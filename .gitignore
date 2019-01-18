@@ -24,12 +24,15 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*build/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+*.sublime-workspace
+*.sublime-project
 
 # Installer logs
 pip-log.txt
