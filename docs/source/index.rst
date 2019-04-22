@@ -13,8 +13,8 @@ Welcome to estimagic's documentation!
    introduction
    estimation
    inference
-   model_tools
-   visualization
+   module_reference
+   contributing
 
 
 

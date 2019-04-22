@@ -1,0 +1,15 @@
+name: estimagic
+
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+
+  - python=3.7
+  - pandas=0.24
+  - numpy=1.16
+  - pytest=4.0.2
+  - pygmo=2.10
+  - pytest-mock
+
