@@ -6,11 +6,21 @@ import pandas as pd
 import os
 import json
 from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import reparametrize_to_internal, reparametrize_from_internal
+from estimagic.optimization.reparametrize import (
+    reparametrize_to_internal,
+    reparametrize_from_internal,
+)
 
 
 def minimize(
-    func, params, algorithm, func_args=[], func_kwargs={}, constraints=[], general_options={}, algo_options={}
+    func,
+    params,
+    algorithm,
+    func_args=[],
+    func_kwargs={},
+    constraints=[],
+    general_options={},
+    algo_options={},
 ):
     """Minimize *func* using *algorithm* subject to *constraints* and bounds.
 
@@ -59,9 +69,11 @@ def _create_problem(func, params, func_args, func_kwargs, constraints):
             self.internal_index = internal_params.index
 
         def fitness(self, x):
-            internal_params = pd.Series(data=x, index=self.internal_index)
+            internal_params = self.internal_params.copy(deep=True)
+            internal_params["value"] = x
             params = reparametrize_from_internal(
-                internal_params, self.constraints, self.params)
+                internal_params, self.constraints, self.params
+            )
             return [func(params, *self.func_args, **self.func_kwargs)]
 
         def get_bounds(self):
@@ -101,7 +113,7 @@ def _create_population(problem, algo_options):
 
     """
     popsize = algo_options.copy().pop("popsize", 1)
-    x0 = problem.internal_params['value'].to_numpy()
+    x0 = problem.internal_params["value"].to_numpy()
     pop = pg.population(problem, size=popsize - 1, seed=5471)
     pop.push_back(x0)
     return pop

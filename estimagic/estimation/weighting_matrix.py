@@ -18,7 +18,7 @@ Questions:
 """
 
 
-def weighting_matrix(moment_func, data, estimation_principle, weight_type='diagonal'):
+def weighting_matrix(moment_func, data, estimation_principle, weight_type="diagonal"):
     """Construct a weighting matrix for minimum distance estimators.
 
     Args:
