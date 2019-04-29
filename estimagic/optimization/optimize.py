@@ -96,7 +96,6 @@ def _create_population(problem, algo_options):
     """Create a pygmo population object.
 
     Todo:
-        - set params['values'] as start values
         - constrain random initial values to be in some bounds
         - remove hardcoded seed
 

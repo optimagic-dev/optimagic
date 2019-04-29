@@ -1,18 +1,60 @@
 import numpy as np
+import warnings
 
 
 def process_constraints(constraints, params):
     """Process, consolidate and check constraints."""
-    processed = []
-    equality_constraints = []
-    for constr in constraints:
-        if constr['type'] == 'equality':
-            equality_constraints.append(constr)
-        else:
-            processed.append(constr)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="indexing past lexsort depth may impact performance.")
 
-    processed += _consolidate_equality_constraints(equality_constraints, params)
-    _check_compatibility_of_constraints(constraints, params)
+        processed = []
+
+        constraints = _process_selectors(constraints, params)
+        equality_constraints = []
+        for constr in constraints:
+            if constr['type'] == 'equality':
+                equality_constraints.append(constr)
+            else:
+                processed.append(constr)
+
+        processed += _consolidate_equality_constraints(equality_constraints, params)
+        _check_compatibility_of_constraints(constraints, params)
+
+    return processed
+
+
+def _process_selectors(constraints, params):
+    """Process and harmonize the query and loc field of the constraints.
+
+    The resulting list of constraints contains a new entry called 'selector' that
+    consists of the full index of all selected parameters and not only the index
+    levels provided in the loc field of the original constraint, which is very important
+    for the rest of the constraint handling.
+
+    """
+    processed = []
+    for constr in constraints:
+        assert 'query' in constr or 'loc' in constr, (
+            'Either query or loc has to be in a constraint dictionary.')
+        assert not ('query' in constr and 'loc' in constr), (
+            'query and loc cannot both be specified in a constraint dictionary.')
+
+        par_copy = params.copy()
+        new_constr = constr.copy()
+
+        if 'query' in constr:
+            query = new_constr.pop('query')
+            selector = par_copy.query(query).index
+        else:
+                loc = new_constr.pop('loc')
+                par_copy['selected'] = False
+                par_copy.loc[loc, 'selected'] = True
+                selector = par_copy.query('selected').index
+
+        new_constr['selector'] = selector
+        processed.append(new_constr)
 
     return processed
 
@@ -27,8 +69,7 @@ def _consolidate_equality_constraints(constraints, params):
     order.
 
     """
-    candidates = [
-        params.loc[constr['selector']].index for constr in constraints]
+    candidates = [constr['selector'] for constr in constraints]
 
     consolidated = []
 

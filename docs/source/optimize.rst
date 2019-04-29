@@ -96,16 +96,15 @@ The drawback is that they are cumbersome to implement by hand and are less gener
 applicable. Estimagic automatically applies the reparametrizations in the background.
 
 The user can specify a list with any number of constraints. Each constraint is a
-dictionary with the keys 'selector' and 'type'. Some types of constraints have
-additional optional or required keys. Selectors will be passed to the .loc
-method of the params DataFrame to select the subset of parameters to which the
-constraint applies. 'type' can take the following values:
+dictionary. The dictionary must contain the following entries:
 
-- 'covariance': a set of parameters forms a valid (i.e. positive semi-definite) covariance matrix. This is not compatible with any other constraints on the involved parameters.
-- 'sum': a set of parameters sums to a specified value. The last involved parameter can't have bounds. In this case the constraint dictionary also needs to contain a 'value' key.
-- 'probability': a set of parameters is between 0 and 1 and sums to 1.
-- 'increasing': a set of parameters is increasing. We check that the box constraints are compatible with the order.
-- 'equality': a set of parameters is restricted to be equal to a particular value. The value has to be specified in the constraints dictionary.
+- 'loc' or 'query' but not both. This specifies to which subset of the parameters the constraint applies. The value corresponding to 'loc' will be passed to df.loc and the value corresponding to 'query' will be passed to df.query so you can provide whatever is accepted by those methods.
+- 'type', which can take the following values:
+    - 'covariance': a set of parameters forms a valid (i.e. positive semi-definite) covariance matrix. This is not compatible with any other constraints on the involved parameters.
+    - 'sum': a set of parameters sums to a specified value. The last involved parameter can't have bounds. In this case the constraint dictionary also needs to contain a 'value' key.
+    - 'probability': a set of parameters is between 0 and 1 and sums to 1.
+    - 'increasing': a set of parameters is increasing. We check that the box constraints are compatible with the order.
+    - 'equality': a set of parameters is restricted to be equal to a particular value. The value has to be specified in the constraints dictionary.
 
 
 Constraints that involve just one parameter are specified in the params DataFrame. Currently we implement lower and upper bounds as well as fixing parameters to a value.

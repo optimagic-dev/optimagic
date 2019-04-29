@@ -34,8 +34,12 @@ def reparametrize_to_internal(params, constraints):
         elif constr['type'] == 'equality':
             internal.update(_equality_to_internal(params_subset))
 
-    actually_fixed = internal['lower'] == internal['upper']
-    internal.loc[actually_fixed, 'fixed'] = True
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="indexing past lexsort depth may impact performance.")
+        actually_fixed = internal['lower'] == internal['upper']
+        internal.loc[actually_fixed, 'fixed'] = True
 
     internal = internal.query('~fixed')
 
@@ -85,37 +89,35 @@ def _covariance_to_internal(params_subset):
     http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.31.494&rep=rep1&type=pdf)
 
     Note that the cholesky reparametrization is not compatible with any other
-    constraints on the involved parameters.
+    constraints on the involved parameters. Moreover, it requires the covariance matrix
+    described by the start values to be positive definite as opposed to positive
+    semi-definite.
 
     """
     cov = cov_params_to_matrix(params_subset["value"].to_numpy())
     dim = len(cov)
-    off_diagonal_zero = bool((cov[np.tril_indices(dim)] == 0).all())
+    off_diagonal_zero = bool((cov[np.tril_indices(dim, k=-1)] == 0).all())
 
-    fixed_helper = cov_params_to_matrix(params_subset["fixed"].to_numpy())
-    off_diagonal_fixed = bool(fixed_helper[np.tril_indices()].all())
+    fixed_helper = cov_params_to_matrix(params_subset["fixed"].to_numpy()).astype(bool)
+    off_diagonal_fixed = bool(fixed_helper[np.tril_indices(dim, k=-1)].all())
     all_fixed = bool(params_subset["fixed"].all())
 
     res = params_subset.copy()
 
-    try:
-        chol = np.linalg.cholesky(cov)
-    except np.linalg.LinAlgError:
-        raise ValueError("Invalid covariance matrix.")
+    e, v = np.linalg.eigh(cov)
+    assert np.all(e > -1e-8), "Invalid covariance matrix."
 
     if all_fixed:
         pass
     elif off_diagonal_fixed and off_diagonal_zero:
         lower_bound_helper = cov_params_to_matrix(params_subset["lower"])
-        lower_bound_helper[np.diag_indices(dim)] = np.max(
-            np.diagonal(lower_bound_helper), np.zeros(dim)
-        )
+        diag_lower = np.maximum(np.diagonal(lower_bound_helper), np.zeros(dim))
+        lower_bound_helper[np.diag_indices(dim)] = diag_lower
         lower_bounds = lower_bound_helper[np.tril_indices(dim)]
 
         res["lower"] = lower_bounds
 
         assert (res["upper"] >= res["lower"]).all(), "Invalid upper bound for variance."
-
     else:
         chol = np.linalg.cholesky(cov)
         chol_coeffs = chol[np.tril_indices(dim)]
@@ -129,7 +131,7 @@ def _covariance_to_internal(params_subset):
             warnings.warn("Covariance parameters are unfixed.", UserWarning)
 
         for bound in ["lower", "upper"]:
-            if params_subset[bound].isfinite.any():
+            if np.isfinite(params_subset[bound]).any():
                 warnings.warn(
                     "Bounds are ignored for covariance parameters.", UserWarning
                 )
@@ -164,13 +166,16 @@ def _increasing_to_internal(params_subset):
         warnings.warn("Ordered parameters were unfixed.", UserWarning)
 
     for bound in ["lower", "upper"]:
-        if params_subset[bound].isfinite.any():
+        if np.isfinite(params_subset[bound]).any():
             warnings.warn("Bounds are ignored for ordered parameters.", UserWarning)
+
+    return res
 
 
 def _increasing_from_internal(params_subset):
     res = params_subset.copy()
     res["value"] = params_subset["value"].cumsum()
+    return res
 
 
 def _sum_to_internal(params_subset, value):
@@ -190,7 +195,8 @@ def _sum_from_internal(params_subset, value):
     res = params_subset.copy()
     last = params_subset.index[-1]
     all_others = params_subset.index[:-1]
-    res.loc[last, "value"] = params_subset.loc[all_others, "value"].sum()
+    res.loc[last, "value"] = value - params_subset.loc[all_others, "value"].sum()
+    return res
 
 
 def _probability_to_internal(params_subset):
@@ -209,13 +215,16 @@ def _probability_to_internal(params_subset):
 
     res["lower"] = -np.inf
     res["upper"] = np.inf
-
     last = params_subset.index[-1]
     res.loc[last, "fixed"] = True
+    res['value'] /= res.loc[last, 'value']
+    return res
 
 
 def _probability_from_internal(params_subset):
+    last = params_subset.index[-1]
     res = params_subset.copy()
+    res.loc[last, 'value'] = 1
     res["value"] /= params_subset["value"].sum()
     return res
 
