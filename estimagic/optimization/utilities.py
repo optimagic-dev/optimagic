@@ -21,9 +21,9 @@ def number_of_triangular_elements_to_dimension(num):
 
     Example
     -------
-    >>> number_of_triangular_elements_to_dimensio(6)
+    >>> number_of_triangular_elements_to_dimension(6)
     3
-    >>> number_of_triangular_elements_to_dimensio(10)
+    >>> number_of_triangular_elements_to_dimension(10)
     4
 
     """

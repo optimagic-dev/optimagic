@@ -1,15 +1,13 @@
 """Functional wrapper around the object oriented pygmo library."""
-
-
-import pygmo as pg
-import pandas as pd
-import os
 import json
+import os
+
+import pandas as pd
+import pygmo as pg
+
 from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import (
-    reparametrize_to_internal,
-    reparametrize_from_internal,
-)
+from estimagic.optimization.reparametrize import reparametrize_from_internal
+from estimagic.optimization.reparametrize import reparametrize_to_internal
 
 
 def minimize(

@@ -1,5 +1,7 @@
-import numpy as np
 import warnings
+
+import numpy as np
+
 from estimagic.optimization.utilities import cov_params_to_matrix
 
 
