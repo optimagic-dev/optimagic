@@ -2,7 +2,7 @@
 
 
 import pygmo as pg
-import pandas as pd
+import numpy as np
 import os
 import json
 from estimagic.optimization.process_constraints import process_constraints
@@ -10,6 +10,57 @@ from estimagic.optimization.reparametrize import (
     reparametrize_to_internal,
     reparametrize_from_internal,
 )
+
+
+def maximize(
+    func,
+    params,
+    algorithm,
+    func_args=[],
+    func_kwargs={},
+    constraints=[],
+    general_options={},
+    algo_options={},
+):
+    """Maximize *func* using *algorithm* subject to *constraints* and bounds.
+
+    Args:
+        func (function):
+            Python function that takes a pandas Series with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame):
+            See :ref:`params_df`.
+
+        algorithm (str):
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+
+        func_args (list or tuple):
+            additional positional arguments for func
+
+        func_kwargs (dict):
+            additional keyword arguments for func
+
+        constraints (list):
+            list with constraint dictionaries. See for details.
+
+    """
+    def neg_func(*func_args, **func_kwargs):
+        return - func(*func_args, **func_kwargs)
+
+    res_dict, params = minimize(
+        neg_func,
+        params,
+        algorithm,
+        func_args,
+        func_kwargs,
+        constraints,
+        general_options,
+        algo_options,
+    )
+    res_dict['f'] = - res_dict['f']
+
+    return res_dict, params
 
 
 def minimize(
@@ -45,35 +96,51 @@ def minimize(
             list with constraint dictionaries. See for details.
 
     """
+    params = _process_params_df(params)
     prob = _create_problem(func, params, func_args, func_kwargs, constraints)
     algo = _create_algorithm(algorithm, algo_options)
     pop = _create_population(prob, algo_options)
     evolved = algo.evolve(pop)
-    result = _process_pygmo_results(evolved)
+    result = _process_pygmo_results(evolved, prob)
     return result
+
+
+def _process_params_df(params):
+    params = params.copy()
+    if 'lower' not in params.columns:
+        params['lower'] = -np.inf
+    if 'upper' not in params.columns:
+        params['upper'] = np.inf
+    if 'fixed' not in params.columns:
+        # todo: does this have to be removed after we move fixed to constraints?
+        params['fixed'] = False
+    return params
 
 
 def _create_problem(func, params, func_args, func_kwargs, constraints):
     class Problem:
         def __init__(self, func, params, func_args, func_kwargs, constraints):
             self.func = func
+            self.params = params
             self.func_args = func_args
             self.func_kwargs = func_kwargs
             self.constraints = process_constraints(constraints, params)
-
-            self.params = params
             self.index = params.index
 
             internal_params = reparametrize_to_internal(params, self.constraints)
             self.internal_params = internal_params
             self.internal_index = internal_params.index
 
-        def fitness(self, x):
+        def _params_sr_from_x(self, x):
             internal_params = self.internal_params.copy(deep=True)
             internal_params["value"] = x
             params = reparametrize_from_internal(
                 internal_params, self.constraints, self.params
             )
+            return params
+
+        def fitness(self, x):
+            params = self._params_sr_from_x(x)
             return [func(params, *self.func_args, **self.func_kwargs)]
 
         def get_bounds(self):
@@ -119,11 +186,19 @@ def _create_population(problem, algo_options):
     return pop
 
 
-def _process_pygmo_results(pygmo_res):
+def _process_pygmo_results(pygmo_res, prob):
     """Convert evolved population into json serializable dictionary.
 
     Todo:
         - implement this function.
 
     """
-    return pygmo_res
+    x = pygmo_res.champion_x
+    params = prob._params_sr_from_x(x)
+
+    res_dict = {
+        'x': params.to_numpy().tolist(),
+        'internal_x': x.tolist(),
+        'f': pygmo_res.champion_f
+    }
+    return res_dict, params
