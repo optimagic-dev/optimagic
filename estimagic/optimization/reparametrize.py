@@ -1,11 +1,10 @@
 """Handle constraints by bounds and reparametrizations."""
+import warnings
 
 import numpy as np
-import warnings
-from estimagic.optimization.utilities import (
-    cov_params_to_matrix,
-    number_of_triangular_elements_to_dimension,
-)
+
+from estimagic.optimization.utilities import cov_params_to_matrix
+from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 
 
 def reparametrize_to_internal(params, constraints):

@@ -1,0 +1,53 @@
+exclude: >
+    (?x)^(
+        .pytest_cache |
+        .tox
+    )$
+repos:
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: v1.4.0
+    hooks:
+    -   id: reorder-python-imports
+        types: [python]
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.1.0
+    hooks:
+    -   id: check-yaml
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: 3.7.7
+    hooks:
+    -   id: flake8
+        types: [python]
+        additional_dependencies: [
+            flake8-bugbear, flake8-builtins, flake8-comprehensions, flake8-docstrings,
+            flake8-eradicate, flake8-print, flake8-rst-docstrings, flake8-todo,
+            pep8-naming,
+        ]
+-   repo: https://github.com/asottile/blacken-docs
+    rev: v0.5.0
+    hooks:
+    -   id: blacken-docs
+        additional_dependencies: [black]
+        types: [rst]
+-   repo: https://github.com/ambv/black
+    rev: 19.3b0
+    hooks:
+    -   id: black
+        types: [python]
+-   repo: local
+    hooks:
+    -   id: doc8
+        entry: doc8
+        language: system
+        types: [rst]
+        name: doc8 - Lint the documentation.
+    -   id: restructuredtext-lint
+        entry: rst-lint
+        language: system
+        files: '(README.rst)'
+        name: restructuredtext-lint - Is the README PyPi-compliant?
+-   repo: meta
+    hooks:
+    -   id: check-hooks-apply
+    -   id: check-useless-excludes
+    # -   id: identity  # Prints all files passed to pre-commits. Debugging.

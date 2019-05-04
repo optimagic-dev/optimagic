@@ -1,13 +1,13 @@
-import pandas as pd
-import numpy as np
-import pytest
-from estimagic.optimization.reparametrize import (
-    reparametrize_to_internal,
-    reparametrize_from_internal,
-)
-from estimagic.optimization.process_constraints import process_constraints
 from os import path
+
+import numpy as np
+import pandas as pd
+import pytest
 from pandas.testing import assert_series_equal
+
+from estimagic.optimization.process_constraints import process_constraints
+from estimagic.optimization.reparametrize import reparametrize_from_internal
+from estimagic.optimization.reparametrize import reparametrize_to_internal
 
 dirname = path.dirname(path.abspath(__file__))
 params_fixture = pd.read_csv(path.join(dirname, "fixtures/reparametrize_fixtures.csv"))
