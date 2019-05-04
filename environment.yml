@@ -19,3 +19,4 @@ dependencies:
     - pytest-xdist
     - restructuredtext_lint
     - tox-conda
+    - black
