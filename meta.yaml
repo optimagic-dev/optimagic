@@ -1,0 +1,38 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: estimagic
+  version: {{ data.get('version') }}
+
+source:
+  path: ../estimagic
+
+build:
+  number: 0
+
+
+requirements:
+  build:
+    - python {{ python }}
+    - setuptools
+
+  run:
+    - python {{ python }}
+    - numpy
+    - pandas>=0.24
+    # - pygmo>=2.10
+
+test:
+  commands:
+    - py.test
+  files:
+    - estimagic/tests/
+  requires:
+    - pytest
+    - pytest-mock
+
+about:
+  home: https://github.com/janosg/estimagic
+  license: BSD
+  license_file: LICENSE
+  summary: Tools for the estimation of (structural) econometric models.
