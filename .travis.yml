@@ -22,7 +22,7 @@ install:
     - conda config --set always_yes yes --set changeps1 no
     - conda info -a
 
-    - conda update python=$PYTHON_VERSION
+    - conda install python=$PYTHON_VERSION
 
     - pip install tox-conda
 

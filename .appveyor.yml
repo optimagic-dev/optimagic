@@ -12,7 +12,9 @@ image: Visual Studio 2015
 environment:
   matrix:
       - MINICONDA: "C:\\Miniconda36-x64"
-      - MINICONDA: "C:\\Miniconda37-x64"
+        PYTHON_VERSION: "3.6"
+      # - MINICONDA: "C:\\Miniconda37-x64"
+      #   PYTHON_VERSION: "3.7"
 
 install:
   # If there is a newer build queued for the same PR, cancel this one. The AppVeyor
@@ -28,8 +30,12 @@ install:
   - ps: $env:PATH = "$env:MINICONDA;$env:MINICONDA\Scripts;$env:MINICONDA\bin;$env:PATH"
 
   # Configure conda
-  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set always_yes yes --set changeps1 no --set quiet true
+  - ps: conda install python=$env:PYTHON_VERSION
+  - conda update conda
   - conda info -a
+
+  - set CONDA_DLL_SEARCH_MODIFICATION_ENABLE=1
 
   - pip install tox-conda
 
