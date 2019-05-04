@@ -7,9 +7,16 @@ channels:
 dependencies:
 
   - python=3.7
+  - pip=19.0.3
   - pandas=0.24
   - numpy=1.16
-  - pytest=4.0.2
   - pygmo=2.10
-  - pytest-mock
-
+  - pip:
+    - doc8
+    - pre-commit
+    - pytest
+    - pytest-mock
+    - pytest-xdist
+    - restructuredtext_lint
+    - tox-conda
+    - black

@@ -1,26 +1,24 @@
 """Functional wrapper around the object oriented pygmo library."""
-
-
-import pygmo as pg
-import numpy as np
-import os
 import json
+import os
+
+import numpy as np
+import pygmo as pg
+
 from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import (
-    reparametrize_to_internal,
-    reparametrize_from_internal,
-)
+from estimagic.optimization.reparametrize import reparametrize_from_internal
+from estimagic.optimization.reparametrize import reparametrize_to_internal
 
 
 def maximize(
     func,
     params,
     algorithm,
-    func_args=[],
-    func_kwargs={},
-    constraints=[],
-    general_options={},
-    algo_options={},
+    func_args=None,
+    func_kwargs=None,
+    constraints=None,
+    general_options=None,
+    algo_options=None,
 ):
     """Maximize *func* using *algorithm* subject to *constraints* and bounds.
 
@@ -45,8 +43,9 @@ def maximize(
             list with constraint dictionaries. See for details.
 
     """
+
     def neg_func(*func_args, **func_kwargs):
-        return - func(*func_args, **func_kwargs)
+        return -func(*func_args, **func_kwargs)
 
     res_dict, params = minimize(
         neg_func,
@@ -58,7 +57,7 @@ def maximize(
         general_options,
         algo_options,
     )
-    res_dict['f'] = - res_dict['f']
+    res_dict["f"] = -res_dict["f"]
 
     return res_dict, params
 
@@ -67,11 +66,11 @@ def minimize(
     func,
     params,
     algorithm,
-    func_args=[],
-    func_kwargs={},
-    constraints=[],
-    general_options={},
-    algo_options={},
+    func_args=None,
+    func_kwargs=None,
+    constraints=None,
+    general_options=None,
+    algo_options=None,
 ):
     """Minimize *func* using *algorithm* subject to *constraints* and bounds.
 
@@ -97,6 +96,12 @@ def minimize(
 
     """
     params = _process_params_df(params)
+    func_args = [] if func_args is None else func_args
+    func_kwargs = {} if func_kwargs is None else func_kwargs
+    constraints = [] if constraints is None else constraints
+    general_options = {} if general_options is None else {}
+    algo_options = {} if algo_options is None else {}
+
     prob = _create_problem(func, params, func_args, func_kwargs, constraints)
     algo = _create_algorithm(algorithm, algo_options)
     pop = _create_population(prob, algo_options)
@@ -107,13 +112,13 @@ def minimize(
 
 def _process_params_df(params):
     params = params.copy()
-    if 'lower' not in params.columns:
-        params['lower'] = -np.inf
-    if 'upper' not in params.columns:
-        params['upper'] = np.inf
-    if 'fixed' not in params.columns:
+    if "lower" not in params.columns:
+        params["lower"] = -np.inf
+    if "upper" not in params.columns:
+        params["upper"] = np.inf
+    if "fixed" not in params.columns:
         # todo: does this have to be removed after we move fixed to constraints?
-        params['fixed'] = False
+        params["fixed"] = False
     return params
 
 
@@ -197,8 +202,8 @@ def _process_pygmo_results(pygmo_res, prob):
     params = prob._params_sr_from_x(x)
 
     res_dict = {
-        'x': params.to_numpy().tolist(),
-        'internal_x': x.tolist(),
-        'f': pygmo_res.champion_f
+        "x": params.to_numpy().tolist(),
+        "internal_x": x.tolist(),
+        "f": pygmo_res.champion_f,
     }
     return res_dict, params
