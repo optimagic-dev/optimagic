@@ -31,6 +31,7 @@ install:
 
   # Configure conda
   - conda config --set always_yes yes --set changeps1 no --set quiet true
+  - conda update python=$env:PYTHON_VERSION
   - conda update conda
   - ps: conda install python=$env:PYTHON_VERSION
   - conda info -a
