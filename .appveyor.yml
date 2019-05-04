@@ -32,7 +32,7 @@ install:
   # Configure conda
   - conda config --set always_yes yes --set changeps1 no
   - conda info -a
-  - conda install python=$PYTHON_VERSION
+  - ps: conda install python=$env:PYTHON_VERSION
 
   - pip install tox-conda
 
