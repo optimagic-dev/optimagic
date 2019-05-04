@@ -30,7 +30,7 @@ install:
   - ps: $env:PATH = "$env:MINICONDA;$env:MINICONDA\Scripts;$env:MINICONDA\bin;$env:PATH"
 
   # Configure conda
-  - conda config --set always_yes yes --set changeps1 no
+  - conda config --set always_yes yes --set changeps1 no --set quiet true
   - conda info -a
   - ps: conda install python=$env:PYTHON_VERSION
 
