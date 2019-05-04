@@ -18,3 +18,4 @@ dependencies:
     - pytest-mock
     - pytest-xdist
     - restructuredtext_lint
+    - tox-conda

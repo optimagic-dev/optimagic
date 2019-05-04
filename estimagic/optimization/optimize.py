@@ -2,7 +2,6 @@
 import json
 import os
 
-import pandas as pd
 import pygmo as pg
 
 from estimagic.optimization.process_constraints import process_constraints
@@ -14,11 +13,11 @@ def minimize(
     func,
     params,
     algorithm,
-    func_args=[],
-    func_kwargs={},
-    constraints=[],
-    general_options={},
-    algo_options={},
+    func_args=None,
+    func_kwargs=None,
+    constraints=None,
+    general_options=None,
+    algo_options=None,
 ):
     """Minimize *func* using *algorithm* subject to *constraints* and bounds.
 
@@ -43,6 +42,12 @@ def minimize(
             list with constraint dictionaries. See for details.
 
     """
+    func_args = [] if func_args is None else func_args
+    func_kwargs = {} if func_kwargs is None else func_kwargs
+    constraints = [] if constraints is None else constraints
+    general_options = {} if general_options is None else {}
+    algo_options = {} if algo_options is None else {}
+
     prob = _create_problem(func, params, func_args, func_kwargs, constraints)
     algo = _create_algorithm(algorithm, algo_options)
     pop = _create_population(prob, algo_options)
