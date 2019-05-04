@@ -11,8 +11,8 @@ image: Visual Studio 2015
 
 environment:
   matrix:
-      - MINICONDA: "C:\\Miniconda36-x64"
-        PYTHON_VERSION: "3.6"
+      # - MINICONDA: "C:\\Miniconda36-x64"
+      #   PYTHON_VERSION: "3.6"
       - MINICONDA: "C:\\Miniconda37-x64"
         PYTHON_VERSION: "3.7"
 
