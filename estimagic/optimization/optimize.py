@@ -2,6 +2,7 @@
 import json
 import os
 
+import numpy as np
 import pygmo as pg
 
 from estimagic.optimization.process_constraints import process_constraints
@@ -9,20 +10,20 @@ from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 
 
-def minimize(
-    func,
+def maximize(
+    criterion,
     params,
     algorithm,
-    func_args=None,
-    func_kwargs=None,
+    criterion_args=None,
+    criterion_kwargs=None,
     constraints=None,
     general_options=None,
     algo_options=None,
 ):
-    """Minimize *func* using *algorithm* subject to *constraints* and bounds.
+    """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
 
     Args:
-        func (function):
+        criterion (function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
 
@@ -32,57 +33,132 @@ def minimize(
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
-        func_args (list or tuple):
-            additional positional arguments for func
+        criterion_args (list or tuple):
+            additional positional arguments for criterion
 
-        func_kwargs (dict):
-            additional keyword arguments for func
+        criterion_kwargs (dict):
+            additional keyword arguments for criterion
 
         constraints (list):
             list with constraint dictionaries. See for details.
 
     """
-    func_args = [] if func_args is None else func_args
-    func_kwargs = {} if func_kwargs is None else func_kwargs
+
+    def neg_func(*func_args, **func_kwargs):
+        return -criterion(*func_args, **func_kwargs)
+
+    res_dict, params = minimize(
+        neg_func,
+        params,
+        algorithm,
+        criterion_args,
+        criterion_kwargs,
+        constraints,
+        general_options,
+        algo_options,
+    )
+    res_dict["f"] = -res_dict["f"]
+
+    return res_dict, params
+
+
+def minimize(
+    criterion,
+    params,
+    algorithm,
+    criterion_args=None,
+    criterion_kwargs=None,
+    constraints=None,
+    general_options=None,
+    algo_options=None,
+):
+    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
+
+    Args:
+        criterion (function):
+            Python function that takes a pandas Series with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame):
+            See :ref:`params_df`.
+
+        algorithm (str):
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+
+        criterion_args (list or tuple):
+            additional positional arguments for criterion
+
+        criterion_kwargs (dict):
+            additional keyword arguments for criterion
+
+        constraints (list):
+            list with constraint dictionaries. See for details.
+
+    """
+    # set default arguments
+    criterion_args = [] if criterion_args is None else criterion_args
+    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
     general_options = {} if general_options is None else {}
     algo_options = {} if algo_options is None else {}
 
-    prob = _create_problem(func, params, func_args, func_kwargs, constraints)
+    params = _process_params_df(params)
+    constraints = process_constraints(constraints, params)
+    internal_params = reparametrize_to_internal(params, constraints)
+    internal_criterion = _create_internal_criterion(
+        criterion,
+        params,
+        internal_params,
+        constraints,
+        criterion_args,
+        criterion_kwargs,
+    )
+    prob = _create_problem(internal_criterion, internal_params)
     algo = _create_algorithm(algorithm, algo_options)
-    pop = _create_population(prob, algo_options)
+    pop = _create_population(prob, algo_options, internal_params)
     evolved = algo.evolve(pop)
-    result = _process_pygmo_results(evolved)
+    result = _process_pygmo_results(evolved, params, internal_params, constraints)
     return result
 
 
-def _create_problem(func, params, func_args, func_kwargs, constraints):
+def _create_internal_criterion(
+    criterion, params, internal_params, constraints, criterion_args, criterion_kwargs
+):
+    def internal_criterion(x):
+        params_sr = _params_sr_from_x(x, internal_params, constraints, params)
+        return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
+
+    return internal_criterion
+
+
+def _params_sr_from_x(x, internal_params, constraints, params):
+    internal_params = internal_params.copy(deep=True)
+    internal_params["value"] = x
+    params = reparametrize_from_internal(internal_params, constraints, params)
+    return params
+
+
+def _process_params_df(params):
+    params = params.copy()
+    if "lower" not in params.columns:
+        params["lower"] = -np.inf
+    if "upper" not in params.columns:
+        params["upper"] = np.inf
+    if "fixed" not in params.columns:
+        # todo: does this have to be removed after we move fixed to constraints?
+        params["fixed"] = False
+    return params
+
+
+def _create_problem(internal_criterion, internal_params):
     class Problem:
-        def __init__(self, func, params, func_args, func_kwargs, constraints):
-            self.func = func
-            self.func_args = func_args
-            self.func_kwargs = func_kwargs
-            self.constraints = process_constraints(constraints, params)
-
-            self.params = params
-            self.index = params.index
-
-            internal_params = reparametrize_to_internal(params, self.constraints)
-            self.internal_params = internal_params
-            self.internal_index = internal_params.index
-
         def fitness(self, x):
-            internal_params = self.internal_params.copy(deep=True)
-            internal_params["value"] = x
-            params = reparametrize_from_internal(
-                internal_params, self.constraints, self.params
-            )
-            return [func(params, *self.func_args, **self.func_kwargs)]
+            return internal_criterion(x)
 
         def get_bounds(self):
-            return (self.internal_params["lower"], self.internal_params["upper"])
+            return (internal_params["lower"], internal_params["upper"])
 
-    return Problem(func, params, func_args, func_kwargs, constraints)
+    return Problem()
 
 
 def _create_algorithm(algorithm, algo_options):
@@ -107,7 +183,7 @@ def _create_algorithm(algorithm, algo_options):
     return algo
 
 
-def _create_population(problem, algo_options):
+def _create_population(problem, algo_options, internal_params):
     """Create a pygmo population object.
 
     Todo:
@@ -116,17 +192,25 @@ def _create_population(problem, algo_options):
 
     """
     popsize = algo_options.copy().pop("popsize", 1)
-    x0 = problem.internal_params["value"].to_numpy()
+    x0 = internal_params["value"].to_numpy()
     pop = pg.population(problem, size=popsize - 1, seed=5471)
     pop.push_back(x0)
     return pop
 
 
-def _process_pygmo_results(pygmo_res):
+def _process_pygmo_results(pygmo_res, params, internal_params, constraints):
     """Convert evolved population into json serializable dictionary.
 
     Todo:
         - implement this function.
 
     """
-    return pygmo_res
+    x = pygmo_res.champion_x
+    params = _params_sr_from_x(x, internal_params, constraints, params)
+
+    res_dict = {
+        "x": params.to_numpy().tolist(),
+        "internal_x": x.tolist(),
+        "f": pygmo_res.champion_f,
+    }
+    return res_dict, params
