@@ -1,10 +1,15 @@
 """Functional wrapper around the object oriented pygmo library."""
 import json
 import os
+from functools import partial
+from threading import Thread
 
 import numpy as np
 import pygmo as pg
 
+from estimagic.dashboard.callbacks import add_callbacks
+from estimagic.dashboard.setup_dashboard import configure_dashboard
+from estimagic.dashboard.setup_dashboard import run_with_dashboard
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
@@ -19,6 +24,7 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    dashboard=True,
 ):
     """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -42,6 +48,15 @@ def maximize(
         constraints (list):
             list with constraint dictionaries. See for details.
 
+        general_options (dict):
+            additional configurations for the optimization
+
+        algo_options (dict):
+            algorithm specific configurations for the optimization
+
+        dashboard (bool):
+            whether to create and show a dashboard
+
     """
 
     def neg_func(*func_args, **func_kwargs):
@@ -56,6 +71,7 @@ def maximize(
         constraints,
         general_options,
         algo_options,
+        dashboard,
     )
     res_dict["f"] = -res_dict["f"]
 
@@ -71,6 +87,7 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    dashboard=True,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -94,17 +111,103 @@ def minimize(
         constraints (list):
             list with constraint dictionaries. See for details.
 
+        general_options (dict):
+            additional configurations for the optimization
+
+        algo_options (dict):
+            algorithm specific configurations for the optimization
+
+        dashboard (bool):
+            whether to create and show a dashboard
+
     """
     # set default arguments
     criterion_args = [] if criterion_args is None else criterion_args
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
-    general_options = {} if general_options is None else {}
-    algo_options = {} if algo_options is None else {}
+    general_options = {} if general_options is None else general_options
+    algo_options = {} if algo_options is None else algo_options
 
     params = _process_params_df(params)
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
+
+    if dashboard is True:
+        run_with_dashboard(
+            func=partial(
+                _minimize_in_thread,
+                criterion=criterion,
+                criterion_args=criterion_args,
+                criterion_kwargs=criterion_kwargs,
+                params=params,
+                internal_params=internal_params,
+                algorithm=algorithm,
+                algo_options=algo_options,
+                constraints=constraints,
+                dashboard=dashboard,
+            )
+        )
+    else:
+        _minimize(
+            criterion,
+            criterion_args,
+            criterion_kwargs,
+            params,
+            internal_params,
+            algorithm,
+            algo_options,
+            constraints,
+            dashboard,
+        )
+
+
+def _minimize_in_thread(
+    doc,
+    criterion,
+    criterion_args,
+    criterion_kwargs,
+    params,
+    internal_params,
+    algorithm,
+    algo_options,
+    constraints,
+    dashboard,
+):
+    doc, dashboard_data = configure_dashboard(doc=doc)
+
+    thread = Thread(
+        target=_minimize,
+        args=(
+            criterion,
+            criterion_args,
+            criterion_kwargs,
+            params,
+            internal_params,
+            algorithm,
+            algo_options,
+            constraints,
+            dashboard,
+            dashboard_data,
+        ),
+    )
+    thread.start()
+
+
+def _minimize(
+    criterion,
+    criterion_args,
+    criterion_kwargs,
+    params,
+    internal_params,
+    algorithm,
+    algo_options,
+    constraints,
+    dashboard,
+    doc=None,
+    dashboard_data=None,
+):
+    """."""
+
     internal_criterion = _create_internal_criterion(
         criterion,
         params,
@@ -112,7 +215,10 @@ def minimize(
         constraints,
         criterion_args,
         criterion_kwargs,
+        doc,
+        dashboard_data,
     )
+
     prob = _create_problem(internal_criterion, internal_params)
     algo = _create_algorithm(algorithm, algo_options)
     pop = _create_population(prob, algo_options, internal_params)
@@ -122,11 +228,27 @@ def minimize(
 
 
 def _create_internal_criterion(
-    criterion, params, internal_params, constraints, criterion_args, criterion_kwargs
+    criterion,
+    params,
+    internal_params,
+    constraints,
+    criterion_args,
+    criterion_kwargs,
+    doc=None,
+    dashboard_data=None,
 ):
-    def internal_criterion(x):
-        params_sr = _params_sr_from_x(x, internal_params, constraints, params)
-        return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
+    if doc is None:
+
+        def internal_criterion(x):
+            params_sr = _params_sr_from_x(x, internal_params, constraints, params)
+            return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
+
+    else:
+
+        def internal_criterion(x):
+            params_sr = _params_sr_from_x(x, internal_params, constraints, params)
+            add_callbacks(doc, dashboard_data, params_sr)
+            return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
 
     return internal_criterion
 
