@@ -11,6 +11,8 @@ dependencies:
   - pandas=0.24
   - numpy=1.16
   - pygmo=2.10
+  - conda-build
+  - anaconda-client
   - pip:
     - doc8
     - pre-commit

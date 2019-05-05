@@ -9,10 +9,10 @@ repos:
     hooks:
     -   id: reorder-python-imports
         types: [python]
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.1.0
-    hooks:
-    -   id: check-yaml
+# -   repo: https://github.com/pre-commit/pre-commit-hooks
+#     rev: v2.1.0
+#     hooks:
+#     -   id: check-yaml
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.7.7
     hooks:
