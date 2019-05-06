@@ -29,13 +29,21 @@ def run_with_dashboard(func, notebook):
 
     """
     res = []
-    apps = {"/": Application(FunctionHandler(partial(func, res=res)))}
+    my_func = partial(func, res=res)
+    apps = {"/": Application(FunctionHandler(partial(my_func)))}
     server = setup_server(apps=apps, notebook=notebook)
-    server_thread = Thread(target=start_server, args=(server, notebook))
-    server_thread.start()
-    while len(res) == 0:
-        time.sleep(0.1)
-    return res
+
+    if notebook is False:
+        server_thread = Thread(target=start_server, args=(server, notebook))
+        server_thread.start()
+        server
+
+        while len(res) == 0:
+            time.sleep(0.1)
+        return res
+
+    else:
+        start_server(server, notebook)
 
 
 def configure_dashboard(doc, param_df, start_time):

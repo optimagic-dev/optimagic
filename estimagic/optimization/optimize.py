@@ -1,6 +1,7 @@
 """Functional wrapper around the object oriented pygmo library."""
 import json
 import os
+import sys
 from datetime import datetime
 from functools import partial
 from threading import Thread
@@ -156,12 +157,9 @@ def minimize(
     }
 
     if dashboard is True:
-
-        ######
-        return run_with_dashboard(
+        run_with_dashboard(
             func=partial(_minimize_in_thread, **min_kwargs), notebook=notebook
         )
-
     else:
         _minimize(**min_kwargs)
 
@@ -241,6 +239,9 @@ def _minimize(
     result = _process_pygmo_results(evolved, params, internal_params, constraints)
     if res is not None:
         res += [result, dashboard_data]
+        print(result)
+        sys.stdout.flush()
+        return result
     else:
         return result
 
