@@ -132,33 +132,22 @@ def minimize(
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
+    min_kwargs = {
+        "criterion": criterion,
+        "criterion_args": criterion_args,
+        "criterion_kwargs": criterion_kwargs,
+        "params": params,
+        "internal_params": internal_params,
+        "algorithm": algorithm,
+        "algo_options": algo_options,
+        "constraints": constraints,
+        "dashboard": dashboard,
+    }
+
     if dashboard is True:
-        run_with_dashboard(
-            func=partial(
-                _minimize_in_thread,
-                criterion=criterion,
-                criterion_args=criterion_args,
-                criterion_kwargs=criterion_kwargs,
-                params=params,
-                internal_params=internal_params,
-                algorithm=algorithm,
-                algo_options=algo_options,
-                constraints=constraints,
-                dashboard=dashboard,
-            )
-        )
+        run_with_dashboard(func=partial(_minimize_in_thread, **min_kwargs))
     else:
-        _minimize(
-            criterion,
-            criterion_args,
-            criterion_kwargs,
-            params,
-            internal_params,
-            algorithm,
-            algo_options,
-            constraints,
-            dashboard,
-        )
+        _minimize(**min_kwargs)
 
 
 def _minimize_in_thread(
@@ -177,18 +166,19 @@ def _minimize_in_thread(
 
     thread = Thread(
         target=_minimize,
-        args=(
-            criterion,
-            criterion_args,
-            criterion_kwargs,
-            params,
-            internal_params,
-            algorithm,
-            algo_options,
-            constraints,
-            dashboard,
-            dashboard_data,
-        ),
+        kwargs={
+            "criterion": criterion,
+            "criterion_args": criterion_args,
+            "criterion_kwargs": criterion_kwargs,
+            "params": params,
+            "internal_params": internal_params,
+            "algorithm": algorithm,
+            "algo_options": algo_options,
+            "constraints": constraints,
+            "dashboard": dashboard,
+            "dashboard_data": dashboard_data,
+            "doc": doc,
+        },
     )
     thread.start()
 
@@ -209,14 +199,14 @@ def _minimize(
     """."""
 
     internal_criterion = _create_internal_criterion(
-        criterion,
-        params,
-        internal_params,
-        constraints,
-        criterion_args,
-        criterion_kwargs,
-        doc,
-        dashboard_data,
+        criterion=criterion,
+        params=params,
+        internal_params=internal_params,
+        constraints=constraints,
+        criterion_args=criterion_args,
+        criterion_kwargs=criterion_kwargs,
+        doc=doc,
+        dashboard_data=dashboard_data,
     )
 
     prob = _create_problem(internal_criterion, internal_params)

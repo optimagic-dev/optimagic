@@ -40,7 +40,7 @@ def configure_dashboard(doc):
     return doc, [data, data2]
 
 
-def _setup_server(apps, notebook=False, port=5473):
+def _setup_server(apps, notebook=False, port=5475):
     # this is adapted from bokeh.subcommands.serve
     with report_server_init_errors(port=port):
         server = Server(apps, port=port)
