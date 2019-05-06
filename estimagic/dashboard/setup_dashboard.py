@@ -48,8 +48,8 @@ def run_with_dashboard(func, notebook):
         _start_server(server, notebook)
 
 
-def configure_dashboard(doc, param_df):
-    conv_p, param_data = _setup_convergence_plot(param_df)
+def configure_dashboard(doc, param_df, start_time):
+    conv_p, param_data = _setup_convergence_plot(param_df, start_time)
 
     tab1 = Panel(child=row([conv_p]), title="Convergence Plot")
     tabs = Tabs(tabs=[tab1])
@@ -58,11 +58,12 @@ def configure_dashboard(doc, param_df):
     return doc, [param_data]
 
 
-def _setup_convergence_plot(param_df):
+def _setup_convergence_plot(param_df, start_time):
     # ToDo: split up convergence plot depending on MultiIndex and/or nr of parameters
 
     # this must only be modified from a Bokeh session callback
-    param_data = ColumnDataSource(data=_data_dict_from_param_values(param_df["value"]))
+    first_entry = _data_dict_from_param_values(param_df["value"], start_time)
+    param_data = ColumnDataSource(data=first_entry)
     conv_p = figure(plot_height=350, tools="tap,reset,save")
     conv_p.title.text = "Convergence Plot"
 
@@ -90,11 +91,12 @@ def _setup_convergence_plot(param_df):
     # Add Legend manually as our update somehow messes up the legend
     legend = Legend(items=legend_items)
     conv_p.add_layout(legend)
+    conv_p.legend.click_policy = "mute"
     return conv_p, param_data
 
 
-def _data_dict_from_param_values(param_sr):
-    entry = {"time": [datetime.now()]}
+def _data_dict_from_param_values(param_sr, start_time):
+    entry = {"time": [datetime.now() - start_time]}
     entry.update({str(k): [v] for k, v in param_sr.to_dict().items()})
     return entry
 

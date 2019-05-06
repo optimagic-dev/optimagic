@@ -1,6 +1,7 @@
 """Functional wrapper around the object oriented pygmo library."""
 import json
 import os
+from datetime import datetime
 from functools import partial
 from threading import Thread
 
@@ -139,6 +140,7 @@ def minimize(
     params = _process_params_df(params)
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
+    start_time = datetime.now()
 
     min_kwargs = {
         "criterion": criterion,
@@ -150,6 +152,7 @@ def minimize(
         "algo_options": algo_options,
         "constraints": constraints,
         "dashboard": dashboard,
+        "start_time": start_time,
     }
 
     if dashboard is True:
@@ -172,8 +175,11 @@ def _minimize_in_thread(
     constraints,
     dashboard,
     res,
+    start_time,
 ):
-    doc, dashboard_data = configure_dashboard(doc=doc, param_df=params)
+    doc, dashboard_data = configure_dashboard(
+        doc=doc, param_df=params, start_time=start_time
+    )
 
     thread = Thread(
         target=_minimize,
@@ -190,6 +196,7 @@ def _minimize_in_thread(
             "dashboard_data": dashboard_data,
             "doc": doc,
             "res": res,
+            "start_time": start_time,
         },
     )
     thread.start()
@@ -205,6 +212,7 @@ def _minimize(
     algo_options,
     constraints,
     dashboard,
+    start_time,
     doc=None,
     dashboard_data=None,
     res=None,
@@ -220,6 +228,7 @@ def _minimize(
         criterion_kwargs=criterion_kwargs,
         doc=doc,
         dashboard_data=dashboard_data,
+        start_time=start_time,
     )
 
     prob = _create_problem(internal_criterion, internal_params)
@@ -240,6 +249,7 @@ def _create_internal_criterion(
     constraints,
     criterion_args,
     criterion_kwargs,
+    start_time,
     doc=None,
     dashboard_data=None,
 ):
@@ -253,7 +263,7 @@ def _create_internal_criterion(
 
         def internal_criterion(x):
             params_sr = _params_sr_from_x(x, internal_params, constraints, params)
-            add_callbacks(doc, dashboard_data, params_sr)
+            add_callbacks(doc, dashboard_data, params_sr, start_time)
             return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
 
     return internal_criterion
