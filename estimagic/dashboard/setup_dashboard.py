@@ -1,21 +1,17 @@
 """Functions to setup the dashboard and run a bokeh server with a supplied function."""
-import random
 import time
-from datetime import datetime
 from functools import partial
 from threading import Thread
 
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
-from bokeh.command.util import report_server_init_errors
 from bokeh.layouts import row
-from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
-from bokeh.models.annotations import Legend
 from bokeh.models.widgets import Tabs
-from bokeh.palettes import Viridis256
-from bokeh.plotting import figure
-from bokeh.server.server import Server
+
+from estimagic.dashboard.convergence_plot import setup_convergence_plot
+from estimagic.dashboard.server_functions import setup_server
+from estimagic.dashboard.server_functions import start_server
 
 
 def run_with_dashboard(func, notebook):
@@ -34,103 +30,34 @@ def run_with_dashboard(func, notebook):
     """
     res = []
     apps = {"/": Application(FunctionHandler(partial(func, res=res)))}
-    server = _setup_server(apps=apps, notebook=notebook)
-
-    if notebook is False:
-        t_server = Thread(target=_start_server, args=(server, notebook))
-        t_server.start()
-
-        while len(res) == 0:
-            time.sleep(0.1)
-        return res
-
-    else:
-        _start_server(server, notebook)
+    server = setup_server(apps=apps, notebook=notebook)
+    server_thread = Thread(target=start_server, args=(server, notebook))
+    server_thread.start()
+    while len(res) == 0:
+        time.sleep(0.1)
+    return res
 
 
 def configure_dashboard(doc, param_df, start_time):
-    conv_p, param_data = _setup_convergence_plot(param_df, start_time)
+    """
+    Setup the basic dashboard.
+
+    Args:
+        doc (bokeh Document):
+            bokeh document to be configured
+
+        param_df (pandas DataFrame):
+            DataFrame with the initial parameter values, constraints etc.
+
+        start_time (datetime):
+            time at which the optimization started
+
+    """
+    # To-Do: use label based object to store tha data!
+    conv_p, param_data = setup_convergence_plot(param_df, start_time)
 
     tab1 = Panel(child=row([conv_p]), title="Convergence Plot")
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
 
     return doc, [param_data]
-
-
-def _setup_convergence_plot(param_df, start_time):
-    # ToDo: split up convergence plot depending on MultiIndex and/or nr of parameters
-
-    # this must only be modified from a Bokeh session callback
-    first_entry = _data_dict_from_param_values(param_df["value"], start_time)
-    param_data = ColumnDataSource(data=first_entry)
-    conv_p = figure(plot_height=350, tools="tap,reset,save")
-    conv_p.title.text = "Convergence Plot"
-
-    colors = random.sample(Viridis256, len(param_df))
-    legend_items = []
-
-    for i, name in enumerate(param_df.index):
-        legend_items.append(
-            (
-                str(name),
-                [
-                    conv_p.line(
-                        source=param_data,
-                        x="time",
-                        y=str(name),
-                        line_width=2,
-                        name=str(name),
-                        color=colors[i],
-                        nonselection_alpha=0,
-                    )
-                ],
-            )
-        )
-
-    # Add Legend manually as our update somehow messes up the legend
-    legend = Legend(items=legend_items)
-    conv_p.add_layout(legend)
-    conv_p.legend.click_policy = "mute"
-    return conv_p, param_data
-
-
-def _data_dict_from_param_values(param_sr, start_time):
-    entry = {"time": [datetime.now() - start_time]}
-    entry.update({str(k): [v] for k, v in param_sr.to_dict().items()})
-    return entry
-
-
-def _setup_server(apps, notebook, port=5477):
-    # this is adapted from bokeh.subcommands.serve
-    with report_server_init_errors(port=port):
-        server = Server(apps, port=port)
-        if notebook is True:
-            return server
-        else:
-
-            def show_callback():
-                for route in apps.keys():
-                    server.show(route)
-
-            server.io_loop.add_callback(show_callback)
-
-            address_string = "localhost"
-            if server.address is not None and server.address != "":
-                address_string = server.address
-
-            for route in sorted(apps.keys()):
-                url = "http://{}:{}{}{}".format(
-                    address_string, server.port, server.prefix, route
-                )
-                print("Bokeh app running at: " + url)
-        return server
-
-
-def _start_server(server, notebook):
-    if notebook is False:
-        server._loop.start()
-        server.start()
-    else:
-        server.start()
-        server.show("/")

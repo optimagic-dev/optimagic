@@ -156,9 +156,12 @@ def minimize(
     }
 
     if dashboard is True:
-        run_with_dashboard(
+
+        ######
+        return run_with_dashboard(
             func=partial(_minimize_in_thread, **min_kwargs), notebook=notebook
         )
+
     else:
         _minimize(**min_kwargs)
 
