@@ -59,11 +59,11 @@ def maximize(
 
     """
 
-    def neg_func(*func_args, **func_kwargs):
-        return -criterion(*func_args, **func_kwargs)
+    def neg_criterion(*criterion_args, **criterion_kwargs):
+        return -criterion(*criterion_args, **criterion_kwargs)
 
     res_dict, params = minimize(
-        neg_func,
+        neg_criterion,
         params,
         algorithm,
         criterion_args,
@@ -161,8 +161,9 @@ def _minimize_in_thread(
     algo_options,
     constraints,
     dashboard,
+    res,
 ):
-    doc, dashboard_data = configure_dashboard(doc=doc)
+    doc, dashboard_data = configure_dashboard(doc=doc, param_df=params)
 
     thread = Thread(
         target=_minimize,
@@ -178,6 +179,7 @@ def _minimize_in_thread(
             "dashboard": dashboard,
             "dashboard_data": dashboard_data,
             "doc": doc,
+            "res": res,
         },
     )
     thread.start()
@@ -195,6 +197,7 @@ def _minimize(
     dashboard,
     doc=None,
     dashboard_data=None,
+    res=None,
 ):
     """."""
 
@@ -214,7 +217,10 @@ def _minimize(
     pop = _create_population(prob, algo_options, internal_params)
     evolved = algo.evolve(pop)
     result = _process_pygmo_results(evolved, params, internal_params, constraints)
-    return result
+    if res is not None:
+        res += [result, dashboard_data]
+    else:
+        return result
 
 
 def _create_internal_criterion(

@@ -1,16 +1,17 @@
 """Functions to update the dashboard plots."""
 from functools import partial
-from random import random
 
 from tornado import gen
 
+from estimagic.dashboard.setup_dashboard import _data_dict_from_param_values
+
 
 def add_callbacks(doc, dashboard_data, params_sr):
-    x, y = random(), random()
-    doc.add_next_tick_callback(partial(_update, x=x, y=y, data=dashboard_data[0]))
-    doc.add_next_tick_callback(partial(_update, x=x, y=y, data=dashboard_data[1]))
+    doc.add_next_tick_callback(
+        partial(_update_convergence_plot, new_params=params_sr, data=dashboard_data[0])
+    )
 
 
 @gen.coroutine
-def _update(x, y, data):
-    data.stream({"x": [x], "y": [y]})
+def _update_convergence_plot(new_params, data):
+    data.stream(_data_dict_from_param_values(new_params))
