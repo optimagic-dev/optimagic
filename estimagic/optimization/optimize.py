@@ -25,6 +25,7 @@ def maximize(
     general_options=None,
     algo_options=None,
     dashboard=True,
+    notebook=False,
 ):
     """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -57,6 +58,9 @@ def maximize(
         dashboard (bool):
             whether to create and show a dashboard
 
+        notebook (bool):
+            whether the function is called in a jupyter notebook
+
     """
 
     def neg_criterion(*criterion_args, **criterion_kwargs):
@@ -64,14 +68,14 @@ def maximize(
 
     res_dict, params = minimize(
         neg_criterion,
-        params,
-        algorithm,
-        criterion_args,
-        criterion_kwargs,
-        constraints,
-        general_options,
-        algo_options,
-        dashboard,
+        params=params,
+        algorithm=algorithm,
+        criterion_args=criterion_args,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        general_options=general_options,
+        algo_options=algo_options,
+        dashboard=dashboard,
     )
     res_dict["f"] = -res_dict["f"]
 
@@ -88,6 +92,7 @@ def minimize(
     general_options=None,
     algo_options=None,
     dashboard=True,
+    notebook=False,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -120,6 +125,9 @@ def minimize(
         dashboard (bool):
             whether to create and show a dashboard
 
+        notebook (bool):
+            whether the function is called in a jupyter notebook
+
     """
     # set default arguments
     criterion_args = [] if criterion_args is None else criterion_args
@@ -145,7 +153,9 @@ def minimize(
     }
 
     if dashboard is True:
-        run_with_dashboard(func=partial(_minimize_in_thread, **min_kwargs))
+        run_with_dashboard(
+            func=partial(_minimize_in_thread, **min_kwargs), notebook=notebook
+        )
     else:
         _minimize(**min_kwargs)
 

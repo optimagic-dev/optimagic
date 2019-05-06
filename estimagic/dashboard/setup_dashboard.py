@@ -18,7 +18,7 @@ from bokeh.plotting import figure
 from bokeh.server.server import Server
 
 
-def run_with_dashboard(func, notebook=False):
+def run_with_dashboard(func, notebook):
     """
     Run the *func* in a Bokeh server and return the optimization result.
 
@@ -34,14 +34,18 @@ def run_with_dashboard(func, notebook=False):
     """
     res = []
     apps = {"/": Application(FunctionHandler(partial(func, res=res)))}
-    server = _setup_server(apps)
+    server = _setup_server(apps=apps, notebook=notebook)
 
-    t_server = Thread(target=_start_server, args=(server, notebook))
-    t_server.start()
+    if notebook is False:
+        t_server = Thread(target=_start_server, args=(server, notebook))
+        t_server.start()
 
-    while len(res) == 0:
-        time.sleep(0.1)
-    return res
+        while len(res) == 0:
+            time.sleep(0.1)
+        return res
+
+    else:
+        _start_server(server, notebook)
 
 
 def configure_dashboard(doc, param_df):
@@ -95,7 +99,7 @@ def _data_dict_from_param_values(param_sr):
     return entry
 
 
-def _setup_server(apps, notebook=False, port=5477):
+def _setup_server(apps, notebook, port=5477):
     # this is adapted from bokeh.subcommands.serve
     with report_server_init_errors(port=port):
         server = Server(apps, port=port)
@@ -124,4 +128,7 @@ def _setup_server(apps, notebook=False, port=5477):
 def _start_server(server, notebook):
     if notebook is False:
         server._loop.start()
-    server.start()
+        server.start()
+    else:
+        server.start()
+        server.show("/")
