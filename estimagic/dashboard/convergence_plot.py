@@ -1,40 +1,39 @@
 """Functions for creating and styling the convergence plot."""
 import random
-from datetime import datetime
+from functools import partial
 
 import bokeh.palettes
 from bokeh.models import ColumnDataSource
 from bokeh.models.annotations import Legend
 from bokeh.plotting import figure
-from pandas import MultiIndex
+from tornado import gen
 
 
-def setup_convergence_plot(param_df, start_time):
+def setup_convergence_plot(param_df):
     """
     Setup the convergence plot for later updating.
+
+    This function is called in _setup_dashboard.
 
     Args:
         param_df (pandas DataFrame):
             DataFrame with the initial parameter values, constraints etc.
-
-        start_time (datetime):
-            time at which the optimization started
-
     """
     # ToDo: split up convergence plot depending on MultiIndex and/or nr of parameters
     # ToDo: plot upper and lower bounds
     # ToDo: only plot parameters that are not fixed.
 
-    # this must only be modified from a Bokeh session callback
-    assert "time" not in param_df.index, (
-        "Estimagic uses the key 'time'. "
+    assert "iteration" not in param_df.index, (
+        "Estimagic uses the key 'iteration'. "
         + "Therefore, it may not be used in the index of the parameter DataFrame."
     )
 
-    first_entry = data_dict_from_param_values(param_df["value"], start_time)
     colors = _choose_color_palettes(param_df)
+    first_entry = _convert_parmas_for_cds(param_sr=param_df["value"], iteration=0)
     param_data = ColumnDataSource(data=first_entry)
-    conv_p = figure(plot_height=700)
+
+    conv_p = figure(plot_height=700, plot_width=1400)
+
     named_lines = _add_convergence_lines(
         figure=conv_p, param_data=param_data, colors=colors
     )
@@ -49,49 +48,49 @@ def setup_convergence_plot(param_df, start_time):
     return conv_p, param_data
 
 
-def data_dict_from_param_values(param_sr, start_time):
+def update_convergence_plot(doc, queue, param_data):
     """
-    Convert parameter Series for adding it to a ColumnDataSource.
+    Check for new param values and update the plot.
+
+    This function is called in a never ending while loop in _update_dashboard.
 
     Args:
-        param_sr (pd.Series):
-            Series with the parameter values
+        doc (bokeh Document):
+            document instance where the Dashboard will be stored.
+            Note this must stay the first argument for the bokeh FunctionHandler
+            to work properly.
 
-        start_time (datetime):
-            time at which the optimization started
+        queue (Queue):
+            queue to which originally the parameters DataFrame is supplied and to which
+            the updated parameter Series will be supplied later.
+
+        param_data (ColumnDataSource):
+            ColumnDataSource storing earlier parameter iterations.
 
     """
-    entry = {"time": [datetime.now() - start_time]}
-    entry.update({str(k): [v] for k, v in param_sr.to_dict().items()})
-    return entry
+    if queue.qsize() > 0:
+        new_params = queue.get()
 
-
-def _choose_color_palettes(param_df):
-    blues = bokeh.palettes.Blues9
-    # other color palettes: Greens9, Reds9, Purples9
-    long_colors = bokeh.palettes.Viridis256
-
-    index = param_df.index
-    if type(index) != MultiIndex:
-        if len(index) < 9:
-            return blues
-        else:
-            return random.sample(long_colors, len(param_df))
-    else:
-        raise NotImplementedError(
-            "MultiIndex is not supported yet by the Estimagic dashboard!"
+        doc.add_next_tick_callback(
+            partial(_update_convergence_plot, data=param_data, new_params=new_params)
         )
 
 
+def _choose_color_palettes(param_df):
+    # color tone palettes: bokeh.palettes.Blues9, Greens9, Reds9, Purples9.
+    long_colors = bokeh.palettes.Viridis256
+    return random.sample(long_colors, len(param_df))
+
+
 def _add_convergence_lines(figure, param_data, colors):
-    line_names = [str(x) for x in sorted(param_data.column_names) if x != "time"]
+    line_names = [str(x) for x in sorted(param_data.column_names) if x != "iteration"]
 
     named_lines = []
 
     for i, name in enumerate(line_names):
         renderer = figure.line(
             source=param_data,
-            x="time",
+            x="iteration",
             y=name,
             line_width=2,
             name=name,
@@ -101,3 +100,26 @@ def _add_convergence_lines(figure, param_data, colors):
         named_lines.append((name, [renderer]))
 
     return named_lines
+
+
+def _convert_parmas_for_cds(param_sr, iteration):
+    """
+    Convert parameter Series for adding it to a ColumnDataSource.
+
+    Args:
+        param_sr (pd.Series):
+            Series with the parameter values
+
+        iteration (int):
+            iteration of the parameter vector
+    """
+    entry = {"iteration": [iteration]}
+    entry.update({str(k): [v] for k, v in param_sr.to_dict().items()})
+    return entry
+
+
+@gen.coroutine
+def _update_convergence_plot(new_params, data):
+    iteration = max(data.data["iteration"]) + 1
+    to_add = _convert_parmas_for_cds(param_sr=new_params, iteration=iteration)
+    data.stream(to_add)

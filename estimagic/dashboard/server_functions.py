@@ -1,9 +1,47 @@
-"""Functions for setting up and running the BokehServer."""
+"""Functions for setting up and running the BokehServer displaying the dashboard."""
+import asyncio
+from functools import partial
+
+from bokeh.application import Application
+from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
 from bokeh.server.server import Server
 
+from estimagic.dashboard.dashboard import run_dashboard
 
-def setup_server(apps, notebook, port=5478):
+
+def run_server(queue, notebook, port):
+    """
+    Setup and run a server creating und continuously updating a dashboard.
+
+    The main building of the dashboard is done in run_dashboard.
+    Here this function is only turned into an Application and run in a server.
+
+    Args:
+        queue (Queue):
+            queue to which originally the parameters DataFrame is supplied and
+            to which later the updated parameter Series will be supplied.
+
+        notebook (bool):
+            whether the function is called in a jupyter notebook.
+
+        port (int):
+            port at which to display the dashboard.
+
+    """
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+    apps = {"/": Application(FunctionHandler(partial(run_dashboard, queue=queue)))}
+
+    server = _setup_server(apps, notebook, port)
+
+    server._loop.start()
+    server.start()
+    if notebook is True:
+        server.show("/")
+
+
+def _setup_server(apps, notebook, port):
     """
     Setup the server similarly to bokeh serve subcommand.
 
@@ -13,7 +51,7 @@ def setup_server(apps, notebook, port=5478):
 
     Args:
         apps (dict):
-            dictionary mapping suffixes to the address to Applications
+            dictionary mapping suffixes of the address to Applications
 
         notebook (bool):
             whether the function is called in a jupyter notebook
@@ -25,37 +63,20 @@ def setup_server(apps, notebook, port=5478):
     # this is adapted from bokeh.subcommands.serve
     with report_server_init_errors(port=port):
         server = Server(apps, port=port)
-        if notebook is False:
-            _prepare_server_without_notebook(apps, server)
-            _announce_server_addresses(apps, server)
+
+        def show_callback():
+            for route in apps.keys():
+                server.show(route)
+
+        server.io_loop.add_callback(show_callback)
+
+        address_string = "localhost"
+        if server.address is not None and server.address != "":
+            address_string = server.address
+
+        for route in sorted(apps.keys()):
+            url = "http://{}:{}{}{}".format(
+                address_string, server.port, server.prefix, route
+            )
+            print("Bokeh app running at: " + url)
         return server
-
-
-def start_server(server, notebook):
-    """Start the server and an IOLoop if necessary."""
-    if notebook is True:
-        server.start()
-        server.show("/")
-    else:
-        server._loop.start()
-        server.start()
-
-
-def _prepare_server_without_notebook(apps, server):
-    def show_callback():
-        for route in apps.keys():
-            server.show(route)
-
-    server.io_loop.add_callback(show_callback)
-
-
-def _announce_server_addresses(apps, server):
-    address_string = "localhost"
-    if server.address is not None and server.address != "":
-        address_string = server.address
-
-    for route in sorted(apps.keys()):
-        url = "http://{}:{}{}{}".format(
-            address_string, server.port, server.prefix, route
-        )
-        print("Bokeh app running at: " + url)

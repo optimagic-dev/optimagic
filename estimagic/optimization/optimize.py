@@ -2,16 +2,13 @@
 import json
 import os
 import sys
-from datetime import datetime
-from functools import partial
+from queue import Queue
 from threading import Thread
 
 import numpy as np
 import pygmo as pg
 
-from estimagic.dashboard.callbacks import add_callbacks
-from estimagic.dashboard.setup_dashboard import configure_dashboard
-from estimagic.dashboard.setup_dashboard import run_with_dashboard
+from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
@@ -29,7 +26,8 @@ def maximize(
     dashboard=True,
     notebook=False,
 ):
-    """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
+    """
+    Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
 
     Args:
         criterion (function):
@@ -52,16 +50,16 @@ def maximize(
             list with constraint dictionaries. See for details.
 
         general_options (dict):
-            additional configurations for the optimization
+            additional configurations for the optimization.
 
         algo_options (dict):
-            algorithm specific configurations for the optimization
+            algorithm specific configurations for the optimization.
 
         dashboard (bool):
-            whether to create and show a dashboard
+            whether to create and show a dashboard.
 
         notebook (bool):
-            whether the function is called in a jupyter notebook
+            whether the function is called in a jupyter notebook.
 
     """
 
@@ -78,6 +76,7 @@ def maximize(
         general_options=general_options,
         algo_options=algo_options,
         dashboard=dashboard,
+        notebook=notebook,
     )
     res_dict["f"] = -res_dict["f"]
 
@@ -141,66 +140,34 @@ def minimize(
     params = _process_params_df(params)
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
-    start_time = datetime.now()
 
-    min_kwargs = {
-        "criterion": criterion,
-        "criterion_args": criterion_args,
-        "criterion_kwargs": criterion_kwargs,
-        "params": params,
-        "internal_params": internal_params,
-        "algorithm": algorithm,
-        "algo_options": algo_options,
-        "constraints": constraints,
-        "dashboard": dashboard,
-        "start_time": start_time,
-    }
-
+    queue = Queue() if dashboard is True else None
     if dashboard is True:
-        run_with_dashboard(
-            func=partial(_minimize_in_thread, **min_kwargs), notebook=notebook
+        # later only the parameter series will be supplied
+        # but for the setup of the dashboard we want the whole DataFrame
+        queue.put(params)
+
+        # To-Do: Don't hard code the port
+        server_thread = Thread(
+            target=run_server,
+            kwargs={"queue": queue, "notebook": notebook, "port": 5035 + notebook},
         )
-    else:
-        _minimize(**min_kwargs)
+        server_thread.start()
 
-
-def _minimize_in_thread(
-    doc,
-    criterion,
-    criterion_args,
-    criterion_kwargs,
-    params,
-    internal_params,
-    algorithm,
-    algo_options,
-    constraints,
-    dashboard,
-    res,
-    start_time,
-):
-    doc, dashboard_data = configure_dashboard(
-        doc=doc, param_df=params, start_time=start_time
+    result = _minimize(
+        criterion=criterion,
+        criterion_args=criterion_args,
+        criterion_kwargs=criterion_kwargs,
+        params=params,
+        internal_params=internal_params,
+        constraints=constraints,
+        algorithm=algorithm,
+        algo_options=algo_options,
+        general_options=general_options,
+        queue=queue,
     )
 
-    thread = Thread(
-        target=_minimize,
-        kwargs={
-            "criterion": criterion,
-            "criterion_args": criterion_args,
-            "criterion_kwargs": criterion_kwargs,
-            "params": params,
-            "internal_params": internal_params,
-            "algorithm": algorithm,
-            "algo_options": algo_options,
-            "constraints": constraints,
-            "dashboard": dashboard,
-            "dashboard_data": dashboard_data,
-            "doc": doc,
-            "res": res,
-            "start_time": start_time,
-        },
-    )
-    thread.start()
+    return result
 
 
 def _minimize(
@@ -209,17 +176,49 @@ def _minimize(
     criterion_kwargs,
     params,
     internal_params,
+    constraints,
     algorithm,
     algo_options,
-    constraints,
-    dashboard,
-    start_time,
-    doc=None,
-    dashboard_data=None,
-    res=None,
+    general_options,
+    queue,
 ):
-    """."""
+    """
+    Create the internal criterion function and minimize it.
 
+    Args:
+        criterion (function):
+            Python function that takes a pandas Series with parameters as the first
+            argument and returns a scalar floating point value.
+
+        criterion_args (list or tuple):
+            additional positional arguments for criterion
+
+        criterion_kwargs (dict):
+            additional keyword arguments for criterion
+
+        params (pd.DataFrame):
+            See :ref:`params_df`.
+
+        internal_params (DataFrame):
+            See :ref:`params_df`.
+
+        constraints (list):
+            list with constraint dictionaries. See for details.
+
+        algorithm (str):
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+
+        algo_options (dict):
+            algorithm specific configurations for the optimization
+
+        general_options (dict):
+            additional configurations for the optimization
+
+        queue (Queue):
+            queue to which originally the parameters DataFrame is supplied and to which
+            the updated parameter Series will be supplied later.
+
+    """
     internal_criterion = _create_internal_criterion(
         criterion=criterion,
         params=params,
@@ -227,9 +226,7 @@ def _minimize(
         constraints=constraints,
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
-        doc=doc,
-        dashboard_data=dashboard_data,
-        start_time=start_time,
+        queue=queue,
     )
 
     prob = _create_problem(internal_criterion, internal_params)
@@ -237,13 +234,7 @@ def _minimize(
     pop = _create_population(prob, algo_options, internal_params)
     evolved = algo.evolve(pop)
     result = _process_pygmo_results(evolved, params, internal_params, constraints)
-    if res is not None:
-        res += [result, dashboard_data]
-        print(result)
-        sys.stdout.flush()
-        return result
-    else:
-        return result
+    return result
 
 
 def _create_internal_criterion(
@@ -253,22 +244,14 @@ def _create_internal_criterion(
     constraints,
     criterion_args,
     criterion_kwargs,
-    start_time,
-    doc=None,
-    dashboard_data=None,
+    queue,
 ):
-    if doc is None:
-
-        def internal_criterion(x):
-            params_sr = _params_sr_from_x(x, internal_params, constraints, params)
-            return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
-
-    else:
-
-        def internal_criterion(x):
-            params_sr = _params_sr_from_x(x, internal_params, constraints, params)
-            add_callbacks(doc, dashboard_data, params_sr, start_time)
-            return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
+    def internal_criterion(x):
+        params_sr = _params_sr_from_x(x, internal_params, constraints, params)
+        if queue is not None:
+            queue.put(params_sr)
+            sys.stdout.flush()
+        return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
 
     return internal_criterion
 
