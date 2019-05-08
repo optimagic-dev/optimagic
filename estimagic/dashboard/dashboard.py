@@ -13,7 +13,7 @@ The functions to build and update each tab can be found in the respective module
 from functools import partial
 from threading import Thread
 
-from bokeh.layouts import row
+from bokeh.layouts import column
 from bokeh.models import Panel
 from bokeh.models.widgets import Tabs
 
@@ -39,9 +39,11 @@ def run_dashboard(doc, queue):
             the updated parameter Series will be supplied later.
 
     """
-    param_df = queue.get()
+    param_df, initial_fitness = queue.get()
 
-    doc, data = _setup_dashboard(doc=doc, param_df=param_df)
+    doc, data = _setup_dashboard(
+        doc=doc, param_df=param_df, initial_fitness=initial_fitness
+    )
 
     # this thread is necessary to not lock the server
     callbacks = partial(_update_dashboard, doc=doc, dashboard_data=data, queue=queue)
@@ -49,7 +51,7 @@ def run_dashboard(doc, queue):
     update_data_thread.start()
 
 
-def _setup_dashboard(doc, param_df):
+def _setup_dashboard(doc, param_df, initial_fitness):
     """
     Setup the basic dashboard.
 
@@ -59,15 +61,18 @@ def _setup_dashboard(doc, param_df):
 
         param_df (pandas DataFrame):
             See :ref:`params_df`.
-    """
-    conv_p, param_data = setup_convergence_plot(param_df)
 
-    tab1 = Panel(child=row([conv_p]), title="Convergence Plot")
+        initial_fitness (float):
+            criterion function evaluated at the initial parameters
+    """
+    plots, data = setup_convergence_plot(param_df, initial_fitness)
+
+    tab1 = Panel(child=column(plots), title="Convergence Plots")
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
 
     # To-Do: use label based object to store tha data!
-    return doc, [param_data]
+    return doc, data
 
 
 def _update_dashboard(doc, dashboard_data, queue):
@@ -81,11 +86,9 @@ def _update_dashboard(doc, dashboard_data, queue):
         dashboard_data (list):
             List of datasets used for the dashboard.
 
-        param_sr (pandas Series):
-            new parameter values
+        queue (Queue):
+            queue to which the updated parameter Series are supplied.
 
     """
-    param_data, = dashboard_data
-
     while True:
-        update_convergence_plot(doc=doc, queue=queue, param_data=param_data)
+        update_convergence_plot(doc=doc, queue=queue, datasets=dashboard_data)

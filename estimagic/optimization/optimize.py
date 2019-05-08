@@ -2,16 +2,20 @@
 import json
 import os
 import sys
+from collections import namedtuple
 from queue import Queue
 from threading import Thread
 
 import numpy as np
+import pandas as pd
 import pygmo as pg
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
+
+QueueEntry = namedtuple("QueueEntry", ["params", "fitness"])
 
 
 def maximize(
@@ -138,6 +142,7 @@ def minimize(
     algo_options = {} if algo_options is None else algo_options
 
     params = _process_params_df(params)
+    fitness_eval = criterion(params["value"], *criterion_args, **criterion_kwargs)
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
@@ -145,7 +150,11 @@ def minimize(
     if dashboard is True:
         # later only the parameter series will be supplied
         # but for the setup of the dashboard we want the whole DataFrame
-        queue.put(params)
+        queue.put(
+            QueueEntry(
+                params=params, fitness=pd.Series([fitness_eval], index=["fitness"])
+            )
+        )
 
         # To-Do: Don't hard code the port
         server_thread = Thread(
@@ -248,10 +257,16 @@ def _create_internal_criterion(
 ):
     def internal_criterion(x):
         params_sr = _params_sr_from_x(x, internal_params, constraints, params)
+        fitness_eval = criterion(params_sr, *criterion_args, **criterion_kwargs)
         if queue is not None:
-            queue.put(params_sr)
+            queue.put(
+                QueueEntry(
+                    params=params_sr,
+                    fitness=pd.Series([fitness_eval], index=["fitness"]),
+                )
+            )
             sys.stdout.flush()
-        return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
+        return [fitness_eval]
 
     return internal_criterion
 
