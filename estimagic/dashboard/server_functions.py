@@ -10,7 +10,7 @@ from bokeh.server.server import Server
 from estimagic.dashboard.dashboard import run_dashboard
 
 
-def run_server(queue, port):
+def run_server(queue, port, db_options):
     """
     Setup and run a server creating und continuously updating a dashboard.
 
@@ -25,15 +25,31 @@ def run_server(queue, port):
         port (int):
             port at which to display the dashboard.
 
+        db_options (dict):
+            dictionary with options. see ``run_dashboard`` for details.
+
     """
+    db_options = _process_db_options(db_options)
     asyncio.set_event_loop(asyncio.new_event_loop())
 
-    apps = {"/": Application(FunctionHandler(partial(run_dashboard, queue=queue)))}
+    apps = {
+        "/": Application(
+            FunctionHandler(partial(run_dashboard, queue=queue, db_options=db_options))
+        )
+    }
 
     server = _setup_server(apps, port)
 
     server._loop.start()
     server.start()
+
+
+def _process_db_options(db_options):
+    full_db_options = {"rollover": None}
+    if "rollover" in db_options.keys() and db_options["rollover"] <= 0:
+        db_options["rollover"] = None
+    full_db_options.update(db_options)
+    return full_db_options
 
 
 def _setup_server(apps, port):

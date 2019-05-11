@@ -28,6 +28,7 @@ def maximize(
     general_options=None,
     algo_options=None,
     dashboard=True,
+    db_options=None,
 ):
     """
     Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
@@ -61,6 +62,9 @@ def maximize(
         dashboard (bool):
             whether to create and show a dashboard.
 
+        db_options (dict):
+            dictionary with kwargs to be supplied to the run_server function.
+
     """
 
     def neg_criterion(*criterion_args, **criterion_kwargs):
@@ -76,6 +80,7 @@ def maximize(
         general_options=general_options,
         algo_options=algo_options,
         dashboard=dashboard,
+        db_options=db_options,
     )
     res_dict["f"] = -res_dict["f"]
 
@@ -92,6 +97,7 @@ def minimize(
     general_options=None,
     algo_options=None,
     dashboard=True,
+    db_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -124,6 +130,9 @@ def minimize(
         dashboard (bool):
             whether to create and show a dashboard
 
+        db_options (dict):
+            dictionary with kwargs to be supplied to the run_server function.
+
     """
     # set default arguments
     criterion_args = [] if criterion_args is None else criterion_args
@@ -131,6 +140,7 @@ def minimize(
     constraints = [] if constraints is None else constraints
     general_options = {} if general_options is None else general_options
     algo_options = {} if algo_options is None else algo_options
+    db_options = {} if db_options is None else db_options
 
     params = _process_params_df(params)
     fitness_eval = criterion(params["value"], *criterion_args, **criterion_kwargs)
@@ -148,7 +158,10 @@ def minimize(
         )
 
         # To-Do: Don't hard code the port
-        server_thread = Thread(target=run_server, kwargs={"queue": queue, "port": 5035})
+        server_thread = Thread(
+            target=run_server,
+            kwargs={"queue": queue, "port": 5035, "db_options": db_options},
+        )
         server_thread.start()
 
     result = _minimize(

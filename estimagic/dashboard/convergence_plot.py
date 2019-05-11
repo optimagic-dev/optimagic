@@ -28,7 +28,7 @@ def setup_convergence_tab(param_df, initial_fitness):
     return plots, datasets
 
 
-def update_convergence_tab(doc, queue, datasets):
+def update_convergence_tab(doc, queue, datasets, rollover):
     """
     Check for new param values and update the plot.
 
@@ -47,6 +47,9 @@ def update_convergence_tab(doc, queue, datasets):
         datasets (list):
             list of ColumnDataSource storing earlier parameter iterations.
 
+        rollover (int):
+            how many iterations to keep before discarding the first
+
     """
     fitness_data, param_data = datasets
 
@@ -54,10 +57,20 @@ def update_convergence_tab(doc, queue, datasets):
         new_params, fitness = queue.get()
 
         doc.add_next_tick_callback(
-            partial(_update_convergence_plot, data=param_data, new_values=new_params)
+            partial(
+                _update_convergence_plot,
+                data=param_data,
+                new_values=new_params,
+                rollover=rollover,
+            )
         )
         doc.add_next_tick_callback(
-            partial(_update_convergence_plot, data=fitness_data, new_values=fitness)
+            partial(
+                _update_convergence_plot,
+                data=fitness_data,
+                new_values=fitness,
+                rollover=rollover,
+            )
         )
 
 
@@ -148,10 +161,10 @@ def _convert_sr_for_cds(sr, iteration):
 
 
 @gen.coroutine
-def _update_convergence_plot(new_values, data):
+def _update_convergence_plot(new_values, data, rollover):
     iteration = max(data.data["XxXxITERATIONxXxX"]) + 1
     to_add = _convert_sr_for_cds(sr=new_values, iteration=iteration)
-    data.stream(to_add)
+    data.stream(to_add, rollover)
 
 
 def _wide_figure(title):

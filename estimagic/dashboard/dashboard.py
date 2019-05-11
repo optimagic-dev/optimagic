@@ -21,7 +21,7 @@ from estimagic.dashboard.convergence_plot import setup_convergence_tab
 from estimagic.dashboard.convergence_plot import update_convergence_tab
 
 
-def run_dashboard(doc, queue):
+def run_dashboard(doc, queue, db_options):
     """Configure the dashboard and update constantly as new parameters arrive.
 
     This is the main function that is supplied to the bokeh FunctionHandler.
@@ -38,7 +38,13 @@ def run_dashboard(doc, queue):
             queue to which originally the parameters DataFrame is supplied and to which
             the updated parameter Series will be supplied later.
 
+        db_options (dict):
+            dictionary with options. Supported so far:
+                rollover (int):
+                    How many data points to store, default None.
+
     """
+    rollover = db_options["rollover"]
     param_df, initial_fitness = queue.get()
 
     doc, data = _configure_dashboard(
@@ -46,7 +52,9 @@ def run_dashboard(doc, queue):
     )
 
     # this thread is necessary to not lock the server
-    callbacks = partial(_update_dashboard, doc=doc, dashboard_data=data, queue=queue)
+    callbacks = partial(
+        _update_dashboard, doc=doc, dashboard_data=data, queue=queue, rollover=rollover
+    )
     update_data_thread = Thread(target=callbacks)
     update_data_thread.start()
 
@@ -75,7 +83,7 @@ def _configure_dashboard(doc, param_df, initial_fitness):
     return doc, data
 
 
-def _update_dashboard(doc, dashboard_data, queue):
+def _update_dashboard(doc, dashboard_data, queue, rollover):
     """
     Update the dashboard after each call of the criterion function.
 
@@ -91,4 +99,6 @@ def _update_dashboard(doc, dashboard_data, queue):
 
     """
     while True:
-        update_convergence_tab(doc=doc, queue=queue, datasets=dashboard_data)
+        update_convergence_tab(
+            doc=doc, queue=queue, datasets=dashboard_data, rollover=rollover
+        )
