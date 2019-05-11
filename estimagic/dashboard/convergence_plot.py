@@ -107,8 +107,11 @@ def _parameter_plots(param_df):
 
 def _choose_color_palettes(param_df):
     # color tone palettes: bokeh.palettes.Blues9, Greens9, Reds9, Purples9.
-    long_colors = bokeh.palettes.Viridis256
-    return random.sample(long_colors, len(param_df))
+    nr_colors = len(param_df)
+    if nr_colors < 20:
+        return bokeh.palettes.Category20[nr_colors]
+    else:
+        random.sample(bokeh.pallettes.Category20[20], nr_colors)
 
 
 def _add_convergence_lines(figure, param_data, colors):
