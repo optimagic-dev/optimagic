@@ -28,7 +28,6 @@ def maximize(
     general_options=None,
     algo_options=None,
     dashboard=True,
-    notebook=False,
 ):
     """
     Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
@@ -62,9 +61,6 @@ def maximize(
         dashboard (bool):
             whether to create and show a dashboard.
 
-        notebook (bool):
-            whether the function is called in a jupyter notebook.
-
     """
 
     def neg_criterion(*criterion_args, **criterion_kwargs):
@@ -80,7 +76,6 @@ def maximize(
         general_options=general_options,
         algo_options=algo_options,
         dashboard=dashboard,
-        notebook=notebook,
     )
     res_dict["f"] = -res_dict["f"]
 
@@ -97,7 +92,6 @@ def minimize(
     general_options=None,
     algo_options=None,
     dashboard=True,
-    notebook=False,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -130,9 +124,6 @@ def minimize(
         dashboard (bool):
             whether to create and show a dashboard
 
-        notebook (bool):
-            whether the function is called in a jupyter notebook
-
     """
     # set default arguments
     criterion_args = [] if criterion_args is None else criterion_args
@@ -157,10 +148,7 @@ def minimize(
         )
 
         # To-Do: Don't hard code the port
-        server_thread = Thread(
-            target=run_server,
-            kwargs={"queue": queue, "notebook": notebook, "port": 5035 + notebook},
-        )
+        server_thread = Thread(target=run_server, kwargs={"queue": queue, "port": 5035})
         server_thread.start()
 
     result = _minimize(

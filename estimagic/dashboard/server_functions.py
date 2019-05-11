@@ -10,7 +10,7 @@ from bokeh.server.server import Server
 from estimagic.dashboard.dashboard import run_dashboard
 
 
-def run_server(queue, notebook, port):
+def run_server(queue, port):
     """
     Setup and run a server creating und continuously updating a dashboard.
 
@@ -22,9 +22,6 @@ def run_server(queue, notebook, port):
             queue to which originally the parameters DataFrame is supplied and
             to which later the updated parameter Series will be supplied.
 
-        notebook (bool):
-            whether the function is called in a jupyter notebook.
-
         port (int):
             port at which to display the dashboard.
 
@@ -33,15 +30,13 @@ def run_server(queue, notebook, port):
 
     apps = {"/": Application(FunctionHandler(partial(run_dashboard, queue=queue)))}
 
-    server = _setup_server(apps, notebook, port)
+    server = _setup_server(apps, port)
 
     server._loop.start()
     server.start()
-    if notebook is True:
-        server.show("/")
 
 
-def _setup_server(apps, notebook, port):
+def _setup_server(apps, port):
     """
     Setup the server similarly to bokeh serve subcommand.
 
@@ -52,9 +47,6 @@ def _setup_server(apps, notebook, port):
     Args:
         apps (dict):
             dictionary mapping suffixes of the address to Applications
-
-        notebook (bool):
-            whether the function is called in a jupyter notebook
 
         port (int):
             port where to host the BokehServer

@@ -8,7 +8,7 @@ from bokeh.plotting import figure
 from tornado import gen
 
 
-def setup_convergence_plot(param_df, initial_fitness):
+def setup_convergence_tab(param_df, initial_fitness):
     """
     Setup the convergence plot for later updating.
 
@@ -28,7 +28,7 @@ def setup_convergence_plot(param_df, initial_fitness):
     return plots, datasets
 
 
-def update_convergence_plot(doc, queue, datasets):
+def update_convergence_tab(doc, queue, datasets):
     """
     Check for new param values and update the plot.
 
@@ -68,7 +68,7 @@ def _fitness_plot(initial_fitness):
     fitness_p = _wide_figure(title="Fitness")
     fitness_p.line(
         source=fitness_data,
-        x="iteration",
+        x="XxXxITERATIONxXxX",
         y="fitness",
         line_width=1,
         name="fitness",
@@ -93,11 +93,6 @@ def _parameter_plots(param_df):
 
     """
 
-    assert "iteration" not in param_df.index, (
-        "Estimagic uses the key 'iteration'. "
-        + "Therefore, it may not be used in the index of the parameter DataFrame."
-    )
-
     colors = _choose_color_palettes(param_df)
 
     first_entry = _convert_sr_for_cds(sr=param_df["value"], iteration=0)
@@ -117,11 +112,14 @@ def _choose_color_palettes(param_df):
 
 
 def _add_convergence_lines(figure, param_data, colors):
-    line_names = [str(x) for x in sorted(param_data.column_names) if x != "iteration"]
+    iteration_name = "XxXxITERATIONxXxX"
+    line_names = [
+        str(x) for x in sorted(param_data.column_names) if x != iteration_name
+    ]
     for i, name in enumerate(line_names):
         figure.line(
             source=param_data,
-            x="iteration",
+            x=iteration_name,
             y=name,
             line_width=1,
             name=name,
@@ -141,14 +139,14 @@ def _convert_sr_for_cds(sr, iteration):
         iteration (int):
             iteration of the parameter vector
     """
-    entry = {"iteration": [iteration]}
+    entry = {"XxXxITERATIONxXxX": [iteration]}
     entry.update({str(k): [v] for k, v in sr.to_dict().items()})
     return entry
 
 
 @gen.coroutine
 def _update_convergence_plot(new_values, data):
-    iteration = max(data.data["iteration"]) + 1
+    iteration = max(data.data["XxXxITERATIONxXxX"]) + 1
     to_add = _convert_sr_for_cds(sr=new_values, iteration=iteration)
     data.stream(to_add)
 

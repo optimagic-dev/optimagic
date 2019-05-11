@@ -17,8 +17,8 @@ from bokeh.layouts import column
 from bokeh.models import Panel
 from bokeh.models.widgets import Tabs
 
-from estimagic.dashboard.convergence_plot import setup_convergence_plot
-from estimagic.dashboard.convergence_plot import update_convergence_plot
+from estimagic.dashboard.convergence_plot import setup_convergence_tab
+from estimagic.dashboard.convergence_plot import update_convergence_tab
 
 
 def run_dashboard(doc, queue):
@@ -41,7 +41,7 @@ def run_dashboard(doc, queue):
     """
     param_df, initial_fitness = queue.get()
 
-    doc, data = _setup_dashboard(
+    doc, data = _configure_dashboard(
         doc=doc, param_df=param_df, initial_fitness=initial_fitness
     )
 
@@ -51,7 +51,7 @@ def run_dashboard(doc, queue):
     update_data_thread.start()
 
 
-def _setup_dashboard(doc, param_df, initial_fitness):
+def _configure_dashboard(doc, param_df, initial_fitness):
     """
     Setup the basic dashboard.
 
@@ -65,7 +65,7 @@ def _setup_dashboard(doc, param_df, initial_fitness):
         initial_fitness (float):
             criterion function evaluated at the initial parameters
     """
-    plots, data = setup_convergence_plot(param_df, initial_fitness)
+    plots, data = setup_convergence_tab(param_df, initial_fitness)
 
     tab1 = Panel(child=column(plots), title="Convergence Plots")
     tabs = Tabs(tabs=[tab1])
@@ -91,4 +91,4 @@ def _update_dashboard(doc, dashboard_data, queue):
 
     """
     while True:
-        update_convergence_plot(doc=doc, queue=queue, datasets=dashboard_data)
+        update_convergence_tab(doc=doc, queue=queue, datasets=dashboard_data)
