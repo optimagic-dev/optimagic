@@ -62,13 +62,13 @@ def update_convergence_data(new_fitness, new_params, data, rollover):
     """
     iteration = max(data.data[X_NAME]) + 1
     to_add = {X_NAME: [iteration], "fitness": [new_fitness]}
-    to_add.update({k: [new_params[k]] for k in new_params.index})
+    to_add.update({"_".join(k): [new_params[k]] for k in new_params.index})
     data.stream(to_add, rollover)
 
 
 def _convergence_data(params_df, initial_fitness):
     data_dict = {X_NAME: [0], "fitness": [initial_fitness]}
-    params_dict = {p: [params_df["value"].loc[p]] for p in params_df.index}
+    params_dict = {"_".join(k): [params_df["value"][k]] for k in params_df.index}
     data_dict.update(params_dict)
     return ColumnDataSource(data=data_dict)
 
@@ -77,5 +77,7 @@ def _map_groups_to_params(params_df):
     group_to_params = {}
     for group in params_df["param_group"].unique():
         if group is not None:
-            group_to_params[group] = params_df[params_df["param_group"] == group].index
+            tup_params = params_df[params_df["param_group"] == group].index
+            str_params = ["_".join(tup) for tup in tup_params]
+            group_to_params[group] = str_params
     return group_to_params
