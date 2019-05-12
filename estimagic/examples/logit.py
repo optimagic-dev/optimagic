@@ -1,6 +1,6 @@
 """Likelihood functions and derivatives of a logit model."""
 import numpy as np
-
+from estimagic.differentiation.gradient import gradient
 
 def logit_loglike(params, y, x):
     """Log-likelihood function of a logit model.
