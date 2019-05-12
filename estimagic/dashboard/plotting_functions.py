@@ -2,6 +2,7 @@
 import random
 
 import bokeh.palettes
+from bokeh.core.properties import value
 from bokeh.plotting import figure
 
 
@@ -13,8 +14,10 @@ def create_wide_figure(title):
 def get_color_palette(nr_colors):
     """Return list of colors depending on the number needed."""
     # color tone palettes: bokeh.palettes.Blues9, Greens9, Reds9, Purples9.
-    if nr_colors < 3:
-        return bokeh.palettes.Category20[3][:nr_colors]
+    if nr_colors == 1:
+        return ["firebrick"]
+    elif nr_colors == 2:
+        return ["firebrick", "darkslateblue"]
     elif nr_colors < 20:
         return bokeh.palettes.Category20[nr_colors]
     else:
@@ -48,8 +51,11 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
             x=x_name,
             y=y_key,
             line_width=1,
-            name=y_name,
+            legend=value(y_name),
             color=color,
-            nonselection_alpha=0,
+            muted_color=color,
+            muted_alpha=0.2,
         )
+
+    plot.legend.click_policy = "mute"
     return plot
