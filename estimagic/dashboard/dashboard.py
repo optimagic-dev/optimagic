@@ -13,12 +13,10 @@ The functions to build and update each tab can be found in the respective module
 from functools import partial
 from threading import Thread
 
-from bokeh.layouts import column
-from bokeh.models import Panel
 from bokeh.models.widgets import Tabs
 
-from estimagic.dashboard.convergence_plot import setup_convergence_tab
-from estimagic.dashboard.convergence_plot import update_convergence_tab
+from estimagic.dashboard.convergence_tab import setup_convergence_tab
+from estimagic.dashboard.convergence_tab import update_convergence_data
 
 
 def run_dashboard(doc, queue, db_options):
@@ -73,14 +71,12 @@ def _configure_dashboard(doc, param_df, initial_fitness):
         initial_fitness (float):
             criterion function evaluated at the initial parameters
     """
-    plots, data = setup_convergence_tab(param_df, initial_fitness)
+    conv_data, tab1 = setup_convergence_tab(param_df, initial_fitness)
 
-    tab1 = Panel(child=column(plots), title="Convergence Plots")
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
 
-    # To-Do: use label based object to store tha data!
-    return doc, data
+    return doc, [conv_data]
 
 
 def _update_dashboard(doc, dashboard_data, queue, rollover):
@@ -98,7 +94,17 @@ def _update_dashboard(doc, dashboard_data, queue, rollover):
             queue to which the updated parameter Series are supplied.
 
     """
+    conv_data, = dashboard_data
+
     while True:
-        update_convergence_tab(
-            doc=doc, queue=queue, datasets=dashboard_data, rollover=rollover
-        )
+        if queue.qsize() > 0:
+            new_params, new_fitness = queue.get()
+            doc.add_next_tick_callback(
+                partial(
+                    update_convergence_data,
+                    data=conv_data,
+                    new_params=new_params,
+                    new_fitness=new_fitness,
+                    rollover=rollover,
+                )
+            )

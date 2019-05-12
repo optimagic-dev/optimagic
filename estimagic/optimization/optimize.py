@@ -7,7 +7,6 @@ from queue import Queue
 from threading import Thread
 
 import numpy as np
-import pandas as pd
 import pygmo as pg
 
 from estimagic.dashboard.server_functions import run_server
@@ -151,11 +150,7 @@ def minimize(
     if dashboard is True:
         # later only the parameter series will be supplied
         # but for the setup of the dashboard we want the whole DataFrame
-        queue.put(
-            QueueEntry(
-                params=params, fitness=pd.Series([fitness_eval], index=["fitness"])
-            )
-        )
+        queue.put(QueueEntry(params=params, fitness=fitness_eval))
 
         # To-Do: Don't hard code the port
         server_thread = Thread(
@@ -260,12 +255,7 @@ def _create_internal_criterion(
         params_sr = _params_sr_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(params_sr, *criterion_args, **criterion_kwargs)
         if queue is not None:
-            queue.put(
-                QueueEntry(
-                    params=params_sr,
-                    fitness=pd.Series([fitness_eval], index=["fitness"]),
-                )
-            )
+            queue.put(QueueEntry(params=params_sr, fitness=fitness_eval))
             sys.stdout.flush()
         return [fitness_eval]
 
