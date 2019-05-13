@@ -13,6 +13,7 @@ from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
+from estimagic.optimization.utilities import index_tuple_to_string
 
 QueueEntry = namedtuple("QueueEntry", ["params", "fitness"])
 
@@ -278,6 +279,12 @@ def _process_params_df(params):
     if "fixed" not in params.columns:
         # todo: does this have to be removed after we move fixed to constraints?
         params["fixed"] = False
+    if "group" not in params.columns:
+        params["group"] = "All Parameters"
+
+    if "name" not in params.columns:
+        names = [index_tuple_to_string(tup) for tup in params.index]
+        params["name"] = names
     return params
 
 
