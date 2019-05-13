@@ -13,6 +13,7 @@ Welcome to estimagic's documentation!
    introduction
    estimation
    inference
+   dashboard
    module_reference
    contributing
 
