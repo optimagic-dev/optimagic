@@ -156,6 +156,7 @@ def minimize(
         server_thread = Thread(
             target=run_server,
             kwargs={"queue": queue, "port": 5037, "db_options": db_options},
+            daemon=True,
         )
         server_thread.start()
 
