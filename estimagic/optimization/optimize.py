@@ -1,13 +1,21 @@
 """Functional wrapper around the object oriented pygmo library."""
 import json
 import os
+import sys
+from collections import namedtuple
+from queue import Queue
+from threading import Thread
 
 import numpy as np
 import pygmo as pg
 
+from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
+from estimagic.optimization.utilities import index_tuple_to_string
+
+QueueEntry = namedtuple("QueueEntry", ["params", "fitness"])
 
 
 def maximize(
@@ -19,8 +27,11 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    dashboard=True,
+    db_options=None,
 ):
-    """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
+    """
+    Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
 
     Args:
         criterion (function):
@@ -42,20 +53,34 @@ def maximize(
         constraints (list):
             list with constraint dictionaries. See for details.
 
+        general_options (dict):
+            additional configurations for the optimization.
+
+        algo_options (dict):
+            algorithm specific configurations for the optimization.
+
+        dashboard (bool):
+            whether to create and show a dashboard.
+
+        db_options (dict):
+            dictionary with kwargs to be supplied to the run_server function.
+
     """
 
-    def neg_func(*func_args, **func_kwargs):
-        return -criterion(*func_args, **func_kwargs)
+    def neg_criterion(*criterion_args, **criterion_kwargs):
+        return -criterion(*criterion_args, **criterion_kwargs)
 
     res_dict, params = minimize(
-        neg_func,
-        params,
-        algorithm,
-        criterion_args,
-        criterion_kwargs,
-        constraints,
-        general_options,
-        algo_options,
+        neg_criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_args=criterion_args,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        general_options=general_options,
+        algo_options=algo_options,
+        dashboard=dashboard,
+        db_options=db_options,
     )
     res_dict["f"] = -res_dict["f"]
 
@@ -71,6 +96,8 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    dashboard=True,
+    db_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -94,25 +121,120 @@ def minimize(
         constraints (list):
             list with constraint dictionaries. See for details.
 
+        general_options (dict):
+            additional configurations for the optimization
+
+        algo_options (dict):
+            algorithm specific configurations for the optimization
+
+        dashboard (bool):
+            whether to create and show a dashboard
+
+        db_options (dict):
+            dictionary with kwargs to be supplied to the run_server function.
+
     """
     # set default arguments
     criterion_args = [] if criterion_args is None else criterion_args
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
-    general_options = {} if general_options is None else {}
-    algo_options = {} if algo_options is None else {}
+    general_options = {} if general_options is None else general_options
+    algo_options = {} if algo_options is None else algo_options
+    db_options = {} if db_options is None else db_options
 
     params = _process_params_df(params)
+    fitness_eval = criterion(params["value"], *criterion_args, **criterion_kwargs)
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
-    internal_criterion = _create_internal_criterion(
-        criterion,
-        params,
-        internal_params,
-        constraints,
-        criterion_args,
-        criterion_kwargs,
+
+    queue = Queue() if dashboard is True else None
+    if dashboard is True:
+        # later only the parameter series will be supplied
+        # but for the setup of the dashboard we want the whole DataFrame
+        queue.put(QueueEntry(params=params, fitness=fitness_eval))
+
+        # To-Do: Don't hard code the port
+        server_thread = Thread(
+            target=run_server,
+            kwargs={"queue": queue, "port": 5037, "db_options": db_options},
+        )
+        server_thread.start()
+
+    result = _minimize(
+        criterion=criterion,
+        criterion_args=criterion_args,
+        criterion_kwargs=criterion_kwargs,
+        params=params,
+        internal_params=internal_params,
+        constraints=constraints,
+        algorithm=algorithm,
+        algo_options=algo_options,
+        general_options=general_options,
+        queue=queue,
     )
+
+    return result
+
+
+def _minimize(
+    criterion,
+    criterion_args,
+    criterion_kwargs,
+    params,
+    internal_params,
+    constraints,
+    algorithm,
+    algo_options,
+    general_options,
+    queue,
+):
+    """
+    Create the internal criterion function and minimize it.
+
+    Args:
+        criterion (function):
+            Python function that takes a pandas Series with parameters as the first
+            argument and returns a scalar floating point value.
+
+        criterion_args (list or tuple):
+            additional positional arguments for criterion
+
+        criterion_kwargs (dict):
+            additional keyword arguments for criterion
+
+        params (pd.DataFrame):
+            See :ref:`params_df`.
+
+        internal_params (DataFrame):
+            See :ref:`params_df`.
+
+        constraints (list):
+            list with constraint dictionaries. See for details.
+
+        algorithm (str):
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+
+        algo_options (dict):
+            algorithm specific configurations for the optimization
+
+        general_options (dict):
+            additional configurations for the optimization
+
+        queue (Queue):
+            queue to which originally the parameters DataFrame is supplied and to which
+            the updated parameter Series will be supplied later.
+
+    """
+    internal_criterion = _create_internal_criterion(
+        criterion=criterion,
+        params=params,
+        internal_params=internal_params,
+        constraints=constraints,
+        criterion_args=criterion_args,
+        criterion_kwargs=criterion_kwargs,
+        queue=queue,
+    )
+
     prob = _create_problem(internal_criterion, internal_params)
     algo = _create_algorithm(algorithm, algo_options)
     pop = _create_population(prob, algo_options, internal_params)
@@ -122,11 +244,21 @@ def minimize(
 
 
 def _create_internal_criterion(
-    criterion, params, internal_params, constraints, criterion_args, criterion_kwargs
+    criterion,
+    params,
+    internal_params,
+    constraints,
+    criterion_args,
+    criterion_kwargs,
+    queue,
 ):
     def internal_criterion(x):
         params_sr = _params_sr_from_x(x, internal_params, constraints, params)
-        return [criterion(params_sr, *criterion_args, **criterion_kwargs)]
+        fitness_eval = criterion(params_sr, *criterion_args, **criterion_kwargs)
+        if queue is not None:
+            queue.put(QueueEntry(params=params_sr, fitness=fitness_eval))
+            sys.stdout.flush()
+        return [fitness_eval]
 
     return internal_criterion
 
@@ -147,6 +279,12 @@ def _process_params_df(params):
     if "fixed" not in params.columns:
         # todo: does this have to be removed after we move fixed to constraints?
         params["fixed"] = False
+    if "group" not in params.columns:
+        params["group"] = "All Parameters"
+
+    if "name" not in params.columns:
+        names = [index_tuple_to_string(tup) for tup in params.index]
+        params["name"] = names
     return params
 
 

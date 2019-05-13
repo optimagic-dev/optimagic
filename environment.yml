@@ -13,6 +13,7 @@ dependencies:
   - pygmo=2.10
   - conda-build
   - anaconda-client
+  - bokeh=1.1
   - pip:
     - doc8
     - pre-commit
