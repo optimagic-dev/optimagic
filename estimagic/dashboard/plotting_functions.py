@@ -53,6 +53,7 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
     tooltips += [(name, "@" + key) for name, key in zip(y_names, y_keys)]
 
     plot = create_wide_figure(title=title, tooltips=tooltips)
+
     colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
         plot.line(

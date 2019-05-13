@@ -99,6 +99,7 @@ def _update_dashboard(doc, dashboard_data, queue, rollover):
     while still_running:
         if queue.qsize() > 0:
             new_params, new_fitness, still_running = queue.get()
+
             doc.add_next_tick_callback(
                 partial(
                     update_convergence_data,
