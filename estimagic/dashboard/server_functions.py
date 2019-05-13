@@ -10,7 +10,7 @@ from bokeh.server.server import Server
 from estimagic.dashboard.dashboard import run_dashboard
 
 
-def run_server(queue, port, db_options):
+def run_server(queue, start_signal, port, db_options):
     """
     Setup and run a server creating und continuously updating a dashboard.
 
@@ -21,6 +21,9 @@ def run_server(queue, port, db_options):
         queue (Queue):
             queue to which originally the parameters DataFrame is supplied and
             to which later the updated parameter Series will be supplied.
+
+        start_signal (Queue):
+            empty queue. The minimization starts once it stops being empty.
 
         port (int):
             port at which to display the dashboard.
@@ -34,7 +37,14 @@ def run_server(queue, port, db_options):
 
     apps = {
         "/": Application(
-            FunctionHandler(partial(run_dashboard, queue=queue, db_options=db_options))
+            FunctionHandler(
+                partial(
+                    run_dashboard,
+                    queue=queue,
+                    db_options=db_options,
+                    start_signal=start_signal,
+                )
+            )
         )
     }
 

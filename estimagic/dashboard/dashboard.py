@@ -19,7 +19,7 @@ from estimagic.dashboard.convergence_tab import setup_convergence_tab
 from estimagic.dashboard.convergence_tab import update_convergence_data
 
 
-def run_dashboard(doc, queue, db_options):
+def run_dashboard(doc, queue, start_signal, db_options):
     """Configure the dashboard and update constantly as new parameters arrive.
 
     This is the main function that is supplied to the bokeh FunctionHandler.
@@ -36,6 +36,9 @@ def run_dashboard(doc, queue, db_options):
             queue to which originally the parameters DataFrame is supplied and to which
             the updated parameter Series will be supplied later.
 
+        start_signal (Queue):
+            empty queue. The minimization starts once it stops being empty.
+
         db_options (dict):
             dictionary with options. Supported so far:
                 rollover (int):
@@ -43,7 +46,7 @@ def run_dashboard(doc, queue, db_options):
 
     """
     rollover = db_options["rollover"]
-    param_df, initial_fitness = queue.get()
+    param_df, initial_fitness, still_running = queue.get()
 
     doc, data = _configure_dashboard(
         doc=doc, param_df=param_df, initial_fitness=initial_fitness
@@ -55,6 +58,7 @@ def run_dashboard(doc, queue, db_options):
     )
     update_data_thread = Thread(target=callbacks)
     update_data_thread.start()
+    start_signal.put(True)
 
 
 def _configure_dashboard(doc, param_df, initial_fitness):
@@ -95,10 +99,11 @@ def _update_dashboard(doc, dashboard_data, queue, rollover):
 
     """
     conv_data, = dashboard_data
-
-    while True:
+    still_running = True
+    while still_running:
         if queue.qsize() > 0:
-            new_params, new_fitness = queue.get()
+            new_params, new_fitness, still_running = queue.get()
+
             doc.add_next_tick_callback(
                 partial(
                     update_convergence_data,
