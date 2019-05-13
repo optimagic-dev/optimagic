@@ -148,14 +148,14 @@ def minimize(
 
     queue = Queue() if dashboard is True else None
     if dashboard is True:
-        # later only the parameter series will be supplied
+        # later only the parameter series can be supplied
         # but for the setup of the dashboard we want the whole DataFrame
         queue.put(QueueEntry(params=params, fitness=fitness_eval, still_running=True))
 
         # To-Do: Don't hard code the port
         server_thread = Thread(
             target=run_server,
-            kwargs={"queue": queue, "port": 5037, "db_options": db_options},
+            kwargs={"queue": queue, "port": 5039, "db_options": db_options},
             daemon=True,
         )
         server_thread.start()
