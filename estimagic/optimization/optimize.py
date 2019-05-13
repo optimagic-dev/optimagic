@@ -14,7 +14,7 @@ from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 
-QueueEntry = namedtuple("QueueEntry", ["params", "fitness"])
+QueueEntry = namedtuple("QueueEntry", ["params", "fitness", "still_running"])
 
 
 def maximize(
@@ -150,7 +150,7 @@ def minimize(
     if dashboard is True:
         # later only the parameter series will be supplied
         # but for the setup of the dashboard we want the whole DataFrame
-        queue.put(QueueEntry(params=params, fitness=fitness_eval))
+        queue.put(QueueEntry(params=params, fitness=fitness_eval, still_running=True))
 
         # To-Do: Don't hard code the port
         server_thread = Thread(
@@ -172,6 +172,7 @@ def minimize(
         queue=queue,
     )
 
+    queue.put(QueueEntry(params=result[1], fitness=result[0]["f"], still_running=False))
     return result
 
 
@@ -255,7 +256,9 @@ def _create_internal_criterion(
         params_sr = _params_sr_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(params_sr, *criterion_args, **criterion_kwargs)
         if queue is not None:
-            queue.put(QueueEntry(params=params_sr, fitness=fitness_eval))
+            queue.put(
+                QueueEntry(params=params_sr, fitness=fitness_eval, still_running=True)
+            )
             sys.stdout.flush()
         return [fitness_eval]
 

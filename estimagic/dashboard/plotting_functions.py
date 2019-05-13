@@ -17,7 +17,7 @@ def get_color_palette(nr_colors):
     if nr_colors == 1:
         return ["firebrick"]
     elif nr_colors == 2:
-        return ["firebrick", "darkslateblue"]
+        return ["darkslateblue", "goldenrod"]
     elif nr_colors < 20:
         return bokeh.palettes.Category20[nr_colors]
     else:

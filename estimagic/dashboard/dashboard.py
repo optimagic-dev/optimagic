@@ -43,7 +43,7 @@ def run_dashboard(doc, queue, db_options):
 
     """
     rollover = db_options["rollover"]
-    param_df, initial_fitness = queue.get()
+    param_df, initial_fitness, still_running = queue.get()
 
     doc, data = _configure_dashboard(
         doc=doc, param_df=param_df, initial_fitness=initial_fitness
@@ -95,10 +95,10 @@ def _update_dashboard(doc, dashboard_data, queue, rollover):
 
     """
     conv_data, = dashboard_data
-
-    while True:
+    still_running = True
+    while still_running:
         if queue.qsize() > 0:
-            new_params, new_fitness = queue.get()
+            new_params, new_fitness, still_running = queue.get()
             doc.add_next_tick_callback(
                 partial(
                     update_convergence_data,
