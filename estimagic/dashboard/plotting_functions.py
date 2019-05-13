@@ -6,9 +6,9 @@ from bokeh.core.properties import value
 from bokeh.plotting import figure
 
 
-def create_wide_figure(title):
+def create_wide_figure(title, tooltips=None):
     """Return an empty figure of predetermined height and width."""
-    return figure(plot_height=350, plot_width=700, title=title)
+    return figure(plot_height=350, plot_width=700, title=title, tooltips=tooltips)
 
 
 def get_color_palette(nr_colors):
@@ -43,7 +43,16 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
     """
     if y_names is None:
         y_names = y_keys
-    plot = create_wide_figure(title=title)
+
+    if x_name == "XxXxITERATIONxXxX":
+        tooltips = [("iteration", "@" + x_name)]
+    else:
+        tooltips = [(x_name, "@" + x_name)]
+    if "fitness" not in y_names:
+        tooltips += [("fitness", "@fitness")]
+    tooltips += [(name, "@" + key) for name, key in zip(y_names, y_keys)]
+
+    plot = create_wide_figure(title=title, tooltips=tooltips)
     colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
         plot.line(
