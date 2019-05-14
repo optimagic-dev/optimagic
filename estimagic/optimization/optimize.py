@@ -1,10 +1,10 @@
 """Functional wrapper around the object oriented pygmo library."""
 import json
 import os
-import sys
 from collections import namedtuple
 from queue import Queue
 from threading import Thread
+from time import sleep
 
 import numpy as np
 import pygmo as pg
@@ -13,9 +13,9 @@ from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
-from estimagic.optimization.utilities import index_tuple_to_string
+from estimagic.optimization.utilities import index_element_to_string
 
-QueueEntry = namedtuple("QueueEntry", ["params", "fitness"])
+QueueEntry = namedtuple("QueueEntry", ["params", "fitness", "still_running"])
 
 
 def maximize(
@@ -148,17 +148,29 @@ def minimize(
     internal_params = reparametrize_to_internal(params, constraints)
 
     queue = Queue() if dashboard is True else None
+    start_signal = Queue() if dashboard is True else None
     if dashboard is True:
-        # later only the parameter series will be supplied
+        # later only the parameter series can be supplied
         # but for the setup of the dashboard we want the whole DataFrame
-        queue.put(QueueEntry(params=params, fitness=fitness_eval))
+        queue.put(QueueEntry(params=params, fitness=fitness_eval, still_running=True))
 
         # To-Do: Don't hard code the port
         server_thread = Thread(
             target=run_server,
-            kwargs={"queue": queue, "port": 5037, "db_options": db_options},
+            kwargs={
+                "queue": queue,
+                "port": 5039,
+                "db_options": db_options,
+                "start_signal": start_signal,
+            },
+            daemon=True,
         )
         server_thread.start()
+
+    if dashboard is True:
+        # wait for server_thread to give start signal
+        while start_signal.qsize() == 0:
+            sleep(0.01)
 
     result = _minimize(
         criterion=criterion,
@@ -173,6 +185,10 @@ def minimize(
         queue=queue,
     )
 
+    if dashboard is True:
+        queue.put(
+            QueueEntry(params=result[1], fitness=result[0]["f"], still_running=False)
+        )
     return result
 
 
@@ -256,8 +272,9 @@ def _create_internal_criterion(
         params_sr = _params_sr_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(params_sr, *criterion_args, **criterion_kwargs)
         if queue is not None:
-            queue.put(QueueEntry(params=params_sr, fitness=fitness_eval))
-            sys.stdout.flush()
+            queue.put(
+                QueueEntry(params=params_sr, fitness=fitness_eval, still_running=True)
+            )
         return [fitness_eval]
 
     return internal_criterion
@@ -283,7 +300,7 @@ def _process_params_df(params):
         params["group"] = "All Parameters"
 
     if "name" not in params.columns:
-        names = [index_tuple_to_string(tup) for tup in params.index]
+        names = [index_element_to_string(tup) for tup in params.index]
         params["name"] = names
     return params
 

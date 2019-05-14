@@ -50,6 +50,9 @@ It can have the following columns (most of them being optional)
   global optimizers or if 'value' is not provided.
 - 'fixed' (dtype=bool): Indicates if a parameter is fixed to value. If any
   parameter is fixed, 'value' is required.
+- 'group' (dtype=str or None): Indicates in which group (if any)
+  a parameter's values will be plotted in the convergence tab of the dashboard.
+  Parameters with value None are not plotted.
 
 It is important to distinguish three related but different concepts:
 

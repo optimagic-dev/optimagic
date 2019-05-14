@@ -6,9 +6,15 @@ from bokeh.core.properties import value
 from bokeh.plotting import figure
 
 
-def create_wide_figure(title):
+def create_wide_figure(title, tooltips=None):
     """Return an empty figure of predetermined height and width."""
-    return figure(plot_height=350, plot_width=700, title=title)
+    fig = figure(plot_height=350, plot_width=700, title=title, tooltips=tooltips)
+    fig.title.text_font_size = "15pt"
+    fig.min_border_left = 50
+    fig.min_border_right = 50
+    fig.min_border_top = 20
+    fig.min_border_bottom = 100
+    return fig
 
 
 def get_color_palette(nr_colors):
@@ -17,11 +23,11 @@ def get_color_palette(nr_colors):
     if nr_colors == 1:
         return ["firebrick"]
     elif nr_colors == 2:
-        return ["firebrick", "darkslateblue"]
+        return ["darkslateblue", "goldenrod"]
     elif nr_colors < 20:
         return bokeh.palettes.Category20[nr_colors]
     else:
-        return random.sample(bokeh.pallettes.Category20[20], nr_colors)
+        return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
 
 
 def plot_with_lines(data, y_keys, x_name, title, y_names=None):
@@ -43,7 +49,17 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
     """
     if y_names is None:
         y_names = y_keys
-    plot = create_wide_figure(title=title)
+
+    if x_name == "XxXxITERATIONxXxX":
+        tooltips = [("iteration", "@" + x_name)]
+    else:
+        tooltips = [(x_name, "@" + x_name)]
+    if "fitness" not in y_names:
+        tooltips += [("fitness", "@fitness")]
+    tooltips += [(name, "@" + key) for name, key in zip(y_names, y_keys)]
+
+    plot = create_wide_figure(title=title, tooltips=tooltips)
+
     colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
         plot.line(
@@ -58,4 +74,9 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
         )
 
     plot.legend.click_policy = "mute"
+
+    plot.xaxis.axis_label = x_name if x_name != "XxXxITERATIONxXxX" else "iteration"
+    plot.xaxis.axis_label_text_font_style = "normal"
+    plot.xaxis.axis_label_text_font_size = "12pt"
+
     return plot

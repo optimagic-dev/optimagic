@@ -20,7 +20,8 @@ requirements:
     - python {{ python }}
     - numpy
     - pandas>=0.24
-    # - pygmo>=2.10
+    - pygmo>=2.10
+    - bokeh>=1.1
 
 test:
   commands:
