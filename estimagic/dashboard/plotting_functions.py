@@ -27,7 +27,7 @@ def get_color_palette(nr_colors):
     elif nr_colors < 20:
         return bokeh.palettes.Category20[nr_colors]
     else:
-        return random.choices(bokeh.palettes.Category20[20], nr_colors)
+        return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
 
 
 def plot_with_lines(data, y_keys, x_name, title, y_names=None):

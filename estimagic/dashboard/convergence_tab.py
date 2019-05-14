@@ -36,7 +36,7 @@ def setup_convergence_tab(params_df, initial_fitness):
     plots = [fitness_plot] + _param_plots(params_df=params_df, data=conv_data)
 
     tab = Panel(
-        child=column(children=plots, sizing_mode="stretch_both"),
+        child=column(children=plots, sizing_mode="scale_width"),
         title="Convergence Plots",
     )
 

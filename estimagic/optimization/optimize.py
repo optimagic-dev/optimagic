@@ -4,6 +4,7 @@ import os
 from collections import namedtuple
 from queue import Queue
 from threading import Thread
+from time import sleep
 
 import numpy as np
 import pygmo as pg
@@ -166,9 +167,10 @@ def minimize(
         )
         server_thread.start()
 
-    # wait for server_thread to give start signal
-    while start_signal.qsize() == 0:
-        pass
+    if dashboard is True:
+        # wait for server_thread to give start signal
+        while start_signal.qsize() == 0:
+            sleep(0.01)
 
     result = _minimize(
         criterion=criterion,
@@ -183,7 +185,10 @@ def minimize(
         queue=queue,
     )
 
-    queue.put(QueueEntry(params=result[1], fitness=result[0]["f"], still_running=False))
+    if dashboard is True:
+        queue.put(
+            QueueEntry(params=result[1], fitness=result[0]["f"], still_running=False)
+        )
     return result
 
 
