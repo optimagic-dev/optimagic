@@ -5,7 +5,7 @@ from bokeh.models import Panel
 from tornado import gen
 
 from estimagic.dashboard.plotting_functions import plot_with_lines
-from estimagic.optimization.utilities import index_tuple_to_string
+from estimagic.optimization.utilities import index_element_to_string
 
 X_NAME = "XxXxITERATIONxXxX"
 
@@ -89,7 +89,7 @@ def _make_data_dict(iteration, fitness, param_values):
     data_dict = {X_NAME: [iteration], "fitness": [fitness]}
     data_dict.update(
         {
-            index_tuple_to_string(name): [param_values[name]]
+            index_element_to_string(name): [param_values[name]]
             for name in param_values.index
         }
     )
@@ -123,6 +123,6 @@ def _map_groups_to_params(params_df):
     for group in params_df["group"].unique():
         if group is not None:
             tup_params = params_df[params_df["group"] == group].index
-            str_params = [index_tuple_to_string(tup) for tup in tup_params]
+            str_params = [index_element_to_string(tup) for tup in tup_params]
             group_to_params[group] = str_params
     return group_to_params

@@ -13,7 +13,7 @@ from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
-from estimagic.optimization.utilities import index_tuple_to_string
+from estimagic.optimization.utilities import index_element_to_string
 
 QueueEntry = namedtuple("QueueEntry", ["params", "fitness", "still_running"])
 
@@ -300,7 +300,7 @@ def _process_params_df(params):
         params["group"] = "All Parameters"
 
     if "name" not in params.columns:
-        names = [index_tuple_to_string(tup) for tup in params.index]
+        names = [index_element_to_string(tup) for tup in params.index]
         params["name"] = names
     return params
 

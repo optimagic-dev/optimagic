@@ -12,6 +12,7 @@ The functions to build and update each tab can be found in the respective module
 """
 from functools import partial
 from threading import Thread
+from time import sleep
 
 from bokeh.models.widgets import Tabs
 
@@ -113,3 +114,5 @@ def _update_dashboard(doc, dashboard_data, queue, rollover):
                     rollover=rollover,
                 )
             )
+        else:
+            sleep(0.001)
