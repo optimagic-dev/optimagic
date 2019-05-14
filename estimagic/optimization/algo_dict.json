@@ -35,5 +35,10 @@
     "xnes",
     "nsga2",
     "moead"
+  ],
+  "scipy": [
+    "L-BFGS-B",
+    "TNC",
+    "SLSQP"
   ]
 }

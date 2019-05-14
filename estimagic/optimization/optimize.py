@@ -8,6 +8,7 @@ from time import sleep
 
 import numpy as np
 import pygmo as pg
+import scipy
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
@@ -251,11 +252,31 @@ def _minimize(
         queue=queue,
     )
 
-    prob = _create_problem(internal_criterion, internal_params)
-    algo = _create_algorithm(algorithm, algo_options)
-    pop = _create_population(prob, algo_options, internal_params)
-    evolved = algo.evolve(pop)
-    result = _process_pygmo_results(evolved, params, internal_params, constraints)
+    with open(os.path.join(os.path.dirname(__file__), "algo_dict.json")) as j:
+        algos = json.load(j)
+    origin, algo_name = algorithm.split("_", 1)
+
+    assert algo_name in algos[origin], "Invalid algorithm requested: {}".format(
+        algorithm
+    )
+
+    if origin in ["nlopt", "pygmo"]:
+        prob = _create_problem(internal_criterion, internal_params)
+        algo = _create_algorithm(algo_name, algo_options, origin)
+        pop = _create_population(prob, algo_options, internal_params)
+        evolved = algo.evolve(pop)
+        result = _process_results(evolved, params, internal_params, constraints, origin)
+    elif origin == "scipy":
+        bounds = _get_scipy_bounds(params)
+        x0 = _x_from_params_df(params, constraints)
+        minimized = scipy.optimize.minimize(
+            internal_criterion, x0, method=algo_name, bounds=bounds
+        )
+        result = _process_results(
+            minimized, params, internal_params, constraints, origin
+        )
+    else:
+        raise ValueError("Invalid algorithm requested.")
     return result
 
 
@@ -275,7 +296,7 @@ def _create_internal_criterion(
             queue.put(
                 QueueEntry(params=params_sr, fitness=fitness_eval, still_running=True)
             )
-        return [fitness_eval]
+        return fitness_eval
 
     return internal_criterion
 
@@ -285,6 +306,10 @@ def _params_sr_from_x(x, internal_params, constraints, params):
     internal_params["value"] = x
     params = reparametrize_from_internal(internal_params, constraints, params)
     return params
+
+
+def _x_from_params_df(params, constraints):
+    return reparametrize_to_internal(params, constraints)["value"].to_numpy()
 
 
 def _process_params_df(params):
@@ -305,10 +330,25 @@ def _process_params_df(params):
     return params
 
 
+def _get_scipy_bounds(params):
+    unprocessed_bounds = params[["lower", "upper"]].to_numpy().tolist()
+    bounds = []
+    for lower, upper in unprocessed_bounds:
+        bounds.append((_convert_bound(lower), _convert_bound(upper)))
+    return bounds
+
+
+def _convert_bound(x):
+    if np.isfinite(x):
+        return x
+    else:
+        return None
+
+
 def _create_problem(internal_criterion, internal_params):
     class Problem:
         def fitness(self, x):
-            return internal_criterion(x)
+            return [internal_criterion(x)]
 
         def get_bounds(self):
             return (internal_params["lower"], internal_params["upper"])
@@ -316,23 +356,17 @@ def _create_problem(internal_criterion, internal_params):
     return Problem()
 
 
-def _create_algorithm(algorithm, algo_options):
+def _create_algorithm(algo_name, algo_options, origin):
     """Create a pygmo algorithm.
 
     Todo:
         - Pass the algo options through
 
     """
-    with open(os.path.join(os.path.dirname(__file__), "algo_dict.json")) as j:
-        algos = json.load(j)
-    prefix, alg = algorithm.split("_", 1)
-
-    assert alg in algos[prefix], "Invalid algorithm requested: {}".format(algorithm)
-
-    if prefix == "nlopt":
-        algo = pg.algorithm(pg.nlopt(solver=alg))
-    elif prefix == "pygmo":
-        pygmo_uda = getattr(pg, alg)
+    if origin == "nlopt":
+        algo = pg.algorithm(pg.nlopt(solver=algo_name))
+    elif origin == "pygmo":
+        pygmo_uda = getattr(pg, algo_name)
         algo = pg.algorithm(pygmo_uda())
 
     return algo
@@ -353,19 +387,24 @@ def _create_population(problem, algo_options, internal_params):
     return pop
 
 
-def _process_pygmo_results(pygmo_res, params, internal_params, constraints):
-    """Convert evolved population into json serializable dictionary.
+def _process_results(res, params, internal_params, constraints, origin):
+    """Convert optimization results into json serializable dictionary.
 
-    Todo:
-        - implement this function.
+    Args:
+        res: Result from numerical optimizer.
+        params (DataFrame): See :ref:`params_df`.
+        internal_params (DataFrame): See :ref:`params_df`.
+        constraints (list): constraints for the optimization
+        origin (str): takes the values "pygmo", "nlopt", "scipy"
 
     """
-    x = pygmo_res.champion_x
+    if origin == "scipy":
+        x = res["x"]
+        f = res["fun"]
+    elif origin in ["pygmo", "nlopt"]:
+        x = res.champion_x
+        f = res.champion_f
     params = _params_sr_from_x(x, internal_params, constraints, params)
 
-    res_dict = {
-        "x": params.to_numpy().tolist(),
-        "internal_x": x.tolist(),
-        "f": pygmo_res.champion_f,
-    }
+    res_dict = {"x": params.to_numpy().tolist(), "internal_x": x.tolist(), "f": f}
     return res_dict, params
