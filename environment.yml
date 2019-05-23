@@ -14,6 +14,7 @@ dependencies:
   - conda-build
   - anaconda-client
   - bokeh=1.1
+  - scipy=1.2.1
   - pip:
     - doc8
     - pre-commit

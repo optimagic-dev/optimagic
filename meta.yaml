@@ -22,6 +22,7 @@ requirements:
     - pandas>=0.24
     - pygmo>=2.10
     - bokeh>=1.1
+    - scipy
 
 test:
   commands:
