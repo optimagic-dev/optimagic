@@ -1,7 +1,8 @@
-"""Functional wrapper around the object oriented pygmo library."""
+"""Functional wrapper around the pygmo, nlopt and scipy libraries."""
 import json
 import os
 from collections import namedtuple
+from numbers import Number
 from queue import Queue
 from threading import Thread
 from time import sleep
@@ -405,6 +406,12 @@ def _process_results(res, params, internal_params, constraints, origin):
         x = res.champion_x
         f = res.champion_f
     params = _params_sr_from_x(x, internal_params, constraints, params)
+
+    if not isinstance(f, Number):
+        if len(f) == 1:
+            f = f[0]
+        else:
+            f = list(f)
 
     res_dict = {"x": params.to_numpy().tolist(), "internal_x": x.tolist(), "f": f}
     return res_dict, params
