@@ -3,8 +3,11 @@ import warnings
 
 import numpy as np
 
+from estimagic.optimization.utilities import cov_matrix_to_params
+from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
 from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
+from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
 
 def reparametrize_to_internal(params, constraints):
@@ -26,8 +29,10 @@ def reparametrize_to_internal(params, constraints):
     internal = params.copy()
     for constr in constraints:
         params_subset = params.loc[constr["index"]]
-        if constr["type"] == "covariance":
-            internal.update(_covariance_to_internal(params_subset, constr["case"]))
+        if constr["type"] in ["covariance", "sdcorr"]:
+            internal.update(
+                _covariance_to_internal(params_subset, constr["case"], constr["type"])
+            )
         elif constr["type"] == "sum":
             internal.update(_sum_to_internal(params_subset, constr["value"]))
         elif constr["type"] == "probability":
@@ -78,8 +83,10 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
 
     for constr in constraints:
         params_subset = reindexed.loc[constr["index"]]
-        if constr["type"] == "covariance":
-            params_sr.update(_covariance_from_internal(params_subset, constr["case"]))
+        if constr["type"] in ["covariance", "sdcorr"]:
+            params_sr.update(
+                _covariance_from_internal(params_subset, constr["case"], constr["type"])
+            )
         elif constr["type"] == "sum":
             params_sr.update(_sum_from_internal(params_subset, constr["value"]))
         elif constr["type"] == "probability":
@@ -92,20 +99,21 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
     return params_sr
 
 
-def _covariance_to_internal(params_subset, case):
+def _covariance_to_internal(params_subset, case, type_):
     """Reparametrize parameters that describe a covariance matrix to internal.
 
-    The parameters in params_subset are assumed to be the lower triangular elements of
-    a covariance matrix.
+    If `type_` == 'covariance', the parameters in params_subset are assumed to be the
+    lower triangular elements of a covariance matrix.
 
-    If all parameters are fixed, nothing has to be done.
+    If `type_` == 'sdcorr', the first *dim* parameters in params_subset are assumed to
+    variances and the remaining parameters are assumed to be correlations.
 
-    If all off-diagonal elements are fixed to zero, it is only necessary to set the
-    lower bounds  of the off-diagonals to 0, unless already stricter.
-
-    Otherwise, we do a (lower triangular) Cholesky reparametrization and restrict
-    diagonal elements to be positive (see:
-    http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.31.494&rep=rep1&type=pdf)
+    What has to be done depends on the case:
+        - 'all_fixed': nothing has to be done
+        - 'uncorrelated': bounds of diagonal elements are set to zero unless already
+            stricter
+        - 'all_free': do a (lower triangular) Cholesky reparametrization and restrict
+            diagonal elements to be positive (see: https://tinyurl.com/y2n55cfb)
 
     Note that the cholesky reparametrization is not compatible with any other
     constraints on the involved parameters. Moreover, it requires the covariance matrix
@@ -121,20 +129,21 @@ def _covariance_to_internal(params_subset, case):
 
     """
     res = params_subset.copy()
-    cov = cov_params_to_matrix(params_subset["value"].to_numpy())
+    if type_ == "covariance":
+        cov = cov_params_to_matrix(params_subset["value"].to_numpy())
+    elif type == "sdcorr":
+        cov = sdcorr_params_to_matrix(params_subset["value"].to_numpy())
+    else:
+        raise ValueError("Invalid type_: {}".format(type_))
+
     dim = len(cov)
 
     e, v = np.linalg.eigh(cov)
     assert np.all(e > -1e-8), "Invalid covariance matrix."
 
     if case == "uncorrelated":
-        lower_bound_helper = cov_params_to_matrix(params_subset["lower"])
-        diag_lower = np.maximum(np.diagonal(lower_bound_helper), np.zeros(dim))
-        lower_bound_helper[np.diag_indices(dim)] = diag_lower
-        lower_bounds = lower_bound_helper[np.tril_indices(dim)]
 
-        res["lower"] = lower_bounds
-
+        res["lower"] = np.maximum(res["lower"], np.zeros(len(res)))
         assert (res["upper"] >= res["lower"]).all(), "Invalid upper bound for variance."
     elif case == "all_free":
         chol = np.linalg.cholesky(cov)
@@ -163,7 +172,7 @@ def _covariance_to_internal(params_subset, case):
     return res
 
 
-def _covariance_from_internal(params_subset, case):
+def _covariance_from_internal(params_subset, case, type_):
     """Reparametrize parameters that describe a covariance matrix from internal.
 
     If case == 'all_free', undo the cholesky reparametrization. Otherwise, do nothing.
@@ -182,8 +191,13 @@ def _covariance_from_internal(params_subset, case):
         helper = np.zeros((dim, dim))
         helper[np.tril_indices(dim)] = params_subset["value"].to_numpy()
         cov = helper.dot(helper.T)
-        cov_coeffs = cov[np.tril_indices(dim)]
-        res["value"] = cov_coeffs
+
+        if type_ == "covariance":
+            res["value"] = cov_matrix_to_params(cov)
+        elif type_ == "sdcorr":
+            res["value"] = cov_matrix_to_sdcorr_params(cov)
+        else:
+            raise ValueError("Invalid type_: {}".format(type_))
     elif case in ["all_fixed", "uncorrelated"]:
         pass
     else:

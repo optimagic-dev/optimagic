@@ -81,8 +81,8 @@ a dictionary. The dictionary must contain the following entries:
     - 'covariance': a set of parameters forms a valid (i.e. positive
       semi-definite) covariance matrix. This is not compatible with any other
       constraints on the involved parameters.
-    - 'varcorr': the first part of a set of parameters are
-      variances, the second part are the lower triangle (excluding the diagonal)
+    - 'sdcorr': the first part of a set of parameters are standard deviations,
+      the second part are the lower triangle (excluding the diagonal)
       of a correlation matrix. All parameters together can be used to construct
       a full covariance matrix but are more interpretable. This is not compatible
       with any other type of constraints on the involved parameters.

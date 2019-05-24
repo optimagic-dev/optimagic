@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 
 from estimagic.optimization.utilities import cov_params_to_matrix
+from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
 
 def process_constraints(constraints, params):
@@ -48,8 +49,10 @@ def process_constraints(constraints, params):
                 processed_constraints.append(
                     _process_cov_constraint(constr, processed_params)
                 )
-            elif constr["type"] == "varcorr":
-                raise NotImplementedError
+            elif constr["type"] == "sdcorr":
+                processed_constraints.append(
+                    _process_sdcorr_constraint(constr, processed_params)
+                )
             elif constr["type"] in ["sum", "probability", "increasing"]:
                 processed_constraints.append(constr)
             else:
@@ -62,8 +65,6 @@ def process_constraints(constraints, params):
 
 def _process_selectors(constraints, params):
     """Process and harmonize the query and loc field of the constraints.
-
-
 
     Args:
         constraints (list): see :ref:`constraints`.
@@ -140,14 +141,54 @@ def _process_cov_constraint(constraint, params):
     """
     new_constr = constraint.copy()
     params_subset = params.loc[constraint["index"]]
-    cov = cov_params_to_matrix(params_subset["value"].to_numpy())
-    dim = len(cov)
-    off_diagonal_zero = bool((cov[np.tril_indices(dim, k=-1)] == 0).all())
+    value_mat = cov_params_to_matrix(params_subset["value"].to_numpy())
+    fixed_mat = cov_params_to_matrix(params_subset["__fixed__"].to_numpy()).astype(bool)
+    new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
+    return new_constr
 
-    fixed_helper = cov_params_to_matrix(params_subset["__fixed__"].to_numpy()).astype(
-        bool
-    )
-    off_diagonal_fixed = bool(fixed_helper[np.tril_indices(dim, k=-1)].all())
+
+def _process_sdcorr_constraint(constraint, params):
+    """Process sdcorr constraints.
+
+    Args:
+        constraint (dict)
+        params (pd.DataFrame): see :ref:`params_df`.
+
+
+    Returns:
+        new_constr (dict): copy of *constraint* with a new entry called 'case',
+            which can take the values 'all_fixed', 'uncorrelated' and 'all_free'.
+
+    """
+    new_constr = constraint.copy()
+    params_subset = params.loc[constraint["index"]]
+    value_mat = sdcorr_params_to_matrix(params_subset["value"].to_numpy())
+    dim = len(value_mat)
+    fixed_vec = params_subset["__fixed__"].to_numpy().astype(int)
+    fixed_diag = np.diag(fixed_vec[:dim])
+    fixed_lower = np.zeros((dim, dim), dtype=int)
+    fixed_lower[np.tril_indices(dim, k=-1)] = fixed_vec[dim:]
+    fixed_mat = (fixed_lower + fixed_diag + fixed_lower.T).astype(bool)
+    new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
+    return new_constr
+
+
+def _determine_cov_case(value_mat, fixed_mat, params_subset):
+    """How constrained a covariance matrix is.
+
+    Args:
+        value_mat (np.array): start parameters for the implied covariance matrix
+        fixed_mat (np.array): which elements of the implied covariance matrix are fixed.
+        params_subset (DataFrame): relevant subset of a :ref:`params_df`.
+
+    Returns:
+        case (str): takes the values 'all_fixed', 'uncorrelated', 'all_free'
+
+    """
+    dim = len(value_mat)
+    off_diagonal_zero = bool((value_mat[np.tril_indices(dim, k=-1)] == 0).all())
+
+    off_diagonal_fixed = bool(fixed_mat[np.tril_indices(dim, k=-1)].all())
     all_fixed = bool(params_subset["__fixed__"].all())
 
     if all_fixed is True:
@@ -156,8 +197,7 @@ def _process_cov_constraint(constraint, params):
         case = "uncorrelated"
     else:
         case = "all_free"
-    new_constr["case"] = case
-    return new_constr
+    return case
 
 
 def _consolidate_equality_constraints(constraints, params):
@@ -233,7 +273,14 @@ def _check_compatibility_of_constraints(constraints, params):
 
     """
     params = params.copy()
-    constr_types = ["covariance", "sum", "probability", "increasing", "equality"]
+    constr_types = [
+        "covariance",
+        "sdcorr",
+        "sum",
+        "probability",
+        "increasing",
+        "equality",
+    ]
 
     for typ in constr_types:
         params["has_" + typ] = False
@@ -245,9 +292,19 @@ def _check_compatibility_of_constraints(constraints, params):
     params["has_upper"] = params["upper"] != np.inf
 
     invalid_cov = (
-        "has_covariance & (has_equality | has_sum | has_increasing | has_probability)"
+        "has_covariance & (has_equality | has_sum | has_increasing | has_probability | "
+        "has_sdcorr)"
+    )
+
+    invalid_sdcorr = (
+        "has_sdcorr & (has_equality | has_sum | has_increasing | has_probability | "
+        "has_covariance)"
     )
 
     assert (
         len(params.query(invalid_cov)) == 0
     ), "covariance constraints are not compatible with other constraints"
+
+    assert (
+        len(params.query(invalid_sdcorr)) == 0
+    ), "sdcorr constraints are not compatible with other constraints"
