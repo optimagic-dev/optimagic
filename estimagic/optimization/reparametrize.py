@@ -42,9 +42,9 @@ def reparametrize_to_internal(params, constraints):
             "ignore", message="indexing past lexsort depth may impact performance."
         )
         actually_fixed = internal["lower"] == internal["upper"]
-        internal.loc[actually_fixed, "fixed"] = True
+        internal.loc[actually_fixed, "__fixed__"] = True
 
-    internal = internal.query("~fixed")
+    internal = internal.query("~__fixed__")
 
     assert (internal["value"] >= internal["lower"]).all(), "Invalid lower bound."
     assert (internal["value"] <= internal["upper"]).all(), "Invalid upper bound."
@@ -145,9 +145,9 @@ def _covariance_to_internal(params_subset, case):
         lower_bound_helper[np.diag_indices(dim)] = 0
         res["lower"] = lower_bound_helper[np.tril_indices(dim)]
         res["upper"] = np.inf
-        res["fixed"] = False
+        res["__fixed__"] = False
 
-        if params_subset["fixed"].any():
+        if params_subset["__fixed__"].any():
             warnings.warn("Covariance parameters are unfixed.", UserWarning)
 
         for bound in ["lower", "upper"]:
@@ -202,11 +202,11 @@ def _increasing_to_internal(params_subset):
     res = params_subset.copy()
     res["value"] = new_vals
 
-    res["fixed"] = False
+    res["__fixed__"] = False
     res["lower"] = [-np.inf] + [0] * (len(params_subset) - 1)
     res["upper"] = np.inf
 
-    if params_subset["fixed"].any():
+    if params_subset["__fixed__"].any():
         warnings.warn("Ordered parameters were unfixed.", UserWarning)
 
     for bound in ["lower", "upper"]:
@@ -246,7 +246,7 @@ def _sum_to_internal(params_subset, value):
 
     """
 
-    free = params_subset.query("lower == -inf & upper == inf & fixed == False")
+    free = params_subset.query("lower == -inf & upper == inf & __fixed__ == False")
     last = params_subset.index[-1]
 
     assert (
@@ -254,7 +254,7 @@ def _sum_to_internal(params_subset, value):
     ), "The last sum constrained parameter cannot have bounds nor be fixed."
 
     res = params_subset.copy()
-    res.loc[last, "fixed"] = True
+    res.loc[last, "__fixed__"] = True
     return res
 
 
@@ -301,13 +301,13 @@ def _probability_to_internal(params_subset):
     ), "Upper bound has to be 1 or inf for probability constrained parameters."
 
     assert not params_subset[
-        "fixed"
+        "__fixed__"
     ].any(), "Probability constrained parameters cannot be fixed."
 
     res["lower"] = 0
     res["upper"] = np.inf
     last = params_subset.index[-1]
-    res.loc[last, "fixed"] = True
+    res.loc[last, "__fixed__"] = True
     res["value"] /= res.loc[last, "value"]
     return res
 
@@ -346,8 +346,8 @@ def _equality_to_internal(params_subset):
     res = params_subset.copy()
     first = params_subset.index[0]
     all_others = params_subset.index[1:]
-    res.loc[first, "fixed"] = params_subset["fixed"].any()
-    res.loc[all_others, "fixed"] = True
+    res.loc[first, "__fixed__"] = params_subset["__fixed__"].any()
+    res.loc[all_others, "__fixed__"] = True
     res["lower"] = params_subset["lower"].max()
     res["upper"] = params_subset["upper"].min()
     assert (

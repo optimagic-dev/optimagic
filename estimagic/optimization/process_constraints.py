@@ -8,7 +8,7 @@ from estimagic.optimization.utilities import cov_params_to_matrix
 def process_constraints(constraints, params):
     """Process, consolidate and check constraints.
 
-    Note: Do not change the order of function calls in this function!
+    Note: Do not change the order of function calls.
 
     Args:
         constraints (list): see :ref:`constraints`.
@@ -23,23 +23,41 @@ def process_constraints(constraints, params):
             "ignore", message="indexing past lexsort depth may impact performance."
         )
 
-        processed = []
+        processed_constraints = []
+        processed_params = params.copy()
+        processed_params["__fixed__"] = False
 
         constraints = _process_selectors(constraints, params)
         constraints = _replace_pairwise_equality_by_equality(constraints, params)
-        equality_constraints = []
-        for constr in constraints:
-            if constr["type"] == "equality":
-                equality_constraints.append(constr)
-            elif constr["type"] == "covariance":
-                processed.append(_process_cov_constraint(constr, params))
+
+        fixed_constraints = [c for c in constraints if c["type"] == "fixed"]
+        equality_constraints = [c for c in constraints if c["type"] == "equality"]
+        other_constraints = [
+            c for c in constraints if c["type"] not in ["equality", "fixed"]
+        ]
+
+        for constr in fixed_constraints:
+            processed_params.loc[constr["index"], "__fixed__"] = True
+
+        processed_constraints += _consolidate_equality_constraints(
+            equality_constraints, processed_params
+        )
+
+        for constr in other_constraints:
+            if constr["type"] == "covariance":
+                processed_constraints.append(
+                    _process_cov_constraint(constr, processed_params)
+                )
+            elif constr["type"] == "varcorr":
+                raise NotImplementedError
+            elif constr["type"] in ["sum", "probability", "increasing"]:
+                processed_constraints.append(constr)
             else:
-                processed.append(constr)
+                raise ValueError("Invalid constraint type {}".format(constr["type"]))
 
-        processed += _consolidate_equality_constraints(equality_constraints, params)
-        _check_compatibility_of_constraints(constraints, params)
+        _check_compatibility_of_constraints(processed_constraints, processed_params)
 
-    return processed
+    return processed_constraints, processed_params
 
 
 def _process_selectors(constraints, params):
@@ -126,9 +144,11 @@ def _process_cov_constraint(constraint, params):
     dim = len(cov)
     off_diagonal_zero = bool((cov[np.tril_indices(dim, k=-1)] == 0).all())
 
-    fixed_helper = cov_params_to_matrix(params_subset["fixed"].to_numpy()).astype(bool)
+    fixed_helper = cov_params_to_matrix(params_subset["__fixed__"].to_numpy()).astype(
+        bool
+    )
     off_diagonal_fixed = bool(fixed_helper[np.tril_indices(dim, k=-1)].all())
-    all_fixed = bool(params_subset["fixed"].all())
+    all_fixed = bool(params_subset["__fixed__"].all())
 
     if all_fixed is True:
         case = "all_fixed"

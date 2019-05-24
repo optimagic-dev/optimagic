@@ -82,7 +82,7 @@ a dictionary. The dictionary must contain the following entries:
     - 'covariance': a set of parameters forms a valid (i.e. positive
       semi-definite) covariance matrix. This is not compatible with any other
       constraints on the involved parameters.
-    - 'variances_and_correlations': the first part of a set of parameters are
+    - 'varcorr': the first part of a set of parameters are
       variances, the second part are the lower triangle (excluding the diagonal)
       of a correlation matrix. All parameters together can be used to construct
       a full covariance matrix but are more interpretable. This is not compatible
@@ -99,9 +99,8 @@ a dictionary. The dictionary must contain the following entries:
     - 'pairwise_equality': Two sets of parameters are pairwise equal. In this
       the constraint dictionary has to contain the keys 'loc1' or 'query1'
       and 'loc2' or 'query2'.
-    - 'fixed': A set of parameters is fixed. In this case the constraints dict
-      has to contain a 'value' entry that specifies to which value the parameters
-      are fixed. This can be a scalar or an array like object of the right length.
+    - 'fixed': A set of parameters is fixed to the value in the 'value' column
+      of the params_df.
 
 
 Lower and upper bounds are specified in :ref:`params_df`.

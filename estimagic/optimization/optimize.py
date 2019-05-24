@@ -146,7 +146,7 @@ def minimize(
 
     params = _process_params_df(params)
     fitness_eval = criterion(params["value"], *criterion_args, **criterion_kwargs)
-    constraints = process_constraints(constraints, params)
+    constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
     queue = Queue() if dashboard is True else None
@@ -319,15 +319,16 @@ def _process_params_df(params):
         params["lower"] = -np.inf
     if "upper" not in params.columns:
         params["upper"] = np.inf
-    if "fixed" not in params.columns:
-        # todo: does this have to be removed after we move fixed to constraints?
-        params["fixed"] = False
     if "group" not in params.columns:
         params["group"] = "All Parameters"
 
     if "name" not in params.columns:
         names = [index_element_to_string(tup) for tup in params.index]
         params["name"] = names
+
+    assert (
+        "__fixed__" not in params.columns
+    ), "Invalid column name __fixed__ in params_df."
     return params
 
 

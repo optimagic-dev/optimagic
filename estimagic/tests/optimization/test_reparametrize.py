@@ -35,9 +35,11 @@ for i in range(3):
     internal.append(int_)
 
 
-def constraints(params):
+def constraints_and_processed_params(params):
     constr = [
         {"loc": ("c", "c2"), "type": "probability"},
+        {"loc": [("a", "a", "0"), ("a", "a", "2"), ("a", "a", "4")], "type": "fixed"},
+        {"loc": ("e", "off"), "type": "fixed"},
         {"loc": "d", "type": "increasing"},
         {"loc": "e", "type": "covariance"},
         {"loc": "f", "type": "covariance"},
@@ -46,8 +48,8 @@ def constraints(params):
         {"loc": "i", "type": "equality"},
         {"query": 'subcategory == "j1" | subcategory == "i1"', "type": "equality"},
     ]
-    constr = process_constraints(constr, params)
-    return constr
+    constr, params = process_constraints(constr, params)
+    return constr, params
 
 
 to_test = []
@@ -58,13 +60,13 @@ for ext, int_ in zip(external, internal):
 
 @pytest.mark.parametrize("params, expected_internal, col", to_test)
 def test_reparametrize_to_internal(params, expected_internal, col):
-    calculated = reparametrize_to_internal(params, constraints(params))
+    constraints, params = constraints_and_processed_params(params)
+    calculated = reparametrize_to_internal(params, constraints)
     assert_series_equal(calculated[col], expected_internal[col])
 
 
 @pytest.mark.parametrize("internal, expected_external", zip(internal, external))
 def test_reparametrize_from_internal(internal, expected_external):
-    calculated = reparametrize_from_internal(
-        internal, constraints(expected_external), expected_external
-    )
+    constraints, params = constraints_and_processed_params(expected_external)
+    calculated = reparametrize_from_internal(internal, constraints, params)
     assert_series_equal(calculated, expected_external["value"])
