@@ -48,8 +48,6 @@ It can have the following columns (most of them being optional)
   parameters. They are ignored or only enforced approximately for some
   constrained parameters. These columns are required for genetic or pseudo
   global optimizers or if 'value' is not provided.
-- 'fixed' (dtype=bool): Indicates if a parameter is fixed to value. If any
-  parameter is fixed, 'value' is required.
 - 'group' (dtype=str or None): Indicates in which group (if any)
   a parameter's values will be plotted in the convergence tab of the dashboard.
   Parameters with value None are not plotted.
@@ -106,8 +104,7 @@ a dictionary. The dictionary must contain the following entries:
       are fixed. This can be a scalar or an array like object of the right length.
 
 
-Lower and upper bounds are specified in :ref:`params_df`. Fixed parameters can
-also be specified there.
+Lower and upper bounds are specified in :ref:`params_df`.
 
 The constraints are enforced by reparametrizations, additional bounds or
 additional fixed parameters. For details see :ref:`reparametrize`
@@ -162,7 +159,9 @@ List of algorithms
 - nlopt_var1
 - nlopt_auglag
 - nlopt_auglag_eq
-
+- scipy_L-BFGS-B
+- scipy_TNC
+- scipy_SLSQP
 
 
 
