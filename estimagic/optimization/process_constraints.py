@@ -112,6 +112,17 @@ def _process_selectors(constraints, params):
 
 
 def _replace_pairwise_equality_by_equality(constraints, params):
+    """Rewrite pairwise equality constraints to equality constraints.
+
+    Args:
+        constraints (list): list of constraints.
+            It is assumed that the selectors in the constraints were already processed.
+        params (DataFrame): see :ref:`params_df` for details.
+
+    Returns:
+        constraints (list): equality constraints
+
+    """
     pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
     final_constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
     for constr in pairwise_constraints:
@@ -132,7 +143,6 @@ def _process_cov_constraint(constraint, params):
     Args:
         constraint (dict)
         params (pd.DataFrame): see :ref:`params_df`.
-
 
     Returns:
         new_constr (dict): copy of *constraint* with a new entry called 'case',
@@ -210,7 +220,7 @@ def _consolidate_equality_constraints(constraints, params):
     Since equality is a transitive conditions we can consolidate any two equality
     constraints have at least one parameter in common into one condition. Besides being
     faster, this also ensures that the result remains unchanged if equality conditions
-    are split into several different constraints or their order specified in a differnt
+    are split into several different constraints or their order specified in a different
     order.
 
     The index in the consolidated equality constraints is sorted in the same order
