@@ -13,7 +13,8 @@ estimagic
 .. image:: https://travis-ci.org/janosg/estimagic.svg?branch=master
     :target: https://travis-ci.org/janosg/estimagic
 
-.. Add Appveyor badge.
+.. image:: https://ci.appveyor.com/api/projects/status/fcfquuj17d7mrosr?svg=true
+    :target: https://ci.appveyor.com/project/janosg/estimagic
 
 
 
