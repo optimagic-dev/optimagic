@@ -50,11 +50,11 @@ def sdcorr_params_to_matrix(sdcorr_params):
 
 def cov_matrix_to_sdcorr_params(cov):
     dim = len(cov)
-    variances = np.diagonal(cov)
-    scaling_matrix = np.diag(1 / variances)
+    sds = np.sqrt(np.diagonal(cov))
+    scaling_matrix = np.diag(1 / sds)
     corr = scaling_matrix.dot(cov).dot(scaling_matrix)
     correlations = corr[np.tril_indices(dim, k=-1)]
-    return np.hstack(variances, correlations)
+    return np.hstack([sds, correlations])
 
 
 def number_of_triangular_elements_to_dimension(num):

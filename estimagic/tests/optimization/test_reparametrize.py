@@ -47,26 +47,37 @@ def constraints_and_processed_params(params):
         {"loc": "h", "type": "equality"},
         {"loc": "i", "type": "equality"},
         {"query": 'subcategory == "j1" | subcategory == "i1"', "type": "equality"},
+        {"loc": "k", "type": "sdcorr"},
     ]
     constr, params = process_constraints(constr, params)
     return constr, params
 
 
+internal_categories = list("abcdefghik")
+external_categories = internal_categories + ["j1", "j2"]
+
 to_test = []
 for ext, int_ in zip(external, internal):
     for col in ["value", "lower", "upper"]:
-        to_test.append((ext, int_, col))
+        for category in internal_categories:
+            to_test.append((ext, int_, col, category))
 
 
-@pytest.mark.parametrize("params, expected_internal, col", to_test)
-def test_reparametrize_to_internal(params, expected_internal, col):
+@pytest.mark.parametrize("params, expected_internal, col, category", to_test)
+def test_reparametrize_to_internal(params, expected_internal, col, category):
     constraints, params = constraints_and_processed_params(params)
     calculated = reparametrize_to_internal(params, constraints)
-    assert_series_equal(calculated[col], expected_internal[col])
+    assert_series_equal(calculated[col][category], expected_internal[col][category])
 
 
-@pytest.mark.parametrize("internal, expected_external", zip(internal, external))
-def test_reparametrize_from_internal(internal, expected_external):
+to_test = []
+for int_, ext in zip(internal, external):
+    for category in external_categories:
+        to_test.append((int_, ext, category))
+
+
+@pytest.mark.parametrize("internal, expected_external, category", to_test)
+def test_reparametrize_from_internal(internal, expected_external, category):
     constraints, params = constraints_and_processed_params(expected_external)
     calculated = reparametrize_from_internal(internal, constraints, params)
-    assert_series_equal(calculated, expected_external["value"])
+    assert_series_equal(calculated[category], expected_external.loc[category, "value"])

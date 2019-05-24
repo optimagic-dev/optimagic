@@ -131,7 +131,7 @@ def _covariance_to_internal(params_subset, case, type_):
     res = params_subset.copy()
     if type_ == "covariance":
         cov = cov_params_to_matrix(params_subset["value"].to_numpy())
-    elif type == "sdcorr":
+    elif type_ == "sdcorr":
         cov = sdcorr_params_to_matrix(params_subset["value"].to_numpy())
     else:
         raise ValueError("Invalid type_: {}".format(type_))
@@ -150,25 +150,20 @@ def _covariance_to_internal(params_subset, case, type_):
         chol_coeffs = chol[np.tril_indices(dim)]
         res["value"] = chol_coeffs
 
-        lower_bound_helper = np.full((dim, dim), -np.inf)
-        lower_bound_helper[np.diag_indices(dim)] = 0
-        res["lower"] = lower_bound_helper[np.tril_indices(dim)]
-        res["upper"] = np.inf
-        res["__fixed__"] = False
-
-        if params_subset["__fixed__"].any():
-            warnings.warn("Covariance parameters are unfixed.", UserWarning)
+        if type_ == "covariance":
+            lower_bound_helper = np.full((dim, dim), -np.inf)
+            lower_bound_helper[np.diag_indices(dim)] = 0
+            res["lower"] = lower_bound_helper[np.tril_indices(dim)]
+            res["upper"] = np.inf
+            res["__fixed__"] = False
+        else:
+            res.loc[res.index[:dim], "lower"] = 0
 
         for bound in ["lower", "upper"]:
             if np.isfinite(params_subset[bound]).any():
                 warnings.warn(
                     "Bounds are ignored for covariance parameters.", UserWarning
                 )
-    elif case == "all_fixed":
-        pass
-    else:
-        raise ValueError("Invalid case: {}".format(case))
-
     return res
 
 

@@ -196,7 +196,11 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
     elif off_diagonal_fixed and off_diagonal_zero:
         case = "uncorrelated"
     else:
+        assert not params_subset[
+            "__fixed__"
+        ].any(), "Fixed parameters are not allowed for covariance or sdcorr containt."
         case = "all_free"
+
     return case
 
 
