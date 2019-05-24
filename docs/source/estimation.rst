@@ -35,29 +35,28 @@ argument of any criterion function optimized with estimagic's :ref:`minimize`.
 
 It can have the following columns (most of them being optional)
 
-- 'value' (dtype=float): Start values for the optimization. If not provided,
-  start values based on constraints and other information in params are drawn
-  randomly. If provided, we ensure that these values    are taken as start
-  values for local optimizers and are in the initial population of genetic
-  algorithms or pseudo global optimizers.
-- 'lower' (dtype=float): Lower bounds enforced in optimization. Can take the
+- `'value'`` (dtype=float): Start values for the optimization. This column is
+  not optional. These values are taken as start values for local optimizers
+  and are in the initial population of genetic algorithms or pseudo global
+  optimizers.
+- `'lower'`` (dtype=float): Lower bounds enforced in optimization. Can take the
   values - np.inf or np.nan for unbounded parameters.
-- 'upper' (dtype=float): Upper bounds enforced in optimization. Can take the
+- `'upper'`` (dtype=float): Upper bounds enforced in optimization. Can take the
   values np.inf or np.nan for unbounded parameters.
-- 'draw_lower' and 'draw_upper' (dtype=float): bounds used to randomly draw
+- `'draw_lower'`` and `'draw_upper'`` (dtype=float): bounds used to randomly draw
   parameters. They are ignored or only enforced approximately for some
   constrained parameters. These columns are required for genetic or pseudo
-  global optimizers or if 'value' is not provided.
-- 'group' (dtype=str or None): Indicates in which group (if any)
+  global optimizers.
+- `'group'`` (dtype=str or None): Indicates in which group (if any)
   a parameter's values will be plotted in the convergence tab of the dashboard.
   Parameters with value None are not plotted.
 
 It is important to distinguish three related but different concepts:
 
-- params_df: the DataFrame described above
-- params_sr: the 'value' column of params. This is the first argument of any
+- `params_df`: the DataFrame described above, sometimes just called `params`.
+- `params_sr`: the `'value'` column of params. This is the first argument of any
   criterion function optimized with estimagic's minimize function.
-- internal_params: a reparametrized version of params that is only used
+- `internal_params`: a reparametrized version of params that is only used
   internally in order to enforce some types of constraints during the
   optimization. It is often shorter than params and has a different index.
   Moreover, the columns for lower ad upper bounds might be differnet.
