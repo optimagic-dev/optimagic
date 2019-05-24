@@ -136,7 +136,7 @@ def _covariance_to_internal(params_subset, case):
         res["lower"] = lower_bounds
 
         assert (res["upper"] >= res["lower"]).all(), "Invalid upper bound for variance."
-    else:
+    elif case == "all_free":
         chol = np.linalg.cholesky(cov)
         chol_coeffs = chol[np.tril_indices(dim)]
         res["value"] = chol_coeffs
@@ -155,6 +155,10 @@ def _covariance_to_internal(params_subset, case):
                 warnings.warn(
                     "Bounds are ignored for covariance parameters.", UserWarning
                 )
+    elif case == "all_fixed":
+        pass
+    else:
+        raise ValueError("Invalid case: {}".format(case))
 
     return res
 
@@ -180,6 +184,10 @@ def _covariance_from_internal(params_subset, case):
         cov = helper.dot(helper.T)
         cov_coeffs = cov[np.tril_indices(dim)]
         res["value"] = cov_coeffs
+    elif case in ["all_fixed", "uncorrelated"]:
+        pass
+    else:
+        raise ValueError("Invalid case: {}".format(case))
     return res["value"]
 
 
