@@ -8,6 +8,8 @@ from estimagic.optimization.utilities import cov_params_to_matrix
 def process_constraints(constraints, params):
     """Process, consolidate and check constraints.
 
+    Note: Do not change the order of function calls in this function!
+
     Args:
         constraints (list): see :ref:`constraints`.
         params (pd.DataFrame): see :ref:`params_df`.
@@ -24,6 +26,7 @@ def process_constraints(constraints, params):
         processed = []
 
         constraints = _process_selectors(constraints, params)
+        constraints = _replace_pairwise_equality_by_equality(constraints, params)
         equality_constraints = []
         for constr in constraints:
             if constr["type"] == "equality":
@@ -54,30 +57,54 @@ def _process_selectors(constraints, params):
 
     """
     processed = []
-    for constr in constraints:
-        assert (
-            "query" in constr or "loc" in constr
-        ), "Either query or loc has to be in a constraint dictionary."
-        assert not (
-            "query" in constr and "loc" in constr
-        ), "query and loc cannot both be specified in a constraint dictionary."
 
-        par_copy = params.copy()
+    for constr in constraints:
+        if constr["type"] != "pairwise_equality":
+            suffixes = [""]
+        else:
+            suffixes = [1, 2]
+
         new_constr = constr.copy()
 
-        if "query" in constr:
-            query = new_constr.pop("query")
-            index = par_copy.query(query).index
-        else:
-            loc = new_constr.pop("loc")
-            par_copy["selected"] = False
-            par_copy.loc[loc, "selected"] = True
-            index = par_copy.query("selected").index
+        for suf in suffixes:
+            assert (
+                f"query{suf}" in constr or f"loc{suf}" in constr
+            ), f"Either query{suf} or loc{suf} has to be in a constraint dictionary."
+            assert not (
+                f"query{suf}" in constr and f"loc{suf}" in constr
+            ), f"query{suf} and loc{suf} cannot both be in a constraint dictionary."
 
-        new_constr["index"] = index
+            par_copy = params.copy()
+
+            if f"query{suf}" in constr:
+                query = new_constr.pop(f"query{suf}")
+                index = par_copy.query(query).index
+            else:
+                loc = new_constr.pop(f"loc{suf}")
+                par_copy["selected"] = False
+                par_copy.loc[loc, "selected"] = True
+                index = par_copy.query("selected").index
+
+            new_constr[f"index{suf}"] = index
+
         processed.append(new_constr)
 
     return processed
+
+
+def _replace_pairwise_equality_by_equality(constraints, params):
+    pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
+    final_constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
+    for constr in pairwise_constraints:
+        index1, index2 = constr["index1"], constr["index2"]
+        assert len(index1) == len(
+            index2
+        ), "index1 and index2 must have the same length."
+        equality_constraints = []
+        for i1, i2 in zip(index1, index2):
+            equality_constraints.append({"loc": [i1, i2], "type": "equality"})
+        final_constraints += _process_selectors(equality_constraints, params)
+    return final_constraints
 
 
 def _process_cov_constraint(constraint, params):

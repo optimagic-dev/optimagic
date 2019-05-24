@@ -84,6 +84,11 @@ a dictionary. The dictionary must contain the following entries:
     - 'covariance': a set of parameters forms a valid (i.e. positive
       semi-definite) covariance matrix. This is not compatible with any other
       constraints on the involved parameters.
+    - 'variances_and_correlations': the first part of a set of parameters are
+      variances, the second part are the lower triangle (excluding the diagonal)
+      of a correlation matrix. All parameters together can be used to construct
+      a full covariance matrix but are more interpretable. This is not compatible
+      with any other type of constraints on the involved parameters.
     - 'sum': a set of parameters sums to a specified value. The last involved
       parameter can't have bounds. In this case the constraint dictionary also
       needs to contain a 'value' key.
@@ -93,16 +98,24 @@ a dictionary. The dictionary must contain the following entries:
     - 'equality': a set of parameters is restricted to be equal to a
       particular value. The value has to be specified in the constraints
       dictionary.
+    - 'pairwise_equality': Two sets of parameters are pairwise equal. In this
+      the constraint dictionary has to contain the keys 'loc1' or 'query1'
+      and 'loc2' or 'query2'.
+    - 'fixed': A set of parameters is fixed. In this case the constraints dict
+      has to contain a 'value' entry that specifies to which value the parameters
+      are fixed. This can be a scalar or an array like object of the right length.
 
 
-Lower and upper bounds as well as fixed parameters are specified in
-:ref:`params_df`
+Lower and upper bounds are specified in :ref:`params_df`. Fixed parameters can
+also be specified there.
 
 The constraints are enforced by reparametrizations, additional bounds or
 additional fixed parameters. For details see :ref:`reparametrize`
 
 
-.. todo:: Implement a way to use nlopts and pygmo's general equality or inequality constraints for all algorithms that support this type of constraints.
+.. todo:: Implement a way to use nlopts and pygmo's general equality or
+  inequality constraints for all algorithms that support this type of
+  constraints.
 
 .. todo:: Find out if box constraints are implemented efficiently in pygmo
 
