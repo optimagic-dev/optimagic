@@ -13,7 +13,8 @@ dependencies:
   - pygmo=2.10
   - conda-build
   - anaconda-client
-  - numdifftools
+  - bokeh=1.1
+  - scipy=1.2.1
   - pip:
     - doc8
     - pre-commit

@@ -28,3 +28,12 @@ def number_of_triangular_elements_to_dimension(num):
 
     """
     return int(np.sqrt(8 * num + 1) / 2 - 0.5)
+
+
+def index_element_to_string(element, separator="_"):
+    if isinstance(element, (tuple, list)):
+        as_strings = [str(entry) for entry in element]
+        res_string = separator.join(as_strings)
+    else:
+        res_string = str(element)
+    return res_string

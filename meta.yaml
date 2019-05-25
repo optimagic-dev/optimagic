@@ -21,7 +21,8 @@ requirements:
     - numpy
     - pandas>=0.24
     - pygmo>=2.10
-    - numdifftools
+    - bokeh>=1.1
+    - scipy
 
 test:
   commands:

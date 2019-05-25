@@ -21,6 +21,9 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
 
+# Set variable so that todos are shown in local build
+on_rtd = os.environ.get("READTHEDOCS") == "True"
+
 
 # -- General configuration ------------------------------------------------
 
@@ -78,7 +81,11 @@ exclude_patterns = []
 pygments_style = "sphinx"
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
+if on_rtd:
+    pass
+else:
+    todo_include_todos = True
+    todo_emit_warnings = True
 
 
 # -- Options for HTML output ----------------------------------------------
