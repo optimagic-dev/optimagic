@@ -1,0 +1,71 @@
+[tox]
+envlist = pytest, linting
+skipsdist = True
+skip_missing_interpreters = True
+
+[testenv]
+basepython = python
+
+[testenv:pytest]
+deps =
+    pytest
+    pytest-mock
+    pytest-xdist
+conda_deps =
+    numpy
+    pygmo >= 2.10
+    pandas >= 0.24
+<<<<<<< HEAD
+    numdifftools >= 0.9.20
+=======
+    bokeh >= 1.1
+    scipy >= 1.2.1
+
+>>>>>>> master
+conda_channels =
+    defaults
+    conda-forge
+commands = pytest estimagic
+
+[testenv:linting]
+passenv = USERPROFILE SSH_AUTH_SOCK
+deps =
+    pre-commit
+    doc8
+    restructuredtext_lint
+    Pygments
+commands =
+    pre-commit install -f --install-hooks
+    pre-commit run --all-files
+
+[testenv:sphinx]
+changedir = docs
+deps =
+    sphinx
+    sphinx_rtd_theme
+commands =
+    # Add W flag to builds so that warnings become errors.
+    sphinx-build -nT -b html -d {envtmpdir}/doctrees . {envtmpdir}/html
+    sphinx-build -nT -b linkcheck -d {envtmpdir}/doctrees . {envtmpdir}/linkcheck
+
+[doc8]
+ignore =
+    D002,
+    D004,
+max-line-length = 89
+
+[flake8]
+max-line-length = 88
+ignore =
+    D  ; ignores docstring style errors, enable if you are nit-picky
+    E203  ; ignores whitespace around : which is enforced by Black
+    W503  ; ignores linebreak before binary operator which is enforced by Black
+    RST304  ; ignores check for valid rst roles because it is too aggressive
+    RST203  ; ignore some blank line warning
+    T001  ; ignore print statements
+    RST301  ; ignores unexpected indentations in docstrings because it was not compatible with google style docstrings
+[pytest]
+addopts = --doctest-modules -n auto
+norecursedirs =
+    docs
+    .tox
