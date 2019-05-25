@@ -3,7 +3,7 @@ import numpy as np
 from estimagic.differentiation.diff_auxiliary import forward
 from estimagic.differentiation.diff_auxiliary import backward
 from estimagic.differentiation.diff_auxiliary import central
-
+from estimagic.differentiation.diff_auxiliary import richardson
 
 def gradient(
     func, params_sr, method="central", extrapolant=None, func_args=None,
@@ -36,19 +36,12 @@ def gradient(
         f = central
     else:
         raise ValueError('The given method was not found.')
-    h = 2 * np.sqrt(np.finfo(float).eps)
     for var in grad.index:
-        if params_sr[var] + h == params_sr[var]:
-            h = abs(params_sr[var]) * np.finfo(float).eps
+        h = (1 + abs(params_sr[var])) * np.sqrt(np.finfo(float).eps)
         if extrapolant == 'richardson':
-            f_h = f(func, f_x0, params_sr, var, h * 4, *func_args, **func_kwargs)
-            f_half = f(func, f_x0, params_sr, var, h * 2, *func_args, **func_kwargs)
-            f_qua = f(func, f_x0, params_sr, var, h, *func_args, **func_kwargs)
-            if method == 'central':
-                f_diff = (f_h - 20 * f_half + 64 * f_qua) / 45
-            else:
-                f_diff = (f_h - 6 * f_half + 8 * f_qua) / 3
+            f_diff = richardson(f, func, f_x0, params_sr, var, h,  method, *func_args,
+                                **func_kwargs)
         else:
             f_diff = f(func, f_x0, params_sr, var, h, *func_args, **func_kwargs)
-        grad[var] = f_diff
+        grad[var] = f_diff / h
     return grad
