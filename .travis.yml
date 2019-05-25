@@ -12,7 +12,7 @@ env:
 # The tests run only if it is an PR or if a tag is pushed. This should prevent duplicate
 # builds with pr and push. We cannot disable push as it also disables deployment via
 # tags.
-if: type != push OR tag IS present
+if: type != push OR tag IS present OR branch = master
 
 install:
     # Install and configure conda
