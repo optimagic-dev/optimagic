@@ -20,15 +20,27 @@ def reparametrize_to_internal(params, constraints):
 
     Args:
         params (DataFrame): A non-internal parameter DataFrame. See :ref:`params_df`.
-        constraints (list): See :ref:`constraints`.
+        constraints (list): See :ref:`constraints`. It is assumed that the constraints
+            are already processed.
 
     Returns:
         internal (DataFrame): See :ref:`params_df`.
 
     """
     internal = params.copy()
+
+    # handle explicit fixes
+    internal["__fixed__"] = False
+    fixed_constraints = [c for c in constraints if c["type"] == "fixed"]
+    for constr in fixed_constraints:
+        internal.loc[constr["index"], "__fixed__"] = True
+
+    equality_constraints = [c for c in constraints if c["type"] == "equality"]
+    for constr in equality_constraints:
+        internal.update(_equality_to_internal(internal.loc[constr["index"]]))
+
     for constr in constraints:
-        params_subset = params.loc[constr["index"]]
+        params_subset = internal.loc[constr["index"]]
         if constr["type"] in ["covariance", "sdcorr"]:
             internal.update(
                 _covariance_to_internal(params_subset, constr["case"], constr["type"])
@@ -39,8 +51,6 @@ def reparametrize_to_internal(params, constraints):
             internal.update(_probability_to_internal(params_subset))
         elif constr["type"] == "increasing":
             internal.update(_increasing_to_internal(params_subset))
-        elif constr["type"] == "equality":
-            internal.update(_equality_to_internal(params_subset))
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -50,11 +60,32 @@ def reparametrize_to_internal(params, constraints):
         internal.loc[actually_fixed, "__fixed__"] = True
 
     internal = internal.query("~__fixed__")
+    internal.drop(["__fixed__"], axis=1, inplace=True)
 
     assert (internal["value"] >= internal["lower"]).all(), "Invalid lower bound."
     assert (internal["value"] <= internal["upper"]).all(), "Invalid upper bound."
 
     return internal
+
+
+def start_params_helper(params_index, extended_constraints):
+    """Helper DataFrames to generate start params.
+
+    Args:
+        params_index (DataFrame): The index of a non-internal parameter DataFrame.
+            See :ref:`params_df`.
+        extended_constraints (list): A list of constraints where in addition to what
+            is described in :ref:`constraints` all fixed parameters also contain a
+            'value' entry.
+
+    Returns:
+        fixed_params (DataFrame): parameters that are fixed because of explicit fixes
+            or equality constraints.
+        free_params (DataFrame): parameters that are not fixed because of explicit
+            fixes or equality constraints.
+
+    """
+    pass
 
 
 def reparametrize_from_internal(internal_params, constraints, original_params):
@@ -65,7 +96,8 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
 
     Args:
         internal_params (DataFrame): internal parameter DataFrame. See :ref:`params_df`.
-        constraints (list): see :ref:`constraints`.
+        constraints (list): see :ref:`constraints`. It is assumed that the constraints
+            are already processed.
         original_params (DataFrame): A non-internal parameter DataFrame. This is used to
             extract the original index and fixed values of parameters.
 

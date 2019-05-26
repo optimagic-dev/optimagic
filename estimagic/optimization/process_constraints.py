@@ -25,42 +25,36 @@ def process_constraints(constraints, params):
         )
 
         processed_constraints = []
-        processed_params = params.copy()
-        processed_params["__fixed__"] = False
+        params = params.copy()
+        params["__fixed__"] = False
 
         constraints = _process_selectors(constraints, params)
         constraints = _replace_pairwise_equality_by_equality(constraints, params)
 
-        fixed_constraints = [c for c in constraints if c["type"] == "fixed"]
         equality_constraints = [c for c in constraints if c["type"] == "equality"]
-        other_constraints = [
-            c for c in constraints if c["type"] not in ["equality", "fixed"]
-        ]
+        other_constraints = [c for c in constraints if c["type"] != "equality"]
 
-        for constr in fixed_constraints:
-            processed_params.loc[constr["index"], "__fixed__"] = True
+        for constr in other_constraints:
+            if constr["type"] == "fixed":
+                params.loc[constr["index"], "__fixed__"] = True
 
         processed_constraints += _consolidate_equality_constraints(
-            equality_constraints, processed_params
+            equality_constraints, params
         )
 
         for constr in other_constraints:
             if constr["type"] == "covariance":
-                processed_constraints.append(
-                    _process_cov_constraint(constr, processed_params)
-                )
+                processed_constraints.append(_process_cov_constraint(constr, params))
             elif constr["type"] == "sdcorr":
-                processed_constraints.append(
-                    _process_sdcorr_constraint(constr, processed_params)
-                )
-            elif constr["type"] in ["sum", "probability", "increasing"]:
+                processed_constraints.append(_process_sdcorr_constraint(constr, params))
+            elif constr["type"] in ["sum", "probability", "increasing", "fixed"]:
                 processed_constraints.append(constr)
             else:
                 raise ValueError("Invalid constraint type {}".format(constr["type"]))
 
-        _check_compatibility_of_constraints(processed_constraints, processed_params)
+        _check_compatibility_of_constraints(processed_constraints, params)
 
-    return processed_constraints, processed_params
+    return processed_constraints
 
 
 def _process_selectors(constraints, params):
