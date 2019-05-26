@@ -2,6 +2,7 @@
 import warnings
 
 import numpy as np
+import pandas as pd
 
 from estimagic.optimization.utilities import cov_matrix_to_params
 from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
@@ -52,14 +53,9 @@ def reparametrize_to_internal(params, constraints):
         elif constr["type"] == "increasing":
             internal.update(_increasing_to_internal(params_subset))
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", message="indexing past lexsort depth may impact performance."
-        )
-        actually_fixed = internal["lower"] == internal["upper"]
-        internal.loc[actually_fixed, "__fixed__"] = True
-
-    internal = internal.query("~__fixed__")
+    internal["__fixed__"] = internal["__fixed__"].astype(bool)
+    assert (internal["lower"] < internal["upper"]).all(), "lower must be < upper."
+    internal = internal.loc[~(internal["__fixed__"])].copy(deep=True)
     internal.drop(["__fixed__"], axis=1, inplace=True)
 
     assert (internal["value"] >= internal["lower"]).all(), "Invalid lower bound."
@@ -68,8 +64,15 @@ def reparametrize_to_internal(params, constraints):
     return internal
 
 
-def start_params_helper(params_index, extended_constraints):
+def make_start_params_helpers(params_index, extended_constraints):
     """Helper DataFrames to generate start params.
+
+    Construct a default params DataFrame and split it into free and parameters and
+    parameters that are fixed explicitly or implicitly through equality constraints.
+
+    The free parameters can be exposed to a user to generate custom start parameters
+    in a complex model. The fixed part can then be used to transform the user provided
+    start parameters into a full params_df.
 
     Args:
         params_index (DataFrame): The index of a non-internal parameter DataFrame.
@@ -79,13 +82,55 @@ def start_params_helper(params_index, extended_constraints):
             'value' entry.
 
     Returns:
-        fixed_params (DataFrame): parameters that are fixed because of explicit fixes
+        free (DataFrame): free parameters
+        fixed (DataFrame): parameters that are fixed because of explicit fixes
             or equality constraints.
-        free_params (DataFrame): parameters that are not fixed because of explicit
-            fixes or equality constraints.
 
     """
-    pass
+    params = pd.DataFrame(index=params_index)
+    params["lower"] = -np.inf
+    params["upper"] = np.inf
+    params["value"] = np.nan
+
+    # handle explicit fixes
+    params["__fixed__"] = False
+    fixed_constraints = [c for c in extended_constraints if c["type"] == "fixed"]
+    for constr in fixed_constraints:
+        params.loc[constr["index"], "__fixed__"] = True
+        params.loc[constr["index"], "value"] = constr["value"]
+
+    equality_constraints = [c for c in extended_constraints if c["type"] == "equality"]
+    for constr in equality_constraints:
+        params.update(_equality_to_internal(params.loc[constr["index"]]))
+
+    free = params.query("~__fixed__").drop("__fixed__", axis=1)
+    fixed = params.query("__fixed__").drop("__fixed__", axis=1)
+    return free, fixed
+
+
+def get_start_params_from_helpers(free, fixed, constraints, params_index):
+    """Construct a params_df from helper DataFrames.
+
+    Args:
+        free (DataFrame): free parameters
+        fixed (DataFrame): parameters that are fixed explicitly or due to equality
+            constraints.
+        constraints (list): list of constraints
+        params_index (DataFrame): The index of a non-internal parameter DataFrame.
+            See :ref:`params_df`.
+
+    Returns:
+        params (DataFrame): see :ref:`params_df`.
+
+    """
+    equality_constraints = [c for c in constraints if c["type"] == "equality"]
+    params = pd.concat([free, fixed], axis=0).loc[params_index]
+    for constr in equality_constraints:
+        params_subset = params.loc[constr["index"]]
+        values = params_subset["value"].unique()
+        assert len(values) == 1, "Too many values."
+        params.loc[constr["index"]] = values[0]
+    return params
 
 
 def reparametrize_from_internal(internal_params, constraints, original_params):
@@ -395,14 +440,13 @@ def _equality_to_internal(params_subset):
     res = params_subset.copy()
     first = params_subset.index[0]
     all_others = params_subset.index[1:]
-    res.loc[first, "__fixed__"] = params_subset["__fixed__"].any()
+    if params_subset["__fixed__"].any():
+        res.loc[first, "__fixed__"] = True
     res.loc[all_others, "__fixed__"] = True
     res["lower"] = params_subset["lower"].max()
     res["upper"] = params_subset["upper"].min()
-    assert (
-        res["lower"] <= res["upper"]
-    ).all(), "Invalid bounds for equality constrained parameters."
     assert len(params_subset["value"].unique()) == 1, "Equality constraint is violated."
+    assert res["__fixed__"].dtype == bool
     return res
 
 

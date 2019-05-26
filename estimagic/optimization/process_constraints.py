@@ -229,6 +229,8 @@ def _consolidate_equality_constraints(constraints, params):
 
     """
     candidates = [constr["index"] for constr in constraints]
+    # drop constraints that just restrict one parameter to be equal to itself
+    candidates = [c for c in candidates if len(c) >= 2]
 
     merged = []
 
