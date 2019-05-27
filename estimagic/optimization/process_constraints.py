@@ -27,8 +27,9 @@ def process_constraints(constraints, params):
 
         processed_constraints = []
         params = params.copy()
-        params["__fixed__"] = False
-        params["__fixed_value__"] = np.nan
+        fixed = pd.DataFrame(index=params.index)
+        fixed["bool"] = False
+        fixed["value"] = np.nan
 
         constraints = _process_selectors(constraints, params)
         constraints = _replace_pairwise_equality_by_equality(constraints, params)
@@ -38,8 +39,8 @@ def process_constraints(constraints, params):
 
         for constr in other_constraints:
             if constr["type"] == "fixed":
-                params.loc[constr["index"], "__fixed__"] = True
-                params.loc[constr["index"], "__fixed_value__"] = constr["value"]
+                fixed.loc[constr["index"], "bool"] = True
+                fixed.loc[constr["index"], "value"] = constr["value"]
 
         processed_constraints += _consolidate_equality_constraints(
             equality_constraints, params
@@ -47,15 +48,19 @@ def process_constraints(constraints, params):
 
         for constr in other_constraints:
             if constr["type"] == "covariance":
-                processed_constraints.append(_process_cov_constraint(constr, params))
+                processed_constraints.append(
+                    _process_cov_constraint(constr, params, fixed)
+                )
             elif constr["type"] == "sdcorr":
-                processed_constraints.append(_process_sdcorr_constraint(constr, params))
+                processed_constraints.append(
+                    _process_sdcorr_constraint(constr, params, fixed)
+                )
             elif constr["type"] in ["sum", "probability", "increasing", "fixed"]:
                 processed_constraints.append(constr)
             else:
                 raise ValueError("Invalid constraint type {}".format(constr["type"]))
 
-        _check_compatibility_of_constraints(processed_constraints, params)
+        _check_compatibility_of_constraints(processed_constraints, params, fixed)
 
     return processed_constraints
 
@@ -92,7 +97,6 @@ def _process_selectors(constraints, params):
             assert not index.duplicated().any(), "Duplicates in loc are not allowed."
             indices.append(index)
         for query in queries:
-            print(query)
             indices.append(params.query(query).index)
 
         if constr["type"] == "pairwise_equality":
@@ -129,7 +133,6 @@ def _replace_pairwise_equality_by_equality(constraints, params):
     pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
     final_constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
     for constr in pairwise_constraints:
-        print(constr)
         equality_constraints = []
         for elements in zip(*constr["indices"]):
             equality_constraints.append({"loc": list(elements), "type": "equality"})
@@ -137,7 +140,7 @@ def _replace_pairwise_equality_by_equality(constraints, params):
     return final_constraints
 
 
-def _process_cov_constraint(constraint, params):
+def _process_cov_constraint(constraint, params, fixed):
     """Process covariance constraints.
 
     Args:
@@ -151,13 +154,14 @@ def _process_cov_constraint(constraint, params):
     """
     new_constr = constraint.copy()
     params_subset = params.loc[constraint["index"]]
+    fixed_subset = fixed.loc[constraint["index"]]
     value_mat = cov_params_to_matrix(params_subset["value"].to_numpy())
-    fixed_mat = cov_params_to_matrix(params_subset["__fixed__"].to_numpy()).astype(bool)
+    fixed_mat = cov_params_to_matrix(fixed_subset["bool"].to_numpy()).astype(bool)
     new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
     return new_constr
 
 
-def _process_sdcorr_constraint(constraint, params):
+def _process_sdcorr_constraint(constraint, params, fixed):
     """Process sdcorr constraints.
 
     Args:
@@ -174,7 +178,7 @@ def _process_sdcorr_constraint(constraint, params):
     params_subset = params.loc[constraint["index"]]
     value_mat = sdcorr_params_to_matrix(params_subset["value"].to_numpy())
     dim = len(value_mat)
-    fixed_vec = params_subset["__fixed__"].to_numpy().astype(int)
+    fixed_vec = fixed.loc[constraint["index"], "bool"].to_numpy().astype(int)
     fixed_diag = np.diag(fixed_vec[:dim])
     fixed_lower = np.zeros((dim, dim), dtype=int)
     fixed_lower[np.tril_indices(dim, k=-1)] = fixed_vec[dim:]
@@ -199,16 +203,16 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
     off_diagonal_zero = bool((value_mat[np.tril_indices(dim, k=-1)] == 0).all())
 
     off_diagonal_fixed = bool(fixed_mat[np.tril_indices(dim, k=-1)].all())
-    all_fixed = bool(params_subset["__fixed__"].all())
+    all_fixed = bool(fixed_mat.all())
 
     if all_fixed is True:
         case = "all_fixed"
     elif off_diagonal_fixed and off_diagonal_zero:
         case = "uncorrelated"
     else:
-        assert not params_subset[
-            "__fixed__"
-        ].any(), "Fixed parameters are not allowed for covariance or sdcorr constraint."
+        assert (
+            not fixed_mat.any()
+        ), "Fixed parameters are not allowed for covariance or sdcorr constraint."
         case = "all_free"
 
     return case
@@ -277,7 +281,7 @@ def _unite_first_with_all_intersecting_elements(indices):
     return [new_first] + new_others
 
 
-def _check_compatibility_of_constraints(constraints, params):
+def _check_compatibility_of_constraints(constraints, params, fixed):
     """Additional compatibility checks for constraints.
 
     Checks that require fine grained case distinctions are already done in the functions
@@ -290,7 +294,7 @@ def _check_compatibility_of_constraints(constraints, params):
     """
     _check_no_overlapping_transforming_constraints(constraints, params)
     _check_no_invalid_equality_constraints(constraints, params)
-    _check_fixes(params)
+    _check_fixes(params, fixed)
 
 
 def _check_no_overlapping_transforming_constraints(constraints, params):
@@ -377,11 +381,11 @@ def _check_no_invalid_equality_constraints(constraints, params):
                     raise ValueError("Incompatible equality constraint.")
 
 
-def _check_fixes(params):
-    fixed = params.query("__fixed__")
+def _check_fixes(params, fixed):
+    fixed = fixed.query("bool")
     for p in fixed.index:
         if not pd.isnull(params.loc[p, "value"]):
-            fvalue = params.loc[p, "__fixed_value__"]
+            fvalue = fixed.loc[p, "value"]
             value = params.loc[p, "value"]
             if fvalue != value:
                 warnings.warn(

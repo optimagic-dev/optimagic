@@ -329,9 +329,7 @@ def _process_params_df(params):
         names = [index_element_to_string(tup) for tup in params.index]
         params["name"] = names
 
-    assert (
-        "__fixed__" not in params.columns
-    ), "Invalid column name __fixed__ in params_df."
+    assert "_fixed" not in params.columns, "Invalid column name _fixed in params_df."
     return params
 
 

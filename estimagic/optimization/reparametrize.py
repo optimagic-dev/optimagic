@@ -31,10 +31,10 @@ def reparametrize_to_internal(params, constraints):
     internal = params.copy()
 
     # handle explicit fixes
-    internal["__fixed__"] = False
+    internal["_fixed"] = False
     fixed_constraints = [c for c in constraints if c["type"] == "fixed"]
     for constr in fixed_constraints:
-        internal.loc[constr["index"], "__fixed__"] = True
+        internal.loc[constr["index"], "_fixed"] = True
         internal.loc[constr["index"], "value"] = constr["value"]
 
     equality_constraints = [c for c in constraints if c["type"] == "equality"]
@@ -54,10 +54,10 @@ def reparametrize_to_internal(params, constraints):
         elif constr["type"] == "increasing":
             internal.update(_increasing_to_internal(params_subset))
 
-    internal["__fixed__"] = internal["__fixed__"].astype(bool)
+    internal["_fixed"] = internal["_fixed"].astype(bool)
     assert (internal["lower"] < internal["upper"]).all(), "lower must be < upper."
-    internal = internal.loc[~(internal["__fixed__"])].copy(deep=True)
-    internal.drop(["__fixed__"], axis=1, inplace=True)
+    internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
+    internal.drop(["_fixed"], axis=1, inplace=True)
 
     assert (internal["value"] >= internal["lower"]).all(), "Invalid lower bound."
     assert (internal["value"] <= internal["upper"]).all(), "Invalid upper bound."
@@ -94,18 +94,18 @@ def make_start_params_helpers(params_index, extended_constraints):
     params["value"] = np.nan
 
     # handle explicit fixes
-    params["__fixed__"] = False
+    params["_fixed"] = False
     fixed_constraints = [c for c in extended_constraints if c["type"] == "fixed"]
     for constr in fixed_constraints:
-        params.loc[constr["index"], "__fixed__"] = True
+        params.loc[constr["index"], "_fixed"] = True
         params.loc[constr["index"], "value"] = constr["value"]
 
     equality_constraints = [c for c in extended_constraints if c["type"] == "equality"]
     for constr in equality_constraints:
         params.update(_equality_to_internal(params.loc[constr["index"]]))
 
-    free = params.query("~__fixed__").drop("__fixed__", axis=1)
-    fixed = params.query("__fixed__").drop("__fixed__", axis=1)
+    free = params.query("~_fixed").drop("_fixed", axis=1)
+    fixed = params.query("_fixed").drop("_fixed", axis=1)
     return free, fixed
 
 
@@ -236,7 +236,7 @@ def _covariance_to_internal(params_subset, case, type_):
             lower_bound_helper[np.diag_indices(dim)] = 0
             res["lower"] = lower_bound_helper[np.tril_indices(dim)]
             res["upper"] = np.inf
-            res["__fixed__"] = False
+            res["_fixed"] = False
         else:
             res.loc[res.index[:dim], "lower"] = 0
 
@@ -261,10 +261,6 @@ def _covariance_from_internal(params_subset, case, type_):
         res (Series): Series with lower triangular elements of a covariance matrix
 
     """
-    print("\n\n")
-    print(params_subset)
-    print(type_)
-    print("\n\n")
     res = params_subset.copy(deep=True)
     if case == "all_free":
         dim = number_of_triangular_elements_to_dimension(len(params_subset))
@@ -304,11 +300,11 @@ def _increasing_to_internal(params_subset):
     res = params_subset.copy()
     res["value"] = new_vals
 
-    res["__fixed__"] = False
+    res["_fixed"] = False
     res["lower"] = [-np.inf] + [0] * (len(params_subset) - 1)
     res["upper"] = np.inf
 
-    if params_subset["__fixed__"].any():
+    if params_subset["_fixed"].any():
         warnings.warn("Ordered parameters were unfixed.", UserWarning)
 
     for bound in ["lower", "upper"]:
@@ -348,7 +344,7 @@ def _sum_to_internal(params_subset, value):
 
     """
 
-    free = params_subset.query("lower == -inf & upper == inf & __fixed__ == False")
+    free = params_subset.query("lower == -inf & upper == inf & _fixed == False")
     last = params_subset.index[-1]
 
     assert (
@@ -356,7 +352,7 @@ def _sum_to_internal(params_subset, value):
     ), "The last sum constrained parameter cannot have bounds nor be fixed."
 
     res = params_subset.copy()
-    res.loc[last, "__fixed__"] = True
+    res.loc[last, "_fixed"] = True
     return res
 
 
@@ -403,13 +399,13 @@ def _probability_to_internal(params_subset):
     ), "Upper bound has to be 1 or inf for probability constrained parameters."
 
     assert not params_subset[
-        "__fixed__"
+        "_fixed"
     ].any(), "Probability constrained parameters cannot be fixed."
 
     res["lower"] = 0
     res["upper"] = np.inf
     last = params_subset.index[-1]
-    res.loc[last, "__fixed__"] = True
+    res.loc[last, "_fixed"] = True
     res["value"] /= res.loc[last, "value"]
     return res
 
@@ -448,13 +444,13 @@ def _equality_to_internal(params_subset):
     res = params_subset.copy()
     first = params_subset.index[0]
     all_others = params_subset.index[1:]
-    if params_subset["__fixed__"].any():
-        res.loc[first, "__fixed__"] = True
-    res.loc[all_others, "__fixed__"] = True
+    if params_subset["_fixed"].any():
+        res.loc[first, "_fixed"] = True
+    res.loc[all_others, "_fixed"] = True
     res["lower"] = params_subset["lower"].max()
     res["upper"] = params_subset["upper"].min()
     assert len(params_subset["value"].unique()) == 1, "Equality constraint is violated."
-    assert res["__fixed__"].dtype == bool
+    assert res["_fixed"].dtype == bool
     return res
 
 
