@@ -22,7 +22,7 @@ def reparametrize_to_internal(params, constraints):
     Args:
         params (DataFrame): A non-internal parameter DataFrame. See :ref:`params_df`.
         constraints (list): See :ref:`constraints`. It is assumed that the constraints
-            are already processed.
+            are already processed and sorted.
 
     Returns:
         internal (DataFrame): See :ref:`params_df`.
@@ -37,12 +37,10 @@ def reparametrize_to_internal(params, constraints):
         internal.loc[constr["index"], "_fixed"] = True
         internal.loc[constr["index"], "value"] = constr["value"]
 
-    equality_constraints = [c for c in constraints if c["type"] == "equality"]
-    for constr in equality_constraints:
-        internal.update(_equality_to_internal(internal.loc[constr["index"]]))
-
     for constr in constraints:
         params_subset = internal.loc[constr["index"]]
+        if constr["type"] == "equality":
+            internal.update(_equality_to_internal(internal.loc[constr["index"]]))
         if constr["type"] in ["covariance", "sdcorr"]:
             internal.update(
                 _covariance_to_internal(params_subset, constr["case"], constr["type"])

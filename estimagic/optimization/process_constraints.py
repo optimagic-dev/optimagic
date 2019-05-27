@@ -26,29 +26,23 @@ def process_constraints(constraints, params):
             "ignore", message="indexing past lexsort depth may impact performance."
         )
 
-        processed_constraints = []
-        params = params.copy()
         fixed = pd.DataFrame(index=params.index)
         fixed["bool"] = False
         fixed["value"] = np.nan
 
         constraints = _process_selectors(constraints, params)
         constraints = _replace_pairwise_equality_by_equality(constraints, params)
+        constraints = _consolidate_equality_constraints(constraints, params)
+        constraints = sorted(constraints, key=_sort_key)
 
-        equality_constraints = [c for c in constraints if c["type"] == "equality"]
-        other_constraints = [c for c in constraints if c["type"] != "equality"]
-
-        for constr in other_constraints:
+        processed_constraints = []
+        for constr in constraints:
             if constr["type"] == "fixed":
                 fixed.loc[constr["index"], "bool"] = True
                 fixed.loc[constr["index"], "value"] = constr["value"]
+                processed_constraints.append(constr)
 
-        processed_constraints += _consolidate_equality_constraints(
-            equality_constraints, params
-        )
-
-        for constr in other_constraints:
-            if constr["type"] == "covariance":
+            elif constr["type"] == "covariance":
                 processed_constraints.append(
                     _process_cov_constraint(constr, params, fixed)
                 )
@@ -56,7 +50,7 @@ def process_constraints(constraints, params):
                 processed_constraints.append(
                     _process_sdcorr_constraint(constr, params, fixed)
                 )
-            elif constr["type"] in ["sum", "probability", "increasing", "fixed"]:
+            elif constr["type"] in ["sum", "probability", "increasing", "equality"]:
                 processed_constraints.append(constr)
             else:
                 raise ValueError("Invalid constraint type {}".format(constr["type"]))
@@ -239,7 +233,10 @@ def _consolidate_equality_constraints(constraints, params):
         consolidated (list): The consolidated equality constraints.
 
     """
-    candidates = [constr["index"] for constr in constraints]
+    equality_constraints = [c for c in constraints if c["type"] == "equality"]
+    other_constraints = [c for c in constraints if c["type"] != "equality"]
+
+    candidates = [constr["index"] for constr in equality_constraints]
     # drop constraints that just restrict one parameter to be equal to itself
     candidates = [c for c in candidates if len(c) >= 2]
 
@@ -261,7 +258,7 @@ def _consolidate_equality_constraints(constraints, params):
         ordered.append(helper.query("selected").index)
 
     consolidated = [{"index": index, "type": "equality"} for index in ordered]
-    return consolidated
+    return consolidated + other_constraints
 
 
 def _unite_first_with_all_intersecting_elements(indices):
@@ -280,3 +277,12 @@ def _unite_first_with_all_intersecting_elements(indices):
         else:
             new_others.append(idx)
     return [new_first] + new_others
+
+
+def _sort_key(x):
+    if x["type"] == "fixed":
+        return 0
+    elif x["type"] == "equality":
+        return 1
+    else:
+        return 2
