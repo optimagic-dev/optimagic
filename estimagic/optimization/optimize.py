@@ -314,6 +314,9 @@ def _x_from_params_df(params, constraints):
 
 
 def _process_params_df(params):
+    assert (
+        not params.index.duplicated().any()
+    ), "No duplicates allowed in the index of params."
     params = params.copy()
     if "lower" not in params.columns:
         params["lower"] = -np.inf

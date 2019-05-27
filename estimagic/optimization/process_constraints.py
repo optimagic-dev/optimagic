@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pandas as pd
 
 from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
@@ -27,6 +28,7 @@ def process_constraints(constraints, params):
         processed_constraints = []
         params = params.copy()
         params["__fixed__"] = False
+        params["__fixed_value__"] = np.nan
 
         constraints = _process_selectors(constraints, params)
         constraints = _replace_pairwise_equality_by_equality(constraints, params)
@@ -37,6 +39,7 @@ def process_constraints(constraints, params):
         for constr in other_constraints:
             if constr["type"] == "fixed":
                 params.loc[constr["index"], "__fixed__"] = True
+                params.loc[constr["index"], "__fixed_value__"] = constr["value"]
 
         processed_constraints += _consolidate_equality_constraints(
             equality_constraints, params
@@ -72,36 +75,42 @@ def _process_selectors(constraints, params):
     processed = []
 
     for constr in constraints:
-        if constr["type"] != "pairwise_equality":
-            suffixes = [""]
-        else:
-            suffixes = [1, 2]
-
         new_constr = constr.copy()
 
-        for suf in suffixes:
+        if constr["type"] != "pairwise_equality":
+            locs = [constr["loc"]] if "loc" in constr else []
+            queries = [constr["query"]] if "query" in constr else []
+        else:
+            locs = new_constr.pop("locs", [])
+            queries = new_constr.pop("queries", [])
+
+        indices = []
+        for loc in locs:
+            selected = pd.DataFrame(index=params.index, data=False, columns=["select"])
+            selected.loc[loc] = True
+            index = selected.query("select").index
+            assert not index.duplicated().any(), "Duplicates in loc are not allowed."
+            indices.append(index)
+        for query in queries:
+            print(query)
+            indices.append(params.query(query).index)
+
+        if constr["type"] == "pairwise_equality":
             assert (
-                f"query{suf}" in constr or f"loc{suf}" in constr
-            ), f"Either query{suf} or loc{suf} has to be in a constraint dictionary."
-            assert not (
-                f"query{suf}" in constr and f"loc{suf}" in constr
-            ), f"query{suf} and loc{suf} cannot both be in a constraint dictionary."
-
-            par_copy = params.copy()
-
-            if f"query{suf}" in constr:
-                query = new_constr.pop(f"query{suf}")
-                index = par_copy.query(query).index
-            else:
-                loc = new_constr.pop(f"loc{suf}")
-                par_copy["selected"] = False
-                par_copy.loc[loc, "selected"] = True
-                index = par_copy.query("selected").index
-
-            new_constr[f"index{suf}"] = index
-
+                len(indices) >= 2
+            ), "Select at least two 2 of parameters for pairwise equality constraint!"
+            length = len(indices[0])
+            for index in indices:
+                assert (
+                    len(index) == length
+                ), "Invalid selector in pairwise equality constraint."
+            new_constr["indices"] = indices
+        else:
+            assert (
+                len(indices) == 1
+            ), "Either loc or query can be in constraint but not both."
+            new_constr["index"] = indices[0]
         processed.append(new_constr)
-
     return processed
 
 
@@ -120,13 +129,10 @@ def _replace_pairwise_equality_by_equality(constraints, params):
     pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
     final_constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
     for constr in pairwise_constraints:
-        index1, index2 = constr["index1"], constr["index2"]
-        assert len(index1) == len(
-            index2
-        ), "index1 and index2 must have the same length."
+        print(constr)
         equality_constraints = []
-        for i1, i2 in zip(index1, index2):
-            equality_constraints.append({"loc": [i1, i2], "type": "equality"})
+        for elements in zip(*constr["indices"]):
+            equality_constraints.append({"loc": list(elements), "type": "equality"})
         final_constraints += _process_selectors(equality_constraints, params)
     return final_constraints
 
@@ -202,7 +208,7 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
     else:
         assert not params_subset[
             "__fixed__"
-        ].any(), "Fixed parameters are not allowed for covariance or sdcorr containt."
+        ].any(), "Fixed parameters are not allowed for covariance or sdcorr constraint."
         case = "all_free"
 
     return case
@@ -282,39 +288,104 @@ def _check_compatibility_of_constraints(constraints, params):
         params (pd.DataFrame): see :ref:`params_df`.
 
     """
-    params = params.copy()
-    constr_types = [
-        "covariance",
-        "sdcorr",
-        "sum",
-        "probability",
-        "increasing",
-        "equality",
-    ]
+    _check_no_overlapping_transforming_constraints(constraints, params)
+    _check_no_invalid_equality_constraints(constraints, params)
+    _check_fixes(params)
 
-    for typ in constr_types:
-        params["has_" + typ] = False
+
+def _check_no_overlapping_transforming_constraints(constraints, params):
+    counter = pd.Series(index=params.index, data=0, name="constraint_type")
+
+    transforming_types = ["covariance", "sdcorr", "sum", "probability", "increasing"]
 
     for constr in constraints:
-        params.loc[constr["index"], "has_" + constr["type"]] = True
+        if constr["type"] in transforming_types:
+            counter.loc[constr["index"]] += 1
 
-    params["has_lower"] = params["lower"] != -np.inf
-    params["has_upper"] = params["upper"] != np.inf
+    invalid = counter >= 2
 
-    invalid_cov = (
-        "has_covariance & (has_equality | has_sum | has_increasing | has_probability | "
-        "has_sdcorr)"
-    )
+    if invalid.any() > 0:
+        raise ValueError("Overlapping constraints for {}".format(params.loc[invalid]))
 
-    invalid_sdcorr = (
-        "has_sdcorr & (has_equality | has_sum | has_increasing | has_probability | "
-        "has_covariance)"
-    )
 
-    assert (
-        len(params.query(invalid_cov)) == 0
-    ), "covariance constraints are not compatible with other constraints"
+def _check_no_invalid_equality_constraints(constraints, params):
+    """Check that equality constraints are compatible with other constraints.
 
-    assert (
-        len(params.query(invalid_sdcorr)) == 0
-    ), "sdcorr constraints are not compatible with other constraints"
+    In general, we don't allow for equality constraints on parameters that have
+    constraints that require reparametrizations. The only exception is when a set of
+    parameters is pairwise equal to another set of parameters that has the same
+    constraint.
+
+    In the long run we could allow some more equality constraints for sum and
+    probability constraints bit this is relatively complex and probably rarely
+    needed.
+
+    """
+    helper = pd.DataFrame(index=params.index)
+    helper["eq_id"] = -1
+    helper["constraint_type"] = "None"
+
+    transforming_types = ["covariance", "sdcorr", "probability", "increasing"]
+    sums = []
+    for constr in constraints:
+        if constr["type"] == "sum":
+            sums.append("sum_" + str(constr["value"]))
+    transforming_types += sums
+
+    extended_constraints = []
+    for constr in constraints:
+        if constr["type"] == "sum":
+            new_constr = constr.copy()
+            new_constr["type"] = "sum_" + str(constr["value"])
+            extended_constraints.append(new_constr)
+        else:
+            extended_constraints.append(constr)
+
+    equality_constraints = [c for c in constraints if c["type"] == "equality"]
+
+    for i, constr in enumerate(equality_constraints):
+        if constr["type"] == "equality":
+            helper.loc[constr["index"], "eq_id"] = i
+
+    for constr in constraints:
+        if constr["type"] in transforming_types:
+            helper.loc[constr["index"], "constraint_type"] = constr["type"]
+
+    for constr in equality_constraints:
+        other_constraint_types = helper.loc[constr["index"], "constraint_type"].unique()
+
+        if len(other_constraint_types) > 1:
+            raise ValueError("Incompatible equality constraint.")
+        other_type = other_constraint_types[0]
+        if other_type != "None":
+            other_constraints = [c for c in constraints if c["type"] == other_type]
+
+            relevant_others = []
+            for ind_tup in constr["index"]:
+                for other_constraint in other_constraints:
+                    if ind_tup in other_constraint["index"]:
+                        relevant_others.append(other_constraint)
+
+            first_eq_ids = helper.loc[relevant_others[0]["index"], "eq_id"]
+            if len(first_eq_ids.unique()) != len(first_eq_ids):
+                raise ValueError("Incompatible equality constraint.")
+
+            for rel in relevant_others:
+                eq_ids = helper.loc[rel["index"], "eq_id"]
+
+                if not (eq_ids.to_numpy() == first_eq_ids.to_numpy()).all():
+                    raise ValueError("Incompatible equality constraint.")
+
+
+def _check_fixes(params):
+    fixed = params.query("__fixed__")
+    for p in fixed.index:
+        if not pd.isnull(params.loc[p, "value"]):
+            fvalue = params.loc[p, "__fixed_value__"]
+            value = params.loc[p, "value"]
+            if fvalue != value:
+                warnings.warn(
+                    "Parameter {} is fixed to {} but value column is {}".format(
+                        p, fvalue, value
+                    )
+                )

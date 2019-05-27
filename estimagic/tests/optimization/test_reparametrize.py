@@ -3,6 +3,7 @@ from os import path
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 from pandas.testing import assert_series_equal
 
 from estimagic.optimization.process_constraints import process_constraints
@@ -38,8 +39,12 @@ for i in range(3):
 def constraints(params):
     constr = [
         {"loc": ("c", "c2"), "type": "probability"},
-        {"loc": [("a", "a", "0"), ("a", "a", "2"), ("a", "a", "4")], "type": "fixed"},
-        {"loc": ("e", "off"), "type": "fixed"},
+        {
+            "loc": [("a", "a", "0"), ("a", "a", "2"), ("a", "a", "4")],
+            "type": "fixed",
+            "value": [0.1, 0.3, 0.5],
+        },
+        {"loc": ("e", "off"), "type": "fixed", "value": 0},
         {"loc": "d", "type": "increasing"},
         {"loc": "e", "type": "covariance"},
         {"loc": "f", "type": "covariance"},
@@ -48,26 +53,30 @@ def constraints(params):
         {"loc": "i", "type": "equality"},
         {"query": 'subcategory == "j1" | subcategory == "i1"', "type": "equality"},
         {"loc": "k", "type": "sdcorr"},
+        {"loc": "l", "type": "covariance"},
+        {"locs": ["f", "l"], "type": "pairwise_equality"},
     ]
     constr = process_constraints(constr, params)
     return constr
 
 
 internal_categories = list("abcdefghik")
-external_categories = internal_categories + ["j1", "j2"]
+external_categories = internal_categories + ["j1", "j2", "l"]
 
 to_test = []
 for ext, int_ in zip(external, internal):
-    for col in ["value", "lower", "upper"]:
-        for category in internal_categories:
-            to_test.append((ext, int_, col, category))
+    for category in internal_categories:
+        to_test.append((ext, int_, category))
 
 
-@pytest.mark.parametrize("params, expected_internal, col, category", to_test)
-def test_reparametrize_to_internal(params, expected_internal, col, category):
+@pytest.mark.parametrize("params, expected_internal, category", to_test)
+def test_reparametrize_to_internal(params, expected_internal, category):
     constr = constraints(params)
+    cols = ["value", "lower", "upper"]
     calculated = reparametrize_to_internal(params, constr)
-    assert_series_equal(calculated[col][category], expected_internal[col][category])
+    assert_frame_equal(
+        calculated.loc[category, cols], expected_internal.loc[category, cols]
+    )
 
 
 to_test = []

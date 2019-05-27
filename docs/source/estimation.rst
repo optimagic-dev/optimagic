@@ -96,10 +96,13 @@ a dictionary. The dictionary must contain the following entries:
       particular value. The value has to be specified in the constraints
       dictionary.
     - 'pairwise_equality': Two sets of parameters are pairwise equal. In this
-      the constraint dictionary has to contain the keys 'loc1' or 'query1'
-      and 'loc2' or 'query2'.
-    - 'fixed': A set of parameters is fixed to the value in the 'value' column
-      of the params_df.
+      the constraint dictionary has to contain the keys `locs` and `queries`
+      instead of `loc` and `query`. Both are lists of arbitrary length
+      and each element in the list hast to be a valid argument to
+      `DataFrame.loc[]` or `DataFrame.query()`, respectively. Pairwise
+      equality constraints are just syntactic sugar and are converted
+      to normal equality constraints internally.
+    - 'fixed': A set of parameters is fixed to a constraint['value'].
 
 
 Lower and upper bounds are specified in :ref:`params_df`.

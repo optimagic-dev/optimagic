@@ -15,10 +15,9 @@ expected1 = {"index": [(0, "a"), (0, "b"), (0, "c")]}
 constr2 = {"loc": 2, "type": "fixed"}
 expected2 = {"index": [(2, "a"), (2, "b")]}
 
-constr3 = {"loc1": 0, "loc2": 1, "type": "pairwise_equality"}
+constr3 = {"locs": [0, 1], "type": "pairwise_equality"}
 expected3 = {
-    "index1": [(0, "a"), (0, "b"), (0, "c")],
-    "index2": [(1, "f"), (1, "e"), (1, "d")],
+    "indices": [[(0, "a"), (0, "b"), (0, "c")], [(1, "f"), (1, "e"), (1, "d")]]
 }
 
 test_cases = [(constr1, expected1), (constr2, expected2), (constr3, expected3)]
@@ -45,14 +44,16 @@ def test_process_selectors(constraint, expected):
 
     calculated = _process_selectors([constraint], params_df)[0]
 
-    if constraint["type"] == "pairwise_equality":
-        suffixes = [1, 2]
+    if constraint["type"] != "pairwise_equality":
+        indices = [calculated["index"]]
+        expected_indices = [expected["index"]]
     else:
-        suffixes = [""]
+        indices = calculated["indices"]
+        expected_indices = expected["indices"]
 
-    for suf in suffixes:
-        ind_tuples = [tup for tup in calculated[f"index{suf}"]]
-        assert ind_tuples == expected[f"index{suf}"]
+    for calc, exp in zip(indices, expected_indices):
+        for ind_tup1, ind_tup2 in zip(calc, exp):
+            assert ind_tup1 == ind_tup2
 
 
 def test_replace_pairwise_equality_by_equality():
@@ -60,8 +61,10 @@ def test_replace_pairwise_equality_by_equality():
     df = pd.DataFrame(index=pd.MultiIndex.from_tuples(ind_tups))
 
     constr = {
-        "index1": pd.MultiIndex.from_tuples(ind_tups[:2]),
-        "index2": pd.MultiIndex.from_tuples(ind_tups[2:]),
+        "indices": [
+            pd.MultiIndex.from_tuples(ind_tups[:2]),
+            pd.MultiIndex.from_tuples(ind_tups[2:]),
+        ],
         "type": "pairwise_equality",
     }
 

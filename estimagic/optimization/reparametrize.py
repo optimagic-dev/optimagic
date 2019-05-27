@@ -35,6 +35,7 @@ def reparametrize_to_internal(params, constraints):
     fixed_constraints = [c for c in constraints if c["type"] == "fixed"]
     for constr in fixed_constraints:
         internal.loc[constr["index"], "__fixed__"] = True
+        internal.loc[constr["index"], "value"] = constr["value"]
 
     equality_constraints = [c for c in constraints if c["type"] == "equality"]
     for constr in equality_constraints:
@@ -159,6 +160,12 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
     params_sr.update(original_params.loc[fixed_index, "value"])
 
     for constr in constraints:
+        if constr["type"] == "equality":
+            params_subset = reindexed.loc[constr["index"]]
+            reindexed.update(_equality_from_internal(params_subset))
+            params_sr.update(_equality_from_internal(params_subset))
+
+    for constr in constraints:
         params_subset = reindexed.loc[constr["index"]]
         if constr["type"] in ["covariance", "sdcorr"]:
             params_sr.update(
@@ -170,9 +177,6 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
             params_sr.update(_probability_from_internal(params_subset))
         elif constr["type"] == "increasing":
             params_sr.update(_increasing_from_internal(params_subset))
-        elif constr["type"] == "equality":
-            params_sr.update(_equality_from_internal(params_subset))
-
     return params_sr
 
 
@@ -257,6 +261,10 @@ def _covariance_from_internal(params_subset, case, type_):
         res (Series): Series with lower triangular elements of a covariance matrix
 
     """
+    print("\n\n")
+    print(params_subset)
+    print(type_)
+    print("\n\n")
     res = params_subset.copy(deep=True)
     if case == "all_free":
         dim = number_of_triangular_elements_to_dimension(len(params_subset))
