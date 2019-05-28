@@ -30,7 +30,6 @@ def reparametrize_to_internal(params, constraints):
     """
     internal = params.copy()
 
-    # handle explicit fixes
     internal["_fixed"] = False
     fixed_constraints = [c for c in constraints if c["type"] == "fixed"]
     for constr in fixed_constraints:
@@ -41,7 +40,7 @@ def reparametrize_to_internal(params, constraints):
         params_subset = internal.loc[constr["index"]]
         if constr["type"] == "equality":
             internal.update(_equality_to_internal(internal.loc[constr["index"]]))
-        if constr["type"] in ["covariance", "sdcorr"]:
+        elif constr["type"] in ["covariance", "sdcorr"]:
             internal.update(
                 _covariance_to_internal(params_subset, constr["case"], constr["type"])
             )
@@ -51,6 +50,10 @@ def reparametrize_to_internal(params, constraints):
             internal.update(_probability_to_internal(params_subset))
         elif constr["type"] == "increasing":
             internal.update(_increasing_to_internal(params_subset))
+        elif constr["type"] == "fixed":
+            pass
+        else:
+            raise ValueError("Invalid constraint type: {}".format(constr["type"]))
 
     internal["_fixed"] = internal["_fixed"].astype(bool)
     assert (internal["lower"] < internal["upper"]).all(), "lower must be < upper."
