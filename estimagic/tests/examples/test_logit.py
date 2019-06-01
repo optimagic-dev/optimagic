@@ -1,13 +1,15 @@
 """Tests for the logit example."""
 import os
 import pickle
+
 import pytest
 from numpy.testing import assert_array_almost_equal
+
+from estimagic.differentiation.gradient import gradient
+from estimagic.differentiation.hessian import hessian
+from estimagic.differentiation.jacobian import jacobian
 from estimagic.examples.logit import logit_loglike
 from estimagic.examples.logit import logit_loglikeobs
-from estimagic.differentiation.gradient import gradient
-from estimagic.differentiation.jacobian import jacobian
-from estimagic.differentiation.hessian import hessian
 
 
 @pytest.fixture()
@@ -125,7 +127,8 @@ def test_jacobian_central(statsmodels_fixtures):
             method="central",
             func_args=[fix["y"], fix["x"]],
         ),
-        fix["jacobian"], decimal=8
+        fix["jacobian"],
+        decimal=8,
     )
 
 
@@ -139,7 +142,8 @@ def test_jacobian_central_richardson(statsmodels_fixtures):
             extrapolant="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
-        fix["jacobian"], decimal=7
+        fix["jacobian"],
+        decimal=7,
     )
 
 
@@ -153,7 +157,6 @@ def test_jacobian_forward(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["jacobian"],
-
     )
 
 
@@ -167,7 +170,8 @@ def test_jacobian_forward_richardson(statsmodels_fixtures):
             extrapolant="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
-        fix["jacobian"], decimal=7
+        fix["jacobian"],
+        decimal=7,
     )
 
 
@@ -209,7 +213,7 @@ def test_hessian_central(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["hessian"],
-        decimal=5,
+        decimal=4,
     )
 
 
@@ -248,9 +252,11 @@ def test_hessian_central_richardson(statsmodels_fixtures):
             logit_loglike,
             fix["params"],
             method="central",
-            extrapolant='richardson',
+            extrapolant="richardson",
             func_args=[fix["y"], fix["x"]],
-        ), fix["hessian"], decimal=4
+        ),
+        fix["hessian"],
+        decimal=4,
     )
 
 
@@ -261,7 +267,7 @@ def test_hessian_backward_richardson(statsmodels_fixtures):
             logit_loglike,
             fix["params"],
             method="backward",
-            extrapolant='richardson',
+            extrapolant="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["hessian"],
@@ -276,7 +282,7 @@ def test_hessian_forward_richardson(statsmodels_fixtures):
             logit_loglike,
             fix["params"],
             method="forward",
-            extrapolant='richardson',
+            extrapolant="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["hessian"],

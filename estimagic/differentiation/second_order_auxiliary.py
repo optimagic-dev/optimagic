@@ -2,12 +2,11 @@
 This module contains functions for the calculation of a hessian matrix. The functions
 call two times the one step differentiation functions.
 """
-
 import numpy as np
 
-from estimagic.differentiation.first_order_auxiliary import forward
 from estimagic.differentiation.first_order_auxiliary import backward
 from estimagic.differentiation.first_order_auxiliary import central
+from estimagic.differentiation.first_order_auxiliary import forward
 from estimagic.differentiation.first_order_auxiliary import richardson
 
 
@@ -109,10 +108,11 @@ def hess_richardson(
     if method == "central":
         pol_factors = (pol_plus - pol_minus) / 2
         f_diff = (pol_factors[2] / 4 - 10 * pol_factors[1] + 64 * pol_factors[0]) / 45
-    elif method == "forward":
-        pol_factors = pol_plus - f_i_x0
-        f_diff = (pol_factors[2] / 4 - 3 * pol_factors[1] + 8 * pol_factors[0]) / 3
     else:
-        pol_factors = f_i_x0 - pol_minus
-        f_diff = (pol_factors[2] / 4 - 3 * pol_factors[1] + 8 * pol_factors[0]) / 3
+        if method == "forward":
+            pol_factors = pol_plus - f_i_x0
+        else:
+            pol_factors = f_i_x0 - pol_minus
+        f_diff = (32 * pol_factors[0] - 12 * pol_factors[1] + pol_factors[2]) / 12
+
     return f_diff
