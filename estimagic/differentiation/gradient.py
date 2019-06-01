@@ -1,8 +1,9 @@
-import pandas as pd
 import numpy as np
-from estimagic.differentiation.first_order_auxiliary import forward
+import pandas as pd
+
 from estimagic.differentiation.first_order_auxiliary import backward
 from estimagic.differentiation.first_order_auxiliary import central
+from estimagic.differentiation.first_order_auxiliary import forward
 from estimagic.differentiation.first_order_auxiliary import richardson
 
 
@@ -14,7 +15,8 @@ def gradient(
     func_args=None,
     func_kwargs=None,
 ):
-    """Calculate the gradient of *func*.
+    """
+    Calculate the gradient of *func*.
 
     Args:
         func (function): A function that maps params_sr into a float.
@@ -24,6 +26,7 @@ def gradient(
         extrapolant (string): A variable indicating the use of a extrapolation method.
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
+
     Returns:
         Series: The index is the index of params_sr.
 

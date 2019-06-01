@@ -1,8 +1,9 @@
-import pandas as pd
 import numpy as np
-from estimagic.differentiation.second_order_auxiliary import forward_hess
+import pandas as pd
+
 from estimagic.differentiation.second_order_auxiliary import backward_hess
 from estimagic.differentiation.second_order_auxiliary import central_hess
+from estimagic.differentiation.second_order_auxiliary import forward_hess
 from estimagic.differentiation.second_order_auxiliary import hess_richardson
 
 
@@ -14,16 +15,17 @@ def hessian(
     func_args=None,
     func_kwargs=None,
 ):
-    """Calculate the hessian of *func*.
+    """
+    Calculate the hessian of *func*.
 
     Args:
         func (function): A function that maps params_sr into a float.
-        params_sr (Series): see :ref:`parmas_df` for details.
-        method (str): The method for the computation of the derivative. Default is
-                      central as it gives the highest accuracy.
-        extrapolant (str): A variable indicating the use of a extrapolation method.
+        params_sr (Series): see :ref:`parmas_df`
         func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
+        extrapolant (string): A variable indicating the use of a extrapolation method.
+        method (string): The method for the computation of the derivative. Default is
+                         central as it gives the highest accuracy.
 
     Returns:
         DataFrame: The index and columns are the index of params_sr.

@@ -1,8 +1,9 @@
-import pandas as pd
 import numpy as np
-from estimagic.differentiation.first_order_auxiliary import forward
+import pandas as pd
+
 from estimagic.differentiation.first_order_auxiliary import backward
 from estimagic.differentiation.first_order_auxiliary import central
+from estimagic.differentiation.first_order_auxiliary import forward
 from estimagic.differentiation.first_order_auxiliary import richardson
 
 
@@ -14,17 +15,19 @@ def jacobian(
     func_args=None,
     func_kwargs=None,
 ):
-    """Calculate the jacobian of *func*.
+    """
+    Calculate the jacobian of *func*.
 
     Args:
         func (function): A function that maps params_sr into a numpy array
-            or pandas Series.
+                        or pandas Series.
+
         params_sr (Series): see :ref:`parmas_df`
-        method (string): The method for the computation of the derivative. Default is
-                         central as it gives the highest accuracy.
-        extrapolant (string): A variable indicating the use of a extrapolation method.
         func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
+        extrapolant (string): A variable indicating the use of a extrapolation method.
+        method (string): The method for the computation of the derivative. Default is
+                         central as it gives the highest accuracy.
 
     Returns:
         DataFrame: If func returns a Series, the index is the index of this Series or
