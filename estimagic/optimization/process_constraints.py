@@ -200,7 +200,7 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
     off_diagonal_fixed = bool(fixed_mat[np.tril_indices(dim, k=-1)].all())
     all_fixed = bool(fixed_mat.all())
 
-    if all_fixed is True:
+    if all_fixed:
         case = "all_fixed"
     elif off_diagonal_fixed and off_diagonal_zero:
         case = "uncorrelated"

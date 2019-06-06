@@ -149,9 +149,9 @@ def minimize(
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
-    queue = Queue() if dashboard is True else None
-    start_signal = Queue() if dashboard is True else None
-    if dashboard is True:
+    queue = Queue() if dashboard else None
+    start_signal = Queue() if dashboard else None
+    if dashboard:
         # later only the parameter series can be supplied
         # but for the setup of the dashboard we want the whole DataFrame
         queue.put(QueueEntry(params=params, fitness=fitness_eval, still_running=True))
@@ -169,7 +169,7 @@ def minimize(
         )
         server_thread.start()
 
-    if dashboard is True:
+    if dashboard:
         # wait for server_thread to give start signal
         while start_signal.qsize() == 0:
             sleep(0.01)
@@ -187,7 +187,7 @@ def minimize(
         queue=queue,
     )
 
-    if dashboard is True:
+    if dashboard:
         queue.put(
             QueueEntry(params=result[1], fitness=result[0]["f"], still_running=False)
         )

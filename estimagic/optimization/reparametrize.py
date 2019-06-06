@@ -56,12 +56,12 @@ def reparametrize_to_internal(params, constraints):
             raise ValueError("Invalid constraint type: {}".format(constr["type"]))
 
     internal["_fixed"] = internal["_fixed"].astype(bool)
-    assert (internal["lower"] < internal["upper"]).all(), "lower must be < upper."
+    assert internal["lower"].lt(internal["upper"]).all(), "lower must be < upper."
     internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
     internal.drop(["_fixed"], axis=1, inplace=True)
 
-    assert (internal["value"] >= internal["lower"]).all(), "Invalid lower bound."
-    assert (internal["value"] <= internal["upper"]).all(), "Invalid upper bound."
+    assert internal["value"].ge(internal["lower"]).all(), "Invalid lower bound."
+    assert internal["value"].le(internal["upper"]).all(), "Invalid upper bound."
 
     return internal
 
