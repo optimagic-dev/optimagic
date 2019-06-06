@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from estimagic.optimization.check_constraints import check_compatibility_of_constraints
+from estimagic.optimization.reparametrize import apply_fixes_to_external_params
 from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
@@ -21,28 +22,22 @@ def process_constraints(constraints, params):
         processed (list): the processed constraints.
 
     """
+
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
-
-        fixed = pd.DataFrame(index=params.index)
-        fixed["bool"] = False
-        fixed["value"] = np.nan
-
+        # it is important to process selectors first
         constraints = _process_selectors(constraints, params)
+        fixed = apply_fixes_to_external_params(
+            params, [c for c in constraints if c["type"] == "fixed"]
+        )
         constraints = _replace_pairwise_equality_by_equality(constraints, params)
         constraints = _consolidate_equality_constraints(constraints, params)
-        constraints = sorted(constraints, key=_sort_key)
 
         processed_constraints = []
         for constr in constraints:
-            if constr["type"] == "fixed":
-                fixed.loc[constr["index"], "bool"] = True
-                fixed.loc[constr["index"], "value"] = constr["value"]
-                processed_constraints.append(constr)
-
-            elif constr["type"] == "covariance":
+            if constr["type"] == "covariance":
                 processed_constraints.append(
                     _process_cov_constraint(constr, params, fixed)
                 )
@@ -50,7 +45,13 @@ def process_constraints(constraints, params):
                 processed_constraints.append(
                     _process_sdcorr_constraint(constr, params, fixed)
                 )
-            elif constr["type"] in ["sum", "probability", "increasing", "equality"]:
+            elif constr["type"] in [
+                "fixed",
+                "sum",
+                "probability",
+                "increasing",
+                "equality",
+            ]:
                 processed_constraints.append(constr)
             else:
                 raise ValueError("Invalid constraint type {}".format(constr["type"]))
@@ -151,7 +152,7 @@ def _process_cov_constraint(constraint, params, fixed):
     params_subset = params.loc[constraint["index"]]
     fixed_subset = fixed.loc[constraint["index"]]
     value_mat = cov_params_to_matrix(params_subset["value"].to_numpy())
-    fixed_mat = cov_params_to_matrix(fixed_subset["bool"].to_numpy()).astype(bool)
+    fixed_mat = cov_params_to_matrix(fixed_subset["_fixed"].to_numpy()).astype(bool)
     new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
     return new_constr
 
@@ -173,7 +174,7 @@ def _process_sdcorr_constraint(constraint, params, fixed):
     params_subset = params.loc[constraint["index"]]
     value_mat = sdcorr_params_to_matrix(params_subset["value"].to_numpy())
     dim = len(value_mat)
-    fixed_vec = fixed.loc[constraint["index"], "bool"].to_numpy().astype(int)
+    fixed_vec = fixed.loc[constraint["index"], "_fixed"].to_numpy().astype(int)
     fixed_diag = np.diag(fixed_vec[:dim])
     fixed_lower = np.zeros((dim, dim), dtype=int)
     fixed_lower[np.tril_indices(dim, k=-1)] = fixed_vec[dim:]

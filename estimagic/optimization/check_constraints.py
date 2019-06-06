@@ -9,7 +9,7 @@ def check_compatibility_of_constraints(constraints, params, fixed):
     Args:
         constraint (dict)
         params (pd.DataFrame): see :ref:`params_df`.
-        fixed (pd.DataFrame): Same index as params. The column 'bool' indicates
+        fixed (pd.DataFrame): Same index as params. The column '_fixed' indicates
             if a parameter is fixed. The column 'value' indicates the value to which
             it is fixed.
 
@@ -110,7 +110,7 @@ def _check_fixes(params, fixed):
     a different non-nan value in params.
 
     """
-    fixed = fixed.query("bool")
+    fixed = fixed.query("_fixed")
     for p in fixed.index:
         if not pd.isnull(params.loc[p, "value"]):
             fvalue = fixed.loc[p, "value"]

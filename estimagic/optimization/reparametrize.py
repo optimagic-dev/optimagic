@@ -28,15 +28,11 @@ def reparametrize_to_internal(params, constraints):
         internal (DataFrame): See :ref:`params_df`.
 
     """
-    internal = params.copy()
+    fixes = [c for c in constraints if c["type"] == "fixed"]
+    other_constraints = [c for c in constraints if c["type"] != "fixed"]
+    internal = apply_fixes_to_external_params(params, fixes)
 
-    internal["_fixed"] = False
-    fixed_constraints = [c for c in constraints if c["type"] == "fixed"]
-    for constr in fixed_constraints:
-        internal.loc[constr["index"], "_fixed"] = True
-        internal.loc[constr["index"], "value"] = constr["value"]
-
-    for constr in constraints:
+    for constr in other_constraints:
         params_subset = internal.loc[constr["index"]]
         if constr["type"] == "equality":
             internal.update(_equality_to_internal(internal.loc[constr["index"]]))
@@ -50,23 +46,70 @@ def reparametrize_to_internal(params, constraints):
             internal.update(_probability_to_internal(params_subset))
         elif constr["type"] == "increasing":
             internal.update(_increasing_to_internal(params_subset))
-        elif constr["type"] == "fixed":
-            pass
         else:
             raise ValueError("Invalid constraint type: {}".format(constr["type"]))
 
     internal["_fixed"] = internal["_fixed"].astype(bool)
-    assert internal["lower"].lt(internal["upper"]).all(), "lower must be < upper."
     internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
-    internal.drop(["_fixed"], axis=1, inplace=True)
+    internal.drop(columns="_fixed", axis=1, inplace=True)
 
-    assert internal["value"].ge(internal["lower"]).all(), "Invalid lower bound."
-    assert internal["value"].le(internal["upper"]).all(), "Invalid upper bound."
+    invalid = internal.query("lower >= upper | lower > value | upper < value")
+    assert (
+        len(invalid) == 0
+    ), "Bounds and/or values are incompatible for parameters {}".format(invalid.index)
 
     return internal
 
 
-def make_start_params_helpers(params_index, extended_constraints):
+def reparametrize_from_internal(internal_params, constraints, original_params):
+    """Convert an internal_params DataFrame to a Series with valid parameters.
+
+    The parameter values are constructed from the 'value' column of internal_params.
+    The resulting Series has the same index as the non-internal params DataFrame.
+
+    Args:
+        internal_params (DataFrame): internal parameter DataFrame. See :ref:`params_df`.
+        constraints (list): see :ref:`constraints`. It is assumed that the constraints
+            are already processed.
+        original_params (DataFrame): A non-internal parameter DataFrame. This is used to
+            extract the original index and fixed values of parameters.
+
+    Returns:
+        params_sr (Series): See :ref:`params_df`.
+
+    """
+    external = internal_params.reindex(original_params.index)
+
+    # fixed parameters have to be written back before equality constraints are handled
+    fixed_index = external.query("value.isnull()", engine="python").index
+    external.update(original_params.loc[fixed_index, "value"])
+
+    # equality constraints have to be handled before all other constraints
+    for constr in constraints:
+        if constr["type"] == "equality":
+            external.update(_equality_from_internal(external.loc[constr["index"]]))
+
+    # order of the remaining constraints is irrelevant
+    for constr in constraints:
+        params_subset = external.loc[constr["index"]]
+        if constr["type"] in ["covariance", "sdcorr"]:
+            external.update(
+                _covariance_from_internal(params_subset, constr["case"], constr["type"])
+            )
+        elif constr["type"] == "sum":
+            external.update(_sum_from_internal(params_subset, constr["value"]))
+        elif constr["type"] == "probability":
+            external.update(_probability_from_internal(params_subset))
+        elif constr["type"] == "increasing":
+            external.update(_increasing_from_internal(params_subset))
+        elif constr["type"] in ["fixed", "equality"]:
+            pass
+        else:
+            raise ValueError("Invalid constraint type: {}".format(constr["type"]))
+    return external["value"]
+
+
+def make_start_params_helpers(params_index, constraints):
     """Helper DataFrames to generate start params.
 
     Construct a default params DataFrame and split it into free and parameters and
@@ -79,9 +122,7 @@ def make_start_params_helpers(params_index, extended_constraints):
     Args:
         params_index (DataFrame): The index of a non-internal parameter DataFrame.
             See :ref:`params_df`.
-        extended_constraints (list): A list of constraints where in addition to what
-            is described in :ref:`constraints` all fixed parameters also contain a
-            'value' entry.
+        constraints (list): A list of constraints
 
     Returns:
         free (DataFrame): free parameters
@@ -94,19 +135,15 @@ def make_start_params_helpers(params_index, extended_constraints):
     params["upper"] = np.inf
     params["value"] = np.nan
 
-    # handle explicit fixes
-    params["_fixed"] = False
-    fixed_constraints = [c for c in extended_constraints if c["type"] == "fixed"]
-    for constr in fixed_constraints:
-        params.loc[constr["index"], "_fixed"] = True
-        params.loc[constr["index"], "value"] = constr["value"]
+    fixes = [c for c in constraints if c["type"] == "fixed"]
+    params = apply_fixes_to_external_params(params, fixes)
 
-    equality_constraints = [c for c in extended_constraints if c["type"] == "equality"]
+    equality_constraints = [c for c in constraints if c["type"] == "equality"]
     for constr in equality_constraints:
         params.update(_equality_to_internal(params.loc[constr["index"]]))
 
-    free = params.query("~_fixed").drop("_fixed", axis=1)
-    fixed = params.query("_fixed").drop("_fixed", axis=1)
+    free = params.query("~_fixed").drop(columns="_fixed")
+    fixed = params.query("_fixed").drop(columns="_fixed")
     return free, fixed
 
 
@@ -133,52 +170,6 @@ def get_start_params_from_helpers(free, fixed, constraints, params_index):
         assert len(values) == 1, "Too many values."
         params.loc[constr["index"]] = values[0]
     return params
-
-
-def reparametrize_from_internal(internal_params, constraints, original_params):
-    """Convert an internal_params DataFrame to a Series with valid parameters.
-
-    The parameter values are constructed from the 'value' column of internal_params.
-    The resulting Series has the same index as the non-internal params DataFrame.
-
-    Args:
-        internal_params (DataFrame): internal parameter DataFrame. See :ref:`params_df`.
-        constraints (list): see :ref:`constraints`. It is assumed that the constraints
-            are already processed.
-        original_params (DataFrame): A non-internal parameter DataFrame. This is used to
-            extract the original index and fixed values of parameters.
-
-    Returns:
-        params_sr (Series): See :ref:`params_df`.
-
-    """
-    reindexed = internal_params.reindex(original_params.index)
-    params_sr = reindexed["value"].copy()
-    fixed_index = params_sr[params_sr.isnull()].index
-
-    # writing the fixed parameters back has to be done before all other constraints
-    # are handled!
-    params_sr.update(original_params.loc[fixed_index, "value"])
-
-    for constr in constraints:
-        if constr["type"] == "equality":
-            params_subset = reindexed.loc[constr["index"]]
-            reindexed.update(_equality_from_internal(params_subset))
-            params_sr.update(_equality_from_internal(params_subset))
-
-    for constr in constraints:
-        params_subset = reindexed.loc[constr["index"]]
-        if constr["type"] in ["covariance", "sdcorr"]:
-            params_sr.update(
-                _covariance_from_internal(params_subset, constr["case"], constr["type"])
-            )
-        elif constr["type"] == "sum":
-            params_sr.update(_sum_from_internal(params_subset, constr["value"]))
-        elif constr["type"] == "probability":
-            params_sr.update(_probability_from_internal(params_subset))
-        elif constr["type"] == "increasing":
-            params_sr.update(_increasing_from_internal(params_subset))
-    return params_sr
 
 
 def _covariance_to_internal(params_subset, case, type_):
@@ -472,3 +463,15 @@ def _equality_from_internal(params_subset):
     all_others = params_subset.index[1:]
     res.loc[all_others, "value"] = res.loc[first, "value"]
     return res["value"]
+
+
+def apply_fixes_to_external_params(params, fixes):
+    params = params.copy()
+    params["_fixed"] = False
+    for fix in fixes:
+        assert fix["type"] == "fixed", "Invalid constraint of type {} in fixes.".format(
+            fix["type"]
+        )
+        params.loc[fix["index"], "_fixed"] = True
+        params.loc[fix["index"], "value"] = fix["value"]
+    return params

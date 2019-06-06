@@ -13,6 +13,7 @@ from estimagic.optimization.reparametrize import reparametrize_to_internal
 dirname = path.dirname(path.abspath(__file__))
 params_fixture = pd.read_csv(path.join(dirname, "fixtures/reparametrize_fixtures.csv"))
 params_fixture.set_index(["category", "subcategory", "name"], inplace=True)
+params_fixture.sort_index()
 for col in ["lower", "internal_lower"]:
     params_fixture[col].fillna(-np.inf, inplace=True)
 for col in ["upper", "internal_upper"]:
@@ -29,7 +30,7 @@ for i in range(3):
     int_ = params_fixture.copy(deep=True)
     int_.rename(columns={"internal_value{}".format(i): "value"}, inplace=True)
     int_.dropna(subset=["value"], inplace=True)
-    int_.drop(["lower", "upper"], axis=1, inplace=True)
+    int_.drop(columns=["lower", "upper"], inplace=True)
     int_.rename(
         columns={"internal_lower": "lower", "internal_upper": "upper"}, inplace=True
     )
