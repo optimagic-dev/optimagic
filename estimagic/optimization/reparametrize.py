@@ -49,6 +49,7 @@ def reparametrize_to_internal(params, constraints):
         else:
             raise ValueError("Invalid constraint type: {}".format(constr["type"]))
 
+    # It is a known bug that df.update changes some dtypes: https://tinyurl.com/y66hqxg2
     internal["_fixed"] = internal["_fixed"].astype(bool)
     internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
     internal.drop(columns="_fixed", axis=1, inplace=True)
@@ -131,9 +132,9 @@ def make_start_params_helpers(params_index, constraints):
 
     """
     params = pd.DataFrame(index=params_index)
+    params["value"] = np.nan
     params["lower"] = -np.inf
     params["upper"] = np.inf
-    params["value"] = np.nan
 
     fixes = [c for c in constraints if c["type"] == "fixed"]
     params = apply_fixes_to_external_params(params, fixes)
@@ -142,6 +143,8 @@ def make_start_params_helpers(params_index, constraints):
     for constr in equality_constraints:
         params.update(_equality_to_internal(params.loc[constr["index"]]))
 
+    # It is a known bug that df.update changes some dtypes: https://tinyurl.com/y66hqxg2
+    params["_fixed"] = params["_fixed"].astype(bool)
     free = params.query("~_fixed").drop(columns="_fixed")
     fixed = params.query("_fixed").drop(columns="_fixed")
     return free, fixed
@@ -168,7 +171,7 @@ def get_start_params_from_helpers(free, fixed, constraints, params_index):
         params_subset = params.loc[constr["index"]]
         values = params_subset["value"].unique()
         assert len(values) == 1, "Too many values."
-        params.loc[constr["index"]] = values[0]
+        params.loc[constr["index"], "value"] = values[0]
     return params
 
 
@@ -442,7 +445,6 @@ def _equality_to_internal(params_subset):
     res["lower"] = params_subset["lower"].max()
     res["upper"] = params_subset["upper"].min()
     assert len(params_subset["value"].unique()) == 1, "Equality constraint is violated."
-    assert res["_fixed"].dtype == bool
     return res
 
 
