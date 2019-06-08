@@ -1,3 +1,4 @@
+import warnings
 from os import path
 
 import numpy as np
@@ -15,7 +16,6 @@ from estimagic.optimization.reparametrize import reparametrize_to_internal
 dirname = path.dirname(path.abspath(__file__))
 params_fixture = pd.read_csv(path.join(dirname, "fixtures/reparametrize_fixtures.csv"))
 params_fixture.set_index(["category", "subcategory", "name"], inplace=True)
-params_fixture.sort_index()
 for col in ["lower", "internal_lower"]:
     params_fixture[col].fillna(-np.inf, inplace=True)
 for col in ["upper", "internal_upper"]:
@@ -76,10 +76,14 @@ for ext, int_ in zip(external, internal):
 def test_reparametrize_to_internal(params, expected_internal, category):
     constr = constraints(params)
     cols = ["value", "lower", "upper"]
-    calculated = reparametrize_to_internal(params, constr)
-    assert_frame_equal(
-        calculated.loc[category, cols], expected_internal.loc[category, cols]
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", message="indexing past lexsort depth may impact performance."
+        )
+        calculated = reparametrize_to_internal(params, constr)
+        assert_frame_equal(
+            calculated.loc[category, cols], expected_internal.loc[category, cols]
+        )
 
 
 to_test = []
@@ -91,8 +95,14 @@ for int_, ext in zip(internal, external):
 @pytest.mark.parametrize("internal, expected_external, category", to_test)
 def test_reparametrize_from_internal(internal, expected_external, category):
     constr = constraints(expected_external)
-    calculated = reparametrize_from_internal(internal, constr, expected_external)
-    assert_series_equal(calculated[category], expected_external.loc[category, "value"])
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", message="indexing past lexsort depth may impact performance."
+        )
+        calculated = reparametrize_from_internal(internal, constr, expected_external)
+        assert_series_equal(
+            calculated[category], expected_external.loc[category, "value"]
+        )
 
 
 @pytest.fixture
