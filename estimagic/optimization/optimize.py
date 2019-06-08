@@ -29,7 +29,7 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    dashboard=True,
+    dashboard=False,
     db_options=None,
 ):
     """
@@ -98,7 +98,7 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    dashboard=True,
+    dashboard=False,
     db_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
