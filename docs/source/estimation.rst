@@ -20,7 +20,7 @@ Below we describe some concepts a user has to understand in order to use the
 minimize function or any of the estimation functions.
 
 
-.. _params_df:
+.. _params:
 
 The params DataFrame
 --------------------
@@ -35,31 +35,28 @@ argument of any criterion function optimized with estimagic's :ref:`minimize`.
 
 It can have the following columns (most of them being optional)
 
-- 'value' (dtype=float): Start values for the optimization. If not provided,
-  start values based on constraints and other information in params are drawn
-  randomly. If provided, we ensure that these values    are taken as start
-  values for local optimizers and are in the initial population of genetic
-  algorithms or pseudo global optimizers.
-- 'lower' (dtype=float): Lower bounds enforced in optimization. Can take the
+- ``'value'`` (dtype=float): Start values for the optimization. This column is
+  not optional. These values are taken as start values for local optimizers
+  and are in the initial population of genetic algorithms or pseudo global
+  optimizers.
+- ``'lower'`` (dtype=float): Lower bounds enforced in optimization. Can take the
   values - np.inf or np.nan for unbounded parameters.
-- 'upper' (dtype=float): Upper bounds enforced in optimization. Can take the
+- ``'upper'`` (dtype=float): Upper bounds enforced in optimization. Can take the
   values np.inf or np.nan for unbounded parameters.
-- 'draw_lower' and 'draw_upper' (dtype=float): bounds used to randomly draw
+- ``'draw_lower'`` and ``'draw_upper'`` (dtype=float): bounds used to randomly draw
   parameters. They are ignored or only enforced approximately for some
   constrained parameters. These columns are required for genetic or pseudo
-  global optimizers or if 'value' is not provided.
-- 'fixed' (dtype=bool): Indicates if a parameter is fixed to value. If any
-  parameter is fixed, 'value' is required.
-- 'group' (dtype=str or None): Indicates in which group (if any)
+  global optimizers.
+- ``'group'`` (dtype=str or None): Indicates in which group (if any)
   a parameter's values will be plotted in the convergence tab of the dashboard.
   Parameters with value None are not plotted.
 
 It is important to distinguish three related but different concepts:
 
-- params_df: the DataFrame described above
-- params_sr: the 'value' column of params. This is the first argument of any
+- ``params_df``: the DataFrame described above, sometimes just called ``params``.
+- ``params_sr``: the ``'value'`` column of params. This is the first argument of any
   criterion function optimized with estimagic's minimize function.
-- internal_params: a reparametrized version of params that is only used
+- ``internal_params``: a reparametrized version of params that is only used
   internally in order to enforce some types of constraints during the
   optimization. It is often shorter than params and has a different index.
   Moreover, the columns for lower ad upper bounds might be differnet.
@@ -76,33 +73,49 @@ Specification of Constraints
 The user can specify a list with any number of constraints. Each constraint is
 a dictionary. The dictionary must contain the following entries:
 
-- 'loc' or 'query' but not both. This specifies to which subset of the
+- ``'loc'`` or ``'query'`` but not both. This specifies to which subset of the
   parameters the constraint applies. The value corresponding to 'loc' will be
   passed to df.loc and the value corresponding to 'query' will be passed to
   df.query so you can provide whatever is accepted by those methods.
-- 'type', which can take the following values:
-    - 'covariance': a set of parameters forms a valid (i.e. positive
+- ``'type'``, which can take the following values:
+    - ``'covariance'``: a set of parameters forms a valid (i.e. positive
       semi-definite) covariance matrix. This is not compatible with any other
       constraints on the involved parameters.
-    - 'sum': a set of parameters sums to a specified value. The last involved
+    - ``'sdcorr'``: the first part of a set of parameters are standard deviations,
+      the second part are the lower triangle (excluding the diagonal)
+      of a correlation matrix. All parameters together can be used to construct
+      a full covariance matrix but are more interpretable. This is not compatible
+      with any other type of constraints on the involved parameters.
+    - ``'sum'``: a set of parameters sums to a specified value. The last involved
       parameter can't have bounds. In this case the constraint dictionary also
       needs to contain a 'value' key.
-    - 'probability': a set of parameters is between 0 and 1 and sums to 1.
-    - 'increasing': a set of parameters is increasing. We check that the box
+    - ``'probability'``: a set of parameters is between 0 and 1 and sums to 1.
+    - ``'increasing'``: a set of parameters is increasing. We check that the box
       constraints are compatible with the order.
-    - 'equality': a set of parameters is restricted to be equal to a
+    - ``'equality'``: a set of parameters is restricted to be equal to a
       particular value. The value has to be specified in the constraints
       dictionary.
+    - ``'pairwise_equality'``: Two sets of parameters are pairwise equal. In this
+      the constraint dictionary has to contain the keys ``locs`` and ``queries``
+      instead of ``loc`` and ``query``. Both are lists of arbitrary length
+      and each element in the list hast to be a valid argument to
+      ``DataFrame.loc[]`` or ``DataFrame.query()``, respectively. Pairwise
+      equality constraints are just syntactic sugar and are converted
+      to normal equality constraints internally.
+    - ``'fixed'``: A set of parameters is fixed to some values. In this case
+      the constraints dictionary has to contain a ``'value'`` entry which can
+      be a scalar or an iterable of suitable length.
 
 
-Lower and upper bounds as well as fixed parameters are specified in
-:ref:`params_df`
+Lower and upper bounds are specified in :ref:`params`.
 
 The constraints are enforced by reparametrizations, additional bounds or
 additional fixed parameters. For details see :ref:`reparametrize`
 
 
-.. todo:: Implement a way to use nlopts and pygmo's general equality or inequality constraints for all algorithms that support this type of constraints.
+.. todo:: Implement a way to use nlopts and pygmo's general equality or
+  inequality constraints for all algorithms that support this type of
+  constraints.
 
 .. todo:: Find out if box constraints are implemented efficiently in pygmo
 
@@ -149,7 +162,9 @@ List of algorithms
 - nlopt_var1
 - nlopt_auglag
 - nlopt_auglag_eq
-
+- scipy_L-BFGS-B
+- scipy_TNC
+- scipy_SLSQP
 
 
 
