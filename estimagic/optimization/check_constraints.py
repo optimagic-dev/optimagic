@@ -45,10 +45,12 @@ def _check_no_overlapping_transforming_constraints(constraints, params):
         if constr["type"] in transforming_types:
             counter.loc[constr["index"]] += 1
 
-    invalid = counter >= 2
+    invalid = counter[counter.ge(2)]
 
-    if invalid.any() > 0:
-        raise ValueError("Overlapping constraints for {}".format(params.loc[invalid]))
+    if len(invalid) > 0:
+        raise ValueError(
+            "Overlapping constraints for {}".format(params.loc[invalid.index])
+        )
 
 
 def _check_no_invalid_equality_constraints(constraints, params):
