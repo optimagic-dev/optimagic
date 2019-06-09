@@ -8,7 +8,7 @@ def check_compatibility_of_constraints(constraints, params, fixed):
 
     Args:
         constraint (dict)
-        params (pd.DataFrame): see :ref:`params_df`.
+        params (pd.DataFrame): see :ref:`params`.
         fixed (pd.DataFrame): Same index as params. The column '_fixed' indicates
             if a parameter is fixed. The column 'value' indicates the value to which
             it is fixed.

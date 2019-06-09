@@ -41,7 +41,7 @@ def maximize(
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
@@ -109,7 +109,7 @@ def minimize(
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
@@ -221,10 +221,10 @@ def _minimize(
             additional keyword arguments for criterion
 
         params (pd.DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         internal_params (DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         constraints (list):
             list with constraint dictionaries. See for details.
@@ -395,8 +395,8 @@ def _process_results(res, params, internal_params, constraints, origin):
 
     Args:
         res: Result from numerical optimizer.
-        params (DataFrame): See :ref:`params_df`.
-        internal_params (DataFrame): See :ref:`params_df`.
+        params (DataFrame): See :ref:`params`.
+        internal_params (DataFrame): See :ref:`params`.
         constraints (list): constraints for the optimization
         origin (str): takes the values "pygmo", "nlopt", "scipy"
 

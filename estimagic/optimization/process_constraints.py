@@ -16,7 +16,7 @@ def process_constraints(constraints, params):
 
     Args:
         constraints (list): see :ref:`constraints`.
-        params (pd.DataFrame): see :ref:`params_df`.
+        params (pd.DataFrame): see :ref:`params`.
 
     Returns:
         processed (list): the processed constraints.
@@ -66,7 +66,7 @@ def _process_selectors(constraints, params):
 
     Args:
         constraints (list): see :ref:`constraints`.
-        params (pd.DataFrame): see :ref:`params_df`.
+        params (pd.DataFrame): see :ref:`params`.
 
     Returns:
         processed (list): The resulting constraint dictionaries contain a new entry
@@ -120,7 +120,7 @@ def _replace_pairwise_equality_by_equality(constraints, params):
     Args:
         constraints (list): list of constraints.
             It is assumed that the selectors in the constraints were already processed.
-        params (DataFrame): see :ref:`params_df` for details.
+        params (DataFrame): see :ref:`params` for details.
 
     Returns:
         constraints (list): equality constraints
@@ -141,7 +141,7 @@ def _process_cov_constraint(constraint, params, fixed):
 
     Args:
         constraint (dict)
-        params (pd.DataFrame): see :ref:`params_df`.
+        params (pd.DataFrame): see :ref:`params`.
 
     Returns:
         new_constr (dict): copy of *constraint* with a new entry called 'case',
@@ -162,7 +162,7 @@ def _process_sdcorr_constraint(constraint, params, fixed):
 
     Args:
         constraint (dict)
-        params (pd.DataFrame): see :ref:`params_df`.
+        params (pd.DataFrame): see :ref:`params`.
 
 
     Returns:
@@ -189,7 +189,7 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
     Args:
         value_mat (np.array): start parameters for the implied covariance matrix
         fixed_mat (np.array): which elements of the implied covariance matrix are fixed.
-        params_subset (DataFrame): relevant subset of a :ref:`params_df`.
+        params_subset (DataFrame): relevant subset of a :ref:`params`.
 
     Returns:
         case (str): takes the values 'all_fixed', 'uncorrelated', 'all_free'
@@ -228,7 +228,7 @@ def _consolidate_equality_constraints(constraints, params):
 
     Args:
         constraint (dict)
-        params (pd.DataFrame): see :ref:`params_df`.
+        params (pd.DataFrame): see :ref:`params`.
 
     Returns:
         consolidated (list): The consolidated equality constraints.

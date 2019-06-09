@@ -20,12 +20,12 @@ def reparametrize_to_internal(params, constraints):
     upper bounds.
 
     Args:
-        params (DataFrame): A non-internal parameter DataFrame. See :ref:`params_df`.
+        params (DataFrame): A non-internal parameter DataFrame. See :ref:`params`.
         constraints (list): See :ref:`constraints`. It is assumed that the constraints
             are already processed and sorted.
 
     Returns:
-        internal (DataFrame): See :ref:`params_df`.
+        internal (DataFrame): See :ref:`params`.
 
     """
     fixes = [c for c in constraints if c["type"] == "fixed"]
@@ -69,14 +69,14 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
     The resulting Series has the same index as the non-internal params DataFrame.
 
     Args:
-        internal_params (DataFrame): internal parameter DataFrame. See :ref:`params_df`.
+        internal_params (DataFrame): internal parameter DataFrame. See :ref:`params`.
         constraints (list): see :ref:`constraints`. It is assumed that the constraints
             are already processed.
         original_params (DataFrame): A non-internal parameter DataFrame. This is used to
             extract the original index and fixed values of parameters.
 
     Returns:
-        params_sr (Series): See :ref:`params_df`.
+        params_sr (Series): See :ref:`params`.
 
     """
     external = internal_params.reindex(original_params.index)
@@ -122,7 +122,7 @@ def make_start_params_helpers(params_index, constraints):
 
     Args:
         params_index (DataFrame): The index of a non-internal parameter DataFrame.
-            See :ref:`params_df`.
+            See :ref:`params`.
         constraints (list): A list of constraints
 
     Returns:
@@ -159,10 +159,10 @@ def get_start_params_from_helpers(free, fixed, constraints, params_index):
             constraints.
         constraints (list): list of constraints
         params_index (DataFrame): The index of a non-internal parameter DataFrame.
-            See :ref:`params_df`.
+            See :ref:`params`.
 
     Returns:
-        params (DataFrame): see :ref:`params_df`.
+        params (DataFrame): see :ref:`params`.
 
     """
     equality_constraints = [c for c in constraints if c["type"] == "equality"]

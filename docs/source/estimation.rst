@@ -20,7 +20,7 @@ Below we describe some concepts a user has to understand in order to use the
 minimize function or any of the estimation functions.
 
 
-.. _params_df:
+.. _params:
 
 The params DataFrame
 --------------------
@@ -107,7 +107,7 @@ a dictionary. The dictionary must contain the following entries:
       be a scalar or an iterable of suitable length.
 
 
-Lower and upper bounds are specified in :ref:`params_df`.
+Lower and upper bounds are specified in :ref:`params`.
 
 The constraints are enforced by reparametrizations, additional bounds or
 additional fixed parameters. For details see :ref:`reparametrize`
