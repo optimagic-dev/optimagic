@@ -4,6 +4,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
+from estimagic.optimization.process_constraints import apply_fixes_to_external_params
+from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.utilities import cov_matrix_to_params
 from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
 from estimagic.optimization.utilities import cov_params_to_matrix
@@ -136,6 +138,8 @@ def make_start_params_helpers(params_index, constraints):
     params["lower"] = -np.inf
     params["upper"] = np.inf
 
+    constraints = process_constraints(constraints, params)
+
     fixes = [c for c in constraints if c["type"] == "fixed"]
     params = apply_fixes_to_external_params(params, fixes)
 
@@ -165,7 +169,9 @@ def get_start_params_from_helpers(free, fixed, constraints, params_index):
         params (DataFrame): see :ref:`params`.
 
     """
-    equality_constraints = [c for c in constraints if c["type"] == "equality"]
+    fake_params = pd.DataFrame(index=params_index, columns=["value", "lower", "upper"])
+    processed_constraints = process_constraints(constraints, fake_params)
+    equality_constraints = [c for c in processed_constraints if c["type"] == "equality"]
     params = pd.concat([free, fixed], axis=0).loc[params_index]
     for constr in equality_constraints:
         params_subset = params.loc[constr["index"]]
@@ -465,15 +471,3 @@ def _equality_from_internal(params_subset):
     all_others = params_subset.index[1:]
     res.loc[all_others, "value"] = res.loc[first, "value"]
     return res["value"]
-
-
-def apply_fixes_to_external_params(params, fixes):
-    params = params.copy()
-    params["_fixed"] = False
-    for fix in fixes:
-        assert fix["type"] == "fixed", "Invalid constraint of type {} in fixes.".format(
-            fix["type"]
-        )
-        params.loc[fix["index"], "_fixed"] = True
-        params.loc[fix["index"], "value"] = fix["value"]
-    return params

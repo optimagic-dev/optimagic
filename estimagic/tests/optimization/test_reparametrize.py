@@ -113,11 +113,8 @@ def helpers_fixture():
     out["params_index"] = index
 
     out["constraints"] = [
-        {"index": ("b", 1), "type": "fixed", "value": 3},
-        {
-            "index": pd.MultiIndex.from_tuples([("a", 0), ("a", 1), ("a", 2)]),
-            "type": "equality",
-        },
+        {"loc": ("b", 1), "type": "fixed", "value": 3},
+        {"loc": [("a", 0), ("a", 1), ("a", 2)], "type": "equality"},
     ]
 
     out["free"] = pd.DataFrame(
