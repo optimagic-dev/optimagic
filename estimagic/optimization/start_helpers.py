@@ -69,7 +69,7 @@ def get_start_params_from_helpers(free, fixed, constraints, params_index):
     params = pd.concat([free, fixed], axis=0).loc[params_index]
     for constr in equality_constraints:
         params_subset = params.loc[constr["index"]]
-        values = params_subset["value"].unique()
+        values = list(params_subset["value"].value_counts(dropna=True).index)
         assert len(values) == 1, "Too many values."
         params.loc[constr["index"], "value"] = values[0]
     return params
