@@ -9,7 +9,7 @@ from time import sleep
 
 import numpy as np
 import pygmo as pg
-import scipy
+from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
@@ -146,7 +146,7 @@ def minimize(
 
     params = _process_params_df(params)
     fitness_eval = criterion(params["value"], *criterion_args, **criterion_kwargs)
-    constraints, params = process_constraints(constraints, params)
+    constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
     queue = Queue() if dashboard else None
@@ -270,7 +270,7 @@ def _minimize(
     elif origin == "scipy":
         bounds = _get_scipy_bounds(params)
         x0 = _x_from_params_df(params, constraints)
-        minimized = scipy.optimize.minimize(
+        minimized = scipy_minimize(
             internal_criterion, x0, method=algo_name, bounds=bounds
         )
         result = _process_results(
@@ -407,7 +407,7 @@ def _process_results(res, params, internal_params, constraints, origin):
     elif origin in ["pygmo", "nlopt"]:
         x = res.champion_x
         f = res.champion_f
-    params = _params_sr_from_x(x, internal_params, constraints, params)
+    params_sr = _params_sr_from_x(x, internal_params, constraints, params)
 
     if not isinstance(f, Number):
         if len(f) == 1:
@@ -415,5 +415,5 @@ def _process_results(res, params, internal_params, constraints, origin):
         else:
             f = list(f)
 
-    res_dict = {"x": params.to_numpy().tolist(), "internal_x": x.tolist(), "f": f}
+    res_dict = {"x": params_sr.to_numpy().tolist(), "internal_x": x.tolist(), "f": f}
     return res_dict, params
