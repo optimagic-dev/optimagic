@@ -1,3 +1,4 @@
+"""Check compatibility of constraints with each other and with bounds and fixes."""
 import warnings
 
 import pandas as pd
@@ -7,8 +8,11 @@ def check_compatibility_of_constraints(constraints, params, fixed):
     """Compatibility checks for constraints.
 
     Args:
-        constraint (dict)
+        constraints (list):
+            List with constraint dictionaries.
+
         params (pd.DataFrame): see :ref:`params`.
+
         fixed (pd.DataFrame): Same index as params. The column '_fixed' indicates
             if a parameter is fixed. The column 'value' indicates the value to which
             it is fixed.
@@ -20,6 +24,19 @@ def check_compatibility_of_constraints(constraints, params, fixed):
 
 
 def _check_no_overlapping_transforming_constraints(constraints, params):
+    """Check that there are no overlapping transforming constraints.
+
+    Transforming constraints are constraints that do not only fix a parameter but
+    require an actual transformation when converting between internal and external
+    parameter vectors.
+
+    Args:
+        constraints (list):
+            List with constraint dictionaries.
+
+        params (pd.DataFrame): see :ref:`params`.
+
+    """
     counter = pd.Series(index=params.index, data=0, name="constraint_type")
 
     transforming_types = ["covariance", "sdcorr", "sum", "probability", "increasing"]
@@ -45,6 +62,12 @@ def _check_no_invalid_equality_constraints(constraints, params):
     In the long run we could allow some more equality constraints for sum and
     probability constraints bit this is relatively complex and probably rarely
     needed.
+
+    Args:
+        constraints (list):
+            List with constraint dictionaries.
+
+        params (pd.DataFrame): see :ref:`params`.
 
     """
     helper = pd.DataFrame(index=params.index)
@@ -108,6 +131,10 @@ def _check_fixes(params, fixed):
 
     Warn the user if he fixes a parameter to a value even though that parameter has
     a different non-nan value in params.
+
+    Args:
+        params (pd.DataFrame): see :ref:`params`.
+        fixed (DataFrame): has the columns "_fixed" (bool) and "value" (float)
 
     """
     fixed = fixed.query("_fixed")
