@@ -84,7 +84,7 @@ def comparison_plot(
         # add scatterplot representing the parameter value
         point_estimate_glyph = param_group_plot.scatter(
             source=source,
-            x="value",
+            x="final_value",
             y="full_name",
             size=12,
             color="color",
@@ -108,13 +108,15 @@ def comparison_plot(
                 alpha=0.0,
                 selection_alpha=0.25,
                 nonselection_fill_alpha=0.0,
-                line_alpha=0.1,
+                line_alpha=0.0,
+                selection_line_alpha=0.5,
+                nonselection_line_alpha=0.0,
                 color="color",
                 selection_color="color",
                 nonselection_color="color",
             )
 
-        _add_hover_tool(param_group_plot, point_estimate_glyph)
+        _add_hover_tool(param_group_plot, point_estimate_glyph, df)
 
         _add_tap_tool(source, param_group_plot, point_estimate_glyph)
 
@@ -344,8 +346,19 @@ def _add_tap_tool(source, param_group_plot, point_estimate_glyph):
     param_group_plot.tools.append(tap)
 
 
-def _add_hover_tool(param_group_plot, point_estimate_glyph):
-    tooltips = [("parameter value", "@value"), ("model", "@model")]
+def _add_hover_tool(param_group_plot, point_estimate_glyph, df):
+    top_cols = ["model", "full_name", "start_value", "final_value"]
+    dont_display = ["color", "marker", "group", "name"]
+    cols_sorted_by_missing = (
+        (df.isnull().mean() + (df == None).mean())
+        .sort_values(ascending=True)
+        .index  # noqa
+    )
+    to_add = top_cols + [
+        x for x in cols_sorted_by_missing if x not in top_cols and x not in dont_display
+    ]
+
+    tooltips = [(col, "@" + col) for col in to_add]
     hover = HoverTool(renderers=[point_estimate_glyph], tooltips=tooltips)
     param_group_plot.tools.append(hover)
 
