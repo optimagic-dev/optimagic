@@ -8,8 +8,6 @@ from pandas.testing import assert_frame_equal
 from pandas.testing import assert_series_equal
 
 from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import get_start_params_from_helpers
-from estimagic.optimization.reparametrize import make_start_params_helpers
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 
@@ -103,51 +101,3 @@ def test_reparametrize_from_internal(internal, expected_external, category):
         assert_series_equal(
             calculated[category], expected_external.loc[category, "value"]
         )
-
-
-@pytest.fixture
-def helpers_fixture():
-    out = {}
-    ind_tups = [("a", 0), ("a", 1), ("a", 2), ("b", 1), ("b", 2)]
-    index = pd.MultiIndex.from_tuples(ind_tups)
-    out["params_index"] = index
-
-    out["constraints"] = [
-        {"index": ("b", 1), "type": "fixed", "value": 3},
-        {
-            "index": pd.MultiIndex.from_tuples([("a", 0), ("a", 1), ("a", 2)]),
-            "type": "equality",
-        },
-    ]
-
-    out["free"] = pd.DataFrame(
-        index=pd.MultiIndex.from_tuples([("a", 0), ("b", 2)]),
-        columns=["value", "lower", "upper"],
-        data=[[np.nan, -np.inf, np.inf]] * 2,
-    )
-
-    out["fixed"] = pd.DataFrame(
-        index=pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1)]),
-        columns=["value", "lower", "upper"],
-        data=[[np.nan, -np.inf, np.inf]] * 2 + [[3.0, -np.inf, np.inf]],
-    )
-    return out
-
-
-def test_make_start_params_helpers(helpers_fixture):
-    calculated_free, calculated_fixed = make_start_params_helpers(
-        helpers_fixture["params_index"], helpers_fixture["constraints"]
-    )
-    assert calculated_free.equals(helpers_fixture["free"])
-    assert calculated_fixed.equals(helpers_fixture["fixed"])
-
-
-def test_get_start_params_from_helpers(helpers_fixture):
-    calculated = get_start_params_from_helpers(**helpers_fixture)
-    row = [[np.nan, -np.inf, np.inf]]
-    expected = pd.DataFrame(
-        index=helpers_fixture["params_index"],
-        data=row * 3 + [[3.0, -np.inf, np.inf]] + row,
-        columns=["value", "lower", "upper"],
-    )
-    assert calculated.equals(expected)

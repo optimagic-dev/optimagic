@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from estimagic.optimization.check_constraints import check_compatibility_of_constraints
-from estimagic.optimization.reparametrize import apply_fixes_to_external_params
 from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
@@ -287,3 +286,15 @@ def _sort_key(x):
         return 1
     else:
         return 2
+
+
+def apply_fixes_to_external_params(params, fixes):
+    params = params.copy()
+    params["_fixed"] = False
+    for fix in fixes:
+        assert fix["type"] == "fixed", "Invalid constraint of type {} in fixes.".format(
+            fix["type"]
+        )
+        params.loc[fix["index"], "_fixed"] = True
+        params.loc[fix["index"], "value"] = fix["value"]
+    return params
