@@ -48,13 +48,11 @@ def make_start_params_helpers(params_index, constraints):
     return free, fixed
 
 
-def get_start_params_from_helpers(free, fixed, constraints, params_index):
+def get_start_params_from_helpers(free, constraints, params_index):
     """Construct a params_df from helper DataFrames.
 
     Args:
         free (DataFrame): free parameters
-        fixed (DataFrame): parameters that are fixed explicitly or due to equality
-            constraints.
         constraints (list): list of constraints
         params_index (DataFrame): The index of a non-internal parameter DataFrame.
             See :ref:`params`.
@@ -63,6 +61,7 @@ def get_start_params_from_helpers(free, fixed, constraints, params_index):
         params (DataFrame): see :ref:`params`.
 
     """
+    _, fixed = make_start_params_helpers(params_index, constraints)
     fake_params = pd.DataFrame(index=params_index, columns=["value", "lower", "upper"])
     processed_constraints = process_constraints(constraints, fake_params)
     equality_constraints = [c for c in processed_constraints if c["type"] == "equality"]
@@ -70,6 +69,6 @@ def get_start_params_from_helpers(free, fixed, constraints, params_index):
     for constr in equality_constraints:
         params_subset = params.loc[constr["index"]]
         values = list(params_subset["value"].value_counts(dropna=True).index)
-        assert len(values) == 1, "Too many values."
+        assert len(values) <= 1, "Too many values."
         params.loc[constr["index"], "value"] = values[0]
     return params

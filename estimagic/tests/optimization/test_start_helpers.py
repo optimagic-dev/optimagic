@@ -41,11 +41,14 @@ def test_make_start_params_helpers(helpers_fixture):
 
 
 def test_get_start_params_from_helpers(helpers_fixture):
+    helpers_fixture["free"].loc[("a", 0), "value"] = 2
+    helpers_fixture.pop("fixed")
     calculated = get_start_params_from_helpers(**helpers_fixture)
-    row = [[np.nan, -np.inf, np.inf]]
     expected = pd.DataFrame(
         index=helpers_fixture["params_index"],
-        data=row * 3 + [[3.0, -np.inf, np.inf]] + row,
+        data=[[2.0, -np.inf, np.inf]] * 3
+        + [[3.0, -np.inf, np.inf]]
+        + [[np.nan, -np.inf, np.inf]],
         columns=["value", "lower", "upper"],
     )
     assert calculated.equals(expected)
