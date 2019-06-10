@@ -48,8 +48,8 @@ def make_start_params_helpers(params_index, constraints):
     return free, fixed
 
 
-def get_start_params_from_helpers(free, constraints, params_index):
-    """Construct a params_df from helper DataFrames.
+def get_start_params_from_free_params(free, constraints, params_index):
+    """Construct a full params df from free parameters, constraints and the param_index.
 
     Args:
         free (DataFrame): free parameters

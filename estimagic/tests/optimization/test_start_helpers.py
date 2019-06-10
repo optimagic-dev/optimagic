@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from estimagic.optimization.start_helpers import get_start_params_from_helpers
+from estimagic.optimization.start_helpers import get_start_params_from_free_params
 from estimagic.optimization.start_helpers import make_start_params_helpers
 
 
@@ -40,10 +40,10 @@ def test_make_start_params_helpers(helpers_fixture):
     assert calculated_fixed.equals(helpers_fixture["fixed"])
 
 
-def test_get_start_params_from_helpers(helpers_fixture):
+def test_get_start_params_from_free_params(helpers_fixture):
     helpers_fixture["free"].loc[("a", 0), "value"] = 2
     helpers_fixture.pop("fixed")
-    calculated = get_start_params_from_helpers(**helpers_fixture)
+    calculated = get_start_params_from_free_params(**helpers_fixture)
     expected = pd.DataFrame(
         index=helpers_fixture["params_index"],
         data=[[2.0, -np.inf, np.inf]] * 3
