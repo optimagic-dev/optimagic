@@ -9,7 +9,7 @@ from time import sleep
 
 import numpy as np
 import pygmo as pg
-import scipy
+from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
@@ -146,7 +146,7 @@ def minimize(
 
     params = _process_params_df(params)
     fitness_eval = criterion(params["value"], *criterion_args, **criterion_kwargs)
-    constraints, params = process_constraints(constraints, params)
+    constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
     queue = Queue() if dashboard else None
@@ -270,7 +270,7 @@ def _minimize(
     elif origin == "scipy":
         bounds = _get_scipy_bounds(params)
         x0 = _x_from_params_df(params, constraints)
-        minimized = scipy.optimize.minimize(
+        minimized = scipy_minimize(
             internal_criterion, x0, method=algo_name, bounds=bounds
         )
         result = _process_results(
