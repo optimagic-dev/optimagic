@@ -27,7 +27,6 @@ from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 from bokeh.plotting import show
 
-from estimagic.dashboard.plotting_functions import get_color_palette
 from estimagic.optimization.utilities import index_element_to_string
 
 
@@ -49,7 +48,6 @@ def comparison_plot(
 
         color_dict (dict):
             maps model_class to color string that is understood by bokeh.
-            This is generated from the Category20 palette if not given.
 
         marker_dict (dict):
             maps model_class to a marker string that is understood by bokeh scatter.
@@ -200,8 +198,7 @@ def _build_or_check_option_dicts(color_dict, marker_dict, data_dict):
     }
 
     if color_dict is None:
-        colors = get_color_palette(len(model_classes))
-        color_dict = {m: c for m, c in zip(list(model_classes), colors)}
+        color_dict = {m: "#035096" for m in model_classes}
     else:
         assert set(model_classes).issubset(color_dict.keys()), (
             "Your color_dict does not map every model class "
