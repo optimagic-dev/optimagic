@@ -390,12 +390,12 @@ def _create_population(problem, algo_options, internal_params):
     return pop
 
 
-def _process_results(res, params, internal_params, constraints, origin):
+def _process_results(res, start_params_df, internal_params, constraints, origin):
     """Convert optimization results into json serializable dictionary.
 
     Args:
         res: Result from numerical optimizer.
-        params (DataFrame): See :ref:`params`.
+        start_params_df (DataFrame): See :ref:`params`.
         internal_params (DataFrame): See :ref:`params`.
         constraints (list): constraints for the optimization
         origin (str): takes the values "pygmo", "nlopt", "scipy"
@@ -407,7 +407,10 @@ def _process_results(res, params, internal_params, constraints, origin):
     elif origin in ["pygmo", "nlopt"]:
         x = res.champion_x
         f = res.champion_f
-    params_sr = _params_sr_from_x(x, internal_params, constraints, params)
+    params_sr = _params_sr_from_x(x, internal_params, constraints, start_params_df)
+
+    params_df = start_params_df.rename(columns={"value": "start_value"})
+    params_df["final_value"] = params_sr
 
     if not isinstance(f, Number):
         if len(f) == 1:
@@ -416,4 +419,4 @@ def _process_results(res, params, internal_params, constraints, origin):
             f = list(f)
 
     res_dict = {"x": params_sr.to_numpy().tolist(), "internal_x": x.tolist(), "f": f}
-    return res_dict, params
+    return res_dict, params_df
