@@ -17,8 +17,8 @@ def make_start_params_helpers(params_index, constraints):
     start parameters into a full params_df.
 
     Args:
-        params_index (DataFrame): The index of a non-internal parameter DataFrame.
-            See :ref:`params`.
+        params_index (pd.Index or pd.MultiIndex): The index of a non-internal parameter
+            DataFrame. See :ref:`params`.
         constraints (list): A list of constraints
 
     Returns:
@@ -54,8 +54,8 @@ def get_start_params_from_free_params(free, constraints, params_index):
     Args:
         free (DataFrame): free parameters
         constraints (list): list of constraints
-        params_index (DataFrame): The index of a non-internal parameter DataFrame.
-            See :ref:`params`.
+        params_index (pd.Index or pd.MultiIndex): The index of a non-internal parameter
+            DataFrame. See :ref:`params`.
 
     Returns:
         params (DataFrame): see :ref:`params`.
