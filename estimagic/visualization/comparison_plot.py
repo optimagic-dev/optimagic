@@ -3,6 +3,18 @@ Draw an interactive comparison plot of named result dictionaries.
 
 The plot can plot many results for large numbers of parameters
 against each other.
+
+The plot can answer the following questions:
+
+1. How are the parameters distributed?
+
+2. How large are the differences in parameter estimates between results
+    compared to the uncertainty around the parameter estimates?
+
+3. Are parameters of groups of results clustered?
+
+Example Usage: see tutorials/example_comparison_plot.ipynb
+
 """
 import pandas as pd
 from bokeh.layouts import gridplot
@@ -19,18 +31,14 @@ from estimagic.optimization.utilities import index_element_to_string
 
 
 def comparison_plot(data_dict, color_dict=None, height=None, width=None):
-    """Make a comparison plot either from a data_dict or a DataFrame.
+    """Make a comparison plot either from a data_dict.
 
     Args:
         data_dict (dict): The keys are the names of different models.
             The values is a dictinoary with the following keys and values:
-                - result_df (pd.DataFrame): DataFrame containing optimization result.
-                    The following columns are required:
-                        - 'params': the point estimates
-                    The following columns are optional:
-                        - 'conf_int_lower': lower bounds of the confidence interval
-                        - 'conf_int_upper': upper bounds of the confidence interval
-
+                - result_df (pd.DataFrame):
+                    params_df returned by estimagic.optimization.maximize or
+                    estimagic.optimization.minimize.
                 - model_class (str, optional):
                     name of the model class to which the model belongs.
                     This determines the color and checkbox entries with
@@ -41,10 +49,10 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
             This is generated from the Category20 palette if not given.
 
         height (int):
-            height of the (entire) plot
+            height of the (entire) plot.
 
         width (int):
-            width of the (entire) plot
+            width of the (entire) plot.
 
     """
     df, color_dict, param_groups, heights, width = _process_inputs(
@@ -72,12 +80,14 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
             y="full_name",
             size=12,
             color="color",
+            selection_color="color",
+            nonselection_color="color",
             alpha=0.5,
             selection_alpha=0.8,
             nonselection_alpha=0.2,
         )
 
-        # add the confidence_intervals
+        # add the confidence_intervals as hbars
         # horizontal whiskers not supported in bokeh 1.0.4
         if "conf_int_lower" in df.columns and "conf_int_upper" in df.columns:
             param_group_plot.hbar(
@@ -91,6 +101,8 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
                 nonselection_fill_alpha=0.0,
                 line_alpha=0.1,
                 color="color",
+                selection_color="color",
+                nonselection_color="color",
             )
 
         _add_hover_tool(param_group_plot, point_estimate_glyph)
@@ -100,8 +112,9 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
         plots.append(param_group_plot)
 
     if "model_class" in df.columns:
-        widget_labels = sorted(df["model_class"].unique())
-        cb_group = _create_checkbox(widget_labels, source)
+        cb_group = _create_checkbox(
+            widget_labels=sorted(df["model_class"].unique()), source=source
+        )
         plots = [cb_group] + plots
 
     grid = gridplot(plots, toolbar_location="right", ncols=1)
@@ -114,13 +127,28 @@ def _process_inputs(data_dict, color_dict, height, width):
     Convert a dictionary mapping model names to the optimization results to a DataFrame.
 
     Args:
-        data_dict (dict):
-            Mapping model names to dictionaries containing the results DataFrame.
+        data_dict (dict): The keys are the names of different models.
+            The values is a dictinoary with the following keys and values:
+                - result_df (pd.DataFrame):
+                    params_df returned by estimagic.optimization.maximize or
+                    estimagic.optimization.minimize.
+                - model_class (str, optional):
+                    name of the model class to which the model belongs.
+                    This determines the color and checkbox entries with
+                    which model classes can be selected and unselected
+
         color_dict (dict):
-            Mapping from the model classes to colors
+            maps model_class to color string that is understood by bokeh.
+            This is generated from the Category20 palette if not given.
+
+        height (int):
+            height of the (entire) plot.
+
+        width (int):
+            width of the (entire) plot.
 
     Returns:
-        df (pd.DataFrame): DataFrame with mandatory columns:
+        df (pd.DataFrame): DataFrame with the following columns:
             - *model* (str): model name
             - *value* (float): point estimate of the parameter value
             - *name* (str): name of the parameter (excluding its group)
@@ -128,10 +156,11 @@ def _process_inputs(data_dict, color_dict, height, width):
                 (used for grouping parameters in plots).
             - *color* (str): color
 
-            Optional columns:
-            - *conf_int_lower* (float): lower end of the confidence interval
-            - *conf_int_upper* (float): upper end of the confidence interval
-            - *model_class* (str): groups that can be filtered through the widget
+            if they were supplied by at least some of the result_dfs:
+                - *conf_int_lower* (float): lower end of the confidence interval
+                - *conf_int_upper* (float): upper end of the confidence interval
+            if they were supplied by at least some data_dicts:
+                - *model_class* (str): groups that can be filtered through the widget
 
     """
     color_dict = _build_or_check_color_dict(color_dict, data_dict)
@@ -187,15 +216,6 @@ def _build_df_from_data_dict(data_dict, color_dict):
             # the standard color is mediumelectricblue
             ext_param_df["color"] = "#035096"
 
-        if (
-            "conf_int_lower" in ext_param_df.columns
-            and "conf_int_upper" in ext_param_df.columns
-        ):
-            # assuming that upper and lower are 95% CIs and using the 68-95-99.7 rule
-            # https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule
-            ext_param_df["std"] = (
-                ext_param_df["conf_int_upper"] - ext_param_df["conf_int_lower"]
-            ) / 4
         df = df.append(ext_param_df, sort=False)
 
     # reset index as safety measure to make sure the index
