@@ -16,6 +16,7 @@ The plot can answer the following questions:
 Example Usage: see tutorials/example_comparison_plot.ipynb
 
 """
+import numpy as np
 import pandas as pd
 from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource
@@ -30,7 +31,9 @@ from estimagic.dashboard.plotting_functions import get_color_palette
 from estimagic.optimization.utilities import index_element_to_string
 
 
-def comparison_plot(data_dict, color_dict=None, height=None, width=None):
+def comparison_plot(
+    data_dict, color_dict=None, marker_dict=None, height=None, width=None
+):
     """Make a comparison plot either from a data_dict.
 
     Args:
@@ -48,6 +51,9 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
             maps model_class to color string that is understood by bokeh.
             This is generated from the Category20 palette if not given.
 
+        marker_dict (dict):
+            maps model_class to a marker string that is understood by bokeh scatter.
+
         height (int):
             height of the (entire) plot.
 
@@ -55,14 +61,18 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
             width of the (entire) plot.
 
     """
-    df, color_dict, param_groups, heights, width = _process_inputs(
-        data_dict=data_dict, color_dict=color_dict, height=height, width=width
+    df, param_groups_and_heights, width = _process_inputs(
+        data_dict=data_dict,
+        color_dict=color_dict,
+        marker_dict=marker_dict,
+        height=height,
+        width=width,
     )
 
     source = ColumnDataSource(df)
 
     plots = []
-    for param_group_name, group_height in zip(param_groups, heights):
+    for param_group_name, group_height in param_groups_and_heights:
         to_plot = df[df["group"] == param_group_name]["full_name"].unique()
 
         # create the "canvas"
@@ -73,8 +83,8 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
             plot_width=width,
         )
 
-        # add circles representing the parameter value
-        point_estimate_glyph = param_group_plot.circle(
+        # add scatterplot representing the parameter value
+        point_estimate_glyph = param_group_plot.scatter(
             source=source,
             x="value",
             y="full_name",
@@ -85,6 +95,7 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
             alpha=0.5,
             selection_alpha=0.8,
             nonselection_alpha=0.2,
+            marker="marker",
         )
 
         # add the confidence_intervals as hbars
@@ -122,7 +133,7 @@ def comparison_plot(data_dict, color_dict=None, height=None, width=None):
     return grid, plots
 
 
-def _process_inputs(data_dict, color_dict, height, width):
+def _process_inputs(data_dict, color_dict, marker_dict, height, width):
     """
     Convert a dictionary mapping model names to the optimization results to a DataFrame.
 
@@ -140,6 +151,9 @@ def _process_inputs(data_dict, color_dict, height, width):
         color_dict (dict):
             maps model_class to color string that is understood by bokeh.
             This is generated from the Category20 palette if not given.
+
+        marker_dict (dict):
+            maps model_class to a marker string that is understood by bokeh scatter.
 
         height (int):
             height of the (entire) plot.
@@ -161,46 +175,68 @@ def _process_inputs(data_dict, color_dict, height, width):
                 - *conf_int_upper* (float): upper end of the confidence interval
             if they were supplied by at least some data_dicts:
                 - *model_class* (str): groups that can be filtered through the widget
+        param_groups (list): list of paramater_groups
+        group_and_heights (list):
+            list of of tuples of the name of the group and height for each group plot
+        width (int): width of the plot
 
     """
-    color_dict = _build_or_check_color_dict(color_dict, data_dict)
-    df = _build_df_from_data_dict(data_dict, color_dict)
+    color_dict, marker_dict = _build_or_check_option_dicts(
+        color_dict, marker_dict, data_dict
+    )
+    df = _build_df_from_data_dict(data_dict, color_dict, marker_dict)
     _check_groups_and_names_compatible(df)
-
-    param_groups = [x for x in df["group"].unique() if x is not None]
-    nr_params = len(df[df["group"].isin(param_groups)]["name"].unique())
-    if height is None:
-        heights = [300 for group_name in param_groups]
-    else:
-        heights = []
-        for group_name in param_groups:
-            nr_group_params = len(df[df["group"] == group_name]["name"].unique())
-            heights.append(int(nr_group_params / nr_params * height))
 
     if width is None:
         width = 600
-    return df, color_dict, param_groups, heights, width
+    group_and_heights = _create_group_and_heights(df, height)
+
+    return df, group_and_heights, width
 
 
-def _build_or_check_color_dict(color_dict, data_dict):
-    model_classes = []
-    for d in data_dict.values():
-        if "model_class" in d.keys():
-            model_classes.append(d["model_class"])
+def _build_or_check_option_dicts(color_dict, marker_dict, data_dict):
+    model_classes = {
+        d["model_class"] for d in data_dict.values() if "model_class" in d.keys()
+    }
 
     if color_dict is None:
         colors = get_color_palette(len(model_classes))
-        color_dict = {m: c for m, c in zip(model_classes, colors)}
+        color_dict = {m: c for m, c in zip(list(model_classes), colors)}
     else:
         assert set(model_classes).issubset(color_dict.keys()), (
             "Your color_dict does not map every model class "
             + "in your data_dict to a color."
         )
-    return color_dict
+
+    if marker_dict is None:
+        markers = [
+            "circle",
+            "square",
+            "triangle",
+            "asterisk",
+            "inverted_triangle",
+            "diamond",
+            "cross",
+            "circle_cross",
+            "square_cross",
+            "diamond_cross",
+        ]
+        if len(model_classes) <= len(markers):
+            markers = markers[: len(model_classes)]
+        else:
+            markers = np.random.choice(a=markers, size=len(model_classes), replace=True)
+        marker_dict = {m: c for m, c in zip(list(model_classes), markers)}
+    else:
+        assert set(model_classes).issubset(marker_dict.keys()), (
+            "Your marker_dict does not map every model class "
+            + "in your data_dict to a marker."
+        )
+
+    return color_dict, marker_dict
 
 
-def _build_df_from_data_dict(data_dict, color_dict):
-    df = pd.DataFrame(columns=["value", "model", "name"])
+def _build_df_from_data_dict(data_dict, color_dict, marker_dict):
+    df = pd.DataFrame()
 
     for model, mod_dict in data_dict.items():
         ext_param_df = mod_dict["result_df"]
@@ -210,11 +246,15 @@ def _build_df_from_data_dict(data_dict, color_dict):
         )
         ext_param_df["model"] = model
         if "model_class" in mod_dict.keys():
-            ext_param_df["model_class"] = mod_dict["model_class"]
-            ext_param_df["color"] = color_dict[mod_dict["model_class"]]
+            model_class = mod_dict["model_class"]
+            ext_param_df["model_class"] = model_class
+            ext_param_df["color"] = color_dict[model_class]
+            ext_param_df["marker"] = marker_dict[model_class]
+
         else:
             # the standard color is mediumelectricblue
             ext_param_df["color"] = "#035096"
+            ext_param_df["marker"] = "circle"
 
         df = df.append(ext_param_df, sort=False)
 
@@ -225,10 +265,10 @@ def _build_df_from_data_dict(data_dict, color_dict):
     # keep as much information from the index as possible
     if type(df.index) is pd.MultiIndex:
         for name in df.index.names:
-            drop = name not in df.columns
+            drop = name in df.columns
             df.reset_index(name, drop=drop, inplace=True)
     else:
-        drop = df.index.name not in df.columns
+        drop = df.index.name in df.columns
         df.reset_index(drop=drop, inplace=True)
 
     if "group" not in df.columns:
@@ -258,6 +298,19 @@ def _check_groups_and_names_compatible(df):
                     ), "{} was assigned to group {} before but now {}".format(
                         name, supposed, current_group
                     )
+
+
+def _create_group_and_heights(df, height):
+    param_groups = [x for x in df["group"].unique() if x is not None]
+    nr_params = len(df[df["group"].isin(param_groups)]["name"].unique())
+    if height is None:
+        height = 50 * nr_params
+    group_and_heights = []
+    for group_name in param_groups:
+        nr_group_params = len(df[df["group"] == group_name]["name"].unique())
+        plot_height = int(nr_group_params / nr_params * height)
+        group_and_heights.append((group_name, plot_height))
+    return group_and_heights
 
 
 def _add_tap_tool(source, param_group_plot, point_estimate_glyph):
