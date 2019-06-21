@@ -117,7 +117,7 @@ def test_jacobian_backward(statsmodels_fixtures):
 
 def test_hessian_central(statsmodels_fixtures):
     fix = statsmodels_fixtures
-    assert_array_almost_equal(
+    assert_frame_equal(
         hessian(
             logit_loglike,
             fix["params"],
@@ -125,33 +125,4 @@ def test_hessian_central(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["hessian"],
-        decimal=7,
-    )
-
-
-def test_hessian_forward(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        hessian(
-            logit_loglike,
-            fix["params"],
-            method="forward",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["hessian"],
-        decimal=2,
-    )
-
-
-def test_hessian_backward(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        hessian(
-            logit_loglike,
-            fix["params"],
-            method="backward",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["hessian"],
-        decimal=0,
     )

@@ -1,4 +1,5 @@
 import numdifftools as nd
+import pandas as pd
 
 
 def hessian(func, params_sr, method="central", func_args=None, func_kwargs=None):
@@ -18,6 +19,8 @@ def hessian(func, params_sr, method="central", func_args=None, func_kwargs=None)
         DataFrame: The index and columns are the index of params_sr.
 
     """
+    if method != "central":
+        raise ValueError("The given method is not supported")
     # set default arguments
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -25,6 +28,7 @@ def hessian(func, params_sr, method="central", func_args=None, func_kwargs=None)
         order = 2
     else:
         order = 1
-    return nd.Hessian(func, method=method, order=order)(
+    hess_np = nd.Hessian(func, method=method, order=order)(
         params_sr, *func_args, **func_kwargs
     )
+    return pd.DataFrame(data=hess_np, index=params_sr.index, columns=params_sr.index)

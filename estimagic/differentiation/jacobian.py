@@ -23,6 +23,8 @@ def jacobian(func, params_sr, method="central", func_args=None, func_kwargs=None
         index of params_sr.
 
     """
+    if method not in ["central", "forward", "backward"]:
+        raise ValueError("The given method is not supported")
     # set default arguments
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
