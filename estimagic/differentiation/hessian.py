@@ -20,7 +20,7 @@ def hessian(func, params_sr, method="central", func_args=None, func_kwargs=None)
 
     """
     if method != "central":
-        raise ValueError("The given method is not supported")
+        raise ValueError("The given method is not supported.")
     # set default arguments
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
