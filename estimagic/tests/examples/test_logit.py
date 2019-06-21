@@ -4,6 +4,7 @@ import pickle
 
 import pytest
 from numpy.testing import assert_array_almost_equal
+from pandas.testing import assert_frame_equal
 from pandas.testing import assert_series_equal
 
 from estimagic.differentiation.gradient import gradient
@@ -77,7 +78,7 @@ def test_gradient_central(statsmodels_fixtures):
 
 def test_jacobian_central(statsmodels_fixtures):
     fix = statsmodels_fixtures
-    assert_array_almost_equal(
+    assert_frame_equal(
         jacobian(
             logit_loglikeobs,
             fix["params"],
@@ -85,13 +86,12 @@ def test_jacobian_central(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["jacobian"],
-        decimal=8,
     )
 
 
 def test_jacobian_forward(statsmodels_fixtures):
     fix = statsmodels_fixtures
-    assert_array_almost_equal(
+    assert_frame_equal(
         jacobian(
             logit_loglikeobs,
             fix["params"],
@@ -104,7 +104,7 @@ def test_jacobian_forward(statsmodels_fixtures):
 
 def test_jacobian_backward(statsmodels_fixtures):
     fix = statsmodels_fixtures
-    assert_array_almost_equal(
+    assert_frame_equal(
         jacobian(
             logit_loglikeobs,
             fix["params"],
@@ -112,7 +112,6 @@ def test_jacobian_backward(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["jacobian"],
-        decimal=5,
     )
 
 

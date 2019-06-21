@@ -1,4 +1,5 @@
 import numdifftools as nd
+import pandas as pd
 
 
 def jacobian(func, params_sr, method="central", func_args=None, func_kwargs=None):
@@ -25,4 +26,10 @@ def jacobian(func, params_sr, method="central", func_args=None, func_kwargs=None
     # set default arguments
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
-    return nd.Jacobian(func, method=method)(params_sr, *func_args, **func_kwargs)
+    f_x0 = func(params_sr, *func_args, **func_kwargs)
+    jac_np = nd.Jacobian(func, method=method)(params_sr, *func_args, **func_kwargs)
+    if isinstance(f_x0, pd.Series):
+        jac = pd.DataFrame(index=f_x0.index, columns=params_sr.index, data=jac_np)
+    else:
+        jac = pd.DataFrame(columns=params_sr.index, data=jac_np)
+    return jac
