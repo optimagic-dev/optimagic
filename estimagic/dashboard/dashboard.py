@@ -71,7 +71,7 @@ def _configure_dashboard(doc, param_df, initial_fitness):
             bokeh document to be configured
 
         param_df (pandas DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         initial_fitness (float):
             criterion function evaluated at the initial parameters

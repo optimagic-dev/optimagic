@@ -102,7 +102,7 @@ def _param_plots(params_df, data):
 
     Args:
         params_df (pd.DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         data (ColumnDataSource):
             ColumnDataSource that will be updated with new iterations

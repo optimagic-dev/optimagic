@@ -16,6 +16,8 @@ dependencies:
   - numdifftools
   - bokeh=1.1
   - scipy=1.2.1
+  - conda-verify
+  - jupyter
   - pip:
     - doc8
     - pre-commit

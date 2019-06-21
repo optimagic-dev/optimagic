@@ -1,8 +1,10 @@
+import warnings
 from os import path
 
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 from pandas.testing import assert_series_equal
 
 from estimagic.optimization.process_constraints import process_constraints
@@ -28,7 +30,7 @@ for i in range(3):
     int_ = params_fixture.copy(deep=True)
     int_.rename(columns={"internal_value{}".format(i): "value"}, inplace=True)
     int_.dropna(subset=["value"], inplace=True)
-    int_.drop(["lower", "upper"], axis=1, inplace=True)
+    int_.drop(columns=["lower", "upper"], inplace=True)
     int_.rename(
         columns={"internal_lower": "lower", "internal_upper": "upper"}, inplace=True
     )
@@ -38,6 +40,12 @@ for i in range(3):
 def constraints(params):
     constr = [
         {"loc": ("c", "c2"), "type": "probability"},
+        {
+            "loc": [("a", "a", "0"), ("a", "a", "2"), ("a", "a", "4")],
+            "type": "fixed",
+            "value": [0.1, 0.3, 0.5],
+        },
+        {"loc": ("e", "off"), "type": "fixed", "value": 0},
         {"loc": "d", "type": "increasing"},
         {"loc": "e", "type": "covariance"},
         {"loc": "f", "type": "covariance"},
@@ -45,26 +53,51 @@ def constraints(params):
         {"loc": "h", "type": "equality"},
         {"loc": "i", "type": "equality"},
         {"query": 'subcategory == "j1" | subcategory == "i1"', "type": "equality"},
+        {"loc": "k", "type": "sdcorr"},
+        {"loc": "l", "type": "covariance"},
+        {"locs": ["f", "l"], "type": "pairwise_equality"},
     ]
     constr = process_constraints(constr, params)
     return constr
 
 
+internal_categories = list("abcdefghik")
+external_categories = internal_categories + ["j1", "j2", "l"]
+
 to_test = []
 for ext, int_ in zip(external, internal):
-    for col in ["value", "lower", "upper"]:
-        to_test.append((ext, int_, col))
+    for category in internal_categories:
+        to_test.append((ext, int_, category))
 
 
-@pytest.mark.parametrize("params, expected_internal, col", to_test)
-def test_reparametrize_to_internal(params, expected_internal, col):
-    calculated = reparametrize_to_internal(params, constraints(params))
-    assert_series_equal(calculated[col], expected_internal[col])
+@pytest.mark.parametrize("params, expected_internal, category", to_test)
+def test_reparametrize_to_internal(params, expected_internal, category):
+    constr = constraints(params)
+    cols = ["value", "lower", "upper"]
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", message="indexing past lexsort depth may impact performance."
+        )
+        calculated = reparametrize_to_internal(params, constr)
+        assert_frame_equal(
+            calculated.loc[category, cols], expected_internal.loc[category, cols]
+        )
 
 
-@pytest.mark.parametrize("internal, expected_external", zip(internal, external))
-def test_reparametrize_from_internal(internal, expected_external):
-    calculated = reparametrize_from_internal(
-        internal, constraints(expected_external), expected_external
-    )
-    assert_series_equal(calculated, expected_external["value"])
+to_test = []
+for int_, ext in zip(internal, external):
+    for category in external_categories:
+        to_test.append((int_, ext, category))
+
+
+@pytest.mark.parametrize("internal, expected_external, category", to_test)
+def test_reparametrize_from_internal(internal, expected_external, category):
+    constr = constraints(expected_external)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore", message="indexing past lexsort depth may impact performance."
+        )
+        calculated = reparametrize_from_internal(internal, constr, expected_external)
+        assert_series_equal(
+            calculated[category], expected_external.loc[category, "value"]
+        )

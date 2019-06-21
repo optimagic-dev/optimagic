@@ -9,7 +9,7 @@ from time import sleep
 
 import numpy as np
 import pygmo as pg
-import scipy
+from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
@@ -29,7 +29,7 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    dashboard=True,
+    dashboard=False,
     db_options=None,
 ):
     """
@@ -41,7 +41,7 @@ def maximize(
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
@@ -98,7 +98,7 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    dashboard=True,
+    dashboard=False,
     db_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
@@ -109,7 +109,7 @@ def minimize(
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
@@ -149,9 +149,9 @@ def minimize(
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
-    queue = Queue() if dashboard is True else None
-    start_signal = Queue() if dashboard is True else None
-    if dashboard is True:
+    queue = Queue() if dashboard else None
+    start_signal = Queue() if dashboard else None
+    if dashboard:
         # later only the parameter series can be supplied
         # but for the setup of the dashboard we want the whole DataFrame
         queue.put(QueueEntry(params=params, fitness=fitness_eval, still_running=True))
@@ -169,7 +169,7 @@ def minimize(
         )
         server_thread.start()
 
-    if dashboard is True:
+    if dashboard:
         # wait for server_thread to give start signal
         while start_signal.qsize() == 0:
             sleep(0.01)
@@ -187,7 +187,7 @@ def minimize(
         queue=queue,
     )
 
-    if dashboard is True:
+    if dashboard:
         queue.put(
             QueueEntry(params=result[1], fitness=result[0]["f"], still_running=False)
         )
@@ -221,10 +221,10 @@ def _minimize(
             additional keyword arguments for criterion
 
         params (pd.DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         internal_params (DataFrame):
-            See :ref:`params_df`.
+            See :ref:`params`.
 
         constraints (list):
             list with constraint dictionaries. See for details.
@@ -270,7 +270,7 @@ def _minimize(
     elif origin == "scipy":
         bounds = _get_scipy_bounds(params)
         x0 = _x_from_params_df(params, constraints)
-        minimized = scipy.optimize.minimize(
+        minimized = scipy_minimize(
             internal_criterion, x0, method=algo_name, bounds=bounds
         )
         result = _process_results(
@@ -314,20 +314,22 @@ def _x_from_params_df(params, constraints):
 
 
 def _process_params_df(params):
+    assert (
+        not params.index.duplicated().any()
+    ), "No duplicates allowed in the index of params."
     params = params.copy()
     if "lower" not in params.columns:
         params["lower"] = -np.inf
     if "upper" not in params.columns:
         params["upper"] = np.inf
-    if "fixed" not in params.columns:
-        # todo: does this have to be removed after we move fixed to constraints?
-        params["fixed"] = False
     if "group" not in params.columns:
         params["group"] = "All Parameters"
 
     if "name" not in params.columns:
         names = [index_element_to_string(tup) for tup in params.index]
         params["name"] = names
+
+    assert "_fixed" not in params.columns, "Invalid column name _fixed in params_df."
     return params
 
 
@@ -393,8 +395,8 @@ def _process_results(res, params, internal_params, constraints, origin):
 
     Args:
         res: Result from numerical optimizer.
-        params (DataFrame): See :ref:`params_df`.
-        internal_params (DataFrame): See :ref:`params_df`.
+        params (DataFrame): See :ref:`params`.
+        internal_params (DataFrame): See :ref:`params`.
         constraints (list): constraints for the optimization
         origin (str): takes the values "pygmo", "nlopt", "scipy"
 
