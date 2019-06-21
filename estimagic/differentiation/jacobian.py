@@ -13,7 +13,6 @@ def jacobian(func, params_sr, method="central", func_args=None, func_kwargs=None
         params_sr (Series): see :ref:`parmas_df`
         func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
-        extrapolant (string): A variable indicating the use of a extrapolation method.
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
 

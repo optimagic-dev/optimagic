@@ -23,18 +23,18 @@ methods, defined by the two variables method and extrapolation are explained in 
 chapter. The first two functions give the first and second order derivative for a real
 valued multivariate function. The first order is calculated by:
 
-.. automodule:: estimagic.differentiation.gradient :members:
+.. automodule:: estimagic.differentiation.gradient
 
 The second order, which is the hessian matrix is calculated by:
 
 .. automodule:: estimagic.differentiation.jacobian
-    :members:
+
 
 For vector valued multivariate functions the following yields the numerical calculation
 of the jacobian matrix:
 
 .. automodule:: estimagic.differentiation.hessian
-    :members:
+
 
 Methods
 -------
