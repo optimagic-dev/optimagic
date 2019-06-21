@@ -1,20 +1,7 @@
-import numpy as np
-import pandas as pd
-
-from estimagic.differentiation.first_order_auxiliary import backward
-from estimagic.differentiation.first_order_auxiliary import central
-from estimagic.differentiation.first_order_auxiliary import forward
-from estimagic.differentiation.first_order_auxiliary import richardson
+import numdifftools as nd
 
 
-def jacobian(
-    func,
-    params_sr,
-    method="central",
-    extrapolant=None,
-    func_args=None,
-    func_kwargs=None,
-):
+def jacobian(func, params_sr, method="central", func_args=None, func_kwargs=None):
     """
     Calculate the jacobian of *func*.
 
@@ -38,31 +25,4 @@ def jacobian(
     # set default arguments
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
-    # Calculate the value of the function for the observations
-    f_x0 = func(params_sr, *func_args, **func_kwargs)
-    if isinstance(f_x0, np.ndarray):
-        jacobi = pd.DataFrame(index=range(len(f_x0)), columns=params_sr.index)
-    elif isinstance(f_x0, pd.Series):
-        jacobi = pd.DataFrame(index=f_x0.index, columns=params_sr.index)
-    else:
-        raise ValueError("Unsupported output of function with type" + str(f_x0.dtype))
-    if method == "forward":
-        f = forward
-    elif method == "backward":
-        f = backward
-    elif method == "central":
-        f = central
-    else:
-        raise ValueError("The given method was not found.")
-    for var in jacobi.columns:
-        # The rule of thumb for the stepsize is implemented
-        h = (1 + abs(params_sr[var])) * np.sqrt(np.finfo(float).eps)
-        if extrapolant == "richardson":
-            # For the richardson extrapolation a seperate function is called.
-            f_diff = richardson(
-                f, func, f_x0, params_sr, var, h, method, *func_args, **func_kwargs
-            )
-        else:
-            f_diff = f(func, f_x0, params_sr, var, h, *func_args, **func_kwargs)
-        jacobi[var] = f_diff / h
-    return jacobi
+    return nd.Jacobian(func, method=method)(params_sr, *func_args, **func_kwargs)

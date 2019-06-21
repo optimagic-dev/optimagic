@@ -4,6 +4,7 @@ import pickle
 
 import pytest
 from numpy.testing import assert_array_almost_equal
+from pandas.testing import assert_series_equal
 
 from estimagic.differentiation.gradient import gradient
 from estimagic.differentiation.hessian import hessian
@@ -37,26 +38,11 @@ def test_loglikeobs(statsmodels_fixtures):
 
 def test_gradient_forward(statsmodels_fixtures):
     fix = statsmodels_fixtures
-    assert_array_almost_equal(
+    assert_series_equal(
         gradient(
             logit_loglike,
             fix["params"],
             method="forward",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["gradient"],
-        decimal=4,
-    )
-
-
-def test_gradient_forward_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        gradient(
-            logit_loglike,
-            fix["params"],
-            method="forward",
-            extrapolant="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["gradient"],
@@ -65,26 +51,11 @@ def test_gradient_forward_richardson(statsmodels_fixtures):
 
 def test_gradient_backward(statsmodels_fixtures):
     fix = statsmodels_fixtures
-    assert_array_almost_equal(
+    assert_series_equal(
         gradient(
             logit_loglike,
             fix["params"],
             method="backward",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["gradient"],
-        decimal=4,
-    )
-
-
-def test_gradient_backward_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        gradient(
-            logit_loglike,
-            fix["params"],
-            method="backward",
-            extrapolant="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["gradient"],
@@ -98,20 +69,6 @@ def test_gradient_central(statsmodels_fixtures):
             logit_loglike,
             fix["params"],
             method="central",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["gradient"],
-    )
-
-
-def test_gradient_central_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        gradient(
-            logit_loglike,
-            fix["params"],
-            method="central",
-            extrapolant="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["gradient"],
@@ -132,21 +89,6 @@ def test_jacobian_central(statsmodels_fixtures):
     )
 
 
-def test_jacobian_central_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        jacobian(
-            logit_loglikeobs,
-            fix["params"],
-            method="central",
-            extrapolant="richardson",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["jacobian"],
-        decimal=7,
-    )
-
-
 def test_jacobian_forward(statsmodels_fixtures):
     fix = statsmodels_fixtures
     assert_array_almost_equal(
@@ -157,21 +99,6 @@ def test_jacobian_forward(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["jacobian"],
-    )
-
-
-def test_jacobian_forward_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        jacobian(
-            logit_loglikeobs,
-            fix["params"],
-            method="forward",
-            extrapolant="richardson",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["jacobian"],
-        decimal=7,
     )
 
 
@@ -189,20 +116,6 @@ def test_jacobian_backward(statsmodels_fixtures):
     )
 
 
-def test_jacobian_backward_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        jacobian(
-            logit_loglikeobs,
-            fix["params"],
-            method="backward",
-            extrapolant="richardson",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["jacobian"],
-    )
-
-
 def test_hessian_central(statsmodels_fixtures):
     fix = statsmodels_fixtures
     assert_array_almost_equal(
@@ -213,7 +126,7 @@ def test_hessian_central(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["hessian"],
-        decimal=4,
+        decimal=7,
     )
 
 
@@ -227,7 +140,7 @@ def test_hessian_forward(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["hessian"],
-        decimal=1,
+        decimal=2,
     )
 
 
@@ -241,50 +154,5 @@ def test_hessian_backward(statsmodels_fixtures):
             func_args=[fix["y"], fix["x"]],
         ),
         fix["hessian"],
-        decimal=1,
-    )
-
-
-def test_hessian_central_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        hessian(
-            logit_loglike,
-            fix["params"],
-            method="central",
-            extrapolant="richardson",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["hessian"],
-        decimal=4,
-    )
-
-
-def test_hessian_backward_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        hessian(
-            logit_loglike,
-            fix["params"],
-            method="backward",
-            extrapolant="richardson",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["hessian"],
-        decimal=3,
-    )
-
-
-def test_hessian_forward_richardson(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        hessian(
-            logit_loglike,
-            fix["params"],
-            method="forward",
-            extrapolant="richardson",
-            func_args=[fix["y"], fix["x"]],
-        ),
-        fix["hessian"],
-        decimal=3,
+        decimal=0,
     )
