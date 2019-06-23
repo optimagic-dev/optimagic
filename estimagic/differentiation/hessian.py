@@ -23,11 +23,5 @@ def hessian(func, params_sr, method="central", func_args=None, func_kwargs=None)
     # set default arguments
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
-    if method == "central":
-        order = 2
-    else:
-        order = 1
-    hess_np = nd.Hessian(func, method=method, order=order)(
-        params_sr, *func_args, **func_kwargs
-    )
+    hess_np = nd.Hessian(func, method=method)(params_sr, *func_args, **func_kwargs)
     return pd.DataFrame(data=hess_np, index=params_sr.index, columns=params_sr.index)
