@@ -21,10 +21,10 @@ def hessian(
         params_sr (Series): see :ref:`parmas_df`
         func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
-        :extrapolation (string): This variable allows to specify the use of the
-        richardson extrapolation.
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
+        extrapolation (string): This variable allows to specify the use of the
+        richardson extrapolation.
 
     Returns:
         DataFrame: The index and columns are the index of params_sr.
@@ -42,7 +42,7 @@ def hessian(
             data=hess_np, index=params_sr.index, columns=params_sr.index
         )
     else:
-        hess = pd.DataFrame(index=params_sr.index, columns=params_sr.index)
+        hess = pd.DataFrame(index=params_sr.index, columns=params_sr.index, dtype=float)
         for var_1 in params_sr.index:
             h_1 = (1.0 + abs(params_sr[var_1])) * np.cbrt(np.finfo(float).eps)
             for var_2 in params_sr.index:

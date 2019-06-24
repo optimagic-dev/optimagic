@@ -24,6 +24,21 @@ def test_gradient_forward(statsmodels_fixtures):
             logit_loglike,
             fix["params"],
             method="forward",
+            extrapolation="",
+            func_args=[fix["y"], fix["x"]],
+        ),
+        fix["gradient"],
+    )
+
+
+def test_gradient_forward_richardson(statsmodels_fixtures):
+    fix = statsmodels_fixtures
+    assert_series_equal(
+        gradient(
+            logit_loglike,
+            fix["params"],
+            method="forward",
+            extrapolation="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["gradient"],
@@ -37,6 +52,21 @@ def test_gradient_backward(statsmodels_fixtures):
             logit_loglike,
             fix["params"],
             method="backward",
+            extrapolation="",
+            func_args=[fix["y"], fix["x"]],
+        ),
+        fix["gradient"],
+    )
+
+
+def test_gradient_backward_richardson(statsmodels_fixtures):
+    fix = statsmodels_fixtures
+    assert_series_equal(
+        gradient(
+            logit_loglike,
+            fix["params"],
+            method="backward",
+            extrapolation="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["gradient"],
@@ -50,6 +80,21 @@ def test_gradient_central(statsmodels_fixtures):
             logit_loglike,
             fix["params"],
             method="central",
+            extrapolation="",
+            func_args=[fix["y"], fix["x"]],
+        ),
+        fix["gradient"],
+    )
+
+
+def test_gradient_central_richardson(statsmodels_fixtures):
+    fix = statsmodels_fixtures
+    assert_series_equal(
+        gradient(
+            logit_loglike,
+            fix["params"],
+            method="central",
+            extrapolation="richardson",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["gradient"],

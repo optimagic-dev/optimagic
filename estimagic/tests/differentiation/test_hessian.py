@@ -24,6 +24,7 @@ def test_hessian_central(statsmodels_fixtures):
             logit_loglike,
             fix["params"],
             method="central",
+            extrapolation="",
             func_args=[fix["y"], fix["x"]],
         ),
         fix["hessian"],
