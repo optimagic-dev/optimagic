@@ -2,7 +2,7 @@ import numdifftools as nd
 import numpy as np
 import pandas as pd
 
-from estimagic.differentiation.first_order_auxiliary import central
+import estimagic.differentiation.first_order_auxiliary as aux
 
 
 def hessian(
@@ -42,6 +42,7 @@ def hessian(
             data=hess_np, index=params_sr.index, columns=params_sr.index
         )
     else:
+        finite_diff = getattr(aux, method)
         hess = pd.DataFrame(index=params_sr.index, columns=params_sr.index, dtype=float)
         for var_1 in params_sr.index:
             h_1 = (1.0 + abs(params_sr[var_1])) * np.cbrt(np.finfo(float).eps)
@@ -53,7 +54,7 @@ def hessian(
                 # the central method. This is not the right f_x0, but the real one
                 # isn't needed for
                 # the central method.
-                f_plus = central(
+                f_plus = finite_diff(
                     func, None, params_r, var_1, h_1, *func_args, **func_kwargs
                 )
                 params_l = params_sr.copy()
@@ -61,7 +62,7 @@ def hessian(
                 # Calculate the first derivative w.r.t. var_1 at (params_sr - h_2) with
                 # the central method. This is not the right f_x0, but the real one
                 # isn't needed for the central method.
-                f_minus = central(
+                f_minus = finite_diff(
                     func, None, params_l, var_1, h_1, *func_args, **func_kwargs
                 )
                 f_diff = (f_plus - f_minus) / (2.0 * h_1 * h_2)

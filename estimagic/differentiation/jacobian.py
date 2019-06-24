@@ -2,9 +2,7 @@ import numdifftools as nd
 import numpy as np
 import pandas as pd
 
-from estimagic.differentiation.first_order_auxiliary import backward
-from estimagic.differentiation.first_order_auxiliary import central
-from estimagic.differentiation.first_order_auxiliary import forward
+import estimagic.differentiation.first_order_auxiliary as aux
 
 
 def jacobian(
@@ -51,12 +49,7 @@ def jacobian(
             jac = pd.DataFrame(columns=params_sr.index, data=jac_np)
         return jac
     else:
-        if method == "forward":
-            f = forward
-        elif method == "backward":
-            f = backward
-        else:
-            f = central
+        finite_diff = getattr(aux, method)
         if isinstance(f_x0, pd.Series):
             jac = pd.DataFrame(index=f_x0.index, columns=params_sr.index)
         else:
@@ -64,6 +57,8 @@ def jacobian(
         for var in jac.columns:
             # The rule of thumb for the stepsize is implemented
             h = (1 + abs(params_sr[var])) * np.sqrt(np.finfo(float).eps)
-            f_diff = f(func, f_x0, params_sr, var, h, *func_args, **func_kwargs)
+            f_diff = finite_diff(
+                func, f_x0, params_sr, var, h, *func_args, **func_kwargs
+            )
             jac[var] = f_diff / h
         return jac

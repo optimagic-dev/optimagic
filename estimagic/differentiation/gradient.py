@@ -2,9 +2,7 @@ import numdifftools as nd
 import numpy as np
 import pandas as pd
 
-from estimagic.differentiation.first_order_auxiliary import backward
-from estimagic.differentiation.first_order_auxiliary import central
-from estimagic.differentiation.first_order_auxiliary import forward
+import estimagic.differentiation.first_order_auxiliary as aux
 
 
 def gradient(
@@ -44,13 +42,11 @@ def gradient(
     else:
         grad = pd.Series(index=params_sr.index)
         f_x0 = func(params_sr, *func_args, **func_kwargs)
-        if method == "forward":
-            f = forward
-        elif method == "backward":
-            f = backward
-        else:
-            f = central
+        finite_diff = getattr(aux, method)
         for var in params_sr.index:
             h = (1 + abs(params_sr[var])) * np.sqrt(np.finfo(float).eps)
-            grad[var] = f(func, f_x0, params_sr, var, h, *func_args, **func_kwargs) / h
+            grad[var] = (
+                finite_diff(func, f_x0, params_sr, var, h, *func_args, **func_kwargs)
+                / h
+            )
         return grad

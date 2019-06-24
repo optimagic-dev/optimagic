@@ -5,7 +5,7 @@ This module contains auxiliary functions for a one step differentiation.
 
 def central(func, f_x0, params_sr, var, h, *func_args, **func_kwargs):
     """
-    This function calculates the central difference.
+    Calculate the central difference.
     Args:
         func (fucntion): A function that maps params_sr into a float.
         f_x0 (func output): The function value at params_sr, func_args and func_kwargs.
@@ -30,7 +30,7 @@ def central(func, f_x0, params_sr, var, h, *func_args, **func_kwargs):
 
 def forward(func, f_x0, params_sr, var, h, *func_args, **func_kwargs):
     """
-    This function calculates the forward difference.
+    Calculate the forward difference.
     Args:
         func (fucntion): A function that maps params_sr into a float.
         f_x0 (func output): The function value at params_sr, func_args and func_kwargs.
@@ -50,7 +50,7 @@ def forward(func, f_x0, params_sr, var, h, *func_args, **func_kwargs):
 
 def backward(func, f_x0, params_sr, var, h, *func_args, **func_kwargs):
     """
-    This function calculates the backward difference.
+    Calculate the backward difference.
     Args:
         func (fucntion): A function that maps params_sr into a float.
         f_x0 (func output): The function value at params_sr, func_args and func_kwargs.
