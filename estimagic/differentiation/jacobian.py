@@ -23,12 +23,12 @@ def jacobian(
                         or pandas Series.
 
         params_sr (Series): see :ref:`parmas_df`
-        func_args (list): additional positional arguments for func.
-        func_kwargs (dict): additional positional arguments for func.
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
         extrapolation (string): This variable allows to specify the use of the
-        richardson extrapolation.
+                                richardson extrapolation.
+        func_args (list): additional positional arguments for func.
+        func_kwargs (dict): additional positional arguments for func.
 
     Returns:
         DataFrame: If func returns a Series, the index is the index of this Series or

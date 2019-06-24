@@ -21,12 +21,12 @@ def gradient(
     Args:
         func (function): A function that maps params_sr into a float.
         params_sr (Series): see :ref:`parmas_df`
-        func_args (list): additional positional arguments for func.
-        func_kwargs (dict): additional positional arguments for func.
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
         extrapolation (string): This variable allows to specify the use of the
-        richardson extrapolation.
+                                richardson extrapolation.
+        func_args (list): additional positional arguments for func.
+        func_kwargs (dict): additional positional arguments for func.
 
     Returns:
         Series: The index is the index of params_sr.
