@@ -9,7 +9,7 @@ def hessian(
     func,
     params_sr,
     method="central",
-    extrapolation="richardson",
+    extrapolation=True,
     func_args=None,
     func_kwargs=None,
 ):
@@ -21,7 +21,7 @@ def hessian(
         params_sr (Series): see :ref:`parmas_df`
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
-        extrapolation (string): This variable allows to specify the use of the
+        extrapolation (bool): This variable allows to specify the use of the
                                 richardson extrapolation.
         func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
@@ -35,7 +35,7 @@ def hessian(
     # set default arguments
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
-    if extrapolation == "richardson":
+    if extrapolation:
         # For the richardson extrapolation we use, the numdifftools library.
         hess_np = nd.Hessian(func, method=method)(params_sr, *func_args, **func_kwargs)
         return pd.DataFrame(
