@@ -16,16 +16,17 @@ The plot can answer the following questions:
 Example Usage: see tutorials/example_comparison_plot.ipynb
 
 """
-import numpy as np
 import pandas as pd
 from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
+from bokeh.models import Range1d
 from bokeh.models import TapTool
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 from bokeh.plotting import show
+from bokeh.transform import jitter
 
 from estimagic.optimization.utilities import index_element_to_string
 
@@ -71,7 +72,8 @@ def comparison_plot(
 
     plots = []
     for param_group_name, group_height in param_groups_and_heights:
-        to_plot = df[df["group"] == param_group_name]["full_name"].unique()
+        df_slice = df[df["group"] == param_group_name]
+        to_plot = sorted(df_slice["full_name"].unique(), reverse=True)
 
         # create the "canvas"
         param_group_plot = figure(
@@ -81,18 +83,20 @@ def comparison_plot(
             plot_width=width,
         )
 
+        jittered_y = jitter("full_name", width=0.4, range=param_group_plot.y_range)
+
         # add scatterplot representing the parameter value
         point_estimate_glyph = param_group_plot.scatter(
             source=source,
             x="final_value",
-            y="full_name",
+            y=jittered_y,
             size=12,
             color="color",
             selection_color="color",
             nonselection_color="color",
             alpha=0.5,
-            selection_alpha=0.8,
-            nonselection_alpha=0.2,
+            selection_alpha=0.7,
+            nonselection_alpha=0.3,
             marker="marker",
         )
 
@@ -101,15 +105,15 @@ def comparison_plot(
         if "conf_int_lower" in df.columns and "conf_int_upper" in df.columns:
             param_group_plot.hbar(
                 source=source,
-                y="full_name",
+                y=jittered_y,
                 left="conf_int_lower",
                 right="conf_int_upper",
-                height=0.3,
+                height=0.01,
                 alpha=0.0,
-                selection_alpha=0.25,
+                selection_alpha=0.7,
                 nonselection_fill_alpha=0.0,
                 line_alpha=0.0,
-                selection_line_alpha=0.5,
+                selection_line_alpha=0.7,
                 nonselection_line_alpha=0.0,
                 color="color",
                 selection_color="color",
@@ -119,6 +123,8 @@ def comparison_plot(
         _add_hover_tool(param_group_plot, point_estimate_glyph, df)
 
         _add_tap_tool(source, param_group_plot, point_estimate_glyph)
+
+        _style_plot(param_group_plot, df_slice)
 
         plots.append(param_group_plot)
 
@@ -208,23 +214,7 @@ def _build_or_check_option_dicts(color_dict, marker_dict, data_dict):
         )
 
     if marker_dict is None:
-        markers = [
-            "circle",
-            "square",
-            "triangle",
-            "asterisk",
-            "inverted_triangle",
-            "diamond",
-            "cross",
-            "circle_cross",
-            "square_cross",
-            "diamond_cross",
-        ]
-        if len(model_classes) <= len(markers):
-            markers = markers[: len(model_classes)]
-        else:
-            markers = np.random.choice(a=markers, size=len(model_classes), replace=True)
-        marker_dict = {m: c for m, c in zip(list(model_classes), markers)}
+        marker_dict = {m: "circle" for m in list(model_classes)}
     else:
         assert set(model_classes).issubset(marker_dict.keys()), (
             "Your marker_dict does not map every model class "
@@ -235,7 +225,9 @@ def _build_or_check_option_dicts(color_dict, marker_dict, data_dict):
 
 
 def _build_df_from_data_dict(data_dict, color_dict, marker_dict):
-    df = pd.DataFrame()
+    df = pd.DataFrame(
+        columns=["conf_int_lower", "conf_int_upper", "group", "model_class"]
+    )
 
     for model, mod_dict in data_dict.items():
         ext_param_df = mod_dict["result_df"]
@@ -302,8 +294,10 @@ def _check_groups_and_names_compatible(df):
 def _create_group_and_heights(df, height):
     param_groups = [x for x in df["group"].unique() if x is not None]
     nr_params = len(df[df["group"].isin(param_groups)]["name"].unique())
+    nr_models = len(df["model"].unique())
     if height is None:
-        height = 50 * nr_params
+        model_param = max(min(nr_models, 60), 10)
+        height = 8 * model_param * nr_params
     group_and_heights = []
     for group_name in param_groups:
         nr_group_params = len(df[df["group"] == group_name]["name"].unique())
@@ -390,6 +384,21 @@ def _create_checkbox(widget_labels, source):
     source.change.emit();"""
     widget_callback = CustomJS(args=widget_js_kwargs, code=widget_js_code)
     cb_group = CheckboxGroup(
-        labels=widget_labels, active=[0, 1], callback=widget_callback
+        labels=widget_labels,
+        active=[0] * len(widget_labels),
+        callback=widget_callback,
+        inline=True,
     )
     return cb_group
+
+
+def _style_plot(fig, df_slice):
+    fig.xgrid.grid_line_color = None
+    fig.yaxis.major_tick_line_color = None
+    fig.yaxis.axis_line_color = "white"
+    fig.outline_line_color = None
+
+    top = df_slice[["conf_int_upper", "final_value"]].max(axis=1).max()
+    bottom = df_slice[["conf_int_lower", "final_value"]].min(axis=1).min()
+    border_buffer = 0.07 * (top - bottom)
+    fig.x_range = Range1d(bottom - border_buffer, top + border_buffer)
