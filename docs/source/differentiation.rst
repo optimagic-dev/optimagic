@@ -40,9 +40,9 @@ documentation_ of numdifftools.
 
 .. _documentation: https://numdifftools.readthedocs.io/en/latest/
 
-We also use the default values for stepsize and order of error term from the numdifftools
-package. The default stepsize is given below and the order of the error term is in the
-first order differentiation 2 and in the second 1.
+To deactivate the exptrapolation method and just use standard finite differences,
+just set the "extrapolation" variable to an empty string. Then we will use the stepsize
+introduced below.
 
 Therefore our functions have the following interface:
 
