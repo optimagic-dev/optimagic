@@ -41,7 +41,7 @@ documentation_ of numdifftools.
 .. _documentation: https://numdifftools.readthedocs.io/en/latest/
 
 To deactivate the exptrapolation method and just use standard finite differences,
-just set the "extrapolation" variable to an empty string. Then we will use the stepsize
+just set the "extrapolation" variable to False. Then we will use the stepsize
 introduced below.
 
 Therefore our functions have the following interface:
