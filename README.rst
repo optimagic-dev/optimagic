@@ -10,12 +10,8 @@ estimagic
     :target: https://estimagic.readthedocs.io/en/master/?badge=master
     :alt: Documentation Status
 
-.. image:: https://travis-ci.org/janosg/estimagic.svg?branch=master
-    :target: https://travis-ci.org/janosg/estimagic
-
-.. image:: https://ci.appveyor.com/api/projects/status/fcfquuj17d7mrosr?svg=true
-    :target: https://ci.appveyor.com/project/janosg/estimagic
-
+.. image:: https://dev.azure.com/OpenSourceEconomics/estimagic/_apis/build/status/OpenSourceEconomics.estimagic?branchName=master
+    :target: https://dev.azure.com/OpenSourceEconomics/estimagic/_build/latest?definitionId=1&branchName=master
 
 
 Introduction
@@ -37,7 +33,8 @@ feedback.
 Credits
 =======
 
-Estimagic is designed and written by Janos Gabler (`janosg <https://github.com/janosg>`_).
+Estimagic is designed and written by Janos Gabler (`janosg
+<https://github.com/janosg>`_).
 
 However, it has been a collaborative project right from the start.
 
@@ -60,8 +57,7 @@ terminal:
 
 .. code-block:: bash
 
-    $ conda config --add channels conda-forge
-    $ conda install -c janosg estimagic
+    $ conda config --add channels conda-forge $ conda install -c janosg estimagic
 
 The first line adds conda-forge to your conda channels. This is necessary for conda to
 find all dependencies of estimagic. The second line installs estimagic and its
@@ -71,13 +67,12 @@ dependencies.
 Roadmap
 =======
 
-
-Currently, estimagic is mainly a collection of optimizers. In the near future we want
-to add the following capabilites:
+Currently, estimagic is mainly a collection of optimizers. In the near future we want to
+add the following capabilities:
 
 - Standard error estimation for Maximum Likelihood, Method of Simulated Moments and
   Indirect Inference
 - Calculation of weighting matrices for minimum distance estimators
-- Specialized estimation functions for Maximum Likelihood, Method of Simulated
-  Moments and Indirect Inference that will provide a more convenient syntax and
-  defaults that are tailored to the specific application.
+- Specialized estimation functions for Maximum Likelihood, Method of Simulated Moments
+  and Indirect Inference that will provide a more convenient syntax and defaults that
+  are tailored to the specific application.
