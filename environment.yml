@@ -13,6 +13,7 @@ dependencies:
   - pygmo=2.10
   - conda-build
   - anaconda-client
+  - numdifftools>= 0.9.20
   - bokeh=1.1
   - scipy=1.2.1
   - conda-verify
