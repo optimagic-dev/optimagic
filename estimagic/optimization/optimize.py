@@ -16,6 +16,7 @@ from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import index_element_to_string
+from estimagic.optimization.utilities import propose_algorithms
 
 QueueEntry = namedtuple("QueueEntry", ["params", "fitness", "still_running"])
 
@@ -257,9 +258,15 @@ def _minimize(
         algos = json.load(j)
     origin, algo_name = algorithm.split("_", 1)
 
-    assert algo_name in algos[origin], "Invalid algorithm requested: {}".format(
-        algorithm
-    )
+    try:
+        assert algo_name in algos[origin], "Invalid algorithm requested: {}".format(
+            algorithm
+        )
+    except (AssertionError, KeyError):
+        proposals = propose_algorithms(algorithm, algos)
+        raise NotImplementedError(
+            f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
+        )
 
     if origin in ["nlopt", "pygmo"]:
         prob = _create_problem(internal_criterion, internal_params)

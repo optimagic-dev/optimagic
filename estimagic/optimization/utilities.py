@@ -1,4 +1,5 @@
 import numpy as np
+from fuzzywuzzy import process as fw_process
 
 
 def cov_params_to_matrix(cov_params):
@@ -93,3 +94,13 @@ def index_element_to_string(element, separator="_"):
     else:
         res_string = str(element)
     return res_string
+
+
+def propose_algorithms(requested_algo, algos, number=3):
+    possibilities = [
+        "_".join([origin, algo_name]) for origin in algos for algo_name in algos[origin]
+    ]
+    proposals_w_probs = fw_process.extract(requested_algo, possibilities, limit=number)
+    proposals = [proposal[0] for proposal in proposals_w_probs]
+
+    return proposals

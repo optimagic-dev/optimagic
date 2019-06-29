@@ -18,6 +18,7 @@ dependencies:
   - scipy=1.2.1
   - conda-verify
   - jupyter
+  - fuzzywuzzy
   - pip:
     - doc8
     - pre-commit
