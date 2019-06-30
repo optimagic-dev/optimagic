@@ -278,7 +278,11 @@ def _minimize(
         bounds = _get_scipy_bounds(params)
         x0 = _x_from_params_df(params, constraints)
         minimized = scipy_minimize(
-            internal_criterion, x0, method=algo_name, bounds=bounds
+            internal_criterion,
+            x0,
+            method=algo_name,
+            bounds=bounds,
+            options=algo_options,
         )
         result = _process_results(
             minimized, params, internal_params, constraints, origin
