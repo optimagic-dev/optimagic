@@ -1,3 +1,4 @@
+import os
 import pickle
 from itertools import product
 
@@ -18,7 +19,11 @@ def get_expected_covariance(model, cov_method):
         expected_covariance
 
     """
-    with open("fixtures/{}_{}.pickle".format(model, cov_method), "rb") as f:
+    dirname = os.path.dirname(os.path.abspath(__file__))
+
+    with open(
+        os.path.join(dirname, "fixtures/{}_{}.pickle".format(model, cov_method)), "rb"
+    ) as f:
         expected_cov = pickle.load(f)
     return expected_cov
 
@@ -36,7 +41,11 @@ def get_input(model, input_types):
     """
     inputs = {}
     for typ in input_types:
-        with open("fixtures/{}_{}_matrix.pickle".format(model, typ), "rb") as f:
+        dirname = os.path.dirname(os.path.abspath(__file__))
+        with open(
+            os.path.join(dirname, "fixtures/{}_{}_matrix.pickle".format(model, typ)),
+            "rb",
+        ) as f:
             input_matrix = pickle.load(f)
         inputs[typ] = input_matrix
     return inputs
