@@ -1,0 +1,74 @@
+pr: none
+
+jobs:
+- job:
+  displayName: Linux
+  pool:
+    vmImage: "ubuntu-16.04"
+  strategy:
+    matrix:
+      Python36:
+        python.version: "3.6"
+      Python37:
+        python.version: "3.7"
+
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+
+  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c conda-forge
+    displayName: Create Anaconda environment
+
+  - bash: |
+      source activate estimagic
+      tox
+
+- job:
+  displayName: Windows
+  pool:
+    vmImage: "windows-2019"
+  strategy:
+    matrix:
+      Python36:
+        python.version: "3.6"
+      # Python37:
+      #   python.version: "3.7"
+
+  steps:
+  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    displayName: Add conda to PATH
+
+  - powershell: conda create --yes --quiet --name estimagic python=$env:PYTHON_VERSION tox-conda -c conda-forge
+    displayName: Create Anaconda environment
+
+  - script: |
+      call activate estimagic
+      tox -e pytest
+
+- job:
+  displayName: MacOS
+  pool:
+    vmImage: "macOS-10.13"
+  strategy:
+    matrix:
+      Python36:
+        python.version: "3.6"
+      Python37:
+        python.version: "3.7"
+
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+
+  # On Hosted macOS, the agent user doesn't have ownership of Miniconda's installation
+  # directory. We need to take ownership if we want to update conda or install packages
+  # globally.
+  - bash: sudo chown -R $USER $CONDA
+    displayName: Take ownership of conda installation
+
+  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c conda-forge
+    displayName: Create Anaconda environment
+
+  - bash: |
+      source activate estimagic
+      tox -e pytest

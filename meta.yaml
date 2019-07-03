@@ -23,6 +23,8 @@ requirements:
     - pygmo>=2.10
     - bokeh>=1.1
     - scipy
+    - numdifftools>= 0.9.20
+    - fuzzywuzzy
 
 test:
   commands:
