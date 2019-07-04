@@ -153,6 +153,8 @@ def _process_cov_constraint(constraint, params, fixed):
     value_mat = cov_params_to_matrix(params_subset["value"].to_numpy())
     fixed_mat = cov_params_to_matrix(fixed_subset["_fixed"].to_numpy()).astype(bool)
     new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
+    new_constr["bounds_distance"] = constraint.pop("bounds_distance", 0.0)
+
     return new_constr
 
 
@@ -179,6 +181,7 @@ def _process_sdcorr_constraint(constraint, params, fixed):
     fixed_lower[np.tril_indices(dim, k=-1)] = fixed_vec[dim:]
     fixed_mat = (fixed_lower + fixed_diag + fixed_lower.T).astype(bool)
     new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
+    new_constr["bounds_distance"] = constraint.pop("bounds_distance", 0.0)
     return new_constr
 
 

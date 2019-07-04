@@ -38,7 +38,12 @@ def reparametrize_to_internal(params, constraints):
             internal.update(_equality_to_internal(internal.loc[constr["index"]]))
         elif constr["type"] in ["covariance", "sdcorr"]:
             internal.update(
-                _covariance_to_internal(params_subset, constr["case"], constr["type"])
+                _covariance_to_internal(
+                    params_subset,
+                    constr["case"],
+                    constr["type"],
+                    constr["bounds_distance"],
+                )
             )
         elif constr["type"] == "sum":
             internal.update(_sum_to_internal(params_subset, constr["value"]))
@@ -110,7 +115,7 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
     return external["value"]
 
 
-def _covariance_to_internal(params_subset, case, type_):
+def _covariance_to_internal(params_subset, case, type_, bounds_distance):
     """Reparametrize parameters that describe a covariance matrix to internal.
 
     If `type_` == 'covariance', the parameters in params_subset are assumed to be the
@@ -163,7 +168,7 @@ def _covariance_to_internal(params_subset, case, type_):
 
         if type_ == "covariance":
             lower_bound_helper = np.full((dim, dim), -np.inf)
-            lower_bound_helper[np.diag_indices(dim)] = 0
+            lower_bound_helper[np.diag_indices(dim)] = bounds_distance
             res["lower"] = lower_bound_helper[np.tril_indices(dim)]
             res["upper"] = np.inf
             res["_fixed"] = False
