@@ -320,6 +320,7 @@ def _probability_to_internal(params_subset):
 
     """
     res = params_subset.copy()
+
     assert (
         params_subset["lower"].isin([-np.inf, 0]).all()
     ), "Lower bound has to be 0 or -inf for probability constrained parameters."
@@ -328,9 +329,10 @@ def _probability_to_internal(params_subset):
         params_subset["upper"].isin([np.inf, 1]).all()
     ), "Upper bound has to be 1 or inf for probability constrained parameters."
 
-    assert not params_subset[
-        "_fixed"
-    ].any(), "Probability constrained parameters cannot be fixed."
+    if params_subset["_fixed"].any():
+        assert params_subset[
+            "_fixed"
+        ].all(), "Either all or no probability constrained parameter can be fixed."
 
     res["lower"] = 0
     res["upper"] = np.inf

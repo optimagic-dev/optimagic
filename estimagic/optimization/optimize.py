@@ -275,7 +275,7 @@ def _minimize(
         evolved = algo.evolve(pop)
         result = _process_results(evolved, params, internal_params, constraints, origin)
     elif origin == "scipy":
-        bounds = _get_scipy_bounds(params)
+        bounds = _get_scipy_bounds(internal_params)
         x0 = _x_from_params_df(params, constraints)
         minimized = scipy_minimize(
             internal_criterion,
