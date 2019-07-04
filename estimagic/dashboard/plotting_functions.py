@@ -3,6 +3,7 @@ import random
 
 import bokeh.palettes
 from bokeh.core.properties import value
+from bokeh.models import HoverTool
 from bokeh.plotting import figure
 
 
@@ -50,19 +51,11 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
     if y_names is None:
         y_names = y_keys
 
-    if x_name == "XxXxITERATIONxXxX":
-        tooltips = [("iteration", "@" + x_name)]
-    else:
-        tooltips = [(x_name, "@" + x_name)]
-    if "fitness" not in y_names:
-        tooltips += [("fitness", "@fitness")]
-    tooltips += [(name, "@" + key) for name, key in zip(y_names, y_keys)]
-
-    plot = create_wide_figure(title=title, tooltips=tooltips)
+    plot = create_wide_figure(title=title)
 
     colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
-        plot.line(
+        line_glyph = plot.line(
             source=data,
             x=x_name,
             y=y_key,
@@ -72,6 +65,16 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
             muted_color=color,
             muted_alpha=0.2,
         )
+
+        if x_name == "XxXxITERATIONxXxX":
+            tooltips = [("iteration", "@" + x_name)]
+        else:
+            tooltips = [(x_name, "@" + x_name)]
+        if "fitness" not in y_names:
+            tooltips += [("fitness", "@fitness")]
+        tooltips += [("param_name", y_name), ("param_value", "@" + y_key)]
+        hover = HoverTool(renderers=[line_glyph], tooltips=tooltips)
+        plot.tools.append(hover)
 
     plot.legend.click_policy = "mute"
 
