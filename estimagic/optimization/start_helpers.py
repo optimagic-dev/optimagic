@@ -65,7 +65,7 @@ def get_start_params_from_free_params(free, constraints, params_index):
     fake_params = pd.DataFrame(index=params_index, columns=["value", "lower", "upper"])
     processed_constraints = process_constraints(constraints, fake_params)
     equality_constraints = [c for c in processed_constraints if c["type"] == "equality"]
-    params = pd.concat([free, fixed], axis=0).loc[params_index]
+    params = pd.concat([free, fixed], axis=0, sort=False).loc[params_index]
     for constr in equality_constraints:
         params_subset = params.loc[constr["index"]]
         values = list(params_subset["value"].value_counts(dropna=True).index)
