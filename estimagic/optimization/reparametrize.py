@@ -286,7 +286,6 @@ def _sum_to_internal(params_subset, value):
         res (DataFrame): copy of params_subset with adjusted 'fixed' column
 
     """
-
     free = params_subset.query("lower == -inf & upper == inf & _fixed == False")
     last = params_subset.index[-1]
 
