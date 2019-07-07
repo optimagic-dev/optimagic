@@ -144,7 +144,7 @@ def _process_cov_constraint(constraint, params, fixed):
 
     Returns:
         new_constr (dict): copy of *constraint* with a new entry called 'case',
-            which can take the values 'all_fixed', 'uncorrelated' and 'all_free'.
+            which can take the values 'all_fixed', 'uncorrelated' and 'free'.
 
     """
     new_constr = constraint.copy()
@@ -168,7 +168,7 @@ def _process_sdcorr_constraint(constraint, params, fixed):
 
     Returns:
         new_constr (dict): copy of *constraint* with a new entry called 'case',
-            which can take the values 'all_fixed', 'uncorrelated' and 'all_free'.
+            which can take the values 'all_fixed', 'uncorrelated' and 'free'.
 
     """
     new_constr = constraint.copy()
@@ -194,7 +194,7 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
         params_subset (DataFrame): relevant subset of a :ref:`params`.
 
     Returns:
-        case (str): takes the values 'all_fixed', 'uncorrelated', 'all_free'
+        case (str): takes the values 'all_fixed', 'uncorrelated', 'free'
 
     """
     dim = len(value_mat)
@@ -215,7 +215,7 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
             "Only the first diagonal element can be fixed for parameters with "
             "covariance or sdcorr constraint."
         )
-        case = "all_free"
+        case = "free"
 
         if fixed_mat.any():
             assert value_mat[0, 0] == 1.0, (

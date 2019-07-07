@@ -129,8 +129,10 @@ def _covariance_to_internal(params_subset, case, type_, bounds_distance):
         - 'all_fixed': nothing has to be done
         - 'uncorrelated': bounds of diagonal elements are set to zero unless already
             stricter
-        - 'all_free': do a (lower triangular) Cholesky reparametrization and restrict
-            diagonal elements to be positive (see: https://tinyurl.com/y2n55cfb)
+        - 'free': do a (lower triangular) Cholesky reparametrization and restrict
+            diagonal elements to be positive (see: https://tinyurl.com/y2n55cfb).
+            Note that free does not mean that all parameters are free. The first
+            diagonal element can still be fixed.
 
     Note that the cholesky reparametrization is not compatible with any other
     constraints on the involved parameters. Moreover, it requires the covariance matrix
@@ -139,7 +141,7 @@ def _covariance_to_internal(params_subset, case, type_, bounds_distance):
 
     Args:
         params_subset (DataFrame): relevant subset of non-internal params.
-        case (str): can take the values 'all_free', 'uncorrelated' or 'all_fixed'.
+        case (str): can take the values 'free', 'uncorrelated' or 'all_fixed'.
 
     Returns:
         res (DataFrame): copy of params_subset with adjusted 'value' and 'lower' columns
@@ -162,7 +164,7 @@ def _covariance_to_internal(params_subset, case, type_, bounds_distance):
 
         res["lower"] = np.maximum(res["lower"], np.zeros(len(res)))
         assert (res["upper"] >= res["lower"]).all(), "Invalid upper bound for variance."
-    elif case == "all_free":
+    elif case == "free":
         chol = np.linalg.cholesky(cov)
         chol_coeffs = chol[np.tril_indices(dim)]
         res["value"] = chol_coeffs
@@ -186,18 +188,18 @@ def _covariance_to_internal(params_subset, case, type_, bounds_distance):
 def _covariance_from_internal(params_subset, case, type_):
     """Reparametrize parameters that describe a covariance matrix from internal.
 
-    If case == 'all_free', undo the cholesky reparametrization. Otherwise, do nothing.
+    If case == 'free', undo the cholesky reparametrization. Otherwise, do nothing.
 
     Args:
         params_subset (DataFrame): relevant subset of internal_params.
-        case (str): can take the values 'all_free', 'uncorrelated' or 'all_fixed'.
+        case (str): can take the values 'free', 'uncorrelated' or 'all_fixed'.
 
     Returns:
         res (Series): Series with lower triangular elements of a covariance matrix
 
     """
     res = params_subset.copy(deep=True)
-    if case == "all_free":
+    if case == "free":
         dim = number_of_triangular_elements_to_dimension(len(params_subset))
         helper = np.zeros((dim, dim))
         helper[np.tril_indices(dim)] = params_subset["value"].to_numpy()
