@@ -57,7 +57,7 @@ def constraints(params):
         {"loc": "l", "type": "covariance"},
         {"locs": ["f", "l"], "type": "pairwise_equality"},
         {"loc": "m", "type": "covariance"},
-        {"loc": ("m", "diag", "a"), "type": "fixed", "value": 1.0},
+        {"loc": ("m", "diag", "a"), "type": "fixed", "value": 4.0},
     ]
     constr = process_constraints(constr, params)
     return constr

@@ -217,12 +217,6 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
         )
         case = "free"
 
-        if fixed_mat.any():
-            assert value_mat[0, 0] == 1.0, (
-                "The first diagonal element of a covariance or sdcorr matrix can only "
-                "be fixed to 1.0."
-            )
-
     return case
 
 

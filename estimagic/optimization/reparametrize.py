@@ -90,6 +90,8 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
     # fixed parameters have to be written back before equality constraints are handled
     fixed_index = external.query("value.isnull()", engine="python").index
     external.update(original_params.loc[fixed_index, "value"])
+    external["_fixed"] = False
+    external.loc[fixed_index, "_fixed"] = True
 
     # equality constraints have to be handled before all other constraints
     for constr in constraints:
@@ -203,6 +205,10 @@ def _covariance_from_internal(params_subset, case, type_):
         dim = number_of_triangular_elements_to_dimension(len(params_subset))
         helper = np.zeros((dim, dim))
         helper[np.tril_indices(dim)] = params_subset["value"].to_numpy()
+
+        if params_subset["_fixed"].any():
+            helper[0, 0] = np.sqrt(helper[0, 0])
+
         cov = helper.dot(helper.T)
 
         if type_ == "covariance":
