@@ -56,6 +56,7 @@ def reparametrize_to_internal(params, constraints):
 
     # It is a known bug that df.update changes some dtypes: https://tinyurl.com/y66hqxg2
     internal["_fixed"] = internal["_fixed"].astype(bool)
+
     internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
     internal.drop(columns="_fixed", axis=1, inplace=True)
 
@@ -171,7 +172,6 @@ def _covariance_to_internal(params_subset, case, type_, bounds_distance):
             lower_bound_helper[np.diag_indices(dim)] = bounds_distance
             res["lower"] = lower_bound_helper[np.tril_indices(dim)]
             res["upper"] = np.inf
-            res["_fixed"] = False
         else:
             res.loc[res.index[:dim], "lower"] = 0
 

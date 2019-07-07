@@ -208,10 +208,20 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
     elif off_diagonal_fixed and off_diagonal_zero:
         case = "uncorrelated"
     else:
-        assert (
-            not fixed_mat.any()
-        ), "Fixed parameters are not allowed for covariance or sdcorr constraint."
+        fixed_copy = fixed_mat.copy()
+        fixed_copy[0, 0] = False
+
+        assert not fixed_copy.any(), (
+            "Only the first diagonal element can be fixed for parameters with "
+            "covariance or sdcorr constraint."
+        )
         case = "all_free"
+
+        if fixed_mat.any():
+            assert value_mat[0, 0] == 1.0, (
+                "The first diagonal element of a covariance or sdcorr matrix can only "
+                "be fixed to 1.0."
+            )
 
     return case
 
