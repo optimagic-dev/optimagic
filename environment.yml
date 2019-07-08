@@ -19,7 +19,6 @@ dependencies:
   - conda-verify
   - jupyter
   - fuzzywuzzy
-  - pydocstyle>=1.1.1
   - pip:
     - doc8
     - pre-commit
