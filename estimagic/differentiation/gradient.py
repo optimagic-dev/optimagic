@@ -37,7 +37,7 @@ def gradient(
     func_kwargs = {} if func_kwargs is None else func_kwargs
     if extrapolation:
         # For the richardson extrapolation we use, the numdifftools library.
-        grad_np = nd.Gradient(func, method=method)(params_sr, *func_args, *func_kwargs)
+        grad_np = nd.Gradient(func, method=method)(params_sr, *func_args, **func_kwargs)
         return pd.Series(data=grad_np, index=params_sr.index)
     else:
         grad = pd.Series(index=params_sr.index)
