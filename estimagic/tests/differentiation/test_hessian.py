@@ -43,3 +43,17 @@ def test_hessian_central_richardson(statsmodels_fixtures):
         ),
         fix["hessian"],
     )
+
+
+def test_hessian_central_richardson_kwargs(statsmodels_fixtures):
+    fix = statsmodels_fixtures
+    assert_frame_equal(
+        hessian(
+            logit_loglike,
+            fix["params"],
+            method="central",
+            extrapolation=True,
+            func_kwargs={"y": fix["y"], "x": fix["x"]},
+        ),
+        fix["hessian"],
+    )

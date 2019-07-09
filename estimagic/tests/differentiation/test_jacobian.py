@@ -99,3 +99,17 @@ def test_jacobian_backward_richardson(statsmodels_fixtures):
         ),
         fix["jacobian"],
     )
+
+
+def test_jacobian_backward_richardson_kwargs(statsmodels_fixtures):
+    fix = statsmodels_fixtures
+    assert_frame_equal(
+        jacobian(
+            logit_loglikeobs,
+            fix["params"],
+            method="backward",
+            extrapolation=True,
+            func_kwargs={"y": fix["y"], "x": fix["x"]},
+        ),
+        fix["jacobian"],
+    )

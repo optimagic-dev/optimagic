@@ -45,6 +45,20 @@ def test_gradient_forward_richardson(statsmodels_fixtures):
     )
 
 
+def test_gradient_forward_richardson_kwargs(statsmodels_fixtures):
+    fix = statsmodels_fixtures
+    assert_series_equal(
+        gradient(
+            logit_loglike,
+            fix["params"],
+            method="forward",
+            extrapolation=True,
+            func_kwargs={"y": fix["y"], "x": fix["x"]},
+        ),
+        fix["gradient"],
+    )
+
+
 def test_gradient_backward(statsmodels_fixtures):
     fix = statsmodels_fixtures
     assert_series_equal(
