@@ -144,7 +144,7 @@ def _process_cov_constraint(constraint, params, fixed):
 
     Returns:
         new_constr (dict): copy of *constraint* with a new entry called 'case',
-            which can take the values 'all_fixed', 'uncorrelated' and 'all_free'.
+            which can take the values 'all_fixed', 'uncorrelated' and 'free'.
 
     """
     new_constr = constraint.copy()
@@ -153,6 +153,8 @@ def _process_cov_constraint(constraint, params, fixed):
     value_mat = cov_params_to_matrix(params_subset["value"].to_numpy())
     fixed_mat = cov_params_to_matrix(fixed_subset["_fixed"].to_numpy()).astype(bool)
     new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
+    new_constr["bounds_distance"] = constraint.pop("bounds_distance", 0.0)
+
     return new_constr
 
 
@@ -166,7 +168,7 @@ def _process_sdcorr_constraint(constraint, params, fixed):
 
     Returns:
         new_constr (dict): copy of *constraint* with a new entry called 'case',
-            which can take the values 'all_fixed', 'uncorrelated' and 'all_free'.
+            which can take the values 'all_fixed', 'uncorrelated' and 'free'.
 
     """
     new_constr = constraint.copy()
@@ -179,6 +181,7 @@ def _process_sdcorr_constraint(constraint, params, fixed):
     fixed_lower[np.tril_indices(dim, k=-1)] = fixed_vec[dim:]
     fixed_mat = (fixed_lower + fixed_diag + fixed_lower.T).astype(bool)
     new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
+    new_constr["bounds_distance"] = constraint.pop("bounds_distance", 0.0)
     return new_constr
 
 
@@ -191,7 +194,7 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
         params_subset (DataFrame): relevant subset of a :ref:`params`.
 
     Returns:
-        case (str): takes the values 'all_fixed', 'uncorrelated', 'all_free'
+        case (str): takes the values 'all_fixed', 'uncorrelated', 'free'
 
     """
     dim = len(value_mat)
@@ -205,10 +208,14 @@ def _determine_cov_case(value_mat, fixed_mat, params_subset):
     elif off_diagonal_fixed and off_diagonal_zero:
         case = "uncorrelated"
     else:
-        assert (
-            not fixed_mat.any()
-        ), "Fixed parameters are not allowed for covariance or sdcorr constraint."
-        case = "all_free"
+        fixed_copy = fixed_mat.copy()
+        fixed_copy[0, 0] = False
+
+        assert not fixed_copy.any(), (
+            "Only the first diagonal element can be fixed for parameters with "
+            "covariance or sdcorr constraint."
+        )
+        case = "free"
 
     return case
 
