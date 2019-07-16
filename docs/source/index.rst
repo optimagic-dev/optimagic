@@ -12,6 +12,7 @@ Welcome to estimagic's documentation!
 
    introduction
    estimation
+   differentiation
    inference
    dashboard
    module_reference

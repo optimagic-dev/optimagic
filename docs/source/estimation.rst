@@ -59,7 +59,7 @@ It is important to distinguish three related but different concepts:
 - ``internal_params``: a reparametrized version of params that is only used
   internally in order to enforce some types of constraints during the
   optimization. It is often shorter than params and has a different index.
-  Moreover, the columns for lower ad upper bounds might be differnet.
+  Moreover, the columns for lower ad upper bounds might be different.
   internal_params is only relevant if you want to read the source code or want
   to extend estimagic.
 
@@ -79,13 +79,18 @@ a dictionary. The dictionary must contain the following entries:
   df.query so you can provide whatever is accepted by those methods.
 - ``'type'``, which can take the following values:
     - ``'covariance'``: a set of parameters forms a valid (i.e. positive
-      semi-definite) covariance matrix. This is not compatible with any other
-      constraints on the involved parameters.
+      semi-definite) covariance matrix. This is not compatible with other
+      constraints on the involved parameters, except for fixing the first
+      element to some value. To avoid covariance matrices that are only
+      positive semi-definite but not positive-definite during optimization you can
+      specify an entry ``'bounds_distance' : some_float`` in the constraint dictionary.
+      The variances are then restricted to be larger than that number. Even very
+      small bounds distances (e.g. 1e-20) can make the optimization much more robust.
     - ``'sdcorr'``: the first part of a set of parameters are standard deviations,
       the second part are the lower triangle (excluding the diagonal)
       of a correlation matrix. All parameters together can be used to construct
-      a full covariance matrix but are more interpretable. This is not compatible
-      with any other type of constraints on the involved parameters.
+      a full covariance matrix but are more interpretable. All remaining options
+      and limitations are the same as in ``'covariance'``
     - ``'sum'``: a set of parameters sums to a specified value. The last involved
       parameter can't have bounds. In this case the constraint dictionary also
       needs to contain a 'value' key.

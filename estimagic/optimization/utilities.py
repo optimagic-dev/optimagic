@@ -1,4 +1,5 @@
 import numpy as np
+from fuzzywuzzy import process as fw_process
 
 
 def cov_params_to_matrix(cov_params):
@@ -60,17 +61,14 @@ def cov_matrix_to_sdcorr_params(cov):
 def number_of_triangular_elements_to_dimension(num):
     """Calculate the dimension of a square matrix from number of triangular elements.
 
-    Parameters
-    ----------
-    num : int
-        The number of upper or lower triangular elements in the matrix.
+    Args:
+        num (int): The number of upper or lower triangular elements in the matrix.
 
-    Example
-    -------
-    >>> number_of_triangular_elements_to_dimension(6)
-    3
-    >>> number_of_triangular_elements_to_dimension(10)
-    4
+    Examples:
+        >>> number_of_triangular_elements_to_dimension(6)
+        3
+        >>> number_of_triangular_elements_to_dimension(10)
+        4
 
     """
     return int(np.sqrt(8 * num + 1) / 2 - 0.5)
@@ -93,3 +91,32 @@ def index_element_to_string(element, separator="_"):
     else:
         res_string = str(element)
     return res_string
+
+
+def propose_algorithms(requested_algo, algos, number=3):
+    """Propose a a number of algorithms based on similarity to the requested algorithm.
+
+    Args:
+        requested_algo (str): From the user requested algorithm.
+        algos (dict(str, list(str))): Dictionary where keys are the package and values
+            are lists of algorithms.
+        number (int) : Number of proposals.
+
+    Returns:
+        proposals (list(str)): List of proposed algorithms.
+
+    Example:
+        >>> algos = {"scipy": ["L-BFGS-B", "TNC"], "nlopt": ["lbfgsb"]}
+        >>> propose_algorithms("scipy_L-BFGS-B", algos, number=1)
+        ['scipy_L-BFGS-B']
+        >>> propose_algorithms("L-BFGS-B", algos, number=2)
+        ['scipy_L-BFGS-B', 'nlopt_lbfgsb']
+
+    """
+    possibilities = [
+        "_".join([origin, algo_name]) for origin in algos for algo_name in algos[origin]
+    ]
+    proposals_w_probs = fw_process.extract(requested_algo, possibilities, limit=number)
+    proposals = [proposal[0] for proposal in proposals_w_probs]
+
+    return proposals
