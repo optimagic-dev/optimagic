@@ -55,6 +55,10 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
     """
     rollover = db_options["rollover"]
 
+    start_param_df, start_fitness = _trim_start_values(
+        start_param_df=start_param_df, start_fitness=start_fitness
+    )
+
     doc, data = _configure_dashboard(
         doc=doc, param_df=start_param_df, start_fitness=start_fitness
     )
@@ -66,6 +70,23 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
     update_data_thread = Thread(target=callbacks)
     update_data_thread.start()
     start_signal.set()
+
+
+def _trim_start_values(start_param_df, start_fitness):
+    """
+    Trim extremely large start values.
+
+    Extremely large (>1e17) starting value cause the dashboard to crash.
+    This does not seem to be an issue later on."""
+    start_fitness = max(min(start_fitness, 1e15), -1e15)
+    start_param_df["value"] = start_param_df["value"].where(
+        start_param_df["value"] < 1e15, 1e15
+    )
+    start_param_df["value"] = start_param_df["value"].where(
+        start_param_df["value"] > -1e15, -1e15
+    )
+
+    return start_param_df, start_fitness
 
 
 def _configure_dashboard(doc, param_df, start_fitness):
