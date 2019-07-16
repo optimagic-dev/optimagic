@@ -12,7 +12,7 @@ from bokeh.server.server import Server
 from estimagic.dashboard.dashboard import run_dashboard
 
 
-def run_server(queue, start_signal, port, db_options):
+def run_server(queue, start_signal, db_options):
     """
     Setup and run a server creating und continuously updating a dashboard.
 
@@ -26,9 +26,6 @@ def run_server(queue, start_signal, port, db_options):
 
         start_signal (Queue):
             empty queue. The minimization starts once it stops being empty.
-
-        port (int):
-            port at which to display the dashboard.
 
         db_options (dict):
             dictionary with options. see ``run_dashboard`` for details.
@@ -50,13 +47,24 @@ def run_server(queue, start_signal, port, db_options):
         )
     }
 
-    server = _setup_server(apps, port)
+    server = _setup_server(apps=apps, port=db_options["port"])
 
     server._loop.start()
     server.start()
 
 
-def find_free_port():
+def _process_db_options(db_options):
+    full_db_options = {"rollover": None}
+    if "rollover" in db_options.keys() and db_options["rollover"] <= 0:
+        db_options["rollover"] = None
+    if "port" not in db_options.keys():
+        db_options["port"] = _find_free_port()
+
+    full_db_options.update(db_options)
+    return full_db_options
+
+
+def _find_free_port():
     """
     Find a free port on the localhost.
 
@@ -66,14 +74,6 @@ def find_free_port():
         s.bind(("localhost", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
-
-
-def _process_db_options(db_options):
-    full_db_options = {"rollover": None}
-    if "rollover" in db_options.keys() and db_options["rollover"] <= 0:
-        db_options["rollover"] = None
-    full_db_options.update(db_options)
-    return full_db_options
 
 
 def _setup_server(apps, port):

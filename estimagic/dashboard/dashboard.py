@@ -44,6 +44,8 @@ def run_dashboard(doc, queue, start_signal, db_options):
             dictionary with options. Supported so far:
                 rollover (int):
                     How many data points to store, default None.
+                port (int):
+                    port at which to display the dashboard.
 
     """
     rollover = db_options["rollover"]

@@ -11,7 +11,6 @@ import numpy as np
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
-from estimagic.dashboard.server_functions import find_free_port
 from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
@@ -157,15 +156,10 @@ def minimize(
         # later only the parameter series can be supplied
         # but for the setup of the dashboard we want the whole DataFrame
         queue.put(QueueEntry(params=params, fitness=fitness_eval, still_running=True))
-        if "port" in db_options.keys():
-            port = db_options["port"]
-        else:
-            port = find_free_port()
         server_thread = Thread(
             target=run_server,
             kwargs={
                 "queue": queue,
-                "port": port,
                 "db_options": db_options,
                 "start_signal": start_signal,
             },
