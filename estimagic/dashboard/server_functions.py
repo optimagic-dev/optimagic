@@ -1,5 +1,7 @@
 """Functions for setting up and running the BokehServer displaying the dashboard."""
 import asyncio
+import socket
+from contextlib import closing
 from functools import partial
 
 from bokeh.application import Application
@@ -52,6 +54,18 @@ def run_server(queue, start_signal, port, db_options):
 
     server._loop.start()
     server.start()
+
+
+def find_free_port():
+    """
+    Find a free port on the localhost.
+
+    Adapted from https://stackoverflow.com/a/45690594
+    """
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("localhost", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 
 def _process_db_options(db_options):
