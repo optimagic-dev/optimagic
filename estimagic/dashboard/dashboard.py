@@ -45,6 +45,10 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
                     How many data points to store, default None.
                 port (int):
                     port at which to display the dashboard.
+                evaluations_to_skip (int):
+                    only plot every (k+1)th evaluation of the criterion function.
+                    The default is 0, i.e. plot every evaluation.
+                    If 9 was supplied, only every 10th evaluation's results are plotted.
 
         start_param_df (pd.DataFrame):
             DataFrame with the start params and information on them.
@@ -53,8 +57,6 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
             fitness evaluation at the start parameters.
 
     """
-    rollover = db_options["rollover"]
-
     start_param_df, start_fitness = _trim_start_values(
         start_param_df=start_param_df, start_fitness=start_fitness
     )
@@ -65,7 +67,12 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
 
     # this thread is necessary to not lock the server
     callbacks = partial(
-        _update_dashboard, doc=doc, dashboard_data=data, queue=queue, rollover=rollover
+        _update_dashboard,
+        doc=doc,
+        dashboard_data=data,
+        queue=queue,
+        rollover=db_options["rollover"],
+        evaluations_to_skip=db_options["evaluations_to_skip"],
     )
     update_data_thread = Thread(target=callbacks)
     update_data_thread.start()
@@ -111,7 +118,7 @@ def _configure_dashboard(doc, param_df, start_fitness):
     return doc, [conv_data]
 
 
-def _update_dashboard(doc, dashboard_data, queue, rollover):
+def _update_dashboard(doc, dashboard_data, queue, rollover, evaluations_to_skip):
     """
     Update the dashboard after each call of the criterion function.
 
@@ -125,10 +132,19 @@ def _update_dashboard(doc, dashboard_data, queue, rollover):
         queue (Queue):
             queue to which the updated parameter Series are supplied.
 
+        rollover (int or None):
+            How many data points to store, default None.
+
+        evaluations_to_skip (int):
+            only plot every (k+1)th evaluation of the criterion function.
+            The default is 0, i.e. plot every evaluation.
+            If 9 was supplied, only every 10th evaluation's results are plotted.
+
     """
     conv_data, = dashboard_data
+    k = evaluations_to_skip
     while True:
-        if queue.qsize() > 0:
+        if queue.qsize() > 0 and queue.qsize() % k == 0:
             new_params, new_fitness = queue.get()
 
             doc.add_next_tick_callback(
@@ -140,5 +156,9 @@ def _update_dashboard(doc, dashboard_data, queue, rollover):
                     rollover=rollover,
                 )
             )
+            if k != 1:
+                # necessary because we just took one element out of the queue
+                # thus with the next iteration the queue size would be divisible again
+                k += evaluations_to_skip
         else:
             sleep(0.001)

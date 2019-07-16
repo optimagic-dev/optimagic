@@ -65,6 +65,8 @@ def _process_db_options(db_options):
         db_options["rollover"] = None
     if "port" not in db_options.keys():
         db_options["port"] = _find_free_port()
+    if "evaluations_to_skip" not in db_options.keys():
+        db_options["evaluations_to_skip"] = 1
 
     full_db_options.update(db_options)
     return full_db_options
