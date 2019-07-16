@@ -4,8 +4,8 @@ import os
 from collections import namedtuple
 from numbers import Number
 from queue import Queue
+from threading import Event
 from threading import Thread
-from time import sleep
 
 import numpy as np
 import pygmo as pg
@@ -18,7 +18,7 @@ from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
-QueueEntry = namedtuple("QueueEntry", ["params", "fitness", "still_running"])
+QueueEntry = namedtuple("QueueEntry", ["params", "fitness"])
 
 
 def maximize(
@@ -151,8 +151,8 @@ def minimize(
     internal_params = reparametrize_to_internal(params, constraints)
 
     queue = Queue() if dashboard else None
-    start_signal = Queue() if dashboard else None
     if dashboard:
+        start_signal = Event()
         server_thread = Thread(
             target=run_server,
             kwargs={
@@ -165,11 +165,7 @@ def minimize(
             daemon=True,
         )
         server_thread.start()
-
-    if dashboard:
-        # wait for server_thread to give start signal
-        while start_signal.qsize() == 0:
-            sleep(0.01)
+        start_signal.wait()
 
     result = _minimize(
         criterion=criterion,
@@ -185,9 +181,7 @@ def minimize(
     )
 
     if dashboard:
-        queue.put(
-            QueueEntry(params=result[1], fitness=result[0]["f"], still_running=False)
-        )
+        queue.put(QueueEntry(params=result[1], fitness=result[0]["f"]))
     return result
 
 
@@ -301,9 +295,7 @@ def _create_internal_criterion(
         params_sr = _params_sr_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(params_sr, *criterion_args, **criterion_kwargs)
         if queue is not None:
-            queue.put(
-                QueueEntry(params=params_sr, fitness=fitness_eval, still_running=True)
-            )
+            queue.put(QueueEntry(params=params_sr, fitness=fitness_eval))
         return fitness_eval
 
     return internal_criterion

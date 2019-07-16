@@ -36,8 +36,8 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
         queue (Queue):
             queue to which the updated parameter Series will be supplied later.
 
-        start_signal (Queue):
-            empty queue. The minimization starts once it stops being empty.
+        start_signal (Event):
+            signal to parent thread to start the optimization.
 
         db_options (dict):
             dictionary with options. Supported so far:
@@ -65,7 +65,7 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
     )
     update_data_thread = Thread(target=callbacks)
     update_data_thread.start()
-    start_signal.put(True)
+    start_signal.set()
 
 
 def _configure_dashboard(doc, param_df, start_fitness):
@@ -106,10 +106,9 @@ def _update_dashboard(doc, dashboard_data, queue, rollover):
 
     """
     conv_data, = dashboard_data
-    still_running = True
-    while still_running:
+    while True:
         if queue.qsize() > 0:
-            new_params, new_fitness, still_running = queue.get()
+            new_params, new_fitness = queue.get()
 
             doc.add_next_tick_callback(
                 partial(

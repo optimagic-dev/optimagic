@@ -23,8 +23,8 @@ def run_server(queue, start_signal, db_options, start_param_df, start_fitness):
         queue (Queue):
             queue to which the updated parameter Series will be supplied.
 
-        start_signal (Queue):
-            empty queue. The minimization starts once it stops being empty.
+        start_signal (Event):
+            signal to parent thread to start the optimization.
 
         db_options (dict):
             dictionary with options. see ``run_dashboard`` for details.
