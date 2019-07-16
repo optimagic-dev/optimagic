@@ -35,7 +35,7 @@ def run_server(queue, start_signal, db_options, start_param_df, start_fitness):
         start_fitness (float):
             fitness evaluation at the start parameters.
     """
-    db_options = _process_db_options(db_options)
+    db_options, port = _process_db_options(db_options)
     asyncio.set_event_loop(asyncio.new_event_loop())
 
     apps = {
@@ -53,23 +53,28 @@ def run_server(queue, start_signal, db_options, start_param_df, start_fitness):
         )
     }
 
-    server = _setup_server(apps=apps, port=db_options["port"])
+    server = _setup_server(apps=apps, port=port)
 
     server._loop.start()
     server.start()
 
 
 def _process_db_options(db_options):
-    full_db_options = {"rollover": None}
+    if "port" not in db_options.keys():
+        port = _find_free_port()
+    else:
+        port = db_options.pop("port")
+
     if "rollover" in db_options.keys() and db_options["rollover"] <= 0:
         db_options["rollover"] = None
-    if "port" not in db_options.keys():
-        db_options["port"] = _find_free_port()
-    if "evaluations_to_skip" not in db_options.keys():
-        db_options["evaluations_to_skip"] = 1
+    full_db_options = {
+        "rollover": None,
+        "evaluations_to_skip": 0,
+        "time_btw_queue_checks": 0.001,
+    }
 
     full_db_options.update(db_options)
-    return full_db_options
+    return full_db_options, port
 
 
 def _find_free_port():
