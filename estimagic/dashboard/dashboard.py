@@ -20,7 +20,7 @@ from estimagic.dashboard.convergence_tab import setup_convergence_tab
 from estimagic.dashboard.convergence_tab import update_convergence_data
 
 
-def run_dashboard(doc, queue, start_signal, db_options):
+def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fitness):
     """Configure the dashboard and update constantly as new parameters arrive.
 
     This is the main function that is supplied to the bokeh FunctionHandler.
@@ -34,8 +34,7 @@ def run_dashboard(doc, queue, start_signal, db_options):
             to work properly.
 
         queue (Queue):
-            queue to which originally the parameters DataFrame is supplied and to which
-            the updated parameter Series will be supplied later.
+            queue to which the updated parameter Series will be supplied later.
 
         start_signal (Queue):
             empty queue. The minimization starts once it stops being empty.
@@ -47,12 +46,17 @@ def run_dashboard(doc, queue, start_signal, db_options):
                 port (int):
                     port at which to display the dashboard.
 
+        start_param_df (pd.DataFrame):
+            DataFrame with the start params and information on them.
+
+        start_fitness (float):
+            fitness evaluation at the start parameters.
+
     """
     rollover = db_options["rollover"]
-    param_df, initial_fitness, still_running = queue.get()
 
     doc, data = _configure_dashboard(
-        doc=doc, param_df=param_df, initial_fitness=initial_fitness
+        doc=doc, param_df=start_param_df, start_fitness=start_fitness
     )
 
     # this thread is necessary to not lock the server
@@ -64,7 +68,7 @@ def run_dashboard(doc, queue, start_signal, db_options):
     start_signal.put(True)
 
 
-def _configure_dashboard(doc, param_df, initial_fitness):
+def _configure_dashboard(doc, param_df, start_fitness):
     """
     Setup the basic dashboard.
 
@@ -75,10 +79,10 @@ def _configure_dashboard(doc, param_df, initial_fitness):
         param_df (pandas DataFrame):
             See :ref:`params`.
 
-        initial_fitness (float):
+        start_fitness (float):
             criterion function evaluated at the initial parameters
     """
-    conv_data, tab1 = setup_convergence_tab(param_df, initial_fitness)
+    conv_data, tab1 = setup_convergence_tab(param_df, start_fitness)
 
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)

@@ -153,15 +153,14 @@ def minimize(
     queue = Queue() if dashboard else None
     start_signal = Queue() if dashboard else None
     if dashboard:
-        # later only the parameter series can be supplied
-        # but for the setup of the dashboard we want the whole DataFrame
-        queue.put(QueueEntry(params=params, fitness=fitness_eval, still_running=True))
         server_thread = Thread(
             target=run_server,
             kwargs={
                 "queue": queue,
                 "db_options": db_options,
                 "start_signal": start_signal,
+                "start_param_df": params,
+                "start_fitness": fitness_eval,
             },
             daemon=True,
         )

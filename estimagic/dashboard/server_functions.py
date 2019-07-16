@@ -12,7 +12,7 @@ from bokeh.server.server import Server
 from estimagic.dashboard.dashboard import run_dashboard
 
 
-def run_server(queue, start_signal, db_options):
+def run_server(queue, start_signal, db_options, start_param_df, start_fitness):
     """
     Setup and run a server creating und continuously updating a dashboard.
 
@@ -21,8 +21,7 @@ def run_server(queue, start_signal, db_options):
 
     Args:
         queue (Queue):
-            queue to which originally the parameters DataFrame is supplied and
-            to which later the updated parameter Series will be supplied.
+            queue to which the updated parameter Series will be supplied.
 
         start_signal (Queue):
             empty queue. The minimization starts once it stops being empty.
@@ -30,6 +29,11 @@ def run_server(queue, start_signal, db_options):
         db_options (dict):
             dictionary with options. see ``run_dashboard`` for details.
 
+        start_param_df (pd.DataFrame):
+            DataFrame with the start params and information on them.
+
+        start_fitness (float):
+            fitness evaluation at the start parameters.
     """
     db_options = _process_db_options(db_options)
     asyncio.set_event_loop(asyncio.new_event_loop())
@@ -42,6 +46,8 @@ def run_server(queue, start_signal, db_options):
                     queue=queue,
                     db_options=db_options,
                     start_signal=start_signal,
+                    start_param_df=start_param_df,
+                    start_fitness=start_fitness,
                 )
             )
         )
