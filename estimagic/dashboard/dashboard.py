@@ -20,7 +20,9 @@ from estimagic.dashboard.convergence_tab import setup_convergence_tab
 from estimagic.dashboard.convergence_tab import update_convergence_data
 
 
-def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fitness):
+def run_dashboard(
+    doc, queue, start_signal, stop_signal, db_options, start_param_df, start_fitness
+):
     """Configure the dashboard and update constantly as new parameters arrive.
 
     This is the main function that is supplied to the bokeh FunctionHandler.
@@ -38,6 +40,9 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
 
         start_signal (Event):
             signal to parent thread to start the optimization.
+
+        stop_signal (Event):
+            signal from parent thread to stop the dashboard.
 
         db_options (dict):
             dictionary with options. Supported so far:
@@ -70,7 +75,12 @@ def run_dashboard(doc, queue, start_signal, db_options, start_param_df, start_fi
 
     # this thread is necessary to not lock the server
     callbacks = partial(
-        _update_dashboard, doc=doc, dashboard_data=data, queue=queue, **db_options
+        _update_dashboard,
+        doc=doc,
+        dashboard_data=data,
+        queue=queue,
+        stop_signal=stop_signal,
+        **db_options
     )
     update_data_thread = Thread(target=callbacks)
     update_data_thread.start()
@@ -117,7 +127,13 @@ def _configure_dashboard(doc, param_df, start_fitness):
 
 
 def _update_dashboard(
-    doc, dashboard_data, queue, rollover, evaluations_to_skip, time_btw_queue_checks
+    doc,
+    dashboard_data,
+    stop_signal,
+    queue,
+    rollover,
+    evaluations_to_skip,
+    time_btw_queue_checks,
 ):
     """
     Update the dashboard after each call of the criterion function.
@@ -128,6 +144,9 @@ def _update_dashboard(
 
         dashboard_data (list):
             List of datasets used for the dashboard.
+
+        stop_signal (Event):
+            signal from parent thread to stop the dashboard.
 
         queue (Queue):
             queue to which the updated parameter Series are supplied.
@@ -148,7 +167,7 @@ def _update_dashboard(
 
     """
     conv_data, = dashboard_data
-    while True:
+    while not stop_signal.is_set():
         if queue.qsize() >= evaluations_to_skip + 1:
             new_params, new_fitness = queue.queue.pop()
             queue.queue.clear()

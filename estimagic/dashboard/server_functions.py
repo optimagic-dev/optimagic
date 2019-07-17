@@ -12,7 +12,9 @@ from bokeh.server.server import Server
 from estimagic.dashboard.dashboard import run_dashboard
 
 
-def run_server(queue, start_signal, db_options, start_param_df, start_fitness):
+def run_server(
+    queue, start_signal, stop_signal, db_options, start_param_df, start_fitness
+):
     """
     Setup and run a server creating und continuously updating a dashboard.
 
@@ -25,6 +27,9 @@ def run_server(queue, start_signal, db_options, start_param_df, start_fitness):
 
         start_signal (Event):
             signal to parent thread to start the optimization.
+
+        stop_signal (Event):
+            signal from parent thread to stop the dashboard
 
         db_options (dict):
             dictionary with options. see ``run_dashboard`` for details.
@@ -48,6 +53,7 @@ def run_server(queue, start_signal, db_options, start_param_df, start_fitness):
                     start_signal=start_signal,
                     start_param_df=start_param_df,
                     start_fitness=start_fitness,
+                    stop_signal=stop_signal,
                 )
             )
         )
