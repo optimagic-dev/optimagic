@@ -99,7 +99,9 @@ def test_reparametrize_from_internal(internal, expected_external, category):
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
-        calculated = reparametrize_from_internal(internal, constr, expected_external)
+        calculated = reparametrize_from_internal(internal, constr, expected_external)[
+            "value"
+        ]
         assert_series_equal(
             calculated[category], expected_external.loc[category, "value"]
         )

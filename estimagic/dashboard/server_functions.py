@@ -83,7 +83,7 @@ def _process_db_options(db_options):
     if "rollover" in db_options.keys() and db_options["rollover"] <= 0:
         db_options["rollover"] = None
     full_db_options = {
-        "rollover": None,
+        "rollover": 500,
         "evaluations_to_skip": 0,
         "time_btw_queue_checks": 0.001,
     }

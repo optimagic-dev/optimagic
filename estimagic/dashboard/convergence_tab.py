@@ -52,7 +52,7 @@ def update_convergence_data(new_fitness, new_params, data, rollover):
         new_fitness (float):
             fitness value of the new iteration
 
-        new_params (Series):
+        new_params (pd.DataFrame):
             new parameter values
 
         data (ColumnDataSource):
@@ -65,7 +65,7 @@ def update_convergence_data(new_fitness, new_params, data, rollover):
     """
     iteration = max(data.data[X_NAME]) + 1
     to_add = _make_data_dict(
-        iteration=iteration, fitness=new_fitness, param_values=new_params
+        iteration=iteration, fitness=new_fitness, param_values=new_params["value"]
     )
     data.stream(to_add, rollover)
 
