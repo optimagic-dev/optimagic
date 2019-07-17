@@ -38,6 +38,13 @@ Implementation
 The dashboard is implemented using a Bokeh Server which is run
 in a separate thread parallel to the optimization.
 
+.. attention::
+    The Bokeh server stops looking for updates
+    when the optimization finishes. However, the server is
+    only shut down when the Python script that
+    called the optimization exits or the notebook that started
+    the optimization is shut down or restarted.
+
 ``dashboard.py`` contains the main function ``run_dashboard``.
 ``run_dashboard`` builds the tabs and adds the callbacks for updating the plots.
 It is the basis for the Bokeh Application that is run in the Bokeh Server.

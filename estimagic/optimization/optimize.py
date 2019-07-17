@@ -151,14 +151,12 @@ def minimize(
 
     queue = Queue() if dashboard else None
     if dashboard:
-        start_signal = Event()
         stop_signal = Event()
         server_thread = Thread(
             target=run_server,
             kwargs={
                 "queue": queue,
                 "db_options": db_options,
-                "start_signal": start_signal,
                 "start_param_df": params,
                 "start_fitness": fitness_eval,
                 "stop_signal": stop_signal,
@@ -166,7 +164,6 @@ def minimize(
             daemon=True,
         )
         server_thread.start()
-        start_signal.wait()
 
     result = _minimize(
         criterion=criterion,

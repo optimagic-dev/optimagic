@@ -77,6 +77,7 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
         plot.tools.append(hover)
 
     plot.legend.click_policy = "mute"
+    plot.legend.location = "top_left"
 
     plot.xaxis.axis_label = x_name if x_name != "XxXxITERATIONxXxX" else "iteration"
     plot.xaxis.axis_label_text_font_style = "normal"
