@@ -1,6 +1,7 @@
 name: estimagic
 
 channels:
+  - numba
   - defaults
   - conda-forge
 
