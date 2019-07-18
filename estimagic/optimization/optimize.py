@@ -1,10 +1,11 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
 import json
 import os
+import time
 from collections import namedtuple
-from queue import Queue
+from multiprocessing import Process
+from multiprocessing import Queue
 from threading import Event
-from threading import Thread
 
 import numpy as np
 import pygmo as pg
@@ -152,7 +153,7 @@ def minimize(
     queue = Queue() if dashboard else None
     if dashboard:
         stop_signal = Event()
-        server_thread = Thread(
+        server_thread = Process(
             target=run_server,
             kwargs={
                 "queue": queue,
@@ -165,7 +166,7 @@ def minimize(
         )
         server_thread.start()
 
-    result = _minimize(
+    result, times = _minimize(
         criterion=criterion,
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
@@ -181,7 +182,7 @@ def minimize(
     if dashboard:
         queue.put(QueueEntry(params=result[1], fitness=result[0]["fun"]))
         stop_signal.set()
-    return result
+    return result, times
 
 
 def _minimize(
@@ -233,6 +234,8 @@ def _minimize(
             the updated parameter Series will be supplied later.
 
     """
+    times = [time.time()]
+
     internal_criterion = _create_internal_criterion(
         criterion=criterion,
         params=params,
@@ -241,6 +244,7 @@ def _minimize(
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
+        times=times,
     )
 
     with open(os.path.join(os.path.dirname(__file__), "algo_dict.json")) as j:
@@ -278,7 +282,7 @@ def _minimize(
         )
     else:
         raise ValueError("Invalid algorithm requested.")
-    return result
+    return result, times
 
 
 def _create_internal_criterion(
@@ -289,12 +293,15 @@ def _create_internal_criterion(
     criterion_args,
     criterion_kwargs,
     queue,
+    times,
 ):
     def internal_criterion(x):
         p = _params_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
         if queue is not None:
             queue.put(QueueEntry(params=p, fitness=fitness_eval))
+        if times is not None:
+            times.append(time.time())
         return fitness_eval
 
     return internal_criterion
