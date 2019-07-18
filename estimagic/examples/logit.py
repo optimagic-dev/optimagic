@@ -6,8 +6,8 @@ def logit_loglike(params, y, x):
     """Log-likelihood function of a logit model.
 
     Args:
-        params (Series): The index consists of the parmater names,
-            the values are the parameters.
+        params (pd.DataFrame): The index consists of the parmater names,
+            the "value" column are the parameters.
         y (np.array): 1d numpy array with the dependent variable
         x (np.array): 2d numpy array with the independent variables
 
@@ -22,8 +22,8 @@ def logit_loglikeobs(params, y, x):
     """Log-likelihood contribution per individual of a logit model.
 
     Args:
-        params (Series): The index consists of the parmater names,
-            the values are the parameters.
+        params (pd.DataFrame): The index consists of the parmater names,
+            the "value" column are the parameters.
         y (np.array): 1d numpy array with the dependent variable
         x (np.array): 2d numpy array with the independent variables
 
@@ -32,15 +32,15 @@ def logit_loglikeobs(params, y, x):
 
     """
     q = 2 * y - 1
-    return np.log(1 / (1 + np.exp(-(q * np.dot(x, params)))))
+    return np.log(1 / (1 + np.exp(-(q * np.dot(x, params["value"])))))
 
 
 def logit_gradient(params, y, x):
     """Gradient of the log-likelihood for each observation of a logit model.
 
     Args:
-        parmas (Series): The index consists of the parmater names,
-            the values are the parameters.
+        parmas (pd.DataFrame): The index consists of the parmater names,
+            the "value" column are the parameters.
         y (np.array): 1d numpy array with the dependent variable
         x (np.array): 2d numpy array with the independent variables
 
@@ -49,7 +49,7 @@ def logit_gradient(params, y, x):
 
     """
     y = y
-    c = 1 / (1 + np.exp(-(np.dot(x, params))))
+    c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
     return np.dot(y - c, x)
 
 
@@ -57,8 +57,8 @@ def logit_jacobian(params, y, x):
     """Jacobian of the log-likelihood for each observation of a logit model.
 
     Args:
-        params (Series): The index consists of the parmater names,
-            the values are the parameters.
+        params (pd.DataFrame): The index consists of the parmater names,
+            the "value" column are the parameters.
         y (np.array): 1d numpy array with the dependent variable
         x (np.array): 2d numpy array with the independent variables
 
@@ -68,7 +68,7 @@ def logit_jacobian(params, y, x):
             at `params`.
     """
     y = y
-    c = 1 / (1 + np.exp(-(np.dot(x, params))))
+    c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
     return (y - c)[:, None] * x
 
 
@@ -76,8 +76,8 @@ def logit_hessian(params, y, x):
     """Hessian matrix of the log-likelihood.
 
     Args:
-        params (Series): The index consists of the parmater names,
-            the values are the parameters.
+        params (pd.DataFrame): The index consists of the parmater names,
+            the "value" column are the parameters.
         y (np.array): 1d numpy array with the dependent variable
         x (np.array): 2d numpy array with the independent variables
 
@@ -86,5 +86,5 @@ def logit_hessian(params, y, x):
             logl-ikelihood function evaluated at `params`
 
     """
-    c = 1 / (1 + np.exp(-(np.dot(x, params))))
+    c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
     return -np.dot(c * (1 - c) * x.T, x)
