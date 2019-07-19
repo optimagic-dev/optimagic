@@ -400,7 +400,8 @@ def _process_results(res, params, internal_params, constraints, origin):
 
     """
     if origin == "scipy":
-        res_dict = {}.update(res)
+        res_dict = {}
+        res_dict.update(res)
         for key, value in res_dict.items():
             if isinstance(value, np.ndarray):
                 res_dict[key] = value.tolist()
