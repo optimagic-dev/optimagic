@@ -161,18 +161,18 @@ def _update_dashboard(
 
     """
     conv_data, = dashboard_data
-    k = evaluations_to_skip + 1
     while not stop_signal.is_set():
-        if queue.qsize() >= k:
+        if queue.qsize() >= evaluations_to_skip + 1:
             for _to_skip in range(evaluations_to_skip):
                 queue.get()
-            new_params, new_fitness = queue.get()
+            iteration, new_params, new_fitness = queue.get()
             doc.add_next_tick_callback(
                 partial(
                     update_convergence_data,
                     data=conv_data,
                     new_params=new_params,
                     new_fitness=new_fitness,
+                    iteration=iteration,
                     rollover=rollover,
                 )
             )

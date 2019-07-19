@@ -4,7 +4,7 @@ from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
 from tornado import gen
 
-from estimagic.dashboard.plotting_functions import plot_with_lines
+from estimagic.dashboard.plotting_functions import plot_time_series
 from estimagic.optimization.utilities import index_element_to_string
 
 X_NAME = "XxXxITERATIONxXxX"
@@ -29,7 +29,7 @@ def setup_convergence_tab(params_df, initial_fitness):
     )
     conv_data = ColumnDataSource(data_dict)
 
-    fitness_plot = plot_with_lines(
+    fitness_plot = plot_time_series(
         data=conv_data, y_keys=["fitness"], x_name=X_NAME, title="Fitness"
     )
 
@@ -44,7 +44,7 @@ def setup_convergence_tab(params_df, initial_fitness):
 
 
 @gen.coroutine
-def update_convergence_data(new_fitness, new_params, data, rollover):
+def update_convergence_data(new_fitness, new_params, iteration, data, rollover):
     """
     Update the convergence data with new parameters and a new fitness value.
 
@@ -55,6 +55,9 @@ def update_convergence_data(new_fitness, new_params, data, rollover):
         new_params (pd.DataFrame):
             new parameter values
 
+        iteration (int):
+            iteration counter
+
         data (ColumnDataSource):
             ColumnDataSource to stream to
 
@@ -63,7 +66,6 @@ def update_convergence_data(new_fitness, new_params, data, rollover):
             to add new entries
 
     """
-    iteration = max(data.data[X_NAME]) + 1
     to_add = _make_data_dict(
         iteration=iteration, fitness=new_fitness, param_values=new_params["value"]
     )
@@ -112,7 +114,7 @@ def _param_plots(params_df, data):
     group_to_params = _map_groups_to_params(params_df)
     plots = []
     for g, params in group_to_params.items():
-        group_plot = plot_with_lines(data=data, y_keys=params, x_name=X_NAME, title=g)
+        group_plot = plot_time_series(data=data, y_keys=params, x_name=X_NAME, title=g)
         plots.append(group_plot)
     return plots
 

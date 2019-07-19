@@ -31,9 +31,9 @@ def get_color_palette(nr_colors):
         return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
 
 
-def plot_with_lines(data, y_keys, x_name, title, y_names=None):
+def plot_time_series(data, y_keys, x_name, title, y_names=None):
     """
-    Plot lines linking the *y_keys* to a common *x_name* variable.
+    Plot time series linking the *y_keys* to a common *x_name* variable.
 
     Args:
         data (ColumnDataSource):
@@ -55,7 +55,7 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
 
     colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
-        line_glyph = plot.line(
+        line_glyph = plot.scatter(
             source=data,
             x=x_name,
             y=y_key,
