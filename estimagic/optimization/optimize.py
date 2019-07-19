@@ -1,7 +1,6 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
 import json
 import os
-import time
 from collections import namedtuple
 from multiprocessing import Event
 from multiprocessing import Process
@@ -73,7 +72,7 @@ def maximize(
     def neg_criterion(*criterion_args, **criterion_kwargs):
         return -criterion(*criterion_args, **criterion_kwargs)
 
-    (res_dict, params), timing_info = minimize(
+    res_dict, params = minimize(
         neg_criterion,
         params=params,
         algorithm=algorithm,
@@ -87,7 +86,7 @@ def maximize(
     )
     res_dict["fun"] = -res_dict["fun"]
 
-    return res_dict, params, timing_info
+    return res_dict, params
 
 
 def minimize(
@@ -234,8 +233,6 @@ def _minimize(
             the updated parameter Series will be supplied later.
 
     """
-    times = [time.perf_counter()]
-
     internal_criterion = _create_internal_criterion(
         criterion=criterion,
         params=params,
@@ -244,7 +241,6 @@ def _minimize(
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
-        times=times,
     )
 
     with open(os.path.join(os.path.dirname(__file__), "algo_dict.json")) as j:
@@ -283,11 +279,7 @@ def _minimize(
     else:
         raise ValueError("Invalid algorithm requested.")
 
-    time_deltas = np.diff(np.array(times)).tolist()
-    setup_costs = time_deltas.pop(0)
-    timing_info = {"setup_costs": setup_costs, "time_deltas": time_deltas}
-
-    return result, timing_info
+    return result
 
 
 def _create_internal_criterion(
@@ -298,13 +290,10 @@ def _create_internal_criterion(
     criterion_args,
     criterion_kwargs,
     queue,
-    times,
 ):
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):
-        if times is not None:
-            times.append(time.perf_counter())
         p = _params_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
         if queue is not None:
