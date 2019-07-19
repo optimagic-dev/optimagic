@@ -55,7 +55,7 @@ def plot_time_series(data, y_keys, x_name, title, y_names=None):
 
     colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
-        line_glyph = plot.scatter(
+        line_glyph = plot.line(
             source=data,
             x=x_name,
             y=y_key,
