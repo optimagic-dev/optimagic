@@ -3,9 +3,9 @@ import json
 import os
 import time
 from collections import namedtuple
-from queue import Queue
-from threading import Event
-from threading import Thread
+from multiprocessing import Event
+from multiprocessing import Process
+from multiprocessing import Queue
 
 import numpy as np
 import pygmo as pg
@@ -153,7 +153,7 @@ def minimize(
     queue = Queue() if dashboard else None
     if dashboard:
         stop_signal = Event()
-        server_thread = Thread(
+        outer_server_process = Process(
             target=run_server,
             kwargs={
                 "queue": queue,
@@ -162,9 +162,9 @@ def minimize(
                 "start_fitness": fitness_eval,
                 "stop_signal": stop_signal,
             },
-            daemon=True,
+            daemon=False,
         )
-        server_thread.start()
+        outer_server_process.start()
 
     result, timing_info = _minimize(
         criterion=criterion,
@@ -181,6 +181,7 @@ def minimize(
 
     if dashboard:
         stop_signal.set()
+        outer_server_process.terminate()
     return result, timing_info
 
 

@@ -3,7 +3,7 @@ import asyncio
 import socket
 from contextlib import closing
 from functools import partial
-from threading import Thread
+from multiprocessing import Process
 
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
@@ -56,16 +56,10 @@ def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
 
     server = _setup_server(apps=apps, port=port)
 
-    # Thread not necessary at the moment.
-    # No way found to stop the server except by
-    # exiting the main script / restarting the kernel
-    # multiprocessing is not a solution as the dashboard is not correctly displayed.
-    # server.stop(), server.unlisten(), server.io_loop.stop() also don't free the port.
-    run_server_thread = Thread(
-        target=_start_server, kwargs={"server": server}, daemon=True
+    inner_server_process = Process(
+        target=_start_server, kwargs={"server": server}, daemon=False
     )
-    run_server_thread.start()
-    stop_signal.wait()
+    inner_server_process.start()
 
 
 def _process_db_options(db_options):
