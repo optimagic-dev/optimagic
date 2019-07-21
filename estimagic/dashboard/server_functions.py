@@ -63,6 +63,7 @@ def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
 
 
 def _process_db_options(db_options):
+    db_options = db_options.copy()
     if "port" not in db_options.keys():
         port = _find_free_port()
     else:
@@ -70,6 +71,7 @@ def _process_db_options(db_options):
 
     if "rollover" in db_options.keys() and db_options["rollover"] <= 0:
         db_options["rollover"] = None
+
     full_db_options = {
         "rollover": 500,
         "evaluations_to_skip": 0,

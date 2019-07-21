@@ -14,6 +14,7 @@ from functools import partial
 from threading import Thread
 from time import sleep
 
+import numpy as np
 from bokeh.models.widgets import Tabs
 
 from estimagic.dashboard.convergence_tab import setup_convergence_tab
@@ -82,18 +83,16 @@ def run_dashboard(doc, queue, stop_signal, db_options, start_param_df, start_fit
 
 
 def _trim_start_values(start_param_df, start_fitness):
-    """
-    Trim extremely large start values.
+    """Trim extremely large start values.
 
     Extremely large (>1e17) starting value cause the dashboard to crash.
-    This does not seem to be an issue later on."""
-    start_fitness = max(min(start_fitness, 1e15), -1e15)
-    start_param_df["value"] = start_param_df["value"].where(
-        start_param_df["value"] < 1e15, 1e15
-    )
-    start_param_df["value"] = start_param_df["value"].where(
-        start_param_df["value"] > -1e15, -1e15
-    )
+    This does not seem to be an issue later on.
+
+    """
+    large = 1e15
+    start_fitness = np.clip(start_fitness, -large, large)
+    start_param_df = start_param_df.copy()
+    start_param_df["value"] = start_param_df["value"].clip(-large, large)
 
     return start_param_df, start_fitness
 
@@ -149,12 +148,8 @@ def _update_dashboard(
             How many data points to store, default None.
 
         evaluations_to_skip (int):
-            only plot (at most) every (k+1)th evaluation of the criterion function.
-            The default is 0, i.e. plot every evaluation.
-            If 9 was supplied, at most every 10th evaluation's results are plotted.
-            This does not guarantee that every 9th evaluation is plotted.
-            If the queue grows too fast, whenever the queue is checked the latest
-            evaluation is plotted and the rest is discarded.
+            only plot every evaluation_to_skip_th evaluation of the criterion
+            function. The default is 0, i.e. plot every evaluation.
 
         time_btw_updates (float):
             Seconds to wait until checking for new results in the queue.
