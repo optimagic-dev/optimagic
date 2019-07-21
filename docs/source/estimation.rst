@@ -27,11 +27,13 @@ The params DataFrame
 
 .. todo:: Add probit example
 
-params_df is an important concept in estimagic. It collects information on the
-dimensionality of the optimization problem, lower and upper bounds, fixed
-parameters, categories of parameters and valid ranges for randomly sampled
-parameter vectors. Moreover, it's 'value' column is the mandatory first
-argument of any criterion function optimized with estimagic's :ref:`minimize`.
+The ``params`` DataFrame is an important concept in estimagic.
+It collects information on the
+dimensionality of the optimization problem, lower and upper bounds,
+categories of parameters and valid ranges for randomly sampled
+parameter vectors. Moreover, it is the mandatory first
+argument of any criterion function optimized with estimagic's :ref:`minimize`
+or :ref:`maximize`.
 
 It can have the following columns (most of them being optional)
 
@@ -51,17 +53,15 @@ It can have the following columns (most of them being optional)
   a parameter's values will be plotted in the convergence tab of the dashboard.
   Parameters with value None are not plotted.
 
-It is important to distinguish three related but different concepts:
+It comes in two flavors:
 
-- ``params_df``: the DataFrame described above, sometimes just called ``params``.
-- ``params_sr``: the ``'value'`` column of params. This is the first argument of any
-  criterion function optimized with estimagic's minimize function.
+- ``params``: the DataFrame described above.
 - ``internal_params``: a reparametrized version of params that is only used
   internally in order to enforce some types of constraints during the
   optimization. It is often shorter than params and has a different index.
-  Moreover, the columns for lower ad upper bounds might be different.
-  internal_params is only relevant if you want to read the source code or want
-  to extend estimagic.
+  Moreover, the columns for lower and upper bounds might be different.
+  internal_params is only relevant for you if you want to read the source
+  code or want to extend estimagic.
 
 .. _constraints:
 
