@@ -38,7 +38,12 @@ def reparametrize_to_internal(params, constraints):
             internal.update(_equality_to_internal(internal.loc[constr["index"]]))
         elif constr["type"] in ["covariance", "sdcorr"]:
             internal.update(
-                _covariance_to_internal(params_subset, constr["case"], constr["type"])
+                _covariance_to_internal(
+                    params_subset,
+                    constr["case"],
+                    constr["type"],
+                    constr["bounds_distance"],
+                )
             )
         elif constr["type"] == "sum":
             internal.update(_sum_to_internal(params_subset, constr["value"]))
@@ -51,6 +56,7 @@ def reparametrize_to_internal(params, constraints):
 
     # It is a known bug that df.update changes some dtypes: https://tinyurl.com/y66hqxg2
     internal["_fixed"] = internal["_fixed"].astype(bool)
+
     internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
     internal.drop(columns="_fixed", axis=1, inplace=True)
 
@@ -76,14 +82,13 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
             extract the original index and fixed values of parameters.
 
     Returns:
-        params_sr (Series): See :ref:`params`.
+        params (DataFrame): See :ref:`params`.
 
     """
-    external = internal_params.reindex(original_params.index)
-
-    # fixed parameters have to be written back before equality constraints are handled
-    fixed_index = external.query("value.isnull()", engine="python").index
-    external.update(original_params.loc[fixed_index, "value"])
+    external = original_params.copy(deep=True)
+    external.update(internal_params["value"])
+    external["_fixed"] = True
+    external.loc[internal_params.index, "_fixed"] = False
 
     # equality constraints have to be handled before all other constraints
     for constr in constraints:
@@ -107,10 +112,10 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
             pass
         else:
             raise ValueError("Invalid constraint type: {}".format(constr["type"]))
-    return external["value"]
+    return external
 
 
-def _covariance_to_internal(params_subset, case, type_):
+def _covariance_to_internal(params_subset, case, type_, bounds_distance):
     """Reparametrize parameters that describe a covariance matrix to internal.
 
     If `type_` == 'covariance', the parameters in params_subset are assumed to be the
@@ -123,8 +128,10 @@ def _covariance_to_internal(params_subset, case, type_):
         - 'all_fixed': nothing has to be done
         - 'uncorrelated': bounds of diagonal elements are set to zero unless already
             stricter
-        - 'all_free': do a (lower triangular) Cholesky reparametrization and restrict
-            diagonal elements to be positive (see: https://tinyurl.com/y2n55cfb)
+        - 'free': do a (lower triangular) Cholesky reparametrization and restrict
+            diagonal elements to be positive (see: https://tinyurl.com/y2n55cfb).
+            Note that free does not mean that all parameters are free. The first
+            diagonal element can still be fixed.
 
     Note that the cholesky reparametrization is not compatible with any other
     constraints on the involved parameters. Moreover, it requires the covariance matrix
@@ -133,7 +140,7 @@ def _covariance_to_internal(params_subset, case, type_):
 
     Args:
         params_subset (DataFrame): relevant subset of non-internal params.
-        case (str): can take the values 'all_free', 'uncorrelated' or 'all_fixed'.
+        case (str): can take the values 'free', 'uncorrelated' or 'all_fixed'.
 
     Returns:
         res (DataFrame): copy of params_subset with adjusted 'value' and 'lower' columns
@@ -156,17 +163,16 @@ def _covariance_to_internal(params_subset, case, type_):
 
         res["lower"] = np.maximum(res["lower"], np.zeros(len(res)))
         assert (res["upper"] >= res["lower"]).all(), "Invalid upper bound for variance."
-    elif case == "all_free":
+    elif case == "free":
         chol = np.linalg.cholesky(cov)
         chol_coeffs = chol[np.tril_indices(dim)]
         res["value"] = chol_coeffs
 
         if type_ == "covariance":
             lower_bound_helper = np.full((dim, dim), -np.inf)
-            lower_bound_helper[np.diag_indices(dim)] = 0
+            lower_bound_helper[np.diag_indices(dim)] = bounds_distance
             res["lower"] = lower_bound_helper[np.tril_indices(dim)]
             res["upper"] = np.inf
-            res["_fixed"] = False
         else:
             res.loc[res.index[:dim], "lower"] = 0
 
@@ -181,21 +187,25 @@ def _covariance_to_internal(params_subset, case, type_):
 def _covariance_from_internal(params_subset, case, type_):
     """Reparametrize parameters that describe a covariance matrix from internal.
 
-    If case == 'all_free', undo the cholesky reparametrization. Otherwise, do nothing.
+    If case == 'free', undo the cholesky reparametrization. Otherwise, do nothing.
 
     Args:
         params_subset (DataFrame): relevant subset of internal_params.
-        case (str): can take the values 'all_free', 'uncorrelated' or 'all_fixed'.
+        case (str): can take the values 'free', 'uncorrelated' or 'all_fixed'.
 
     Returns:
         res (Series): Series with lower triangular elements of a covariance matrix
 
     """
     res = params_subset.copy(deep=True)
-    if case == "all_free":
+    if case == "free":
         dim = number_of_triangular_elements_to_dimension(len(params_subset))
         helper = np.zeros((dim, dim))
         helper[np.tril_indices(dim)] = params_subset["value"].to_numpy()
+
+        if params_subset["_fixed"].any():
+            helper[0, 0] = np.sqrt(helper[0, 0])
+
         cov = helper.dot(helper.T)
 
         if type_ == "covariance":
@@ -273,7 +283,6 @@ def _sum_to_internal(params_subset, value):
         res (DataFrame): copy of params_subset with adjusted 'fixed' column
 
     """
-
     free = params_subset.query("lower == -inf & upper == inf & _fixed == False")
     last = params_subset.index[-1]
 
@@ -320,6 +329,7 @@ def _probability_to_internal(params_subset):
 
     """
     res = params_subset.copy()
+
     assert (
         params_subset["lower"].isin([-np.inf, 0]).all()
     ), "Lower bound has to be 0 or -inf for probability constrained parameters."
@@ -328,9 +338,10 @@ def _probability_to_internal(params_subset):
         params_subset["upper"].isin([np.inf, 1]).all()
     ), "Upper bound has to be 1 or inf for probability constrained parameters."
 
-    assert not params_subset[
-        "_fixed"
-    ].any(), "Probability constrained parameters cannot be fixed."
+    if params_subset["_fixed"].any():
+        assert params_subset[
+            "_fixed"
+        ].all(), "Either all or no probability constrained parameter can be fixed."
 
     res["lower"] = 0
     res["upper"] = np.inf
