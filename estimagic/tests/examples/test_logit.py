@@ -15,6 +15,8 @@ def statsmodels_fixtures():
         os.path.join(os.path.dirname(__file__), "logit_fixtures.pickle"), "rb"
     ) as p:
         fix = pickle.load(p)
+    fix["params"].name = "value"
+    fix["params"] = fix["params"].to_frame()
     return fix
 
 

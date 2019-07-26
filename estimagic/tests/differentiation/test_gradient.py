@@ -4,7 +4,7 @@ import pickle
 import pytest
 from pandas.testing import assert_series_equal
 
-from estimagic.differentiation.gradient import gradient
+from estimagic.differentiation.differentiation import gradient
 from estimagic.examples.logit import logit_loglike
 
 
@@ -14,6 +14,10 @@ def statsmodels_fixtures():
         os.path.join(os.path.dirname(__file__), "diff_fixtures.pickle"), "rb"
     ) as p:
         fix = pickle.load(p)
+
+    fix["params"].name = "value"
+    fix["params"] = fix["params"].to_frame()
+    fix["gradient"].name = "gradient"
     return fix
 
 
