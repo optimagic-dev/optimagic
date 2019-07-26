@@ -26,7 +26,7 @@ def gradient(
 
     """
     if method not in ["central", "forward", "backward"]:
-        raise ValueError("The given method is not supported.")
+        raise ValueError("Method has to be in ['central', 'forward', 'backward']")
 
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -72,7 +72,7 @@ def jacobian(
 
     """
     if method not in ["central", "forward", "backward"]:
-        raise ValueError("The given method is not supported.")
+        raise ValueError("Method has to be in ['central', 'forward', 'backward']")
 
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
