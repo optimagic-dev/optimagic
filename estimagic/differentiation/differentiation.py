@@ -31,19 +31,22 @@ def gradient(
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
 
+    internal_func = _create_internal_func(func, params, func_args, func_kwargs)
+    params_value = params["value"].to_numpy()
     if extrapolation:
-        internal_func = _create_internal_func(func, params, func_args, func_kwargs)
-        grad_np = nd.Gradient(internal_func, method=method)(params["value"].to_numpy())
-        grad = pd.Series(data=grad_np, index=params.index, name="gradient")
+        grad_np = nd.Gradient(internal_func, method=method)(params_value)
     else:
-        grad = pd.Series(index=params.index, name="gradient")
-        f_x0 = func(params, *func_args, **func_kwargs)
-        finite_diff = getattr(aux, method)
-        for var in params.index:
-            h = (1 + abs(params.loc[var, "value"])) * np.sqrt(np.finfo(float).eps)
-            grad[var] = (
-                finite_diff(func, f_x0, params, var, h, *func_args, **func_kwargs) / h
-            )
+        grad_np = _no_extrapolation_gradient(internal_func, params_value, method)
+    return pd.Series(data=grad_np, index=params.index, name="gradient")
+
+
+def _no_extrapolation_gradient(internal_func, params_value, method):
+    grad = np.empty_like(params_value)
+    f_x0 = internal_func(params_value)
+    finite_diff = getattr(aux, method)
+    for i, val in enumerate(params_value):
+        h = (1 + abs(val)) * np.sqrt(np.finfo(float).eps)
+        grad[i] = finite_diff(internal_func, f_x0, params_value, i, h) / h
     return grad
 
 
