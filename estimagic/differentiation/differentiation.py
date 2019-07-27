@@ -33,6 +33,7 @@ def gradient(
 
     internal_func = _create_internal_func(func, params, func_args, func_kwargs)
     params_value = params["value"].to_numpy()
+
     if extrapolation:
         grad_np = nd.Gradient(internal_func, method=method)(params_value)
     else:
@@ -82,24 +83,30 @@ def jacobian(
 
     f_x0 = func(params, *func_args, **func_kwargs)
 
+    internal_func = _create_internal_func(func, params, func_args, func_kwargs)
+    params_value = params["value"].to_numpy()
+
     if extrapolation:
-        internal_func = _create_internal_func(func, params, func_args, func_kwargs)
-        jac_np = nd.Jacobian(internal_func, method=method)(params["value"].to_numpy())
-        if isinstance(f_x0, pd.Series):
-            jac = pd.DataFrame(index=f_x0.index, columns=params.index, data=jac_np)
-        else:
-            jac = pd.DataFrame(columns=params.index, data=jac_np)
+
+        jac_np = nd.Jacobian(internal_func, method=method)(params_value)
     else:
-        finite_diff = getattr(aux, method)
-        if isinstance(f_x0, pd.Series):
-            jac = pd.DataFrame(index=f_x0.index, columns=params.index)
-        else:
-            jac = pd.DataFrame(columns=params.index)
-        for var in jac.columns:
-            # The rule of thumb for the stepsize is implemented
-            h = (1 + abs(params.loc[var, "value"])) * np.sqrt(np.finfo(float).eps)
-            f_diff = finite_diff(func, f_x0, params, var, h, *func_args, **func_kwargs)
-            jac[var] = f_diff / h
+        jac_np = _no_extrapolation_jacobian(internal_func, params_value, method)
+
+    if isinstance(f_x0, pd.Series):
+        return pd.DataFrame(index=f_x0.index, columns=params.index, data=jac_np)
+    else:
+        return pd.DataFrame(columns=params.index, data=jac_np)
+
+
+def _no_extrapolation_jacobian(internal_func, params_value, method):
+    f_x0_np = internal_func(params_value)
+    jac = np.empty((len(f_x0_np), len(params_value)))
+    finite_diff = getattr(aux, method)
+    for i, val in enumerate(params_value):
+        # The rule of thumb for the stepsize is implemented
+        h = (1 + abs(val)) * np.sqrt(np.finfo(float).eps)
+        f_diff = finite_diff(internal_func, f_x0_np, params_value, i, h)
+        jac[:, i] = f_diff / h
     return jac
 
 
