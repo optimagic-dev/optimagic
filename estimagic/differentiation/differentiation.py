@@ -87,7 +87,6 @@ def jacobian(
     params_value = params["value"].to_numpy()
 
     if extrapolation:
-
         jac_np = nd.Jacobian(internal_func, method=method)(params_value)
     else:
         jac_np = _no_extrapolation_jacobian(internal_func, params_value, method)
@@ -136,38 +135,38 @@ def hessian(
     func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
 
+    internal_func = _create_internal_func(func, params, func_args, func_kwargs)
+    params_value = params["value"].to_numpy()
+
     if extrapolation:
-        internal_func = _create_internal_func(func, params, func_args, func_kwargs)
-        hess_np = nd.Hessian(internal_func, method=method)(params["value"].to_numpy())
-        hess = pd.DataFrame(data=hess_np, index=params.index, columns=params.index)
+        hess_np = nd.Hessian(internal_func, method=method)(params_value)
     else:
-        finite_diff = getattr(aux, method)
-        hess = pd.DataFrame(index=params.index, columns=params.index, dtype=float)
-        for var_1 in params.index:
-            h_1 = (1.0 + abs(params.loc[var_1, "value"])) * np.cbrt(np.finfo(float).eps)
-            for var_2 in params.index:
-                h_2 = (1.0 + abs(params.loc[var_2, "value"])) * np.cbrt(
-                    np.finfo(float).eps
-                )
-                params_r = params.copy()
-                params_r.loc[var_2, "value"] += h_2
-                # Calculate the first derivative w.r.t. var_1 at (params_sr + h_2) with
-                # the central method. This is not the right f_x0, but the real one
-                # isn't needed for the central method.
-                f_plus = finite_diff(
-                    func, None, params_r, var_1, h_1, *func_args, **func_kwargs
-                )
-                params_l = params.copy()
-                params_l.loc[var_2, "value"] -= h_2
-                # Calculate the first derivative w.r.t. var_1 at (params_sr - h_2) with
-                # the central method. This is not the right f_x0, but the real one
-                # isn't needed for the central method.
-                f_minus = finite_diff(
-                    func, None, params_l, var_1, h_1, *func_args, **func_kwargs
-                )
-                f_diff = (f_plus - f_minus) / (2.0 * h_1 * h_2)
-                hess.loc[var_1, var_2] = f_diff
-                hess.loc[var_2, var_1] = f_diff
+        hess_np = _no_extrapolation_hessian(internal_func, params_value, method)
+    return pd.DataFrame(data=hess_np, index=params.index, columns=params.index)
+
+
+def _no_extrapolation_hessian(internal_func, params_value, method):
+    finite_diff = getattr(aux, method)
+    hess = np.empty((len(params_value), len(params_value)))
+    for i, val_1 in enumerate(params_value):
+        h_1 = (1.0 + abs(val_1)) * np.cbrt(np.finfo(float).eps)
+        for j, val_2 in enumerate(params_value):
+            h_2 = (1.0 + abs(val_2)) * np.cbrt(np.finfo(float).eps)
+            params_r = params_value.copy()
+            params_r[j] += h_2
+            # Calculate the first derivative w.r.t. var_1 at (params_sr + h_2) with
+            # the central method. This is not the right f_x0, but the real one
+            # isn't needed for the central method.
+            f_plus = finite_diff(internal_func, None, params_r, i, h_1)
+            params_l = params_value.copy()
+            params_l[j] -= h_2
+            # Calculate the first derivative w.r.t. var_1 at (params_sr - h_2) with
+            # the central method. This is not the right f_x0, but the real one
+            # isn't needed for the central method.
+            f_minus = finite_diff(internal_func, None, params_l, i, h_1)
+            f_diff = (f_plus - f_minus) / (2.0 * h_1 * h_2)
+            hess[i, j] = f_diff
+            hess[i, j] = f_diff
     return hess
 
 
