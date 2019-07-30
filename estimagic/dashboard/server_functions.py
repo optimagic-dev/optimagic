@@ -54,10 +54,8 @@ def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
         )
     }
 
-    server = _setup_server(apps=apps, port=port)
-
     inner_server_process = Process(
-        target=_start_server, kwargs={"server": server}, daemon=False
+        target=_setup_server, kwargs={"apps": apps, "port": port}, daemon=False
     )
     inner_server_process.start()
 
@@ -129,9 +127,9 @@ def _setup_server(apps, port):
                 address_string, server.port, server.prefix, route
             )
             print("Bokeh app running at: " + url)
-        return server
 
-
-def _start_server(server):
-    server._loop.start()
-    server.start()
+        # For Windows, it is important that the server is started here as otherwise a
+        # pickling error happens within multiprocess. See
+        # https://stackoverflow.com/a/38236630/7523785 for more information.
+        server._loop.start()
+        server.start()
