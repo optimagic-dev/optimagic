@@ -4,7 +4,7 @@ jobs:
 - job:
   displayName: Linux
   pool:
-    vmImage: "ubuntu-16.04"
+    vmImage: "ubuntu-latest"
   strategy:
     matrix:
       Python36:
@@ -26,7 +26,7 @@ jobs:
 - job:
   displayName: Windows
   pool:
-    vmImage: "windows-2019"
+    vmImage: "windows-latest"
   strategy:
     matrix:
       Python36:
@@ -38,7 +38,7 @@ jobs:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
 
-  - powershell: conda create --yes --quiet --name estimagic python=$env:PYTHON_VERSION pillow tox-conda -c defaults -c conda-forge
+  - powershell: conda create --yes --quiet --name estimagic python=$env:PYTHON_VERSION pillow numpy mkl tox-conda -c defaults -c conda-forge
     displayName: Create Anaconda environment
 
   - script: |
@@ -48,7 +48,7 @@ jobs:
 - job:
   displayName: MacOS
   pool:
-    vmImage: "macOS-10.13"
+    vmImage: "macOS-latest"
   strategy:
     matrix:
       Python36:

@@ -10,6 +10,7 @@ dependencies:
   - python=3.7
   - pip=19.0.3
   - pandas=0.24
+  - mkl
   - numpy=1.16
   - pygmo=2.10
   - conda-build
