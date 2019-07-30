@@ -38,7 +38,7 @@ jobs:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
 
-  - powershell: conda create --yes --quiet --name estimagic python=$env:PYTHON_VERSION numpy tox-conda -c defaults -c conda-forge
+  - powershell: conda create --yes --quiet --name estimagic python=$env:PYTHON_VERSION numpy mkl tox-conda -c defaults -c conda-forge
     displayName: Create Anaconda environment
 
   - script: |
@@ -66,7 +66,7 @@ jobs:
   - bash: sudo chown -R $USER $CONDA
     displayName: Take ownership of conda installation
 
-  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION numpy tox-conda -c defaults -c conda-forge
+  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c defaults -c conda-forge
     displayName: Create Anaconda environment
 
   - bash: |
