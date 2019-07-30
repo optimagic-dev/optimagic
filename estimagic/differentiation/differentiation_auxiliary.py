@@ -5,9 +5,8 @@ def central(internal_func, f_x0, params_value, i, h):
     """Calculate the central difference.
 
     Args:
-        internal_func (func): A function wrapping the original function, s.t. it is
-        only dependent on the variable to differentiate.
-        f_x0 (func output): The function value at params_value.
+        internal_func (func): A function with a 1d numpy array as it's only argument.
+        f_x0 (numpy array): The function value at params_value
         params_value (numpy array): The value column of param_df as numpy array.
         i (int): The variable's index of which the finite difference is calculated.
         h (float): The infinitesimal step.
@@ -28,9 +27,8 @@ def forward(internal_func, f_x0, params_value, i, h):
     """Calculate the forward difference.
 
     Args:
-        internal_func (func): A function wrapping the original function, s.t. it is
-        only dependent on the variable to differentiate.
-        f_x0 (func output): The function value at params_value.
+        internal_func (func): A function with a 1d numpy array as it's only argument.
+        f_x0 (numpy array): The function value at params_value.
         params_value (numpy array): The value column of param_df as numpy array.
         i (int): The variable's index of which the finite difference is calculated.
         h (float): The infinitesimal step.
@@ -48,9 +46,8 @@ def backward(internal_func, f_x0, params_value, i, h):
     """Calculate the backward difference.
 
     Args:
-        internal_func (func): A function wrapping the original function, s.t. it is
-        only dependent on the variable to differentiate.
-        f_x0 (func output): The function value at params_value.
+        internal_func (func): A function with a 1d numpy array as it's only argument.
+        f_x0 (numpy array): The function value at params_value.
         params_value (numpy array): The value column of param_df as numpy array.
         i (int): The variable's index of which the finite difference is calculated.
         h (float): The infinitesimal step.
