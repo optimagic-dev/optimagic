@@ -133,5 +133,3 @@ def _setup_server(apps, port):
         # https://stackoverflow.com/a/38236630/7523785 for more information.
         server._loop.start()
         server.start()
-
-        return server
