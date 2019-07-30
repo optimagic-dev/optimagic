@@ -66,7 +66,7 @@ jobs:
   - bash: sudo chown -R $USER $CONDA
     displayName: Take ownership of conda installation
 
-  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c conda-forge
+  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION numpy tox-conda -c conda-forge
     displayName: Create Anaconda environment
 
   - bash: |
