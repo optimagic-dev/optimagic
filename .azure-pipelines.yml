@@ -38,7 +38,7 @@ jobs:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
 
-  - powershell: conda create --yes --quiet --name estimagic python=$env:PYTHON_VERSION tox-conda -c conda-forge
+  - powershell: conda create --yes --quiet --name estimagic python=$env:PYTHON_VERSION numpy pillow pygmo scipy tox-conda -c conda-forge
     displayName: Create Anaconda environment
 
   - script: |
