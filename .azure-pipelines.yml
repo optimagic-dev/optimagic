@@ -67,8 +67,8 @@ jobs:
     displayName: Take ownership of conda installation
 
   - bash: |
-      conda clean -i
-      conda clean --all
+      conda clean -i --yes
+      conda clean --all --yes
 
   - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c defaults -c conda-forge
     displayName: Create Anaconda environment
