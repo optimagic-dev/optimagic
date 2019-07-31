@@ -97,6 +97,6 @@ def se_from_cov(cov):
         standard_errors (np.array): 1d array of dimension (nparams) with standard errors
 
     """
-    standard_errors = np.sqrt(np.diag(cov()))
+    standard_errors = np.sqrt(np.diag(cov))
 
     return standard_errors
