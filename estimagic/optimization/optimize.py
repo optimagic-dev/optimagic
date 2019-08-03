@@ -2,10 +2,9 @@
 import json
 import os
 from collections import namedtuple
-from numbers import Number
-from queue import Queue
-from threading import Thread
-from time import sleep
+from multiprocessing import Event
+from multiprocessing import Process
+from multiprocessing import Queue
 
 import numpy as np
 import pygmo as pg
@@ -18,7 +17,7 @@ from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
-QueueEntry = namedtuple("QueueEntry", ["params", "fitness", "still_running"])
+QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "fitness"])
 
 
 def maximize(
@@ -85,7 +84,7 @@ def maximize(
         dashboard=dashboard,
         db_options=db_options,
     )
-    res_dict["f"] = -res_dict["f"]
+    res_dict["fun"] = -res_dict["fun"]
 
     return res_dict, params
 
@@ -145,37 +144,28 @@ def minimize(
     algo_options = {} if algo_options is None else algo_options
     db_options = {} if db_options is None else db_options
 
-    params = _process_params_df(params)
-    fitness_eval = criterion(params["value"], *criterion_args, **criterion_kwargs)
+    params = _process_params(params)
+    fitness_eval = criterion(params, *criterion_args, **criterion_kwargs)
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
     queue = Queue() if dashboard else None
-    start_signal = Queue() if dashboard else None
     if dashboard:
-        # later only the parameter series can be supplied
-        # but for the setup of the dashboard we want the whole DataFrame
-        queue.put(QueueEntry(params=params, fitness=fitness_eval, still_running=True))
-
-        # To-Do: Don't hard code the port
-        server_thread = Thread(
+        stop_signal = Event()
+        outer_server_process = Process(
             target=run_server,
             kwargs={
                 "queue": queue,
-                "port": 5039,
                 "db_options": db_options,
-                "start_signal": start_signal,
+                "start_param_df": params,
+                "start_fitness": fitness_eval,
+                "stop_signal": stop_signal,
             },
-            daemon=True,
+            daemon=False,
         )
-        server_thread.start()
+        outer_server_process.start()
 
-    if dashboard:
-        # wait for server_thread to give start signal
-        while start_signal.qsize() == 0:
-            sleep(0.01)
-
-    result = _minimize(
+    result, timing_info = _minimize(
         criterion=criterion,
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
@@ -189,10 +179,9 @@ def minimize(
     )
 
     if dashboard:
-        queue.put(
-            QueueEntry(params=result[1], fitness=result[0]["f"], still_running=False)
-        )
-    return result
+        stop_signal.set()
+        outer_server_process.terminate()
+    return result, timing_info
 
 
 def _minimize(
@@ -276,7 +265,7 @@ def _minimize(
         result = _process_results(evolved, params, internal_params, constraints, origin)
     elif origin == "scipy":
         bounds = _get_scipy_bounds(internal_params)
-        x0 = _x_from_params_df(params, constraints)
+        x0 = _x_from_params(params, constraints)
         minimized = scipy_minimize(
             internal_criterion,
             x0,
@@ -289,6 +278,7 @@ def _minimize(
         )
     else:
         raise ValueError("Invalid algorithm requested.")
+
     return result
 
 
@@ -301,30 +291,31 @@ def _create_internal_criterion(
     criterion_kwargs,
     queue,
 ):
-    def internal_criterion(x):
-        params_sr = _params_sr_from_x(x, internal_params, constraints, params)
-        fitness_eval = criterion(params_sr, *criterion_args, **criterion_kwargs)
+    c = np.ones(1, dtype=int)
+
+    def internal_criterion(x, counter=c):
+        p = _params_from_x(x, internal_params, constraints, params)
+        fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
         if queue is not None:
-            queue.put(
-                QueueEntry(params=params_sr, fitness=fitness_eval, still_running=True)
-            )
+            queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
+        counter += 1
         return fitness_eval
 
     return internal_criterion
 
 
-def _params_sr_from_x(x, internal_params, constraints, params):
+def _params_from_x(x, internal_params, constraints, params):
     internal_params = internal_params.copy(deep=True)
     internal_params["value"] = x
-    params = reparametrize_from_internal(internal_params, constraints, params)
-    return params
+    updated_params = reparametrize_from_internal(internal_params, constraints, params)
+    return updated_params
 
 
-def _x_from_params_df(params, constraints):
+def _x_from_params(params, constraints):
     return reparametrize_to_internal(params, constraints)["value"].to_numpy()
 
 
-def _process_params_df(params):
+def _process_params(params):
     assert (
         not params.index.duplicated().any()
     ), "No duplicates allowed in the index of params."
@@ -401,33 +392,26 @@ def _create_population(problem, algo_options, internal_params):
     return pop
 
 
-def _process_results(res, start_params_df, internal_params, constraints, origin):
+def _process_results(res, params, internal_params, constraints, origin):
     """Convert optimization results into json serializable dictionary.
-
     Args:
         res: Result from numerical optimizer.
-        start_params_df (DataFrame): See :ref:`params`.
+        params (DataFrame): See :ref:`params`.
         internal_params (DataFrame): See :ref:`params`.
         constraints (list): constraints for the optimization
         origin (str): takes the values "pygmo", "nlopt", "scipy"
-
     """
     if origin == "scipy":
-        x = res["x"]
-        f = res["fun"]
+        res_dict = {}
+        res_dict.update(res)
+        for key, value in res_dict.items():
+            if isinstance(value, np.ndarray):
+                res_dict[key] = value.tolist()
+        x = res.x
     elif origin in ["pygmo", "nlopt"]:
         x = res.champion_x
-        f = res.champion_f
-    params_sr = _params_sr_from_x(x, internal_params, constraints, start_params_df)
+        res_dict = {"fun": res.champion_f[0]}
+    params = _params_from_x(x, internal_params, constraints, params)
 
-    params_df = start_params_df.rename(columns={"value": "start_value"})
-    params_df["final_value"] = params_sr
-
-    if not isinstance(f, Number):
-        if len(f) == 1:
-            f = f[0]
-        else:
-            f = list(f)
-
-    res_dict = {"x": params_sr.to_numpy().tolist(), "internal_x": x.tolist(), "f": f}
-    return res_dict, params_df
+    res_dict["internal_x"] = x.tolist()
+    return res_dict, params

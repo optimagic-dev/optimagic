@@ -31,9 +31,9 @@ def get_color_palette(nr_colors):
         return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
 
 
-def plot_with_lines(data, y_keys, x_name, title, y_names=None):
+def plot_time_series(data, y_keys, x_name, title, y_names=None):
     """
-    Plot lines linking the *y_keys* to a common *x_name* variable.
+    Plot time series linking the *y_keys* to a common *x_name* variable.
 
     Args:
         data (ColumnDataSource):
@@ -59,7 +59,7 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
             source=data,
             x=x_name,
             y=y_key,
-            line_width=1,
+            line_width=2,
             legend=value(y_name),
             color=color,
             muted_color=color,
@@ -77,6 +77,7 @@ def plot_with_lines(data, y_keys, x_name, title, y_names=None):
         plot.tools.append(hover)
 
     plot.legend.click_policy = "mute"
+    plot.legend.location = "top_left"
 
     plot.xaxis.axis_label = x_name if x_name != "XxXxITERATIONxXxX" else "iteration"
     plot.xaxis.axis_label_text_font_style = "normal"

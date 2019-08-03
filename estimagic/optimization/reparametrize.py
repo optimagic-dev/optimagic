@@ -82,16 +82,13 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
             extract the original index and fixed values of parameters.
 
     Returns:
-        params_sr (Series): See :ref:`params`.
+        params (DataFrame): See :ref:`params`.
 
     """
-    external = internal_params.reindex(original_params.index)
-
-    # fixed parameters have to be written back before equality constraints are handled
-    fixed_index = external.query("value.isnull()", engine="python").index
-    external.update(original_params.loc[fixed_index, "value"])
-    external["_fixed"] = False
-    external.loc[fixed_index, "_fixed"] = True
+    external = original_params.copy(deep=True)
+    external.update(internal_params["value"])
+    external["_fixed"] = True
+    external.loc[internal_params.index, "_fixed"] = False
 
     # equality constraints have to be handled before all other constraints
     for constr in constraints:
@@ -115,7 +112,7 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
             pass
         else:
             raise ValueError("Invalid constraint type: {}".format(constr["type"]))
-    return external["value"]
+    return external
 
 
 def _covariance_to_internal(params_subset, case, type_, bounds_distance):

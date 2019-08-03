@@ -1,6 +1,9 @@
 """Functions for setting up and running the BokehServer displaying the dashboard."""
 import asyncio
+import socket
+from contextlib import closing
 from functools import partial
+from multiprocessing import Process
 
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
@@ -10,7 +13,7 @@ from bokeh.server.server import Server
 from estimagic.dashboard.dashboard import run_dashboard
 
 
-def run_server(queue, start_signal, port, db_options):
+def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
     """
     Setup and run a server creating und continuously updating a dashboard.
 
@@ -19,20 +22,21 @@ def run_server(queue, start_signal, port, db_options):
 
     Args:
         queue (Queue):
-            queue to which originally the parameters DataFrame is supplied and
-            to which later the updated parameter Series will be supplied.
+            queue to which the updated parameter Series will be supplied.
 
-        start_signal (Queue):
-            empty queue. The minimization starts once it stops being empty.
-
-        port (int):
-            port at which to display the dashboard.
+        stop_signal (Event):
+            signal from parent thread to stop the dashboard
 
         db_options (dict):
             dictionary with options. see ``run_dashboard`` for details.
 
+        start_param_df (pd.DataFrame):
+            DataFrame with the start params and information on them.
+
+        start_fitness (float):
+            fitness evaluation at the start parameters.
     """
-    db_options = _process_db_options(db_options)
+    db_options, port = _process_db_options(db_options)
     asyncio.set_event_loop(asyncio.new_event_loop())
 
     apps = {
@@ -42,24 +46,50 @@ def run_server(queue, start_signal, port, db_options):
                     run_dashboard,
                     queue=queue,
                     db_options=db_options,
-                    start_signal=start_signal,
+                    start_param_df=start_param_df,
+                    start_fitness=start_fitness,
+                    stop_signal=stop_signal,
                 )
             )
         )
     }
 
-    server = _setup_server(apps, port)
-
-    server._loop.start()
-    server.start()
+    inner_server_process = Process(
+        target=_setup_server, kwargs={"apps": apps, "port": port}, daemon=False
+    )
+    inner_server_process.start()
 
 
 def _process_db_options(db_options):
-    full_db_options = {"rollover": None}
+    db_options = db_options.copy()
+    if "port" not in db_options.keys():
+        port = _find_free_port()
+    else:
+        port = db_options.pop("port")
+
     if "rollover" in db_options.keys() and db_options["rollover"] <= 0:
         db_options["rollover"] = None
+
+    full_db_options = {
+        "rollover": 500,
+        "evaluations_to_skip": 0,
+        "time_btw_updates": 0.001,
+    }
+
     full_db_options.update(db_options)
-    return full_db_options
+    return full_db_options, port
+
+
+def _find_free_port():
+    """
+    Find a free port on the localhost.
+
+    Adapted from https://stackoverflow.com/a/45690594
+    """
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("localhost", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 
 def _setup_server(apps, port):
@@ -97,4 +127,9 @@ def _setup_server(apps, port):
                 address_string, server.port, server.prefix, route
             )
             print("Bokeh app running at: " + url)
-        return server
+
+        # For Windows, it is important that the server is started here as otherwise a
+        # pickling error happens within multiprocess. See
+        # https://stackoverflow.com/a/38236630/7523785 for more information.
+        server._loop.start()
+        server.start()
