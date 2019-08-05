@@ -20,6 +20,7 @@ dependencies:
   - conda-verify
   - jupyter
   - fuzzywuzzy
+  - numba
   - pip:
     - doc8
     - pre-commit

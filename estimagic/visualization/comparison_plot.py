@@ -92,7 +92,7 @@ def comparison_plot(
         # add scatterplot representing the parameter value
         point_estimate_glyph = param_group_plot.scatter(
             source=source,
-            x="final_value",
+            x="binned_x",
             y="name_with_dodge",
             size=scatter_size,
             color="color",
@@ -318,7 +318,9 @@ def _create_group_and_heights(df, height):
 def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
     for scatter_size in [12, 9, 6]:
         df["name_with_dodge"] = np.nan
+        df["needs_dodge"] = np.nan
         df["dodge"] = np.nan
+        df["binned_x"] = np.nan
         for group, height in param_groups_and_heights:
             group_df = df[df["group"] == group]
             param_names = group_df["full_name"].unique()
@@ -334,8 +336,12 @@ def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
                 ind = values.index
                 dist_to_left_neighbor = values.diff()
                 needs_dodge = dist_to_left_neighbor < critical_dist
-                dodge = increment_with_reset(needs_dodge.to_numpy()) * dodge_unit
-                df.loc[ind, "dodge"] = dodge
+                df.loc[ind, "needs_dodge"] = needs_dodge
+                new_xs, dodge = _create_x_and_dodge(
+                    values.to_numpy(), needs_dodge.to_numpy()
+                )
+                df.loc[ind, "binned_x"] = new_xs
+                df.loc[ind, "dodge"] = dodge * dodge_unit
         if df["dodge"].max() < 0.9:
             df["name_with_dodge"] = df.apply(
                 lambda x: (x["full_name"], x["dodge"]), axis=1
@@ -353,14 +359,39 @@ def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
 
 
 @jit
-def increment_with_reset(bool_arr):
-    res = []
-    for x in bool_arr:
-        if x is False:
-            res.append(0)
-        else:
-            res.append(res[-1] + 1)
-    return np.array(res)
+def _create_x_and_dodge(val_arr, bool_arr):
+    new_xs, dodge, stored_x = [], [], []
+    for old_x, needs_dodge in zip(val_arr, bool_arr):
+        true_bool = bool(needs_dodge)
+        _update_dodge(dodge=dodge, needs_dodge=true_bool)
+        _update_x(old_x=old_x, needs_dodge=true_bool, new_xs=new_xs, stored_x=stored_x)
+
+    _catch_up_x(new_xs=new_xs, stored_x=stored_x)
+    return np.array(new_xs), np.array(dodge, dtype=int)
+
+
+def _update_dodge(dodge, needs_dodge):
+    if needs_dodge is False:
+        dodge.append(0)
+    elif len(dodge) == 0 or dodge[-1] == 0:
+        # flag for following row to go to 1 if it needs a dodge
+        dodge.append(1e-300)
+    else:
+        dodge.append(dodge[-1] + 1)
+
+
+def _update_x(old_x, needs_dodge, new_xs, stored_x):
+    if needs_dodge is True:
+        stored_x.append(old_x)
+    else:
+        _catch_up_x(new_xs, stored_x)
+        new_xs.append(old_x)
+
+
+def _catch_up_x(new_xs, stored_x):
+    if len(stored_x) != 0:
+        new_xs += [np.mean(stored_x)] * len(stored_x)
+        del stored_x[:]
 
 
 def _add_select_tools(source, param_group_plot, point_estimate_glyph):
