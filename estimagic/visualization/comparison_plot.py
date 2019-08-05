@@ -16,6 +16,9 @@ The plot can answer the following questions:
 Example Usage: see tutorials/example_comparison_plot.ipynb
 
 """
+import warnings
+
+import numpy as np
 import pandas as pd
 from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource
@@ -26,7 +29,7 @@ from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 from bokeh.plotting import show
-from bokeh.transform import jitter
+from numba import jit
 
 from estimagic.optimization.utilities import index_element_to_string
 
@@ -60,7 +63,7 @@ def comparison_plot(
             width of the (entire) plot.
 
     """
-    df, param_groups_and_heights, width = _process_inputs(
+    df, param_groups_and_heights, width, scatter_size = _process_inputs(
         data_dict=data_dict,
         color_dict=color_dict,
         marker_dict=marker_dict,
@@ -83,14 +86,12 @@ def comparison_plot(
             plot_width=width,
         )
 
-        jittered_y = jitter("full_name", width=0.4, range=param_group_plot.y_range)
-
         # add scatterplot representing the parameter value
         point_estimate_glyph = param_group_plot.scatter(
             source=source,
             x="final_value",
-            y=jittered_y,
-            size=12,
+            y="name_with_dodge",
+            size=scatter_size,
             color="color",
             selection_color="color",
             nonselection_color="color",
@@ -105,7 +106,7 @@ def comparison_plot(
         if "conf_int_lower" in df.columns and "conf_int_upper" in df.columns:
             param_group_plot.hbar(
                 source=source,
-                y=jittered_y,
+                y="name_with_dodge",
                 left="conf_int_lower",
                 right="conf_int_upper",
                 height=0.01,
@@ -197,7 +198,11 @@ def _process_inputs(data_dict, color_dict, marker_dict, height, width):
         width = 600
     group_and_heights = _create_group_and_heights(df, height)
 
-    return df, group_and_heights, width
+    df, scatter_size = _determine_dodge_and_scatter_size(
+        df=df, param_groups_and_heights=group_and_heights, width=width
+    )
+
+    return df, group_and_heights, width, scatter_size
 
 
 def _build_or_check_option_dicts(color_dict, marker_dict, data_dict):
@@ -244,6 +249,7 @@ def _build_df_from_data_dict(data_dict, color_dict, marker_dict):
 
         else:
             # the standard color is mediumelectricblue
+            ext_param_df["model_class"] = "no class"
             ext_param_df["color"] = "#035096"
             ext_param_df["marker"] = "circle"
 
@@ -304,6 +310,55 @@ def _create_group_and_heights(df, height):
         plot_height = int(nr_group_params / nr_params * height)
         group_and_heights.append((group_name, plot_height))
     return group_and_heights
+
+
+def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
+    for scatter_size in [12, 9, 6, 3]:
+        df["name_with_dodge"] = np.nan
+        df["dodge"] = np.nan
+        for group, height in param_groups_and_heights:
+            group_df = df[df["group"] == group]
+            param_names = group_df["full_name"].unique()
+
+            height_points_per_param = height / len(param_names)
+            dodge_unit = 1.5 * scatter_size / height_points_per_param
+            x_range = group_df["final_value"].max() - group_df["final_value"].min()
+            critical_dist = 1.5 * scatter_size * x_range / width
+
+            for p in param_names:
+                param_slice = df[df["full_name"] == p]
+                values = param_slice["final_value"].sort_values()
+                ind = values.index
+                dist_to_left_neighbor = values.diff()
+                needs_dodge = dist_to_left_neighbor < critical_dist
+                dodge = increment_with_reset(needs_dodge.to_numpy()) * dodge_unit
+                df.loc[ind, "dodge"] = dodge
+        if df["dodge"].max() < 0.9:
+            df["name_with_dodge"] = df.apply(
+                lambda x: (x["full_name"], x["dodge"]), axis=1
+            )
+            return df, scatter_size
+    prob_param_names = df[df["dodge"] >= 0.9]["full_name"].tolist()
+    warnings.warn(
+        "Points of "
+        + ", ".join(prob_param_names)
+        + " are stacked so high "
+        + "that it is hard to distinguish to which parameter a point belongs. "
+        + "Switch to a histogram, KDE plot or increase the plot height to avoid this."
+    )
+    df["name_with_dodge"] = df.apply(lambda x: (x["full_name"], x["dodge"]), axis=1)
+    return df, scatter_size
+
+
+@jit
+def increment_with_reset(bool_arr):
+    res = []
+    for x in bool_arr:
+        if x is False:
+            res.append(0)
+        else:
+            res.append(res[-1] + 1)
+    return np.array(res)
 
 
 def _add_tap_tool(source, param_group_plot, point_estimate_glyph):
