@@ -21,10 +21,12 @@ import warnings
 import numpy as np
 import pandas as pd
 from bokeh.layouts import gridplot
+from bokeh.models import BoxSelectTool
 from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
 from bokeh.models import Range1d
 from bokeh.models import TapTool
+from bokeh.models.annotations import BoxAnnotation
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
@@ -84,6 +86,7 @@ def comparison_plot(
             y_range=to_plot,
             plot_height=group_height,
             plot_width=width,
+            tools="reset,save",
         )
 
         # add scatterplot representing the parameter value
@@ -123,7 +126,7 @@ def comparison_plot(
 
         _add_hover_tool(param_group_plot, point_estimate_glyph, df)
 
-        _add_tap_tool(source, param_group_plot, point_estimate_glyph)
+        _add_select_tools(source, param_group_plot, point_estimate_glyph)
 
         _style_plot(param_group_plot, df_slice)
 
@@ -313,7 +316,7 @@ def _create_group_and_heights(df, height):
 
 
 def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
-    for scatter_size in [12, 9, 6, 3]:
+    for scatter_size in [12, 9, 6]:
         df["name_with_dodge"] = np.nan
         df["dodge"] = np.nan
         for group, height in param_groups_and_heights:
@@ -339,13 +342,12 @@ def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
             )
             return df, scatter_size
     prob_param_names = df[df["dodge"] >= 0.9]["full_name"].tolist()
-    warnings.warn(
-        "Points of "
-        + ", ".join(prob_param_names)
-        + " are stacked so high "
-        + "that it is hard to distinguish to which parameter a point belongs. "
+    msg = (
+        "Points of {} are stacked so high ".format(", ".join(prob_param_names))
+        + "it is hard to distinguish to which parameter a point belongs. "
         + "Switch to a histogram, KDE plot or increase the plot height to avoid this."
     )
+    warnings.warn(msg, UserWarning)
     df["name_with_dodge"] = df.apply(lambda x: (x["full_name"], x["dodge"]), axis=1)
     return df, scatter_size
 
@@ -361,9 +363,9 @@ def increment_with_reset(bool_arr):
     return np.array(res)
 
 
-def _add_tap_tool(source, param_group_plot, point_estimate_glyph):
-    tap_js_kwargs = {"source": source}
-    tap_js_code = """
+def _add_select_tools(source, param_group_plot, point_estimate_glyph):
+    select_js_kwargs = {"source": source}
+    select_js_code = """
     // adapted from https://stackoverflow.com/a/44996422
 
     var chosen = source.selected.indices;
@@ -387,12 +389,18 @@ def _add_tap_tool(source, param_group_plot, point_estimate_glyph):
 
     source.selected.indices = chosen_models_indices;
     source.change.emit();"""
-    tap_callback = CustomJS(args=tap_js_kwargs, code=tap_js_code)
+    select_callback = CustomJS(args=select_js_kwargs, code=select_js_code)
     # point_estimate_glyph as only renderer assures that when a point is chosen
     # only that point's model is chosen
     # this makes it impossible to choose models based on clicking confidence bands
-    tap = TapTool(renderers=[point_estimate_glyph], callback=tap_callback)
+    tap = TapTool(renderers=[point_estimate_glyph], callback=select_callback)
     param_group_plot.tools.append(tap)
+    boxselect = BoxSelectTool(
+        renderers=[point_estimate_glyph],
+        callback=select_callback,
+        overlay=BoxAnnotation(fill_alpha=0.2, fill_color="gray"),
+    )
+    param_group_plot.tools.append(boxselect)
 
 
 def _add_hover_tool(param_group_plot, point_estimate_glyph, df):
