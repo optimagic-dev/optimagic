@@ -13,11 +13,7 @@ The plot can answer the following questions:
 
 3. Are parameters of groups of results clustered?
 
-Example Usage: see tutorials/example_comparison_plot.ipynb
-
 """
-import warnings
-
 import numpy as np
 import pandas as pd
 from bokeh.layouts import gridplot
@@ -31,37 +27,28 @@ from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 from bokeh.plotting import show
-from numba import jit
 
 from estimagic.optimization.utilities import index_element_to_string
 
 
 def comparison_plot(
-    data_dict,
-    color_dict=None,
-    marker_dict=None,
-    height=None,
-    width=None,
-    scatter_kwargs=None,
+    data_dict, color_dict=None, height=None, width=600, point_estimate_plot_kwargs=None
 ):
     """Make a comparison plot either from a data_dict.
 
     Args:
         data_dict (dict): The keys are the names of different models.
-            The values is a dictinoary with the following keys and values:
+            Each value is a dictinoary with the following keys and values:
                 - result_df (pd.DataFrame):
-                    params_df returned by estimagic.optimization.maximize or
+                    params returned by estimagic.optimization.maximize or
                     estimagic.optimization.minimize.
                 - model_class (str, optional):
                     name of the model class to which the model belongs.
                     This determines the color and checkbox entries with
-                    which model classes can be selected and unselected
+                    which model classes can be selected and unselected.
 
         color_dict (dict):
             maps model_class to color string that is understood by bokeh.
-
-        marker_dict (dict):
-            maps model_class to a marker string that is understood by bokeh scatter.
 
         height (int):
             height of the (entire) plot.
@@ -69,49 +56,40 @@ def comparison_plot(
         width (int):
             width of the (entire) plot.
 
-        scatter_kwargs (dict):
-            dictionary with options to be passed to bokeh figure.scatter
-
     """
-    df, param_groups_and_heights, width, scatter_kwargs = _process_inputs(
-        data_dict=data_dict,
-        color_dict=color_dict,
-        marker_dict=marker_dict,
-        height=height,
-        width=width,
-        scatter_kwargs=scatter_kwargs,
-    )
 
+    df = _build_df_from_data_dict(data_dict, color_dict)
+    param_groups_and_heights = _create_group_and_heights(df, height)
+    df = _add_rectangle_specs_to_df(df, param_groups_and_heights, width)
     source = ColumnDataSource(df)
 
     plots = []
     for param_group_name, group_height in param_groups_and_heights:
         df_slice = df[df["group"] == param_group_name]
-        to_plot = sorted(df_slice["full_name"].unique(), reverse=True)
+        y_range = sorted(df_slice["full_name"].unique(), reverse=True)
 
-        # create the "canvas"
         param_group_plot = figure(
             title="Comparison Plot of {} Parameters".format(param_group_name.title()),
-            y_range=to_plot,
+            y_range=y_range,
             plot_height=group_height,
             plot_width=width,
             tools="reset,save",
         )
 
-        # add scatterplot representing the parameter value
-        point_estimate_glyph = param_group_plot.scatter(
+        point_estimate_glyph = param_group_plot.rect(
             source=source,
             x="binned_x",
             y="name_with_dodge",
+            width="rect_width",
+            height="rect_height",
             color="color",
             selection_color="color",
             nonselection_color="color",
-            marker="marker",
-            **scatter_kwargs
+            alpha=0.5,
+            selection_alpha=0.7,
+            nonselection_alpha=0.3,
         )
 
-        # add the confidence_intervals as hbars
-        # horizontal whiskers not supported in bokeh 1.0.4
         if "conf_int_lower" in df.columns and "conf_int_upper" in df.columns:
             param_group_plot.hbar(
                 source=source,
@@ -149,175 +127,34 @@ def comparison_plot(
     return grid, plots
 
 
-def _process_inputs(data_dict, color_dict, marker_dict, height, width, scatter_kwargs):
-    """
-    Convert a dictionary mapping model names to the optimization results to a DataFrame.
-
-    Args:
-        data_dict (dict): The keys are the names of different models.
-            The values is a dictinoary with the following keys and values:
-                - result_df (pd.DataFrame):
-                    params_df returned by estimagic.optimization.maximize or
-                    estimagic.optimization.minimize.
-                - model_class (str, optional):
-                    name of the model class to which the model belongs.
-                    This determines the color and checkbox entries with
-                    which model classes can be selected and unselected
-
-        color_dict (dict):
-            maps model_class to color string that is understood by bokeh.
-            This is generated from the Category20 palette if not given.
-
-        marker_dict (dict):
-            maps model_class to a marker string that is understood by bokeh scatter.
-
-        height (int):
-            height of the (entire) plot.
-
-        width (int):
-            width of the (entire) plot.
-
-        scatter_kwargs (dict):
-            dictionary with options to be passed to bokeh figure.scatter
-
-    Returns:
-        df (pd.DataFrame): DataFrame with the following columns:
-            - *model* (str): model name
-            - *value* (float): point estimate of the parameter value
-            - *name* (str): name of the parameter (excluding its group)
-            - *group* (str): name of the parameter group
-                (used for grouping parameters in plots).
-            - *color* (str): color
-
-            if they were supplied by at least some of the result_dfs:
-                - *conf_int_lower* (float): lower end of the confidence interval
-                - *conf_int_upper* (float): upper end of the confidence interval
-            if they were supplied by at least some data_dicts:
-                - *model_class* (str): groups that can be filtered through the widget
-        param_groups (list): list of paramater_groups
-        group_and_heights (list):
-            list of of tuples of the name of the group and height for each group plot
-        width (int): width of the plot
-
-    """
-    color_dict, marker_dict, scatter_kwargs = _build_or_check_option_dicts(
-        color_dict, marker_dict, data_dict, scatter_kwargs
-    )
-    df = _build_df_from_data_dict(data_dict, color_dict, marker_dict)
-    _check_groups_and_names_compatible(df)
-
-    if width is None:
-        width = 600
-    group_and_heights = _create_group_and_heights(df, height)
-
-    df = _determine_dodge_and_scatter_size(
-        df=df,
-        param_groups_and_heights=group_and_heights,
-        width=width,
-        scatter_kwargs=scatter_kwargs,
-    )
-
-    return df, group_and_heights, width, scatter_kwargs
-
-
-def _build_or_check_option_dicts(color_dict, marker_dict, data_dict, scatter_kwargs):
-    model_classes = {
-        d["model_class"] for d in data_dict.values() if "model_class" in d.keys()
-    }
-
-    if color_dict is None:
-        color_dict = {m: "#035096" for m in model_classes}
-    else:
-        assert set(model_classes).issubset(color_dict.keys()), (
-            "Your color_dict does not map every model class "
-            + "in your data_dict to a color."
-        )
-
-    if marker_dict is None:
-        marker_dict = {m: "circle" for m in list(model_classes)}
-    else:
-        assert set(model_classes).issubset(marker_dict.keys()), (
-            "Your marker_dict does not map every model class "
-            + "in your data_dict to a marker."
-        )
-
-    full_scatter_kwargs = {
-        "alpha": 0.5,
-        "selection_alpha": 0.7,
-        "nonselection_alpha": 0.3,
-    }
-    if scatter_kwargs is not None:
-        full_scatter_kwargs.update(scatter_kwargs)
-
-    return color_dict, marker_dict, full_scatter_kwargs
-
-
-def _build_df_from_data_dict(data_dict, color_dict, marker_dict):
+def _build_df_from_data_dict(data_dict, color_dict):
     df = pd.DataFrame(
         columns=["conf_int_lower", "conf_int_upper", "group", "model_class"]
     )
-
-    for model, mod_dict in data_dict.items():
-        ext_param_df = mod_dict["result_df"]
-        name_cols = [x for x in ["group", "name"] if x in ext_param_df.columns]
-        ext_param_df["full_name"] = ext_param_df[name_cols].apply(
+    for model, model_dict in data_dict.items():
+        result_df = model_dict["result_df"].reset_index()
+        result_df["model"] = model
+        name_cols = [x for x in ["group", "name"] if x in result_df.columns]
+        result_df["full_name"] = result_df[name_cols].apply(
             lambda x: index_element_to_string(tuple(x)), axis=1
         )
-        ext_param_df["model"] = model
-        if "model_class" in mod_dict.keys():
-            model_class = mod_dict["model_class"]
-            ext_param_df["model_class"] = model_class
-            ext_param_df["color"] = color_dict[model_class]
-            ext_param_df["marker"] = marker_dict[model_class]
-
+        if "model_class" in model_dict.keys():
+            model_class = model_dict["model_class"]
+            result_df["model_class"] = model_class
+            if model_class in color_dict.keys():
+                result_df["color"] = color_dict[model_class]
+            else:
+                result_df["color"] = "#035096"
         else:
-            # the standard color is mediumelectricblue
-            ext_param_df["model_class"] = "no class"
-            ext_param_df["color"] = "#035096"
-            ext_param_df["marker"] = "circle"
+            result_df["model_class"] = "no class"
+            result_df["color"] = "#035096"
 
-        df = df.append(ext_param_df, sort=False)
-
-    # reset index as safety measure to make sure the index
-    # gives the position in the arrays
-    # that the source data dictionary points to
-
-    # keep as much information from the index as possible
-    if type(df.index) is pd.MultiIndex:
-        for name in df.index.names:
-            drop = name in df.columns
-            df.reset_index(name, drop=drop, inplace=True)
-    else:
-        drop = df.index.name in df.columns
-        df.reset_index(drop=drop, inplace=True)
+        df = df.append(result_df, sort=False)
 
     if "group" not in df.columns:
         df["group"] = "all"
 
-    return df
-
-
-def _check_groups_and_names_compatible(df):
-    name_to_group = {}
-    for model in df["model"].unique():
-        small_df = df[df["model"] == model]
-        for name in small_df["name"].unique():
-            current_group = set(df[df["name"] == name]["group"])
-            assert (
-                len(current_group) == 1
-            ), "{} is assigned to several groups: {}".format(name, current_group)
-            if name not in name_to_group.keys() or name_to_group[name] is None:
-                name_to_group[name] = current_group
-            else:
-                supposed = name_to_group[name]
-                if current_group is None:
-                    pass
-                else:
-                    assert (
-                        supposed == current_group
-                    ), "{} was assigned to group {} before but now {}".format(
-                        name, supposed, current_group
-                    )
+    return df.reset_index(drop=True)
 
 
 def _create_group_and_heights(df, height):
@@ -335,86 +172,87 @@ def _create_group_and_heights(df, height):
     return group_and_heights
 
 
-def _determine_dodge_and_scatter_size(
-    df, param_groups_and_heights, width, scatter_kwargs
-):
-    if "size" in scatter_kwargs.keys():
-        sizes = [scatter_kwargs["size"]]
-    else:
-        sizes = [12, 9, 6]
+def _add_rectangle_specs_to_df(df, width):
+    df["rect_width"] = np.nan
+    df["rect_height"] = np.nan
+    df["rect_angle"] = 0.0
+    df["needs_dodge"] = np.nan
+    df["binned_x"] = np.nan
+    df["dodge"] = np.nan
+    for group in df["group"].unique():
+        group_df = df[df["group"] == group]
+        group_ind = group_df.index
+        x_range = group_df["final_value"].max() - group_df["final_value"].min()
+        min_rect_width = x_range / 80
+        no_overlap_rect_width = _smallest_diff_btw_params(group_df, x_range)
 
-    for scatter_size in sizes:
-        df["name_with_dodge"] = np.nan
-        df["needs_dodge"] = np.nan
-        df["dodge"] = np.nan
-        df["binned_x"] = np.nan
-        for group, height in param_groups_and_heights:
-            group_df = df[df["group"] == group]
+        if no_overlap_rect_width >= min_rect_width:
+            rect_width = min(x_range / 20, no_overlap_rect_width)
+            df.loc[group_ind, "rect_width"] = rect_width
+            df.loc[group_ind, "rect_height"] = 0.25
+            df.loc[group_ind, "needs_dodge"] = False
+            df.loc[group_ind, "binned_x"] = df.loc[group_ind, "final_value"]
+            df.loc[group_ind, "dodge"] = 0
+        else:
+            df.loc[group_ind, "rect_width"] = min_rect_width
             param_names = group_df["full_name"].unique()
-
-            height_points_per_param = height / len(param_names)
-            dodge_unit = 1.5 * scatter_size / height_points_per_param
-            x_range = group_df["final_value"].max() - group_df["final_value"].min()
-            critical_dist = 1.5 * scatter_size * x_range / width
-
             for p in param_names:
                 param_slice = df[df["full_name"] == p]
-                values = param_slice["final_value"].sort_values()
-                ind = values.index
-                dist_to_left_neighbor = values.diff()
-                needs_dodge = dist_to_left_neighbor < critical_dist
+                sorted_values = param_slice["final_value"].sort_values()
+                ind = sorted_values.index
+                dist_to_left_neighbor = sorted_values.diff()
+                needs_dodge = dist_to_left_neighbor < 1.25 * min_rect_width
                 df.loc[ind, "needs_dodge"] = needs_dodge
-                new_xs, dodge = _create_x_and_dodge(
-                    values.to_numpy(), needs_dodge.to_numpy()
-                )
+                new_xs, dodge = _create_x_and_dodge(sorted_values, needs_dodge)
                 df.loc[ind, "binned_x"] = new_xs
-                df.loc[ind, "dodge"] = dodge * dodge_unit
-        if df["dodge"].max() < 0.9:
-            df["name_with_dodge"] = df.apply(
-                lambda x: (x["full_name"], x["dodge"]), axis=1
-            )
-            scatter_kwargs["size"] = scatter_size
-            return df
-    prob_param_names = df[df["dodge"] >= 0.9]["full_name"].tolist()
-    msg = (
-        "Points of {} are stacked so high ".format(", ".join(prob_param_names))
-        + "it is hard to distinguish to which parameter a point belongs. "
-        + "Switch to a histogram, KDE plot or increase the plot height to avoid this."
-    )
-    warnings.warn(msg, UserWarning)
+                rect_height = 0.4 * min(0.25, 1 / max(1, 0.5 * max(np.abs(dodge))))
+                df.loc[ind, "rect_height"] = rect_height
+                df.loc[ind, "dodge"] = 0.55 * rect_height * dodge
     df["name_with_dodge"] = df.apply(lambda x: (x["full_name"], x["dodge"]), axis=1)
-    scatter_kwargs["size"] = scatter_size
     return df
 
 
-@jit
+def _smallest_diff_btw_params(group_df, x_range):
+    param_names = group_df["full_name"].unique()
+    min_dist = x_range
+    for p in param_names:
+        param_slice = group_df[group_df["full_name"] == p]
+        values = param_slice["final_value"].sort_values()
+        dist_to_left_neighbor = values.diff()
+        min_dist = min(min_dist, dist_to_left_neighbor.min())
+    return min_dist
+
+
 def _create_x_and_dodge(val_arr, bool_arr):
     new_xs, dodge, stored_x = [], [], []
     for old_x, needs_dodge in zip(val_arr, bool_arr):
-        true_bool = bool(needs_dodge)
-        _update_dodge(dodge=dodge, needs_dodge=true_bool)
-        _update_x(old_x=old_x, needs_dodge=true_bool, new_xs=new_xs, stored_x=stored_x)
+        _update_dodge(dodge, needs_dodge)
+        _update_x(old_x, needs_dodge, new_xs, stored_x)
 
-    _catch_up_x(new_xs=new_xs, stored_x=stored_x)
+    _catch_up_x(new_xs, stored_x)
     return np.array(new_xs), np.array(dodge, dtype=int)
 
 
 def _update_dodge(dodge, needs_dodge):
-    if needs_dodge is False:
+    if not needs_dodge:
         dodge.append(0)
-    elif len(dodge) == 0 or dodge[-1] == 0:
-        # flag for following row to go to 1 if it needs a dodge
-        dodge.append(1e-300)
+    elif len(dodge) == 0:
+        dodge.append(1)
+    elif dodge[-1] == 0:
+        dodge[-1] = 1
+        dodge.append(-1)
     else:
-        dodge.append(dodge[-1] + 1)
+        last_was_pos = dodge[-1] > 0
+        if last_was_pos:
+            dodge.append(-dodge[-1])
+        else:
+            dodge.append(-dodge[-1] + 1)
 
 
 def _update_x(old_x, needs_dodge, new_xs, stored_x):
-    if needs_dodge is True:
-        stored_x.append(old_x)
-    else:
+    if not needs_dodge:
         _catch_up_x(new_xs, stored_x)
-        new_xs.append(old_x)
+    stored_x.append(old_x)
 
 
 def _catch_up_x(new_xs, stored_x):
@@ -464,18 +302,10 @@ def _add_select_tools(source, param_group_plot, point_estimate_glyph):
 
 
 def _add_hover_tool(param_group_plot, point_estimate_glyph, df):
-    top_cols = ["model", "full_name", "start_value", "final_value"]
-    dont_display = ["color", "marker", "group", "name"]
-    cols_sorted_by_missing = (
-        (df.isnull().mean() + (df == None).mean())
-        .sort_values(ascending=True)
-        .index  # noqa
-    )
-    to_add = top_cols + [
-        x for x in cols_sorted_by_missing if x not in top_cols and x not in dont_display
-    ]
-
-    tooltips = [(col, "@" + col) for col in to_add]
+    top_cols = ["model", "full_name", "final_value", "model_class"]
+    if "conf_int_lower" in df.columns and "conf_int_upper" in df.columns:
+        top_cols += ["conf_int_lower", "conf_int_upper"]
+    tooltips = [(col, "@" + col) for col in top_cols]
     hover = HoverTool(renderers=[point_estimate_glyph], tooltips=tooltips)
     param_group_plot.tools.append(hover)
 

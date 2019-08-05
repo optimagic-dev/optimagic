@@ -8,6 +8,16 @@ from estimagic.visualization.comparison_plot import _update_dodge
 from estimagic.visualization.comparison_plot import _update_x
 
 # ============================================================================
+# _BUILD_DF_FROM_DATA_DICT
+# ============================================================================
+
+
+# ============================================================================
+# _CREATE_GROUP_AND_HEIGHTS
+# ============================================================================
+
+
+# ============================================================================
 # _CATCH_UP_X
 # ============================================================================
 
@@ -32,9 +42,9 @@ def test_catch_up_x(new_xs, stored_x, expected_new):
 
 fix_for_update_x = [
     # old_x, needs_dodge, new_xs, stored_x, expected_new, expected_stored
-    (0, False, [], [], [0], []),
+    (0, False, [], [], [], [0]),
     (1, True, [], [], [], [1]),
-    (0, False, [1, 2, 3], [4, 5, 6], [1, 2, 3, 5, 5, 5, 0], []),
+    (0, False, [1, 2, 3], [4, 5, 6], [1, 2, 3, 5, 5, 5], [0]),
     (1, True, [1, 2, 3], [4, 5, 6], [1, 2, 3], [4, 5, 6, 1]),
 ]
 
@@ -56,11 +66,11 @@ def test_update_x(old_x, needs_dodge, new_xs, stored_x, expected_new, expected_s
 fix_for_update_dodge = [
     # dodge, needs_dodge, expected
     ([], False, [0]),
-    ([], True, [1e-300]),
+    ([], True, [1]),
     ([0], False, [0, 0]),
-    ([0], True, [0, 1e-300]),
+    ([0], True, [1, -1]),
     ([0, 1], False, [0, 1, 0]),
-    ([0, 1], True, [0, 1, 2]),
+    ([0, 1], True, [0, 1, -1]),
 ]
 
 
@@ -88,21 +98,21 @@ fix_for_create_x_and_dodge = [
         np.arange(5),
         np.array([True, True, True, False, False]),
         np.array([1, 1, 1, 3, 4]),
-        np.array([0, 1, 2, 0, 0]),
+        np.array([1, -1, 2, 0, 0]),
     ),
     (
         "middle_dodge",
         np.arange(5),
         np.array([False, True, True, True, False]),
-        np.array([0, 2, 2, 2, 4]),
-        np.array([0, 0, 1, 2, 0]),
+        np.array([1.5, 1.5, 1.5, 1.5, 4]),
+        np.array([1, -1, 2, -2, 0]),
     ),
     (
         "start_finish_dodge",
         np.arange(5),
         np.array([True, True, False, True, True]),
-        np.array([0.5, 0.5, 2, 3.5, 3.5]),
-        np.array([0, 1, 0, 0, 1]),
+        np.array([0.5, 0.5, 3, 3, 3]),
+        np.array([1, -1, 1, -1, 2]),
     ),
 ]
 
