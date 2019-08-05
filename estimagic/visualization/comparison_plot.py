@@ -37,7 +37,12 @@ from estimagic.optimization.utilities import index_element_to_string
 
 
 def comparison_plot(
-    data_dict, color_dict=None, marker_dict=None, height=None, width=None
+    data_dict,
+    color_dict=None,
+    marker_dict=None,
+    height=None,
+    width=None,
+    scatter_kwargs=None,
 ):
     """Make a comparison plot either from a data_dict.
 
@@ -64,13 +69,17 @@ def comparison_plot(
         width (int):
             width of the (entire) plot.
 
+        scatter_kwargs (dict):
+            dictionary with options to be passed to bokeh figure.scatter
+
     """
-    df, param_groups_and_heights, width, scatter_size = _process_inputs(
+    df, param_groups_and_heights, width, scatter_kwargs = _process_inputs(
         data_dict=data_dict,
         color_dict=color_dict,
         marker_dict=marker_dict,
         height=height,
         width=width,
+        scatter_kwargs=scatter_kwargs,
     )
 
     source = ColumnDataSource(df)
@@ -94,14 +103,11 @@ def comparison_plot(
             source=source,
             x="binned_x",
             y="name_with_dodge",
-            size=scatter_size,
             color="color",
             selection_color="color",
             nonselection_color="color",
-            alpha=0.5,
-            selection_alpha=0.7,
-            nonselection_alpha=0.3,
             marker="marker",
+            **scatter_kwargs
         )
 
         # add the confidence_intervals as hbars
@@ -143,7 +149,7 @@ def comparison_plot(
     return grid, plots
 
 
-def _process_inputs(data_dict, color_dict, marker_dict, height, width):
+def _process_inputs(data_dict, color_dict, marker_dict, height, width, scatter_kwargs):
     """
     Convert a dictionary mapping model names to the optimization results to a DataFrame.
 
@@ -171,6 +177,9 @@ def _process_inputs(data_dict, color_dict, marker_dict, height, width):
         width (int):
             width of the (entire) plot.
 
+        scatter_kwargs (dict):
+            dictionary with options to be passed to bokeh figure.scatter
+
     Returns:
         df (pd.DataFrame): DataFrame with the following columns:
             - *model* (str): model name
@@ -191,8 +200,8 @@ def _process_inputs(data_dict, color_dict, marker_dict, height, width):
         width (int): width of the plot
 
     """
-    color_dict, marker_dict = _build_or_check_option_dicts(
-        color_dict, marker_dict, data_dict
+    color_dict, marker_dict, scatter_kwargs = _build_or_check_option_dicts(
+        color_dict, marker_dict, data_dict, scatter_kwargs
     )
     df = _build_df_from_data_dict(data_dict, color_dict, marker_dict)
     _check_groups_and_names_compatible(df)
@@ -201,14 +210,17 @@ def _process_inputs(data_dict, color_dict, marker_dict, height, width):
         width = 600
     group_and_heights = _create_group_and_heights(df, height)
 
-    df, scatter_size = _determine_dodge_and_scatter_size(
-        df=df, param_groups_and_heights=group_and_heights, width=width
+    df = _determine_dodge_and_scatter_size(
+        df=df,
+        param_groups_and_heights=group_and_heights,
+        width=width,
+        scatter_kwargs=scatter_kwargs,
     )
 
-    return df, group_and_heights, width, scatter_size
+    return df, group_and_heights, width, scatter_kwargs
 
 
-def _build_or_check_option_dicts(color_dict, marker_dict, data_dict):
+def _build_or_check_option_dicts(color_dict, marker_dict, data_dict, scatter_kwargs):
     model_classes = {
         d["model_class"] for d in data_dict.values() if "model_class" in d.keys()
     }
@@ -229,7 +241,15 @@ def _build_or_check_option_dicts(color_dict, marker_dict, data_dict):
             + "in your data_dict to a marker."
         )
 
-    return color_dict, marker_dict
+    full_scatter_kwargs = {
+        "alpha": 0.5,
+        "selection_alpha": 0.7,
+        "nonselection_alpha": 0.3,
+    }
+    if scatter_kwargs is not None:
+        full_scatter_kwargs.update(scatter_kwargs)
+
+    return color_dict, marker_dict, full_scatter_kwargs
 
 
 def _build_df_from_data_dict(data_dict, color_dict, marker_dict):
@@ -315,8 +335,15 @@ def _create_group_and_heights(df, height):
     return group_and_heights
 
 
-def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
-    for scatter_size in [12, 9, 6]:
+def _determine_dodge_and_scatter_size(
+    df, param_groups_and_heights, width, scatter_kwargs
+):
+    if "size" in scatter_kwargs.keys():
+        sizes = [scatter_kwargs["size"]]
+    else:
+        sizes = [12, 9, 6]
+
+    for scatter_size in sizes:
         df["name_with_dodge"] = np.nan
         df["needs_dodge"] = np.nan
         df["dodge"] = np.nan
@@ -346,7 +373,8 @@ def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
             df["name_with_dodge"] = df.apply(
                 lambda x: (x["full_name"], x["dodge"]), axis=1
             )
-            return df, scatter_size
+            scatter_kwargs["size"] = scatter_size
+            return df
     prob_param_names = df[df["dodge"] >= 0.9]["full_name"].tolist()
     msg = (
         "Points of {} are stacked so high ".format(", ".join(prob_param_names))
@@ -355,7 +383,8 @@ def _determine_dodge_and_scatter_size(df, param_groups_and_heights, width):
     )
     warnings.warn(msg, UserWarning)
     df["name_with_dodge"] = df.apply(lambda x: (x["full_name"], x["dodge"]), axis=1)
-    return df, scatter_size
+    scatter_kwargs["size"] = scatter_size
+    return df
 
 
 @jit
