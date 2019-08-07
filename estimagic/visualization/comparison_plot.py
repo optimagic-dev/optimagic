@@ -31,149 +31,59 @@ from estimagic.optimization.utilities import index_element_to_string
 
 
 def comparison_plot(
-    data_dict, color_dict=None, height=None, width=600, point_estimate_plot_kwargs=None
+    res_dict, color_dict=None, height=None, width=600, point_estimate_plot_kwargs=None
 ):
-    """Make a comparison plot either from a data_dict.
+    """Make a comparison plot from a dictionary containing optimization results.
 
     Args:
-        data_dict (dict): The keys are the names of different models.
+        res_dict (dict): The keys are the names of different models.
             Each value is a dictinoary with the following keys and values:
                 - result_df (pd.DataFrame):
-                    params returned by estimagic.optimization.maximize or
-                    estimagic.optimization.minimize.
+                    params DataFrame returned by maximize or minimize.
                 - model_class (str, optional):
                     name of the model class to which the model belongs.
                     This determines the color and checkbox entries with
                     which model classes can be selected and unselected.
 
         color_dict (dict):
-            maps model_class to color string that is understood by bokeh.
+            mapping from the model class names to colors.
 
         height (int):
-            height of the (entire) plot.
+            height of the plot.
 
         width (int):
-            width of the (entire) plot.
-
+            width of the plot.
     """
+    df = _df_with_all_results(res_dict, color_dict)
+    heights, lower, upper, rect_widths = _create_plot_specs(df, width, height)
+    _add_rectangle_specs_to_df(df, rect_widths)
 
-    df = _build_df_from_data_dict(data_dict, color_dict)
-    plot_specs = _plot_specs(df, width, height)
-    _add_rectangle_specs_to_df(df, plot_specs)
-    source = ColumnDataSource(df)
+    source_dict, figure_dict, glyph_dict = _create_comparison_plot_components(
+        df=df,
+        heights=heights,
+        lower=lower,
+        upper=upper,
+        rect_widths=rect_widths,
+        width=width,
+    )
 
-    groups = plot_specs.keys()
-    name_to_source = {k: {} for k in groups}
-    name_to_figure = {k: {} for k in groups}
-    name_to_point_glyph = {k: {} for k in groups}
-    name_to_ci_glyphs = {k: {} for k in groups}
-    finished_plot_list = []
+    plots_with_callbacks = _add_callbacks(
+        source_dict=source_dict,
+        figure_dict=figure_dict,
+        glyph_dict=glyph_dict,
+        model_classes=df["model_class"].unique(),
+    )
 
-    for param_group in groups:
-        group_specs = plot_specs[param_group]
-        rect_width = group_specs["rect_width"]
-        param_names = sorted(df[df["group"] == param_group]["full_name"].unique())
-        for param in param_names:
-            param_src = ColumnDataSource(df[df["full_name"] == param])
-            name_to_source[param_group][param] = param_src
-            param_plot = figure(
-                title=param,
-                title_location="left",
-                y_axis_location="right",
-                plot_height=int(group_specs["plot_height"]),
-                plot_width=width,
-                tools="reset,save",
-                x_range=[group_specs["lower"], group_specs["upper"]],
-            )
-            name_to_figure[param_group][param] = param_plot
-
-            point_glyph = param_plot.rect(
-                source=param_src,
-                x="binned_x",
-                y="dodge",
-                width=rect_width,
-                height=1,
-                color="color",
-                selection_color="color",
-                nonselection_color="color",
-                alpha=0.5,
-                selection_alpha=0.7,
-                nonselection_alpha=0.3,
-            )
-            name_to_point_glyph[param_group][param] = point_glyph
-
-            name_to_ci_glyphs[param_group][param] = []
-            if "conf_int_lower" in df.columns and "conf_int_upper" in df.columns:
-                ci_glyph = param_plot.hbar(
-                    source=param_src,
-                    y="dodge",
-                    left="conf_int_lower",
-                    right="conf_int_upper",
-                    height=0.01,
-                    alpha=0.0,
-                    selection_alpha=0.7,
-                    nonselection_fill_alpha=0.0,
-                    line_alpha=0.0,
-                    selection_line_alpha=0.7,
-                    nonselection_line_alpha=0.0,
-                    color="color",
-                    selection_color="color",
-                    nonselection_color="color",
-                )
-                name_to_ci_glyphs[param_group][param].append(ci_glyph)
-
-            _add_hover_tool(param_plot, point_glyph, df)
-            hide_x_axis = param != param_names[-1]
-            _style_plot(param_plot, hide_x_axis=hide_x_axis)
-
-    for param_group in groups:
-        param_names = sorted(df[df["group"] == param_group]["full_name"].unique())
-        for param in param_names:
-            param_src = name_to_source[param_group][param]
-            param_plot = name_to_figure[param_group][param]
-            point_glyph = name_to_point_glyph[param_group][param]
-            other_src = []
-            for g in groups:
-                for p, src in name_to_source[g].items():
-                    if p != param:
-                        other_src.append(src)
-            _add_select_tools(
-                current_src=param_src,
-                full_src=source,
-                other_src=other_src,
-                param_plot=param_plot,
-                point_glyph=point_glyph,
-            )
-
-            if param == param_names[0]:
-                param_plot.add_layout(
-                    Title(
-                        text="Comparison Plot of {} Parameters".format(
-                            param_group.title()
-                        ),
-                        align="center",
-                    ),
-                    "above",
-                )
-            finished_plot_list.append(param_plot)
-
-    all_src = [param_src] + other_src
-    if "model_class" in df.columns:
-        cb_group = _create_checkbox(
-            widget_labels=sorted(df["model_class"].unique()), all_src=all_src
-        )
-        finished_plot_list = [cb_group] + finished_plot_list
-
-    grid = gridplot(finished_plot_list, toolbar_location="right", ncols=1)
+    grid = gridplot(plots_with_callbacks, toolbar_location="right", ncols=1)
     show(grid)
-    return df, grid, finished_plot_list
+    return df, grid, plots_with_callbacks
 
 
-def _build_df_from_data_dict(data_dict, color_dict):
+def _df_with_all_results(res_dict, color_dict):
     df = pd.DataFrame(
         columns=["conf_int_lower", "conf_int_upper", "group", "model_class"]
     )
-    for model, model_dict in data_dict.items():
+    for model, model_dict in res_dict.items():
         result_df = model_dict["result_df"].reset_index()
         result_df["model"] = model
         name_cols = [x for x in ["group", "name"] if x in result_df.columns]
@@ -199,25 +109,19 @@ def _build_df_from_data_dict(data_dict, color_dict):
     return df.reset_index(drop=True)
 
 
-def _plot_specs(df, figure_width, figure_height):
+def _create_plot_specs(df, figure_width, figure_height):
     figure_height = _determine_figure_height(df, figure_height)
-    nr_groups = len(df["group"].unique())
-    available_height = figure_height - nr_groups * 50
-    nr_params = len(df["full_name"].unique())
-    plot_specs = {}
+    grouped = df.groupby("group")
 
-    group_names = df["group"].unique()
-    for group in group_names:
-        plot_specs[group] = {}
-        group_df = df[df["group"] == group]
-        param_names = group_df["full_name"].unique()
-        lower, upper = _determine_lower_and_upper_bound(group_df)
-        plot_specs[group]["lower"] = lower
-        plot_specs[group]["upper"] = upper
-        plot_specs[group]["rect_width"] = (upper - lower) / 50
-        plot_height = (len(param_names) / nr_params) * available_height
-        plot_specs[group]["plot_height"] = plot_height
-    return plot_specs
+    nr_params = grouped["full_name"].unique().apply(len)
+    height_shares = nr_params / nr_params.sum()
+    heights = (height_shares * figure_height).astype(int)
+
+    upper = grouped[["conf_int_upper", "final_value"]].max().max(axis=1)
+    lower = grouped[["conf_int_lower", "final_value"]].min().min(axis=1)
+    rect_widths = 0.02 * (upper - lower)
+
+    return heights, lower, upper, rect_widths
 
 
 def _determine_figure_height(df, figure_height):
@@ -228,25 +132,12 @@ def _determine_figure_height(df, figure_height):
     return figure_height
 
 
-def _determine_lower_and_upper_bound(group_df):
-    if "conf_int_upper" in group_df.columns:
-        max_value = group_df["conf_int_upper"].max()
-    else:
-        max_value = group_df["final_value"].max()
-    if "conf_int_lower" in group_df.columns:
-        min_value = group_df["conf_int_lower"].min()
-    else:
-        min_value = group_df["final_value"].min()
-
-    return min_value, max_value
-
-
-def _add_rectangle_specs_to_df(df, plot_specs):
-    for group in plot_specs.keys():
-        rect_width = plot_specs[group]["rect_width"]
+def _add_rectangle_specs_to_df(df, rect_widths):
+    for group in df["group"].unique():
+        width = rect_widths.loc[group]
         param_names = df[df["group"] == group]["full_name"].unique()
         for param in param_names:
-            _add_dodge_and_binned_x(df, param, rect_width)
+            _add_dodge_and_binned_x(df, param, width)
 
 
 def _add_dodge_and_binned_x(df, param, rect_width):
@@ -294,12 +185,96 @@ def _find_nearest_upper(array, value):
     return candidates[idx]
 
 
-def _add_select_tools(current_src, full_src, other_src, param_plot, point_glyph):
-    select_js_kwargs = {
-        "full_src": full_src,
-        "current_src": current_src,
-        "other_src": other_src,
-    }
+def _create_comparison_plot_components(df, heights, lower, upper, rect_widths, width):
+    groups = heights.index.tolist()
+    source_dict = {k: {} for k in groups}
+    figure_dict = {k: {} for k in groups}
+    glyph_dict = {k: {} for k in groups}
+
+    for param_group in groups:
+        group_df = df[df["group"] == param_group]
+        param_names = sorted(group_df["full_name"].unique())
+        for param in param_names:
+            param_src = ColumnDataSource(group_df[group_df["full_name"] == param])
+            source_dict[param_group][param] = param_src
+            param_plot = figure(
+                title=param,
+                plot_height=int(heights.loc[param_group]),
+                plot_width=width,
+                tools="reset,save",
+                y_axis_location="right",
+                x_range=[lower.loc[param_group], upper.loc[param_group]],
+            )
+            figure_dict[param_group][param] = param_plot
+
+            point_glyph = param_plot.rect(
+                source=param_src,
+                x="binned_x",
+                y="dodge",
+                width=rect_widths.loc[param_group],
+                height=1,
+                color="color",
+                alpha=0.5,
+                selection_alpha=0.7,
+                nonselection_alpha=0.3,
+            )
+            _add_hover_tool(param_plot, point_glyph, df)
+
+            param_plot.hbar(
+                source=param_src,
+                y="dodge",
+                left="conf_int_lower",
+                right="conf_int_upper",
+                height=0.01,
+                alpha=0.0,
+                selection_alpha=0.7,
+                nonselection_fill_alpha=0.0,
+                color="color",
+            )
+
+            _style_plot(param_plot, param, param_names, param_group)
+
+            glyph_dict[param_group][param] = point_glyph
+    return source_dict, figure_dict, glyph_dict
+
+
+def _add_callbacks(source_dict, figure_dict, glyph_dict, model_classes):
+    plots_with_callbacks = []
+    if len(model_classes) > 1:
+        plots_with_callbacks.append(
+            _create_checkbox(
+                widget_labels=list(model_classes), all_src=_flatten_dict(source_dict)
+            )
+        )
+
+    for group, param_to_source in source_dict.items():
+        for param, param_src in param_to_source.items():
+            param_plot = figure_dict[group][param]
+            point_glyph = glyph_dict[group][param]
+            other_src = _flatten_dict(source_dict, param)
+            _add_select_tools(
+                current_src=param_src,
+                other_src=other_src,
+                param_plot=param_plot,
+                point_glyph=point_glyph,
+            )
+            plots_with_callbacks.append(param_plot)
+
+    return plots_with_callbacks
+
+
+def _flatten_dict(nested_dict, exclude_key=None):
+    flattened = []
+    for outer_key, inner_dict in nested_dict.items():
+        if exclude_key is None or outer_key != exclude_key:
+            for inner_key, inner_val in inner_dict.items():
+                if exclude_key is None or inner_key != exclude_key:
+                    flattened.append(inner_val)
+    return flattened
+
+
+def _add_select_tools(current_src, other_src, param_plot, point_glyph):
+    select_js_kwargs = {"current_src": current_src, "other_src": other_src}
     select_js_code = """
     // adapted from https://stackoverflow.com/a/44996422
 
@@ -322,15 +297,6 @@ def _add_select_tools(current_src, full_src, other_src, param_plot, point_glyph)
     };
     current_src.selected.indices = chosen_models_indices;
     current_src.change.emit();
-
-    var chosen_models_indices = [];
-    for (var i = 0; i < full_src.data['index'].length; ++ i){
-        if (chosen_models.includes(full_src.data['model'][i])){
-            chosen_models_indices.push(i)
-        };
-    };
-    full_src.selected.indices = chosen_models_indices;
-    full_src.change.emit();
 
     for (var i = 0; i < other_src.length; ++i){
         var chosen_models_indices = [];
@@ -403,7 +369,19 @@ def _create_checkbox(widget_labels, all_src):
     return cb_group
 
 
-def _style_plot(fig, hide_x_axis):
+def _style_plot(fig, param, param_names, group):
+    if param == param_names[0]:
+        fig.add_layout(
+            Title(
+                text="Comparison Plot of {} Parameters".format(group.title()),
+                align="center",
+            ),
+            "above",
+        )
+    if param != param_names[-1]:
+        fig.xaxis.visible = False
+    else:
+        fig.xaxis.axis_line_color = None
     fig.title.vertical_align = "middle"
     fig.title.align = "center"
     fig.title.offset = 0
@@ -413,11 +391,8 @@ def _style_plot(fig, hide_x_axis):
     fig.xaxis.minor_tick_line_color = None
     fig.yaxis.axis_line_color = None
     fig.yaxis.major_tick_line_color = None
-    if hide_x_axis:
-        fig.xaxis.visible = False
-    else:
-        fig.xaxis.axis_line_color = None
     xmin = fig.x_range.start
     xmax = fig.x_range.end
     fig.line([xmin, xmax], [0, 0], line_color="black")
     fig.sizing_mode = "scale_width"
+    fig.title_location = "left"
