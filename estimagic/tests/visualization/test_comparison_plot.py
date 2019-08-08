@@ -4,6 +4,8 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from estimagic.visualization.comparison_plot import _determine_figure_height
+from estimagic.visualization.comparison_plot import _determine_plot_heights
 from estimagic.visualization.comparison_plot import _df_with_all_results
 from estimagic.visualization.comparison_plot import _prep_result_df
 
@@ -48,6 +50,13 @@ def res_dict_with_model_class(minimal_res_dict):
     res_dict["mod2"]["model_class"] = "large"
     res_dict["mod4"]["model_class"] = "large"
     return res_dict
+
+
+@pytest.fixture()
+def df():
+    with open("estimagic/tests/visualization/minimal_expected_df.json", "r") as f:
+        df = pd.DataFrame(json.load(f))
+    return df
 
 
 # _prep_result_df
@@ -136,8 +145,25 @@ def test_df_with_results_with_model_classes(res_dict_with_model_class):
 # ===========================================================================
 
 
+def test_determine_plot_heights(df):
+    grouped = df.groupby("group")
+    res = _determine_plot_heights(grouped=grouped, df=df, figure_height=400)
+    expected = pd.Series([80, 160, 80, 80], index=["a", "b", "c", "d"])
+    assert res.to_dict() == expected.to_dict()
+
+
 # _determine_figure_height
 # ===========================================================================
+
+
+def test_determine_figure_height_none(df):
+    expected = 8 * 10 * 10
+    assert _determine_figure_height(df, None) == expected
+
+
+def test_determine_figure_height_given(df):
+    expected = 400
+    assert _determine_figure_height(df, 400) == expected
 
 
 # _add_plot_specs_to_df
