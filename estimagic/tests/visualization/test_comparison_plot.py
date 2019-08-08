@@ -9,6 +9,7 @@ from estimagic.visualization.comparison_plot import _create_bounds_and_rect_widt
 from estimagic.visualization.comparison_plot import _determine_figure_height
 from estimagic.visualization.comparison_plot import _determine_plot_heights
 from estimagic.visualization.comparison_plot import _df_with_all_results
+from estimagic.visualization.comparison_plot import _flatten_dict
 from estimagic.visualization.comparison_plot import _prep_result_df
 
 # ===========================================================================
@@ -187,7 +188,7 @@ def test_create_bounds_and_rect_widths_with_cis(res_dict_with_cis):
         16, "final_value"
     ] = 0.02  # have one entry with negative lower and positive upper
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
-    exp_upper = {"a": 1.88, "b": 2.93, "c": 2.59, "d": 0.02}
+    exp_upper = {"a": 2.11, "b": 2.93, "c": 2.5900000000000003, "d": 0.02}
 
     exp_lower = {"a": 1.35, "b": 0.42000000000000015, "c": 1.43, "d": -1.4}
     assert lower.to_dict() == exp_lower
@@ -240,3 +241,27 @@ def test_determine_figure_height_given(df):
 
 # _flatten_dict
 # ===========================================================================
+
+
+def test_flatten_dict_without_exclude_key():
+    d = {
+        "g1": {"p1": "val1"},
+        "g2": {"p2": "val2"},
+        "g3": {"p3": "val3", "p31": "val4"},
+    }
+
+    flattened = _flatten_dict(d)
+    expected = ["val1", "val2", "val3", "val4"]
+    assert flattened == expected
+
+
+def test_flatten_dict_with_exclude_key():
+    d = {
+        "g1": {"p1": "val1"},
+        "g2": {"p2": "val2"},
+        "g3": {"p3": "val3", "p31": "val4"},
+    }
+
+    flattened = _flatten_dict(d, "p31")
+    expected = ["val1", "val2", "val3"]
+    assert flattened == expected
