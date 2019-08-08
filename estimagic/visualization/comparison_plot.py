@@ -93,18 +93,7 @@ def _df_with_all_results(res_dict):
     """
     df = pd.DataFrame()
     for model, model_dict in res_dict.items():
-        result_df = model_dict["result_df"].reset_index()
-        result_df["model"] = model
-        name_cols = [x for x in ["group", "name"] if x in result_df.columns]
-        result_df["full_name"] = result_df[name_cols].apply(
-            lambda x: index_element_to_string(tuple(x)), axis=1
-        )
-        if "model_class" in model_dict.keys():
-            model_class = model_dict["model_class"]
-            result_df["model_class"] = model_class
-        else:
-            result_df["model_class"] = "no class"
-
+        result_df = _prep_result_df(model_dict, model)
         df = df.append(result_df, sort=False)
 
     if "group" not in df.columns:
@@ -113,19 +102,38 @@ def _df_with_all_results(res_dict):
     return df.reset_index(drop=True)
 
 
+def _prep_result_df(model_dict, model):
+    result_df = model_dict["result_df"].reset_index()
+    result_df["model"] = model
+    name_cols = [x for x in ["group", "name"] if x in result_df.columns]
+    result_df["full_name"] = result_df[name_cols].apply(
+        lambda x: index_element_to_string(tuple(x)), axis=1
+    )
+    if "model_class" in model_dict.keys():
+        model_class = model_dict["model_class"]
+        result_df["model_class"] = model_class
+    else:
+        result_df["model_class"] = "no class"
+    return result_df
+
+
 def _create_plot_specs(df, figure_width, figure_height):
-    figure_height = _determine_figure_height(df, figure_height)
     grouped = df.groupby("group")
 
-    nr_params = grouped["full_name"].unique().apply(len)
-    height_shares = nr_params / nr_params.sum()
-    heights = (height_shares * figure_height).astype(int)
+    heights = _determine_plot_heights(grouped, figure_height, df)
 
     upper = grouped[["conf_int_upper", "final_value"]].max().max(axis=1)
     lower = grouped[["conf_int_lower", "final_value"]].min().min(axis=1)
     rect_widths = 0.02 * (upper - lower)
 
     return heights, lower, upper, rect_widths
+
+
+def _determine_plot_heights(grouped, figure_height, df):
+    figure_height = _determine_figure_height(df, figure_height)
+    nr_params = grouped["full_name"].unique().apply(len)
+    height_shares = nr_params / nr_params.sum()
+    return (height_shares * figure_height).astype(int)
 
 
 def _determine_figure_height(df, figure_height):
@@ -179,9 +187,9 @@ def _add_dodge_and_binned_x(df, param, bins):
     df.loc[param_ind, "upper_edges"] = values.apply(
         lambda x: _find_next_upper(edges, x)
     )
-    df.loc[param_ind, "binned_x"] = df.loc[
-        param_ind, ["upper_edges", "lower_edges"]
-    ].mean(axis=1)
+
+    edges = ["upper_edges", "lower_edges"]
+    df.loc[param_ind, "binned_x"] = df.loc[param_ind, edges].mean(axis=1)
 
 
 def _find_next_lower(array, value):
