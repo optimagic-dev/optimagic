@@ -1,7 +1,10 @@
+import json
+
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from estimagic.visualization.comparison_plot import _df_with_all_results
 from estimagic.visualization.comparison_plot import _prep_result_df
 
 # ===========================================================================
@@ -32,7 +35,7 @@ def minimal_res_dict():
 
     res_dict = {
         "mod1": {"result_df": df1},
-        "mod2": {"result_df": df2, "model_class": "class2"},
+        "mod2": {"result_df": df2},
         "mod3": {"result_df": df3},
         "mod4": {"result_df": df4},
     }
@@ -103,6 +106,26 @@ def test_prep_result_df(minimal_res_dict):
 
 # _df_with_all_results
 # ===========================================================================
+
+
+def test_df_with_minimal_results(minimal_res_dict):
+    with open("estimagic/tests/visualization/minimal_expected_df.json", "r") as f:
+        expected = pd.DataFrame(json.load(f))
+    res = _df_with_all_results(minimal_res_dict)
+    expected.set_index(["model", "full_name"], inplace=True)
+    res.set_index(["model", "full_name"], inplace=True)
+    assert_frame_equal(res, expected)
+
+
+def test_df_with_results_with_model_classes(res_dict_with_model_class):
+    with open(
+        "estimagic/tests/visualization/with_model_class_expected_df.json", "r"
+    ) as f:
+        expected = pd.DataFrame(json.load(f))
+    res = _df_with_all_results(res_dict_with_model_class)
+    expected.set_index(["model", "full_name"], inplace=True)
+    res.set_index(["model", "full_name"], inplace=True)
+    assert_frame_equal(res, expected)
 
 
 # _create_plot_specs
