@@ -1,9 +1,11 @@
 import json
 
+import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from estimagic.visualization.comparison_plot import _create_bounds_and_rect_widths
 from estimagic.visualization.comparison_plot import _determine_figure_height
 from estimagic.visualization.comparison_plot import _determine_plot_heights
 from estimagic.visualization.comparison_plot import _df_with_all_results
@@ -53,9 +55,35 @@ def res_dict_with_model_class(minimal_res_dict):
 
 
 @pytest.fixture()
+def res_dict_with_cis(res_dict_with_model_class):
+    res_dict = res_dict_with_model_class
+    diff1 = [0.3, 0.1, 0.2, 0.1, 0.3, 0.4, 0.2]
+    diff2 = [0.1, 0.1, 0.2, 0.3, 0.3, 0.2, 0.4]
+    res_dict["mod1"]["result_df"]["conf_int_upper"] = res_dict["mod1"]["result_df"][
+        "final_value"
+    ] + np.array(diff1)
+    res_dict["mod1"]["result_df"]["conf_int_lower"] = res_dict["mod1"]["result_df"][
+        "final_value"
+    ] - np.array(diff2)
+
+    diff1 += [0.3] * 3
+    diff2 += [0.3] * 3
+    res_dict["mod4"]["result_df"]["conf_int_upper"] = res_dict["mod4"]["result_df"][
+        "final_value"
+    ] + 0.5 * np.array(diff1)
+    res_dict["mod4"]["result_df"]["conf_int_lower"] = res_dict["mod4"]["result_df"][
+        "final_value"
+    ] - 0.5 * np.array(diff2)
+
+    return res_dict
+
+
+@pytest.fixture()
 def df():
     with open("estimagic/tests/visualization/minimal_expected_df.json", "r") as f:
         df = pd.DataFrame(json.load(f))
+        df["conf_int_upper"] = pd.np.nan
+        df["conf_int_lower"] = pd.np.nan
     return df
 
 
@@ -120,6 +148,8 @@ def test_prep_result_df(minimal_res_dict):
 def test_df_with_minimal_results(minimal_res_dict):
     with open("estimagic/tests/visualization/minimal_expected_df.json", "r") as f:
         expected = pd.DataFrame(json.load(f))
+        expected["conf_int_upper"] = pd.np.nan
+        expected["conf_int_lower"] = pd.np.nan
     res = _df_with_all_results(minimal_res_dict)
     expected.set_index(["model", "full_name"], inplace=True)
     res.set_index(["model", "full_name"], inplace=True)
@@ -131,14 +161,37 @@ def test_df_with_results_with_model_classes(res_dict_with_model_class):
         "estimagic/tests/visualization/with_model_class_expected_df.json", "r"
     ) as f:
         expected = pd.DataFrame(json.load(f))
+        expected["conf_int_upper"] = pd.np.nan
+        expected["conf_int_lower"] = pd.np.nan
     res = _df_with_all_results(res_dict_with_model_class)
     expected.set_index(["model", "full_name"], inplace=True)
     res.set_index(["model", "full_name"], inplace=True)
     assert_frame_equal(res, expected)
 
 
-# _create_plot_specs
+# _create_bounds_and_rect_widths
 # ===========================================================================
+
+
+def test_create_bounds_and_rect_widths(df):
+    lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
+    exp_lower = pd.Series([1.35, 0.52, 1.58, -1.25], index=["a", "b", "c", "d"])
+    exp_upper = pd.Series([2.01, 2.73, 2.49, -0.95], index=["a", "b", "c", "d"])
+    assert lower.to_dict() == exp_lower.to_dict()
+    assert upper.to_dict() == exp_upper.to_dict()
+
+
+def test_create_bounds_and_rect_widths_with_cis(res_dict_with_cis):
+    df = _df_with_all_results(res_dict_with_cis)
+    df.loc[
+        16, "final_value"
+    ] = 0.02  # have one entry with negative lower and positive upper
+    lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
+    exp_upper = {"a": 1.88, "b": 2.93, "c": 2.59, "d": 0.02}
+
+    exp_lower = {"a": 1.35, "b": 0.42000000000000015, "c": 1.43, "d": -1.4}
+    assert lower.to_dict() == exp_lower
+    assert upper.to_dict() == exp_upper
 
 
 # _determine_plot_heights
@@ -146,8 +199,7 @@ def test_df_with_results_with_model_classes(res_dict_with_model_class):
 
 
 def test_determine_plot_heights(df):
-    grouped = df.groupby("group")
-    res = _determine_plot_heights(grouped=grouped, df=df, figure_height=400)
+    res = _determine_plot_heights(df=df, figure_height=400)
     expected = pd.Series([80, 160, 80, 80], index=["a", "b", "c", "d"])
     assert res.to_dict() == expected.to_dict()
 

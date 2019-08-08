@@ -55,7 +55,8 @@ def comparison_plot(
             width of the plot.
     """
     df = _df_with_all_results(res_dict)
-    heights, lower, upper, rect_widths = _create_plot_specs(df, width, height)
+    heights = _determine_plot_heights(df, height)
+    lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
     _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict)
 
     source_dict, figure_dict, glyph_dict = _create_comparison_plot_components(
@@ -98,6 +99,10 @@ def _df_with_all_results(res_dict):
 
     if "group" not in df.columns:
         df["group"] = "all"
+    if "conf_int_upper" not in df.columns:
+        df["conf_int_upper"] = np.nan
+    if "conf_int_lower" not in df.columns:
+        df["conf_int_lower"] = np.nan
 
     return df.reset_index(drop=True)
 
@@ -117,19 +122,17 @@ def _prep_result_df(model_dict, model):
     return result_df
 
 
-def _create_plot_specs(df, figure_width, figure_height):
+def _create_bounds_and_rect_widths(df):
     grouped = df.groupby("group")
-
-    heights = _determine_plot_heights(grouped, figure_height, df)
-
     upper = grouped[["conf_int_upper", "final_value"]].max().max(axis=1)
     lower = grouped[["conf_int_lower", "final_value"]].min().min(axis=1)
     rect_widths = 0.02 * (upper - lower)
 
-    return heights, lower, upper, rect_widths
+    return lower, upper, rect_widths
 
 
-def _determine_plot_heights(grouped, figure_height, df):
+def _determine_plot_heights(df, figure_height):
+    grouped = df.groupby("group")
     figure_height = _determine_figure_height(df, figure_height)
     nr_params = grouped["full_name"].unique().apply(len)
     height_shares = nr_params / nr_params.sum()
