@@ -198,15 +198,21 @@ def _add_dodge_and_binned_x(df, param, bins):
 def _find_next_lower(array, value):
     # adapted from https://stackoverflow.com/a/2566508
     candidates = array[array <= value]
-    idx = (np.abs(candidates - value)).argmin()
-    return candidates[idx]
+    if len(candidates) > 0:
+        idx = (np.abs(candidates - value)).argmin()
+        return candidates[idx]
+    else:
+        return value
 
 
 def _find_next_upper(array, value):
     # adapted from https://stackoverflow.com/a/2566508
     candidates = array[array >= value]
-    idx = (np.abs(candidates - value)).argmin()
-    return candidates[idx]
+    if len(candidates) > 0:
+        idx = (np.abs(candidates - value)).argmin()
+        return candidates[idx]
+    else:
+        return value
 
 
 # ===========================================================================

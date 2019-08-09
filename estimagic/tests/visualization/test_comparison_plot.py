@@ -9,6 +9,8 @@ from estimagic.visualization.comparison_plot import _create_bounds_and_rect_widt
 from estimagic.visualization.comparison_plot import _determine_figure_height
 from estimagic.visualization.comparison_plot import _determine_plot_heights
 from estimagic.visualization.comparison_plot import _df_with_all_results
+from estimagic.visualization.comparison_plot import _find_next_lower
+from estimagic.visualization.comparison_plot import _find_next_upper
 from estimagic.visualization.comparison_plot import _flatten_dict
 from estimagic.visualization.comparison_plot import _prep_result_df
 
@@ -235,8 +237,74 @@ def test_determine_figure_height_given(df):
 # ===========================================================================
 
 
+def test_find_next_lower_with_sorted():
+    arr = np.arange(15)
+    val = 5.5
+    expected = 5
+    assert _find_next_lower(arr, val) == expected
+
+
+def test_find_next_lower_with_sorted_equal():
+    arr = np.arange(15)
+    val = 5
+    expected = 5
+    assert _find_next_lower(arr, val) == expected
+
+
+def test_find_next_lower_unsorted():
+    arr = np.array([3, 5, 1, 0, -10, -5, 0])
+    val = -2.5
+    expected = -5
+    assert _find_next_lower(arr, val) == expected
+
+
+def test_find_next_lower_lowest():
+    arr = np.array([3, 5, 0])
+    val = -10
+    assert _find_next_lower(arr, val) == val
+
+
+def test_find_next_lower_empty():
+    arr = np.array([])
+    val = 45
+    assert _find_next_lower(arr, val) == val
+
+
 # _find_next_upper
 # ===========================================================================
+
+
+def test_find_next_upper_with_sorted():
+    arr = np.arange(15)
+    val = 5.5
+    expected = 6
+    assert _find_next_upper(arr, val) == expected
+
+
+def test_find_next_upper_with_sorted_equal():
+    arr = np.arange(15)
+    val = 5
+    expected = 5
+    assert _find_next_upper(arr, val) == expected
+
+
+def test_find_next_upper_unsorted():
+    arr = np.array([3, 5, 1, 0, -10, -5, 0])
+    val = -2.5
+    expected = 0
+    assert _find_next_upper(arr, val) == expected
+
+
+def test_find_next_upper_highest():
+    arr = np.array([3, 5, 0])
+    val = 10
+    assert _find_next_upper(arr, val) == val
+
+
+def test_find_next_upper_empty():
+    arr = np.array([])
+    val = 45
+    assert _find_next_upper(arr, val) == val
 
 
 # _flatten_dict
