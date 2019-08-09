@@ -5,6 +5,8 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+from estimagic.visualization.comparison_plot import _add_color_column
+from estimagic.visualization.comparison_plot import _add_dodge_and_binned_x
 from estimagic.visualization.comparison_plot import _create_bounds_and_rect_widths
 from estimagic.visualization.comparison_plot import _determine_figure_height
 from estimagic.visualization.comparison_plot import _determine_plot_heights
@@ -34,10 +36,10 @@ def minimal_res_dict():
     df2["name"] = names + ["x", "v", "l"]
     df2["final_value"] = [1.48, 1.82, 1.12, 2.15, 1.65, 1.93, 2.39, 1.68, -1.24, -0.95]
 
-    df3 = df1.copy()
+    df3 = df1.copy(deep=True)
     df3["final_value"] += [-0.23, -0.2, -0.11, 0.03, -0.13, -0.21, 0.17]
 
-    df4 = df2.copy()
+    df4 = df2.copy(deep=True)
     df4["final_value"] += [0.4, -0.2, -0.6, -0.0, 0.2, -0.1, 0.1, -0.1, 0.0, -0.3]
 
     res_dict = {
@@ -229,8 +231,50 @@ def test_determine_figure_height_given(df):
 # ===========================================================================
 
 
+def test_add_color_column_no_dict():
+    color_dict = {}
+    df = pd.DataFrame()
+    df["model_class"] = list("ababab")
+    expected = df.copy(deep=True)
+    expected["color"] = "#035096"
+    _add_color_column(df=df, color_dict=color_dict)
+    assert_frame_equal(df, expected)
+
+
+def test_add_color_column_with_dict():
+    color_dict = {"a": "green"}
+    df = pd.DataFrame()
+    df["model_class"] = list("ababab")
+    expected = df.copy(deep=True)
+    expected["color"] = ["green", "#035096"] * 3
+    _add_color_column(df=df, color_dict=color_dict)
+    assert_frame_equal(df, expected)
+
+
 # _add_dodge_and_binned_x
 # ===========================================================================
+
+
+def test_add_dodge_and_binned_x_without_class():
+    df = pd.DataFrame()
+    df["final_value"] = [1, 5, 3, 3.5, 0.1, 2.5, 0.2, 0.3, 10]
+    df["full_name"] = "param"
+    df["model_class"] = "no class"
+    param = "param"
+    bins = np.array([-2, -1, 0, 1, 2, 3, 4, 5, 6], dtype=float)
+
+    expected = df.copy(deep=True)
+    expected["lower_edge"] = np.array([1, 5, 3, 3, 0, 2, 0, 0, 6], dtype=float)
+    expected["upper_edge"] = np.array([2, 6, 4, 4, 1, 3, 1, 1, np.nan], dtype=float)
+    expected["dodge"] = np.array(
+        [np.nan, np.nan, 0.5, 1.5, 0.5, np.nan, 1.5, 2.5, np.nan], dtype=float
+    )
+    expected["binned_x"] = np.array(
+        [1.5, 5.5, 3.5, 3.5, 0.5, 2.5, 0.5, 0.5, np.nan], dtype=float
+    )
+
+    _add_dodge_and_binned_x(df, param, bins)
+    assert_frame_equal(df, expected)
 
 
 # _find_next_lower
@@ -261,13 +305,13 @@ def test_find_next_lower_unsorted():
 def test_find_next_lower_lowest():
     arr = np.array([3, 5, 0])
     val = -10
-    assert _find_next_lower(arr, val) == val
+    assert np.isnan(_find_next_lower(arr, val))
 
 
 def test_find_next_lower_empty():
     arr = np.array([])
     val = 45
-    assert _find_next_lower(arr, val) == val
+    assert np.isnan(_find_next_lower(arr, val))
 
 
 # _find_next_upper
@@ -284,7 +328,7 @@ def test_find_next_upper_with_sorted():
 def test_find_next_upper_with_sorted_equal():
     arr = np.arange(15)
     val = 5
-    expected = 5
+    expected = 6
     assert _find_next_upper(arr, val) == expected
 
 
@@ -298,13 +342,13 @@ def test_find_next_upper_unsorted():
 def test_find_next_upper_highest():
     arr = np.array([3, 5, 0])
     val = 10
-    assert _find_next_upper(arr, val) == val
+    assert np.isnan(_find_next_upper(arr, val))
 
 
 def test_find_next_upper_empty():
     arr = np.array([])
     val = 45
-    assert _find_next_upper(arr, val) == val
+    assert np.isnan(_find_next_upper(arr, val))
 
 
 # _flatten_dict

@@ -160,6 +160,7 @@ def _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict):
         for param in param_names:
             _add_dodge_and_binned_x(df, param, bins)
     df["dodge"].fillna(0.5, inplace=True)
+    df["binned_x"].fillna(df["final_value"], inplace=True)
 
 
 def _add_color_column(df, color_dict):
@@ -178,21 +179,18 @@ def _add_dodge_and_binned_x(df, param, bins):
     values = param_df["final_value"]
     param_ind = param_df.index
     hist, edges = np.histogram(param_df["final_value"], bins)
-    for lower, upper, nr_points in zip(edges[:-1], edges[1:], hist):
+    df.loc[param_ind, "lower_edge"] = values.apply(lambda x: _find_next_lower(bins, x))
+    df.loc[param_ind, "upper_edge"] = values.apply(lambda x: _find_next_upper(bins, x))
+    for lower, upper, nr_points in zip(bins[:-1], bins[1:], hist):
         if nr_points > 1:
-            need_dodge = values[values.between(lower, upper)]
+            need_dodge = values[(lower <= values) & (values < upper)]
             ind = need_dodge.index
             df.loc[ind, "dodge"] = 0.5 + np.arange(len(ind))
 
-    df.loc[param_ind, "lower_edges"] = values.apply(
-        lambda x: _find_next_lower(edges, x)
+    edge_cols = ["upper_edge", "lower_edge"]
+    df.loc[param_ind, "binned_x"] = df.loc[param_ind, edge_cols].mean(
+        axis=1, skipna=False
     )
-    df.loc[param_ind, "upper_edges"] = values.apply(
-        lambda x: _find_next_upper(edges, x)
-    )
-
-    edges = ["upper_edges", "lower_edges"]
-    df.loc[param_ind, "binned_x"] = df.loc[param_ind, edges].mean(axis=1)
 
 
 def _find_next_lower(array, value):
@@ -202,17 +200,17 @@ def _find_next_lower(array, value):
         idx = (np.abs(candidates - value)).argmin()
         return candidates[idx]
     else:
-        return value
+        return np.nan
 
 
 def _find_next_upper(array, value):
     # adapted from https://stackoverflow.com/a/2566508
-    candidates = array[array >= value]
+    candidates = array[array > value]
     if len(candidates) > 0:
         idx = (np.abs(candidates - value)).argmin()
         return candidates[idx]
     else:
-        return value
+        return np.nan
 
 
 # ===========================================================================
