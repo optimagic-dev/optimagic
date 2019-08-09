@@ -7,6 +7,7 @@ from pandas.testing import assert_frame_equal
 
 from estimagic.visualization.comparison_plot import _add_color_column
 from estimagic.visualization.comparison_plot import _add_dodge_and_binned_x
+from estimagic.visualization.comparison_plot import _add_plot_specs_to_df
 from estimagic.visualization.comparison_plot import _create_bounds_and_rect_widths
 from estimagic.visualization.comparison_plot import _determine_figure_height
 from estimagic.visualization.comparison_plot import _determine_plot_heights
@@ -225,6 +226,30 @@ def test_determine_figure_height_given(df):
 
 # _add_plot_specs_to_df
 # ===========================================================================
+
+
+def test_add_plot_specs_to_df():
+    df = pd.DataFrame()
+    df["final_value"] = [0.5, 0.2, 5.5, 4.5, -0.2, -0.1, 4.3, 6.1]
+    df["group"] = list("aabb") * 2
+    df["model_class"] = ["c"] * 4 + ["d"] * 4
+    df["full_name"] = ["a_1", "a_2", "b_1", "b_2"] * 2
+    df["conf_int_lower"] = pd.np.nan
+    df["conf_int_upper"] = pd.np.nan
+    lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
+    color_dict = {}
+
+    expected = df.copy()
+    expected["color"] = "#035096"
+    expected["dodge"] = 0.5
+    expected["lower_edge"] = [0.500, 0.192, 5.488, 4.480, -0.200, -0.102, 4.3, 6.100]
+    expected["upper_edge"] = [0.514, 0.206, 5.524, 4.516, -0.186, -0.088, 4.336, 6.136]
+    expected["binned_x"] = expected[["upper_edge", "lower_edge"]].mean(axis=1)
+
+    _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict)
+    df[["lower_edge", "upper_edge"]] = df[["lower_edge", "upper_edge"]].round(3)
+
+    assert_frame_equal(df, expected)
 
 
 # _add_color_column

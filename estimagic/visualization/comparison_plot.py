@@ -149,6 +149,7 @@ def _determine_figure_height(df, figure_height):
 
 def _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict):
     _add_color_column(df, color_dict)
+    df["dodge"] = 0.5
     for group in df["group"].unique():
         rect_width = rect_widths.loc[group]
         bins = np.arange(
@@ -159,7 +160,6 @@ def _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict):
         param_names = df[df["group"] == group]["full_name"].unique()
         for param in param_names:
             _add_dodge_and_binned_x(df, param, bins)
-    df["dodge"].fillna(0.5, inplace=True)
     df["binned_x"].fillna(df["final_value"], inplace=True)
 
 
@@ -174,6 +174,7 @@ def _add_color_column(df, color_dict):
 
 
 def _add_dodge_and_binned_x(df, param, bins):
+    print(param)
     param_df = df[df["full_name"] == param].copy(deep=True)
     param_df.sort_values(["model_class", "final_value"], inplace=True)
     values = param_df["final_value"]
@@ -182,6 +183,8 @@ def _add_dodge_and_binned_x(df, param, bins):
     df.loc[param_ind, "lower_edge"] = values.apply(lambda x: _find_next_lower(bins, x))
     df.loc[param_ind, "upper_edge"] = values.apply(lambda x: _find_next_upper(bins, x))
     for lower, upper, nr_points in zip(bins[:-1], bins[1:], hist):
+        if nr_points > 0:
+            print(lower, upper, values[(lower <= values) & (values < upper)])
         if nr_points > 1:
             need_dodge = values[(lower <= values) & (values < upper)]
             ind = need_dodge.index
