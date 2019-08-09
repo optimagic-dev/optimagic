@@ -123,6 +123,7 @@ def _prep_result_df(model_dict, model):
 
 
 def _create_bounds_and_rect_widths(df):
+    """Calculate lower and upper bounds and the width of the "histogram" bars."""
     grouped = df.groupby("group")
     upper = grouped[["conf_int_upper", "final_value"]].max().max(axis=1)
     lower = grouped[["conf_int_lower", "final_value"]].min().min(axis=1)
@@ -148,6 +149,7 @@ def _determine_figure_height(df, figure_height):
 
 
 def _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict):
+    """Add color column, dodge column and binned_x colomun to *df*."""
     _add_color_column(df, color_dict)
     df["dodge"] = 0.5
     for group in df["group"].unique():
@@ -174,7 +176,7 @@ def _add_color_column(df, color_dict):
 
 
 def _add_dodge_and_binned_x(df, param, bins):
-    print(param)
+    """For one parameter calculate for each estimate its dodge and bin."""
     param_df = df[df["full_name"] == param].copy(deep=True)
     param_df.sort_values(["model_class", "final_value"], inplace=True)
     values = param_df["final_value"]
@@ -183,8 +185,6 @@ def _add_dodge_and_binned_x(df, param, bins):
     df.loc[param_ind, "lower_edge"] = values.apply(lambda x: _find_next_lower(bins, x))
     df.loc[param_ind, "upper_edge"] = values.apply(lambda x: _find_next_upper(bins, x))
     for lower, upper, nr_points in zip(bins[:-1], bins[1:], hist):
-        if nr_points > 0:
-            print(lower, upper, values[(lower <= values) & (values < upper)])
         if nr_points > 1:
             need_dodge = values[(lower <= values) & (values < upper)]
             ind = need_dodge.index
@@ -289,6 +289,7 @@ def _add_hover_tool(plot, point_glyph, df):
 
 
 def _add_callbacks(source_dict, figure_dict, glyph_dict, model_classes):
+    """Add checkbox for selecting model classes and tap tools."""
     all_src = _flatten_dict(source_dict)
     plots_with_callbacks = [
         _create_checkbox(widget_labels=model_classes, all_src=all_src)
