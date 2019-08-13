@@ -148,7 +148,7 @@ def test_determine_plot_heights(df):
 
 
 def test_determine_figure_height_none(df):
-    expected = 8 * 10 * 10
+    expected = 20 * 10
     assert _determine_figure_height(df, None) == expected
 
 

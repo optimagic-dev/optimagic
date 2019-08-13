@@ -33,7 +33,7 @@ MEDIUMELECTRICBLUE = "#035096"
 
 
 def comparison_plot(
-    res_dict, color_dict=None, height=None, width=600, point_estimate_plot_kwargs=None
+    res_dict, color_dict=None, height=None, width=500, point_estimate_plot_kwargs=None
 ):
     """Make a comparison plot from a dictionary containing optimization results.
 
@@ -57,9 +57,9 @@ def comparison_plot(
             width of the plot (in pixels).
     """
     df = _df_with_all_results(res_dict)
-    heights = _determine_plot_heights(df, height)
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
     df = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
+    heights = _determine_plot_heights(df, height)
 
     source_dict, figure_dict, glyph_dict = _create_comparison_plot_components(
         df=df,
@@ -141,7 +141,8 @@ def _determine_figure_height(df, figure_height):
     if figure_height is None:
         n_models = len(df["model"].unique())
         n_params = len(df["full_name"].unique())
-        figure_height = 8 * max(min(n_models, 60), 10) * n_params
+        height_per_plot = max(min(n_models, 60), 20)
+        figure_height = height_per_plot * n_params
     return figure_height
 
 
