@@ -29,6 +29,8 @@ from bokeh.plotting import show
 
 from estimagic.optimization.utilities import index_element_to_string
 
+MEDIUMELECTRICBLUE = "#035096"
+
 
 def comparison_plot(
     res_dict, color_dict=None, height=None, width=600, point_estimate_plot_kwargs=None
@@ -171,7 +173,7 @@ def _add_color_column(df, color_dict):
     models = df["model_class"].unique()
     for m in models:
         if m not in color_dict.keys():
-            color_dict[m] = "#035096"
+            color_dict[m] = MEDIUMELECTRICBLUE
     df["color"] = df["model_class"].replace(color_dict)
 
 

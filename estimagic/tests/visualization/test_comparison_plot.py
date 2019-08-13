@@ -1,9 +1,10 @@
 import json
+from os.path import join
 
 import numpy as np
 import pandas as pd
+import pandas.testing as pdt
 import pytest
-from pandas.testing import assert_frame_equal
 
 from estimagic.visualization.comparison_plot import _add_color_column
 from estimagic.visualization.comparison_plot import _add_dodge_and_binned_x
@@ -16,43 +17,28 @@ from estimagic.visualization.comparison_plot import _find_next_lower
 from estimagic.visualization.comparison_plot import _find_next_upper
 from estimagic.visualization.comparison_plot import _flatten_dict
 from estimagic.visualization.comparison_plot import _prep_result_df
+from estimagic.visualization.comparison_plot import MEDIUMELECTRICBLUE
+
+FIX_PATH = "estimagic/tests/visualization/comparison_plot_fixtures/"
+
 
 # ===========================================================================
 # FIXTURES
 # ===========================================================================
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_res_dict():
-    groups = ["a", "a", "b", "b", "b", "b", "c"]
-    names = ["u", "i", "a", "e", "n", "r", "t"]
-
-    df1 = pd.DataFrame()
-    df1["group"] = groups
-    df1["name"] = names
-    df1["final_value"] = [1.58, 2.01, 2.73, 1.62, 2.18, 1.75, 2.25]
-
-    df2 = pd.DataFrame()
-    df2["group"] = groups + ["c", "d", "d"]
-    df2["name"] = names + ["x", "v", "l"]
-    df2["final_value"] = [1.48, 1.82, 1.12, 2.15, 1.65, 1.93, 2.39, 1.68, -1.24, -0.95]
-
-    df3 = df1.copy(deep=True)
-    df3["final_value"] += [-0.23, -0.2, -0.11, 0.03, -0.13, -0.21, 0.17]
-
-    df4 = df2.copy(deep=True)
-    df4["final_value"] += [0.4, -0.2, -0.6, -0.0, 0.2, -0.1, 0.1, -0.1, 0.0, -0.3]
-
-    res_dict = {
-        "mod1": {"result_df": df1},
-        "mod2": {"result_df": df2},
-        "mod3": {"result_df": df3},
-        "mod4": {"result_df": df4},
-    }
+    with open(join(FIX_PATH, "minimal_res_dict.json"), "r") as f:
+        res_dict = json.load(f)
+    for model in res_dict.keys():
+        data_as_dict = res_dict[model]["result_df"]
+        df = pd.DataFrame.from_dict(data_as_dict)
+        res_dict[model]["result_df"] = df
     return res_dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def res_dict_with_model_class(minimal_res_dict):
     res_dict = minimal_res_dict
     res_dict["mod2"]["model_class"] = "large"
@@ -60,36 +46,27 @@ def res_dict_with_model_class(minimal_res_dict):
     return res_dict
 
 
-@pytest.fixture()
-def res_dict_with_cis(res_dict_with_model_class):
-    res_dict = res_dict_with_model_class
-    diff1 = [0.3, 0.1, 0.2, 0.1, 0.3, 0.4, 0.2]
-    diff2 = [0.1, 0.1, 0.2, 0.3, 0.3, 0.2, 0.4]
-    res_dict["mod1"]["result_df"]["conf_int_upper"] = res_dict["mod1"]["result_df"][
-        "final_value"
-    ] + np.array(diff1)
-    res_dict["mod1"]["result_df"]["conf_int_lower"] = res_dict["mod1"]["result_df"][
-        "final_value"
-    ] - np.array(diff2)
-
-    diff1 += [0.3] * 3
-    diff2 += [0.3] * 3
-    res_dict["mod4"]["result_df"]["conf_int_upper"] = res_dict["mod4"]["result_df"][
-        "final_value"
-    ] + 0.5 * np.array(diff1)
-    res_dict["mod4"]["result_df"]["conf_int_lower"] = res_dict["mod4"]["result_df"][
-        "final_value"
-    ] - 0.5 * np.array(diff2)
-
+@pytest.fixture
+def res_dict_with_cis():
+    with open(join(FIX_PATH, "res_dict_with_cis.json"), "r") as f:
+        res_dict = json.load(f)
+    for model in res_dict.keys():
+        data_as_dict = res_dict[model]["result_df"]
+        df = pd.DataFrame.from_dict(data_as_dict)
+        res_dict[model]["result_df"] = df
     return res_dict
 
 
-@pytest.fixture()
+@pytest.fixture
 def df():
-    with open("estimagic/tests/visualization/minimal_expected_df.json", "r") as f:
-        df = pd.DataFrame(json.load(f))
-        df["conf_int_upper"] = pd.np.nan
-        df["conf_int_lower"] = pd.np.nan
+    df = pd.read_csv(join(FIX_PATH, "df_minimal.csv"))
+    return df
+
+
+def _make_df_similar(raw):
+    df = raw.set_index(["model", "full_name"])
+    df.sort_index(level=["model", "full_name"], inplace=True)
+    df["index"] = df["index"].astype(int)
     return df
 
 
@@ -100,79 +77,26 @@ def df():
 def test_prep_result_df(minimal_res_dict):
     model = "mod1"
     model_dict = minimal_res_dict[model]
-    res = _prep_result_df(model_dict, model)
-    expected = pd.DataFrame.from_dict(
-        {
-            "group": {0: "a", 1: "a", 2: "b", 3: "b", 4: "b", 5: "b", 6: "c"},
-            "name": {0: "u", 1: "i", 2: "a", 3: "e", 4: "n", 5: "r", 6: "t"},
-            "final_value": {
-                0: 1.58,
-                1: 2.01,
-                2: 2.73,
-                3: 1.62,
-                4: 2.18,
-                5: 1.75,
-                6: 2.25,
-            },
-            "index": {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6},
-            "full_name": {
-                0: "a_u",
-                1: "a_i",
-                2: "b_a",
-                3: "b_e",
-                4: "b_n",
-                5: "b_r",
-                6: "c_t",
-            },
-            "model_class": {
-                0: "no class",
-                1: "no class",
-                2: "no class",
-                3: "no class",
-                4: "no class",
-                5: "no class",
-                6: "no class",
-            },
-            "model": {
-                0: "mod1",
-                1: "mod1",
-                2: "mod1",
-                3: "mod1",
-                4: "mod1",
-                5: "mod1",
-                6: "mod1",
-            },
-        }
-    )
-    assert_frame_equal(res, expected, check_like=True)
+    res = _make_df_similar(_prep_result_df(model_dict, model))
+    expected = _make_df_similar(pd.read_csv(join(FIX_PATH, "single_df_prepped.csv")))
+    pdt.assert_frame_equal(res, expected, check_like=True)
 
 
 # _df_with_all_results
 # ===========================================================================
 
 
-def test_df_with_minimal_results(minimal_res_dict):
-    with open("estimagic/tests/visualization/minimal_expected_df.json", "r") as f:
-        expected = pd.DataFrame(json.load(f))
-        expected["conf_int_upper"] = pd.np.nan
-        expected["conf_int_lower"] = pd.np.nan
-    res = _df_with_all_results(minimal_res_dict)
-    expected.set_index(["model", "full_name"], inplace=True)
-    res.set_index(["model", "full_name"], inplace=True)
-    assert_frame_equal(res, expected)
+def test_df_with_minimal_results(minimal_res_dict, df):
+    res = _make_df_similar(_df_with_all_results(minimal_res_dict))
+    expected = _make_df_similar(df)
+    pdt.assert_frame_equal(res, expected)
 
 
 def test_df_with_results_with_model_classes(res_dict_with_model_class):
-    with open(
-        "estimagic/tests/visualization/with_model_class_expected_df.json", "r"
-    ) as f:
-        expected = pd.DataFrame(json.load(f))
-        expected["conf_int_upper"] = pd.np.nan
-        expected["conf_int_lower"] = pd.np.nan
-    res = _df_with_all_results(res_dict_with_model_class)
-    expected.set_index(["model", "full_name"], inplace=True)
-    res.set_index(["model", "full_name"], inplace=True)
-    assert_frame_equal(res, expected)
+    res = _make_df_similar(_df_with_all_results(res_dict_with_model_class))
+    expected = pd.read_csv(join(FIX_PATH, "df_with_model_classes.csv"))
+    expected = _make_df_similar(expected)
+    pdt.assert_frame_equal(res, expected)
 
 
 # _create_bounds_and_rect_widths
@@ -234,13 +158,13 @@ def test_add_plot_specs_to_df():
     df["group"] = list("aabb") * 2
     df["model_class"] = ["c"] * 4 + ["d"] * 4
     df["full_name"] = ["a_1", "a_2", "b_1", "b_2"] * 2
-    df["conf_int_lower"] = pd.np.nan
-    df["conf_int_upper"] = pd.np.nan
+    df["conf_int_lower"] = np.nan
+    df["conf_int_upper"] = np.nan
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
     color_dict = {}
 
     expected = df.copy()
-    expected["color"] = "#035096"
+    expected["color"] = MEDIUMELECTRICBLUE
     expected["dodge"] = 0.5
     expected["lower_edge"] = [0.500, 0.192, 5.488, 4.480, -0.200, -0.102, 4.3, 6.100]
     expected["upper_edge"] = [0.514, 0.206, 5.524, 4.516, -0.186, -0.088, 4.336, 6.136]
@@ -249,7 +173,7 @@ def test_add_plot_specs_to_df():
     _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict)
     df[["lower_edge", "upper_edge"]] = df[["lower_edge", "upper_edge"]].round(3)
 
-    assert_frame_equal(df, expected)
+    pdt.assert_frame_equal(df, expected)
 
 
 # _add_color_column
@@ -263,7 +187,7 @@ def test_add_color_column_no_dict():
     expected = df.copy(deep=True)
     expected["color"] = "#035096"
     _add_color_column(df=df, color_dict=color_dict)
-    assert_frame_equal(df, expected)
+    pdt.assert_frame_equal(df, expected)
 
 
 def test_add_color_column_with_dict():
@@ -273,7 +197,7 @@ def test_add_color_column_with_dict():
     expected = df.copy(deep=True)
     expected["color"] = ["green", "#035096"] * 3
     _add_color_column(df=df, color_dict=color_dict)
-    assert_frame_equal(df, expected)
+    pdt.assert_frame_equal(df, expected)
 
 
 # _add_dodge_and_binned_x
@@ -299,7 +223,7 @@ def test_add_dodge_and_binned_x_without_class():
     )
 
     _add_dodge_and_binned_x(df, param, bins)
-    assert_frame_equal(df, expected)
+    pdt.assert_frame_equal(df, expected)
 
 
 # _find_next_lower

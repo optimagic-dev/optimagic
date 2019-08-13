@@ -1,0 +1,8 @@
+group,name,final_value,index,full_name,model_class,model
+a,u,1.58,0.0,a_u,no class,mod1
+a,i,2.01,1.0,a_i,no class,mod1
+b,a,2.73,2.0,b_a,no class,mod1
+b,e,1.62,3.0,b_e,no class,mod1
+b,n,2.18,4.0,b_n,no class,mod1
+b,r,1.75,5.0,b_r,no class,mod1
+c,t,2.25,6.0,c_t,no class,mod1
