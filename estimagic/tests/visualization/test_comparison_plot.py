@@ -6,13 +6,13 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 
-from estimagic.visualization.comparison_plot import _add_color_column
 from estimagic.visualization.comparison_plot import _add_dodge_and_binned_x
-from estimagic.visualization.comparison_plot import _add_plot_specs_to_df
 from estimagic.visualization.comparison_plot import _create_bounds_and_rect_widths
 from estimagic.visualization.comparison_plot import _determine_figure_height
 from estimagic.visualization.comparison_plot import _determine_plot_heights
 from estimagic.visualization.comparison_plot import _df_with_all_results
+from estimagic.visualization.comparison_plot import _df_with_color_column
+from estimagic.visualization.comparison_plot import _df_with_plot_specs
 from estimagic.visualization.comparison_plot import _find_next_lower
 from estimagic.visualization.comparison_plot import _find_next_upper
 from estimagic.visualization.comparison_plot import _flatten_dict
@@ -157,11 +157,11 @@ def test_determine_figure_height_given(df):
     assert _determine_figure_height(df, 400) == expected
 
 
-# _add_plot_specs_to_df
+# _df_with_plot_specs
 # ===========================================================================
 
 
-def test_add_plot_specs_to_df():
+def test_df_with_plot_specs():
     df = pd.DataFrame()
     df["final_value"] = [0.5, 0.2, 5.5, 4.5, -0.2, -0.1, 4.3, 6.1]
     df["group"] = list("aabb") * 2
@@ -179,34 +179,34 @@ def test_add_plot_specs_to_df():
     expected["upper_edge"] = [0.514, 0.206, 5.524, 4.516, -0.186, -0.088, 4.336, 6.136]
     expected["binned_x"] = expected[["upper_edge", "lower_edge"]].mean(axis=1)
 
-    _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict)
-    df[["lower_edge", "upper_edge"]] = df[["lower_edge", "upper_edge"]].round(3)
+    res = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
+    res[["lower_edge", "upper_edge"]] = res[["lower_edge", "upper_edge"]].round(3)
 
-    pdt.assert_frame_equal(df, expected)
+    pdt.assert_frame_equal(res, expected)
 
 
-# _add_color_column
+# _df_with_color_column
 # ===========================================================================
 
 
-def test_add_color_column_no_dict():
+def test_df_with_color_column_no_dict():
     color_dict = {}
     df = pd.DataFrame()
     df["model_class"] = list("ababab")
     expected = df.copy(deep=True)
     expected["color"] = MEDIUMELECTRICBLUE
-    _add_color_column(df=df, color_dict=color_dict)
-    pdt.assert_frame_equal(df, expected)
+    res = _df_with_color_column(df=df, color_dict=color_dict)
+    pdt.assert_frame_equal(res, expected)
 
 
-def test_add_color_column_with_dict():
+def test_df_with_color_column_with_dict():
     color_dict = {"a": "green"}
     df = pd.DataFrame()
     df["model_class"] = list("ababab")
     expected = df.copy(deep=True)
     expected["color"] = ["green", MEDIUMELECTRICBLUE] * 3
-    _add_color_column(df=df, color_dict=color_dict)
-    pdt.assert_frame_equal(df, expected)
+    res = _df_with_color_column(df=df, color_dict=color_dict)
+    pdt.assert_frame_equal(res, expected)
 
 
 # _add_dodge_and_binned_x

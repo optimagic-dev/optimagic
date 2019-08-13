@@ -54,12 +54,12 @@ def comparison_plot(
             height of the plot.
 
         width (int):
-            width of the plot.
+            width of the plot (in pixels).
     """
     df = _df_with_all_results(res_dict)
     heights = _determine_plot_heights(df, height)
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
-    _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict)
+    df = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
 
     source_dict, figure_dict, glyph_dict = _create_comparison_plot_components(
         df=df,
@@ -97,7 +97,7 @@ def _df_with_all_results(res_dict):
     df = pd.DataFrame()
     for model, model_dict in res_dict.items():
         result_df = _prep_result_df(model_dict, model)
-        df = df.append(result_df, sort=False)
+        df = df.append(result_df, sort=False, ignore_index=True)
 
     if "group" not in df.columns:
         df["group"] = "all"
@@ -105,8 +105,7 @@ def _df_with_all_results(res_dict):
         df["conf_int_upper"] = np.nan
     if "conf_int_lower" not in df.columns:
         df["conf_int_lower"] = np.nan
-
-    return df.reset_index(drop=True)
+    return df
 
 
 def _prep_result_df(model_dict, model):
@@ -116,11 +115,7 @@ def _prep_result_df(model_dict, model):
     result_df["full_name"] = result_df[name_cols].apply(
         lambda x: index_element_to_string(tuple(x)), axis=1
     )
-    if "model_class" in model_dict.keys():
-        model_class = model_dict["model_class"]
-        result_df["model_class"] = model_class
-    else:
-        result_df["model_class"] = "no class"
+    result_df["model_class"] = model_dict.get("model_class", "no class")
     return result_df
 
 
@@ -137,22 +132,22 @@ def _create_bounds_and_rect_widths(df):
 def _determine_plot_heights(df, figure_height):
     grouped = df.groupby("group")
     figure_height = _determine_figure_height(df, figure_height)
-    nr_params = grouped["full_name"].unique().apply(len)
-    height_shares = nr_params / nr_params.sum()
+    n_params = grouped["full_name"].unique().apply(len)
+    height_shares = n_params / n_params.sum()
     return (height_shares * figure_height).astype(int)
 
 
 def _determine_figure_height(df, figure_height):
     if figure_height is None:
-        nr_models = len(df["model"].unique())
-        nr_params = len(df["full_name"].unique())
-        figure_height = 8 * max(min(nr_models, 60), 10) * nr_params
+        n_models = len(df["model"].unique())
+        n_params = len(df["full_name"].unique())
+        figure_height = 8 * max(min(n_models, 60), 10) * n_params
     return figure_height
 
 
-def _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict):
-    """Add color column, dodge column and binned_x colomun to *df*."""
-    _add_color_column(df, color_dict)
+def _df_with_plot_specs(df, rect_widths, lower, upper, color_dict):
+    """Add color column, dodge column and binned_x column to *df*."""
+    df = _df_with_color_column(df, color_dict)
     df["dodge"] = 0.5
     for group in df["group"].unique():
         rect_width = rect_widths.loc[group]
@@ -165,16 +160,20 @@ def _add_plot_specs_to_df(df, rect_widths, lower, upper, color_dict):
         for param in param_names:
             _add_dodge_and_binned_x(df, param, bins)
     df["binned_x"].fillna(df["final_value"], inplace=True)
+    return df
 
 
-def _add_color_column(df, color_dict):
+def _df_with_color_column(df, color_dict):
+    models = df["model_class"].unique()
     if color_dict is None:
         color_dict = {}
-    models = df["model_class"].unique()
+    color_dict = {m: color_dict.get(m, "#035096") for m in models}
+
     for m in models:
         if m not in color_dict.keys():
             color_dict[m] = MEDIUMELECTRICBLUE
     df["color"] = df["model_class"].replace(color_dict)
+    return df
 
 
 def _add_dodge_and_binned_x(df, param, bins):
@@ -186,8 +185,8 @@ def _add_dodge_and_binned_x(df, param, bins):
     hist, edges = np.histogram(param_df["final_value"], bins)
     df.loc[param_ind, "lower_edge"] = values.apply(lambda x: _find_next_lower(bins, x))
     df.loc[param_ind, "upper_edge"] = values.apply(lambda x: _find_next_upper(bins, x))
-    for lower, upper, nr_points in zip(bins[:-1], bins[1:], hist):
-        if nr_points > 1:
+    for lower, upper, n_points in zip(bins[:-1], bins[1:], hist):
+        if n_points > 1:
             need_dodge = values[(lower <= values) & (values < upper)]
             ind = need_dodge.index
             df.loc[ind, "dodge"] = 0.5 + np.arange(len(ind))
