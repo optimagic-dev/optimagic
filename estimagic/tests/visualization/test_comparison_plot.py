@@ -63,6 +63,16 @@ def df():
     return df
 
 
+@pytest.fixture
+def nested_dict():
+    nested_dict = {
+        "g1": {"p1": "val1"},
+        "g2": {"p2": "val2"},
+        "g3": {"p3": "val3", "p31": "val4"},
+    }
+    return nested_dict
+
+
 def _make_df_similar(raw):
     df = raw.set_index(["model", "full_name"])
     df.sort_index(level=["model", "full_name"], inplace=True)
@@ -113,9 +123,8 @@ def test_create_bounds_and_rect_widths(df):
 
 def test_create_bounds_and_rect_widths_with_cis(res_dict_with_cis):
     df = _df_with_all_results(res_dict_with_cis)
-    df.loc[
-        16, "final_value"
-    ] = 0.02  # have one entry with negative lower and positive upper
+    # have one entry with negative lower and positive upper
+    df.loc[16, "final_value"] = 0.02
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
     exp_upper = {"a": 2.11, "b": 2.93, "c": 2.5900000000000003, "d": 0.02}
 
@@ -185,7 +194,7 @@ def test_add_color_column_no_dict():
     df = pd.DataFrame()
     df["model_class"] = list("ababab")
     expected = df.copy(deep=True)
-    expected["color"] = "#035096"
+    expected["color"] = MEDIUMELECTRICBLUE
     _add_color_column(df=df, color_dict=color_dict)
     pdt.assert_frame_equal(df, expected)
 
@@ -195,7 +204,7 @@ def test_add_color_column_with_dict():
     df = pd.DataFrame()
     df["model_class"] = list("ababab")
     expected = df.copy(deep=True)
-    expected["color"] = ["green", "#035096"] * 3
+    expected["color"] = ["green", MEDIUMELECTRICBLUE] * 3
     _add_color_column(df=df, color_dict=color_dict)
     pdt.assert_frame_equal(df, expected)
 
@@ -209,19 +218,15 @@ def test_add_dodge_and_binned_x_without_class():
     df["final_value"] = [1, 5, 3, 3.5, 0.1, 2.5, 0.2, 0.3, 10]
     df["full_name"] = "param"
     df["model_class"] = "no class"
-    param = "param"
-    bins = np.array([-2, -1, 0, 1, 2, 3, 4, 5, 6], dtype=float)
 
     expected = df.copy(deep=True)
-    expected["lower_edge"] = np.array([1, 5, 3, 3, 0, 2, 0, 0, 6], dtype=float)
-    expected["upper_edge"] = np.array([2, 6, 4, 4, 1, 3, 1, 1, np.nan], dtype=float)
-    expected["dodge"] = np.array(
-        [np.nan, np.nan, 0.5, 1.5, 0.5, np.nan, 1.5, 2.5, np.nan], dtype=float
-    )
-    expected["binned_x"] = np.array(
-        [1.5, 5.5, 3.5, 3.5, 0.5, 2.5, 0.5, 0.5, np.nan], dtype=float
-    )
+    expected["lower_edge"] = [1.0, 5.0, 3.0, 3.0, 0.0, 2.0, 0.0, 0.0, 6.0]
+    expected["upper_edge"] = [2.0, 6.0, 4.0, 4.0, 1.0, 3.0, 1.0, 1.0, np.nan]
+    expected["dodge"] = [np.nan, np.nan, 0.5, 1.5, 0.5, np.nan, 1.5, 2.5, np.nan]
+    expected["binned_x"] = [1.5, 5.5, 3.5, 3.5, 0.5, 2.5, 0.5, 0.5, np.nan]
 
+    param = "param"
+    bins = np.array([-2, -1, 0, 1, 2, 3, 4, 5, 6], dtype=float)
     _add_dodge_and_binned_x(df, param, bins)
     pdt.assert_frame_equal(df, expected)
 
@@ -229,100 +234,59 @@ def test_add_dodge_and_binned_x_without_class():
 # _find_next_lower
 # ===========================================================================
 
+sorted_arr = np.arange(15)
+unsorted_arr = np.array([3, 5, 1, 0, -10, -5, 0])
+empty_arr = np.array([])
 
-def test_find_next_lower_with_sorted():
-    arr = np.arange(15)
-    val = 5.5
-    expected = 5
-    assert _find_next_lower(arr, val) == expected
-
-
-def test_find_next_lower_with_sorted_equal():
-    arr = np.arange(15)
-    val = 5
-    expected = 5
-    assert _find_next_lower(arr, val) == expected
+find_lower_fixtures = [
+    (sorted_arr, 5.5, 5),
+    (sorted_arr, 5, 5),
+    (unsorted_arr, -2.5, -5),
+    (unsorted_arr, -20, np.nan),
+    (empty_arr, 45, np.nan),
+]
 
 
-def test_find_next_lower_unsorted():
-    arr = np.array([3, 5, 1, 0, -10, -5, 0])
-    val = -2.5
-    expected = -5
-    assert _find_next_lower(arr, val) == expected
-
-
-def test_find_next_lower_lowest():
-    arr = np.array([3, 5, 0])
-    val = -10
-    assert np.isnan(_find_next_lower(arr, val))
-
-
-def test_find_next_lower_empty():
-    arr = np.array([])
-    val = 45
-    assert np.isnan(_find_next_lower(arr, val))
+@pytest.mark.parametrize("arr, val, expected", find_lower_fixtures)
+def test_find_next_lower(arr, val, expected):
+    res = _find_next_lower(arr, val)
+    if np.isnan(expected):
+        assert np.isnan(res)
+    else:
+        assert res == expected
 
 
 # _find_next_upper
 # ===========================================================================
 
-
-def test_find_next_upper_with_sorted():
-    arr = np.arange(15)
-    val = 5.5
-    expected = 6
-    assert _find_next_upper(arr, val) == expected
-
-
-def test_find_next_upper_with_sorted_equal():
-    arr = np.arange(15)
-    val = 5
-    expected = 6
-    assert _find_next_upper(arr, val) == expected
+find_upper_fixtures = [
+    (sorted_arr, 5.5, 6),
+    (sorted_arr, 5, 6),
+    (unsorted_arr, -2.5, 0),
+    (unsorted_arr, 350, np.nan),
+    (empty_arr, 45, np.nan),
+]
 
 
-def test_find_next_upper_unsorted():
-    arr = np.array([3, 5, 1, 0, -10, -5, 0])
-    val = -2.5
-    expected = 0
-    assert _find_next_upper(arr, val) == expected
-
-
-def test_find_next_upper_highest():
-    arr = np.array([3, 5, 0])
-    val = 10
-    assert np.isnan(_find_next_upper(arr, val))
-
-
-def test_find_next_upper_empty():
-    arr = np.array([])
-    val = 45
-    assert np.isnan(_find_next_upper(arr, val))
+@pytest.mark.parametrize("arr, val, expected", find_upper_fixtures)
+def test_find_next_upper(arr, val, expected):
+    res = _find_next_upper(arr, val)
+    if np.isnan(expected):
+        assert np.isnan(res)
+    else:
+        assert res == expected
 
 
 # _flatten_dict
 # ===========================================================================
 
-
-def test_flatten_dict_without_exclude_key():
-    d = {
-        "g1": {"p1": "val1"},
-        "g2": {"p2": "val2"},
-        "g3": {"p3": "val3", "p31": "val4"},
-    }
-
-    flattened = _flatten_dict(d)
-    expected = ["val1", "val2", "val3", "val4"]
-    assert flattened == expected
+flatten_dict_fixtures = [
+    (None, ["val1", "val2", "val3", "val4"]),
+    ("p31", ["val1", "val2", "val3"]),
+]
 
 
-def test_flatten_dict_with_exclude_key():
-    d = {
-        "g1": {"p1": "val1"},
-        "g2": {"p2": "val2"},
-        "g3": {"p3": "val3", "p31": "val4"},
-    }
-
-    flattened = _flatten_dict(d, "p31")
-    expected = ["val1", "val2", "val3"]
+@pytest.mark.parametrize("exclude_key, expected", flatten_dict_fixtures)
+def test_flatten_dict_without_exclude_key(nested_dict, exclude_key, expected):
+    flattened = _flatten_dict(nested_dict, exclude_key)
     assert flattened == expected
