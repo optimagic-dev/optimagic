@@ -31,7 +31,7 @@ MEDIUMELECTRICBLUE = "#035096"
 
 
 def comparison_plot(
-    res_dict, color_dict=None, height=None, width=500, point_estimate_plot_kwargs=None
+    res_dict, color_dict=None, height=None, width=500, axis_for_every_parameter=False
 ):
     """Make a comparison plot from a dictionary containing optimization results.
 
@@ -53,6 +53,9 @@ def comparison_plot(
 
         width (int):
             width of the plot (in pixels).
+
+        axis_for_every_parameter (bool):
+            if False the x axis is only shown once for every group of parameters.
     """
     df = _df_with_all_results(res_dict)
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
@@ -66,6 +69,7 @@ def comparison_plot(
         upper=upper,
         rect_widths=rect_widths,
         width=width,
+        axis_for_every_parameter=axis_for_every_parameter,
     )
 
     plots_with_callbacks = _add_callbacks(
@@ -228,7 +232,9 @@ def _find_next_upper(array, value):
 # ===========================================================================
 
 
-def _create_comparison_plot_components(df, heights, lower, upper, rect_widths, width):
+def _create_comparison_plot_components(
+    df, heights, lower, upper, rect_widths, width, axis_for_every_parameter
+):
     groups = heights.index.tolist()
     source_dict = {k: {} for k in groups}
     figure_dict = {k: {} for k in groups}
@@ -277,7 +283,9 @@ def _create_comparison_plot_components(df, heights, lower, upper, rect_widths, w
                 nonselection_color="color",
             )
 
-            _style_plot(param_plot, param, param_names, param_group)
+            _style_plot(
+                param_plot, param, param_names, param_group, axis_for_every_parameter
+            )
 
             figure_dict[param_group][param] = param_plot
             source_dict[param_group][param] = param_src
@@ -414,24 +422,26 @@ def _create_checkbox(widget_labels, all_src):
     return cb_group
 
 
-def _style_plot(fig, param, param_names, group):
+def _style_plot(fig, param, param_names, group, axis_for_every_parameter):
     if param == param_names[0]:
         group_title = Title(
             text="Comparison Plot of {} Parameters".format(group.title()),
             align="center",
         )
         fig.add_layout(group_title, "above")
-
-    _prettify_x_axis(fig, param, param_names)
+    if not axis_for_every_parameter:
+        _prettify_x_axis(fig, param, param_names)
 
     fig.title.vertical_align = "middle"
     fig.title.align = "center"
     fig.title.offset = 0
+
     fig.outline_line_color = None
     fig.xgrid.visible = False
+
     fig.yaxis.minor_tick_line_color = None
-    fig.xaxis.minor_tick_line_color = None
     fig.yaxis.axis_line_color = None
+    fig.xaxis.minor_tick_line_color = None
     fig.yaxis.major_tick_line_color = None
     fig.sizing_mode = "scale_width"
     fig.title_location = "left"
