@@ -74,8 +74,8 @@ def nested_dict():
 
 
 def _make_df_similar(raw):
-    df = raw.set_index(["model", "full_name"])
-    df.sort_index(level=["model", "full_name"], inplace=True)
+    df = raw.set_index(["model", "name"])
+    df.sort_index(level=["model", "name"], inplace=True)
     df["index"] = df["index"].astype(int)
     return df
 
@@ -87,7 +87,8 @@ def _make_df_similar(raw):
 def test_prep_result_df(minimal_res_dict):
     model = "mod1"
     model_dict = minimal_res_dict[model]
-    res = _make_df_similar(_prep_result_df(model_dict, model))
+    res = _prep_result_df(model_dict, model)
+    res = _make_df_similar(res)
     expected = _make_df_similar(pd.read_csv(join(FIX_PATH, "single_df_prepped.csv")))
     pdt.assert_frame_equal(res, expected, check_like=True)
 
@@ -124,7 +125,7 @@ def test_create_bounds_and_rect_widths(df):
 def test_create_bounds_and_rect_widths_with_cis(res_dict_with_cis):
     df = _df_with_all_results(res_dict_with_cis)
     # have one entry with negative lower and positive upper
-    df.loc[16, "final_value"] = 0.02
+    df.loc[16, "value"] = 0.02
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
     exp_upper = {"a": 2.11, "b": 2.93, "c": 2.5900000000000003, "d": 0.02}
 
@@ -163,10 +164,10 @@ def test_determine_figure_height_given(df):
 
 def test_df_with_plot_specs():
     df = pd.DataFrame()
-    df["final_value"] = [0.5, 0.2, 5.5, 4.5, -0.2, -0.1, 4.3, 6.1]
+    df["value"] = [0.5, 0.2, 5.5, 4.5, -0.2, -0.1, 4.3, 6.1]
     df["group"] = list("aabb") * 2
     df["model_class"] = ["c"] * 4 + ["d"] * 4
-    df["full_name"] = ["a_1", "a_2", "b_1", "b_2"] * 2
+    df["name"] = ["a_1", "a_2", "b_1", "b_2"] * 2
     df["conf_int_lower"] = np.nan
     df["conf_int_upper"] = np.nan
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
@@ -215,9 +216,10 @@ def test_df_with_color_column_with_dict():
 
 def test_add_dodge_and_binned_x_without_class():
     df = pd.DataFrame()
-    df["final_value"] = [1, 5, 3, 3.5, 0.1, 2.5, 0.2, 0.3, 10]
-    df["full_name"] = "param"
+    df["value"] = [1, 5, 3, 3.5, 0.1, 2.5, 0.2, 0.3, 10]
+    df["name"] = "param"
     df["model_class"] = "no class"
+    df["group"] = "all"
 
     expected = df.copy(deep=True)
     expected["lower_edge"] = [1.0, 5.0, 3.0, 3.0, 0.0, 2.0, 0.0, 0.0, 6.0]
@@ -227,7 +229,7 @@ def test_add_dodge_and_binned_x_without_class():
 
     param = "param"
     bins = np.array([-2, -1, 0, 1, 2, 3, 4, 5, 6], dtype=float)
-    _add_dodge_and_binned_x(df, param, bins)
+    _add_dodge_and_binned_x(df, "all", param, bins)
     pdt.assert_frame_equal(df, expected)
 
 

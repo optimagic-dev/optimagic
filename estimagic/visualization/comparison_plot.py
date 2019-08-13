@@ -27,8 +27,6 @@ from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 from bokeh.plotting import show
 
-from estimagic.optimization.utilities import index_element_to_string
-
 MEDIUMELECTRICBLUE = "#035096"
 
 
@@ -99,8 +97,6 @@ def _df_with_all_results(res_dict):
         result_df = _prep_result_df(model_dict, model)
         df = df.append(result_df, sort=False, ignore_index=True)
 
-    if "group" not in df.columns:
-        df["group"] = "all"
     if "conf_int_upper" not in df.columns:
         df["conf_int_upper"] = np.nan
     if "conf_int_lower" not in df.columns:
@@ -109,12 +105,21 @@ def _df_with_all_results(res_dict):
 
 
 def _prep_result_df(model_dict, model):
-    result_df = model_dict["result_df"].reset_index()
+    result_df = model_dict["result_df"].copy(deep=True)
+    for index_name in result_df.index.names:
+        if index_name in result_df.columns:
+            ind_values = result_df.index.get_level_values(index_name)
+            if (result_df[index_name] == ind_values).all():
+                result_df.drop(columns=[index_name], inplace=True)
+            else:
+                raise ValueError(
+                    "The index level {} of the result DataFrame of {}".format(
+                        index_name, model
+                    ),
+                    "has different values than the column of the same name.",
+                )
+    result_df.reset_index(inplace=True)
     result_df["model"] = model
-    name_cols = [x for x in ["group", "name"] if x in result_df.columns]
-    result_df["full_name"] = result_df[name_cols].apply(
-        lambda x: index_element_to_string(tuple(x)), axis=1
-    )
     result_df["model_class"] = model_dict.get("model_class", "no class")
     return result_df
 
@@ -122,8 +127,8 @@ def _prep_result_df(model_dict, model):
 def _create_bounds_and_rect_widths(df):
     """Calculate lower and upper bounds and the width of the "histogram" bars."""
     grouped = df.groupby("group")
-    upper = grouped[["conf_int_upper", "final_value"]].max().max(axis=1)
-    lower = grouped[["conf_int_lower", "final_value"]].min().min(axis=1)
+    upper = grouped[["conf_int_upper", "value"]].max().max(axis=1)
+    lower = grouped[["conf_int_lower", "value"]].min().min(axis=1)
     rect_widths = 0.02 * (upper - lower)
 
     return lower, upper, rect_widths
@@ -132,7 +137,7 @@ def _create_bounds_and_rect_widths(df):
 def _determine_plot_heights(df, figure_height):
     grouped = df.groupby("group")
     figure_height = _determine_figure_height(df, figure_height)
-    n_params = grouped["full_name"].unique().apply(len)
+    n_params = grouped["name"].unique().apply(len)
     height_shares = n_params / n_params.sum()
     return (height_shares * figure_height).astype(int)
 
@@ -140,7 +145,7 @@ def _determine_plot_heights(df, figure_height):
 def _determine_figure_height(df, figure_height):
     if figure_height is None:
         n_models = len(df["model"].unique())
-        n_params = len(df["full_name"].unique())
+        n_params = len(df["name"].unique())
         height_per_plot = max(min(n_models, 60), 20)
         figure_height = height_per_plot * n_params
     return figure_height
@@ -157,10 +162,10 @@ def _df_with_plot_specs(df, rect_widths, lower, upper, color_dict):
             stop=upper.loc[group] + 2 * rect_width,
             step=rect_width,
         )
-        param_names = df[df["group"] == group]["full_name"].unique()
+        param_names = df[df["group"] == group]["name"].unique()
         for param in param_names:
-            _add_dodge_and_binned_x(df, param, bins)
-    df["binned_x"].fillna(df["final_value"], inplace=True)
+            _add_dodge_and_binned_x(df, group, param, bins)
+    df["binned_x"].fillna(df["value"], inplace=True)
     return df
 
 
@@ -177,13 +182,13 @@ def _df_with_color_column(df, color_dict):
     return df
 
 
-def _add_dodge_and_binned_x(df, param, bins):
+def _add_dodge_and_binned_x(df, group, param, bins):
     """For one parameter calculate for each estimate its dodge and bin."""
-    param_df = df[df["full_name"] == param].copy(deep=True)
-    param_df.sort_values(["model_class", "final_value"], inplace=True)
-    values = param_df["final_value"]
+    param_df = df[(df["group"] == group) & (df["name"] == param)].copy(deep=True)
+    param_df.sort_values(["model_class", "value"], inplace=True)
+    values = param_df["value"]
     param_ind = param_df.index
-    hist, edges = np.histogram(param_df["final_value"], bins)
+    hist, edges = np.histogram(param_df["value"], bins)
     df.loc[param_ind, "lower_edge"] = values.apply(lambda x: _find_next_lower(bins, x))
     df.loc[param_ind, "upper_edge"] = values.apply(lambda x: _find_next_upper(bins, x))
     for lower, upper, n_points in zip(bins[:-1], bins[1:], hist):
@@ -231,9 +236,9 @@ def _create_comparison_plot_components(df, heights, lower, upper, rect_widths, w
 
     for param_group in groups:
         group_df = df[df["group"] == param_group]
-        param_names = sorted(group_df["full_name"].unique())
+        param_names = sorted(group_df["name"].unique())
         for param in param_names:
-            param_src = ColumnDataSource(group_df[group_df["full_name"] == param])
+            param_src = ColumnDataSource(group_df[group_df["name"] == param])
             param_plot = figure(
                 title=param,
                 plot_height=int(heights.loc[param_group]),
@@ -282,7 +287,7 @@ def _create_comparison_plot_components(df, heights, lower, upper, rect_widths, w
 
 
 def _add_hover_tool(plot, point_glyph, df):
-    top_cols = ["model", "full_name", "final_value", "model_class"]
+    top_cols = ["model", "name", "value", "model_class"]
     if "conf_int_lower" in df.columns and "conf_int_upper" in df.columns:
         top_cols += ["conf_int_lower", "conf_int_upper"]
     tooltips = [(col, "@" + col) for col in top_cols]
