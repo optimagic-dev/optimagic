@@ -57,10 +57,9 @@ def comparison_plot(
         axis_for_every_parameter (bool):
             if False the x axis is only shown once for every group of parameters.
     """
-    df = _df_with_all_results(res_dict)
-    lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
-    df = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
-    heights = _determine_plot_heights(df, height)
+    df, lower, upper, rect_widths, heights = _process_inputs(
+        res_dict, color_dict, height
+    )
 
     source_dict, figure_dict, glyph_dict = _create_comparison_plot_components(
         df=df,
@@ -89,6 +88,14 @@ def comparison_plot(
 # ===========================================================================
 
 
+def _process_inputs(res_dict, color_dict, height):
+    df = _df_with_all_results(res_dict)
+    lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
+    df = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
+    heights = _determine_plot_heights(df, height)
+    return df, lower, upper, rect_widths, heights
+
+
 def _df_with_all_results(res_dict):
     """
     Build the DataFrame combining all DataFrames from the results dictionary.
@@ -110,22 +117,28 @@ def _df_with_all_results(res_dict):
 
 def _prep_result_df(model_dict, model):
     result_df = model_dict["result_df"].copy(deep=True)
-    for index_name in result_df.index.names:
-        if index_name in result_df.columns:
-            ind_values = result_df.index.get_level_values(index_name)
-            if (result_df[index_name] == ind_values).all():
-                result_df.drop(columns=[index_name], inplace=True)
-            else:
-                raise ValueError(
-                    "The index level {} of the result DataFrame of {}".format(
-                        index_name, model
-                    ),
-                    "has different values than the column of the same name.",
-                )
-    result_df.reset_index(inplace=True)
+    result_df = _reset_index_without_losing_information(result_df, model)
     result_df["model"] = model
     result_df["model_class"] = model_dict.get("model_class", "no class")
     return result_df
+
+
+def _reset_index_without_losing_information(df, model):
+    duplicates = [name for name in df.index.names if name in df.columns]
+    for col_name in duplicates:
+        ind_values = df.index.get_level_values(col_name)
+        if (df[col_name] == ind_values).all():
+            df.drop(columns=[col_name], inplace=True)
+        else:
+            raise ValueError(
+                "The index level "
+                + col_name
+                + " of the result DataFrame of "
+                + model
+                + "has different values than the column of the same name."
+            )
+    df.reset_index(inplace=True)
+    return df
 
 
 def _create_bounds_and_rect_widths(df):
@@ -150,7 +163,7 @@ def _determine_figure_height(df, figure_height):
     if figure_height is None:
         n_models = len(df["model"].unique())
         n_params = len(df["name"].unique())
-        height_per_plot = max(min(n_models, 60), 20)
+        height_per_plot = max(min(n_models, 60), 30)
         figure_height = height_per_plot * n_params
     return figure_height
 
@@ -423,35 +436,38 @@ def _create_checkbox(widget_labels, all_src):
 
 
 def _style_plot(fig, param, param_names, group, axis_for_every_parameter):
+    _style_title(fig, param, param_names, group)
+    _style_x_axis(fig, param, param_names, axis_for_every_parameter)
+
+    fig.yaxis.minor_tick_line_color = None
+    fig.yaxis.axis_line_color = None
+    fig.yaxis.major_tick_line_color = None
+
+    fig.outline_line_color = None
+    fig.xgrid.visible = False
+    fig.sizing_mode = "scale_width"
+
+
+def _style_title(fig, param, param_names, group):
     if param == param_names[0]:
         group_title = Title(
             text="Comparison Plot of {} Parameters".format(group.title()),
             align="center",
         )
         fig.add_layout(group_title, "above")
-    if not axis_for_every_parameter:
-        _prettify_x_axis(fig, param, param_names)
-
     fig.title.vertical_align = "middle"
     fig.title.align = "center"
     fig.title.offset = 0
-
-    fig.outline_line_color = None
-    fig.xgrid.visible = False
-
-    fig.yaxis.minor_tick_line_color = None
-    fig.yaxis.axis_line_color = None
-    fig.xaxis.minor_tick_line_color = None
-    fig.yaxis.major_tick_line_color = None
-    fig.sizing_mode = "scale_width"
     fig.title_location = "left"
 
 
-def _prettify_x_axis(fig, param, param_names):
-    if param != param_names[-1]:
-        fig.xaxis.visible = False
-    else:
-        fig.xaxis.axis_line_color = None
-    xmin = fig.x_range.start
-    xmax = fig.x_range.end
-    fig.line([xmin, xmax], [0, 0], line_color="black")
+def _style_x_axis(fig, param, param_names, axis_for_every_parameter):
+    if not axis_for_every_parameter:
+        if param != param_names[-1]:
+            fig.xaxis.visible = False
+        else:
+            fig.xaxis.axis_line_color = None
+        xmin = fig.x_range.start
+        xmax = fig.x_range.end
+        fig.line([xmin, xmax], [0, 0], line_color="black")
+    fig.xaxis.minor_tick_line_color = None
