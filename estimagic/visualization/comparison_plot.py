@@ -23,6 +23,7 @@ from bokeh.models import HoverTool
 from bokeh.models import TapTool
 from bokeh.models import Title
 from bokeh.models.callbacks import CustomJS
+from bokeh.models.tickers import FixedTicker
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 from bokeh.plotting import show
@@ -163,7 +164,7 @@ def _determine_figure_height(df, figure_height):
     if figure_height is None:
         n_models = len(df["model"].unique())
         n_params = len(df["name"].unique())
-        height_per_plot = max(min(n_models, 60), 30)
+        height_per_plot = max(min(n_models, 100), 40)
         figure_height = height_per_plot * n_params
     return figure_height
 
@@ -257,6 +258,12 @@ def _create_comparison_plot_components(
         group_df = df[df["group"] == param_group]
         param_names = sorted(group_df["name"].unique())
         for param in param_names:
+            x_range = (
+                [
+                    lower.loc[param_group] - 0.05 * np.abs(lower.loc[param_group]),
+                    upper.loc[param_group] + 0.05 * np.abs(upper.loc[param_group]),
+                ],
+            )
             param_src = ColumnDataSource(group_df[group_df["name"] == param])
             param_plot = figure(
                 title=param,
@@ -264,7 +271,8 @@ def _create_comparison_plot_components(
                 plot_width=width,
                 tools="reset,save",
                 y_axis_location="right",
-                x_range=[lower.loc[param_group], upper.loc[param_group]],
+                x_range=x_range,
+                y_range=[0, group_df["dodge"].max() + 0.5],
             )
 
             point_glyph = param_plot.rect(
@@ -438,10 +446,7 @@ def _create_checkbox(widget_labels, all_src):
 def _style_plot(fig, param, param_names, group, axis_for_every_parameter):
     _style_title(fig, param, param_names, group)
     _style_x_axis(fig, param, param_names, axis_for_every_parameter)
-
-    fig.yaxis.minor_tick_line_color = None
-    fig.yaxis.axis_line_color = None
-    fig.yaxis.major_tick_line_color = None
+    _style_y_axis(fig)
 
     fig.outline_line_color = None
     fig.xgrid.visible = False
@@ -471,3 +476,14 @@ def _style_x_axis(fig, param, param_names, axis_for_every_parameter):
         xmax = fig.x_range.end
         fig.line([xmin, xmax], [0, 0], line_color="black")
     fig.xaxis.minor_tick_line_color = None
+
+
+def _style_y_axis(fig):
+    top = int(np.ceil(fig.y_range.end))
+    if top < 5:
+        ticker = FixedTicker(ticks=list(range(top)), minor_ticks=[])
+        fig.yaxis.ticker = ticker
+        fig.ygrid.ticker = ticker
+    fig.yaxis.minor_tick_line_color = None
+    fig.yaxis.axis_line_color = None
+    fig.yaxis.major_tick_line_color = None

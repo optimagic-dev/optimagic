@@ -128,7 +128,6 @@ def test_create_bounds_and_rect_widths_with_cis(res_dict_with_cis):
     df.loc[16, "value"] = 0.02
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
     exp_upper = {"a": 2.11, "b": 2.93, "c": 2.5900000000000003, "d": 0.02}
-
     exp_lower = {"a": 1.35, "b": 0.42000000000000015, "c": 1.43, "d": -1.4}
     assert lower.to_dict() == exp_lower
     assert upper.to_dict() == exp_upper
@@ -149,7 +148,7 @@ def test_determine_plot_heights(df):
 
 
 def test_determine_figure_height_none(df):
-    expected = 20 * 10
+    expected = 40 * 10
     assert _determine_figure_height(df, None) == expected
 
 
@@ -181,9 +180,8 @@ def test_df_with_plot_specs():
     expected["binned_x"] = expected[["upper_edge", "lower_edge"]].mean(axis=1)
 
     res = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
-    res[["lower_edge", "upper_edge"]] = res[["lower_edge", "upper_edge"]].round(3)
 
-    pdt.assert_frame_equal(res, expected)
+    pdt.assert_frame_equal(res, expected, check_less_precise=True)
 
 
 # _df_with_color_column
