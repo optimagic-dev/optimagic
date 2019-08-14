@@ -256,14 +256,10 @@ def _create_comparison_plot_components(
 
     for param_group in groups:
         group_df = df[df["group"] == param_group]
+        left = lower.loc[param_group] - 0.05 * np.abs(lower.loc[param_group])
+        right = upper.loc[param_group] + 0.05 * np.abs(upper.loc[param_group])
         param_names = sorted(group_df["name"].unique())
         for param in param_names:
-            x_range = (
-                [
-                    lower.loc[param_group] - 0.05 * np.abs(lower.loc[param_group]),
-                    upper.loc[param_group] + 0.05 * np.abs(upper.loc[param_group]),
-                ],
-            )
             param_src = ColumnDataSource(group_df[group_df["name"] == param])
             param_plot = figure(
                 title=param,
@@ -271,8 +267,8 @@ def _create_comparison_plot_components(
                 plot_width=width,
                 tools="reset,save",
                 y_axis_location="right",
-                x_range=x_range,
-                y_range=[0, group_df["dodge"].max() + 0.5],
+                x_range=[left, right],
+                y_range=[0, group_df["dodge"].max() + 1.0],
             )
 
             point_glyph = param_plot.rect(
@@ -449,6 +445,8 @@ def _style_plot(fig, param, param_names, group, axis_for_every_parameter):
     _style_y_axis(fig)
 
     fig.outline_line_color = None
+    fig.min_border_top = 15
+    fig.min_border_bottom = 15
     fig.xgrid.visible = False
     fig.sizing_mode = "scale_width"
 
@@ -479,7 +477,7 @@ def _style_x_axis(fig, param, param_names, axis_for_every_parameter):
 
 
 def _style_y_axis(fig):
-    top = int(np.ceil(fig.y_range.end))
+    top = int(fig.y_range.end + 0.5)
     if top < 5:
         ticker = FixedTicker(ticks=list(range(top)), minor_ticks=[])
         fig.yaxis.ticker = ticker

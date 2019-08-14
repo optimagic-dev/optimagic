@@ -17,6 +17,9 @@ from estimagic.visualization.comparison_plot import _find_next_lower
 from estimagic.visualization.comparison_plot import _find_next_upper
 from estimagic.visualization.comparison_plot import _flatten_dict
 from estimagic.visualization.comparison_plot import _prep_result_df
+from estimagic.visualization.comparison_plot import (
+    _reset_index_without_losing_information,
+)
 from estimagic.visualization.comparison_plot import MEDIUMELECTRICBLUE
 
 FIX_PATH = "estimagic/tests/visualization/comparison_plot_fixtures/"
@@ -78,6 +81,43 @@ def _make_df_similar(raw):
     df.sort_index(level=["model", "name"], inplace=True)
     df["index"] = df["index"].astype(int)
     return df
+
+
+# _reset_index_without_losing_information
+# ===========================================================================
+
+df1 = pd.DataFrame()
+df1["a"] = ["a", "b", "c", "d"]
+df1["b"] = np.arange(4) + 5
+df1["c"] = [100, 104, 108, 150]
+df1.index = np.arange(4) + 1
+
+reset_index_fixtures = [
+    (df1, "just_reset", df1.reset_index()),
+    (df1.set_index(["a", "b"]), "just_reset_multiindex", df1.reset_index(drop=True)),
+    (
+        df1.set_index(["a", "b"], drop=False),
+        "compatible columns",
+        df1.reset_index(drop=True),
+    ),
+]
+
+
+@pytest.mark.parametrize("df,model,expected", reset_index_fixtures)
+def test_reset_index_without_losing_information(df, model, expected):
+    res = _reset_index_without_losing_information(df, model)
+    pdt.assert_frame_equal(res, expected)
+
+
+def test_reset_index_without_losing_information_raise():
+    df2 = pd.DataFrame()
+    df2["a"] = ["a", "b", "c", "d"]
+    df2["b"] = np.arange(4) + 5
+    df2["c"] = [100, 104, 108, 150]
+    df2.index = pd.Index(np.arange(4), name="b")
+
+    with pytest.raises(ValueError):
+        _reset_index_without_losing_information(df2, "incompatible index")
 
 
 # _prep_result_df
