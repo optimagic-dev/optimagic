@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 
 from estimagic.inference.moment_covs import average_contribution
-from estimagic.inference.moment_covs import calc_standard_cov
+from estimagic.inference.moment_covs import covariance_moments
 
 
 def test_average_contribution():
@@ -18,7 +18,7 @@ def test_average_contribution():
     assert_array_almost_equal(average_contribution(moment_cond), control / x)
 
 
-def test_calc_standard_cov():
+def test_covariance_moments():
     moment_cond = np.reshape(np.arange(12), (3, 4, 1))
     control = np.full((4, 4), 32, dtype=np.float) / 3
-    assert_array_almost_equal(calc_standard_cov(moment_cond), control)
+    assert_array_almost_equal(covariance_moments(moment_cond), control)
