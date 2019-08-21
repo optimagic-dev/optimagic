@@ -100,11 +100,10 @@ def _setup_server(apps, port, no_browser):
     is waiting for the output.
 
     Args:
-        apps (dict):
-            dictionary mapping suffixes of the address to Applications
-
-        port (int):
-            port where to host the BokehServer
+        apps (dict): Dictionary mapping suffixes of the address to Applications.
+        port (int): Port where to host the BokehServer.
+        no_browser (bool): Whether to open the dashboard in the browser. Defaults to
+            false. Has to be set to ``True`` for running on a remote server.
 
     """
     # this is adapted from bokeh.subcommands.serve
