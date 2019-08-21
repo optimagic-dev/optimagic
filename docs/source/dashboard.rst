@@ -128,3 +128,8 @@ notebook and the dashboard to the local machine. Here is a short instruction for
 
    ``"open_browser"`` is on by default, but it has to be disabled as the dashboard
    crashes if it does not find a browser.
+
+7. That's it. For more information on ``ssh`` and how to conveniently configure it,
+   check out `Working remotely in shell environments
+   <https://github.com/OpenSourceEconomics/hackathon/blob/master/
+   material/2019_08_20/17_shell_remote.pdf>`_.
