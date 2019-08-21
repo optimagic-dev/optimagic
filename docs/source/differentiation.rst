@@ -27,17 +27,17 @@ called from the numdifftools_ library.
 
 .. _numdifftools: https://pypi.org/project/numdifftools/
 
-The variable method "method" allows the user to call a specific finite difference method.
-We only allow for one of the methods and therefore exclude complex step and other
-possibilities:
+The variable method "method" allows the user to call a specific finite difference
+method. We only allow for one of the methods and therefore exclude complex step and
+other possibilities:
 
 - forward differences ("method" = "forward")
 - backward differences ("method" = "backward")
 - central differences ("method" = "central")
 
 As the central difference method is the most accurate, it is the default for all three
-functions. The numdifftools functions use Richardson extrapolation as their standard tool
-to increase accuracy. The concept of this extrapolation method can be found in the
+functions. The numdifftools functions use Richardson extrapolation as their standard
+tool to increase accuracy. The concept of this extrapolation method can be found in the
 documentation_ of numdifftools.
 
 .. _documentation: https://numdifftools.readthedocs.io/en/latest/
