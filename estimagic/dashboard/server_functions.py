@@ -36,7 +36,7 @@ def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
         start_fitness (float):
             fitness evaluation at the start parameters.
     """
-    db_options, port, open_browser = _process_db_options(db_options)
+    db_options, port, no_browser = _process_db_options(db_options)
     asyncio.set_event_loop(asyncio.new_event_loop())
 
     apps = {
@@ -56,7 +56,7 @@ def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
 
     inner_server_process = Process(
         target=_setup_server,
-        kwargs={"apps": apps, "port": port, "open_browser": open_browser},
+        kwargs={"apps": apps, "port": port, "no_browser": no_browser},
         daemon=False,
     )
     inner_server_process.start()
@@ -66,7 +66,7 @@ def _process_db_options(db_options):
     db_options = db_options.copy()
 
     port = db_options.pop("port", _find_free_port())
-    open_browser = db_options.pop("open_browser", True)
+    no_browser = db_options.pop("no_browser", False)
 
     if db_options.get("rollover", 1) <= 0:
         db_options["rollover"] = None
@@ -76,7 +76,7 @@ def _process_db_options(db_options):
     full_db_options = {"evaluations_to_skip": 0, "time_btw_updates": 0.001}
     full_db_options.update(db_options)
 
-    return full_db_options, port, open_browser
+    return full_db_options, port, no_browser
 
 
 def _find_free_port():
@@ -91,7 +91,7 @@ def _find_free_port():
         return s.getsockname()[1]
 
 
-def _setup_server(apps, port, open_browser):
+def _setup_server(apps, port, no_browser):
     """
     Setup the server similarly to bokeh serve subcommand.
 
@@ -112,7 +112,7 @@ def _setup_server(apps, port, open_browser):
         server = Server(apps, port=port)
 
         # On a remote server, we do not want to start the dashboard here.
-        if open_browser:
+        if not no_browser:
 
             def show_callback():
                 for route in apps.keys():

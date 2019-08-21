@@ -47,7 +47,7 @@ supported:
 - ``time_between_updates (float)``: Defaults to 0. Seconds between each update of the
   convergence plot. A good value is ``evaluations_to_skip`` multiplied with the
   approximate runtime of criterion function.
-- ``open_browser (bool)``: Defaults to ``True``. On a remote server the dashboard should
+- ``no_browser (bool)``: Defaults to ``False``. On a remote server the dashboard should
   not launch a browser. See :ref:`remote-server` for more information.
 
 
@@ -124,13 +124,13 @@ use ``estimagic`` on a remote server.
        from estimagic.optimization.optimize import maximize, minimize
 
 
-       maximize(..., db_options={"port": 10102, "open_browser": False}, ...)
-       minimize(..., db_options={"port": 10102, "open_browser": False}, ...)
+       maximize(..., db_options={"port": 10102, "no_browser": True}, ...)
+       minimize(..., db_options={"port": 10102, "no_browser": True}, ...)
 
-   ``"open_browser"`` is on by default, but it has to be disabled as the dashboard
-   crashes if it does not find a browser.
+   ``"no_browser"`` is ``False`` by default, but it has to be set to ``True`` as the
+   dashboard crashes if it does not find a browser.
 
-7. That's it. For more information on ``ssh`` and how to conveniently configure it,
+7. That's it. For more information on ``ssh`` and how to configure your remote machine,
    check out `Working remotely in shell environments
    <https://github.com/OpenSourceEconomics/hackathon/blob/master/
    material/2019_08_20/17_shell_remote.pdf>`_.
