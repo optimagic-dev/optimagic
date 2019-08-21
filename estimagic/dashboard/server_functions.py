@@ -68,12 +68,12 @@ def _process_db_options(db_options):
     port = db_options.pop("port", _find_free_port())
     open_browser = db_options.pop("open_browser", True)
 
-    db_options["rollover"] = None if db_options.get("rollover", 1) <= 0 else 500
+    if db_options.get("rollover", 1) <= 0:
+        db_options["rollover"] = None
+    else:
+        db_options["rollover"] = db_options.get("rollover", 500)
 
-    full_db_options = {
-        "evaluations_to_skip": 0,
-        "time_btw_updates": 0.001,
-    }
+    full_db_options = {"evaluations_to_skip": 0, "time_btw_updates": 0.001}
     full_db_options.update(db_options)
 
     return full_db_options, port, open_browser
