@@ -36,7 +36,7 @@ def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
         start_fitness (float):
             fitness evaluation at the start parameters.
     """
-    db_options, port = _process_db_options(db_options)
+    db_options, port, no_browser = _process_db_options(db_options)
     asyncio.set_event_loop(asyncio.new_event_loop())
 
     apps = {
@@ -55,29 +55,28 @@ def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
     }
 
     inner_server_process = Process(
-        target=_setup_server, kwargs={"apps": apps, "port": port}, daemon=False
+        target=_setup_server,
+        kwargs={"apps": apps, "port": port, "no_browser": no_browser},
+        daemon=False,
     )
     inner_server_process.start()
 
 
 def _process_db_options(db_options):
     db_options = db_options.copy()
-    if "port" not in db_options.keys():
-        port = _find_free_port()
-    else:
-        port = db_options.pop("port")
 
-    if "rollover" in db_options.keys() and db_options["rollover"] <= 0:
+    port = db_options.pop("port", _find_free_port())
+    no_browser = db_options.pop("no_browser", False)
+
+    if db_options.get("rollover", 1) <= 0:
         db_options["rollover"] = None
+    else:
+        db_options["rollover"] = db_options.get("rollover", 500)
 
-    full_db_options = {
-        "rollover": 500,
-        "evaluations_to_skip": 0,
-        "time_btw_updates": 0.001,
-    }
-
+    full_db_options = {"evaluations_to_skip": 0, "time_btw_updates": 0.001}
     full_db_options.update(db_options)
-    return full_db_options, port
+
+    return full_db_options, port, no_browser
 
 
 def _find_free_port():
@@ -92,7 +91,7 @@ def _find_free_port():
         return s.getsockname()[1]
 
 
-def _setup_server(apps, port):
+def _setup_server(apps, port, no_browser):
     """
     Setup the server similarly to bokeh serve subcommand.
 
@@ -101,32 +100,32 @@ def _setup_server(apps, port):
     is waiting for the output.
 
     Args:
-        apps (dict):
-            dictionary mapping suffixes of the address to Applications
-
-        port (int):
-            port where to host the BokehServer
+        apps (dict): Dictionary mapping suffixes of the address to Applications.
+        port (int): Port where to host the BokehServer.
+        no_browser (bool): Whether to open the dashboard in the browser. Defaults to
+            false. Has to be set to ``True`` for running on a remote server.
 
     """
     # this is adapted from bokeh.subcommands.serve
     with report_server_init_errors(port=port):
         server = Server(apps, port=port)
 
-        def show_callback():
-            for route in apps.keys():
-                server.show(route)
+        # On a remote server, we do not want to start the dashboard here.
+        if not no_browser:
 
-        server.io_loop.add_callback(show_callback)
+            def show_callback():
+                for route in apps.keys():
+                    server.show(route)
 
-        address_string = "localhost"
-        if server.address is not None and server.address != "":
-            address_string = server.address
+            server.io_loop.add_callback(show_callback)
 
-        for route in sorted(apps.keys()):
+        address_string = server.address if server.address else "localhost"
+
+        for route in sorted(apps):
             url = "http://{}:{}{}{}".format(
                 address_string, server.port, server.prefix, route
             )
-            print("Bokeh app running at: " + url)
+            print("Bokeh app running at:", url)
 
         # For Windows, it is important that the server is started here as otherwise a
         # pickling error happens within multiprocess. See
