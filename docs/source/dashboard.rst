@@ -78,7 +78,8 @@ On a remote server
 ``estimagic`` is well suited to run on both, on local machines and on remote servers
 with much more computational support. Normally, these servers do not offer a GUI and a
 browser. Instead, the user must tunnel into the server via ``ssh`` and redirect the
-notebook and the dashboard to the local machine. Here is a short instruction for how to use ``estimagic`` on a remote server.
+notebook and the dashboard to the local machine. Here is a short instruction for how to
+use ``estimagic`` on a remote server.
 
 1. Open Bash, Powershell, CMD or Terminal.
 
