@@ -75,11 +75,15 @@ The functions for setting up and running the server are in ``server_functions.py
 On a remote server
 ------------------
 
-``estimagic`` is well suited to run on both, on local machines and on remote servers
-with much more computational support. Normally, these servers do not offer a GUI and a
-browser. Instead, the user must tunnel into the server via ``ssh`` and redirect the
-notebook and the dashboard to the local machine. Here is a short instruction for how to
-use ``estimagic`` on a remote server.
+Since ``estimagic`` is designed for long running optimizations, it is often run on
+large remote servers. Normally, these servers do not offer a GUI or browser.
+The most convenient way of running estimagic on such machines is to redirect
+Jupyter Lab and the estimagic dashboard (both running on the remote machine) such
+that you can interact with them in the browser of your local machine. The following
+section describes how to do that. Note that the dashboard and Jupyter Lab can be
+used independently. If you don't need a dashboard or don't need jupyter lab because
+you start estimagic from a .py script, you can just skip the corresponding steps.
+
 
 1. Open Bash, Powershell, CMD or Terminal.
 
