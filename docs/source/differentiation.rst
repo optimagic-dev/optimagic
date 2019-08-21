@@ -117,11 +117,11 @@ deductions for forward and backward, are left to the interested reader:
 .. math::
 
     f_{i,j}(x)
-        &= \frac{f_i(x + e_j * h_j) - f_i(x - e_j * h_j)}{h_j} \\
-        &= \frac{\frac{f(x + e_j * h_j + e_i * h_i) - f(x + e_j * h_j - e_i * h_i)}{h_i}
+        = &\frac{f_i(x + e_j * h_j) - f_i(x - e_j * h_j)}{h_j} \\
+        = &\frac{\frac{f(x + e_j * h_j + e_i * h_i) - f(x + e_j * h_j - e_i * h_i)}{h_i}
            - \frac{f(x - e_j * h_j + e_i * h_i) - f(x - e_j * h_j - e_i * h_i)}{h_i}}{h_j} \\
-        &= \frac{f(x + e_j * h_j + e_i * h_i) - f(x + e_j * h_j - e_i * h_i)}{h_j * h_i} \\
-        &   - \frac{f(x - e_j * h_j + e_i * h_i) + f(x - e_j * h_j - e_i * h_i)}{h_j * h_i}
+        = &\frac{f(x + e_j * h_j + e_i * h_i) - f(x + e_j * h_j - e_i * h_i)}{h_j * h_i} \\
+          &+ \frac{- f(x - e_j * h_j + e_i * h_i) + f(x - e_j * h_j - e_i * h_i)}{h_j * h_i}
 
 For the optimal stepsize a different rule applies:
 
