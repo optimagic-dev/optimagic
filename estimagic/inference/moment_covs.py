@@ -51,6 +51,6 @@ def gmm_cov(mom_cond, mom_cond_jacob, mom_weight):
 
     bread = np.linalg.inv(Q.T @ W @ Q)
     butter = Q.T @ W @ Omega @ W @ Q
-    sandwich = bread @ butter @ bread
+    sandwich = bread @ butter @ bread / mom_cond.shape[0]
 
     return sandwich
