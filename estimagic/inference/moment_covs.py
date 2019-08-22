@@ -38,17 +38,16 @@ def gmm_cov(mom_cond, mom_cond_jacob, mom_weight):
             2d array weighting matrix for the moments of dimension (nmoms, nmoms)
 
     Returns:
-
         sandwich (np.array):
-            2d array variance-covariance matrix of the GMM estimator of dimension
-            (nparams, nparams)
+        2d array variance-covariance matrix of the GMM estimator of dimension
+        (nparams, nparams)
 
     """
 
-    # Use notation from Hansen book everywhere
-    W = mom_weight
-    Omega = covariance_moments(mom_cond)
-    Q = np.mean(mom_cond_jacob, axis=0)
+    # Use notation from Hansen book everywhere. Tell flake8 to ignore capital notation
+    W = mom_weight  # noqa: N806
+    Omega = covariance_moments(mom_cond)  # noqa: N806
+    Q = np.mean(mom_cond_jacob, axis=0)  # noqa: N806
 
     bread = np.linalg.inv(Q.T @ W @ Q)
     butter = Q.T @ W @ Omega @ W @ Q
