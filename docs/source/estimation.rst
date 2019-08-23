@@ -101,10 +101,10 @@ dictionary. The dictionary must contain the following entries:
       list hast to be a valid argument to ``DataFrame.loc[]`` or ``DataFrame.query()``,
       respectively. Pairwise equality constraints are just syntactic sugar and are
       converted to normal equality constraints internally.
-    - ``'fixed'``: A set of parameters is fixed to some values. In this case the
-      constraints dictionary has to contain a ``'value'`` entry which can be a scalar or
-      an iterable of suitable length.
-
+    - ``'fixed'``: A set of parameters is fixed to some values. The constraints
+      dictionary may contain a ``'value'`` entry which can be a scalar or an iterable of
+      suitable length. If ``'value'`` is not supplied, the parameters are fixed at the
+      given values.
 
 Lower and upper bounds are specified in :ref:`params`.
 
