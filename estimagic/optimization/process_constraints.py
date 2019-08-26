@@ -303,12 +303,6 @@ def apply_fixes_to_external_params(params, fixes):
             fix["type"]
         )
         params.loc[fix["index"], "_fixed"] = True
-        if "value" not in fix:
-            warnings.warn(
-                "No value(s) in constraints to fix parameter(s) under "
-                f"{fix['index'].values}. Fix at given value(s) instead.",
-                category=UserWarning,
-            )
-        else:
+        if "value" in fix:
             params.loc[fix["index"], "value"] = fix["value"]
     return params
