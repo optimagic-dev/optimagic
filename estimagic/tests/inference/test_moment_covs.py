@@ -4,6 +4,7 @@ from numpy.testing import assert_array_almost_equal
 
 from estimagic.inference.moment_covs import covariance_moments
 from estimagic.inference.moment_covs import gmm_cov
+from estimagic.inference.moment_covs import sandwich_cov
 
 
 def test_covariance_moments_random():
@@ -39,5 +40,17 @@ def test_gmm_cov(statsmodels_fixtures_gmm_cov):
     fix = statsmodels_fixtures_gmm_cov
     assert_array_almost_equal(
         gmm_cov(fix["mom_cond"], fix["mom_cond_jacob"], fix["mom_weight"]),
+        fix["cov_result"],
+    )
+
+
+def test_sandwich_cov(statsmodels_fixtures_gmm_cov):
+    fix = statsmodels_fixtures_gmm_cov
+    cov_moments = covariance_moments(fix["mom_cond"])  # noqa: N806
+    mean_mom_jacobi = np.mean(fix["mom_cond_jacob"], axis=0)  # noqa: N806
+    assert_array_almost_equal(
+        sandwich_cov(
+            mean_mom_jacobi, fix["mom_weight"], cov_moments, fix["mom_cond"].shape[0]
+        ),
         fix["cov_result"],
     )

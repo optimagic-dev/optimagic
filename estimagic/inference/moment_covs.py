@@ -49,8 +49,10 @@ def gmm_cov(mom_cond, mom_cond_jacob, mom_weight):
     Omega = covariance_moments(mom_cond)  # noqa: N806
     Q = np.mean(mom_cond_jacob, axis=0)  # noqa: N806
 
+    return sandwich_cov(Q, W, Omega, mom_cond.shape[0])
+
+
+def sandwich_cov(Q, W, Omega, nobs):  # noqa: N803
     bread = np.linalg.inv(Q.T @ W @ Q)
     butter = Q.T @ W @ Omega @ W @ Q
-    sandwich = bread @ butter @ bread / mom_cond.shape[0]
-
-    return sandwich
+    return bread @ butter @ bread / nobs
