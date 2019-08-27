@@ -8,8 +8,6 @@ from petsc4py import PETSc
 from functools import partial
 
 
-
-
 def solve(func,
           x,
           len_out,
@@ -158,32 +156,37 @@ def _prep_args(size_paras, size_objective):
 
     return paras, crit
 
+
 def _max_iters(max_iterations, tao):
     if tao.getSolutionStatus()[0] < max_iterations:
         return (0)
     elif tao.getSolutionStatus()[0] >= max_iterations:
         tao.setConvergedReason(8)
 
-def _gatol_conv(gatol,tao):
+
+def _gatol_conv(gatol, tao):
     if tao.getSolutionStatus()[2] >= gatol:
         return 0
     elif tao.getSolutionStatus()[2] < gatol:
         tao.setConvergedReason(3)
 
+
 def _grtol_conv(grtol, tao):
-    if tao.getSolutionStatus()[2]/tao.getSolutionStatus()[1] >= grtol:
+    if tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1] >= grtol:
         return 0
-    elif tao.getSolutionStatus()[2]/tao.getSolutionStatus()[1] < grtol:
+    elif tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1] < grtol:
         tao.setConvergedReason(4)
 
+
 def _grtol_gatol_conv(grtol, gatol, tao):
-    if tao.getSolutionStatus()[2]/tao.getSolutionStatus()[1] >= grtol:
+    if tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1] >= grtol:
         return 0
-    elif tao.getSolutionStatus()[2]/tao.getSolutionStatus()[1] < grtol:
+    elif tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1] < grtol:
         tao.setConvergedReason(4)
 
     elif tao.getSolutionStatus()[2] < gatol:
         tao.setConvergedReason(3)
+
 
 def _get_tolerances(tol, gatol, grtol):
     out = tol.copy()
@@ -198,15 +201,15 @@ def _get_tolerances(tol, gatol, grtol):
 
 
 _conv_reason = {3: "gatol below critical value",
-               4: "grtol below critical value",
-               5: "gttol below critical value",
-               6: "step size small",
-               7: "objective below min value",
-               8: "user defined",
-               -2: "maxits reached",
-               -4: "numerical porblems",
-               -5: "max funcevals reached",
-               -6: "line search failure",
-               -7: "trust region failure",
-               -8: "user defined"
-               }
+                4: "grtol below critical value",
+                5: "gttol below critical value",
+                6: "step size small",
+                7: "objective below min value",
+                8: "user defined",
+                -2: "maxits reached",
+                -4: "numerical porblems",
+                -5: "max funcevals reached",
+                -6: "line search failure",
+                -7: "trust region failure",
+                -8: "user defined"
+                }
