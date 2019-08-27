@@ -8,17 +8,18 @@ from petsc4py import PETSc
 from functools import partial
 
 
-def solve(func,
-          x,
-          len_out,
-          bounds=None,
-          init_tr=None,
-          tol={"gatol": 0.00000001, "grtol": 0.00000001, "gttol": 0.0000000001},
-          max_iterations=None,
-          gatol=True,
-          grtol=True,
-          gttol=True
-          ):
+def solve(
+    func,
+    x,
+    len_out,
+    bounds=None,
+    init_tr=None,
+    tol={"gatol": 0.00000001, "grtol": 0.00000001, "gttol": 0.0000000001},
+    max_iterations=None,
+    gatol=True,
+    grtol=True,
+    gttol=True,
+):
     """
     Args:
         func: function that takes a 1d numpy array and returns a 1d numpy array
@@ -75,7 +76,7 @@ def solve(func,
     tao = PETSc.TAO().create(PETSc.COMM_WORLD)
 
     # Set the solver type
-    tao.setType('pounders')
+    tao.setType("pounders")
 
     tao.setFromOptions()
 
@@ -104,7 +105,9 @@ def solve(func,
     tol_real = _get_tolerances(tol, gatol, grtol)
 
     # Set tolerances for default convergence tests
-    tao.setTolerances(gatol=tol_real["gatol"], gttol=tol_real["gttol"], grtol=tol_real["grtol"])
+    tao.setTolerances(
+        gatol=tol_real["gatol"], gttol=tol_real["gttol"], grtol=tol_real["grtol"]
+    )
 
     # Set user defined convergence tests. Beware that specifiying multiple tests could overwrite others or lead to
     # unclear behavior.
@@ -159,7 +162,7 @@ def _prep_args(size_paras, size_objective):
 
 def _max_iters(max_iterations, tao):
     if tao.getSolutionStatus()[0] < max_iterations:
-        return (0)
+        return 0
     elif tao.getSolutionStatus()[0] >= max_iterations:
         tao.setConvergedReason(8)
 
@@ -200,16 +203,17 @@ def _get_tolerances(tol, gatol, grtol):
     return out
 
 
-_conv_reason = {3: "gatol below critical value",
-                4: "grtol below critical value",
-                5: "gttol below critical value",
-                6: "step size small",
-                7: "objective below min value",
-                8: "user defined",
-                -2: "maxits reached",
-                -4: "numerical porblems",
-                -5: "max funcevals reached",
-                -6: "line search failure",
-                -7: "trust region failure",
-                -8: "user defined"
-                }
+_conv_reason = {
+    3: "gatol below critical value",
+    4: "grtol below critical value",
+    5: "gttol below critical value",
+    6: "step size small",
+    7: "objective below min value",
+    8: "user defined",
+    -2: "maxits reached",
+    -4: "numerical porblems",
+    -5: "max funcevals reached",
+    -6: "line search failure",
+    -7: "trust region failure",
+    -8: "user defined",
+}
