@@ -168,13 +168,10 @@ def _covariance_to_internal(params_subset, case, type_, bounds_distance):
         chol_coeffs = chol[np.tril_indices(dim)]
         res["value"] = chol_coeffs
 
-        if type_ == "covariance":
-            lower_bound_helper = np.full((dim, dim), -np.inf)
-            lower_bound_helper[np.diag_indices(dim)] = bounds_distance
-            res["lower"] = lower_bound_helper[np.tril_indices(dim)]
-            res["upper"] = np.inf
-        else:
-            res.loc[res.index[:dim], "lower"] = 0
+        lower_bound_helper = np.full((dim, dim), -np.inf)
+        lower_bound_helper[np.diag_indices(dim)] = bounds_distance
+        res["lower"] = lower_bound_helper[np.tril_indices(dim)]
+        res["upper"] = np.inf
 
         for bound in ["lower", "upper"]:
             if np.isfinite(params_subset[bound]).any():
