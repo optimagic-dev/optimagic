@@ -312,9 +312,11 @@ def _create_comparison_plot_components(
 
 
 def _add_hover_tool(plot, point_glyph, df):
-    top_cols = ["model", "name", "value", "model_class"]
-    if "conf_int_lower" in df.columns and "conf_int_upper" in df.columns:
-        top_cols += ["conf_int_lower", "conf_int_upper"]
+    top_cols = ["model", "name", "value"]
+    optional_cols = ["model_class", "conf_int_lower", "conf_int_upper"]
+    for col in optional_cols:
+        if len(df[col].unique() > 1):
+            top_cols.append(col)
     tooltips = [(col, "@" + col) for col in top_cols]
     hover = HoverTool(renderers=[point_glyph], tooltips=tooltips)
     plot.tools.append(hover)
