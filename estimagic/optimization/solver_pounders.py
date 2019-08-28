@@ -6,8 +6,7 @@ from functools import partial
 
 
 def solve(func, x, len_out, bounds=None, init_tr=None,
-          tol={"gatol": 0.00000001, "grtol": 0.00000001, "gttol": 0.0000000001},
-          max_iterations=None, gatol=True, grtol=True, gttol=True, ):
+          max_iterations=None, gatol=0.00000001, grtol=0.00000001, gttol=0.0000000001 ):
     """
     Args:
         func: function that takes a 1d numpy array and returns a 1d numpy array
@@ -101,7 +100,7 @@ def solve(func, x, len_out, bounds=None, init_tr=None,
     # Since we can not create gttol manually we manually set gatol and or grtol to zero
     # once a subset of these two is
     # turned off and gttol is still turned on
-    tol_real = _get_tolerances(tol, gatol, grtol)
+    tol_real = _get_tolerances(gttol, gatol, grtol)
 
     # Set tolerances for default convergence tests
     tao.setTolerances(gatol=tol_real["gatol"], gttol=tol_real["gttol"],
@@ -113,17 +112,17 @@ def solve(func, x, len_out, bounds=None, init_tr=None,
     if max_iterations is not None:
         tao.setConvergenceTest(partial(_max_iters, max_iterations))
     elif gttol is False and gatol is False:
-        tao.setConvergenceTest(partial(_grtol_conv, tol["grtol"]))
+        tao.setConvergenceTest(partial(_grtol_conv, grtol))
     elif grtol is False and gttol is False:
-        tao.setConvergenceTest(partial(_gatol_conv, tol["gatol"]))
+        tao.setConvergenceTest(partial(_gatol_conv, gatol))
     elif gttol is False:
-        tao.setConvergenceTest(partial(_grtol_gatol_conv, tol["grtol"], tol["gatol"]))
+        tao.setConvergenceTest(partial(_grtol_gatol_conv, grtol, gatol))
 
     # Run the problem
     tao.solve()
 
     # Create a dict that contains relevant information
-    out = dict()
+    out = {}
     out["solution"] = paras.array
     out["func_values"] = crit.array
     out["x"] = x
@@ -190,15 +189,14 @@ def _grtol_gatol_conv(grtol, gatol, tao):
         tao.setConvergedReason(3)
 
 
-def _get_tolerances(tol, gatol, grtol):
-    out = tol.copy()
-    if gatol is False and grtol is False:
-        out["gatol"] = -1
-        out["grtol"] = -1
-    elif gatol is False:
-        out["gatol"] = -1
-    elif grtol is False:
-        out["grtol"] = -1
+def _get_tolerances(gttol, gatol, grtol):
+    out = {}
+    out["gatol"] = gatol
+    out["grtol"] = grtol
+    out["gttol"] = gttol
+    for x in out.keys():
+        if out[x] is False:
+            out[x] = -1
     return out
 
 

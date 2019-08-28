@@ -33,11 +33,11 @@ def test_robustness_2():
     out = solve(objective, x, len_out), start, paras
 
     # Obtain result via ols
-    X = np.concatenate(
+    x = np.concatenate(
         (np.ones(len(exog)).reshape(len(exog), 1), exog.reshape(len(exog), 1)), axis=1
     ).reshape(len(exog), 2)
     y = endog.reshape(len(endog), 1)
-    ols = np.linalg.lstsq(X, y)
+    ols = np.linalg.lstsq(x, y)
 
     # compare
     np.testing.assert_almost_equal(
@@ -86,15 +86,13 @@ def test_grtol():
         objective,
         x,
         len_out,
-        tol={"grtol": 10, "gatol": 1, "gttol": 1},
         bounds=bounds,
         gatol=False,
         gttol=False,
     )
 
     assert (
-    out["conv"] == "grtol below critical value" or out[
-        "conv"] == "step size small"
+        out["conv"] == "grtol below critical value" or out["conv"] == "step size small"
     )
 
     if out["conv"] == 4:
@@ -113,14 +111,12 @@ def test_gatol():
         objective,
         x,
         len_out,
-        tol={"grtol": 1, "gatol": 0.00001, "gttol": 1},
         bounds=bounds,
         grtol=False,
         gttol=False,
     )
     assert (
-    out["conv"] == "gatol below critical value" or out[
-        "conv"] == "step size small"
+        out["conv"] == "gatol below critical value" or out["conv"] == "step size small"
     )
 
     if out["conv"] == 3:
@@ -139,14 +135,12 @@ def test_gttol():
         objective,
         x,
         len_out,
-        tol={"grtol": 1, "gatol": 1, "gttol": 1},
         bounds=bounds,
         grtol=False,
         gatol=False,
     )
     assert (
-    out["conv"] == "gttol below critical value" or out[
-        "conv"] == "step size small"
+        out["conv"] == "gttol below critical value" or out["conv"] == "step size small"
     )
 
     if out["conv"] == 5:
@@ -166,7 +160,9 @@ def test_tol():
         x,
         len_out,
         bounds=bounds,
-        tol={"gatol": 0.00000001, "grtol": 0.00000001, "gttol": 0.0000000001},
+        gatol=0.00000001,
+        grtol=0.00000001,
+        gttol=0.0000000001
     )
 
     if out["conv"] == 3:
