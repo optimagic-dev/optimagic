@@ -82,14 +82,7 @@ def test_grtol():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(
-        objective,
-        x,
-        len_out,
-        bounds=bounds,
-        gatol=False,
-        gttol=False,
-    )
+    out = solve(objective, x, len_out, bounds=bounds, gatol=False, gttol=False)
 
     assert (
         out["conv"] == "grtol below critical value" or out["conv"] == "step size small"
@@ -107,14 +100,7 @@ def test_gatol():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(
-        objective,
-        x,
-        len_out,
-        bounds=bounds,
-        grtol=False,
-        gttol=False,
-    )
+    out = solve(objective, x, len_out, bounds=bounds, grtol=False, gttol=False)
     assert (
         out["conv"] == "gatol below critical value" or out["conv"] == "step size small"
     )
@@ -131,14 +117,7 @@ def test_gttol():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(
-        objective,
-        x,
-        len_out,
-        bounds=bounds,
-        grtol=False,
-        gatol=False,
-    )
+    out = solve(objective, x, len_out, bounds=bounds, grtol=False, gatol=False)
     assert (
         out["conv"] == "gttol below critical value" or out["conv"] == "step size small"
     )
@@ -162,7 +141,7 @@ def test_tol():
         bounds=bounds,
         gatol=0.00000001,
         grtol=0.00000001,
-        gttol=0.0000000001
+        gttol=0.0000000001,
     )
 
     if out["conv"] == 3:
