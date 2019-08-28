@@ -370,9 +370,11 @@ def _create_algorithm(algo_name, algo_options, origin):
     """
     if origin == "nlopt":
         algo = pg.algorithm(pg.nlopt(solver=algo_name))
+        for option, val in algo_options.items():
+            setattr(algo.extract(pg.nlopt), option, val)
     elif origin == "pygmo":
         pygmo_uda = getattr(pg, algo_name)
-        algo = pg.algorithm(pygmo_uda())
+        algo = pg.algorithm(pygmo_uda(**algo_options))
 
     return algo
 
