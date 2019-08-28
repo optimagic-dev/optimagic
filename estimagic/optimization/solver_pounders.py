@@ -26,12 +26,12 @@ def solve(func, x, len_out, bounds=None, init_tr=None,
                         iterations or after the step size is sufficiently small.
                         If the variable is set the default
                         criteria will all be ignored.
-        gatol: Boolean that indicates whether the gatol should be cosnidered.
-               Explicit description is in the documentation.
-        grtol: Boolean that indicates whether the grtol should be cosnidered.
-               Explicit description is in the documentation
-        gttol: Boolean that indicates whether the gttol should be cosnidered.
-               Explicit description is in the documentation
+        gatol: Int indicating the sufficient value of gatol. If set to False the
+        algorithm will not consider gatol.
+        grtol: Int indicating the sufficient value of grtol. If set to False the
+        algorithm will not consider grtol.
+        gttol: Int indicating the sufficient value of grtol. If set to False the
+        algorithm will not consider grtol.
     Returns:
         out: dict with the following key value pairs:
              "solution": solution vector as np.array,
