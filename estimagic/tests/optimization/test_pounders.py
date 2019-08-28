@@ -1,9 +1,6 @@
 """
 Testing the wrapper around pounders
 """
-"""
-
-"""
 import numpy as np
 from functools import partial
 
@@ -96,7 +93,8 @@ def test_grtol():
     )
 
     assert (
-        out["conv"] == "grtol below critical value" or out["conv"] == "step size small"
+    out["conv"] == "grtol below critical value" or out[
+        "conv"] == "step size small"
     )
 
     if out["conv"] == 4:
@@ -121,7 +119,8 @@ def test_gatol():
         gttol=False,
     )
     assert (
-        out["conv"] == "gatol below critical value" or out["conv"] == "step size small"
+    out["conv"] == "gatol below critical value" or out[
+        "conv"] == "step size small"
     )
 
     if out["conv"] == 3:
@@ -146,7 +145,8 @@ def test_gttol():
         gatol=False,
     )
     assert (
-        out["conv"] == "gttol below critical value" or out["conv"] == "step size small"
+    out["conv"] == "gttol below critical value" or out[
+        "conv"] == "step size small"
     )
 
     if out["conv"] == 5:
