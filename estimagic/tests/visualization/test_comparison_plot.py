@@ -167,28 +167,20 @@ def test_create_bounds_and_rect_widths_with_cis(res_dict_with_cis):
     assert upper.to_dict() == exp_upper
 
 
-# _determine_plot_heights
+# _determine_plot_height
 # ===========================================================================
 
 
-def test_determine_plot_heights(df):
-    res = comparison_plot._determine_plot_heights(df=df, figure_height=400)
-    expected = pd.Series([80, 160, 80, 80], index=["a", "b", "c", "d"])
-    assert res.to_dict() == expected.to_dict()
+def test_determine_plot_height_height_given(df):
+    res = comparison_plot._determine_plot_height(df=df, figure_height=600)
+    expected = 60
+    assert res == expected
 
 
-# _determine_figure_height
-# ===========================================================================
-
-
-def test_determine_figure_height_none(df):
-    expected = 40 * 10
-    assert comparison_plot._determine_figure_height(df, None) == expected
-
-
-def test_determine_figure_height_given(df):
-    expected = 400
-    assert comparison_plot._determine_figure_height(df, 400) == expected
+def test_determine_plot_height_no_height(df):
+    res = comparison_plot._determine_plot_height(df=df, figure_height=None)
+    expected = 40
+    assert res == expected
 
 
 # _df_with_plot_specs

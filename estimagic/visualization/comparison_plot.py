@@ -23,7 +23,6 @@ from bokeh.models import HoverTool
 from bokeh.models import TapTool
 from bokeh.models import Title
 from bokeh.models.callbacks import CustomJS
-from bokeh.models.tickers import FixedTicker
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 from bokeh.plotting import show
@@ -58,13 +57,11 @@ def comparison_plot(
         axis_for_every_parameter (bool):
             if False the x axis is only shown once for every group of parameters.
     """
-    df, lower, upper, rect_widths, heights = _process_inputs(
-        res_dict, color_dict, height
-    )
+    df, lower, upper, rect_widths = _process_inputs(res_dict, color_dict)
 
     source_dict, figure_dict, glyph_dict = _create_comparison_plot_components(
         df=df,
-        heights=heights,
+        height=height,
         lower=lower,
         upper=upper,
         rect_widths=rect_widths,
@@ -89,12 +86,11 @@ def comparison_plot(
 # ===========================================================================
 
 
-def _process_inputs(res_dict, color_dict, height):
+def _process_inputs(res_dict, color_dict):
     df = _df_with_all_results(res_dict)
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
     df = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
-    heights = _determine_plot_heights(df, height)
-    return df, lower, upper, rect_widths, heights
+    return df, lower, upper, rect_widths
 
 
 def _df_with_all_results(res_dict):
@@ -150,23 +146,6 @@ def _create_bounds_and_rect_widths(df):
     rect_widths = 0.02 * (upper - lower)
 
     return lower, upper, rect_widths
-
-
-def _determine_plot_heights(df, figure_height):
-    grouped = df.groupby("group")
-    figure_height = _determine_figure_height(df, figure_height)
-    n_params = grouped["name"].unique().apply(len)
-    height_shares = n_params / n_params.sum()
-    return (height_shares * figure_height).astype(int)
-
-
-def _determine_figure_height(df, figure_height):
-    if figure_height is None:
-        n_models = len(df["model"].unique())
-        n_params = len(df["name"].unique())
-        height_per_plot = max(min(n_models, 100), 40)
-        figure_height = height_per_plot * n_params
-    return figure_height
 
 
 def _df_with_plot_specs(df, rect_widths, lower, upper, color_dict):
@@ -247,9 +226,10 @@ def _find_next_upper(array, value):
 
 
 def _create_comparison_plot_components(
-    df, heights, lower, upper, rect_widths, width, axis_for_every_parameter
+    df, height, lower, upper, rect_widths, width, axis_for_every_parameter
 ):
-    groups = heights.index.tolist()
+    groups = lower.index.tolist()
+    plot_height = _determine_plot_height(df, height)
     source_dict = {k: {} for k in groups}
     figure_dict = {k: {} for k in groups}
     glyph_dict = {k: {} for k in groups}
@@ -263,12 +243,12 @@ def _create_comparison_plot_components(
             param_src = ColumnDataSource(group_df[group_df["name"] == param])
             param_plot = figure(
                 title=param,
-                plot_height=int(heights.loc[param_group]),
+                plot_height=plot_height,
                 plot_width=width,
                 tools="reset,save",
                 y_axis_location="right",
                 x_range=[left, right],
-                y_range=[0, group_df["dodge"].max() + 1.0],
+                y_range=[0, max(df["dodge"].max() + 1.0, 5)],
             )
 
             point_glyph = param_plot.rect(
@@ -311,11 +291,21 @@ def _create_comparison_plot_components(
     return source_dict, figure_dict, glyph_dict
 
 
+def _determine_plot_height(df, figure_height):
+    if figure_height is None:
+        n_models = len(df["model"].unique())
+        plot_height = int(max(min(n_models, 1000), 200))
+    else:
+        n_params = len(df["name"].unique())
+        plot_height = int(figure_height / n_params)
+    return plot_height
+
+
 def _add_hover_tool(plot, point_glyph, df):
     top_cols = ["model", "name", "value"]
     optional_cols = ["model_class", "conf_int_lower", "conf_int_upper"]
     for col in optional_cols:
-        if len(df[col].unique() > 1):
+        if len(df[col].unique()) > 1:
             top_cols.append(col)
     tooltips = [(col, "@" + col) for col in top_cols]
     hover = HoverTool(renderers=[point_glyph], tooltips=tooltips)
@@ -479,11 +469,6 @@ def _style_x_axis(fig, param, param_names, axis_for_every_parameter):
 
 
 def _style_y_axis(fig):
-    top = int(fig.y_range.end + 0.5)
-    if top < 5:
-        ticker = FixedTicker(ticks=list(range(top)), minor_ticks=[])
-        fig.yaxis.ticker = ticker
-        fig.ygrid.ticker = ticker
     fig.yaxis.minor_tick_line_color = None
     fig.yaxis.axis_line_color = None
     fig.yaxis.major_tick_line_color = None
