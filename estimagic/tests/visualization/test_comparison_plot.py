@@ -1,6 +1,5 @@
-import inspect
 import json
-from pathlib import Path
+import os
 
 import numpy as np
 import pandas as pd
@@ -9,8 +8,10 @@ import pytest
 
 from estimagic.visualization import comparison_plot
 
-module_path = Path(inspect.getfile(inspect.currentframe()))
-FIX_PATH = Path(module_path.parent, "comparison_plot_fixtures")
+current_dir = os.path.dirname(os.path.abspath(__file__))
+print(current_dir)
+
+FIX_PATH = os.path.join(current_dir, "comparison_plot_fixtures")
 
 # ===========================================================================
 # FIXTURES
@@ -19,7 +20,7 @@ FIX_PATH = Path(module_path.parent, "comparison_plot_fixtures")
 
 @pytest.fixture
 def minimal_res_dict():
-    with open(FIX_PATH / "minimal_res_dict.json", "r") as f:
+    with open(os.path.join(FIX_PATH, "minimal_res_dict.json"), "r") as f:
         res_dict = json.load(f)
     for model in res_dict.keys():
         data_as_dict = res_dict[model]["result_df"]
@@ -38,7 +39,7 @@ def res_dict_with_model_class(minimal_res_dict):
 
 @pytest.fixture
 def res_dict_with_cis():
-    with open(FIX_PATH / "res_dict_with_cis.json", "r") as f:
+    with open(os.path.join(FIX_PATH, "res_dict_with_cis.json"), "r") as f:
         res_dict = json.load(f)
     for model in res_dict.keys():
         data_as_dict = res_dict[model]["result_df"]
@@ -49,7 +50,7 @@ def res_dict_with_cis():
 
 @pytest.fixture
 def df():
-    df = pd.read_csv(FIX_PATH / "df_minimal.csv")
+    df = pd.read_csv(os.path.join(FIX_PATH, "df_minimal.csv"))
     return df
 
 
@@ -118,7 +119,9 @@ def test_prep_result_df(minimal_res_dict):
     model_dict = minimal_res_dict[model]
     res = comparison_plot._prep_result_df(model_dict, model)
     res = _make_df_similar(res)
-    expected = _make_df_similar(pd.read_csv(FIX_PATH / "single_df_prepped.csv"))
+    expected = _make_df_similar(
+        pd.read_csv(os.path.join(FIX_PATH, "single_df_prepped.csv"))
+    )
     pdt.assert_frame_equal(res, expected, check_like=True)
 
 
@@ -136,7 +139,7 @@ def test_df_with_results_with_model_classes(res_dict_with_model_class):
     res = _make_df_similar(
         comparison_plot._df_with_all_results(res_dict_with_model_class)
     )
-    expected = pd.read_csv(FIX_PATH / "df_with_model_classes.csv")
+    expected = pd.read_csv(os.path.join(FIX_PATH, "df_with_model_classes.csv"))
     expected = _make_df_similar(expected)
     pdt.assert_frame_equal(res, expected)
 
