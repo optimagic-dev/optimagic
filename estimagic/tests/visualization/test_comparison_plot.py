@@ -9,7 +9,6 @@ import pytest
 from estimagic.visualization import comparison_plot
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-print(current_dir)
 
 FIX_PATH = os.path.join(current_dir, "comparison_plot_fixtures")
 
@@ -172,7 +171,7 @@ def test_create_bounds_and_rect_widths_with_cis(res_dict_with_cis):
 
 
 def test_determine_plot_height_height_given(df):
-    res = comparison_plot._determine_plot_height(df=df, figure_height=600)
+    res = comparison_plot._determine_plot_height(df=df, figure_height=800)
     expected = 60
     assert res == expected
 

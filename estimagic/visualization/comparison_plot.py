@@ -235,8 +235,23 @@ def _create_comparison_plot_components(
     source_dict = {k: {} for k in groups}
     figure_dict = {k: {} for k in groups}
     glyph_dict = {k: {} for k in groups}
+    y_max = int(max(df["dodge"].max() + 1.0, 5))
 
     for param_group in groups:
+        title_fig = figure(
+            title=Title(
+                text="Comparison Plot of " + param_group.title() + " Parameters",
+                align="center",
+                text_font_size="15pt",
+            ),
+            plot_height=50,
+            plot_width=width,
+            tools="reset,save",
+        )
+        _style_title_fig(title_fig)
+
+        figure_dict[param_group]["__title__"] = title_fig
+
         group_df = df[df["group"] == param_group]
         left = lower.loc[param_group] - 0.05 * np.abs(lower.loc[param_group])
         right = upper.loc[param_group] + 0.05 * np.abs(upper.loc[param_group])
@@ -248,9 +263,9 @@ def _create_comparison_plot_components(
                 plot_height=plot_height,
                 plot_width=width,
                 tools="reset,save",
-                y_axis_location="right",
+                y_axis_location="left",
                 x_range=[left, right],
-                y_range=[0, max(df["dodge"].max() + 1.0, 5)],
+                y_range=[0, y_max],
             )
 
             point_glyph = param_plot.rect(
@@ -299,7 +314,10 @@ def _determine_plot_height(df, figure_height):
         plot_height = int(max(min(n_models, 1000), 200))
     else:
         n_params = len(df["name"].unique())
-        plot_height = int(figure_height / n_params)
+        n_groups = len(df["group"].unique())
+        space_of_titles = n_groups * 50
+        available_space = figure_height - space_of_titles
+        plot_height = int(available_space / n_params)
         if plot_height < 50:
             warnings.warn(
                 "\n\nThe height ({}) ".format(figure_height)
@@ -331,17 +349,18 @@ def _add_callbacks(source_dict, figure_dict, glyph_dict, model_classes):
         _create_checkbox(widget_labels=model_classes, all_src=all_src)
     ]
 
-    for group, param_to_source in source_dict.items():
-        for param, param_src in param_to_source.items():
-            param_plot = figure_dict[group][param]
-            point_glyph = glyph_dict[group][param]
-            other_src = _flatten_dict(source_dict, param)
-            _add_select_tools(
-                current_src=param_src,
-                other_src=other_src,
-                param_plot=param_plot,
-                point_glyph=point_glyph,
-            )
+    for group, param_to_figure in figure_dict.items():
+        for param, param_plot in param_to_figure.items():
+            if param != "__title__":
+                param_src = source_dict[group][param]
+                point_glyph = glyph_dict[group][param]
+                other_src = _flatten_dict(source_dict, param)
+                _add_select_tools(
+                    current_src=param_src,
+                    other_src=other_src,
+                    param_plot=param_plot,
+                    point_glyph=point_glyph,
+                )
             plots_with_callbacks.append(param_plot)
 
     return plots_with_callbacks
@@ -443,29 +462,27 @@ def _create_checkbox(widget_labels, all_src):
     return cb_group
 
 
+def _style_title_fig(fig):
+    fig.ygrid.visible = False
+    fig.xgrid.visible = False
+    fig.outline_line_color = None
+    fig.yaxis.axis_line_color = None
+    fig.xaxis.axis_line_color = None
+
+
 def _style_plot(fig, param, param_names, group, axis_for_every_parameter):
-    _style_title(fig, param, param_names, group)
     _style_x_axis(fig, param, param_names, axis_for_every_parameter)
     _style_y_axis(fig)
 
+    fig.title.vertical_align = "top"
+    fig.title.text_alpha = 70
+    fig.title.text_font_style = "normal"
     fig.outline_line_color = None
-    fig.min_border_top = 15
-    fig.min_border_bottom = 15
+    fig.min_border_top = 20
+    fig.min_border_bottom = 20
     fig.xgrid.visible = False
+    fig.ygrid.visible = False
     fig.sizing_mode = "scale_width"
-
-
-def _style_title(fig, param, param_names, group):
-    if param == param_names[0]:
-        group_title = Title(
-            text="Comparison Plot of {} Parameters".format(group.title()),
-            align="center",
-        )
-        fig.add_layout(group_title, "above")
-    fig.title.vertical_align = "middle"
-    fig.title.align = "center"
-    fig.title.offset = 0
-    fig.title_location = "left"
 
 
 def _style_x_axis(fig, param, param_names, axis_for_every_parameter):
