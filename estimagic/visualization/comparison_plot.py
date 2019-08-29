@@ -14,6 +14,8 @@ The plot can answer the following questions:
 3. Are parameters of groups of results clustered?
 
 """
+import warnings
+
 import numpy as np
 import pandas as pd
 from bokeh.layouts import gridplot
@@ -298,6 +300,16 @@ def _determine_plot_height(df, figure_height):
     else:
         n_params = len(df["name"].unique())
         plot_height = int(figure_height / n_params)
+        if plot_height < 50:
+            warnings.warn(
+                "\n\nThe height ({}) ".format(figure_height)
+                + "you specified results in very small "
+                + "plots which may not render well. \n"
+                + "Adjust the figure height to a larger value "
+                + "or set it to None to get a larger plot. \n"
+                + "Alternatively, you can click on the Reset button "
+                + "on the right of the plot and your plot should render correctly."
+            )
     return plot_height
 
 

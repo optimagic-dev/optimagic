@@ -179,7 +179,7 @@ def test_determine_plot_height_height_given(df):
 
 def test_determine_plot_height_no_height(df):
     res = comparison_plot._determine_plot_height(df=df, figure_height=None)
-    expected = 40
+    expected = 200
     assert res == expected
 
 
