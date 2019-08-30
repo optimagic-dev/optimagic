@@ -80,8 +80,8 @@ dictionary. The dictionary must contain the following entries:
       matrices that are only positive semi-definite but not positive-definite during
       optimization you can specify an entry ``'bounds_distance' : some_float`` in the
       constraint dictionary. The variances are then restricted to be larger than that
-      number. Even very small bounds distances (e.g. 1e-20) can make the optimization
-      much more robust.
+      number. The default is set to 1e-20.
+      Even very small bounds distances (e.g. 1e-20) can make the optimization much more robust.
     - ``'sdcorr'``: the first part of a set of parameters are standard deviations, the
       second part are the lower triangle (excluding the diagonal) of a correlation
       matrix. All parameters together can be used to construct a full covariance matrix
