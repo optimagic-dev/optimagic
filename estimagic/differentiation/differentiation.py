@@ -13,7 +13,7 @@ def gradient(
 
     Args:
         func (function): A function that maps params_sr into a float.
-        params (DataFrame): see :ref:`parmas_df`
+        params (DataFrame): see :ref:`params`
         method (str): The method for the computation of the derivative. Default is
             central as it gives the highest accuracy.
         extrapolation (bool): This variable allows to specify the use of the
@@ -61,7 +61,7 @@ def jacobian(
         func (function): A function that maps params_sr into a numpy array
                         or pandas Series.
 
-        params (DataFrame): see :ref:`parmas_df`
+        params (DataFrame): see :ref:`params`
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
         extrapolation (bool): This variable allows to specify the use of the
@@ -117,7 +117,7 @@ def hessian(
 
     Args:
         func (function): A function that maps params_sr into a float.
-        params (DataFrame): see :ref:`parmas_df`
+        params (DataFrame): see :ref:`params`
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
         extrapolation (bool): This variable allows to specify the use of the
