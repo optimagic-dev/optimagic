@@ -93,7 +93,7 @@ reset_index_fixtures = [
 @pytest.mark.parametrize("df,model,expected", reset_index_fixtures)
 def test_reset_index_without_losing_information(df, model, expected):
     res = comparison_plot._reset_index_without_losing_information(df, model)
-    pdt.assert_frame_equal(res, expected)
+    pdt.assert_frame_equal(res, expected, check_dtype=False)
 
 
 def test_reset_index_without_losing_information_raise():
