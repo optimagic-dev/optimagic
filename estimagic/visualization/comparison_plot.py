@@ -463,6 +463,7 @@ def _create_checkbox(widget_labels, all_src):
 
 
 def _style_title_fig(fig):
+    fig.line([], [])  # add renderer to avoid warning
     fig.ygrid.visible = False
     fig.xgrid.visible = False
     fig.outline_line_color = None
