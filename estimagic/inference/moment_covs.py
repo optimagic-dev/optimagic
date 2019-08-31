@@ -6,7 +6,7 @@ Bruce E. Hansen - Econometrics (https://www.ssc.wisc.edu/~bhansen/econometrics).
 import numpy as np
 
 
-def gmm_cov(mom_cond, mom_cond_jacob, mom_weight):
+def gmm_cov(mom_cond, mom_cond_jacob, weighting_matrix):
     """
 
     Args:
@@ -16,7 +16,7 @@ def gmm_cov(mom_cond, mom_cond_jacob, mom_weight):
         mom_cond_jacob (np.array): 3d array of the moment condition derivatives
             w.r.t. the parameters of dimension (nobs, nmoms, nparams).
 
-        mom_weight (np.array):
+        weighting_matrix (np.array):
             2d array weighting matrix for the moments of dimension (nmoms, nmoms)
 
     Returns:
@@ -26,12 +26,11 @@ def gmm_cov(mom_cond, mom_cond_jacob, mom_weight):
 
     """
 
-    # Use notation from Hansen book everywhere. Tell flake8 to ignore capital notation
-    W = mom_weight  # noqa: N806
-    Omega = _covariance_moments(mom_cond)  # noqa: N806
-    Q = np.mean(mom_cond_jacob, axis=0)  # noqa: N806
+    # Use notation from Hansen book everywhere.
+    omega = _covariance_moments(mom_cond)
+    q_hat = np.mean(mom_cond_jacob, axis=0)
 
-    return _sandwich_cov(Q, W, Omega, mom_cond.shape[0])
+    return _sandwich_cov(q_hat, weighting_matrix, omega, mom_cond.shape[0])
 
 
 def _covariance_moments(mom_cond):
@@ -52,7 +51,7 @@ def _covariance_moments(mom_cond):
     return cov
 
 
-def _sandwich_cov(Q, W, Omega, nobs):  # noqa: N803
-    bread = np.linalg.inv(Q.T @ W @ Q)
-    butter = Q.T @ W @ Omega @ W @ Q
+def _sandwich_cov(q_hat, weighting_matrix, omega, nobs):
+    bread = np.linalg.inv(q_hat.T @ weighting_matrix @ q_hat)
+    butter = q_hat.T @ weighting_matrix @ omega @ weighting_matrix @ q_hat
     return bread @ butter @ bread / nobs
