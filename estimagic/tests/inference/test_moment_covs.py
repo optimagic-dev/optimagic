@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from estimagic.inference.moment_covs import covariance_moments
+from estimagic.inference.moment_covs import _covariance_moments
+from estimagic.inference.moment_covs import _sandwich_cov
 from estimagic.inference.moment_covs import gmm_cov
-from estimagic.inference.moment_covs import sandwich_cov
 
 
 def test_covariance_moments_random():
@@ -15,13 +15,13 @@ def test_covariance_moments_random():
     for i in range(nobs):
         cov += dev[i, :, :] @ dev[i, :, :].T
     cov = cov / nobs
-    assert_array_almost_equal(covariance_moments(mom_cond), cov)
+    assert_array_almost_equal(_covariance_moments(mom_cond), cov)
 
 
 def test_covariance_moments_unit():
     moment_cond = np.reshape(np.arange(12), (3, 4))
     control = np.full((4, 4), 32, dtype=np.float) / 3
-    assert_array_almost_equal(covariance_moments(moment_cond), control)
+    assert_array_almost_equal(_covariance_moments(moment_cond), control)
 
 
 @pytest.fixture
@@ -46,10 +46,10 @@ def test_gmm_cov(statsmodels_fixtures_gmm_cov):
 
 def test_sandwich_cov(statsmodels_fixtures_gmm_cov):
     fix = statsmodels_fixtures_gmm_cov
-    cov_moments = covariance_moments(fix["mom_cond"])  # noqa: N806
+    cov_moments = _covariance_moments(fix["mom_cond"])  # noqa: N806
     mean_mom_jacobi = np.mean(fix["mom_cond_jacob"], axis=0)  # noqa: N806
     assert_array_almost_equal(
-        sandwich_cov(
+        _sandwich_cov(
             mean_mom_jacobi, fix["mom_weight"], cov_moments, fix["mom_cond"].shape[0]
         ),
         fix["cov_result"],
