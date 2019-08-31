@@ -311,3 +311,42 @@ flatten_dict_fixtures = [
 def test_flatten_dict_without_exclude_key(nested_dict, exclude_key, expected):
     flattened = comparison_plot._flatten_dict(nested_dict, exclude_key)
     assert flattened == expected
+
+
+# _df_with_fake_points
+# ===========================================================================
+
+
+def test_df_with_fake_points(df):
+    df = pd.DataFrame()
+    df["value"] = [0.5, 0.2, 5.5, 4.5, -0.2, -0.1, 4.3, 6.1]
+    df["group"] = list("aabb") * 2
+    df["model_class"] = ["c"] * 4 + ["d"] * 4
+    df["name"] = ["a_1", "a_2", "b_1", "b_2"] + ["a_1", "a_3", "b_1", "b_2"]
+    df["conf_int_lower"] = np.nan
+    df["conf_int_upper"] = np.nan
+    df["model"] = ["mod1"] * 4 + ["mod2"] * 4
+
+    res = comparison_plot._df_with_fake_points(df)
+
+    expected = df.copy()
+    expected["fake"] = False
+
+    # add a_3 to mod1
+    expected.loc[8, "group"] = "a"
+    expected.loc[8, "model_class"] = "c"
+    expected.loc[8, "name"] = "a_3"
+    expected.loc[8, "model"] = "mod1"
+    expected.loc[8, "fake"] = True
+    expected.loc[8, "dodge"] = -10
+    expected.loc[8, "binned_x"] = -0.1
+    # add a_2 to mod2
+    expected.loc[9, "group"] = "a"
+    expected.loc[9, "model_class"] = "d"
+    expected.loc[9, "name"] = "a_2"
+    expected.loc[9, "model"] = "mod2"
+    expected.loc[9, "fake"] = True
+    expected.loc[9, "dodge"] = -10
+    expected.loc[9, "binned_x"] = 0.2
+
+    pdt.assert_frame_equal(res, expected)

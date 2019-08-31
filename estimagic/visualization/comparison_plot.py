@@ -92,6 +92,7 @@ def _process_inputs(res_dict, color_dict):
     df = _df_with_all_results(res_dict)
     lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
     df = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
+    df = _df_with_fake_points(df)
     return df, lower, upper, rect_widths
 
 
@@ -220,6 +221,44 @@ def _find_next_upper(array, value):
         return candidates[idx]
     else:
         return np.nan
+
+
+def _df_with_fake_points(df):
+    """
+    Add fake points that can't be tapped by the user.
+
+    The reason to add them is to make sure no matter which point is
+    selected by the user at least one (possibly invisible) point is selected
+    by the CustomJS callback below.
+    Otherwise the display is in "normal" color and alpha instead of unselected.
+
+    """
+    all_names = df["name"].unique()
+    models = df["model"].unique()
+    df["fake"] = False
+    for mod in models:
+        present_names = df[df["model"] == mod]["name"].unique()
+        missing_names = [param for param in all_names if param not in present_names]
+        if len(missing_names) > 0:
+            to_add = _fake_point_df(df, missing_names, mod)
+            df = df.append(to_add, sort=False, ignore_index=True)
+
+    return df
+
+
+def _fake_point_df(df, missing_names, model):
+    fake_point_df = pd.DataFrame()
+    model_class = df[df["model"] == model]["model_class"].unique()[0]
+    groups = [df[df["name"] == param]["group"].unique()[0] for param in missing_names]
+    mean_x = [df[df["name"] == param]["value"].mean() for param in missing_names]
+    fake_point_df["name"] = missing_names
+    fake_point_df["group"] = groups
+    fake_point_df["model"] = model
+    fake_point_df["model_class"] = model_class
+    fake_point_df["fake"] = True
+    fake_point_df["dodge"] = -10
+    fake_point_df["binned_x"] = mean_x
+    return fake_point_df
 
 
 # ===========================================================================
