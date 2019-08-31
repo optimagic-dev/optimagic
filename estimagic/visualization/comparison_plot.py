@@ -9,7 +9,7 @@ The plot can answer the following questions:
 1. How are the parameters distributed?
 
 2. How large are the differences in parameter estimates between results
-    compared to the uncertainty around the parameter estimates?
+compared to the uncertainty around the parameter estimates?
 
 3. Are parameters of groups of results clustered?
 

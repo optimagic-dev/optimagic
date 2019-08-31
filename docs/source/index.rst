@@ -15,6 +15,7 @@ Welcome to estimagic's documentation!
    differentiation
    inference
    dashboard
+   visualization
    module_reference
    contributing
 
