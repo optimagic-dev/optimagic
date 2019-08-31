@@ -1,5 +1,5 @@
 import warnings
-from os import path
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -11,8 +11,8 @@ from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 
-dirname = path.dirname(path.abspath(__file__))
-params_fixture = pd.read_csv(path.join(dirname, "fixtures/reparametrize_fixtures.csv"))
+fix_path = Path(__file__).resolve().parent / "fixtures" / "reparametrize_fixtures.csv"
+params_fixture = pd.read_csv(fix_path)
 params_fixture.set_index(["category", "subcategory", "name"], inplace=True)
 for col in ["lower", "internal_lower"]:
     params_fixture[col].fillna(-np.inf, inplace=True)

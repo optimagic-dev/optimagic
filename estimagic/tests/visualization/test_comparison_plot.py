@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 
 import numpy as np
@@ -9,9 +8,7 @@ import pytest
 
 from estimagic.visualization import comparison_plot
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-FIX_PATH = Path(current_dir, "comparison_plot_fixtures")
-
+FIX_PATH = Path(__file__).resolve().parent / "comparison_plot_fixtures"
 
 # ===========================================================================
 # FIXTURES

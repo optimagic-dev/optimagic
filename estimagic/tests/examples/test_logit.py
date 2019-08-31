@@ -1,5 +1,4 @@
 """Tests for the logit example."""
-import os
 import pickle
 from pathlib import Path
 
@@ -12,7 +11,7 @@ from estimagic.examples.logit import logit_loglikeobs
 
 @pytest.fixture()
 def statsmodels_fixtures():
-    fix_path = Path(os.path.dirname(__file__), "logit_fixtures.pickle")
+    fix_path = Path(__file__).resolve().parent / "logit_fixtures.pickle"
     with open(fix_path, "rb") as p:
         fix = pickle.load(p)
     fix["params"].name = "value"

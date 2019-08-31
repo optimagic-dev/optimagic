@@ -1,4 +1,3 @@
-import os
 import pickle
 from itertools import product
 from pathlib import Path
@@ -8,7 +7,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.inference import likelihood_covs
 
-FIX_PATH = Path(os.path.dirname(os.path.abspath(__file__)), "fixtures")
+FIX_PATH = Path(__file__).resolve().parent / "fixtures"
 
 
 def get_expected_covariance(model, cov_method):
