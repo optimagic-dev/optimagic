@@ -16,8 +16,6 @@ compared to the uncertainty around the parameter estimates?
 """
 import warnings
 
-import numpy as np
-import pandas as pd
 from bokeh.layouts import gridplot
 from bokeh.models import BoxSelectTool
 from bokeh.models import ColumnDataSource
@@ -29,252 +27,91 @@ from bokeh.models.widgets import CheckboxGroup
 from bokeh.plotting import figure
 from bokeh.plotting import show
 
-MEDIUMELECTRICBLUE = "#035096"
+from estimagic.visualization.comparison_plot_data_preparation import (
+    generate_comp_plot_inputs,
+)
 
 
 def comparison_plot(
-    res_dict, color_dict=None, height=None, width=500, axis_for_every_parameter=False
+    results,
+    color_dict=None,
+    height=None,
+    width=500,
+    axis_for_every_parameter=False,
+    x_padding=0.1,
+    num_bins=50,
 ):
     """Make a comparison plot from a dictionary containing optimization results.
 
     Args:
-        res_dict (dict): The keys are the names of different models.
-            Each value is a dictinoary with the following keys and values:
-                - result_df (pd.DataFrame):
-                    params DataFrame returned by maximize or minimize.
-                - model_class (str, optional):
-                    name of the model class to which the model belongs.
-                    This determines the color and checkbox entries with
-                    which model classes can be selected and unselected.
-
+        results (list): List of estimagic optimization results where the info
+            has been extended with 'model' and 'model_name'
         color_dict (dict):
             mapping from the model class names to colors.
-
         height (int):
             height of the plot.
-
         width (int):
             width of the plot (in pixels).
-
         axis_for_every_parameter (bool):
             if False the x axis is only shown once for every group of parameters.
+        x_padding (float): the x_range is extended on each side by x_padding
+            times the range of the data
+        num_bins (int): number of bins
+
+    Returns:
+        source_dfs, grid
     """
-    df, lower, upper, rect_widths = _process_inputs(res_dict, color_dict)
+    source_dfs, x_mins, x_maxs, bins, rect_widths = generate_comp_plot_inputs(
+        results=results, x_padding=x_padding, num_bins=num_bins, color_dict=color_dict
+    )
 
     source_dict, figure_dict, glyph_dict = _create_comparison_plot_components(
-        df=df,
-        height=height,
-        lower=lower,
-        upper=upper,
+        source_dfs=source_dfs,
+        x_mins=x_mins,
+        x_maxs=x_maxs,
         rect_widths=rect_widths,
+        height=height,
         width=width,
         axis_for_every_parameter=axis_for_every_parameter,
+        n_models=len(results),
     )
+
+    model_classes = sorted({res.info["model_class"] for res in results})
 
     plots_with_callbacks = _add_callbacks(
         source_dict=source_dict,
         figure_dict=figure_dict,
         glyph_dict=glyph_dict,
-        model_classes=sorted(df["model_class"].unique()),
+        model_classes=model_classes,
     )
 
     grid = gridplot(plots_with_callbacks, toolbar_location="right", ncols=1)
     show(grid)
-    return df, grid, plots_with_callbacks
-
-
-# ===========================================================================
-# DATA PREP FUNCTIONS
-# ===========================================================================
-
-
-def _process_inputs(res_dict, color_dict):
-    df = _df_with_all_results(res_dict)
-    lower, upper, rect_widths = _create_bounds_and_rect_widths(df)
-    df = _df_with_plot_specs(df, rect_widths, lower, upper, color_dict)
-    df = _df_with_fake_points(df)
-    return df, lower, upper, rect_widths
-
-
-def _df_with_all_results(res_dict):
-    """
-    Build the DataFrame combining all DataFrames from the results dictionary.
-
-    Args:
-        res_dict (dict): see comparsion_plot docstring
-    """
-    df = pd.DataFrame()
-    for model, model_dict in res_dict.items():
-        result_df = _prep_result_df(model_dict, model)
-        df = df.append(result_df, sort=False, ignore_index=True)
-
-    if "conf_int_upper" not in df.columns:
-        df["conf_int_upper"] = np.nan
-    if "conf_int_lower" not in df.columns:
-        df["conf_int_lower"] = np.nan
-    return df
-
-
-def _prep_result_df(model_dict, model):
-    result_df = model_dict["result_df"].copy(deep=True)
-    result_df = _reset_index_without_losing_information(result_df, model)
-    result_df["model"] = model
-    result_df["model_class"] = model_dict.get("model_class", "no class")
-    return result_df
-
-
-def _reset_index_without_losing_information(df, model):
-    duplicates = [name for name in df.index.names if name in df.columns]
-    for col_name in duplicates:
-        ind_values = df.index.get_level_values(col_name)
-        if (df[col_name] == ind_values).all():
-            df.drop(columns=[col_name], inplace=True)
-        else:
-            raise ValueError(
-                "The index level "
-                + col_name
-                + " of the result DataFrame of "
-                + model
-                + "has different values than the column of the same name."
-            )
-    df.reset_index(inplace=True)
-    return df
-
-
-def _create_bounds_and_rect_widths(df):
-    """Calculate lower and upper bounds and the width of the "histogram" bars."""
-    grouped = df.groupby("group")
-    upper = grouped[["conf_int_upper", "value"]].max().max(axis=1)
-    lower = grouped[["conf_int_lower", "value"]].min().min(axis=1)
-    rect_widths = 0.02 * (upper - lower)
-
-    return lower, upper, rect_widths
-
-
-def _df_with_plot_specs(df, rect_widths, lower, upper, color_dict):
-    """Add color column, dodge column and binned_x column to *df*."""
-    df = _df_with_color_column(df, color_dict)
-    df["dodge"] = 0.5
-    for group in df["group"].unique():
-        rect_width = rect_widths.loc[group]
-        bins = np.arange(
-            start=lower.loc[group] - 2 * rect_width,
-            stop=upper.loc[group] + 2 * rect_width,
-            step=rect_width,
-        )
-        param_names = df[df["group"] == group]["name"].unique()
-        for param in param_names:
-            _add_dodge_and_binned_x(df, group, param, bins)
-    df["binned_x"].fillna(df["value"], inplace=True)
-    return df
-
-
-def _df_with_color_column(df, color_dict):
-    models = df["model_class"].unique()
-    if color_dict is None:
-        color_dict = {}
-    color_dict = {m: color_dict.get(m, "#035096") for m in models}
-
-    for m in models:
-        if m not in color_dict.keys():
-            color_dict[m] = MEDIUMELECTRICBLUE
-    df["color"] = df["model_class"].replace(color_dict)
-    return df
-
-
-def _add_dodge_and_binned_x(df, group, param, bins):
-    """For one parameter calculate for each estimate its dodge and bin."""
-    param_df = df[(df["group"] == group) & (df["name"] == param)].copy(deep=True)
-    param_df.sort_values(["model_class", "value"], inplace=True)
-    values = param_df["value"]
-    param_ind = param_df.index
-    hist, edges = np.histogram(param_df["value"], bins)
-    df.loc[param_ind, "lower_edge"] = values.apply(lambda x: _find_next_lower(bins, x))
-    df.loc[param_ind, "upper_edge"] = values.apply(lambda x: _find_next_upper(bins, x))
-    for lower, upper, n_points in zip(bins[:-1], bins[1:], hist):
-        if n_points > 1:
-            need_dodge = values[(lower <= values) & (values < upper)]
-            ind = need_dodge.index
-            df.loc[ind, "dodge"] = 0.5 + np.arange(len(ind))
-
-    edge_cols = ["upper_edge", "lower_edge"]
-    df.loc[param_ind, "binned_x"] = df.loc[param_ind, edge_cols].mean(
-        axis=1, skipna=False
-    )
-
-
-def _find_next_lower(array, value):
-    # adapted from https://stackoverflow.com/a/2566508
-    candidates = array[array <= value]
-    if len(candidates) > 0:
-        idx = (np.abs(candidates - value)).argmin()
-        return candidates[idx]
-    else:
-        return np.nan
-
-
-def _find_next_upper(array, value):
-    # adapted from https://stackoverflow.com/a/2566508
-    candidates = array[array > value]
-    if len(candidates) > 0:
-        idx = (np.abs(candidates - value)).argmin()
-        return candidates[idx]
-    else:
-        return np.nan
-
-
-def _df_with_fake_points(df):
-    """
-    Add fake points that can't be tapped by the user.
-
-    The reason to add them is to make sure no matter which point is
-    selected by the user at least one (possibly invisible) point is selected
-    by the CustomJS callback below.
-    Otherwise the display is in "normal" color and alpha instead of unselected.
-
-    """
-    all_names = df["name"].unique()
-    models = df["model"].unique()
-    df["fake"] = False
-    for mod in models:
-        present_names = df[df["model"] == mod]["name"].unique()
-        missing_names = [param for param in all_names if param not in present_names]
-        if len(missing_names) > 0:
-            to_add = _fake_point_df(df, missing_names, mod)
-            df = df.append(to_add, sort=False, ignore_index=True)
-
-    return df
-
-
-def _fake_point_df(df, missing_names, model):
-    fake_point_df = pd.DataFrame()
-    model_class = df[df["model"] == model]["model_class"].unique()[0]
-    groups = [df[df["name"] == param]["group"].unique()[0] for param in missing_names]
-    mean_x = [df[df["name"] == param]["value"].mean() for param in missing_names]
-    fake_point_df["name"] = missing_names
-    fake_point_df["group"] = groups
-    fake_point_df["model"] = model
-    fake_point_df["model_class"] = model_class
-    fake_point_df["fake"] = True
-    fake_point_df["dodge"] = -10
-    fake_point_df["binned_x"] = mean_x
-    return fake_point_df
-
-
-# ===========================================================================
-# PLOTTING FUNCTIONS
-# ===========================================================================
+    return source_dfs, grid
 
 
 def _create_comparison_plot_components(
-    df, height, lower, upper, rect_widths, width, axis_for_every_parameter
+    source_dfs,
+    x_mins,
+    x_maxs,
+    rect_widths,
+    height,
+    width,
+    axis_for_every_parameter,
+    n_models,
 ):
-    groups = lower.index.tolist()
-    plot_height = _determine_plot_height(df, height)
+    groups = x_mins.index
+    plot_height = _determine_plot_height(
+        figure_height=height,
+        n_models=n_models,
+        n_params=len(source_dfs),
+        n_groups=len(groups),
+    )
     source_dict = {k: {} for k in groups}
     figure_dict = {k: {} for k in groups}
     glyph_dict = {k: {} for k in groups}
-    y_max = int(max(df["dodge"].max() + 1.0, 5))
+    max_dodge = max(df["dodge"].max() for df in source_dfs)
+    y_max = int(max(max_dodge + 1, 5))
 
     for param_group in groups:
         title_fig = figure(
@@ -291,12 +128,18 @@ def _create_comparison_plot_components(
 
         figure_dict[param_group]["__title__"] = title_fig
 
-        group_df = df[df["group"] == param_group]
-        left = lower.loc[param_group] - 0.05 * np.abs(lower.loc[param_group])
-        right = upper.loc[param_group] + 0.05 * np.abs(upper.loc[param_group])
-        param_names = sorted(group_df["name"].unique())
-        for param in param_names:
-            param_src = ColumnDataSource(group_df[group_df["name"] == param])
+        left = x_mins.loc[param_group]
+        right = x_maxs.loc[param_group]
+
+        # this will be simplified later!
+        param_names_and_dfs = []
+        for df in source_dfs:
+            if df["group"].unique()[0] == param_group:
+                param_name = df["name"].unique()[0]
+                param_names_and_dfs.append((param_name, df))
+
+        for i, (param, df) in enumerate(param_names_and_dfs):
+            param_src = ColumnDataSource(df)
             param_plot = figure(
                 title=param,
                 plot_height=plot_height,
@@ -336,8 +179,11 @@ def _create_comparison_plot_components(
                 nonselection_color="color",
             )
 
+            is_last = i == len(param_names_and_dfs)
             _style_plot(
-                param_plot, param, param_names, param_group, axis_for_every_parameter
+                fig=param_plot,
+                last=is_last,
+                axis_for_every_parameter=axis_for_every_parameter,
             )
 
             figure_dict[param_group][param] = param_plot
@@ -347,13 +193,10 @@ def _create_comparison_plot_components(
     return source_dict, figure_dict, glyph_dict
 
 
-def _determine_plot_height(df, figure_height):
+def _determine_plot_height(figure_height, n_models, n_params, n_groups):
     if figure_height is None:
-        n_models = len(df["model"].unique())
         plot_height = int(max(min(n_models, 1000), 200))
     else:
-        n_params = len(df["name"].unique())
-        n_groups = len(df["group"].unique())
         space_of_titles = n_groups * 50
         available_space = figure_height - space_of_titles
         plot_height = int(available_space / n_params)
@@ -510,9 +353,9 @@ def _style_title_fig(fig):
     fig.xaxis.axis_line_color = None
 
 
-def _style_plot(fig, param, param_names, group, axis_for_every_parameter):
-    _style_x_axis(fig, param, param_names, axis_for_every_parameter)
-    _style_y_axis(fig)
+def _style_plot(fig, last, axis_for_every_parameter):
+    _style_x_axis(fig=fig, last=last, axis_for_every_parameter=axis_for_every_parameter)
+    _style_y_axis(fig=fig)
 
     fig.title.vertical_align = "top"
     fig.title.text_alpha = 70
@@ -525,9 +368,9 @@ def _style_plot(fig, param, param_names, group, axis_for_every_parameter):
     fig.sizing_mode = "scale_width"
 
 
-def _style_x_axis(fig, param, param_names, axis_for_every_parameter):
+def _style_x_axis(fig, last, axis_for_every_parameter):
     if not axis_for_every_parameter:
-        if param != param_names[-1]:
+        if last:
             fig.xaxis.visible = False
         else:
             fig.xaxis.axis_line_color = None
