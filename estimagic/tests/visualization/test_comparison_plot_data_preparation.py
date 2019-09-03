@@ -1,9 +1,15 @@
 """Tests for the comparison_plot_data_preparation functions."""
+import pandas as pd
+import pandas.testing as pdt
 import pytest
 
 from estimagic.visualization.comparison_plot import _flatten_dict
+from estimagic.visualization.comparison_plot_data_preparation import _create_plot_info
 from estimagic.visualization.comparison_plot_data_preparation import (
     _determine_plot_height,
+)
+from estimagic.visualization.comparison_plot_data_preparation import (
+    _replace_by_bin_midpoint,
 )
 
 # consolidate_parameter_attribute
@@ -119,7 +125,12 @@ def test_calculate_bins_and_rectangle_width():
 
 
 def test_replace_by_midpoint_without_nan():
-    pass
+    ind = ["model1", "model2", "model3"]
+    values = pd.Series([0.1, 0.2, 0.6], index=ind)
+    group_bins = pd.Series([0.0, 0.15, 0.3, 0.45, 0.6, 0.75], name="group1")
+    res = _replace_by_bin_midpoint(values, group_bins)
+    expected = pd.Series([0.075, 0.225, 0.525], index=ind)
+    pdt.assert_series_equal(res, expected)
 
 
 def test_replace_by_midpoint_with_nan():
@@ -143,7 +154,24 @@ def test_calculate_dodge_with_nan():
 
 
 def test_create_plot_info():
-    pass
+    ind = pd.Index(["group1", "group2", "group3"], name="group")
+    x_min = pd.Series([0.0, 5.0, -3.5], index=ind, name="x_min")
+    x_max = pd.Series([1.0, 149.3, -1.1], index=ind, name="x_max")
+    rect_width = pd.Series([0.1, 20, 0.5], index=ind, name="width")
+    res = _create_plot_info(
+        x_min=x_min, x_max=x_max, rect_width=rect_width, y_max=10, plot_height=50
+    )
+
+    expected = {
+        "plot_height": 50,
+        "y_range": (0, 10),
+        "group_info": {
+            "group1": {"x_range": (0.0, 1.0), "width": 0.1},
+            "group2": {"x_range": (5.0, 149.3), "width": 20},
+            "group3": {"x_range": (-3.5, -1.1), "width": 0.5},
+        },
+    }
+    assert res == expected
 
 
 # determine_plot_height
@@ -152,7 +180,7 @@ def test_create_plot_info():
 
 def test_determine_plot_height_none():
     res = _determine_plot_height(figure_height=None, y_max=10, n_params=10, n_groups=4)
-    expected = 200
+    expected = 300
     assert res == expected
 
 
@@ -172,6 +200,7 @@ def test_determine_plot_height_warning():
 
 
 def test_comparison_plot_inputs():
+    print("THIS TEST IS STILL MISSING")
     pass
 
 

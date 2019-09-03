@@ -227,6 +227,23 @@ def _calculate_dodge(values, bins):
 
 
 def _create_plot_info(x_min, x_max, rect_width, y_max, plot_height):
+    """
+    Return the information on the plot specs in one dictionary.
+
+    Args:
+        x_min (pd.Series):
+        x_max (pd.series):
+        rect_width (pd.Series):
+        y_max (float):
+        plot_height (int):
+
+    Returns:
+        plot_info (dict): of the form:
+            plot_height: plot_height
+            y_range: (0, y_max)
+            group_info:
+                group: {x_range: x_range, width: rect_width}
+    """
     group_plot_info = pd.concat([x_min, x_max, rect_width], axis=1)
     group_plot_info["x_range"] = group_plot_info.apply(
         lambda x: (x["x_min"], x["x_max"]), axis=1
@@ -255,7 +272,7 @@ def _determine_plot_height(figure_height, y_max, n_params, n_groups):
     the user is warned and advised in such a case.
     """
     if figure_height is None:
-        plot_height = int(max(min(50 * y_max, 1000), 200))
+        plot_height = int(max(min(30 * y_max, 1000), 100))
     else:
         space_of_titles = n_groups * 50
         available_space = figure_height - space_of_titles
