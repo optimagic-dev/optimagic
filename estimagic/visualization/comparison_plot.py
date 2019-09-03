@@ -14,8 +14,6 @@ compared to the uncertainty around the parameter estimates?
 3. Are parameters of groups of results clustered?
 
 """
-import warnings
-
 from bokeh.layouts import gridplot
 from bokeh.models import BoxSelectTool
 from bokeh.models import ColumnDataSource
@@ -28,7 +26,7 @@ from bokeh.plotting import figure
 from bokeh.plotting import show
 
 from estimagic.visualization.comparison_plot_data_preparation import (
-    generate_comp_plot_inputs,
+    comparison_plot_inputs,
 )
 
 
@@ -64,19 +62,19 @@ def comparison_plot(
     if color_dict is None:
         color_dict = {}
 
-    source_dfs, x_mins, x_maxs, rect_widths, y_max = generate_comp_plot_inputs(
-        results=results, x_padding=x_padding, num_bins=num_bins, color_dict=color_dict
+    source_dfs, plot_info = comparison_plot_inputs(
+        results=results,
+        x_padding=x_padding,
+        num_bins=num_bins,
+        color_dict=color_dict,
+        fig_height=height,
     )
 
     source_dict, figure_dict, glyph_dict = _create_comparison_plot_components(
         source_dfs=source_dfs,
-        x_mins=x_mins,
-        x_maxs=x_maxs,
-        rect_widths=rect_widths,
-        height=height,
-        width=width,
+        plot_info=plot_info,
         axis_for_every_parameter=axis_for_every_parameter,
-        y_max=y_max,
+        width=width,
     )
 
     model_classes = sorted({res.info["model_class"] for res in results})
@@ -94,28 +92,15 @@ def comparison_plot(
 
 
 def _create_comparison_plot_components(
-    source_dfs,
-    x_mins,
-    x_maxs,
-    rect_widths,
-    height,
-    width,
-    axis_for_every_parameter,
-    y_max,
+    source_dfs, plot_info, width, axis_for_every_parameter
 ):
 
-    # much easier once we have fake points!
-    plot_height = _determine_plot_height(
-        figure_height=height,
-        y_max=y_max,
-        n_params=sum(len(param_to_df) for param_to_df in source_dfs.values()),
-        n_groups=len(source_dfs),
-    )
     source_dict = {k: {} for k in source_dfs.keys()}
     figure_dict = {k: {} for k in source_dfs.keys()}
     glyph_dict = {k: {} for k in source_dfs.keys()}
 
     for group, param_to_df in source_dfs.items():
+        group_info = plot_info["group_info"][group]
         title_fig = figure(
             title=Title(
                 text="Comparison Plot of " + group.title() + " Parameters",
@@ -130,26 +115,23 @@ def _create_comparison_plot_components(
 
         figure_dict[group]["__title__"] = title_fig
 
-        left = x_mins.loc[group]
-        right = x_maxs.loc[group]
-
         for i, (param, df) in enumerate(param_to_df.items()):
             param_src = ColumnDataSource(df)
             param_plot = figure(
                 title=df["name"].unique()[0],
-                plot_height=plot_height,
+                plot_height=plot_info["plot_height"],
                 plot_width=width,
                 tools="reset,save",
                 y_axis_location="left",
-                x_range=[left, right],
-                y_range=[0, y_max],
+                x_range=group_info["x_range"],
+                y_range=plot_info["y_range"],
             )
 
             point_glyph = param_plot.rect(
                 source=param_src,
                 x="binned_x",
                 y="dodge",
-                width=rect_widths.loc[group],
+                width=group_info["width"],
                 height=1,
                 color="color",
                 selection_color="color",
@@ -186,26 +168,6 @@ def _create_comparison_plot_components(
             glyph_dict[group][param] = point_glyph
 
     return source_dict, figure_dict, glyph_dict
-
-
-def _determine_plot_height(figure_height, y_max, n_params, n_groups):
-    if figure_height is None:
-        plot_height = int(max(min(y_max, 1000), 200))
-    else:
-        space_of_titles = n_groups * 50
-        available_space = figure_height - space_of_titles
-        plot_height = int(available_space / n_params)
-        if plot_height < 50:
-            warnings.warn(
-                "\n\nThe height ({}) ".format(figure_height)
-                + "you specified results in very small "
-                + "plots which may not render well. \n"
-                + "Adjust the figure height to a larger value "
-                + "or set it to None to get a larger plot. \n"
-                + "Alternatively, you can click on the Reset button "
-                + "on the right of the plot and your plot should render correctly."
-            )
-    return plot_height
 
 
 def _add_hover_tool(plot, point_glyph, df):

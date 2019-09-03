@@ -2,6 +2,8 @@
 Process a list of estimagic optimization results for drawing a comparison plot.
 
 """
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -9,7 +11,7 @@ import pandas as pd
 MEDIUMELECTRICBLUE = "#035096"
 
 
-def generate_comp_plot_inputs(results, x_padding, num_bins, color_dict):
+def comparison_plot_inputs(results, x_padding, num_bins, color_dict, fig_height):
     """Generate the inputs for the comparison plot function.
 
     Args:
@@ -19,26 +21,25 @@ def generate_comp_plot_inputs(results, x_padding, num_bins, color_dict):
             times the range of the data
         num_bins (int): number of bins
         color_dict (dict): mapping from the model class names to colors.
+        fig_height (int): height the entire plot should have
 
     Returns:
         source_dfs (dict): map from parameter identifiers to DataFrames
             with everything we need for the comparison plot
-        x_min (Series): The index are the parameter groups. The values are
-            the left bound of the x-axis for this parameter group
-        x_max (Series): Same as x_min but for right bound
-        bins (DataFrame): The index are the parameter groups. Each row contains
-            the edges of the bins for that group.
-        rect_widths (Series): The index are the parameter groups. The value are
-            the bin width for that parameter group.
+        group_plot_info (dict): map from parameter group to x_range,
+        general_plot_info (dict):
     """
     parameter_groups = _consolidate_parameter_attribute(results, "group")
     parameter_names = _consolidate_parameter_attribute(results, "name")
     all_data = _combine_params_data(
         results, parameter_groups, parameter_names, color_dict
     )
+
     x_min, x_max = _calculate_x_bounds(all_data, x_padding)
     bins, rect_width = _calculate_bins_and_rectangle_width(x_min, x_max, num_bins)
-    source_dfs = {group: {} for group in parameter_groups.unique()}
+
+    groups = parameter_groups.unique()
+    source_dfs = {group: {} for group in groups}
     y_max = 5
     for param in parameter_groups.index:
         group = parameter_groups.loc[param]
@@ -49,7 +50,23 @@ def generate_comp_plot_inputs(results, x_padding, num_bins, color_dict):
         sdf["dodge"] = sdf["dodge"].where(sdf["value"].notnull(), -10)
         source_dfs[group][param] = sdf
         y_max = int(max(y_max, sdf["dodge"].max() + 1))
-    return source_dfs, x_min, x_max, rect_width, y_max
+
+    plot_height = _determine_plot_height(
+        figure_height=fig_height,
+        y_max=y_max,
+        n_params=len(all_data.index.unique()),
+        n_groups=len(groups),
+    )
+
+    plot_info = _create_plot_info(
+        x_min=x_min,
+        x_max=x_max,
+        rect_width=rect_width,
+        y_max=y_max,
+        plot_height=plot_height,
+    )
+
+    return source_dfs, plot_info
 
 
 def _consolidate_parameter_attribute(results, attribute, wildcards=None):
@@ -139,6 +156,8 @@ def _calculate_x_bounds(params_data, padding):
     white_space = (raw_max - raw_min).clip(1e-50) * padding
     x_min = raw_min - white_space
     x_max = raw_max + white_space
+    x_min.name = "x_min"
+    x_max.name = "x_max"
     return x_min, x_max
 
 
@@ -147,7 +166,7 @@ def _calculate_bins_and_rectangle_width(x_min, x_max, num_bins):
         start=x_min, stop=x_max, num=num_bins + 1, retstep=True
     )
     bins = pd.DataFrame(data=bins_transposed.T, index=x_min.index)
-    rectangle_width = pd.Series(data=stepsize, index=x_min.index)
+    rectangle_width = pd.Series(data=stepsize, index=x_min.index, name="width")
     return bins, rectangle_width
 
 
@@ -161,3 +180,38 @@ def _calculate_dodge(values, bins):
     df["bin"] = pd.cut(values, bins, labels=range(len(bins) - 1))
     dodge = 0.5 + df.groupby("bin").cumcount()
     return dodge
+
+
+def _create_plot_info(x_min, x_max, rect_width, y_max, plot_height):
+    group_plot_info = pd.concat([x_min, x_max, rect_width], axis=1)
+    group_plot_info["x_range"] = group_plot_info.apply(
+        lambda x: (x["x_min"], x["x_max"]), axis=1
+    )
+    group_plot_info.drop(columns=["x_min", "x_max"], inplace=True)
+    group_plot_info = group_plot_info.T.to_dict()
+    plot_info = {
+        "plot_height": plot_height,
+        "y_range": (0, y_max),
+        "group_info": group_plot_info,
+    }
+    return plot_info
+
+
+def _determine_plot_height(figure_height, y_max, n_params, n_groups):
+    if figure_height is None:
+        plot_height = int(max(min(y_max, 1000), 200))
+    else:
+        space_of_titles = n_groups * 50
+        available_space = figure_height - space_of_titles
+        plot_height = int(available_space / n_params)
+        if plot_height < 50:
+            warnings.warn(
+                "\n\nThe height ({}) ".format(figure_height)
+                + "you specified results in very small "
+                + "plots which may not render well. \n"
+                + "Adjust the figure height to a larger value "
+                + "or set it to None to get a larger plot. \n"
+                + "Alternatively, you can click on the Reset button "
+                + "on the right of the plot and your plot should render correctly."
+            )
+    return plot_height
