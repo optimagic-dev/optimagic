@@ -43,7 +43,7 @@ def comparison_plot(
 
     Args:
         results (list): List of estimagic optimization results where the info
-            has been extended with 'model' and 'model_name'
+            can have been extended with 'model' and 'model_name'
         color_dict (dict):
             mapping from the model class names to colors.
         height (int):
@@ -59,9 +59,6 @@ def comparison_plot(
     Returns:
         source_dfs, grid
     """
-    if color_dict is None:
-        color_dict = {}
-
     source_dfs, plot_info = comparison_plot_inputs(
         results=results,
         x_padding=x_padding,

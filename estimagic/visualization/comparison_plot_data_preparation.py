@@ -121,19 +121,36 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
             - 'name': Pretty name of the parameter. Not necessarily unique.
 
     """
+    if color_dict is None:
+        color_dict = {}
     relevant = ["value", "conf_int_lower", "conf_int_upper"]
+    used_model_names = []
     res_dfs = []
-    for res in results:
+    for i, res in enumerate(results):
         small_params = res.params[res.params.columns & relevant].copy()
         params = pd.concat([small_params, parameter_groups, parameter_names], axis=1)
-        params["model"] = res.info["model_name"]
-        params["model_class"] = res.info["model_class"]
-        params["color"] = color_dict.get(res.info["model_class"], MEDIUMELECTRICBLUE)
+        params = _add_missing_columns(params, info=res.info, color_dict=color_dict)
+        model_name = res.info.get("model_name", str(i))
+        if model_name in used_model_names:
+            model_name = model_name + "_{}".format(i)
+        params["model"] = model_name
+        used_model_names.append(model_name)
         res_dfs.append(params)
     all_data = pd.concat(res_dfs)
     all_data["group"].replace({None: np.nan}, inplace=True)
     all_data.dropna(subset=["group"], inplace=True)
     return all_data
+
+
+def _add_missing_columns(params, info, color_dict):
+    if "conf_int_upper" not in params.columns:
+        params["conf_int_upper"] = np.nan
+    if "conf_int_lower" not in params.columns:
+        params["conf_int_lower"] = np.nan
+    model_class = info.get("model_class", "no model class")
+    params["model_class"] = model_class
+    params["color"] = color_dict.get(model_class, MEDIUMELECTRICBLUE)
+    return params
 
 
 def _calculate_x_bounds(params_data, padding):
