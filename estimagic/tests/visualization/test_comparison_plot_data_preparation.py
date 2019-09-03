@@ -1,9 +1,14 @@
 """Tests for the comparison_plot_data_preparation functions."""
+from collections import namedtuple
+
 import pandas as pd
 import pandas.testing as pdt
 import pytest
 
 from estimagic.visualization.comparison_plot import _flatten_dict
+from estimagic.visualization.comparison_plot_data_preparation import (
+    _construct_model_names,
+)
 from estimagic.visualization.comparison_plot_data_preparation import _create_plot_info
 from estimagic.visualization.comparison_plot_data_preparation import (
     _determine_plot_height,
@@ -11,6 +16,8 @@ from estimagic.visualization.comparison_plot_data_preparation import (
 from estimagic.visualization.comparison_plot_data_preparation import (
     _replace_by_bin_midpoint,
 )
+
+OPT_RES = namedtuple("optimization_result", ["params", "info"])
 
 # consolidate_parameter_attribute
 # ================================
@@ -32,20 +39,48 @@ def test_consolidate_parameter_attribute_uncompatible():
     pass
 
 
-# add_model_name
-# ===============
+# construct_model_names
+# ======================
 
 
-def test_add_model_name_no_name():
-    pass
+def test_construct_model_names_no_names():
+    params = pd.DataFrame()
+    info1 = {"model_class": "small", "foo": "bar"}
+    info2 = {"model_class": "large", "foo": "bar2"}
+    no_name_results = [OPT_RES(params, info1), OPT_RES(params, info2)]
+    res = _construct_model_names(results=no_name_results)
+    expected = ["0", "1"]
+    assert res == expected
 
 
-def test_add_model_name_name():
-    pass
+def test_construct_model_names_unique_names():
+    params = pd.DataFrame()
+    info1 = {"model_name": "small_1", "foo": "bar"}
+    info2 = {"model_name": "small_2", "foo": "bar2"}
+    unique_name_results = [OPT_RES(params, info1), OPT_RES(params, info2)]
+    res = _construct_model_names(results=unique_name_results)
+    expected = ["small_1", "small_2"]
+    assert res == expected
 
 
-def test_add_model_name_already_used_name():
-    pass
+def test_construct_model_names_duplicate_names():
+    params = pd.DataFrame()
+    info1 = {"model_name": "small_1", "foo": "bar"}
+    info2 = {"model_name": "small_1", "foo": "bar2"}
+    results_with_duplicate_names = [OPT_RES(params, info1), OPT_RES(params, info2)]
+
+    with pytest.raises(AssertionError):
+        _construct_model_names(results_with_duplicate_names)
+
+
+def test_construct_model_names_only_some_names():
+    params = pd.DataFrame()
+    info1 = {"model_name": "small_1", "foo": "bar"}
+    info2 = {"foo": "bar2"}
+    results_with_only_some_names = [OPT_RES(params, info1), OPT_RES(params, info2)]
+
+    with pytest.raises(AssertionError):
+        _construct_model_names(results_with_only_some_names)
 
 
 # add_model_class_and_color

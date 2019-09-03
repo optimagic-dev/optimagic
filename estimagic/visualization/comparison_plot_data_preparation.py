@@ -122,17 +122,13 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
 
     """
     relevant = ["value", "conf_int_lower", "conf_int_upper"]
-    used_model_names = []
+
+    model_names = _construct_model_names(results)
     res_dfs = []
-    for i, res in enumerate(results):
+    for mod_name, res in zip(model_names, results):
         small_params = res.params[res.params.columns & relevant].copy()
         params = pd.concat([small_params, parameter_groups, parameter_names], axis=1)
-        params, used_model_names = _add_model_name(
-            df=params,
-            info=res.info,
-            missing_val=str(i),
-            used_model_names=used_model_names,
-        )
+        params["model"] = mod_name
         params = _add_model_class_and_color(
             df=params, info=res.info, color_dict=color_dict
         )
@@ -145,13 +141,21 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
     return all_data
 
 
-def _add_model_name(df, info, missing_val, used_model_names):
-    model_name = info.get("model_name", missing_val)
-    if model_name in used_model_names:
-        model_name = model_name + "_" + missing_val
-    df["model"] = model_name
-    used_model_names.append(model_name)
-    return df, used_model_names
+def _construct_model_names(results):
+    has_model_name = ["model_name" in res.info.keys() for res in results]
+    if all(has_model_name):
+        model_names = [res.info["model_name"] for res in results]
+        assert len(model_names) == len(set(model_names)), (
+            "Some model names occur more than once in the results."
+            + "If model names are supplied they must uniquely identify the model."
+        )
+    elif not any(has_model_name):
+        model_names = [str(i) for i in range(len(results))]
+    else:
+        raise AssertionError(
+            "Only allowed to either specify all or not a single model name."
+        )
+    return model_names
 
 
 def _add_model_class_and_color(df, info, color_dict):
@@ -190,10 +194,10 @@ def _calculate_x_bounds(params_data, padding):
 
     """
     raw_min = (
-        params_data[["conf_int_lower", "value"]].groupby("group").min().min(axis=1)
+        params_data.groupby("group")[["conf_int_lower", "value"]].min().min(axis=1)
     )
     raw_max = (
-        params_data[["conf_int_upper", "value"]].groupby("group").max().max(axis=1)
+        params_data.groupby("group")[["conf_int_upper", "value"]].max().max(axis=1)
     )
     white_space = (raw_max - raw_min).clip(1e-50) * padding
     x_min = raw_min - white_space
