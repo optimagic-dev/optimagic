@@ -189,8 +189,12 @@ def _calculate_x_bounds(params_data, padding):
         x_max (Series): Same as x_min but for right bound
 
     """
-    raw_min = params_data.groupby("group").min().min(axis=1)
-    raw_max = params_data.groupby("group").max().max(axis=1)
+    raw_min = (
+        params_data[["conf_int_lower", "value"]].groupby("group").min().min(axis=1)
+    )
+    raw_max = (
+        params_data[["conf_int_upper", "value"]].groupby("group").max().max(axis=1)
+    )
     white_space = (raw_max - raw_min).clip(1e-50) * padding
     x_min = raw_min - white_space
     x_max = raw_max + white_space
