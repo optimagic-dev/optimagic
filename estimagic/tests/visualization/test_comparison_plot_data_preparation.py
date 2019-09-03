@@ -1,4 +1,11 @@
 """Tests for the comparison_plot_data_preparation functions."""
+import pytest
+
+from estimagic.visualization.comparison_plot import _flatten_dict
+from estimagic.visualization.comparison_plot_data_preparation import (
+    _determine_plot_height,
+)
+
 # consolidate_parameter_attribute
 # ================================
 
@@ -144,15 +151,20 @@ def test_create_plot_info():
 
 
 def test_determine_plot_height_none():
-    pass
+    res = _determine_plot_height(figure_height=None, y_max=10, n_params=10, n_groups=4)
+    expected = 200
+    assert res == expected
 
 
 def test_determine_plot_height_given():
-    pass
+    res = _determine_plot_height(figure_height=500, y_max=5, n_params=5, n_groups=2)
+    expected = 80
+    assert res == expected
 
 
 def test_determine_plot_height_warning():
-    pass
+    with pytest.warns(Warning):
+        _determine_plot_height(figure_height=100, y_max=5, n_params=5, n_groups=3)
 
 
 # comparison_plot_inputs
@@ -167,5 +179,23 @@ def test_comparison_plot_inputs():
 # ==============
 
 
-def test_flatten_dict():
-    pass
+@pytest.fixture
+def nested_dict():
+    nested_dict = {
+        "g1": {"p1": "val1"},
+        "g2": {"p2": "val2"},
+        "g3": {"p3": "val3", "p31": "val4"},
+    }
+    return nested_dict
+
+
+flatten_dict_fixtures = [
+    (None, ["val1", "val2", "val3", "val4"]),
+    ("p31", ["val1", "val2", "val3"]),
+]
+
+
+@pytest.mark.parametrize("exclude_key, expected", flatten_dict_fixtures)
+def test_flatten_dict_without_exclude_key(nested_dict, exclude_key, expected):
+    flattened = _flatten_dict(nested_dict, exclude_key)
+    assert flattened == expected

@@ -242,8 +242,20 @@ def _create_plot_info(x_min, x_max, rect_width, y_max, plot_height):
 
 
 def _determine_plot_height(figure_height, y_max, n_params, n_groups):
+    """
+    Calculate the height alloted to each parameter plot.
+
+    If None is given the plot height is between 200 and 1000.
+    Within that range it scales with the maximum number of parameters in a bin.
+    This allows for easy clicking.
+
+    If a height for the full figure is given, space for the group titles is substracted
+    and the plot height calculated from the number of parameters.
+    Since rendering of the plot can fail when plots are too small,
+    the user is warned and advised in such a case.
+    """
     if figure_height is None:
-        plot_height = int(max(min(y_max, 1000), 200))
+        plot_height = int(max(min(50 * y_max, 1000), 200))
     else:
         space_of_titles = n_groups * 50
         available_space = figure_height - space_of_titles

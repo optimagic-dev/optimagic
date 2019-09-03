@@ -203,6 +203,18 @@ def _add_callbacks(source_dict, figure_dict, glyph_dict, model_classes):
 
 
 def _flatten_dict(nested_dict, exclude_key=None):
+    """
+    Return a list of the values of the values of a nested dictionary.
+
+    This is used to collect all ColumnDataSources except the one modified by the user
+    (e.g. by clicking on one of its parameters).
+    The ``source_dict`` has the structure {group: {param: CDS})}
+
+    Args:
+        nested_dict (dict): nested dictionary whose inner values are to be returned
+        exclude_key:
+            key possibly in one of the inner dictionaries whose value is to be excluded.
+    """
     flattened = []
     for inner_dict in nested_dict.values():
         for inner_key, inner_val in inner_dict.items():
