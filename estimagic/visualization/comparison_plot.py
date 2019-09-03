@@ -61,7 +61,10 @@ def comparison_plot(
     Returns:
         source_dfs, grid
     """
-    source_dfs, x_mins, x_maxs, bins, rect_widths = generate_comp_plot_inputs(
+    if color_dict is None:
+        color_dict = {}
+
+    source_dfs, x_mins, x_maxs, rect_widths, y_max = generate_comp_plot_inputs(
         results=results, x_padding=x_padding, num_bins=num_bins, color_dict=color_dict
     )
 
@@ -73,7 +76,7 @@ def comparison_plot(
         height=height,
         width=width,
         axis_for_every_parameter=axis_for_every_parameter,
-        n_models=len(results),
+        y_max=y_max,
     )
 
     model_classes = sorted({res.info["model_class"] for res in results})
@@ -98,25 +101,24 @@ def _create_comparison_plot_components(
     height,
     width,
     axis_for_every_parameter,
-    n_models,
+    y_max,
 ):
-    groups = x_mins.index
+
+    # much easier once we have fake points!
     plot_height = _determine_plot_height(
         figure_height=height,
-        n_models=n_models,
-        n_params=len(source_dfs),
-        n_groups=len(groups),
+        y_max=y_max,
+        n_params=sum(len(param_to_df) for param_to_df in source_dfs.values()),
+        n_groups=len(source_dfs),
     )
-    source_dict = {k: {} for k in groups}
-    figure_dict = {k: {} for k in groups}
-    glyph_dict = {k: {} for k in groups}
-    max_dodge = max(df["dodge"].max() for df in source_dfs)
-    y_max = int(max(max_dodge + 1, 5))
+    source_dict = {k: {} for k in source_dfs.keys()}
+    figure_dict = {k: {} for k in source_dfs.keys()}
+    glyph_dict = {k: {} for k in source_dfs.keys()}
 
-    for param_group in groups:
+    for group, param_to_df in source_dfs.items():
         title_fig = figure(
             title=Title(
-                text="Comparison Plot of " + param_group.title() + " Parameters",
+                text="Comparison Plot of " + group.title() + " Parameters",
                 align="center",
                 text_font_size="15pt",
             ),
@@ -126,22 +128,15 @@ def _create_comparison_plot_components(
         )
         _style_title_fig(title_fig)
 
-        figure_dict[param_group]["__title__"] = title_fig
+        figure_dict[group]["__title__"] = title_fig
 
-        left = x_mins.loc[param_group]
-        right = x_maxs.loc[param_group]
+        left = x_mins.loc[group]
+        right = x_maxs.loc[group]
 
-        # this will be simplified later!
-        param_names_and_dfs = []
-        for df in source_dfs:
-            if df["group"].unique()[0] == param_group:
-                param_name = df["name"].unique()[0]
-                param_names_and_dfs.append((param_name, df))
-
-        for i, (param, df) in enumerate(param_names_and_dfs):
+        for i, (param, df) in enumerate(param_to_df.items()):
             param_src = ColumnDataSource(df)
             param_plot = figure(
-                title=param,
+                title=df["name"].unique()[0],
                 plot_height=plot_height,
                 plot_width=width,
                 tools="reset,save",
@@ -154,7 +149,7 @@ def _create_comparison_plot_components(
                 source=param_src,
                 x="binned_x",
                 y="dodge",
-                width=rect_widths.loc[param_group],
+                width=rect_widths.loc[group],
                 height=1,
                 color="color",
                 selection_color="color",
@@ -179,23 +174,23 @@ def _create_comparison_plot_components(
                 nonselection_color="color",
             )
 
-            is_last = i == len(param_names_and_dfs)
+            is_last = i == len(param_to_df)
             _style_plot(
                 fig=param_plot,
                 last=is_last,
                 axis_for_every_parameter=axis_for_every_parameter,
             )
 
-            figure_dict[param_group][param] = param_plot
-            source_dict[param_group][param] = param_src
-            glyph_dict[param_group][param] = point_glyph
+            figure_dict[group][param] = param_plot
+            source_dict[group][param] = param_src
+            glyph_dict[group][param] = point_glyph
 
     return source_dict, figure_dict, glyph_dict
 
 
-def _determine_plot_height(figure_height, n_models, n_params, n_groups):
+def _determine_plot_height(figure_height, y_max, n_params, n_groups):
     if figure_height is None:
-        plot_height = int(max(min(n_models, 1000), 200))
+        plot_height = int(max(min(y_max, 1000), 200))
     else:
         space_of_titles = n_groups * 50
         available_space = figure_height - space_of_titles

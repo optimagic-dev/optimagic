@@ -21,8 +21,8 @@ def generate_comp_plot_inputs(results, x_padding, num_bins, color_dict):
         color_dict (dict): mapping from the model class names to colors.
 
     Returns:
-        source_dfs (list): List of DataFrames with everything we need in a
-            column_data_source
+        source_dfs (dict): map from parameter identifiers to DataFrames
+            with everything we need for the comparison plot
         x_min (Series): The index are the parameter groups. The values are
             the left bound of the x-axis for this parameter group
         x_max (Series): Same as x_min but for right bound
@@ -33,10 +33,13 @@ def generate_comp_plot_inputs(results, x_padding, num_bins, color_dict):
     """
     parameter_groups = _consolidate_parameter_attribute(results, "group")
     parameter_names = _consolidate_parameter_attribute(results, "name")
-    all_data = _combine_params_data(results, parameter_groups, parameter_names)
+    all_data = _combine_params_data(
+        results, parameter_groups, parameter_names, color_dict
+    )
     x_min, x_max = _calculate_x_bounds(all_data, x_padding)
     bins, rect_width = _calculate_bins_and_rectangle_width(x_min, x_max, num_bins)
-    source_dfs = []
+    source_dfs = {group: {} for group in parameter_groups.unique()}
+    y_max = 5
     for param in parameter_groups.index:
         group = parameter_groups.loc[param]
         sdf = all_data.loc[param]
@@ -44,50 +47,9 @@ def generate_comp_plot_inputs(results, x_padding, num_bins, color_dict):
         sdf["binned_x"] = _replace_by_bin_midpoint(sdf["value"], bins.loc[group])
         sdf["dodge"] = _calculate_dodge(sdf["value"], bins.loc[group])
         sdf["dodge"] = sdf["dodge"].where(sdf["value"].notnull(), -10)
-
-        color_dict = {} if color_dict is None else color_dict
-        sdf["color"] = sdf["model_class"].replace(color_dict)
-        sdf["color"] = sdf["color"].where(
-            sdf["color"].isin(color_dict.values()), MEDIUMELECTRICBLUE
-        )
-
-        source_dfs.append(sdf)
-    return source_dfs, x_min, x_max, bins, rect_width
-
-
-def _combine_params_data(results, parameter_groups, parameter_names):
-    """Combine the params fields of the results across models.
-
-     Args:
-        results (list): List of estimagic optimization results where the info
-            has been extended with 'model' and 'model_name'
-        parameter_groups (Series): maps parameters to parameter group
-        parameter_names (Series): maps parameters to pretty names
-
-    Returns:
-        df (DataFrame): A DataFrame in long format. The columns are
-            - 'value': Parameter values
-            - 'conf_int_lower': Lower bound of confidence intervals
-            - 'conf_int_upper': Upper bound of confidence intervals
-            - 'model': Name of the model
-            - 'model_class': Class of the model
-            - 'group': Parameter group
-            - 'name': Pretty name of the parameter. Not necessarily unique.
-
-    """
-    relevant = ["value", "conf_int_lower", "conf_int_upper"]
-    to_concat = []
-    for res in results:
-        params = res.params[res.params.columns & relevant].copy()
-        params["model"] = res.info["model_name"]
-        params["model_class"] = res.info["model_class"]
-        to_concat.append(params)
-    df = pd.concat(to_concat)
-    for attr in [parameter_groups, parameter_names]:
-        df = pd.merge(df, attr, left_index=True, right_index=True)
-    df["group"].replace({None, np.nan}, inplace=True)
-    df.dropna(subset=["group"], inplace=True)
-    return df
+        source_dfs[group][param] = sdf
+        y_max = int(max(y_max, sdf["dodge"].max() + 1))
+    return source_dfs, x_min, x_max, rect_width, y_max
 
 
 def _consolidate_parameter_attribute(results, attribute, wildcards=None):
@@ -120,6 +82,42 @@ def _consolidate_parameter_attribute(results, attribute, wildcards=None):
     consolidated = data.apply(_consolidate, axis=1)
     consolidated.name = attribute
     return consolidated
+
+
+def _combine_params_data(results, parameter_groups, parameter_names, color_dict):
+    """Combine the params fields of the results across models.
+
+     Args:
+        results (list): List of estimagic optimization results where the info
+            has been extended with 'model' and 'model_name'
+        parameter_groups (Series): maps parameters to parameter group
+        parameter_names (Series): maps parameters to pretty names
+
+    Returns:
+        df (DataFrame): A DataFrame in long format. The columns are
+            - 'value': Parameter values
+            - 'conf_int_lower': Lower bound of confidence intervals
+            - 'conf_int_upper': Upper bound of confidence intervals
+            - 'model': Name of the model
+            - 'model_class': Class of the model
+            - 'group': Parameter group
+            - 'name': Pretty name of the parameter. Not necessarily unique.
+
+    """
+    relevant = ["value", "conf_int_lower", "conf_int_upper"]
+    to_concat = []
+    for res in results:
+        params = res.params[res.params.columns & relevant].copy()
+        params["model"] = res.info["model_name"]
+        params["model_class"] = res.info["model_class"]
+        params["color"] = color_dict.get(res.info["model_class"], MEDIUMELECTRICBLUE)
+        to_concat.append(params)
+    df = pd.concat(to_concat)
+    for attr in [parameter_groups, parameter_names]:
+        df = pd.merge(df, attr, left_index=True, right_index=True)
+    df["group"].replace({None: np.nan}, inplace=True)
+    df.dropna(subset=["group"], inplace=True)
+    return df
 
 
 def _calculate_x_bounds(params_data, padding):
