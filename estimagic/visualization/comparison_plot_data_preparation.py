@@ -48,7 +48,7 @@ def comparison_plot_inputs(results, x_padding, num_bins, color_dict, fig_height)
         sdf["binned_x"] = _replace_by_bin_midpoint(sdf["value"], bins.loc[group])
         sdf["dodge"] = _calculate_dodge(sdf["value"], bins.loc[group])
         sdf["dodge"] = sdf["dodge"].where(sdf["value"].notnull(), -10)
-        source_dfs[group][param] = sdf
+        source_dfs[group][param] = sdf.reset_index()
         y_max = int(max(y_max, sdf["dodge"].max() + 1))
 
     plot_height = _determine_plot_height(

@@ -113,7 +113,7 @@ def _create_comparison_plot_components(
         figure_dict[group]["__title__"] = title_fig
 
         for i, (param, df) in enumerate(param_to_df.items()):
-            param_src = ColumnDataSource(df)
+            param_src = ColumnDataSource(df.reset_index())
             param_plot = figure(
                 title=df["name"].unique()[0],
                 plot_height=plot_info["plot_height"],
