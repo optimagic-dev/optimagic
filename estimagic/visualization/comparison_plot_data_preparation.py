@@ -43,7 +43,7 @@ def comparison_plot_inputs(results, x_padding, num_bins, color_dict, fig_height)
     y_max = 5
     for param in parameter_groups.index:
         group = parameter_groups.loc[param]
-        sdf = all_data.loc[param]
+        sdf = all_data.loc[param].sort_values(["model_class", "value"])
         sdf = sdf.set_index("model", drop=True)
         sdf["binned_x"] = _replace_by_bin_midpoint(sdf["value"], bins.loc[group])
         sdf["dodge"] = _calculate_dodge(sdf["value"], bins.loc[group])
@@ -219,7 +219,7 @@ def _calculate_bins_and_rectangle_width(x_min, x_max, num_bins):
 def _replace_by_bin_midpoint(values, bins):
     midpoints = (bins + bins.shift(periods=-1))[:-1] / 2
     sr = pd.cut(values, bins, labels=midpoints).astype(float)
-    sr.fillna(bins[0], inplace=True)
+    sr.fillna(midpoints[0], inplace=True)
     return sr
 
 
