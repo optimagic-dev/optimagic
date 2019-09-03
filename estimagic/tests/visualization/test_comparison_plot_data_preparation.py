@@ -30,6 +30,9 @@ from estimagic.visualization.comparison_plot_data_preparation import (
 from estimagic.visualization.comparison_plot_data_preparation import (
     _replace_by_bin_midpoint,
 )
+from estimagic.visualization.comparison_plot_data_preparation import (
+    comparison_plot_inputs,
+)
 
 OPT_RES = namedtuple("optimization_result", ["params", "info"])
 MEDIUMELECTRICBLUE = "#035096"
@@ -486,8 +489,113 @@ def test_combine_params_data(input_results, all_data):
 # =======================
 
 
-def test_comparison_plot_inputs():
-    # test that correct dodge comes out when results
-    # are not fed in ordered by model_class!
-    # -> nice coloring in the "histogram" plot!
-    pass
+@pytest.fixture
+def expected_source_dfs():
+    cols = [
+        "model",
+        "value",
+        "conf_int_lower",
+        "conf_int_upper",
+        "group",
+        "name",
+        "model_class",
+        "color",
+        "binned_x",
+        "dodge",
+    ]
+    base_df = pd.DataFrame(columns=cols)
+    base_df["model"] = ["mod1", "mod2", "mod3"]
+    base_df["model_class"] = ["small", "full", "small"]
+    base_df["color"] = MEDIUMELECTRICBLUE
+
+    # group 1: xmin=0.2, xmax=0.4
+    g11_df = base_df.copy(deep=True)
+    g11_df["value"] = [0.2, 0.25, pd.np.nan]
+    g11_df["conf_int_lower"] = [pd.np.nan, 0.2, pd.np.nan]
+    g11_df["conf_int_upper"] = [pd.np.nan, 0.35, pd.np.nan]
+    g11_df["group"] = "g1"
+    g11_df["name"] = "l1_1_0"
+    g11_df["binned_x"] = [0.21, 0.25, 0.21]
+    g11_df["dodge"] = [0.5, 0.5, -10]
+
+    g20_df = base_df.copy(deep=True)
+    g20_df["value"] = [pd.np.nan, 0.30, 0.25]
+    g20_df["conf_int_lower"] = [pd.np.nan, 0.25, 0.20]
+    g20_df["conf_int_upper"] = [pd.np.nan, 0.4, 0.35]
+    g20_df["group"] = "g1"
+    g20_df["name"] = "l1_2_1"
+    g20_df["binned_x"] = [0.21, 0.29, 0.25]
+    g20_df["dodge"] = [-10, 0.5, 0.5]
+
+    # group 2: xmin=-0.1, xmax=0.55
+    g21_df = base_df.copy(deep=True)
+    g21_df["value"] = [0.5, 0.45, pd.np.nan]
+    g21_df["conf_int_lower"] = [pd.np.nan, 0.4, pd.np.nan]
+    g21_df["conf_int_upper"] = [pd.np.nan, 0.55, pd.np.nan]
+    g21_df["group"] = "g2"
+    g21_df["name"] = "l1_1_1"
+    g21_df["binned_x"] = [0.5175, 0.4525, -0.0675]
+    g21_df["dodge"] = [0.5, 0.5, -10]
+
+    g22_df = base_df.copy(deep=True)
+    g22_df["value"] = [0.1, 0.0, -0.05]
+    g22_df["conf_int_lower"] = [pd.np.nan, -0.05, -0.1]
+    g22_df["conf_int_upper"] = [pd.np.nan, 0.1, 0.05]
+    g22_df["group"] = "g2"
+    g22_df["name"] = "l1_2_0"
+    g22_df["binned_x"] = [0.1275, -0.0025, -0.0675]
+    g22_df["dodge"] = [0.5, 0.5, 0.5]
+
+    g1_dict = {
+        ("l1_1", 0): g11_df.sort_values(["model_class", "value"]).reset_index(
+            drop=True
+        ),
+        ("l1_2", 1): g20_df.sort_values(["model_class", "value"]).reset_index(
+            drop=True
+        ),
+    }
+
+    g2_dict = {
+        ("l1_1", 1): g21_df.sort_values(["model_class", "value"]).reset_index(
+            drop=True
+        ),
+        ("l1_2", 0): g22_df.sort_values(["model_class", "value"]).reset_index(
+            drop=True
+        ),
+    }
+
+    return {"g1": g1_dict, "g2": g2_dict}
+
+
+@pytest.fixture
+def expected_plot_info():
+    expected_plot_info = {
+        "plot_height": 150,
+        "y_range": (0, 5),
+        "group_info": {
+            "g1": {"x_range": (0.2, 0.4), "width": 0.02},
+            "g2": {"x_range": (-0.1, 0.55), "width": 0.065},
+        },
+    }
+    return expected_plot_info
+
+
+def test_comparison_plot_inputs(input_results, expected_source_dfs, expected_plot_info):
+    x_padding = 0.0
+    num_bins = 10
+
+    res_source_dfs, res_plot_info = comparison_plot_inputs(
+        results=input_results[0],
+        x_padding=x_padding,
+        num_bins=num_bins,
+        color_dict=None,
+        fig_height=None,
+    )
+
+    assert res_plot_info == expected_plot_info
+
+    assert res_source_dfs.keys() == expected_source_dfs.keys()
+    for group, res_dict in res_source_dfs.items():
+        for param, res_df in res_dict.items():
+            exp_df = expected_source_dfs[group][param]
+            pdt.assert_frame_equal(res_df, exp_df, check_like=True)

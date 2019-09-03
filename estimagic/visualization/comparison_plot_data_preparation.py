@@ -38,13 +38,15 @@ def comparison_plot_inputs(results, x_padding, num_bins, color_dict, fig_height)
     x_min, x_max = _calculate_x_bounds(all_data, x_padding)
     bins, rect_width = _calculate_bins_and_rectangle_width(x_min, x_max, num_bins)
 
+    parameter_groups = parameter_groups[parameter_groups.notnull()]
     groups = parameter_groups.unique()
     source_dfs = {group: {} for group in groups}
     y_max = 5
     for param in parameter_groups.index:
-        group = parameter_groups.loc[param]
-        sdf = all_data.loc[param].sort_values(["model_class", "value"])
-        sdf = sdf.set_index("model", drop=True)
+        group = parameter_groups[param]
+        sdf = all_data.loc[param].copy(deep=True)
+        sdf.sort_values(["model_class", "value"], inplace=True)
+        sdf.set_index("model", drop=True, inplace=True)
         sdf["binned_x"] = _replace_by_bin_midpoint(sdf["value"], bins.loc[group])
         sdf["dodge"] = _calculate_dodge(sdf["value"], bins.loc[group])
         sdf["dodge"] = sdf["dodge"].where(sdf["value"].notnull(), -10)
@@ -136,8 +138,6 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
 
     all_data = pd.concat(res_dfs, sort=False)
     all_data = _ensure_correct_conf_ints(all_data)
-    all_data["group"].replace({None: np.nan}, inplace=True)
-    all_data.dropna(subset=["group"], inplace=True)
     return all_data
 
 
