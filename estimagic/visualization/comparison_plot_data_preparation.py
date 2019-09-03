@@ -134,7 +134,7 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
         )
         res_dfs.append(params)
 
-    all_data = pd.concat(res_dfs)
+    all_data = pd.concat(res_dfs, sort=False)
     all_data = _ensure_correct_conf_ints(all_data)
     all_data["group"].replace({None: np.nan}, inplace=True)
     all_data.dropna(subset=["group"], inplace=True)

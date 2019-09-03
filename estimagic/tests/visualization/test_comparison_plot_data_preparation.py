@@ -12,6 +12,12 @@ from estimagic.visualization.comparison_plot_data_preparation import (
 from estimagic.visualization.comparison_plot_data_preparation import _calculate_dodge
 from estimagic.visualization.comparison_plot_data_preparation import _calculate_x_bounds
 from estimagic.visualization.comparison_plot_data_preparation import (
+    _combine_params_data,
+)
+from estimagic.visualization.comparison_plot_data_preparation import (
+    _consolidate_parameter_attribute,
+)
+from estimagic.visualization.comparison_plot_data_preparation import (
     _construct_model_names,
 )
 from estimagic.visualization.comparison_plot_data_preparation import _create_plot_info
@@ -34,19 +40,68 @@ MEDIUMELECTRICBLUE = "#035096"
 
 
 def test_consolidate_parameter_attribute_standard_wildcards():
-    pass
+    tuples = [("a", 0), ("a", 1), ("b", 1), ("b", 2)]
+    ind = pd.MultiIndex.from_tuples(tuples, names=["ind1", "ind2"])
+
+    df = pd.DataFrame(index=ind[:3])
+    df["attr"] = ["g1", "g2", "g3"]
+    df["other"] = [1, 2, 3]
+
+    df2 = pd.DataFrame(index=ind)
+    df2["attr"] = ["g1", "g2", "g3", "g2"]
+    df2["other2"] = [11, 22, 33, 44]
+
+    info = {}
+    compatible_input = [OPT_RES(df, info), OPT_RES(df2, info)]
+    attribute = "attr"
+    res = _consolidate_parameter_attribute(
+        results=compatible_input, attribute=attribute
+    )
+    expected = pd.Series(["g1", "g2", "g3", "g2"], index=ind, name="attr")
+    pdt.assert_series_equal(res, expected)
 
 
 def test_consolidate_parameter_attribute_custom_wildcards():
-    pass
+    tuples = [("a", 0), ("a", 1), ("b", 1), ("b", 2)]
+    ind = pd.MultiIndex.from_tuples(tuples, names=["ind1", "ind2"])
 
+    df = pd.DataFrame(index=ind[:3])
+    df["attr"] = ["g1", None, "g3"]
+    df["other"] = [1, 2, 3]
 
-def test_consolidate_parameter_attribute_different_results_indices():
-    pass
+    df2 = pd.DataFrame(index=ind)
+    df2["attr"] = ["g1", "g2", "g3", 0]
+    df2["other2"] = [11, 22, 33, 44]
+
+    info = {}
+    compatible_input = [OPT_RES(df, info), OPT_RES(df2, info)]
+    attribute = "attr"
+    res = _consolidate_parameter_attribute(
+        results=compatible_input, attribute=attribute, wildcards=[0, None]
+    )
+    expected = pd.Series(["g1", "g2", "g3", pd.np.nan], index=ind, name="attr")
+    pdt.assert_series_equal(res, expected)
 
 
 def test_consolidate_parameter_attribute_uncompatible():
-    pass
+    tuples = [("a", 0), ("a", 1), ("b", 1), ("b", 2)]
+    ind = pd.MultiIndex.from_tuples(tuples, names=["ind1", "ind2"])
+
+    df = pd.DataFrame(index=ind[:3])
+    df["attr"] = ["g1", "g2", "g3"]
+    df["other"] = [1, 2, 3]
+
+    df2 = pd.DataFrame(index=ind)
+    df2["attr"] = ["g1", "g2", "g2", "g3"]
+    df2["other2"] = [11, 22, 33, 44]
+
+    info = {"foo": "bar"}
+    uncompatible_input = [OPT_RES(df, info), OPT_RES(df2, info)]
+    attribute = "attr"
+    with pytest.raises(AssertionError):
+        _consolidate_parameter_attribute(
+            results=uncompatible_input, attribute=attribute
+        )
 
 
 # construct_model_names
@@ -128,18 +183,6 @@ def test_add_model_class_and_color_known_model_class():
     expected["color"] = "green"
     res = _add_model_class_and_color(df, info, color_dict)
     pdt.assert_frame_equal(res, expected)
-
-
-# combine_params_data
-# ====================
-
-
-def test_combine_params_data():
-    pass
-
-
-def test_combine_params_data_complicated_index():
-    pass
 
 
 # ensure_correct_conf_ints
@@ -228,14 +271,6 @@ def test_calculate_x_bounds_with_padding():
 
     pdt.assert_series_equal(expected_x_min, res_x_min)
     pdt.assert_series_equal(expected_x_max, res_x_max)
-
-
-# calculate_bins_and_rectangle_width
-# ===================================
-
-
-def test_calculate_bins_and_rectangle_width():
-    pass
 
 
 # replace_by_midpoint
@@ -328,17 +363,6 @@ def test_determine_plot_height_warning():
         _determine_plot_height(figure_height=100, y_max=5, n_params=5, n_groups=3)
 
 
-# comparison_plot_inputs
-# =======================
-
-
-def test_comparison_plot_inputs():
-    # test that correct dodge comes out when results
-    # are not fed in ordered by model_class!
-    # -> nice coloring in the "histogram" plot!
-    pass
-
-
 # flatten_dict
 # ==============
 
@@ -363,3 +387,107 @@ flatten_dict_fixtures = [
 def test_flatten_dict_without_exclude_key(nested_dict, exclude_key, expected):
     flattened = _flatten_dict(nested_dict, exclude_key)
     assert flattened == expected
+
+
+# combine_params_data
+# ====================
+
+
+@pytest.fixture
+def input_results():
+    full_tuples = [("l1_1", 0), ("l1_1", 1), ("l1_2", 0), ("l1_2", 1), ("l1_2", 2)]
+    full_index = pd.MultiIndex.from_tuples(full_tuples, names=["level1", "level2"])
+
+    df1 = pd.DataFrame(index=full_index[:3])
+    df1["value"] = [0.2] + [0.5, 0.1]
+    df1["group"] = ["g1"] + ["g2", "g2"]
+    df1["name"] = ["l1_1_0"] + ["l1_1_1", "l1_2_0"]
+
+    df2 = pd.DataFrame(index=full_index)
+    df2["value"] = [0.25] + [0.45, 0.0] + [0.3, 0.2]
+    df2["group"] = ["g1"] + ["g2", "g2"] + ["g1", None]
+    df2["name"] = ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"]
+    df2["conf_int_upper"] = df2["value"] + 0.1
+    df2["conf_int_lower"] = df2["value"] - 0.05
+
+    df3 = df2.iloc[-3:].copy(deep=True)
+    df3[["value", "conf_int_upper", "conf_int_lower"]] -= 0.05
+
+    info1 = {"model_name": "mod1", "model_class": "small"}
+    info2 = {"model_name": "mod2", "model_class": "full"}
+    info3 = {"model_name": "mod3", "model_class": "small"}
+
+    results = [OPT_RES(df1, info1), OPT_RES(df2, info2), OPT_RES(df3, info3)]
+    parameter_groups = pd.Series(
+        ["g1", "g2", "g2", "g1", "g1"], index=full_index, name="group"
+    )
+    parameter_names = pd.Series(
+        ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"],
+        index=full_index,
+        name="name",
+    )
+    return results, parameter_groups, parameter_names
+
+
+@pytest.fixture
+def all_data():
+    full_tuples = [("l1_1", 0), ("l1_1", 1), ("l1_2", 0), ("l1_2", 1), ("l1_2", 2)]
+    all_data_index = pd.MultiIndex.from_tuples(
+        full_tuples + full_tuples + full_tuples, names=["level1", "level2"]
+    )
+    all_data = pd.DataFrame(index=all_data_index)
+    all_data["value"] = (
+        [0.2, 0.5, 0.1]
+        + [pd.np.nan, pd.np.nan]
+        + [0.25, 0.45, 0.0, 0.3, 0.2]
+        + [pd.np.nan, pd.np.nan]
+        + [-0.05, 0.25, 0.15]
+    )
+    all_data["group"] = (
+        ["g1"]
+        + ["g2", "g2"]
+        + ["g1", "g1"]
+        + ["g1"]
+        + ["g2", "g2"]
+        + ["g1", "g1"]
+        + ["g1"]
+        + ["g2", "g2"]
+        + ["g1", "g1"]
+    )
+    all_data["name"] = (
+        ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"]
+        + ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"]
+        + ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"]
+    )
+    all_data["model"] = ["mod1"] * 5 + ["mod2"] * 5 + ["mod3"] * 5
+    all_data["model_class"] = ["small"] * 5 + ["full"] * 5 + ["small"] * 5
+    all_data["color"] = MEDIUMELECTRICBLUE
+    all_data["conf_int_upper"] = (
+        [pd.np.nan] * 5
+        + [0.35, 0.55, 0.1, 0.4, 0.3]
+        + [pd.np.nan] * 2
+        + [0.05, 0.35, 0.25]
+    )
+    all_data["conf_int_lower"] = (
+        [pd.np.nan] * 5
+        + [0.2, 0.4, -0.05, 0.25, 0.15]
+        + [pd.np.nan] * 2
+        + [-0.1, 0.2, 0.10]
+    )
+    return all_data
+
+
+def test_combine_params_data(input_results, all_data):
+    res = _combine_params_data(*input_results, color_dict=None)
+    pdt.assert_frame_equal(res, all_data)
+
+
+# comparison_plot_inputs
+# =======================
+
+
+def test_comparison_plot_inputs():
+    # test that correct dodge comes out when results
+    # are not fed in ordered by model_class!
+    # -> nice coloring in the "histogram" plot!
+    pass
