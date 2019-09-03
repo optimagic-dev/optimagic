@@ -139,6 +139,10 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
     all_data = pd.concat(res_dfs)
     all_data["group"].replace({None: np.nan}, inplace=True)
     all_data.dropna(subset=["group"], inplace=True)
+    nr_nans_in_cis = all_data[["conf_int_lower", "conf_int_upper"]].isnull().sum(axis=1)
+    assert all(
+        nr_nans_in_cis.isin([0, 2])
+    ), "For some models there is only one of the two confidence bounds given."
     return all_data
 
 
