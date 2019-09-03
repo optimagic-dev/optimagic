@@ -122,19 +122,18 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
 
     """
     relevant = ["value", "conf_int_lower", "conf_int_upper"]
-    to_concat = []
+    res_dfs = []
     for res in results:
-        params = res.params[res.params.columns & relevant].copy()
+        small_params = res.params[res.params.columns & relevant].copy()
+        params = pd.concat([small_params, parameter_groups, parameter_names], axis=1)
         params["model"] = res.info["model_name"]
         params["model_class"] = res.info["model_class"]
         params["color"] = color_dict.get(res.info["model_class"], MEDIUMELECTRICBLUE)
-        to_concat.append(params)
-    df = pd.concat(to_concat)
-    for attr in [parameter_groups, parameter_names]:
-        df = pd.merge(df, attr, left_index=True, right_index=True)
-    df["group"].replace({None: np.nan}, inplace=True)
-    df.dropna(subset=["group"], inplace=True)
-    return df
+        res_dfs.append(params)
+    all_data = pd.concat(res_dfs)
+    all_data["group"].replace({None: np.nan}, inplace=True)
+    all_data.dropna(subset=["group"], inplace=True)
+    return all_data
 
 
 def _calculate_x_bounds(params_data, padding):
@@ -172,7 +171,9 @@ def _calculate_bins_and_rectangle_width(x_min, x_max, num_bins):
 
 def _replace_by_bin_midpoint(values, bins):
     midpoints = (bins + bins.shift(periods=-1))[:-1] / 2
-    return pd.cut(values, bins, labels=midpoints).astype(float)
+    sr = pd.cut(values, bins, labels=midpoints).astype(float)
+    sr.fillna(bins[0], inplace=True)
+    return sr
 
 
 def _calculate_dodge(values, bins):
