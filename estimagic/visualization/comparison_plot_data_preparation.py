@@ -121,40 +121,58 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
             - 'name': Pretty name of the parameter. Not necessarily unique.
 
     """
-    if color_dict is None:
-        color_dict = {}
     relevant = ["value", "conf_int_lower", "conf_int_upper"]
     used_model_names = []
     res_dfs = []
     for i, res in enumerate(results):
         small_params = res.params[res.params.columns & relevant].copy()
         params = pd.concat([small_params, parameter_groups, parameter_names], axis=1)
-        params = _add_missing_columns(params, info=res.info, color_dict=color_dict)
-        model_name = res.info.get("model_name", str(i))
-        if model_name in used_model_names:
-            model_name = model_name + "_{}".format(i)
-        params["model"] = model_name
-        used_model_names.append(model_name)
+        params, used_model_names = _add_model_name(
+            df=params,
+            info=res.info,
+            missing_val=str(i),
+            used_model_names=used_model_names,
+        )
+        params = _add_model_class_and_color(
+            df=params, info=res.info, color_dict=color_dict
+        )
         res_dfs.append(params)
+
     all_data = pd.concat(res_dfs)
+    all_data = _ensure_correct_conf_ints(all_data)
     all_data["group"].replace({None: np.nan}, inplace=True)
     all_data.dropna(subset=["group"], inplace=True)
-    nr_nans_in_cis = all_data[["conf_int_lower", "conf_int_upper"]].isnull().sum(axis=1)
-    assert all(
-        nr_nans_in_cis.isin([0, 2])
-    ), "For some models there is only one of the two confidence bounds given."
     return all_data
 
 
-def _add_missing_columns(params, info, color_dict):
-    if "conf_int_upper" not in params.columns:
-        params["conf_int_upper"] = np.nan
-    if "conf_int_lower" not in params.columns:
-        params["conf_int_lower"] = np.nan
+def _add_model_name(df, info, missing_val, used_model_names):
+    model_name = info.get("model_name", missing_val)
+    if model_name in used_model_names:
+        model_name = model_name + "_" + missing_val
+    df["model"] = model_name
+    used_model_names.append(model_name)
+    return df, used_model_names
+
+
+def _add_model_class_and_color(df, info, color_dict):
+    if color_dict is None:
+        color_dict = {}
     model_class = info.get("model_class", "no model class")
-    params["model_class"] = model_class
-    params["color"] = color_dict.get(model_class, MEDIUMELECTRICBLUE)
-    return params
+    df["model_class"] = model_class
+    df["color"] = color_dict.get(model_class, MEDIUMELECTRICBLUE)
+    return df
+
+
+def _ensure_correct_conf_ints(df):
+    if "conf_int_upper" not in df.columns:
+        df["conf_int_upper"] = np.nan
+    if "conf_int_lower" not in df.columns:
+        df["conf_int_lower"] = np.nan
+    nr_nans_in_cis = df[["conf_int_lower", "conf_int_upper"]].isnull().sum(axis=1)
+    assert all(
+        nr_nans_in_cis.isin([0, 2])
+    ), "For some models there is only one of the two confidence bounds given."
+    return df
 
 
 def _calculate_x_bounds(params_data, padding):
