@@ -231,11 +231,12 @@ def _create_plot_info(x_min, x_max, rect_width, y_max, plot_height):
     """Return the information on the plot specs in one dictionary.
 
     Args:
-        x_min (pd.Series):
-        x_max (pd.series):
-        rect_width (pd.Series):
-        y_max (float):
-        plot_height (int):
+        x_min (pd.Series): see _calculate_x_bounds
+        x_max (pd.series): see _calculate_x_bounds
+        rect_width (pd.Series): The index are the parameter groups. The values
+            are the rectangle widths used in each group
+        y_max (float): maximum number of parameters that fall into one bin
+        plot_height (int): Plot height in pixels.
 
     Returns:
         plot_info (dict): of the form:

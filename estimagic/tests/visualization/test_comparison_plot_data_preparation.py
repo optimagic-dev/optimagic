@@ -11,6 +11,7 @@ from estimagic.visualization.comparison_plot import _flatten_dict
 
 OPT_RES = namedtuple("optimization_result", ["params", "info"])
 MEDIUMELECTRICBLUE = "#035096"
+FIXPATH = Path(__file__).resolve().parent
 
 
 # consolidate_parameter_attribute
@@ -372,7 +373,7 @@ def test_flatten_dict_without_exclude_key(nested_dict, exclude_key, expected):
 
 @pytest.fixture
 def input_results():
-    fix_path = Path(__file__).resolve().parent / "comp_plot_input_dfs.csv"
+    fix_path = FIXPATH / "comp_plot_input_dfs.csv"
     fix = pd.read_csv(fix_path).set_index(["df", "level1", "level2"])
 
     infos = [
@@ -396,50 +397,9 @@ def input_results():
 
 @pytest.fixture
 def all_data():
-    full_tuples = [("l1_1", 0), ("l1_1", 1), ("l1_2", 0), ("l1_2", 1), ("l1_2", 2)]
-    all_data_index = pd.MultiIndex.from_tuples(
-        full_tuples + full_tuples + full_tuples, names=["level1", "level2"]
-    )
-    all_data = pd.DataFrame(index=all_data_index)
-    all_data["value"] = (
-        [0.2, 0.5, 0.1]
-        + [pd.np.nan, pd.np.nan]
-        + [0.25, 0.45, 0.0, 0.3, 0.2]
-        + [pd.np.nan, pd.np.nan]
-        + [-0.05, 0.25, 0.15]
-    )
-    all_data["group"] = (
-        ["g1"]
-        + ["g2", "g2"]
-        + ["g1", "g1"]
-        + ["g1"]
-        + ["g2", "g2"]
-        + ["g1", "g1"]
-        + ["g1"]
-        + ["g2", "g2"]
-        + ["g1", "g1"]
-    )
-    all_data["name"] = (
-        ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"]
-        + ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"]
-        + ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"]
-    )
-    all_data["model"] = ["mod1"] * 5 + ["mod2"] * 5 + ["mod3"] * 5
-    all_data["model_class"] = ["small"] * 5 + ["full"] * 5 + ["small"] * 5
-    all_data["color"] = MEDIUMELECTRICBLUE
-    all_data["conf_int_upper"] = (
-        [pd.np.nan] * 5
-        + [0.35, 0.55, 0.1, 0.4, 0.3]
-        + [pd.np.nan] * 2
-        + [0.05, 0.35, 0.25]
-    )
-    all_data["conf_int_lower"] = (
-        [pd.np.nan] * 5
-        + [0.2, 0.4, -0.05, 0.25, 0.15]
-        + [pd.np.nan] * 2
-        + [-0.1, 0.2, 0.10]
-    )
-    return all_data
+    fix_path = FIXPATH / "combined_params_dataframe.csv"
+    fix = pd.read_csv(fix_path).set_index(["level1", "level2"])
+    return fix
 
 
 def test_combine_params_data(input_results, all_data):
@@ -453,80 +413,21 @@ def test_combine_params_data(input_results, all_data):
 
 @pytest.fixture
 def expected_source_dfs():
-    cols = [
-        "model",
-        "value",
-        "conf_int_lower",
-        "conf_int_upper",
-        "group",
-        "name",
-        "model_class",
-        "color",
-        "binned_x",
-        "dodge",
-    ]
-    base_df = pd.DataFrame(columns=cols)
-    base_df["model"] = ["mod1", "mod2", "mod3"]
-    base_df["model_class"] = ["small", "full", "small"]
-    base_df["color"] = MEDIUMELECTRICBLUE
-
-    # group 1: xmin=0.2, xmax=0.4
-    g11_df = base_df.copy(deep=True)
-    g11_df["value"] = [0.2, 0.25, pd.np.nan]
-    g11_df["conf_int_lower"] = [pd.np.nan, 0.2, pd.np.nan]
-    g11_df["conf_int_upper"] = [pd.np.nan, 0.35, pd.np.nan]
-    g11_df["group"] = "g1"
-    g11_df["name"] = "l1_1_0"
-    g11_df["binned_x"] = [0.21, 0.25, 0.21]
-    g11_df["dodge"] = [0.5, 0.5, -10]
-
-    g20_df = base_df.copy(deep=True)
-    g20_df["value"] = [pd.np.nan, 0.30, 0.25]
-    g20_df["conf_int_lower"] = [pd.np.nan, 0.25, 0.20]
-    g20_df["conf_int_upper"] = [pd.np.nan, 0.4, 0.35]
-    g20_df["group"] = "g1"
-    g20_df["name"] = "l1_2_1"
-    g20_df["binned_x"] = [0.21, 0.29, 0.25]
-    g20_df["dodge"] = [-10, 0.5, 0.5]
-
-    # group 2: xmin=-0.1, xmax=0.55
-    g21_df = base_df.copy(deep=True)
-    g21_df["value"] = [0.5, 0.45, pd.np.nan]
-    g21_df["conf_int_lower"] = [pd.np.nan, 0.4, pd.np.nan]
-    g21_df["conf_int_upper"] = [pd.np.nan, 0.55, pd.np.nan]
-    g21_df["group"] = "g2"
-    g21_df["name"] = "l1_1_1"
-    g21_df["binned_x"] = [0.5175, 0.4525, -0.0675]
-    g21_df["dodge"] = [0.5, 0.5, -10]
-
-    g22_df = base_df.copy(deep=True)
-    g22_df["value"] = [0.1, 0.0, -0.05]
-    g22_df["conf_int_lower"] = [pd.np.nan, -0.05, -0.1]
-    g22_df["conf_int_upper"] = [pd.np.nan, 0.1, 0.05]
-    g22_df["group"] = "g2"
-    g22_df["name"] = "l1_2_0"
-    g22_df["binned_x"] = [0.1275, -0.0025, -0.0675]
-    g22_df["dodge"] = [0.5, 0.5, 0.5]
+    fix_path = FIXPATH / "expected_comparison_plot_inputs.csv"
+    fix = pd.read_csv(fix_path).set_index(["level1", "level2"], drop=True)
 
     g1_dict = {
-        ("l1_1", 0): g11_df.sort_values(["model_class", "value"]).reset_index(
-            drop=True
-        ),
-        ("l1_2", 1): g20_df.sort_values(["model_class", "value"]).reset_index(
-            drop=True
-        ),
+        ("l1_1", 0): fix.loc[("l1_1", 0)].reset_index(drop=True),
+        ("l1_2", 1): fix.loc[("l1_2", 1)].reset_index(drop=True),
     }
 
     g2_dict = {
-        ("l1_1", 1): g21_df.sort_values(["model_class", "value"]).reset_index(
-            drop=True
-        ),
-        ("l1_2", 0): g22_df.sort_values(["model_class", "value"]).reset_index(
-            drop=True
-        ),
+        ("l1_1", 1): fix.loc[("l1_1", 1)].reset_index(drop=True),
+        ("l1_2", 0): fix.loc[("l1_2", 0)].reset_index(drop=True),
     }
 
-    return {"g1": g1_dict, "g2": g2_dict}
+    expected_source_dfs = {"g1": g1_dict, "g2": g2_dict}
+    return expected_source_dfs
 
 
 @pytest.fixture
