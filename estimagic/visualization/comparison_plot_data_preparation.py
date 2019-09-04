@@ -1,9 +1,4 @@
-"""
-Process a list of estimagic optimization results for drawing a comparison plot.
-
-"""
-import warnings
-
+"""Process a list of estimagic optimization results for drawing a comparison plot."""
 import numpy as np
 import pandas as pd
 
@@ -28,6 +23,7 @@ def comparison_plot_inputs(results, x_padding, num_bins, color_dict, fig_height)
             with everything we need for the comparison plot
         group_plot_info (dict): map from parameter group to x_range,
         general_plot_info (dict):
+
     """
     parameter_groups = _consolidate_parameter_attribute(results, "group")
     parameter_names = _consolidate_parameter_attribute(results, "name")
@@ -137,7 +133,7 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
         res_dfs.append(params)
 
     all_data = pd.concat(res_dfs, sort=False)
-    all_data = _ensure_correct_conf_ints(all_data)
+    all_data = _process_conf_ints(all_data)
     return all_data
 
 
@@ -145,10 +141,9 @@ def _construct_model_names(results):
     has_model_name = ["model_name" in res.info.keys() for res in results]
     if all(has_model_name):
         model_names = [res.info["model_name"] for res in results]
-        assert len(model_names) == len(set(model_names)), (
-            "Some model names occur more than once in the results."
-            + "If model names are supplied they must uniquely identify the model."
-        )
+        assert len(model_names) == len(
+            set(model_names)
+        ), "Some model names occur more than once in the results."
     elif not any(has_model_name):
         model_names = [str(i) for i in range(len(results))]
     else:
@@ -159,6 +154,7 @@ def _construct_model_names(results):
 
 
 def _add_model_class_and_color(df, info, color_dict):
+    df = df.copy()
     if color_dict is None:
         color_dict = {}
     model_class = info.get("model_class", "no model class")
@@ -167,7 +163,8 @@ def _add_model_class_and_color(df, info, color_dict):
     return df
 
 
-def _ensure_correct_conf_ints(df):
+def _process_conf_ints(df):
+    df = df.copy()
     if "conf_int_upper" not in df.columns:
         df["conf_int_upper"] = np.nan
     if "conf_int_lower" not in df.columns:
@@ -231,8 +228,7 @@ def _calculate_dodge(values, bins):
 
 
 def _create_plot_info(x_min, x_max, rect_width, y_max, plot_height):
-    """
-    Return the information on the plot specs in one dictionary.
+    """Return the information on the plot specs in one dictionary.
 
     Args:
         x_min (pd.Series):
@@ -263,17 +259,17 @@ def _create_plot_info(x_min, x_max, rect_width, y_max, plot_height):
 
 
 def _determine_plot_height(figure_height, y_max, n_params, n_groups):
-    """
-    Calculate the height alloted to each parameter plot.
+    """Calculate the height alloted to each parameter plot in pixels.
 
-    If None is given the plot height is between 200 and 1000.
-    Within that range it scales with the maximum number of parameters in a bin.
-    This allows for easy clicking.
+    Args:
+        figure_height (int): height of figure in pixels
+        y_max (float): maximum entry on any y-axis in the plot
+        n_params (int): number of params
+        n_groups (int): number of parameter groups
 
-    If a height for the full figure is given, space for the group titles is substracted
-    and the plot height calculated from the number of parameters.
-    Since rendering of the plot can fail when plots are too small,
-    the user is warned and advised in such a case.
+    Returns:
+        plot_height (int): Plot height in pixels.
+
     """
     if figure_height is None:
         plot_height = int(max(min(30 * y_max, 1000), 100))
@@ -281,14 +277,4 @@ def _determine_plot_height(figure_height, y_max, n_params, n_groups):
         space_of_titles = n_groups * 50
         available_space = figure_height - space_of_titles
         plot_height = int(available_space / n_params)
-        if plot_height < 50:
-            warnings.warn(
-                "\n\nThe height ({}) ".format(figure_height)
-                + "you specified results in very small "
-                + "plots which may not render well. \n"
-                + "Adjust the figure height to a larger value "
-                + "or set it to None to get a larger plot. \n"
-                + "Alternatively, you can click on the Reset button "
-                + "on the right of the plot and your plot should render correctly."
-            )
     return plot_height

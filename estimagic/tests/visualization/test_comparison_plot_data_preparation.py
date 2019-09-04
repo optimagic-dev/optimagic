@@ -5,34 +5,8 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 
+import estimagic.visualization.comparison_plot_data_preparation as test_module
 from estimagic.visualization.comparison_plot import _flatten_dict
-from estimagic.visualization.comparison_plot_data_preparation import (
-    _add_model_class_and_color,
-)
-from estimagic.visualization.comparison_plot_data_preparation import _calculate_dodge
-from estimagic.visualization.comparison_plot_data_preparation import _calculate_x_bounds
-from estimagic.visualization.comparison_plot_data_preparation import (
-    _combine_params_data,
-)
-from estimagic.visualization.comparison_plot_data_preparation import (
-    _consolidate_parameter_attribute,
-)
-from estimagic.visualization.comparison_plot_data_preparation import (
-    _construct_model_names,
-)
-from estimagic.visualization.comparison_plot_data_preparation import _create_plot_info
-from estimagic.visualization.comparison_plot_data_preparation import (
-    _determine_plot_height,
-)
-from estimagic.visualization.comparison_plot_data_preparation import (
-    _ensure_correct_conf_ints,
-)
-from estimagic.visualization.comparison_plot_data_preparation import (
-    _replace_by_bin_midpoint,
-)
-from estimagic.visualization.comparison_plot_data_preparation import (
-    comparison_plot_inputs,
-)
 
 OPT_RES = namedtuple("optimization_result", ["params", "info"])
 MEDIUMELECTRICBLUE = "#035096"
@@ -57,7 +31,7 @@ def test_consolidate_parameter_attribute_standard_wildcards():
     info = {}
     compatible_input = [OPT_RES(df, info), OPT_RES(df2, info)]
     attribute = "attr"
-    res = _consolidate_parameter_attribute(
+    res = test_module._consolidate_parameter_attribute(
         results=compatible_input, attribute=attribute
     )
     expected = pd.Series(["g1", "g2", "g3", "g2"], index=ind, name="attr")
@@ -79,7 +53,7 @@ def test_consolidate_parameter_attribute_custom_wildcards():
     info = {}
     compatible_input = [OPT_RES(df, info), OPT_RES(df2, info)]
     attribute = "attr"
-    res = _consolidate_parameter_attribute(
+    res = test_module._consolidate_parameter_attribute(
         results=compatible_input, attribute=attribute, wildcards=[0, None]
     )
     expected = pd.Series(["g1", "g2", "g3", pd.np.nan], index=ind, name="attr")
@@ -102,7 +76,7 @@ def test_consolidate_parameter_attribute_uncompatible():
     uncompatible_input = [OPT_RES(df, info), OPT_RES(df2, info)]
     attribute = "attr"
     with pytest.raises(AssertionError):
-        _consolidate_parameter_attribute(
+        test_module._consolidate_parameter_attribute(
             results=uncompatible_input, attribute=attribute
         )
 
@@ -116,7 +90,7 @@ def test_construct_model_names_no_names():
     info1 = {"model_class": "small", "foo": "bar"}
     info2 = {"model_class": "large", "foo": "bar2"}
     no_name_results = [OPT_RES(params, info1), OPT_RES(params, info2)]
-    res = _construct_model_names(results=no_name_results)
+    res = test_module._construct_model_names(results=no_name_results)
     expected = ["0", "1"]
     assert res == expected
 
@@ -126,7 +100,7 @@ def test_construct_model_names_unique_names():
     info1 = {"model_name": "small_1", "foo": "bar"}
     info2 = {"model_name": "small_2", "foo": "bar2"}
     unique_name_results = [OPT_RES(params, info1), OPT_RES(params, info2)]
-    res = _construct_model_names(results=unique_name_results)
+    res = test_module._construct_model_names(results=unique_name_results)
     expected = ["small_1", "small_2"]
     assert res == expected
 
@@ -138,7 +112,7 @@ def test_construct_model_names_duplicate_names():
     results_with_duplicate_names = [OPT_RES(params, info1), OPT_RES(params, info2)]
 
     with pytest.raises(AssertionError):
-        _construct_model_names(results_with_duplicate_names)
+        test_module._construct_model_names(results_with_duplicate_names)
 
 
 def test_construct_model_names_only_some_names():
@@ -148,7 +122,7 @@ def test_construct_model_names_only_some_names():
     results_with_only_some_names = [OPT_RES(params, info1), OPT_RES(params, info2)]
 
     with pytest.raises(AssertionError):
-        _construct_model_names(results_with_only_some_names)
+        test_module._construct_model_names(results_with_only_some_names)
 
 
 # add_model_class_and_color
@@ -162,7 +136,7 @@ def test_add_model_class_and_color_no_color_dict():
     expected = df.copy(deep=True)
     expected["model_class"] = "no model class"
     expected["color"] = MEDIUMELECTRICBLUE
-    res = _add_model_class_and_color(df, info, color_dict)
+    res = test_module._add_model_class_and_color(df, info, color_dict)
     pdt.assert_frame_equal(res, expected)
 
 
@@ -173,7 +147,7 @@ def test_add_model_class_and_color_unknown_model_class():
     expected = df.copy(deep=True)
     expected["model_class"] = "small"
     expected["color"] = MEDIUMELECTRICBLUE
-    res = _add_model_class_and_color(df, info, color_dict)
+    res = test_module._add_model_class_and_color(df, info, color_dict)
     pdt.assert_frame_equal(res, expected)
 
 
@@ -184,7 +158,7 @@ def test_add_model_class_and_color_known_model_class():
     expected = df.copy(deep=True)
     expected["model_class"] = "small"
     expected["color"] = "green"
-    res = _add_model_class_and_color(df, info, color_dict)
+    res = test_module._add_model_class_and_color(df, info, color_dict)
     pdt.assert_frame_equal(res, expected)
 
 
@@ -192,30 +166,30 @@ def test_add_model_class_and_color_known_model_class():
 # ==========================
 
 
-def test_ensure_correct_conf_ints_missing():
+def test_process_conf_ints_missing():
     df = pd.DataFrame(index=[0, 1, 2], columns=["a", "b", "c"])
     expected = df.copy(deep=True)
     expected["conf_int_upper"] = pd.np.nan
     expected["conf_int_lower"] = pd.np.nan
-    res = _ensure_correct_conf_ints(df)
+    res = test_module._process_conf_ints(df)
     pdt.assert_frame_equal(res, expected)
 
 
-def test_ensure_correct_conf_ints_present():
+def test_process_conf_ints_present():
     df = pd.DataFrame(index=[0, 1, 2], columns=["a", "b", "c"])
     df["conf_int_lower"] = 3
     df["conf_int_upper"] = 1
     expected = df.copy(deep=True)
-    res = _ensure_correct_conf_ints(df)
+    res = test_module._process_conf_ints(df)
     pdt.assert_frame_equal(res, expected)
 
 
-def test_ensure_correct_conf_ints_raise_error():
+def test_process_conf_ints_raise_error():
     df = pd.DataFrame(index=[0, 1, 2], columns=["a", "b", "c"])
     df["conf_int_lower"] = 3
     df["conf_int_upper"] = pd.np.nan
     with pytest.raises(AssertionError):
-        _ensure_correct_conf_ints(df)
+        test_module._process_conf_ints(df)
 
 
 # calculate_x_bounds
@@ -230,7 +204,7 @@ def test_calculate_x_bounds_without_nan():
     params_data["conf_int_upper"] = [1, 2, 3] + [3, 5, 10]
 
     padding = 0.0
-    res_x_min, res_x_max = _calculate_x_bounds(params_data, padding)
+    res_x_min, res_x_max = test_module._calculate_x_bounds(params_data, padding)
 
     ind = pd.Index(["a", "b"], name="group")
     expected_x_min = pd.Series([-2.0, -5.0], index=ind, name="x_min")
@@ -248,7 +222,7 @@ def test_calculate_x_bounds_with_nan():
     params_data["conf_int_upper"] = pd.np.nan
 
     padding = 0.0
-    res_x_min, res_x_max = _calculate_x_bounds(params_data, padding)
+    res_x_min, res_x_max = test_module._calculate_x_bounds(params_data, padding)
 
     ind = pd.Index(["a", "b"], name="group")
     expected_x_min = pd.Series([0.0, 3.0], index=ind, name="x_min")
@@ -266,7 +240,7 @@ def test_calculate_x_bounds_with_padding():
     params_data["conf_int_upper"] = pd.np.nan
 
     padding = 0.1
-    res_x_min, res_x_max = _calculate_x_bounds(params_data, padding)
+    res_x_min, res_x_max = test_module._calculate_x_bounds(params_data, padding)
 
     ind = pd.Index(["a", "b"], name="group")
     expected_x_min = pd.Series([-0.1, 2.8], index=ind, name="x_min")
@@ -284,7 +258,7 @@ def test_replace_by_midpoint_without_nan():
     ind = ["model1", "model2", "corner_right", "corner_left"]
     values = pd.Series([0.1, 0.2, 0.6, 0.15], index=ind)
     group_bins = pd.Series([0.0, 0.15, 0.3, 0.45, 0.6, 0.75], name="group1")
-    res = _replace_by_bin_midpoint(values, group_bins)
+    res = test_module._replace_by_bin_midpoint(values, group_bins)
     expected = pd.Series([0.075, 0.225, 0.525, 0.075], index=ind)
     pdt.assert_series_equal(res, expected)
 
@@ -293,7 +267,7 @@ def test_replace_by_midpoint_with_nan():
     ind = ["model1", "missing", "corner_right", "corner_left"]
     values = pd.Series([0.1, pd.np.nan, 0.6, 0.15], index=ind)
     group_bins = pd.Series([0.0, 0.15, 0.3, 0.45, 0.6, 0.75], name="group1")
-    res = _replace_by_bin_midpoint(values, group_bins)
+    res = test_module._replace_by_bin_midpoint(values, group_bins)
     expected = pd.Series([0.075, 0.075, 0.525, 0.075], index=ind)
     pdt.assert_series_equal(res, expected)
 
@@ -307,7 +281,7 @@ def test_calculate_dodge_without_nan():
     values = pd.Series([0.05, 0.1, 0.2, 0.61, 0.62, 0.7], index=ind)
     group_bins = pd.Series([0.0, 0.15, 0.3, 0.45, 0.6, 0.75], name="group1")
     expected = pd.Series([0.5, 1.5, 0.5, 0.5, 1.5, 2.5], index=ind)
-    res = _calculate_dodge(values, group_bins)
+    res = test_module._calculate_dodge(values, group_bins)
     pdt.assert_series_equal(res, expected)
 
 
@@ -316,7 +290,7 @@ def test_calculate_dodge_with_nan():
     values_with_nan = pd.Series([0.05, 0.1, 0.2, 0.61, pd.np.nan, pd.np.nan], index=ind)
     group_bins = pd.Series([0.0, 0.15, 0.3, 0.45, 0.6, 0.75], name="group1")
     expected = pd.Series([0.5, 1.5, 0.5, 0.5, 0.5, 1.5], index=ind)
-    res = _calculate_dodge(values_with_nan, group_bins)
+    res = test_module._calculate_dodge(values_with_nan, group_bins)
     pdt.assert_series_equal(res, expected)
 
 
@@ -329,7 +303,7 @@ def test_create_plot_info():
     x_min = pd.Series([0.0, 5.0, -3.5], index=ind, name="x_min")
     x_max = pd.Series([1.0, 149.3, -1.1], index=ind, name="x_max")
     rect_width = pd.Series([0.1, 20, 0.5], index=ind, name="width")
-    res = _create_plot_info(
+    res = test_module._create_plot_info(
         x_min=x_min, x_max=x_max, rect_width=rect_width, y_max=10, plot_height=50
     )
 
@@ -350,20 +324,19 @@ def test_create_plot_info():
 
 
 def test_determine_plot_height_none():
-    res = _determine_plot_height(figure_height=None, y_max=10, n_params=10, n_groups=4)
+    res = test_module._determine_plot_height(
+        figure_height=None, y_max=10, n_params=10, n_groups=4
+    )
     expected = 300
     assert res == expected
 
 
 def test_determine_plot_height_given():
-    res = _determine_plot_height(figure_height=500, y_max=5, n_params=5, n_groups=2)
+    res = test_module._determine_plot_height(
+        figure_height=500, y_max=5, n_params=5, n_groups=2
+    )
     expected = 80
     assert res == expected
-
-
-def test_determine_plot_height_warning():
-    with pytest.warns(Warning):
-        _determine_plot_height(figure_height=100, y_max=5, n_params=5, n_groups=3)
 
 
 # flatten_dict
@@ -481,7 +454,7 @@ def all_data():
 
 
 def test_combine_params_data(input_results, all_data):
-    res = _combine_params_data(*input_results, color_dict=None)
+    res = test_module._combine_params_data(*input_results, color_dict=None)
     pdt.assert_frame_equal(res, all_data)
 
 
@@ -584,7 +557,7 @@ def test_comparison_plot_inputs(input_results, expected_source_dfs, expected_plo
     x_padding = 0.0
     num_bins = 10
 
-    res_source_dfs, res_plot_info = comparison_plot_inputs(
+    res_source_dfs, res_plot_info = test_module.comparison_plot_inputs(
         results=input_results[0],
         x_padding=x_padding,
         num_bins=num_bins,
