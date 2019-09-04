@@ -3,8 +3,8 @@ import pytest
 from numpy.testing import assert_array_almost_equal
 
 from estimagic.inference.moment_covs import _covariance_moments
-from estimagic.inference.moment_covs import _sandwich_cov
 from estimagic.inference.moment_covs import gmm_cov
+from estimagic.inference.moment_covs import sandwich_cov
 
 
 def test_covariance_moments_random():
@@ -26,6 +26,8 @@ def test_covariance_moments_unit():
 
 @pytest.fixture
 def statsmodels_fixtures_gmm_cov():
+    """ The fixture contains a test case for our functions. The expected result was
+    calculated by hand.s"""
     fix = {}
     fix["mom_cond"] = np.array([[0.1, 0.3], [0.7, 1.3]])
     fix["mom_cond_jacob"] = np.array(
@@ -49,7 +51,7 @@ def test_sandwich_cov(statsmodels_fixtures_gmm_cov):
     cov_moments = _covariance_moments(fix["mom_cond"])  # noqa: N806
     mean_mom_jacobi = np.mean(fix["mom_cond_jacob"], axis=0)  # noqa: N806
     assert_array_almost_equal(
-        _sandwich_cov(
+        sandwich_cov(
             mean_mom_jacobi, fix["mom_weight"], cov_moments, fix["mom_cond"].shape[0]
         ),
         fix["cov_result"],
