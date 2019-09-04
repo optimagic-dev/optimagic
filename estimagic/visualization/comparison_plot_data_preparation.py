@@ -1,4 +1,6 @@
 """Process a list of estimagic optimization results for drawing a comparison plot."""
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -278,4 +280,12 @@ def _determine_plot_height(figure_height, y_max, n_params, n_groups):
         space_of_titles = n_groups * 50
         available_space = figure_height - space_of_titles
         plot_height = int(available_space / n_params)
+        if plot_height < 50:
+            warnings.warn(
+                "The figure height you specified results in very small "
+                "plots which may not render well. Adjust the figure height "
+                "to a larger value or set it to None to get a larger plot. "
+                "Alternatively, you can click on the Reset button "
+                "on the right of the plot and your plot should render correctly."
+            )
     return plot_height
