@@ -388,9 +388,7 @@ def input_results():
         ["g1", "g2", "g2", "g1", "g1"], index=fix.loc[1].index, name="group"
     )
     parameter_names = pd.Series(
-        ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"],
-        index=fix.loc[1].index,
-        name="name",
+        ["a_0", "a_1", "b_0", "b_1", "b_2"], index=fix.loc[1].index, name="name"
     )
     return results, parameter_groups, parameter_names
 
@@ -417,13 +415,13 @@ def expected_source_dfs():
     fix = pd.read_csv(fix_path).set_index(["level1", "level2"], drop=True)
 
     g1_dict = {
-        ("l1_1", 0): fix.loc[("l1_1", 0)].reset_index(drop=True),
-        ("l1_2", 1): fix.loc[("l1_2", 1)].reset_index(drop=True),
+        ("a", 0): fix.loc[("a", 0)].reset_index(drop=True),
+        ("b", 1): fix.loc[("b", 1)].reset_index(drop=True),
     }
 
     g2_dict = {
-        ("l1_1", 1): fix.loc[("l1_1", 1)].reset_index(drop=True),
-        ("l1_2", 0): fix.loc[("l1_2", 0)].reset_index(drop=True),
+        ("a", 1): fix.loc[("a", 1)].reset_index(drop=True),
+        ("b", 0): fix.loc[("b", 0)].reset_index(drop=True),
     }
 
     expected_source_dfs = {"g1": g1_dict, "g2": g2_dict}
