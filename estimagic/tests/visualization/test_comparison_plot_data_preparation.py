@@ -1,5 +1,6 @@
 """Tests for the comparison_plot_data_preparation functions."""
 from collections import namedtuple
+from pathlib import Path
 
 import pandas as pd
 import pandas.testing as pdt
@@ -371,35 +372,23 @@ def test_flatten_dict_without_exclude_key(nested_dict, exclude_key, expected):
 
 @pytest.fixture
 def input_results():
-    full_tuples = [("l1_1", 0), ("l1_1", 1), ("l1_2", 0), ("l1_2", 1), ("l1_2", 2)]
-    full_index = pd.MultiIndex.from_tuples(full_tuples, names=["level1", "level2"])
+    fix_path = Path(__file__).resolve().parent / "comp_plot_input_dfs.csv"
+    fix = pd.read_csv(fix_path).set_index(["df", "level1", "level2"])
 
-    df1 = pd.DataFrame(index=full_index[:3])
-    df1["value"] = [0.2] + [0.5, 0.1]
-    df1["group"] = ["g1"] + ["g2", "g2"]
-    df1["name"] = ["l1_1_0"] + ["l1_1_1", "l1_2_0"]
+    infos = [
+        {"model_name": "mod1", "model_class": "small"},
+        {"model_name": "mod2", "model_class": "full"},
+        {"model_name": "mod3", "model_class": "small"},
+    ]
 
-    df2 = pd.DataFrame(index=full_index)
-    df2["value"] = [0.25] + [0.45, 0.0] + [0.3, 0.2]
-    df2["group"] = ["g1"] + ["g2", "g2"] + ["g1", None]
-    df2["name"] = ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"]
-    df2["conf_int_upper"] = df2["value"] + 0.1
-    df2["conf_int_lower"] = df2["value"] - 0.05
+    results = [OPT_RES(fix.loc[i], info) for i, info in enumerate(infos)]
 
-    df3 = df2.iloc[-3:].copy(deep=True)
-    df3[["value", "conf_int_upper", "conf_int_lower"]] -= 0.05
-
-    info1 = {"model_name": "mod1", "model_class": "small"}
-    info2 = {"model_name": "mod2", "model_class": "full"}
-    info3 = {"model_name": "mod3", "model_class": "small"}
-
-    results = [OPT_RES(df1, info1), OPT_RES(df2, info2), OPT_RES(df3, info3)]
     parameter_groups = pd.Series(
-        ["g1", "g2", "g2", "g1", "g1"], index=full_index, name="group"
+        ["g1", "g2", "g2", "g1", "g1"], index=fix.loc[1].index, name="group"
     )
     parameter_names = pd.Series(
         ["l1_1_0", "l1_1_1", "l1_2_0", "l1_2_1", "l1_2_2"],
-        index=full_index,
+        index=fix.loc[1].index,
         name="name",
     )
     return results, parameter_groups, parameter_names
@@ -455,7 +444,7 @@ def all_data():
 
 def test_combine_params_data(input_results, all_data):
     res = test_module._combine_params_data(*input_results, color_dict=None)
-    pdt.assert_frame_equal(res, all_data)
+    pdt.assert_frame_equal(res[sorted(res.columns)], all_data[sorted(all_data.columns)])
 
 
 # comparison_plot_inputs
