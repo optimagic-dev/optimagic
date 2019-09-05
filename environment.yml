@@ -18,6 +18,10 @@ dependencies:
   - bokeh=1.1
   - scipy=1.2.1
   - conda-verify
+  - sphinx
+  - nbsphinx
+  - sphinx_rtd_theme
+  - seaborn
   - jupyter
   - fuzzywuzzy
   - mpi4py
@@ -32,4 +36,5 @@ dependencies:
     - restructuredtext_lint
     - tox-conda
     - black
-    - flake8-eradicate
+
+
