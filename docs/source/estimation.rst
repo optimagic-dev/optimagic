@@ -101,10 +101,10 @@ dictionary. The dictionary must contain the following entries:
       list hast to be a valid argument to ``DataFrame.loc[]`` or ``DataFrame.query()``,
       respectively. Pairwise equality constraints are just syntactic sugar and are
       converted to normal equality constraints internally.
-    - ``'fixed'``: A set of parameters is fixed to some values. In this case the
-      constraints dictionary has to contain a ``'value'`` entry which can be a scalar or
-      an iterable of suitable length.
-
+    - ``'fixed'``: A set of parameters is fixed to some values. The constraints
+      dictionary may contain a ``'value'`` entry which can be a scalar or an iterable of
+      suitable length. If ``'value'`` is not supplied, the parameters are fixed at the
+      given values.
 
 Lower and upper bounds are specified in :ref:`params`.
 
@@ -124,9 +124,14 @@ fixed parameters. For details see :mod:`estimagic.optimization.reparametrize`.
 List of algorithms
 ------------------
 
-.. todo:: Document the algorithms and their arguments. Provide links to the pygmo
-          documentation.
+``estimagic`` supports the following list of algorithms for optimization. To learn more
+about the options of each algorithm, follow the accompanying links.
 
+pygmo
+~~~~~
+
+The options can be found `here
+<https://esa.github.io/pagmo2/docs/python/algorithms/py_algorithms.html>`__.
 
 - pygmo_gaco
 - pygmo_de
@@ -143,6 +148,13 @@ List of algorithms
 - pygmo_xnes
 - pygmo_nsga2
 - pygmo_moead
+
+nlopt
+~~~~~
+
+The options can be found `here
+<https://nlopt.readthedocs.io/en/latest/NLopt_Python_Reference/#stopping-criteria>`__.
+
 - nlopt_cobyla
 - nlopt_bobyqa
 - nlopt_newuoa
@@ -162,6 +174,13 @@ List of algorithms
 - nlopt_var1
 - nlopt_auglag
 - nlopt_auglag_eq
+
+scipy
+~~~~~
+
+The options can be found `here
+<https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html>`__.
+
 - scipy_L-BFGS-B
 - scipy_TNC
 - scipy_SLSQP

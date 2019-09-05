@@ -303,5 +303,6 @@ def apply_fixes_to_external_params(params, fixes):
             fix["type"]
         )
         params.loc[fix["index"], "_fixed"] = True
-        params.loc[fix["index"], "value"] = fix["value"]
+        if "value" in fix:
+            params.loc[fix["index"], "value"] = fix["value"]
     return params
