@@ -18,6 +18,10 @@ dependencies:
   - bokeh=1.1
   - scipy=1.2.1
   - conda-verify
+  - sphinx
+  - nbsphinx
+  - sphinx_rtd_theme
+  - seaborn
   - jupyter
   - fuzzywuzzy
   - pip:

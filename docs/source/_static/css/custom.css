@@ -1,0 +1,4 @@
+/* Remove execution count for notebook cells. */
+div.prompt {
+    display: none;
+}
