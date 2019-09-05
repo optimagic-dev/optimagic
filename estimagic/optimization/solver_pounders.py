@@ -1,8 +1,9 @@
 """
 This file contains the wrapper for pounders in the tao package
 """
-from petsc4py import PETSc
 from functools import partial
+
+from petsc4py import PETSc
 
 
 def solve(

@@ -1,8 +1,9 @@
 """
 Testing the wrapper around pounders
 """
-import numpy as np
 from functools import partial
+
+import numpy as np
 
 from estimagic.optimization.solver_pounders import solve
 
