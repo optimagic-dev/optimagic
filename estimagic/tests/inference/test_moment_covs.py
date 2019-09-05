@@ -27,7 +27,7 @@ def test_covariance_moments_unit():
 @pytest.fixture
 def fixtures_gmm_cov():
     """ The fixture contains a test case for our functions. The expected result was
-    calculated by hand.s"""
+    calculated by hand."""
     fix = {}
     fix["mom_cond"] = np.array([[0.1, 0.3], [0.7, 1.3]])
     fix["mom_cond_jacob"] = np.array(
