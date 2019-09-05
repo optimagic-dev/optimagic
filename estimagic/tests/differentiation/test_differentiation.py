@@ -1,6 +1,6 @@
-import os
 import pickle
 from itertools import product
+from pathlib import Path
 
 import pytest
 from pandas.testing import assert_frame_equal
@@ -15,7 +15,7 @@ from estimagic.examples.logit import logit_loglikeobs
 
 @pytest.fixture()
 def statsmodels_fixtures():
-    fix_path = os.path.join(os.path.dirname(__file__), "diff_fixtures.pickle")
+    fix_path = Path(__file__).resolve().parent / "diff_fixtures.pickle"
     with open(fix_path, "rb") as p:
         fix = pickle.load(p)
 

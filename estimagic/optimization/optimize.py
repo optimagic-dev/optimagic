@@ -1,10 +1,10 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
 import json
-import os
 from collections import namedtuple
 from multiprocessing import Event
 from multiprocessing import Process
 from multiprocessing import Queue
+from pathlib import Path
 
 import numpy as np
 import pygmo as pg
@@ -243,7 +243,8 @@ def _minimize(
         queue=queue,
     )
 
-    with open(os.path.join(os.path.dirname(__file__), "algo_dict.json")) as j:
+    current_dir_path = Path(__file__).resolve().parent
+    with open(current_dir_path / "algo_dict.json") as j:
         algos = json.load(j)
     origin, algo_name = algorithm.split("_", 1)
 
@@ -396,14 +397,12 @@ def _create_population(problem, algo_options, internal_params):
 
 def _process_results(res, params, internal_params, constraints, origin):
     """Convert optimization results into json serializable dictionary.
-
     Args:
         res: Result from numerical optimizer.
         params (DataFrame): See :ref:`params`.
         internal_params (DataFrame): See :ref:`params`.
         constraints (list): constraints for the optimization
         origin (str): takes the values "pygmo", "nlopt", "scipy"
-
     """
     if origin == "scipy":
         res_dict = {}
