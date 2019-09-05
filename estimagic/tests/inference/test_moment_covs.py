@@ -25,7 +25,7 @@ def test_covariance_moments_unit():
 
 
 @pytest.fixture
-def statsmodels_fixtures_gmm_cov():
+def fixtures_gmm_cov():
     """ The fixture contains a test case for our functions. The expected result was
     calculated by hand.s"""
     fix = {}
@@ -38,16 +38,16 @@ def statsmodels_fixtures_gmm_cov():
     return fix
 
 
-def test_gmm_cov(statsmodels_fixtures_gmm_cov):
-    fix = statsmodels_fixtures_gmm_cov
+def test_gmm_cov(fixtures_gmm_cov):
+    fix = fixtures_gmm_cov
     assert_array_almost_equal(
         gmm_cov(fix["mom_cond"], fix["mom_cond_jacob"], fix["mom_weight"]),
         fix["cov_result"],
     )
 
 
-def test_sandwich_cov(statsmodels_fixtures_gmm_cov):
-    fix = statsmodels_fixtures_gmm_cov
+def test_sandwich_cov(fixtures_gmm_cov):
+    fix = fixtures_gmm_cov
     cov_moments = _covariance_moments(fix["mom_cond"])  # noqa: N806
     mean_mom_jacobi = np.mean(fix["mom_cond_jacob"], axis=0)  # noqa: N806
     assert_array_almost_equal(
