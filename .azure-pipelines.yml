@@ -38,41 +38,41 @@ jobs:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
 
-  - powershell: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c defaults -c conda-forge
+  - powershell: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda numpy pillow pygmo>=2.1 scipy>=1.2.1 -c conda-forge
     displayName: Create Anaconda environment
 
   - script: |
       call activate estimagic
       tox -e pytest
 
-# - job:
-#   displayName: MacOS
-#   pool:
-#     vmImage: "macOS-latest"
-#   strategy:
-#     matrix:
-#       Python36:
-#         python.version: "3.6"
-#       Python37:
-#         python.version: "3.7"
-#
-#   steps:
-#   - bash: echo "##vso[task.prependpath]$CONDA/bin"
-#     displayName: Add conda to PATH
-#
-#   # On Hosted macOS, the agent user doesn't have ownership of Miniconda's installation
-#   # directory. We need to take ownership if we want to update conda or install packages
-#   # globally.
-#   - bash: sudo chown -R $USER $CONDA
-#     displayName: Take ownership of conda installation
-#
-#   - bash: |
-#       conda clean -i --yes
-#       conda clean --all --yes
-#
-#   - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c defaults -c conda-forge
-#     displayName: Create Anaconda environment
-#
-#   - bash: |
-#       source activate estimagic
-#       tox -e pytest
+- job:
+  displayName: MacOS
+  pool:
+    vmImage: "macOS-latest"
+  strategy:
+    matrix:
+      Python36:
+        python.version: "3.6"
+      Python37:
+        python.version: "3.7"
+
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+
+  # On Hosted macOS, the agent user doesn't have ownership of Miniconda's installation
+  # directory. We need to take ownership if we want to update conda or install packages
+  # globally.
+  - bash: sudo chown -R $USER $CONDA
+    displayName: Take ownership of conda installation
+
+  - bash: |
+      conda clean -i --yes
+      conda clean --all --yes
+
+  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c defaults -c conda-forge
+    displayName: Create Anaconda environment
+
+  - bash: |
+      source activate estimagic
+      tox -e pytest
