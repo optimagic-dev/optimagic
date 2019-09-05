@@ -16,6 +16,7 @@ Welcome to estimagic's documentation!
    inference
    dashboard
    visualization
+   example_notebooks
    module_reference
    contributing
 
