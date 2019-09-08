@@ -6,6 +6,13 @@ from scipy.linalg import ldl
 from scipy.linalg import qr
 
 
+def chol_params_to_lower_triangular_matrix(params):
+    dim = number_of_triangular_elements_to_dimension(len(params))
+    mat = np.zeros((dim, dim))
+    mat[np.tril_indices(dim)] = params
+    return mat
+
+
 def cov_params_to_matrix(cov_params):
     """Build covariance matrix from 1d array with its lower triangular elements.
 
@@ -17,18 +24,27 @@ def cov_params_to_matrix(cov_params):
         cov (np.array): a covariance matrix
 
     """
-    dim = number_of_triangular_elements_to_dimension(len(cov_params))
-    lower = np.zeros((dim, dim))
-    lower[np.tril_indices(dim)] = cov_params
-    upper = lower.T.copy()
-    upper[np.diag_indices(dim)] = 0
-    cov = lower + upper
+    lower = chol_params_to_lower_triangular_matrix(cov_params)
+    cov = lower + np.tril(lower, k=-1).T
     return cov
 
 
 def cov_matrix_to_params(cov):
-    dim = len(cov)
-    return cov[np.tril_indices(dim)]
+    return cov[np.tril_indices(len(cov))]
+
+
+def sdcorr_params_to_sds_and_corr(sdcorr_params):
+    dim = number_of_triangular_elements_to_dimension(len(sdcorr_params))
+    sds = sdcorr_params[:dim]
+    corr = np.eye(dim)
+    corr[np.tril_indices(dim, k=-1)] = sdcorr_params[dim:]
+    corr += np.tril(corr, k=-1).T
+    return sds, corr
+
+
+def sds_and_corr_to_cov(sds, corr):
+    diag = np.diag(sds)
+    return diag @ corr @ diag
 
 
 def sdcorr_params_to_matrix(sdcorr_params):
@@ -44,13 +60,7 @@ def sdcorr_params_to_matrix(sdcorr_params):
         cov (np.array): a covariance matrix
 
     """
-    dim = number_of_triangular_elements_to_dimension(len(sdcorr_params))
-    diag = np.diag(sdcorr_params[:dim])
-    lower = np.zeros((dim, dim))
-    lower[np.tril_indices(dim, k=-1)] = sdcorr_params[dim:]
-    corr = np.eye(dim) + lower + lower.T
-    cov = diag.dot(corr).dot(diag)
-    return cov
+    return sds_and_corr_to_cov(*sdcorr_params_to_sds_and_corr(sdcorr_params))
 
 
 def cov_matrix_to_sdcorr_params(cov):
