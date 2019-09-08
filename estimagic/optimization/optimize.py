@@ -1,5 +1,6 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
 import json
+import sqlite3
 from collections import namedtuple
 from multiprocessing import Event
 from multiprocessing import Process
@@ -7,6 +8,7 @@ from multiprocessing import Queue
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
@@ -432,7 +434,7 @@ def _logging(params, fitness_eval, counter, log_interval=100, path_to_sql="loggi
         counter (int): number of current iteration
         log_interval (int): number of iterations until first logging shall
                             occur
-        path_to_sql: path to sql database
+        path_to_sql (str): path to sql database (needs to end with .db)
 
     """
     if counter % log_interval == 0:
@@ -446,14 +448,8 @@ def _logging(params, fitness_eval, counter, log_interval=100, path_to_sql="loggi
         p_final["fitness_eval"] = fitness_eval
         p_final["iteration"] = counter
 
-
         # Save results as sql database
         conn = sqlite3.connect(path_to_sql)
-        p_final.to_sql(
-                name="params",
-                con=conn,
-                if_exists="append",
-                index=False,
-        )
+        p_final.to_sql(name="params", con=conn, if_exists="append", index=False)
         conn.commit()
         conn.close()
