@@ -171,14 +171,16 @@ def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
         method = "LDL cholesky"
         threshold = threshold if threshold is not None else -np.finfo(float).eps
 
-        lu, d, perm = ldl(matrix)
+        lu, d, _ = ldl(matrix)
 
-        for i in range(len(d)):
-            if d[i, i] >= 0:
-                d[i, i] = np.sqrt(d[i, i])
-            elif d[i, i] > threshold:
-                sum_stabilized += d[i, i]
-                d[i, i] = 0
+        diags = np.diagonal(d).copy()
+
+        for i in range(len(diags)):
+            if diags[i] >= 0:
+                diags[i] = np.sqrt(diags[i])
+            elif diags[i] > threshold:
+                diags[i] = 0
+                sum_stabilized += diags[i]
             else:
                 raise np.linalg.LinAlgError(
                     "Diagonal entry below threshold in D from LDL decomposition."
@@ -190,15 +192,15 @@ def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
                 category=RuntimeWarning,
             )
 
-        lu = lu.dot(d)
+        candidate = lu * diags.reshape(1, len(diags))
 
-        is_triangular = (lu[np.triu_indices(len(matrix), k=1)] == 0).all()
+        is_triangular = (candidate[np.triu_indices(len(matrix), k=1)] == 0).all()
 
         if is_triangular:
-            chol = lu
+            chol = candidate
             method = "LDL cholesky"
         else:
-            q, r = qr(lu.T)
+            _, r = qr(candidate.T)
             chol = r.T
             method = "LDL cholesky with QR decomposition"
 
