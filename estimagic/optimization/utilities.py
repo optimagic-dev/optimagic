@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from fuzzywuzzy import process as fw_process
 from scipy.linalg import ldl
@@ -124,60 +126,83 @@ def propose_algorithms(requested_algo, algos, number=3):
     return proposals
 
 
-def robust_cholesky(matrix, threshold=None):
-    """Lower triangular cholesky factor *matrix*.
-
-    In contrast to a regular cholesky decomposition, this function will also
-    work for matrices that are only positive semi-definite or even only close
-    to positive semi-definite.
-
-    The extra robustness comes from hitting the matrix with two hammers:
-
-    1) Take an LDL decomposition of the matrix, set the entries in D that are
-        negative but larger than threshold to zero and use this to construct
-        lu sucht that lu.dot(lu.T) = matrix. Unfortunately, lu is not
-        guaranteed to be lower triangular.
-
-    2) Use a QR decomposition of lu.T to construct a lower triangular cholesky
-        factor of matrix. The QR decomposition always exists.
-
-    This is much slower than a standard cholesky decomposition, so don't use
-    it unless you need the extra robustness.
+def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
+    """Lower triangular cholesky factor of *matrix*.
 
     Args:
-        matrix (np.array): A square, symmetri and (almost) positive semi-definite matrix
+        matrix (np.array): Square, symmetric and (almost) positive semi-definite matrix
         threshold (float): Small negative number. Diagonal elements of D from the LDL
-            decomposition between threshold and zero are set to zero.
+            decomposition between threshold and zero are set to zero. Default is
+            minus machine accuracy.
+        warn (bool): If True, the user is warned about negative elements in D
+        return_info (bool): If True, also return a dictionary with 'method' and
+            'sum_stabilized'. Method can take the values 'np.linalg.cholesky',
+            'LDL cholesky' and 'LDL cholesky with QR decomposition'.
+            'sum_stabilized' is the sum of entries of D between threshold and 0 and can
+            be used to construct penalty terms.
+
 
     Returns:
         chol (np.array): Cholesky factor of matrix
+        info (float, optional): see return_info.
 
     Raises:
         np.linalg.LinalgError if the diagonal entries of D from the LDL decomposition
         are smaller than threshold.
 
+    In contrast to a regular cholesky decomposition, this function will also
+    work for matrices that are only positive semi-definite or even indefinite.
+
+    For speed and precision reasons we first try a regular cholesky decomposition.
+    If it fails we switch to more robust methods. For this we first take an LDL
+    decomposition and set diagonal elements in D that are negative but above
+    threshold to 0. Then we use the modified D to construct a candidate cholesky
+    factor. If the candidate is not lower triangular, we use a QR decomposition to
+    make it lower triangular.
+
+
     """
-    threshold = threshold if threshold is not None else -np.finfo(float).eps
+    sum_stabilized = 0.0
 
-    lu, d, perm = ldl(matrix)
+    try:
+        chol = np.linalg.cholesky(matrix)
+        method = "np.linalg.cholesky"
+    except np.linalg.LinAlgError:
+        method = "LDL cholesky"
+        threshold = threshold if threshold is not None else -np.finfo(float).eps
 
-    for i in range(len(d)):
-        if d[i, i] >= 0:
-            d[i, i] = np.sqrt(d[i, i])
-        elif d[i, i] > threshold:
-            d[i, i] = 0
-        else:
-            raise np.linalg.LinAlgError(
-                "Diagonal entry below threshold in D from LDL decomposition."
+        lu, d, perm = ldl(matrix)
+
+        for i in range(len(d)):
+            if d[i, i] >= 0:
+                d[i, i] = np.sqrt(d[i, i])
+            elif d[i, i] > threshold:
+                sum_stabilized += d[i, i]
+                d[i, i] = 0
+            else:
+                raise np.linalg.LinAlgError(
+                    "Diagonal entry below threshold in D from LDL decomposition."
+                )
+
+        if sum_stabilized < 0 and warn:
+            warnings.warn(
+                "Negative diagonal entry has been set to 0 in robust_cholesky.",
+                category=RuntimeWarning,
             )
 
-    lu = lu.dot(d)
+        lu = lu.dot(d)
 
-    is_triangular = (lu[np.triu_indices(len(matrix), k=1)] == 0).all()
+        is_triangular = (lu[np.triu_indices(len(matrix), k=1)] == 0).all()
 
-    if is_triangular:
-        chol = lu
-    else:
-        q, r = qr(lu.T)
-        chol = r.T
-    return chol
+        if is_triangular:
+            chol = lu
+            method = "LDL cholesky"
+        else:
+            q, r = qr(lu.T)
+            chol = r.T
+            method = "LDL cholesky with QR decomposition"
+
+    info = {"method": method, "sum_stabilized": sum_stabilized}
+
+    res = (chol, info) if return_info else chol
+    return res

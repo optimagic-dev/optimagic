@@ -82,8 +82,14 @@ dims = [8] * 6 + [10, 12, 15, 20]
 
 
 @pytest.mark.parametrize("dim, seed", zip(dims, seeds))
-def test_robust_cholesky(dim, seed):
+def test_robust_cholesky_with_zero_variance(dim, seed):
     cov = random_cov(dim, seed)
     chol = robust_cholesky(cov)
     aaae(chol.dot(chol.T), cov)
     assert (chol[np.triu_indices(len(cov), k=1)] == 0).all()
+
+
+def test_robust_cholesky_with_extreme_cases():
+    for cov in [np.ones((5, 5)), np.zeros((5, 5))]:
+        chol = robust_cholesky(cov)
+        aaae(chol.dot(chol.T), cov)
