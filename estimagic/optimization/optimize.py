@@ -297,6 +297,7 @@ def _create_internal_criterion(
     def internal_criterion(x, counter=c):
         p = _params_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
+        _logging(p, fitness_eval, counter[0])
         if queue is not None:
             queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
         counter += 1
@@ -418,3 +419,41 @@ def _process_results(res, params, internal_params, constraints, origin):
 
     res_dict["internal_x"] = x.tolist()
     return res_dict, params
+
+
+def _logging(params, fitness_eval, counter, log_interval=100, path_to_sql="logging.db"):
+    """Log parameter values and fitness.
+
+    Saves optimization results every `log_interval` iteration to `path_to_sql`.
+
+    Arg:
+        params (DataFrame): See :ref:`params`
+        fitness_eval (float): current fitness evaluation
+        counter (int): number of current iteration
+        log_interval (int): number of iterations until first logging shall
+                            occur
+        path_to_sql: path to sql database
+
+    """
+    if counter % log_interval == 0:
+        # Reshaping Param DataFrame (Transposing)
+        p = params["value"].reset_index(drop=True).copy()
+        p_trans = pd.DataFrame(p).T
+        p_trans.columns = params["value"].index
+        p_final = p_trans.reset_index(drop=True)
+
+        # Save additional values
+        p_final["fitness_eval"] = fitness_eval
+        p_final["iteration"] = counter
+
+
+        # Save results as sql database
+        conn = sqlite3.connect(path_to_sql)
+        p_final.to_sql(
+                name="params",
+                con=conn,
+                if_exists="append",
+                index=False,
+        )
+        conn.commit()
+        conn.close()
