@@ -1,5 +1,7 @@
 import numpy as np
 from fuzzywuzzy import process as fw_process
+from scipy.linalg import ldl
+from scipy.linalg import qr
 
 
 def cov_params_to_matrix(cov_params):
@@ -120,3 +122,62 @@ def propose_algorithms(requested_algo, algos, number=3):
     proposals = [proposal[0] for proposal in proposals_w_probs]
 
     return proposals
+
+
+def robust_cholesky(matrix, threshold=None):
+    """Lower triangular cholesky factor *matrix*.
+
+    In contrast to a regular cholesky decomposition, this function will also
+    work for matrices that are only positive semi-definite or even only close
+    to positive semi-definite.
+
+    The extra robustness comes from hitting the matrix with two hammers:
+
+    1) Take an LDL decomposition of the matrix, set the entries in D that are
+        negative but larger than threshold to zero and use this to construct
+        lu sucht that lu.dot(lu.T) = matrix. Unfortunately, lu is not
+        guaranteed to be lower triangular.
+
+    2) Use a QR decomposition of lu.T to construct a lower triangular cholesky
+        factor of matrix. The QR decomposition always exists.
+
+    This is much slower than a standard cholesky decomposition, so don't use
+    it unless you need the extra robustness.
+
+    Args:
+        matrix (np.array): A square, symmetri and (almost) positive semi-definite matrix
+        threshold (float): Small negative number. Diagonal elements of D from the LDL
+            decomposition between threshold and zero are set to zero.
+
+    Returns:
+        chol (np.array): Cholesky factor of matrix
+
+    Raises:
+        np.linalg.LinalgError if the diagonal entries of D from the LDL decomposition
+        are smaller than threshold.
+
+    """
+    threshold = threshold if threshold is not None else -np.finfo(float).eps
+
+    lu, d, perm = ldl(matrix)
+
+    for i in range(len(d)):
+        if d[i, i] >= 0:
+            d[i, i] = np.sqrt(d[i, i])
+        elif d[i, i] > threshold:
+            d[i, i] = 0
+        else:
+            raise np.linalg.LinAlgError(
+                "Diagonal entry below threshold in D from LDL decomposition."
+            )
+
+    lu = lu.dot(d)
+
+    is_triangular = (lu[np.triu_indices(len(matrix), k=1)] == 0).all()
+
+    if is_triangular:
+        chol = lu
+    else:
+        q, r = qr(lu.T)
+        chol = r.T
+    return chol
