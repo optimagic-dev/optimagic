@@ -1,7 +1,7 @@
 from setuptools import find_packages
 from setuptools import setup
 
-version = "0.0.13"
+version = "0.0.14"
 
 setup(
     name="estimagic",
