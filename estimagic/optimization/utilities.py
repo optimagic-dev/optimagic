@@ -72,9 +72,7 @@ def sdcorr_params_to_matrix(sdcorr_params):
 
 def cov_matrix_to_sdcorr_params(cov):
     dim = len(cov)
-    sds = np.sqrt(np.diagonal(cov))
-    scaling_matrix = np.diag(1 / sds)
-    corr = scaling_matrix.dot(cov).dot(scaling_matrix)
+    sds, corr = cov_to_sds_and_corr(cov)
     correlations = corr[np.tril_indices(dim, k=-1)]
     return np.hstack([sds, correlations])
 
