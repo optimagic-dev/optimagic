@@ -153,11 +153,13 @@ def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
             minus machine accuracy.
         warn (bool): If True, the user is warned about negative elements in D
         return_info (bool): If True, also return a dictionary with 'method' and
-            'sum_stabilized'. Method can take the values 'np.linalg.cholesky',
+            'diagonals'. Method can take the values 'np.linalg.cholesky',
             'LDL cholesky' and 'LDL cholesky with QR decomposition'.
-            'sum_stabilized' is the sum of entries of D between threshold and 0 and can
-            be used to construct penalty terms.
-
+            'diagonals' are the diagonal entries of D. They can be used to construct
+            penalty terms for non positive definite matrices. Note that diagonals will
+            also be returned if the standard cholesky decomposition did not fail. This
+            allows for smooth penalty terms that start before actually reaching invalid
+            matrices.
 
     Returns:
         chol (np.array): Cholesky factor of matrix
@@ -184,6 +186,7 @@ def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
     try:
         chol = np.linalg.cholesky(matrix)
         method = "np.linalg.cholesky"
+        diags = np.diagonal(chol) ** 2
     except np.linalg.LinAlgError:
         method = "LDL cholesky"
         threshold = threshold if threshold is not None else -np.finfo(float).eps
@@ -221,7 +224,7 @@ def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
             chol = r.T
             method = "LDL cholesky with QR decomposition"
 
-    info = {"method": method, "sum_stabilized": sum_stabilized}
+    info = {"method": method, "diagonals": diags}
 
     res = (chol, info) if return_info else chol
     return res
