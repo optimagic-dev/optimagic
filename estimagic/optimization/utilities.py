@@ -1,4 +1,5 @@
 import warnings
+from collections import namedtuple
 
 import numpy as np
 from fuzzywuzzy import process as fw_process
@@ -226,3 +227,36 @@ def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
 
     res = (chol, info) if return_info else chol
     return res
+
+
+def namedtuple_from_dict(field_dict):
+    """Filled namedtuple generated from a dictionary.
+
+    Example:
+        >>> namedtuple_from_dict({'a': 1, 'b': 2})
+        NamedTuple(a=1, b=2)
+
+    """
+    return namedtuple("NamedTuple", field_dict)(**field_dict)
+
+
+def namedtuple_from_kwargs(**kwargs):
+    """Filled namedtuple generated from keyword arguments.
+
+    Example:
+        >>> namedtuple_from_kwargs(a=1, b=2)
+        NamedTuple(a=1, b=2)
+
+    """
+    return namedtuple("NamedTuple", kwargs)(**kwargs)
+
+
+def namedtuple_from_iterables(field_names, field_entries):
+    """Filled namedtuple generated from field_names and field_entries.
+
+    Example:
+        >>> namedtuple_from_iterables(field_names=['a', 'b'], field_entries=[1, 2])
+        NamedTuple(a=1, b=2)
+
+    """
+    return namedtuple("NamedTuple", field_names)(*field_entries)
