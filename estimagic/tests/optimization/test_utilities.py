@@ -1,15 +1,26 @@
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from estimagic.optimization.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.optimization.utilities import cov_matrix_to_params
 from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
 from estimagic.optimization.utilities import cov_params_to_matrix
+from estimagic.optimization.utilities import cov_to_sds_and_corr
 from estimagic.optimization.utilities import dimension_to_number_of_triangular_elements
 from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 from estimagic.optimization.utilities import robust_cholesky
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
+from estimagic.optimization.utilities import sdcorr_params_to_sds_and_corr
+from estimagic.optimization.utilities import sds_and_corr_to_cov
+
+
+def test_chol_params_to_lower_triangular_matrix():
+    calculated = chol_params_to_lower_triangular_matrix(pd.Series([1, 2, 3]))
+    expected = np.array([[1, 0], [2, 3]])
+    aaae(calculated, expected)
 
 
 def test_cov_params_to_matrix():
@@ -24,6 +35,15 @@ def test_cov_matrix_to_params():
     cov = np.array([[1, 0.1, 0.2], [0.1, 2, 0.22], [0.2, 0.22, 3]])
     calculated = cov_matrix_to_params(cov)
     aaae(calculated, expected)
+
+
+def test_sdcorr_params_to_sds_and_corr():
+    sdcorr_params = pd.Series([1, 2, 3, 0.1, 0.2, 0.3])
+    exp_corr = np.array([[1, 0.1, 0.2], [0.1, 1, 0.3], [0.2, 0.3, 1]])
+    exp_sds = np.array([1, 2, 3])
+    calc_sds, calc_corr = sdcorr_params_to_sds_and_corr(sdcorr_params)
+    aaae(calc_sds, exp_sds)
+    aaae(calc_corr, exp_corr)
 
 
 def test_sdcorr_params_to_matrix():
@@ -42,6 +62,25 @@ def test_cov_matrix_to_sdcorr_params():
     cov = np.array([[1, 0.1, 0.2], [0.1, 2, 0.22], [0.2, 0.22, 3]])
     calculated = cov_matrix_to_sdcorr_params(cov)
     aaae(calculated, expected)
+
+
+def test_sds_and_corr_to_cov():
+    sds = [1, 2, 3]
+    corr = np.ones((3, 3)) * 0.2
+    corr[np.diag_indices(3)] = 1
+    calculated = sds_and_corr_to_cov(sds, corr)
+    expected = np.array([[1.0, 0.4, 0.6], [0.4, 4.0, 1.2], [0.6, 1.2, 9.0]])
+    aaae(calculated, expected)
+
+
+def test_cov_to_sds_and_corr():
+    cov = np.array([[1.0, 0.4, 0.6], [0.4, 4.0, 1.2], [0.6, 1.2, 9.0]])
+    calc_sds, calc_corr = cov_to_sds_and_corr(cov)
+    exp_sds = [1, 2, 3]
+    exp_corr = np.ones((3, 3)) * 0.2
+    exp_corr[np.diag_indices(3)] = 1
+    aaae(calc_sds, exp_sds)
+    aaae(calc_corr, exp_corr)
 
 
 def test_number_of_triangular_elements_to_dimension():

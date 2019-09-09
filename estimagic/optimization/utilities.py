@@ -35,7 +35,7 @@ def cov_matrix_to_params(cov):
 
 def sdcorr_params_to_sds_and_corr(sdcorr_params):
     dim = number_of_triangular_elements_to_dimension(len(sdcorr_params))
-    sds = sdcorr_params[:dim]
+    sds = np.array(sdcorr_params[:dim])
     corr = np.eye(dim)
     corr[np.tril_indices(dim, k=-1)] = sdcorr_params[dim:]
     corr += np.tril(corr, k=-1).T
@@ -45,6 +45,13 @@ def sdcorr_params_to_sds_and_corr(sdcorr_params):
 def sds_and_corr_to_cov(sds, corr):
     diag = np.diag(sds)
     return diag @ corr @ diag
+
+
+def cov_to_sds_and_corr(cov):
+    sds = np.sqrt(np.diagonal(cov))
+    diag = np.diag(1 / sds)
+    corr = diag @ cov @ diag
+    return sds, corr
 
 
 def sdcorr_params_to_matrix(sdcorr_params):
