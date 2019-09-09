@@ -1,7 +1,10 @@
 import numpy as np
+import pandas as pd
 import pytest
+import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal
 
+from estimagic.differentiation.differentiation import jacobian
 from estimagic.inference.moment_covs import _covariance_moments
 from estimagic.inference.moment_covs import gmm_cov
 from estimagic.inference.moment_covs import sandwich_cov
@@ -56,3 +59,47 @@ def test_sandwich_cov(fixtures_gmm_cov):
         ),
         fix["cov_result"],
     )
+
+
+@pytest.fixture()
+def statsmodels_fixture():
+    """These fixtures are taken from the statsmodels test battery."""
+    fix = {}
+    np.random.seed(0)
+    num_obs = 100
+    x = np.linspace(0, 10, 100)
+    x = sm.add_constant(np.column_stack((x, x ** 2)), prepend=False)
+    beta = np.array([1, 0.1, 10])
+    y = np.dot(x, beta) + np.random.normal(size=num_obs)
+
+    results = sm.OLS(y, x).fit()
+
+    fix["stats_cov"] = results.cov_params()
+
+    params_df = pd.DataFrame({"value": results.params})
+
+    num_params = len(beta)
+    moment_cond = np.zeros((num_obs, num_params))
+    moment_jac = np.zeros((num_obs, num_params, num_params))
+    for i in range(num_obs):
+        moment_cond[i, :] = calc_moment_condition(params_df, x[i, :], y[i])
+        moment_jac[i, :, :] = jacobian(
+            calc_moment_condition, params_df, func_args=[x[i, :], y[i]]
+        )
+    fix["mom_cond"] = moment_cond
+    fix["mom_cond_jacob"] = moment_jac
+    fix["weighting_matrix"] = np.eye(num_params)
+    return fix
+
+
+def test_statsmodels_routine(statsmodels_fixture):
+    fix = statsmodels_fixture
+    assert_array_almost_equal(
+        gmm_cov(fix["mom_cond"], fix["mom_cond_jacob"], fix["weighting_matrix"]),
+        fix["stats_cov"],
+    )
+
+
+def calc_moment_condition(params, x_t, y_t):
+    par = params["value"].to_numpy()
+    return x_t * (y_t - x_t @ par)
