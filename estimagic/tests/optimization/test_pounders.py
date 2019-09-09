@@ -4,6 +4,7 @@ Testing the wrapper around pounders
 from functools import partial
 
 import numpy as np
+import pytest
 
 from estimagic.optimization.solver_pounders import solve
 
@@ -151,9 +152,13 @@ def test_tol():
         assert out["sol"][2] / out["sol"][1] < 0.00000001
 
 
+def test_exception():
+    with pytest.raises(Exception):
+        solve(_return_exception, 0)
+
+
 def _set_up_test_1(paras, start, num_agents):
     """
-    This is a bit ad hoc
 
     """
     # Simulate values
@@ -173,6 +178,7 @@ def _set_up_test_2(paras, start, num_agents):
 
 def _set_up_test_2_ols(paras, start, num_agents):
     """
+    This is only used for the precision check of the optimizer
     """
     exog, endog = _simulate_ols_sample(num_agents, paras)
     func = _return_obj_func(_return_dev_ols, endog, exog)
@@ -192,6 +198,10 @@ def _return_obj_func(func, endog, exog):
 def _return_dev_ols(endog, exog, x):
     dev = (endog - x[0] - x[1] * exog) ** 2
     return dev
+
+
+def _return_exception(x):
+    raise (Exception)
 
 
 def _simulate_sample(num_agents, paras):
