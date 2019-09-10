@@ -8,6 +8,7 @@ from estimagic.optimization.utilities import cov_matrix_to_params
 from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
 from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
+from estimagic.optimization.utilities import robust_cholesky
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
 
@@ -164,17 +165,14 @@ def _covariance_to_internal(params_subset, case, type_, bounds_distance):
         res["lower"] = np.maximum(res["lower"], np.zeros(len(res)))
         assert (res["upper"] >= res["lower"]).all(), "Invalid upper bound for variance."
     elif case == "free":
-        chol = np.linalg.cholesky(cov)
+        chol = robust_cholesky(cov, threshold=1e-8)
         chol_coeffs = chol[np.tril_indices(dim)]
         res["value"] = chol_coeffs
 
-        if type_ == "covariance":
-            lower_bound_helper = np.full((dim, dim), -np.inf)
-            lower_bound_helper[np.diag_indices(dim)] = bounds_distance
-            res["lower"] = lower_bound_helper[np.tril_indices(dim)]
-            res["upper"] = np.inf
-        else:
-            res.loc[res.index[:dim], "lower"] = 0
+        lower_bound_helper = np.full((dim, dim), -np.inf)
+        lower_bound_helper[np.diag_indices(dim)] = bounds_distance
+        res["lower"] = lower_bound_helper[np.tril_indices(dim)]
+        res["upper"] = np.inf
 
         for bound in ["lower", "upper"]:
             if np.isfinite(params_subset[bound]).any():

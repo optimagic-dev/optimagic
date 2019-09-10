@@ -1,11 +1,13 @@
-import os
 import pickle
 from itertools import product
+from pathlib import Path
 
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.inference import likelihood_covs
+
+FIX_PATH = Path(__file__).resolve().parent / "fixtures"
 
 
 def get_expected_covariance(model, cov_method):
@@ -19,11 +21,8 @@ def get_expected_covariance(model, cov_method):
         expected_covariance
 
     """
-    dirname = os.path.dirname(os.path.abspath(__file__))
-
-    with open(
-        os.path.join(dirname, "fixtures/{}_{}.pickle".format(model, cov_method)), "rb"
-    ) as f:
+    fix_name = "{}_{}.pickle".format(model, cov_method)
+    with open(FIX_PATH / fix_name, "rb") as f:
         expected_cov = pickle.load(f)
     return expected_cov
 
@@ -41,11 +40,8 @@ def get_input(model, input_types):
     """
     inputs = {}
     for typ in input_types:
-        dirname = os.path.dirname(os.path.abspath(__file__))
-        with open(
-            os.path.join(dirname, "fixtures/{}_{}_matrix.pickle".format(model, typ)),
-            "rb",
-        ) as f:
+        fix_name = "{}_{}_matrix.pickle".format(model, typ)
+        with open(FIX_PATH / fix_name, "rb") as f:
             input_matrix = pickle.load(f)
         inputs[typ] = input_matrix
     return inputs
