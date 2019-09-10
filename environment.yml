@@ -2,7 +2,6 @@ name: estimagic
 
 channels:
 
-  - defaults
   - conda-forge
 
 dependencies:
