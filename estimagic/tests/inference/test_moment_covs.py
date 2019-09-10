@@ -65,20 +65,19 @@ def test_sandwich_cov(fixtures_gmm_cov):
 def statsmodels_fixture():
     """These fixtures are taken from the statsmodels test battery."""
     fix = {}
-    np.random.seed(0)
     num_obs = 100
-    x = np.linspace(0, 10, 100)
+    num_params = 3
+    x = np.linspace(0, 10, num_obs)
     x = sm.add_constant(np.column_stack((x, x ** 2)), prepend=False)
-    beta = np.array([1, 0.1, 10])
+    beta = np.random.rand(num_params) * 10
     y = np.dot(x, beta) + np.random.normal(size=num_obs)
 
     results = sm.OLS(y, x).fit()
 
-    fix["stats_cov"] = results.cov_params()
+    fix["stats_cov"] = results.cov_HC0
 
     params_df = pd.DataFrame({"value": results.params})
 
-    num_params = len(beta)
     moment_cond = np.zeros((num_obs, num_params))
     moment_jac = np.zeros((num_obs, num_params, num_params))
     for i in range(num_obs):
