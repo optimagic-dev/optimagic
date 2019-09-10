@@ -23,7 +23,7 @@ dependencies:
   - seaborn
   - jupyter
   - fuzzywuzzy
-  - mpi4py
+  - mpi
   - petsc4py
   - pip:
     - doc8
