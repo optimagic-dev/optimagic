@@ -66,9 +66,9 @@ def statsmodels_fixture():
     """These fixtures are taken from the statsmodels test battery and adapted towards
      a random test."""
     fix = {}
-    num_obs = np.random.randint(500)
+    num_obs = 100
     num_params = 3
-    max_range = np.random.randint(20)
+    max_range = 10
     x = np.linspace(0, max_range, num_obs)
     x = sm.add_constant(np.column_stack((x, x ** 2)), prepend=False)
     beta = np.random.rand(num_params) * max_range
