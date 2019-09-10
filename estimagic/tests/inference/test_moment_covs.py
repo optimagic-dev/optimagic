@@ -63,13 +63,15 @@ def test_sandwich_cov(fixtures_gmm_cov):
 
 @pytest.fixture()
 def statsmodels_fixture():
-    """These fixtures are taken from the statsmodels test battery."""
+    """These fixtures are taken from the statsmodels test battery and adapted towards
+     a random test."""
     fix = {}
-    num_obs = 100
+    num_obs = np.random.randint(500)
     num_params = 3
-    x = np.linspace(0, 10, num_obs)
+    max_range = np.random.randint(20)
+    x = np.linspace(0, max_range, num_obs)
     x = sm.add_constant(np.column_stack((x, x ** 2)), prepend=False)
-    beta = np.random.rand(num_params) * 10
+    beta = np.random.rand(num_params) * max_range
     y = np.dot(x, beta) + np.random.normal(size=num_obs)
 
     results = sm.OLS(y, x).fit()
