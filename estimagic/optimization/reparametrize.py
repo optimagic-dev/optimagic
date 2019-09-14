@@ -414,11 +414,7 @@ def _equality_from_internal(params_subset):
 
 
 def _fixed_from_internal(params_subset, constr):
-    """Reparametrize fixed parameters from internal.
-
-    Overwrite fixed parameters
-
-    """
+    """Overwrite fixed parameters with the value in the constraints if provided."""
     res = params_subset.copy()
     value = constr.get("value", None)
     if value is not None:
