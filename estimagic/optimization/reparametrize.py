@@ -111,7 +111,7 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
             external.update(_increasing_from_internal(params_subset))
         elif constr["type"] == "fixed":
             external.update(_fixed_from_internal(params_subset, constr))
-        elif constr["type"] in ["fixed", "equality"]:
+        elif constr["type"] == "equality":
             pass
         else:
             raise ValueError("Invalid constraint type: {}".format(constr["type"]))
