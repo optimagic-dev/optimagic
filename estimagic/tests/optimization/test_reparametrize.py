@@ -74,13 +74,22 @@ for ext, int_ in zip(external, internal):
 
 @pytest.mark.parametrize("params, expected_internal, category", to_test)
 def test_reparametrize_to_internal(params, expected_internal, category):
+    general_options = {}
     constr = constraints(params)
     cols = ["value", "lower", "upper"]
     with warnings.catch_warnings():
+        # TODO: Remove this warning here and ignore it in tox.ini.
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
-        calculated = reparametrize_to_internal(params, constr)
+        calculated = reparametrize_to_internal(
+            criterion,
+            params,
+            constraints,
+            general_options,
+            criterion_args,
+            criterion_kwargs,
+        )
         assert_frame_equal(
             calculated.loc[category, cols], expected_internal.loc[category, cols]
         )

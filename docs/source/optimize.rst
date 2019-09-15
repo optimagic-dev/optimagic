@@ -2,6 +2,8 @@
 Optimization tools
 ==================
 
+.. todo:: Fix or start documentation.
+
 
 .. _minimize:
 

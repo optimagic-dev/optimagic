@@ -147,7 +147,14 @@ def minimize(
     params = _process_params(params)
     fitness_eval = criterion(params, *criterion_args, **criterion_kwargs)
     constraints = process_constraints(constraints, params)
-    internal_params = reparametrize_to_internal(params, constraints)
+    internal_params = reparametrize_to_internal(
+        criterion,
+        params,
+        constraints,
+        general_options,
+        criterion_args,
+        criterion_kwargs,
+    )
 
     queue = Queue() if dashboard else None
     if dashboard:
@@ -233,7 +240,7 @@ def _minimize(
             the updated parameter Series will be supplied later.
 
     """
-    internal_criterion = _create_internal_criterion(
+    internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
         internal_params=internal_params,
@@ -266,7 +273,14 @@ def _minimize(
         result = _process_results(evolved, params, internal_params, constraints, origin)
     elif origin == "scipy":
         bounds = _get_scipy_bounds(internal_params)
-        x0 = _x_from_params(params, constraints)
+        x0 = _x_from_params(
+            criterion,
+            params,
+            constraints,
+            general_options,
+            criterion_args,
+            criterion_kwargs,
+        )
         minimized = scipy_minimize(
             internal_criterion,
             x0,
@@ -283,7 +297,7 @@ def _minimize(
     return result
 
 
-def _create_internal_criterion(
+def create_internal_criterion(
     criterion,
     params,
     internal_params,
@@ -292,9 +306,12 @@ def _create_internal_criterion(
     criterion_kwargs,
     queue,
 ):
+    # TODO: Why not just one, but an array with one? Then you would not need counter[0]
+    #       below. Why dont you remove it and use counter=1 in internal_criterion?
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):
+        # ERROR_1: Note that, p was a DataFrame and so is x. Go into _params_from_x.
         p = _params_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
         if queue is not None:
@@ -307,13 +324,24 @@ def _create_internal_criterion(
 
 def _params_from_x(x, internal_params, constraints, params):
     internal_params = internal_params.copy(deep=True)
+    # ERROR_2: Note that x is a dataframe with multiple columns. Setting value to x
+    # turns value into an object type which leads to crashes in respy.
     internal_params["value"] = x
     updated_params = reparametrize_from_internal(internal_params, constraints, params)
     return updated_params
 
 
-def _x_from_params(params, constraints):
-    return reparametrize_to_internal(params, constraints)["value"].to_numpy()
+def _x_from_params(
+    criterion, params, constraints, general_options, criterion_args, criterion_kwargs
+):
+    return reparametrize_to_internal(
+        criterion,
+        params,
+        constraints,
+        general_options,
+        criterion_args,
+        criterion_kwargs,
+    )["value"].to_numpy()
 
 
 def _process_params(params):
