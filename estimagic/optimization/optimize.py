@@ -307,8 +307,6 @@ def create_internal_criterion(
     criterion_kwargs,
     queue,
 ):
-    # TODO: Why not just one, but an array with one? Then you would not need counter[0]
-    #       below. Why dont you remove it and use counter=1 in internal_criterion?
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):

@@ -464,7 +464,9 @@ def _rescale_to_internal(
     """
     scaling = general_options.get("scaling", None)
 
-    if scaling == "start_values":
+    if scaling is None:
+        pass
+    elif scaling == "start_values":
         internal["scaling_factor"] = internal["value"].abs().clip(1)
         internal[["value", "lower", "upper"]] = internal[
             ["value", "lower", "upper"]
@@ -498,8 +500,6 @@ def _rescale_to_internal(
         ].divide(internal["scaling_factor"], axis="index")
     else:
         raise NotImplementedError(f"Scaling method {scaling} is not implemented.")
-
-    breakpoint()
 
     return internal
 
