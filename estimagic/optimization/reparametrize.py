@@ -109,7 +109,9 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
             external.update(_probability_from_internal(params_subset))
         elif constr["type"] == "increasing":
             external.update(_increasing_from_internal(params_subset))
-        elif constr["type"] in ["fixed", "equality"]:
+        elif constr["type"] == "fixed":
+            external.update(_fixed_from_internal(params_subset, constr))
+        elif constr["type"] == "equality":
             pass
         else:
             raise ValueError("Invalid constraint type: {}".format(constr["type"]))
@@ -408,4 +410,13 @@ def _equality_from_internal(params_subset):
     first = params_subset.index[0]
     all_others = params_subset.index[1:]
     res.loc[all_others, "value"] = res.loc[first, "value"]
+    return res["value"]
+
+
+def _fixed_from_internal(params_subset, constr):
+    """Overwrite fixed parameters with the value in the constraints if provided."""
+    res = params_subset.copy()
+    value = constr.get("value", None)
+    if value is not None:
+        res["value"] = value
     return res["value"]
