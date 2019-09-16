@@ -3,8 +3,6 @@ import warnings
 
 import numpy as np
 
-from estimagic.differentiation.differentiation import gradient
-from estimagic.optimization import optimize
 from estimagic.optimization.process_constraints import apply_fixes_to_external_params
 from estimagic.optimization.utilities import cov_matrix_to_params
 from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
@@ -14,9 +12,7 @@ from estimagic.optimization.utilities import robust_cholesky
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
 
-def reparametrize_to_internal(
-    criterion, params, constraints, general_options, criterion_args, criterion_kwargs
-):
+def reparametrize_to_internal(params, constraints, scaling_factor):
     """Convert a params DataFrame to an internal_params DataFrame.
 
     The internal params df is shorter because it does not contain fixed parameters.
@@ -65,15 +61,7 @@ def reparametrize_to_internal(
     internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
     internal.drop(columns="_fixed", axis=1, inplace=True)
 
-    internal = _rescale_to_internal(
-        criterion,
-        params,
-        internal,
-        constraints,
-        general_options,
-        criterion_args,
-        criterion_kwargs,
-    )
+    internal = _scaling_to_internal(internal, scaling_factor)
 
     invalid = internal.query("lower >= upper | lower > value | upper < value")
     assert (
@@ -83,7 +71,9 @@ def reparametrize_to_internal(
     return internal
 
 
-def reparametrize_from_internal(internal_params, constraints, original_params):
+def reparametrize_from_internal(
+    internal_params, constraints, original_params, scaling_factor
+):
     """Convert an internal_params DataFrame to a Series with valid parameters.
 
     The parameter values are constructed from the 'value' column of internal_params.
@@ -102,7 +92,7 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
     """
     external = original_params.copy(deep=True)
 
-    internal_params = _rescale_from_internal(internal_params)
+    internal_params = _scaling_from_internal(internal_params, scaling_factor)
 
     external.update(internal_params["value"])
 
@@ -440,87 +430,21 @@ def _fixed_from_internal(params_subset, constr):
     return res["value"]
 
 
-def _rescale_to_internal(
-    criterion,
-    params,
-    internal,
-    constraints,
-    general_options,
-    criterion_args,
-    criterion_kwargs,
-):
-    """Rescale the internal parameter vector.
-
-    There are multiple ways the user is able to rescale the parameter vector which is
-    specified in ``general_options["scaling"]``.
-
-    - ``None`` (default): No scaling happens.
-    - ``"start_values"``: Divide parameters which are not in ``[-1, 1]`` by their
-      starting values.
-    - ``"gradient"``: Divide parameters which are not in ``[-1e-2, 1e-2]`` by the
-      inverse of the gradient. By default, the computation method is ``"central"`` with
-      extrapolation set to ``False``. The user can change the defaults by passing
-      ``scaling_gradient_method`` or ``scaling_gradient_extrapolation``. See
-      :func:`~estimagic.differentiation.differentiation.gradient` for more details.
-
-    Note that the scaling factor should be defined such that unscaling is done by
-    multiplying the scaling factor. This simplifies :func:`_rescale_from_internal`.
-
-    Args:
-        internal (DataFrame): See :ref:`params`.
-        general_options (dict): See
-
-    Returns:
-        internal (DataFrame): Rescaled internal.
-
-    """
-    scaling = general_options.get("scaling", None)
-
-    if scaling is None:
-        pass
-    elif scaling == "start_values":
-        internal["scaling_factor"] = internal["value"].abs().clip(1)
+def _scaling_to_internal(internal, scaling_factor):
+    """Scale parameters by division with the scaling factor."""
+    if scaling_factor is not None:
         internal[["value", "lower", "upper"]] = internal[
             ["value", "lower", "upper"]
-        ].divide(internal["scaling_factor"], axis="index")
-    elif scaling == "gradient":
-        method = general_options.get("scaling_gradient_method", "center")
-        extrapolation = general_options.get("scaling_gradient_extrapolation", False)
-
-        internal_criterion = optimize.create_internal_criterion(
-            criterion,
-            params,
-            internal,
-            constraints,
-            criterion_args,
-            criterion_kwargs,
-            queue=None,
-        )
-
-        gradients = gradient(
-            internal_criterion,
-            internal,
-            method,
-            extrapolation,
-            criterion_args,
-            criterion_kwargs,
-        )
-        internal["scaling_factor"] = np.clip(1 / gradients.abs(), 1e-2, None)
-
-        internal[["value", "lower", "upper"]] = internal[
-            ["value", "lower", "upper"]
-        ].divide(internal["scaling_factor"], axis="index")
-    else:
-        raise NotImplementedError(f"Scaling method {scaling} is not implemented.")
+        ].divide(scaling_factor, axis="index")
 
     return internal
 
 
-def _rescale_from_internal(internal):
+def _scaling_from_internal(internal, scaling_factor):
     """Unscale parameters by multiplication with the scaling factor."""
-    if "scaling_factor" in internal.columns:
+    if scaling_factor is not None:
         internal[["value", "lower", "upper"]] = internal[
             ["value", "lower", "upper"]
-        ].multiply(internal["scaling_factor"], axis="index")
+        ].multiply(scaling_factor, axis="index")
 
     return internal

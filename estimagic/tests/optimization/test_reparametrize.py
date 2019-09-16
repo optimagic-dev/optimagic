@@ -73,16 +73,11 @@ for ext, int_ in zip(external, internal):
 
 @pytest.mark.parametrize("params, expected_internal, category", to_test)
 def test_reparametrize_to_internal(params, expected_internal, category):
-    def criterion(x):
-        return 1
-
     general_options = {}
     constr = constraints(params)
     cols = ["value", "lower", "upper"]
 
-    calculated = reparametrize_to_internal(
-        criterion, params, constr, general_options, [], {}
-    )
+    calculated = reparametrize_to_internal(params, constr, None, general_options)
     assert_frame_equal(
         calculated.loc[category, cols], expected_internal.loc[category, cols]
     )

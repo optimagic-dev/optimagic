@@ -186,6 +186,8 @@ The options can be found `here
 - scipy_SLSQP
 
 
+.. _estimation_general_options:
+
 General options
 ---------------
 
