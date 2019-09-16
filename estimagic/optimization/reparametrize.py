@@ -455,12 +455,13 @@ def _rescale_to_internal(
     specified in ``general_options["scaling"]``.
 
     - ``None`` (default): No scaling happens.
-    - ``"start_values"``: Divide parameters which are not in [-1, 1] by their starting
-      values.
-    - ``"gradient"``: Divide parameters which are not in [-1e-2, 1e-2] by the inverse of
-      the gradient. By default, the computation method is "forward" with extrapolation
-      set to ``True``. The user can change the defaults by passing
-      ``scaling_gradient_method`` or ``scaling_gradient_extrapolation``.
+    - ``"start_values"``: Divide parameters which are not in ``[-1, 1]`` by their
+      starting values.
+    - ``"gradient"``: Divide parameters which are not in ``[-1e-2, 1e-2]`` by the
+      inverse of the gradient. By default, the computation method is ``"central"`` with
+      extrapolation set to ``False``. The user can change the defaults by passing
+      ``scaling_gradient_method`` or ``scaling_gradient_extrapolation``. See
+      :func:`~estimagic.differentiation.differentiation.gradient` for more details.
 
     Note that the scaling factor should be defined such that unscaling is done by
     multiplying the scaling factor. This simplifies :func:`_rescale_from_internal`.
@@ -516,6 +517,7 @@ def _rescale_to_internal(
 
 
 def _rescale_from_internal(internal):
+    """Unscale parameters by multiplication with the scaling factor."""
     if "scaling_factor" in internal.columns:
         internal[["value", "lower", "upper"]] = internal[
             ["value", "lower", "upper"]
