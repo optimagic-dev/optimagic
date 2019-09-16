@@ -443,9 +443,17 @@ def _rescale_to_internal(
     There are multiple ways the user is able to rescale the parameter vector which is
     specified in ``general_options["scaling"]``.
 
-    - ``None`` (default): No scaling happens except ``internal["scaling_factor"]``
-      provides a user-defined scaling factor.
-    - ``False``: Turns scaling
+    - ``None`` (default): No scaling happens.
+    - ``"start_values"``: Divide parameters which are not in [-1, 1] by their starting
+      values.
+    - ``"gradient"``: Divide parameters which are not in [-1e-2, 1e-2] by the inverse of
+      the gradient. By default, the computation method is "forward" with extrapolation
+      set to ``True``. The user can change the defaults by passing
+      ``scaling_gradient_method`` or ``scaling_gradient_extrapolation``.
+
+    Note that the scaling factor should be defined such that unscaling is done by
+    multiplying the scaling factor. This simplifies :func:`_rescale_from_internal`.
+
     Args:
         internal (DataFrame): See :ref:`params`.
         general_options (dict): See
@@ -462,6 +470,9 @@ def _rescale_to_internal(
             ["value", "lower", "upper"]
         ].divide(internal["scaling_factor"], axis="index")
     elif scaling == "gradient":
+        method = general_options.get("scaling_gradient_method", "center")
+        extrapolation = general_options.get("scaling_gradient_extrapolation", False)
+
         internal_criterion = optimize.create_internal_criterion(
             criterion,
             params,
@@ -471,17 +482,24 @@ def _rescale_to_internal(
             criterion_kwargs,
             queue=None,
         )
-        internal["scaling_factor"] = 1 / gradient(
+
+        gradients = gradient(
             internal_criterion,
             internal,
-            func_args=criterion_args,
-            func_kwargs=criterion_kwargs,
-        ).abs().clip(1e-2)
+            method,
+            extrapolation,
+            criterion_args,
+            criterion_kwargs,
+        )
+        internal["scaling_factor"] = np.clip(1 / gradients.abs(), 1e-2, None)
+
         internal[["value", "lower", "upper"]] = internal[
             ["value", "lower", "upper"]
         ].divide(internal["scaling_factor"], axis="index")
     else:
         raise NotImplementedError(f"Scaling method {scaling} is not implemented.")
+
+    breakpoint()
 
     return internal
 

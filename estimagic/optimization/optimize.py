@@ -7,6 +7,7 @@ from multiprocessing import Queue
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
@@ -311,7 +312,6 @@ def create_internal_criterion(
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):
-        # ERROR_1: Note that, p was a DataFrame and so is x. Go into _params_from_x.
         p = _params_from_x(x, internal_params, constraints, params)
         fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
         if queue is not None:
@@ -324,9 +324,11 @@ def create_internal_criterion(
 
 def _params_from_x(x, internal_params, constraints, params):
     internal_params = internal_params.copy(deep=True)
-    # ERROR_2: Note that x is a dataframe with multiple columns. Setting value to x
-    # turns value into an object type which leads to crashes in respy.
-    internal_params["value"] = x
+    # :func:`internal_criterion` always assumes that `x` is a NumPy array, but if we
+    # pass the internal criterion function to :func:`gradient`, x is a DataFrame.
+    # Setting a series to a DataFrame will convert the column "value" to object type
+    # which causes trouble in following NumPy routines assuming a numeric type.
+    internal_params["value"] = x["value"] if isinstance(x, pd.DataFrame) else x
     updated_params = reparametrize_from_internal(internal_params, constraints, params)
     return updated_params
 

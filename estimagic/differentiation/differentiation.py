@@ -174,9 +174,7 @@ def _create_internal_func(func, params, func_args, func_kwargs):
     def internal_func(x):
         p = params.copy(deep=True)
         p["value"] = x
-        # ERROR_0: The gradient function wraps the internal_criterion here. Note that, p
-        # is a params DataFrame whereas internal criterion expects a numpy vector. Go to
-        # create_internal_criterion.
+
         func_value = func(p, *func_args, **func_kwargs)
         if isinstance(func_value, (pd.DataFrame, pd.Series)):
             func_value = func_value.to_numpy()
