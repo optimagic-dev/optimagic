@@ -2,7 +2,6 @@
 Optimization tools
 ==================
 
-
 .. _minimize:
 
 minimize function
@@ -24,6 +23,5 @@ Processing constraints
 
 Enforcing constraints by reparametrizations and bounds
 ------------------------------------------------------
-
 
 .. automodule:: estimagic.optimization.reparametrize

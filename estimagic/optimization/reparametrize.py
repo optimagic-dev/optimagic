@@ -12,7 +12,7 @@ from estimagic.optimization.utilities import robust_cholesky
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
 
-def reparametrize_to_internal(params, constraints):
+def reparametrize_to_internal(params, constraints, scaling_factor):
     """Convert a params DataFrame to an internal_params DataFrame.
 
     The internal params df is shorter because it does not contain fixed parameters.
@@ -61,6 +61,8 @@ def reparametrize_to_internal(params, constraints):
     internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
     internal.drop(columns="_fixed", axis=1, inplace=True)
 
+    internal = _scaling_to_internal(internal, scaling_factor)
+
     invalid = internal.query("lower >= upper | lower > value | upper < value")
     assert (
         len(invalid) == 0
@@ -69,7 +71,9 @@ def reparametrize_to_internal(params, constraints):
     return internal
 
 
-def reparametrize_from_internal(internal_params, constraints, original_params):
+def reparametrize_from_internal(
+    internal_params, constraints, original_params, scaling_factor
+):
     """Convert an internal_params DataFrame to a Series with valid parameters.
 
     The parameter values are constructed from the 'value' column of internal_params.
@@ -87,7 +91,11 @@ def reparametrize_from_internal(internal_params, constraints, original_params):
 
     """
     external = original_params.copy(deep=True)
+
+    internal_params = _scaling_from_internal(internal_params, scaling_factor)
+
     external.update(internal_params["value"])
+
     external["_fixed"] = True
     external.loc[internal_params.index, "_fixed"] = False
 
@@ -420,3 +428,23 @@ def _fixed_from_internal(params_subset, constr):
     if value is not None:
         res["value"] = value
     return res["value"]
+
+
+def _scaling_to_internal(internal, scaling_factor):
+    """Scale parameters by division with the scaling factor."""
+    if scaling_factor is not None:
+        internal[["value", "lower", "upper"]] = internal[
+            ["value", "lower", "upper"]
+        ].divide(scaling_factor, axis="index")
+
+    return internal
+
+
+def _scaling_from_internal(internal, scaling_factor):
+    """Unscale parameters by multiplication with the scaling factor."""
+    if scaling_factor is not None:
+        internal[["value", "lower", "upper"]] = internal[
+            ["value", "lower", "upper"]
+        ].multiply(scaling_factor, axis="index")
+
+    return internal

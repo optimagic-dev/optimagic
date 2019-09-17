@@ -34,13 +34,12 @@ repos:
     hooks:
     -   id: black
         types: [python]
+-   repo: https://github.com/PyCQA/doc8
+    rev: 0.8.1rc2
+    hooks:
+        -   id: doc8
 -   repo: local
     hooks:
-    -   id: doc8
-        entry: doc8
-        language: system
-        types: [rst]
-        name: doc8 - Lint the documentation.
     -   id: restructuredtext-lint
         entry: rst-lint
         language: system

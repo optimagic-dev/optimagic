@@ -174,6 +174,7 @@ def _create_internal_func(func, params, func_args, func_kwargs):
     def internal_func(x):
         p = params.copy(deep=True)
         p["value"] = x
+
         func_value = func(p, *func_args, **func_kwargs)
         if isinstance(func_value, (pd.DataFrame, pd.Series)):
             func_value = func_value.to_numpy()

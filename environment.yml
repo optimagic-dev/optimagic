@@ -25,7 +25,6 @@ dependencies:
   - jupyter
   - fuzzywuzzy
   - pip:
-    - doc8
     - pre-commit
     - pytest
     - pytest-mock
