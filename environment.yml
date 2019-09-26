@@ -32,3 +32,4 @@ dependencies:
     - restructuredtext_lint
     - tox-conda
     - black
+    - pdbpp
