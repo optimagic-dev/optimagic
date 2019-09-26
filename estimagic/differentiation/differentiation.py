@@ -6,7 +6,13 @@ from estimagic.differentiation import differentiation_auxiliary as aux
 
 
 def gradient(
-    func, params, method="central", extrapolation=True, func_args=None, func_kwargs=None
+    func,
+    params,
+    method="central",
+    extrapolation=True,
+    func_args=None,
+    func_kwargs=None,
+    step_options=None,
 ):
     """
     Calculate the gradient of *func*.
@@ -20,11 +26,16 @@ def gradient(
             richardson extrapolation.
         func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
+        step_options (dict): Options for the numdifftools step generator.
+            See :ref:`step_options`
+
 
     Returns:
         Series: The index is the index of params_sr.
 
     """
+    step_options = step_options if step_options is not None else {}
+
     if method not in ["central", "forward", "backward"]:
         raise ValueError("Method has to be in ['central', 'forward', 'backward']")
 
@@ -35,7 +46,9 @@ def gradient(
     params_value = params["value"].to_numpy()
 
     if extrapolation:
-        grad_np = nd.Gradient(internal_func, method=method)(params_value)
+        grad_np = nd.Gradient(internal_func, method=method, **step_options)(
+            params_value
+        )
     else:
         grad_np = _no_extrapolation_gradient(internal_func, params_value, method)
     return pd.Series(data=grad_np, index=params.index, name="gradient")
@@ -52,7 +65,13 @@ def _no_extrapolation_gradient(internal_func, params_value, method):
 
 
 def jacobian(
-    func, params, method="central", extrapolation=True, func_args=None, func_kwargs=None
+    func,
+    params,
+    method="central",
+    extrapolation=True,
+    func_args=None,
+    func_kwargs=None,
+    step_options=None,
 ):
     """
     Calculate the jacobian of *func*.
@@ -68,6 +87,8 @@ def jacobian(
                                 richardson extrapolation.
         func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
+        step_options (dict): Options for the numdifftools step generator.
+            See :ref:`step_options`
 
     Returns:
         DataFrame: If func returns a Series, the index is the index of this Series or
@@ -75,6 +96,8 @@ def jacobian(
         index of params_sr.
 
     """
+    step_options = step_options if step_options is not None else {}
+
     if method not in ["central", "forward", "backward"]:
         raise ValueError("Method has to be in ['central', 'forward', 'backward']")
 
@@ -87,7 +110,7 @@ def jacobian(
     params_value = params["value"].to_numpy()
 
     if extrapolation:
-        jac_np = nd.Jacobian(internal_func, method=method)(params_value)
+        jac_np = nd.Jacobian(internal_func, method=method, **step_options)(params_value)
     else:
         jac_np = _no_extrapolation_jacobian(internal_func, params_value, method)
 
@@ -110,7 +133,13 @@ def _no_extrapolation_jacobian(internal_func, params_value, method):
 
 
 def hessian(
-    func, params, method="central", extrapolation=True, func_args=None, func_kwargs=None
+    func,
+    params,
+    method="central",
+    extrapolation=True,
+    func_args=None,
+    func_kwargs=None,
+    step_options=None,
 ):
     """
     Calculate the hessian of *func*.
@@ -124,11 +153,15 @@ def hessian(
                                 richardson extrapolation.
         func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
+        step_options (dict): Options for the numdifftools step generator.
+            See :ref:`step_options`
 
     Returns:
         DataFrame: The index and columns are the index of params_sr.
 
     """
+    step_options = step_options if step_options is not None else {}
+
     if method != "central":
         raise ValueError("Only the method 'central' is supported.")
 
@@ -139,7 +172,7 @@ def hessian(
     params_value = params["value"].to_numpy()
 
     if extrapolation:
-        hess_np = nd.Hessian(internal_func, method=method)(params_value)
+        hess_np = nd.Hessian(internal_func, method=method, **step_options)(params_value)
     else:
         hess_np = _no_extrapolation_hessian(internal_func, params_value, method)
     return pd.DataFrame(data=hess_np, index=params.index, columns=params.index)
