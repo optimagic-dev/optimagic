@@ -7,16 +7,16 @@ if sys.platform != "win32":
     from petsc4py import PETSc
 
 
-def solve(
+def minimize_pounders(
     func,
     x,
     len_out,
     bounds=None,
     init_tr=None,
     max_iterations=None,
-    gatol=0.00000001,
-    grtol=0.00000001,
-    gttol=0.0000000001,
+    gatol=1e-8,
+    grtol=1e-8,
+    gttol=1e-10,
 ):
     """Minimize a function using the pounders algortihm.
 

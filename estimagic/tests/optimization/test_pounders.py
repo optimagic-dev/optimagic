@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 import pytest
 
-from estimagic.optimization.solver_pounders import solve
+from estimagic.optimization.pounders import minimize_pounders
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
@@ -16,38 +16,28 @@ def test_robustness_1():
     num_agents = 10000
     objective, x = _set_up_test_1(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(objective, x, len_out), start, paras
+    out = minimize_pounders(objective, x, len_out), start, paras
 
     return out
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_robustness_2():
-    # get random args
-    paras = np.random.uniform(size=2)
-    start = np.random.uniform(size=2)
-
-    # Simulate a sample
+    np.random.seed(5471)
+    true_params = np.random.uniform(size=2)
+    start_params = np.random.uniform(size=2)
     num_agents = 10000
-    objective, x, exog, endog = _set_up_test_2_ols(paras, start, num_agents)
 
-    # Obtain result with Pounders
-    len_out = len(objective(x))
-    out = solve(objective, x, len_out), start, paras
+    exog, endog = _simulate_ols_sample(num_agents, true_params)
+    objective = partial(_ols_criterion, endog, exog)
+    len_out = len(objective(start_params))
+    calculated = minimize_pounders(objective, start_params, len_out)["solution"]
 
-    # Obtain result via ols
-    x = np.concatenate(
-        (np.ones(len(exog)).reshape(len(exog), 1), exog.reshape(len(exog), 1)), axis=1
-    ).reshape(len(exog), 2)
+    x = np.column_stack([np.ones_like(exog), exog])
     y = endog.reshape(len(endog), 1)
-    ols = np.linalg.lstsq(x, y)
+    expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
-    # compare
-    np.testing.assert_almost_equal(
-        ols[0], np.array(out[0]["solution"]).reshape(2, 1), decimal=1
-    )
-
-    return out
+    np.testing.assert_almost_equal(calculated, expected, decimal=1)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
@@ -59,7 +49,7 @@ def test_box_constr():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(objective, x, len_out, bounds=bounds)
+    out = minimize_pounders(objective, x, len_out, bounds=bounds)
     assert 0 <= out["solution"][0] <= 0.3
     assert 0 <= out["solution"][1] <= 0.3
 
@@ -72,7 +62,7 @@ def test_max_iters():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(objective, x, len_out, bounds=bounds, max_iterations=25)
+    out = minimize_pounders(objective, x, len_out, bounds=bounds, max_iterations=25)
 
     assert out["conv"] == "user defined" or out["conv"] == "step size small"
     if out["conv"] == 8:
@@ -88,7 +78,9 @@ def test_grtol():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(objective, x, len_out, bounds=bounds, gatol=False, gttol=False)
+    out = minimize_pounders(
+        objective, x, len_out, bounds=bounds, gatol=False, gttol=False
+    )
 
     assert (
         out["conv"] == "grtol below critical value" or out["conv"] == "step size small"
@@ -107,7 +99,9 @@ def test_gatol():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(objective, x, len_out, bounds=bounds, grtol=False, gttol=False)
+    out = minimize_pounders(
+        objective, x, len_out, bounds=bounds, grtol=False, gttol=False
+    )
     assert (
         out["conv"] == "gatol below critical value" or out["conv"] == "step size small"
     )
@@ -125,7 +119,9 @@ def test_gttol():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(objective, x, len_out, bounds=bounds, grtol=False, gatol=False)
+    out = minimize_pounders(
+        objective, x, len_out, bounds=bounds, grtol=False, gatol=False
+    )
     assert (
         out["conv"] == "gttol below critical value" or out["conv"] == "step size small"
     )
@@ -143,7 +139,7 @@ def test_tol():
     num_agents = 10000
     objective, x = _set_up_test_2(paras, start, num_agents)
     len_out = len(objective(x))
-    out = solve(
+    out = minimize_pounders(
         objective,
         x,
         len_out,
@@ -162,7 +158,7 @@ def test_tol():
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_exception():
     with pytest.raises(Exception):
-        solve(_return_exception, 0)
+        minimize_pounders(_return_exception, 0)
 
 
 def _set_up_test_1(paras, start, num_agents):
@@ -180,17 +176,8 @@ def _set_up_test_2(paras, start, num_agents):
     """
     """
     exog, endog = _simulate_ols_sample(num_agents, paras)
-    func = _return_obj_func(_return_dev_ols, endog, exog)
+    func = _return_obj_func(_ols_criterion, endog, exog)
     return func, start
-
-
-def _set_up_test_2_ols(paras, start, num_agents):
-    """
-    This is only used for the precision check of the optimizer
-    """
-    exog, endog = _simulate_ols_sample(num_agents, paras)
-    func = _return_obj_func(_return_dev_ols, endog, exog)
-    return func, start, exog, endog
 
 
 def _return_dev(endog, exog, x):
@@ -203,7 +190,7 @@ def _return_obj_func(func, endog, exog):
     return out
 
 
-def _return_dev_ols(endog, exog, x):
+def _ols_criterion(endog, exog, x):
     dev = (endog - x[0] - x[1] * exog) ** 2
     return dev
 

@@ -25,6 +25,7 @@ requirements:
     - scipy
     - numdifftools>= 0.9.20
     - fuzzywuzzy
+    - petsc4py # [not win]
 
 test:
   commands:
