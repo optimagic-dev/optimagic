@@ -1,6 +1,5 @@
-"""
-Testing the wrapper around pounders
-"""
+"""Test the wrapper around pounders."""
+import sys
 from functools import partial
 
 import numpy as np
@@ -9,6 +8,7 @@ import pytest
 from estimagic.optimization.solver_pounders import solve
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_robustness_1():
     # get random args
     paras = np.random.uniform(size=3)
@@ -21,6 +21,7 @@ def test_robustness_1():
     return out
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_robustness_2():
     # get random args
     paras = np.random.uniform(size=2)
@@ -49,6 +50,7 @@ def test_robustness_2():
     return out
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_box_constr():
     paras = np.random.uniform(0.3, 0.4, size=2)
     start = np.random.uniform(0.1, 0.2, size=2)
@@ -62,6 +64,7 @@ def test_box_constr():
     assert 0 <= out["solution"][1] <= 0.3
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_max_iters():
     paras = np.random.uniform(0.3, 0.4, size=2)
     start = np.random.uniform(0.1, 0.2, size=2)
@@ -76,6 +79,7 @@ def test_max_iters():
         assert out["sol"][0] == 25
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_grtol():
     paras = np.random.uniform(0.3, 0.4, size=2)
     start = np.random.uniform(0.1, 0.2, size=2)
@@ -94,6 +98,7 @@ def test_grtol():
         assert out["sol"][2] / out["sol"][1] < 10
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_gatol():
     paras = np.random.uniform(0.3, 0.4, size=2)
     start = np.random.uniform(0.1, 0.2, size=2)
@@ -111,6 +116,7 @@ def test_gatol():
         assert out["sol"][2] < 0.00001
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_gttol():
     paras = np.random.uniform(0.3, 0.4, size=2)
     start = np.random.uniform(0.1, 0.2, size=2)
@@ -128,6 +134,7 @@ def test_gttol():
         assert out["sol"][2] < 1
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_tol():
     paras = np.random.uniform(0.3, 0.4, size=2)
     start = np.random.uniform(0.1, 0.2, size=2)
@@ -152,6 +159,7 @@ def test_tol():
         assert out["sol"][2] / out["sol"][1] < 0.00000001
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_exception():
     with pytest.raises(Exception):
         solve(_return_exception, 0)

@@ -1,9 +1,10 @@
-"""
-This file contains the wrapper for pounders in the tao package
-"""
+"""Wrapper for pounders in the tao package."""
+import sys
 from functools import partial
 
-from petsc4py import PETSc
+
+if sys.platform != "win32":
+    from petsc4py import PETSc
 
 
 def solve(
@@ -17,7 +18,8 @@ def solve(
     grtol=0.00000001,
     gttol=0.0000000001,
 ):
-    """
+    """Minimize a function using the pounders algortihm.
+
     Args:
         func: function that takes a 1d numpy array and returns a 1d numpy array
         x:np.array that contains the start values of the variables of interest
@@ -56,6 +58,9 @@ def solve(
 
 
     """
+    if sys.platform == "win32":
+        raise NotImplementedError("The pounders algorithm is not available on Windows.")
+
     # we want to get containers for the func verctor and the paras
     size_paras = len(x)
     size_objective = len_out
@@ -65,10 +70,10 @@ def solve(
     paras[:] = x
 
     def func_tao(tao, paras, f):
-        """
-        This function takes an input, calculates the value of the objective and
-        attaches it to an petsc object f thereafter.
-        func_tao puts the objective in a format that the optimizer requires.
+        """Evaluate objective and attach result to an petsc object f.
+
+        This is required to use the pounders solver from tao.
+
         Args:
              tao: The tao object we created for the optimization task
              paras: 1d np.array of the current values at which we want to
@@ -137,7 +142,7 @@ def solve(
     out["solution"] = paras.array
     out["func_values"] = crit.array
     out["x"] = x
-    out["conv"] = _conv_reason[tao.getConvergedReason()]
+    out["conv"] = _translate_tao_convergence_reason(tao.getConvergedReason())
     out["sol"] = tao.getSolutionStatus()
 
     # Destroy petsc objects for memory reasons
@@ -149,7 +154,8 @@ def solve(
 
 
 def _prep_args(size_paras, size_objective):
-    """
+    """Prepare the arguments for tao.
+
     Args:
         size_paras: int containing the size of the pram vector
         size_prob: int containing the size of the
@@ -211,17 +217,19 @@ def _get_tolerances(gttol, gatol, grtol):
     return out
 
 
-_conv_reason = {
-    3: "gatol below critical value",
-    4: "grtol below critical value",
-    5: "gttol below critical value",
-    6: "step size small",
-    7: "objective below min value",
-    8: "user defined",
-    -2: "maxits reached",
-    -4: "numerical porblems",
-    -5: "max funcevals reached",
-    -6: "line search failure",
-    -7: "trust region failure",
-    -8: "user defined",
-}
+def _translate_tao_convergence_reason(tao_resaon):
+    mapping = {
+        3: "gatol below critical value",
+        4: "grtol below critical value",
+        5: "gttol below critical value",
+        6: "step size small",
+        7: "objective below min value",
+        8: "user defined",
+        -2: "maxits reached",
+        -4: "numerical porblems",
+        -5: "max funcevals reached",
+        -6: "line search failure",
+        -7: "trust region failure",
+        -8: "user defined",
+    }
+    return mapping[tao_resaon]
