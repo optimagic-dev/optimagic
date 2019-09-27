@@ -27,7 +27,6 @@ dependencies:
   - mpi
   - petsc4py
   - pip:
-    - doc8
     - pre-commit
     - pytest
     - pytest-mock
@@ -35,5 +34,4 @@ dependencies:
     - restructuredtext_lint
     - tox-conda
     - black
-
-
+    - pdbpp

@@ -1,4 +1,3 @@
-import warnings
 from pathlib import Path
 
 import numpy as np
@@ -76,14 +75,11 @@ for ext, int_ in zip(external, internal):
 def test_reparametrize_to_internal(params, expected_internal, category):
     constr = constraints(params)
     cols = ["value", "lower", "upper"]
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", message="indexing past lexsort depth may impact performance."
-        )
-        calculated = reparametrize_to_internal(params, constr)
-        assert_frame_equal(
-            calculated.loc[category, cols], expected_internal.loc[category, cols]
-        )
+
+    calculated = reparametrize_to_internal(params, constr, None)
+    assert_frame_equal(
+        calculated.loc[category, cols], expected_internal.loc[category, cols]
+    )
 
 
 to_test = []
@@ -95,13 +91,8 @@ for int_, ext in zip(internal, external):
 @pytest.mark.parametrize("internal, expected_external, category", to_test)
 def test_reparametrize_from_internal(internal, expected_external, category):
     constr = constraints(expected_external)
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", message="indexing past lexsort depth may impact performance."
-        )
-        calculated = reparametrize_from_internal(internal, constr, expected_external)[
-            "value"
-        ]
-        assert_series_equal(
-            calculated[category], expected_external.loc[category, "value"]
-        )
+
+    calculated = reparametrize_from_internal(internal, constr, expected_external, None)[
+        "value"
+    ]
+    assert_series_equal(calculated[category], expected_external.loc[category, "value"])

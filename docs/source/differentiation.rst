@@ -15,8 +15,6 @@ backward or central differences for the following problems:
 - Jacobian matrix of real vector-valued multivariate functions
 - Hessian matrix of real valued multivariate functions
 
-The methods explained below are not implemented by us and instead called from the
-
 
 Functions
 ---------
@@ -31,9 +29,9 @@ The variable method "method" allows the user to call a specific finite differenc
 method. We only allow for one of the methods and therefore exclude complex step and
 other possibilities:
 
-- forward differences ("method" = "forward")
-- backward differences ("method" = "backward")
-- central differences ("method" = "central")
+- forward differences (method="forward")
+- backward differences (method="backward")
+- central differences (method="central")
 
 As the central difference method is the most accurate, it is the default for all three
 functions. The numdifftools functions use Richardson extrapolation as their standard
@@ -58,6 +56,43 @@ For vector valued multivariate functions the following yields the numerical calc
 of the jacobian matrix:
 
 .. autofunction:: jacobian
+
+
+.. _step_options:
+
+Influencing the Step Size
+-------------------------
+
+As mentioned before, we use numdifftools_ for all numerical differentiations with
+Richardson extrapolations. numdifftools_ offers many ways of influencing the step
+size of the extrapolation:
+
+
+- base_step (float, array-like, optional):
+    Defines the minimum step, if None, the value is set to ``EPS**(1/scale)````
+
+- step_ratio (float , optional):
+    Ratio between sequential steps generated. Must be > 1. If None
+    then ``step_ratio`` is 2 for first order derivatives, otherwise it is 1.6
+
+- num_steps (scalar integer, optional):
+    default ``min_num_steps + num_extrap``. Defines number of steps generated.
+    It should be larger than ``min_num_steps = (n + order - 1) / fact`` where
+    ``fact`` is 1, 2 or 4 depending on differentiation method used.
+
+
+- offset (float, optional):
+    offset to the base step.
+
+- num_extrap (int):
+    number of points used for extrapolation.  Numdifftools Documentation says
+    that the default is 0 but that would be surprising.
+
+
+- scale (float, array like):
+    scale used in base step. If not None it will override the default
+    computed with the default_scale function.
+
 
 
 Methods

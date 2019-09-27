@@ -7,10 +7,12 @@ from multiprocessing import Queue
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
+from estimagic.differentiation.differentiation import gradient
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
@@ -147,7 +149,17 @@ def minimize(
     params = _process_params(params)
     fitness_eval = criterion(params, *criterion_args, **criterion_kwargs)
     constraints = process_constraints(constraints, params)
-    internal_params = reparametrize_to_internal(params, constraints)
+    internal_params = reparametrize_to_internal(params, constraints, None)
+
+    scaling_factor = calculate_scaling_factor(
+        criterion,
+        params,
+        internal_params,
+        constraints,
+        general_options,
+        criterion_args,
+        criterion_kwargs,
+    )
 
     queue = Queue() if dashboard else None
     if dashboard:
@@ -165,13 +177,14 @@ def minimize(
         )
         outer_server_process.start()
 
-    result, timing_info = _minimize(
+    result = _minimize(
         criterion=criterion,
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         params=params,
         internal_params=internal_params,
         constraints=constraints,
+        scaling_factor=scaling_factor,
         algorithm=algorithm,
         algo_options=algo_options,
         general_options=general_options,
@@ -181,7 +194,7 @@ def minimize(
     if dashboard:
         stop_signal.set()
         outer_server_process.terminate()
-    return result, timing_info
+    return result
 
 
 def _minimize(
@@ -191,6 +204,7 @@ def _minimize(
     params,
     internal_params,
     constraints,
+    scaling_factor,
     algorithm,
     algo_options,
     general_options,
@@ -233,11 +247,12 @@ def _minimize(
             the updated parameter Series will be supplied later.
 
     """
-    internal_criterion = _create_internal_criterion(
+    internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
         internal_params=internal_params,
         constraints=constraints,
+        scaling_factor=scaling_factor,
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
@@ -263,10 +278,12 @@ def _minimize(
         algo = _create_algorithm(algo_name, algo_options, origin)
         pop = _create_population(prob, algo_options, internal_params)
         evolved = algo.evolve(pop)
-        result = _process_results(evolved, params, internal_params, constraints, origin)
+        result = _process_results(
+            evolved, params, internal_params, constraints, origin, scaling_factor
+        )
     elif origin == "scipy":
         bounds = _get_scipy_bounds(internal_params)
-        x0 = _x_from_params(params, constraints)
+        x0 = _x_from_params(params, constraints, scaling_factor)
         minimized = scipy_minimize(
             internal_criterion,
             x0,
@@ -275,7 +292,7 @@ def _minimize(
             options=algo_options,
         )
         result = _process_results(
-            minimized, params, internal_params, constraints, origin
+            minimized, params, internal_params, constraints, origin, scaling_factor
         )
     else:
         raise ValueError("Invalid algorithm requested.")
@@ -283,11 +300,12 @@ def _minimize(
     return result
 
 
-def _create_internal_criterion(
+def create_internal_criterion(
     criterion,
     params,
     internal_params,
     constraints,
+    scaling_factor,
     criterion_args,
     criterion_kwargs,
     queue,
@@ -295,7 +313,7 @@ def _create_internal_criterion(
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):
-        p = _params_from_x(x, internal_params, constraints, params)
+        p = _params_from_x(x, internal_params, constraints, params, scaling_factor)
         fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
         if queue is not None:
             queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
@@ -305,15 +323,23 @@ def _create_internal_criterion(
     return internal_criterion
 
 
-def _params_from_x(x, internal_params, constraints, params):
+def _params_from_x(x, internal_params, constraints, params, scaling_factor):
     internal_params = internal_params.copy(deep=True)
-    internal_params["value"] = x
-    updated_params = reparametrize_from_internal(internal_params, constraints, params)
+    # :func:`internal_criterion` always assumes that `x` is a NumPy array, but if we
+    # pass the internal criterion function to :func:`gradient`, x is a DataFrame.
+    # Setting a series to a DataFrame will convert the column "value" to object type
+    # which causes trouble in following NumPy routines assuming a numeric type.
+    internal_params["value"] = x["value"] if isinstance(x, pd.DataFrame) else x
+    updated_params = reparametrize_from_internal(
+        internal_params, constraints, params, scaling_factor
+    )
     return updated_params
 
 
-def _x_from_params(params, constraints):
-    return reparametrize_to_internal(params, constraints)["value"].to_numpy()
+def _x_from_params(params, constraints, scaling_factor):
+    return reparametrize_to_internal(params, constraints, scaling_factor)[
+        "value"
+    ].to_numpy()
 
 
 def _process_params(params):
@@ -395,7 +421,7 @@ def _create_population(problem, algo_options, internal_params):
     return pop
 
 
-def _process_results(res, params, internal_params, constraints, origin):
+def _process_results(res, params, internal_params, constraints, origin, scaling_factor):
     """Convert optimization results into json serializable dictionary.
     Args:
         res: Result from numerical optimizer.
@@ -414,7 +440,85 @@ def _process_results(res, params, internal_params, constraints, origin):
     elif origin in ["pygmo", "nlopt"]:
         x = res.champion_x
         res_dict = {"fun": res.champion_f[0]}
-    params = _params_from_x(x, internal_params, constraints, params)
+    params = _params_from_x(x, internal_params, constraints, params, scaling_factor)
 
     res_dict["internal_x"] = x.tolist()
     return res_dict, params
+
+
+def calculate_scaling_factor(
+    criterion,
+    params,
+    internal,
+    constraints,
+    general_options,
+    criterion_args,
+    criterion_kwargs,
+):
+    """Calculate the scaling factor for the internal parameters.
+
+    There are multiple ways the user is able to rescale the parameter vector which is
+    specified in ``general_options["scaling"]``.
+
+    - ``None`` (default): No scaling happens.
+    - ``"start_values"``: Divide parameters which are not in ``[-1, 1]`` by their
+      starting values.
+    - ``"gradient"``: Divide parameters which are not in ``[-1e-2, 1e-2]`` by the
+      inverse of the gradient. By default, the computation method is ``"central"`` with
+      extrapolation set to ``False``. The user can change the defaults by passing
+      ``scaling_gradient_method`` or ``scaling_gradient_extrapolation``. See
+      :func:`~estimagic.differentiation.differentiation.gradient` for more details.
+
+    Note that the scaling factor should be defined such that unscaling is done by
+    multiplying the scaling factor. This simplifies :func:`_rescale_from_internal`.
+
+    Args:
+        criterion (func): Criterion function.
+        params (DataFrame): See :ref:`params`.
+        internal (DataFrame): See :ref:`params`.
+        constraints (dict): Dictionary containing constraints.
+        general_options (dict): General options. See :ref:`estimation_general_options`.
+        criterion_args (list): List of arguments of the criterion function.
+        crtierion_kwargs (dict): Dictionary of keyword arguments of the criterion
+            function.
+
+    Returns:
+        scaling_factor (Series): Scaling Factor.
+
+    """
+    scaling = general_options.get("scaling", None)
+
+    if scaling is None:
+        scaling_factor = np.ones(len(internal))
+    elif scaling == "start_values":
+        scaling_factor = internal["value"].abs().clip(1)
+    elif scaling == "gradient":
+        method = general_options.get("scaling_gradient_method", "central")
+        extrapolation = general_options.get("scaling_gradient_extrapolation", False)
+
+        internal_criterion = create_internal_criterion(
+            criterion,
+            params,
+            internal,
+            constraints,
+            None,
+            criterion_args,
+            criterion_kwargs,
+            queue=None,
+        )
+
+        gradients = gradient(
+            internal_criterion,
+            internal,
+            method,
+            extrapolation,
+            criterion_args,
+            criterion_kwargs,
+        )
+        scaling_factor = np.clip(1 / gradients.abs(), 1e-2, None)
+    else:
+        raise NotImplementedError(f"Scaling method {scaling} is not implemented.")
+
+    scaling_factor = pd.Series(scaling_factor, index=internal.index)
+
+    return scaling_factor
