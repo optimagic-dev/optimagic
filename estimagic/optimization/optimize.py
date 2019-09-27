@@ -177,7 +177,7 @@ def minimize(
         )
         outer_server_process.start()
 
-    result, timing_info = _minimize(
+    result = _minimize(
         criterion=criterion,
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
@@ -194,7 +194,7 @@ def minimize(
     if dashboard:
         stop_signal.set()
         outer_server_process.terminate()
-    return result, timing_info
+    return result
 
 
 def _minimize(
