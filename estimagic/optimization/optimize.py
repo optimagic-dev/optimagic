@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
+from multiprocessing import Pool
+
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.differentiation.differentiation import gradient
@@ -180,6 +182,7 @@ def minimize(
     # arg_is_two_dim_list = [test_two_dim_list(arg) for arg in args_pot_two_dim_list]
     # Determine number of optimizations that should be run
     n_opts = max(len_list)
+
     if n_opts == 1:
         # Run just a single optimization
         result = _single_minimize(
@@ -206,22 +209,26 @@ def minimize(
             for arg, len_arg in zip(args_pot_list, len_list)
         ]
         # Run single minimizations in parallel
-        result = []
-        for i in range(n_opts):
-            result.append(
-                _single_minimize(
-                    criterion=criterion[i],
-                    params=params[i],
-                    algorithm=algorithm[i],
-                    criterion_args=criterion_args,
-                    criterion_kwargs=criterion_kwargs,
-                    constraints=constraints,
-                    general_options=general_options,
-                    algo_options=algo_options[i],
-                    dashboard=dashboard,
-                    db_options=db_options,
-                )
+        pool = Pool(processes=4)
+        result = [
+            pool.apply_async(
+                _single_minimize,
+                args=(
+                    criterion[i],
+                    params[i],
+                    algorithm[i],
+                    criterion_args,
+                    criterion_kwargs,
+                    constraints,
+                    general_options,
+                    algo_options[i],
+                    dashboard,
+                    db_options,
+                ),
             )
+            for i in range(n_opts)
+        ]
+        result = [p.get() for p in result]
     return result
 
 
