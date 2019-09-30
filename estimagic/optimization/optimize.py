@@ -104,6 +104,99 @@ def minimize(
     db_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
+    Run several optimizations if called by lists of inputs.
+
+    Args:
+        criterion (function or list of functions):
+            Python function that takes a pandas Series with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame or list of pd.DataFrames):
+            See :ref:`params`.
+
+        algorithm (str or list of strings):
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+
+        criterion_args (list or list of lists)::
+            additional positional arguments for criterion
+
+        criterion_kwargs (dict or list of dicts):
+            additional keyword arguments for criterion
+
+        constraints (list or list of lists):
+            list with constraint dictionaries. See for details.
+
+        general_options (dict):
+            additional configurations for the optimization
+
+        algo_options (dict or list of dicts):
+            algorithm specific configurations for the optimization
+
+        dashboard (bool):
+            whether to create and show a dashboard
+
+        db_options (dict):
+            dictionary with kwargs to be supplied to the run_server function.
+
+    """
+    # set default arguments
+    criterion_args = [] if criterion_args is None else criterion_args
+    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
+    constraints = [] if constraints is None else constraints
+    general_options = {} if general_options is None else general_options
+    algo_options = {} if algo_options is None else algo_options
+    db_options = {} if db_options is None else db_options
+
+    # Find out if multiple optimizations should be run
+    def test_two_dim_list(testlist):
+        if testlist == [] or not isinstance(testlist, list):
+            return False
+        else:
+            return isinstance(testlist[0], list)
+
+    args_pot_list = [criterion, params, algorithm, algo_options]
+    args_pot_two_dim_list = [criterion_args, constraints]
+    arg_is_list = [isinstance(arg, list) for arg in args_pot_list]
+    arg_is_two_dim_list = [test_two_dim_list(arg) for arg in args_pot_two_dim_list]
+
+    if not any(arg_is_list + arg_is_two_dim_list):
+        # Run just a single optimization
+        result = _single_minimize(
+            criterion=criterion,
+            params=params,
+            algorithm=algorithm,
+            criterion_args=criterion_args,
+            criterion_kwargs=criterion_kwargs,
+            constraints=constraints,
+            general_options=general_options,
+            algo_options=algo_options,
+            dashboard=dashboard,
+            db_options=db_options,
+        )
+    else:
+        # Run several optimizations
+
+        print(arg_is_list)
+    # Broadcast args not entered as list
+
+    # Run single minimizations in parallel
+
+    return result
+
+
+def _single_minimize(
+    criterion,
+    params,
+    algorithm,
+    criterion_args,
+    criterion_kwargs,
+    constraints,
+    general_options,
+    algo_options,
+    dashboard,
+    db_options,
+):
+    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds. Only one minimization.
 
     Args:
         criterion (function):
@@ -138,14 +231,6 @@ def minimize(
             dictionary with kwargs to be supplied to the run_server function.
 
     """
-    # set default arguments
-    criterion_args = [] if criterion_args is None else criterion_args
-    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
-    constraints = [] if constraints is None else constraints
-    general_options = {} if general_options is None else general_options
-    algo_options = {} if algo_options is None else algo_options
-    db_options = {} if db_options is None else db_options
-
     params = _process_params(params)
     fitness_eval = criterion(params, *criterion_args, **criterion_kwargs)
     constraints = process_constraints(constraints, params)
@@ -177,7 +262,7 @@ def minimize(
         )
         outer_server_process.start()
 
-    result = _minimize(
+    result = _internal_minimize(
         criterion=criterion,
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
@@ -197,7 +282,7 @@ def minimize(
     return result
 
 
-def _minimize(
+def _internal_minimize(
     criterion,
     criterion_args,
     criterion_kwargs,
@@ -379,6 +464,7 @@ def _convert_bound(x):
 
 def _create_problem(internal_criterion, internal_params):
     class Problem:
+
         def fitness(self, x):
             return [internal_criterion(x)]
 
