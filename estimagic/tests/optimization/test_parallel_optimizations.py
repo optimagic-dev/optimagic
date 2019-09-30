@@ -2,78 +2,36 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal
 
-from estimagic.optimization.process_constraints import _process_selectors
-from estimagic.optimization.process_constraints import (
-    _replace_pairwise_equality_by_equality,
-)
-
-constr1 = {"loc": 0, "type": "equality"}
-expected1 = {"index": [(0, "a"), (0, "b"), (0, "c")]}
-
-
-constr2 = {"loc": 2, "type": "fixed"}
-expected2 = {"index": [(2, "a"), (2, "b")]}
-
-constr3 = {"locs": [0, 1], "type": "pairwise_equality"}
-expected3 = {
-    "indices": [[(0, "a"), (0, "b"), (0, "c")], [(1, "f"), (1, "e"), (1, "d")]]
-}
-
-test_cases = [(constr1, expected1), (constr2, expected2), (constr3, expected3)]
-
-
-@pytest.mark.parametrize("constraint, expected", test_cases)
-def test_process_selectors(constraint, expected):
-    ind_tups = [
-        (0, "a"),
-        (0, "b"),
-        (0, "c"),
-        (1, "f"),
-        (1, "e"),
-        (1, "d"),
-        (2, "a"),
-        (3, "a"),
-        (2, "b"),
-    ]
-    params_df = pd.DataFrame(
-        index=pd.MultiIndex.from_tuples(ind_tups),
-        columns=["bla", "blubb"],
-        data=np.ones((9, 2)),
-    )
-
-    calculated = _process_selectors([constraint], params_df)[0]
-
-    if constraint["type"] != "pairwise_equality":
-        indices = [calculated["index"]]
-        expected_indices = [expected["index"]]
-    else:
-        indices = calculated["indices"]
-        expected_indices = expected["indices"]
-
-    for calc, exp in zip(indices, expected_indices):
-        for ind_tup1, ind_tup2 in zip(calc, exp):
-            assert ind_tup1 == ind_tup2
+from estimagic.optimization.optimize import minimize
 
 
 def test_replace_pairwise_equality_by_equality():
-    ind_tups = [(0, "a"), (0, "b"), (1, "f"), (1, "e")]
-    df = pd.DataFrame(index=pd.MultiIndex.from_tuples(ind_tups))
+    """
+    Test an easy single optimization.
+    """
 
-    constr = {
-        "indices": [
-            pd.MultiIndex.from_tuples(ind_tups[:2]),
-            pd.MultiIndex.from_tuples(ind_tups[2:]),
-        ],
-        "type": "pairwise_equality",
-    }
+    def rosen(x):
+        """The Rosenbrock function
 
-    expected_ind_tups = [[(0, "a"), (1, "f")], [(0, "b"), (1, "e")]]
+        Args:
+            x (pd.Series): Series with the parameters.
 
-    calculated = _replace_pairwise_equality_by_equality([constr], df)
+        """
+        return np_rosen(x["value"].to_numpy())
 
-    for constr, ind_tups in zip(calculated, expected_ind_tups):
-        for tup_calc, tup_exp in zip(constr["index"], ind_tups):
-            assert tup_calc == tup_exp
+    def np_rosen(x):
 
-        assert constr["type"] == "equality"
+        return sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
+
+    params = pd.DataFrame()
+    params["value"] = np.array([1.3, 0.7, 1.0, 1.9, 1.2])
+    params["fixed"] = [False, False, True, False, False]
+    params["lower"] = [-1, -1, -1, -1, -1]
+    params["upper"] = [5, 5, 5, 5, 5]
+
+    result = minimize(rosen, params, "nlopt_neldermead")[0]["internal_x"]
+    expected_result = [1, 1, 1, 1, 1]
+
+    assert_array_almost_equal(result, expected_result)
