@@ -36,7 +36,7 @@ def test_single_optimization():
     result = minimize(rosen, params, "nlopt_neldermead")[0]["internal_x"]
     expected_result = [1, 1, 1, 1, 1]
 
-    assert_array_almost_equal(result, expected_result)
+    assert_array_almost_equal(result, expected_result, decimal=4)
 
 
 def test_multiple_opt_same_size():
@@ -53,9 +53,29 @@ def test_multiple_opt_same_size():
     result = minimize(
         [rosen, rosen], [params, params], ["nlopt_neldermead", "scipy_L-BFGS-B"]
     )
-    result_neldermead = [0][0]["internal_x"]
-    result_BFGS = [1][0]["internal_x"]
+
+    result_neldermead = result[0][0]["internal_x"]
+    result_BFGS = result[1][0]["internal_x"]
     expected_result = [1, 1, 1, 1, 1]
 
-    assert_array_almost_equal(result_neldermead, expected_result)
-    assert_array_almost_equal(result_BFGS, expected_result)
+    assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
+    assert_array_almost_equal(result_BFGS, expected_result, decimal=4)
+
+
+def test_multiple_opt_different_size_wrong():
+    """
+    Make sure an error is raised if arguments entered as list are of different length
+    """
+
+    params = pd.DataFrame()
+    params["value"] = np.array([1.3, 0.7, 1.0, 1.9, 1.2])
+    params["fixed"] = [False, False, True, False, False]
+    params["lower"] = [-1, -1, -1, -1, -1]
+    params["upper"] = [5, 5, 5, 5, 5]
+
+    with pytest.raises(ValueError):
+        result = minimize(
+            [rosen, rosen],
+            [params, params, params],
+            ["nlopt_neldermead", "scipy_L-BFGS-B"],
+        )

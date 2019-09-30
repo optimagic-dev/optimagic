@@ -117,13 +117,13 @@ def minimize(
         algorithm (str or list of strings):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
-        criterion_args (list or list of lists)::
+        criterion_args (list)::
             additional positional arguments for criterion
 
         criterion_kwargs (dict or list of dicts):
             additional keyword arguments for criterion
 
-        constraints (list or list of lists):
+        constraints (list):
             list with constraint dictionaries. See for details.
 
         general_options (dict):
@@ -148,18 +148,39 @@ def minimize(
     db_options = {} if db_options is None else db_options
 
     # Find out if multiple optimizations should be run
-    def test_two_dim_list(testlist):
-        if testlist == [] or not isinstance(testlist, list):
-            return False
+    # def len_two_dimensional_list(testlist):
+    #     """Return None if testlist is no two dimensional list and the length of the list otherwise.
+
+    #     """
+    #     if testlist == [] or not isinstance(testlist, list):
+    #         return False
+    #     else:
+    #         if isinstance(testlist[0], list):
+    #             return len(testlist)
+    #         else:
+
+    def len_list(testlist):
+        """Return 0 if testlist is no list and the length of the list otherwise.
+
+        """
+        if not isinstance(testlist, list):
+            return 1
         else:
-            return isinstance(testlist[0], list)
+            return len(testlist)
+
+    def broadcast_argument(arg, len_arg, n_opts):
+        if len_arg == 1:
+            return [arg] * n_opts
+        else:
+            return arg
 
     args_pot_list = [criterion, params, algorithm, algo_options]
-    args_pot_two_dim_list = [criterion_args, constraints]
-    arg_is_list = [isinstance(arg, list) for arg in args_pot_list]
-    arg_is_two_dim_list = [test_two_dim_list(arg) for arg in args_pot_two_dim_list]
-
-    if not any(arg_is_list + arg_is_two_dim_list):
+    # args_pot_two_dim_list = [criterion_args, constraints]
+    len_list = [len_list(arg) for arg in args_pot_list]
+    # arg_is_two_dim_list = [test_two_dim_list(arg) for arg in args_pot_two_dim_list]
+    # Determine number of optimizations that should be run
+    n_opts = max(len_list)
+    if n_opts == 1:
         # Run just a single optimization
         result = _single_minimize(
             criterion=criterion,
@@ -175,12 +196,32 @@ def minimize(
         )
     else:
         # Run several optimizations
+        # Make sure that all lists are of the same length
+        if len(set([l for l in len_list if l > 1])) > 1:
+            raise ValueError("All arguments entered as list must be of the same length")
 
-        print(arg_is_list)
-    # Broadcast args not entered as list
-
-    # Run single minimizations in parallel
-
+        # Broadcast args not entered as list
+        criterion, params, algorithm, algo_options = [
+            broadcast_argument(arg, len_arg, n_opts)
+            for arg, len_arg in zip(args_pot_list, len_list)
+        ]
+        # Run single minimizations in parallel
+        result = []
+        for i in range(n_opts):
+            result.append(
+                _single_minimize(
+                    criterion=criterion[i],
+                    params=params[i],
+                    algorithm=algorithm[i],
+                    criterion_args=criterion_args,
+                    criterion_kwargs=criterion_kwargs,
+                    constraints=constraints,
+                    general_options=general_options,
+                    algo_options=algo_options[i],
+                    dashboard=dashboard,
+                    db_options=db_options,
+                )
+            )
     return result
 
 
