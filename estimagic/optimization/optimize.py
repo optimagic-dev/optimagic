@@ -125,7 +125,7 @@ def minimize(
         criterion_kwargs (dict or list of dicts):
             additional keyword arguments for criterion
 
-        constraints (list):
+        constraints (list or list of lists):
             list with constraint dictionaries. See for details.
 
         general_options (dict):
@@ -150,19 +150,25 @@ def minimize(
     db_options = {} if db_options is None else db_options
 
     # Find out if multiple optimizations should be run
-    # def len_two_dimensional_list(testlist):
-    #     """Return None if testlist is no two dimensional list and the length of the list otherwise.
 
-    #     """
-    #     if testlist == [] or not isinstance(testlist, list):
-    #         return False
-    #     else:
-    #         if isinstance(testlist[0], list):
-    #             return len(testlist)
-    #         else:
+    def len_two_dimensional_list(testlist):
+        """Return 0 if testlist is no two-dimensional list and the length of the two-dimensional list otherwise.
+
+        """
+        if not isinstance(testlist, list):
+            raise ValueError(
+                "An argument is not a list although it is expected to be so."
+            )
+        elif testlist == []:
+            return 1
+        else:
+            if isinstance(testlist[0], list):
+                return len(testlist)
+            else:
+                return 1
 
     def len_list(testlist):
-        """Return 0 if testlist is no list and the length of the list otherwise.
+        """Return 1 if testlist is no list and the length of the list otherwise.
 
         """
         if not isinstance(testlist, list):
@@ -176,12 +182,14 @@ def minimize(
         else:
             return arg
 
-    args_pot_list = [criterion, params, algorithm, algo_options]
-    # args_pot_two_dim_list = [criterion_args, constraints]
+    args_pot_list = [criterion, params, algorithm, algo_options, criterion_kwargs]
+    args_pot_two_dim_list = [constraints]
+
     len_list = [len_list(arg) for arg in args_pot_list]
-    # arg_is_two_dim_list = [test_two_dim_list(arg) for arg in args_pot_two_dim_list]
+    len_two_dim_list = [len_two_dimensional_list(arg) for arg in args_pot_two_dim_list]
+
     # Determine number of optimizations that should be run
-    n_opts = max(len_list)
+    n_opts = max(len_list + len_two_dim_list)
 
     if n_opts == 1:
         # Run just a single optimization
@@ -200,15 +208,26 @@ def minimize(
     else:
         # Run several optimizations
         # Make sure that all lists are of the same length
-        if len(set([l for l in len_list if l > 1])) > 1:
+        if len(set([l for l in len_list + len_two_dim_list if l > 1])) > 1:
             raise ValueError("All arguments entered as list must be of the same length")
 
         # Broadcast args not entered as list
-        criterion, params, algorithm, algo_options = [
+        criterion, params, algorithm, algo_options, criterion_kwargs = [
             broadcast_argument(arg, len_arg, n_opts)
             for arg, len_arg in zip(args_pot_list, len_list)
         ]
+
+        [constraints] = [
+            broadcast_argument(arg, len_arg, n_opts)
+            for arg, len_arg in zip(args_pot_two_dim_list, len_two_dim_list)
+        ]
+        print(criterion, params, algorithm, algo_options, criterion_kwargs, constraints)
         # Run single minimizations in parallel
+        if not "n_cores" in general_options:
+            raise ValueError(
+                "n_cores need to be specified if multiple optimizations should be run."
+            )
+        n_cores = general_options["n_cores"]
         pool = Pool(processes=4)
         result = [
             pool.apply_async(
@@ -218,8 +237,8 @@ def minimize(
                     params[i],
                     algorithm[i],
                     criterion_args,
-                    criterion_kwargs,
-                    constraints,
+                    criterion_kwargs[i],
+                    constraints[i],
                     general_options,
                     algo_options[i],
                     dashboard,
