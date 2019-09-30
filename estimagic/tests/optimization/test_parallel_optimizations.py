@@ -139,8 +139,7 @@ def test_list_of_constraints():
     result_unrestricted = result[0][0]["internal_x"]
     result_restricted = result[1][1]["value"]
     expected_result_unrestricted = [1, 1, 1, 1, 1]
-    print(result_unrestricted)
-    print(result_restricted)
+
     assert_array_almost_equal(
         result_unrestricted, expected_result_unrestricted, decimal=4
     )

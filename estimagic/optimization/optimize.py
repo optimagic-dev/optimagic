@@ -177,10 +177,16 @@ def minimize(
             return len(testlist)
 
     def broadcast_argument(arg, len_arg, n_opts):
+        """Broadcast argument if of length 1. Otherwise, make sure that it is of 
+        the same length as all other arguments.
+
+        """
         if len_arg == 1:
             return [arg] * n_opts
-        else:
+        elif len_arg == n_opts:
             return arg
+        else:
+            raise ValueError("All arguments entered as list must be of the same length")
 
     args_pot_list = [criterion, params, algorithm, algo_options, criterion_kwargs]
     args_pot_two_dim_list = [constraints]
@@ -207,10 +213,6 @@ def minimize(
         )
     else:
         # Run several optimizations
-        # Make sure that all lists are of the same length
-        if len(set([l for l in len_list + len_two_dim_list if l > 1])) > 1:
-            raise ValueError("All arguments entered as list must be of the same length")
-
         # Broadcast args not entered as list
         criterion, params, algorithm, algo_options, criterion_kwargs = [
             broadcast_argument(arg, len_arg, n_opts)
@@ -221,7 +223,7 @@ def minimize(
             broadcast_argument(arg, len_arg, n_opts)
             for arg, len_arg in zip(args_pot_two_dim_list, len_two_dim_list)
         ]
-        print(criterion, params, algorithm, algo_options, criterion_kwargs, constraints)
+
         # Run single minimizations in parallel
         if not "n_cores" in general_options:
             raise ValueError(
@@ -263,38 +265,38 @@ def _single_minimize(
     dashboard,
     db_options,
 ):
-    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds. Only one minimization.
+    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds. Only one minimization.
 
     Args:
-        criterion (function):
+        criterion(function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
 
-        params (pd.DataFrame):
-            See :ref:`params`.
+        params(pd.DataFrame):
+            See: ref: `params`.
 
-        algorithm (str):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+        algorithm(str):
+            specifies the optimization algorithm. See: ref: `list_of_algorithms`.
 
-        criterion_args (list or tuple):
+        criterion_args(list or tuple):
             additional positional arguments for criterion
 
-        criterion_kwargs (dict):
+        criterion_kwargs(dict):
             additional keyword arguments for criterion
 
-        constraints (list):
+        constraints(list):
             list with constraint dictionaries. See for details.
 
-        general_options (dict):
+        general_options(dict):
             additional configurations for the optimization
 
-        algo_options (dict):
+        algo_options(dict):
             algorithm specific configurations for the optimization
 
-        dashboard (bool):
+        dashboard(bool):
             whether to create and show a dashboard
 
-        db_options (dict):
+        db_options(dict):
             dictionary with kwargs to be supplied to the run_server function.
 
     """
@@ -366,35 +368,35 @@ def _internal_minimize(
     Create the internal criterion function and minimize it.
 
     Args:
-        criterion (function):
+        criterion(function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
 
-        criterion_args (list or tuple):
+        criterion_args(list or tuple):
             additional positional arguments for criterion
 
-        criterion_kwargs (dict):
+        criterion_kwargs(dict):
             additional keyword arguments for criterion
 
-        params (pd.DataFrame):
-            See :ref:`params`.
+        params(pd.DataFrame):
+            See: ref: `params`.
 
-        internal_params (DataFrame):
-            See :ref:`params`.
+        internal_params(DataFrame):
+            See: ref: `params`.
 
-        constraints (list):
+        constraints(list):
             list with constraint dictionaries. See for details.
 
-        algorithm (str):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+        algorithm(str):
+            specifies the optimization algorithm. See: ref: `list_of_algorithms`.
 
-        algo_options (dict):
+        algo_options(dict):
             algorithm specific configurations for the optimization
 
-        general_options (dict):
+        general_options(dict):
             additional configurations for the optimization
 
-        queue (Queue):
+        queue(Queue):
             queue to which originally the parameters DataFrame is supplied and to which
             the updated parameter Series will be supplied later.
 
@@ -578,10 +580,10 @@ def _process_results(res, params, internal_params, constraints, origin, scaling_
     """Convert optimization results into json serializable dictionary.
     Args:
         res: Result from numerical optimizer.
-        params (DataFrame): See :ref:`params`.
-        internal_params (DataFrame): See :ref:`params`.
-        constraints (list): constraints for the optimization
-        origin (str): takes the values "pygmo", "nlopt", "scipy"
+        params(DataFrame): See: ref: `params`.
+        internal_params(DataFrame): See: ref: `params`.
+        constraints(list): constraints for the optimization
+        origin(str): takes the values "pygmo", "nlopt", "scipy"
     """
     if origin == "scipy":
         res_dict = {}
@@ -620,23 +622,23 @@ def calculate_scaling_factor(
       inverse of the gradient. By default, the computation method is ``"central"`` with
       extrapolation set to ``False``. The user can change the defaults by passing
       ``scaling_gradient_method`` or ``scaling_gradient_extrapolation``. See
-      :func:`~estimagic.differentiation.differentiation.gradient` for more details.
+      : func: `~estimagic.differentiation.differentiation.gradient` for more details.
 
     Note that the scaling factor should be defined such that unscaling is done by
-    multiplying the scaling factor. This simplifies :func:`_rescale_from_internal`.
+    multiplying the scaling factor. This simplifies: func: `_rescale_from_internal`.
 
     Args:
-        criterion (func): Criterion function.
-        params (DataFrame): See :ref:`params`.
-        internal (DataFrame): See :ref:`params`.
-        constraints (dict): Dictionary containing constraints.
-        general_options (dict): General options. See :ref:`estimation_general_options`.
-        criterion_args (list): List of arguments of the criterion function.
-        crtierion_kwargs (dict): Dictionary of keyword arguments of the criterion
+        criterion(func): Criterion function.
+        params(DataFrame): See: ref: `params`.
+        internal(DataFrame): See: ref: `params`.
+        constraints(dict): Dictionary containing constraints.
+        general_options(dict): General options. See: ref: `estimation_general_options`.
+        criterion_args(list): List of arguments of the criterion function.
+        crtierion_kwargs(dict): Dictionary of keyword arguments of the criterion
             function.
 
     Returns:
-        scaling_factor (Series): Scaling Factor.
+        scaling_factor(Series): Scaling Factor.
 
     """
     scaling = general_options.get("scaling", None)
