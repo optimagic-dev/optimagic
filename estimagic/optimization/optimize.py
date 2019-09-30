@@ -12,6 +12,7 @@ import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 from multiprocessing import Pool
 
+import dill
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.differentiation.differentiation import gradient
@@ -22,6 +23,21 @@ from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
 QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "fitness"])
+
+
+def run_dill_encoded(payload):
+    fun, args = dill.loads(payload)
+    return fun(*args)
+
+
+def apply_async(pool, fun, args):
+    """Wrap Pool.apply_async and use dill to pickle the criterion. 
+    The latter is for example necessary if guvectorize is used.
+
+    """
+
+    payload = dill.dumps((fun, args))
+    return pool.apply_async(run_dill_encoded, (payload,))
 
 
 def maximize(
@@ -232,7 +248,8 @@ def minimize(
         n_cores = general_options["n_cores"]
         pool = Pool(processes=4)
         result = [
-            pool.apply_async(
+            apply_async(
+                pool,
                 _single_minimize,
                 args=(
                     criterion[i],
@@ -533,7 +550,6 @@ def _convert_bound(x):
 
 def _create_problem(internal_criterion, internal_params):
     class Problem:
-
         def fitness(self, x):
             return [internal_criterion(x)]
 

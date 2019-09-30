@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal
 
+from numba import vectorize, float64
 from estimagic.optimization.optimize import minimize
 
 
@@ -144,3 +145,33 @@ def test_list_of_constraints():
         result_unrestricted, expected_result_unrestricted, decimal=4
     )
     assert_array_almost_equal(result_restricted[3], 1.9, decimal=4)
+
+
+def test_criterion_including_guvectoring():
+    """
+    Test if multiple lists of constraints are added.
+    """
+
+    def rosen_vec(x):
+        val_vec = x["value"].to_numpy()
+        return np_rosen_vec(val_vec[0], val_vec[1], val_vec[2], val_vec[3], val_vec[4])
+
+    @vectorize([float64(float64, float64, float64, float64, float64)])
+    def np_rosen_vec(x1, x2, x3, x4, x5):
+        x = np.array([x1, x2, x3, x4, x5])
+        return np.sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
+
+    result = minimize(
+        rosen_vec,
+        params,
+        ["nlopt_neldermead", "scipy_L-BFGS-B"],
+        general_options={"n_cores": 4},
+    )
+    assert len(result) == 2
+
+    result_neldermead = result[0][0]["internal_x"]
+    result_BFGS = result[1][0]["internal_x"]
+    expected_result = [1, 1, 1, 1, 1]
+
+    assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
+    assert_array_almost_equal(result_BFGS, expected_result, decimal=4)
