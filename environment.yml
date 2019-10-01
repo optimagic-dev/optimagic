@@ -24,6 +24,8 @@ dependencies:
   - seaborn
   - jupyter
   - fuzzywuzzy
+  - pathos
+  - numba
   - pip:
     - pre-commit
     - pytest
