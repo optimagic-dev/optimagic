@@ -10,7 +10,11 @@ import numpy as np
 import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
+
 from multiprocessing import Pool
+
+from pathos.multiprocessing import ProcessingPool
+from itertools import repeat
 
 import dill
 
@@ -23,21 +27,6 @@ from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
 QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "fitness"])
-
-
-def run_dill_encoded(payload):
-    fun, args = dill.loads(payload)
-    return fun(*args)
-
-
-def apply_async(pool, fun, args):
-    """Wrap Pool.apply_async and use dill to pickle the criterion. 
-    The latter is for example necessary if guvectorize is used.
-
-    """
-
-    payload = dill.dumps((fun, args))
-    return pool.apply_async(run_dill_encoded, (payload,))
 
 
 def maximize(
@@ -246,27 +235,81 @@ def minimize(
                 "n_cores need to be specified if multiple optimizations should be run."
             )
         n_cores = general_options["n_cores"]
-        pool = Pool(processes=4)
-        result = [
-            apply_async(
-                pool,
-                _single_minimize,
-                args=(
-                    criterion[i],
-                    params[i],
-                    algorithm[i],
-                    criterion_args,
-                    criterion_kwargs[i],
-                    constraints[i],
-                    general_options,
-                    algo_options[i],
-                    dashboard,
-                    db_options,
-                ),
-            )
-            for i in range(n_opts)
-        ]
-        result = [p.get() for p in result]
+        # pool = "Pool"(processes=4)
+        # result = [
+        #     apply_async(
+        #         pool,
+        #         _single_minimize,
+        #         args=(
+        #             criterion[i],
+        #             params[i],
+        #             algorithm[i],
+        #             criterion_args,
+        #             criterion_kwargs[i],
+        #             constraints[i],
+        #             general_options,
+        #             algo_options[i],
+        #             dashboard,
+        #             db_options,
+        #         ),
+        #     )
+        #     for i in range(n_opts)
+        # ]
+        # result = [
+        #     pool.apply_async(
+        #         _single_minimize,
+        #         (
+        #             criterion[i],
+        #             params[i],
+        #             algorithm[i],
+        #             criterion_args,
+        #             criterion_kwargs[i],
+        #             constraints[i],
+        #             general_options,
+        #             algo_options[i],
+        #             dashboard,
+        #             db_options,
+        #         ),
+        #     )
+        #     for i in range(n_opts)
+        # ]
+        p = ProcessingPool(processes=4)
+        # result = [
+        #     p.apipe(
+        #         _single_minimize,
+        #         (
+        #             criterion[i],
+        #             params[i],
+        #             algorithm[i],
+        #             criterion_args,
+        #             criterion_kwargs[i],
+        #             constraints[i],
+        #             general_options,
+        #             algo_options[i],
+        #             dashboard,
+        #             db_options,
+        #         ),
+        #     )
+        #     for i in range(n_opts)
+        # ]
+        # result = [p.get() for p in result]
+
+        result = p.amap(
+            _single_minimize,
+            [
+                criterion,
+                params,
+                algorithm,
+                repeat(criterion_args, n_opts),
+                criterion_kwargs,
+                constraints,
+                repeat(general_options, n_opts),
+                algo_options,
+                repeat(dashboard, n_opts),
+                repeat(db_options, n_opts),
+            ],
+        )
+        result = result.get()
     return result
 
 
@@ -550,6 +593,7 @@ def _convert_bound(x):
 
 def _create_problem(internal_criterion, internal_params):
     class Problem:
+
         def fitness(self, x):
             return [internal_criterion(x)]
 
