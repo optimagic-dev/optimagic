@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from estimagic.optimization.process_constraints import _apply_consraint_killers
 from estimagic.optimization.process_constraints import _process_selectors
 from estimagic.optimization.process_constraints import (
     _replace_pairwise_equality_by_equality,
@@ -77,3 +78,26 @@ def test_replace_pairwise_equality_by_equality():
             assert tup_calc == tup_exp
 
         assert constr["type"] == "equality"
+
+
+def test_apply_killer_constraints():
+    constraints = [
+        {"loc": "a", "type": "sdcorr"},
+        {"loc": "b", "type": "sum", "id": "bla"},
+        {"loc": "c", "type": "sum", "id": 3},
+        {"kill": 3},
+    ]
+
+    calculated = _apply_consraint_killers(constraints)
+    expected = [
+        {"loc": "a", "type": "sdcorr"},
+        {"loc": "b", "type": "sum", "id": "bla"},
+    ]
+
+    assert calculated == expected
+
+
+def test_apply_killer_constraint_invalid():
+    constraints = [{"loc": "a"}, {"loc": "b", "id": 5}, {"kill": 6}]
+    with pytest.raises(KeyError):
+        _apply_consraint_killers(constraints)

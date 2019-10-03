@@ -1,22 +1,12 @@
-=========
-Inference
-=========
-
-Here we will have standard error functions for the following types of models:
-
-- maximum likelihood (ml) generalized method of moments (gmm) method of simulated
-  moments
-- (msm) indirect inference (ii)
-
-Generalized Method of Moments (GMM)
------------------------------------
+Moments Based Estimation
+========================
 
 .. currentmodule:: estimagic.inference.moment_covs
 
-In this section we document how calculate standard errors of a (GMM) estimator. We use
-the notation and formulations provided in section 13.25 of
+In this section we document how to calculate standard errors of a GMM or MSM estimator.
+We use the notation and formulations provided in section 13.25 of :cite:`Hansen2019`
 
-Bruce E. Hansen - Econometrics (https://www.ssc.wisc.edu/~bhansen/econometrics)
+Bruce E. Hansen - Econometrics,  (https://www.ssc.wisc.edu/~bhansen/econometrics)
 
 The distribution of the estimator is shaped by the moment conditions, which are
 functions of the estimated parameter :math:`\beta` to the real numbers. We denote the
@@ -48,3 +38,7 @@ above. The second input can be obtained by calling for each observation the jaco
 function in the differentiation module of estimagic. This function provides the partial
 derivatives at the estimated parameter value. The third input is the weighting matrix,
 which was chosen before the estimation.
+
+
+.. bibliography:: ../refs.bib
+    :filter: docname in docnames
