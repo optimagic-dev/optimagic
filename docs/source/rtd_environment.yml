@@ -14,3 +14,4 @@ dependencies:
   - sphinx_rtd_theme
   - jupyter
   - seaborn
+  - patsy

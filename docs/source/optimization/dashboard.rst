@@ -12,24 +12,9 @@ All estimagic functions that run an optimization have an optional
 boolean argument `dashboard`. When True, the function call will fire
 up a new tab in your default browser that displays the dashboard.
 
-Tabs
-----
-
-The estimagic dashboard will provide three tabs:
-
-1. **Convergence Monitor**:
-   This tab plots the values of the fitness and (selected) parameter values in real
-   time.
-
-2. **Profiling Information**:
-   This tab will provide a snakeviz profile of the criterion function.
-
-3. **Optimization Log**:
-   Output during the optimization will be logged here.
-
-
-.. todo:: Implement tab 2 and 3
-
+The dashboards shows the evolution of the criterion function and all parameters
+in real time. If your params DataFrame has a "group" column, there will be one
+parameter plot for each group.
 
 Options
 -------
@@ -51,25 +36,6 @@ supported:
   approximate runtime of criterion function.
 - ``no_browser (bool)``: Defaults to ``False``. On a remote server the dashboard should
   not launch a browser. See :ref:`remote-server` for more information.
-
-
-Implementation
----------------
-
-The dashboard is implemented using a Bokeh Server which is run
-in a separate process parallel to the optimization. After the optimization
-terminates, the updates to the dashboard are stopped, but the bokeh server
-will keep running such that interactive features of the plots can still be
-used.
-
-
-``dashboard.py`` contains the main function ``run_dashboard``.
-``run_dashboard`` builds the tabs and adds the callbacks for updating the plots.
-It is the basis for the Bokeh Application that is run in the Bokeh Server.
-
-The functions for building and updating each tab have their own module.
-
-The functions for setting up and running the server are in ``server_functions.py``.
 
 
 .. _remote-server:
@@ -140,3 +106,13 @@ you start estimagic from a .py script, you can just skip the corresponding steps
    check out `Working remotely in shell environments
    <https://github.com/OpenSourceEconomics/hackathon/blob/master/
    material/2019_08_20/17_shell_remote.pdf>`_.
+
+
+Implementation
+---------------
+
+The dashboard is implemented using a Bokeh Server which is run
+in a separate process parallel to the optimization. After the optimization
+terminates, the updates to the dashboard are stopped, but the bokeh server
+will keep running such that interactive features of the plots can still be
+used.

@@ -1,11 +1,9 @@
-==================
-Optimization tools
+Optimization Tools
 ==================
 
-.. _minimize:
 
-minimize function
------------------
+Optimization Functions
+----------------------
 
 .. automodule:: estimagic.optimization.optimize
     :members:
