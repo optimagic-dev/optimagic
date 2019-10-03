@@ -161,6 +161,10 @@ def minimize(
         criterion_kwargs,
     )
 
+    elastic_net_reference = _prepare_elastic_net_penalty(
+        internal_params, general_options
+    )
+
     queue = Queue() if dashboard else None
     if dashboard:
         stop_signal = Event()
@@ -185,6 +189,7 @@ def minimize(
         internal_params=internal_params,
         constraints=constraints,
         scaling_factor=scaling_factor,
+        elastic_net_reference=elastic_net_reference,
         algorithm=algorithm,
         algo_options=algo_options,
         general_options=general_options,
@@ -205,6 +210,7 @@ def _minimize(
     internal_params,
     constraints,
     scaling_factor,
+    elastic_net_reference,
     algorithm,
     algo_options,
     general_options,
@@ -253,8 +259,10 @@ def _minimize(
         internal_params=internal_params,
         constraints=constraints,
         scaling_factor=scaling_factor,
+        elastic_net_reference=elastic_net_reference,
         criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
+        general_options=general_options,
         queue=queue,
     )
 
@@ -306,8 +314,10 @@ def create_internal_criterion(
     internal_params,
     constraints,
     scaling_factor,
+    elastic_net_reference,
     criterion_args,
     criterion_kwargs,
+    general_options,
     queue,
 ):
     c = np.ones(1, dtype=int)
@@ -315,10 +325,17 @@ def create_internal_criterion(
     def internal_criterion(x, counter=c):
         p = _params_from_x(x, internal_params, constraints, params, scaling_factor)
         fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
+        penalty = _calculate_elastic_net_penalty(
+            x, elastic_net_reference, general_options
+        )
         if queue is not None:
-            queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
+            queue.put(
+                QueueEntry(
+                    iteration=counter[0], params=p, fitness=fitness_eval + penalty
+                )
+            )
         counter += 1
-        return fitness_eval
+        return fitness_eval + penalty
 
     return internal_criterion
 
@@ -522,3 +539,36 @@ def calculate_scaling_factor(
     scaling_factor = pd.Series(scaling_factor, index=internal.index)
 
     return scaling_factor
+
+
+def _prepare_elastic_net_penalty(internal, general_options):
+    if general_options.get("elastic_net_lambda", 0):
+        if general_options.get("elastic_net_reference", "start_values"):
+            elastic_net_reference = internal["value"].copy()
+        else:
+            raise NotImplementedError
+    else:
+        elastic_net_reference = None
+
+    return elastic_net_reference
+
+
+def _calculate_elastic_net_penalty(x, elastic_net_reference, general_options):
+    """Calculate the elastic net penalty."""
+    lambda_ = general_options.get("elastic_net_lambda", 0)
+    alpha = general_options.get("elastic_net_alpha", 0.5)
+
+    if lambda_:
+        if general_options.get("elastic_net_reference", False):
+            penalty_vector = x - elastic_net_reference
+        else:
+            penalty_vector = x.copy()
+
+        penalty = -lambda_ * (
+            alpha * penalty_vector.abs().sum()
+            + (1 - alpha) * (penalty_vector ** 2).sum()
+        )
+    else:
+        penalty = 0
+
+    return penalty
