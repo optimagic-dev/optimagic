@@ -1,13 +1,11 @@
 Background and Methods
 ======================
 
-In this section we explain the mathematical background of forward, backward and
-central differences. The main ideas in this chapter are taken from this [Dennis]_ and
-Schneidler. Our toolkit is developed for multivariate functions but can of
-course also be used for single variable functions. Notationwise x is used for the
-pandas Series params_sr. We index the entries of x as a n-dimensional vector, where
-n is the number of variables in params_sr. The forward difference for the gradient
-is given by:
+In this section we explain the mathematical background of forward, backward
+and central differences. The main ideas in this chapter are taken from
+:cite:`Dennis1996`. x is used for the pandas DataFrame with parameters. We
+index the entries of x as a n-dimensional vector, where n is the number of
+variables in params_sr. The forward difference for the gradient is given by:
 
 .. math::
 
@@ -75,6 +73,5 @@ central differences.
 
 **References:**
 
-.. [Dennis] Numerical Methods for Unconstrained Optimization and Nonlinear Equations
-      J. E. Dennis, Jr. and Robert B. Schnabel, 1996
-
+.. bibliography:: ../refs.bib
+    :filter: docname in docnames

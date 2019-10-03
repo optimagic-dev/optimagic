@@ -1,5 +1,5 @@
-minimize and maximize
-=====================
+The *minimize* and *maximize* Functions
+=======================================
 
 .. currentmodule:: estimagic.optimization.optimize
 

@@ -45,11 +45,11 @@ Likelihood, GMM, Method of Simulated Moments and Indirect inference estimators.
 Visualization
 =============
 
-Interactive plots that help you to compare large numbers of estimated
-parameters. The plots help you to diagnose how strongly your results depend on
-constraints, start values or the choice of optimizer. Moreover, you can see
-whether the size of those effects is large or small in comparison to your
-statistical standard errors.
+We implement functions for interactive plots that help you to compare large
+numbers of estimated parameters. The plots help you to diagnose how strongly
+your results depend on constraints, start values or the choice of optimizer.
+Moreover, you can see whether the size of those effects is large or small in
+comparison to your statistical standard errors.
 
 
 

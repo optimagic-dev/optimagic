@@ -1,8 +1,8 @@
 .. _params:
 
-====================
-The params DataFrame
-====================
+=====================
+The *params* Argument
+=====================
 
 The ``params`` DataFrame is an important concept in estimagic. It collects
 information on the dimensionality of the optimization problem, lower and upper
@@ -11,8 +11,10 @@ vectors. Moreover, it is the mandatory first argument of any criterion function
 optimized with estimagic.
 
 
-If you haven't done so yet, you should check out our example notebook for an
-ordered logit model, so you see one small params DataFrame in action.
+If you haven't done so yet, you should check out our `Ordered Logit Example`_,
+so you see one small params DataFrame in action.
+
+.. _Ordered Logit Example: ../getting_started/ordered_logit_example.ipynb
 
 
 The Index

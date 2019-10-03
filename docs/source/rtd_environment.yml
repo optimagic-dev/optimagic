@@ -12,6 +12,7 @@ dependencies:
   - sphinx
   - nbsphinx
   - sphinx_rtd_theme
+  - sphinxcontrib-bibtex
   - jupyter
   - seaborn
   - patsy

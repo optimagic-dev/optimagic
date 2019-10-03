@@ -12,7 +12,7 @@ def cov_hessian(hessian):
        hessian_matrix (np.array): 2d array covariance matrix (nparams, nparams)
 
 
-    Resources: Marno Verbeek - A guide to modern econometrics.
+    Resources: Marno Verbeek - A guide to modern econometrics :cite:`Verbeek2008`
 
     """
     info_matrix = -1 * (hessian)

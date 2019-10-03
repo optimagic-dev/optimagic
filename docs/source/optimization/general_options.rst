@@ -1,7 +1,7 @@
 .. _estimation_general_options:
 
-General options
-===============
+The *general_options* Argument
+==============================
 
 You can pass a dictionary with general options to the
 :func:`~estimagic.optimization.optimize.minimize` or
