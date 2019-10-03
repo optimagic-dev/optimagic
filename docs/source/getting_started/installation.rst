@@ -14,4 +14,4 @@ conda to find all dependencies of estimagic. The second line installs estimagic
 and its dependencies.
 
 Estimagic is not and will not be pip installable because it has so many
-dependencies that would be really hard to install via pip.
+dependencies that it would be really hard to install via pip.

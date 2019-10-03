@@ -41,7 +41,7 @@ also be as parsimonious as possible. In practice we always use between 2 and
 
 Our recommendation is that you first make a list of the quantities into which
 you have to parse your parameters. Then make a list of all constraints you want
-to express and then decide which index makes those two steps most easy.
+to express and then decide which index makes those two steps easiest.
 
 The ``"value"`` column
 ======================

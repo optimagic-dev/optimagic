@@ -3,7 +3,7 @@ Moments Based Estimation
 
 .. currentmodule:: estimagic.inference.moment_covs
 
-In this section we document how calculate standard errors of a GMM or MSM estimator.
+In this section we document how to calculate standard errors of a GMM or MSM estimator.
 We use the notation and formulations provided in section 13.25 of
 
 Bruce E. Hansen - Econometrics (https://www.ssc.wisc.edu/~bhansen/econometrics)

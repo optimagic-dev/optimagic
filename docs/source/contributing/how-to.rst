@@ -3,7 +3,7 @@ How To Contribute
 
 Contributions are always welcome. Everything ranging from small extensions of the
 documentation to implementing new features is appreciated. Of course, the
-bigger the change the more it is necessary to reach out to us in advance for an
+bigger the change the more it is necessary to reach out to us in advance for a
 discussion. You can post an issue or contact janosg via email.
 
 To get acquainted with the code base, you can also check out our `issue tracker
@@ -24,7 +24,7 @@ defined tasks.
    and the ``environment.yml``. Implement the fix.
 
 3. We validate contributions in three ways. First, we have a test suite to check the
-   implementation of respy. Second, we correct for stylistic errors in code and
+   implementation of estimagic. Second, we correct for stylistic errors in code and
    documentation using linters. Third, we test whether the documentation builds
    successfully.
 

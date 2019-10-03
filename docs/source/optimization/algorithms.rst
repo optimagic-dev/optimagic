@@ -13,11 +13,11 @@ each algorithm.
 
 Typically you will leave all of those parameters at their default, unless you
 have a very difficult optimization problem. If so, you can find all available
-options at the following links (depending on the origin of the algorithm.)
+options at the following links (depending on the origin of the algorithm.):
 
-`pygmo <https://tinyurl.com/y3bgsl4z>`__.
-`nlopt <https://tinyurl.com/y3dsmaz7>`__.
-`scipy <https://tinyurl.com/y54nmedo>`__.
+- `pygmo <https://tinyurl.com/y3bgsl4z>`__
+- `nlopt <https://tinyurl.com/y3dsmaz7>`__
+- `scipy <https://tinyurl.com/y54nmedo>`__
 
 
 ``estimagic`` supports the following algorithms for optimization. To learn more

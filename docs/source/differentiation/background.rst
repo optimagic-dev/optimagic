@@ -1,16 +1,13 @@
 Background and Methods
 ======================
 
-In this section we will explain the mathematical background of forward, backward and
+In this section we explain the mathematical background of forward, backward and
 central differences. The main ideas in this chapter are taken from this [Dennis]_ and
 Schneidler. Our toolkit is developed for multivariate functions but can of
-course also be used for single variable functions. Notation wise x is used for the
-pandas series params_sr. I index the entries of x as a n-dimensional vector, where
+course also be used for single variable functions. Notationwise x is used for the
+pandas Series params_sr. We index the entries of x as a n-dimensional vector, where
 n is the number of variables in params_sr. The forward difference for the gradient
 is given by:
-
-.. [Dennis] Numerical Methods for Unconstrained Optimization and Nonlinear Equations
-      J. E. Dennis, Jr. and Robert B. Schnabel, 1996
 
 .. math::
 
@@ -37,7 +34,7 @@ The central difference for the gradient is given by:
     \frac{f(x + e_1 * h_1) - f(x - e_1 * h_1)}{h_1}\\.\\.\\.\\ \frac{f(x + e_n * h_n)
     - f(x - e_n * h_n)}{h_n} \end{pmatrix}
 
-For the optimal stepsize h the following rule of thumb applies:
+For the optimal stepsize h the following rule of thumb is applied:
 
 .. math::
 
@@ -67,11 +64,17 @@ deductions for forward and backward, are left to the interested reader:
                  - f(x - e_j * h_j + e_i * h_i) + f(x - e_j * h_j - e_i * h_i)
              }{h_j * h_i}
 
-For the optimal stepsize a different rule applies:
+For the optimal stepsize a different rule is used:
 
 .. math::
 
     h_i = (1 + |x[i]|) * \sqrt[3]\epsilon
 
-Similar deviations lead to the elements of the hessian matrix calculated by backward and
-central differences. As this is very straightforward, it will not be mentioned here.
+Similar deviations lead to the elements of the Hessian matrix calculated by backward and
+central differences.
+
+**References:**
+
+.. [Dennis] Numerical Methods for Unconstrained Optimization and Nonlinear Equations
+      J. E. Dennis, Jr. and Robert B. Schnabel, 1996
+
