@@ -42,7 +42,29 @@ Your contribution should fulfill the following criteria:
 - All functions have a `Google style <https://tinyurl.com/mxams9k>`_ docstring
     The docstring describes all arguments and outputs. For arrays, please document
     how many dimensions and what shape they have. Look around in the code to find
-    examples if you are in doubt.
+    examples if you are in doubt. Example:
+
+    .. code-block:: python
+
+        def ordered_logit(formula, data, dashboard=False):
+            """Estimate an ordered probit model with maximum likelihood.
+
+            Args:
+                formula (str): A patsy formula.
+                data (str): A pandas DataFrame.
+                dashboard (bool): Switch on the dashboard.
+
+            Returns:
+                res: optimization result.
+
+            """
+            pass
+
+    In particular each docstring should start with a one liner that describes
+    very concisely what the function does. The one liner should be in
+    imperative mode, i.e. not "This function does" ..." , but "Do ..."
+    and end with a period.
+
 - Unit tests.
     If you write a small helper whose interface might change during refactoring,
     it is sufficient if the function that calls it is tested.
