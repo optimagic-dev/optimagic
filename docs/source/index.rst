@@ -22,6 +22,7 @@ like logit or probit models.
    differentiation/index
    inference/index
    visualization/index
+   faq
    api/index
    contributing/index
 

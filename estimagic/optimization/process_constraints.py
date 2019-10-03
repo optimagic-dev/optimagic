@@ -14,7 +14,7 @@ def process_constraints(constraints, params):
     Note: Do not change the order of function calls.
 
     Args:
-        constraints (list): see :ref:`constraints`.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
@@ -64,7 +64,7 @@ def _process_selectors(constraints, params):
     """Process and harmonize the query and loc field of the constraints.
 
     Args:
-        constraints (list): see :ref:`constraints`.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
@@ -117,7 +117,7 @@ def _replace_pairwise_equality_by_equality(constraints, params):
     """Rewrite pairwise equality constraints to equality constraints.
 
     Args:
-        constraints (list): list of constraints.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
             It is assumed that the selectors in the constraints were already processed.
         params (DataFrame): see :ref:`params` for details.
 

@@ -22,8 +22,8 @@ def reparametrize_to_internal(params, constraints, scaling_factor):
 
     Args:
         params (DataFrame): A non-internal parameter DataFrame. See :ref:`params`.
-        constraints (list): See :ref:`constraints`. It is assumed that the constraints
-            are already processed and sorted.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
+            It is assumed that the constraints are already processed and sorted.
 
     Returns:
         internal (DataFrame): See :ref:`params`.
@@ -81,8 +81,8 @@ def reparametrize_from_internal(
 
     Args:
         internal_params (DataFrame): internal parameter DataFrame. See :ref:`params`.
-        constraints (list): see :ref:`constraints`. It is assumed that the constraints
-            are already processed.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
+            It is assumed that the constraints are already processed.
         original_params (DataFrame): A non-internal parameter DataFrame. This is used to
             extract the original index and fixed values of parameters.
 
