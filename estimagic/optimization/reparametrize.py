@@ -248,17 +248,32 @@ def _increasing_to_internal(params_subset):
     res = params_subset.copy()
     res["value"] = new_vals
 
-    res["_fixed"] = False
-    res["lower"] = [-np.inf] + [0] * (len(params_subset) - 1)
-    res["upper"] = np.inf
+    first = params_subset.index[0]
+    others = params_subset.index[1:]
 
     if params_subset["_fixed"].any():
         warnings.warn("Ordered parameters were unfixed.", UserWarning)
 
-    for bound in ["lower", "upper"]:
-        if np.isfinite(params_subset[bound]).any():
-            warnings.warn("Bounds are ignored for ordered parameters.", UserWarning)
+    if np.isfinite(params_subset["upper"]).any():
+        warnings.warn(
+            "Upper bounds are ignored for increasing parameters.", UserWarning
+        )
 
+    any_bounded = np.isfinite(params_subset["lower"]).any()
+    only_first_bounded = np.isfinite(params_subset.loc[first, "lower"]) and (
+        not np.isfinite(params_subset.loc[others, "lower"]).any()
+    )
+    all_have_same_bound = len(params_subset["lower"].unique()) == 1
+
+    if any_bounded and not (only_first_bounded or all_have_same_bound):
+        warnings.warn(
+            "All but the first lower bound are ignored for increasing parameters.",
+            UserWarning,
+        )
+
+    res["_fixed"] = False
+    res["lower"] = [params_subset.loc[first, "lower"]] + [0] * (len(params_subset) - 1)
+    res["upper"] = np.inf
     return res
 
 
@@ -297,6 +312,10 @@ def _sum_to_internal(params_subset, value):
     assert (
         last in free.index
     ), "The last sum constrained parameter cannot have bounds nor be fixed."
+
+    assert np.isclose(
+        params_subset["value"].sum(), value, rtol=0.01
+    ), f"Sum constraint parameters do not sum to {value}"
 
     res = params_subset.copy()
     res.loc[last, "_fixed"] = True
@@ -350,6 +369,10 @@ def _probability_to_internal(params_subset):
         assert params_subset[
             "_fixed"
         ].all(), "Either all or no probability constrained parameter can be fixed."
+
+    assert np.isclose(
+        params_subset["value"].sum(), 1.0, rtol=0.01
+    ), "Probabilities do not sum to 1."
 
     res["lower"] = 0
     res["upper"] = np.inf

@@ -7,6 +7,9 @@ from pandas.testing import assert_frame_equal
 from pandas.testing import assert_series_equal
 
 from estimagic.optimization.process_constraints import process_constraints
+from estimagic.optimization.reparametrize import _increasing_to_internal
+from estimagic.optimization.reparametrize import _probability_to_internal
+from estimagic.optimization.reparametrize import _sum_to_internal
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 
@@ -96,3 +99,58 @@ def test_reparametrize_from_internal(internal, expected_external, category):
         "value"
     ]
     assert_series_equal(calculated[category], expected_external.loc[category, "value"])
+
+
+def test_invalid_sum():
+    df = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
+    df["lower"] = np.nan
+    df["upper"] = np.nan
+    df["_fixed"] = False
+    with pytest.raises(AssertionError):
+        _sum_to_internal(df, 6)
+
+
+def test_invalid_probability():
+    df = pd.DataFrame(data=[[0.1], [0.2], [0.72]], columns=["value"])
+    df["lower"] = np.nan
+    df["upper"] = np.nan
+    df["_fixed"] = False
+    with pytest.raises(AssertionError):
+        _probability_to_internal(df)
+
+
+def test_invalid_bound_for_increasing():
+    df = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
+    df["lower"] = [-np.inf, 1, -np.inf]
+    df["upper"] = np.nan
+    df["_fixed"] = False
+    with pytest.warns(UserWarning):
+        _increasing_to_internal(df)
+
+
+def test_only_first_bounded_incresing():
+    df = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
+    df["lower"] = [1, -np.inf, -np.inf]
+    df["upper"] = np.nan
+    df["_fixed"] = False
+    calculated = _increasing_to_internal(df)
+    expected = calculated.copy(deep=True)
+    expected["lower"] = [1.0, 0, 0]
+    expected["value"] = [1, 1, 0.9]
+    pd.testing.assert_frame_equal(
+        calculated[["value", "lower"]], expected[["value", "lower"]]
+    )
+
+
+def test_all_bounds_same_increasing():
+    df = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
+    df["lower"] = [1.0, 1, 1]
+    df["upper"] = np.nan
+    df["_fixed"] = False
+    calculated = _increasing_to_internal(df)
+    expected = calculated.copy(deep=True)
+    expected["lower"] = [1.0, 0, 0]
+    expected["value"] = [1, 1, 0.9]
+    pd.testing.assert_frame_equal(
+        calculated[["value", "lower"]], expected[["value", "lower"]]
+    )

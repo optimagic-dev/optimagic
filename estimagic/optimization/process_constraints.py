@@ -20,13 +20,15 @@ def process_constraints(constraints, params):
     Returns:
         processed (list): the processed constraints.
 
+    Note: The order of function calls is important!
+
     """
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
-        # it is important to process selectors first
+        constraints = _apply_consraint_killers(constraints)
         constraints = _process_selectors(constraints, params)
         fixed = apply_fixes_to_external_params(
             params, [c for c in constraints if c["type"] == "fixed"]
@@ -58,6 +60,31 @@ def process_constraints(constraints, params):
         check_compatibility_of_constraints(processed_constraints, params, fixed)
 
     return processed_constraints
+
+
+def _apply_consraint_killers(constraints):
+    """Filter out constraints that have a killer."""
+    to_kill, real_constraints = [], []
+    for constr in constraints:
+        if "kill" in constr and len(constr) == 1:
+            to_kill.append(constr["kill"])
+        else:
+            real_constraints.append(constr)
+
+    to_kill = set(to_kill)
+
+    survivors = []
+    for constr in real_constraints:
+        if "id" not in constr or constr["id"] not in to_kill:
+            survivors.append(constr)
+
+    present_ids = [constr["id"] for c in real_constraints if "id" in constr]
+
+    if not to_kill.issubset(present_ids):
+        invalid = to_kill.difference(present_ids)
+        raise KeyError(f"You try to kill constraint with non-exsting id: {invalid}")
+
+    return survivors
 
 
 def _process_selectors(constraints, params):
