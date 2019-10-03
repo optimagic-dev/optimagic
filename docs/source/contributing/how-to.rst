@@ -12,9 +12,11 @@ To get acquainted with the code base, you can also check out our `issue tracker
 defined tasks.
 
 
+0. Assuming you have settled on contributing a small fix to the project, please
+   read the :ref:`style_guide` on the next page before you continue.
 
-1. Assuming you have settled on contributing a small fix to the project, fork the
-   `repository <https://github.com/OpenSourceEconomics/estimagic/>`_. This will create a
+1. Next, fork the `repository <https://github.com/OpenSourceEconomics/estimagic/>`_.
+   This will create a
    copy of the repository where you have write access. Your fix will be implemented in
    your copy. After that, you will start a pull request (PR) which means a proposal to
    merge your changes into the project. If you plan to become a regular contributor
