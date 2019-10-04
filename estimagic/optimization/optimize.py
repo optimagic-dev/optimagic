@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
+from warnings import simplefilter
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.differentiation.differentiation import gradient
@@ -103,8 +104,11 @@ def minimize(
     dashboard=False,
     db_options=None,
 ):
-    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
 
+    #simplefilter is used to ingore the pandas PerformanceWarnings.
+        simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
+        
+    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
     Args:
         criterion (function):
             Python function that takes a pandas DataFrame with parameters as the first
