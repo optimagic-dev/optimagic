@@ -105,7 +105,7 @@ def minimize(
     db_options=None,
 ):
 
-    #simplefilter is used to ingore the pandas PerformanceWarnings.
+    #simplefilter is used to ingore the pandas Performance Warnings.
         simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
         
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
