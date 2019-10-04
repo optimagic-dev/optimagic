@@ -39,7 +39,7 @@ def maximize(
 
     Args:
         criterion (function):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
@@ -107,7 +107,7 @@ def minimize(
 
     Args:
         criterion (function):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
