@@ -10,15 +10,17 @@ from estimagic.optimization.pounders import minimize_pounders
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_robustness_1():
-    # get random args
-    paras = np.random.uniform(size=3)
+    np.random.seed(5470)
+    true_paras = np.random.uniform(size=3)
     start = np.random.uniform(size=3)
     num_agents = 10000
-    objective, x = _set_up_test_1(paras, start, num_agents)
-    len_out = len(objective(x))
-    out = minimize_pounders(objective, x, len_out), start, paras
 
-    return out
+    exog, endog = _simulate_sample(num_agents, true_paras)
+    objective = partial(_nonlinear_criterion, endog, exog)
+    len_out = len(objective(start))
+    calculated = minimize_pounders(objective, start, len_out)
+
+
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
@@ -37,157 +39,148 @@ def test_robustness_2():
     y = endog.reshape(len(endog), 1)
     expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
-    np.testing.assert_almost_equal(calculated, expected, decimal=1)
+    np.testing.assert_almost_equal(calculated, expected, decimal=2)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_box_constr():
-    paras = np.random.uniform(0.3, 0.4, size=2)
-    start = np.random.uniform(0.1, 0.2, size=2)
+    np.random.seed(5472)
+    true_params = np.random.uniform(0.3, 0.4, size=2)
+    start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-
     num_agents = 10000
-    objective, x = _set_up_test_2(paras, start, num_agents)
-    len_out = len(objective(x))
-    out = minimize_pounders(objective, x, len_out, bounds=bounds)
-    assert 0 <= out["solution"][0] <= 0.3
-    assert 0 <= out["solution"][1] <= 0.3
+
+    exog, endog = _simulate_ols_sample(num_agents, true_params)
+    objective = partial(_ols_criterion, endog, exog)
+    len_out = len(objective(start_params))
+    calculated = minimize_pounders(objective, start_params, len_out, bounds=bounds)
+    assert 0 <= calculated["solution"][0] <= 0.3
+    assert 0 <= calculated["solution"][1] <= 0.3
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_max_iters():
-    paras = np.random.uniform(0.3, 0.4, size=2)
-    start = np.random.uniform(0.1, 0.2, size=2)
+    np.random.seed(5473)
+    true_params = np.random.uniform(0.3, 0.4, size=2)
+    start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
     num_agents = 10000
-    objective, x = _set_up_test_2(paras, start, num_agents)
-    len_out = len(objective(x))
-    out = minimize_pounders(objective, x, len_out, bounds=bounds, max_iterations=25)
 
-    assert out["conv"] == "user defined" or out["conv"] == "step size small"
-    if out["conv"] == 8:
-        assert out["sol"][0] == 25
+    exog, endog = _simulate_ols_sample(num_agents, true_params)
+    objective = partial(_ols_criterion, endog, exog)
+    len_out = len(objective(start_params))
+    calculated = minimize_pounders(objective, start_params, len_out, bounds=bounds, max_iterations=25)
+
+    assert calculated["conv"] == "user defined" or calculated["conv"] == "step size small"
+    if calculated["conv"] == 8:
+        assert calculated["sol"][0] == 25
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_grtol():
-    paras = np.random.uniform(0.3, 0.4, size=2)
-    start = np.random.uniform(0.1, 0.2, size=2)
+    np.random.seed(5474)
+    true_params = np.random.uniform(0.3, 0.4, size=2)
+    start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-
     num_agents = 10000
-    objective, x = _set_up_test_2(paras, start, num_agents)
-    len_out = len(objective(x))
-    out = minimize_pounders(
-        objective, x, len_out, bounds=bounds, gatol=False, gttol=False
+
+    exog, endog = _simulate_ols_sample(num_agents, true_params)
+    objective = partial(_ols_criterion, endog, exog)
+    len_calculated = len(objective(start_params))
+    calculated = minimize_pounders(
+        objective, start_params, len_calculated, bounds=bounds, gatol=False, gttol=False
     )
 
     assert (
-        out["conv"] == "grtol below critical value" or out["conv"] == "step size small"
+        calculated["conv"] == "grtol below critical value" or calculated["conv"] == "step size small"
     )
 
-    if out["conv"] == 4:
-        assert out["sol"][2] / out["sol"][1] < 10
+    if calculated["conv"] == 4:
+        assert calculated["sol"][2] / calculated["sol"][1] < 10
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_gatol():
-    paras = np.random.uniform(0.3, 0.4, size=2)
-    start = np.random.uniform(0.1, 0.2, size=2)
+    np.random.seed(5475)
+    true_params = np.random.uniform(0.3, 0.4, size=2)
+    start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-
     num_agents = 10000
-    objective, x = _set_up_test_2(paras, start, num_agents)
-    len_out = len(objective(x))
-    out = minimize_pounders(
-        objective, x, len_out, bounds=bounds, grtol=False, gttol=False
-    )
-    assert (
-        out["conv"] == "gatol below critical value" or out["conv"] == "step size small"
+
+    exog, endog = _simulate_ols_sample(num_agents, true_params)
+    objective = partial(_ols_criterion, endog, exog)
+    len_out = len(objective(start_params))
+    calculated = minimize_pounders(
+        objective, start_params, len_out, bounds=bounds, grtol=False, gttol=False
     )
 
-    if out["conv"] == 3:
-        assert out["sol"][2] < 0.00001
+    assert (
+        calculated["conv"] == "gatol below critical value" or calculated["conv"] == "step size small"
+    )
+    if calculated["conv"] == 3:
+        assert calculated["sol"][2] < 1e-4
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_gttol():
-    paras = np.random.uniform(0.3, 0.4, size=2)
-    start = np.random.uniform(0.1, 0.2, size=2)
+    np.random.seed(5476)
+    true_params = np.random.uniform(0.3, 0.4, size=2)
+    start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-
     num_agents = 10000
-    objective, x = _set_up_test_2(paras, start, num_agents)
-    len_out = len(objective(x))
-    out = minimize_pounders(
-        objective, x, len_out, bounds=bounds, grtol=False, gatol=False
-    )
-    assert (
-        out["conv"] == "gttol below critical value" or out["conv"] == "step size small"
+
+    exog, endog = _simulate_ols_sample(num_agents, true_params)
+    objective = partial(_ols_criterion, endog, exog)
+    len_out = len(objective(start_params))
+    calculated = minimize_pounders(
+        objective, start_params, len_out, bounds=bounds, grtol=False, gatol=False
     )
 
-    if out["conv"] == 5:
-        assert out["sol"][2] < 1
+    assert (
+        calculated["conv"] == "gttol below critical value" or calculated["conv"] == "step size small"
+    )
+
+    if calculated["conv"] == 5:
+        assert calculated["sol"][2] < 1
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_tol():
-    paras = np.random.uniform(0.3, 0.4, size=2)
-    start = np.random.uniform(0.1, 0.2, size=2)
+    np.random.seed(5477)
+    true_params = np.random.uniform(0.3, 0.4, size=2)
+    start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-
     num_agents = 10000
-    objective, x = _set_up_test_2(paras, start, num_agents)
-    len_out = len(objective(x))
-    out = minimize_pounders(
+
+    exog, endog = _simulate_ols_sample(num_agents, true_params)
+    objective = partial(_ols_criterion, endog, exog)
+    len_out = len(objective(start_params))
+    calculated = minimize_pounders(
         objective,
-        x,
+        start_params,
         len_out,
         bounds=bounds,
-        gatol=0.00000001,
-        grtol=0.00000001,
-        gttol=0.0000000001,
+        gatol=1e-7,
+        grtol=1e-7,
+        gttol=1e-9,
     )
 
-    if out["conv"] == 3:
-        assert out["sol"][2] < 0.00000001
-    elif out["conv"] == 4:
-        assert out["sol"][2] / out["sol"][1] < 0.00000001
+    if calculated["conv"] == 3:
+        assert calculated["sol"][2] < 0.00000001
+    elif calculated["conv"] == 4:
+        assert calculated["sol"][2] / calculated["sol"][1] < 0.00000001
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_exception():
+    np.random.seed(5478)
     with pytest.raises(Exception):
         minimize_pounders(_return_exception, 0)
 
 
-def _set_up_test_1(paras, start, num_agents):
-    """
-
-    """
-    # Simulate values
-    exog, endog = _simulate_sample(num_agents, paras)
-    # Initialize class container
-    func = _return_obj_func(_return_dev, endog, exog)
-    return func, start
-
-
-def _set_up_test_2(paras, start, num_agents):
-    """
-    """
-    exog, endog = _simulate_ols_sample(num_agents, paras)
-    func = _return_obj_func(_ols_criterion, endog, exog)
-    return func, start
-
-
-def _return_dev(endog, exog, x):
+def _nonlinear_criterion(endog, exog, x):
     dev = (endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)) ** 2
     return dev
-
-
-def _return_obj_func(func, endog, exog):
-    out = partial(func, endog, exog)
-    return out
 
 
 def _ols_criterion(endog, exog, x):
