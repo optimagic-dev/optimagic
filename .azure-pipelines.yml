@@ -1,5 +1,3 @@
-pr: none
-
 jobs:
 - job:
   displayName: Linux
