@@ -140,7 +140,7 @@ def minimize(
 
     """
     # set default arguments
-    simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
+    simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     criterion_args = [] if criterion_args is None else criterion_args
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
