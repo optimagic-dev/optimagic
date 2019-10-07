@@ -5,6 +5,7 @@ from multiprocessing import Event
 from multiprocessing import Process
 from multiprocessing import Queue
 from pathlib import Path
+from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
@@ -139,6 +140,7 @@ def minimize(
 
     """
     # set default arguments
+    simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     criterion_args = [] if criterion_args is None else criterion_args
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
