@@ -146,6 +146,15 @@ def minimize(
             dictionary with kwargs to be supplied to the run_server function.
 
     """
+
+    arguments = process_arguments(...)
+    n_opts = 1 if isinstance(arguments, dict) else len(arguments)
+    if n_opts == 1:
+        res = _single_minimize(**arguments)
+    else:
+        # set up pool
+        pool.starmap(**arguments)  # oder starmap_async oder was auch immer
+
     # set default arguments
     criterion_args = [] if criterion_args is None else criterion_args
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
@@ -153,6 +162,8 @@ def minimize(
     general_options = {} if general_options is None else general_options
     algo_options = {} if algo_options is None else algo_options
     db_options = {} if db_options is None else db_options
+
+    def preprocess
 
     # Find out if multiple optimizations should be run
 

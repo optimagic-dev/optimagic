@@ -114,6 +114,27 @@ def test_broadcasting():
     assert_array_almost_equal(result_BFGS, expected_result, decimal=4)
 
 
+def test_list_length_1():
+    """
+    Test if broadcasting of arguments that are entered as list of length 1 works.
+    """
+    result = minimize(
+        [rosen],
+        [params],
+        ["nlopt_neldermead", "scipy_L-BFGS-B"],
+        general_options={"n_cores": 4},
+    )
+    print(result)
+    assert len(result) == 2
+
+    result_neldermead = result[0][0]["internal_x"]
+    result_BFGS = result[1][0]["internal_x"]
+    expected_result = [1, 1, 1, 1, 1]
+
+    assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
+    assert_array_almost_equal(result_BFGS, expected_result, decimal=4)
+
+
 def test_order_of_results():
     """
     Test if order is contained.
