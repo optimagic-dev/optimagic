@@ -12,12 +12,6 @@ import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
 from multiprocessing import Pool
-
-from pathos.multiprocessing import ProcessingPool
-from itertools import repeat
-
-import dill
-
 from estimagic.dashboard.server_functions import run_server
 from estimagic.differentiation.differentiation import gradient
 from estimagic.optimization.process_constraints import process_constraints
@@ -168,7 +162,7 @@ def minimize(
         result = _single_minimize(**arguments)
     else:
         # set up pool
-        if not "n_cores" in arguments["general_options"][0]:
+        if "n_cores" not in arguments["general_options"][0]:
             raise ValueError(
                 "n_cores need to be specified if multiple optimizations should be run."
             )
@@ -192,7 +186,8 @@ def _single_minimize(
     dashboard,
     db_options,
 ):
-    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds. Only one minimization.
+    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds.
+    Only one minimization.
 
     Args:
         criterion(function):

@@ -157,7 +157,6 @@ def broadcast_argument(argument, len_arg, n_opts_total, name):
     # Argument was entered as too short list/tuple
     else:
         raise ValueError(msg)
-    # print(res)
     return res
 
 
@@ -219,8 +218,10 @@ def process_optimization_arguments(
     # Determine number of optimizations and check types
 
     # Specify name and expected type for all arguments.
-    # Three groups of arguments are relevant: (i) expected as scalar,
-    # (ii) expected as scalar or list/tuple, (iii) expected as list/tuple or nested list/tuple
+    # Three groups of arguments are relevant:
+    # (i) expected as scalar,
+    # (ii) expected as scalar or list/tuple,
+    # (iii) expected as list/tuple or nested list/tuple
 
     args_non_list = [
         {"candidate": general_options, "scalar_type": dict, "name": "general_options"},
@@ -313,9 +314,5 @@ def process_optimization_arguments(
         "dashboard": dashboard,
         "db_options": db_options,
     }
-    # # Use pandas to convert dict of lists to list of dicts
-    # processed_arguments = pd.DataFrame(processed_arguments).to_dict("list")
 
-    # if n_opts == 1:
-    #     processed_arguments = processed_arguments
     return processed_arguments
