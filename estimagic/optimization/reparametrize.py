@@ -314,7 +314,7 @@ def _sum_to_internal(params_subset, value):
     last = params_subset.index[-1]
 
     assert (
-        last in free.index
+        last in free.index or params_subset["_fixed"].all()
     ), "The last sum constrained parameter cannot have bounds nor be fixed."
 
     assert np.isclose(
