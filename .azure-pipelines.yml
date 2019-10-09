@@ -43,7 +43,7 @@ jobs:
 
   - script: |
       call activate estimagic
-      tox -e pytest_win
+      tox -e pytest
 
 - job:
   displayName: MacOS
