@@ -21,6 +21,7 @@ import dill
 from estimagic.dashboard.server_functions import run_server
 from estimagic.differentiation.differentiation import gradient
 from estimagic.optimization.process_constraints import process_constraints
+from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import index_element_to_string
@@ -147,106 +148,53 @@ def minimize(
 
     """
 
-    arguments = process_arguments(...)
-    n_opts = 1 if isinstance(arguments, dict) else len(arguments)
+    arguments = process_optimization_arguments(
+        criterion=criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_args=criterion_args,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        general_options=general_options,
+        algo_options=algo_options,
+        dashboard=dashboard,
+        db_options=db_options,
+    )
+    n_opts = (
+        1 if isinstance(arguments["params"], pd.DataFrame) else len(arguments["params"])
+    )
+
     if n_opts == 1:
-        res = _single_minimize(**arguments)
+        result = _single_minimize(**arguments)
     else:
         # set up pool
-        pool.starmap(**arguments)  # oder starmap_async oder was auch immer
-
-    # set default arguments
-    criterion_args = [] if criterion_args is None else criterion_args
-    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
-    constraints = [] if constraints is None else constraints
-    general_options = {} if general_options is None else general_options
-    algo_options = {} if algo_options is None else algo_options
-    db_options = {} if db_options is None else db_options
-
-    def preprocess
-
-    # Find out if multiple optimizations should be run
-
-    def len_two_dimensional_list(testlist):
-        """Return 0 if testlist is no two-dimensional list and the length of the two-dimensional list otherwise.
-
-        """
-        if not isinstance(testlist, list):
-            raise ValueError(
-                "An argument is not a list although it is expected to be so."
-            )
-        elif testlist == []:
-            return 1
-        else:
-            if isinstance(testlist[0], list):
-                return len(testlist)
-            else:
-                return 1
-
-    def len_list(testlist):
-        """Return 1 if testlist is no list and the length of the list otherwise.
-
-        """
-        if not isinstance(testlist, list):
-            return 1
-        else:
-            return len(testlist)
-
-    def broadcast_argument(arg, len_arg, n_opts):
-        """Broadcast argument if of length 1. Otherwise, make sure that it is of 
-        the same length as all other arguments.
-
-        """
-        if len_arg == 1:
-            return [arg] * n_opts
-        elif len_arg == n_opts:
-            return arg
-        else:
-            raise ValueError("All arguments entered as list must be of the same length")
-
-    args_pot_list = [criterion, params, algorithm, algo_options, criterion_kwargs]
-    args_pot_two_dim_list = [constraints]
-
-    len_list = [len_list(arg) for arg in args_pot_list]
-    len_two_dim_list = [len_two_dimensional_list(arg) for arg in args_pot_two_dim_list]
-
-    # Determine number of optimizations that should be run
-    n_opts = max(len_list + len_two_dim_list)
-
-    if n_opts == 1:
-        # Run just a single optimization
-        result = _single_minimize(
-            criterion=criterion,
-            params=params,
-            algorithm=algorithm,
-            criterion_args=criterion_args,
-            criterion_kwargs=criterion_kwargs,
-            constraints=constraints,
-            general_options=general_options,
-            algo_options=algo_options,
-            dashboard=dashboard,
-            db_options=db_options,
-        )
-    else:
-        # Run several optimizations
-        # Broadcast args not entered as list
-        criterion, params, algorithm, algo_options, criterion_kwargs = [
-            broadcast_argument(arg, len_arg, n_opts)
-            for arg, len_arg in zip(args_pot_list, len_list)
-        ]
-
-        [constraints] = [
-            broadcast_argument(arg, len_arg, n_opts)
-            for arg, len_arg in zip(args_pot_two_dim_list, len_two_dim_list)
-        ]
-
-        # Run single minimizations in parallel
-        if not "n_cores" in general_options:
+        if not "n_cores" in arguments["general_options"][0]:
             raise ValueError(
                 "n_cores need to be specified if multiple optimizations should be run."
             )
-        n_cores = general_options["n_cores"]
+        n_cores = arguments["general_options"][0]["n_cores"]
         pool = Pool(processes=4)
+
+        result = pool.starmap(_single_minimize, map(list, zip(*arguments.values())))
+        # result = p.map(
+        #     _single_minimize,
+        #     [
+        #         criterion,
+        #         params,
+        #         algorithm,
+        #         repeat(criterion_args, n_opts),
+        #         criterion_kwargs,
+        #         constraints,
+        #         repeat(general_options, n_opts),
+        #         algo_options,
+        #         repeat(dashboard, n_opts),
+        #         repeat(db_options, n_opts),
+        #     ],
+        # )
+        # result = result.get()
+
+        # Run single minimizations in parallel
+
         # result = [
         #     apply_async(
         #         pool,
@@ -266,24 +214,24 @@ def minimize(
         #     )
         #     for i in range(n_opts)
         # ]
-        result = [
-            pool.apply_async(
-                _single_minimize,
-                (
-                    criterion[i],
-                    params[i],
-                    algorithm[i],
-                    criterion_args,
-                    criterion_kwargs[i],
-                    constraints[i],
-                    general_options,
-                    algo_options[i],
-                    dashboard,
-                    db_options,
-                ),
-            )
-            for i in range(n_opts)
-        ]
+        # result = [
+        #     pool.apply_async(
+        #         _single_minimize,
+        #         (
+        #             criterion[i],
+        #             params[i],
+        #             algorithm[i],
+        #             criterion_args,
+        #             criterion_kwargs[i],
+        #             constraints[i],
+        #             general_options,
+        #             algo_options[i],
+        #             dashboard,
+        #             db_options,
+        #         ),
+        #     )
+        #     for i in range(n_opts)
+        # ]
         # p = ProcessingPool(processes=1)
         # result = [
         #     p.apipe(
@@ -303,24 +251,8 @@ def minimize(
         #     )
         #     for i in range(n_opts)
         # ]
-        result = [p.get() for p in result]
+        # result = [p.get() for p in result]
 
-        # result = p.map(
-        #     _single_minimize,
-        #     [
-        #         criterion,
-        #         params,
-        #         algorithm,
-        #         repeat(criterion_args, n_opts),
-        #         criterion_kwargs,
-        #         constraints,
-        #         repeat(general_options, n_opts),
-        #         algo_options,
-        #         repeat(dashboard, n_opts),
-        #         repeat(db_options, n_opts),
-        #     ],
-        # )
-        # result = result.get()
     return result
 
 
