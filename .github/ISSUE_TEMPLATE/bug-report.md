@@ -7,18 +7,23 @@ assignees: ''
 
 ---
 
-**Bug description**
+### Bug description
+
 A clear and concise description of what the bug is.
 
-**To Reproduce**
+### To Reproduce
+
 Ideally, provide a minimal code example. If that's not possible, describe steps to reproduce the bug.
 
-**Expected behavior**
+### Expected behavior
+
 A clear and concise description of what you expected to happen.
 
-**Screenshots/Error messages**
+### Screenshots/Error messages
+
 If applicable, add screenshots to help explain your problem.
 
-**System**
+### System
+
  - OS: [e.g. Ubuntu 18.04]
  - Version [e.g. 0.0.1]
