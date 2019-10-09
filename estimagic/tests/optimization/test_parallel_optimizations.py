@@ -54,7 +54,7 @@ def test_single_optimization_list_len1():
     """
     Test an easy single optimization.
     """
-    result = minimize([rosen], gs], ["nlopt_neldermead"])[0]["internal_x"]
+    result = minimize([rosen], [gs], ["nlopt_neldermead"])[0]["internal_x"]
     expected_result = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(result, expected_result, decimal=4)
@@ -68,15 +68,15 @@ def test_lists_same_size():
         [rosen, rosen],
         [params, params],
         ["nlopt_neldermead", "scipy_L-BFGS-B"],
-        general_options = {"n_cores": 4},
+        general_options={"n_cores": 4},
     )
 
-    result_neldermead=result[0][0]["internal_x"]
-    result_bfgs=result[1][0]["internal_x"]
-    expected_result=[1, 1, 1, 1, 1]
+    result_neldermead = result[0][0]["internal_x"]
+    result_bfgs = result[1][0]["internal_x"]
+    expected_result = [1, 1, 1, 1, 1]
 
-    assert_array_almost_equal(result_neldermead, expected_result, decimal = 4)
-    assert_array_almost_equal(result_bfgs, expected_result, decimal = 4)
+    assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
+    assert_array_almost_equal(result_bfgs, expected_result, decimal=4)
 
 
 def test_lists_different_size():
@@ -84,11 +84,11 @@ def test_lists_different_size():
     Make sure an error is raised if arguments entered as list are of different length
     """
     with pytest.raises(ValueError):
-        result=minimize(
+        result = minimize(
             [rosen, rosen],
             [params, params, params],
             ["nlopt_neldermead", "scipy_L-BFGS-B"],
-            general_options = {"n_cores": 4},
+            general_options={"n_cores": 4},
         )
 
 
@@ -105,9 +105,7 @@ def test_wrong_type_criterion():
         )
 
     with pytest.raises(ValueError):
-        minimize(
-            "error", params, "nlopt_neldermead", general_options={"n_cores": 4}
-        )
+        minimize("error", params, "nlopt_neldermead", general_options={"n_cores": 4})
 
 
 def test_wrong_type_algorithm():
@@ -123,9 +121,7 @@ def test_wrong_type_algorithm():
         )
 
     with pytest.raises(ValueError):
-        minimize(
-            rosen, params, algorithm=rosen, general_options={"n_cores": 4}
-        )
+        minimize(rosen, params, algorithm=rosen, general_options={"n_cores": 4})
 
 
 def test_wrong_type_constraints():
