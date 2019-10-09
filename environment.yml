@@ -21,6 +21,7 @@ dependencies:
   - sphinx
   - nbsphinx
   - sphinx_rtd_theme
+  - sphinxcontrib-bibtex
   - seaborn
   - jupyter
   - fuzzywuzzy

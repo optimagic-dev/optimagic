@@ -14,11 +14,13 @@ def process_constraints(constraints, params):
     Note: Do not change the order of function calls.
 
     Args:
-        constraints (list): see :ref:`constraints`.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
         processed (list): the processed constraints.
+
+    Note: The order of function calls is important!
 
     """
 
@@ -26,7 +28,7 @@ def process_constraints(constraints, params):
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
-        # it is important to process selectors first
+        constraints = _apply_consraint_killers(constraints)
         constraints = _process_selectors(constraints, params)
         fixed = apply_fixes_to_external_params(
             params, [c for c in constraints if c["type"] == "fixed"]
@@ -60,11 +62,36 @@ def process_constraints(constraints, params):
     return processed_constraints
 
 
+def _apply_consraint_killers(constraints):
+    """Filter out constraints that have a killer."""
+    to_kill, real_constraints = [], []
+    for constr in constraints:
+        if "kill" in constr and len(constr) == 1:
+            to_kill.append(constr["kill"])
+        else:
+            real_constraints.append(constr)
+
+    to_kill = set(to_kill)
+
+    survivors = []
+    for constr in real_constraints:
+        if "id" not in constr or constr["id"] not in to_kill:
+            survivors.append(constr)
+
+    present_ids = [constr["id"] for c in real_constraints if "id" in constr]
+
+    if not to_kill.issubset(present_ids):
+        invalid = to_kill.difference(present_ids)
+        raise KeyError(f"You try to kill constraint with non-exsting id: {invalid}")
+
+    return survivors
+
+
 def _process_selectors(constraints, params):
     """Process and harmonize the query and loc field of the constraints.
 
     Args:
-        constraints (list): see :ref:`constraints`.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
@@ -97,7 +124,7 @@ def _process_selectors(constraints, params):
         if constr["type"] == "pairwise_equality":
             assert (
                 len(indices) >= 2
-            ), "Select at least two 2 of parameters for pairwise equality constraint!"
+            ), "Select at least 2 sets of parameters for pairwise equality constraint!"
             length = len(indices[0])
             for index in indices:
                 assert (
@@ -117,7 +144,7 @@ def _replace_pairwise_equality_by_equality(constraints, params):
     """Rewrite pairwise equality constraints to equality constraints.
 
     Args:
-        constraints (list): list of constraints.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
             It is assumed that the selectors in the constraints were already processed.
         params (DataFrame): see :ref:`params` for details.
 
