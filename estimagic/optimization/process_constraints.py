@@ -124,7 +124,7 @@ def _process_selectors(constraints, params):
         if constr["type"] == "pairwise_equality":
             assert (
                 len(indices) >= 2
-            ), "Select at least two 2 of parameters for pairwise equality constraint!"
+            ), "Select at least 2 sets of parameters for pairwise equality constraint!"
             length = len(indices[0])
             for index in indices:
                 assert (
