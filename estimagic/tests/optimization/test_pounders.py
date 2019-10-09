@@ -18,9 +18,7 @@ def test_robustness_1():
     exog, endog = _simulate_sample(num_agents, true_paras)
     objective = partial(_nonlinear_criterion, endog, exog)
     len_out = len(objective(start))
-    calculated = minimize_pounders(objective, start, len_out)
-
-
+    minimize_pounders(objective, start, len_out)
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
@@ -69,9 +67,13 @@ def test_max_iters():
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
-    calculated = minimize_pounders(objective, start_params, len_out, bounds=bounds, max_iterations=25)
+    calculated = minimize_pounders(
+        objective, start_params, len_out, bounds=bounds, max_iterations=25
+    )
 
-    assert calculated["conv"] == "user defined" or calculated["conv"] == "step size small"
+    assert (
+        calculated["conv"] == "user defined" or calculated["conv"] == "step size small"
+    )
     if calculated["conv"] == 8:
         assert calculated["sol"][0] == 25
 
@@ -92,7 +94,8 @@ def test_grtol():
     )
 
     assert (
-        calculated["conv"] == "grtol below critical value" or calculated["conv"] == "step size small"
+        calculated["conv"] == "grtol below critical value"
+        or calculated["conv"] == "step size small"
     )
 
     if calculated["conv"] == 4:
@@ -115,7 +118,8 @@ def test_gatol():
     )
 
     assert (
-        calculated["conv"] == "gatol below critical value" or calculated["conv"] == "step size small"
+        calculated["conv"] == "gatol below critical value"
+        or calculated["conv"] == "step size small"
     )
     if calculated["conv"] == 3:
         assert calculated["sol"][2] < 1e-4
@@ -137,7 +141,8 @@ def test_gttol():
     )
 
     assert (
-        calculated["conv"] == "gttol below critical value" or calculated["conv"] == "step size small"
+        calculated["conv"] == "gttol below critical value"
+        or calculated["conv"] == "step size small"
     )
 
     if calculated["conv"] == 5:
