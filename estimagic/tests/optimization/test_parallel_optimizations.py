@@ -82,6 +82,79 @@ def test_lists_different_size():
         )
 
 
+def test_wrong_type_criterion():
+    """
+    Make sure an error is raised if an argument has a wrong type.
+    """
+    with pytest.raises(ValueError):
+        result = minimize(
+            [rosen, "error"],
+            [params, params],
+            ["nlopt_neldermead", "scipy_L-BFGS-B"],
+            general_options={"n_cores": 4},
+        )
+
+    with pytest.raises(ValueError):
+        result = minimize(
+            "error", params, "nlopt_neldermead", general_options={"n_cores": 4}
+        )
+
+
+def test_wrong_type_algorithm():
+    """
+    Make sure an error is raised if an argument has a wrong type.
+    """
+    with pytest.raises(ValueError):
+        result = minimize(
+            [rosen, rosen],
+            [params, params],
+            algorithm=["nlopt_neldermead", rosen],
+            general_options={"n_cores": 4},
+        )
+
+    with pytest.raises(ValueError):
+        result = minimize(
+            rosen, params, algorithm=rosen, general_options={"n_cores": 4}
+        )
+
+
+def test_wrong_type_constraints():
+    """
+    Make sure an error is raised if an argument has a wrong type.
+    """
+    with pytest.raises(ValueError):
+        result = minimize(
+            rosen,
+            params,
+            "nlopt_neldermead",
+            constraints={},
+            general_options={"n_cores": 4},
+        )
+
+
+def test_wrong_type_dashboard():
+    """
+    Make sure an error is raised if an argument has a wrong type.
+    """
+    with pytest.raises(ValueError):
+        result = minimize(
+            [rosen, rosen],
+            [params, params],
+            algorithm=["nlopt_neldermead", "nlopt_neldermead"],
+            dashboard="yes",
+            general_options={"n_cores": 4},
+        )
+
+    with pytest.raises(ValueError):
+        result = minimize(
+            rosen,
+            params,
+            algorithm=rosen,
+            dashboard="yes",
+            general_options={"n_cores": 4},
+        )
+
+
 def test_n_cores_not_specified():
     """
     Make sure an error is raised if n_cores is not specified and multiple optimizations should be run.
@@ -114,6 +187,27 @@ def test_broadcasting():
     assert_array_almost_equal(result_BFGS, expected_result, decimal=4)
 
 
+def test_broadcasting_list_len1():
+    """
+    Test if broadcasting of arguments that are not entered 
+    as list works if entered as list of length 1.
+    """
+    result = minimize(
+        [rosen],
+        [params],
+        ["nlopt_neldermead", "scipy_L-BFGS-B"],
+        general_options={"n_cores": 4},
+    )
+    assert len(result) == 2
+
+    result_neldermead = result[0][0]["internal_x"]
+    result_BFGS = result[1][0]["internal_x"]
+    expected_result = [1, 1, 1, 1, 1]
+
+    assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
+    assert_array_almost_equal(result_BFGS, expected_result, decimal=4)
+
+
 def test_list_length_1():
     """
     Test if broadcasting of arguments that are entered as list of length 1 works.
@@ -124,7 +218,6 @@ def test_list_length_1():
         ["nlopt_neldermead", "scipy_L-BFGS-B"],
         general_options={"n_cores": 4},
     )
-    print(result)
     assert len(result) == 2
 
     result_neldermead = result[0][0]["internal_x"]

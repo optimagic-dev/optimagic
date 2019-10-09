@@ -173,85 +173,9 @@ def minimize(
                 "n_cores need to be specified if multiple optimizations should be run."
             )
         n_cores = arguments["general_options"][0]["n_cores"]
-        pool = Pool(processes=4)
+        pool = Pool(processes=n_cores)
 
         result = pool.starmap(_single_minimize, map(list, zip(*arguments.values())))
-        # result = p.map(
-        #     _single_minimize,
-        #     [
-        #         criterion,
-        #         params,
-        #         algorithm,
-        #         repeat(criterion_args, n_opts),
-        #         criterion_kwargs,
-        #         constraints,
-        #         repeat(general_options, n_opts),
-        #         algo_options,
-        #         repeat(dashboard, n_opts),
-        #         repeat(db_options, n_opts),
-        #     ],
-        # )
-        # result = result.get()
-
-        # Run single minimizations in parallel
-
-        # result = [
-        #     apply_async(
-        #         pool,
-        #         _single_minimize,
-        #         args=(
-        #             criterion[i],
-        #             params[i],
-        #             algorithm[i],
-        #             criterion_args,
-        #             criterion_kwargs[i],
-        #             constraints[i],
-        #             general_options,
-        #             algo_options[i],
-        #             dashboard,
-        #             db_options,
-        #         ),
-        #     )
-        #     for i in range(n_opts)
-        # ]
-        # result = [
-        #     pool.apply_async(
-        #         _single_minimize,
-        #         (
-        #             criterion[i],
-        #             params[i],
-        #             algorithm[i],
-        #             criterion_args,
-        #             criterion_kwargs[i],
-        #             constraints[i],
-        #             general_options,
-        #             algo_options[i],
-        #             dashboard,
-        #             db_options,
-        #         ),
-        #     )
-        #     for i in range(n_opts)
-        # ]
-        # p = ProcessingPool(processes=1)
-        # result = [
-        #     p.apipe(
-        #         _single_minimize,
-        #         (
-        #             criterion[i],
-        #             params[i],
-        #             algorithm[i],
-        #             criterion_args,
-        #             criterion_kwargs[i],
-        #             constraints[i],
-        #             general_options,
-        #             algo_options[i],
-        #             dashboard,
-        #             db_options,
-        #         ),
-        #     )
-        #     for i in range(n_opts)
-        # ]
-        # result = [p.get() for p in result]
 
     return result
 
