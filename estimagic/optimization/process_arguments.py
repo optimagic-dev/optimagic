@@ -5,8 +5,7 @@ import pandas as pd
 
 
 def _check_type_nonlist_argument(candidate, scalar_type, name):
-    """ Calculate number of inputs and check input types for argument
-    that is expected as scalar.
+    """Check input types for argument that is expected as scalar.
 
     Args:
         candidate:
@@ -26,7 +25,7 @@ def _check_type_nonlist_argument(candidate, scalar_type, name):
 def _get_n_opt_and_check_type_list_argument(
     candidate, scalar_type, argument_required, name
 ):
-    """ Calculate number of inputs and check input types for argument
+    """Calculate number of inputs and check input types for argument
     that is expected as scalar or list/tuple.
 
     Args:
