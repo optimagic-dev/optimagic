@@ -56,6 +56,11 @@ scipy
 - ``"scipy_TNC"``
 - ``"scipy_SLSQP"``
 
+tao
+---
+
+- ``"pounders"``
+
 
 
 
@@ -77,3 +82,9 @@ options at the following links (depending on the origin of the algorithm):
 - `pygmo <https://tinyurl.com/y3bgsl4z>`_
 - `nlopt <https://tinyurl.com/y3dsmaz7>`_
 - `scipy <https://tinyurl.com/y54nmedo>`_
+
+The ``algo_options`` of the pounders algorithm can be found in the documentation
+of :ref:`pounders`
+
+
+

@@ -296,6 +296,9 @@ def _minimize(
         result = _process_results(
             minimized, params, internal_params, constraints, origin, scaling_factor
         )
+    elif origin == "tao":
+        raise NotImplementedError
+
     else:
         raise ValueError("Invalid algorithm requested.")
 
