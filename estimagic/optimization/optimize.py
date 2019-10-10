@@ -154,7 +154,12 @@ def minimize(
         # set up pool
         if "n_cores" not in arguments["general_options"][0]:
             raise ValueError(
-                "n_cores need to be specified if multiple optimizations should be run."
+                "n_cores need to be specified in general_options"
+                + " if multiple optimizations should be run."
+            )
+        if dashboard:
+            raise NotImplementedError(
+                "Dashboard cannot be used for multiple optimizations, yet."
             )
         n_cores = arguments["general_options"][0]["n_cores"]
         pool = Pool(processes=n_cores)
