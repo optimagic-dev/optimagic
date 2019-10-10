@@ -144,6 +144,8 @@ def minimize(
         dashboard=dashboard,
         db_options=db_options,
     )
+
+    # Find out number of optimizations
     n_opts = (
         1 if isinstance(arguments["params"], pd.DataFrame) else len(arguments["params"])
     )
@@ -151,19 +153,21 @@ def minimize(
     if n_opts == 1:
         result = _single_minimize(**arguments)
     else:
-        # set up pool
+        if dashboard:
+            raise NotImplementedError(
+                "Dashboard cannot be used for multiple optimizations, yet."
+            )
+
+        # set up multiprocessing
         if "n_cores" not in arguments["general_options"][0]:
             raise ValueError(
                 "n_cores need to be specified in general_options"
                 + " if multiple optimizations should be run."
             )
-        if dashboard:
-            raise NotImplementedError(
-                "Dashboard cannot be used for multiple optimizations, yet."
-            )
         n_cores = arguments["general_options"][0]["n_cores"]
         pool = Pool(processes=n_cores)
 
+        # `Transpose' arguments and run all optimizations in parallel
         result = pool.starmap(_single_minimize, map(list, zip(*arguments.values())))
 
     return result
