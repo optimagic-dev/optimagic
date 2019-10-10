@@ -2,7 +2,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numba import guvectorize
 from numpy.testing import assert_array_almost_equal
 
 from estimagic.optimization.optimize import minimize
@@ -21,38 +20,6 @@ def rosen(x):
 def np_rosen(x):
 
     return sum(100.0 * (x[1:] - x[:-1] ** 2.0) ** 2.0 + (1 - x[:-1]) ** 2.0)
-
-
-@guvectorize(
-    ["f8[:], f8[:, :], f8[:]"],
-    "(n_choices), (n_draws, n_choices) -> ()",
-    nopython=True,
-    target="parallel",
-)
-def simulate_emax(static_utilities, draws, emax):
-    n_draws, n_choices = draws.shape
-    emax_ = 0
-
-    for i in range(n_draws):
-        max_utility = 0
-        for j in range(n_choices):
-            utility = static_utilities[j] + draws[i, j]
-
-            if utility > max_utility or j == 0:
-                max_utility = utility
-
-        emax_ += max_utility
-
-    emax[0] = emax_ / n_draws
-
-
-def rosen_with_guvectorize(x):
-    static_utilities = np.arange(1, 5)
-    n_draws = 10000
-    draws = np.random.randn(n_draws, 4)
-    simulate_emax(static_utilities, draws)
-
-    return np_rosen(x["value"].to_numpy())
 
 
 params = pd.DataFrame()
@@ -312,24 +279,3 @@ def test_list_of_constraints():
         result_unrestricted, expected_result_unrestricted, decimal=4
     )
     assert_array_almost_equal(result_restricted[3], 1.9, decimal=4)
-
-
-def test_criterion_including_guvectoring():
-    """
-    Test if multiple lists of constraints are added.
-    """
-
-    result = minimize(
-        rosen_with_guvectorize,
-        params,
-        ["nlopt_neldermead", "scipy_L-BFGS-B"],
-        general_options={"n_cores": 4},
-    )
-    assert len(result) == 2
-
-    result_neldermead = result[0][0]["internal_x"]
-    result_bfgs = result[1][0]["internal_x"]
-    expected_result = [1, 1, 1, 1, 1]
-
-    assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
-    assert_array_almost_equal(result_bfgs, expected_result, decimal=4)
