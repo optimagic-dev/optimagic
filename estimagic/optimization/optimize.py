@@ -188,32 +188,32 @@ def _single_minimize(
     Only one minimization.
 
     Args:
-        criterion(function):
+        criterion (function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
 
-        params(pd.DataFrame):
+        params (pd.DataFrame):
             See: ref: `params`.
 
-        algorithm(str):
+        algorithm (str):
             specifies the optimization algorithm. See: ref: `list_of_algorithms`.
 
-        criterion_kwargs(dict):
+        criterion_kwargs (dict):
             additional keyword arguments for criterion
 
-        constraints(list):
+        constraints (list):
             list with constraint dictionaries. See for details.
 
-        general_options(dict):
+        general_options (dict):
             additional configurations for the optimization
 
-        algo_options(dict):
+        algo_options (dict):
             algorithm specific configurations for the optimization
 
-        dashboard(bool):
+        dashboard (bool):
             whether to create and show a dashboard
 
-        db_options(dict):
+        db_options (dict):
             dictionary with kwargs to be supplied to the run_server function.
 
     """
@@ -282,32 +282,32 @@ def _internal_minimize(
     Create the internal criterion function and minimize it.
 
     Args:
-        criterion(function):
+        criterion (function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
 
-        criterion_kwargs(dict):
+        criterion_kwargs (dict):
             additional keyword arguments for criterion
 
-        params(pd.DataFrame):
+        params (pd.DataFrame):
             See: ref: `params`.
 
-        internal_params(DataFrame):
+        internal_params (DataFrame):
             See: ref: `params`.
 
-        constraints(list):
+        constraints (list):
             list with constraint dictionaries. See for details.
 
-        algorithm(str):
+        algorithm (str):
             specifies the optimization algorithm. See: ref: `list_of_algorithms`.
 
-        algo_options(dict):
+        algo_options (dict):
             algorithm specific configurations for the optimization
 
-        general_options(dict):
+        general_options (dict):
             additional configurations for the optimization
 
-        queue(Queue):
+        queue (Queue):
             queue to which originally the parameters DataFrame is supplied and to which
             the updated parameter Series will be supplied later.
 
@@ -488,10 +488,10 @@ def _process_results(res, params, internal_params, constraints, origin, scaling_
     """Convert optimization results into json serializable dictionary.
     Args:
         res: Result from numerical optimizer.
-        params(DataFrame): See: ref: `params`.
-        internal_params(DataFrame): See: ref: `params`.
-        constraints(list): constraints for the optimization
-        origin(str): takes the values "pygmo", "nlopt", "scipy"
+        params (DataFrame): See: ref: `params`.
+        internal_params (DataFrame): See: ref: `params`.
+        constraints (list): constraints for the optimization
+        origin (str): takes the values "pygmo", "nlopt", "scipy"
     """
     if origin == "scipy":
         res_dict = {}
@@ -530,12 +530,12 @@ def calculate_scaling_factor(
     multiplying the scaling factor. This simplifies: func: `_rescale_from_internal`.
 
     Args:
-        criterion(func): Criterion function.
-        params(DataFrame): See: ref: `params`.
-        internal(DataFrame): See: ref: `params`.
-        constraints(dict): Dictionary containing constraints.
-        general_options(dict): General options. See: ref: `estimation_general_options`.
-        crtierion_kwargs(dict): Dictionary of keyword arguments of the criterion
+        criterion (func): Criterion function.
+        params (DataFrame): See: ref: `params`.
+        internal (DataFrame): See: ref: `params`.
+        constraints (dict): Dictionary containing constraints.
+        general_options (dict): General options. See: ref: `estimation_general_options`.
+        crtierion_kwargs (dict): Dictionary of keyword arguments of the criterion
             function.
 
     Returns:
