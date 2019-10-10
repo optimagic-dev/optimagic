@@ -48,7 +48,7 @@ def simulate_emax(static_utilities, draws, emax):
 
 def rosen_with_guvectorize(x):
     static_utilities = np.arange(1, 5)
-    n_draws = 1000
+    n_draws = 10000
     draws = np.random.randn(n_draws, 4)
     simulate_emax(static_utilities, draws)
 
