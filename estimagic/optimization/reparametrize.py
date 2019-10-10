@@ -251,13 +251,19 @@ def _increasing_to_internal(params_subset):
     first = params_subset.index[0]
     others = params_subset.index[1:]
 
-    if params_subset["_fixed"].any():
+    invalid_fixes = (
+        params_subset.loc[others, "_fixed"].any() and not params_subset["_fixed"].all()
+    )
+
+    if invalid_fixes:
         warnings.warn("Ordered parameters were unfixed.", UserWarning)
+        res.loc[others, "_fixed"] = False
 
     if np.isfinite(params_subset["upper"]).any():
         warnings.warn(
             "Upper bounds are ignored for increasing parameters.", UserWarning
         )
+        res["upper"] = np.inf
 
     any_bounded = np.isfinite(params_subset["lower"]).any()
     only_first_bounded = np.isfinite(params_subset.loc[first, "lower"]) and (
@@ -271,9 +277,7 @@ def _increasing_to_internal(params_subset):
             UserWarning,
         )
 
-    res["_fixed"] = False
     res["lower"] = [params_subset.loc[first, "lower"]] + [0] * (len(params_subset) - 1)
-    res["upper"] = np.inf
     return res
 
 
@@ -310,7 +314,7 @@ def _sum_to_internal(params_subset, value):
     last = params_subset.index[-1]
 
     assert (
-        last in free.index
+        last in free.index or params_subset["_fixed"].all()
     ), "The last sum constrained parameter cannot have bounds nor be fixed."
 
     assert np.isclose(

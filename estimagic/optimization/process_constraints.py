@@ -313,15 +313,6 @@ def _unite_first_with_all_intersecting_elements(indices):
     return [new_first] + new_others
 
 
-def _sort_key(x):
-    if x["type"] == "fixed":
-        return 0
-    elif x["type"] == "equality":
-        return 1
-    else:
-        return 2
-
-
 def apply_fixes_to_external_params(params, fixes):
     params = params.copy()
     params["_fixed"] = False
