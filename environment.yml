@@ -2,8 +2,8 @@ name: estimagic
 
 channels:
 
-  - defaults
   - conda-forge
+  - defaults
 
 dependencies:
 
@@ -25,6 +25,8 @@ dependencies:
   - seaborn
   - jupyter
   - fuzzywuzzy
+  - mpi
+  - petsc4py>=3.11
   - pip:
     - pre-commit
     - pytest

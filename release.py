@@ -14,7 +14,7 @@ from conda_build.api import convert
 
 
 if __name__ == "__main__":
-    platforms = ["osx-64", "linux-32", "linux-64", "win-32", "win-64"]
+    platforms = ["osx-64", "linux-64", "win-32", "win-64"]
     built_packages = build(".", need_source_download=False)
     converted_packages = []
 
