@@ -10,7 +10,6 @@ def gradient(
     params,
     method="central",
     extrapolation=True,
-    func_args=None,
     func_kwargs=None,
     step_options=None,
 ):
@@ -24,7 +23,6 @@ def gradient(
             central as it gives the highest accuracy.
         extrapolation (bool): This variable allows to specify the use of the
             richardson extrapolation.
-        func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
         step_options (dict): Options for the numdifftools step generator.
             See :ref:`step_options`
@@ -39,10 +37,9 @@ def gradient(
     if method not in ["central", "forward", "backward"]:
         raise ValueError("Method has to be in ['central', 'forward', 'backward']")
 
-    func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
 
-    internal_func = _create_internal_func(func, params, func_args, func_kwargs)
+    internal_func = _create_internal_func(func, params, func_kwargs)
     params_value = params["value"].to_numpy()
 
     if extrapolation:
@@ -69,7 +66,6 @@ def jacobian(
     params,
     method="central",
     extrapolation=True,
-    func_args=None,
     func_kwargs=None,
     step_options=None,
 ):
@@ -85,7 +81,6 @@ def jacobian(
                          central as it gives the highest accuracy.
         extrapolation (bool): This variable allows to specify the use of the
                                 richardson extrapolation.
-        func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
         step_options (dict): Options for the numdifftools step generator.
             See :ref:`step_options`
@@ -101,12 +96,11 @@ def jacobian(
     if method not in ["central", "forward", "backward"]:
         raise ValueError("Method has to be in ['central', 'forward', 'backward']")
 
-    func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
 
-    f_x0 = func(params, *func_args, **func_kwargs)
+    f_x0 = func(params, **func_kwargs)
 
-    internal_func = _create_internal_func(func, params, func_args, func_kwargs)
+    internal_func = _create_internal_func(func, params, func_kwargs)
     params_value = params["value"].to_numpy()
 
     if extrapolation:
@@ -137,7 +131,6 @@ def hessian(
     params,
     method="central",
     extrapolation=True,
-    func_args=None,
     func_kwargs=None,
     step_options=None,
 ):
@@ -151,7 +144,6 @@ def hessian(
                          central as it gives the highest accuracy.
         extrapolation (bool): This variable allows to specify the use of the
                                 richardson extrapolation.
-        func_args (list): additional positional arguments for func.
         func_kwargs (dict): additional positional arguments for func.
         step_options (dict): Options for the numdifftools step generator.
             See :ref:`step_options`
@@ -165,10 +157,9 @@ def hessian(
     if method != "central":
         raise ValueError("Only the method 'central' is supported.")
 
-    func_args = [] if func_args is None else func_args
     func_kwargs = {} if func_kwargs is None else func_kwargs
 
-    internal_func = _create_internal_func(func, params, func_args, func_kwargs)
+    internal_func = _create_internal_func(func, params, func_kwargs)
     params_value = params["value"].to_numpy()
 
     if extrapolation:
@@ -203,12 +194,12 @@ def _no_extrapolation_hessian(internal_func, params_value, method):
     return hess
 
 
-def _create_internal_func(func, params, func_args, func_kwargs):
+def _create_internal_func(func, params, func_kwargs):
     def internal_func(x):
         p = params.copy(deep=True)
         p["value"] = x
 
-        func_value = func(p, *func_args, **func_kwargs)
+        func_value = func(p, **func_kwargs)
         if isinstance(func_value, (pd.DataFrame, pd.Series)):
             func_value = func_value.to_numpy()
         return func_value

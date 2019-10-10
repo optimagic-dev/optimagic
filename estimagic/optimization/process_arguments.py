@@ -1,4 +1,6 @@
+import copy
 from collections import Callable
+
 import pandas as pd
 
 
@@ -72,10 +74,8 @@ def _get_n_opt_and_check_type_list_argument(
 
 
 def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required, name):
-    """ Calculate number of inputs and check input types for argument
+    """Calculate number of inputs and check input types for argument
     that is expected as list/tuple or nested list/tuple.
-
-    ToDo: Check scalar types, as well?
 
     Args:
         candidate
@@ -114,8 +114,7 @@ def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required,
 
 
 def broadcast_argument(argument, len_arg, n_opts_total, name):
-    """Broadcast argument if of length 1. Otherwise, make sure that it is of
-    the same length as all other arguments.
+    """Broadcast argument if of length 1.
 
     Args:
         argument:
@@ -134,10 +133,11 @@ def broadcast_argument(argument, len_arg, n_opts_total, name):
         f"All arguments entered as list/tuple must be of the same length."
         + f"The length of {name} is below the length of another argument."
     )
-    # ToDo: deep copy!
 
     # Only one optimization
     if n_opts_total == 1:
+
+        # Select element if entered as list of length 1
         if isinstance(argument, (list, tuple)) and len(argument) == 1:
             res = argument[0]
         else:
@@ -145,10 +145,12 @@ def broadcast_argument(argument, len_arg, n_opts_total, name):
 
     # Argument is broadcasted
     elif len_arg == 1:
+
+        # Select element if entered as list of length 1
         if isinstance(argument, (list, tuple)) and len(argument) == 1:
-            res = argument * n_opts_total
+            res = [copy.deepcopy(argument[0]) for i in range(n_opts_total)]
         else:
-            res = [argument] * n_opts_total
+            res = [copy.deepcopy(argument) for i in range(n_opts_total)]
 
     # Argument was entered as list/tuple
     elif len_arg == n_opts_total:
@@ -164,7 +166,6 @@ def process_optimization_arguments(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -184,9 +185,6 @@ def process_optimization_arguments(
 
         algorithm (str or list of strings):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_args (list)::
-            additional positional arguments for criterion
 
         criterion_kwargs (dict or list of dicts):
             additional keyword arguments for criterion
@@ -208,7 +206,6 @@ def process_optimization_arguments(
     """
 
     # set default arguments
-    criterion_args = [] if criterion_args is None else criterion_args
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options
@@ -227,7 +224,6 @@ def process_optimization_arguments(
         {"candidate": general_options, "scalar_type": dict, "name": "general_options"},
         {"candidate": dashboard, "scalar_type": bool, "name": "dashboard"},
         {"candidate": db_options, "scalar_type": dict, "name": "db_options"},
-        {"candidate": criterion_args, "scalar_type": list, "name": "criterion_args"},
     ]
     args_list = [
         {
@@ -264,7 +260,6 @@ def process_optimization_arguments(
     args_nested_list = [
         {"candidate": constraints, "argument_required": False, "name": "constraints"}
     ]
-    # ToDo: criterion_args?
 
     # Check type of all inputs
     for arg in args_non_list:
@@ -294,7 +289,7 @@ def process_optimization_arguments(
         )
     ]
 
-    general_options, dashboard, db_options, criterion_args = [
+    general_options, dashboard, db_options = [
         broadcast_argument(
             argument=arg["candidate"], len_arg=1, n_opts_total=n_opts, name=arg["name"]
         )
@@ -306,7 +301,6 @@ def process_optimization_arguments(
         "criterion": criterion,
         "params": params,
         "algorithm": algorithm,
-        "criterion_args": criterion_args,
         "criterion_kwargs": criterion_kwargs,
         "constraints": constraints,
         "general_options": general_options,

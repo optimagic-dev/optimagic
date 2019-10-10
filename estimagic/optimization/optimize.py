@@ -2,6 +2,7 @@
 import json
 from collections import namedtuple
 from multiprocessing import Event
+from multiprocessing import Pool
 from multiprocessing import Process
 from multiprocessing import Queue
 from pathlib import Path
@@ -11,11 +12,10 @@ import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
-from multiprocessing import Pool
 from estimagic.dashboard.server_functions import run_server
 from estimagic.differentiation.differentiation import gradient
-from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.process_arguments import process_optimization_arguments
+from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import index_element_to_string
@@ -28,7 +28,6 @@ def maximize(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -50,9 +49,6 @@ def maximize(
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
-        criterion_args (list or tuple):
-            additional positional arguments for criterion
-
         criterion_kwargs (dict):
             additional keyword arguments for criterion
 
@@ -73,14 +69,13 @@ def maximize(
 
     """
 
-    def neg_criterion(*criterion_args, **criterion_kwargs):
-        return -criterion(*criterion_args, **criterion_kwargs)
+    def neg_criterion(**criterion_kwargs):
+        return -criterion(**criterion_kwargs)
 
     res_dict, params = minimize(
         neg_criterion,
         params=params,
         algorithm=algorithm,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
         general_options=general_options,
@@ -97,7 +92,6 @@ def minimize(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -118,9 +112,6 @@ def minimize(
 
         algorithm (str or list of strings):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_args (list)::
-            additional positional arguments for criterion
 
         criterion_kwargs (dict or list of dicts):
             additional keyword arguments for criterion
@@ -146,7 +137,6 @@ def minimize(
         criterion=criterion,
         params=params,
         algorithm=algorithm,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
         general_options=general_options,
@@ -178,7 +168,6 @@ def _single_minimize(
     criterion,
     params,
     algorithm,
-    criterion_args,
     criterion_kwargs,
     constraints,
     general_options,
@@ -200,9 +189,6 @@ def _single_minimize(
         algorithm(str):
             specifies the optimization algorithm. See: ref: `list_of_algorithms`.
 
-        criterion_args(list or tuple):
-            additional positional arguments for criterion
-
         criterion_kwargs(dict):
             additional keyword arguments for criterion
 
@@ -223,7 +209,7 @@ def _single_minimize(
 
     """
     params = _process_params(params)
-    fitness_eval = criterion(params, *criterion_args, **criterion_kwargs)
+    fitness_eval = criterion(params, **criterion_kwargs)
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints, None)
 
@@ -233,7 +219,6 @@ def _single_minimize(
         internal_params,
         constraints,
         general_options,
-        criterion_args,
         criterion_kwargs,
     )
 
@@ -255,7 +240,6 @@ def _single_minimize(
 
     result = _internal_minimize(
         criterion=criterion,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         params=params,
         internal_params=internal_params,
@@ -275,7 +259,6 @@ def _single_minimize(
 
 def _internal_minimize(
     criterion,
-    criterion_args,
     criterion_kwargs,
     params,
     internal_params,
@@ -293,9 +276,6 @@ def _internal_minimize(
         criterion(function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
-
-        criterion_args(list or tuple):
-            additional positional arguments for criterion
 
         criterion_kwargs(dict):
             additional keyword arguments for criterion
@@ -329,7 +309,6 @@ def _internal_minimize(
         internal_params=internal_params,
         constraints=constraints,
         scaling_factor=scaling_factor,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
     )
@@ -382,7 +361,6 @@ def create_internal_criterion(
     internal_params,
     constraints,
     scaling_factor,
-    criterion_args,
     criterion_kwargs,
     queue,
 ):
@@ -390,7 +368,7 @@ def create_internal_criterion(
 
     def internal_criterion(x, counter=c):
         p = _params_from_x(x, internal_params, constraints, params, scaling_factor)
-        fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
+        fitness_eval = criterion(p, **criterion_kwargs)
         if queue is not None:
             queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
         counter += 1
@@ -455,7 +433,6 @@ def _convert_bound(x):
 
 def _create_problem(internal_criterion, internal_params):
     class Problem:
-
         def fitness(self, x):
             return [internal_criterion(x)]
 
@@ -524,13 +501,7 @@ def _process_results(res, params, internal_params, constraints, origin, scaling_
 
 
 def calculate_scaling_factor(
-    criterion,
-    params,
-    internal,
-    constraints,
-    general_options,
-    criterion_args,
-    criterion_kwargs,
+    criterion, params, internal, constraints, general_options, criterion_kwargs
 ):
     """Calculate the scaling factor for the internal parameters.
 
@@ -555,7 +526,6 @@ def calculate_scaling_factor(
         internal(DataFrame): See: ref: `params`.
         constraints(dict): Dictionary containing constraints.
         general_options(dict): General options. See: ref: `estimation_general_options`.
-        criterion_args(list): List of arguments of the criterion function.
         crtierion_kwargs(dict): Dictionary of keyword arguments of the criterion
             function.
 
@@ -574,23 +544,11 @@ def calculate_scaling_factor(
         extrapolation = general_options.get("scaling_gradient_extrapolation", False)
 
         internal_criterion = create_internal_criterion(
-            criterion,
-            params,
-            internal,
-            constraints,
-            None,
-            criterion_args,
-            criterion_kwargs,
-            queue=None,
+            criterion, params, internal, constraints, None, criterion_kwargs, queue=None
         )
 
         gradients = gradient(
-            internal_criterion,
-            internal,
-            method,
-            extrapolation,
-            criterion_args,
-            criterion_kwargs,
+            internal_criterion, internal, method, extrapolation, criterion_kwargs
         )
         scaling_factor = np.clip(1 / gradients.abs(), 1e-2, None)
     else:

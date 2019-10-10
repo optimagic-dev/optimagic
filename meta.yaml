@@ -23,6 +23,7 @@ requirements:
     - pygmo>=2.10
     - bokeh>=1.1
     - scipy
+    - numba >= 0.12
     - numdifftools>= 0.9.20
     - fuzzywuzzy
 
