@@ -1,152 +1,195 @@
 """Check compatibility of constraints with each other and with bounds and fixes."""
 import warnings
 
-import pandas as pd
+import numpy as np
+
+from estimagic.optimization.utilities import cov_params_to_matrix
+from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
 
-def check_compatibility_of_constraints(constraints, params, fixed):
-    """Compatibility checks for constraints.
+def check_constraints_are_satisfied(constraints, params):
+    """Check that params satisfies all constraints.
 
-    Args:
-        constraints (list):
-            List with constraint dictionaries.
-
-        params (pd.DataFrame): see :ref:`params`.
-
-        fixed (pd.DataFrame): Same index as params. The column '_fixed' indicates
-            if a parameter is fixed. The column 'value' indicates the value to which
-            it is fixed.
-
-    """
-    _check_no_overlapping_transforming_constraints(constraints, params)
-    _check_no_invalid_equality_constraints(constraints, params)
-    _check_fixes(params, fixed)
-
-
-def _check_no_overlapping_transforming_constraints(constraints, params):
-    """Check that there are no overlapping transforming constraints.
-
-    Transforming constraints are constraints that do not only fix a parameter but
-    require an actual transformation when converting between internal and external
-    parameter vectors.
+    This should be called before the more specialized constraints are rewritten to
+    linear constraints in order to get better error messages!
 
     Args:
-        constraints (list):
-            List with constraint dictionaries.
+        constraints (list): List of constraints with processed selectors.
+        params (pd.DataFrame): See :ref:`params`
 
-        params (pd.DataFrame): see :ref:`params`.
+    Raises:
+        ValueError if constraints are not satisfied.
 
     """
-    counter = pd.Series(index=params.index, data=0, name="constraint_type")
-
-    transforming_types = ["covariance", "sdcorr", "sum", "probability", "increasing"]
-
     for constr in constraints:
-        if constr["type"] in transforming_types:
-            counter.loc[constr["index"]] += 1
+        typ = constr["type"]
+        params_subset = params.iloc[constr["index"]]["value"]
+        msg = f"{{}}:\n{params_subset.to_frame()}"
+        if typ == "covariance":
+            cov = cov_params_to_matrix(params_subset)
+            e, v = np.linalg.eigh(cov)
+            if not np.all(e > -1e-8):
+                raise ValueError(msg.format("Invalid covariance parameters."))
+        elif typ == "sdcorr":
+            cov = sdcorr_params_to_matrix(params_subset)
+            e, v = np.linalg.eigh(cov)
+            if not np.all(e > -1e-8):
+                raise ValueError(msg.format("Invalid sdcorr parameters."))
+        elif typ == "probability":
+            if not np.isclose(params_subset.sum(), 1, rtol=0.01):
+                raise ValueError(msg.format("Probabilities do not sum to 1"))
+            if np.any(params_subset < 0):
+                raise ValueError(msg.format("Negative Probability."))
+            if np.any(params_subset > 1):
+                raise ValueError(msg.format("Probability larger than 1."))
+        elif typ == "increasing":
+            if np.any(np.diff(params_subset) < 0):
+                raise ValueError(msg.format("Increasing constraint violated."))
+        elif typ == "decreasing":
+            if np.any(np.diff(params_subset) > 0):
+                raise ValueError(msg.format("Decreasing constraint violated"))
+        elif typ == "linear":
+            # using sr.dot is important in case weights are a series in wrong order
+            wsum = params_subset.dot(constr["weights"])
+            if "lower_bound" in constr and wsum < constr["lower_bound"]:
+                raise ValueError(
+                    msg.format("Lower bound of linear constraint violated")
+                )
+            elif "upper_bound" in constr and wsum > constr["upper_bound"]:
+                raise ValueError(
+                    msg.format("Upper bound of linear constraint violated")
+                )
+            elif "value" in constr and not np.isclose(wsum, constr["value"]):
+                raise ValueError(
+                    msg.format("Equality condition of linear constraint violated")
+                )
+        elif typ == "equality":
+            if len(params_subset.unique()) != 1:
+                raise ValueError(msg.format("Equality constraint violated."))
 
-    invalid = counter[counter.ge(2)]
 
-    if len(invalid) > 0:
-        raise ValueError(
-            "Overlapping constraints for {}".format(params.loc[invalid.index])
-        )
-
-
-def _check_no_invalid_equality_constraints(constraints, params):
-    """Check that equality constraints are compatible with other constraints.
-
-    In general, we don't allow for equality constraints on parameters that have
-    constraints which require reparametrizations. The only exception is when a set of
-    parameters is pairwise equal to another set of parameters that shares the same
-    constraint.
-
-    In the long run we could allow some more equality constraints for sum and
-    probability constraints bit this is relatively complex and probably rarely
-    needed.
+def check_types(constraints):
+    """Check that no invalid constraint types are requested.
 
     Args:
-        constraints (list):
-            List with constraint dictionaries.
+        constraints (list): List of constraints
 
-        params (pd.DataFrame): see :ref:`params`.
+    Raises:
+        TypeError if invalid constraint types are encountered
+
+
 
     """
-    helper = pd.DataFrame(index=params.index)
-    helper["eq_id"] = -1
-    helper["constraint_type"] = "None"
-
-    transforming_types = ["covariance", "sdcorr", "probability", "increasing"]
-    sums = []
+    valid_types = {
+        "covariance",
+        "sdcorr",
+        "linear",
+        "probability",
+        "increasing",
+        "decreasing",
+        "equality",
+        "pairwise_equality",
+        "fixed",
+    }
     for constr in constraints:
-        if constr["type"] == "sum":
-            sums.append("sum_" + str(constr["value"]))
-    transforming_types += sums
-
-    extended_constraints = []
-    for constr in constraints:
-        if constr["type"] == "sum":
-            new_constr = constr.copy()
-            new_constr["type"] = "sum_" + str(constr["value"])
-            extended_constraints.append(new_constr)
-        else:
-            extended_constraints.append(constr)
-
-    equality_constraints = [c for c in constraints if c["type"] == "equality"]
-
-    for i, constr in enumerate(equality_constraints):
-        if constr["type"] == "equality":
-            helper.loc[constr["index"], "eq_id"] = i
-
-    for constr in constraints:
-        if constr["type"] in transforming_types:
-            helper.loc[constr["index"], "constraint_type"] = constr["type"]
-
-    for constr in equality_constraints:
-        other_constraint_types = helper.loc[constr["index"], "constraint_type"].unique()
-
-        if len(other_constraint_types) > 1:
-            raise ValueError("Incompatible equality constraint.")
-        other_type = other_constraint_types[0]
-        if other_type != "None":
-            other_constraints = [c for c in constraints if c["type"] == other_type]
-
-            relevant_others = []
-            for ind_tup in constr["index"]:
-                for other_constraint in other_constraints:
-                    if ind_tup in other_constraint["index"]:
-                        relevant_others.append(other_constraint)
-
-            first_eq_ids = helper.loc[relevant_others[0]["index"], "eq_id"]
-            if len(first_eq_ids.unique()) != len(first_eq_ids):
-                raise ValueError("Incompatible equality constraint.")
-
-            for rel in relevant_others:
-                eq_ids = helper.loc[rel["index"], "eq_id"]
-
-                if not (eq_ids.to_numpy() == first_eq_ids.to_numpy()).all():
-                    raise ValueError("Incompatible equality constraint.")
+        if constr["type"] not in valid_types:
+            raise TypeError("Invalid constraint_type: {}".format(constr["type"]))
 
 
-def _check_fixes(params, fixed):
+def check_for_incompatible_overlaps(processed_params, consolidated_constraints):
+    """Check that there are no overlaps between constraints that transform paramters.
+
+    Since the constraints are already consolidated such that only those that transform
+    a parameter are left and all equality constraints are already plugged in, this
+    boils down to checking that no parameter appears more than once.
+
+    Args:
+        processed_params (pd.DataFrame)
+        cosolidated_constraints (list): List with consolidated constraint dictionaries.
+
+    """
+    all_ilocs = []
+    for constr in consolidated_constraints:
+        all_ilocs += constr["index"]
+
+    msg = (
+        "Transforming constraints such as 'covariance', 'sdcorr', 'probability' "
+        "and 'linear' cannot overlap. This includes overlaps induced by equality "
+        "constraints. This was violated for the following parameters:\n{}"
+    )
+
+    if len(set(all_ilocs)) < len(all_ilocs):
+        unique, counts = np.unique(all_ilocs, return_counts=True)
+        invalid_indices = unique[counts >= 2]
+        invalid_names = processed_params.iloc[invalid_indices].index
+
+        raise ValueError(msg.format(invalid_names))
+
+
+def check_fixes_and_bounds(processed_params, consolidated_constraints):
     """Check fixes.
 
     Warn the user if he fixes a parameter to a value even though that parameter has
-    a different non-nan value in params.
+    a different non-nan value in params
+
+    check that fixes are compatible with other constraints.
 
     Args:
-        params (pd.DataFrame): see :ref:`params`.
-        fixed (DataFrame): has the columns "_fixed" (bool) and "value" (float)
-
+        processed_params (pd.DataFrame): see :ref:`params`.
+        consolidated_constraints (list)
     """
-    fixed = fixed.query("_fixed")
-    for p in fixed.index:
-        if not pd.isnull(params.loc[p, "value"]):
-            fvalue = fixed.loc[p, "value"]
-            value = params.loc[p, "value"]
-            if fvalue != value:
-                warnings.warn(
-                    "Parameter {} is fixed to {} but value column is {}".format(
-                        p, fvalue, value
-                    )
+    # warn about fixes to a different value that what is in the "value" column
+    problematic_fixes = processed_params.query(
+        "value != _fixed_value & _fixed_value.notnull()", engine="python"
+    )
+
+    warn_msg = (
+        "The following parameters were fixed to a different value than their start "
+        "value:\n {}. You can ignore this message if you did so on purpose."
+    )
+
+    if len(problematic_fixes) > 0:
+        warnings.warn(warn_msg.format(problematic_fixes[["value", "_fixed_value"]]))
+
+    # Check fixes and bounds are compatible with other constraints
+    prob_msg = (
+        "{} constraints are incompatible with fixes or bounds. "
+        "This is violated for:\n{}"
+    )
+
+    cov_msg = (
+        "{} constraints are incompatible with fixes or bounds except for the first "
+        "parameter. This is violated for:\n{}"
+    )
+
+    for constr in consolidated_constraints:
+        if constr["type"] in ["covariance", "sdcorr"]:
+            params_subset = processed_params.iloc[constr["index"][1:]]
+            if params_subset["_is_fixed_to_value"].any():
+                problematic = params_subset[params_subset["_is_fixed_to_value"]].index
+                raise ValueError(cov_msg.format(constr["type"], problematic))
+            if np.isfinite(params_subset[["lower", "upper"]]).any(axis=None):
+                problematic = (
+                    params_subset.replace([-np.inf, np.inf], np.nan)
+                    .dropna(how="all")
+                    .index
                 )
+                raise ValueError(cov_msg.format(constr["type"], problematic))
+        elif constr["type"] == "probability":
+            params_subset = processed_params.iloc[constr["index"]]
+            if params_subset["_is_fixed_to_value"].any():
+                problematic = params_subset[params_subset["_is_fixed_to_value"]].index
+                raise ValueError(prob_msg.format(constr["type"], problematic))
+            if np.isfinite(params_subset[["lower", "upper"]]).any(axis=None):
+                problematic = (
+                    params_subset.replace([-np.inf, np.inf], np.nan)
+                    .dropna(how="all")
+                    .index
+                )
+                raise ValueError(prob_msg.format(constr["type"], problematic))
+
+    # Check lower < upper
+    invalid = processed_params.query("lower >= upper")[["lower", "upper"]]
+    msg = f"lower must be strictly smaller than upper. This is violated for:\n{invalid}"
+    if len(invalid) > 0:
+        raise ValueError(msg)
