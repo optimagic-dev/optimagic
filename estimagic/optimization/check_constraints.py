@@ -55,11 +55,11 @@ def check_constraints_are_satisfied(constraints, params):
         elif typ == "linear":
             # using sr.dot is important in case weights are a series in wrong order
             wsum = subset.dot(constr["weights"])
-            if "lower_bound" in constr and wsum < constr["lower_bound"]:
+            if "lower" in constr and wsum < constr["lower"]:
                 raise ValueError(
                     msg.format("Lower bound of linear constraint violated")
                 )
-            elif "upper_bound" in constr and wsum > constr["upper_bound"]:
+            elif "upper" in constr and wsum > constr["upper"]:
                 raise ValueError(
                     msg.format("Upper bound of linear constraint violated")
                 )

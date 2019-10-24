@@ -88,8 +88,8 @@ def _create_internal_bounds(processed_params, processed_constraints):
         elif constr["type"] == "linear":
             int_lower.iloc[constr["index"]] = -np.inf
             int_upper.iloc[constr["index"]] = np.inf
-            int_lower.update(constr["right_hand_side"]["lower_bound"])
-            int_upper.update(constr["right_hand_side"]["upper_bound"])
+            int_lower.update(constr["right_hand_side"]["lower"])
+            int_upper.update(constr["right_hand_side"]["upper"])
         else:
             raise TypeError("Invalid constraint type {}".format(constr["type"]))
 
@@ -301,7 +301,7 @@ def _replace_increasing_and_decreasing_by_linear(constraints):
                 "index": [smaller, larger],
                 "type": "linear",
                 "weights": np.array([-1, 1]),
-                "lower_bound": 0,
+                "lower": 0,
             }
             linear_constraints.append(lincon)
 

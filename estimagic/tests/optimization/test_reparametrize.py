@@ -188,14 +188,8 @@ def test_linear_constraint():
 
     constraints = [
         {"loc": "a", "type": "linear", "weights": [1, -2, 0], "value": 0},
-        {"loc": "b", "type": "linear", "weights": 1 / 3, "upper_bound": 3},
-        {
-            "loc": "c",
-            "type": "linear",
-            "weights": 1,
-            "lower_bound": 0,
-            "upper_bound": 5,
-        },
+        {"loc": "b", "type": "linear", "weights": 1 / 3, "upper": 3},
+        {"loc": "c", "type": "linear", "weights": 1, "lower": 0, "upper": 5},
         {"loc": params.index, "type": "linear", "weights": 1, "value": 14},
         {"loc": "c", "type": "equality"},
     ]

@@ -21,7 +21,6 @@ def consolidate_constraints(constraints, params):
         processed_params (pd.DataFrame)
 
     """
-    # consolidate equality constraints
     raw_eq, others = _split_constraints(constraints, "equality")
     eq_constraints = _consolidate_equality_constraints(raw_eq)
 
@@ -328,23 +327,23 @@ def _transform_linear_constraints_to_pandas_objects(linear_constraints, params):
     Returns:
         weights (pd.DataFrame): DataFrame with one row per constraint and one column
             per parameter. Columns names are the ilocs of the parameters in params.
-        rhs (pd.DataFrame): DataFrame with the columns "value", "lower_bound" and
-            "upper_bound" that collects the right hand sides of the constraints.
+        rhs (pd.DataFrame): DataFrame with the columns "value", "lower" and
+            "upper" that collects the right hand sides of the constraints.
 
     """
     all_weights, all_values, all_lbs, all_ubs = [], [], [], []
     for constr in linear_constraints:
         all_weights.append(constr["weights"])
         all_values.append(constr.get("value", np.nan))
-        all_lbs.append(constr.get("lower_bound", -np.inf))
-        all_ubs.append(constr.get("upper_bound", np.inf))
+        all_lbs.append(constr.get("lower", -np.inf))
+        all_ubs.append(constr.get("upper", np.inf))
 
     weights = pd.concat(all_weights, axis=1).T.reset_index()
     weights = weights.reindex(columns=params.index).fillna(0)
     weights.columns = np.arange(len(weights.columns))
     values = pd.Series(all_values, name="value")
-    lbs = pd.Series(all_lbs, name="lower_bound")
-    ubs = pd.Series(all_ubs, name="upper_bound")
+    lbs = pd.Series(all_lbs, name="lower")
+    ubs = pd.Series(all_ubs, name="upper")
     rhs = pd.concat([values, lbs, ubs], axis=1)
     return weights, rhs
 
@@ -377,7 +376,7 @@ def _plug_fixes_into_linear_weights_and_rhs(weights, right_hand_side, processed_
     if len(fixed_ilocs) > 0:
         fixed_values = processed_params.iloc[fixed_ilocs]["_fixed_value"].to_numpy()
         to_add = weights[fixed_ilocs] @ fixed_values
-        for column in ["lower_bound", "upper_bound", "value"]:
+        for column in ["lower", "upper", "value"]:
             new_rhs[column] = new_rhs[column] + to_add
         for i in fixed_ilocs:
             new_weights[i] = 0
@@ -406,7 +405,7 @@ def _express_bounds_as_linear_constraints(weights, right_hand_side, params):
     for i in weights.columns:
         new = {}
         if np.isfinite(params.iloc[i]["lower"]):
-            new["lower_bound"] = params.iloc[i]["lower"]
+            new["lower"] = params.iloc[i]["lower"]
         if np.isfinite(params.iloc[i]["upper"]):
             new["upper"] = params.iloc[i]["upper"]
         if new != {}:
@@ -439,11 +438,11 @@ def _rescale_linear_constraints(weights, right_hand_side):
     weights = scaling_factor * weights
     scaled_rhs = scaling_factor * right_hand_side
     rhs = scaled_rhs.copy()
-    rhs["lower_bound"] = scaled_rhs["lower_bound"].where(
-        scaling_factor.flatten() > 0, scaled_rhs["upper_bound"]
+    rhs["lower"] = scaled_rhs["lower"].where(
+        scaling_factor.flatten() > 0, scaled_rhs["upper"]
     )
-    rhs["upper_bound"] = scaled_rhs["upper_bound"].where(
-        scaling_factor.flatten() > 0, scaled_rhs["lower_bound"]
+    rhs["upper"] = scaled_rhs["upper"].where(
+        scaling_factor.flatten() > 0, scaled_rhs["lower"]
     )
     return weights, rhs
 
@@ -464,17 +463,15 @@ def _drop_redundant_linear_constraints(weights, right_hand_side):
         else:
             raise ValueError
 
-    ub = right_hand_side.groupby("dupl_group")["upper_bound"].min()
-    lb = right_hand_side.groupby("dupl_group")["lower_bound"].max()
+    ub = right_hand_side.groupby("dupl_group")["upper"].min()
+    lb = right_hand_side.groupby("dupl_group")["lower"].max()
     fix = right_hand_side.groupby("dupl_group")["value"].apply(_consolidate_fix)
 
     # remove the bounds for fixed parameters
     ub = ub.where(fix.isnull(), np.inf)
     lb = lb.where(fix.isnull(), -np.inf)
 
-    new_rhs = pd.concat(
-        [lb, ub, fix], axis=1, names=["lower_bound", "upper_bound", "value"]
-    )
+    new_rhs = pd.concat([lb, ub, fix], axis=1, names=["lower", "upper", "value"])
     new_rhs = new_rhs.reindex(weights.index)
     return new_weights, new_rhs
 
