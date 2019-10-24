@@ -91,3 +91,13 @@ be grouped in the same sub-plot in the dashboard or the convergence plot.
 Parameters whose ``"group"`` is ``None`` are typically not plotted. This can
 be used to save resources when using the dashboard on vary large optimizations.
 
+
+Invalid columns
+===============
+
+Some names are reserved for internal use in estimagic. Currently those are:
+
+``'_fixed_value'``, ``'_is_fixed_to_value'``, ``'_is_fixed_to_other'``,
+``'_pre_replacements'``, ``'_post_replacements'`` as well any name that starts with
+``_internal``.
+

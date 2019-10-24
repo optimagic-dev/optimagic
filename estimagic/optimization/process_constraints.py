@@ -66,11 +66,6 @@ def process_constraints(constraints, params):
         pp["_pre_replacements"] = _create_pre_replacements(pp, constraints)
         pp["_internal_fixed_value"] = _create_internal_fixed_value(pp, constraints)
 
-        pp.drop(
-            columns=["_fixed_value", "_is_fixed_to_value", "_is_fixed_to_other"],
-            inplace=True,
-        )
-
         return constraints, pp
 
 

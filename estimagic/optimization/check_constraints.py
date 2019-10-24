@@ -140,7 +140,8 @@ def check_fixes_and_bounds(processed_params, consolidated_constraints):
     """
     # warn about fixes to a different value that what is in the "value" column
     problematic_fixes = processed_params.query(
-        "value != _fixed_value & _fixed_value.notnull()", engine="python"
+        "value != _fixed_value & _fixed_value.notnull() & value.notnull()",
+        engine="python",
     )
 
     warn_msg = (

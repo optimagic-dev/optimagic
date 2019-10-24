@@ -338,6 +338,20 @@ def _process_params(params):
         params["name"] = names
 
     assert "_fixed" not in params.columns, "Invalid column name _fixed in params_df."
+
+    invalid_names = ["_fixed_value", "_is_fixed_to_value", "_is_fixed_to_other"]
+    invalid_present_columns = []
+    for col in params.columns:
+        if col in invalid_names or col.startswith("_internal"):
+            invalid_present_columns.append(col)
+
+    if len(invalid_present_columns) > 0:
+        msg = (
+            "Column names starting with '_internal' and as well as any other of the "
+            f"following columns are not allowed in params:\n{invalid_names}."
+            f"This is violated for:\n{invalid_present_columns}."
+        )
+        raise ValueError(msg)
     return params
 
 

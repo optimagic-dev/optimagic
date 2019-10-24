@@ -54,19 +54,21 @@ def all_constraints():
     return constraints_dict
 
 
-to_test = product(
-    [
-        "basic_probability",
-        "uncorrelated_covariance",
-        "basic_covariance",
-        "basic_fixed",
-        "basic_increasing",
-        "basic_equality",
-        "query_equality",
-        "basic_sdcorr",
-        "normalized_covariance",
-    ],
-    [0, 1, 2],
+to_test = list(
+    product(
+        [
+            "basic_probability",
+            "uncorrelated_covariance",
+            "basic_covariance",
+            "basic_fixed",
+            "basic_increasing",
+            "basic_equality",
+            "query_equality",
+            "basic_sdcorr",
+            "normalized_covariance",
+        ],
+        [0, 1, 2],
+    )
 )
 
 

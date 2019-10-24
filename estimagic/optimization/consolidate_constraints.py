@@ -77,19 +77,20 @@ def _consolidate_equality_constraints(equality_constraints):
     candidates = [constr["index"] for constr in equality_constraints]
     # drop constraints that just restrict one parameter to be equal to itself
     candidates = [c for c in candidates if len(c) >= 2]
-    merged = _bundle_overlapping_indices(candidates)
+    merged = _join_overlapping_lists(candidates)
     consolidated = [{"index": sorted(index), "type": "equality"} for index in merged]
     return consolidated
 
 
-def _bundle_overlapping_indices(candidates):
+def _join_overlapping_lists(candidates):
     """Bundle all candidates with with non-empty intersection.
 
     Args:
         candidates (list): List of potentially overlapping lists.
 
     Returns:
-        bundles (list)
+        bundles (list): List of lists where all overlapping lists have been joined
+            and sorted.
 
     """
     bundles = []
@@ -291,7 +292,7 @@ def _consolidate_linear_constraints(linear_constraints, processed_params):
     for _, w in weights.iterrows():
         involved_parameters.append(set(w[w != 0].index))
 
-    bundled_indices = _bundle_overlapping_indices(involved_parameters)
+    bundled_indices = _join_overlapping_lists(involved_parameters)
 
     constraints = []
     for involved_parameters in bundled_indices:
