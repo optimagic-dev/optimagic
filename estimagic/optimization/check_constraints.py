@@ -23,34 +23,38 @@ def check_constraints_are_satisfied(constraints, params):
     """
     for constr in constraints:
         typ = constr["type"]
-        params_subset = params.iloc[constr["index"]]["value"]
-        msg = f"{{}}:\n{params_subset.to_frame()}"
+        subset = params.iloc[constr["index"]]["value"]
+        msg = f"{{}}:\n{subset.to_frame()}"
         if typ == "covariance":
-            cov = cov_params_to_matrix(params_subset)
+            cov = cov_params_to_matrix(subset)
             e, v = np.linalg.eigh(cov)
             if not np.all(e > -1e-8):
                 raise ValueError(msg.format("Invalid covariance parameters."))
         elif typ == "sdcorr":
-            cov = sdcorr_params_to_matrix(params_subset)
+            cov = sdcorr_params_to_matrix(subset)
+            if (subset.iloc[: len(cov)] < 0).any():
+                raise ValueError(msg.format("Invalid standard deviations."))
+            if ((subset.iloc[len(cov) :] < -1) | (subset.iloc[len(cov) :] > 1)).any():
+                raise ValueError(msg.format("Invalid correlations."))
             e, v = np.linalg.eigh(cov)
             if not np.all(e > -1e-8):
                 raise ValueError(msg.format("Invalid sdcorr parameters."))
         elif typ == "probability":
-            if not np.isclose(params_subset.sum(), 1, rtol=0.01):
+            if not np.isclose(subset.sum(), 1, rtol=0.01):
                 raise ValueError(msg.format("Probabilities do not sum to 1"))
-            if np.any(params_subset < 0):
+            if np.any(subset < 0):
                 raise ValueError(msg.format("Negative Probability."))
-            if np.any(params_subset > 1):
+            if np.any(subset > 1):
                 raise ValueError(msg.format("Probability larger than 1."))
         elif typ == "increasing":
-            if np.any(np.diff(params_subset) < 0):
+            if np.any(np.diff(subset) < 0):
                 raise ValueError(msg.format("Increasing constraint violated."))
         elif typ == "decreasing":
-            if np.any(np.diff(params_subset) > 0):
+            if np.any(np.diff(subset) > 0):
                 raise ValueError(msg.format("Decreasing constraint violated"))
         elif typ == "linear":
             # using sr.dot is important in case weights are a series in wrong order
-            wsum = params_subset.dot(constr["weights"])
+            wsum = subset.dot(constr["weights"])
             if "lower_bound" in constr and wsum < constr["lower_bound"]:
                 raise ValueError(
                     msg.format("Lower bound of linear constraint violated")
@@ -64,7 +68,7 @@ def check_constraints_are_satisfied(constraints, params):
                     msg.format("Equality condition of linear constraint violated")
                 )
         elif typ == "equality":
-            if len(params_subset.unique()) != 1:
+            if len(subset.unique()) != 1:
                 raise ValueError(msg.format("Equality constraint violated."))
 
 
@@ -165,27 +169,23 @@ def check_fixes_and_bounds(processed_params, consolidated_constraints):
 
     for constr in consolidated_constraints:
         if constr["type"] in ["covariance", "sdcorr"]:
-            params_subset = processed_params.iloc[constr["index"][1:]]
-            if params_subset["_is_fixed_to_value"].any():
-                problematic = params_subset[params_subset["_is_fixed_to_value"]].index
+            subset = processed_params.iloc[constr["index"][1:]]
+            if subset["_is_fixed_to_value"].any():
+                problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(cov_msg.format(constr["type"], problematic))
-            if np.isfinite(params_subset[["lower", "upper"]]).any(axis=None):
+            if np.isfinite(subset[["lower", "upper"]]).any(axis=None):
                 problematic = (
-                    params_subset.replace([-np.inf, np.inf], np.nan)
-                    .dropna(how="all")
-                    .index
+                    subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
                 raise ValueError(cov_msg.format(constr["type"], problematic))
         elif constr["type"] == "probability":
-            params_subset = processed_params.iloc[constr["index"]]
-            if params_subset["_is_fixed_to_value"].any():
-                problematic = params_subset[params_subset["_is_fixed_to_value"]].index
+            subset = processed_params.iloc[constr["index"]]
+            if subset["_is_fixed_to_value"].any():
+                problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(prob_msg.format(constr["type"], problematic))
-            if np.isfinite(params_subset[["lower", "upper"]]).any(axis=None):
+            if np.isfinite(subset[["lower", "upper"]]).any(axis=None):
                 problematic = (
-                    params_subset.replace([-np.inf, np.inf], np.nan)
-                    .dropna(how="all")
-                    .index
+                    subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
                 raise ValueError(prob_msg.format(constr["type"], problematic))
 

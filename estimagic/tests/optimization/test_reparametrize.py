@@ -132,3 +132,25 @@ def test_reparametrize_from_internal(example_params, all_constraints, case, numb
     expected_external_value = params["value"]
 
     assert_series_equal(calculated_external_value, expected_external_value)
+
+
+invalid_cases = [
+    "basic_probability",
+    "uncorrelated_covariance",
+    "basic_covariance",
+    "basic_increasing",
+    "basic_equality",
+    "query_equality",
+    "basic_sdcorr",
+]
+
+
+@pytest.mark.parametrize("case", invalid_cases)
+def test_value_error_if_constraints_are_violated(example_params, all_constraints, case):
+    constraints = all_constraints[case]
+    params = reduce_params(example_params, constraints)
+    for val in ["invalid_value0", "invalid_value1"]:
+        params["value"] = params[val]
+
+        with pytest.raises(ValueError):
+            process_constraints(constraints, params)
