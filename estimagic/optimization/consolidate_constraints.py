@@ -302,6 +302,7 @@ def _consolidate_linear_constraints(linear_constraints, processed_params):
         w, rhs = _express_bounds_as_linear_constraints(w, rhs, processed_params)
         w, rhs = _rescale_linear_constraints(w, rhs)
         w, rhs = _drop_redundant_linear_constraints(w, rhs)
+        _check_consolidated_weights(w, processed_params)
         rhs = _set_rhs_index(w, rhs, processed_params)
         to_internal, from_internal = _get_kernel_transformation_matrices(
             w, processed_params
@@ -401,7 +402,6 @@ def _express_bounds_as_linear_constraints(weights, right_hand_side, params):
         extended_rhs (pd.DataFrame)
 
     """
-
     additional_constraints = []
     for i in weights.columns:
         new = {}
@@ -410,7 +410,7 @@ def _express_bounds_as_linear_constraints(weights, right_hand_side, params):
         if np.isfinite(params.iloc[i]["upper"]):
             new["upper"] = params.iloc[i]["upper"]
         if new != {}:
-            new["weights"] = pd.Series([1], name="w", index=params.iloc[i].index)
+            new["weights"] = pd.Series([1], name="w", index=params.iloc[[i]].index)
             additional_constraints.append(new)
 
     if len(additional_constraints) > 0:
@@ -419,8 +419,8 @@ def _express_bounds_as_linear_constraints(weights, right_hand_side, params):
             additional_constraints, params
         )
 
-        extended_weights = (pd.concat([weights, new_weights]).reset_index(),)
-        extended_rhs = pd.concat([right_hand_side, new_rhs]).reset_index()
+        extended_weights = pd.concat([weights, new_weights]).reset_index(drop=True)
+        extended_rhs = pd.concat([right_hand_side, new_rhs]).reset_index(drop=True)
     else:
         extended_weights, extended_rhs = weights, right_hand_side
 
@@ -433,7 +433,6 @@ def _rescale_linear_constraints(weights, right_hand_side):
     This will make it easier to detect redundant rows.
 
     """
-
     first_nonzero = weights.replace(0, np.nan).bfill(1).iloc[:, 0]
     scaling_factor = 1 / first_nonzero.to_numpy().reshape(-1, 1)
     weights = scaling_factor * weights
@@ -475,19 +474,12 @@ def _drop_redundant_linear_constraints(weights, right_hand_side):
     new_rhs = pd.concat(
         [lb, ub, fix], axis=1, names=["lower_bound", "upper_bound", "value"]
     )
+    new_weights.sort_index(inplace=True)
+    new_rhs.sort_index(inplace=True)
     return new_weights, new_rhs
 
 
-def _set_rhs_index(weights, right_hand_side, params):
-    ind = params.iloc[weights.columns[-len(weights) :]].index
-    new_rhs = pd.DataFrame(
-        right_hand_side.to_numpy(), columns=right_hand_side.columns, index=ind
-    )
-
-    return new_rhs
-
-
-def _get_kernel_transformation_matrices(weights, params):
+def _check_consolidated_weights(weights, processed_params):
     n_constraints, n_params = weights.shape
 
     msg_too_many = (
@@ -504,13 +496,26 @@ def _get_kernel_transformation_matrices(weights, params):
         "decreasing constraints."
     )
 
-    ind = params.iloc[weights.columns].index
+    ind = processed_params.iloc[weights.columns].index
 
     if n_constraints > n_params:
         raise ValueError(msg_too_many + msg_general.format(ind, weights))
 
     if np.linalg.matrix_rank(weights) < n_constraints:
         raise ValueError(msg_rank + msg_general.format(ind, weights))
+
+
+def _set_rhs_index(weights, right_hand_side, params):
+    ind = params.iloc[weights.columns[-len(weights) :]].index
+    new_rhs = pd.DataFrame(
+        right_hand_side.to_numpy(), columns=right_hand_side.columns, index=ind
+    )
+
+    return new_rhs
+
+
+def _get_kernel_transformation_matrices(weights, params):
+    n_constraints, n_params = weights.shape
 
     identity = np.eye(n_params)
 

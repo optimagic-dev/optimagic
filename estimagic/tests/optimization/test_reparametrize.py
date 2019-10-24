@@ -154,3 +154,24 @@ def test_value_error_if_constraints_are_violated(example_params, all_constraints
 
         with pytest.raises(ValueError):
             process_constraints(constraints, params)
+
+
+def test_invalid_bound_for_increasing():
+    params = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
+    params["lower"] = [-np.inf, 1, 0.5]
+    params["upper"] = np.nan
+
+    constraints = [{"loc": params.index, "type": "increasing"}]
+
+    with pytest.raises(ValueError):
+        process_constraints(constraints, params)
+
+
+def test_one_bound_is_allowed_for_increasing():
+    params = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
+    params["lower"] = [-np.inf, 1, -np.inf]
+    params["upper"] = [np.inf, 2, np.inf]
+
+    constraints = [{"loc": params.index, "type": "increasing"}]
+
+    process_constraints(constraints, params)
