@@ -268,7 +268,7 @@ def _process_linear_weights(constraints, params):
                     raise ValueError(msg)
                 weights = np.asarray(raw_weights)
             elif isinstance(raw_weights, (float, int)):
-                weights = np.full(len(params_subset), float(weights))
+                weights = np.full(len(params_subset), float(raw_weights))
             else:
                 raise TypeError(
                     "Invalid type for linear weights {}.".format(type(raw_weights))

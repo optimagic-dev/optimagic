@@ -175,3 +175,60 @@ def test_one_bound_is_allowed_for_increasing():
     constraints = [{"loc": params.index, "type": "increasing"}]
 
     process_constraints(constraints, params)
+
+
+def test_linear_constraint():
+    params = pd.DataFrame(
+        index=pd.MultiIndex.from_product([["a", "b", "c"], [0, 1, 2]]),
+        data=[[2], [1], [0], [1], [3], [4], [1], [1], [1.0]],
+        columns=["value"],
+    )
+    params["lower"] = [-1] + [-np.inf] * 8
+    params["upper"] = [1] + [np.inf] * 8
+
+    constraints = [
+        {"loc": "a", "type": "linear", "weights": [1, -2, 0], "value": 0},
+        {"loc": "b", "type": "linear", "weights": 1 / 3, "upper_bound": 3},
+        {
+            "loc": "c",
+            "type": "linear",
+            "weights": 1,
+            "lower_bound": 0,
+            "upper_bound": 5,
+        },
+        {"loc": params.index, "type": "linear", "weights": 1, "value": 14},
+        {"loc": "c", "type": "equality"},
+    ]
+
+    internal, external = _back_and_forth_transformation_and_assert(params, constraints)
+    assert len(internal) == 5
+
+
+def test_covariance_is_inherited_from_pairwise_equality(example_params):
+    params = example_params.loc[["f", "l"]].copy()
+    params["value"] = params["value0"]
+    constraints = [
+        {"loc": "l", "type": "covariance"},
+        {"locs": ["l", "f"], "type": "pairwise_equality"},
+    ]
+
+    internal, external = _back_and_forth_transformation_and_assert(params, constraints)
+    assert len(internal) == 10
+
+
+def _back_and_forth_transformation_and_assert(params, constraints):
+    pc, pp = process_constraints(constraints, params)
+
+    internal = reparametrize_to_internal(pp, pc)
+
+    external = reparametrize_from_internal(
+        internal=internal,
+        fixed_values=pp["_internal_fixed_value"].to_numpy(),
+        pre_replacements=pp["_pre_replacements"].to_numpy(),
+        processed_constraints=pc,
+        post_replacements=pp["_post_replacements"].to_numpy(),
+        processed_params=pp,
+    )
+
+    assert_series_equal(external["value"], params["value"])
+    return internal, external

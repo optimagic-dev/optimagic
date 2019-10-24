@@ -418,6 +418,7 @@ def _express_bounds_as_linear_constraints(weights, right_hand_side, params):
         new_weights, new_rhs = _transform_linear_constraints_to_pandas_objects(
             additional_constraints, params
         )
+        new_weights = new_weights[weights.columns]
 
         extended_weights = pd.concat([weights, new_weights]).reset_index(drop=True)
         extended_rhs = pd.concat([right_hand_side, new_rhs]).reset_index(drop=True)
