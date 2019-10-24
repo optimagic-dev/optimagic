@@ -37,3 +37,4 @@ dependencies:
     - tox-conda
     - black
     - pdbpp
+    - blackcellmagic
