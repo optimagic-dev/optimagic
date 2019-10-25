@@ -1,5 +1,5 @@
 """Handle constraints by reparametrizations."""
-from numba import jit
+import numba as nb
 
 import estimagic.optimization.kernel_transformations as kt
 
@@ -7,11 +7,9 @@ import estimagic.optimization.kernel_transformations as kt
 def reparametrize_to_internal(processed_params, processed_constraints):
     """Convert a params DataFrame into a numpy array of internal parameters.
 
-
     Args:
         processed_params (DataFrame): A processed params DataFrame. See :ref:`params`.
         processed_constraints (list): Processed and consolidated constraints.
-
 
     Returns:
         internal_params (np.ndarray): 1d numpy array of free reparametrized parameters.
@@ -63,10 +61,11 @@ def reparametrize_from_internal(
 
     external = processed_params.copy()
     external["value"] = external_values
+
     return external
 
 
-@jit
+@nb.jit
 def _do_pre_replacements(internal, pre_replacements, container):
     for external_pos, internal_pos in enumerate(pre_replacements):
         if internal_pos >= 0:
@@ -74,7 +73,7 @@ def _do_pre_replacements(internal, pre_replacements, container):
     return container
 
 
-@jit
+@nb.jit
 def _do_post_replacements(post_replacements, container):
     for i, pos in enumerate(post_replacements):
         if pos >= 0:

@@ -78,6 +78,7 @@ def _consolidate_equality_constraints(equality_constraints):
     candidates = [c for c in candidates if len(c) >= 2]
     merged = _join_overlapping_lists(candidates)
     consolidated = [{"index": sorted(index), "type": "equality"} for index in merged]
+
     return consolidated
 
 
@@ -101,6 +102,7 @@ def _join_overlapping_lists(candidates):
             candidates = candidates[1:]
         else:
             candidates = new_candidates
+
     return bundles
 
 
@@ -119,6 +121,7 @@ def _unite_first_with_all_intersecting_elements(indices):
             new_first = new_first.union(idx)
         else:
             new_others.append(idx)
+
     return [new_first] + new_others
 
 
@@ -154,6 +157,7 @@ def _consolidate_fixes_with_equality_constraints(
                 len(valcounts) == 1
             ), "Equality constrained parameters cannot be fixed to different values."
             fixed_value.iloc[eq["index"]] = valcounts.idex[0]
+
     return fixed_value
 
 
@@ -181,6 +185,7 @@ def _consolidate_bounds_with_equality_constraints(equality_constraints, params):
 
     pp["lower"] = lower
     pp["upper"] = upper
+
     return pp
 
 
@@ -273,6 +278,7 @@ def _plug_equality_constraints_into_selectors(
             processed_constraints.append(constr)
 
     processed_constraints += linear_constraints
+
     return processed_constraints, pp
 
 
@@ -314,6 +320,7 @@ def _consolidate_linear_constraints(linear_constraints, processed_params):
             "right_hand_side": rhs,
         }
         constraints.append(constr)
+
     return constraints
 
 
@@ -345,6 +352,7 @@ def _transform_linear_constraints_to_pandas_objects(linear_constraints, params):
     lbs = pd.Series(all_lbs, name="lower")
     ubs = pd.Series(all_ubs, name="upper")
     rhs = pd.concat([values, lbs, ubs], axis=1)
+
     return weights, rhs
 
 
@@ -444,6 +452,7 @@ def _rescale_linear_constraints(weights, right_hand_side):
     rhs["upper"] = scaled_rhs["upper"].where(
         scaling_factor.flatten() > 0, scaled_rhs["lower"]
     )
+
     return weights, rhs
 
 
@@ -473,6 +482,7 @@ def _drop_redundant_linear_constraints(weights, right_hand_side):
 
     new_rhs = pd.concat([lb, ub, fix], axis=1, names=["lower", "upper", "value"])
     new_rhs = new_rhs.reindex(weights.index)
+
     return new_weights, new_rhs
 
 
@@ -541,4 +551,5 @@ def _is_redundant(candidate, others):
         same_type = _split_constraints(others, candidate["type"])
         duplicates = [c for c in same_type if c["index"] == candidate["index"]]
         is_redundant = len(duplicates) > 0
+
     return is_redundant

@@ -76,12 +76,12 @@ def _create_internal_bounds(processed_params, processed_constraints):
     for constr in processed_constraints:
         if constr["type"] in ["covariance", "sdcorr"]:
             # Note that the diagonal positions are the same for covariance and sdcorr
-            # because the internal params contain the cholesky factor of the implied
+            # because the internal params contains the Cholesky factor of the implied
             # covariance matrix in both cases.
             dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
             diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
-            bd = constr.get("bounds_distance", 0.0)
+            bd = constr.get("bounds_distance", 0)
             int_lower.iloc[diag_indices] = np.maximum(int_lower.iloc[diag_indices], bd)
         elif constr["type"] == "probability":
             int_lower.iloc[constr["index"]] = 0
@@ -99,7 +99,7 @@ def _create_internal_bounds(processed_params, processed_constraints):
 def _create_internal_free(processed_params, processed_constraints):
     """Boolean Series that is true for parameters over which the optimizer optimizes."""
     int_fixed = processed_params["_is_fixed_to_value"]
-    int_fixed = int_fixed | processed_params["_is_fixed_to_other"]
+    int_fixed |= processed_params["_is_fixed_to_other"]
 
     for constr in processed_constraints:
         if constr["type"] == "probability":
@@ -111,6 +111,7 @@ def _create_internal_free(processed_params, processed_constraints):
             int_fixed = int_fixed.astype(bool)
 
     int_free = ~int_fixed
+
     return int_free
 
 
@@ -126,11 +127,14 @@ def _create_pre_replacements(processed_params, processed_constraints):
     that has the same length as all params.
 
     """
-    free = processed_params.query("_internal_free").copy()
-    free["_internal_iloc"] = np.arange(len(free))
-    free = free["_internal_iloc"]
-    pre_replacements = pd.concat([processed_params, free], axis=1)["_internal_iloc"]
-    pre_replacements = pre_replacements.fillna(-1).astype(int)
+    pre_replacements = (
+        processed_params._internal_free.replace(False, np.nan)
+        .cumsum()
+        .subtract(1)
+        .fillna(-1)
+        .astype(int)
+    )
+
     return pre_replacements
 
 
@@ -144,30 +148,27 @@ def _create_internal_fixed_value(processed_params, processed_constraints):
         elif constr["type"] == "linear":
             int_fix.iloc[constr["index"]] = np.nan
             int_fix.update(constr["right_hand_side"]["value"])
+
     return int_fix
 
 
 def _apply_constraint_killers(constraints):
     """Filter out constraints that have a killer."""
-    to_kill, real_constraints = [], []
+    to_kill, real_constraints = set(), []
     for constr in constraints:
         if "kill" in constr and len(constr) == 1:
-            to_kill.append(constr["kill"])
+            to_kill.add(constr["kill"])
         else:
             real_constraints.append(constr)
 
-    to_kill = set(to_kill)
-
     survivors = []
     for constr in real_constraints:
-        if "id" not in constr or constr["id"] not in to_kill:
+        if constr.get("id", None) not in to_kill:
             survivors.append(constr)
+        to_kill.discard(constr.get("id", None))
 
-    present_ids = [constr["id"] for c in real_constraints if "id" in constr]
-
-    if not to_kill.issubset(present_ids):
-        invalid = to_kill.difference(present_ids)
-        raise KeyError(f"You try to kill constraint with non-exsting id: {invalid}")
+    if to_kill:
+        raise KeyError(f"You try to kill constraint with non-exsting id: {to_kill}")
 
     return survivors
 
@@ -229,6 +230,7 @@ def _process_selectors(constraints, params):
             ), "Either loc or query can be in constraint but not both."
             new_constr["index"] = indices[0]
         processed.append(new_constr)
+
     return processed
 
 
@@ -251,6 +253,7 @@ def _replace_pairwise_equality_by_equality(constraints, params):
         for elements in zip(*constr["indices"]):
             equality_constraints.append({"index": list(elements), "type": "equality"})
         final_constraints += equality_constraints
+
     return final_constraints
 
 
@@ -260,6 +263,7 @@ def _process_linear_weights(constraints, params):
         if constr["type"] == "linear":
             raw_weights = constr["weights"]
             params_subset = params.iloc[constr["index"]]
+
             msg = f"Weights must be same length as selected parameters: {params_subset}"
             if isinstance(raw_weights, pd.Series):
                 weights = raw_weights.loc[params_subset.index].to_numpy()
@@ -270,9 +274,8 @@ def _process_linear_weights(constraints, params):
             elif isinstance(raw_weights, (float, int)):
                 weights = np.full(len(params_subset), float(raw_weights))
             else:
-                raise TypeError(
-                    "Invalid type for linear weights {}.".format(type(raw_weights))
-                )
+                raise TypeError(f"Invalid type for linear weights {type(raw_weights)}.")
+
             new_constr = constr.copy()
             weights_sr = pd.Series(weights, index=params_subset.index)
             new_constr["weights"] = weights_sr
@@ -297,12 +300,12 @@ def _replace_increasing_and_decreasing_by_linear(constraints):
     linear_constraints = []
     for iloc in increasing_ilocs:
         for smaller, larger in zip(iloc, iloc[1:]):
-            lincon = {
+            linear_constr = {
                 "index": [smaller, larger],
                 "type": "linear",
                 "weights": np.array([-1, 1]),
                 "lower": 0,
             }
-            linear_constraints.append(lincon)
+            linear_constraints.append(linear_constr)
 
     return linear_constraints + other_constraints
