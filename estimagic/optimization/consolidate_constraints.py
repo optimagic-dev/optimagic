@@ -148,6 +148,7 @@ def _consolidate_fixes_with_equality_constraints(
         if "value" in fix:
             fixed_value.iloc[fix["index"]] = fix["value"]
         else:
+            breakpoint()
             fixed_value.iloc[fix["index"]] = params["value"].iloc[fix["index"]]
 
     for eq in equality_constraints:

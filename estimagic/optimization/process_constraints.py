@@ -154,21 +154,21 @@ def _create_internal_fixed_value(processed_params, processed_constraints):
 
 def _apply_constraint_killers(constraints):
     """Filter out constraints that have a killer."""
-    to_kill, real_constraints = set(), []
+    killers, real_constraints = set(), []
     for constr in constraints:
         if "kill" in constr and len(constr) == 1:
-            to_kill.add(constr["kill"])
+            killers.add(constr["kill"])
         else:
             real_constraints.append(constr)
 
     survivors = []
     for constr in real_constraints:
-        if constr.get("id", None) not in to_kill:
+        if constr.get("id", None) not in killers:
             survivors.append(constr)
-        to_kill.discard(constr.get("id", None))
+        killers.discard(constr.get("id", None))
 
-    if to_kill:
-        raise KeyError(f"You try to kill constraint with non-exsting id: {to_kill}")
+    if killers:
+        raise KeyError(f"You try to kill non-existing constraints with ids: {killers}")
 
     return survivors
 
