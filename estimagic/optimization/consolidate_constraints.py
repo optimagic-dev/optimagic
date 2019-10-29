@@ -148,7 +148,6 @@ def _consolidate_fixes_with_equality_constraints(
         if "value" in fix:
             fixed_value.iloc[fix["index"]] = fix["value"]
         else:
-            breakpoint()
             fixed_value.iloc[fix["index"]] = params["value"].iloc[fix["index"]]
 
     for eq in equality_constraints:
@@ -422,7 +421,6 @@ def _express_bounds_as_linear_constraints(weights, right_hand_side, params):
             additional_constraints.append(new)
 
     if len(additional_constraints) > 0:
-
         new_weights, new_rhs = _transform_linear_constraints_to_pandas_objects(
             additional_constraints, params
         )
