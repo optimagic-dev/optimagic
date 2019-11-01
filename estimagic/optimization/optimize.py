@@ -35,7 +35,7 @@ def maximize(
     db_options=None,
 ):
     """
-    Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
+    Maximize *criterion* using *algorithm* subject to *pc* and bounds.
 
     Args:
         criterion (function):
@@ -103,7 +103,7 @@ def minimize(
     dashboard=False,
     db_options=None,
 ):
-    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
+    """Minimize *criterion* using *algorithm* subject to *pc* and bounds.
 
     Args:
         criterion (function):
@@ -422,7 +422,7 @@ def _process_results(res, params, internal_params, constraints, origin):
         res: Result from numerical optimizer.
         params (DataFrame): See :ref:`params`.
         internal_params (DataFrame): See :ref:`params`.
-        constraints (list): constraints for the optimization
+        constraints (list): pc for the optimization
         origin (str): takes the values "pygmo", "nlopt", "scipy"
     """
     if origin == "scipy":

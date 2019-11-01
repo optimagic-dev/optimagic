@@ -1,4 +1,4 @@
-"""Check compatibility of constraints with each other and with bounds and fixes."""
+"""Check compatibility of pc with each other and with bounds and fixes."""
 import warnings
 
 import numpy as np
@@ -8,17 +8,17 @@ from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
 
 def check_constraints_are_satisfied(constraints, params):
-    """Check that params satisfies all constraints.
+    """Check that params satisfies all pc.
 
-    This should be called before the more specialized constraints are rewritten to
-    linear constraints in order to get better error messages!
+    This should be called before the more specialized pc are rewritten to
+    linear pc in order to get better error messages!
 
     Args:
-        constraints (list): List of constraints with processed selectors.
+        constraints (list): List of pc with processed selectors.
         params (pd.DataFrame): See :ref:`params`
 
     Raises:
-        ValueError if constraints are not satisfied.
+        ValueError if pc are not satisfied.
 
     """
     for constr in constraints:
@@ -76,7 +76,7 @@ def check_types(constraints):
     """Check that no invalid constraint types are requested.
 
     Args:
-        constraints (list): List of constraints
+        constraints (list): List of pc
 
     Raises:
         TypeError if invalid constraint types are encountered
@@ -100,32 +100,32 @@ def check_types(constraints):
             raise TypeError("Invalid constraint_type: {}".format(constr["type"]))
 
 
-def check_for_incompatible_overlaps(processed_params, consolidated_constraints):
+def check_for_incompatible_overlaps(params, pc):
     """Check that there are no overlaps between constraints that transform paramters.
 
     Since the constraints are already consolidated such that only those that transform
-    a parameter are left and all equality constraints are already plugged in, this
+    a parameter are left and all equality pc are already plugged in, this
     boils down to checking that no parameter appears more than once.
 
     Args:
-        processed_params (pd.DataFrame)
-        cosolidated_constraints (list): List with consolidated constraint dictionaries.
+        params (pd.DataFrame): see :ref:`params`
+        pc (list): List with consolidated constraint dictionaries.
 
     """
     all_ilocs = []
-    for constr in consolidated_constraints:
+    for constr in pc:
         all_ilocs += constr["index"]
 
     msg = (
-        "Transforming constraints such as 'covariance', 'sdcorr', 'probability' "
+        "Transforming pc such as 'covariance', 'sdcorr', 'probability' "
         "and 'linear' cannot overlap. This includes overlaps induced by equality "
-        "constraints. This was violated for the following parameters:\n{}"
+        "pc. This was violated for the following parameters:\n{}"
     )
 
     if len(set(all_ilocs)) < len(all_ilocs):
         unique, counts = np.unique(all_ilocs, return_counts=True)
         invalid_indices = unique[counts >= 2]
-        invalid_names = processed_params.iloc[invalid_indices].index
+        invalid_names = params.iloc[invalid_indices].index
 
         raise ValueError(msg.format(invalid_names))
 
@@ -136,7 +136,7 @@ def check_fixes_and_bounds(processed_params, consolidated_constraints):
     Warn the user if he fixes a parameter to a value even though that parameter has
     a different non-nan value in params
 
-    check that fixes are compatible with other constraints.
+    check that fixes are compatible with other pc.
 
     Args:
         processed_params (pd.DataFrame): see :ref:`params`.
@@ -156,14 +156,13 @@ def check_fixes_and_bounds(processed_params, consolidated_constraints):
     if len(problematic_fixes) > 0:
         warnings.warn(warn_msg.format(problematic_fixes[["value", "_fixed_value"]]))
 
-    # Check fixes and bounds are compatible with other constraints
+    # Check fixes and bounds are compatible with other pc
     prob_msg = (
-        "{} constraints are incompatible with fixes or bounds. "
-        "This is violated for:\n{}"
+        "{} pc are incompatible with fixes or bounds. " "This is violated for:\n{}"
     )
 
     cov_msg = (
-        "{} constraints are incompatible with fixes or bounds except for the first "
+        "{} pc are incompatible with fixes or bounds except for the first "
         "parameter. This is violated for:\n{}"
     )
 

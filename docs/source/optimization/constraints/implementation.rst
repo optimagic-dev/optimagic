@@ -187,6 +187,39 @@ where :math:`k = m - n` and :math:`\mathbb{I}_n[k]` are the k rows of the identi
 that make all rows of :math:`\mathbf{M}` linearly independent.
 
 
+**Proof:**
+
+":math:`\Rightarrow`":
+
+Let :math:`x\in \mathbf{X}`, then we define
+:math:`\mathbf{\tilde{x}} = \mathbf{M}^{-1} x`.
+Claim: :math:`\mathbf{\tilde{x}}  \in \mathbf{\tilde{X}}`: \\
+
+.. math::
+  \mathbf{\tilde{x}}  = \mathbf{M}^{-1} x =
+    \left[ {\begin{array}{cc}
+       \mathbb{I}_n[k]x \\
+       Ax \\
+      \end{array} } \right]
+      = (\tilde{x}_1, \tilde{x}_2)^T
+
+where :math:`\tilde{x}_1 \in \mathbb{R}^k` and
+:math:`\mathbf{l} \leq \mathbf{\tilde{x}}_2 \leq \mathbf{u}` because
+:math:`\mathbf{l} \leq \mathbf{Ax} \leq \mathbf{u}`. Thus
+:math:`\mathbf{\tilde{x}} \in \mathbf{\tilde{X}}`.
+
+
+":math:`\Leftarrow`" (Proof by negation):
+
+Let :math:`x \not\in \mathbf{X}` and define
+:math:`\mathbf{\tilde{x}} = \mathbf{M}^{-1} x`.
+Claim :math:`\mathbf{\tilde{x}}  \not\in \mathbf{\tilde{X}}`.
+
+By the same argument as above we can show, that, because
+:math:`\neg(\mathbf{l} \leq \mathbf{Ax} \leq \mathbf{u})`,
+:math:`\mathbf{\tilde{x}}  \not\in \mathbf{\tilde{X}}`.
+
+
 The rank condition on M makes it clear that there can be at most as many linear
 constraints as involved parameters. This includes any box constraints on the involved
 parameters.

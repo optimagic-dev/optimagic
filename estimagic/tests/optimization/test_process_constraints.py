@@ -1,4 +1,4 @@
-"""Test the constraints processing."""
+"""Test the pc processing."""
 import numpy as np
 import pandas as pd
 import pytest
@@ -56,9 +56,6 @@ def test_process_selectors(constraint, expected):
 
 
 def test_replace_pairwise_equality_by_equality():
-    ind_tups = [(0, "a"), (0, "b"), (1, "f"), (1, "e")]
-    df = pd.DataFrame(index=pd.MultiIndex.from_tuples(ind_tups))
-
     constr = {"indices": [[0, 1], [2, 3]], "type": "pairwise_equality"}
 
     expected = [
@@ -66,7 +63,7 @@ def test_replace_pairwise_equality_by_equality():
         {"index": [1, 3], "type": "equality"},
     ]
 
-    calculated = _replace_pairwise_equality_by_equality([constr], df)
+    calculated = _replace_pairwise_equality_by_equality([constr])
 
     assert calculated == expected
 

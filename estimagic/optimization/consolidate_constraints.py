@@ -1,3 +1,11 @@
+"""Functions to consolidate user provided pc.
+
+Consolidation means that redundant pc are dropped
+and other pc are collected in meaningful bundles.
+
+Check the module docstring of process_constraints for naming conventions.
+
+"""
 import numpy as np
 import pandas as pd
 
@@ -5,20 +13,20 @@ from estimagic.optimization.utilities import number_of_triangular_elements_to_di
 
 
 def consolidate_constraints(constraints, params):
-    """Consolidate constraints with each other and remove redundant constraints.
+    """Consolidate pc with each other and remove redundant pc.
 
     Args:
         constraints (list): List with constraint dictionaries. It is assumed that
-            the selectors are already processed, sum constraints have been rewritten
-            as linear constraints and pairwise_equality constraints have been rewritten
-            as equality constraints.
+            the selectors are already processed, sum pc have been rewritten
+            as linear pc and pairwise_equality pc have been rewritten
+            as equality pc.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
-        consolidated_constraints (list): This contains processed version of all
-            constraints that require an actual kernel transformation. The information
-            on all other constraints is subsumed in processed_params.
-        processed_params (pd.DataFrame)
+        pc (list): This contains processed version of all
+            pc that require an actual kernel transformation. The information
+            on all other pc is subsumed in pp.
+        pp (pd.DataFrame)
 
     """
     raw_eq, others = _split_constraints(constraints, "equality")
@@ -52,29 +60,29 @@ def consolidate_constraints(constraints, params):
 
 
 def _consolidate_equality_constraints(equality_constraints):
-    """Consolidate equality constraints as far as possible.
+    """Consolidate equality pc as far as possible.
 
     Since equality is a transitive conditions we can consolidate any two equality
-    constraints that have at least one parameter in common into one condition. Besides
+    pc that have at least one parameter in common into one condition. Besides
     being faster, this also ensures that the result remains unchanged if equality
-    constraints are are split into several different constraints or if they are
+    pc are are split into several different pc or if they are
     specified in a different order.
 
-    The index in the consolidated equality constraints is sorted in the same order
+    The index in the consolidated equality pc is sorted in the same order
     as the index of params. This is no problem because order is irrelevant for
-    equality constraints.
+    equality pc.
 
     Args:
         equality_constraints (list): List of dictionaries where each dictionary is a
-            constraint. It is assumed that the selectors in the constraints were already
+            constraint. It is assumed that the selectors in the pc were already
             processed.
 
     Returns:
-        consolidated (list): List of consolidated equality constraints.
+        consolidated (list): List of consolidated equality pc.
     """
 
     candidates = [constr["index"] for constr in equality_constraints]
-    # drop constraints that just restrict one parameter to be equal to itself
+    # drop pc that just restrict one parameter to be equal to itself
     candidates = [c for c in candidates if len(c) >= 2]
     merged = _join_overlapping_lists(candidates)
     consolidated = [{"index": sorted(index), "type": "equality"} for index in merged]
@@ -128,14 +136,14 @@ def _unite_first_with_all_intersecting_elements(indices):
 def _consolidate_fixes_with_equality_constraints(
     fixed_constraints, equality_constraints, params
 ):
-    """Consolidate fixes with equality constraints.
+    """Consolidate fixes with equality pc.
 
     If any equality constrained parameter is fixed, all of the parameters that are
     equal to it have to be fixed to the same value.
 
     Args:
-        fixed_constraints (list): List of constraints of type "fixed".
-        equality_constraints (list): List of constraints of type "equality".
+        fixed_constraints (list): List of pc of type "fixed".
+        equality_constraints (list): List of pc of type "equality".
         params (pd.DataFrame): see :ref:`params`
 
     Returns:
@@ -162,18 +170,18 @@ def _consolidate_fixes_with_equality_constraints(
 
 
 def _consolidate_bounds_with_equality_constraints(equality_constraints, params):
-    """consolidate bounds with equality constraints.
+    """consolidate bounds with equality pc.
 
     Check that there are no incompatible bounds on equality constrained parameters and
     set the bounds for equal parameters to the strictest bound encountered on any of
     them.
 
     Args:
-        equality_constraints (list): List of constraints of type "equality".
+        equality_constraints (list): List of pc of type "equality".
         params (pd.DataFrame): see :ref:`param`.
 
     Returns:
-        processed_params (pd.DataFrame): Copy of params with stricter bounds.
+        pp (pd.DataFrame): Copy of params with stricter bounds.
 
     """
     pp = params.copy()
@@ -242,17 +250,17 @@ def _plug_equality_constraints_into_selectors(
     Only one parameter from a set of equality constrained parameters will actually
     be free. Which one is not important. We take the one with the lowest iloc.
 
-    Then all other constraints have to be rewritten in terms of the free parameters.
-    Once that is done, redundant constraints can be filtered out.
+    Then all other pc have to be rewritten in terms of the free parameters.
+    Once that is done, redundant pc can be filtered out.
 
     Args:
-        equality_constraints (list): List of constraints of type "equality".
-        other_constraints (list): All other constraints.
+        equality_constraints (list): List of pc of type "equality".
+        other_constraints (list): All other pc.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
-        processed_constraints (list): List of processed non-equality constraints.
-        processed_params (pd.DataFrame):
+        pc (list): List of processed non-equality pc.
+        pp (pd.DataFrame):
 
     """
     pp = params.copy()
@@ -328,14 +336,14 @@ def _transform_linear_constraints_to_pandas_objects(linear_constraints, params):
     """Collect information from the linear constraint dictionaries into pandas objects.
 
     Args:
-        linear_constraints (list): List of constraints of type "linear".
+        linear_constraints (list): List of pc of type "linear".
         params (pd.DataFrame): see :ref:`params`
 
     Returns:
         weights (pd.DataFrame): DataFrame with one row per constraint and one column
             per parameter. Columns names are the ilocs of the parameters in params.
         rhs (pd.DataFrame): DataFrame with the columns "value", "lower" and
-            "upper" that collects the right hand sides of the constraints.
+            "upper" that collects the right hand sides of the pc.
 
     """
     all_weights, all_values, all_lbs, all_ubs = [], [], [], []
@@ -395,9 +403,9 @@ def _plug_fixes_into_linear_weights_and_rhs(weights, right_hand_side, processed_
 def _express_bounds_as_linear_constraints(weights, right_hand_side, params):
     """Express bounds of linearly constrained params as linear constraint.
 
-    In general it is easier to keep bounds separately from the constraints
+    In general it is easier to keep bounds separately from the pc
     but in the case of linearly constrained parameters we need to express them as
-    additional linear constraints to check compatibility and to choose the correct
+    additional linear pc to check compatibility and to choose the correct
     reparametrization.
 
     Args:
@@ -489,17 +497,17 @@ def _check_consolidated_weights(weights, processed_params):
     n_constraints, n_params = weights.shape
 
     msg_too_many = (
-        "Too many linear constraints. There can be at most as many linear constraints"
+        "Too many linear pc. There can be at most as many linear pc"
         "as involved parameters with non-zero weights.\n"
     )
 
-    msg_rank = "The weights for linear constraints must be linearly independent.\n"
+    msg_rank = "The weights for linear pc must be linearly independent.\n"
 
     msg_general = (
-        "The error occurred for constraints on the following parameters:\n{}\n with "
+        "The error occurred for pc on the following parameters:\n{}\n with "
         "weighting matrix:\n{}\nIt is possible that you did not specify those "
-        "constraints as linear constraints but as bounds, fixes, increasing or "
-        "decreasing constraints."
+        "pc as linear pc but as bounds, fixes, increasing or "
+        "decreasing pc."
     )
 
     ind = processed_params.iloc[weights.columns].index

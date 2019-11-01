@@ -1,4 +1,4 @@
-"""Handle constraints by reparametrizations."""
+"""Handle pc by reparametrizations."""
 import numba as nb
 
 import estimagic.optimization.kernel_transformations as kt
@@ -9,7 +9,7 @@ def reparametrize_to_internal(processed_params, processed_constraints):
 
     Args:
         processed_params (DataFrame): A processed params DataFrame. See :ref:`params`.
-        processed_constraints (list): Processed and consolidated constraints.
+        processed_constraints (list): Processed and consolidated pc.
 
     Returns:
         internal_params (np.ndarray): 1d numpy array of free reparametrized parameters.
@@ -48,7 +48,7 @@ def reparametrize_from_internal(
         processed_params (pd.DataFrame): See :ref:`params`
 
     Returns:
-        updated_params (pd.DataFrame): Copy of processed_params with replaced values.
+        updated_params (pd.DataFrame): Copy of pp with replaced values.
 
     """
     external_values = fixed_values.copy()
