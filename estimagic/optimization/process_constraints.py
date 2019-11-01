@@ -42,22 +42,22 @@ from estimagic.optimization.consolidate_constraints import consolidate_constrain
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 
 
-def process_constraints(pc, params):
-    """Process, consolidate and check pc.
+def process_constraints(constraints, params):
+    """Process, consolidate and check constraints.
 
     Args:
-        pc (list): List of dictionaries where each dictionary is a constraint.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
 
-        pc (list): A processed version of those pc
+        pc (list): A processed version of those constraints
             that entail actual transformations and not just fixing parameters.
         pp (pd.DataFrame): Processed params. A copy of params with additional columns:
             - _internal_lower:
                 Lower bounds for the internal parameter vector. Those are derived from
                 the original lower bounds and additional bounds implied by other
-                pc.
+                constraints.
             - _internal_upper: As _internal_lower but for upper bounds.
             - _internal_free: Boolean column that is true for those parameters over
                 which the optimizer will actually optimize.
@@ -76,7 +76,7 @@ def process_constraints(pc, params):
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
-        pc = _apply_constraint_killers(pc)
+        pc = _apply_constraint_killers(constraints)
         check_types(pc)
         pc = _process_selectors(pc, params)
         pc = _replace_pairwise_equality_by_equality(pc)
@@ -116,7 +116,7 @@ def _apply_constraint_killers(constraints):
         killers.discard(constr.get("id", None))
 
     if killers:
-        raise KeyError(f"You try to kill non-existing pc with ids: {killers}")
+        raise KeyError(f"You try to kill non-existing constraints with ids: {killers}")
 
     return survivors
 
@@ -187,7 +187,7 @@ def _replace_pairwise_equality_by_equality(pc):
 
     Args:
         pc (list): List of dictionaries where each dictionary is a constraint.
-            It is assumed that the selectors in the pc were already processed.
+            It is assumed that the selectors in constraints were already processed.
 
     Returns:
         pc (list): List of processed constraints.
@@ -373,7 +373,7 @@ def _create_internal_fixed_value(fixed_value, pc):
     transformed) user specified fixed values.
 
     Args:
-        fixed_value (pd.Series): The (external) _fixed_value column of processed_params.
+        fixed_value (pd.Series): The (external) _fixed_value column of pp.
         pc (list): Processed and consolidated params.
 
     """

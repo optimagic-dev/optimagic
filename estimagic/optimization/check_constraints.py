@@ -1,4 +1,7 @@
-"""Check compatibility of pc with each other and with bounds and fixes."""
+"""Check compatibility of pc with each other and with bounds and fixes.
+
+See the module docstring of process_constraints for naming conventions.
+"""
 import warnings
 
 import numpy as np
@@ -7,21 +10,21 @@ from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
 
 
-def check_constraints_are_satisfied(constraints, params):
-    """Check that params satisfies all pc.
+def check_constraints_are_satisfied(pc, params):
+    """Check that params satisfies all constraints.
 
-    This should be called before the more specialized pc are rewritten to
-    linear pc in order to get better error messages!
+    This should be called before the more specialized constraints are rewritten to
+    linear constraints in order to get better error messages!
 
     Args:
-        constraints (list): List of pc with processed selectors.
+        pc (list): List of constraints with processed selectors.
         params (pd.DataFrame): See :ref:`params`
 
     Raises:
-        ValueError if pc are not satisfied.
+        ValueError if constraints are not satisfied.
 
     """
-    for constr in constraints:
+    for constr in pc:
         typ = constr["type"]
         subset = params.iloc[constr["index"]]["value"]
         msg = f"{{}}:\n{subset.to_frame()}"
@@ -76,7 +79,7 @@ def check_types(constraints):
     """Check that no invalid constraint types are requested.
 
     Args:
-        constraints (list): List of pc
+        constraints (list): List of constraints.
 
     Raises:
         TypeError if invalid constraint types are encountered
@@ -101,14 +104,14 @@ def check_types(constraints):
 
 
 def check_for_incompatible_overlaps(params, pc):
-    """Check that there are no overlaps between constraints that transform paramters.
+    """Check that there are no overlaps between constraints that transform parameters.
 
     Since the constraints are already consolidated such that only those that transform
-    a parameter are left and all equality pc are already plugged in, this
+    a parameter are left and all equality constraints are already plugged in, this
     boils down to checking that no parameter appears more than once.
 
     Args:
-        params (pd.DataFrame): see :ref:`params`
+        params (pd.DataFrame): see :ref:`params`. Only used for error messages.
         pc (list): List with consolidated constraint dictionaries.
 
     """
@@ -117,9 +120,9 @@ def check_for_incompatible_overlaps(params, pc):
         all_ilocs += constr["index"]
 
     msg = (
-        "Transforming pc such as 'covariance', 'sdcorr', 'probability' "
+        "Transforming constraints such as 'covariance', 'sdcorr', 'probability' "
         "and 'linear' cannot overlap. This includes overlaps induced by equality "
-        "pc. This was violated for the following parameters:\n{}"
+        "constraints. This was violated for the following parameters:\n{}"
     )
 
     if len(set(all_ilocs)) < len(all_ilocs):
@@ -130,20 +133,20 @@ def check_for_incompatible_overlaps(params, pc):
         raise ValueError(msg.format(invalid_names))
 
 
-def check_fixes_and_bounds(processed_params, consolidated_constraints):
+def check_fixes_and_bounds(pp, pc):
     """Check fixes.
 
     Warn the user if he fixes a parameter to a value even though that parameter has
     a different non-nan value in params
 
-    check that fixes are compatible with other pc.
+    check that fixes are compatible with other constraints.
 
     Args:
-        processed_params (pd.DataFrame): see :ref:`params`.
-        consolidated_constraints (list)
+        pp (pd.DataFrame): see :ref:`params`.
+        pc (list): Processed and consolidated constraints.
     """
     # warn about fixes to a different value that what is in the "value" column
-    problematic_fixes = processed_params.query(
+    problematic_fixes = pp.query(
         "value != _fixed_value & _fixed_value.notnull() & value.notnull()",
         engine="python",
     )
@@ -156,19 +159,20 @@ def check_fixes_and_bounds(processed_params, consolidated_constraints):
     if len(problematic_fixes) > 0:
         warnings.warn(warn_msg.format(problematic_fixes[["value", "_fixed_value"]]))
 
-    # Check fixes and bounds are compatible with other pc
+    # Check fixes and bounds are compatible with other constraints
     prob_msg = (
-        "{} pc are incompatible with fixes or bounds. " "This is violated for:\n{}"
+        "{} constraints are incompatible with fixes or bounds. "
+        "This is violated for:\n{}"
     )
 
     cov_msg = (
-        "{} pc are incompatible with fixes or bounds except for the first "
+        "{} constraints are incompatible with fixes or bounds except for the first "
         "parameter. This is violated for:\n{}"
     )
 
-    for constr in consolidated_constraints:
+    for constr in pc:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = processed_params.iloc[constr["index"][1:]]
+            subset = pp.iloc[constr["index"][1:]]
             if subset["_is_fixed_to_value"].any():
                 problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(cov_msg.format(constr["type"], problematic))
@@ -178,7 +182,7 @@ def check_fixes_and_bounds(processed_params, consolidated_constraints):
                 )
                 raise ValueError(cov_msg.format(constr["type"], problematic))
         elif constr["type"] == "probability":
-            subset = processed_params.iloc[constr["index"]]
+            subset = pp.iloc[constr["index"]]
             if subset["_is_fixed_to_value"].any():
                 problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(prob_msg.format(constr["type"], problematic))
@@ -188,8 +192,7 @@ def check_fixes_and_bounds(processed_params, consolidated_constraints):
                 )
                 raise ValueError(prob_msg.format(constr["type"], problematic))
 
-    # Check lower < upper
-    invalid = processed_params.query("lower >= upper")[["lower", "upper"]]
+    invalid = pp.query("lower >= upper")[["lower", "upper"]]
     msg = f"lower must be strictly smaller than upper. This is violated for:\n{invalid}"
     if len(invalid) > 0:
         raise ValueError(msg)
