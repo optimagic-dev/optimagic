@@ -120,6 +120,7 @@ optimizers. More general constraints are only available with optimizers that can
 natively with them. This includes all optimizers from the nlopt and ipopt library.
 
 
+
 The Nontrivial Reparametrizations
 =================================
 
@@ -148,6 +149,7 @@ optimize over covariance matrices. Examples are :cite:`Pinheiro1996` and
 A limitation of this approach is that there can be no additional fixes, box constraints
 or other constraints on any of the involved parameters.
 
+.. _linear_constraint_implementation:
 
 Linear Constraints
 ------------------
