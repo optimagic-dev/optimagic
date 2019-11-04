@@ -1,450 +1,81 @@
-"""Handle constraints by bounds and reparametrizations."""
-import warnings
+"""Handle pc by reparametrizations."""
+import numba as nb
 
-import numpy as np
-
-from estimagic.optimization.process_constraints import apply_fixes_to_external_params
-from estimagic.optimization.utilities import cov_matrix_to_params
-from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
-from estimagic.optimization.utilities import cov_params_to_matrix
-from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
-from estimagic.optimization.utilities import robust_cholesky
-from estimagic.optimization.utilities import sdcorr_params_to_matrix
+import estimagic.optimization.kernel_transformations as kt
 
 
-def reparametrize_to_internal(params, constraints, scaling_factor):
-    """Convert a params DataFrame to an internal_params DataFrame.
-
-    The internal params df is shorter because it does not contain fixed parameters.
-    Moreover, it contains a reparametrized 'value' column that can be used to construct
-    a parameter vector that satisfies all constraints. It also has adjusted lower and
-    upper bounds.
+def reparametrize_to_internal(processed_params, processed_constraints):
+    """Convert a params DataFrame into a numpy array of internal parameters.
 
     Args:
-        params (DataFrame): A non-internal parameter DataFrame. See :ref:`params`.
-        constraints (list): See :ref:`constraints`. It is assumed that the constraints
-            are already processed and sorted.
+        processed_params (DataFrame): A processed params DataFrame. See :ref:`params`.
+        processed_constraints (list): Processed and consolidated pc.
 
     Returns:
-        internal (DataFrame): See :ref:`params`.
+        internal_params (np.ndarray): 1d numpy array of free reparametrized parameters.
 
     """
-    fixes = [c for c in constraints if c["type"] == "fixed"]
-    other_constraints = [c for c in constraints if c["type"] != "fixed"]
-    internal = apply_fixes_to_external_params(params, fixes)
+    pp = processed_params.copy()
+    internal_values = pp["value"].to_numpy()
+    for constr in processed_constraints:
+        func = getattr(kt, f"{constr['type']}_to_internal")
+        index = constr["index"]
+        internal_values[index] = func(internal_values[index], constr)
 
-    for constr in other_constraints:
-        params_subset = internal.loc[constr["index"]]
-        if constr["type"] == "equality":
-            internal.update(_equality_to_internal(internal.loc[constr["index"]]))
-        elif constr["type"] in ["covariance", "sdcorr"]:
-            internal.update(
-                _covariance_to_internal(
-                    params_subset,
-                    constr["case"],
-                    constr["type"],
-                    constr["bounds_distance"],
-                )
-            )
-        elif constr["type"] == "sum":
-            internal.update(_sum_to_internal(params_subset, constr["value"]))
-        elif constr["type"] == "probability":
-            internal.update(_probability_to_internal(params_subset))
-        elif constr["type"] == "increasing":
-            internal.update(_increasing_to_internal(params_subset))
-        else:
-            raise ValueError("Invalid constraint type: {}".format(constr["type"]))
-
-    # It is a known bug that df.update changes some dtypes: https://tinyurl.com/y66hqxg2
-    internal["_fixed"] = internal["_fixed"].astype(bool)
-
-    internal = internal.loc[~(internal["_fixed"])].copy(deep=True)
-    internal.drop(columns="_fixed", axis=1, inplace=True)
-
-    internal = _scaling_to_internal(internal, scaling_factor)
-
-    invalid = internal.query("lower >= upper | lower > value | upper < value")
-    assert (
-        len(invalid) == 0
-    ), "Bounds and/or values are incompatible for parameters {}".format(invalid.index)
-
-    return internal
+    return internal_values[pp["_internal_free"]]
 
 
 def reparametrize_from_internal(
-    internal_params, constraints, original_params, scaling_factor
+    internal,
+    fixed_values,
+    pre_replacements,
+    processed_constraints,
+    post_replacements,
+    processed_params,
 ):
-    """Convert an internal_params DataFrame to a Series with valid parameters.
-
-    The parameter values are constructed from the 'value' column of internal_params.
-    The resulting Series has the same index as the non-internal params DataFrame.
+    """Convert a numpy array of internal parameters to a params DataFrame.
 
     Args:
-        internal_params (DataFrame): internal parameter DataFrame. See :ref:`params`.
-        constraints (list): see :ref:`constraints`. It is assumed that the constraints
-            are already processed.
-        original_params (DataFrame): A non-internal parameter DataFrame. This is used to
-            extract the original index and fixed values of parameters.
+        internal (np.ndarray): 1d numpy array with internal parameters
+        fixed_values (np.ndarray): 1d numpy array with internal fixed values
+        pre_replacements (np.ndarray): 1d numpy array with positions of internal
+            parameters that have to be copied before transformations are applied.
+            Negative if no value has to be copied.
+        processed_constraints (list): List of processed and consolidated constraint
+            dictionaries. Can have the types "linear", "probability", "covariance"
+            and "sdcorr".
+        post_replacments (np.ndarray): 1d numpy array with parameter positions.
+        processed_params (pd.DataFrame): See :ref:`params`
 
     Returns:
-        params (DataFrame): See :ref:`params`.
+        updated_params (pd.DataFrame): Copy of pp with replaced values.
 
     """
-    external = original_params.copy(deep=True)
+    external_values = fixed_values.copy()
+    external_values = _do_pre_replacements(internal, pre_replacements, external_values)
+    for constr in processed_constraints:
+        func = getattr(kt, f"{constr['type']}_from_internal")
+        index = constr["index"]
+        external_values[index] = func(external_values[index], constr)
+    external_values = _do_post_replacements(post_replacements, external_values)
 
-    internal_params = _scaling_from_internal(internal_params, scaling_factor)
+    external = processed_params.copy()
+    external["value"] = external_values
 
-    external.update(internal_params["value"])
-
-    external["_fixed"] = True
-    external.loc[internal_params.index, "_fixed"] = False
-
-    # equality constraints have to be handled before all other constraints
-    for constr in constraints:
-        if constr["type"] == "equality":
-            external.update(_equality_from_internal(external.loc[constr["index"]]))
-
-    # order of the remaining constraints is irrelevant
-    for constr in constraints:
-        params_subset = external.loc[constr["index"]]
-        if constr["type"] in ["covariance", "sdcorr"]:
-            external.update(
-                _covariance_from_internal(params_subset, constr["case"], constr["type"])
-            )
-        elif constr["type"] == "sum":
-            external.update(_sum_from_internal(params_subset, constr["value"]))
-        elif constr["type"] == "probability":
-            external.update(_probability_from_internal(params_subset))
-        elif constr["type"] == "increasing":
-            external.update(_increasing_from_internal(params_subset))
-        elif constr["type"] == "fixed":
-            external.update(_fixed_from_internal(params_subset, constr))
-        elif constr["type"] == "equality":
-            pass
-        else:
-            raise ValueError("Invalid constraint type: {}".format(constr["type"]))
     return external
 
 
-def _covariance_to_internal(params_subset, case, type_, bounds_distance):
-    """Reparametrize parameters that describe a covariance matrix to internal.
-
-    If `type_` == 'covariance', the parameters in params_subset are assumed to be the
-    lower triangular elements of a covariance matrix.
-
-    If `type_` == 'sdcorr', the first *dim* parameters in params_subset are assumed to
-    variances and the remaining parameters are assumed to be correlations.
-
-    What has to be done depends on the case:
-        - 'all_fixed': nothing has to be done
-        - 'uncorrelated': bounds of diagonal elements are set to zero unless already
-            stricter
-        - 'free': do a (lower triangular) Cholesky reparametrization and restrict
-            diagonal elements to be positive (see: https://tinyurl.com/y2n55cfb).
-            Note that free does not mean that all parameters are free. The first
-            diagonal element can still be fixed.
-
-    Note that the cholesky reparametrization is not compatible with any other
-    constraints on the involved parameters. Moreover, it requires the covariance matrix
-    described by the start values to be positive definite as opposed to positive
-    semi-definite.
-
-    Args:
-        params_subset (DataFrame): relevant subset of non-internal params.
-        case (str): can take the values 'free', 'uncorrelated' or 'all_fixed'.
-
-    Returns:
-        res (DataFrame): copy of params_subset with adjusted 'value' and 'lower' columns
-
-    """
-    res = params_subset.copy()
-    if type_ == "covariance":
-        cov = cov_params_to_matrix(params_subset["value"].to_numpy())
-    elif type_ == "sdcorr":
-        cov = sdcorr_params_to_matrix(params_subset["value"].to_numpy())
-    else:
-        raise ValueError("Invalid type_: {}".format(type_))
-
-    dim = len(cov)
-
-    e, v = np.linalg.eigh(cov)
-    assert np.all(e > -1e-8), "Invalid covariance matrix."
-
-    if case == "uncorrelated":
-
-        res["lower"] = np.maximum(res["lower"], np.zeros(len(res)))
-        assert (res["upper"] >= res["lower"]).all(), "Invalid upper bound for variance."
-    elif case == "free":
-        chol = robust_cholesky(cov, threshold=1e-8)
-        chol_coeffs = chol[np.tril_indices(dim)]
-        res["value"] = chol_coeffs
-
-        lower_bound_helper = np.full((dim, dim), -np.inf)
-        lower_bound_helper[np.diag_indices(dim)] = bounds_distance
-        res["lower"] = lower_bound_helper[np.tril_indices(dim)]
-        res["upper"] = np.inf
-
-        for bound in ["lower", "upper"]:
-            if np.isfinite(params_subset[bound]).any():
-                warnings.warn(
-                    "Bounds are ignored for covariance parameters.", UserWarning
-                )
-    return res
-
-
-def _covariance_from_internal(params_subset, case, type_):
-    """Reparametrize parameters that describe a covariance matrix from internal.
-
-    If case == 'free', undo the cholesky reparametrization. Otherwise, do nothing.
-
-    Args:
-        params_subset (DataFrame): relevant subset of internal_params.
-        case (str): can take the values 'free', 'uncorrelated' or 'all_fixed'.
-
-    Returns:
-        res (Series): Series with lower triangular elements of a covariance matrix
-
-    """
-    res = params_subset.copy(deep=True)
-    if case == "free":
-        dim = number_of_triangular_elements_to_dimension(len(params_subset))
-        helper = np.zeros((dim, dim))
-        helper[np.tril_indices(dim)] = params_subset["value"].to_numpy()
-
-        if params_subset["_fixed"].any():
-            helper[0, 0] = np.sqrt(helper[0, 0])
-
-        cov = helper.dot(helper.T)
-
-        if type_ == "covariance":
-            res["value"] = cov_matrix_to_params(cov)
-        elif type_ == "sdcorr":
-            res["value"] = cov_matrix_to_sdcorr_params(cov)
-        else:
-            raise ValueError("Invalid type_: {}".format(type_))
-    elif case in ["all_fixed", "uncorrelated"]:
-        pass
-    else:
-        raise ValueError("Invalid case: {}".format(case))
-    return res["value"]
-
-
-def _increasing_to_internal(params_subset):
-    """Reparametrize increasing parameters to internal.
-
-    Replace all but the first parameter by the difference to the previous one and
-    set their lower bound to 0.
-
-    Args:
-        params_subset (DataFrame): relevant subset of non-internal params.
-
-    Returns:
-        res (DataFrame): copy of params_subset with adjusted 'value' and 'lower' columns
-
-    """
-    old_vals = params_subset["value"].to_numpy()
-    new_vals = old_vals.copy()
-    new_vals[1:] -= old_vals[:-1]
-    res = params_subset.copy()
-    res["value"] = new_vals
-
-    res["_fixed"] = False
-    res["lower"] = [-np.inf] + [0] * (len(params_subset) - 1)
-    res["upper"] = np.inf
-
-    if params_subset["_fixed"].any():
-        warnings.warn("Ordered parameters were unfixed.", UserWarning)
-
-    for bound in ["lower", "upper"]:
-        if np.isfinite(params_subset[bound]).any():
-            warnings.warn("Bounds are ignored for ordered parameters.", UserWarning)
-
-    return res
-
-
-def _increasing_from_internal(params_subset):
-    """Reparametrize increasing parameters from internal.
-
-    Replace the parameters by their cumulative sum.
-
-    Args:
-        params_subset (DataFrame): relevant subset of internal_params.
-
-    Returns:
-        res (Series): Series with increasing parameters.
-
-    """
-    res = params_subset.copy()
-    res["value"] = params_subset["value"].cumsum()
-    return res["value"]
-
-
-def _sum_to_internal(params_subset, value):
-    """Reparametrize sum constrained parameters to internal.
-
-    fix the last parameter in params_subset.
-
-    Args:
-        params_subset (DataFrame): relevant subset of non-internal params.
-
-    Returns:
-        res (DataFrame): copy of params_subset with adjusted 'fixed' column
-
-    """
-    free = params_subset.query("lower == -inf & upper == inf & _fixed == False")
-    last = params_subset.index[-1]
-
-    assert (
-        last in free.index
-    ), "The last sum constrained parameter cannot have bounds nor be fixed."
-
-    res = params_subset.copy()
-    res.loc[last, "_fixed"] = True
-    return res
-
-
-def _sum_from_internal(params_subset, value):
-    """Reparametrize sum constrained parameters from internal.
-
-    Replace the last parameter by *value* - the sum of all other parameters.
-
-    Args:
-        params_subset (DataFrame): relevant subset of internal_params.
-
-    Returns:
-        res (Series): parameters that sum to *value*
-
-    """
-    res = params_subset.copy()
-    last = params_subset.index[-1]
-    all_others = params_subset.index[:-1]
-    res.loc[last, "value"] = value - params_subset.loc[all_others, "value"].sum()
-    return res["value"]
-
-
-def _probability_to_internal(params_subset):
-    """Reparametrize probability constrained parameters to internal.
-
-    fix the last parameter in params_subset,  divide all parameters by the last one
-    and set all lower bounds to 0.
-
-    Args:
-        params_subset (DataFrame): relevant subset of non-internal params.
-
-    Returns:
-        res (DataFrame): copy of params_subset with adjusted 'fixed' and 'value'
-            and 'lower' columns.
-
-    """
-    res = params_subset.copy()
-
-    assert (
-        params_subset["lower"].isin([-np.inf, 0]).all()
-    ), "Lower bound has to be 0 or -inf for probability constrained parameters."
-
-    assert (
-        params_subset["upper"].isin([np.inf, 1]).all()
-    ), "Upper bound has to be 1 or inf for probability constrained parameters."
-
-    if params_subset["_fixed"].any():
-        assert params_subset[
-            "_fixed"
-        ].all(), "Either all or no probability constrained parameter can be fixed."
-
-    res["lower"] = 0
-    res["upper"] = np.inf
-    last = params_subset.index[-1]
-    res.loc[last, "_fixed"] = True
-    res["value"] /= res.loc[last, "value"]
-    return res
-
-
-def _probability_from_internal(params_subset):
-    """Reparametrize probability constrained parameters from internal.
-
-    Replace the last parameter by 1 and divide by the sum of all parameters.
-
-    Args:
-        params_subset (DataFrame): relevant subset of internal_params.
-
-    Returns:
-        res (Series): parameters that sum to 1 and are between 0 and 1.
-
-    """
-    last = params_subset.index[-1]
-    res = params_subset.copy()
-    res.loc[last, "value"] = 1
-    res["value"] /= res["value"].sum()
-    return res["value"]
-
-
-def _equality_to_internal(params_subset):
-    """Reparametrize equality constrained parameters to internal.
-
-    fix all but the first parameter in params_subset
-
-    Args:
-        params_subset (DataFrame): relevant subset of non-internal params.
-
-    Returns:
-        res (DataFrame): copy of params_subset with adjusted 'fixed' column
-
-    """
-    res = params_subset.copy()
-    first = params_subset.index[0]
-    all_others = params_subset.index[1:]
-    if params_subset["_fixed"].any():
-        res.loc[first, "_fixed"] = True
-    res.loc[all_others, "_fixed"] = True
-    res["lower"] = params_subset["lower"].max()
-    res["upper"] = params_subset["upper"].min()
-    assert len(params_subset["value"].unique()) == 1, "Equality constraint is violated."
-    return res
-
-
-def _equality_from_internal(params_subset):
-    """Reparametrize equality constrained parameters from internal.
-
-    Replace the previously fixed parameters by the first parameter
-
-    Args:
-        params_subset (DataFrame): relevant subset of internal_params.
-
-    Returns:
-        res (Series): parameters that obey the equality constraint.
-
-    """
-    res = params_subset.copy()
-    first = params_subset.index[0]
-    all_others = params_subset.index[1:]
-    res.loc[all_others, "value"] = res.loc[first, "value"]
-    return res["value"]
-
-
-def _fixed_from_internal(params_subset, constr):
-    """Overwrite fixed parameters with the value in the constraints if provided."""
-    res = params_subset.copy()
-    value = constr.get("value", None)
-    if value is not None:
-        res["value"] = value
-    return res["value"]
-
-
-def _scaling_to_internal(internal, scaling_factor):
-    """Scale parameters by division with the scaling factor."""
-    if scaling_factor is not None:
-        internal[["value", "lower", "upper"]] = internal[
-            ["value", "lower", "upper"]
-        ].divide(scaling_factor, axis="index")
-
-    return internal
-
-
-def _scaling_from_internal(internal, scaling_factor):
-    """Unscale parameters by multiplication with the scaling factor."""
-    if scaling_factor is not None:
-        internal[["value", "lower", "upper"]] = internal[
-            ["value", "lower", "upper"]
-        ].multiply(scaling_factor, axis="index")
-
-    return internal
+@nb.jit
+def _do_pre_replacements(internal, pre_replacements, container):
+    for external_pos, internal_pos in enumerate(pre_replacements):
+        if internal_pos >= 0:
+            container[external_pos] = internal[internal_pos]
+    return container
+
+
+@nb.jit
+def _do_post_replacements(post_replacements, container):
+    for i, pos in enumerate(post_replacements):
+        if pos >= 0:
+            container[i] = container[pos]
+    return container

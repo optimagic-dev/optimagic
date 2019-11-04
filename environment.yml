@@ -2,8 +2,8 @@ name: estimagic
 
 channels:
 
-  - defaults
   - conda-forge
+  - defaults
 
 dependencies:
 
@@ -18,15 +18,19 @@ dependencies:
   - bokeh=1.1
   - scipy=1.2.1
   - conda-verify
+  - numba
   - sphinx
   - nbsphinx
   - numba >= 0.12
   - sphinx_rtd_theme
+  - sphinxcontrib-bibtex
   - seaborn
   - jupyter
   - fuzzywuzzy
   - pathos
   - numba
+  - mpi
+  - petsc4py>=3.11
   - pip:
     - pre-commit
     - pytest
@@ -36,3 +40,4 @@ dependencies:
     - tox-conda
     - black
     - pdbpp
+    - blackcellmagic

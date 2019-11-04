@@ -65,7 +65,7 @@ def test_single_optimization():
     """
     Test an easy single optimization.
     """
-    result = minimize(rosen, params, "nlopt_neldermead")[0]["internal_x"]
+    result = minimize(rosen, params, "nlopt_neldermead")[1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(result, expected_result, decimal=4)
@@ -75,7 +75,7 @@ def test_single_optimization_list_len1():
     """
     Test an easy single optimization.
     """
-    result = minimize([rosen], [params], ["nlopt_neldermead"])[0]["internal_x"]
+    result = minimize([rosen], [params], ["nlopt_neldermead"])[1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(result, expected_result, decimal=4)
@@ -92,8 +92,8 @@ def test_lists_same_size():
         general_options={"n_cores": 4},
     )
 
-    result_neldermead = result[0][0]["internal_x"]
-    result_bfgs = result[1][0]["internal_x"]
+    result_neldermead = result[0][1]["value"].to_numpy()
+    result_bfgs = result[1][1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
@@ -221,8 +221,8 @@ def test_broadcasting():
     )
     assert len(result) == 2
 
-    result_neldermead = result[0][0]["internal_x"]
-    result_bfgs = result[1][0]["internal_x"]
+    result_neldermead = result[0][1]["value"].to_numpy()
+    result_bfgs = result[1][1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
@@ -242,8 +242,8 @@ def test_broadcasting_list_len1():
     )
     assert len(result) == 2
 
-    result_neldermead = result[0][0]["internal_x"]
-    result_bfgs = result[1][0]["internal_x"]
+    result_neldermead = result[0][1]["value"].to_numpy()
+    result_bfgs = result[1][1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
@@ -262,8 +262,8 @@ def test_list_length_1():
     )
     assert len(result) == 2
 
-    result_neldermead = result[0][0]["internal_x"]
-    result_bfgs = result[1][0]["internal_x"]
+    result_neldermead = result[0][1]["value"].to_numpy()
+    result_bfgs = result[1][1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
@@ -282,8 +282,8 @@ def test_order_of_results():
         "nlopt_neldermead",
         general_options={"n_cores": 4},
     )
-    result_unrestricted = result[0][0]["internal_x"]
-    result_restricted = result[1][0]["internal_x"]
+    result_unrestricted = result[0][1]["value"].to_numpy()
+    result_restricted = result[1][1]["value"].to_numpy()
     expected_result_unrestricted = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(
@@ -304,7 +304,7 @@ def test_list_of_constraints():
         constraints=[[], constraints],
         general_options={"n_cores": 4},
     )
-    result_unrestricted = result[0][0]["internal_x"]
+    result_unrestricted = result[0][1]["value"].to_numpy()
     result_restricted = result[1][1]["value"]
     expected_result_unrestricted = [1, 1, 1, 1, 1]
 
@@ -330,8 +330,8 @@ def test_criterion_including_guvectoring():
     )
     assert len(result) == 2
 
-    result_neldermead = result[0][0]["internal_x"]
-    result_bfgs = result[1][0]["internal_x"]
+    result_neldermead = result[0][1]["value"].to_numpy()
+    result_bfgs = result[1][1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
     assert_array_almost_equal(result_neldermead, expected_result, decimal=4)

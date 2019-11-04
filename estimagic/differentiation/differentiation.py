@@ -17,7 +17,7 @@ def gradient(
     Calculate the gradient of *func*.
 
     Args:
-        func (function): A function that maps params_sr into a float.
+        func (function): A function that maps params into a float.
         params (DataFrame): see :ref:`params`
         method (str): The method for the computation of the derivative. Default is
             central as it gives the highest accuracy.
@@ -29,7 +29,8 @@ def gradient(
 
 
     Returns:
-        Series: The index is the index of params_sr.
+        Series: The index is the index of params, the values contain the estimated
+            gradient.
 
     """
     step_options = step_options if step_options is not None else {}
@@ -73,8 +74,7 @@ def jacobian(
     Calculate the jacobian of *func*.
 
     Args:
-        func (function): A function that maps params_sr into a numpy array
-                        or pandas Series.
+        func (function): A function that maps params into a numpy array or pd.Series.
 
         params (DataFrame): see :ref:`params`
         method (string): The method for the computation of the derivative. Default is
@@ -88,7 +88,7 @@ def jacobian(
     Returns:
         DataFrame: If func returns a Series, the index is the index of this Series or
         the index is 0,1,2... if func returns a numpy array. The columns are the
-        index of params_sr.
+        index of params.
 
     """
     step_options = step_options if step_options is not None else {}
@@ -138,18 +138,18 @@ def hessian(
     Calculate the hessian of *func*.
 
     Args:
-        func (function): A function that maps params_sr into a float.
+        func (function): A function that maps params into a float.
         params (DataFrame): see :ref:`params`
         method (string): The method for the computation of the derivative. Default is
                          central as it gives the highest accuracy.
-        extrapolation (bool): This variable allows to specify the use of the
-                                richardson extrapolation.
+        extrapolation (bool): Use richardson extrapolations.
         func_kwargs (dict): additional positional arguments for func.
         step_options (dict): Options for the numdifftools step generator.
             See :ref:`step_options`
 
     Returns:
-        DataFrame: The index and columns are the index of params_sr.
+        DataFrame: The index and columns are the index of params. The data is
+            the estimated hessian.
 
     """
     step_options = step_options if step_options is not None else {}
@@ -178,13 +178,13 @@ def _no_extrapolation_hessian(internal_func, params_value, method):
             h_2 = (1.0 + abs(val_2)) * np.cbrt(np.finfo(float).eps)
             params_r = params_value.copy()
             params_r[j] += h_2
-            # Calculate the first derivative w.r.t. var_1 at (params_sr + h_2) with
+            # Calculate the first derivative w.r.t. var_1 at (params + h_2) with
             # the central method. This is not the right f_x0, but the real one
             # isn't needed for the central method.
             f_plus = finite_diff(internal_func, None, params_r, i, h_1)
             params_l = params_value.copy()
             params_l[j] -= h_2
-            # Calculate the first derivative w.r.t. var_1 at (params_sr - h_2) with
+            # Calculate the first derivative w.r.t. var_1 at (params - h_2) with
             # the central method. This is not the right f_x0, but the real one
             # isn't needed for the central method.
             f_minus = finite_diff(internal_func, None, params_l, i, h_1)

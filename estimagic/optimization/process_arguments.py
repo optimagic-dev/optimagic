@@ -244,16 +244,16 @@ def process_optimization_arguments(
             "name": "algorithm",
         },
         {
-            "candidate": criterion_kwargs,
-            "scalar_type": dict,
-            "argument_required": False,
-            "name": "criterion_kwargs",
-        },
-        {
             "candidate": algo_options,
             "scalar_type": dict,
             "argument_required": False,
             "name": "algo_options",
+        },
+        {
+            "candidate": criterion_kwargs,
+            "scalar_type": dict,
+            "argument_required": False,
+            "name": "criterion_kwargs",
         },
     ]
     args_nested_list = [
