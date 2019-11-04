@@ -26,6 +26,7 @@ requirements:
     - numdifftools>= 0.9.20
     - fuzzywuzzy
     - petsc4py>=3.11
+    - numba
 
 test:
   commands:
