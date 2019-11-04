@@ -155,7 +155,7 @@ def _update_dashboard(
             Seconds to wait until checking for new results in the queue.
 
     """
-    conv_data, = dashboard_data
+    (conv_data,) = dashboard_data
     while not stop_signal.is_set():
         if queue.qsize() >= evaluations_to_skip + 1:
             for _to_skip in range(evaluations_to_skip):

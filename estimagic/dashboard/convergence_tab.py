@@ -18,7 +18,7 @@ def setup_convergence_tab(params_df, initial_fitness):
 
     Args:
         params_df (pandas DataFrame):
-            DataFrame with the initial parameter values, constraints etc.
+            DataFrame with the initial parameter values, pc etc.
 
         initial_fitness (pd.Series):
             criterion function evaluated at the initial parameters
