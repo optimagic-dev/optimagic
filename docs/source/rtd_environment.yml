@@ -1,18 +1,18 @@
-name: estimagic_rtd
+name: estimagic-rtd
 
 channels:
 
-  - defaults
-  - conda-forge
   - janosg
+  - conda-forge
+  - defaults
 
 dependencies:
+
   - python=3.7
   - estimagic
-  - sphinx
-  - nbsphinx
-  - sphinx_rtd_theme
-  - sphinxcontrib-bibtex
-  - jupyter
-  - seaborn
-  - patsy
+  - sphinx=2.2.1
+  - nbsphinx=0.4.3
+  - sphinx_rtd_theme=0.4.3
+  - sphinxcontrib-bibtex=1.0.0
+  - jupyter=1.0.0
+  - patsy=0.5.1
