@@ -30,13 +30,13 @@ to_test = list(product(["forward", "central", "backward"], [True, False]))
 @pytest.mark.parametrize("method, extrapolation", to_test)
 def test_gradient(statsmodels_fixtures, method, extrapolation):
     fix = statsmodels_fixtures
-    func_args = [fix["y"], fix["x"]]
+    func_kwargs = {"y": fix["y"], "x": fix["x"]}
     calculated = gradient(
         logit_loglike,
         fix["params"],
         method="forward",
         extrapolation=extrapolation,
-        func_args=func_args,
+        func_kwargs=func_kwargs,
         step_options={"step_ratio": 2.0},
     )
     expected = fix["gradient"]

@@ -20,6 +20,7 @@ dependencies:
   - conda-verify
   - sphinx
   - nbsphinx
+  - numba >= 0.12
   - sphinx_rtd_theme
   - seaborn
   - jupyter

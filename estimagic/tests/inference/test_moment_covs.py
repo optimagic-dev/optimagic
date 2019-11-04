@@ -85,7 +85,7 @@ def statsmodels_fixture():
     for i in range(num_obs):
         moment_cond[i, :] = calc_moment_condition(params_df, x[i, :], y[i])
         moment_jac[i, :, :] = jacobian(
-            calc_moment_condition, params_df, func_args=[x[i, :], y[i]]
+            calc_moment_condition, params_df, func_kwargs={"x_t": x[i, :], "y_t": y[i]}
         )
     fix["mom_cond"] = moment_cond
     fix["mom_cond_jacob"] = moment_jac

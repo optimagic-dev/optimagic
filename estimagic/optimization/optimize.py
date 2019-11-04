@@ -2,6 +2,7 @@
 import json
 from collections import namedtuple
 from multiprocessing import Event
+from multiprocessing import Pool
 from multiprocessing import Process
 from multiprocessing import Queue
 from pathlib import Path
@@ -11,15 +12,9 @@ import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
-from multiprocessing import Pool
-
-from pathos.multiprocessing import ProcessingPool
-from itertools import repeat
-
-import dill
-
 from estimagic.dashboard.server_functions import run_server
 from estimagic.differentiation.differentiation import gradient
+from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
@@ -33,7 +28,6 @@ def maximize(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -55,9 +49,6 @@ def maximize(
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
-        criterion_args (list or tuple):
-            additional positional arguments for criterion
-
         criterion_kwargs (dict):
             additional keyword arguments for criterion
 
@@ -78,14 +69,13 @@ def maximize(
 
     """
 
-    def neg_criterion(*criterion_args, **criterion_kwargs):
-        return -criterion(*criterion_args, **criterion_kwargs)
+    def neg_criterion(**criterion_kwargs):
+        return -criterion(**criterion_kwargs)
 
     res_dict, params = minimize(
         neg_criterion,
         params=params,
         algorithm=algorithm,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
         general_options=general_options,
@@ -102,7 +92,6 @@ def minimize(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -124,9 +113,6 @@ def minimize(
         algorithm (str or list of strings):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
-        criterion_args (list)::
-            additional positional arguments for criterion
-
         criterion_kwargs (dict or list of dicts):
             additional keyword arguments for criterion
 
@@ -146,170 +132,44 @@ def minimize(
             dictionary with kwargs to be supplied to the run_server function.
 
     """
-    # set default arguments
-    criterion_args = [] if criterion_args is None else criterion_args
-    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
-    constraints = [] if constraints is None else constraints
-    general_options = {} if general_options is None else general_options
-    algo_options = {} if algo_options is None else algo_options
-    db_options = {} if db_options is None else db_options
 
-    # Find out if multiple optimizations should be run
+    arguments = process_optimization_arguments(
+        criterion=criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        general_options=general_options,
+        algo_options=algo_options,
+        dashboard=dashboard,
+        db_options=db_options,
+    )
 
-    def len_two_dimensional_list(testlist):
-        """Return 0 if testlist is no two-dimensional list and the length of the two-dimensional list otherwise.
-
-        """
-        if not isinstance(testlist, list):
-            raise ValueError(
-                "An argument is not a list although it is expected to be so."
-            )
-        elif testlist == []:
-            return 1
-        else:
-            if isinstance(testlist[0], list):
-                return len(testlist)
-            else:
-                return 1
-
-    def len_list(testlist):
-        """Return 1 if testlist is no list and the length of the list otherwise.
-
-        """
-        if not isinstance(testlist, list):
-            return 1
-        else:
-            return len(testlist)
-
-    def broadcast_argument(arg, len_arg, n_opts):
-        """Broadcast argument if of length 1. Otherwise, make sure that it is of 
-        the same length as all other arguments.
-
-        """
-        if len_arg == 1:
-            return [arg] * n_opts
-        elif len_arg == n_opts:
-            return arg
-        else:
-            raise ValueError("All arguments entered as list must be of the same length")
-
-    args_pot_list = [criterion, params, algorithm, algo_options, criterion_kwargs]
-    args_pot_two_dim_list = [constraints]
-
-    len_list = [len_list(arg) for arg in args_pot_list]
-    len_two_dim_list = [len_two_dimensional_list(arg) for arg in args_pot_two_dim_list]
-
-    # Determine number of optimizations that should be run
-    n_opts = max(len_list + len_two_dim_list)
+    # Find out number of optimizations
+    n_opts = (
+        1 if isinstance(arguments["params"], pd.DataFrame) else len(arguments["params"])
+    )
 
     if n_opts == 1:
-        # Run just a single optimization
-        result = _single_minimize(
-            criterion=criterion,
-            params=params,
-            algorithm=algorithm,
-            criterion_args=criterion_args,
-            criterion_kwargs=criterion_kwargs,
-            constraints=constraints,
-            general_options=general_options,
-            algo_options=algo_options,
-            dashboard=dashboard,
-            db_options=db_options,
-        )
+        result = _single_minimize(**arguments)
     else:
-        # Run several optimizations
-        # Broadcast args not entered as list
-        criterion, params, algorithm, algo_options, criterion_kwargs = [
-            broadcast_argument(arg, len_arg, n_opts)
-            for arg, len_arg in zip(args_pot_list, len_list)
-        ]
+        if dashboard:
+            raise NotImplementedError(
+                "Dashboard cannot be used for multiple optimizations, yet."
+            )
 
-        [constraints] = [
-            broadcast_argument(arg, len_arg, n_opts)
-            for arg, len_arg in zip(args_pot_two_dim_list, len_two_dim_list)
-        ]
-
-        # Run single minimizations in parallel
-        if not "n_cores" in general_options:
+        # set up multiprocessing
+        if "n_cores" not in arguments["general_options"][0]:
             raise ValueError(
-                "n_cores need to be specified if multiple optimizations should be run."
+                "n_cores need to be specified in general_options"
+                + " if multiple optimizations should be run."
             )
-        n_cores = general_options["n_cores"]
-        pool = Pool(processes=4)
-        # result = [
-        #     apply_async(
-        #         pool,
-        #         _single_minimize,
-        #         args=(
-        #             criterion[i],
-        #             params[i],
-        #             algorithm[i],
-        #             criterion_args,
-        #             criterion_kwargs[i],
-        #             constraints[i],
-        #             general_options,
-        #             algo_options[i],
-        #             dashboard,
-        #             db_options,
-        #         ),
-        #     )
-        #     for i in range(n_opts)
-        # ]
-        result = [
-            pool.apply_async(
-                _single_minimize,
-                (
-                    criterion[i],
-                    params[i],
-                    algorithm[i],
-                    criterion_args,
-                    criterion_kwargs[i],
-                    constraints[i],
-                    general_options,
-                    algo_options[i],
-                    dashboard,
-                    db_options,
-                ),
-            )
-            for i in range(n_opts)
-        ]
-        # p = ProcessingPool(processes=1)
-        # result = [
-        #     p.apipe(
-        #         _single_minimize,
-        #         (
-        #             criterion[i],
-        #             params[i],
-        #             algorithm[i],
-        #             criterion_args,
-        #             criterion_kwargs[i],
-        #             constraints[i],
-        #             general_options,
-        #             algo_options[i],
-        #             dashboard,
-        #             db_options,
-        #         ),
-        #     )
-        #     for i in range(n_opts)
-        # ]
-        result = [p.get() for p in result]
+        n_cores = arguments["general_options"][0]["n_cores"]
+        pool = Pool(processes=n_cores)
 
-        # result = p.map(
-        #     _single_minimize,
-        #     [
-        #         criterion,
-        #         params,
-        #         algorithm,
-        #         repeat(criterion_args, n_opts),
-        #         criterion_kwargs,
-        #         constraints,
-        #         repeat(general_options, n_opts),
-        #         algo_options,
-        #         repeat(dashboard, n_opts),
-        #         repeat(db_options, n_opts),
-        #     ],
-        # )
-        # result = result.get()
+        # `Transpose' arguments and run all optimizations in parallel
+        result = pool.starmap(_single_minimize, map(list, zip(*arguments.values())))
+
     return result
 
 
@@ -317,7 +177,6 @@ def _single_minimize(
     criterion,
     params,
     algorithm,
-    criterion_args,
     criterion_kwargs,
     constraints,
     general_options,
@@ -325,43 +184,41 @@ def _single_minimize(
     dashboard,
     db_options,
 ):
-    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds. Only one minimization.
+    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds.
+    Only one minimization.
 
     Args:
-        criterion(function):
+        criterion (function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
 
-        params(pd.DataFrame):
+        params (pd.DataFrame):
             See: ref: `params`.
 
-        algorithm(str):
+        algorithm (str):
             specifies the optimization algorithm. See: ref: `list_of_algorithms`.
 
-        criterion_args(list or tuple):
-            additional positional arguments for criterion
-
-        criterion_kwargs(dict):
+        criterion_kwargs (dict):
             additional keyword arguments for criterion
 
-        constraints(list):
+        constraints (list):
             list with constraint dictionaries. See for details.
 
-        general_options(dict):
+        general_options (dict):
             additional configurations for the optimization
 
-        algo_options(dict):
+        algo_options (dict):
             algorithm specific configurations for the optimization
 
-        dashboard(bool):
+        dashboard (bool):
             whether to create and show a dashboard
 
-        db_options(dict):
+        db_options (dict):
             dictionary with kwargs to be supplied to the run_server function.
 
     """
     params = _process_params(params)
-    fitness_eval = criterion(params, *criterion_args, **criterion_kwargs)
+    fitness_eval = criterion(params, **criterion_kwargs)
     constraints = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints, None)
 
@@ -371,7 +228,6 @@ def _single_minimize(
         internal_params,
         constraints,
         general_options,
-        criterion_args,
         criterion_kwargs,
     )
 
@@ -393,7 +249,6 @@ def _single_minimize(
 
     result = _internal_minimize(
         criterion=criterion,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         params=params,
         internal_params=internal_params,
@@ -413,7 +268,6 @@ def _single_minimize(
 
 def _internal_minimize(
     criterion,
-    criterion_args,
     criterion_kwargs,
     params,
     internal_params,
@@ -428,35 +282,32 @@ def _internal_minimize(
     Create the internal criterion function and minimize it.
 
     Args:
-        criterion(function):
+        criterion (function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
 
-        criterion_args(list or tuple):
-            additional positional arguments for criterion
-
-        criterion_kwargs(dict):
+        criterion_kwargs (dict):
             additional keyword arguments for criterion
 
-        params(pd.DataFrame):
+        params (pd.DataFrame):
             See: ref: `params`.
 
-        internal_params(DataFrame):
+        internal_params (DataFrame):
             See: ref: `params`.
 
-        constraints(list):
+        constraints (list):
             list with constraint dictionaries. See for details.
 
-        algorithm(str):
+        algorithm (str):
             specifies the optimization algorithm. See: ref: `list_of_algorithms`.
 
-        algo_options(dict):
+        algo_options (dict):
             algorithm specific configurations for the optimization
 
-        general_options(dict):
+        general_options (dict):
             additional configurations for the optimization
 
-        queue(Queue):
+        queue (Queue):
             queue to which originally the parameters DataFrame is supplied and to which
             the updated parameter Series will be supplied later.
 
@@ -467,7 +318,6 @@ def _internal_minimize(
         internal_params=internal_params,
         constraints=constraints,
         scaling_factor=scaling_factor,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
     )
@@ -520,7 +370,6 @@ def create_internal_criterion(
     internal_params,
     constraints,
     scaling_factor,
-    criterion_args,
     criterion_kwargs,
     queue,
 ):
@@ -528,7 +377,7 @@ def create_internal_criterion(
 
     def internal_criterion(x, counter=c):
         p = _params_from_x(x, internal_params, constraints, params, scaling_factor)
-        fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
+        fitness_eval = criterion(p, **criterion_kwargs)
         if queue is not None:
             queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
         counter += 1
@@ -593,7 +442,6 @@ def _convert_bound(x):
 
 def _create_problem(internal_criterion, internal_params):
     class Problem:
-
         def fitness(self, x):
             return [internal_criterion(x)]
 
@@ -640,10 +488,10 @@ def _process_results(res, params, internal_params, constraints, origin, scaling_
     """Convert optimization results into json serializable dictionary.
     Args:
         res: Result from numerical optimizer.
-        params(DataFrame): See: ref: `params`.
-        internal_params(DataFrame): See: ref: `params`.
-        constraints(list): constraints for the optimization
-        origin(str): takes the values "pygmo", "nlopt", "scipy"
+        params (DataFrame): See: ref: `params`.
+        internal_params (DataFrame): See: ref: `params`.
+        constraints (list): constraints for the optimization
+        origin (str): takes the values "pygmo", "nlopt", "scipy"
     """
     if origin == "scipy":
         res_dict = {}
@@ -662,13 +510,7 @@ def _process_results(res, params, internal_params, constraints, origin, scaling_
 
 
 def calculate_scaling_factor(
-    criterion,
-    params,
-    internal,
-    constraints,
-    general_options,
-    criterion_args,
-    criterion_kwargs,
+    criterion, params, internal, constraints, general_options, criterion_kwargs
 ):
     """Calculate the scaling factor for the internal parameters.
 
@@ -688,13 +530,12 @@ def calculate_scaling_factor(
     multiplying the scaling factor. This simplifies: func: `_rescale_from_internal`.
 
     Args:
-        criterion(func): Criterion function.
-        params(DataFrame): See: ref: `params`.
-        internal(DataFrame): See: ref: `params`.
-        constraints(dict): Dictionary containing constraints.
-        general_options(dict): General options. See: ref: `estimation_general_options`.
-        criterion_args(list): List of arguments of the criterion function.
-        crtierion_kwargs(dict): Dictionary of keyword arguments of the criterion
+        criterion (func): Criterion function.
+        params (DataFrame): See: ref: `params`.
+        internal (DataFrame): See: ref: `params`.
+        constraints (dict): Dictionary containing constraints.
+        general_options (dict): General options. See: ref: `estimation_general_options`.
+        crtierion_kwargs (dict): Dictionary of keyword arguments of the criterion
             function.
 
     Returns:
@@ -712,23 +553,11 @@ def calculate_scaling_factor(
         extrapolation = general_options.get("scaling_gradient_extrapolation", False)
 
         internal_criterion = create_internal_criterion(
-            criterion,
-            params,
-            internal,
-            constraints,
-            None,
-            criterion_args,
-            criterion_kwargs,
-            queue=None,
+            criterion, params, internal, constraints, None, criterion_kwargs, queue=None
         )
 
         gradients = gradient(
-            internal_criterion,
-            internal,
-            method,
-            extrapolation,
-            criterion_args,
-            criterion_kwargs,
+            internal_criterion, internal, method, extrapolation, criterion_kwargs
         )
         scaling_factor = np.clip(1 / gradients.abs(), 1e-2, None)
     else:
