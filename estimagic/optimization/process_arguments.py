@@ -19,7 +19,7 @@ def process_optimization_arguments(
 
     Args:
         criterion (function or list of functions):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame or list of pd.DataFrames):
@@ -45,6 +45,7 @@ def process_optimization_arguments(
 
         db_options (dict):
             dictionary with kwargs to be supplied to the run_server function.
+
     """
 
     # set default arguments
