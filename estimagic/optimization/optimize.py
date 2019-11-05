@@ -133,7 +133,7 @@ def minimize(
 
     """
 
-    arguments = process_optimization_arguments(
+    arguments, n_opts = process_optimization_arguments(
         criterion=criterion,
         params=params,
         algorithm=algorithm,
@@ -143,11 +143,6 @@ def minimize(
         algo_options=algo_options,
         dashboard=dashboard,
         db_options=db_options,
-    )
-
-    # Find out number of optimizations
-    n_opts = (
-        1 if isinstance(arguments["params"], pd.DataFrame) else len(arguments["params"])
     )
 
     if n_opts == 1:
@@ -193,10 +188,10 @@ def _single_minimize(
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
-            See: ref: `params`.
+            See :ref:`params`.
 
         algorithm (str):
-            specifies the optimization algorithm. See: ref: `list_of_algorithms`.
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
         criterion_kwargs (dict):
             additional keyword arguments for criterion
@@ -280,16 +275,16 @@ def _internal_minimize(
             additional keyword arguments for criterion
 
         params (pd.DataFrame):
-            See: ref: `params`.
+            See :ref:`params`.
 
         internal_params (DataFrame):
-            See: ref: `params`.
+            See :ref:`params`.
 
         constraints (list):
             list with constraint dictionaries. See for details.
 
         algorithm (str):
-            specifies the optimization algorithm. See: ref: `list_of_algorithms`.
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
         algo_options (dict):
             algorithm specific configurations for the optimization
@@ -483,8 +478,8 @@ def _process_results(res, params, internal_params, constraints, origin):
     """Convert optimization results into json serializable dictionary.
     Args:
         res: Result from numerical optimizer.
-        params (DataFrame): See: ref: `params`.
-        internal_params (DataFrame): See: ref: `params`.
+        params (DataFrame): See :ref:`params`.
+        internal_params (DataFrame): See :ref:`params`.
         constraints (list): constraints for the optimization
         origin (str): takes the values "pygmo", "nlopt", "scipy"
     """

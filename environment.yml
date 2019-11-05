@@ -26,7 +26,6 @@ dependencies:
   - seaborn
   - jupyter
   - fuzzywuzzy
-  - pathos
   - numba
   - mpi
   - petsc4py>=3.11
