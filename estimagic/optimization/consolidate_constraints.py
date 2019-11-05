@@ -107,7 +107,7 @@ def _join_overlapping_lists(candidates):
     while len(candidates) > 0:
         new_candidates = _unite_first_with_all_intersecting_elements(candidates)
         if len(candidates) == len(new_candidates):
-            bundles.append(sorted(candidates[0]))
+            bundles.append(sorted(new_candidates[0]))
             candidates = candidates[1:]
         else:
             candidates = new_candidates
@@ -163,7 +163,7 @@ def _consolidate_fixes_with_equality_constraints(fixed_pc, equality_pc, params):
             assert (
                 len(valcounts) == 1
             ), "Equality constrained parameters cannot be fixed to different values."
-            fixed_value.iloc[eq["index"]] = valcounts.idex[0]
+            fixed_value.iloc[eq["index"]] = valcounts.index[0]
 
     return fixed_value
 
@@ -273,7 +273,7 @@ def _plug_equality_constraints_into_selectors(equality_pc, other_pc, params):
     pp = params.copy()
     is_equal_to = pd.Series(index=params.index, data=-1, dtype=int)
     for eq in equality_pc:
-        is_equal_to.iloc[sorted(eq["index"][1:])] = eq["index"][0]
+        is_equal_to.iloc[sorted(eq["index"])[1:]] = sorted(eq["index"])[0]
     pp["_post_replacements"] = is_equal_to
     pp["_is_fixed_to_other"] = is_equal_to >= 0
     helper = pp["_post_replacements"].reset_index(drop=True)
@@ -653,7 +653,7 @@ def _is_redundant(candidate, others):
     if len(others) == 0:
         is_redundant = False
     else:
-        same_type = _split_constraints(others, candidate["type"])
+        same_type, _ = _split_constraints(others, candidate["type"])
         duplicates = [c for c in same_type if c["index"] == candidate["index"]]
         is_redundant = len(duplicates) > 0
 
