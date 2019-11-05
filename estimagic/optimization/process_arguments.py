@@ -56,99 +56,99 @@ def process_optimization_arguments(
 
     # Determine number of optimizations and check types
 
-    # Specify name and expected type for all arguments.
-    # Three groups of arguments are relevant:
+    # Specify name, expected type and expected dimensionality for all arguments.
+    # Three groups of expected dimensionality are relevant:
     # (i) expected as scalar,
     # (ii) expected as scalar or list/tuple,
     # (iii) expected as list/tuple or nested list/tuple
-    args_non_list = [
-        {"candidate": general_options, "scalar_type": dict, "name": "general_options"},
-        {"candidate": dashboard, "scalar_type": bool, "name": "dashboard"},
-        {"candidate": db_options, "scalar_type": dict, "name": "db_options"},
-    ]
-    args_list = [
-        {
+    arguments = {
+        "general_options": {
+            "candidate": general_options,
+            "scalar_type": dict,
+            "expected_dim": "scalar",
+        },
+        "dashboard": {
+            "candidate": dashboard,
+            "scalar_type": bool,
+            "expected_dim": "scalar",
+        },
+        "db_options": {
+            "candidate": db_options,
+            "scalar_type": dict,
+            "expected_dim": "scalar",
+        },
+        "criterion": {
             "candidate": criterion,
             "scalar_type": Callable,
             "argument_required": True,
-            "name": "criterion",
+            "expected_dim": "scalar_or_list",
         },
-        {
+        "params": {
             "candidate": params,
             "scalar_type": pd.DataFrame,
             "argument_required": True,
-            "name": "params",
+            "expected_dim": "scalar_or_list",
         },
-        {
+        "algorithm": {
             "candidate": algorithm,
             "scalar_type": str,
             "argument_required": True,
-            "name": "algorithm",
+            "expected_dim": "scalar_or_list",
         },
-        {
+        "algo_options": {
             "candidate": algo_options,
             "scalar_type": dict,
             "argument_required": False,
-            "name": "algo_options",
+            "expected_dim": "scalar_or_list",
         },
-        {
+        "criterion_kwargs": {
             "candidate": criterion_kwargs,
             "scalar_type": dict,
             "argument_required": False,
-            "name": "criterion_kwargs",
+            "expected_dim": "scalar_or_list",
         },
-    ]
-    args_nested_list = [
-        {"candidate": constraints, "argument_required": False, "name": "constraints"}
-    ]
+        "constraints": {
+            "candidate": constraints,
+            "argument_required": False,
+            "expected_dim": "list_or_nested_list",
+        },
+    }
 
-    # Check type of all inputs
-    for arg in args_non_list:
-        _check_type_nonlist_argument(**arg)
-
-    n_opts_args_list = [
-        _get_n_opt_and_check_type_list_argument(**arg) for arg in args_list
-    ]
-    n_opts_args_nested_list = [
-        _get_n_opt_and_check_type_nested_list_argument(**arg)
-        for arg in args_nested_list
-    ]
+    # Check type and calc n_opts for each argument
+    for arg_name, arg_spec in arguments.items():
+        if arg_spec["expected_dim"] == "scalar":
+            _check_type_nonlist_argument(
+                candidate=arg_spec["candidate"],
+                scalar_type=arg_spec["scalar_type"],
+                name=arg_name,
+            )
+            arg_spec["n_opts_entered"] = 1
+        elif arg_spec["expected_dim"] == "scalar_or_list":
+            arg_spec["n_opts_entered"] = _get_n_opt_and_check_type_list_argument(
+                candidate=arg_spec["candidate"],
+                scalar_type=arg_spec["scalar_type"],
+                argument_required=arg_spec["argument_required"],
+                name=arg_name,
+            )
+        elif arg_spec["expected_dim"] == "list_or_nested_list":
+            arg_spec["n_opts_entered"] = _get_n_opt_and_check_type_nested_list_argument(
+                candidate=arg_spec["candidate"],
+                argument_required=arg_spec["argument_required"],
+                name=arg_name,
+            )
 
     # Calc number of optimizations that should be run
-    n_opts = max(n_opts_args_list + n_opts_args_nested_list)
+    n_opts = max(a["n_opts_entered"] for a in arguments.values())
 
     # Broadcast inputs
-    criterion, params, algorithm, algo_options, criterion_kwargs, constraints = [
-        _broadcast_argument(
-            argument=arg["candidate"],
-            len_arg=len_arg,
+    processed_arguments = {}
+    for arg_name, arg_spec in arguments.items():
+        processed_arguments[arg_name] = _broadcast_argument(
+            argument=arg_spec["candidate"],
+            len_arg=arg_spec["n_opts_entered"],
             n_opts_total=n_opts,
-            name=arg["name"],
+            name=arg_name,
         )
-        for arg, len_arg in zip(
-            args_list + args_nested_list, n_opts_args_list + n_opts_args_nested_list
-        )
-    ]
-
-    general_options, dashboard, db_options = [
-        _broadcast_argument(
-            argument=arg["candidate"], len_arg=1, n_opts_total=n_opts, name=arg["name"]
-        )
-        for arg in args_non_list
-    ]
-
-    # Put arguments together
-    processed_arguments = {
-        "criterion": criterion,
-        "params": params,
-        "algorithm": algorithm,
-        "criterion_kwargs": criterion_kwargs,
-        "constraints": constraints,
-        "general_options": general_options,
-        "algo_options": algo_options,
-        "dashboard": dashboard,
-        "db_options": db_options,
-    }
 
     return processed_arguments, n_opts
 

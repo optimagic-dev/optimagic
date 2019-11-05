@@ -144,7 +144,6 @@ def minimize(
         dashboard=dashboard,
         db_options=db_options,
     )
-
     if n_opts == 1:
         result = _single_minimize(**arguments)
     else:
@@ -163,7 +162,8 @@ def minimize(
         pool = Pool(processes=n_cores)
 
         # `Transpose' arguments and run all optimizations in parallel
-        result = pool.starmap(_single_minimize, map(list, zip(*arguments.values())))
+        args_transposed = [{a: arguments[a][i] for a in arguments} for i in range(2)]
+        result = pool.map(_one_argument_single_minimize, args_transposed)
 
     return result
 
@@ -252,6 +252,12 @@ def _single_minimize(
     return result
 
 
+def _one_argument_single_minimize(kwargs):
+    """Wrapper for single_minimize used for multiprocessing.
+    """
+    return _single_minimize(**kwargs)
+
+
 def _internal_minimize(
     criterion,
     criterion_kwargs,
@@ -263,8 +269,7 @@ def _internal_minimize(
     general_options,
     queue,
 ):
-    """
-    Create the internal criterion function and minimize it.
+    """Create the internal criterion function and minimize it.
 
     Args:
         criterion (function):
