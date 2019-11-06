@@ -16,8 +16,9 @@ def check_constraints_are_satisfied(pc, params):
     This should be called before the more specialized constraints are rewritten to
     linear constraints in order to get better error messages!
 
-    We let the checks pass if all parameter values are np.nan. This is useful for the
-    construction of star parameters.
+    We let the checks pass if all "values" are np.nan. This way `process_constraints`
+    can be used on empty params DataFrames which is useful to construct templates for
+    start parameters that can be filled out by the user.
 
     Args:
         pc (list): List of constraints with processed selectors.
