@@ -2,6 +2,7 @@
 import json
 from collections import namedtuple
 from multiprocessing import Event
+from multiprocessing import Pool
 from multiprocessing import Process
 from multiprocessing import Queue
 from pathlib import Path
@@ -13,6 +14,7 @@ import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
+from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
@@ -26,7 +28,6 @@ def maximize(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -48,9 +49,6 @@ def maximize(
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
-        criterion_args (list or tuple):
-            additional positional arguments for criterion
-
         criterion_kwargs (dict):
             additional keyword arguments for criterion
 
@@ -71,14 +69,13 @@ def maximize(
 
     """
 
-    def neg_criterion(*criterion_args, **criterion_kwargs):
-        return -criterion(*criterion_args, **criterion_kwargs)
+    def neg_criterion(params, **criterion_kwargs):
+        return -criterion(params, **criterion_kwargs)
 
     res_dict, params = minimize(
         neg_criterion,
         params=params,
         algorithm=algorithm,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
         general_options=general_options,
@@ -95,7 +92,6 @@ def minimize(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -103,11 +99,95 @@ def minimize(
     dashboard=False,
     db_options=None,
 ):
-    """Minimize *criterion* using *algorithm* subject to *pc* and bounds.
+    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
+    Run several optimizations if called by lists of inputs.
+
+    Args:
+        criterion (function or list of functions):
+            Python function that takes a pandas Series with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame or list of pd.DataFrames):
+            See :ref:`params`.
+
+        algorithm (str or list of strings):
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+
+        criterion_kwargs (dict or list of dicts):
+            additional keyword arguments for criterion
+
+        constraints (list or list of lists):
+            list with constraint dictionaries. See for details.
+
+        general_options (dict):
+            additional configurations for the optimization
+
+        algo_options (dict or list of dicts):
+            algorithm specific configurations for the optimization
+
+        dashboard (bool):
+            whether to create and show a dashboard
+
+        db_options (dict):
+            dictionary with kwargs to be supplied to the run_server function.
+
+    """
+
+    arguments = process_optimization_arguments(
+        criterion=criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        general_options=general_options,
+        algo_options=algo_options,
+        dashboard=dashboard,
+        db_options=db_options,
+    )
+
+    if len(arguments) == 1:
+
+        # Run only one optimization
+        arguments = arguments[0]
+        result = _single_minimize(**arguments)
+    else:
+
+        # Run multiple optimizations
+        if dashboard:
+            raise NotImplementedError(
+                "Dashboard cannot be used for multiple optimizations, yet."
+            )
+
+        # set up multiprocessing
+        if "n_cores" not in arguments[0]["general_options"]:
+            raise ValueError(
+                "n_cores need to be specified in general_options"
+                + " if multiple optimizations should be run."
+            )
+        n_cores = arguments[0]["general_options"]["n_cores"]
+        pool = Pool(processes=n_cores)
+        result = pool.map(_one_argument_single_minimize, arguments)
+
+    return result
+
+
+def _single_minimize(
+    criterion,
+    params,
+    algorithm,
+    criterion_kwargs,
+    constraints,
+    general_options,
+    algo_options,
+    dashboard,
+    db_options,
+):
+    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds.
+    Only one minimization.
 
     Args:
         criterion (function):
-            Python function that takes a pandas DataFrame with parameters as the first
+            Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
@@ -115,9 +195,6 @@ def minimize(
 
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_args (list or tuple):
-            additional positional arguments for criterion
 
         criterion_kwargs (dict):
             additional keyword arguments for criterion
@@ -138,17 +215,9 @@ def minimize(
             dictionary with kwargs to be supplied to the run_server function.
 
     """
-    # set default arguments
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-    criterion_args = [] if criterion_args is None else criterion_args
-    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
-    constraints = [] if constraints is None else constraints
-    general_options = {} if general_options is None else general_options
-    algo_options = {} if algo_options is None else algo_options
-    db_options = {} if db_options is None else db_options
-
     params = _process_params(params)
-    fitness_eval = criterion(params, *criterion_args, **criterion_kwargs)
+    fitness_eval = criterion(params, **criterion_kwargs)
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
@@ -168,9 +237,8 @@ def minimize(
         )
         outer_server_process.start()
 
-    result = _minimize(
+    result = _internal_minimize(
         criterion=criterion,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         params=params,
         internal_params=internal_params,
@@ -187,9 +255,14 @@ def minimize(
     return result
 
 
-def _minimize(
+def _one_argument_single_minimize(kwargs):
+    """Wrapper for single_minimize used for multiprocessing.
+    """
+    return _single_minimize(**kwargs)
+
+
+def _internal_minimize(
     criterion,
-    criterion_args,
     criterion_kwargs,
     params,
     internal_params,
@@ -199,16 +272,12 @@ def _minimize(
     general_options,
     queue,
 ):
-    """
-    Create the internal criterion function and minimize it.
+    """Create the internal criterion function and minimize it.
 
     Args:
         criterion (function):
             Python function that takes a pandas Series with parameters as the first
             argument and returns a scalar floating point value.
-
-        criterion_args (list or tuple):
-            additional positional arguments for criterion
 
         criterion_kwargs (dict):
             additional keyword arguments for criterion
@@ -240,7 +309,6 @@ def _minimize(
         criterion=criterion,
         params=params,
         constraints=constraints,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
     )
@@ -292,9 +360,7 @@ def _minimize(
     return result
 
 
-def create_internal_criterion(
-    criterion, params, constraints, criterion_args, criterion_kwargs, queue
-):
+def create_internal_criterion(criterion, params, constraints, criterion_kwargs, queue):
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):
@@ -306,7 +372,7 @@ def create_internal_criterion(
             post_replacements=params["_post_replacements"].to_numpy().astype(int),
             processed_params=params,
         )
-        fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
+        fitness_eval = criterion(p, **criterion_kwargs)
         if queue is not None:
             queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
         counter += 1
@@ -422,7 +488,7 @@ def _process_results(res, params, internal_params, constraints, origin):
         res: Result from numerical optimizer.
         params (DataFrame): See :ref:`params`.
         internal_params (DataFrame): See :ref:`params`.
-        constraints (list): pc for the optimization
+        constraints (list): constraints for the optimization
         origin (str): takes the values "pygmo", "nlopt", "scipy"
     """
     if origin == "scipy":

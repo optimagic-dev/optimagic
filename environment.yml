@@ -18,9 +18,9 @@ dependencies:
   - bokeh=1.1
   - scipy=1.2.1
   - conda-verify
-  - numba
   - sphinx
   - nbsphinx
+  - numba >= 0.12
   - sphinx_rtd_theme
   - sphinxcontrib-bibtex
   - seaborn
