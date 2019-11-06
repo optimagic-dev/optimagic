@@ -14,18 +14,18 @@ scipy_algos = ["scipy_L-BFGS-B", "scipy_TNC", "scipy_SLSQP"]
 
 
 algorithms = [
-    "pygmo_ihs",
-    "pygmo_sga",
-    "pygmo_sea",
-    "pygmo_de",
-    "pygmo_sade",
     "pygmo_de1220",
+    "pygmo_sade",
     "pygmo_pso",
     "pygmo_pso_gen",
     "pygmo_bee_colony",
     "pygmo_cmaes",
     "pygmo_xnes",
     "scipy_L-BFGS-B",
+    "pygmo_ihs",
+    "pygmo_sga",
+    "pygmo_sea",
+    "pygmo_de",
     "scipy_TNC",
     "scipy_SLSQP",
     "nlopt_cobyla",
