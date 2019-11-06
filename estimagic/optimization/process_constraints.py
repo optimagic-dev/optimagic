@@ -55,21 +55,24 @@ def process_constraints(constraints, params):
             that entail actual transformations and not just fixing parameters.
         pp (pd.DataFrame): Processed params. A copy of params with additional columns:
             - _internal_lower:
-                Lower bounds for the internal parameter vector. Those are derived from
-                the original lower bounds and additional bounds implied by other
-                constraints.
+              Lower bounds for the internal parameter vector. Those are derived from
+              the original lower bounds and additional bounds implied by other
+              constraints.
             - _internal_upper: As _internal_lower but for upper bounds.
             - _internal_free: Boolean column that is true for those parameters over
-                which the optimizer will actually optimize.
+              which the optimizer will actually optimize.
             - _pre_replacements: The j_th element indicates the position of the internal
-                parameter that has to be copied into the j_th position of the external
-                parameter vector when reparametrizing from_internal, before any
-                transformations are applied. Negative if no element has to be copied.
+              parameter that has to be copied into the j_th position of the external
+              parameter vector when reparametrizing from_internal, before any
+              transformations are applied. Negative if no element has to be copied.
             - _post_replacements: As pre_replacements, but applied after the
-                transformations are done.
+              transformations are done.
             - _internal_fixed_value: Contains transformed versions of the fixed values
-                that will become equal to the external fixed values after the
-                kernel transformations are applied.
+              that will become equal to the external fixed values after the
+              kernel transformations are applied.
+            - _is_fixed_to_value: True for parameters that are fixed to a value
+            - _is_fixed_to_other: True for parameters that are fixed to another
+              parameter
 
     """
     with warnings.catch_warnings():

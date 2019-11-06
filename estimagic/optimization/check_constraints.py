@@ -16,6 +16,10 @@ def check_constraints_are_satisfied(pc, params):
     This should be called before the more specialized constraints are rewritten to
     linear constraints in order to get better error messages!
 
+    We let the checks pass if all "values" are np.nan. This way `process_constraints`
+    can be used on empty params DataFrames which is useful to construct templates for
+    start parameters that can be filled out by the user.
+
     Args:
         pc (list): List of constraints with processed selectors.
         params (pd.DataFrame): See :ref:`params`
@@ -24,55 +28,58 @@ def check_constraints_are_satisfied(pc, params):
         ValueError if constraints are not satisfied.
 
     """
-    for constr in pc:
-        typ = constr["type"]
-        subset = params.iloc[constr["index"]]["value"]
-        msg = f"{{}}:\n{subset.to_frame()}"
-        if typ == "covariance":
-            cov = cov_params_to_matrix(subset)
-            e, v = np.linalg.eigh(cov)
-            if not np.all(e > -1e-8):
-                raise ValueError(msg.format("Invalid covariance parameters."))
-        elif typ == "sdcorr":
-            cov = sdcorr_params_to_matrix(subset)
-            if (subset.iloc[: len(cov)] < 0).any():
-                raise ValueError(msg.format("Invalid standard deviations."))
-            if ((subset.iloc[len(cov) :] < -1) | (subset.iloc[len(cov) :] > 1)).any():
-                raise ValueError(msg.format("Invalid correlations."))
-            e, v = np.linalg.eigh(cov)
-            if not np.all(e > -1e-8):
-                raise ValueError(msg.format("Invalid sdcorr parameters."))
-        elif typ == "probability":
-            if not np.isclose(subset.sum(), 1, rtol=0.01):
-                raise ValueError(msg.format("Probabilities do not sum to 1"))
-            if np.any(subset < 0):
-                raise ValueError(msg.format("Negative Probability."))
-            if np.any(subset > 1):
-                raise ValueError(msg.format("Probability larger than 1."))
-        elif typ == "increasing":
-            if np.any(np.diff(subset) < 0):
-                raise ValueError(msg.format("Increasing constraint violated."))
-        elif typ == "decreasing":
-            if np.any(np.diff(subset) > 0):
-                raise ValueError(msg.format("Decreasing constraint violated"))
-        elif typ == "linear":
-            # using sr.dot is important in case weights are a series in wrong order
-            wsum = subset.dot(constr["weights"])
-            if "lower" in constr and wsum < constr["lower"]:
-                raise ValueError(
-                    msg.format("Lower bound of linear constraint violated")
-                )
-            elif "upper" in constr and wsum > constr["upper"]:
-                raise ValueError(
-                    msg.format("Upper bound of linear constraint violated")
-                )
-            elif "value" in constr and not np.isclose(wsum, constr["value"]):
-                raise ValueError(
-                    msg.format("Equality condition of linear constraint violated")
-                )
-        elif typ == "equality":
-            if len(subset.unique()) != 1:
-                raise ValueError(msg.format("Equality constraint violated."))
+
+    if params["value"].notnull().any():
+        for constr in pc:
+            typ = constr["type"]
+            subset = params.iloc[constr["index"]]["value"]
+            msg = f"{{}}:\n{subset.to_frame()}"
+            if typ == "covariance":
+                cov = cov_params_to_matrix(subset)
+                e, v = np.linalg.eigh(cov)
+                if not np.all(e > -1e-8):
+                    raise ValueError(msg.format("Invalid covariance parameters."))
+            elif typ == "sdcorr":
+                cov = sdcorr_params_to_matrix(subset)
+                dim = len(cov)
+                if (subset.iloc[:dim] < 0).any():
+                    raise ValueError(msg.format("Invalid standard deviations."))
+                if ((subset.iloc[dim:] < -1) | (subset.iloc[dim:] > 1)).any():
+                    raise ValueError(msg.format("Invalid correlations."))
+                e, v = np.linalg.eigh(cov)
+                if not np.all(e > -1e-8):
+                    raise ValueError(msg.format("Invalid sdcorr parameters."))
+            elif typ == "probability":
+                if not np.isclose(subset.sum(), 1, rtol=0.01):
+                    raise ValueError(msg.format("Probabilities do not sum to 1"))
+                if np.any(subset < 0):
+                    raise ValueError(msg.format("Negative Probability."))
+                if np.any(subset > 1):
+                    raise ValueError(msg.format("Probability larger than 1."))
+            elif typ == "increasing":
+                if np.any(np.diff(subset) < 0):
+                    raise ValueError(msg.format("Increasing constraint violated."))
+            elif typ == "decreasing":
+                if np.any(np.diff(subset) > 0):
+                    raise ValueError(msg.format("Decreasing constraint violated"))
+            elif typ == "linear":
+                # using sr.dot is important in case weights are a series in wrong order
+                wsum = subset.dot(constr["weights"])
+                if "lower" in constr and wsum < constr["lower"]:
+                    raise ValueError(
+                        msg.format("Lower bound of linear constraint violated")
+                    )
+                elif "upper" in constr and wsum > constr["upper"]:
+                    raise ValueError(
+                        msg.format("Upper bound of linear constraint violated")
+                    )
+                elif "value" in constr and not np.isclose(wsum, constr["value"]):
+                    raise ValueError(
+                        msg.format("Equality condition of linear constraint violated")
+                    )
+            elif typ == "equality":
+                if len(subset.unique()) != 1:
+                    raise ValueError(msg.format("Equality constraint violated."))
 
 
 def check_types(constraints):
