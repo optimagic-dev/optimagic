@@ -133,7 +133,7 @@ def minimize(
 
     """
 
-    arguments, n_opts = process_optimization_arguments(
+    arguments = process_optimization_arguments(
         criterion=criterion,
         params=params,
         algorithm=algorithm,
@@ -144,26 +144,29 @@ def minimize(
         dashboard=dashboard,
         db_options=db_options,
     )
-    if n_opts == 1:
+
+    if len(arguments) == 1:
+
+        # Run only one optimization
+        arguments = arguments[0]
         result = _single_minimize(**arguments)
     else:
+
+        # Run multiple optimizations
         if dashboard:
             raise NotImplementedError(
                 "Dashboard cannot be used for multiple optimizations, yet."
             )
 
         # set up multiprocessing
-        if "n_cores" not in arguments["general_options"][0]:
+        if "n_cores" not in arguments[0]["general_options"]:
             raise ValueError(
                 "n_cores need to be specified in general_options"
                 + " if multiple optimizations should be run."
             )
-        n_cores = arguments["general_options"][0]["n_cores"]
+        n_cores = arguments[0]["general_options"]["n_cores"]
         pool = Pool(processes=n_cores)
-
-        # `Transpose' arguments and run all optimizations in parallel
-        args_transposed = [{a: arguments[a][i] for a in arguments} for i in range(2)]
-        result = pool.map(_one_argument_single_minimize, args_transposed)
+        result = pool.map(_one_argument_single_minimize, arguments)
 
     return result
 

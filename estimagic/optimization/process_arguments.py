@@ -45,6 +45,10 @@ def process_optimization_arguments(
 
         db_options (dict):
             dictionary with kwargs to be supplied to the run_server function.
+
+
+    Returns:
+        List: List of dictionaries. One dict for each optimization.
     """
 
     # set default arguments
@@ -53,7 +57,6 @@ def process_optimization_arguments(
     algo_options = {} if algo_options is None else algo_options
     db_options = {} if db_options is None else db_options
     general_options = {} if general_options is None else general_options
-
     # Determine number of optimizations and check types
 
     # Specify name, expected type and expected dimensionality for all arguments.
@@ -140,17 +143,34 @@ def process_optimization_arguments(
     # Calc number of optimizations that should be run
     n_opts = max(a["n_opts_entered"] for a in arguments.values())
 
-    # Broadcast inputs
-    processed_arguments = {}
-    for arg_name, arg_spec in arguments.items():
-        processed_arguments[arg_name] = _broadcast_argument(
-            argument=arg_spec["candidate"],
-            len_arg=arg_spec["n_opts_entered"],
-            n_opts_total=n_opts,
-            name=arg_name,
-        )
+    # Put arguments together
+    processed_arguments = []
+    for run in range(n_opts):
+        args_one_run = {}
+        for arg_name, arg_spec in arguments.items():
 
-    return processed_arguments, n_opts
+            # Entered as scalar
+            if arg_spec["n_opts_entered"] == 1:
+                is_list = isinstance(arg_spec["candidate"], (list, tuple))
+                if is_list and len(arg_spec["candidate"]) == 1:
+                    args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"][0])
+                else:
+                    args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
+
+            # Entered as list of correct length
+            elif arg_spec["n_opts_entered"] == n_opts:
+                args_one_run[arg_name] = arg_spec["candidate"][run]
+
+            # Entered as too short list
+            else:
+                raise ValueError(
+                    f"All arguments entered as list/tuple must be of the same "
+                    + f"length. The length of {arg_name} "
+                    + f"is below the length of another argument."
+                )
+        processed_arguments.append(args_one_run)
+
+    return processed_arguments
 
 
 def _check_type_nonlist_argument(candidate, scalar_type, name):
@@ -259,52 +279,3 @@ def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required,
     else:
         num_opt = 1
     return num_opt
-
-
-def _broadcast_argument(argument, len_arg, n_opts_total, name):
-    """Broadcast argument if of length 1.
-
-    Args:
-        argument:
-            Argument
-
-        len_arg (int):
-            Length of argument
-
-        n_opts_total (int):
-            Number of optimizatiions that should be run
-
-        name (str):
-            Name of argument used in error message (not used so far)
-    """
-    msg = (
-        f"All arguments entered as list/tuple must be of the same length."
-        + f"The length of {name} is below the length of another argument."
-    )
-
-    # Only one optimization
-    if n_opts_total == 1:
-
-        # Select element if entered as list of length 1
-        if isinstance(argument, (list, tuple)) and len(argument) == 1:
-            res = argument[0]
-        else:
-            res = argument
-
-    # Argument is broadcasted
-    elif len_arg == 1:
-
-        # Select element if entered as list of length 1
-        if isinstance(argument, (list, tuple)) and len(argument) == 1:
-            res = [copy.deepcopy(argument[0]) for i in range(n_opts_total)]
-        else:
-            res = [copy.deepcopy(argument) for i in range(n_opts_total)]
-
-    # Argument was entered as list/tuple
-    elif len_arg == n_opts_total:
-        res = argument
-
-    # Argument was entered as too short list/tuple
-    else:
-        raise ValueError(msg)
-    return res
