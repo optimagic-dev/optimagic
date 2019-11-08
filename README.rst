@@ -74,6 +74,22 @@ Documentation
 
 The documentation is hosted (`on rtd <https://estimagic.readthedocs.io/en/latest/#>`_)
 
+Citation
+========
+
+If you use Estimagic for your research, please do not forget to cite it. Many people
+worked on this software and you should recognize their effort.
+
+.. code-block::
+
+    @Unpublished{Gabler2019,
+      Title  = {A Python Tool for the Estimation of (Structural) Econometric Models.},
+      Author = {Janos Gabler},
+      Year   = {2019},
+      Url    = {https://github.com/OpenSourceEconomics/estimagic}
+    }
+
+
 Roadmap
 =======
 
