@@ -104,7 +104,7 @@ def minimize(
 
     Args:
         criterion (function or list of functions):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame or list of pd.DataFrames):
@@ -187,7 +187,7 @@ def _single_minimize(
 
     Args:
         criterion (function):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
@@ -276,7 +276,7 @@ def _internal_minimize(
 
     Args:
         criterion (function):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         criterion_kwargs (dict):
@@ -301,8 +301,7 @@ def _internal_minimize(
             additional configurations for the optimization
 
         queue (Queue):
-            queue to which originally the parameters DataFrame is supplied and to which
-            the updated parameter Series will be supplied later.
+            queue to which the fitness evaluations and params DataFrames are supplied.
 
     """
     internal_criterion = create_internal_criterion(
@@ -361,6 +360,33 @@ def _internal_minimize(
 
 
 def create_internal_criterion(criterion, params, constraints, criterion_kwargs, queue):
+    """Create the internal criterion function.
+
+    Args:
+        criterion (function):
+            Python function that takes a pandas DataFrame with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame):
+            See :ref:`params`.
+
+        constraints (list):
+            list with constraint dictionaries. See for details.
+
+        criterion_kwargs (dict):
+            additional keyword arguments for criterion
+
+        queue (Queue):
+            queue to which the fitness evaluations and params DataFrames are supplied.
+
+    Returns:
+        internal_criterion (function):
+            function that takes an internal_params DataFrame as only argument.
+            It calls the original criterion function after the necessary
+            reparametrizations and passes the results to the dashboard queue if given
+            before returning the fitness evaluation.
+
+    """
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):
