@@ -72,6 +72,12 @@ def maximize(
     def neg_criterion(params, **criterion_kwargs):
         return -criterion(params, **criterion_kwargs)
 
+    # identify the criterion function as belongig to a maximization problem
+    if criterion_kwargs is None:
+        criterion_kwargs = {"_maximization": True}
+    else:
+        criterion_kwargs["_maximization"] = True
+
     res_dict, params = minimize(
         neg_criterion,
         params=params,
@@ -217,7 +223,12 @@ def _single_minimize(
     """
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
-    fitness_eval = criterion(params, **criterion_kwargs)
+
+    fitness_factor = -1 if criterion_kwargs.get("_maximization", False) else 1
+    if "_maximization" in criterion_kwargs:
+        del criterion_kwargs["_maximization"]
+
+    fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
@@ -247,6 +258,7 @@ def _single_minimize(
         algo_options=algo_options,
         general_options=general_options,
         queue=queue,
+        fitness_factor=fitness_factor,
     )
 
     if dashboard:
@@ -271,6 +283,7 @@ def _internal_minimize(
     algo_options,
     general_options,
     queue,
+    fitness_factor,
 ):
     """Create the internal criterion function and minimize it.
 
@@ -303,6 +316,10 @@ def _internal_minimize(
         queue (Queue):
             queue to which the fitness evaluations and params DataFrames are supplied.
 
+        fitness_factor (float):
+            multiplicative factor for the fitness displayed in the dashboard.
+            Set to -1 for maximizations to plot the fitness that is being maximized.
+
     """
     internal_criterion = create_internal_criterion(
         criterion=criterion,
@@ -310,6 +327,7 @@ def _internal_minimize(
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
+        fitness_factor=fitness_factor,
     )
 
     current_dir_path = Path(__file__).resolve().parent
@@ -359,7 +377,9 @@ def _internal_minimize(
     return result
 
 
-def create_internal_criterion(criterion, params, constraints, criterion_kwargs, queue):
+def create_internal_criterion(
+    criterion, params, constraints, criterion_kwargs, queue, fitness_factor
+):
     """Create the internal criterion function.
 
     Args:
@@ -378,6 +398,10 @@ def create_internal_criterion(criterion, params, constraints, criterion_kwargs, 
 
         queue (Queue):
             queue to which the fitness evaluations and params DataFrames are supplied.
+
+        fitness_factor (float):
+            multiplicative factor for the fitness displayed in the dashboard.
+            Set to -1 for maximizations to plot the fitness that is being maximized.
 
     Returns:
         internal_criterion (function):
@@ -400,7 +424,13 @@ def create_internal_criterion(criterion, params, constraints, criterion_kwargs, 
         )
         fitness_eval = criterion(p, **criterion_kwargs)
         if queue is not None:
-            queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
+            queue.put(
+                QueueEntry(
+                    iteration=counter[0],
+                    params=p,
+                    fitness=fitness_factor * fitness_eval,
+                )
+            )
         counter += 1
         return fitness_eval
 
