@@ -24,7 +24,7 @@ setup(
         "Development Status :: 2 - Pre-Alpha",
     ],
     keywords=["econometrics", "statistics", "extremum estimation", "optimization"],
-    url="https://github.com/janosg/estimagic",
+    url="https://github.com/OpenSourceEconomics/estimagic",
     author="Janos Gabler",
     author_email="janos.gabler@gmail.com",
     packages=find_packages(exclude=["tests/*"]),

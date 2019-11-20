@@ -2,11 +2,11 @@
 estimagic
 =========
 
-.. image:: https://anaconda.org/janosg/estimagic/badges/version.svg
-   :target: https://anaconda.org/janosg/estimagic
+.. image:: https://anaconda.org/OpenSourceEconomics/estimagic/badges/version.svg
+   :target: https://anaconda.org/OpenSourceEconomics/estimagic
 
-.. image:: https://anaconda.org/janosg/estimagic/badges/platforms.svg
-   :target: https://anaconda.org/janosg/estimagic
+.. image:: https://anaconda.org/OpenSourceEconomics/estimagic/badges/platforms.svg
+   :target: https://anaconda.org/OpenSourceEconomics/estimagic
 
 .. image:: https://img.shields.io/badge/License-BSD%203--Clause-orange.svg
     :target: https://opensource.org/licenses/BSD-3-Clause
@@ -69,7 +69,8 @@ terminal:
 
 .. code-block:: bash
 
-    $ conda config --add channels conda-forge $ conda install -c janosg estimagic
+    $ conda config --add channels conda-forge
+    $ conda install -c opensourceeconomics estimagic
 
 The first line adds conda-forge to your conda channels. This is necessary for conda to
 find all dependencies of estimagic. The second line installs estimagic and its
