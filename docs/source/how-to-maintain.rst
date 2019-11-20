@@ -73,7 +73,7 @@ To release a new major or minor version of estimagic, do the following.
        $ python release.py
 
    which uploads the new release to the `repository on Anaconda.org
-   <https://anaconda.org/estimagic/estimagic>`_.
+   <https://anaconda.org/janosg/estimagic>`_.
 
 
 .. _backports:

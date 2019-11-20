@@ -2,6 +2,12 @@
 estimagic
 =========
 
+.. image:: https://anaconda.org/janosg/estimagic/badges/version.svg
+   :target: https://anaconda.org/janosg/estimagic
+
+.. image:: https://anaconda.org/janosg/estimagic/badges/platforms.svg
+   :target: https://anaconda.org/janosg/estimagic
+
 .. image:: https://img.shields.io/badge/License-BSD%203--Clause-orange.svg
     :target: https://opensource.org/licenses/BSD-3-Clause
     :alt: License
@@ -48,8 +54,8 @@ In particular we would like to thank:
   numerical integration and calculation of standard errors for GMM and MSM estimators
 - Linda Maokomatanda (`lindamaok899 <https://github.com/lindamaok899>`_) for
   contributing code for the calculation of likelihood standard errors
-- Moritz Mendel (`mo2561057 <https://github.com/mo2561057>`_) for wrapping the
-  pounders algorithm from TAO
+- Moritz Mendel (`mo2561057 <https://github.com/mo2561057>`_) for wrapping the pounders
+  algorithm from TAO
 
 If you want to find your name here as well, please contact us or browse through our
 Issues and submit a Pull Request.
