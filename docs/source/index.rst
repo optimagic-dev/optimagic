@@ -19,7 +19,6 @@ models in mind, but also "scales down" to simpler use cases like logit or probit
    faq
    api/index
    contributing/index
-   how-to-maintain
    changes
 
 
