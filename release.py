@@ -21,7 +21,7 @@ CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 TEMPORARY_FOLDERS = [
     Path("documentation", "_build"),
     Path("documentation", "_generated"),
-]
+] + list(Path(".").glob("**/__pycache__"))
 
 
 @click.group(context_settings=CONTEXT_SETTINGS, chain=True, invoke_without_command=True)
