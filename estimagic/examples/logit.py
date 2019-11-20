@@ -31,9 +31,8 @@ def logit_loglikeobs(params, y, x):
         loglike (np.array): 1d numpy array with likelihood contribution per individual
 
     """
-    param_arr = params["value"].to_numpy()
     q = 2 * y - 1
-    return np.log(1 / (1 + np.exp(-(q * np.dot(x, param_arr)))))
+    return np.log(1 / (1 + np.exp(-(q * np.dot(x, params["value"])))))
 
 
 def logit_gradient(params, y, x):
@@ -49,8 +48,7 @@ def logit_gradient(params, y, x):
         gradient (np.array)
 
     """
-    param_arr = params["value"].to_numpy()
-    c = 1 / (1 + np.exp(-(np.dot(x, param_arr))))
+    c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
     return np.dot(y - c, x)
 
 
@@ -68,8 +66,7 @@ def logit_jacobian(params, y, x):
             The derivative of the loglikelihood for each observation evaluated
             at `params`.
     """
-    param_arr = params["value"].to_numpy()
-    c = 1 / (1 + np.exp(-(np.dot(x, param_arr))))
+    c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
     return (y - c)[:, None] * x
 
 
@@ -87,6 +84,5 @@ def logit_hessian(params, y, x):
             logl-ikelihood function evaluated at `params`
 
     """
-    param_arr = params["value"].to_numpy()
-    c = 1 / (1 + np.exp(-(np.dot(x, param_arr))))
+    c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
     return -np.dot(c * (1 - c) * x.T, x)
