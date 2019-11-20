@@ -6,7 +6,7 @@ def logit_loglike(params, y, x):
     """Log-likelihood function of a logit model.
 
     Args:
-        params (pd.DataFrame): The index consists of the parmater names,
+        params (pd.DataFrame): The index consists of the parameter names,
             the "value" column are the parameter values.
         y (np.array): 1d numpy array with the dependent variable
         x (np.array): 2d numpy array with the independent variables
