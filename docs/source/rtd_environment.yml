@@ -2,6 +2,7 @@ name: estimagic-rtd
 
 channels:
 
+  - opensourceeconomics
   - conda-forge
   - defaults
 
