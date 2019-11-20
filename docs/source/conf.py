@@ -42,6 +42,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
+    "sphinx.ext.extlinks",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
@@ -51,6 +52,7 @@ extensions = [
 
 autodoc_member_order = "bysource"
 
+extlinks = {"ghuser": ("https://github.com/%s", "@")}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

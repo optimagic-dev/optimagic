@@ -6,8 +6,8 @@ estimagic
     :target: https://opensource.org/licenses/BSD-3-Clause
     :alt: License
 
-.. image:: https://readthedocs.org/projects/estimagic/badge/?version=master
-    :target: https://estimagic.readthedocs.io/en/master/?badge=master
+.. image:: https://readthedocs.org/projects/estimagic/badge/?version=latest
+    :target: https://estimagic.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
 .. image:: https://dev.azure.com/OpenSourceEconomics/estimagic/_apis/build/status/OpenSourceEconomics.estimagic?branchName=master
