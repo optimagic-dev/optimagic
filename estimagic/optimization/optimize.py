@@ -73,10 +73,10 @@ def maximize(
         return -criterion(params, **criterion_kwargs)
 
     # identify the criterion function as belongig to a maximization problem
-    if criterion_kwargs is None:
-        criterion_kwargs = {"_maximization": True}
+    if general_options is None:
+        general_options = {"_maximization": True}
     else:
-        criterion_kwargs["_maximization"] = True
+        general_options["_maximization"] = True
 
     res_dict, params = minimize(
         neg_criterion,
@@ -224,10 +224,7 @@ def _single_minimize(
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
-    fitness_factor = -1 if criterion_kwargs.get("_maximization", False) else 1
-    if "_maximization" in criterion_kwargs:
-        del criterion_kwargs["_maximization"]
-
+    fitness_factor = -1 if general_options.get("_maximization", False) else 1
     fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
