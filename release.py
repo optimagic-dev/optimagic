@@ -94,7 +94,9 @@ def build_convert_upload():
     all_packages = built_packages + converted_packages
     for package in all_packages:
         _, package_name = split(package)
-        subprocess.run(["anaconda", "upload", "--user", "OpenSourceEconomics", package])
+        subprocess.run(
+            ["anaconda", "upload", "--force", "--user", "OpenSourceEconomics", package]
+        )
 
 
 if __name__ == "__main__":
