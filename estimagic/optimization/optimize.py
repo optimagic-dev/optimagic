@@ -72,6 +72,12 @@ def maximize(
     def neg_criterion(params, **criterion_kwargs):
         return -criterion(params, **criterion_kwargs)
 
+    # identify the criterion function as belongig to a maximization problem
+    if general_options is None:
+        general_options = {"_maximization": True}
+    else:
+        general_options["_maximization"] = True
+
     res_dict, params = minimize(
         neg_criterion,
         params=params,
@@ -104,7 +110,7 @@ def minimize(
 
     Args:
         criterion (function or list of functions):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame or list of pd.DataFrames):
@@ -146,12 +152,10 @@ def minimize(
     )
 
     if len(arguments) == 1:
-
         # Run only one optimization
         arguments = arguments[0]
         result = _single_minimize(**arguments)
     else:
-
         # Run multiple optimizations
         if dashboard:
             raise NotImplementedError(
@@ -187,7 +191,7 @@ def _single_minimize(
 
     Args:
         criterion (function):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         params (pd.DataFrame):
@@ -217,7 +221,9 @@ def _single_minimize(
     """
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
-    fitness_eval = criterion(params, **criterion_kwargs)
+
+    fitness_factor = -1 if general_options.get("_maximization", False) else 1
+    fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
@@ -247,6 +253,7 @@ def _single_minimize(
         algo_options=algo_options,
         general_options=general_options,
         queue=queue,
+        fitness_factor=fitness_factor,
     )
 
     if dashboard:
@@ -271,12 +278,13 @@ def _internal_minimize(
     algo_options,
     general_options,
     queue,
+    fitness_factor,
 ):
     """Create the internal criterion function and minimize it.
 
     Args:
         criterion (function):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
         criterion_kwargs (dict):
@@ -301,8 +309,11 @@ def _internal_minimize(
             additional configurations for the optimization
 
         queue (Queue):
-            queue to which originally the parameters DataFrame is supplied and to which
-            the updated parameter Series will be supplied later.
+            queue to which the fitness evaluations and params DataFrames are supplied.
+
+        fitness_factor (float):
+            multiplicative factor for the fitness displayed in the dashboard.
+            Set to -1 for maximizations to plot the fitness that is being maximized.
 
     """
     internal_criterion = create_internal_criterion(
@@ -311,6 +322,7 @@ def _internal_minimize(
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
+        fitness_factor=fitness_factor,
     )
 
     current_dir_path = Path(__file__).resolve().parent
@@ -360,7 +372,40 @@ def _internal_minimize(
     return result
 
 
-def create_internal_criterion(criterion, params, constraints, criterion_kwargs, queue):
+def create_internal_criterion(
+    criterion, params, constraints, criterion_kwargs, queue, fitness_factor
+):
+    """Create the internal criterion function.
+
+    Args:
+        criterion (function):
+            Python function that takes a pandas DataFrame with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame):
+            See :ref:`params`.
+
+        constraints (list):
+            list with constraint dictionaries. See for details.
+
+        criterion_kwargs (dict):
+            additional keyword arguments for criterion
+
+        queue (Queue):
+            queue to which the fitness evaluations and params DataFrames are supplied.
+
+        fitness_factor (float):
+            multiplicative factor for the fitness displayed in the dashboard.
+            Set to -1 for maximizations to plot the fitness that is being maximized.
+
+    Returns:
+        internal_criterion (function):
+            function that takes an internal_params DataFrame as only argument.
+            It calls the original criterion function after the necessary
+            reparametrizations and passes the results to the dashboard queue if given
+            before returning the fitness evaluation.
+
+    """
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):
@@ -374,7 +419,13 @@ def create_internal_criterion(criterion, params, constraints, criterion_kwargs, 
         )
         fitness_eval = criterion(p, **criterion_kwargs)
         if queue is not None:
-            queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
+            queue.put(
+                QueueEntry(
+                    iteration=counter[0],
+                    params=p,
+                    fitness=fitness_factor * fitness_eval,
+                )
+            )
         counter += 1
         return fitness_eval
 

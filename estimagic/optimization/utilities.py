@@ -106,7 +106,7 @@ def dimension_to_number_of_triangular_elements(dim):
 
 def index_element_to_string(element, separator="_"):
     if isinstance(element, (tuple, list)):
-        as_strings = [str(entry) for entry in element]
+        as_strings = [str(entry).replace("-", "_") for entry in element]
         res_string = separator.join(as_strings)
     else:
         res_string = str(element)

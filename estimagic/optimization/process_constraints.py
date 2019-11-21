@@ -26,7 +26,7 @@ params) respectively. If all pc of a certain type, say linear, are collected
 in a this collection is called pc_linear.
 
 If only few columns of processed params are used in a function, it is better to
-pass them in as Series, to make the flow of information more explicit.
+pass them as Series, to make the flow of information more explicit.
 
 """
 import warnings
