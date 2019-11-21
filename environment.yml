@@ -28,6 +28,7 @@ dependencies:
   - fuzzywuzzy
   - mpi
   - petsc4py>=3.11
+  - bump2version
   - pip:
     - pre-commit
     - pytest
