@@ -152,12 +152,10 @@ def minimize(
     )
 
     if len(arguments) == 1:
-
         # Run only one optimization
         arguments = arguments[0]
         result = _single_minimize(**arguments)
     else:
-
         # Run multiple optimizations
         if dashboard:
             raise NotImplementedError(
