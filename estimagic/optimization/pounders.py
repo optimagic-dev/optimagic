@@ -2,21 +2,20 @@
 import sys
 from functools import partial
 
-
 if sys.platform != "win32":
     from petsc4py import PETSc
 
 
 def minimize_pounders(
-    func,
-    x,
-    len_out,
-    bounds=None,
-    init_tr=None,
-    max_iterations=None,
-    gatol=1e-8,
-    grtol=1e-8,
-    gttol=1e-10,
+        func,
+        x,
+        len_out,
+        bounds=None,
+        init_tr=None,
+        max_iterations=None,
+        gatol=1e-8,
+        grtol=1e-8,
+        gttol=1e-10,
 ):
     """Minimize a function using the pounders algortihm.
 
@@ -26,24 +25,24 @@ def minimize_pounders(
         bounds: list or tuple of lists containing the bounds for the variable
                 of interest.
                 The first list contains the lower value for each param and the upper
-                 list the upper value
-        init_tr: Sets the radius for the initial trust region that the optimizer
-                 employs.
-        tol: Sets the tolerance for the three default stopping criteria.
-         The routine will stop once the first is reached.
-             One can turn off specific criteria with other args.
-              In this case their value in this dict does not matter.
+                 list the upper value.
+                 The object has to contain two elements of which one represents the upper
+                 and the other one the lower bound.
+        init_tr: Float.
+                 Sets the radius for the initial trust region that the optimizer
+                 employs. If none the algorithm uses 100 as initial  trust region radius.
         max_iterations: Alternative Stopping criterion.
                         If set the routine will stop after the number of specified
                         iterations or after the step size is sufficiently small.
                         If the variable is set the default
                         criteria will all be ignored.
-        gatol: Int indicating the sufficient value of gatol. If set to False the
+        gatol: Int - stop if relative norm of gradient is less than this. If set to False the
         algorithm will not consider gatol.
-        grtol: Int indicating the sufficient value of grtol. If set to False the
+        grtol: Int - stop if norm of gradient is less than this. If set to False the
         algorithm will not consider grtol.
-        gttol: Int indicating the sufficient value of grtol. If set to False the
+        gttol: Int - stop if norm of gradient is reduced by this factor. If set to False the
         algorithm will not consider grtol.
+
     Returns:
         out: dict with the following key value pairs:
              "solution": solution vector as np.array,
