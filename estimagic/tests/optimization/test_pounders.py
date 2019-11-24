@@ -33,7 +33,7 @@ def test_robustness_2():
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
-    calculated = minimize_pounders(objective, start_params, len_out)["solution"]
+    calculated = minimize_pounders(objective, start_params, len_out)["x"]
 
     x = np.column_stack([np.ones_like(exog), exog])
     y = endog.reshape(len(endog), 1)
@@ -53,8 +53,8 @@ def test_box_constr():
     objective = functools.partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
     calculated = minimize_pounders(objective, start_params, len_out, bounds=bounds)
-    assert 0 <= calculated["solution"][0] <= 0.3
-    assert 0 <= calculated["solution"][1] <= 0.3
+    assert 0 <= calculated["x"][0] <= 0.3
+    assert 0 <= calculated["x"][1] <= 0.3
 
 
 def test_max_iters():
