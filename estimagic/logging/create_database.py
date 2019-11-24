@@ -120,7 +120,7 @@ def prepare_database(
     Args:
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created.
-        params (pd.DataFrame): see :ref:`params`
+        params (pd.DataFrame): see :ref:`params`.
         db_options (dict): Dashboard options.
         optimization_status (str): One of "scheduled", "running", "success", "failure".
         gradient_status (float): Progress of gradient calculation between 0 and 1.
