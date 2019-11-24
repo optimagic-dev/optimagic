@@ -9,8 +9,8 @@ function.
 
 """
 import pickle
+import time
 import warnings
-from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -110,7 +110,8 @@ def _handle_exception(statements, database):
     for stat in statements:
         if isinstance(stat, (sqlalchemy.sql.dml.Insert, sqlalchemy.sql.dml.Update)):
             values = stat.compile().params
-            filename = f"{stat.table.name}_{datetime.now()}.pickle"
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            filename = f"{stat.table.name}_{timestamp}.pickle"
             with open(directory / filename, "wb") as p:
                 pickle.dump(values, p)
 
