@@ -13,48 +13,56 @@ import warnings
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import sqlalchemy
 
 
-def append_rows(metadata, tables, values):
-    """As append values to tables in an atomic transaction.
+def append_rows(database, tables, rows):
+    """Append rows to one or several tables in one transaction.
 
-    This ensures that the iteration counters stay correct in parallel optimizations.
+    Using just one transaction ensures that the iteration counters stay correct in
+    parallel optimizations. It is also faster than using several transactions.
+
+    If anything fails, the complete operation is rolled back and the data is stored in
+    pickle files instead.
 
     Args:
-        metadata (sqlalchemy.MetaData):
-        tables (list): list of strings
-        values (list): list of dicts or pd.Series: values to append.
+        database (sqlalchemy.MetaData):
+        tables (str or list): A table name or list of table names.
+        rows (dict, pd.Series or list): The data to append.
 
     """
     if isinstance(tables, str):
         tables = [tables]
-        values = [values]
+    if isinstance(rows, (dict, pd.Series)):
+        rows = [rows]
 
-    values = [dict(val) for val in values]
+    assert len(tables) == len(rows), "There must be one value per table."
+
+    rows = [dict(val) for val in rows]
 
     inserts = [
-        metadata.tables[tab].insert().values(**val) for tab, val in zip(tables, values)
+        database.tables[tab].insert().values(**row) for tab, row in zip(tables, rows)
     ]
 
-    _execute_write_statements(inserts, metadata)
+    _execute_write_statements(inserts, database)
 
 
-def update_scalar_field(metadata, table, value):
+def update_scalar_field(database, table, value):
     """Update the value of a table with one row and one column called "value".
 
     Args:
-        metadata (sqlalchemy.MetaData)
-        table (string): Name of a table.
-        value: The new value of the scalar field.
+        database (sqlalchemy.MetaData)
+        table (string): Name of the table to be updated.
+        value: The new value of the table.
 
     """
     value = {"value": value}
-    upd = metadata.tables[table].update().values(**value)
-    _execute_write_statements(upd, metadata)
+    upd = database.tables[table].update().values(**value)
+    _execute_write_statements(upd, database)
 
 
-def _execute_write_statements(statements, metadata):
+def _execute_write_statements(statements, database):
     """Execute all statements in one atomic transaction.
 
     If any statement fails, the transaction is rolled back, and a warning is issued.
@@ -66,13 +74,13 @@ def _execute_write_statements(statements, metadata):
         statements (list or sqlalchemy statement): List of sqlalchemy statements
             or single statement that entail a write operation. Examples are Insert,
             Update and Delete.
-        metadata (sqlalchemy.sql.schema.MetaData): The bind argument must be set.
+        database (sqlalchemy.sql.schema.MetaData): The bind argument must be set.
 
     """
     if not isinstance(statements, (list, tuple)):
         statements = [statements]
 
-    engine = metadata.bind
+    engine = database.bind
     conn = engine.connect()
     # acquire lock
     trans = conn.begin()
@@ -85,16 +93,16 @@ def _execute_write_statements(statements, metadata):
     except (KeyboardInterrupt, SystemExit):
         trans.rollback()
         conn.close()
-        _handle_exception(statements, metadata)
+        _handle_exception(statements, database)
         raise
     except Exception:
         trans.rollback()
         conn.close()
-        _handle_exception(statements, metadata)
+        _handle_exception(statements, database)
 
 
-def _handle_exception(statements, metadata):
-    directory = Path(str(metadata.bind.url)[10:])
+def _handle_exception(statements, database):
+    directory = Path(str(database.bind.url)[10:])
     if not directory.is_dir():
         directory = Path(".")
     directory = directory.resolve()

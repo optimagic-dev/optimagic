@@ -32,8 +32,8 @@ def load_database(path, replace=False):
             Otherwise, data will be appended.
 
     Returns:
-        metadata (sqlalchemy.MetaData). The engine that connects to the database can be
-        accessed via ``metadata.bind``.
+        database (sqlalchemy.MetaData). The engine that connects to the database can be
+        accessed via ``database.bind``.
 
     """
     if isinstance(path, str):
@@ -44,10 +44,10 @@ def load_database(path, replace=False):
 
     engine = create_engine(f"sqlite:///{path}")
     _make_engine_thread_safe(engine)
-    metadata = MetaData()
-    metadata.bind = engine
-    metadata.reflect()
-    return metadata
+    database = MetaData()
+    database.bind = engine
+    database.reflect()
+    return database
 
 
 def _make_engine_thread_safe(engine):
@@ -81,42 +81,41 @@ def prepare_database(
     gradient_status=0,
     replace=False,
 ):
-    """Return database metadata object with all relevant tables.
+    """Return database metadata object with all relevant tables for the optimization.
 
     This should always be used to create entirely new databases or to create the
     tables needed during optimization in an existing database.
 
+    A new database is created if path does not exist yet or replace=True. Otherwise the
+    existing database is loaded and all tables needed to log the optimization are
+    overwritten.
+
     The resulting database has the following tables:
+
     - params_history: the complete history of parameters from the optimization. The
-      first column is "iteration", the remaining columns are parameter names taken
+      index column is "iteration", the remaining columns are parameter names taken
       from params["name"].
     - gradient_history: the complete history of gradient evaluations from the
       optimization. Same columns as params_history.
     - criterion_history: the complete history of criterion values from the optimization.
-      The first column is "iteration", the second column is "value".
-    - time_stamps: timestamps from the end of each criterion evaluation. Same columss as
+      The index column is "iteration", the second column is "value".
+    - time_stamps: timestamps from the end of each criterion evaluation. Same columns as
       criterion_history.
     - convergence_history: the complete history of convergence criteria from the
-      optimization. The first column is iteration, the other columns are "ftol", "gtol"
-      and "xtol".
-    - start_params: copy of user provided params.
+      optimization. The index column is "iteration", the other columns are "ftol",
+      "gtol" and "xtol".
+    - start_params: copy of user provided ``params``. This is not just the fist entry of
+      params_history because it contains all columns and has a different index.
     - optimization_status: table with one row and one column called "value" which takes
-      the values "scheduled", "running", "success" or "failure". The initial value is
-      "scheduled".
+      the values "scheduled", "running", "success" or "failure". Initialized to
+      ``optimization_status``.
     - gradient_status: table with one row and one column called "value" which takes
       can be any float between 0 and 1 and indicates the progress of the gradient
-      calculation. Initialized to 0.
+      calculation. Initialized to ``gradient_status``
     - db_options: table with one row and one column called "value". It contains
       a dictionary with the dashboard options. Internally this is a PickleType, so the
-      dictionary must be pickle serializable.
+      dictionary must be pickle serializable. Initialized to db_options.
 
-    If the function is called with an existing database, only the tables that do not
-    exist already are created. We assume that the existing tables have the correct
-    columns but do not check it.
-
-    start_params, db_options, optimization_status and gradient_status will be
-    initialized (or overwritten if they already existed) with the corresponding
-    argument. All other tables remain unchanged.
 
     Args:
         path (str or pathlib.Path): location of the database file. If the file does
@@ -129,40 +128,56 @@ def prepare_database(
             Otherwise, data will be appended.
 
     Returns:
-        metadata (sqlalchemy.sql.schema.MetaData). The engine that connects
-        to the database can be accessed via metadata.bind.
+        database (sqlalchemy.sql.schema.MetaData). The engine that connects
+        to the database can be accessed via ``database.bind``.
 
     """
     db_options = {} if db_options is None else db_options
     gradient_status = float(gradient_status)
-    metadata = load_database(path, replace)
+    database = load_database(path, replace)
 
-    _define_params_history_table(metadata, params)
-    _define_gradient_history_table(metadata, params)
-    _define_criterion_history_table(metadata)
-    _define_time_stamps_table(metadata)
-    _define_convergence_history_table(metadata)
-    _define_start_params_table(metadata)
-    _define_optimization_status_table(metadata)
-    _define_gradient_status_table(metadata)
-    _define_db_options_table(metadata)
-    engine = metadata.bind
-    metadata.create_all(engine)
+    opt_tables = [
+        "params_history",
+        "gradient_history",
+        "criterion_history",
+        "timestamps",
+        "convergence_history",
+        "start_params",
+        "optimization_status",
+        "gradient_status",
+        "db_options",
+    ]
 
-    append_rows(metadata, "start_params", {"value": params})
-    append_rows(metadata, "optimization_status", {"value": optimization_status})
-    append_rows(metadata, "gradient_status", {"value": gradient_status})
-    append_rows(metadata, "db_options", {"value": db_options})
+    for table in opt_tables:
+        if table in database.tables:
+            database.tables[table].drop(database.bind)
 
-    return metadata
+    _define_params_history_table(database, params)
+    _define_gradient_history_table(database, params)
+    _define_criterion_history_table(database)
+    _define_time_stamps_table(database)
+    _define_convergence_history_table(database)
+    _define_start_params_table(database)
+    _define_optimization_status_table(database)
+    _define_gradient_status_table(database)
+    _define_db_options_table(database)
+    engine = database.bind
+    database.create_all(engine)
+
+    append_rows(database, "start_params", {"value": params})
+    append_rows(database, "optimization_status", {"value": optimization_status})
+    append_rows(database, "gradient_status", {"value": gradient_status})
+    append_rows(database, "db_options", {"value": db_options})
+
+    return database
 
 
-def _define_params_history_table(metadata, params):
+def _define_params_history_table(database, params):
     names = params["name"].tolist()
     cols = [Column(name, Float) for name in names]
     parvals = Table(
         "params_history",
-        metadata,
+        database,
         Column("iteration", Integer, primary_key=True),
         *cols,
         sqlite_autoincrement=True,
@@ -170,12 +185,12 @@ def _define_params_history_table(metadata, params):
     return parvals
 
 
-def _define_gradient_history_table(metadata, params):
+def _define_gradient_history_table(database, params):
     names = params["name"].tolist()
     cols = [Column(name, Float) for name in names]
     gradvals = Table(
         "gradient_history",
-        metadata,
+        database,
         Column("iteration", Integer, primary_key=True),
         *cols,
         sqlite_autoincrement=True,
@@ -183,10 +198,10 @@ def _define_gradient_history_table(metadata, params):
     return gradvals
 
 
-def _define_criterion_history_table(metadata):
+def _define_criterion_history_table(database):
     critvals = Table(
         "criterion_history",
-        metadata,
+        database,
         Column("iteration", Integer, primary_key=True),
         Column("value", Float),
         sqlite_autoincrement=True,
@@ -194,10 +209,10 @@ def _define_criterion_history_table(metadata):
     return critvals
 
 
-def _define_time_stamps_table(metadata):
+def _define_time_stamps_table(database):
     tstamps = Table(
         "timestamps",
-        metadata,
+        database,
         Column("iteration", Integer, primary_key=True),
         Column("value", DATETIME),
         sqlite_autoincrement=True,
@@ -205,12 +220,12 @@ def _define_time_stamps_table(metadata):
     return tstamps
 
 
-def _define_convergence_history_table(metadata):
+def _define_convergence_history_table(database):
     names = ["ftol", "gtol", "xtol"]
     cols = [Column(name, Float) for name in names]
     term = Table(
         "convergence_history",
-        metadata,
+        database,
         Column("iteration", Integer, primary_key=True),
         *cols,
         sqlite_autoincrement=True,
@@ -218,21 +233,21 @@ def _define_convergence_history_table(metadata):
     return term
 
 
-def _define_start_params_table(metadata):
-    params_table = Table("start_params", metadata, Column("value", PickleType))
+def _define_start_params_table(database):
+    params_table = Table("start_params", database, Column("value", PickleType))
     return params_table
 
 
-def _define_optimization_status_table(metadata):
-    optstat = Table("optimization_status", metadata, Column("value", String),)
+def _define_optimization_status_table(database):
+    optstat = Table("optimization_status", database, Column("value", String),)
     return optstat
 
 
-def _define_gradient_status_table(metadata):
-    gradstat = Table("gradient_status", metadata, Column("value", Float),)
+def _define_gradient_status_table(databes):
+    gradstat = Table("gradient_status", databes, Column("value", Float),)
     return gradstat
 
 
-def _define_db_options_table(metadata):
-    db_options = Table("db_options", metadata, Column("value", PickleType),)
+def _define_db_options_table(database):
+    db_options = Table("db_options", database, Column("value", PickleType),)
     return db_options
