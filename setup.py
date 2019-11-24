@@ -1,11 +1,9 @@
 from setuptools import find_packages
 from setuptools import setup
 
-version = "0.0.20"
-
 setup(
     name="estimagic",
-    version=version,
+    version="0.0.22",
     description="Tools for the estimation of (structural) econometric models.",
     long_description="""
         Estimagic is a Python package that helps to build high-quality and user
@@ -24,7 +22,7 @@ setup(
         "Development Status :: 2 - Pre-Alpha",
     ],
     keywords=["econometrics", "statistics", "extremum estimation", "optimization"],
-    url="https://github.com/janosg/estimagic",
+    url="https://github.com/OpenSourceEconomics/estimagic",
     author="Janos Gabler",
     author_email="janos.gabler@gmail.com",
     packages=find_packages(exclude=["tests/*"]),

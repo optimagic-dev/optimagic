@@ -20,6 +20,7 @@ dependencies:
   - conda-verify
   - sphinx
   - nbsphinx
+  - numba >= 0.12
   - sphinx_rtd_theme
   - sphinxcontrib-bibtex
   - seaborn
@@ -27,6 +28,7 @@ dependencies:
   - fuzzywuzzy
   - mpi
   - petsc4py>=3.11
+  - bump2version
   - pip:
     - pre-commit
     - pytest
@@ -36,3 +38,4 @@ dependencies:
     - tox-conda
     - black
     - pdbpp
+    - blackcellmagic

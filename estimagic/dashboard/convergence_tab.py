@@ -18,9 +18,9 @@ def setup_convergence_tab(params_df, initial_fitness):
 
     Args:
         params_df (pandas DataFrame):
-            DataFrame with the initial parameter values, constraints etc.
+            DataFrame with the initial parameter values, pc etc.
 
-        initial_fitness (pd.Series):
+        initial_fitness (float):
             criterion function evaluated at the initial parameters
 
     """
@@ -53,7 +53,7 @@ def update_convergence_data(new_fitness, new_params, iteration, data, rollover):
             fitness value of the new iteration
 
         new_params (pd.DataFrame):
-            new parameter values
+            new parameter DataFrame
 
         iteration (int):
             iteration counter

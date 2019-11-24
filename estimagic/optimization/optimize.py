@@ -2,6 +2,7 @@
 import json
 from collections import namedtuple
 from multiprocessing import Event
+from multiprocessing import Pool
 from multiprocessing import Process
 from multiprocessing import Queue
 from pathlib import Path
@@ -13,7 +14,7 @@ import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
-from estimagic.differentiation.differentiation import gradient
+from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
@@ -27,7 +28,6 @@ def maximize(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -36,7 +36,7 @@ def maximize(
     db_options=None,
 ):
     """
-    Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
+    Maximize *criterion* using *algorithm* subject to *pc* and bounds.
 
     Args:
         criterion (function):
@@ -48,9 +48,6 @@ def maximize(
 
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_args (list or tuple):
-            additional positional arguments for criterion
 
         criterion_kwargs (dict):
             additional keyword arguments for criterion
@@ -72,14 +69,19 @@ def maximize(
 
     """
 
-    def neg_criterion(*criterion_args, **criterion_kwargs):
-        return -criterion(*criterion_args, **criterion_kwargs)
+    def neg_criterion(params, **criterion_kwargs):
+        return -criterion(params, **criterion_kwargs)
+
+    # identify the criterion function as belongig to a maximization problem
+    if general_options is None:
+        general_options = {"_maximization": True}
+    else:
+        general_options["_maximization"] = True
 
     res_dict, params = minimize(
         neg_criterion,
         params=params,
         algorithm=algorithm,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
         general_options=general_options,
@@ -96,7 +98,6 @@ def minimize(
     criterion,
     params,
     algorithm,
-    criterion_args=None,
     criterion_kwargs=None,
     constraints=None,
     general_options=None,
@@ -105,6 +106,88 @@ def minimize(
     db_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
+    Run several optimizations if called by lists of inputs.
+
+    Args:
+        criterion (function or list of functions):
+            Python function that takes a pandas DataFrame with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame or list of pd.DataFrames):
+            See :ref:`params`.
+
+        algorithm (str or list of strings):
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+
+        criterion_kwargs (dict or list of dicts):
+            additional keyword arguments for criterion
+
+        constraints (list or list of lists):
+            list with constraint dictionaries. See for details.
+
+        general_options (dict):
+            additional configurations for the optimization
+
+        algo_options (dict or list of dicts):
+            algorithm specific configurations for the optimization
+
+        dashboard (bool):
+            whether to create and show a dashboard
+
+        db_options (dict):
+            dictionary with kwargs to be supplied to the run_server function.
+
+    """
+
+    arguments = process_optimization_arguments(
+        criterion=criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        general_options=general_options,
+        algo_options=algo_options,
+        dashboard=dashboard,
+        db_options=db_options,
+    )
+
+    if len(arguments) == 1:
+        # Run only one optimization
+        arguments = arguments[0]
+        result = _single_minimize(**arguments)
+    else:
+        # Run multiple optimizations
+        if dashboard:
+            raise NotImplementedError(
+                "Dashboard cannot be used for multiple optimizations, yet."
+            )
+
+        # set up multiprocessing
+        if "n_cores" not in arguments[0]["general_options"]:
+            raise ValueError(
+                "n_cores need to be specified in general_options"
+                + " if multiple optimizations should be run."
+            )
+        n_cores = arguments[0]["general_options"]["n_cores"]
+        pool = Pool(processes=n_cores)
+        result = pool.map(_one_argument_single_minimize, arguments)
+
+    return result
+
+
+def _single_minimize(
+    criterion,
+    params,
+    algorithm,
+    criterion_kwargs,
+    constraints,
+    general_options,
+    algo_options,
+    dashboard,
+    db_options,
+):
+    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds.
+    Only one minimization.
 
     Args:
         criterion (function):
@@ -116,9 +199,6 @@ def minimize(
 
         algorithm (str):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_args (list or tuple):
-            additional positional arguments for criterion
 
         criterion_kwargs (dict):
             additional keyword arguments for criterion
@@ -139,29 +219,13 @@ def minimize(
             dictionary with kwargs to be supplied to the run_server function.
 
     """
-    # set default arguments
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-    criterion_args = [] if criterion_args is None else criterion_args
-    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
-    constraints = [] if constraints is None else constraints
-    general_options = {} if general_options is None else general_options
-    algo_options = {} if algo_options is None else algo_options
-    db_options = {} if db_options is None else db_options
-
     params = _process_params(params)
-    fitness_eval = criterion(params, *criterion_args, **criterion_kwargs)
-    constraints = process_constraints(constraints, params)
-    internal_params = reparametrize_to_internal(params, constraints, None)
 
-    scaling_factor = calculate_scaling_factor(
-        criterion,
-        params,
-        internal_params,
-        constraints,
-        general_options,
-        criterion_args,
-        criterion_kwargs,
-    )
+    fitness_factor = -1 if general_options.get("_maximization", False) else 1
+    fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
+    constraints, params = process_constraints(constraints, params)
+    internal_params = reparametrize_to_internal(params, constraints)
 
     queue = Queue() if dashboard else None
     if dashboard:
@@ -179,18 +243,17 @@ def minimize(
         )
         outer_server_process.start()
 
-    result = _minimize(
+    result = _internal_minimize(
         criterion=criterion,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         params=params,
         internal_params=internal_params,
         constraints=constraints,
-        scaling_factor=scaling_factor,
         algorithm=algorithm,
         algo_options=algo_options,
         general_options=general_options,
         queue=queue,
+        fitness_factor=fitness_factor,
     )
 
     if dashboard:
@@ -199,29 +262,30 @@ def minimize(
     return result
 
 
-def _minimize(
+def _one_argument_single_minimize(kwargs):
+    """Wrapper for single_minimize used for multiprocessing.
+    """
+    return _single_minimize(**kwargs)
+
+
+def _internal_minimize(
     criterion,
-    criterion_args,
     criterion_kwargs,
     params,
     internal_params,
     constraints,
-    scaling_factor,
     algorithm,
     algo_options,
     general_options,
     queue,
+    fitness_factor,
 ):
-    """
-    Create the internal criterion function and minimize it.
+    """Create the internal criterion function and minimize it.
 
     Args:
         criterion (function):
-            Python function that takes a pandas Series with parameters as the first
+            Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
-
-        criterion_args (list or tuple):
-            additional positional arguments for criterion
 
         criterion_kwargs (dict):
             additional keyword arguments for criterion
@@ -245,19 +309,20 @@ def _minimize(
             additional configurations for the optimization
 
         queue (Queue):
-            queue to which originally the parameters DataFrame is supplied and to which
-            the updated parameter Series will be supplied later.
+            queue to which the fitness evaluations and params DataFrames are supplied.
+
+        fitness_factor (float):
+            multiplicative factor for the fitness displayed in the dashboard.
+            Set to -1 for maximizations to plot the fitness that is being maximized.
 
     """
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
-        internal_params=internal_params,
         constraints=constraints,
-        scaling_factor=scaling_factor,
-        criterion_args=criterion_args,
         criterion_kwargs=criterion_kwargs,
         queue=queue,
+        fitness_factor=fitness_factor,
     )
 
     current_dir_path = Path(__file__).resolve().parent
@@ -275,26 +340,31 @@ def _minimize(
             f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
         )
 
+    if origin == "pygmo" and algorithm != "pygmo_simulated_annealing":
+        assert (
+            "popsize" in algo_options
+        ), f"For genetic optimizers like {algo_name}, popsize is mandatory."
+        assert (
+            "gen" in algo_options
+        ), f"For genetic optimizers like {algo_name}, gen is mandatory."
+
     if origin in ["nlopt", "pygmo"]:
-        prob = _create_problem(internal_criterion, internal_params)
+        prob = _create_problem(internal_criterion, params)
         algo = _create_algorithm(algo_name, algo_options, origin)
         pop = _create_population(prob, algo_options, internal_params)
         evolved = algo.evolve(pop)
-        result = _process_results(
-            evolved, params, internal_params, constraints, origin, scaling_factor
-        )
+        result = _process_results(evolved, params, internal_params, constraints, origin)
     elif origin == "scipy":
-        bounds = _get_scipy_bounds(internal_params)
-        x0 = _x_from_params(params, constraints, scaling_factor)
+        bounds = _get_scipy_bounds(params)
         minimized = scipy_minimize(
             internal_criterion,
-            x0,
+            internal_params,
             method=algo_name,
             bounds=bounds,
             options=algo_options,
         )
         result = _process_results(
-            minimized, params, internal_params, constraints, origin, scaling_factor
+            minimized, params, internal_params, constraints, origin
         )
     elif origin == "tao":
         raise NotImplementedError
@@ -306,45 +376,63 @@ def _minimize(
 
 
 def create_internal_criterion(
-    criterion,
-    params,
-    internal_params,
-    constraints,
-    scaling_factor,
-    criterion_args,
-    criterion_kwargs,
-    queue,
+    criterion, params, constraints, criterion_kwargs, queue, fitness_factor
 ):
+    """Create the internal criterion function.
+
+    Args:
+        criterion (function):
+            Python function that takes a pandas DataFrame with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame):
+            See :ref:`params`.
+
+        constraints (list):
+            list with constraint dictionaries. See for details.
+
+        criterion_kwargs (dict):
+            additional keyword arguments for criterion
+
+        queue (Queue):
+            queue to which the fitness evaluations and params DataFrames are supplied.
+
+        fitness_factor (float):
+            multiplicative factor for the fitness displayed in the dashboard.
+            Set to -1 for maximizations to plot the fitness that is being maximized.
+
+    Returns:
+        internal_criterion (function):
+            function that takes an internal_params DataFrame as only argument.
+            It calls the original criterion function after the necessary
+            reparametrizations and passes the results to the dashboard queue if given
+            before returning the fitness evaluation.
+
+    """
     c = np.ones(1, dtype=int)
 
     def internal_criterion(x, counter=c):
-        p = _params_from_x(x, internal_params, constraints, params, scaling_factor)
-        fitness_eval = criterion(p, *criterion_args, **criterion_kwargs)
+        p = reparametrize_from_internal(
+            internal=x,
+            fixed_values=params["_internal_fixed_value"].to_numpy(),
+            pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
+            processed_constraints=constraints,
+            post_replacements=params["_post_replacements"].to_numpy().astype(int),
+            processed_params=params,
+        )
+        fitness_eval = criterion(p, **criterion_kwargs)
         if queue is not None:
-            queue.put(QueueEntry(iteration=counter[0], params=p, fitness=fitness_eval))
+            queue.put(
+                QueueEntry(
+                    iteration=counter[0],
+                    params=p,
+                    fitness=fitness_factor * fitness_eval,
+                )
+            )
         counter += 1
         return fitness_eval
 
     return internal_criterion
-
-
-def _params_from_x(x, internal_params, constraints, params, scaling_factor):
-    internal_params = internal_params.copy(deep=True)
-    # :func:`internal_criterion` always assumes that `x` is a NumPy array, but if we
-    # pass the internal criterion function to :func:`gradient`, x is a DataFrame.
-    # Setting a series to a DataFrame will convert the column "value" to object type
-    # which causes trouble in following NumPy routines assuming a numeric type.
-    internal_params["value"] = x["value"] if isinstance(x, pd.DataFrame) else x
-    updated_params = reparametrize_from_internal(
-        internal_params, constraints, params, scaling_factor
-    )
-    return updated_params
-
-
-def _x_from_params(params, constraints, scaling_factor):
-    return reparametrize_to_internal(params, constraints, scaling_factor)[
-        "value"
-    ].to_numpy()
 
 
 def _process_params(params):
@@ -354,8 +442,14 @@ def _process_params(params):
     params = params.copy()
     if "lower" not in params.columns:
         params["lower"] = -np.inf
+    else:
+        params["lower"].fillna(-np.inf)
+
     if "upper" not in params.columns:
         params["upper"] = np.inf
+    else:
+        params["upper"].fillna(np.inf)
+
     if "group" not in params.columns:
         params["group"] = "All Parameters"
 
@@ -364,10 +458,25 @@ def _process_params(params):
         params["name"] = names
 
     assert "_fixed" not in params.columns, "Invalid column name _fixed in params_df."
+
+    invalid_names = ["_fixed_value", "_is_fixed_to_value", "_is_fixed_to_other"]
+    invalid_present_columns = []
+    for col in params.columns:
+        if col in invalid_names or col.startswith("_internal"):
+            invalid_present_columns.append(col)
+
+    if len(invalid_present_columns) > 0:
+        msg = (
+            "Column names starting with '_internal' and as well as any other of the "
+            f"following columns are not allowed in params:\n{invalid_names}."
+            f"This is violated for:\n{invalid_present_columns}."
+        )
+        raise ValueError(msg)
     return params
 
 
 def _get_scipy_bounds(params):
+    params = params.query("_internal_free")
     unprocessed_bounds = params[["lower", "upper"]].to_numpy().tolist()
     bounds = []
     for lower, upper in unprocessed_bounds:
@@ -382,30 +491,32 @@ def _convert_bound(x):
         return None
 
 
-def _create_problem(internal_criterion, internal_params):
+def _create_problem(internal_criterion, params):
+    params = params.query("_internal_free")
+
     class Problem:
         def fitness(self, x):
             return [internal_criterion(x)]
 
         def get_bounds(self):
-            return (internal_params["lower"], internal_params["upper"])
+            lb = params["_internal_lower"].to_numpy()
+            ub = params["_internal_upper"].to_numpy()
+            return lb, ub
 
     return Problem()
 
 
 def _create_algorithm(algo_name, algo_options, origin):
-    """Create a pygmo algorithm.
-
-    Todo:
-        - Pass the algo options through
-
-    """
+    """Create a pygmo algorithm."""
     if origin == "nlopt":
         algo = pg.algorithm(pg.nlopt(solver=algo_name))
         for option, val in algo_options.items():
             setattr(algo.extract(pg.nlopt), option, val)
     elif origin == "pygmo":
         pygmo_uda = getattr(pg, algo_name)
+        algo_options = algo_options.copy()
+        if "popsize" in algo_options:
+            del algo_options["popsize"]
         algo = pg.algorithm(pygmo_uda(**algo_options))
 
     return algo
@@ -420,13 +531,12 @@ def _create_population(problem, algo_options, internal_params):
 
     """
     popsize = algo_options.copy().pop("popsize", 1)
-    x0 = internal_params["value"].to_numpy()
     pop = pg.population(problem, size=popsize - 1, seed=5471)
-    pop.push_back(x0)
+    pop.push_back(internal_params)
     return pop
 
 
-def _process_results(res, params, internal_params, constraints, origin, scaling_factor):
+def _process_results(res, params, internal_params, constraints, origin):
     """Convert optimization results into json serializable dictionary.
     Args:
         res: Result from numerical optimizer.
@@ -445,85 +555,13 @@ def _process_results(res, params, internal_params, constraints, origin, scaling_
     elif origin in ["pygmo", "nlopt"]:
         x = res.champion_x
         res_dict = {"fun": res.champion_f[0]}
-    params = _params_from_x(x, internal_params, constraints, params, scaling_factor)
+    params = reparametrize_from_internal(
+        internal=x,
+        fixed_values=params["_internal_fixed_value"].to_numpy(),
+        pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
+        processed_constraints=constraints,
+        post_replacements=params["_post_replacements"].to_numpy().astype(int),
+        processed_params=params,
+    )
 
-    res_dict["internal_x"] = x.tolist()
     return res_dict, params
-
-
-def calculate_scaling_factor(
-    criterion,
-    params,
-    internal,
-    constraints,
-    general_options,
-    criterion_args,
-    criterion_kwargs,
-):
-    """Calculate the scaling factor for the internal parameters.
-
-    There are multiple ways the user is able to rescale the parameter vector which is
-    specified in ``general_options["scaling"]``.
-
-    - ``None`` (default): No scaling happens.
-    - ``"start_values"``: Divide parameters which are not in ``[-1, 1]`` by their
-      starting values.
-    - ``"gradient"``: Divide parameters which are not in ``[-1e-2, 1e-2]`` by the
-      inverse of the gradient. By default, the computation method is ``"central"`` with
-      extrapolation set to ``False``. The user can change the defaults by passing
-      ``scaling_gradient_method`` or ``scaling_gradient_extrapolation``. See
-      :func:`~estimagic.differentiation.differentiation.gradient` for more details.
-
-    Note that the scaling factor should be defined such that unscaling is done by
-    multiplying the scaling factor. This simplifies :func:`_rescale_from_internal`.
-
-    Args:
-        criterion (func): Criterion function.
-        params (DataFrame): See :ref:`params`.
-        internal (DataFrame): See :ref:`params`.
-        constraints (dict): Dictionary containing constraints.
-        general_options (dict): General options. See :ref:`estimation_general_options`.
-        criterion_args (list): List of arguments of the criterion function.
-        crtierion_kwargs (dict): Dictionary of keyword arguments of the criterion
-            function.
-
-    Returns:
-        scaling_factor (Series): Scaling Factor.
-
-    """
-    scaling = general_options.get("scaling", None)
-
-    if scaling is None:
-        scaling_factor = np.ones(len(internal))
-    elif scaling == "start_values":
-        scaling_factor = internal["value"].abs().clip(1)
-    elif scaling == "gradient":
-        method = general_options.get("scaling_gradient_method", "central")
-        extrapolation = general_options.get("scaling_gradient_extrapolation", False)
-
-        internal_criterion = create_internal_criterion(
-            criterion,
-            params,
-            internal,
-            constraints,
-            None,
-            criterion_args,
-            criterion_kwargs,
-            queue=None,
-        )
-
-        gradients = gradient(
-            internal_criterion,
-            internal,
-            method,
-            extrapolation,
-            criterion_args,
-            criterion_kwargs,
-        )
-        scaling_factor = np.clip(1 / gradients.abs(), 1e-2, None)
-    else:
-        raise NotImplementedError(f"Scaling method {scaling} is not implemented.")
-
-    scaling_factor = pd.Series(scaling_factor, index=internal.index)
-
-    return scaling_factor

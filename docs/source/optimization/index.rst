@@ -27,7 +27,7 @@ estimagic if you desire to do so.
 
    interface
    params
-   constraints.ipynb
+   constraints/index
    dashboard
    algorithms
    general_options
