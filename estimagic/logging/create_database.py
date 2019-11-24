@@ -109,7 +109,7 @@ def prepare_database(
     - optimization_status: table with one row and one column called "value" which takes
       the values "scheduled", "running", "success" or "failure". Initialized to
       ``optimization_status``.
-    - gradient_status: table with one row and one column called "value" which takes
+    - gradient_status: table with one row and one column called "value" which
       can be any float between 0 and 1 and indicates the progress of the gradient
       calculation. Initialized to ``gradient_status``
     - db_options: table with one row and one column called "value". It contains
