@@ -2,12 +2,18 @@
 estimagic
 =========
 
+.. image:: https://anaconda.org/OpenSourceEconomics/estimagic/badges/version.svg
+   :target: https://anaconda.org/OpenSourceEconomics/estimagic
+
+.. image:: https://anaconda.org/OpenSourceEconomics/estimagic/badges/platforms.svg
+   :target: https://anaconda.org/OpenSourceEconomics/estimagic
+
 .. image:: https://img.shields.io/badge/License-BSD%203--Clause-orange.svg
     :target: https://opensource.org/licenses/BSD-3-Clause
     :alt: License
 
-.. image:: https://readthedocs.org/projects/estimagic/badge/?version=master
-    :target: https://estimagic.readthedocs.io/en/master/?badge=master
+.. image:: https://readthedocs.org/projects/estimagic/badge/?version=latest
+    :target: https://estimagic.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
 .. image:: https://dev.azure.com/OpenSourceEconomics/estimagic/_apis/build/status/OpenSourceEconomics.estimagic?branchName=master
@@ -48,8 +54,8 @@ In particular we would like to thank:
   numerical integration and calculation of standard errors for GMM and MSM estimators
 - Linda Maokomatanda (`lindamaok899 <https://github.com/lindamaok899>`_) for
   contributing code for the calculation of likelihood standard errors
-- Moritz Mendel (`mo2561057 <https://github.com/mo2561057>`_) for wrapping the
-  pounders algorithm from TAO
+- Moritz Mendel (`mo2561057 <https://github.com/mo2561057>`_) for wrapping the pounders
+  algorithm from TAO
 
 If you want to find your name here as well, please contact us or browse through our
 Issues and submit a Pull Request.
@@ -63,7 +69,8 @@ terminal:
 
 .. code-block:: bash
 
-    $ conda config --add channels conda-forge $ conda install -c janosg estimagic
+    $ conda config --add channels conda-forge
+    $ conda install -c opensourceeconomics estimagic
 
 The first line adds conda-forge to your conda channels. This is necessary for conda to
 find all dependencies of estimagic. The second line installs estimagic and its

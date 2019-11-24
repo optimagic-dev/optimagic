@@ -12,7 +12,7 @@ def rosen(x):
     """The Rosenbrock function
 
     Args:
-        x (pd.Series): Series with the parameters.
+        x (pd.DataFrame): DataFrame with the parameters in the "value" column.
 
     """
     return np_rosen(x["value"].to_numpy())

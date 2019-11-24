@@ -35,7 +35,7 @@ def run_dashboard(doc, queue, stop_signal, db_options, start_param_df, start_fit
             to work properly.
 
         queue (Queue):
-            queue to which the updated parameter Series will be supplied later.
+            queue to which the updated params DataFrame will be supplied later.
 
         stop_signal (Event):
             signal from parent thread to stop the dashboard.
@@ -142,7 +142,7 @@ def _update_dashboard(
             signal from parent thread to stop the dashboard.
 
         queue (Queue):
-            queue to which the updated parameter Series are supplied.
+            queue to which the updated params DataFrame are supplied.
 
         rollover (int or None):
             How many data points to store, default None.
