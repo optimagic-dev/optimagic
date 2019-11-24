@@ -104,7 +104,7 @@ def prepare_database(
     - convergence_history: the complete history of convergence criteria from the
       optimization. The index column is "iteration", the other columns are "ftol",
       "gtol" and "xtol".
-    - start_params: copy of user provided ``params``. This is not just the fist entry of
+    - start_params: copy of user provided ``params``. This is not just the first entry of
       params_history because it contains all columns and has a different index.
     - optimization_status: table with one row and one column called "value" which takes
       the values "scheduled", "running", "success" or "failure". Initialized to
