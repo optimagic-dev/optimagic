@@ -42,16 +42,19 @@ def minimize_pounders(
 
     Returns:
         out (dict): Dictionary with the following key-value pairs:
+
             - `"solution"`: solution vector as `np.ndarray`.
             - `"func_values"`: `np.ndarray` of value of the objective at the solution.
             - `"x"`: `np.ndarray` of the start values.
             - `"conv"`: string indicating the termination reason.
-            - `"sol"`: `list` containing: current iterate as integer.
-             current value of the objective as float, current value of
-                    the approximated jacobian as float,
-                     infeasability norm as float, step length as float and termination
-                    reason as int.
-
+            - `"sol"`: `list` containing ...
+              - current iterate as integer.
+              - current value of the objective as float
+              - current value of the approximated
+              - jacobian as float
+              - infeasability norm as float
+              - step length as float
+              - termination reason as int.
 
     """
     if sys.platform == "win32":

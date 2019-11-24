@@ -6,19 +6,17 @@ Most of the optimizers wrapped in estimagic cannot deal natively with anything b
 constraints. So the problem they can solve is:
 
 .. math::
-    \min_{x \in \mathbb{R}^k} f(x) \quad \text{s.t.} \hspace{0.5cm} l \leq x \leq u
 
+    \min_{x \in \mathbb{R}^k} f(x) \quad \text{s.t.} \hspace{0.5cm} l \leq x \leq u
 
 However, in most econometric applications we also need other constraints. Examples are
 that some parameters sum to a value, that they form a covariance matrix or that they
 are probabilities. More abstractly, the problem becomes:
 
-
 .. math::
+
     \min_{x \in \mathbb{R}^k} f(x) \quad \text{s.t.} \hspace{0.5cm} l \leq x \leq u
     \text{  and  } C(x) = 0
-
-
 
 There are two basic ways of converting optimizers that only can deal with box
 constraints into constrained optimizers. Reparametrization and penalties. Below we
@@ -39,12 +37,14 @@ as two `k'` dimensional vectors `l` and `u` such that:
 
 
 .. math::
+
     l' \leq \tilde{x} \leq u' \iff l \leq g(\tilde{x}) \leq u \text {  and  }
     C(g(\tilde{x})) = 0
 
 This means that:
 
 .. math::
+
     \min_{\tilde{x} \in \mathbb{R}^{k'}} f(g(\tilde{x})) \quad \text{s.t.}
     \hspace{0.5cm} l' \leq \tilde{x} \leq u'\\
 
@@ -78,9 +78,9 @@ econometric applications.
 For this approach to be efficient, it is crucial that the reparametrizations preserve
 desirable properties of the original problem. In particular the mapping `g` should be
 differentiable and if possible linear. Moreover, the dimensionality of :math:`\tilde{x}`
-should be chosen as small as possible. Estimagic only implements constraints
-that can be enforced with differentiable transformations and always achieves full
-dimensionality reduction.
+should be chosen as small as possible. Estimagic only implements constraints that can be
+enforced with differentiable transformations and always achieves full dimensionality
+reduction.
 
 
 Penalties
@@ -92,9 +92,8 @@ penalty term is added to the criterion function. If the penalty term is large en
 that does not satisfy the constraints can be optimal.
 
 While the generality and conceptual simplicity of this approach is attractive, it also
-has its drawbacks. Applying penalties in a naive way can introduce kinks, discontinuities
-and even local optimal into the penalized criterion.
-
+has its drawbacks. Applying penalties in a naive way can introduce kinks,
+discontinuities and even local optimal into the penalized criterion.
 
 
 What estimagic does
@@ -120,15 +119,13 @@ optimizers. More general constraints are only available with optimizers that can
 natively with them. This includes all optimizers from the nlopt and ipopt library.
 
 
-
 The Nontrivial Reparametrizations
 =================================
 
-
-Fixed parameters, equality and pairwise equality constraints can be implemented trivially
-with reparametrizations by simply plugging them into the criterion function. Increasing
-and decreasing constraints are internally implemented as linear constraints. The
-following section explains how the other constraints are implemented:
+Fixed parameters, equality and pairwise equality constraints can be implemented
+trivially with reparametrizations by simply plugging them into the criterion function.
+Increasing and decreasing constraints are internally implemented as linear constraints.
+The following section explains how the other constraints are implemented:
 
 
 Covariance and sdcorr Constraints
@@ -158,6 +155,7 @@ Assume we have m linear constraints on an n-dimensional parameter vector. Then t
 The set of all parameter vectors that satisfies the constraints can be written as:
 
 .. math::
+
     \mathbf{X} \equiv \{\mathbf{x} \in \mathbb{R}^n \mid \mathbf{l} \leq \mathbf{Ax}
     \leq \mathbf{u}\}
 
@@ -167,6 +165,7 @@ and reparametrization. The reparametrization will turn out to be a linear mappin
 thus has a matrix representation, say M. We are good if the following holds:
 
 .. math::
+
     x \in \mathbf{X} \iff \exists \mathbf{\tilde{x}} \in \mathbf{\tilde{X}} \text{s.t.}
     \mathbf{x} = \mathbf{M\tilde{x}}
 
@@ -175,6 +174,7 @@ A suitable choice of :math:`\mathbf{\tilde{X}}` and :math:`\mathbf{M}` are:
 
 
 .. math::
+
     \mathbf{\tilde{X}} \equiv \{(\tilde{x}_1, \tilde{x}_2)^T \mid \mathbf{\tilde{x}}_1
     \in \mathbb{R}^{k}$ \text{ and } \mathbf{l} \leq \mathbf{\tilde{x}}_2 \leq \mathbf{l}\}
 
@@ -185,8 +185,8 @@ A suitable choice of :math:`\mathbf{\tilde{X}}` and :math:`\mathbf{M}` are:
         \end{array} } \right]^{-1}
 
 
-where :math:`k = m - n` and :math:`\mathbb{I}_n[k]` are the k rows of the identity matrix
-that make all rows of :math:`\mathbf{M}` linearly independent.
+where :math:`k = m - n` and :math:`\mathbb{I}_n[k]` are the k rows of the identity
+matrix that make all rows of :math:`\mathbf{M}` linearly independent.
 
 
 **Proof:**
