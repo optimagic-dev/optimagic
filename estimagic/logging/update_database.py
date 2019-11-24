@@ -110,7 +110,7 @@ def _handle_exception(statements, database):
     for stat in statements:
         if isinstance(stat, (sqlalchemy.sql.dml.Insert, sqlalchemy.sql.dml.Update)):
             values = stat.compile().params
-            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")  
             filename = f"{stat.table.name}_{timestamp}.pickle"
             with open(directory / filename, "wb") as p:
                 pickle.dump(values, p)
