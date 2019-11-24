@@ -24,12 +24,11 @@ dependencies:
   - sphinx_rtd_theme
   - sphinxcontrib-bibtex
   - seaborn
-  - jupyter
+  - jupyterlab
   - fuzzywuzzy
-  - mpi
   - petsc4py>=3.11
-  - bump2version
   - pip:
+    - bump2version
     - pre-commit
     - pytest
     - pytest-mock

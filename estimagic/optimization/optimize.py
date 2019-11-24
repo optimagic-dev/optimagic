@@ -14,6 +14,7 @@ import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
+from estimagic.optimization.pounders import minimize_pounders
 from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
@@ -367,8 +368,19 @@ def _internal_minimize(
             minimized, params, internal_params, constraints, origin
         )
     elif origin == "tao":
-        raise NotImplementedError
+        len_output = algo_options.pop("len_output", None)
+        if len_output is None:
+            len_output = len(criterion(params))
 
+        bounds = (
+            params.query("_internal_free")[["lower", "upper"]].to_numpy().T.tolist()
+        )
+        minimized = minimize_pounders(
+            internal_criterion, internal_params, len_output, bounds, **algo_options
+        )
+        result = _process_results(
+            minimized, params, internal_params, constraints, origin
+        )
     else:
         raise ValueError("Invalid algorithm requested.")
 
@@ -409,7 +421,7 @@ def create_internal_criterion(
             before returning the fitness evaluation.
 
     """
-    c = np.ones(1, dtype=int)
+    c = np.zeros(1, dtype=int)
 
     def internal_criterion(x, counter=c):
         p = reparametrize_from_internal(
@@ -421,12 +433,18 @@ def create_internal_criterion(
             processed_params=params,
         )
         fitness_eval = criterion(p, **criterion_kwargs)
+
+        # For Pounders, return the sum of squared errors.
+        _fitness_eval = (
+            fitness_eval.sum() if isinstance(fitness_eval, np.ndarray) else fitness_eval
+        )
+
         if queue is not None:
             queue.put(
                 QueueEntry(
                     iteration=counter[0],
                     params=p,
-                    fitness=fitness_factor * fitness_eval,
+                    fitness=fitness_factor * _fitness_eval,
                 )
             )
         counter += 1
@@ -546,8 +564,7 @@ def _process_results(res, params, internal_params, constraints, origin):
         origin (str): takes the values "pygmo", "nlopt", "scipy"
     """
     if origin == "scipy":
-        res_dict = {}
-        res_dict.update(res)
+        res_dict = {**res}
         for key, value in res_dict.items():
             if isinstance(value, np.ndarray):
                 res_dict[key] = value.tolist()
@@ -555,6 +572,9 @@ def _process_results(res, params, internal_params, constraints, origin):
     elif origin in ["pygmo", "nlopt"]:
         x = res.champion_x
         res_dict = {"fun": res.champion_f[0]}
+    elif origin in ["tao"]:
+        x = res["x"]
+        res_dict = {**res}
     params = reparametrize_from_internal(
         internal=x,
         fixed_values=params["_internal_fixed_value"].to_numpy(),
