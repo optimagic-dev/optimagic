@@ -34,3 +34,13 @@ Utility functions for parameter handling
 
 .. automodule:: estimagic.optimization.utilities
     :members:
+
+
+.. _pounders:
+
+The Pounders Algorithm
+----------------------
+
+
+.. automodule:: estimagic.optimization.pounders
+    :members: minimize_pounders
