@@ -40,5 +40,6 @@
     "L-BFGS-B",
     "TNC",
     "SLSQP"
-  ]
+  ],
+  "tao": ["pounders"]
 }

@@ -29,8 +29,8 @@ methods, check out our `tutorial on selecting parameters <selecting_parameters.i
   inequalities.
 
 
-Depending on the type of constraint, some additional entries in the constraint dictionary
-might be required. The details are explained on the next pages:
+Depending on the type of constraint, some additional entries in the constraint
+dictionary might be required. The details are explained on the next pages:
 
 Details and Tutorials
 =====================

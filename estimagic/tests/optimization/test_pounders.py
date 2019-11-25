@@ -1,14 +1,17 @@
 """Test the wrapper around pounders."""
+import functools
 import sys
-from functools import partial
 
 import numpy as np
 import pytest
 
 from estimagic.optimization.pounders import minimize_pounders
 
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="Pounders is not supported on Windows."
+)
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
+
 def test_robustness_1():
     np.random.seed(5470)
     true_paras = np.random.uniform(size=3)
@@ -16,12 +19,11 @@ def test_robustness_1():
     num_agents = 10000
 
     exog, endog = _simulate_sample(num_agents, true_paras)
-    objective = partial(_nonlinear_criterion, endog, exog)
+    objective = functools.partial(_nonlinear_criterion, endog, exog)
     len_out = len(objective(start))
     minimize_pounders(objective, start, len_out)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_robustness_2():
     np.random.seed(5471)
     true_params = np.random.uniform(size=2)
@@ -29,9 +31,9 @@ def test_robustness_2():
     num_agents = 10000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
-    objective = partial(_ols_criterion, endog, exog)
+    objective = functools.partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
-    calculated = minimize_pounders(objective, start_params, len_out)["solution"]
+    calculated = minimize_pounders(objective, start_params, len_out)["x"]
 
     x = np.column_stack([np.ones_like(exog), exog])
     y = endog.reshape(len(endog), 1)
@@ -40,7 +42,6 @@ def test_robustness_2():
     np.testing.assert_almost_equal(calculated, expected, decimal=2)
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_box_constr():
     np.random.seed(5472)
     true_params = np.random.uniform(0.3, 0.4, size=2)
@@ -49,14 +50,13 @@ def test_box_constr():
     num_agents = 10000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
-    objective = partial(_ols_criterion, endog, exog)
+    objective = functools.partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
     calculated = minimize_pounders(objective, start_params, len_out, bounds=bounds)
-    assert 0 <= calculated["solution"][0] <= 0.3
-    assert 0 <= calculated["solution"][1] <= 0.3
+    assert 0 <= calculated["x"][0] <= 0.3
+    assert 0 <= calculated["x"][1] <= 0.3
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_max_iters():
     np.random.seed(5473)
     true_params = np.random.uniform(0.3, 0.4, size=2)
@@ -65,7 +65,7 @@ def test_max_iters():
     num_agents = 10000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
-    objective = partial(_ols_criterion, endog, exog)
+    objective = functools.partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
     calculated = minimize_pounders(
         objective, start_params, len_out, bounds=bounds, max_iterations=25
@@ -78,7 +78,6 @@ def test_max_iters():
         assert calculated["sol"][0] == 25
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_grtol():
     np.random.seed(5474)
     true_params = np.random.uniform(0.3, 0.4, size=2)
@@ -87,7 +86,7 @@ def test_grtol():
     num_agents = 10000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
-    objective = partial(_ols_criterion, endog, exog)
+    objective = functools.partial(_ols_criterion, endog, exog)
     len_calculated = len(objective(start_params))
     calculated = minimize_pounders(
         objective, start_params, len_calculated, bounds=bounds, gatol=False, gttol=False
@@ -102,7 +101,6 @@ def test_grtol():
         assert calculated["sol"][2] / calculated["sol"][1] < 10
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_gatol():
     np.random.seed(5475)
     true_params = np.random.uniform(0.3, 0.4, size=2)
@@ -111,7 +109,7 @@ def test_gatol():
     num_agents = 10000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
-    objective = partial(_ols_criterion, endog, exog)
+    objective = functools.partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
     calculated = minimize_pounders(
         objective, start_params, len_out, bounds=bounds, grtol=False, gttol=False
@@ -125,7 +123,6 @@ def test_gatol():
         assert calculated["sol"][2] < 1e-4
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_gttol():
     np.random.seed(5476)
     true_params = np.random.uniform(0.3, 0.4, size=2)
@@ -134,7 +131,7 @@ def test_gttol():
     num_agents = 10000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
-    objective = partial(_ols_criterion, endog, exog)
+    objective = functools.partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
     calculated = minimize_pounders(
         objective, start_params, len_out, bounds=bounds, grtol=False, gatol=False
@@ -149,7 +146,6 @@ def test_gttol():
         assert calculated["sol"][2] < 1
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_tol():
     np.random.seed(5477)
     true_params = np.random.uniform(0.3, 0.4, size=2)
@@ -158,7 +154,7 @@ def test_tol():
     num_agents = 10000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
-    objective = partial(_ols_criterion, endog, exog)
+    objective = functools.partial(_ols_criterion, endog, exog)
     len_out = len(objective(start_params))
     calculated = minimize_pounders(
         objective,
@@ -176,7 +172,6 @@ def test_tol():
         assert calculated["sol"][2] / calculated["sol"][1] < 0.00000001
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="Not supported on Windows.")
 def test_exception():
     np.random.seed(5478)
     with pytest.raises(Exception):
