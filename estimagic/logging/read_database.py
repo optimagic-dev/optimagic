@@ -23,9 +23,9 @@ def read_last_iterations(database, tables, n, return_type):
 
     Returns:
         result (dict or return_type):
-            If tables has only one entry, return the last iterations of that table,
-            converted to return_type. If tables has several entries, return a dictionary
-            with one entry per table.
+            If ``tables`` has only one entry, return the last iterations of that table,
+            converted to return_type. If ``tables`` has several entries, return a
+            dictionary with one entry per table.
 
     """
     if isinstance(tables, (str, int)):
@@ -50,16 +50,15 @@ def read_new_iterations(database, tables, last_retrieved, return_type, limit=Non
     Args:
         database (sqlalchemy.MetaData)
         tables (list): List of tables names.
-        n (int): number of rows to retrieve
+        last_retrieved (int): The last iteration that was retrieved.
         return_type (str): one of "list", "pandas", "bokeh"
         limit (int): Only the first ``limit`` rows will be retrieved. Default None.
 
     Returns:
-        dict: A dictionary with one entry per table. The value depends
-            on the return_type. If list, it is a nested list where the
-            first sublist are the columns and the remaining sublists the
-            retrieved rows. If pandas, it is a DataFrame. If bokeh, it is
-            a dictionary with one entry per retrieved column.
+        result (dict or return_type):
+            If ``tables`` has only one entry, return the last iterations of that table,
+            converted to return_type. If ``tables`` has several entries, return a
+            dictionary with one entry per table.
         int: The new last_retrieved value.
 
     """

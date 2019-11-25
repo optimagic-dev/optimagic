@@ -20,7 +20,7 @@ from sqlalchemy.dialects.sqlite import DATETIME
 from estimagic.logging.update_database import append_rows
 
 
-def load_database(path, replace=False):
+def load_database(path):
     """Return database metadata object for the database stored in ``path``.
 
     This is the default way of loading a database for read-only purposes in estimagic.
@@ -28,8 +28,6 @@ def load_database(path, replace=False):
     Args:
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created.
-        replace (bool): If true and the database exists, it will be overwritten.
-            Otherwise, data will be appended.
 
     Returns:
         database (sqlalchemy.MetaData). The engine that connects to the database can be
@@ -38,9 +36,6 @@ def load_database(path, replace=False):
     """
     if isinstance(path, str):
         path = Path(path)
-
-    if path.exists() and replace:
-        path.unlink()
 
     engine = create_engine(f"sqlite:///{path}")
     _make_engine_thread_safe(engine)
@@ -74,21 +69,16 @@ def _make_engine_thread_safe(engine):
 
 
 def prepare_database(
-    path,
-    params,
-    db_options=None,
-    optimization_status="scheduled",
-    gradient_status=0,
-    replace=False,
+    path, params, db_options=None, optimization_status="scheduled", gradient_status=0,
 ):
     """Return database metadata object with all relevant tables for the optimization.
 
     This should always be used to create entirely new databases or to create the
     tables needed during optimization in an existing database.
 
-    A new database is created if path does not exist yet or replace=True. Otherwise the
+    A new database is created if path does not exist yet. Otherwise the
     existing database is loaded and all tables needed to log the optimization are
-    overwritten.
+    overwritten. Other tables remain unchanged.
 
     The resulting database has the following tables:
 
@@ -124,8 +114,6 @@ def prepare_database(
         db_options (dict): Dashboard options.
         optimization_status (str): One of "scheduled", "running", "success", "failure".
         gradient_status (float): Progress of gradient calculation between 0 and 1.
-        replace (bool): If true and the database exists, it will be overwritten.
-            Otherwise, data will be appended.
 
     Returns:
         database (sqlalchemy.sql.schema.MetaData). The engine that connects
@@ -134,7 +122,7 @@ def prepare_database(
     """
     db_options = {} if db_options is None else db_options
     gradient_status = float(gradient_status)
-    database = load_database(path, replace)
+    database = load_database(path)
 
     opt_tables = [
         "params_history",

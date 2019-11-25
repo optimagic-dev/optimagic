@@ -13,21 +13,20 @@ from estimagic.logging.update_database import append_rows
 def database(tmp_path):
     params = pd.DataFrame()
     params["name"] = list("abc")
-    metadata = prepare_database(
+    database = prepare_database(
         path=tmp_path / "test.db",
         params=params,
         db_options={"a": 3},
         optimization_status="success",
-        replace=True,
     )
 
     tables = ["params_history", "criterion_history"]
     for i in range(10):
         params = pd.Series(index=list("abc"), data=i)
         critval = i ** 2
-        append_rows(metadata, tables, [params, {"value": critval}])
+        append_rows(database, tables, [params, {"value": critval}])
 
-    return metadata
+    return database
 
 
 def test_start_params_table(database):
