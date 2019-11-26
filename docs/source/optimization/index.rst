@@ -28,6 +28,7 @@ estimagic if you desire to do so.
    interface
    params
    constraints/index
+   logging
    dashboard
    algorithms
    general_options

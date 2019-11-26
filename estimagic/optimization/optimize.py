@@ -36,37 +36,49 @@ def maximize(
     dashboard=False,
     db_options=None,
 ):
-    """
-    Maximize *criterion* using *algorithm* subject to *pc* and bounds.
+    """Maximize *criterion* using *algorithm* subject to *pc* and bounds.
+
+    Each argument except for ``general_options`` can also be replaced by a list of
+    arguments in which case several optimizations are run in parallel. For this, either
+    all arguments must be lists of the same length, or some arguments can be provided
+    as single arguments in which case they are automatically broadcasted.
 
     Args:
-        criterion (function):
+        criterion (function or list of functions):
             Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
-        params (pd.DataFrame):
+        params (pd.DataFrame or list of pd.DataFrames):
             See :ref:`params`.
 
-        algorithm (str):
+        algorithm (str or list of strings):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
 
-        criterion_kwargs (dict):
+        criterion_kwargs (dict or list of dicts):
             additional keyword arguments for criterion
 
-        constraints (list):
+        constraints (list or list of lists):
             list with constraint dictionaries. See for details.
 
         general_options (dict):
-            additional configurations for the optimization.
+            additional configurations for the optimization
 
-        algo_options (dict):
-            algorithm specific configurations for the optimization.
+        algo_options (dict or list of dicts):
+            algorithm specific configurations for the optimization
+
+        logfile (str or pathlib.Path): Path to an sqlite3 file which typically has the
+            file extension ``.db``. If the file does not exist, it will be created. See
+            :ref:`logging` for details.
+
+        log_options (dict): Keyword arguments to influence the logging. See
+            :ref:`logging` for details.
 
         dashboard (bool):
-            whether to create and show a dashboard.
+            whether to create and show a dashboard. See :ref:`dashboard` for details.
 
         db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function.
+            dictionary with kwargs to be supplied to the run_server function. See
+                :ref:`dashboard` for details.
 
     """
 
@@ -103,11 +115,17 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    logfile=None,
+    log_options=None,
     dashboard=False,
     db_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
-    Run several optimizations if called by lists of inputs.
+
+    Each argument except for ``general_options`` can also be replaced by a list of
+    arguments in which case several optimizations are run in parallel. For this, either
+    all arguments must be lists of the same length, or some arguments can be provided
+    as single arguments in which case they are automatically broadcasted.
 
     Args:
         criterion (function or list of functions):
@@ -132,11 +150,19 @@ def minimize(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
+        logfile (str or pathlib.Path): Path to an sqlite3 file which typically has the
+            file extension ``.db``. If the file does not exist, it will be created. See
+            :ref:`logging` for details.
+
+        log_options (dict): Keyword arguments to influence the logging. See
+            :ref:`logging` for details.
+
         dashboard (bool):
-            whether to create and show a dashboard
+            whether to create and show a dashboard. See :ref:`dashboard` for details.
 
         db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function.
+            dictionary with kwargs to be supplied to the run_server function. See
+                :ref:`dashboard` for details.
 
     """
 
