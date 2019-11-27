@@ -10,7 +10,6 @@ from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize as minimize_scipy
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.pounders import minimize_pounders
@@ -19,6 +18,7 @@ from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.pygmo import minimize_pygmo
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
+from estimagic.optimization.scipy import minimize_scipy
 from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
@@ -343,29 +343,13 @@ def _internal_minimize(
 
     if origin in ["nlopt", "pygmo"]:
         results = minimize_pygmo(
-            internal_criterion,
-            params,
-            internal_params,
-            origin,
-            algo_name,
-            algo_options,
+            internal_criterion, params, internal_params, origin, algo_name, algo_options
         )
 
     elif origin == "scipy":
-        bounds = (
-            params.query("_internal_free")[["lower", "upper"]]
-            .replace([-np.inf, np.inf], [None, None])
-            .to_numpy()
+        results = minimize_scipy(
+            internal_criterion, params, internal_params, algo_name, algo_options
         )
-
-        scipy_results_obj = minimize_scipy(
-            internal_criterion,
-            internal_params,
-            method=algo_name,
-            bounds=bounds,
-            options=algo_options,
-        )
-        results = _process_scipy_results(scipy_results_obj)
     elif origin == "tao":
         len_output = algo_options.pop("len_output", None)
         if len_output is None:
@@ -495,27 +479,3 @@ def _process_params(params):
         )
         raise ValueError(msg)
     return params
-
-
-def _process_scipy_results(scipy_results_obj):
-    """Convert optimization results into json serializable dictionary.
-
-    Args:
-        scipy_results_obj (scipy.optimize.Optimizeresult): Result from numerical
-            optimizer.
-
-    Todo: Is the list conversion necessary? If so, apply to all processing steps.
-
-    """
-    results = {**scipy_results_obj}
-    results["fitness"] = results.pop("fun", None)
-    results["jacobian"] = results.pop("jac", None)
-    results["hessian"] = results.pop("hess", None)
-    results["n_evaluations"] = results.pop("nfev", None)
-    results["n_evaluations_jacobian"] = results.pop("njev", None)
-    results["n_evaluations_hessian"] = results.pop("nhev", None)
-    results["n_iterations"] = results.pop("nit", None)
-    results["max_constraints_violations"] = results.pop("maxcv", None)
-    results["hessian_inverse"] = results.pop("hess_inv", None)
-
-    return results
