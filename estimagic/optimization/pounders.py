@@ -99,8 +99,8 @@ def minimize_pounders(
     if init_tr is not None:
         tao.setInitialTrustRegionRadius(init_tr)
 
-    # Change they need to be in a container
-    # Set the variable sounds if existing
+    # Add bounds.
+    # Todo: This check is pointless. Bounds are always supplied.
     if bounds is not None:
         low, up = _prep_args(len(x), len(x))
         low.array = bounds[0]
@@ -134,21 +134,14 @@ def minimize_pounders(
     # Run the problem.
     tao.solve()
 
-    # Create a dict that contains relevant information.
-    out = {}
-    out["x"] = paras.array
-    out["fun"] = crit.array[-1]
-    out["func_values"] = crit.array
-    out["start_values"] = x
-    out["conv"] = _translate_tao_convergence_reason(tao.getConvergedReason())
-    out["sol"] = tao.getSolutionStatus()
+    results = _process_pounders_results(paras, crit, x, tao)
 
     # Destroy petsc objects for memory reasons.
     tao.destroy()
     paras.destroy()
     crit.destroy()
 
-    return out
+    return results
 
 
 def _prep_args(size_paras, size_objective):
@@ -231,3 +224,16 @@ def _translate_tao_convergence_reason(tao_resaon):
         -8: "user defined",
     }
     return mapping[tao_resaon]
+
+
+def _process_pounders_results(paras, crit, x, tao):
+    results = {
+        "x": paras.array,
+        "fun": crit.array[-1],
+        "func_values": crit.array,
+        "start_values": x,
+        "conv": _translate_tao_convergence_reason(tao.getConvergedReason()),
+        "sol": tao.getSolutionStatus(),
+    }
+
+    return results
