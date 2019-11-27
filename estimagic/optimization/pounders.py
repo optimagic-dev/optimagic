@@ -78,6 +78,7 @@ def minimize_pounders(
              paras (np.ndarray): 1d NumPy array of the current values at which we want
                 to evaluate the function.
              f: Petsc object in which we save the current function value.
+
         """
         dev = func(paras.array)
         # Attach to PETSc object.

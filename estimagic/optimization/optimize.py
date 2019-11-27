@@ -14,6 +14,7 @@ import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
+from estimagic.decorators import x_to_params
 from estimagic.optimization.pounders import minimize_pounders
 from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
@@ -422,15 +423,8 @@ def create_internal_criterion(
     """
     c = np.zeros(1, dtype=int)
 
-    def internal_criterion(x, counter=c):
-        p = reparametrize_from_internal(
-            internal=x,
-            fixed_values=params["_internal_fixed_value"].to_numpy(),
-            pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
-            processed_constraints=constraints,
-            post_replacements=params["_post_replacements"].to_numpy().astype(int),
-            processed_params=params,
-        )
+    @x_to_params(params, constraints)
+    def internal_criterion(p, counter=c):
         fitness_eval = criterion(p, **criterion_kwargs)
 
         # For Pounders, return the sum of squared errors.
