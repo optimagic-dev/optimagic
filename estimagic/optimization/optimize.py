@@ -10,7 +10,7 @@ from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize as scipy_minimize
+from scipy.optimize import minimize as minimize_scipy
 
 from estimagic.dashboard.server_functions import run_server
 from estimagic.optimization.pounders import minimize_pounders
@@ -358,7 +358,7 @@ def _internal_minimize(
             .to_numpy()
         )
 
-        scipy_results_obj = scipy_minimize(
+        scipy_results_obj = minimize_scipy(
             internal_criterion,
             internal_params,
             method=algo_name,
