@@ -264,8 +264,7 @@ def _single_minimize(
 
 
 def _one_argument_single_minimize(kwargs):
-    """Wrapper for single_minimize used for multiprocessing.
-    """
+    """Wrapper for single_minimize to use kwargs with multiprocessing."""
     return _single_minimize(**kwargs)
 
 
@@ -494,19 +493,13 @@ def _process_params(params):
 
 
 def _get_scipy_bounds(params):
-    params = params.query("_internal_free")
-    unprocessed_bounds = params[["lower", "upper"]].to_numpy().tolist()
-    bounds = []
-    for lower, upper in unprocessed_bounds:
-        bounds.append((_convert_bound(lower), _convert_bound(upper)))
+    bounds = (
+        params.query("_internal_free")[["lower", "upper"]]
+        .replace([-np.inf, np.inf], [None, None])
+        .to_numpy()
+    )
+
     return bounds
-
-
-def _convert_bound(x):
-    if np.isfinite(x):
-        return x
-    else:
-        return None
 
 
 def _create_problem(internal_criterion, params):

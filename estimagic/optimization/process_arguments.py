@@ -167,9 +167,8 @@ def process_optimization_arguments(
             # Entered as too short list
             else:
                 raise ValueError(
-                    f"All arguments entered as list/tuple must be of the same "
-                    + f"length. The length of {arg_name} "
-                    + f"is below the length of another argument."
+                    "All arguments entered as list/tuple must be of the same length. "
+                    f"The length of {arg_name} is below the length of another argument."
                 )
         processed_arguments.append(args_one_run)
 
