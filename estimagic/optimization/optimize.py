@@ -79,7 +79,7 @@ def maximize(
     else:
         general_options["_maximization"] = True
 
-    res_dict, params = minimize(
+    results, params = minimize(
         neg_criterion,
         params=params,
         algorithm=algorithm,
@@ -90,9 +90,9 @@ def maximize(
         dashboard=dashboard,
         db_options=db_options,
     )
-    res_dict["fun"] = -res_dict["fun"]
+    results["fitness"] = -results["fitness"]
 
-    return res_dict, params
+    return results, params
 
 
 def minimize(
@@ -508,8 +508,14 @@ def _process_scipy_results(scipy_results_obj):
 
     """
     results = {**scipy_results_obj}
-    for key, value in results.items():
-        if isinstance(value, np.ndarray):
-            results[key] = value.tolist()
+    results["fitness"] = results.pop("fun", None)
+    results["jacobian"] = results.pop("jac", None)
+    results["hessian"] = results.pop("hess", None)
+    results["n_evaluations"] = results.pop("nfev", None)
+    results["n_evaluations_jacobian"] = results.pop("njev", None)
+    results["n_evaluations_hessian"] = results.pop("nhev", None)
+    results["n_iterations"] = results.pop("nit", None)
+    results["max_constraints_violations"] = results.pop("maxcv", None)
+    results["hessian_inverse"] = results.pop("hess_inv", None)
 
     return results

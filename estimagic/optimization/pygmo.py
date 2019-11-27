@@ -74,6 +74,17 @@ def _create_population(problem, algo_options, internal_params):
 
 
 def _process_pygmo_results(evolved):
-    results = {"fun": evolved.champion_f[0], "x": evolved.champion_x}
+    results = {
+        "fitness": evolved.champion_f[0],
+        "n_evaluations": evolved.problem.get_fevals(),
+        "n_evaluations_jacobian": evolved.problem.get_gevals(),
+        "n_evaluations_hessian": evolved.problem.get_hevals(),
+        "n_constraints": evolved.problem.get_nc(),
+        "n_constraints_equality": evolved.problem.get_nec(),
+        "n_constraints_inequality": evolved.problem.get_nic(),
+        "has_gradient": evolved.problem.has_gradient(),
+        "has_hessians": evolved.problem.has_hessians(),
+        "x": evolved.champion_x,
+    }
 
     return results

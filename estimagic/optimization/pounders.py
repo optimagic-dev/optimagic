@@ -134,7 +134,7 @@ def minimize_pounders(
     # Run the problem.
     tao.solve()
 
-    results = _process_pounders_results(paras, crit, x, tao)
+    results = _process_pounders_results(crit, tao)
 
     # Destroy petsc objects for memory reasons.
     tao.destroy()
@@ -226,14 +226,15 @@ def _translate_tao_convergence_reason(tao_resaon):
     return mapping[tao_resaon]
 
 
-def _process_pounders_results(paras, crit, x, tao):
+def _process_pounders_results(crit, tao):
     results = {
-        "x": paras.array,
-        "fun": crit.array[-1],
-        "func_values": crit.array,
-        "start_values": x,
+        "fitness": crit.array.sum(),
+        "fitness_values": crit.array,
+        "x": tao.solution.array,
         "conv": _translate_tao_convergence_reason(tao.getConvergedReason()),
-        "sol": tao.getSolutionStatus(),
+        "n_evaluations": tao.getIterationNumber(),
+        "gnorm": tao.gnorm,
+        "cnorm": tao.cnorm,
     }
 
     return results

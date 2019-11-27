@@ -16,7 +16,7 @@ def test_robustness_1():
     np.random.seed(5470)
     true_paras = np.random.uniform(size=3)
     start = np.random.uniform(size=3)
-    num_agents = 10000
+    num_agents = 10_000
 
     exog, endog = _simulate_sample(num_agents, true_paras)
     objective = functools.partial(_nonlinear_criterion, endog, exog)
@@ -28,7 +28,7 @@ def test_robustness_2():
     np.random.seed(5471)
     true_params = np.random.uniform(size=2)
     start_params = np.random.uniform(size=2)
-    num_agents = 10000
+    num_agents = 10_000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
@@ -47,7 +47,7 @@ def test_box_constr():
     true_params = np.random.uniform(0.3, 0.4, size=2)
     start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-    num_agents = 10000
+    num_agents = 10_000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
@@ -62,7 +62,7 @@ def test_max_iters():
     true_params = np.random.uniform(0.3, 0.4, size=2)
     start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-    num_agents = 10000
+    num_agents = 10_000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
@@ -83,7 +83,7 @@ def test_grtol():
     true_params = np.random.uniform(0.3, 0.4, size=2)
     start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-    num_agents = 10000
+    num_agents = 10_000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
@@ -106,7 +106,7 @@ def test_gatol():
     true_params = np.random.uniform(0.3, 0.4, size=2)
     start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-    num_agents = 10000
+    num_agents = 10_000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
@@ -128,7 +128,7 @@ def test_gttol():
     true_params = np.random.uniform(0.3, 0.4, size=2)
     start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-    num_agents = 10000
+    num_agents = 10_000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
@@ -151,7 +151,7 @@ def test_tol():
     true_params = np.random.uniform(0.3, 0.4, size=2)
     start_params = np.random.uniform(0.1, 0.2, size=2)
     bounds = [[0, 0], [0.3, 0.3]]
-    num_agents = 10000
+    num_agents = 10_000
 
     exog, endog = _simulate_ols_sample(num_agents, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
