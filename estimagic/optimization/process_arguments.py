@@ -1,5 +1,6 @@
 import copy
 from collections import Callable
+from pathlib import Path
 
 import pandas as pd
 
@@ -12,6 +13,8 @@ def process_optimization_arguments(
     constraints=None,
     general_options=None,
     algo_options=None,
+    logfile=False,
+    log_options=None,
     dashboard=False,
     db_options=None,
 ):
@@ -40,6 +43,12 @@ def process_optimization_arguments(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
+        logfile (str/path or list of strings/paths):
+            Location of the database.
+
+        log_options (dict or list of dicts):
+            Optimization-specific options for logging.
+
         dashboard (bool):
             whether to create and show a dashboard
 
@@ -56,6 +65,7 @@ def process_optimization_arguments(
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options
+    log_options = {} if log_options is None else log_options
     db_options = {} if db_options is None else db_options
     general_options = {} if general_options is None else general_options
     # Determine number of optimizations and check types
@@ -105,6 +115,12 @@ def process_optimization_arguments(
             "argument_required": False,
             "expected_dim": "scalar_or_list",
         },
+        "log_options": {
+            "candidate": log_options,
+            "scalar_type": dict,
+            "argument_required": False,
+            "expected_dim": "scalar_or_list",
+        },
         "criterion_kwargs": {
             "candidate": criterion_kwargs,
             "scalar_type": dict,
@@ -118,7 +134,7 @@ def process_optimization_arguments(
         },
     }
 
-    # Check type and calc n_opts for each argument
+    # Check type and calc n_optimizations for each argument
     for arg_name, arg_spec in arguments.items():
         if arg_spec["expected_dim"] == "scalar":
             _check_type_nonlist_argument(
@@ -142,17 +158,21 @@ def process_optimization_arguments(
             )
 
     # Calc number of optimizations that should be run
-    n_opts = max(a["n_opts_entered"] for a in arguments.values())
+    n_optimizations = max(a["n_opts_entered"] for a in arguments.values())
+
+    # Process paths of databases.
+    container = _process_paths_for_logfiles(logfile, n_optimizations)
+    arguments.update({"logfile": container})
 
     # Put arguments together
     processed_arguments = []
-    for run in range(n_opts):
+    for run in range(n_optimizations):
         args_one_run = {}
         for arg_name, arg_spec in arguments.items():
             # Entered as scalar
             if arg_spec["n_opts_entered"] == 1:
-                is_list = isinstance(arg_spec["candidate"], (list, tuple))
-                if is_list and len(arg_spec["candidate"]) == 1:
+                is_iterable = isinstance(arg_spec["candidate"], (list, tuple))
+                if is_iterable and len(arg_spec["candidate"]) == 1:
                     if arg_name == "constraints":
                         args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
                     else:
@@ -161,7 +181,7 @@ def process_optimization_arguments(
                     args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
 
             # Entered as list of correct length
-            elif arg_spec["n_opts_entered"] == n_opts:
+            elif arg_spec["n_opts_entered"] == n_optimizations:
                 args_one_run[arg_name] = arg_spec["candidate"][run]
 
             # Entered as too short list
@@ -218,14 +238,14 @@ def _get_n_opt_and_check_type_list_argument(
     if isinstance(candidate, (list, tuple)):
 
         # Empty argument
-        if candidate in ([], ()):
-            num_opt = 1
+        if len(candidate) == 0:
+            n_optimizations = 1
             if argument_required:
                 raise ValueError(f"{name} needs to be specified")
 
         # Non-empty list/tuple
         else:
-            num_opt = len(candidate)
+            n_optimizations = len(candidate)
 
             # Assert that all values are of the correct type
             for c in candidate:
@@ -234,13 +254,13 @@ def _get_n_opt_and_check_type_list_argument(
 
     # Scalar
     else:
-        num_opt = 1
+        n_optimizations = 1
 
         # Assert that scalar is of the correct type
         if not isinstance(candidate, scalar_type):
             raise ValueError(msg)
 
-    return num_opt
+    return n_optimizations
 
 
 def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required, name):
@@ -265,19 +285,69 @@ def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required,
         raise ValueError(msg)
 
     # Empty list/tuple
-    elif candidate in ([], ()):
-        num_opt = 1
+    elif len(candidate) == 0:
+        n_optimizations = 1
         if argument_required:
             raise ValueError(f"{name} needs to be specified")
 
     # Nested list/tuple
     elif isinstance(candidate[0], (list, tuple)):
-        num_opt = len(candidate)
+        n_optimizations = len(candidate)
         for c in candidate:
             if not isinstance(c, (list, tuple)):
                 raise ValueError(msg)
 
     # Non-empty 1-dimensional list/tuple
     else:
-        num_opt = 1
-    return num_opt
+        n_optimizations = 1
+    return n_optimizations
+
+
+def _process_paths_for_logfiles(logfile, n_optimizations):
+    """Process paths to the logfiles."""
+    msg = "logfile has to be a str/path or list of str/paths."
+
+    container = {}
+
+    # list/tuple
+    if isinstance(logfile, (list, tuple)):
+
+        # Empty argument
+        if len(logfile) == 0:
+            raise ValueError("logfile needs to be specified")
+
+        # Non-empty list/tuple
+        else:
+            n_logfiles = len(logfile)
+            # If there are multiple optimizations but just one database path, extend the
+            # path with numbers such that each optimization has its database.
+            if n_logfiles == 1 != n_optimizations:
+                path = logfile[0]
+                logfile = [
+                    (path.parent / path.stem + "_{i}.db")
+                    for i in range(n_optimizations)
+                ]
+            elif n_logfiles > 1 and n_logfiles != n_optimizations:
+                raise ValueError(
+                    f"logfile has {n_logfiles} entries and there are {n_optimizations} "
+                    "optimizations."
+                )
+            elif n_logfiles == n_optimizations:
+                pass
+
+        container["candidate"] = [Path(i).absolute() for i in logfile]
+        container["n_opts_entered"] = n_optimizations
+
+    # Scalar
+    else:
+        # Assert that scalar is of the correct type
+        if not logfile:
+            container["candidate"] = False
+            container["n_opts_entered"] = 1
+        elif not isinstance(logfile, (str, Path)):
+            raise ValueError(msg)
+        else:
+            container["candidate"] = Path(logfile).absolute()
+            container["n_opts_entered"] = 1
+
+    return container

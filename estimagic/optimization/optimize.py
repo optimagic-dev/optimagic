@@ -166,7 +166,6 @@ def minimize(
                 :ref:`dashboard` for details.
 
     """
-
     arguments = process_optimization_arguments(
         criterion=criterion,
         params=params,
@@ -175,6 +174,8 @@ def minimize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
+        logfile=logfile,
+        log_options=log_options,
         dashboard=dashboard,
         db_options=db_options,
     )
@@ -211,6 +212,8 @@ def _single_minimize(
     constraints,
     general_options,
     algo_options,
+    logfile,
+    log_options,
     dashboard,
     db_options,
 ):
@@ -239,6 +242,13 @@ def _single_minimize(
 
         algo_options (dict):
             algorithm specific configurations for the optimization
+
+        logfile (str or pathlib.Path): Path to an sqlite3 file which typically has the
+            file extension ``.db``. If the file does not exist, it will be created. See
+            :ref:`logging` for details.
+
+        log_options (dict): Keyword arguments to influence the logging. See
+            :ref:`logging` for details.
 
         dashboard (bool):
             whether to create and show a dashboard
