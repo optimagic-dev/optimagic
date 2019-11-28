@@ -42,8 +42,11 @@ def logging(database, tables):
 
     def decorator_logging(func):
         @functools.wraps(func)
-        def wrapper_logging(rows):
-            append_rows(database, tables, rows)
+        def wrapper_logging(x, *args, **kwargs):
+            out = func(x, *args, **kwargs)
+            append_rows(database, tables, [x, out])
+
+            return out
 
         return wrapper_logging
 
