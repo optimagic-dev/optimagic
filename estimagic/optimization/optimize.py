@@ -351,14 +351,8 @@ def _internal_minimize(
             internal_criterion, params, internal_params, algo_name, algo_options
         )
     elif origin == "tao":
-        len_output = algo_options.pop("len_output", None)
-        if len_output is None:
-            len_output = len(criterion(params))
-
-        # Todo: Can we move it within the minimization.
-        bounds = params.query("_internal_free")[["lower", "upper"]].to_numpy().T
         results = minimize_pounders(
-            internal_criterion, internal_params, len_output, bounds, **algo_options
+            internal_criterion, internal_params, criterion, params, algo_options
         )
     else:
         raise ValueError("Invalid algorithm requested.")

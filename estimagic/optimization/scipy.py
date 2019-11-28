@@ -25,15 +25,6 @@ def minimize_scipy(
 
 
 def _process_scipy_results(scipy_results_obj):
-    """Convert optimization results into json serializable dictionary.
-
-    Args:
-        scipy_results_obj (scipy.optimize.OptimizeResult): Result from numerical
-            optimizer.
-
-    Todo: Is the list conversion necessary? If so, apply to all processing steps.
-
-    """
     results = {**scipy_results_obj}
     results["fitness"] = results.pop("fun", None)
     results["jacobian"] = results.pop("jac", None)
