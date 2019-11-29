@@ -161,8 +161,8 @@ def process_optimization_arguments(
     n_optimizations = max(a["n_opts_entered"] for a in arguments.values())
 
     # Process paths of databases.
-    container = _process_paths_for_logfiles(logfile, n_optimizations)
-    arguments.update({"logfile": container})
+    logfile_argument = _process_paths_for_logfiles(logfile, n_optimizations)
+    arguments.update(logfile_argument)
 
     # Put arguments together
     processed_arguments = []
@@ -304,50 +304,69 @@ def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required,
 
 
 def _process_paths_for_logfiles(logfile, n_optimizations):
-    """Process paths to the logfiles."""
-    msg = "logfile has to be a str/path or list of str/paths."
+    """Process paths to the logfiles.
 
-    container = {}
+    `logfile` can be a single value in which case it becomes an iterable with a single
+    value to simplify the processing.
 
-    # list/tuple
-    if isinstance(logfile, (list, tuple)):
+    `logfile` can also be a `list` or a `tuple` in which case
 
-        # Empty argument
-        if len(logfile) == 0:
-            raise ValueError("logfile needs to be specified")
+    - a single path receives a number as a suffix for more than one optimizations.
+    - everything else is parsed according to the following transformation rules.
 
-        # Non-empty list/tuple
-        else:
-            n_logfiles = len(logfile)
-            # If there are multiple optimizations but just one database path, extend the
-            # path with numbers such that each optimization has its database.
-            if n_logfiles == 1 != n_optimizations:
-                path = logfile[0]
-                logfile = [
-                    (path.parent / path.stem + "_{i}.db")
-                    for i in range(n_optimizations)
-                ]
-            elif n_logfiles > 1 and n_logfiles != n_optimizations:
-                raise ValueError(
-                    f"logfile has {n_logfiles} entries and there are {n_optimizations} "
-                    "optimizations."
-                )
-            elif n_logfiles == n_optimizations:
-                pass
+    Every candidate value for `logfile` is transformed according to the following rules.
+    If `logfile` is a `str`, it is converted to :class:`pathlib.Path` and a
+    :class:`pathlib.Path` is left unchanged. Everything which evaluates to `False` is
+    set to `False` which turns logging off.
 
-        container["candidate"] = [Path(i).absolute() for i in logfile]
-        container["n_opts_entered"] = n_optimizations
+    Raises
+    ------
+    ValueError
+        If `n_logfiles` is not one and not `n_optimizations`.
+    ValueError
+        If there are identical paths in `logfile`.
 
-    # Scalar
+    """
+    if not isinstance(logfile, (tuple, list)):
+        logfile = [logfile]
+
+    n_logfiles = len(logfile)
+
+    # If `n_logfiles` is not 1 and not `n_optimizations`, then raise error.
+    if 1 != n_logfiles != n_optimizations:
+        raise ValueError(
+            f"logfile has {n_logfiles} entries and there are {n_optimizations} "
+            "optimizations. Cannot harmonize entries."
+        )
+
+    # Handle the special case, where we have one path and multiple optimizations. Then,
+    # add numbers as suffixes to the path.
+    if n_logfiles == 1 and n_optimizations >= 2 and isinstance(logfile, (str, Path)):
+        path = Path(logfile[0]).absolute()
+        logfile = [
+            (path.parent / path.stem + f"_{i}.db") for i in range(n_optimizations)
+        ]
+    # Else, just parse all the elements.
     else:
-        # Assert that scalar is of the correct type
-        if not logfile:
-            container["candidate"] = False
-            container["n_opts_entered"] = 1
-        elif not isinstance(logfile, (str, Path)):
-            raise ValueError(msg)
-        else:
-            container["candidate"] = Path(logfile).absolute()
-            container["n_opts_entered"] = 1
+        logfile = [_process_path(path) for path in logfile]
 
-    return container
+    # Sanity check if there some False and some paths that the paths are not the same.
+    only_paths = [path for path in logfile if isinstance(path, Path)]
+    if len(set(only_paths)) != len(only_paths):
+        raise ValueError("Paths to databases cannot be identical.")
+
+    argument = {"logfile": {"candidate": logfile, "n_opts_entered": len(logfile)}}
+
+    return argument
+
+
+def _process_path(path):
+    """Processes an individual path."""
+    if not path:
+        path = False
+    elif isinstance(path, (str, Path)):
+        path = Path(path).absolute()
+    else:
+        raise ValueError("logfile has to be a str/path or list of str/paths or False.")
+
+    return path

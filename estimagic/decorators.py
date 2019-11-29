@@ -1,5 +1,7 @@
 import functools
 
+import pandas as pd
+
 from estimagic.logging.update_database import append_rows
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 
@@ -37,6 +39,19 @@ def x_to_params(params, constraints=None):
     return decorator_x_to_params
 
 
+def output_to_numpy(func):
+    @functools.wraps(func)
+    def wrapper_output_to_numpy(*args, **kwargs):
+        out = func(*args, **kwargs)
+
+        if isinstance(out, (pd.DataFrame, pd.Series)):
+            out = out.to_numpy()
+
+        return out
+
+    return wrapper_output_to_numpy
+
+
 def logging(database, tables):
     """Log rows to tables in a database."""
 
@@ -44,8 +59,10 @@ def logging(database, tables):
         @functools.wraps(func)
         def wrapper_logging(params, *args, **kwargs):
             criterion_value = func(params, *args, **kwargs)
-            adj_params = params.copy().set_index("name")["value"]
-            append_rows(database, tables, [adj_params, {"value": criterion_value}])
+
+            if database:
+                adj_params = params.copy().set_index("name")["value"]
+                append_rows(database, tables, [adj_params, {"value": criterion_value}])
 
             return criterion_value
 

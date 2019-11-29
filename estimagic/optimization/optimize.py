@@ -36,7 +36,7 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    logfile=None,
+    logfile=False,
     log_options=None,
     dashboard=False,
     db_options=None,
@@ -122,7 +122,7 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    logfile=None,
+    logfile=False,
     log_options=None,
     dashboard=False,
     db_options=None,
@@ -266,7 +266,7 @@ def _single_minimize(
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
-    database = prepare_database(logfile, params, log_options)
+    database = prepare_database(logfile, params, log_options) if logfile else False
 
     fitness_factor = -1 if general_options.get("_maximization", False) else 1
     fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)

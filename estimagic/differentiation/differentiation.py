@@ -2,6 +2,8 @@ import numdifftools as nd
 import numpy as np
 import pandas as pd
 
+from estimagic.decorators import logging
+from estimagic.decorators import output_to_numpy
 from estimagic.decorators import x_to_params
 from estimagic.differentiation import differentiation_auxiliary as aux
 
@@ -13,6 +15,7 @@ def gradient(
     extrapolation=True,
     func_kwargs=None,
     step_options=None,
+    database=None,
 ):
     """
     Calculate the gradient of *func*.
@@ -41,7 +44,7 @@ def gradient(
 
     func_kwargs = {} if func_kwargs is None else func_kwargs
 
-    internal_func = _create_internal_func(func, params, func_kwargs)
+    internal_func = _create_internal_func(func, params, func_kwargs, database)
     params_value = params["value"].to_numpy()
 
     if extrapolation:
@@ -70,6 +73,7 @@ def jacobian(
     extrapolation=True,
     func_kwargs=None,
     step_options=None,
+    database=None,
 ):
     """
     Calculate the jacobian of *func*.
@@ -101,7 +105,7 @@ def jacobian(
 
     f_x0 = func(params, **func_kwargs)
 
-    internal_func = _create_internal_func(func, params, func_kwargs)
+    internal_func = _create_internal_func(func, params, func_kwargs, database)
     params_value = params["value"].to_numpy()
 
     if extrapolation:
@@ -134,6 +138,7 @@ def hessian(
     extrapolation=True,
     func_kwargs=None,
     step_options=None,
+    database=None,
 ):
     """
     Calculate the hessian of *func*.
@@ -160,7 +165,7 @@ def hessian(
 
     func_kwargs = {} if func_kwargs is None else func_kwargs
 
-    internal_func = _create_internal_func(func, params, func_kwargs)
+    internal_func = _create_internal_func(func, params, func_kwargs, database)
     params_value = params["value"].to_numpy()
 
     if extrapolation:
@@ -195,12 +200,13 @@ def _no_extrapolation_hessian(internal_func, params_value, method):
     return hess
 
 
-def _create_internal_func(func, params, func_kwargs):
+def _create_internal_func(func, params, func_kwargs, database):
+    @output_to_numpy
     @x_to_params(params)
+    @logging(database, ["gradients_history", "criterion_history"])
     def internal_func(p):
         func_value = func(p, **func_kwargs)
-        if isinstance(func_value, (pd.DataFrame, pd.Series)):
-            func_value = func_value.to_numpy()
+
         return func_value
 
     return internal_func
