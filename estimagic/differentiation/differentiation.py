@@ -15,7 +15,7 @@ def gradient(
     extrapolation=True,
     func_kwargs=None,
     step_options=None,
-    database=None,
+    database=False,
 ):
     """
     Calculate the gradient of *func*.
@@ -73,7 +73,7 @@ def jacobian(
     extrapolation=True,
     func_kwargs=None,
     step_options=None,
-    database=None,
+    database=False,
 ):
     """
     Calculate the jacobian of *func*.
@@ -138,7 +138,7 @@ def hessian(
     extrapolation=True,
     func_kwargs=None,
     step_options=None,
-    database=None,
+    database=False,
 ):
     """
     Calculate the hessian of *func*.
