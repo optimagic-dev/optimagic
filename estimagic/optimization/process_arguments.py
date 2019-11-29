@@ -341,10 +341,10 @@ def _process_paths_for_logfiles(logfile, n_optimizations):
 
     # Handle the special case, where we have one path and multiple optimizations. Then,
     # add numbers as suffixes to the path.
-    if n_logfiles == 1 and n_optimizations >= 2 and isinstance(logfile, (str, Path)):
+    if n_logfiles == 1 and n_optimizations >= 2 and isinstance(logfile[0], (str, Path)):
         path = Path(logfile[0]).absolute()
         logfile = [
-            (path.parent / path.stem + f"_{i}.db") for i in range(n_optimizations)
+            path.parent / (path.stem + f"_{i}.db") for i in range(n_optimizations)
         ]
     # Else, just parse all the elements.
     else:
