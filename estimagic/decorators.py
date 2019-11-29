@@ -42,11 +42,12 @@ def logging(database, tables):
 
     def decorator_logging(func):
         @functools.wraps(func)
-        def wrapper_logging(x, *args, **kwargs):
-            out = func(x, *args, **kwargs)
-            append_rows(database, tables, [x, out])
+        def wrapper_logging(params, *args, **kwargs):
+            criterion_value = func(params, *args, **kwargs)
+            adj_params = params.copy().set_index("name")["value"]
+            append_rows(database, tables, [adj_params, {"value": criterion_value}])
 
-            return out
+            return criterion_value
 
         return wrapper_logging
 

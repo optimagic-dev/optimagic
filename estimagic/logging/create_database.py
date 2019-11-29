@@ -161,8 +161,7 @@ def prepare_database(
 
 
 def _define_params_history_table(database, params):
-    names = params["name"].tolist()
-    cols = [Column(name, Float) for name in names]
+    cols = [Column(name, Float) for name in params["name"]]
     parvals = Table(
         "params_history",
         database,
@@ -174,8 +173,7 @@ def _define_params_history_table(database, params):
 
 
 def _define_gradient_history_table(database, params):
-    names = params["name"].tolist()
-    cols = [Column(name, Float) for name in names]
+    cols = [Column(name, Float) for name in params["name"]]
     gradvals = Table(
         "gradient_history",
         database,

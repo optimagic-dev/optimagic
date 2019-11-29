@@ -14,7 +14,9 @@ import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
 from estimagic.dashboard.server_functions import run_server
+from estimagic.decorators import logging
 from estimagic.decorators import x_to_params
+from estimagic.logging.create_database import prepare_database
 from estimagic.optimization.pounders import minimize_pounders
 from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
@@ -34,6 +36,8 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    logfile=None,
+    log_options=None,
     dashboard=False,
     db_options=None,
 ):
@@ -100,6 +104,8 @@ def maximize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
+        logfile=logfile,
+        log_options=log_options,
         dashboard=dashboard,
         db_options=db_options,
     )
@@ -260,6 +266,8 @@ def _single_minimize(
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
+    database = prepare_database(logfile, params, log_options)
+
     fitness_factor = -1 if general_options.get("_maximization", False) else 1
     fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
     constraints, params = process_constraints(constraints, params)
@@ -290,6 +298,7 @@ def _single_minimize(
         algorithm=algorithm,
         algo_options=algo_options,
         general_options=general_options,
+        database=database,
         queue=queue,
         fitness_factor=fitness_factor,
     )
@@ -314,6 +323,7 @@ def _internal_minimize(
     algorithm,
     algo_options,
     general_options,
+    database,
     queue,
     fitness_factor,
 ):
@@ -345,6 +355,9 @@ def _internal_minimize(
         general_options (dict):
             additional configurations for the optimization
 
+        database (sqlalchemy.sql.schema.MetaData). The engine that connects to the
+            database can be accessed via ``database.bind``.
+
         queue (Queue):
             queue to which the fitness evaluations and params DataFrames are supplied.
 
@@ -358,6 +371,7 @@ def _internal_minimize(
         params=params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
+        database=database,
         queue=queue,
         fitness_factor=fitness_factor,
     )
@@ -424,7 +438,7 @@ def _internal_minimize(
 
 
 def create_internal_criterion(
-    criterion, params, constraints, criterion_kwargs, queue, fitness_factor
+    criterion, params, constraints, criterion_kwargs, database, queue, fitness_factor
 ):
     """Create the internal criterion function.
 
@@ -441,6 +455,9 @@ def create_internal_criterion(
 
         criterion_kwargs (dict):
             additional keyword arguments for criterion
+
+        database (sqlalchemy.sql.schema.MetaData). The engine that connects to the
+            database can be accessed via ``database.bind``.
 
         queue (Queue):
             queue to which the fitness evaluations and params DataFrames are supplied.
@@ -460,6 +477,7 @@ def create_internal_criterion(
     c = np.zeros(1, dtype=int)
 
     @x_to_params(params, constraints)
+    @logging(database, ["params_history", "criterion_history"])
     def internal_criterion(p, counter=c):
         fitness_eval = criterion(p, **criterion_kwargs)
 
