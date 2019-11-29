@@ -13,6 +13,7 @@ import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
 
+from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.dashboard.server_functions import run_server
 from estimagic.decorators import logging
 from estimagic.decorators import x_to_params
@@ -36,7 +37,7 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    logfile=False,
+    logfile=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
     db_options=None,
@@ -122,7 +123,7 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    logfile=False,
+    logfile=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
     db_options=None,
