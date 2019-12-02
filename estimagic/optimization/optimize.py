@@ -37,7 +37,7 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    logfile=DEFAULT_DATABASE_NAME,
+    logging=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
     db_options=None,
@@ -72,7 +72,7 @@ def maximize(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
-        logfile (str or pathlib.Path): Path to an sqlite3 file which typically has the
+        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
             file extension ``.db``. If the file does not exist, it will be created. See
             :ref:`logging` for details.
 
@@ -105,7 +105,7 @@ def maximize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
-        logfile=logfile,
+        logging=logging,
         log_options=log_options,
         dashboard=dashboard,
         db_options=db_options,
@@ -123,7 +123,7 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    logfile=DEFAULT_DATABASE_NAME,
+    logging=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
     db_options=None,
@@ -158,7 +158,7 @@ def minimize(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
-        logfile (str or pathlib.Path): Path to an sqlite3 file which typically has the
+        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
             file extension ``.db``. If the file does not exist, it will be created. See
             :ref:`logging` for details.
 
@@ -181,7 +181,7 @@ def minimize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
-        logfile=logfile,
+        logging=logging,
         log_options=log_options,
         dashboard=dashboard,
         db_options=db_options,
@@ -219,7 +219,7 @@ def _single_minimize(
     constraints,
     general_options,
     algo_options,
-    logfile,
+    logging,
     log_options,
     dashboard,
     db_options,
@@ -250,7 +250,7 @@ def _single_minimize(
         algo_options (dict):
             algorithm specific configurations for the optimization
 
-        logfile (str or pathlib.Path): Path to an sqlite3 file which typically has the
+        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
             file extension ``.db``. If the file does not exist, it will be created. See
             :ref:`logging` for details.
 
@@ -267,7 +267,7 @@ def _single_minimize(
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
-    database = prepare_database(logfile, params, log_options) if logfile else False
+    database = prepare_database(logging, params, log_options) if logging else False
 
     fitness_factor = -1 if general_options.get("_maximization", False) else 1
     fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)

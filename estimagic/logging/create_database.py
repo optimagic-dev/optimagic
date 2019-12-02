@@ -140,8 +140,9 @@ def prepare_database(
         if table in database.tables:
             database.tables[table].drop(database.bind)
 
-    _define_params_history_table(database, params)
-    _define_gradient_history_table(database, params)
+    _define_table_formatted_with_params(database, params, "params_history")
+    _define_table_formatted_with_params(database, params, "gradient_history")
+    _define_table_formatted_with_params(database, params, "gradient_params_history")
     _define_criterion_history_table(database)
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
@@ -160,28 +161,16 @@ def prepare_database(
     return database
 
 
-def _define_params_history_table(database, params):
+def _define_table_formatted_with_params(database, params, table_name):
     cols = [Column(name, Float) for name in params["name"]]
-    parvals = Table(
-        "params_history",
+    values = Table(
+        table_name,
         database,
         Column("iteration", Integer, primary_key=True),
         *cols,
         sqlite_autoincrement=True,
     )
-    return parvals
-
-
-def _define_gradient_history_table(database, params):
-    cols = [Column(name, Float) for name in params["name"]]
-    gradvals = Table(
-        "gradient_history",
-        database,
-        Column("iteration", Integer, primary_key=True),
-        *cols,
-        sqlite_autoincrement=True,
-    )
-    return gradvals
+    return values
 
 
 def _define_criterion_history_table(database):
