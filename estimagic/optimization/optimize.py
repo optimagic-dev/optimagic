@@ -416,9 +416,11 @@ def create_internal_criterion(
         )
         fitness_eval = criterion(p, **criterion_kwargs)
 
-        # For Pounders, return the sum of squared errors.
+        # For Pounders, return the sum of squared errors from errors.
         _fitness_eval = (
-            fitness_eval.sum() if isinstance(fitness_eval, np.ndarray) else fitness_eval
+            (fitness_eval ** 2).sum()
+            if isinstance(fitness_eval, np.ndarray)
+            else fitness_eval
         )
 
         if queue is not None:
