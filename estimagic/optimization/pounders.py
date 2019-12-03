@@ -132,11 +132,11 @@ def minimize_pounders_np(
 
     # Add bounds.
     n_params = len(x0.array)
-    lower = np.full(n_params, bounds[0]) if isinstance(bounds[0], int) else bounds[0]
-    upper = np.full(n_params, bounds[1]) if isinstance(bounds[1], int) else bounds[1]
-    lower = initialise_petsc_array(lower)
-    upper = initialise_petsc_array(upper)
-    tao.setVariableBounds([lower, upper])
+    processed_bounds = []
+    for bound in bounds:
+        bound = np.full(n_params, bound) if isinstance(bound, (int, float)) else bound
+        processed_bounds.append(initialise_petsc_array(bound))
+    tao.setVariableBounds(processed_bounds)
 
     # Put the starting values into the container and pass them to the optimizer.
     tao.setInitial(x0)

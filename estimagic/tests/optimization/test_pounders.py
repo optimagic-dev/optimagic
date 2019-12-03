@@ -6,9 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from estimagic.optimization.pounders import minimize_pounders
-
-pytest.skip("Requires decorators.", allow_module_level=True)
+from estimagic.optimization.pounders import minimize_pounders_np
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="Pounders is not supported on Windows."
@@ -18,12 +16,12 @@ pytestmark = pytest.mark.skipif(
 NUM_AGENTS = 10_000
 
 
-def get_random_params(length, low=0, high=1):
+def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np.inf):
     params = pd.DataFrame(
         {
             "value": np.random.uniform(low, high, size=length),
-            "lower": -np.inf,
-            "upper": np.inf,
+            "lower": lower_bound,
+            "upper": upper_bound,
             "_internal_free": True,
         }
     )
@@ -33,12 +31,12 @@ def get_random_params(length, low=0, high=1):
 
 def test_robustness_1():
     np.random.seed(5470)
-    true_paras = get_random_params(3)
-    start = get_random_params(3)
+    true_params = get_random_params(3)
+    start_params = get_random_params(3)
 
-    exog, endog = _simulate_sample(NUM_AGENTS, true_paras)
+    exog, endog = _simulate_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_nonlinear_criterion, endog, exog)
-    minimize_pounders(objective, start, objective, start, {})
+    minimize_pounders_np(start_params["value"].to_numpy(), objective)
 
 
 def test_robustness_2():
@@ -48,7 +46,7 @@ def test_robustness_2():
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
-    results = minimize_pounders(objective, start_params, objective, start_params, {})
+    results = minimize_pounders_np(start_params["value"].to_numpy(), objective)
     calculated = results["x"]
 
     x = np.column_stack([np.ones_like(exog), exog])
@@ -60,31 +58,31 @@ def test_robustness_2():
 
 def test_box_constr():
     np.random.seed(5472)
-    true_params = get_random_params(2, 0.3, 0.4)
-    true_params["lower"] = 0
-    true_params["upper"] = 0.3
+    true_params = get_random_params(2, 0.3, 0.4, 0, 0.3)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     start_params = true_params.copy()
     start_params["value"] = get_random_params(2, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
-    calculated = minimize_pounders(objective, start_params, objective, start_params, {})
+    calculated = minimize_pounders_np(
+        start_params["value"].to_numpy(), objective, bounds
+    )
     assert 0 <= calculated["x"][0] <= 0.3
     assert 0 <= calculated["x"][1] <= 0.3
 
 
 def test_max_iters():
     np.random.seed(5473)
-    true_params = np.random.uniform(0.3, 0.4, size=2)
-    start_params = np.random.uniform(0.1, 0.2, size=2)
-    bounds = [[0, 0], [0.3, 0.3]]
+    true_params = get_random_params(2, 0.3, 0.4, 0, 0.3)
+    start_params = get_random_params(2, 0.1, 0.2)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
-    len_out = len(objective(start_params))
-    calculated = minimize_pounders(
-        objective, start_params, len_out, bounds=bounds, max_iterations=25
+    calculated = minimize_pounders_np(
+        start_params["value"].to_numpy(), objective, bounds=bounds, max_iterations=25
     )
 
     assert (
@@ -96,15 +94,18 @@ def test_max_iters():
 
 def test_grtol():
     np.random.seed(5474)
-    true_params = np.random.uniform(0.3, 0.4, size=2)
-    start_params = np.random.uniform(0.1, 0.2, size=2)
-    bounds = [[0, 0], [0.3, 0.3]]
+    true_params = get_random_params(2, 0.3, 0.4, 0, 0.3)
+    start_params = get_random_params(2, 0.1, 0.2)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
-    len_calculated = len(objective(start_params))
-    calculated = minimize_pounders(
-        objective, start_params, len_calculated, bounds=bounds, gatol=False, gttol=False
+    calculated = minimize_pounders_np(
+        start_params["value"].to_numpy(),
+        objective,
+        bounds=bounds,
+        gatol=False,
+        gttol=False,
     )
 
     assert (
@@ -118,15 +119,18 @@ def test_grtol():
 
 def test_gatol():
     np.random.seed(5475)
-    true_params = np.random.uniform(0.3, 0.4, size=2)
-    start_params = np.random.uniform(0.1, 0.2, size=2)
-    bounds = [[0, 0], [0.3, 0.3]]
+    true_params = get_random_params(2, 0.3, 0.4, 0, 0.3)
+    start_params = get_random_params(2, 0.1, 0.2)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
-    len_out = len(objective(start_params))
-    calculated = minimize_pounders(
-        objective, start_params, len_out, bounds=bounds, grtol=False, gttol=False
+    calculated = minimize_pounders_np(
+        start_params["value"].to_numpy(),
+        objective,
+        bounds=bounds,
+        grtol=False,
+        gttol=False,
     )
 
     assert (
@@ -139,15 +143,18 @@ def test_gatol():
 
 def test_gttol():
     np.random.seed(5476)
-    true_params = np.random.uniform(0.3, 0.4, size=2)
-    start_params = np.random.uniform(0.1, 0.2, size=2)
-    bounds = [[0, 0], [0.3, 0.3]]
+    true_params = get_random_params(2, 0.3, 0.4, 0, 0.3)
+    start_params = get_random_params(2, 0.1, 0.2)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
-    len_out = len(objective(start_params))
-    calculated = minimize_pounders(
-        objective, start_params, len_out, bounds=bounds, grtol=False, gatol=False
+    calculated = minimize_pounders_np(
+        start_params["value"].to_numpy(),
+        objective,
+        bounds=bounds,
+        grtol=False,
+        gatol=False,
     )
 
     assert (
@@ -161,17 +168,15 @@ def test_gttol():
 
 def test_tol():
     np.random.seed(5477)
-    true_params = np.random.uniform(0.3, 0.4, size=2)
-    start_params = np.random.uniform(0.1, 0.2, size=2)
-    bounds = [[0, 0], [0.3, 0.3]]
+    true_params = get_random_params(2, 0.3, 0.4, 0, 0.3)
+    start_params = get_random_params(2, 0.1, 0.2)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
-    len_out = len(objective(start_params))
-    calculated = minimize_pounders(
+    calculated = minimize_pounders_np(
+        start_params["value"].to_numpy(),
         objective,
-        start_params,
-        len_out,
         bounds=bounds,
         gatol=1e-7,
         grtol=1e-7,
@@ -187,19 +192,15 @@ def test_tol():
 def test_exception():
     np.random.seed(5478)
     with pytest.raises(Exception):
-        minimize_pounders(_return_exception, 0)
+        minimize_pounders_np(_return_exception, 0)
 
 
 def _nonlinear_criterion(endog, exog, x):
-    return (
-        endog
-        - np.exp(-x.at[0, "value"] * exog)
-        / (x.at[1, "value"] + x.at[2, "value"] * exog)
-    ) ** 2
+    return (endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)) ** 2
 
 
 def _ols_criterion(endog, exog, x):
-    return (endog - x.at[0, "value"] - x.at[1, "value"] * exog) ** 2
+    return (endog - x[0] - x[1] * exog) ** 2
 
 
 def _return_exception(x):
