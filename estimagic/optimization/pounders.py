@@ -2,41 +2,76 @@
 import sys
 from functools import partial
 
+import numpy as np
+
 if sys.platform != "win32":
     from petsc4py import PETSc
 
 
 def minimize_pounders(
-    internal_criterion, internal_params, criterion, params, algo_options,
+    internal_criterion, internal_params, criterion, params, algo_options
 ):
-    """Minimize a function using the pounders algortihm.
+    # Prepare arguments
+    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+    n_squared_errors = len(criterion(params))
+    x0 = internal_params["value"].to_numpy()
+
+    return minimize_pounders_np(
+        x0,
+        internal_criterion,
+        bounds,
+        **algo_options,
+        n_squared_errors=n_squared_errors,
+    )
+
+
+def minimize_pounders_np(
+    x0,
+    fun,
+    bounds=(-np.inf, np.inf),
+    gatol=1e-8,
+    grtol=1e-8,
+    gttol=1e-10,
+    init_tr=None,
+    max_iterations=None,
+    n_squared_errors=None,
+):
+    """Minimize a function using the Pounders algorithm.
+
+    Pounders can be a useful tool for economists who estimate structural models using
+    indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
+    Pounders is tailored for minimizing a non-linear sum of squares objective function,
+    and therefore may require fewer iterations to arrive at a local optimum than
+    Nelder-Mead.
 
     Args:
-        internal_criterion (callable): Internal criterion function.
-        internal_params (pd.DataFrame): See :ref:`params`.
-        criterion (callable): External criterion function.
-        params (pd.DataFrame): See :ref:`params`.
-        algo_options (dict): Contains options for the algorithm. They are ...
-            - init_tr (float): Sets the radius for the initial trust region that the
-              optimizer employs. If `None` the algorithm uses 100 as initial  trust
-              region radius. Default is `None`.
-            - max_iterations (int): Alternative Stopping criterion. If set the routine
-              will stop after the number of specified iterations or after the step size
-              is sufficiently small. If the variable is set the default criteria will
-              all be ignored. Default is `None`.
-            - gatol (float): Stop if relative norm of gradient is less than this. If set
-              to False the algorithm will not consider gatol. Default is 1e-8.
-            - grtol (float): Stop if norm of gradient is less than this. If set to False
-              the algorithm will not consider grtol. Default is 1e-8.
-            - gttol (float): Stop if norm of gradient is reduced by this factor. If set
-              to False the algorithm will not consider grtol. Default is 1e-10.
+        x0 (np.ndarray): Starting values of parameters.
+        fun (callable): Function to be minimized.
+        bounds (tuple): Bounds are either a tuple of number or arrays. The first
+            elements specifies the lower and the second the upper bound of parameters.
+        gatol (float): Stop if relative norm of gradient is less than this. If set to
+            False the algorithm will not consider gatol. Default is 1e-8.
+        grtol (float): Stop if norm of gradient is less than this. If set to False the
+            algorithm will not consider grtol. Default is 1e-8.
+        gttol (float): Stop if norm of gradient is reduced by this factor. If set to
+            False the algorithm will not consider grtol. Default is 1e-10.
+        init_tr (float): Sets the radius for the initial trust region that the optimizer
+            employs. If `None` the algorithm uses 100 as initial  trust region radius.
+            Default is `None`.
+        max_iterations (int): Alternative Stopping criterion. If set the routine will
+            stop after the number of specified iterations or after the step size is
+            sufficiently small. If the variable is set the default criteria will all be
+            ignored. Default is `None`.
+        n_squared_errors (int or None): The number of outputs of `fun` are necessary to
+            pre-allocate the results array. If the argument is ``None``, evaluate the
+            function once. This might be undesirable during dashboard optimizations.
 
     Returns:
-        out (dict): Dictionary with the following key-value pairs:
+        result (dict): Dictionary with the following key-value pairs:
 
             - `"solution"`: solution vector as `np.ndarray`.
             - `"func_values"`: `np.ndarray` of value of the objective at the solution.
-            - `"x"`: `np.ndarray` of the start values.
+            - `"x0"`: `np.ndarray` of the start values.
             - `"conv"`: string indicating the termination reason.
             - `"sol"`: `list` containing ...
               - current iterate as integer.
@@ -47,27 +82,23 @@ def minimize_pounders(
               - step length as float
               - termination reason as int.
 
+    .. _TAO Users Manual:
+        https://www.mcs.anl.gov/petsc/petsc-current/docs/tao_manual.pdf
+    .. _Solving Derivative-Free Nonlinear Least Squares Problems with POUNDERS:
+        https://www.mcs.anl.gov/papers/P5120-0414.pdf
+
     """
     if sys.platform == "win32":
         raise NotImplementedError("The pounders algorithm is not available on Windows.")
 
-    # Set defaults for algo_options.
-    gatol = algo_options.get("gatol", 1e-8)
-    grtol = algo_options.get("grtol", 1e-8)
-    gttol = algo_options.get("gttol", 1e-10)
-    init_tr = algo_options.get("init_tr", None)
-    max_iterations = algo_options.get("max_iterations", None)
-
     # We need to know the dimension of the output of the criterion function. Evaluate
     # plain `criterion` to prevent logging.
-    len_output = algo_options.pop("len_output", None)
-    if len_output is None:
-        len_output = len(criterion(params))
+    if n_squared_errors is None:
+        n_squared_errors = len(fun(x0))
 
     # We want to get containers for the func vector and the paras.
-    n_params = len(internal_params)
-    paras = initialise_petsc_array(n_params)
-    crit = initialise_petsc_array(len_output)
+    x0 = initialise_petsc_array(x0)
+    squared_errors = initialise_petsc_array(n_squared_errors)
 
     # Create the solver object.
     tao = PETSc.TAO().create(PETSc.COMM_WORLD)
@@ -77,39 +108,38 @@ def minimize_pounders(
 
     tao.setFromOptions()
 
-    def func_tao(tao, crit, f):
+    def func_tao(tao, squared_errors, f):
         """Evaluate objective and attach result to an petsc object f.
 
         This is required to use the pounders solver from tao.
 
         Args:
              tao: The tao object we created for the optimization task.
-             crit (np.ndarray): 1d NumPy array of the current values at which we want
-                to evaluate the function.
+             squared_errors (np.ndarray): 1d NumPy array of the current values at which
+                we want to evaluate the function.
              f: Petsc object in which we save the current function value.
 
         """
-        f.array = internal_criterion(crit.array)
+        f.array = fun(squared_errors.array)
 
     # Set the procedure for calculating the objective. This part has to be changed if we
     # want more than pounders.
-    tao.setResidual(func_tao, crit)
+    tao.setResidual(func_tao, squared_errors)
 
     # We try to set user defined convergence tests.
     if init_tr is not None:
         tao.setInitialTrustRegionRadius(init_tr)
 
     # Add bounds.
-    bounds = params.query("_internal_free")[["lower", "upper"]].to_numpy().T
-    low = initialise_petsc_array(n_params)
-    up = initialise_petsc_array(n_params)
-    low.array = bounds[0]
-    up.array = bounds[1]
-    tao.setVariableBounds([low, up])
+    n_params = len(x0.array)
+    lower = np.full(n_params, bounds[0]) if isinstance(bounds[0], int) else bounds[0]
+    upper = np.full(n_params, bounds[1]) if isinstance(bounds[1], int) else bounds[1]
+    lower = initialise_petsc_array(lower)
+    upper = initialise_petsc_array(upper)
+    tao.setVariableBounds([lower, upper])
 
     # Put the starting values into the container and pass them to the optimizer.
-    paras.array = internal_params["value"].to_numpy()
-    tao.setInitial(paras)
+    tao.setInitial(x0)
 
     # Obtain tolerances for the convergence criteria. Since we can not create gttol
     # manually we manually set gatol and or grtol to zero once a subset of these two is
@@ -134,20 +164,33 @@ def minimize_pounders(
     # Run the problem.
     tao.solve()
 
-    results = _process_pounders_results(crit, tao)
+    results = _process_pounders_results(squared_errors, tao)
 
     # Destroy petsc objects for memory reasons.
     tao.destroy()
-    paras.destroy()
-    crit.destroy()
+    x0.destroy()
+    squared_errors.destroy()
 
     return results
 
 
-def initialise_petsc_array(length):
+def initialise_petsc_array(len_or_array):
+    """Initialize an empty array or fill in provided values.
+
+    Args:
+        len_or_array (int or np.ndarray): If the value is an integer, allocate an empty
+            array with the given length. If the value is an array, allocate an array of
+            equal length and fill in the values.
+
+    """
+    length = len_or_array if isinstance(len_or_array, int) else len(len_or_array)
+
     array = PETSc.Vec().create(PETSc.COMM_WORLD)
     array.setSizes(length)
     array.setFromOptions()
+
+    if isinstance(len_or_array, np.ndarray):
+        array.array = len_or_array
 
     return array
 
@@ -201,10 +244,10 @@ def _translate_tao_convergence_reason(tao_resaon):
     return mapping[tao_resaon]
 
 
-def _process_pounders_results(crit, tao):
+def _process_pounders_results(squared_errors, tao):
     results = {
-        "fitness": crit.array.sum(),
-        "fitness_values": crit.array,
+        "fitness": squared_errors.array.sum(),
+        "fitness_values": squared_errors.array,
         "x": tao.solution.array,
         "conv": _translate_tao_convergence_reason(tao.getConvergedReason()),
         "n_evaluations": tao.getIterationNumber(),

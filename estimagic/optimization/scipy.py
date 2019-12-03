@@ -3,7 +3,7 @@ from scipy.optimize import minimize
 
 
 def minimize_scipy(
-    internal_criterion, params, internal_params, algo_name, algo_options
+    internal_criterion, internal_params, params, algo_name, algo_options
 ):
     # Scipy works with `None` instead of infinite values for unconstrained parameters.
     bounds = (

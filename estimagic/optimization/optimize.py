@@ -343,12 +343,12 @@ def _internal_minimize(
 
     if origin in ["nlopt", "pygmo"]:
         results = minimize_pygmo(
-            internal_criterion, params, internal_params, origin, algo_name, algo_options
+            internal_criterion, internal_params, params, origin, algo_name, algo_options
         )
 
     elif origin == "scipy":
         results = minimize_scipy(
-            internal_criterion, params, internal_params, algo_name, algo_options
+            internal_criterion, internal_params, params, algo_name, algo_options
         )
     elif origin == "tao":
         results = minimize_pounders(
