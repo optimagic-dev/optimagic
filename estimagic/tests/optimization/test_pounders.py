@@ -53,7 +53,7 @@ def test_robustness_2():
     y = endog.reshape(len(endog), 1)
     expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
-    np.testing.assert_almost_equal(calculated, expected, decimal=2)
+    np.testing.assert_almost_equal(calculated, expected, decimal=10)
 
 
 def test_box_constr():
