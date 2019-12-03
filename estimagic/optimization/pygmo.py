@@ -13,11 +13,11 @@ def minimize_pygmo(
     )
 
 
-def minimize_pygmo_np(fun, x0, bounds, origin, algo_name, algo_options):
+def minimize_pygmo_np(func, x0, bounds, origin, algo_name, algo_options):
     """Minimize a function with pygmo.
 
     Args:
-        fun (callable): Function to be minimized.
+        func (callable): Function to be minimized.
         x0 (np.ndarray): Starting values of parameters.
         bounds (tuple): Bounds are either a tuple of number or arrays. The first
             elements specifies the lower and the second the upper bound of parameters.
@@ -38,7 +38,7 @@ def minimize_pygmo_np(fun, x0, bounds, origin, algo_name, algo_options):
             "gen" in algo_options
         ), f"For genetic optimizers like {algo_name}, gen is mandatory."
 
-    prob = _create_problem(fun, bounds)
+    prob = _create_problem(func, bounds)
     algo = _create_algorithm(algo_name, algo_options, origin)
     pop = _create_population(prob, algo_options, x0)
     evolved = algo.evolve(pop)
@@ -47,10 +47,10 @@ def minimize_pygmo_np(fun, x0, bounds, origin, algo_name, algo_options):
     return result
 
 
-def _create_problem(fun, bounds):
+def _create_problem(func, bounds):
     class Problem:
         def fitness(self, x):
-            return [fun(x)]
+            return [func(x)]
 
         def get_bounds(self):
             return bounds

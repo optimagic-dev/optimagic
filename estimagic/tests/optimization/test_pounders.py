@@ -196,11 +196,11 @@ def test_exception():
 
 
 def _nonlinear_criterion(endog, exog, x):
-    return (endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)) ** 2
+    return endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)
 
 
 def _ols_criterion(endog, exog, x):
-    return (endog - x[0] - x[1] * exog) ** 2
+    return endog - x[0] - x[1] * exog
 
 
 def _return_exception(x):

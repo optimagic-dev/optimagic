@@ -27,7 +27,7 @@ def minimize_pounders(
 
 def minimize_pounders_np(
     x0,
-    fun,
+    func,
     bounds=(-np.inf, np.inf),
     gatol=1e-8,
     grtol=1e-8,
@@ -44,9 +44,12 @@ def minimize_pounders_np(
     and therefore may require fewer iterations to arrive at a local optimum than
     Nelder-Mead.
 
+    The criterion function :func:`func` should return an array of the errors NOT an
+    array of the squared errors or anything else.
+
     Args:
         x0 (np.ndarray): Starting values of parameters.
-        fun (callable): Function to be minimized.
+        func (callable): Function to be minimized.
         bounds (tuple): Bounds are either a tuple of number or arrays. The first
             elements specifies the lower and the second the upper bound of parameters.
         gatol (float): Stop if relative norm of gradient is less than this. If set to
@@ -62,7 +65,7 @@ def minimize_pounders_np(
             stop after the number of specified iterations or after the step size is
             sufficiently small. If the variable is set the default criteria will all be
             ignored. Default is `None`.
-        n_squared_errors (int or None): The number of outputs of `fun` are necessary to
+        n_squared_errors (int or None): The number of outputs of `func` are necessary to
             pre-allocate the results array. If the argument is ``None``, evaluate the
             function once. This might be undesirable during dashboard optimizations.
 
@@ -94,7 +97,7 @@ def minimize_pounders_np(
     # We need to know the dimension of the output of the criterion function. Evaluate
     # plain `criterion` to prevent logging.
     if n_squared_errors is None:
-        n_squared_errors = len(fun(x0))
+        n_squared_errors = len(func(x0))
 
     # We want to get containers for the func vector and the paras.
     x0 = initialise_petsc_array(x0)
@@ -120,7 +123,7 @@ def minimize_pounders_np(
              f: Petsc object in which we save the current function value.
 
         """
-        f.array = fun(squared_errors.array)
+        f.array = func(squared_errors.array)
 
     # Set the procedure for calculating the objective. This part has to be changed if we
     # want more than pounders.
@@ -246,7 +249,7 @@ def _translate_tao_convergence_reason(tao_resaon):
 
 def _process_pounders_results(squared_errors, tao):
     results = {
-        "fitness": squared_errors.array.sum(),
+        "fitness": tao.function,
         "fitness_values": squared_errors.array,
         "x": tao.solution.array,
         "conv": _translate_tao_convergence_reason(tao.getConvergedReason()),
