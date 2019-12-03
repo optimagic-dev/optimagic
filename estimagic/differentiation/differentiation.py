@@ -1,48 +1,11 @@
 import numdifftools as nd
 import numpy as np
 import pandas as pd
-from scipy.optimize._numdiff import approx_derivative
 
-from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.decorators import logging
 from estimagic.decorators import output_to_numpy
 from estimagic.decorators import x_to_params
 from estimagic.differentiation import differentiation_auxiliary as aux
-
-
-def create_custom_jac(
-    fun,
-    x0,
-    algorithm,
-    method="3-point",
-    rel_step=None,
-    f0=None,
-    bounds=(-np.inf, np.inf),
-    sparsity=None,
-    as_linear_operator=False,
-    database=None,
-    args=(),
-    kwargs={},
-):
-
-    database = database if algorithm in OPTIMIZER_SAVE_GRADIENTS else None
-
-    @logging(database, ["gradients_history", "gradients_params_history"])
-    def custom_jac():
-        return approx_derivative(
-            fun,
-            x0,
-            method,
-            rel_step,
-            f0,
-            bounds,
-            sparsity,
-            as_linear_operator,
-            args,
-            kwargs,
-        )
-
-    return custom_jac
 
 
 def gradient(

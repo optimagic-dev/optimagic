@@ -141,9 +141,9 @@ def prepare_database(
             database.tables[table].drop(database.bind)
 
     _define_table_formatted_with_params(database, params, "params_history")
-    _define_table_formatted_with_params(database, params, "gradient_history")
     _define_table_formatted_with_params(database, params, "gradient_params_history")
-    _define_criterion_history_table(database)
+    _define_fitness_history_table(database, "criterion_history")
+    _define_fitness_history_table(database, "gradient_history")
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
     _define_start_params_table(database)
@@ -173,9 +173,9 @@ def _define_table_formatted_with_params(database, params, table_name):
     return values
 
 
-def _define_criterion_history_table(database):
+def _define_fitness_history_table(database, table_name):
     critvals = Table(
-        "criterion_history",
+        table_name,
         database,
         Column("iteration", Integer, primary_key=True),
         Column("value", Float),

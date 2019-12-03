@@ -12,8 +12,10 @@ import numpy as np
 import pandas as pd
 import pygmo as pg
 from scipy.optimize import minimize as scipy_minimize
+from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.config import DEFAULT_DATABASE_NAME
+from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
 from estimagic.decorators import logging
 from estimagic.decorators import x_to_params
@@ -25,6 +27,7 @@ from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
+
 
 QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "fitness"])
 
@@ -42,7 +45,7 @@ def maximize(
     dashboard=False,
     db_options=None,
 ):
-    """Maximize *criterion* using *algorithm* subject to *pc* and bounds.
+    """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
 
     Each argument except for ``general_options`` can also be replaced by a list of
     arguments in which case several optimizations are run in parallel. For this, either
@@ -373,8 +376,19 @@ def _internal_minimize(
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         database=database,
+        tables=["params_history", "criterion_history"],
         queue=queue,
         fitness_factor=fitness_factor,
+    )
+
+    internal_jac = create_internal_jac(
+        criterion=criterion,
+        params=params,
+        constraints=constraints,
+        criterion_kwargs=criterion_kwargs,
+        database=database,
+        fitness_factor=fitness_factor,
+        algorithm=algorithm,
     )
 
     current_dir_path = Path(__file__).resolve().parent
@@ -411,6 +425,7 @@ def _internal_minimize(
         minimized = scipy_minimize(
             internal_criterion,
             internal_params,
+            jac=internal_jac,
             method=algo_name,
             bounds=bounds,
             options=algo_options,
@@ -439,7 +454,14 @@ def _internal_minimize(
 
 
 def create_internal_criterion(
-    criterion, params, constraints, criterion_kwargs, database, queue, fitness_factor
+    criterion,
+    params,
+    constraints,
+    criterion_kwargs,
+    database,
+    tables,
+    queue,
+    fitness_factor,
 ):
     """Create the internal criterion function.
 
@@ -460,6 +482,9 @@ def create_internal_criterion(
         database (sqlalchemy.sql.schema.MetaData). The engine that connects to the
             database can be accessed via ``database.bind``.
 
+        tables (List[str]):
+            A list of tables to log the information.
+
         queue (Queue):
             queue to which the fitness evaluations and params DataFrames are supplied.
 
@@ -478,7 +503,7 @@ def create_internal_criterion(
     c = np.zeros(1, dtype=int)
 
     @x_to_params(params, constraints)
-    @logging(database, ["params_history", "criterion_history"])
+    @logging(database, tables)
     def internal_criterion(p, counter=c):
         fitness_eval = criterion(p, **criterion_kwargs)
 
@@ -627,3 +652,47 @@ def _process_results(res, params, internal_params, constraints, origin):
     )
 
     return res_dict, params
+
+
+def create_internal_jac(
+    criterion,
+    params,
+    constraints,
+    criterion_kwargs,
+    database,
+    fitness_factor,
+    algorithm,
+    method="3-point",
+    rel_step=None,
+    f0=None,
+    sparsity=None,
+    as_linear_operator=False,
+):
+
+    database = database if algorithm in OPTIMIZER_SAVE_GRADIENTS else None
+
+    internal_criterion = create_internal_criterion(
+        criterion=criterion,
+        params=params,
+        constraints=constraints,
+        criterion_kwargs=criterion_kwargs,
+        database=database,
+        tables=["gradient_params_history", "gradient_history"],
+        queue=None,
+        fitness_factor=fitness_factor,
+    )
+    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+
+    def internal_jac(x):
+        return approx_derivative(
+            internal_criterion,
+            x,
+            method,
+            rel_step,
+            f0,
+            bounds,
+            sparsity,
+            as_linear_operator,
+        )
+
+    return internal_jac
