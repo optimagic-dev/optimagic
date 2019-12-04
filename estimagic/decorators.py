@@ -2,6 +2,7 @@ import functools
 import itertools
 
 from estimagic.logging.update_database import append_rows
+from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 
 
@@ -39,7 +40,7 @@ def x_to_params(params, constraints=None):
 
 
 def log_parameters_and_fitness(database, tables):
-    """Log rows to tables in a database."""
+    """Log parameters and fitness values."""
 
     def decorator_log_parameters_and_fitness(func):
         @functools.wraps(func)
@@ -58,7 +59,7 @@ def log_parameters_and_fitness(database, tables):
 
 
 def log_gradient(database, names):
-    """Log rows to tables in a database."""
+    """Log gradient."""
 
     def decorator_log_gradient(func):
         @functools.wraps(func)
@@ -78,25 +79,59 @@ def log_gradient(database, names):
 
 
 def log_gradient_status(database, n_gradient_evaluations):
-    """Log rows to tables in a database."""
+    """Log the gradient status.
 
+    The gradient status is between 0 and 1 and shows the share of function evaluations
+    to compute the gradients.
+
+    """
     counter = itertools.count(1)
 
     def decorator_log_gradient_status(func):
         @functools.wraps(func)
         def wrapper_log_gradient_status(params, *args, **kwargs):
+            criterion_value = func(params, *args, **kwargs)
+
             if database:
                 c = next(counter)
                 if n_gradient_evaluations is None:
                     status = c
                 else:
                     status = (c % n_gradient_evaluations) / n_gradient_evaluations
-                append_rows(database, ["gradient_status"], {"value": status})
-
-            criterion_value = func(params, *args, **kwargs)
+                    status = 1 if status == 0 else status
+                update_scalar_field(database, "gradient_status", status)
 
             return criterion_value
 
         return wrapper_log_gradient_status
 
     return decorator_log_gradient_status
+
+
+def log_optimization_status(database):
+    """Log the optimization status.
+
+    This decorator should be applied to all `minimize_*` interfaces of the different
+    optimizer packages.
+
+    The success status should be inferred from common field.
+
+    """
+
+    def decorator_log_optimization_status(func):
+        @functools.wraps(func)
+        def wrapper_log_optimization_status(*args, **kwargs):
+            if database:
+                update_scalar_field(database, "optimization_status", "running")
+
+            results = func(*args, **kwargs)
+
+            if database:
+                success = results["success"]
+                update_scalar_field(database, "optimization_status", success)
+
+            return results
+
+        return wrapper_log_optimization_status
+
+    return decorator_log_optimization_status
