@@ -26,22 +26,7 @@ Introduction
 Estimagic is a Python package that helps to build high-quality and user friendly
 implementations of (structural) econometric models.
 
-![Try with URL](http://timberlandhovawarts.com/Puppy_page/Birgitta_Friskopf_Hayaklause_Oliver_black_and_tan_hovawart.png)
-
-![Image in root directory](test_img.jpg)
-
-![Try 1](/docs/source/images/dashboard.gif)
-
-
-![Try 2](docs/source/images/dashboard.gif)
-
-
-![Try 3](./docs/source/images/dashboard.gif)
-
-
-![Try 4](/docs/source/images/dashboard.gif?raw=true "Try 4")
-
-![Absolute Link](https://raw.githubusercontent.com/OpenSourceEconomics/estimagic/add_dashboard_gif/docs/source/images/dashboard.gif)
+.. image:: docs/source/images/dashboard.gif
 
 It is designed with large structural models in mind. However, it is also useful for any
 other estimator that numerically minimizes or maximizes a criterion function (Extremum
