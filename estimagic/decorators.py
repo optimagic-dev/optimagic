@@ -87,7 +87,10 @@ def log_gradient_status(database, n_gradient_evaluations):
         def wrapper_log_gradient_status(params, *args, **kwargs):
             if database:
                 c = next(counter)
-                status = (c % n_gradient_evaluations) / n_gradient_evaluations
+                if n_gradient_evaluations is None:
+                    status = c
+                else:
+                    status = (c % n_gradient_evaluations) / n_gradient_evaluations
                 append_rows(database, ["gradient_status"], {"value": status})
 
             criterion_value = func(params, *args, **kwargs)

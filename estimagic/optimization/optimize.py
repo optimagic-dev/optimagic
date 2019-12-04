@@ -729,9 +729,7 @@ def create_internal_gradient(
             )
 
     else:
-        n_gradient_evaluations = gradient_options.pop(
-            "n_gradient_evaluations", 1e200 * n_internal_params
-        )
+        n_gradient_evaluations = gradient_options.pop("n_gradient_evaluations", None)
 
     database = database if algorithm in OPTIMIZER_SAVE_GRADIENTS else None
 

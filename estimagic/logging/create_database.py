@@ -69,7 +69,7 @@ def _make_engine_thread_safe(engine):
 
 
 def prepare_database(
-    path, params, db_options=None, optimization_status="scheduled", gradient_status=0,
+    path, params, db_options=None, optimization_status="scheduled", gradient_status=0
 ):
     """Return database metadata object with all relevant tables for the optimization.
 
@@ -127,7 +127,6 @@ def prepare_database(
     opt_tables = [
         "params_history",
         "gradient_history",
-        "hessian_history",
         "criterion_history",
         "timestamps",
         "convergence_history",
@@ -143,7 +142,6 @@ def prepare_database(
 
     _define_table_formatted_with_params(database, params, "params_history")
     _define_table_formatted_with_params(database, params, "gradient_history")
-    _define_table_formatted_with_params(database, params, "hessian_history")
     _define_fitness_history_table(database, "criterion_history")
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
@@ -170,6 +168,7 @@ def _define_table_formatted_with_params(database, params, table_name):
         Column("iteration", Integer, primary_key=True),
         *cols,
         sqlite_autoincrement=True,
+        extend_existing=True,
     )
     return values
 
@@ -181,6 +180,7 @@ def _define_fitness_history_table(database, table_name):
         Column("iteration", Integer, primary_key=True),
         Column("value", Float),
         sqlite_autoincrement=True,
+        extend_existing=True,
     )
     return critvals
 
@@ -192,6 +192,7 @@ def _define_time_stamps_table(database):
         Column("iteration", Integer, primary_key=True),
         Column("value", DATETIME),
         sqlite_autoincrement=True,
+        extend_existing=True,
     )
     return tstamps
 
@@ -205,25 +206,34 @@ def _define_convergence_history_table(database):
         Column("iteration", Integer, primary_key=True),
         *cols,
         sqlite_autoincrement=True,
+        extend_existing=True,
     )
     return term
 
 
 def _define_start_params_table(database):
-    params_table = Table("start_params", database, Column("value", PickleType))
+    params_table = Table(
+        "start_params", database, Column("value", PickleType), extend_existing=True
+    )
     return params_table
 
 
 def _define_optimization_status_table(database):
-    optstat = Table("optimization_status", database, Column("value", String),)
+    optstat = Table(
+        "optimization_status", database, Column("value", String), extend_existing=True
+    )
     return optstat
 
 
 def _define_gradient_status_table(databes):
-    gradstat = Table("gradient_status", databes, Column("value", Float),)
+    gradstat = Table(
+        "gradient_status", databes, Column("value", Float), extend_existing=True
+    )
     return gradstat
 
 
 def _define_db_options_table(database):
-    db_options = Table("db_options", database, Column("value", PickleType),)
+    db_options = Table(
+        "db_options", database, Column("value", PickleType), extend_existing=True
+    )
     return db_options
