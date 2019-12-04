@@ -90,6 +90,7 @@ def test_lists_same_size():
         [params, params],
         ["nlopt_neldermead", "scipy_L-BFGS-B"],
         general_options={"n_cores": 4},
+        logging=False,
     )
 
     result_neldermead = result[0][1]["value"].to_numpy()
@@ -218,6 +219,7 @@ def test_broadcasting():
         params,
         ["nlopt_neldermead", "scipy_L-BFGS-B"],
         general_options={"n_cores": 4},
+        logging=False,
     )
     assert len(result) == 2
 
@@ -239,6 +241,7 @@ def test_broadcasting_list_len1():
         [params],
         ["nlopt_neldermead", "scipy_L-BFGS-B"],
         general_options={"n_cores": 4},
+        logging=False,
     )
     assert len(result) == 2
 
@@ -259,6 +262,7 @@ def test_list_length_1():
         [params],
         ["nlopt_neldermead", "scipy_L-BFGS-B"],
         general_options={"n_cores": 4},
+        logging=False,
     )
     assert len(result) == 2
 
@@ -281,6 +285,7 @@ def test_order_of_results():
         [params, params_new],
         "nlopt_neldermead",
         general_options={"n_cores": 4},
+        logging=False,
     )
     result_unrestricted = result[0][1]["value"].to_numpy()
     result_restricted = result[1][1]["value"].to_numpy()
@@ -303,6 +308,7 @@ def test_list_of_constraints():
         "nlopt_neldermead",
         constraints=[[], constraints],
         general_options={"n_cores": 4},
+        logging=False,
     )
     result_unrestricted = result[0][1]["value"].to_numpy()
     result_restricted = result[1][1]["value"]
@@ -327,6 +333,7 @@ def test_criterion_including_guvectoring():
         params,
         ["nlopt_neldermead", "scipy_L-BFGS-B"],
         general_options={"n_cores": 4},
+        logging=False,
     )
     assert len(result) == 2
 
