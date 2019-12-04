@@ -26,6 +26,10 @@ Introduction
 Estimagic is a Python package that helps to build high-quality and user friendly
 implementations of (structural) econometric models.
 
+![Try with URL](http://timberlandhovawarts.com/Puppy_page/Birgitta_Friskopf_Hayaklause_Oliver_black_and_tan_hovawart.png)
+
+![Image in root directory](test_img.jpg)
+
 ![Try 1](/docs/source/images/dashboard.gif)
 
 
