@@ -37,7 +37,7 @@ Estimagic goes beyond existing optimization libraries by providing:
 - functions to precisely differentiate any function using
   `Richardson extrapolations <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_
   and `numdifftools <https://numdifftools.readthedocs.io/en/latest/>`_.
-- powerful visualizations to inspect the results and monitor the optimization:
+- tools to monitor the optimization:
 
 .. image:: docs/source/images/dashboard.gif
   :scale: 21 %
