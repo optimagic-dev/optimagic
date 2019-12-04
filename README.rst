@@ -26,13 +26,30 @@ Introduction
 Estimagic is a Python package that helps to build high-quality and user friendly
 implementations of (structural) econometric models.
 
-.. image:: docs/source/images/dashboard.gif
-  :scale: 80 %
-
 It is designed with large structural models in mind. However, it is also useful for any
 other estimator that numerically minimizes or maximizes a criterion function (Extremum
-Estimator). Examples are maximum likelihood estimation, generalized method of moments,
+Estimator). Examples include maximum likelihood, generalized method of moments,
 method of simulated moments and indirect inference.
+
+Estimagic goes beyond existing optimization libraries by providing:
+
+- convenient specification and automatic enforcement of several types of constraints
+- functions to precisely differentiate any function using
+  `Richardson extrapolations <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_
+  and `numdifftools <https://numdifftools.readthedocs.io/en/latest/>`_.
+- powerful visualizations to inspect the results and monitor the optimization:
+
+
+|comp_plot|   |db_gif|
+
+
+.. |db_gif| image:: docs/source/images/dashboard.gif
+  :scale: 42 %
+  :align: middle
+
+.. |comp_plot| image:: docs/source/images/comparison_plot_static.png
+  :scale: 47 %
+  :align: middle
 
 Estimagic is in a very early stage and should not be used for major projects yet.
 However, we do encourage interested users to try it out, report bugs and provide
