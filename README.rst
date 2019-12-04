@@ -44,11 +44,11 @@ Estimagic goes beyond existing optimization libraries by providing:
 
 
 .. |db_gif| image:: docs/source/images/dashboard.gif
-  :scale: 42 %
+  :scale: 21 %
   :align: middle
 
 .. |comp_plot| image:: docs/source/images/comparison_plot_static.png
-  :scale: 47 %
+  :scale: 23 %
   :align: middle
 
 Estimagic is in a very early stage and should not be used for major projects yet.
