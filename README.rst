@@ -26,12 +26,16 @@ Introduction
 Estimagic is a Python package that helps to build high-quality and user friendly
 implementations of (structural) econometric models.
 
-.. image:: docs/source/images/dashboard.gif
+|left_text| |db_gif|
 
-It is designed with large structural models in mind. However, it is also useful for any
-other estimator that numerically minimizes or maximizes a criterion function (Extremum
-Estimator). Examples are maximum likelihood estimation, generalized method of moments,
-method of simulated moments and indirect inference.
+.. |db_gif| image:: docs/source/images/dashboard.gif
+  :scale: 50 %
+
+.. |left_text| replace::
+  It is designed with large structural models in mind. However, it is also useful for any
+  other estimator that numerically minimizes or maximizes a criterion function (Extremum
+  Estimator). Examples are maximum likelihood estimation, generalized method of moments,
+  method of simulated moments and indirect inference.
 
 Estimagic is in a very early stage and should not be used for major projects yet.
 However, we do encourage interested users to try it out, report bugs and provide
