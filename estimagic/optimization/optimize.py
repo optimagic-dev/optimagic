@@ -1,4 +1,5 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
+import functools
 import json
 from collections import namedtuple
 from multiprocessing import Event
@@ -17,7 +18,9 @@ from scipy.optimize._numdiff import approx_derivative
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
-from estimagic.decorators import logging
+from estimagic.decorators import log_gradient
+from estimagic.decorators import log_gradient_status
+from estimagic.decorators import log_parameters_and_fitness
 from estimagic.decorators import x_to_params
 from estimagic.logging.create_database import prepare_database
 from estimagic.optimization.pounders import minimize_pounders
@@ -40,6 +43,8 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient=None,
+    gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
@@ -75,6 +80,12 @@ def maximize(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
+        gradient (callable or None):
+            Gradient function.
+
+        gradient_options (dict):
+            Options for the gradient function.
+
         logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
             file extension ``.db``. If the file does not exist, it will be created. See
             :ref:`logging` for details.
@@ -94,11 +105,9 @@ def maximize(
     def neg_criterion(params, **criterion_kwargs):
         return -criterion(params, **criterion_kwargs)
 
-    # identify the criterion function as belongig to a maximization problem
-    if general_options is None:
-        general_options = {"_maximization": True}
-    else:
-        general_options["_maximization"] = True
+    # Set a flag for a maximization problem.
+    general_options = {} if general_options is None else general_options
+    general_options["_maximization"] = True
 
     res_dict, params = minimize(
         neg_criterion,
@@ -108,6 +117,8 @@ def maximize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
+        gradient=gradient,
+        gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
         dashboard=dashboard,
@@ -126,6 +137,8 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient=None,
+    gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
@@ -161,6 +174,12 @@ def minimize(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
+        gradient (callable or None):
+            Gradient function.
+
+        gradient_options (dict):
+            Options for the gradient function.
+
         logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
             file extension ``.db``. If the file does not exist, it will be created. See
             :ref:`logging` for details.
@@ -184,6 +203,8 @@ def minimize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
+        gradient=gradient,
+        gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
         dashboard=dashboard,
@@ -222,6 +243,8 @@ def _single_minimize(
     constraints,
     general_options,
     algo_options,
+    gradient,
+    gradient_options,
     logging,
     log_options,
     dashboard,
@@ -253,6 +276,12 @@ def _single_minimize(
         algo_options (dict):
             algorithm specific configurations for the optimization
 
+        gradient (callable or None):
+            Gradient function.
+
+        gradient_options (dict):
+            Options for the gradient function.
+
         logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
             file extension ``.db``. If the file does not exist, it will be created. See
             :ref:`logging` for details.
@@ -272,7 +301,7 @@ def _single_minimize(
 
     database = prepare_database(logging, params, log_options) if logging else False
 
-    fitness_factor = -1 if general_options.get("_maximization", False) else 1
+    fitness_factor = -1 if general_options.pop("_maximization", False) else 1
     fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
@@ -301,6 +330,8 @@ def _single_minimize(
         constraints=constraints,
         algorithm=algorithm,
         algo_options=algo_options,
+        gradient=gradient,
+        gradient_options=gradient_options,
         general_options=general_options,
         database=database,
         queue=queue,
@@ -326,6 +357,8 @@ def _internal_minimize(
     constraints,
     algorithm,
     algo_options,
+    gradient,
+    gradient_options,
     general_options,
     database,
     queue,
@@ -356,6 +389,12 @@ def _internal_minimize(
         algo_options (dict):
             algorithm specific configurations for the optimization
 
+        gradient (callable or None):
+            Gradient function.
+
+        gradient_options (dict):
+            Options for the gradient function.
+
         general_options (dict):
             additional configurations for the optimization
 
@@ -370,18 +409,25 @@ def _internal_minimize(
             Set to -1 for maximizations to plot the fitness that is being maximized.
 
     """
+    logging_decorator = functools.partial(
+        log_parameters_and_fitness,
+        database=database,
+        tables=["params_history", "criterion_history"],
+    )
+
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
-        database=database,
-        tables=["params_history", "criterion_history"],
+        logging_decorator=logging_decorator,
         queue=queue,
         fitness_factor=fitness_factor,
     )
 
-    internal_jac = create_internal_jac(
+    internal_gradient = create_internal_gradient(
+        gradient=gradient,
+        gradient_options=gradient_options,
         criterion=criterion,
         params=params,
         constraints=constraints,
@@ -425,7 +471,7 @@ def _internal_minimize(
         minimized = scipy_minimize(
             internal_criterion,
             internal_params,
-            jac=internal_jac,
+            jac=internal_gradient,
             method=algo_name,
             bounds=bounds,
             options=algo_options,
@@ -458,8 +504,7 @@ def create_internal_criterion(
     params,
     constraints,
     criterion_kwargs,
-    database,
-    tables,
+    logging_decorator,
     queue,
     fitness_factor,
 ):
@@ -479,14 +524,9 @@ def create_internal_criterion(
         criterion_kwargs (dict):
             additional keyword arguments for criterion
 
-        database (sqlalchemy.sql.schema.MetaData). The engine that connects to the
-            database can be accessed via ``database.bind``.
-
-        tables (List[str]):
-            A list of tables to log the information.
-
-        queue (Queue):
-            queue to which the fitness evaluations and params DataFrames are supplied.
+        logging_decorator (callable):
+            Decorator used for logging information. Either log parameters and fitness
+            values during the optimization or log the gradient status.
 
         fitness_factor (float):
             multiplicative factor for the fitness displayed in the dashboard.
@@ -503,7 +543,7 @@ def create_internal_criterion(
     c = np.zeros(1, dtype=int)
 
     @x_to_params(params, constraints)
-    @logging(database, tables)
+    @logging_decorator()
     def internal_criterion(p, counter=c):
         fitness_eval = criterion(p, **criterion_kwargs)
 
@@ -654,7 +694,9 @@ def _process_results(res, params, internal_params, constraints, origin):
     return res_dict, params
 
 
-def create_internal_jac(
+def create_internal_gradient(
+    gradient,
+    gradient_options,
     criterion,
     params,
     constraints,
@@ -662,37 +704,57 @@ def create_internal_jac(
     database,
     fitness_factor,
     algorithm,
-    method="3-point",
-    rel_step=None,
-    f0=None,
-    sparsity=None,
-    as_linear_operator=False,
 ):
+    n_internal_params = params["_internal_free"].sum()
+    gradient_options = {} if gradient_options is None else gradient_options
+
+    if gradient is None:
+        gradient = approx_derivative
+        default_options = {
+            "method": "3-point",
+            "rel_step": None,
+            "f0": None,
+            "sparsity": None,
+            "as_linear_operator": False,
+        }
+        gradient_options = {**default_options, **gradient_options}
+
+        if gradient_options["method"] == "2-point":
+            n_gradient_evaluations = 2 * n_internal_params
+        elif gradient_options["method"] == "3-point":
+            n_gradient_evaluations = 3 * n_internal_params
+        else:
+            raise ValueError(
+                f"Gradient method '{gradient_options['method']} not supported."
+            )
+
+    else:
+        n_gradient_evaluations = gradient_options.pop(
+            "n_gradient_evaluations", 1e200 * n_internal_params
+        )
 
     database = database if algorithm in OPTIMIZER_SAVE_GRADIENTS else None
+
+    logging_decorator = functools.partial(
+        log_gradient_status,
+        database=database,
+        n_gradient_evaluations=n_gradient_evaluations,
+    )
 
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
-        database=database,
-        tables=["gradient_params_history", "gradient_history"],
+        logging_decorator=logging_decorator,
         queue=None,
         fitness_factor=fitness_factor,
     )
     bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+    names = params.query("_internal_free")["name"].tolist()
 
-    def internal_jac(x):
-        return approx_derivative(
-            internal_criterion,
-            x,
-            method,
-            rel_step,
-            f0,
-            bounds,
-            sparsity,
-            as_linear_operator,
-        )
+    @log_gradient(database, names)
+    def internal_gradient(x):
+        return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
 
-    return internal_jac
+    return internal_gradient

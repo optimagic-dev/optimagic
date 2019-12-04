@@ -127,6 +127,7 @@ def prepare_database(
     opt_tables = [
         "params_history",
         "gradient_history",
+        "hessian_history",
         "criterion_history",
         "timestamps",
         "convergence_history",
@@ -141,9 +142,9 @@ def prepare_database(
             database.tables[table].drop(database.bind)
 
     _define_table_formatted_with_params(database, params, "params_history")
-    _define_table_formatted_with_params(database, params, "gradient_params_history")
+    _define_table_formatted_with_params(database, params, "gradient_history")
+    _define_table_formatted_with_params(database, params, "hessian_history")
     _define_fitness_history_table(database, "criterion_history")
-    _define_fitness_history_table(database, "gradient_history")
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
     _define_start_params_table(database)

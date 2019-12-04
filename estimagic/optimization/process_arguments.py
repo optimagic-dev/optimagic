@@ -13,6 +13,8 @@ def process_optimization_arguments(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient=None,
+    gradient_options=None,
     logging=False,
     log_options=None,
     dashboard=False,
@@ -43,6 +45,12 @@ def process_optimization_arguments(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
+        gradient (callable or None):
+            Gradient function.
+
+        gradient_options (dict):
+            Options for the gradient function.
+
         logging (str/path or list of strings/paths):
             Location of the database.
 
@@ -55,19 +63,17 @@ def process_optimization_arguments(
         db_options (dict):
             dictionary with kwargs to be supplied to the run_server function.
 
-
     Returns:
         List: List of dictionaries. One dict for each optimization.
 
     """
-
-    # set default arguments
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options
     log_options = {} if log_options is None else log_options
     db_options = {} if db_options is None else db_options
     general_options = {} if general_options is None else general_options
+
     # Determine number of optimizations and check types
 
     # Specify name, expected type and expected dimensionality for all arguments.
@@ -112,6 +118,18 @@ def process_optimization_arguments(
         "algo_options": {
             "candidate": algo_options,
             "scalar_type": dict,
+            "argument_required": False,
+            "expected_dim": "scalar_or_list",
+        },
+        "gradient": {
+            "candidate": gradient,
+            "scalar_type": (Callable, type(None)),
+            "argument_required": False,
+            "expected_dim": "scalar_or_list",
+        },
+        "gradient_options": {
+            "candidate": gradient_options,
+            "scalar_type": (dict, type(None)),
             "argument_required": False,
             "expected_dim": "scalar_or_list",
         },

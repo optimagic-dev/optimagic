@@ -1,6 +1,5 @@
 import functools
-
-import pandas as pd
+import itertools
 
 from estimagic.logging.update_database import append_rows
 from estimagic.optimization.reparametrize import reparametrize_from_internal
@@ -39,25 +38,12 @@ def x_to_params(params, constraints=None):
     return decorator_x_to_params
 
 
-def output_to_numpy(func):
-    @functools.wraps(func)
-    def wrapper_output_to_numpy(*args, **kwargs):
-        out = func(*args, **kwargs)
-
-        if isinstance(out, (pd.DataFrame, pd.Series)):
-            out = out.to_numpy()
-
-        return out
-
-    return wrapper_output_to_numpy
-
-
-def logging(database, tables):
+def log_parameters_and_fitness(database, tables):
     """Log rows to tables in a database."""
 
-    def decorator_logging(func):
+    def decorator_log_parameters_and_fitness(func):
         @functools.wraps(func)
-        def wrapper_logging(params, *args, **kwargs):
+        def wrapper_log_parameters_and_fitness(params, *args, **kwargs):
             criterion_value = func(params, *args, **kwargs)
 
             if database:
@@ -66,6 +52,48 @@ def logging(database, tables):
 
             return criterion_value
 
-        return wrapper_logging
+        return wrapper_log_parameters_and_fitness
 
-    return decorator_logging
+    return decorator_log_parameters_and_fitness
+
+
+def log_gradient(database, names):
+    """Log rows to tables in a database."""
+
+    def decorator_log_gradient(func):
+        @functools.wraps(func)
+        def wrapper_log_gradient(*args, **kwargs):
+            gradient = func(*args, **kwargs)
+
+            if database:
+                append_rows(
+                    database, ["gradient_history"], [dict(zip(names, gradient))]
+                )
+
+            return gradient
+
+        return wrapper_log_gradient
+
+    return decorator_log_gradient
+
+
+def log_gradient_status(database, n_gradient_evaluations):
+    """Log rows to tables in a database."""
+
+    counter = itertools.count(1)
+
+    def decorator_log_gradient_status(func):
+        @functools.wraps(func)
+        def wrapper_log_gradient_status(params, *args, **kwargs):
+            if database:
+                c = next(counter)
+                status = (c % n_gradient_evaluations) / n_gradient_evaluations
+                append_rows(database, ["gradient_status"], {"value": status})
+
+            criterion_value = func(params, *args, **kwargs)
+
+            return criterion_value
+
+        return wrapper_log_gradient_status
+
+    return decorator_log_gradient_status
