@@ -39,17 +39,8 @@ Estimagic goes beyond existing optimization libraries by providing:
   and `numdifftools <https://numdifftools.readthedocs.io/en/latest/>`_.
 - powerful visualizations to inspect the results and monitor the optimization:
 
-
-|comp_plot|   |db_gif|
-
-
-.. |db_gif| image:: docs/source/images/dashboard.gif
+.. image:: docs/source/images/dashboard.gif
   :scale: 21 %
-  :align: middle
-
-.. |comp_plot| image:: docs/source/images/comparison_plot_static.png
-  :scale: 23 %
-  :align: middle
 
 Estimagic is in a very early stage and should not be used for major projects yet.
 However, we do encourage interested users to try it out, report bugs and provide
