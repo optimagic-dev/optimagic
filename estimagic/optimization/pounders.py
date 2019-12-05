@@ -8,33 +8,16 @@ if sys.platform != "win32":
     from petsc4py import PETSc
 
 
-def minimize_pounders(
-    internal_criterion, internal_params, criterion, params, algo_options
-):
-    # Prepare arguments
-    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
-    n_squared_errors = len(criterion(params))
-    x0 = internal_params["value"].to_numpy()
-
-    return minimize_pounders_np(
-        x0,
-        internal_criterion,
-        bounds,
-        **algo_options,
-        n_squared_errors=n_squared_errors,
-    )
-
-
 def minimize_pounders_np(
-    x0,
     func,
-    bounds=(-np.inf, np.inf),
+    x0,
+    bounds,
     gatol=1e-8,
     grtol=1e-8,
     gttol=1e-10,
     init_tr=None,
     max_iterations=None,
-    n_squared_errors=None,
+    n_errors=None,
 ):
     """Minimize a function using the Pounders algorithm.
 
@@ -65,7 +48,7 @@ def minimize_pounders_np(
             stop after the number of specified iterations or after the step size is
             sufficiently small. If the variable is set the default criteria will all be
             ignored. Default is `None`.
-        n_squared_errors (int or None): The number of outputs of `func` are necessary to
+        n_errors (int or None): The number of outputs of `func` are necessary to
             pre-allocate the results array. If the argument is ``None``, evaluate the
             function once. This might be undesirable during dashboard optimizations.
 
@@ -96,12 +79,12 @@ def minimize_pounders_np(
 
     # We need to know the dimension of the output of the criterion function. Evaluate
     # plain `criterion` to prevent logging.
-    if n_squared_errors is None:
-        n_squared_errors = len(func(x0))
+    if n_errors is None:
+        n_errors = len(func(x0))
 
     # We want to get containers for the func vector and the paras.
     x0 = initialise_petsc_array(x0)
-    squared_errors = initialise_petsc_array(n_squared_errors)
+    squared_errors = initialise_petsc_array(n_errors)
 
     # Create the solver object.
     tao = PETSc.TAO().create(PETSc.COMM_WORLD)

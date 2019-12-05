@@ -100,4 +100,3 @@ Some names are reserved for internal use in estimagic. Currently those are:
 ``'_fixed_value'``, ``'_is_fixed_to_value'``, ``'_is_fixed_to_other'``,
 ``'_pre_replacements'``, ``'_post_replacements'`` as well any name that starts with
 ``_internal``.
-

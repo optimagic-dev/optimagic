@@ -12,13 +12,13 @@ import numpy as np
 import pandas as pd
 
 from estimagic.dashboard.server_functions import run_server
-from estimagic.optimization.pounders import minimize_pounders
+from estimagic.optimization.pounders import minimize_pounders_np
 from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.pygmo import minimize_pygmo
+from estimagic.optimization.pygmo import minimize_pygmo_np
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
-from estimagic.optimization.scipy import minimize_scipy
+from estimagic.optimization.scipy import minimize_scipy_np
 from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
@@ -341,18 +341,20 @@ def _internal_minimize(
             f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
         )
 
+    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+
     if origin in ["nlopt", "pygmo"]:
-        results = minimize_pygmo(
-            internal_criterion, internal_params, params, origin, algo_name, algo_options
+        results = minimize_pygmo_np(
+            internal_criterion, internal_params, bounds, origin, algo_name, algo_options
         )
 
     elif origin == "scipy":
-        results = minimize_scipy(
-            internal_criterion, internal_params, params, algo_name, algo_options
+        results = minimize_scipy_np(
+            internal_criterion, internal_params, bounds, algo_name, algo_options
         )
     elif origin == "tao":
-        results = minimize_pounders(
-            internal_criterion, internal_params, criterion, params, algo_options
+        results = minimize_pounders_np(
+            internal_criterion, internal_params, bounds, **algo_options
         )
     else:
         raise ValueError("Invalid algorithm requested.")
@@ -432,6 +434,7 @@ def create_internal_criterion(
                 )
             )
         counter += 1
+
         return fitness_eval
 
     return internal_criterion

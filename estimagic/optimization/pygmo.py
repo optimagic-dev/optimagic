@@ -3,16 +3,6 @@ import pygmo as pg
 from estimagic.config import DEFAULT_SEED
 
 
-def minimize_pygmo(
-    internal_criterion, internal_params, params, origin, algo_name, algo_options
-):
-    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
-
-    return minimize_pygmo_np(
-        internal_criterion, internal_params, bounds, origin, algo_name, algo_options,
-    )
-
-
 def minimize_pygmo_np(func, x0, bounds, origin, algo_name, algo_options):
     """Minimize a function with pygmo.
 
@@ -29,7 +19,6 @@ def minimize_pygmo_np(func, x0, bounds, origin, algo_name, algo_options):
         result (dict): Dictionary containing optimization results.
 
     """
-
     if origin == "pygmo" and algo_name != "simulated_annealing":
         assert (
             "popsize" in algo_options
@@ -78,8 +67,13 @@ def _create_algorithm(algo_name, algo_options, origin):
     return algo
 
 
-def _create_population(problem, algo_options, internal_params):
+def _create_population(problem, algo_options, x0):
     """Create a pygmo population object.
+
+    Args:
+        problem (pygmo.Problem)
+        algo_options (dict)
+        x0 (np.ndarray)
 
     Todo:
         - constrain random initial values to be in some bounds
@@ -89,7 +83,7 @@ def _create_population(problem, algo_options, internal_params):
     pop = pg.population(
         problem, size=popsize, seed=algo_options.get("seed", DEFAULT_SEED)
     )
-    pop.push_back(internal_params)
+    pop.push_back(x0)
     return pop
 
 

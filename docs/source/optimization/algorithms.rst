@@ -85,6 +85,3 @@ options at the following links (depending on the origin of the algorithm):
 
 The ``algo_options`` of the pounders algorithm can be found in the documentation
 of :ref:`pounders`
-
-
-

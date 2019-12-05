@@ -2,22 +2,15 @@ import numpy as np
 from scipy.optimize import minimize
 
 
-def minimize_scipy(
-    internal_criterion, internal_params, params, algo_name, algo_options
-):
-    # Scipy works with `None` instead of infinite values for unconstrained parameters.
-    bounds = (
-        params.query("_internal_free")[["lower", "upper"]]
-        .replace([-np.inf, np.inf], [None, None])
-        .to_numpy()
-    )
+def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
+    # Scipy works with `None` instead of infinite values for unconstrained parameters
+    # and requires a list of tuples for each parameter with lower and upper bound.
+    bounds = np.column_stack(bounds).astype(float)
+    bounds[~np.isfinite(bounds)] = None
+    bounds = tuple(bounds)
 
     scipy_results_obj = minimize(
-        internal_criterion,
-        internal_params,
-        method=algo_name,
-        bounds=bounds,
-        options=algo_options,
+        func, x0, method=algo_name, bounds=bounds, options=algo_options,
     )
     results = _process_scipy_results(scipy_results_obj)
 
