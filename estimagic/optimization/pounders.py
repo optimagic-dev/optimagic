@@ -72,8 +72,8 @@ def minimize_pounders_np(
         n_errors = len(func(x0))
 
     # We want to get containers for the func vector and the paras.
-    x0 = initialise_petsc_array(x0)
-    squared_errors = initialise_petsc_array(n_errors)
+    x0 = _initialise_petsc_array(x0)
+    squared_errors = _initialise_petsc_array(n_errors)
 
     # Create the solver object.
     tao = PETSc.TAO().create(PETSc.COMM_WORLD)
@@ -83,19 +83,18 @@ def minimize_pounders_np(
 
     tao.setFromOptions()
 
-    def func_tao(tao, squared_errors, f):
+    def func_tao(tao, x, f):
         """Evaluate objective and attach result to an petsc object f.
 
         This is required to use the pounders solver from tao.
 
         Args:
              tao: The tao object we created for the optimization task.
-             squared_errors (np.ndarray): 1d NumPy array of the current values at which
-                we want to evaluate the function.
+             x (np.ndarray): Current parameter values.
              f: Petsc object in which we save the current function value.
 
         """
-        f.array = func(squared_errors.array)
+        f.array = func(x.array)
 
     # Set the procedure for calculating the objective. This part has to be changed if we
     # want more than pounders.
@@ -110,7 +109,7 @@ def minimize_pounders_np(
     processed_bounds = []
     for bound in bounds:
         bound = np.full(n_params, bound) if isinstance(bound, (int, float)) else bound
-        processed_bounds.append(initialise_petsc_array(bound))
+        processed_bounds.append(_initialise_petsc_array(bound))
     tao.setVariableBounds(processed_bounds)
 
     # Put the starting values into the container and pass them to the optimizer.
@@ -149,7 +148,7 @@ def minimize_pounders_np(
     return results
 
 
-def initialise_petsc_array(len_or_array):
+def _initialise_petsc_array(len_or_array):
     """Initialize an empty array or fill in provided values.
 
     Args:
@@ -221,11 +220,13 @@ def _translate_tao_convergence_reason(tao_resaon):
 
 def _process_pounders_results(squared_errors, tao):
     results = {
+        # Harmonized results.
         "fitness": tao.function,
-        "fitness_values": squared_errors.array,
         "x": tao.solution.array,
-        "conv": _translate_tao_convergence_reason(tao.getConvergedReason()),
         "n_evaluations": tao.getIterationNumber(),
+        # Other results.
+        "fitness_values": squared_errors.array,
+        "conv": _translate_tao_convergence_reason(tao.getConvergedReason()),
         "gnorm": tao.gnorm,
         "cnorm": tao.cnorm,
     }

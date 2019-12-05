@@ -1,5 +1,6 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
 import json
+import traceback
 from collections import namedtuple
 from multiprocessing import Event
 from multiprocessing import Pool
@@ -343,30 +344,45 @@ def _internal_minimize(
 
     bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
 
-    if origin in ["nlopt", "pygmo"]:
-        results = minimize_pygmo_np(
-            internal_criterion, internal_params, bounds, origin, algo_name, algo_options
-        )
+    try:
+        if origin in ["nlopt", "pygmo"]:
+            results = minimize_pygmo_np(
+                internal_criterion,
+                internal_params,
+                bounds,
+                origin,
+                algo_name,
+                algo_options,
+            )
 
-    elif origin == "scipy":
-        results = minimize_scipy_np(
-            internal_criterion, internal_params, bounds, algo_name, algo_options
-        )
-    elif origin == "tao":
-        results = minimize_pounders_np(
-            internal_criterion, internal_params, bounds, **algo_options
-        )
+        elif origin == "scipy":
+            results = minimize_scipy_np(
+                internal_criterion, internal_params, bounds, algo_name, algo_options
+            )
+        elif origin == "tao":
+            results = minimize_pounders_np(
+                internal_criterion, internal_params, bounds, **algo_options
+            )
+        else:
+            raise NotImplementedError("Invalid algorithm requested.")
+
+    except Exception:
+        results = {
+            "optimization_status": "failure",
+            "traceback": traceback.format_exc(),
+        }
+        params = None
+
     else:
-        raise ValueError("Invalid algorithm requested.")
-
-    params = reparametrize_from_internal(
-        internal=results["x"],
-        fixed_values=params["_internal_fixed_value"].to_numpy(),
-        pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
-        processed_constraints=constraints,
-        post_replacements=params["_post_replacements"].to_numpy().astype(int),
-        processed_params=params,
-    )
+        results["optimization_status"] = "success"
+        params = reparametrize_from_internal(
+            internal=results["x"],
+            fixed_values=params["_internal_fixed_value"].to_numpy(),
+            pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
+            processed_constraints=constraints,
+            post_replacements=params["_post_replacements"].to_numpy().astype(int),
+            processed_params=params,
+        )
 
     return results, params
 

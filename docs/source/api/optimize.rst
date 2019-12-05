@@ -36,6 +36,24 @@ Utility functions for parameter handling
     :members:
 
 
+.. _scipy:
+
+The Scipy Algorithms
+--------------------
+
+.. automodule:: estimagic.optimization.scipy
+    :members: minimize_scipy_np
+
+
+.. _pygmo:
+
+The Pygmo Algorithms
+--------------------
+
+.. automodule:: estimagic.optimization.pygmo
+    :members: minimize_pygmo_np
+
+
 .. _pounders:
 
 The Pounders Algorithm

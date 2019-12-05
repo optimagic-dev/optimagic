@@ -36,10 +36,13 @@ def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
 
 def _process_scipy_results(scipy_results_obj):
     results = {**scipy_results_obj}
+    # Harmonized results
     results["fitness"] = results.pop("fun", None)
+    results["n_evaluations"] = results.pop("nfev", None)
+
+    # Other results.
     results["jacobian"] = results.pop("jac", None)
     results["hessian"] = results.pop("hess", None)
-    results["n_evaluations"] = results.pop("nfev", None)
     results["n_evaluations_jacobian"] = results.pop("njev", None)
     results["n_evaluations_hessian"] = results.pop("nhev", None)
     results["n_iterations"] = results.pop("nit", None)
