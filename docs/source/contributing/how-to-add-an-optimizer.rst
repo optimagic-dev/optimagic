@@ -3,8 +3,8 @@ How to add an optimizer
 
 Adding optimizers to estimagic is a well-defined task which requires almost no knowledge
 about the rest of the package. The basic idea is to write a slightly adjusted interface
-which works with some objective function and starting values of the parameters in a
-NumPy array.
+which works with a generic objective function that maps a NumPy array to a criterion
+value.
 
 In the following, the interface is discussed using the wrapper for the scipy package as
 an example. Without further ado, here is the complete wrapper!
