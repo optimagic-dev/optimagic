@@ -33,20 +33,22 @@ def test_robustness_1():
     np.random.seed(5470)
     true_params = get_random_params(3)
     start_params = get_random_params(3)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_nonlinear_criterion, endog, exog)
-    minimize_pounders_np(objective, start_params["value"].to_numpy())
+    minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
 
 
 def test_robustness_2():
     np.random.seed(5471)
     true_params = get_random_params(2)
     start_params = get_random_params(2)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     objective = functools.partial(_ols_criterion, endog, exog)
-    results = minimize_pounders_np(objective, start_params["value"].to_numpy())
+    results = minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
     calculated = results["x"]
 
     x = np.column_stack([np.ones_like(exog), exog])
