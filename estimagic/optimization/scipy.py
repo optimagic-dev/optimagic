@@ -3,6 +3,23 @@ from scipy.optimize import minimize
 
 
 def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
+    """Interface for scipy.
+
+    Args:
+        func (callable): Objective function.
+        x0 (np.ndarray): Starting values of the parameters.
+        bounds (Tuple[np.ndarray]): A tuple containing two NumPy arrays where the first
+            corresponds to the lower and the second to the upper bound. Unbounded
+            parameters are represented by infinite values. The arrays have the same
+            length as the parameter vector.
+        algo_name (str): One of the optimizers of the scipy package which receives the
+            same inputs as the ``"method"`` keyword of the original function.
+        algo_options (dict): Options for the optimizer.
+
+    Returns:
+        results (dict): Dictionary with processed optimization results.
+
+    """
     # Scipy works with `None` instead of infinite values for unconstrained parameters
     # and requires a list of tuples for each parameter with lower and upper bound.
     bounds = np.column_stack(bounds).astype(float)

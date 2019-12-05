@@ -61,27 +61,22 @@ tao
 
 - ``"pounders"``
 
-
-
-
 The *algo_options* Argument
 ===========================
 
-
-``algo_options`` is a dictionary with optional keyword arguments that are passed
-to the optimizer. This includes tolerances for the termination criteria,
-parameters that determine how greedy the optimizer is or the stepsize
-for a numerical gradient. It is the only thing in estimagic that is specific to
-each algorithm.
+``algo_options`` is a dictionary with optional keyword arguments that are passed to the
+optimizer. This includes tolerances for the termination criteria, parameters that
+determine how greedy the optimizer is or the stepsize for a numerical gradient. It is
+the only thing in estimagic that is specific to each algorithm.
 
 
-Typically you will leave all of those parameters at their default, unless you
-have a very difficult optimization problem. If so, you can find all available
-options at the following links (depending on the origin of the algorithm):
+Typically you will leave all of those parameters at their default, unless you have a
+very difficult optimization problem. If so, you can find all available options at the
+following links (depending on the origin of the algorithm):
 
 - `pygmo <https://tinyurl.com/y3bgsl4z>`_
 - `nlopt <https://tinyurl.com/y3dsmaz7>`_
 - `scipy <https://tinyurl.com/y54nmedo>`_
 
-The ``algo_options`` of the pounders algorithm can be found in the documentation
-of :ref:`pounders`
+The ``algo_options`` of the pounders algorithm can be found in the documentation of
+:ref:`pounders`

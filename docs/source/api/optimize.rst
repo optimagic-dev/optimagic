@@ -41,6 +41,5 @@ Utility functions for parameter handling
 The Pounders Algorithm
 ----------------------
 
-
 .. automodule:: estimagic.optimization.pounders
-    :members: minimize_pounders, minimize_pounders_np
+    :members: minimize_pounders_np

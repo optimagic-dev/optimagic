@@ -7,16 +7,18 @@ def minimize_pygmo_np(func, x0, bounds, origin, algo_name, algo_options):
     """Minimize a function with pygmo.
 
     Args:
-        func (callable): Function to be minimized.
-        x0 (np.ndarray): Starting values of parameters.
-        bounds (tuple): Bounds are either a tuple of number or arrays. The first
-            elements specifies the lower and the second the upper bound of parameters.
-        origin (str): Either ``"pygmo"`` or ``"nlopt"``.
-        algo_name (str): Name of the algorithm.
-        algo_options (dict): Dictionary containing options of the algorithm.
+        func (callable): Objective function.
+        x0 (np.ndarray): Starting values of the parameters.
+        bounds (Tuple[np.ndarray]): A tuple containing two NumPy arrays where the first
+            corresponds to the lower and the second to the upper bound. Unbounded
+            parameters are represented by infinite values. The arrays have the same
+            length as the parameter vector.
+        origin ({"nlopt", "pygmo"}): Either an optimizer from NLOPT or pygmo.
+        algo_name (str): One of the optimizers of the pygmo package.
+        algo_options (dict): Options for the optimizer.
 
     Returns:
-        result (dict): Dictionary containing optimization results.
+        results (dict): Dictionary with processed optimization results.
 
     """
     if origin == "pygmo" and algo_name != "simulated_annealing":

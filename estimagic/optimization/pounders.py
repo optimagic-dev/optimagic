@@ -31,10 +31,12 @@ def minimize_pounders_np(
     array of the squared errors or anything else.
 
     Args:
-        x0 (np.ndarray): Starting values of parameters.
-        func (callable): Function to be minimized.
-        bounds (tuple): Bounds are either a tuple of number or arrays. The first
-            elements specifies the lower and the second the upper bound of parameters.
+        func (callable): Objective function.
+        x0 (np.ndarray): Starting values of the parameters.
+        bounds (Tuple[np.ndarray]): A tuple containing two NumPy arrays where the first
+            corresponds to the lower and the second to the upper bound. Unbounded
+            parameters are represented by infinite values. The arrays have the same
+            length as the parameter vector.
         gatol (float): Stop if relative norm of gradient is less than this. If set to
             False the algorithm will not consider gatol. Default is 1e-8.
         grtol (float): Stop if norm of gradient is less than this. If set to False the
@@ -53,20 +55,7 @@ def minimize_pounders_np(
             function once. This might be undesirable during dashboard optimizations.
 
     Returns:
-        result (dict): Dictionary with the following key-value pairs:
-
-            - `"solution"`: solution vector as `np.ndarray`.
-            - `"func_values"`: `np.ndarray` of value of the objective at the solution.
-            - `"x0"`: `np.ndarray` of the start values.
-            - `"conv"`: string indicating the termination reason.
-            - `"sol"`: `list` containing ...
-              - current iterate as integer.
-              - current value of the objective as float
-              - current value of the approximated
-              - jacobian as float
-              - infeasability norm as float
-              - step length as float
-              - termination reason as int.
+        results (dict): Dictionary with processed optimization results.
 
     .. _TAO Users Manual:
         https://www.mcs.anl.gov/petsc/petsc-current/docs/tao_manual.pdf
