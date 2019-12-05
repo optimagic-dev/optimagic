@@ -92,7 +92,7 @@ def _create_population(problem, algo_options, x0):
 def _process_pygmo_results(evolved):
     results = {
         # Harmonized results.
-        "fitness": evolved.champion_f[0],
+        "criterion": evolved.champion_f[0],
         "x": evolved.champion_x,
         "n_evaluations": evolved.problem.get_fevals(),
         # Other results.
@@ -101,8 +101,6 @@ def _process_pygmo_results(evolved):
         "n_constraints": evolved.problem.get_nc(),
         "n_constraints_equality": evolved.problem.get_nec(),
         "n_constraints_inequality": evolved.problem.get_nic(),
-        "has_gradient": evolved.problem.has_gradient(),
-        "has_hessians": evolved.problem.has_hessians(),
     }
 
     return results

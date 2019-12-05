@@ -22,8 +22,8 @@ def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
     """
     # Scipy works with `None` instead of infinite values for unconstrained parameters
     # and requires a list of tuples for each parameter with lower and upper bound.
-    bounds = np.column_stack(bounds).astype(float)
-    bounds[~np.isfinite(bounds)] = None
+    bounds = np.column_stack(bounds)
+    bounds.astype("object")[~np.isfinite(bounds)] = None
     bounds = tuple(bounds)
 
     scipy_results_obj = minimize(
@@ -37,7 +37,7 @@ def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
 def _process_scipy_results(scipy_results_obj):
     results = {**scipy_results_obj}
     # Harmonized results
-    results["fitness"] = results.pop("fun", None)
+    results["criterion"] = results.pop("fun", None)
     results["n_evaluations"] = results.pop("nfev", None)
 
     # Other results.

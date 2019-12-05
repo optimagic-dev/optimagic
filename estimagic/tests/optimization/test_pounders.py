@@ -13,7 +13,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-NUM_AGENTS = 10_000
+NUM_AGENTS = 2_000
 
 
 def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np.inf):
@@ -35,9 +35,13 @@ def test_robustness_1():
     start_params = get_random_params(3)
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
-    exog, endog = _simulate_sample(NUM_AGENTS, true_params)
+    exog, endog = _simulate_sample(NUM_AGENTS, true_params, 0.5)
     objective = functools.partial(_nonlinear_criterion, endog, exog)
-    minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
+    results = minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
+
+    np.testing.assert_array_almost_equal(
+        true_params["value"], results["x"], decimal=0.1
+    )
 
 
 def test_robustness_2():
@@ -55,7 +59,7 @@ def test_robustness_2():
     y = endog.reshape(len(endog), 1)
     expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
-    np.testing.assert_almost_equal(calculated, expected, decimal=10)
+    np.testing.assert_almost_equal(calculated, expected, decimal=6)
 
 
 def test_box_constr():
@@ -209,9 +213,9 @@ def _return_exception(x):
     raise (Exception)
 
 
-def _simulate_sample(num_agents, paras):
+def _simulate_sample(num_agents, paras, error_term_high=0.5):
     exog = np.random.uniform(0, 1, num_agents)
-    error_term = np.random.normal(0, 0.5, num_agents)
+    error_term = np.random.normal(0, error_term_high, num_agents)
     endog = (
         np.exp(-paras.at[0, "value"] * exog)
         / (paras.at[1, "value"] + paras.at[2, "value"] * exog)

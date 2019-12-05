@@ -73,7 +73,7 @@ def minimize_pounders_np(
 
     # We want to get containers for the func vector and the paras.
     x0 = _initialise_petsc_array(x0)
-    squared_errors = _initialise_petsc_array(n_errors)
+    residuals_out = _initialise_petsc_array(n_errors)
 
     # Create the solver object.
     tao = PETSc.TAO().create(PETSc.COMM_WORLD)
@@ -83,22 +83,22 @@ def minimize_pounders_np(
 
     tao.setFromOptions()
 
-    def func_tao(tao, x, f):
+    def func_tao(tao, x, resid_out):
         """Evaluate objective and attach result to an petsc object f.
 
         This is required to use the pounders solver from tao.
 
         Args:
              tao: The tao object we created for the optimization task.
-             x (np.ndarray): Current parameter values.
+             x (PETSc.array): Current parameter values.
              f: Petsc object in which we save the current function value.
 
         """
-        f.array = func(x.array)
+        resid_out.array = func(x.array)
 
     # Set the procedure for calculating the objective. This part has to be changed if we
     # want more than pounders.
-    tao.setResidual(func_tao, squared_errors)
+    tao.setResidual(func_tao, residuals_out)
 
     # We try to set user defined convergence tests.
     if init_tr is not None:
@@ -138,12 +138,12 @@ def minimize_pounders_np(
     # Run the problem.
     tao.solve()
 
-    results = _process_pounders_results(squared_errors, tao)
+    results = _process_pounders_results(residuals_out, tao)
 
     # Destroy petsc objects for memory reasons.
     tao.destroy()
     x0.destroy()
-    squared_errors.destroy()
+    residuals_out.destroy()
 
     return results
 
@@ -218,14 +218,14 @@ def _translate_tao_convergence_reason(tao_resaon):
     return mapping[tao_resaon]
 
 
-def _process_pounders_results(squared_errors, tao):
+def _process_pounders_results(residuals_out, tao):
     results = {
         # Harmonized results.
-        "fitness": tao.function,
+        "criterion": tao.function,
         "x": tao.solution.array,
         "n_evaluations": tao.getIterationNumber(),
         # Other results.
-        "fitness_values": squared_errors.array,
+        "fitness_values": residuals_out.array,
         "conv": _translate_tao_convergence_reason(tao.getConvergedReason()),
         "gnorm": tao.gnorm,
         "cnorm": tao.cnorm,

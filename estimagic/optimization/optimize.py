@@ -23,7 +23,7 @@ from estimagic.optimization.scipy import minimize_scipy_np
 from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
-QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "fitness"])
+QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "criterion"])
 
 
 def maximize(
@@ -91,7 +91,7 @@ def maximize(
         dashboard=dashboard,
         db_options=db_options,
     )
-    results["fitness"] = -results["fitness"]
+    results["criterion"] = -results["criterion"]
 
     return results, params
 
