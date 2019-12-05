@@ -23,7 +23,9 @@ def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
     # Scipy works with `None` instead of infinite values for unconstrained parameters
     # and requires a list of tuples for each parameter with lower and upper bound.
     bounds = np.column_stack(bounds)
-    bounds.astype("object")[~np.isfinite(bounds)] = None
+    mask = ~np.isfinite(bounds)
+    bounds = bounds.astype("object")
+    bounds[mask] = None
     bounds = tuple(bounds)
 
     scipy_results_obj = minimize(
