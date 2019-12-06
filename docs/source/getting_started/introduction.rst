@@ -50,10 +50,3 @@ numbers of estimated parameters. The plots help you to diagnose how strongly
 your results depend on constraints, start values or the choice of optimizer.
 Moreover, you can see whether the size of those effects is large or small in
 comparison to your statistical standard errors.
-
-
-
-
-
-
-

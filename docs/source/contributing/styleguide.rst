@@ -86,5 +86,3 @@ Your contribution should fulfill the following criteria:
 - Don't use global variables unless absolutely necessary
     Exceptions are global variables from a config file that replace magic numbers.
     Never use mutable global variables!
-
-
