@@ -28,37 +28,33 @@ implementations of (structural) econometric models.
 
 It is designed with large structural models in mind. However, it is also useful for any
 other estimator that numerically minimizes or maximizes a criterion function (Extremum
-Estimator). Examples are maximum likelihood estimation, generalized method of moments,
+Estimator). Examples include maximum likelihood, generalized method of moments,
 method of simulated moments and indirect inference.
 
-Estimagic is in a very early stage and should not be used for major projects yet.
-However, we do encourage interested users to try it out, report bugs and provide
-feedback.
+Key Features
+============
 
+Optimization
+------------
 
-Credits
-=======
+- Unified interface to a large number of local and global optimization algorithms.
+- All optimizers can handle linear equality and inequality constraints as well as many
+  other types of constraints.
+- Constraints are specified using parameter names, not positions!
+- The complete history of parameters and function evaluations is saved in a database.
+- An interactive Dashboard allows to monitor the optimization in real time.
 
-Estimagic is designed and maintained by Janos Gabler (`janosg
-<https://github.com/janosg>`_).
+Inference
+---------
 
-However, it has been a collaborative project right from the start.
+- Calculate precise numerical derivatives using `Richardson extrapolations <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
+- Calculate standard errors for maximum likelihood an method of simulated moments
 
-In particular we would like to thank:
+Dashboard Example
+=================
 
-- Klara Röhrl (`roecla <https://github.com/roecla>`_) for writing most of the dashboard
-  code, contributing plots and doing code reviews.
-- Tobias Raabe (`tobiasraabe <https://github.com/tobiasraabe>`_) for setting up the
-  continuous integration and contributing several bug-fixes and improvements.
-- Max Blesch (`MaxBlesch <https://github.com/MaxBlesch>`_) for contributing code for
-  numerical integration and calculation of standard errors for GMM and MSM estimators
-- Linda Maokomatanda (`lindamaok899 <https://github.com/lindamaok899>`_) for
-  contributing code for the calculation of likelihood standard errors
-- Moritz Mendel (`mo2561057 <https://github.com/mo2561057>`_) for wrapping the pounders
-  algorithm from TAO
-
-If you want to find your name here as well, please contact us or browse through our
-Issues and submit a Pull Request.
+.. image:: docs/source/images/dashboard.gif
+  :scale: 21 %
 
 
 Installation
