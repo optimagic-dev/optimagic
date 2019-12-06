@@ -31,20 +31,30 @@ other estimator that numerically minimizes or maximizes a criterion function (Ex
 Estimator). Examples include maximum likelihood, generalized method of moments,
 method of simulated moments and indirect inference.
 
-Estimagic goes beyond existing optimization libraries by providing:
+Key Features
+============
 
-- convenient specification and automatic enforcement of several types of constraints
-- functions to precisely differentiate any function using
-  `Richardson extrapolations <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_
-  and `numdifftools <https://numdifftools.readthedocs.io/en/latest/>`_.
-- tools to monitor the optimization:
+Optimization
+------------
+
+- Unified interface to a large number of local and global optimization algorithms.
+- All optimizers can handle linear equality and inequality constraints as well as many
+  other types of constraints.
+- Constraints are specified using parameter names, not positions!
+- The complete history of parameters and function evaluations is saved in a database.
+- An interactive Dashboard allows to monitor the optimization in real time.
+
+Inference
+---------
+
+- Calculate precise numerical derivatives using `Richardson extrapolations <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
+- Calculate standard errors for maximum likelihood an method of simulated moments
+
+Dashboard Example
+=================
 
 .. image:: docs/source/images/dashboard.gif
   :scale: 21 %
-
-Estimagic is in a very early stage and should not be used for major projects yet.
-However, we do encourage interested users to try it out, report bugs and provide
-feedback.
 
 
 Installation
