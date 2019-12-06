@@ -20,6 +20,7 @@ models in mind, but also "scales down" to simpler use cases like logit or probit
    api/index
    contributing/index
    changes
+   credits
 
 
 Indices and tables

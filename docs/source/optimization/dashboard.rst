@@ -13,7 +13,11 @@ boolean argument `dashboard`. When True, the function call will fire
 up a new tab in your default browser that displays the dashboard.
 
 The dashboards shows the evolution of the criterion function and all parameters
-in real time. If your params DataFrame has a "group" column, there will be one
+in real time as can be seen below.
+
+.. image:: ../images/dashboard.gif
+
+If your params DataFrame has a "group" column, there will be one
 parameter plot for each group.
 
 Options

@@ -14,7 +14,8 @@ def create_wide_figure(title, tooltips=None):
     fig.min_border_left = 50
     fig.min_border_right = 50
     fig.min_border_top = 20
-    fig.min_border_bottom = 100
+    fig.min_border_bottom = 50
+    fig.toolbar_location = None
     return fig
 
 
@@ -71,13 +72,16 @@ def plot_time_series(data, y_keys, x_name, title, y_names=None):
         else:
             tooltips = [(x_name, "@" + x_name)]
         if "fitness" not in y_names:
-            tooltips += [("fitness", "@fitness")]
+            tooltips += [("criterion", "@fitness")]
         tooltips += [("param_name", y_name), ("param_value", "@" + y_key)]
         hover = HoverTool(renderers=[line_glyph], tooltips=tooltips)
         plot.tools.append(hover)
 
-    plot.legend.click_policy = "mute"
-    plot.legend.location = "top_left"
+    if y_key == "fitness":
+        plot.legend.visible = False
+    else:
+        plot.legend.click_policy = "mute"
+        plot.legend.location = "top_left"
 
     plot.xaxis.axis_label = x_name if x_name != "XxXxITERATIONxXxX" else "iteration"
     plot.xaxis.axis_label_text_font_style = "normal"
