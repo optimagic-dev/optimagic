@@ -44,6 +44,3 @@ size of the extrapolation:
 - scale (float, array like):
     scale used in base step. If not None it will override the default
     computed with the default_scale function.
-
-
-
