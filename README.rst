@@ -99,4 +99,3 @@ Afterwards we want to also implement the following extensions:
 
 - Support for general nonlinear constraints for some optimizers
 - Confidence intervals based on the profile-likelihood method
-
