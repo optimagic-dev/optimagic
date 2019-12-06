@@ -30,13 +30,13 @@ def setup_convergence_tab(params_df, initial_fitness):
     conv_data = ColumnDataSource(data_dict)
 
     fitness_plot = plot_time_series(
-        data=conv_data, y_keys=["fitness"], x_name=X_NAME, title="Fitness"
+        data=conv_data, y_keys=["fitness"], x_name=X_NAME, title="Criterion"
     )
 
     plots = [fitness_plot] + _param_plots(params_df=params_df, data=conv_data)
 
     tab = Panel(
-        child=column(children=plots, sizing_mode="scale_width"),
+        child=column(children=plots, sizing_mode="scale_height"),
         title="Convergence Plots",
     )
 
