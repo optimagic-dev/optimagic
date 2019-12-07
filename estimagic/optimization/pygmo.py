@@ -95,6 +95,7 @@ def _create_population(problem, algo_options, x0):
 def _process_pygmo_results(evolved):
     results = {
         # Harmonized results.
+        "status": "success",
         "fitness": evolved.champion_f[0],
         "x": evolved.champion_x,
         "n_evaluations": evolved.problem.get_fevals(),

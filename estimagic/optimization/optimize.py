@@ -22,6 +22,7 @@ from estimagic.decorators import log_gradient_status
 from estimagic.decorators import log_parameters_and_criterion_value
 from estimagic.decorators import x_to_params
 from estimagic.logging.create_database import prepare_database
+from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.pounders import minimize_pounders_np
 from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
@@ -465,6 +466,9 @@ def _internal_minimize(
 
     bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
 
+    if database:
+        update_scalar_field(database, "optimization_status", "running")
+
     if origin in ["nlopt", "pygmo"]:
         results = minimize_pygmo_np(
             internal_criterion,
@@ -497,6 +501,9 @@ def _internal_minimize(
         )
     else:
         raise NotImplementedError("Invalid algorithm requested.")
+
+    if database:
+        update_scalar_field(database, "optimization_status", results["status"])
 
     params = reparametrize_from_internal(
         internal=results["x"],

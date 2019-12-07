@@ -40,6 +40,7 @@ def minimize_scipy_np(func, x0, bounds, algo_name, algo_options=None, gradient=N
 def _process_scipy_results(scipy_results_obj):
     results = {**scipy_results_obj}
     # Harmonized results
+    results["status"] = "success"
     results["fitness"] = results.pop("fun", None)
     results["n_evaluations"] = results.pop("nfev", None)
 

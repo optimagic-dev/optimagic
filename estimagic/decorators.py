@@ -111,35 +111,6 @@ def log_gradient_status(database, n_gradient_evaluations):
     return decorator_log_gradient_status
 
 
-def log_optimization_status(database):
-    """Log the optimization status.
-
-    This decorator should be applied to all `minimize_*` interfaces of the different
-    optimizer packages.
-
-    The success status should be inferred from a common field.
-
-    """
-
-    def decorator_log_optimization_status(func):
-        @functools.wraps(func)
-        def wrapper_log_optimization_status(*args, **kwargs):
-            if database:
-                update_scalar_field(database, "optimization_status", "running")
-
-            results = func(*args, **kwargs)
-
-            if database:
-                success = results["success"]
-                update_scalar_field(database, "optimization_status", success)
-
-            return results
-
-        return wrapper_log_optimization_status
-
-    return decorator_log_optimization_status
-
-
 def exception_handling(start_params, general_options):
     def decorator_exception_handling(func):
         @functools.wraps(func)
