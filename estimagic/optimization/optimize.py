@@ -308,7 +308,7 @@ def _single_minimize(
         raise ValueError(
             "The criterion function evaluated at the start parameters returns NaNs."
         )
-    len_criterion_value = 1 if np.isscalar(fitness_eval) else len(fitness_eval)
+    general_options["criterion_value"] = fitness_eval
 
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
@@ -343,7 +343,6 @@ def _single_minimize(
         database=database,
         queue=queue,
         fitness_factor=fitness_factor,
-        len_criterion_value=len_criterion_value,
     )
 
     if dashboard:
@@ -371,7 +370,6 @@ def _internal_minimize(
     database,
     queue,
     fitness_factor,
-    len_criterion_value,
 ):
     """Create the internal criterion function and minimize it.
 
@@ -416,10 +414,6 @@ def _internal_minimize(
         fitness_factor (float):
             multiplicative factor for the fitness displayed in the dashboard.
             Set to -1 for maximizations to plot the fitness that is being maximized.
-
-        len_criterion_value (float or np.ndarray)
-            Length of the criterion output which is one for scalars and the length of
-            the first dimension of an array.
 
     """
     logging_decorator = functools.partial(
@@ -492,6 +486,8 @@ def _internal_minimize(
             gradient=internal_gradient,
         )
     elif origin == "tao":
+        crit_val = general_options["criterion"]
+        len_criterion_value = 1 if np.isscalar(crit_val) else len(crit_val)
         results = minimize_pounders_np(
             internal_criterion,
             internal_params,
