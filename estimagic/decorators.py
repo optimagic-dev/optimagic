@@ -1,6 +1,9 @@
 import functools
 import itertools
 
+import numpy as np
+
+from estimagic.config import DEFAULT_CRITERION_PENALTY
 from estimagic.logging.update_database import append_rows
 from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.reparametrize import reparametrize_from_internal
@@ -39,12 +42,12 @@ def x_to_params(params, constraints=None):
     return decorator_x_to_params
 
 
-def log_parameters_and_fitness(database, tables):
+def log_parameters_and_criterion_value(database, tables):
     """Log parameters and fitness values."""
 
-    def decorator_log_parameters_and_fitness(func):
+    def decorator_log_parameters_and_criterion_value(func):
         @functools.wraps(func)
-        def wrapper_log_parameters_and_fitness(params, *args, **kwargs):
+        def wrapper_log_parameters_and_criterion_value(params, *args, **kwargs):
             criterion_value = func(params, *args, **kwargs)
 
             if database:
@@ -53,9 +56,9 @@ def log_parameters_and_fitness(database, tables):
 
             return criterion_value
 
-        return wrapper_log_parameters_and_fitness
+        return wrapper_log_parameters_and_criterion_value
 
-    return decorator_log_parameters_and_fitness
+    return decorator_log_parameters_and_criterion_value
 
 
 def log_gradient(database, names):
@@ -135,3 +138,32 @@ def log_optimization_status(database):
         return wrapper_log_optimization_status
 
     return decorator_log_optimization_status
+
+
+def exception_handling(start_params, general_options):
+    def decorator_exception_handling(func):
+        @functools.wraps(func)
+        def wrapper_exception_handling(x, *args, **kwargs):
+            try:
+                out = func(x, *args, **kwargs)
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception as e:
+                constant, slope = general_options.get(
+                    "criterion_exception_penalty", (np.nan, np.nan)
+                )
+                raise_exc = general_options.get("criterion_exception_raise", False)
+
+                if raise_exc:
+                    raise e
+                else:
+                    out = min(
+                        DEFAULT_CRITERION_PENALTY,
+                        constant + slope * np.linalg.norm(x - start_params),
+                    )
+
+            return out
+
+        return wrapper_exception_handling
+
+    return decorator_exception_handling

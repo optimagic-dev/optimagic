@@ -16,9 +16,10 @@ from scipy.optimize._numdiff import approx_derivative
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
+from estimagic.decorators import exception_handling
 from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
-from estimagic.decorators import log_parameters_and_fitness
+from estimagic.decorators import log_parameters_and_criterion_value
 from estimagic.decorators import x_to_params
 from estimagic.logging.create_database import prepare_database
 from estimagic.optimization.pounders import minimize_pounders_np
@@ -303,6 +304,12 @@ def _single_minimize(
 
     fitness_factor = -1 if general_options.pop("_maximization", False) else 1
     fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
+    if np.any(np.isnan(fitness_eval)):
+        raise ValueError(
+            "The criterion function evaluated at the start parameters returns NaNs."
+        )
+    len_criterion_value = 1 if np.isscalar(fitness_eval) else len(fitness_eval)
+
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
@@ -336,6 +343,7 @@ def _single_minimize(
         database=database,
         queue=queue,
         fitness_factor=fitness_factor,
+        len_criterion_value=len_criterion_value,
     )
 
     if dashboard:
@@ -363,6 +371,7 @@ def _internal_minimize(
     database,
     queue,
     fitness_factor,
+    len_criterion_value,
 ):
     """Create the internal criterion function and minimize it.
 
@@ -408,9 +417,13 @@ def _internal_minimize(
             multiplicative factor for the fitness displayed in the dashboard.
             Set to -1 for maximizations to plot the fitness that is being maximized.
 
+        len_criterion_value (float or np.ndarray)
+            Length of the criterion output which is one for scalars and the length of
+            the first dimension of an array.
+
     """
     logging_decorator = functools.partial(
-        log_parameters_and_fitness,
+        log_parameters_and_criterion_value,
         database=database,
         tables=["params_history", "criterion_history"],
     )
@@ -418,11 +431,13 @@ def _internal_minimize(
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
+        internal_params=internal_params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         logging_decorator=logging_decorator,
         queue=queue,
         fitness_factor=fitness_factor,
+        general_options=general_options,
     )
 
     internal_gradient = create_internal_gradient(
@@ -430,11 +445,13 @@ def _internal_minimize(
         gradient_options=gradient_options,
         criterion=criterion,
         params=params,
+        internal_params=internal_params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         database=database,
         fitness_factor=fitness_factor,
         algorithm=algorithm,
+        general_options=general_options,
     )
 
     current_dir_path = Path(__file__).resolve().parent
@@ -456,26 +473,25 @@ def _internal_minimize(
 
     if origin in ["nlopt", "pygmo"]:
         results = minimize_pygmo_np(
-            internal_criterion,
-            internal_params,
-            bounds,
-            origin,
-            algo_name,
-            algo_options,
+            internal_criterion, internal_params, bounds, origin, algo_name, algo_options
         )
 
     elif origin == "scipy":
         results = minimize_scipy_np(
             internal_criterion,
             internal_params,
-            jac=internal_gradient,
             bounds=bounds,
             algo_name=algo_name,
             algo_options=algo_options,
+            jac=internal_gradient,
         )
     elif origin == "tao":
         results = minimize_pounders_np(
-            internal_criterion, internal_params, bounds, **algo_options
+            internal_criterion,
+            internal_params,
+            bounds,
+            n_errors=len_criterion_value,
+            **algo_options,
         )
     else:
         raise NotImplementedError("Invalid algorithm requested.")
@@ -495,11 +511,13 @@ def _internal_minimize(
 def create_internal_criterion(
     criterion,
     params,
+    internal_params,
     constraints,
     criterion_kwargs,
     logging_decorator,
     queue,
     fitness_factor,
+    general_options,
 ):
     """Create the internal criterion function.
 
@@ -533,8 +551,9 @@ def create_internal_criterion(
             before returning the fitness evaluation.
 
     """
-    c = np.zeros(1, dtype=int)
+    c = 0
 
+    @exception_handling(internal_params, general_options)
     @x_to_params(params, constraints)
     @logging_decorator()
     def internal_criterion(p, counter=c):
@@ -542,17 +561,13 @@ def create_internal_criterion(
 
         # For Pounders, return the sum of squared errors from errors.
         _fitness_eval = (
-            (fitness_eval ** 2).sum()
-            if isinstance(fitness_eval, np.ndarray)
-            else fitness_eval
+            fitness_eval if np.isscalar(fitness_eval) else ((fitness_eval ** 2).sum())
         )
 
         if queue is not None:
             queue.put(
                 QueueEntry(
-                    iteration=counter[0],
-                    params=p,
-                    fitness=fitness_factor * _fitness_eval,
+                    iteration=counter, params=p, fitness=fitness_factor * _fitness_eval,
                 )
             )
         counter += 1
@@ -607,11 +622,13 @@ def create_internal_gradient(
     gradient_options,
     criterion,
     params,
+    internal_params,
     constraints,
     criterion_kwargs,
     database,
     fitness_factor,
     algorithm,
+    general_options,
 ):
     n_internal_params = params["_internal_free"].sum()
     gradient_options = {} if gradient_options is None else gradient_options
@@ -650,11 +667,13 @@ def create_internal_gradient(
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
+        internal_params=internal_params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         logging_decorator=logging_decorator,
         queue=None,
         fitness_factor=fitness_factor,
+        general_options=general_options,
     )
     bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
     names = params.query("_internal_free")["name"].tolist()
