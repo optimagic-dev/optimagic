@@ -117,7 +117,7 @@ def log_optimization_status(database):
     This decorator should be applied to all `minimize_*` interfaces of the different
     optimizer packages.
 
-    The success status should be inferred from common field.
+    The success status should be inferred from a common field.
 
     """
 

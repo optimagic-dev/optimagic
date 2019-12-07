@@ -473,7 +473,13 @@ def _internal_minimize(
 
     if origin in ["nlopt", "pygmo"]:
         results = minimize_pygmo_np(
-            internal_criterion, internal_params, bounds, origin, algo_name, algo_options
+            internal_criterion,
+            internal_params,
+            bounds,
+            origin,
+            algo_name,
+            algo_options,
+            internal_gradient,
         )
 
     elif origin == "scipy":
@@ -483,7 +489,7 @@ def _internal_minimize(
             bounds=bounds,
             algo_name=algo_name,
             algo_options=algo_options,
-            jac=internal_gradient,
+            gradient=internal_gradient,
         )
     elif origin == "tao":
         results = minimize_pounders_np(
@@ -567,7 +573,7 @@ def create_internal_criterion(
         if queue is not None:
             queue.put(
                 QueueEntry(
-                    iteration=counter, params=p, fitness=fitness_factor * _fitness_eval,
+                    iteration=counter, params=p, fitness=fitness_factor * _fitness_eval
                 )
             )
         counter += 1
