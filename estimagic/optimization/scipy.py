@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 
-def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
+def minimize_scipy_np(func, x0, bounds, algo_name, algo_options=None, gradient=None):
     """Interface for scipy.
 
     Args:
@@ -15,6 +15,7 @@ def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
         algo_name (str): One of the optimizers of the scipy package which receives the
             same inputs as the ``"method"`` keyword of the original function.
         algo_options (dict): Options for the optimizer.
+        gradient (callable): Gradient function.
 
     Returns:
         results (dict): Dictionary with processed optimization results.
@@ -29,7 +30,7 @@ def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
     bounds = tuple(bounds)
 
     scipy_results_obj = minimize(
-        func, x0, method=algo_name, bounds=bounds, options=algo_options,
+        func, x0, jac=gradient, method=algo_name, bounds=bounds, options=algo_options,
     )
     results = _process_scipy_results(scipy_results_obj)
 
@@ -39,7 +40,8 @@ def minimize_scipy_np(func, x0, bounds, algo_name, algo_options):
 def _process_scipy_results(scipy_results_obj):
     results = {**scipy_results_obj}
     # Harmonized results
-    results["criterion"] = results.pop("fun", None)
+    results["status"] = "success"
+    results["fitness"] = results.pop("fun", None)
     results["n_evaluations"] = results.pop("nfev", None)
 
     # Other results.

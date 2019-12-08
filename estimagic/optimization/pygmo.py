@@ -3,7 +3,7 @@ import pygmo as pg
 from estimagic.config import DEFAULT_SEED
 
 
-def minimize_pygmo_np(func, x0, bounds, origin, algo_name, algo_options):
+def minimize_pygmo_np(func, x0, bounds, origin, algo_name, algo_options, gradient=None):
     """Minimize a function with pygmo.
 
     Args:
@@ -29,7 +29,7 @@ def minimize_pygmo_np(func, x0, bounds, origin, algo_name, algo_options):
             "gen" in algo_options
         ), f"For genetic optimizers like {algo_name}, gen is mandatory."
 
-    prob = _create_problem(func, bounds)
+    prob = _create_problem(func, bounds, origin, gradient)
     algo = _create_algorithm(algo_name, algo_options, origin)
     pop = _create_population(prob, algo_options, x0)
     evolved = algo.evolve(pop)
@@ -38,13 +38,16 @@ def minimize_pygmo_np(func, x0, bounds, origin, algo_name, algo_options):
     return result
 
 
-def _create_problem(func, bounds):
+def _create_problem(func, bounds, origin, gradient_):
     class Problem:
         def fitness(self, x):
             return [func(x)]
 
         def get_bounds(self):
             return bounds
+
+        def gradient(self, dv):
+            return gradient_(dv)
 
     return Problem()
 
@@ -92,7 +95,8 @@ def _create_population(problem, algo_options, x0):
 def _process_pygmo_results(evolved):
     results = {
         # Harmonized results.
-        "criterion": evolved.champion_f[0],
+        "status": "success",
+        "fitness": evolved.champion_f[0],
         "x": evolved.champion_x,
         "n_evaluations": evolved.problem.get_fevals(),
         # Other results.

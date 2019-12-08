@@ -1,5 +1,6 @@
 import copy
 from collections import Callable
+from pathlib import Path
 
 import pandas as pd
 
@@ -12,6 +13,10 @@ def process_optimization_arguments(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient=None,
+    gradient_options=None,
+    logging=False,
+    log_options=None,
     dashboard=False,
     db_options=None,
 ):
@@ -40,24 +45,35 @@ def process_optimization_arguments(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
+        gradient (callable or None):
+            Gradient function.
+
+        gradient_options (dict):
+            Options for the gradient function.
+
+        logging (str/path or list of strings/paths):
+            Location of the database.
+
+        log_options (dict or list of dicts):
+            Optimization-specific options for logging.
+
         dashboard (bool):
             whether to create and show a dashboard
 
         db_options (dict):
             dictionary with kwargs to be supplied to the run_server function.
 
-
     Returns:
         List: List of dictionaries. One dict for each optimization.
 
     """
-
-    # set default arguments
     criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
     constraints = [] if constraints is None else constraints
     algo_options = {} if algo_options is None else algo_options
+    log_options = {} if log_options is None else log_options
     db_options = {} if db_options is None else db_options
     general_options = {} if general_options is None else general_options
+
     # Determine number of optimizations and check types
 
     # Specify name, expected type and expected dimensionality for all arguments.
@@ -105,6 +121,24 @@ def process_optimization_arguments(
             "argument_required": False,
             "expected_dim": "scalar_or_list",
         },
+        "gradient": {
+            "candidate": gradient,
+            "scalar_type": (Callable, type(None)),
+            "argument_required": False,
+            "expected_dim": "scalar_or_list",
+        },
+        "gradient_options": {
+            "candidate": gradient_options,
+            "scalar_type": (dict, type(None)),
+            "argument_required": False,
+            "expected_dim": "scalar_or_list",
+        },
+        "log_options": {
+            "candidate": log_options,
+            "scalar_type": dict,
+            "argument_required": False,
+            "expected_dim": "scalar_or_list",
+        },
         "criterion_kwargs": {
             "candidate": criterion_kwargs,
             "scalar_type": dict,
@@ -118,7 +152,7 @@ def process_optimization_arguments(
         },
     }
 
-    # Check type and calc n_opts for each argument
+    # Check type and calc n_optimizations for each argument
     for arg_name, arg_spec in arguments.items():
         if arg_spec["expected_dim"] == "scalar":
             _check_type_nonlist_argument(
@@ -142,17 +176,21 @@ def process_optimization_arguments(
             )
 
     # Calc number of optimizations that should be run
-    n_opts = max(a["n_opts_entered"] for a in arguments.values())
+    n_optimizations = max(a["n_opts_entered"] for a in arguments.values())
+
+    # Process paths of databases.
+    logging_argument = _process_paths_for_logging(logging, n_optimizations)
+    arguments.update(logging_argument)
 
     # Put arguments together
     processed_arguments = []
-    for run in range(n_opts):
+    for run in range(n_optimizations):
         args_one_run = {}
         for arg_name, arg_spec in arguments.items():
             # Entered as scalar
             if arg_spec["n_opts_entered"] == 1:
-                is_list = isinstance(arg_spec["candidate"], (list, tuple))
-                if is_list and len(arg_spec["candidate"]) == 1:
+                is_iterable = isinstance(arg_spec["candidate"], (list, tuple))
+                if is_iterable and len(arg_spec["candidate"]) == 1:
                     if arg_name == "constraints":
                         args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
                     else:
@@ -161,15 +199,14 @@ def process_optimization_arguments(
                     args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
 
             # Entered as list of correct length
-            elif arg_spec["n_opts_entered"] == n_opts:
+            elif arg_spec["n_opts_entered"] == n_optimizations:
                 args_one_run[arg_name] = arg_spec["candidate"][run]
 
             # Entered as too short list
             else:
                 raise ValueError(
-                    f"All arguments entered as list/tuple must be of the same "
-                    + f"length. The length of {arg_name} "
-                    + f"is below the length of another argument."
+                    "All arguments entered as list/tuple must be of the same length. "
+                    f"The length of {arg_name} is below the length of another argument."
                 )
         processed_arguments.append(args_one_run)
 
@@ -219,14 +256,14 @@ def _get_n_opt_and_check_type_list_argument(
     if isinstance(candidate, (list, tuple)):
 
         # Empty argument
-        if candidate in ([], ()):
-            num_opt = 1
+        if len(candidate) == 0:
+            n_optimizations = 1
             if argument_required:
                 raise ValueError(f"{name} needs to be specified")
 
         # Non-empty list/tuple
         else:
-            num_opt = len(candidate)
+            n_optimizations = len(candidate)
 
             # Assert that all values are of the correct type
             for c in candidate:
@@ -235,13 +272,13 @@ def _get_n_opt_and_check_type_list_argument(
 
     # Scalar
     else:
-        num_opt = 1
+        n_optimizations = 1
 
         # Assert that scalar is of the correct type
         if not isinstance(candidate, scalar_type):
             raise ValueError(msg)
 
-    return num_opt
+    return n_optimizations
 
 
 def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required, name):
@@ -266,19 +303,88 @@ def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required,
         raise ValueError(msg)
 
     # Empty list/tuple
-    elif candidate in ([], ()):
-        num_opt = 1
+    elif len(candidate) == 0:
+        n_optimizations = 1
         if argument_required:
             raise ValueError(f"{name} needs to be specified")
 
     # Nested list/tuple
     elif isinstance(candidate[0], (list, tuple)):
-        num_opt = len(candidate)
+        n_optimizations = len(candidate)
         for c in candidate:
             if not isinstance(c, (list, tuple)):
                 raise ValueError(msg)
 
     # Non-empty 1-dimensional list/tuple
     else:
-        num_opt = 1
-    return num_opt
+        n_optimizations = 1
+    return n_optimizations
+
+
+def _process_paths_for_logging(logging, n_optimizations):
+    """Process paths to the logs.
+
+    `logging` can be a single value in which case it becomes an iterable with a single
+    value to simplify the processing.
+
+    `logging` can also be a `list` or a `tuple` in which case
+
+    - a single path receives a number as a suffix for more than one optimizations.
+    - everything else is parsed according to the following transformation rules.
+
+    Every candidate value for `logging` is transformed according to the following rules.
+    If `logging` is a `str`, it is converted to :class:`pathlib.Path` and a
+    :class:`pathlib.Path` is left unchanged. Everything which evaluates to `False` is
+    set to `False` which turns logging off.
+
+    Raises
+    ------
+    ValueError
+        If `n_logging` is not one and not `n_optimizations`.
+    ValueError
+        If there are identical paths in `logging`.
+
+    """
+    if not isinstance(logging, (tuple, list)):
+        logging = [logging]
+
+    n_logging = len(logging)
+
+    # If `n_logging` is not 1 and not `n_optimizations`, then raise error.
+    if 1 != n_logging != n_optimizations:
+        raise ValueError(
+            f"logging has {n_logging} entries and there are {n_optimizations} "
+            "optimizations. Cannot harmonize entries."
+        )
+
+    # Handle the special case, where we have one path and multiple optimizations. Then,
+    # add numbers as suffixes to the path.
+    if n_logging == 1 and n_optimizations >= 2 and isinstance(logging[0], (str, Path)):
+        path = Path(logging[0]).absolute()
+        logging = [
+            path.parent / (path.stem + f"_{i}.db") for i in range(n_optimizations)
+        ]
+    # Else, just parse all the elements.
+    else:
+        logging = [_process_path(path) for path in logging]
+
+    # Sanity check if there some False and some paths that the paths are not the same.
+    only_paths = [path for path in logging if isinstance(path, Path)]
+    if len(set(only_paths)) != len(only_paths):
+        raise ValueError("Paths to databases cannot be identical.")
+
+    argument = {"logging": {"candidate": logging, "n_opts_entered": len(logging)}}
+
+    return argument
+
+
+def _process_path(path):
+    """Processes an individual path."""
+    if not path:
+        path = False
+    elif isinstance(path, (str, Path)):
+        path = Path(path).absolute()
+    else:
+        raise ValueError("logging has to be a str/path or list of str/paths or False.")
+
+    return path

@@ -2,6 +2,7 @@ import numdifftools as nd
 import numpy as np
 import pandas as pd
 
+from estimagic.decorators import numpy_interface
 from estimagic.differentiation import differentiation_auxiliary as aux
 
 
@@ -195,13 +196,10 @@ def _no_extrapolation_hessian(internal_func, params_value, method):
 
 
 def _create_internal_func(func, params, func_kwargs):
-    def internal_func(x):
-        p = params.copy(deep=True)
-        p["value"] = x
-
+    @numpy_interface(params)
+    def internal_func(p):
         func_value = func(p, **func_kwargs)
-        if isinstance(func_value, (pd.DataFrame, pd.Series)):
-            func_value = func_value.to_numpy()
+
         return func_value
 
     return internal_func

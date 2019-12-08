@@ -1,6 +1,6 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
+import functools
 import json
-import traceback
 from collections import namedtuple
 from multiprocessing import Event
 from multiprocessing import Pool
@@ -11,8 +11,18 @@ from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
+from scipy.optimize._numdiff import approx_derivative
 
+from estimagic.config import DEFAULT_DATABASE_NAME
+from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
+from estimagic.decorators import exception_handling
+from estimagic.decorators import log_evaluation
+from estimagic.decorators import log_gradient
+from estimagic.decorators import log_gradient_status
+from estimagic.decorators import numpy_interface
+from estimagic.logging.create_database import prepare_database
+from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.pounders import minimize_pounders_np
 from estimagic.optimization.process_arguments import process_optimization_arguments
 from estimagic.optimization.process_constraints import process_constraints
@@ -23,7 +33,8 @@ from estimagic.optimization.scipy import minimize_scipy_np
 from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
-QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "criterion"])
+
+QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "fitness"])
 
 
 def maximize(
@@ -34,81 +45,18 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient_options=None,
+    logging=DEFAULT_DATABASE_NAME,
+    log_options=None,
     dashboard=False,
     db_options=None,
 ):
-    """
-    Maximize *criterion* using *algorithm* subject to *pc* and bounds.
+    """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
 
-    Args:
-        criterion (function):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
-
-        params (pd.DataFrame):
-            See :ref:`params`.
-
-        algorithm (str):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_kwargs (dict):
-            additional keyword arguments for criterion
-
-        constraints (list):
-            list with constraint dictionaries. See for details.
-
-        general_options (dict):
-            additional configurations for the optimization.
-
-        algo_options (dict):
-            algorithm specific configurations for the optimization.
-
-        dashboard (bool):
-            whether to create and show a dashboard.
-
-        db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function.
-
-    """
-
-    def neg_criterion(params, **criterion_kwargs):
-        return -criterion(params, **criterion_kwargs)
-
-    # identify the criterion function as belongig to a maximization problem
-    if general_options is None:
-        general_options = {"_maximization": True}
-    else:
-        general_options["_maximization"] = True
-
-    results, params = minimize(
-        neg_criterion,
-        params=params,
-        algorithm=algorithm,
-        criterion_kwargs=criterion_kwargs,
-        constraints=constraints,
-        general_options=general_options,
-        algo_options=algo_options,
-        dashboard=dashboard,
-        db_options=db_options,
-    )
-    results["criterion"] = -results["criterion"]
-
-    return results, params
-
-
-def minimize(
-    criterion,
-    params,
-    algorithm,
-    criterion_kwargs=None,
-    constraints=None,
-    general_options=None,
-    algo_options=None,
-    dashboard=False,
-    db_options=None,
-):
-    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
-    Run several optimizations if called by lists of inputs.
+    Each argument except for ``general_options`` can also be replaced by a list of
+    arguments in which case several optimizations are run in parallel. For this, either
+    all arguments must be lists of the same length, or some arguments can be provided
+    as single arguments in which case they are automatically broadcasted.
 
     Args:
         criterion (function or list of functions):
@@ -133,14 +81,113 @@ def minimize(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
+        gradient_options (dict):
+            Options for the gradient function.
+
+        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
+            file extension ``.db``. If the file does not exist, it will be created. See
+            :ref:`logging` for details.
+
+        log_options (dict): Keyword arguments to influence the logging. See
+            :ref:`logging` for details.
+
         dashboard (bool):
-            whether to create and show a dashboard
+            whether to create and show a dashboard. See :ref:`dashboard` for details.
 
         db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function.
+            dictionary with kwargs to be supplied to the run_server function. See
+                :ref:`dashboard` for details.
 
     """
 
+    def neg_criterion(params, **criterion_kwargs):
+        return -criterion(params, **criterion_kwargs)
+
+    # Set a flag for a maximization problem.
+    general_options = {} if general_options is None else general_options
+    general_options["_maximization"] = True
+
+    results, params = minimize(
+        neg_criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        general_options=general_options,
+        algo_options=algo_options,
+        gradient_options=gradient_options,
+        logging=logging,
+        log_options=log_options,
+        dashboard=dashboard,
+        db_options=db_options,
+    )
+    results["fitness"] = -results["fitness"]
+
+    return results, params
+
+
+def minimize(
+    criterion,
+    params,
+    algorithm,
+    criterion_kwargs=None,
+    constraints=None,
+    general_options=None,
+    algo_options=None,
+    gradient_options=None,
+    logging=DEFAULT_DATABASE_NAME,
+    log_options=None,
+    dashboard=False,
+    db_options=None,
+):
+    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
+
+    Each argument except for ``general_options`` can also be replaced by a list of
+    arguments in which case several optimizations are run in parallel. For this, either
+    all arguments must be lists of the same length, or some arguments can be provided
+    as single arguments in which case they are automatically broadcasted.
+
+    Args:
+        criterion (function or list of functions):
+            Python function that takes a pandas DataFrame with parameters as the first
+            argument and returns a scalar floating point value.
+
+        params (pd.DataFrame or list of pd.DataFrames):
+            See :ref:`params`.
+
+        algorithm (str or list of strings):
+            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+
+        criterion_kwargs (dict or list of dicts):
+            additional keyword arguments for criterion
+
+        constraints (list or list of lists):
+            list with constraint dictionaries. See for details.
+
+        general_options (dict):
+            additional configurations for the optimization
+
+        algo_options (dict or list of dicts):
+            algorithm specific configurations for the optimization
+
+        gradient_options (dict):
+            Options for the gradient function.
+
+        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
+            file extension ``.db``. If the file does not exist, it will be created. See
+            :ref:`logging` for details.
+
+        log_options (dict): Keyword arguments to influence the logging. See
+            :ref:`logging` for details.
+
+        dashboard (bool):
+            whether to create and show a dashboard. See :ref:`dashboard` for details.
+
+        db_options (dict):
+            dictionary with kwargs to be supplied to the run_server function. See
+                :ref:`dashboard` for details.
+
+    """
     arguments = process_optimization_arguments(
         criterion=criterion,
         params=params,
@@ -149,6 +196,10 @@ def minimize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
+        gradient=None,
+        gradient_options=gradient_options,
+        logging=logging,
+        log_options=log_options,
         dashboard=dashboard,
         db_options=db_options,
     )
@@ -185,6 +236,10 @@ def _single_minimize(
     constraints,
     general_options,
     algo_options,
+    gradient,
+    gradient_options,
+    logging,
+    log_options,
     dashboard,
     db_options,
 ):
@@ -214,6 +269,19 @@ def _single_minimize(
         algo_options (dict):
             algorithm specific configurations for the optimization
 
+        gradient (callable or None):
+            Gradient function.
+
+        gradient_options (dict):
+            Options for the gradient function.
+
+        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
+            file extension ``.db``. If the file does not exist, it will be created. See
+            :ref:`logging` for details.
+
+        log_options (dict): Keyword arguments to influence the logging. See
+            :ref:`logging` for details.
+
         dashboard (bool):
             whether to create and show a dashboard
 
@@ -224,8 +292,16 @@ def _single_minimize(
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
-    fitness_factor = -1 if general_options.get("_maximization", False) else 1
+    database = prepare_database(logging, params, log_options) if logging else False
+
+    fitness_factor = -1 if general_options.pop("_maximization", False) else 1
     fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
+    if np.any(np.isnan(fitness_eval)):
+        raise ValueError(
+            "The criterion function evaluated at the start parameters returns NaNs."
+        )
+    general_options["start_criterion_value"] = fitness_eval
+
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
 
@@ -253,7 +329,10 @@ def _single_minimize(
         constraints=constraints,
         algorithm=algorithm,
         algo_options=algo_options,
+        gradient=gradient,
+        gradient_options=gradient_options,
         general_options=general_options,
+        database=database,
         queue=queue,
         fitness_factor=fitness_factor,
     )
@@ -265,8 +344,7 @@ def _single_minimize(
 
 
 def _one_argument_single_minimize(kwargs):
-    """Wrapper for single_minimize used for multiprocessing.
-    """
+    """Wrapper for single_minimize to use kwargs with multiprocessing."""
     return _single_minimize(**kwargs)
 
 
@@ -278,7 +356,10 @@ def _internal_minimize(
     constraints,
     algorithm,
     algo_options,
+    gradient,
+    gradient_options,
     general_options,
+    database,
     queue,
     fitness_factor,
 ):
@@ -307,8 +388,17 @@ def _internal_minimize(
         algo_options (dict):
             algorithm specific configurations for the optimization
 
+        gradient (callable or None):
+            Gradient function.
+
+        gradient_options (dict):
+            Options for the gradient function.
+
         general_options (dict):
             additional configurations for the optimization
+
+        database (sqlalchemy.sql.schema.MetaData). The engine that connects to the
+            database can be accessed via ``database.bind``.
 
         queue (Queue):
             queue to which the fitness evaluations and params DataFrames are supplied.
@@ -318,13 +408,36 @@ def _internal_minimize(
             Set to -1 for maximizations to plot the fitness that is being maximized.
 
     """
+    logging_decorator = functools.partial(
+        log_evaluation,
+        database=database,
+        tables=["params_history", "criterion_history"],
+    )
+
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
+        internal_params=internal_params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
+        logging_decorator=logging_decorator,
         queue=queue,
         fitness_factor=fitness_factor,
+        general_options=general_options,
+    )
+
+    internal_gradient = create_internal_gradient(
+        gradient=gradient,
+        gradient_options=gradient_options,
+        criterion=criterion,
+        params=params,
+        internal_params=internal_params,
+        constraints=constraints,
+        criterion_kwargs=criterion_kwargs,
+        database=database,
+        fitness_factor=fitness_factor,
+        algorithm=algorithm,
+        general_options=general_options,
     )
 
     current_dir_path = Path(__file__).resolve().parent
@@ -344,51 +457,67 @@ def _internal_minimize(
 
     bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
 
-    try:
-        if origin in ["nlopt", "pygmo"]:
-            results = minimize_pygmo_np(
-                internal_criterion,
-                internal_params,
-                bounds,
-                origin,
-                algo_name,
-                algo_options,
-            )
+    if database:
+        update_scalar_field(database, "optimization_status", "running")
 
-        elif origin == "scipy":
-            results = minimize_scipy_np(
-                internal_criterion, internal_params, bounds, algo_name, algo_options
-            )
-        elif origin == "tao":
-            results = minimize_pounders_np(
-                internal_criterion, internal_params, bounds, **algo_options
-            )
-        else:
-            raise NotImplementedError("Invalid algorithm requested.")
-
-    except Exception:
-        results = {
-            "optimization_status": "failure",
-            "traceback": traceback.format_exc(),
-        }
-        params = None
-
-    else:
-        results["optimization_status"] = "success"
-        params = reparametrize_from_internal(
-            internal=results["x"],
-            fixed_values=params["_internal_fixed_value"].to_numpy(),
-            pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
-            processed_constraints=constraints,
-            post_replacements=params["_post_replacements"].to_numpy().astype(int),
-            processed_params=params,
+    if origin in ["nlopt", "pygmo"]:
+        results = minimize_pygmo_np(
+            internal_criterion,
+            internal_params,
+            bounds,
+            origin,
+            algo_name,
+            algo_options,
+            internal_gradient,
         )
+
+    elif origin == "scipy":
+        results = minimize_scipy_np(
+            internal_criterion,
+            internal_params,
+            bounds=bounds,
+            algo_name=algo_name,
+            algo_options=algo_options,
+            gradient=internal_gradient,
+        )
+    elif origin == "tao":
+        crit_val = general_options["start_criterion_value"]
+        len_criterion_value = 1 if np.isscalar(crit_val) else len(crit_val)
+        results = minimize_pounders_np(
+            internal_criterion,
+            internal_params,
+            bounds,
+            n_errors=len_criterion_value,
+            **algo_options,
+        )
+    else:
+        raise NotImplementedError("Invalid algorithm requested.")
+
+    if database:
+        update_scalar_field(database, "optimization_status", results["status"])
+
+    params = reparametrize_from_internal(
+        internal=results["x"],
+        fixed_values=params["_internal_fixed_value"].to_numpy(),
+        pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
+        processed_constraints=constraints,
+        post_replacements=params["_post_replacements"].to_numpy().astype(int),
+        processed_params=params,
+    )
 
     return results, params
 
 
 def create_internal_criterion(
-    criterion, params, constraints, criterion_kwargs, queue, fitness_factor
+    criterion,
+    params,
+    internal_params,
+    constraints,
+    criterion_kwargs,
+    logging_decorator,
+    queue,
+    fitness_factor,
+    general_options,
 ):
     """Create the internal criterion function.
 
@@ -406,8 +535,9 @@ def create_internal_criterion(
         criterion_kwargs (dict):
             additional keyword arguments for criterion
 
-        queue (Queue):
-            queue to which the fitness evaluations and params DataFrames are supplied.
+        logging_decorator (callable):
+            Decorator used for logging information. Either log parameters and fitness
+            values during the optimization or log the gradient status.
 
         fitness_factor (float):
             multiplicative factor for the fitness displayed in the dashboard.
@@ -421,32 +551,23 @@ def create_internal_criterion(
             before returning the fitness evaluation.
 
     """
-    c = np.zeros(1, dtype=int)
+    c = 0
 
-    def internal_criterion(x, counter=c):
-        p = reparametrize_from_internal(
-            internal=x,
-            fixed_values=params["_internal_fixed_value"].to_numpy(),
-            pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
-            processed_constraints=constraints,
-            post_replacements=params["_post_replacements"].to_numpy().astype(int),
-            processed_params=params,
-        )
+    @exception_handling(internal_params, general_options)
+    @numpy_interface(params, constraints)
+    @logging_decorator()
+    def internal_criterion(p, counter=c):
         fitness_eval = criterion(p, **criterion_kwargs)
 
         # For Pounders, return the sum of squared errors from errors.
         _fitness_eval = (
-            (fitness_eval ** 2).sum()
-            if isinstance(fitness_eval, np.ndarray)
-            else fitness_eval
+            fitness_eval if np.isscalar(fitness_eval) else ((fitness_eval ** 2).sum())
         )
 
         if queue is not None:
             queue.put(
                 QueueEntry(
-                    iteration=counter[0],
-                    params=p,
-                    fitness=fitness_factor * _fitness_eval,
+                    iteration=counter, params=p, fitness=fitness_factor * _fitness_eval
                 )
             )
         counter += 1
@@ -494,3 +615,71 @@ def _process_params(params):
         )
         raise ValueError(msg)
     return params
+
+
+def create_internal_gradient(
+    gradient,
+    gradient_options,
+    criterion,
+    params,
+    internal_params,
+    constraints,
+    criterion_kwargs,
+    database,
+    fitness_factor,
+    algorithm,
+    general_options,
+):
+    n_internal_params = params["_internal_free"].sum()
+    gradient_options = {} if gradient_options is None else gradient_options
+
+    if gradient is None:
+        gradient = approx_derivative
+        default_options = {
+            "method": "2-point",
+            "rel_step": None,
+            "f0": None,
+            "sparsity": None,
+            "as_linear_operator": False,
+        }
+        gradient_options = {**default_options, **gradient_options}
+
+        if gradient_options["method"] == "2-point":
+            n_gradient_evaluations = 2 * n_internal_params
+        elif gradient_options["method"] == "3-point":
+            n_gradient_evaluations = 3 * n_internal_params
+        else:
+            raise ValueError(
+                f"Gradient method '{gradient_options['method']} not supported."
+            )
+
+    else:
+        n_gradient_evaluations = gradient_options.pop("n_gradient_evaluations", None)
+
+    database = database if algorithm in OPTIMIZER_SAVE_GRADIENTS else None
+
+    logging_decorator = functools.partial(
+        log_gradient_status,
+        database=database,
+        n_gradient_evaluations=n_gradient_evaluations,
+    )
+
+    internal_criterion = create_internal_criterion(
+        criterion=criterion,
+        params=params,
+        internal_params=internal_params,
+        constraints=constraints,
+        criterion_kwargs=criterion_kwargs,
+        logging_decorator=logging_decorator,
+        queue=None,
+        fitness_factor=fitness_factor,
+        general_options=general_options,
+    )
+    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+    names = params.query("_internal_free")["name"].tolist()
+
+    @log_gradient(database, names)
+    def internal_gradient(x):
+        return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
+
+    return internal_gradient

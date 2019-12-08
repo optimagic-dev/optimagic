@@ -221,7 +221,8 @@ def _translate_tao_convergence_reason(tao_resaon):
 def _process_pounders_results(residuals_out, tao):
     results = {
         # Harmonized results.
-        "criterion": tao.function,
+        "status": "success",
+        "fitness": tao.function,
         "x": tao.solution.array,
         "n_evaluations": tao.getIterationNumber(),
         # Other results.
