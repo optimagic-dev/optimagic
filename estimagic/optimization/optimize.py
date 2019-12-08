@@ -17,10 +17,10 @@ from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
 from estimagic.decorators import exception_handling
+from estimagic.decorators import log_evaluation
 from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
-from estimagic.decorators import log_parameters_and_criterion_value
-from estimagic.decorators import x_to_params
+from estimagic.decorators import numpy_interface
 from estimagic.logging.create_database import prepare_database
 from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.pounders import minimize_pounders_np
@@ -45,7 +45,6 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    gradient=None,
     gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
@@ -82,9 +81,6 @@ def maximize(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
-        gradient (callable or None):
-            Gradient function.
-
         gradient_options (dict):
             Options for the gradient function.
 
@@ -119,7 +115,6 @@ def maximize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
-        gradient=gradient,
         gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
@@ -139,7 +134,6 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
-    gradient=None,
     gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
@@ -176,9 +170,6 @@ def minimize(
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
 
-        gradient (callable or None):
-            Gradient function.
-
         gradient_options (dict):
             Options for the gradient function.
 
@@ -205,7 +196,7 @@ def minimize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
-        gradient=gradient,
+        gradient=None,
         gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
@@ -309,7 +300,7 @@ def _single_minimize(
         raise ValueError(
             "The criterion function evaluated at the start parameters returns NaNs."
         )
-    general_options["criterion_value"] = fitness_eval
+    general_options["start_criterion_value"] = fitness_eval
 
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
@@ -418,7 +409,7 @@ def _internal_minimize(
 
     """
     logging_decorator = functools.partial(
-        log_parameters_and_criterion_value,
+        log_evaluation,
         database=database,
         tables=["params_history", "criterion_history"],
     )
@@ -490,7 +481,7 @@ def _internal_minimize(
             gradient=internal_gradient,
         )
     elif origin == "tao":
-        crit_val = general_options["criterion"]
+        crit_val = general_options["start_criterion_value"]
         len_criterion_value = 1 if np.isscalar(crit_val) else len(crit_val)
         results = minimize_pounders_np(
             internal_criterion,
@@ -563,7 +554,7 @@ def create_internal_criterion(
     c = 0
 
     @exception_handling(internal_params, general_options)
-    @x_to_params(params, constraints)
+    @numpy_interface(params, constraints)
     @logging_decorator()
     def internal_criterion(p, counter=c):
         fitness_eval = criterion(p, **criterion_kwargs)
@@ -645,7 +636,7 @@ def create_internal_gradient(
     if gradient is None:
         gradient = approx_derivative
         default_options = {
-            "method": "3-point",
+            "method": "2-point",
             "rel_step": None,
             "f0": None,
             "sparsity": None,

@@ -44,6 +44,3 @@ behavior. The following options are available:
 - ``"readme"``: A string with a description of the optimization. This can be helpful to
   send a message to your future self who might have forgotten why he ran this particular
   optimization.
-- ``"exclude_tables"``: A list with names of tables from above that should be excluded
-  from the logging. This can be used to save disk space and a bit of time in each
-  iteration. Note that the tables will still be generated, but not updated.

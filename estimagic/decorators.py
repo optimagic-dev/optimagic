@@ -2,19 +2,20 @@ import functools
 import itertools
 
 import numpy as np
+import pandas as pd
 
-from estimagic.config import DEFAULT_CRITERION_PENALTY
+from estimagic.config import MAX_CRITERION_PENALTY
 from estimagic.logging.update_database import append_rows
 from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 
 
-def x_to_params(params, constraints=None):
+def numpy_interface(params, constraints=None):
     """Convert x to params."""
 
-    def decorator_x_to_params(func):
+    def decorator_numpy_interface(func):
         @functools.wraps(func)
-        def wrapper_x_to_params(x, *args, **kwargs):
+        def wrapper_numpy_interface(x, *args, **kwargs):
             # Handle usage in :func:`internal_function` for gradients.
             if constraints is None:
                 p = params.copy()
@@ -35,14 +36,17 @@ def x_to_params(params, constraints=None):
 
             out = func(p, *args, **kwargs)
 
+            if isinstance(out, (pd.DataFrame, pd.Series)):
+                out = out.to_numpy()
+
             return out
 
-        return wrapper_x_to_params
+        return wrapper_numpy_interface
 
-    return decorator_x_to_params
+    return decorator_numpy_interface
 
 
-def log_parameters_and_criterion_value(database, tables):
+def log_evaluation(database, tables):
     """Log parameters and fitness values."""
 
     def decorator_log_parameters_and_criterion_value(func):
@@ -120,16 +124,19 @@ def exception_handling(start_params, general_options):
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
+                criterion_value = general_options["start_criterion_value"]
                 constant, slope = general_options.get(
-                    "criterion_exception_penalty", (np.nan, np.nan)
+                    "criterion_exception_penalty", (None, None)
                 )
+                constant = 2 * criterion_value if constant is None else constant
+                slope = 0.1 * criterion_value if slope is None else slope
                 raise_exc = general_options.get("criterion_exception_raise", False)
 
                 if raise_exc:
                     raise e
                 else:
                     out = min(
-                        DEFAULT_CRITERION_PENALTY,
+                        MAX_CRITERION_PENALTY,
                         constant + slope * np.linalg.norm(x - start_params),
                     )
 
