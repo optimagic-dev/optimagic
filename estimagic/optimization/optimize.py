@@ -414,16 +414,23 @@ def _internal_minimize(
         tables=["params_history", "criterion_history"],
     )
 
+    exception_decorator = functools.partial(
+        exception_handling,
+        database=database,
+        table="criterion_exceptions",
+        start_params=internal_params,
+        general_options=general_options,
+    )
+
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
-        internal_params=internal_params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         logging_decorator=logging_decorator,
+        exception_decorator=exception_decorator,
         queue=queue,
         fitness_factor=fitness_factor,
-        general_options=general_options,
     )
 
     internal_gradient = create_internal_gradient(
@@ -511,13 +518,12 @@ def _internal_minimize(
 def create_internal_criterion(
     criterion,
     params,
-    internal_params,
     constraints,
     criterion_kwargs,
     logging_decorator,
+    exception_decorator,
     queue,
     fitness_factor,
-    general_options,
 ):
     """Create the internal criterion function.
 
@@ -553,7 +559,7 @@ def create_internal_criterion(
     """
     c = np.zeros(1)
 
-    @exception_handling(internal_params, general_options)
+    @exception_decorator()
     @numpy_interface(params, constraints)
     @logging_decorator()
     def internal_criterion(p, counter=c):
@@ -666,16 +672,23 @@ def create_internal_gradient(
         n_gradient_evaluations=n_gradient_evaluations,
     )
 
+    exception_decorator = functools.partial(
+        exception_handling,
+        database=database,
+        table="gradient_exceptions",
+        start_params=internal_params,
+        general_options=general_options,
+    )
+
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
-        internal_params=internal_params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         logging_decorator=logging_decorator,
+        exception_decorator=exception_decorator,
         queue=None,
         fitness_factor=fitness_factor,
-        general_options=general_options,
     )
     bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
     names = params.query("_internal_free")["name"].tolist()

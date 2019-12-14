@@ -1,5 +1,6 @@
 import functools
 import itertools
+import traceback
 
 import numpy as np
 import pandas as pd
@@ -115,7 +116,7 @@ def log_gradient_status(database, n_gradient_evaluations):
     return decorator_log_gradient_status
 
 
-def exception_handling(start_params, general_options):
+def exception_handling(database, table, start_params, general_options):
     def decorator_exception_handling(func):
         @functools.wraps(func)
         def wrapper_exception_handling(x, *args, **kwargs):
@@ -135,10 +136,15 @@ def exception_handling(start_params, general_options):
                 if raise_exc:
                     raise e
                 else:
+                    exception_info = traceback.format_exc()
+                    append_rows(database, table, {"value": exception_info})
+
                     out = min(
                         MAX_CRITERION_PENALTY,
                         constant + slope * np.linalg.norm(x - start_params),
                     )
+            else:
+                append_rows(database, table, {"value": ""})
 
             return out
 
