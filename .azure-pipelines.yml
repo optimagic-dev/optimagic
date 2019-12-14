@@ -14,7 +14,7 @@ jobs:
   - bash: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
 
-  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c conda-forge
+  - bash: conda create --yes --quiet --name estimagic -c conda-forge python=$PYTHON_VERSION tox-conda
     displayName: Create Anaconda environment
 
   - bash: |
@@ -36,7 +36,7 @@ jobs:
   - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
     displayName: Add conda to PATH
 
-  - powershell: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda numpy pillow pygmo>=2.1 scipy>=1.2.1 -c conda-forge
+  - powershell: conda create --yes --quiet --name estimagic -c conda-forge python=$PYTHON_VERSION tox-conda numpy pillow pygmo>=2.1 scipy>=1.2.1
     displayName: Create Anaconda environment
 
   - script: |
@@ -68,7 +68,7 @@ jobs:
       conda clean -i --yes
       conda clean --all --yes
 
-  - bash: conda create --yes --quiet --name estimagic python=$PYTHON_VERSION tox-conda -c defaults -c conda-forge
+  - bash: conda create --yes --quiet --name estimagic -c conda-forge python=$PYTHON_VERSION tox-conda
     displayName: Create Anaconda environment
 
   - bash: |
