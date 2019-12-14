@@ -136,15 +136,17 @@ def exception_handling(database, table, start_params, general_options):
                 if raise_exc:
                     raise e
                 else:
-                    exception_info = traceback.format_exc()
-                    append_rows(database, table, {"value": exception_info})
+                    if database:
+                        exception_info = traceback.format_exc()
+                        append_rows(database, table, {"value": exception_info})
 
                     out = min(
                         MAX_CRITERION_PENALTY,
                         constant + slope * np.linalg.norm(x - start_params),
                     )
             else:
-                append_rows(database, table, {"value": ""})
+                if database:
+                    append_rows(database, table, {"value": ""})
 
             return out
 
