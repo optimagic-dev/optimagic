@@ -49,9 +49,9 @@ def numpy_interface(params, constraints=None):
 def log_evaluation(database, tables):
     """Log parameters and fitness values."""
 
-    def decorator_log_parameters_and_criterion_value(func):
+    def decorator_evaluation(func):
         @functools.wraps(func)
-        def wrapper_log_parameters_and_criterion_value(params, *args, **kwargs):
+        def wrapper_evaluation(params, *args, **kwargs):
             criterion_value = func(params, *args, **kwargs)
 
             if database:
@@ -60,9 +60,43 @@ def log_evaluation(database, tables):
 
             return criterion_value
 
-        return wrapper_log_parameters_and_criterion_value
+        return wrapper_evaluation
 
-    return decorator_log_parameters_and_criterion_value
+    return decorator_evaluation
+
+
+def log_estimate_likelihood(database):
+    """Log log likelihood contributions."""
+
+    def decorator_estimate_likelihood(func):
+        @functools.wraps(func)
+        def wrapper_estimate_likelihood(params, *args, **kwargs):
+            out = func(params, *args, **kwargs)
+
+            if isinstance(out, np.ndarray):
+                log_like_obs = out
+                log_contributions = out
+            else:
+                log_like_obs, df = out
+                if isinstance(df, pd.Series):
+                    log_contributions = df.to_numpy()
+                else:
+                    log_contributions = df["value"].to_numpy()
+
+            criterion_value = log_like_obs.mean()
+
+            if database:
+                append_rows(
+                    database,
+                    ["log_contributions"],
+                    [{"value": log_contributions.astype("float32")}],
+                )
+
+            return criterion_value
+
+        return wrapper_estimate_likelihood
+
+    return decorator_estimate_likelihood
 
 
 def log_gradient(database, names):

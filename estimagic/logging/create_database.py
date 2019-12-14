@@ -31,17 +31,23 @@ def load_database(path):
 
     Returns:
         database (sqlalchemy.MetaData). The engine that connects to the database can be
-        accessed via ``database.bind``.
+            accessed via ``database.bind``.
 
     """
     if isinstance(path, str):
         path = Path(path)
 
-    engine = create_engine(f"sqlite:///{path}")
-    _make_engine_thread_safe(engine)
-    database = MetaData()
-    database.bind = engine
-    database.reflect()
+    if isinstance(path, Path):
+        engine = create_engine(f"sqlite:///{path}")
+        _make_engine_thread_safe(engine)
+        database = MetaData()
+        database.bind = engine
+        database.reflect()
+    elif isinstance(path, MetaData):
+        database = path
+    else:
+        TypeError("'path' neither a path nor a sqlalchemy.MetaData object.")
+
     return database
 
 
@@ -145,7 +151,7 @@ def prepare_database(
     _define_fitness_history_table(database, "criterion_history")
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
-    _define_start_params_table(database)
+    _define_table_formatted_with_pickled_scalar(database, "start_params")
     _define_optimization_status_table(database)
     _define_gradient_status_table(database)
     _define_db_options_table(database)
@@ -156,6 +162,30 @@ def prepare_database(
     append_rows(database, "optimization_status", {"value": optimization_status})
     append_rows(database, "gradient_status", {"value": gradient_status})
     append_rows(database, "db_options", {"value": db_options})
+
+    return database
+
+
+def prepare_database_for_estimation(path, log_contributions):
+    """Prepare the database for estimation.
+
+    Args:
+        path (str or pathlib.Path): location of the database file. If the file does
+            not exist, it will be created.
+        log_contributions (pandas.Series): Series containing log contributions and other
+            fields.
+
+    """
+    database = load_database(path)
+
+    if "log_contributions" in database.tables:
+        database.tables["log_contributions"].drop(database.bind)
+
+    _define_table_formatted_with_pickled_scalar(database, "log_contributions")
+    engine = database.bind
+    database.create_all(engine)
+
+    append_rows(database, "log_contributions", {"value": log_contributions})
 
     return database
 
@@ -211,9 +241,9 @@ def _define_convergence_history_table(database):
     return term
 
 
-def _define_start_params_table(database):
+def _define_table_formatted_with_pickled_scalar(database, table):
     params_table = Table(
-        "start_params", database, Column("value", PickleType), extend_existing=True
+        table, database, Column("value", PickleType), extend_existing=True
     )
     return params_table
 

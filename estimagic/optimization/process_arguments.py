@@ -3,6 +3,7 @@ from collections import Callable
 from pathlib import Path
 
 import pandas as pd
+import sqlalchemy
 
 
 def process_optimization_arguments(
@@ -179,7 +180,7 @@ def process_optimization_arguments(
     n_optimizations = max(a["n_opts_entered"] for a in arguments.values())
 
     # Process paths of databases.
-    logging_argument = _process_paths_for_logging(logging, n_optimizations)
+    logging_argument = _process_path_or_metadata_for_logging(logging, n_optimizations)
     arguments.update(logging_argument)
 
     # Put arguments together
@@ -193,10 +194,15 @@ def process_optimization_arguments(
                 if is_iterable and len(arg_spec["candidate"]) == 1:
                     if arg_name == "constraints":
                         args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
+                    elif arg_name == "logging":
+                        args_one_run[arg_name] = arg_spec["candidate"][0]
                     else:
                         args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"][0])
                 else:
-                    args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
+                    if arg_name == "logging":
+                        args_one_run[arg_name] = arg_spec["candidate"]
+                    else:
+                        args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
 
             # Entered as list of correct length
             elif arg_spec["n_opts_entered"] == n_optimizations:
@@ -321,8 +327,8 @@ def _get_n_opt_and_check_type_nested_list_argument(candidate, argument_required,
     return n_optimizations
 
 
-def _process_paths_for_logging(logging, n_optimizations):
-    """Process paths to the logs.
+def _process_path_or_metadata_for_logging(logging, n_optimizations):
+    """Process paths or sqlalchemy.MetaData object to databases.
 
     `logging` can be a single value in which case it becomes an iterable with a single
     value to simplify the processing.
@@ -366,7 +372,7 @@ def _process_paths_for_logging(logging, n_optimizations):
         ]
     # Else, just parse all the elements.
     else:
-        logging = [_process_path(path) for path in logging]
+        logging = [_process_path_or_metadata(path) for path in logging]
 
     # Sanity check if there some False and some paths that the paths are not the same.
     only_paths = [path for path in logging if isinstance(path, Path)]
@@ -378,13 +384,18 @@ def _process_paths_for_logging(logging, n_optimizations):
     return argument
 
 
-def _process_path(path):
+def _process_path_or_metadata(path):
     """Processes an individual path."""
     if not path:
         path = False
     elif isinstance(path, (str, Path)):
         path = Path(path).absolute()
+    elif isinstance(path, sqlalchemy.MetaData):
+        pass
     else:
-        raise ValueError("logging has to be a str/path or list of str/paths or False.")
+        raise ValueError(
+            "logging has to be a str/pathlib.Path/sqlalchemy.MetaData, a list of the "
+            "same elements or False."
+        )
 
     return path
