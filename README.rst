@@ -47,7 +47,8 @@ Optimization
 Inference
 ---------
 
-- Calculate precise numerical derivatives using `Richardson extrapolations <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
+- Calculate precise numerical derivatives using `Richardson extrapolations
+  <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
 - Calculate standard errors for maximum likelihood an method of simulated moments
 
 Dashboard Example

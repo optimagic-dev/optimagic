@@ -551,7 +551,7 @@ def create_internal_criterion(
             before returning the fitness evaluation.
 
     """
-    c = 0
+    c = np.zeros(1)
 
     @exception_handling(internal_params, general_options)
     @numpy_interface(params, constraints)
@@ -567,7 +567,9 @@ def create_internal_criterion(
         if queue is not None:
             queue.put(
                 QueueEntry(
-                    iteration=counter, params=p, fitness=fitness_factor * _fitness_eval
+                    iteration=counter[0],
+                    params=p,
+                    fitness=fitness_factor * _fitness_eval,
                 )
             )
         counter += 1
