@@ -1,4 +1,3 @@
-import copy
 from collections import Callable
 from pathlib import Path
 
@@ -192,11 +191,11 @@ def process_optimization_arguments(
                 is_iterable = isinstance(arg_spec["candidate"], (list, tuple))
                 if is_iterable and len(arg_spec["candidate"]) == 1:
                     if arg_name == "constraints":
-                        args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
+                        args_one_run[arg_name] = arg_spec["candidate"]
                     else:
-                        args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"][0])
+                        args_one_run[arg_name] = arg_spec["candidate"][0]
                 else:
-                    args_one_run[arg_name] = copy.deepcopy(arg_spec["candidate"])
+                    args_one_run[arg_name] = arg_spec["candidate"]
 
             # Entered as list of correct length
             elif arg_spec["n_opts_entered"] == n_optimizations:

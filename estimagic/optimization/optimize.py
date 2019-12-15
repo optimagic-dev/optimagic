@@ -551,8 +551,7 @@ def create_internal_criterion(
             before returning the fitness evaluation.
 
     """
-    # needs to be an array for internal criterion to count the iterations correctly
-    c = np.zeros(1, dtype=int)
+    c = np.zeros(1)
 
     @exception_handling(internal_params, general_options)
     @numpy_interface(params, constraints)
