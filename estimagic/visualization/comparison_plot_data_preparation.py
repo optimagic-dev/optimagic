@@ -21,7 +21,7 @@ def comparison_plot_inputs(results, x_padding, num_bins, color_dict, fig_height)
         fig_height (int): height the entire plot should have
 
     Returns:
-        source_dfs (dict): map from parameter identifiers to DataFrames
+        source_dfs (dict): map from parameter group identifiers to DataFrames
             with everything we need for the comparison plot
         plot_info (dict): of the form:
             plot_height: plot_height
@@ -112,7 +112,7 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
             has been extended with 'model' and 'model_name'
         parameter_groups (Series): maps parameters to parameter group
         parameter_names (Series): maps parameters to pretty names
-
+        color_dict (dict): mapping from the model class names to colors.
     Returns:
         df (DataFrame): A DataFrame in long format. The columns are
             - 'value': Parameter values
@@ -190,8 +190,9 @@ def _calculate_x_bounds(params_data, padding):
             times the range of the data
 
     Returns:
-        x_min (Series): The index are the parameter groups. The values are
-            the left bound of the x-axis for this parameter group
+        x_min (Series):
+            The index are the parameter groups.
+            The values are the left bound of the x-axis for this parameter group
         x_max (Series): Same as x_min but for right bound
 
     """
