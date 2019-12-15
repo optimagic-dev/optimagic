@@ -23,8 +23,11 @@ def comparison_plot_inputs(results, x_padding, num_bins, color_dict, fig_height)
     Returns:
         source_dfs (dict): map from parameter identifiers to DataFrames
             with everything we need for the comparison plot
-        group_plot_info (dict): map from parameter group to x_range,
-        general_plot_info (dict):
+        plot_info (dict): of the form:
+            plot_height: plot_height
+            y_range: (0, y_max)
+            group_info:
+                group: {x_range: x_range, width: rect_width}
 
     """
     parameter_groups = _consolidate_parameter_attribute(results, "group")
