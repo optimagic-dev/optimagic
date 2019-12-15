@@ -2,7 +2,6 @@
 import random
 
 import bokeh.palettes
-from bokeh.core.properties import value
 from bokeh.models import HoverTool
 from bokeh.plotting import figure
 
@@ -61,7 +60,7 @@ def plot_time_series(data, y_keys, x_name, title, y_names=None):
             x=x_name,
             y=y_key,
             line_width=2,
-            legend=value(y_name),
+            legend_label=y_name,
             color=color,
             muted_color=color,
             muted_alpha=0.2,
