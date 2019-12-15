@@ -77,19 +77,19 @@ def log_estimate_likelihood(database):
                 log_like_obs = out
                 log_contributions = out
             else:
-                log_like_obs, df = out
-                if isinstance(df, pd.Series):
-                    log_contributions = df.to_numpy()
+                log_like_obs, df_or_series = out
+                if isinstance(df_or_series, pd.Series):
+                    log_contributions = df_or_series.to_numpy()
                 else:
-                    log_contributions = df["value"].to_numpy()
+                    log_contributions = df_or_series["value"].to_numpy()
 
             criterion_value = log_like_obs.mean()
 
             if database:
                 append_rows(
                     database,
-                    ["log_contributions"],
-                    [{"value": log_contributions.astype("float32")}],
+                    "log_contributions",
+                    {"value": log_contributions.astype("float32")},
                 )
 
             return criterion_value
