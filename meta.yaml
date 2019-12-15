@@ -18,7 +18,7 @@ requirements:
 
   run:
     - python {{ python }}
-    - numpy
+    - numpy>=1.16.0
     - pandas>=0.24
     - pygmo>=2.10
     - bokeh>=1.3
