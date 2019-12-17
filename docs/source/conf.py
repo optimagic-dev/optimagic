@@ -43,6 +43,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.coverage",
     "sphinx.ext.extlinks",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
@@ -53,7 +54,9 @@ extensions = [
 autodoc_member_order = "bysource"
 
 autodoc_mock_imports = [
+    "bokeh",
     "cloudpickle",
+    "fuzzywuzzy",
     "numba",
     "numdifftools",
     "numpy",
@@ -61,12 +64,24 @@ autodoc_mock_imports = [
     "pytest",
     "pygmo",
     "scipy",
+    "sqlalchemy",
+    "tornado",
 ]
 
 extlinks = {
     "ghuser": ("https://github.com/%s", "@"),
     "gh": ("https://github.com/OpenSourceEconomics/estimagic/pulls/%s", "#"),
 }
+
+intersphinx_mapping = {
+    "numpy": ("https://docs.scipy.org/doc/numpy", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
+    "python": ("https://docs.python.org/3.6", None),
+}
+
+linkcheck_ignore = [
+    r"http://tinyurl\.com/*.",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
