@@ -92,9 +92,9 @@ def _create_comparison_plot_components(
     source_dfs, plot_info, width, axis_for_every_parameter
 ):
 
-    source_dict = {k: {} for k in source_dfs.keys()}
-    figure_dict = {k: {} for k in source_dfs.keys()}
-    glyph_dict = {k: {} for k in source_dfs.keys()}
+    source_dict = {group_name: {} for group_name in source_dfs.keys()}
+    figure_dict = {group_name: {} for group_name in source_dfs.keys()}
+    glyph_dict = {group_name: {} for group_name in source_dfs.keys()}
 
     for group, param_to_df in source_dfs.items():
         group_info = plot_info["group_info"][group]
