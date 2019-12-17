@@ -52,11 +52,23 @@ def log_evaluation(database, tables):
     def decorator_evaluation(func):
         @functools.wraps(func)
         def wrapper_evaluation(params, *args, **kwargs):
-            criterion_value = func(params, *args, **kwargs)
+            out = func(params, *args, **kwargs)
+
+            if isinstance(out, np.ndarray):
+                criterion_value = out
+                values = np.empty()
+            else:
+                criterion_value, comparison_plot_data = out
+                if isinstance(comparison_plot_data, pd.Series):
+                    values = comparison_plot_data.to_numpy()
+                else:
+                    values = comparison_plot_data["value"].to_numpy()
 
             if database:
                 adj_params = params.copy().set_index("name")["value"]
-                append_rows(database, tables, [adj_params, {"value": criterion_value}])
+                append_rows(
+                    database, tables, [adj_params, {"value": criterion_value}, values]
+                )
 
             return criterion_value
 
@@ -71,28 +83,11 @@ def log_estimate_likelihood(database):
     def decorator_estimate_likelihood(func):
         @functools.wraps(func)
         def wrapper_estimate_likelihood(params, *args, **kwargs):
-            out = func(params, *args, **kwargs)
-
-            if isinstance(out, np.ndarray):
-                log_like_obs = out
-                log_contributions = out
-            else:
-                log_like_obs, df_or_series = out
-                if isinstance(df_or_series, pd.Series):
-                    log_contributions = df_or_series.to_numpy()
-                else:
-                    log_contributions = df_or_series["value"].to_numpy()
+            log_like_obs, *out = func(params, *args, **kwargs)
 
             criterion_value = log_like_obs.mean()
 
-            if database:
-                append_rows(
-                    database,
-                    "log_contributions",
-                    {"value": log_contributions.astype("float32")},
-                )
-
-            return criterion_value
+            return (criterion_value, *out)
 
         return wrapper_estimate_likelihood
 

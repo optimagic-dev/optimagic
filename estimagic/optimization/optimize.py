@@ -411,7 +411,7 @@ def _internal_minimize(
     logging_decorator = functools.partial(
         log_evaluation,
         database=database,
-        tables=["params_history", "criterion_history"],
+        tables=["params_history", "criterion_history", "comparison_plot"],
     )
 
     internal_criterion = create_internal_criterion(

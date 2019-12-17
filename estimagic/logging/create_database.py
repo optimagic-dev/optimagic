@@ -137,6 +137,7 @@ def prepare_database(
         "timestamps",
         "convergence_history",
         "start_params",
+        "comparison_plot",
         "optimization_status",
         "gradient_status",
         "db_options",
@@ -152,6 +153,7 @@ def prepare_database(
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
     _define_table_formatted_with_pickled_scalar(database, "start_params")
+    _define_table_formatted_with_pickled_scalar(database, "comparison_plot")
     _define_optimization_status_table(database)
     _define_gradient_status_table(database)
     _define_db_options_table(database)
@@ -162,30 +164,6 @@ def prepare_database(
     append_rows(database, "optimization_status", {"value": optimization_status})
     append_rows(database, "gradient_status", {"value": gradient_status})
     append_rows(database, "db_options", {"value": db_options})
-
-    return database
-
-
-def prepare_database_for_estimation(path, log_contributions):
-    """Prepare the database for estimation.
-
-    Args:
-        path (str or pathlib.Path): location of the database file. If the file does
-            not exist, it will be created.
-        log_contributions (pandas.Series): Series containing log contributions and other
-            fields.
-
-    """
-    database = load_database(path)
-
-    if "log_contributions" in database.tables:
-        database.tables["log_contributions"].drop(database.bind)
-
-    _define_table_formatted_with_pickled_scalar(database, "log_contributions")
-    engine = database.bind
-    database.create_all(engine)
-
-    append_rows(database, "log_contributions", {"value": log_contributions})
 
     return database
 
