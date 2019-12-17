@@ -59,7 +59,7 @@ def maximize(
     as single arguments in which case they are automatically broadcasted.
 
     Args:
-        criterion (function or list of functions):
+        criterion (callable or list of callables):
             Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
