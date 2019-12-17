@@ -57,13 +57,13 @@ def log_evaluation(database, tables):
 
             if np.isscalar(out):
                 criterion_value = out
-                cp_data = np.array([np.nan])
+                cp_data = {"value": np.array([np.nan])}
             else:
                 criterion_value, comparison_plot_data = out
                 if isinstance(comparison_plot_data, pd.Series):
-                    cp_data = comparison_plot_data.to_numpy()
+                    cp_data = {"value": comparison_plot_data.to_numpy()}
                 else:
-                    cp_data = comparison_plot_data["value"].to_numpy()
+                    cp_data = {"value": comparison_plot_data["value"].to_numpy()}
 
             if database:
                 adj_params = params.copy().set_index("name")["value"]
