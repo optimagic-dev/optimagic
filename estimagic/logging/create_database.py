@@ -46,7 +46,7 @@ def load_database(path):
     elif isinstance(path, MetaData):
         database = path
     else:
-        TypeError("'path' neither a path nor a sqlalchemy.MetaData object.")
+        TypeError("'path' is neither a pathlib.Path nor a sqlalchemy.MetaData.")
 
     return database
 

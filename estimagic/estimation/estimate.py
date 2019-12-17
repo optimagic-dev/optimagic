@@ -1,11 +1,6 @@
-import numpy as np
-import pandas as pd
-
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.decorators import log_estimate_likelihood
-from estimagic.logging.create_database import prepare_database_for_estimation
 from estimagic.optimization.optimize import maximize
-from estimagic.optimization.process_arguments import process_optimization_arguments
 
 
 def estimate_likelihood(
@@ -22,35 +17,20 @@ def estimate_likelihood(
     dashboard=False,
     db_options=None,
 ):
-    arguments = process_optimization_arguments(
-        criterion=criterion,
-        params=params,
-        algorithm=algorithm,
-        criterion_kwargs=criterion_kwargs,
-        constraints=constraints,
-        general_options=general_options,
-        algo_options=algo_options,
-        gradient=None,
-        gradient_options=gradient_options,
-        logging=logging,
-        log_options=log_options,
-        dashboard=dashboard,
-        db_options=db_options,
-    )
+    """Estimate parameters via likelihood.
 
-    out = criterion(params, **criterion_kwargs)
-    log_contributions = pd.Series(out) if isinstance(out, np.ndarray) else out[1]
+    Every criterion function needs to be wrapped with a decorator which converts the log
+    likelihood contributions of each observation, the first return, to the likelihood
+    value.
 
-    loggings = []
-    for args_one_run in arguments:
-        logging = args_one_run["logging"]
-        database = prepare_database_for_estimation(logging, log_contributions)
-
-        wrapped_criterion = log_estimate_likelihood(database)(criterion)
-        loggings.append(database)
+    """
+    if isinstance(criterion, list):
+        wrapped_crit = [log_estimate_likelihood(crit_func) for crit_func in criterion]
+    else:
+        wrapped_crit = log_estimate_likelihood(criterion)
 
     results = maximize(
-        wrapped_criterion,
+        wrapped_crit,
         params,
         algorithm,
         criterion_kwargs,
@@ -58,7 +38,7 @@ def estimate_likelihood(
         general_options,
         algo_options,
         gradient_options,
-        loggings,
+        logging,
         log_options,
         dashboard,
         db_options,
