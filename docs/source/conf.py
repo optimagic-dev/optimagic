@@ -106,7 +106,7 @@ else:
 
 # -- Options for nbsphinx  ----------------------------------------
 # Execute notebooks before conversion: 'always', 'never', 'auto' (default)
-nbsphinx_execute = "always"
+nbsphinx_execute = "never"
 
 
 # -- Options for HTML output ----------------------------------------------
