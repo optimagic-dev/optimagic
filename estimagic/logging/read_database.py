@@ -1,4 +1,5 @@
 """Functions to read from from database tables used to log an optimization."""
+import traceback
 import warnings
 
 import pandas as pd
@@ -129,10 +130,16 @@ def _execute_select_statements(statements, database):
         conn.close()
         raise
     except Exception:
+        exception_info = traceback.format_exc()
+        warnings.warn(
+            "Unable to read from database. Try again later. The traceback was:\n\n"
+            f"{exception_info}"
+        )
+
         trans.rollback()
         conn.close()
-        warnings.warn("Unable to read from database. Try again later.")
         results = [[] for stat in statements]
+
     return results
 
 

@@ -134,6 +134,7 @@ def prepare_database(
         "optimization_status",
         "gradient_status",
         "db_options",
+        "exceptions",
     ]
 
     for table in opt_tables:
@@ -149,6 +150,7 @@ def prepare_database(
     _define_optimization_status_table(database)
     _define_gradient_status_table(database)
     _define_db_options_table(database)
+    _define_string_table(database, "exceptions")
     engine = database.bind
     database.create_all(engine)
 
@@ -225,9 +227,9 @@ def _define_optimization_status_table(database):
     return optstat
 
 
-def _define_gradient_status_table(databes):
+def _define_gradient_status_table(database):
     gradstat = Table(
-        "gradient_status", databes, Column("value", Float), extend_existing=True
+        "gradient_status", database, Column("value", Float), extend_existing=True
     )
     return gradstat
 
@@ -237,3 +239,11 @@ def _define_db_options_table(database):
         "db_options", database, Column("value", PickleType), extend_existing=True
     )
     return db_options
+
+
+def _define_string_table(database, name):
+    exception_table = Table(
+        name, database, Column("value", String), extend_existing=True
+    )
+
+    return exception_table

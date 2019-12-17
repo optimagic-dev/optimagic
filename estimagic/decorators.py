@@ -1,5 +1,6 @@
 import functools
 import itertools
+import traceback
 
 import numpy as np
 import pandas as pd
@@ -115,10 +116,10 @@ def log_gradient_status(database, n_gradient_evaluations):
     return decorator_log_gradient_status
 
 
-def exception_handling(start_params, general_options):
-    def decorator_exception_handling(func):
+def handle_exceptions(database, params, constraints, start_params, general_options):
+    def decorator_handle_exceptions(func):
         @functools.wraps(func)
-        def wrapper_exception_handling(x, *args, **kwargs):
+        def wrapper_handle_exceptions(x, *args, **kwargs):
             try:
                 out = func(x, *args, **kwargs)
             except (KeyboardInterrupt, SystemExit):
@@ -135,6 +136,28 @@ def exception_handling(start_params, general_options):
                 if raise_exc:
                     raise e
                 else:
+                    if database:
+                        exception_info = traceback.format_exc()
+                        p = reparametrize_from_internal(
+                            internal=x,
+                            fixed_values=params["_internal_fixed_value"].to_numpy(),
+                            pre_replacements=params["_pre_replacements"]
+                            .to_numpy()
+                            .astype(int),
+                            processed_constraints=constraints,
+                            post_replacements=(
+                                params["_post_replacements"].to_numpy().astype(int)
+                            ),
+                            processed_params=params,
+                        )
+                        msg = (
+                            exception_info
+                            + "\n\n"
+                            + "The parameters are\n\n"
+                            + p["value"].to_csv(sep="\t", header=True)
+                        )
+                        append_rows(database, "exceptions", {"value": msg})
+
                     out = min(
                         MAX_CRITERION_PENALTY,
                         constant + slope * np.linalg.norm(x - start_params),
@@ -142,6 +165,6 @@ def exception_handling(start_params, general_options):
 
             return out
 
-        return wrapper_exception_handling
+        return wrapper_handle_exceptions
 
-    return decorator_exception_handling
+    return decorator_handle_exceptions
