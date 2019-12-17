@@ -134,8 +134,7 @@ def prepare_database(
         "optimization_status",
         "gradient_status",
         "db_options",
-        "criterion_exceptions",
-        "gradient_exceptions",
+        "exceptions",
     ]
 
     for table in opt_tables:
@@ -151,8 +150,7 @@ def prepare_database(
     _define_optimization_status_table(database)
     _define_gradient_status_table(database)
     _define_db_options_table(database)
-    _define_string_table(database, "criterion_exceptions")
-    _define_string_table(database, "gradient_exceptions")
+    _define_string_table(database, "exceptions")
     engine = database.bind
     database.create_all(engine)
 

@@ -16,7 +16,7 @@ from scipy.optimize._numdiff import approx_derivative
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
-from estimagic.decorators import exception_handling
+from estimagic.decorators import handle_exceptions
 from estimagic.decorators import log_evaluation
 from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
@@ -415,9 +415,10 @@ def _internal_minimize(
     )
 
     exception_decorator = functools.partial(
-        exception_handling,
+        handle_exceptions,
         database=database,
-        table="criterion_exceptions",
+        params=params,
+        constraints=constraints,
         start_params=internal_params,
         general_options=general_options,
     )
@@ -442,6 +443,7 @@ def _internal_minimize(
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         database=database,
+        exception_decorator=exception_decorator,
         fitness_factor=fitness_factor,
         algorithm=algorithm,
         general_options=general_options,
@@ -634,6 +636,7 @@ def create_internal_gradient(
     constraints,
     criterion_kwargs,
     database,
+    exception_decorator,
     fitness_factor,
     algorithm,
     general_options,
@@ -670,14 +673,6 @@ def create_internal_gradient(
         log_gradient_status,
         database=database,
         n_gradient_evaluations=n_gradient_evaluations,
-    )
-
-    exception_decorator = functools.partial(
-        exception_handling,
-        database=database,
-        table="gradient_exceptions",
-        start_params=internal_params,
-        general_options=general_options,
     )
 
     internal_criterion = create_internal_criterion(
