@@ -10,6 +10,7 @@ function.
 """
 import datetime as dt
 import pickle
+import traceback
 import warnings
 from pathlib import Path
 
@@ -96,12 +97,13 @@ def _execute_write_statements(statements, database):
         _handle_exception(statements, database)
         raise
     except Exception:
+        exception_info = traceback.format_exc()
         trans.rollback()
         conn.close()
-        _handle_exception(statements, database)
+        _handle_exception(statements, database, exception_info)
 
 
-def _handle_exception(statements, database):
+def _handle_exception(statements, database, exception_info):
     directory = Path(str(database.bind.url)[10:])
     if not directory.is_dir():
         directory = Path(".")
@@ -115,5 +117,7 @@ def _handle_exception(statements, database):
             with open(directory / filename, "wb") as p:
                 pickle.dump(values, p)
 
-    msg = "Unable to write to database. The data was saved in {} instead."
-    warnings.warn(msg.format(directory))
+    warnings.warn(
+        f"Unable to write to database. The data was saved in {directory} instead. The "
+        f"traceback was:\n\n{exception_info}"
+    )
