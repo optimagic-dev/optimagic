@@ -80,7 +80,7 @@ intersphinx_mapping = {
 }
 
 linkcheck_ignore = [
-    r"http://tinyurl\.com/*.",
+    r"https://tinyurl\.com/*.",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
