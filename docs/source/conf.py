@@ -52,6 +52,17 @@ extensions = [
 
 autodoc_member_order = "bysource"
 
+autodoc_mock_imports = [
+    "cloudpickle",
+    "numba",
+    "numdifftools",
+    "numpy",
+    "pandas",
+    "pytest",
+    "pygmo",
+    "scipy",
+]
+
 extlinks = {
     "ghuser": ("https://github.com/%s", "@"),
     "gh": ("https://github.com/OpenSourceEconomics/estimagic/pulls/%s", "#"),
