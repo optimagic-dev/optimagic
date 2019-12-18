@@ -48,7 +48,14 @@ def numpy_interface(params, constraints=None):
 
 
 def log_evaluation(database, tables):
-    """Log parameters and fitness values."""
+    """Log parameters and fitness values.
+
+    The criterion function is allowed to have two returns:
+
+    1. The criterion value which is a scalar.
+    2. Additional data for the comparison plot in the tidy data format.
+
+    """
 
     def decorator_log_evaluation(func):
         @functools.wraps(func)
@@ -60,7 +67,9 @@ def log_evaluation(database, tables):
                 cp_data = {"value": np.array([np.nan])}
             else:
                 criterion_value, comparison_plot_data = out
-                if isinstance(comparison_plot_data, pd.Series):
+                if isinstance(comparison_plot_data, np.ndarray):
+                    cp_data = {"value": comparison_plot_data}
+                elif isinstance(comparison_plot_data, pd.Series):
                     cp_data = {"value": comparison_plot_data.to_numpy()}
                 else:
                     cp_data = {"value": comparison_plot_data["value"].to_numpy()}
@@ -78,26 +87,40 @@ def log_evaluation(database, tables):
     return decorator_log_evaluation
 
 
-def log_estimate_likelihood():
+def log_estimate_likelihood(func):
     """Log log likelihood contributions."""
 
-    def decorator_estimate_likelihood(func):
-        @functools.wraps(func)
-        def wrapper_estimate_likelihood(params, *args, **kwargs):
-            out = func(params, *args, **kwargs)
+    @functools.wraps(func)
+    def wrapper_estimate_likelihood(params, *args, **kwargs):
+        out = func(params, *args, **kwargs)
 
-            if isinstance(out, np.ndarray):
-                log_like_obs = out
-            else:
-                log_like_obs, comparison_plot_data = out
+        if isinstance(out, np.ndarray):
+            criterion_value, comparison_plot_data = np.mean(out), out
+        else:
+            log_like_obs, comparison_plot_data = out
+            criterion_value = np.mean(log_like_obs)
 
-            criterion_value = log_like_obs.mean()
+        return criterion_value, comparison_plot_data
 
-            return criterion_value, comparison_plot_data
+    return wrapper_estimate_likelihood
 
-        return wrapper_estimate_likelihood
 
-    return decorator_estimate_likelihood
+def log_estimate_msm(func):
+    """Log log likelihood contributions."""
+
+    @functools.wraps(func)
+    def wrapper_estimate_likelihood(params, *args, **kwargs):
+        out = func(params, *args, **kwargs)
+
+        if isinstance(out, np.ndarray):
+            criterion_value, comparison_plot_data = np.mean(out ** 2), out
+        else:
+            moments_errors, comparison_plot_data = out
+            criterion_value = np.mean(moments_errors ** 2)
+
+        return criterion_value, comparison_plot_data
+
+    return wrapper_estimate_likelihood
 
 
 def log_gradient(database, names):

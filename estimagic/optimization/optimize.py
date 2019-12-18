@@ -17,6 +17,7 @@ from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
 from estimagic.decorators import handle_exceptions
+from estimagic.decorators import log_estimate_msm
 from estimagic.decorators import log_evaluation
 from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
@@ -101,7 +102,14 @@ def maximize(
     """
 
     def neg_criterion(params, **criterion_kwargs):
-        return -criterion(params, **criterion_kwargs)
+        out = criterion(params, **criterion_kwargs)
+        if np.isscalar(out):
+            criterion_value = -out
+            comparison_plot_data = np.array([np.nan])
+        else:
+            criterion_value, comparison_plot_data = -out[0], out[1]
+
+        return criterion_value, comparison_plot_data
 
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options
@@ -289,13 +297,23 @@ def _single_minimize(
             dictionary with kwargs to be supplied to the run_server function.
 
     """
+    # Todo: Temporary fix until there is an interface for estimation via MSM because
+    # criterion functions for POUNDERS return the errors of sum of squared errors
+    # instead of a scalar.
+    if algorithm == "tao_pounders":
+        criterion = log_estimate_msm(criterion)
+
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
     database = prepare_database(logging, params, log_options) if logging else False
 
     fitness_factor = -1 if general_options.pop("_maximization", False) else 1
-    fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
+    out = criterion(params, **criterion_kwargs)
+    if np.isscalar(out):
+        fitness_eval = fitness_factor * out
+    else:
+        fitness_eval = fitness_factor * out[0]
     if np.any(np.isnan(fitness_eval)):
         raise ValueError(
             "The criterion function evaluated at the start parameters returns NaNs."
@@ -565,24 +583,23 @@ def create_internal_criterion(
     @numpy_interface(params, constraints)
     @logging_decorator()
     def internal_criterion(p, counter=c):
-        fitness_eval = criterion(p, **criterion_kwargs)
-
-        # For Pounders, return the sum of squared errors from errors.
-        _fitness_eval = (
-            fitness_eval if np.isscalar(fitness_eval) else ((fitness_eval ** 2).sum())
-        )
+        out = criterion(p, **criterion_kwargs)
+        if np.isscalar(out):
+            fitness_eval = out
+        else:
+            fitness_eval = out[0]
 
         if queue is not None:
             queue.put(
                 QueueEntry(
                     iteration=counter[0],
                     params=p,
-                    fitness=fitness_factor * _fitness_eval,
+                    fitness=fitness_factor * fitness_eval,
                 )
             )
         counter += 1
 
-        return fitness_eval
+        return out
 
     return internal_criterion
 

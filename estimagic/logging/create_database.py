@@ -153,7 +153,7 @@ def prepare_database(
     _define_fitness_history_table(database, "criterion_history")
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
-    _define_table_formatted_with_pickled_scalar(database, "start_params")
+    _define_start_params_table(database)
     _define_table_formatted_with_pickled_scalar(database, "comparison_plot")
     _define_optimization_status_table(database)
     _define_gradient_status_table(database)
@@ -221,9 +221,21 @@ def _define_convergence_history_table(database):
     return term
 
 
+def _define_start_params_table(database):
+    start_params_table = Table(
+        "start_params", database, Column("value", PickleType), extend_existing=True,
+    )
+    return start_params_table
+
+
 def _define_table_formatted_with_pickled_scalar(database, table):
     params_table = Table(
-        table, database, Column("value", PickleType), extend_existing=True
+        table,
+        database,
+        Column("iteration", Integer, primary_key=True),
+        Column("value", PickleType),
+        sqlite_autoincrement=True,
+        extend_existing=True,
     )
     return params_table
 

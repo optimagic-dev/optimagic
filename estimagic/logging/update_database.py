@@ -92,9 +92,10 @@ def _execute_write_statements(statements, database):
         trans.commit()
         conn.close()
     except (KeyboardInterrupt, SystemExit):
+        exception_info = traceback.format_exc()
         trans.rollback()
         conn.close()
-        _handle_exception(statements, database)
+        _handle_exception(statements, database, exception_info)
         raise
     except Exception:
         exception_info = traceback.format_exc()
