@@ -87,40 +87,25 @@ def log_evaluation(database, tables):
     return decorator_log_evaluation
 
 
-def log_estimate_likelihood(func):
-    """Log log likelihood contributions."""
+def aggregate_criterion_output(aggregation_func):
+    """Aggregate the criterion output."""
 
-    @functools.wraps(func)
-    def wrapper_estimate_likelihood(params, *args, **kwargs):
-        out = func(params, *args, **kwargs)
+    def decorator_aggregate_criterion_output(func):
+        @functools.wraps(func)
+        def wrapper_aggregate_criterion_output(params, *args, **kwargs):
+            out = func(params, *args, **kwargs)
 
-        if isinstance(out, np.ndarray):
-            criterion_value, comparison_plot_data = np.mean(out), out
-        else:
-            log_like_obs, comparison_plot_data = out
-            criterion_value = np.mean(log_like_obs)
+            if isinstance(out, np.ndarray):
+                criterion_value, comparison_plot_data = aggregation_func(out), out
+            else:
+                criterion_components, comparison_plot_data = out
+                criterion_value = aggregation_func(criterion_components)
 
-        return criterion_value, comparison_plot_data
+            return criterion_value, comparison_plot_data
 
-    return wrapper_estimate_likelihood
+        return wrapper_aggregate_criterion_output
 
-
-def log_estimate_msm(func):
-    """Log log likelihood contributions."""
-
-    @functools.wraps(func)
-    def wrapper_estimate_likelihood(params, *args, **kwargs):
-        out = func(params, *args, **kwargs)
-
-        if isinstance(out, np.ndarray):
-            criterion_value, comparison_plot_data = np.mean(out ** 2), out
-        else:
-            moments_errors, comparison_plot_data = out
-            criterion_value = np.mean(moments_errors ** 2)
-
-        return criterion_value, comparison_plot_data
-
-    return wrapper_estimate_likelihood
+    return decorator_aggregate_criterion_output
 
 
 def log_gradient(database, names):

@@ -16,8 +16,8 @@ from scipy.optimize._numdiff import approx_derivative
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
+from estimagic.decorators import aggregate_criterion_output
 from estimagic.decorators import handle_exceptions
-from estimagic.decorators import log_estimate_msm
 from estimagic.decorators import log_evaluation
 from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
@@ -301,7 +301,11 @@ def _single_minimize(
     # criterion functions for POUNDERS return the errors of sum of squared errors
     # instead of a scalar.
     if algorithm == "tao_pounders":
-        criterion = log_estimate_msm(criterion)
+
+        def agg(x):
+            return np.mean(np.square(x))
+
+        criterion = aggregate_criterion_output(agg)(criterion)
 
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)

@@ -1,5 +1,7 @@
+import numpy as np
+
 from estimagic.config import DEFAULT_DATABASE_NAME
-from estimagic.decorators import log_estimate_likelihood
+from estimagic.decorators import aggregate_criterion_output
 from estimagic.optimization.optimize import maximize
 
 
@@ -25,9 +27,11 @@ def estimate_likelihood(
 
     """
     if isinstance(criterion, list):
-        wrapped_crit = [log_estimate_likelihood(crit_func) for crit_func in criterion]
+        wrapped_crit = [
+            aggregate_criterion_output(np.mean)(crit_func) for crit_func in criterion
+        ]
     else:
-        wrapped_crit = log_estimate_likelihood(criterion)
+        wrapped_crit = aggregate_criterion_output(np.mean)(criterion)
 
     results = maximize(
         wrapped_crit,
