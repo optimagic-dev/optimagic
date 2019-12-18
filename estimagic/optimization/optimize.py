@@ -306,18 +306,27 @@ def _single_minimize(
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
-    database = prepare_database(logging, params, log_options) if logging else False
-
     fitness_factor = -1 if general_options.pop("_maximization", False) else 1
+
     out = criterion(params, **criterion_kwargs)
     if np.isscalar(out):
         fitness_eval = fitness_factor * out
+        comparison_plot_data = pd.Series([np.nan])
     else:
         fitness_eval = fitness_factor * out[0]
+        comparison_plot_data = out[1]
+
     if np.any(np.isnan(fitness_eval)):
         raise ValueError(
             "The criterion function evaluated at the start parameters returns NaNs."
         )
+
+    database = (
+        prepare_database(logging, params, comparison_plot_data, log_options)
+        if logging
+        else False
+    )
+
     general_options["start_criterion_value"] = fitness_eval
 
     constraints, params = process_constraints(constraints, params)

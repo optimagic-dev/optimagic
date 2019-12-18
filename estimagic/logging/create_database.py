@@ -6,6 +6,7 @@ recommended way of doing things in sqlalchemy and makes sense for database code.
 """
 from pathlib import Path
 
+import numpy as np
 from sqlalchemy import Column
 from sqlalchemy import create_engine
 from sqlalchemy import event
@@ -75,7 +76,12 @@ def _make_engine_thread_safe(engine):
 
 
 def prepare_database(
-    path, params, db_options=None, optimization_status="scheduled", gradient_status=0
+    path,
+    params,
+    comparison_plot_data=None,
+    db_options=None,
+    optimization_status="scheduled",
+    gradient_status=0,
 ):
     """Return database metadata object with all relevant tables for the optimization.
 
@@ -117,6 +123,10 @@ def prepare_database(
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created.
         params (pd.DataFrame): see :ref:`params`.
+        comparison_plot_data : (numpy.ndarray or pandas.Series or pandas.DataFrame):
+            Contains the data for the comparison plot. Later updates will only deliver
+            the value column where as this input has an index and other invariant
+            information.
         db_options (dict): Dashboard options.
         optimization_status (str): One of "scheduled", "running", "success", "failure".
         gradient_status (float): Progress of gradient calculation between 0 and 1.
@@ -126,6 +136,8 @@ def prepare_database(
         to the database can be accessed via ``database.bind``.
 
     """
+    if comparison_plot_data is None:
+        comparison_plot_data = {"value": np.array([np.nan])}
     db_options = {} if db_options is None else db_options
     gradient_status = float(gradient_status)
     database = load_database(path)
@@ -223,7 +235,7 @@ def _define_convergence_history_table(database):
 
 def _define_start_params_table(database):
     start_params_table = Table(
-        "start_params", database, Column("value", PickleType), extend_existing=True,
+        "start_params", database, Column("value", PickleType), extend_existing=True
     )
     return start_params_table
 
