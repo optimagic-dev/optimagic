@@ -16,7 +16,6 @@ from scipy.optimize._numdiff import approx_derivative
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
-from estimagic.decorators import aggregate_criterion_output
 from estimagic.decorators import handle_exceptions
 from estimagic.decorators import log_evaluation
 from estimagic.decorators import log_gradient
@@ -297,16 +296,6 @@ def _single_minimize(
             dictionary with kwargs to be supplied to the run_server function.
 
     """
-    # Todo: Temporary fix until there is an interface for estimation via MSM because
-    # criterion functions for POUNDERS return the errors of sum of squared errors
-    # instead of a scalar.
-    if algorithm == "tao_pounders":
-
-        def agg(x):
-            return np.mean(np.square(x))
-
-        criterion = aggregate_criterion_output(agg)(criterion)
-
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
@@ -317,7 +306,10 @@ def _single_minimize(
         fitness_eval = fitness_factor * out
         comparison_plot_data = pd.Series([np.nan])
     else:
-        fitness_eval = fitness_factor * out[0]
+        if np.isscalar(out[0]):
+            fitness_eval = fitness_factor * out[0]
+        else:
+            fitness_eval = fitness_factor * np.mean(np.square(out[0]))
         comparison_plot_data = out[1]
 
     if np.any(np.isnan(fitness_eval)):
@@ -600,7 +592,11 @@ def create_internal_criterion(
         if np.isscalar(out):
             fitness_eval = out
         else:
-            fitness_eval = out[0]
+            # Todo: This is a temporary fix for POUNDERs which returns an array.
+            if np.isscalar(out[0]):
+                fitness_eval = out[0]
+            else:
+                fitness_eval = np.mean(np.square(out[0]))
 
         if queue is not None:
             queue.put(
