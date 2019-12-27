@@ -67,12 +67,7 @@ def log_evaluation(database, tables):
                 cp_data = {"value": np.array([np.nan])}
             else:
                 criterion_value, comparison_plot_data = out
-                if isinstance(comparison_plot_data, np.ndarray):
-                    cp_data = {"value": comparison_plot_data}
-                elif isinstance(comparison_plot_data, pd.Series):
-                    cp_data = {"value": comparison_plot_data.to_numpy()}
-                else:
-                    cp_data = {"value": comparison_plot_data["value"].to_numpy()}
+                cp_data = {"value": comparison_plot_data["value"].to_numpy()}
 
             if database:
                 adj_params = params.copy().set_index("name")["value"]
@@ -96,7 +91,8 @@ def aggregate_criterion_output(aggregation_func):
             out = func(params, *args, **kwargs)
 
             if isinstance(out, np.ndarray):
-                criterion_value, comparison_plot_data = aggregation_func(out), out
+                criterion_value = aggregation_func(out)
+                comparison_plot_data = pd.DataFrame({"value": out})
             else:
                 criterion_components, comparison_plot_data = out
                 criterion_value = aggregation_func(criterion_components)

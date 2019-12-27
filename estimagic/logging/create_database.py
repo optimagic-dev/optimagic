@@ -166,7 +166,7 @@ def prepare_database(
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
     _define_start_params_table(database)
-    _define_table_formatted_with_pickled_scalar(database, "comparison_plot")
+    _define_one_column_pickle_table(database, "comparison_plot")
     _define_optimization_status_table(database)
     _define_gradient_status_table(database)
     _define_db_options_table(database)
@@ -240,7 +240,7 @@ def _define_start_params_table(database):
     return start_params_table
 
 
-def _define_table_formatted_with_pickled_scalar(database, table):
+def _define_one_column_pickle_table(database, table):
     params_table = Table(
         table,
         database,

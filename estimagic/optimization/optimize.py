@@ -104,7 +104,7 @@ def maximize(
         out = criterion(params, **criterion_kwargs)
         if np.isscalar(out):
             criterion_value = -out
-            comparison_plot_data = np.array([np.nan])
+            comparison_plot_data = pd.DataFrame({"value": [np.nan]})
         else:
             criterion_value, comparison_plot_data = -out[0], out[1]
 
@@ -304,7 +304,7 @@ def _single_minimize(
     out = criterion(params, **criterion_kwargs)
     if np.isscalar(out):
         fitness_eval = fitness_factor * out
-        comparison_plot_data = pd.Series([np.nan])
+        comparison_plot_data = pd.DataFrame({"value": [np.nan]})
     else:
         if np.isscalar(out[0]):
             fitness_eval = fitness_factor * out[0]
