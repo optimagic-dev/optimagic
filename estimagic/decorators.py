@@ -52,7 +52,7 @@ def log_evaluation(database, tables):
 
     The criterion function is allowed to have two returns:
 
-    1. The criterion value which is a scalar.
+    1. The criterion value which can be a scalar or an array, e.g., moments in MSM.
     2. Additional data for the comparison plot in the tidy data format.
 
     """
