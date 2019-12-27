@@ -64,7 +64,7 @@ def log_evaluation(database, tables):
 
             if np.isscalar(out):
                 criterion_value = out
-                cp_data = {"value": np.array([np.nan])}
+                cp_data = {"value": pd.DataFrame({"value": [np.nan]})}
             else:
                 criterion_value, comparison_plot_data = out
                 cp_data = {"value": comparison_plot_data["value"].to_numpy()}
@@ -113,9 +113,8 @@ def log_gradient(database, names):
             gradient = func(*args, **kwargs)
 
             if database:
-                append_rows(
-                    database, ["gradient_history"], [dict(zip(names, gradient))]
-                )
+                data = [dict(zip(names, gradient))]
+                append_rows(database, ["gradient_history"], data)
 
             return gradient
 
