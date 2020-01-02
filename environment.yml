@@ -13,6 +13,7 @@ dependencies:
   - conda-build
   - conda-verify
   - fuzzywuzzy
+  - joblib
   - jupyterlab
   - nbsphinx
   - numba >= 0.12

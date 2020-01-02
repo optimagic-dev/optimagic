@@ -18,6 +18,7 @@ requirements:
 
   run:
     - python {{ python }}
+    - joblib
     - numpy>=1.16.0
     - pandas>=0.24
     - pygmo>=2.10

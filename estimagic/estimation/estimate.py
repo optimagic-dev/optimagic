@@ -3,6 +3,7 @@ import numpy as np
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.decorators import aggregate_criterion_output
 from estimagic.optimization.optimize import maximize
+from estimagic.optimization.process_arguments import process_optimization_arguments
 
 
 def estimate_likelihood(
@@ -47,5 +48,36 @@ def estimate_likelihood(
         dashboard,
         db_options,
     )
+
+    # To convert the mean log likelihood in the results dictionary to the log
+    # likelihood, get the length of contributions for each optimization.
+    arguments = process_optimization_arguments(
+        criterion=criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        general_options=general_options,
+        algo_options=algo_options,
+        gradient=None,
+        gradient_options=gradient_options,
+        logging=logging,
+        log_options=log_options,
+        dashboard=dashboard,
+        db_options=db_options,
+    )
+
+    n_contributions = [
+        len(
+            list(
+                args_one_run["criterion"](
+                    args_one_run["params"], **args_one_run["criterion_kwargs"]
+                )
+            )
+        )
+        for args_one_run in arguments
+    ]
+    for result, n_contribs in zip(results, n_contributions):
+        result[0]["fitness"] = result[0]["fitness"] * n_contribs
 
     return results

@@ -47,6 +47,23 @@ def numpy_interface(params, constraints=None):
     return decorator_numpy_interface
 
 
+def negative_criterion(criterion):
+    """Turn maximization into minimization."""
+
+    @functools.wraps(criterion)
+    def wrapper_negative_criterion(*args, **kwargs):
+        out = criterion(*args, **kwargs)
+        if np.isscalar(out):
+            criterion_value = -out
+            comparison_plot_data = pd.DataFrame({"value": [np.nan]})
+        else:
+            criterion_value, comparison_plot_data = -out[0], out[1]
+
+        return criterion_value, comparison_plot_data
+
+    return wrapper_negative_criterion
+
+
 def log_evaluation(database, tables):
     """Log parameters and fitness values.
 

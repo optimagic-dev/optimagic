@@ -3,7 +3,6 @@ import functools
 import json
 from collections import namedtuple
 from multiprocessing import Event
-from multiprocessing import Pool
 from multiprocessing import Process
 from multiprocessing import Queue
 from pathlib import Path
@@ -11,6 +10,8 @@ from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
+from joblib import delayed
+from joblib import Parallel
 from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.config import DEFAULT_DATABASE_NAME
@@ -20,6 +21,7 @@ from estimagic.decorators import handle_exceptions
 from estimagic.decorators import log_evaluation
 from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
+from estimagic.decorators import negative_criterion
 from estimagic.decorators import numpy_interface
 from estimagic.logging.create_database import prepare_database
 from estimagic.logging.update_database import update_scalar_field
@@ -99,22 +101,16 @@ def maximize(
                 :ref:`dashboard` for details.
 
     """
-
-    def neg_criterion(params, **criterion_kwargs):
-        out = criterion(params, **criterion_kwargs)
-        if np.isscalar(out):
-            criterion_value = -out
-            comparison_plot_data = pd.DataFrame({"value": [np.nan]})
-        else:
-            criterion_value, comparison_plot_data = -out[0], out[1]
-
-        return criterion_value, comparison_plot_data
+    if isinstance(criterion, list):
+        neg_criterion = [negative_criterion(crit_func) for crit_func in criterion]
+    else:
+        neg_criterion = negative_criterion(criterion)
 
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options
     general_options["_maximization"] = True
 
-    results, params = minimize(
+    results = minimize(
         neg_criterion,
         params=params,
         algorithm=algorithm,
@@ -128,9 +124,16 @@ def maximize(
         dashboard=dashboard,
         db_options=db_options,
     )
-    results["fitness"] = -results["fitness"]
 
-    return results, params
+    # Change the fitness value. ``results`` is either a tuple of results and params or a
+    # list of tuples.
+    if isinstance(results, list):
+        for result in results:
+            result[0]["fitness"] = -result[0]["fitness"]
+    else:
+        results[0]["fitness"] = -results[0]["fitness"]
+
+    return results
 
 
 def minimize(
@@ -214,7 +217,7 @@ def minimize(
     if len(arguments) == 1:
         # Run only one optimization
         arguments = arguments[0]
-        result = _single_minimize(**arguments)
+        results = _single_minimize(**arguments)
     else:
         # Run multiple optimizations
         if dashboard:
@@ -229,10 +232,12 @@ def minimize(
                 + " if multiple optimizations should be run."
             )
         n_cores = arguments[0]["general_options"]["n_cores"]
-        pool = Pool(processes=n_cores)
-        result = pool.map(_one_argument_single_minimize, arguments)
 
-    return result
+        results = Parallel(n_jobs=n_cores)(
+            delayed(_one_argument_single_minimize)(argument) for argument in arguments
+        )
+
+    return results
 
 
 def _single_minimize(
@@ -344,7 +349,7 @@ def _single_minimize(
         )
         outer_server_process.start()
 
-    result = _internal_minimize(
+    result, params = _internal_minimize(
         criterion=criterion,
         criterion_kwargs=criterion_kwargs,
         params=params,
@@ -363,7 +368,8 @@ def _single_minimize(
     if dashboard:
         stop_signal.set()
         outer_server_process.terminate()
-    return result
+
+    return result, params
 
 
 def _one_argument_single_minimize(kwargs):
