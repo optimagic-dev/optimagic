@@ -47,47 +47,46 @@ def numpy_interface(params, constraints=None):
     return decorator_numpy_interface
 
 
+def expand_criterion_output(criterion):
+    """Handle one- or two-element criterion returns."""
+
+    @functools.wraps(criterion)
+    def wrappper_expand_criterion_output(*args, **kwargs):
+        out = criterion(*args, **kwargs)
+        if np.isscalar(out):
+            criterion_value = out
+            comparison_plot_data = pd.DataFrame({"value": [np.nan]})
+        else:
+            criterion_value, comparison_plot_data = out[0], out[1]
+
+        return criterion_value, comparison_plot_data
+
+    return wrappper_expand_criterion_output
+
+
 def negative_criterion(criterion):
     """Turn maximization into minimization."""
 
     @functools.wraps(criterion)
     def wrapper_negative_criterion(*args, **kwargs):
-        out = criterion(*args, **kwargs)
-        if np.isscalar(out):
-            criterion_value = -out
-            comparison_plot_data = pd.DataFrame({"value": [np.nan]})
-        else:
-            criterion_value, comparison_plot_data = -out[0], out[1]
+        criterion_value, comparison_plot_data = criterion(*args, **kwargs)
 
-        return criterion_value, comparison_plot_data
+        return -criterion_value, comparison_plot_data
 
     return wrapper_negative_criterion
 
 
 def log_evaluation(database, tables):
-    """Log parameters and fitness values.
-
-    The criterion function is allowed to have two returns:
-
-    1. The criterion value which can be a scalar or an array, e.g., moments in MSM.
-    2. Additional data for the comparison plot in the tidy data format.
-
-    """
+    """Log parameters and fitness values."""
 
     def decorator_log_evaluation(func):
         @functools.wraps(func)
         def wrapper_log_evaluation(params, *args, **kwargs):
-            out = func(params, *args, **kwargs)
-
-            if np.isscalar(out):
-                criterion_value = out
-                cp_data = {"value": pd.DataFrame({"value": [np.nan]})}
-            else:
-                criterion_value, comparison_plot_data = out
-                cp_data = {"value": comparison_plot_data["value"].to_numpy()}
+            criterion_value, comparison_plot_data = func(params, *args, **kwargs)
 
             if database:
                 adj_params = params.copy().set_index("name")["value"]
+                cp_data = {"value": comparison_plot_data["value"].to_numpy()}
                 crit_val = {"value": criterion_value}
 
                 append_rows(database, tables, [adj_params, crit_val, cp_data])
@@ -105,14 +104,9 @@ def aggregate_criterion_output(aggregation_func):
     def decorator_aggregate_criterion_output(func):
         @functools.wraps(func)
         def wrapper_aggregate_criterion_output(params, *args, **kwargs):
-            out = func(params, *args, **kwargs)
+            criterion_values, comparison_plot_data = func(params, *args, **kwargs)
 
-            if isinstance(out, np.ndarray):
-                criterion_value = aggregation_func(out)
-                comparison_plot_data = pd.DataFrame({"value": out})
-            else:
-                criterion_components, comparison_plot_data = out
-                criterion_value = aggregation_func(criterion_components)
+            criterion_value = aggregation_func(criterion_values)
 
             return criterion_value, comparison_plot_data
 
@@ -152,12 +146,7 @@ def log_gradient_status(database, n_gradient_evaluations):
     def decorator_log_gradient_status(func):
         @functools.wraps(func)
         def wrapper_log_gradient_status(params, *args, **kwargs):
-            out = func(params, *args, **kwargs)
-
-            if np.isscalar(out):
-                criterion_value = out
-            else:
-                criterion_value, _ = out
+            criterion_value, _ = func(params, *args, **kwargs)
 
             if database:
                 c = next(counter)

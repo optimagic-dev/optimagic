@@ -17,6 +17,7 @@ from scipy.optimize._numdiff import approx_derivative
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
+from estimagic.decorators import expand_criterion_output
 from estimagic.decorators import handle_exceptions
 from estimagic.decorators import log_evaluation
 from estimagic.decorators import log_gradient
@@ -101,17 +102,12 @@ def maximize(
                 :ref:`dashboard` for details.
 
     """
-    if isinstance(criterion, list):
-        neg_criterion = [negative_criterion(crit_func) for crit_func in criterion]
-    else:
-        neg_criterion = negative_criterion(criterion)
-
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options
     general_options["_maximization"] = True
 
     results = minimize(
-        neg_criterion,
+        criterion=criterion,
         params=params,
         algorithm=algorithm,
         criterion_kwargs=criterion_kwargs,
@@ -304,18 +300,18 @@ def _single_minimize(
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
-    fitness_factor = -1 if general_options.pop("_maximization", False) else 1
+    # Apply decorator two handle criterion functions with one or two returns.
+    criterion = expand_criterion_output(criterion)
 
-    out = criterion(params, **criterion_kwargs)
-    if np.isscalar(out):
-        fitness_eval = fitness_factor * out
-        comparison_plot_data = pd.DataFrame({"value": [np.nan]})
+    is_maximization = general_options.pop("_maximization", False)
+    criterion = negative_criterion(criterion) if is_maximization else criterion
+    fitness_factor = -1 if is_maximization else 1
+
+    criterion_out, comparison_plot_data = criterion(params, **criterion_kwargs)
+    if np.isscalar(criterion_out):
+        fitness_eval = fitness_factor * criterion_out
     else:
-        if np.isscalar(out[0]):
-            fitness_eval = fitness_factor * out[0]
-        else:
-            fitness_eval = fitness_factor * np.mean(np.square(out[0]))
-        comparison_plot_data = out[1]
+        fitness_eval = fitness_factor * np.mean(np.square(criterion_out))
 
     if np.any(np.isnan(fitness_eval)):
         raise ValueError(
@@ -594,15 +590,12 @@ def create_internal_criterion(
     @numpy_interface(params, constraints)
     @logging_decorator()
     def internal_criterion(p, counter=c):
-        out = criterion(p, **criterion_kwargs)
-        if np.isscalar(out):
-            fitness_eval = out
+        criterion_out, comparison_plot_data = criterion(p, **criterion_kwargs)
+        if np.isscalar(criterion_out):
+            fitness_eval = criterion_out
         else:
             # Todo: This is a temporary fix for POUNDERs which returns an array.
-            if np.isscalar(out[0]):
-                fitness_eval = out[0]
-            else:
-                fitness_eval = np.mean(np.square(out[0]))
+            fitness_eval = np.mean(np.square(criterion_out))
 
         if queue is not None:
             queue.put(
@@ -614,7 +607,7 @@ def create_internal_criterion(
             )
         counter += 1
 
-        return out
+        return criterion_out, comparison_plot_data
 
     return internal_criterion
 

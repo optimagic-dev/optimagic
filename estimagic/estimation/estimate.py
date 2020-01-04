@@ -2,6 +2,7 @@ import numpy as np
 
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.decorators import aggregate_criterion_output
+from estimagic.decorators import expand_criterion_output
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.process_arguments import process_optimization_arguments
 
@@ -28,11 +29,13 @@ def estimate_likelihood(
 
     """
     if isinstance(criterion, list):
+        wrapped_crit = [expand_criterion_output(crit_func) for crit_func in criterion]
         wrapped_crit = [
-            aggregate_criterion_output(np.mean)(crit_func) for crit_func in criterion
+            aggregate_criterion_output(np.mean)(crit_func) for crit_func in wrapped_crit
         ]
     else:
-        wrapped_crit = aggregate_criterion_output(np.mean)(criterion)
+        wrapped_crit = expand_criterion_output(criterion)
+        wrapped_crit = aggregate_criterion_output(np.mean)(wrapped_crit)
 
     results = maximize(
         wrapped_crit,
@@ -77,7 +80,11 @@ def estimate_likelihood(
         )
         for args_one_run in arguments
     ]
-    for result, n_contribs in zip(results, n_contributions):
-        result[0]["fitness"] = result[0]["fitness"] * n_contribs
+
+    if isinstance(results, list):
+        for result, n_contribs in zip(results, n_contributions):
+            result[0]["fitness"] = result[0]["fitness"] * n_contribs
+    else:
+        results[0]["fitness"] = results[0]["fitness"] * n_contributions[0]
 
     return results
