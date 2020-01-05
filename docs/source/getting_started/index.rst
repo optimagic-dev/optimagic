@@ -9,4 +9,4 @@ Getting Started
    introduction
    installation
    ordered_logit_example.ipynb
-   estimate_likelihood.ipynb
+   maximum_likelihood_estimation.ipynb
