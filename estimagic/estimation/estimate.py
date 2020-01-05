@@ -8,7 +8,7 @@ from estimagic.optimization.process_arguments import process_optimization_argume
 
 
 def maximize_log_likelihood(
-    criterion,
+    log_like_obs,
     params,
     algorithm,
     criterion_kwargs=None,
@@ -26,10 +26,10 @@ def maximize_log_likelihood(
     This function provides a convenient interface for estimating models via maximum
     likelihood. In the future, it will also calculate standard errors for the solution.
 
-    The criterion function has to return an array of log likelihoods at the first
-    position, not the mean log likelihood. The array is internally aggregated to
-    whatever output is needed. For example, the mean is used for maximization, the sum
-    for standard error calculations.
+    The criterion function ``log_like_obs`` has to return an array of log likelihoods at
+    the first position, not the mean log likelihood. The array is internally aggregated
+    to whatever output is needed. For example, the mean is used for maximization, the
+    sum for standard error calculations.
 
     The second return can be a :class:`pandas.DataFrame` in the `tidy data format`_ to
     display the distribution of contributions for subgroups via the comparison plot in
@@ -46,9 +46,10 @@ def maximize_log_likelihood(
        `2`_ for an example.
 
     Args:
-        criterion (callable or list of callables):
+        log_like_obs (callable or list of callables):
             Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns the log likelihood contributions as the first return.
+            argument and returns an array of log likelihood contributions as the first
+            return.
 
         params (pd.DataFrame or list of pd.DataFrames):
             See :ref:`params`.
@@ -100,17 +101,20 @@ def maximize_log_likelihood(
         https://statmodeling.stat.columbia.edu/2016/06/11/log-sum-of-exponentials/
 
     """
-    if isinstance(criterion, list):
-        wrapped_crit = [expand_criterion_output(crit_func) for crit_func in criterion]
-        wrapped_crit = [
-            aggregate_criterion_output(np.mean)(crit_func) for crit_func in wrapped_crit
+    if isinstance(log_like_obs, list):
+        wrapped_loglikeobs = [
+            expand_criterion_output(crit_func) for crit_func in log_like_obs
+        ]
+        wrapped_loglikeobs = [
+            aggregate_criterion_output(np.mean)(crit_func)
+            for crit_func in wrapped_loglikeobs
         ]
     else:
-        wrapped_crit = expand_criterion_output(criterion)
-        wrapped_crit = aggregate_criterion_output(np.mean)(wrapped_crit)
+        wrapped_loglikeobs = expand_criterion_output(log_like_obs)
+        wrapped_loglikeobs = aggregate_criterion_output(np.mean)(wrapped_loglikeobs)
 
     results = maximize(
-        wrapped_crit,
+        wrapped_loglikeobs,
         params,
         algorithm,
         criterion_kwargs,
@@ -127,7 +131,7 @@ def maximize_log_likelihood(
     # To convert the mean log likelihood in the results dictionary to the log
     # likelihood, get the length of contributions for each optimization.
     arguments = process_optimization_arguments(
-        criterion=criterion,
+        criterion=log_like_obs,
         params=params,
         algorithm=algorithm,
         criterion_kwargs=criterion_kwargs,
