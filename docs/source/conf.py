@@ -57,6 +57,7 @@ autodoc_mock_imports = [
     "bokeh",
     "cloudpickle",
     "fuzzywuzzy",
+    "joblib",
     "numba",
     "numdifftools",
     "numpy",

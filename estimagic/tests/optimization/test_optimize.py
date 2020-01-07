@@ -79,7 +79,7 @@ def test_maximize(algorithm):
         elif algo_name in ["sga"]:
             algo_options = {"popsize": 50, "gen": 500}
         elif algo_name in ["sea"]:
-            algo_options = {"popsize": 5, "gen": 5000}
+            algo_options = {"popsize": 5, "gen": 7000}
         elif algo_name == "simulated_annealing":
             np.random.seed(5471)
             algo_options = {"n_T_adj": 20, "Tf": 0.0001, "n_range_adj": 20}

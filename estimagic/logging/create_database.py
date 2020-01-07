@@ -6,6 +6,7 @@ recommended way of doing things in sqlalchemy and makes sense for database code.
 """
 from pathlib import Path
 
+import numpy as np
 from sqlalchemy import Column
 from sqlalchemy import create_engine
 from sqlalchemy import event
@@ -31,17 +32,23 @@ def load_database(path):
 
     Returns:
         database (sqlalchemy.MetaData). The engine that connects to the database can be
-        accessed via ``database.bind``.
+            accessed via ``database.bind``.
 
     """
     if isinstance(path, str):
         path = Path(path)
 
-    engine = create_engine(f"sqlite:///{path}")
-    _make_engine_thread_safe(engine)
-    database = MetaData()
-    database.bind = engine
-    database.reflect()
+    if isinstance(path, Path):
+        engine = create_engine(f"sqlite:///{path}")
+        _make_engine_thread_safe(engine)
+        database = MetaData()
+        database.bind = engine
+        database.reflect()
+    elif isinstance(path, MetaData):
+        database = path
+    else:
+        TypeError("'path' is neither a pathlib.Path nor a sqlalchemy.MetaData.")
+
     return database
 
 
@@ -69,7 +76,12 @@ def _make_engine_thread_safe(engine):
 
 
 def prepare_database(
-    path, params, db_options=None, optimization_status="scheduled", gradient_status=0
+    path,
+    params,
+    comparison_plot_data=None,
+    db_options=None,
+    optimization_status="scheduled",
+    gradient_status=0,
 ):
     """Return database metadata object with all relevant tables for the optimization.
 
@@ -111,6 +123,10 @@ def prepare_database(
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created.
         params (pd.DataFrame): see :ref:`params`.
+        comparison_plot_data : (numpy.ndarray or pandas.Series or pandas.DataFrame):
+            Contains the data for the comparison plot. Later updates will only deliver
+            the value column where as this input has an index and other invariant
+            information.
         db_options (dict): Dashboard options.
         optimization_status (str): One of "scheduled", "running", "success", "failure".
         gradient_status (float): Progress of gradient calculation between 0 and 1.
@@ -120,6 +136,8 @@ def prepare_database(
         to the database can be accessed via ``database.bind``.
 
     """
+    if comparison_plot_data is None:
+        comparison_plot_data = {"value": np.array([np.nan])}
     db_options = {} if db_options is None else db_options
     gradient_status = float(gradient_status)
     database = load_database(path)
@@ -131,6 +149,7 @@ def prepare_database(
         "timestamps",
         "convergence_history",
         "start_params",
+        "comparison_plot",
         "optimization_status",
         "gradient_status",
         "db_options",
@@ -147,6 +166,7 @@ def prepare_database(
     _define_time_stamps_table(database)
     _define_convergence_history_table(database)
     _define_start_params_table(database)
+    _define_one_column_pickle_table(database, "comparison_plot")
     _define_optimization_status_table(database)
     _define_gradient_status_table(database)
     _define_db_options_table(database)
@@ -214,8 +234,20 @@ def _define_convergence_history_table(database):
 
 
 def _define_start_params_table(database):
-    params_table = Table(
+    start_params_table = Table(
         "start_params", database, Column("value", PickleType), extend_existing=True
+    )
+    return start_params_table
+
+
+def _define_one_column_pickle_table(database, table):
+    params_table = Table(
+        table,
+        database,
+        Column("iteration", Integer, primary_key=True),
+        Column("value", PickleType),
+        sqlite_autoincrement=True,
+        extend_existing=True,
     )
     return params_table
 

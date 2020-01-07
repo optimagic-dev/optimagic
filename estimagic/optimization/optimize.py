@@ -3,7 +3,6 @@ import functools
 import json
 from collections import namedtuple
 from multiprocessing import Event
-from multiprocessing import Pool
 from multiprocessing import Process
 from multiprocessing import Queue
 from pathlib import Path
@@ -11,15 +10,19 @@ from warnings import simplefilter
 
 import numpy as np
 import pandas as pd
+from joblib import delayed
+from joblib import Parallel
 from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
+from estimagic.decorators import expand_criterion_output
 from estimagic.decorators import handle_exceptions
 from estimagic.decorators import log_evaluation
 from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
+from estimagic.decorators import negative_criterion
 from estimagic.decorators import numpy_interface
 from estimagic.logging.create_database import prepare_database
 from estimagic.logging.update_database import update_scalar_field
@@ -99,16 +102,12 @@ def maximize(
                 :ref:`dashboard` for details.
 
     """
-
-    def neg_criterion(params, **criterion_kwargs):
-        return -criterion(params, **criterion_kwargs)
-
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options
     general_options["_maximization"] = True
 
-    results, params = minimize(
-        neg_criterion,
+    results = minimize(
+        criterion=criterion,
         params=params,
         algorithm=algorithm,
         criterion_kwargs=criterion_kwargs,
@@ -121,9 +120,16 @@ def maximize(
         dashboard=dashboard,
         db_options=db_options,
     )
-    results["fitness"] = -results["fitness"]
 
-    return results, params
+    # Change the fitness value. ``results`` is either a tuple of results and params or a
+    # list of tuples.
+    if isinstance(results, list):
+        for result in results:
+            result[0]["fitness"] = -result[0]["fitness"]
+    else:
+        results[0]["fitness"] = -results[0]["fitness"]
+
+    return results
 
 
 def minimize(
@@ -207,7 +213,7 @@ def minimize(
     if len(arguments) == 1:
         # Run only one optimization
         arguments = arguments[0]
-        result = _single_minimize(**arguments)
+        results = _single_minimize(**arguments)
     else:
         # Run multiple optimizations
         if dashboard:
@@ -222,10 +228,12 @@ def minimize(
                 + " if multiple optimizations should be run."
             )
         n_cores = arguments[0]["general_options"]["n_cores"]
-        pool = Pool(processes=n_cores)
-        result = pool.map(_one_argument_single_minimize, arguments)
 
-    return result
+        results = Parallel(n_jobs=n_cores)(
+            delayed(_one_argument_single_minimize)(argument) for argument in arguments
+        )
+
+    return results
 
 
 def _single_minimize(
@@ -292,14 +300,30 @@ def _single_minimize(
     simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
     params = _process_params(params)
 
-    database = prepare_database(logging, params, log_options) if logging else False
+    # Apply decorator two handle criterion functions with one or two returns.
+    criterion = expand_criterion_output(criterion)
 
-    fitness_factor = -1 if general_options.pop("_maximization", False) else 1
-    fitness_eval = fitness_factor * criterion(params, **criterion_kwargs)
+    is_maximization = general_options.pop("_maximization", False)
+    criterion = negative_criterion(criterion) if is_maximization else criterion
+    fitness_factor = -1 if is_maximization else 1
+
+    criterion_out, comparison_plot_data = criterion(params, **criterion_kwargs)
+    if np.isscalar(criterion_out):
+        fitness_eval = fitness_factor * criterion_out
+    else:
+        fitness_eval = fitness_factor * np.mean(np.square(criterion_out))
+
     if np.any(np.isnan(fitness_eval)):
         raise ValueError(
             "The criterion function evaluated at the start parameters returns NaNs."
         )
+
+    database = (
+        prepare_database(logging, params, comparison_plot_data, log_options)
+        if logging
+        else False
+    )
+
     general_options["start_criterion_value"] = fitness_eval
 
     constraints, params = process_constraints(constraints, params)
@@ -321,7 +345,7 @@ def _single_minimize(
         )
         outer_server_process.start()
 
-    result = _internal_minimize(
+    result, params = _internal_minimize(
         criterion=criterion,
         criterion_kwargs=criterion_kwargs,
         params=params,
@@ -340,7 +364,8 @@ def _single_minimize(
     if dashboard:
         stop_signal.set()
         outer_server_process.terminate()
-    return result
+
+    return result, params
 
 
 def _one_argument_single_minimize(kwargs):
@@ -411,7 +436,7 @@ def _internal_minimize(
     logging_decorator = functools.partial(
         log_evaluation,
         database=database,
-        tables=["params_history", "criterion_history"],
+        tables=["params_history", "criterion_history", "comparison_plot"],
     )
 
     exception_decorator = functools.partial(
@@ -565,24 +590,24 @@ def create_internal_criterion(
     @numpy_interface(params, constraints)
     @logging_decorator()
     def internal_criterion(p, counter=c):
-        fitness_eval = criterion(p, **criterion_kwargs)
-
-        # For Pounders, return the sum of squared errors from errors.
-        _fitness_eval = (
-            fitness_eval if np.isscalar(fitness_eval) else ((fitness_eval ** 2).sum())
-        )
+        criterion_out, comparison_plot_data = criterion(p, **criterion_kwargs)
+        if np.isscalar(criterion_out):
+            fitness_eval = criterion_out
+        else:
+            # Todo: This is a temporary fix for POUNDERs which returns an array.
+            fitness_eval = np.mean(np.square(criterion_out))
 
         if queue is not None:
             queue.put(
                 QueueEntry(
                     iteration=counter[0],
                     params=p,
-                    fitness=fitness_factor * _fitness_eval,
+                    fitness=fitness_factor * fitness_eval,
                 )
             )
         counter += 1
 
-        return fitness_eval
+        return criterion_out, comparison_plot_data
 
     return internal_criterion
 
