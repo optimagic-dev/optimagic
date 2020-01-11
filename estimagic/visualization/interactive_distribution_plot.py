@@ -13,7 +13,6 @@ Estimagic uses interactive distribution plots for two types of visualizations:
 
 """
 import warnings
-from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -32,7 +31,9 @@ from bokeh.models.widgets import RangeSlider
 from bokeh.plotting import figure
 from bokeh.plotting import show
 
-from estimagic.dashboard.plotting_functions import get_color_palette
+from estimagic.visualization.add_histogram_columns_to_tidy_df import (
+    add_histogram_columns_to_tidy_df,
+)
 
 
 def interactive_distribution_plot(
@@ -145,13 +146,17 @@ def _create_plots(
     source = ColumnDataSource(df)
     gb = df.groupby(group_cols)
 
-    widgets = _create_group_widgets(
-        df=df,
-        source=source,
-        subgroup_col=subgroup_col,
-        lower_bound_col=lower_bound_col,
-        upper_bound_col=upper_bound_col,
-    )
+    if subgroup_col is not None:
+        widgets = _create_group_widgets(
+            df=df,
+            source=source,
+            subgroup_col=subgroup_col,
+            lower_bound_col=lower_bound_col,
+            upper_bound_col=upper_bound_col,
+        )
+    else:
+        widgets = (None, None)
+
     plots = [wid for wid in widgets if wid is not None]
 
     old_group = np.nan
@@ -231,7 +236,7 @@ def _create_group_widgets(df, source, lower_bound_col, upper_bound_col, subgroup
             "value", CustomJS(code="source.change.emit();", args={"source": source})
         )
     elif sr.dtype == object:
-        checkbox_labels = df[subgroup_col].unique().tolist()
+        checkbox_labels = sr.unique().tolist()
         checkboxes = CheckboxGroup(
             labels=checkbox_labels, active=list(range(len(checkbox_labels)))
         )
@@ -452,85 +457,6 @@ def _add_value_slider_in_front(df, value_col, lower_bound_col, upper_bound_col, 
     callback = CustomJS(args={"plots": plots[1:]}, code=code)
     value_column_slider.js_on_change("value", callback)
     return [value_column_slider] + plots
-
-
-# =====================================================================================
-#                                    DATA FUNCTIONS
-# =====================================================================================
-
-
-def add_histogram_columns_to_tidy_df(
-    df, group_cols, subgroup_col, value_col, id_col, num_bins, x_padding
-):
-    drop_if_nan_cols = group_cols + [subgroup_col, value_col, id_col]
-    hist_data = df[df[drop_if_nan_cols].notnull().all(axis=1)]
-    hist_data.sort_values(group_cols + [subgroup_col, value_col], inplace=True)
-    hist_data.reset_index(inplace=True)
-    hist_data[["binned_x", "rect_width"]] = _bin_width_and_midpoints(
-        df=hist_data,
-        group_cols=group_cols,
-        value_col=value_col,
-        num_bins=num_bins,
-        x_padding=x_padding,
-    )
-
-    hist_data["dodge"] = 0.5 + hist_data.groupby(group_cols + ["binned_x"]).cumcount()
-    hist_data[subgroup_col] = _clean_subgroup_col(sr=hist_data[subgroup_col])
-    hist_data["color"] = _create_color_col(sr=hist_data[subgroup_col])
-    return hist_data
-
-
-def _bin_width_and_midpoints(df, group_cols, value_col, num_bins, x_padding):
-    # Exclude the last column because the last column identifies the plot
-    # but we want the bins to be comparable across plots of the same group.
-    group_keys = group_cols[:-1]
-    grouped = df.groupby(group_keys)
-    bin_width_and_midpoints = partial(
-        _bin_width_and_midpoints_per_group,
-        value_col=value_col,
-        num_bins=num_bins,
-        x_padding=x_padding,
-    )
-    return grouped.apply(bin_width_and_midpoints)
-
-
-def _bin_width_and_midpoints_per_group(df, value_col, num_bins, x_padding):
-    xmin, xmax = _calculate_x_bounds(df, value_col, x_padding)
-    bins, rect_width = np.linspace(
-        start=xmin, stop=xmax, num=num_bins + 1, retstep=True
-    )
-    midpoints = bins[:-1] + rect_width / 2
-    values_midpoints = pd.cut(df[value_col], bins, labels=midpoints).astype(float)
-    to_add = values_midpoints.to_frame(name="binned_x")
-    to_add["rect_width"] = rect_width
-    return to_add
-
-
-def _calculate_x_bounds(df, value_col, padding):
-    raw_min = df[value_col].min()
-    raw_max = df[value_col].max()
-    white_space = (raw_max - raw_min).clip(1e-50) * padding
-    x_min = raw_min - white_space
-    x_max = raw_max + white_space
-    return x_min, x_max
-
-
-def _clean_subgroup_col(sr):
-    if len(sr.unique()) < 10:
-        sr = sr.astype(str)
-    else:
-        try:
-            sr = sr.astype(float)
-        except ValueError:
-            sr = sr.astype(str)
-    return sr
-
-
-def _create_color_col(sr):
-    subgroup_vals = sr.unique()
-    palette = get_color_palette(len(subgroup_vals))
-    color_dict = {val: color for val, color in zip(subgroup_vals, palette)}
-    return sr.replace(color_dict)
 
 
 # =====================================================================================
