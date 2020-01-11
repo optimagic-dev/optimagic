@@ -146,16 +146,13 @@ def maximize_log_likelihood(
         db_options=db_options,
     )
 
-    n_contributions = [
-        len(
-            list(
-                args_one_run["criterion"](
-                    args_one_run["params"], **args_one_run["criterion_kwargs"]
-                )
-            )
-        )
+    contributions = [
+        expand_criterion_output(args_one_run["criterion"])(
+            args_one_run["params"], **args_one_run["criterion_kwargs"]
+        )[0]
         for args_one_run in arguments
     ]
+    n_contributions = [len(contribs) for contribs in contributions]
 
     if isinstance(results, list):
         for result, n_contribs in zip(results, n_contributions):

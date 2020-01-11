@@ -136,8 +136,6 @@ def prepare_database(
         to the database can be accessed via ``database.bind``.
 
     """
-    if comparison_plot_data is None:
-        comparison_plot_data = {"value": np.array([np.nan])}
     db_options = {} if db_options is None else db_options
     gradient_status = float(gradient_status)
     database = load_database(path)
@@ -178,6 +176,10 @@ def prepare_database(
     append_rows(database, "optimization_status", {"value": optimization_status})
     append_rows(database, "gradient_status", {"value": gradient_status})
     append_rows(database, "db_options", {"value": db_options})
+
+    if comparison_plot_data is None:
+        comparison_plot_data = np.array([np.nan])
+    append_rows(database, "comparison_plot", {"value": comparison_plot_data})
 
     return database
 
