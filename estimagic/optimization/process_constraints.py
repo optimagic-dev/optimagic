@@ -1,78 +1,144 @@
+"""Process the user provided pc for use during the optimization.
+
+The main purpose of this module is to convert the user provided pc into
+inputs for fast reparametrization functions. In the process, the pc are
+checked and consolidated. Consolidation means that redundant pc are dropped
+and other pc are collected in meaningful bundles.
+
+To improve readability, the actual code for checking and consolidation are in separate
+modules.
+
+The calls to the check functions are not in one place but scattered over the module.
+This is because we want to do each check as soon as it becomes possible, which allows
+to write error messages that are closely tied to the pc as written by the
+users and not some transformed version thereof. However, some checks can only be done
+after the consolidation.
+
+
+The challenge in making this module readable is that after each function is applied
+the list of pc and the params dataframe will be slightly different, but it
+is not possible to reflect all of the changes in meaningful names because thy would
+get way too long. We chose the following conventions:
+
+As soon as a list of pc or a params DataFrame is different from what the
+user provided they are called pc (for pc) and pp (for processed
+params) respectively. If all pc of a certain type, say linear, are collected
+in a this collection is called pc_linear.
+
+If only few columns of processed params are used in a function, it is better to
+pass them as Series, to make the flow of information more explicit.
+
+"""
 import warnings
 
 import numpy as np
 import pandas as pd
 
-from estimagic.optimization.check_constraints import check_compatibility_of_constraints
-from estimagic.optimization.utilities import cov_params_to_matrix
-from estimagic.optimization.utilities import sdcorr_params_to_matrix
+from estimagic.optimization.check_constraints import check_constraints_are_satisfied
+from estimagic.optimization.check_constraints import check_fixes_and_bounds
+from estimagic.optimization.check_constraints import check_for_incompatible_overlaps
+from estimagic.optimization.check_constraints import check_types
+from estimagic.optimization.consolidate_constraints import consolidate_constraints
+from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 
 
 def process_constraints(constraints, params):
     """Process, consolidate and check constraints.
 
-    Note: Do not change the order of function calls.
-
     Args:
-        constraints (list): see :ref:`constraints`.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
-        processed (list): the processed constraints.
+
+        pc (list): A processed version of those constraints
+            that entail actual transformations and not just fixing parameters.
+        pp (pd.DataFrame): Processed params. A copy of params with additional columns:
+            - _internal_lower:
+              Lower bounds for the internal parameter vector. Those are derived from
+              the original lower bounds and additional bounds implied by other
+              constraints.
+            - _internal_upper: As _internal_lower but for upper bounds.
+            - _internal_free: Boolean column that is true for those parameters over
+              which the optimizer will actually optimize.
+            - _pre_replacements: The j_th element indicates the position of the internal
+              parameter that has to be copied into the j_th position of the external
+              parameter vector when reparametrizing from_internal, before any
+              transformations are applied. Negative if no element has to be copied.
+            - _post_replacements: As pre_replacements, but applied after the
+              transformations are done.
+            - _internal_fixed_value: Contains transformed versions of the fixed values
+              that will become equal to the external fixed values after the
+              kernel transformations are applied.
+            - _is_fixed_to_value: True for parameters that are fixed to a value
+            - _is_fixed_to_other: True for parameters that are fixed to another
+              parameter
 
     """
-
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
-        # it is important to process selectors first
-        constraints = _process_selectors(constraints, params)
-        fixed = apply_fixes_to_external_params(
-            params, [c for c in constraints if c["type"] == "fixed"]
+        pc = _apply_constraint_killers(constraints)
+        check_types(pc)
+        pc = _process_selectors(pc, params)
+        pc = _replace_pairwise_equality_by_equality(pc)
+        pc = _process_linear_weights(pc, params)
+        check_constraints_are_satisfied(pc, params)
+        pc = _replace_increasing_and_decreasing_by_linear(pc)
+        pc = _process_linear_weights(pc, params)
+        pc, pp = consolidate_constraints(pc, params)
+        check_for_incompatible_overlaps(pp, pc)
+        check_fixes_and_bounds(pp, pc)
+
+        int_lower, int_upper = _create_internal_bounds(pp.lower, pp.upper, pc)
+        pp["_internal_lower"] = int_lower
+        pp["_internal_upper"] = int_upper
+        pp["_internal_free"] = _create_internal_free(
+            pp._is_fixed_to_value, pp._is_fixed_to_other, pc
         )
-        constraints = _replace_pairwise_equality_by_equality(constraints, params)
-        constraints = _consolidate_equality_constraints(constraints, params)
+        pp["_pre_replacements"] = _create_pre_replacements(pp._internal_free)
+        pp["_internal_fixed_value"] = _create_internal_fixed_value(pp._fixed_value, pc)
 
-        processed_constraints = []
-        for constr in constraints:
-            if constr["type"] == "covariance":
-                processed_constraints.append(
-                    _process_cov_constraint(constr, params, fixed)
-                )
-            elif constr["type"] == "sdcorr":
-                processed_constraints.append(
-                    _process_sdcorr_constraint(constr, params, fixed)
-                )
-            elif constr["type"] in [
-                "fixed",
-                "sum",
-                "probability",
-                "increasing",
-                "equality",
-            ]:
-                processed_constraints.append(constr)
-            else:
-                raise ValueError("Invalid constraint type {}".format(constr["type"]))
+        return pc, pp
 
-        check_compatibility_of_constraints(processed_constraints, params, fixed)
 
-    return processed_constraints
+def _apply_constraint_killers(constraints):
+    """Filter out constraints that have a killer."""
+    killers, real_constraints = set(), []
+    for constr in constraints:
+        if "kill" in constr and len(constr) == 1:
+            killers.add(constr["kill"])
+        else:
+            real_constraints.append(constr)
+
+    survivors = []
+    for constr in real_constraints:
+        if constr.get("id", None) not in killers:
+            survivors.append(constr)
+        killers.discard(constr.get("id", None))
+
+    if killers:
+        raise KeyError(f"You try to kill non-existing constraints with ids: {killers}")
+
+    return survivors
 
 
 def _process_selectors(constraints, params):
-    """Process and harmonize the query and loc field of the constraints.
+    """Convert the query and loc field of the constraint into position based indices.
 
     Args:
-        constraints (list): see :ref:`constraints`.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
-        processed (list): The resulting constraint dictionaries contain a new entry
-            called 'index' that consists of the full index of all selected parameters.
+        pc (list): The resulting constraint dictionaries contain a new entry
+            called 'index' that consists of the positions of the selected parameters.
+            If the selected parameters are consecutive entries, the value corresponding
+            to 'index' is a list of positions.
 
     """
-    processed = []
+    pc = []
 
     for constr in constraints:
         new_constr = constr.copy()
@@ -84,225 +150,244 @@ def _process_selectors(constraints, params):
             locs = new_constr.pop("locs", [])
             queries = new_constr.pop("queries", [])
 
+        positions = pd.Series(data=np.arange(len(params)), index=params.index)
+
         indices = []
         for loc in locs:
-            selected = pd.DataFrame(index=params.index, data=False, columns=["select"])
-            selected.loc[loc] = True
-            index = selected.query("select").index
-            assert not index.duplicated().any(), "Duplicates in loc are not allowed."
+            index = positions.loc[loc].astype(int).tolist()
+            index = [index] if not isinstance(index, list) else index
+            assert len(set(index)) == len(index), "Duplicates in loc are not allowed."
             indices.append(index)
         for query in queries:
-            indices.append(params.query(query).index)
+            loc = params.query(query).index
+            index = positions.loc[loc].astype(int).tolist()
+            index = [index] if not isinstance(index, list) else index
+            indices.append(index)
 
         if constr["type"] == "pairwise_equality":
             assert (
                 len(indices) >= 2
-            ), "Select at least two 2 of parameters for pairwise equality constraint!"
+            ), "Select at least 2 sets of parameters for pairwise equality constraint!"
             length = len(indices[0])
             for index in indices:
-                assert (
-                    len(index) == length
-                ), "Invalid selector in pairwise equality constraint."
+                assert len(index) == length, (
+                    "All sets of parameters in pairwise_equality pc must have "
+                    "the same length."
+                )
             new_constr["indices"] = indices
         else:
             assert (
                 len(indices) == 1
             ), "Either loc or query can be in constraint but not both."
             new_constr["index"] = indices[0]
-        processed.append(new_constr)
-    return processed
+        pc.append(new_constr)
+
+    return pc
 
 
-def _replace_pairwise_equality_by_equality(constraints, params):
+def _replace_pairwise_equality_by_equality(pc):
     """Rewrite pairwise equality constraints to equality constraints.
 
     Args:
-        constraints (list): list of constraints.
-            It is assumed that the selectors in the constraints were already processed.
-        params (DataFrame): see :ref:`params` for details.
+        pc (list): List of dictionaries where each dictionary is a constraint.
+            It is assumed that the selectors in constraints were already processed.
 
     Returns:
-        constraints (list): equality constraints
+        pc (list): List of processed constraints.
 
     """
-    pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
-    final_constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
+    pairwise_constraints = [c for c in pc if c["type"] == "pairwise_equality"]
+    pc = [c for c in pc if c["type"] != "pairwise_equality"]
     for constr in pairwise_constraints:
         equality_constraints = []
         for elements in zip(*constr["indices"]):
-            equality_constraints.append({"loc": list(elements), "type": "equality"})
-        final_constraints += _process_selectors(equality_constraints, params)
-    return final_constraints
+            equality_constraints.append({"index": list(elements), "type": "equality"})
+        pc += equality_constraints
+
+    return pc
 
 
-def _process_cov_constraint(constraint, params, fixed):
-    """Process covariance constraints.
+def _process_linear_weights(pc, params):
+    """Harmonize the weights of linear constraints.
 
     Args:
-        constraint (dict)
+        pc (list): Constraints where the selector have already been processed.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
-        new_constr (dict): copy of *constraint* with a new entry called 'case',
-            which can take the values 'all_fixed', 'uncorrelated' and 'free'.
+        processed (list): Constraints where all weights are Series.
 
     """
-    new_constr = constraint.copy()
-    params_subset = params.loc[constraint["index"]]
-    fixed_subset = fixed.loc[constraint["index"]]
-    value_mat = cov_params_to_matrix(params_subset["value"].to_numpy())
-    fixed_mat = cov_params_to_matrix(fixed_subset["_fixed"].to_numpy()).astype(bool)
-    new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
-    new_constr["bounds_distance"] = constraint.pop("bounds_distance", 0.0)
+    processed = []
+    for constr in pc:
+        if constr["type"] == "linear":
+            raw_weights = constr["weights"]
+            params_subset = params.iloc[constr["index"]]
 
-    return new_constr
+            msg = f"Weights must be same length as selected parameters: {params_subset}"
+            if isinstance(raw_weights, pd.Series):
+                weights = raw_weights.loc[params_subset.index].to_numpy()
+            elif isinstance(raw_weights, (np.ndarray, list, tuple)):
+                if len(raw_weights) != len(params_subset):
+                    raise ValueError(msg)
+                weights = np.asarray(raw_weights)
+            elif isinstance(raw_weights, (float, int)):
+                weights = np.full(len(params_subset), float(raw_weights))
+            else:
+                raise TypeError(f"Invalid type for linear weights {type(raw_weights)}.")
 
-
-def _process_sdcorr_constraint(constraint, params, fixed):
-    """Process sdcorr constraints.
-
-    Args:
-        constraint (dict)
-        params (pd.DataFrame): see :ref:`params`.
-
-
-    Returns:
-        new_constr (dict): copy of *constraint* with a new entry called 'case',
-            which can take the values 'all_fixed', 'uncorrelated' and 'free'.
-
-    """
-    new_constr = constraint.copy()
-    params_subset = params.loc[constraint["index"]]
-    value_mat = sdcorr_params_to_matrix(params_subset["value"].to_numpy())
-    dim = len(value_mat)
-    fixed_vec = fixed.loc[constraint["index"], "_fixed"].to_numpy().astype(int)
-    fixed_diag = np.diag(fixed_vec[:dim])
-    fixed_lower = np.zeros((dim, dim), dtype=int)
-    fixed_lower[np.tril_indices(dim, k=-1)] = fixed_vec[dim:]
-    fixed_mat = (fixed_lower + fixed_diag + fixed_lower.T).astype(bool)
-    new_constr["case"] = _determine_cov_case(value_mat, fixed_mat, params_subset)
-    new_constr["bounds_distance"] = constraint.pop("bounds_distance", 0.0)
-    return new_constr
-
-
-def _determine_cov_case(value_mat, fixed_mat, params_subset):
-    """How constrained a covariance matrix is.
-
-    Args:
-        value_mat (np.array): start parameters for the implied covariance matrix
-        fixed_mat (np.array): which elements of the implied covariance matrix are fixed.
-        params_subset (DataFrame): relevant subset of a :ref:`params`.
-
-    Returns:
-        case (str): takes the values 'all_fixed', 'uncorrelated', 'free'
-
-    """
-    dim = len(value_mat)
-    off_diagonal_zero = bool((value_mat[np.tril_indices(dim, k=-1)] == 0).all())
-
-    off_diagonal_fixed = bool(fixed_mat[np.tril_indices(dim, k=-1)].all())
-    all_fixed = bool(fixed_mat.all())
-
-    if all_fixed:
-        case = "all_fixed"
-    elif off_diagonal_fixed and off_diagonal_zero:
-        case = "uncorrelated"
-    else:
-        fixed_copy = fixed_mat.copy()
-        fixed_copy[0, 0] = False
-
-        assert not fixed_copy.any(), (
-            "Only the first diagonal element can be fixed for parameters with "
-            "covariance or sdcorr constraint."
-        )
-        case = "free"
-
-    return case
-
-
-def _consolidate_equality_constraints(constraints, params):
-    """Consolidate equality constraints as far as possible.
-
-    Since equality is a transitive conditions we can consolidate any two equality
-    constraints have at least one parameter in common into one condition. Besides being
-    faster, this also ensures that the result remains unchanged if equality conditions
-    are split into several different constraints or their order specified in a different
-    order.
-
-    The index in the consolidated equality constraints is sorted in the same order
-    as the index of params.
-
-    Args:
-        constraint (dict)
-        params (pd.DataFrame): see :ref:`params`.
-
-    Returns:
-        consolidated (list): The consolidated equality constraints.
-
-    """
-    equality_constraints = [c for c in constraints if c["type"] == "equality"]
-    other_constraints = [c for c in constraints if c["type"] != "equality"]
-
-    candidates = [constr["index"] for constr in equality_constraints]
-    # drop constraints that just restrict one parameter to be equal to itself
-    candidates = [c for c in candidates if len(c) >= 2]
-
-    merged = []
-
-    while len(candidates) > 0:
-        new_candidates = _unite_first_with_all_intersecting_elements(candidates)
-        if len(candidates) == len(new_candidates):
-            merged.append(candidates[0])
-            candidates = candidates[1:]
+            new_constr = constr.copy()
+            weights_sr = pd.Series(weights, index=params_subset.index)
+            new_constr["weights"] = weights_sr
+            processed.append(new_constr)
         else:
-            candidates = new_candidates
+            processed.append(constr)
 
-    ordered = []
-    for m in merged:
-        helper = params.copy()
-        helper["selected"] = False
-        helper.loc[m, "selected"] = True
-        ordered.append(helper.query("selected").index)
-
-    consolidated = [{"index": index, "type": "equality"} for index in ordered]
-    return consolidated + other_constraints
+    return processed
 
 
-def _unite_first_with_all_intersecting_elements(indices):
-    """Helper function to consolidate equality constraints.
+def _replace_increasing_and_decreasing_by_linear(pc):
+    """Write increasing and decreasing constraints as linear constraints.
 
     Args:
-        indices (list): A list of pandas Index objects.
+        pc (list): Constraints where the selectors have already been processed.
+
+    Returns:
+        processed (list)
 
     """
-    first = indices[0]
-    new_first = first
-    new_others = []
-    for idx in indices[1:]:
-        if len(first.intersection(idx)) > 0:
-            new_first = new_first.union(idx)
+    increasing_ilocs, other_constraints = [], []
+
+    for constr in pc:
+        if constr["type"] == "increasing":
+            increasing_ilocs.append(constr["index"])
+        elif constr["type"] == "decreasing":
+            increasing_ilocs.append(constr["index"][::-1])
         else:
-            new_others.append(idx)
-    return [new_first] + new_others
+            other_constraints.append(constr)
+
+    linear_constraints = []
+    for iloc in increasing_ilocs:
+        for smaller, larger in zip(iloc, iloc[1:]):
+            linear_constr = {
+                "index": [smaller, larger],
+                "type": "linear",
+                "weights": np.array([-1, 1]),
+                "lower": 0,
+            }
+            linear_constraints.append(linear_constr)
+
+    processed = linear_constraints + other_constraints
+    return processed
 
 
-def _sort_key(x):
-    if x["type"] == "fixed":
-        return 0
-    elif x["type"] == "equality":
-        return 1
-    else:
-        return 2
+def _create_internal_bounds(lower, upper, pc):
+    """Create columns with bounds for the internal parameter vector.
+
+    The columns have the length of the external params and will be reduced later.
+
+    Args:
+        lower (pd.Series): Processed and consolidated external lower bounds.
+        upper (pd.Series): Processed and consolidated external upper bounds.
+        pc (pd.DataFrame): Processed and consolidated constraints.
+
+    Returns:
+        int_lower (pd.Series): Lower bound of internal parameters.
+        int_upper (pd.Series): Upper bound of internal parameters.
+
+    """
+    int_lower, int_upper = lower.copy(), upper.copy()
+
+    for constr in pc:
+        if constr["type"] in ["covariance", "sdcorr"]:
+            # Note that the diagonal positions are the same for covariance and sdcorr
+            # because the internal params contains the Cholesky factor of the implied
+            # covariance matrix in both cases.
+            dim = number_of_triangular_elements_to_dimension(len(constr["index"]))
+            diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
+            diag_indices = np.array(constr["index"])[diag_positions].tolist()
+            bd = constr.get("bounds_distance", 0)
+            int_lower.iloc[diag_indices] = np.maximum(int_lower.iloc[diag_indices], bd)
+        elif constr["type"] == "probability":
+            int_lower.iloc[constr["index"]] = 0
+        elif constr["type"] == "linear":
+            int_lower.iloc[constr["index"]] = -np.inf
+            int_upper.iloc[constr["index"]] = np.inf
+            int_lower.update(constr["right_hand_side"]["lower"])
+            int_upper.update(constr["right_hand_side"]["upper"])
+        else:
+            raise TypeError("Invalid constraint type {}".format(constr["type"]))
+
+    return int_lower, int_upper
 
 
-def apply_fixes_to_external_params(params, fixes):
-    params = params.copy()
-    params["_fixed"] = False
-    for fix in fixes:
-        assert fix["type"] == "fixed", "Invalid constraint of type {} in fixes.".format(
-            fix["type"]
-        )
-        params.loc[fix["index"], "_fixed"] = True
-        if "value" in fix:
-            params.loc[fix["index"], "value"] = fix["value"]
-    return params
+def _create_internal_free(is_fixed_to_value, is_fixed_to_other, pc):
+    """Boolean Series that is true for parameters over which the optimizer optimizes.
+
+    Args:
+        is_fixed_to_value (pd.Series): The _is_fixed_to_value column of pp.
+        is_fixed_to_other (pd.Series): The _is_fixed_to_other column of pp.
+
+    Returns:
+        int_free (pd.Series)
+    """
+    int_fixed = is_fixed_to_value | is_fixed_to_other
+
+    for constr in pc:
+        if constr["type"] == "probability":
+            int_fixed.iloc[constr["index"][-1]] = True
+        elif constr["type"] == "linear":
+            int_fixed.iloc[constr["index"]] = False
+            int_fixed.update(constr["right_hand_side"]["value"].notnull())
+            # dtype gets messed up by update
+            int_fixed = int_fixed.astype(bool)
+
+    int_free = ~int_fixed
+
+    return int_free
+
+
+def _create_pre_replacements(internal_free):
+    """Series with internal position of parameters.
+
+    The j_th element indicates the position of the internal parameter that has to be
+    copied into the j_th position of the external parameter vector when reparametrizing
+    from_internal, before any transformations are applied. Negative if no element has
+    to be copied.
+
+    This will be used to copy the free internal parameters into a parameter vector
+    that has the same length as all params.
+
+    Args:
+        internal_free (pd.Series): The _internal_free column of the processed params.
+
+    """
+    pre_replacements = (
+        internal_free.replace(False, np.nan).cumsum().subtract(1).fillna(-1).astype(int)
+    )
+
+    return pre_replacements
+
+
+def _create_internal_fixed_value(fixed_value, pc):
+    """Pandas Series containing the values to which internal parameters are fixe.
+
+    This contains additional fixes used to enforce other constraints and (potentially
+    transformed) user specified fixed values.
+
+    Args:
+        fixed_value (pd.Series): The (external) _fixed_value column of pp.
+        pc (list): Processed and consolidated params.
+
+    """
+    int_fix = fixed_value.copy()
+    for constr in pc:
+        if constr["type"] == "probability":
+            int_fix.iloc[constr["index"][-1]] = 1
+        elif constr["type"] in ["covariance", "sdcorr"]:
+            int_fix.iloc[constr["index"][0]] = np.sqrt(int_fix.iloc[constr["index"][0]])
+        elif constr["type"] == "linear":
+            int_fix.iloc[constr["index"]] = np.nan
+            int_fix.update(constr["right_hand_side"]["value"])
+
+    return int_fix

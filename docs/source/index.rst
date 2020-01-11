@@ -1,25 +1,26 @@
-.. estimagic documentation master file, created by
-   sphinx-quickstart on Fri Jan 18 10:59:27 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+=========
+Estimagic
+=========
 
-Welcome to estimagic's documentation!
-=====================================
+Estimagic is a Python package that helps to build high-quality and user friendly
+implementations of (structural) econometric models. It is designed with large structural
+models in mind, but also "scales down" to simpler use cases like logit or probit models.
+
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   introduction
-   estimation
-   differentiation
-   inference
-   dashboard
-   visualization
-   example_notebooks
-   module_reference
-   contributing
-
+   getting_started/index
+   optimization/index
+   differentiation/index
+   inference/index
+   visualization/index
+   faq
+   api/index
+   contributing/index
+   changes
+   credits
 
 
 Indices and tables

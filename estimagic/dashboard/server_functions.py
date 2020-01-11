@@ -22,7 +22,7 @@ def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
 
     Args:
         queue (Queue):
-            queue to which the updated parameter Series will be supplied.
+            queue to which the updated params DataFrame will be supplied.
 
         stop_signal (Event):
             signal from parent thread to stop the dashboard

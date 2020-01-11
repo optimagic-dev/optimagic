@@ -30,13 +30,14 @@ to_test = list(product(["forward", "central", "backward"], [True, False]))
 @pytest.mark.parametrize("method, extrapolation", to_test)
 def test_gradient(statsmodels_fixtures, method, extrapolation):
     fix = statsmodels_fixtures
-    func_args = [fix["y"], fix["x"]]
+    func_kwargs = {"y": fix["y"], "x": fix["x"]}
     calculated = gradient(
         logit_loglike,
         fix["params"],
         method="forward",
-        extrapolation=False,
-        func_args=func_args,
+        extrapolation=extrapolation,
+        func_kwargs=func_kwargs,
+        step_options={"step_ratio": 2.0},
     )
     expected = fix["gradient"]
     assert_series_equal(calculated, expected)
@@ -52,6 +53,7 @@ def test_jacobian(statsmodels_fixtures, method, extrapolation):
         method=method,
         extrapolation=extrapolation,
         func_kwargs=func_kwargs,
+        step_options={"step_ratio": 2.0},
     )
 
     expected = fix["jacobian"]
@@ -70,6 +72,7 @@ def test_hessian(statsmodels_fixtures, method, extrapolation):
         method=method,
         extrapolation=extrapolation,
         func_kwargs={"y": fix["y"], "x": fix["x"]},
+        step_options={"step_ratio": 2.0},
     )
     expected = fix["hessian"]
     assert_frame_equal(calculated, expected)
