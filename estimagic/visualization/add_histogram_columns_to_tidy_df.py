@@ -14,9 +14,8 @@ def add_histogram_columns_to_tidy_df(
     if subgroup_col is not None:
         drop_and_sort_cols.append(subgroup_col)
     drop_and_sort_cols += [value_col, id_col]
-    hist_data = df[df[drop_and_sort_cols].notnull().all(axis=1)]
+    hist_data = df[df[drop_and_sort_cols].notnull().all(axis=1)].reset_index()
     hist_data.sort_values(drop_and_sort_cols, inplace=True)
-    hist_data.reset_index(inplace=True)
     hist_data[["binned_x", "rect_width"]] = _bin_width_and_midpoints(
         df=hist_data,
         group_cols=group_cols,
