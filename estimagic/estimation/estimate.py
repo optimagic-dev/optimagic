@@ -102,16 +102,16 @@ def maximize_log_likelihood(
 
     """
     if isinstance(log_like_obs, list):
-        wrapped_loglikeobs = [
+        extended_loglikelobs = [
             expand_criterion_output(crit_func) for crit_func in log_like_obs
         ]
         wrapped_loglikeobs = [
             aggregate_criterion_output(np.mean)(crit_func)
-            for crit_func in wrapped_loglikeobs
+            for crit_func in extended_loglikelobs
         ]
     else:
-        wrapped_loglikeobs = expand_criterion_output(log_like_obs)
-        wrapped_loglikeobs = aggregate_criterion_output(np.mean)(wrapped_loglikeobs)
+        extended_loglikelobs = expand_criterion_output(log_like_obs)
+        wrapped_loglikeobs = aggregate_criterion_output(np.mean)(extended_loglikelobs)
 
     results = maximize(
         wrapped_loglikeobs,
@@ -131,7 +131,7 @@ def maximize_log_likelihood(
     # To convert the mean log likelihood in the results dictionary to the log
     # likelihood, get the length of contributions for each optimization.
     arguments = process_optimization_arguments(
-        criterion=log_like_obs,
+        criterion=extended_loglikelobs,
         params=params,
         algorithm=algorithm,
         criterion_kwargs=criterion_kwargs,
@@ -147,7 +147,7 @@ def maximize_log_likelihood(
     )
 
     contributions = [
-        expand_criterion_output(args_one_run["criterion"])(
+        args_one_run["criterion"](
             args_one_run["params"], **args_one_run["criterion_kwargs"]
         )[0]
         for args_one_run in arguments
