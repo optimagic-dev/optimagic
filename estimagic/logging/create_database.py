@@ -7,6 +7,7 @@ recommended way of doing things in sqlalchemy and makes sense for database code.
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from sqlalchemy import Column
 from sqlalchemy import create_engine
 from sqlalchemy import event
@@ -178,7 +179,7 @@ def prepare_database(
     append_rows(database, "db_options", {"value": db_options})
 
     if comparison_plot_data is None:
-        comparison_plot_data = np.array([np.nan])
+        comparison_plot_data = pd.DataFrame({"value": [np.nan]})
     append_rows(database, "comparison_plot", {"value": comparison_plot_data})
 
     return database
