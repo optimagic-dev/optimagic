@@ -77,7 +77,7 @@ def _tidy_df_from_results(results):
     keep = [x for x in df.columns if not x.startswith("_")]
     df = df[keep]
     if "model_class" in df.columns:
-        df["model_class"].fillna("None", inplace=True)
+        df["model_class"].fillna("No model class", inplace=True)
     return df
 
 
