@@ -62,7 +62,8 @@ def interactive_distribution_plot(
         id_col (str):
             Name of the column that identifies
             which values belong to the same observation.
-            In case of a parameter comparison plot this would be the "model_name" column.
+            In case of a parameter comparison plot
+            this would be the "model_name" column.
         group_cols (list):
             Name of the columns that identify groups that will be plotted together.
             In case of a parameter comparison plot this would be the parameter group
@@ -163,10 +164,10 @@ def _create_plots(
 
     plots = [wid for wid in widgets if wid is not None]
 
-    # =================================================================================
-
     if len(group_cols) == 0:
-        pass
+        plots.append(title_fig(group_type="All Parameters", group_name=""))
+        gb = [(None, df)]
+        old_group_tup = None
 
     else:
         gb = df.groupby(group_cols)
@@ -174,66 +175,41 @@ def _create_plots(
         if len(group_cols) == 1:
             plots.append(title_fig(group_type=group_cols[0], group_name=""))
 
-        # not pretty: this covers the case of len(group_cols) == 1 where group_tup
-        # is actually not a tuple.
-        for group_tup, group_df in gb:
-            plots, new_group, old_group_tup = _check_and_handle_group_switch(
-                group_cols=group_cols,
-                old_group_tup=old_group_tup,
-                group_tup=group_tup,
-                df=df,
-                plots=plots,
-            )
-            x_range = _calculate_x_range(
-                df=df,
-                lower_bound_col=lower_bound_col,
-                upper_bound_col=upper_bound_col,
-                group_cols=group_cols,
-                group_tup=group_tup,
-            )
-            filters = _create_filters(
-                source=source,
-                group_df=group_df,
-                subgroup_col=subgroup_col,
-                id_col=id_col,
-                widgets=widgets,
-            )
-            view = CDSView(source=source, filters=filters)
-
-            plot_title = str(group_tup[-1]) if len(group_cols) > 1 else str(group_tup)
-            param_plot = _create_base_plot(
-                title=plot_title,
-                group_df=group_df,
-                source=source,
-                view=view,
-                x_range=x_range,
-                plot_height=plot_height,
-                width=width,
-                id_col=id_col,
-            )
-
-            param_plot = _add_ci_bars_if_present(
-                param_plot=param_plot,
-                source=source,
-                view=view,
-                lower_bound_col=lower_bound_col,
-                upper_bound_col=upper_bound_col,
-            )
-
-            _style_plot(
-                fig=param_plot,
-                new_group=new_group,
-                axis_for_every_parameter=axis_for_every_parameter,
-            )
-            plots.append(param_plot)
-
-        plots = _add_value_slider_in_front(
+    for group_tup, group_df in gb:
+        plots, new_group, old_group_tup = _check_and_handle_group_switch(
+            group_cols=group_cols,
+            old_group_tup=old_group_tup,
+            group_tup=group_tup,
             df=df,
-            value_col=value_col,
-            lower_bound_col=lower_bound_col,
-            upper_bound_col=upper_bound_col,
             plots=plots,
         )
+
+        param_plot = _create_param_plot(
+            df=df,
+            id_col=id_col,
+            group_cols=group_cols,
+            subgroup_col=subgroup_col,
+            lower_bound_col=lower_bound_col,
+            upper_bound_col=upper_bound_col,
+            source=source,
+            group_tup=group_tup,
+            group_df=group_df,
+            new_group=new_group,
+            plot_height=plot_height,
+            widgets=widgets,
+            width=width,
+            axis_for_every_parameter=axis_for_every_parameter,
+        )
+
+        plots.append(param_plot)
+
+    plots = _add_value_slider_in_front(
+        df=df,
+        value_col=value_col,
+        lower_bound_col=lower_bound_col,
+        upper_bound_col=upper_bound_col,
+        plots=plots,
+    )
     return source, plots
 
 
@@ -270,7 +246,9 @@ def _create_group_widgets(df, source, lower_bound_col, upper_bound_col, subgroup
 
 
 def _check_and_handle_group_switch(group_cols, old_group_tup, group_tup, df, plots):
-    if len(old_group_tup) > 1:
+    if len(group_cols) < 2:
+        new_group = False
+    else:
         new_group = old_group_tup[:-1] != group_tup[:-1]
         if new_group:
             plots = _write_titles(
@@ -280,11 +258,74 @@ def _check_and_handle_group_switch(group_cols, old_group_tup, group_tup, df, plo
                 group_tup=group_tup,
             )
             old_group_tup = group_tup
-    else:
-        # no groups in the case of just one group_col because the last level of the
-        # group columns determines just the plots
-        new_group = False
     return plots, new_group, old_group_tup
+
+
+def _create_param_plot(
+    df,
+    id_col,
+    group_cols,
+    subgroup_col,
+    lower_bound_col,
+    upper_bound_col,
+    source,
+    group_tup,
+    group_df,
+    new_group,
+    plot_height,
+    widgets,
+    width,
+    axis_for_every_parameter,
+):
+    x_range = _calculate_x_range(
+        df=df,
+        lower_bound_col=lower_bound_col,
+        upper_bound_col=upper_bound_col,
+        group_cols=group_cols,
+        group_tup=group_tup,
+    )
+    filters = _create_filters(
+        source=source,
+        group_df=group_df,
+        subgroup_col=subgroup_col,
+        id_col=id_col,
+        widgets=widgets,
+    )
+    view = CDSView(source=source, filters=filters)
+
+    if len(group_cols) == 0:
+        plot_title = ""
+    elif len(group_cols) == 1:
+        plot_title = str(group_tup)
+    else:
+        plot_title = str(group_tup[-1])
+
+    param_plot = _create_base_plot(
+        title=plot_title,
+        group_df=group_df,
+        source=source,
+        view=view,
+        x_range=x_range,
+        plot_height=plot_height,
+        width=width,
+        id_col=id_col,
+    )
+
+    param_plot = _add_ci_bars_if_present(
+        param_plot=param_plot,
+        source=source,
+        view=view,
+        lower_bound_col=lower_bound_col,
+        upper_bound_col=upper_bound_col,
+    )
+
+    _style_plot(
+        fig=param_plot,
+        new_group=new_group,
+        axis_for_every_parameter=axis_for_every_parameter,
+    )
+
+    return param_plot
 
 
 def _calculate_x_range(df, lower_bound_col, upper_bound_col, group_cols, group_tup):
