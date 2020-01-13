@@ -15,7 +15,6 @@ Estimagic uses interactive distribution plots for two types of visualizations:
 import warnings
 
 import numpy as np
-import pandas as pd
 from bokeh.layouts import gridplot
 from bokeh.models import BoxSelectTool
 from bokeh.models import CDSView
@@ -40,11 +39,11 @@ def interactive_distribution_plot(
     df,
     value_col,
     id_col,
-    group_cols,
-    subgroup_col,
+    group_cols=None,
+    subgroup_col=None,
     lower_bound_col=None,
     upper_bound_col=None,
-    height=None,
+    figure_height=None,
     width=500,
     x_padding=0.1,
     num_bins=50,
@@ -76,10 +75,10 @@ def interactive_distribution_plot(
             Name of the column identifying the lower bound of the whisker.
         upper_bound_col (str, optional):
             Name of the column identifying the upper bound of the whisker.
-        height (int, optional):
-            height of the plot (in pixels).
+        figure_height (int, optional):
+            height of the figure (i.e. of all plots together, in pixels).
         width (int, optional):
-            width of the plot (in pixels).
+            width of the figure (in pixels).
         x_padding (float, optional):
             the x_range is extended on each side by this factor of the range of the data
         num_bins (int, optional):
@@ -92,9 +91,10 @@ def interactive_distribution_plot(
         gridplot (bokeh.layouts.Column): grid of the distribution plots.
 
     """
-
-    if len(group_cols) != 2 or type(group_cols) != list:
-        raise NotImplementedError("Only supporting two group columns at the moment.")
+    if group_cols is None:
+        group_cols = []
+    elif type(group_cols) == str:
+        group_cols = [group_cols]
 
     hist_data = add_histogram_columns_to_tidy_df(
         df=df,
@@ -106,9 +106,11 @@ def interactive_distribution_plot(
         x_padding=x_padding,
     )
 
-    if height is None:
-        height = _determine_plot_height(
-            figure_height=height, data=hist_data, group_cols=group_cols,
+    if figure_height is None:
+        plot_height = 200
+    else:
+        plot_height = _determine_plot_height(
+            figure_height=figure_height, data=hist_data, group_cols=group_cols,
         )
 
     source, plots = _create_plots(
@@ -119,6 +121,7 @@ def interactive_distribution_plot(
         id_col=id_col,
         lower_bound_col=lower_bound_col,
         upper_bound_col=upper_bound_col,
+        plot_height=plot_height,
         width=width,
         axis_for_every_parameter=axis_for_every_parameter,
     )
@@ -140,11 +143,12 @@ def _create_plots(
     id_col,
     lower_bound_col,
     upper_bound_col,
+    plot_height,
     width,
     axis_for_every_parameter,
 ):
+
     source = ColumnDataSource(df)
-    gb = df.groupby(group_cols)
 
     if subgroup_col is not None:
         widgets = _create_group_widgets(
@@ -159,62 +163,77 @@ def _create_plots(
 
     plots = [wid for wid in widgets if wid is not None]
 
-    old_group = np.nan
-    for (group1, group2), group_df in gb:
-        new_group = old_group != group1
-        if new_group:
-            plots.append(title_fig(group_cols[0], group1))
+    # =================================================================================
+
+    if len(group_cols) == 0:
+        pass
+
+    else:
+        gb = df.groupby(group_cols)
+        old_group_tup = tuple([np.nan] * len(group_cols))
+        if len(group_cols) == 1:
+            plots.append(title_fig(group_type=group_cols[0], group_name=""))
+
+        # not pretty: this covers the case of len(group_cols) == 1 where group_tup
+        # is actually not a tuple.
+        for group_tup, group_df in gb:
+            plots, new_group, old_group_tup = _check_and_handle_group_switch(
+                group_cols=group_cols,
+                old_group_tup=old_group_tup,
+                group_tup=group_tup,
+                df=df,
+                plots=plots,
+            )
             x_range = _calculate_x_range(
                 df=df,
                 lower_bound_col=lower_bound_col,
                 upper_bound_col=upper_bound_col,
-                group_col=group_cols[-2],
-                group_val=group1,
+                group_cols=group_cols,
+                group_tup=group_tup,
             )
-            old_group = group1
+            filters = _create_filters(
+                source=source,
+                group_df=group_df,
+                subgroup_col=subgroup_col,
+                id_col=id_col,
+                widgets=widgets,
+            )
+            view = CDSView(source=source, filters=filters)
 
-        filters = _create_filters(
-            source=source,
-            group_df=group_df,
-            subgroup_col=subgroup_col,
-            id_col=id_col,
-            widgets=widgets,
-        )
-        view = CDSView(source=source, filters=filters)
+            plot_title = str(group_tup[-1]) if len(group_cols) > 1 else str(group_tup)
+            param_plot = _create_base_plot(
+                title=plot_title,
+                group_df=group_df,
+                source=source,
+                view=view,
+                x_range=x_range,
+                plot_height=plot_height,
+                width=width,
+                id_col=id_col,
+            )
 
-        param_plot = _create_base_plot(
-            group1=group1,
-            group2=group2,
-            group_df=group_df,
-            source=source,
-            view=view,
-            x_range=x_range,
-            width=width,
-            id_col=id_col,
-        )
+            param_plot = _add_ci_bars_if_present(
+                param_plot=param_plot,
+                source=source,
+                view=view,
+                lower_bound_col=lower_bound_col,
+                upper_bound_col=upper_bound_col,
+            )
 
-        param_plot = _add_ci_bars_if_present(
-            param_plot=param_plot,
-            source=source,
-            view=view,
+            _style_plot(
+                fig=param_plot,
+                new_group=new_group,
+                axis_for_every_parameter=axis_for_every_parameter,
+            )
+            plots.append(param_plot)
+
+        plots = _add_value_slider_in_front(
+            df=df,
+            value_col=value_col,
             lower_bound_col=lower_bound_col,
             upper_bound_col=upper_bound_col,
+            plots=plots,
         )
-
-        _style_plot(
-            fig=param_plot,
-            new_group=new_group,
-            axis_for_every_parameter=axis_for_every_parameter,
-        )
-        plots.append(param_plot)
-
-    plots = _add_value_slider_in_front(
-        df=df,
-        value_col=value_col,
-        lower_bound_col=lower_bound_col,
-        upper_bound_col=upper_bound_col,
-        plots=plots,
-    )
     return source, plots
 
 
@@ -250,8 +269,31 @@ def _create_group_widgets(df, source, lower_bound_col, upper_bound_col, subgroup
     )
 
 
-def _calculate_x_range(df, lower_bound_col, upper_bound_col, group_col, group_val):
-    whole_group_df = df[df[group_col] == group_val]
+def _check_and_handle_group_switch(group_cols, old_group_tup, group_tup, df, plots):
+    if len(old_group_tup) > 1:
+        new_group = old_group_tup[:-1] != group_tup[:-1]
+        if new_group:
+            plots = _write_titles(
+                plots=plots,
+                group_cols=group_cols,
+                old_group_tup=old_group_tup,
+                group_tup=group_tup,
+            )
+            old_group_tup = group_tup
+    else:
+        # no groups in the case of just one group_col because the last level of the
+        # group columns determines just the plots
+        new_group = False
+    return plots, new_group, old_group_tup
+
+
+def _calculate_x_range(df, lower_bound_col, upper_bound_col, group_cols, group_tup):
+    if len(group_cols) < 2:
+        whole_group_df = df
+    elif len(group_cols) == 2:
+        whole_group_df = df[df[group_cols[0]] == group_tup[0]]
+    else:
+        whole_group_df = df[df[group_cols[:-1]] == group_tup[:-1]]
     rect_width = whole_group_df["rect_width"].unique()[0]
     group_min = whole_group_df["binned_x"].min() - rect_width
     group_max = whole_group_df["binned_x"].max() + rect_width
@@ -262,10 +304,12 @@ def _calculate_x_range(df, lower_bound_col, upper_bound_col, group_col, group_va
     return group_min, group_max
 
 
-def _create_base_plot(group1, group2, group_df, source, view, x_range, width, id_col):
+def _create_base_plot(
+    title, group_df, source, view, x_range, plot_height, width, id_col
+):
     param_plot = figure(
-        title=str(group2).title(),
-        plot_height=200,
+        title=str(title).title(),
+        plot_height=plot_height,
         plot_width=width,
         tools="reset,save",
         y_axis_location="left",
@@ -478,15 +522,24 @@ def _determine_plot_height(figure_height, data, group_cols):
     if figure_height is None:
         figure_height = int(max(min(30 * data["dodge"].max(), 1000), 100))
 
-    n_groups = len(data.groupby(group_cols[:-1]))
-    n_params = len(data.groupby(group_cols))
+    if len(group_cols) > 1:
+        n_groups = len(data.groupby(group_cols[:-1]))
+        n_plots = len(data.groupby(group_cols))
+    elif len(group_cols) == 1:
+        n_groups = 0
+        n_plots = len(data.groupby(group_cols))
+    else:
+        n_groups = 0
+        n_plots = 1
     space_of_titles = n_groups * 50
     available_space = figure_height - space_of_titles
-    plot_height = int(available_space / n_params)
-    if plot_height < 50:
+    plot_height = int(available_space / n_plots)
+    if plot_height < 20:
         warnings.warn(
-            "The figure height you specified results in very small "
-            "plots which may not render well. Adjust the figure height "
+            "The figure height you specified results in very small ({}) ".format(
+                plot_height
+            )
+            + "plots which may not render well. Adjust the figure height "
             "to a larger value or set it to None to get a larger plot. "
             "Alternatively, you can click on the Reset button "
             "on the right of the plot and your plot should render correctly."
@@ -531,7 +584,7 @@ def _style_y_axis(fig):
 
 def title_fig(group_type, group_name, width=500, level=0):
     title = Title(
-        text="Distribution in {group_type} {group_name}".format(
+        text="{group_type} {group_name}".format(
             group_type=str(group_type).title(), group_name=str(group_name).title()
         ),
         align="center",
@@ -546,3 +599,12 @@ def title_fig(group_type, group_name, width=500, level=0):
     fig.xaxis.axis_line_color = None
 
     return fig
+
+
+def _write_titles(plots, group_cols, old_group_tup, group_tup):
+    for level in range(len(group_cols) - 1):
+        old_name = old_group_tup[level]
+        new_name = group_tup[level]
+        if old_name != new_name:
+            plots.append(title_fig(group_cols[level], new_name, level=level))
+    return plots

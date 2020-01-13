@@ -41,7 +41,7 @@ def parameter_distribution_plot(
         color_dict (dict):
             mapping from the model class names to colors.
         height (int):
-            height of the plot.
+            height of the figure (i.e. of all plots together, in pixels).
         width (int):
             width of the plot (in pixels).
         axis_for_every_parameter (bool):
@@ -62,7 +62,7 @@ def parameter_distribution_plot(
         id_col="model_name",
         group_cols=["group", "name"],
         subgroup_col="model_class" if "model_class" in df.columns else None,
-        height=height,
+        figure_height=height,
         width=width,
         axis_for_every_parameter=axis_for_every_parameter,
         x_padding=x_padding,

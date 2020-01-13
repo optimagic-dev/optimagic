@@ -14,7 +14,7 @@ def add_histogram_columns_to_tidy_df(
     if subgroup_col is not None:
         drop_and_sort_cols.append(subgroup_col)
     drop_and_sort_cols += [value_col, id_col]
-    hist_data = df.dropna(subset=drop_and_sort_cols, how="any")
+    hist_data = df.dropna(subset=drop_and_sort_cols, how="any").copy()
     hist_data.sort_values(drop_and_sort_cols, inplace=True)
     hist_data.reset_index(inplace=True)
     hist_data[["binned_x", "rect_width"]] = _bin_width_and_midpoints(
@@ -35,17 +35,20 @@ def add_histogram_columns_to_tidy_df(
 
 
 def _bin_width_and_midpoints(df, group_cols, value_col, num_bins, x_padding):
-    # Exclude the last column because the last column identifies the plot
-    # but we want the bins to be comparable across plots of the same group.
-    group_keys = group_cols[:-1]
-    grouped = df.groupby(group_keys)
-    bin_width_and_midpoints = partial(
+    bin_width_and_midpoint_func = partial(
         _bin_width_and_midpoints_per_group,
         value_col=value_col,
         num_bins=num_bins,
         x_padding=x_padding,
     )
-    return grouped.apply(bin_width_and_midpoints)
+    if len(group_cols) > 1:
+        # Exclude the last column because the last column identifies the plot
+        # but we want the bins to be comparable across plots of the same (sub)group.
+        grouped = df.groupby(group_cols[:-1])
+        return grouped.apply(bin_width_and_midpoint_func)
+    else:
+        # if no or just one group_col is given
+        return bin_width_and_midpoint_func(df)
 
 
 def _bin_width_and_midpoints_per_group(df, value_col, num_bins, x_padding):
