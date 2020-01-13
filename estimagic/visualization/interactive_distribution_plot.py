@@ -334,7 +334,7 @@ def _calculate_x_range(df, lower_bound_col, upper_bound_col, group_cols, group_t
     elif len(group_cols) == 2:
         whole_group_df = df[df[group_cols[0]] == group_tup[0]]
     else:
-        whole_group_df = df[df[group_cols[:-1]] == group_tup[:-1]]
+        whole_group_df = df[(df[group_cols[:-1]] == group_tup[:-1]).all(axis=1)]
     rect_width = whole_group_df["rect_width"].unique()[0]
     group_min = whole_group_df["binned_x"].min() - rect_width
     group_max = whole_group_df["binned_x"].max() + rect_width
@@ -342,6 +342,10 @@ def _calculate_x_range(df, lower_bound_col, upper_bound_col, group_cols, group_t
         group_min = min(group_min, whole_group_df[lower_bound_col].min())
     if upper_bound_col is not None:
         group_max = max(group_max, whole_group_df[upper_bound_col].max())
+
+    assert np.isfinite(group_min) and np.isfinite(group_max), "{}".format(
+        group_tup[:-1]
+    )
     return group_min, group_max
 
 
