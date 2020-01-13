@@ -10,7 +10,7 @@ from bokeh.models.widgets import RangeSlider
 
 def create_filters(source, group_df, subgroup_col, id_col, widgets):
     filters = [IndexFilter(group_df.index)]
-    checkboxes, group_slider = widgets
+    checkbox_title, checkboxes, group_slider = widgets
     if checkboxes is not None:
         checkbox_filter = _create_checkbox_filter(checkboxes, source, subgroup_col)
         filters.append(checkbox_filter)

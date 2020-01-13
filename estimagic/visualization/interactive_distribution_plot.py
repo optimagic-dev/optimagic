@@ -16,11 +16,13 @@ import warnings
 
 import numpy as np
 from bokeh.layouts import gridplot
+from bokeh.layouts import row
 from bokeh.models import CDSView
 from bokeh.models import ColumnDataSource
 from bokeh.models import Title
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.widgets import CheckboxGroup
+from bokeh.models.widgets import Div
 from bokeh.models.widgets import RangeSlider
 from bokeh.plotting import figure
 from bokeh.plotting import show
@@ -164,9 +166,11 @@ def _create_plots(
             upper_bound_col=upper_bound_col,
         )
     else:
-        widgets = (None, None)
+        widgets = (None, None, None)
 
     plots = [wid for wid in widgets if wid is not None]
+    if len(plots) == 2:
+        plots = [row(plots, width=width)]
 
     if len(group_cols) == 0:
         plots.append(title_fig(group_type="All Parameters", group_name=""))
@@ -218,6 +222,7 @@ def _create_plots(
 
 def _create_group_widgets(df, source, lower_bound_col, upper_bound_col, subgroup_col):
     sr = df[subgroup_col]
+    checkbox_title = None
     checkboxes = None
     slider = None
     if sr.dtype == float:
@@ -235,14 +240,15 @@ def _create_group_widgets(df, source, lower_bound_col, upper_bound_col, subgroup
         )
     elif sr.dtype == object:
         checkbox_labels = sr.unique().tolist()
-        checkboxes = CheckboxGroup(
-            labels=checkbox_labels, active=list(range(len(checkbox_labels)))
-        )
+        actives = list(range(len(checkbox_labels)))
+        checkbox_title = Div(text=str(subgroup_col).title() + ": ")
+        checkboxes = CheckboxGroup(labels=checkbox_labels, active=actives, inline=True)
         checkboxes.js_on_change(
             "active", CustomJS(code="source.change.emit();", args={"source": source})
         )
 
     return (
+        checkbox_title,
         checkboxes,
         slider,
     )
