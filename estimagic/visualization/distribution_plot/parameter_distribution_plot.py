@@ -20,13 +20,14 @@ making it easy to identify and analyze patterns.
 """
 import pandas as pd
 
-from estimagic.visualization.interactive_distribution_plot import (
+from estimagic.visualization.distribution_plot.basic_plot import (
     interactive_distribution_plot,
 )
 
 
 def parameter_distribution_plot(
     results,
+    group_cols=None,
     height=None,
     width=500,
     axis_for_every_parameter=False,
@@ -38,8 +39,8 @@ def parameter_distribution_plot(
     Args:
         results (list): List of estimagic optimization results where the info
             can have been extended with 'model_class' and 'model_name'
-        color_dict (dict):
-            mapping from the model class names to colors.
+        group_cols (list):
+            List of columns (or index levels) by which to group the parameters.
         height (int):
             height of the figure (i.e. of all plots together, in pixels).
         width (int):
@@ -55,12 +56,13 @@ def parameter_distribution_plot(
         gridplot (bokeh.layouts.Column): grid of the distribution plots.
     """
     df = _tidy_df_from_results(results)
+    group_cols = ["group", "name"] if group_cols is None else group_cols
 
     source, grid = interactive_distribution_plot(
-        df=df,
+        db=df,
         value_col="value",
         id_col="model_name",
-        group_cols=["group", "name"],
+        group_cols=group_cols,
         subgroup_col="model_class" if "model_class" in df.columns else None,
         figure_height=height,
         width=width,
@@ -75,7 +77,7 @@ def _tidy_df_from_results(results):
     results = _add_model_names_if_missing(results)
     df = pd.concat(results, sort=True)
     keep = [x for x in df.columns if not x.startswith("_")]
-    df = df[keep]
+    df = df[keep].reset_index()
     if "model_class" in df.columns:
         df["model_class"].fillna("No model class", inplace=True)
     return df

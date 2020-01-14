@@ -10,13 +10,49 @@ from estimagic.dashboard.plotting_functions import get_color_palette
 def add_histogram_columns_to_tidy_df(
     df, group_cols, subgroup_col, value_col, id_col, num_bins, x_padding
 ):
+    """Add bin, rectangle width, vertical position and color as columns to a DataFrame.
+
+    Args:
+        df (pd.DataFrame):
+            Tidy DataFrame.
+            see: http://vita.had.co.nz/papers/tidy-data.pdf
+        value_col (str):
+            Name of the column for which to draw the histogram.
+            In case of a parameter comparison plot this would be the "value" column
+            of the params DataFrame returned by maximize or minimize.
+        id_col (str):
+            Name of the column that identifies
+            which values belong to the same observation.
+            In case of a parameter comparison plot
+            this would be the "model_name" column.
+        group_cols (list):
+            Name of the columns that identify groups that will be plotted together.
+            In case of a parameter comparison plot this would be the parameter group
+            and parameter name.
+        subgroup_col (str):
+            Name of a column according to whose values individual bricks will be
+            color coded. The selection which column is the subgroup_col
+            can be changed in the plot from a dropdown menu.
+        x_padding (float):
+            the x_range is extended on each side by this factor of the range of the data
+        num_bins (int):
+            number of bins
+    """
+
     drop_and_sort_cols = group_cols.copy()
     if subgroup_col is not None:
         drop_and_sort_cols.append(subgroup_col)
     drop_and_sort_cols += [value_col, id_col]
     hist_data = df.dropna(subset=drop_and_sort_cols, how="any").copy()
     hist_data.sort_values(drop_and_sort_cols, inplace=True)
-    hist_data.reset_index(inplace=True)
+    drop_index = (hist_data.index == range(len(hist_data))).all()
+    if hist_data.index.name is None:
+        new_index_name = "_index_{}"
+        i = 0
+        while new_index_name.format(i) in hist_data.columns:
+            i += 1
+        hist_data.index.name = new_index_name.format(i)
+    hist_data.reset_index(inplace=True, drop=drop_index)
     hist_data[["binned_x", "rect_width"]] = _bin_width_and_midpoints(
         df=hist_data,
         group_cols=group_cols,

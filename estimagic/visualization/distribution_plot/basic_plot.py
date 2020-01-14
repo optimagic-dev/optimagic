@@ -15,6 +15,7 @@ Estimagic uses interactive distribution plots for two types of visualizations:
 import warnings
 
 import numpy as np
+import pandas as pd
 from bokeh.layouts import gridplot
 from bokeh.layouts import row
 from bokeh.models import CDSView
@@ -27,22 +28,18 @@ from bokeh.models.widgets import RangeSlider
 from bokeh.plotting import figure
 from bokeh.plotting import show
 
-from estimagic.visualization.add_histogram_columns_to_tidy_df import (
-    add_histogram_columns_to_tidy_df,
-)
-from estimagic.visualization.interactive_distribution_plot_callbacks import (
-    add_single_plot_tools,
-)
-from estimagic.visualization.interactive_distribution_plot_callbacks import (
+from estimagic.visualization.distribution_plot.callbacks import add_single_plot_tools
+from estimagic.visualization.distribution_plot.callbacks import (
     add_value_slider_in_front,
 )
-from estimagic.visualization.interactive_distribution_plot_callbacks import (
-    create_filters,
+from estimagic.visualization.distribution_plot.callbacks import create_filters
+from estimagic.visualization.distribution_plot.histogram_columns import (
+    add_histogram_columns_to_tidy_df,
 )
 
 
 def interactive_distribution_plot(
-    df,
+    db,
     value_col,
     id_col,
     group_cols=None,
@@ -58,8 +55,8 @@ def interactive_distribution_plot(
     """Create an interactive distribution plot from a tidy DataFrame.
 
     Args:
-        df (pd.DataFrame):
-            Tidy DataFrame.
+        db (pd.DataFrame or str or pathlib.Path):
+            Tidy DataFrame or location of the database file that contains tidy data.
             see: http://vita.had.co.nz/papers/tidy-data.pdf
         value_col (str):
             Name of the column for which to draw the histogram.
@@ -98,13 +95,16 @@ def interactive_distribution_plot(
         gridplot (bokeh.layouts.Column): grid of the distribution plots.
 
     """
+    if type(db) != pd.DataFrame:
+        raise NotImplementedError("Database not supported yet.")
+
     if group_cols is None:
         group_cols = []
     elif type(group_cols) == str:
         group_cols = [group_cols]
 
     hist_data = add_histogram_columns_to_tidy_df(
-        df=df,
+        df=db,
         group_cols=group_cols,
         value_col=value_col,
         subgroup_col=subgroup_col,
@@ -308,7 +308,7 @@ def _add_param_plot(
     elif len(group_cols) == 1:
         plot_title = str(group_tup)
     else:
-        plot_title = str(group_tup[-1])
+        plot_title = "{} {}".format(group_cols[-1], group_tup[-1])
 
     param_plot = _create_base_plot(
         title=plot_title,

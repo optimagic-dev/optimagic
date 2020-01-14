@@ -1,4 +1,4 @@
-"""Callback fucntions for the interactive distribution plot."""
+"""Callback functions for the interactive distribution plot."""
 from bokeh.models import BoxSelectTool
 from bokeh.models import HoverTool
 from bokeh.models import IndexFilter
