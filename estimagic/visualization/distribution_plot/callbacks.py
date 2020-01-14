@@ -1,23 +1,97 @@
 """Callback functions for the interactive distribution plot."""
+import bokeh
+import numpy as np
+from bokeh.layouts import row
 from bokeh.models import BoxSelectTool
+from bokeh.models import CDSView
 from bokeh.models import HoverTool
 from bokeh.models import IndexFilter
 from bokeh.models import TapTool
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.filters import CustomJSFilter
+from bokeh.models.widgets import CheckboxGroup
+from bokeh.models.widgets import Div
 from bokeh.models.widgets import RangeSlider
 
 
-def create_filters(source, group_df, subgroup_col, id_col, widgets):
+# =====================================================================================
+# Create Group Widgets
+# =====================================================================================
+
+
+def create_group_widgets(source, subgroup_col):
+    if subgroup_col is None:
+        return []
+    slider = _make_slider(source=source, subgroup_col=subgroup_col)
+    checkbox_group = _make_checkbox_group(source=source, subgroup_col=subgroup_col)
+    if slider is not None:
+        return [slider]
+    elif checkbox_group is not None:
+        return [checkbox_group]
+    else:
+        raise AttributeError("dtype of the subgroup column must be object or float.")
+
+
+def _make_slider(source, subgroup_col):
+    arr = source.data[subgroup_col]
+    if arr.dtype == float:
+        sorted_uniques = np.array(sorted(set(arr)))
+        min_dist_btw_vals = (sorted_uniques[1:] - sorted_uniques[:-1]).min()
+        slider = RangeSlider(
+            start=arr.min() - 0.05 * arr.min(),
+            end=arr.max() + 0.05 * arr.max(),
+            value=(arr.min(), arr.max()),
+            step=min_dist_btw_vals,
+            title=subgroup_col.title(),
+            name="subgroup_slider",
+        )
+        slider.js_on_change(
+            "value", CustomJS(code="source.change.emit();", args={"source": source})
+        )
+        return slider
+
+
+def _make_checkbox_group(source, subgroup_col):
+    arr = source.data[subgroup_col]
+    if arr.dtype == object:
+        checkbox_title = Div(text=str(subgroup_col).title() + ": ")
+        checkbox_labels = sorted(set(arr))
+        actives = list(range(len(checkbox_labels)))
+        checkboxes = CheckboxGroup(
+            labels=checkbox_labels,
+            active=actives,
+            inline=True,
+            name="subgroup_checkbox",
+        )
+        checkboxes.js_on_change(
+            "active", CustomJS(code="source.change.emit();", args={"source": source})
+        )
+        return row(checkbox_title, checkboxes)
+
+
+# =====================================================================================
+
+
+def create_view(source, group_df, subgroup_col, widget):
     filters = [IndexFilter(group_df.index)]
-    checkbox_title, checkboxes, group_slider = widgets
+    if type(widget) == bokeh.models.layouts.Row:
+        checkboxes = widget.children[1]
+        group_slider = None
+    elif type(widget) == bokeh.models.widgets.RangeSlider:
+        checkboxes = None
+        group_slider = widget
+    else:
+        # no widget
+        checkboxes = None
+        group_slider = None
     if checkboxes is not None:
         checkbox_filter = _create_checkbox_filter(checkboxes, source, subgroup_col)
         filters.append(checkbox_filter)
     if group_slider is not None:
         group_slider_filter = _create_slider_filter(group_slider, source, subgroup_col)
         filters.append(group_slider_filter)
-    return filters
+    view = CDSView(source=source, filters=filters)
+    return view
 
 
 def add_single_plot_tools(param_plot, point_glyph, source, id_col):
@@ -107,7 +181,9 @@ def _create_slider_filter(slider, source, column):
 
 
 def _add_hover_tool(param_plot, point_glyph, source):
-    skip = ["dodge", "color", "binned_x", "level_0", "index"]
+    skip = ["dodge", "color", "binned_x", "level_0", "index"] + [
+        x for x in source.column_names if x.startswith("index__")
+    ]
     to_display = [
         col
         for col in source.column_names

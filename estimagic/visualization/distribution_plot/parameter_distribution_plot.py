@@ -59,7 +59,7 @@ def parameter_distribution_plot(
     group_cols = ["group", "name"] if group_cols is None else group_cols
 
     source, grid = interactive_distribution_plot(
-        db=df,
+        source=df,
         value_col="value",
         id_col="model_name",
         group_cols=group_cols,
