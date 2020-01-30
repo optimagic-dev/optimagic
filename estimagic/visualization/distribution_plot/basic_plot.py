@@ -16,7 +16,6 @@ import os
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from bokeh.layouts import gridplot
 from bokeh.models import ColumnDataSource
@@ -58,8 +57,8 @@ def interactive_distribution_plot(
             see: http://vita.had.co.nz/papers/tidy-data.pdf
         value_col (str):
             Name of the column for which to draw the histogram.
-            In case of a parameter comparison plot this would be the "value" column
-            of the params DataFrame returned by maximize or minimize.
+            In case of a parameter comparison plot this would be the "value" columns
+            of the params DataFrames returned by maximize or minimize.
         id_col (str):
             Name of the column that identifies
             which values belong to the same observation.
@@ -68,11 +67,10 @@ def interactive_distribution_plot(
         group_cols (list):
             Name of the columns that identify groups that will be plotted together.
             In case of a parameter comparison plot this would be the parameter group
-            and parameter name.
+            and parameter name by default.
         subgroup_col (str, optional):
             Name of a column according to whose values individual bricks will be
-            color coded. The selection which column is the subgroup_col
-            can be changed in the plot from a dropdown menu.
+            color coded.
         lower_bound_col (str, optional):
             Name of the column identifying the lower bound of the whisker.
         upper_bound_col (str, optional):
@@ -115,6 +113,8 @@ def interactive_distribution_plot(
         id_col=id_col,
         num_bins=num_bins,
         x_padding=x_padding,
+        lower_bound_col=lower_bound_col,
+        upper_bound_col=upper_bound_col,
     )
 
     plot_height = _determine_plot_height(
@@ -159,27 +159,16 @@ def _create_plots(
 
     plots = create_group_widgets(source=source, subgroup_col=subgroup_col)
 
-    # =====================================================
+    old_group_tup = tuple(None for name in group_cols)
 
-    if len(group_cols) == 0:
-        gb = [(None, df)]
-        plots.append(title_fig(group_type="All Parameters", group_name=""))
-        old_group_tup = None
-    elif len(group_cols) == 1:
-        old_group_tup = tuple([np.nan] * len(group_cols))
-        gb = df.groupby(group_cols[0])
-        plots.append(title_fig(group_type=group_cols[0], group_name=""))
-
-    else:
-        gb = df.groupby(group_cols)
-        old_group_tup = tuple([np.nan] * len(group_cols))
+    gb = _create_groupby(df=df, group_cols=group_cols)
 
     for group_tup, group_df in gb:
-        plots, new_group, old_group_tup = _check_and_handle_group_switch(
+        plots, new_group = _add_titles_if_group_switch(
+            plots=plots,
             group_cols=group_cols,
             old_group_tup=old_group_tup,
             group_tup=group_tup,
-            plots=plots,
         )
 
         view = create_view(
@@ -216,6 +205,7 @@ def _create_plots(
         )
 
         plots.append(param_plot)
+        old_group_tup = group_tup
 
     plots = add_value_slider_in_front(
         df=df,
@@ -227,24 +217,18 @@ def _create_plots(
     return source, plots
 
 
-def _check_and_handle_group_switch(group_cols, old_group_tup, group_tup, plots):
-    if len(group_cols) < 2:
-        new_group = False
+def _create_groupby(df, group_cols):
+    if len(group_cols) == 0:
+        gb = [(None, df)]
+    elif len(group_cols) == 1:
+        gb = df.groupby(group_cols[0])
     else:
-        new_group = old_group_tup[:-1] != group_tup[:-1]
-        if new_group:
-            plots = _write_titles(
-                plots=plots,
-                group_cols=group_cols,
-                old_group_tup=old_group_tup,
-                group_tup=group_tup,
-            )
-            old_group_tup = group_tup
-    return plots, new_group, old_group_tup
+        gb = df.groupby(group_cols)
+    return gb
 
 
 def _plot_title(group_cols, group_tup):
-    if len(group_cols) == 0:
+    if group_tup is None:
         plot_title = ""
     elif len(group_cols) == 1:
         plot_title = str(group_tup)
@@ -320,15 +304,15 @@ def _determine_plot_height(figure_height, data, group_cols):
     if figure_height is None:
         figure_height = int(max(min(30 * data["dodge"].max(), 1000), 100))
 
-    if len(group_cols) > 1:
-        n_groups = len(data.groupby(group_cols[:-1]))
-        n_plots = len(data.groupby(group_cols))
+    if len(group_cols) == 0:
+        n_groups = 0
+        n_plots = 1
     elif len(group_cols) == 1:
         n_groups = 0
         n_plots = len(data.groupby(group_cols))
     else:
-        n_groups = 0
-        n_plots = 1
+        n_groups = len(data.groupby(group_cols[:-1]))
+        n_plots = len(data.groupby(group_cols))
     space_of_titles = n_groups * 50
     available_space = figure_height - space_of_titles
     plot_height = int(available_space / n_plots)
@@ -399,10 +383,12 @@ def title_fig(group_type, group_name, width=500, level=0):
     return fig
 
 
-def _write_titles(plots, group_cols, old_group_tup, group_tup):
+def _add_titles_if_group_switch(plots, group_cols, old_group_tup, group_tup):
+    new_group = False
     for level in range(len(group_cols) - 1):
         old_name = old_group_tup[level]
         new_name = group_tup[level]
         if old_name != new_name:
+            new_group = True
             plots.append(title_fig(group_cols[level], new_name, level=level))
-    return plots
+    return plots, new_group

@@ -13,7 +13,7 @@ compared to the uncertainty around the parameter estimates?
 
 The plot is basically a clickable histogram where each individual observation
 (in this case the parameter estimate of a particular model) is represented as a brick
-in the stackt that correspond to one bar of the histogram.
+in the stack that corresponds to one bar of the histogram.
 By hovering or clicking on a particular brick you can learn more about that observation
 making it easy to identify and analyze patterns.
 
@@ -74,6 +74,15 @@ def parameter_distribution_plot(
 
 
 def _tidy_df_from_results(results):
+    """Convert a list of results to a tidy DataFrame.
+
+    Args:
+        results (list): List of estimagic optimization results where the info
+            can have been extended with 'model_class' and 'model_name'
+
+    Returns:
+        df (pd.DataFrame): tidy Dataframe without the histogram columns.
+    """
     results = _add_model_names_if_missing(results)
     df = pd.concat(results, sort=True)
     keep = [x for x in df.columns if not x.startswith("_")]

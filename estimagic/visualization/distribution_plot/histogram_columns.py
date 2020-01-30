@@ -8,7 +8,15 @@ from estimagic.dashboard.plotting_functions import get_color_palette
 
 
 def add_histogram_columns_to_tidy_df(
-    df, group_cols, subgroup_col, value_col, id_col, num_bins, x_padding
+    df,
+    value_col,
+    id_col,
+    group_cols,
+    subgroup_col,
+    lower_bound_col,
+    upper_bound_col,
+    x_padding,
+    num_bins,
 ):
     """Add bin, rectangle width, vertical position and color as columns to a DataFrame.
 
@@ -36,6 +44,10 @@ def add_histogram_columns_to_tidy_df(
             Name of a column according to whose values individual bricks will be
             color coded. The selection which column is the subgroup_col
             can be changed in the plot from a dropdown menu.
+        lower_bound_col (str or None):
+            Name of the column identifying the lower bound of the whisker.
+        upper_bound_col (str or None):
+            Name of the column identifying the upper bound of the whisker.
         x_padding (float):
             the x_range is extended on each side by this factor of the range of the data
         num_bins (int):
@@ -79,7 +91,7 @@ def _drop_nans_and_sort(df, group_cols, subgroup_col, value_col, id_col):
     if subgroup_col is not None:
         drop_and_sort_cols.append(subgroup_col)
     drop_and_sort_cols += [value_col, id_col]
-    df = df.dropna(subset=drop_and_sort_cols, how="any").copy()
+    df = df.dropna(subset=drop_and_sort_cols, how="any")
     df.sort_values(drop_and_sort_cols, inplace=True)
     return df
 
@@ -89,7 +101,7 @@ def _safely_reset_index(df):
     if old_name is None or old_name in df.columns:
         i = 0
         if old_name is None:
-            # double __ to avoid insure unique columns when bokeh transforms the DataFrame
+            # double __ to ensure unique columns when bokeh transforms the DataFrame
             # to a ColumnDataSource
             new_name = "index__{}"
         else:
@@ -110,14 +122,13 @@ def _bin_width_and_midpoints(df, group_cols, value_col, num_bins, x_padding):
         num_bins=num_bins,
         x_padding=x_padding,
     )
-    if len(group_cols) > 1:
+    if len(group_cols) <= 1:
+        return bin_width_and_midpoint_func(df)
+    else:
         # Exclude the last column because the last column identifies the plot
         # but we want the bins to be comparable across plots of the same (sub)group.
         grouped = df.groupby(group_cols[:-1])
         return grouped.apply(bin_width_and_midpoint_func)
-    else:
-        # if no or just one group_col is given
-        return bin_width_and_midpoint_func(df)
 
 
 def _bin_width_and_midpoints_per_group(df, value_col, num_bins, x_padding):
@@ -176,7 +187,7 @@ def _clean_subgroup_col(sr):
 
 
 def _create_color_col(sr):
-    subgroup_vals = sr.unique()
+    subgroup_vals = sorted(sr.unique())
     palette = get_color_palette(len(subgroup_vals))
     color_dict = {val: color for val, color in zip(subgroup_vals, palette)}
     return sr.replace(color_dict)
