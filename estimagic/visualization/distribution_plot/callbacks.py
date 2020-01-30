@@ -1,5 +1,4 @@
 """Callback functions for the interactive distribution plot."""
-import bokeh
 import numpy as np
 from bokeh.layouts import row
 from bokeh.models import BoxSelectTool
@@ -9,98 +8,17 @@ from bokeh.models import IndexFilter
 from bokeh.models import TapTool
 from bokeh.models.callbacks import CustomJS
 from bokeh.models.filters import CustomJSFilter
+from bokeh.models.layouts import Row
 from bokeh.models.widgets import CheckboxGroup
 from bokeh.models.widgets import Div
 from bokeh.models.widgets import RangeSlider
 
-
 # =====================================================================================
-# Create Group Widgets
-# =====================================================================================
-
-
-def create_group_widgets(source, subgroup_col):
-    if subgroup_col is None:
-        return []
-    slider = _make_slider(source=source, subgroup_col=subgroup_col)
-    checkbox_group = _make_checkbox_group(source=source, subgroup_col=subgroup_col)
-    if slider is not None:
-        return [slider]
-    elif checkbox_group is not None:
-        return [checkbox_group]
-    else:
-        raise AttributeError("dtype of the subgroup column must be object or float.")
-
-
-def _make_slider(source, subgroup_col):
-    arr = source.data[subgroup_col]
-    if arr.dtype == float:
-        sorted_uniques = np.array(sorted(set(arr)))
-        min_dist_btw_vals = (sorted_uniques[1:] - sorted_uniques[:-1]).min()
-        slider = RangeSlider(
-            start=arr.min() - 0.05 * arr.min(),
-            end=arr.max() + 0.05 * arr.max(),
-            value=(arr.min(), arr.max()),
-            step=min_dist_btw_vals,
-            title=subgroup_col.title(),
-            name="subgroup_slider",
-        )
-        slider.js_on_change(
-            "value", CustomJS(code="source.change.emit();", args={"source": source})
-        )
-        return slider
-
-
-def _make_checkbox_group(source, subgroup_col):
-    arr = source.data[subgroup_col]
-    if arr.dtype == object:
-        checkbox_title = Div(text=str(subgroup_col).title() + ": ")
-        checkbox_labels = sorted(set(arr))
-        actives = list(range(len(checkbox_labels)))
-        checkboxes = CheckboxGroup(
-            labels=checkbox_labels,
-            active=actives,
-            inline=True,
-            name="subgroup_checkbox",
-        )
-        checkboxes.js_on_change(
-            "active", CustomJS(code="source.change.emit();", args={"source": source})
-        )
-        return row(checkbox_title, checkboxes)
-
-
+# Create widgets
 # =====================================================================================
 
 
-def create_view(source, group_df, subgroup_col, widget):
-    filters = [IndexFilter(group_df.index)]
-    if type(widget) == bokeh.models.layouts.Row:
-        checkboxes = widget.children[1]
-        group_slider = None
-    elif type(widget) == bokeh.models.widgets.RangeSlider:
-        checkboxes = None
-        group_slider = widget
-    else:
-        # no widget
-        checkboxes = None
-        group_slider = None
-    if checkboxes is not None:
-        checkbox_filter = _create_checkbox_filter(checkboxes, source, subgroup_col)
-        filters.append(checkbox_filter)
-    if group_slider is not None:
-        group_slider_filter = _create_slider_filter(group_slider, source, subgroup_col)
-        filters.append(group_slider_filter)
-    view = CDSView(source=source, filters=filters)
-    return view
-
-
-def add_single_plot_tools(param_plot, point_glyph, source, id_col):
-    param_plot = _add_hover_tool(param_plot, point_glyph, source)
-    param_plot = _add_select_tools(param_plot, point_glyph, source, id_col)
-    return param_plot
-
-
-def add_value_slider_in_front(df, value_col, lower_bound_col, upper_bound_col, plots):
+def value_slider(df, value_col, lower_bound_col, upper_bound_col, plots):
     val_min = df[value_col].min()
     val_max = df[value_col].max()
     if lower_bound_col is not None:
@@ -126,12 +44,78 @@ def add_value_slider_in_front(df, value_col, lower_bound_col, upper_bound_col, p
         }
     """
 
-    callback = CustomJS(args={"plots": plots[1:]}, code=code)
+    callback = CustomJS(args={"plots": plots}, code=code)
     value_column_slider.js_on_change("value", callback)
-    return [value_column_slider] + plots
+    return value_column_slider
 
 
-def _create_checkbox_filter(checkboxes, source, subgroup_col):
+def create_group_widget(source, subgroup_col):
+    if subgroup_col is None:
+        return None
+    else:
+        value_type = source.data[subgroup_col].dtype
+        if value_type == float:
+            slider = _subgroup_slider(source=source, subgroup_col=subgroup_col)
+            return slider
+        elif value_type == object:
+            checkbox_group = _checkbox_group(source=source, subgroup_col=subgroup_col)
+            return checkbox_group
+        else:
+            raise AttributeError(
+                "dtype of the subgroup column must be object or float."
+            )
+
+
+def _subgroup_slider(source, subgroup_col):
+    sorted_uniques = np.array(sorted(set(source.data[subgroup_col])))
+    min_val, max_val = sorted_uniques[0], sorted_uniques[-1]
+    min_dist_btw_vals = (sorted_uniques[1:] - sorted_uniques[:-1]).min()
+    slider = RangeSlider(
+        start=min_val - 0.05 * min_val,
+        end=max_val + 0.05 * max_val,
+        value=(min_val, max_val),
+        step=min_dist_btw_vals,
+        title=subgroup_col.title(),
+        name="subgroup_slider",
+    )
+    slider.js_on_change(
+        "value", CustomJS(code="source.change.emit();", args={"source": source})
+    )
+    return slider
+
+
+def _checkbox_group(source, subgroup_col):
+    checkbox_title = Div(text=str(subgroup_col).title() + ": ")
+    checkbox_labels = sorted(set(source.data[subgroup_col]))
+    actives = list(range(len(checkbox_labels)))
+    checkboxes = CheckboxGroup(
+        labels=checkbox_labels, active=actives, inline=True, name="subgroup_checkbox",
+    )
+    checkboxes.js_on_change(
+        "active", CustomJS(code="source.change.emit();", args={"source": source})
+    )
+    return row(checkbox_title, checkboxes)
+
+
+# =====================================================================================
+# create view from index and subgroup filters
+# =====================================================================================
+
+
+def create_view(source, group_df, subgroup_col, widget):
+    filters = [IndexFilter(group_df.index)]
+    if isinstance(widget, Row):  # this means we have checkbox groups
+        checkboxes = widget.children[1]
+        checkbox_filter = _checkbox_filter(checkboxes, source, subgroup_col)
+        filters.append(checkbox_filter)
+    elif isinstance(widget, RangeSlider):
+        group_slider_filter = _slider_filter(widget, source, subgroup_col)
+        filters.append(group_slider_filter)
+    view = CDSView(source=source, filters=filters)
+    return view
+
+
+def _checkbox_filter(checkboxes, source, subgroup_col):
     code = (
         """
     let selected = checkboxes.active.map(i=>checkboxes.labels[i]);
@@ -155,7 +139,7 @@ def _create_checkbox_filter(checkboxes, source, subgroup_col):
     return checkbox_filter
 
 
-def _create_slider_filter(slider, source, column):
+def _slider_filter(slider, source, column):
     code = (
         """
     let lower_bound = slider.value[0];
@@ -180,7 +164,12 @@ def _create_slider_filter(slider, source, column):
     return slider_filter
 
 
-def _add_hover_tool(param_plot, point_glyph, source):
+# =====================================================================================
+# Hover and Select Tools
+# =====================================================================================
+
+
+def add_hover_tool(param_plot, point_glyph, source):
     skip = ["dodge", "color", "binned_x", "level_0", "index"] + [
         x for x in source.column_names if x.startswith("index__")
     ]
@@ -195,7 +184,7 @@ def _add_hover_tool(param_plot, point_glyph, source):
     return param_plot
 
 
-def _add_select_tools(param_plot, point_glyph, source, id_col):
+def add_select_tools(param_plot, point_glyph, source, id_col):
     select_kwargs = {"source": source}
     select_code = (
         """

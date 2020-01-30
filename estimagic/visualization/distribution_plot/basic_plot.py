@@ -24,12 +24,11 @@ from bokeh.plotting import figure
 from bokeh.plotting import show
 
 from estimagic.logging.create_database import load_database
-from estimagic.visualization.distribution_plot.callbacks import add_single_plot_tools
-from estimagic.visualization.distribution_plot.callbacks import (
-    add_value_slider_in_front,
-)
-from estimagic.visualization.distribution_plot.callbacks import create_group_widgets
+from estimagic.visualization.distribution_plot.callbacks import add_hover_tool
+from estimagic.visualization.distribution_plot.callbacks import add_select_tools
+from estimagic.visualization.distribution_plot.callbacks import create_group_widget
 from estimagic.visualization.distribution_plot.callbacks import create_view
+from estimagic.visualization.distribution_plot.callbacks import value_slider
 from estimagic.visualization.distribution_plot.histogram_columns import (
     add_histogram_columns_to_tidy_df,
 )
@@ -133,6 +132,7 @@ def interactive_distribution_plot(
         width=width,
         axis_for_every_parameter=axis_for_every_parameter,
     )
+
     grid = gridplot(plots, toolbar_location="right", ncols=1)
     show(grid)
     return source, plots
@@ -156,8 +156,8 @@ def _create_plots(
     axis_for_every_parameter,
 ):
     source = ColumnDataSource(df)
-
-    plots = create_group_widgets(source=source, subgroup_col=subgroup_col)
+    plots = []
+    widget = create_group_widget(source=source, subgroup_col=subgroup_col)
 
     old_group_tup = tuple(None for name in group_cols)
 
@@ -172,10 +172,7 @@ def _create_plots(
         )
 
         view = create_view(
-            source=source,
-            group_df=group_df,
-            subgroup_col=subgroup_col,
-            widget=plots[0],
+            source=source, group_df=group_df, subgroup_col=subgroup_col, widget=widget,
         )
 
         plot_title = _plot_title(group_cols, group_tup)
@@ -207,13 +204,14 @@ def _create_plots(
         plots.append(param_plot)
         old_group_tup = group_tup
 
-    plots = add_value_slider_in_front(
+    slider = value_slider(
         df=df,
         value_col=value_col,
         lower_bound_col=lower_bound_col,
         upper_bound_col=upper_bound_col,
         plots=plots,
     )
+    plots = [slider, widget] + plots
     return source, plots
 
 
@@ -262,7 +260,9 @@ def _create_base_plot(title, group_df, source, view, plot_height, width, id_col)
         nonselection_alpha=0.1,
     )
 
-    param_plot = add_single_plot_tools(param_plot, point_glyph, source, id_col)
+    param_plot = add_hover_tool(param_plot, point_glyph, source)
+    param_plot = add_select_tools(param_plot, point_glyph, source, id_col)
+
     return param_plot
 
 
