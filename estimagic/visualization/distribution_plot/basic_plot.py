@@ -46,7 +46,6 @@ def interactive_distribution_plot(
     width=500,
     x_padding=0.1,
     num_bins=50,
-    axis_for_every_parameter=False,
 ):
     """Create an interactive distribution plot from a tidy DataFrame.
 
@@ -82,8 +81,6 @@ def interactive_distribution_plot(
             the x_range is extended on each side by this factor of the range of the data
         num_bins (int, optional):
             number of bins
-        axis_for_every_parameter (bool, optional):
-            if False the x axis is only shown once for every group of parameters.
 
     Returns:
         source (bokeh.models.ColumnDataSource): data underlying the plots
@@ -130,7 +127,6 @@ def interactive_distribution_plot(
         upper_bound_col=upper_bound_col,
         plot_height=plot_height,
         width=width,
-        axis_for_every_parameter=axis_for_every_parameter,
     )
 
     grid = gridplot(plots, toolbar_location="right", ncols=1)
@@ -153,15 +149,14 @@ def _create_plots(
     upper_bound_col,
     plot_height,
     width,
-    axis_for_every_parameter,
 ):
     source = ColumnDataSource(df)
-    plots = []
+    gb = _create_groupby(df=df, group_cols=group_cols)
     widget = create_group_widget(source=source, subgroup_col=subgroup_col)
 
+    plots = [None]
     old_group_tup = tuple(None for name in group_cols)
-
-    gb = _create_groupby(df=df, group_cols=group_cols)
+    new_group = None
 
     for group_tup, group_df in gb:
         plots, new_group = _add_titles_if_group_switch(
@@ -195,11 +190,7 @@ def _create_plots(
             upper_bound_col=upper_bound_col,
         )
 
-        _style_plot(
-            fig=param_plot,
-            new_group=new_group,
-            axis_for_every_parameter=axis_for_every_parameter,
-        )
+        param_plot = _style_plot(param_plot)
 
         plots.append(param_plot)
         old_group_tup = group_tup
@@ -329,11 +320,13 @@ def _determine_plot_height(figure_height, data, group_cols):
     return plot_height
 
 
-def _style_plot(fig, new_group, axis_for_every_parameter):
-    _style_x_axis(
-        fig=fig, new_group=new_group, axis_for_every_parameter=axis_for_every_parameter
-    )
-    _style_y_axis(fig=fig)
+def _style_plot(fig):
+    fig.xaxis.minor_tick_line_color = None
+    fig.xaxis.axis_line_color = None
+    fig.xaxis.major_tick_line_color = None
+    fig.yaxis.minor_tick_line_color = None
+    fig.yaxis.axis_line_color = None
+    fig.yaxis.major_tick_line_color = None
 
     fig.title.vertical_align = "top"
     fig.title.text_alpha = 70
@@ -345,23 +338,7 @@ def _style_plot(fig, new_group, axis_for_every_parameter):
     fig.ygrid.visible = False
     fig.sizing_mode = "scale_width"
 
-
-def _style_x_axis(fig, new_group, axis_for_every_parameter):
-    if not axis_for_every_parameter:
-        if new_group:
-            fig.xaxis.visible = False
-        else:
-            fig.xaxis.axis_line_color = None
-        xmin = fig.x_range.start
-        xmax = fig.x_range.end
-        fig.line([xmin, xmax], [0, 0], line_color="black")
-    fig.xaxis.minor_tick_line_color = None
-
-
-def _style_y_axis(fig):
-    fig.yaxis.minor_tick_line_color = None
-    fig.yaxis.axis_line_color = None
-    fig.yaxis.major_tick_line_color = None
+    return fig
 
 
 def title_fig(group_type, group_name, width=500, level=0):
@@ -391,4 +368,7 @@ def _add_titles_if_group_switch(plots, group_cols, old_group_tup, group_tup):
         if old_name != new_name:
             new_group = True
             plots.append(title_fig(group_cols[level], new_name, level=level))
+    # set new group to False for the very first entry
+    if old_group_tup == tuple(None for name in group_cols):
+        new_group = False
     return plots, new_group

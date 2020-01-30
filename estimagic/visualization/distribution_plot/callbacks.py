@@ -19,8 +19,8 @@ from bokeh.models.widgets import RangeSlider
 
 
 def value_slider(df, value_col, lower_bound_col, upper_bound_col, plots):
-    val_min = df[value_col].min()
-    val_max = df[value_col].max()
+    val_min = df["xmin"].min()
+    val_max = df["xmax"].max()
     if lower_bound_col is not None:
         val_min = min(val_min, df[lower_bound_col].min())
     if upper_bound_col is not None:

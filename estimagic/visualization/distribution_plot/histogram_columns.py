@@ -73,6 +73,8 @@ def add_histogram_columns_to_tidy_df(
         df=hist_data,
         group_cols=group_cols,
         value_col=value_col,
+        lower_bound_col=lower_bound_col,
+        upper_bound_col=upper_bound_col,
         num_bins=num_bins,
         x_padding=x_padding,
     )
@@ -115,12 +117,16 @@ def _safely_reset_index(df):
         return df
 
 
-def _bin_width_and_midpoints(df, group_cols, value_col, num_bins, x_padding):
+def _bin_width_and_midpoints(
+    df, group_cols, value_col, lower_bound_col, upper_bound_col, num_bins, x_padding
+):
     bin_width_and_midpoint_func = partial(
         _bin_width_and_midpoints_per_group,
         value_col=value_col,
         num_bins=num_bins,
         x_padding=x_padding,
+        lower_bound_col=lower_bound_col,
+        upper_bound_col=upper_bound_col,
     )
     if len(group_cols) <= 1:
         return bin_width_and_midpoint_func(df)
@@ -131,8 +137,12 @@ def _bin_width_and_midpoints(df, group_cols, value_col, num_bins, x_padding):
         return grouped.apply(bin_width_and_midpoint_func)
 
 
-def _bin_width_and_midpoints_per_group(df, value_col, num_bins, x_padding):
-    xmin, xmax = _calculate_x_bounds(df, value_col, x_padding)
+def _bin_width_and_midpoints_per_group(
+    df, value_col, lower_bound_col, upper_bound_col, num_bins, x_padding
+):
+    xmin, xmax = _calculate_x_bounds(
+        df, value_col, lower_bound_col, upper_bound_col, x_padding
+    )
     bins, rect_width = np.linspace(
         start=xmin, stop=xmax, num=num_bins + 1, retstep=True
     )
@@ -145,34 +155,17 @@ def _bin_width_and_midpoints_per_group(df, value_col, num_bins, x_padding):
     return to_add
 
 
-def _calculate_x_bounds(df, value_col, padding):
+def _calculate_x_bounds(df, value_col, lower_bound_col, upper_bound_col, padding):
     raw_min = df[value_col].min()
     raw_max = df[value_col].max()
+    if lower_bound_col is not None:
+        raw_min = min(raw_min, df[lower_bound_col].min())
+    if upper_bound_col is not None:
+        raw_max = max(raw_max, df[upper_bound_col].max())
     white_space = (raw_max - raw_min).clip(1e-50) * padding
     x_min = raw_min - white_space
     x_max = raw_max + white_space
     return x_min, x_max
-
-
-def _calculate_x_range(df, lower_bound_col, upper_bound_col, group_cols, group_tup):
-    if len(group_cols) < 2:
-        whole_group_df = df
-    elif len(group_cols) == 2:
-        whole_group_df = df[df[group_cols[0]] == group_tup[0]]
-    else:
-        whole_group_df = df[(df[group_cols[:-1]] == group_tup[:-1]).all(axis=1)]
-    rect_width = whole_group_df["rect_width"].unique()[0]
-    group_min = whole_group_df["binned_x"].min() - rect_width
-    group_max = whole_group_df["binned_x"].max() + rect_width
-    if lower_bound_col is not None:
-        group_min = min(group_min, whole_group_df[lower_bound_col].min())
-    if upper_bound_col is not None:
-        group_max = max(group_max, whole_group_df[upper_bound_col].max())
-
-    assert np.isfinite(group_min) and np.isfinite(group_max), "{}".format(
-        group_tup[:-1]
-    )
-    return group_min, group_max
 
 
 def _clean_subgroup_col(sr):

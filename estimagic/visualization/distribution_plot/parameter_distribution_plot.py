@@ -26,13 +26,7 @@ from estimagic.visualization.distribution_plot.basic_plot import (
 
 
 def parameter_distribution_plot(
-    results,
-    group_cols=None,
-    height=None,
-    width=500,
-    axis_for_every_parameter=False,
-    x_padding=0.1,
-    num_bins=50,
+    results, group_cols=None, height=None, width=500, x_padding=0.1, num_bins=50,
 ):
     """Make a comparison plot from a dictionary containing optimization results.
 
@@ -45,8 +39,6 @@ def parameter_distribution_plot(
             height of the figure (i.e. of all plots together, in pixels).
         width (int):
             width of the plot (in pixels).
-        axis_for_every_parameter (bool):
-            if False the x axis is only shown once for every group of parameters.
         x_padding (float): the x_range is extended on each side by x_padding
             times the range of the data
         num_bins (int): number of bins
@@ -66,7 +58,6 @@ def parameter_distribution_plot(
         subgroup_col="model_class" if "model_class" in df.columns else None,
         figure_height=height,
         width=width,
-        axis_for_every_parameter=axis_for_every_parameter,
         x_padding=x_padding,
         num_bins=num_bins,
     )
