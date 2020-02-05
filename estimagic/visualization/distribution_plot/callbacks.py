@@ -1,6 +1,5 @@
 """Callback functions for the interactive distribution plot."""
 import numpy as np
-from bokeh.layouts import row
 from bokeh.models import BoxSelectTool
 from bokeh.models import CDSView
 from bokeh.models import HoverTool
@@ -13,18 +12,19 @@ from bokeh.models.widgets import CheckboxGroup
 from bokeh.models.widgets import Div
 from bokeh.models.widgets import RangeSlider
 
+
 # =====================================================================================
 # Create widgets
 # =====================================================================================
 
 
-def value_slider(df, value_col, lower_bound_col, upper_bound_col, plots):
-    val_min = df["xmin"].min()
-    val_max = df["xmax"].max()
+def value_slider(source, value_col, lower_bound_col, upper_bound_col, plots):
+    val_min = source.data["xmin"].min()
+    val_max = source.data["xmax"].max()
     if lower_bound_col is not None:
-        val_min = min(val_min, df[lower_bound_col].min())
+        val_min = min(val_min, source.data[lower_bound_col].min())
     if upper_bound_col is not None:
-        val_max = max(val_max, df[upper_bound_col].max())
+        val_max = max(val_max, source.data[upper_bound_col].max())
     x_range = val_max - val_min
     value_column_slider = RangeSlider(
         start=val_min - 0.02 * x_range,
@@ -32,6 +32,7 @@ def value_slider(df, value_col, lower_bound_col, upper_bound_col, plots):
         value=(val_min, val_max),
         step=x_range / 500,
         title=value_col.title(),
+        name="value_slider",
     )
 
     code = """
@@ -76,7 +77,7 @@ def _subgroup_slider(source, subgroup_col):
         value=(min_val, max_val),
         step=min_dist_btw_vals,
         title=subgroup_col.title(),
-        name="subgroup_slider",
+        name="subgroup_widget",
     )
     slider.js_on_change(
         "value", CustomJS(code="source.change.emit();", args={"source": source})
@@ -94,7 +95,7 @@ def _checkbox_group(source, subgroup_col):
     checkboxes.js_on_change(
         "active", CustomJS(code="source.change.emit();", args={"source": source})
     )
-    return row(checkbox_title, checkboxes)
+    return Row(checkbox_title, checkboxes, name="subgroup_widget")
 
 
 # =====================================================================================
@@ -102,8 +103,8 @@ def _checkbox_group(source, subgroup_col):
 # =====================================================================================
 
 
-def create_view(source, group_df, subgroup_col, widget):
-    filters = [IndexFilter(group_df.index)]
+def create_view(source, group_index, subgroup_col, widget):
+    filters = [IndexFilter(group_index)]
     if isinstance(widget, Row):  # this means we have checkbox groups
         checkboxes = widget.children[1]
         checkbox_filter = _checkbox_filter(checkboxes, source, subgroup_col)
@@ -169,10 +170,12 @@ def _slider_filter(slider, source, column):
 # =====================================================================================
 
 
-def add_hover_tool(param_plot, point_glyph, source):
-    skip = ["dodge", "color", "binned_x", "level_0", "index"] + [
-        x for x in source.column_names if x.startswith("index__")
-    ]
+def add_hover_tool(fig, point_glyph, source, group_cols):
+    skip = (
+        group_cols
+        + ["dodge", "color", "binned_x", "level_0", "rect_width", "xmin", "xmax"]
+        + [x for x in source.column_names if x.startswith("index")]
+    )
     to_display = [
         col
         for col in source.column_names
@@ -180,11 +183,11 @@ def add_hover_tool(param_plot, point_glyph, source):
     ]
     tooltips = [(col, "@" + col) for col in to_display]
     hover = HoverTool(renderers=[point_glyph], tooltips=tooltips)
-    param_plot.tools.append(hover)
-    return param_plot
+    fig.tools.append(hover)
+    return fig
 
 
-def add_select_tools(param_plot, point_glyph, source, id_col):
+def add_select_tools(fig, point_glyph, source, id_col):
     select_kwargs = {"source": source}
     select_code = (
         """
@@ -219,7 +222,7 @@ def add_select_tools(param_plot, point_glyph, source, id_col):
     # only that brick's id is chosen
     # this makes it impossible to choose ids based on clicking confidence bands
     tap = TapTool(renderers=[point_glyph], callback=select_callback)
-    param_plot.tools.append(tap)
+    fig.tools.append(tap)
     boxselect = BoxSelectTool(renderers=[point_glyph], callback=select_callback)
-    param_plot.tools.append(boxselect)
-    return param_plot
+    fig.tools.append(boxselect)
+    return fig

@@ -19,6 +19,7 @@ making it easy to identify and analyze patterns.
 
 """
 import pandas as pd
+from bokeh.plotting import curdoc
 
 from estimagic.visualization.distribution_plot.basic_plot import (
     interactive_distribution_plot,
@@ -47,10 +48,12 @@ def parameter_distribution_plot(
         source (bokeh.models.ColumnDataSource): data underlying the plots
         gridplot (bokeh.layouts.Column): grid of the distribution plots.
     """
+    doc = curdoc()
     df = _tidy_df_from_results(results)
     group_cols = ["group", "name"] if group_cols is None else group_cols
 
     source, grid = interactive_distribution_plot(
+        doc=doc,
         source=df,
         value_col="value",
         id_col="model_name",
