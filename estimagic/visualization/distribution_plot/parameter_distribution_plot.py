@@ -21,7 +21,7 @@ making it easy to identify and analyze patterns.
 import pandas as pd
 from bokeh.plotting import curdoc
 
-from estimagic.visualization.distribution_plot.basic_plot import (
+from estimagic.visualization.distribution_plot.interactive_distribution_plot import (
     interactive_distribution_plot,
 )
 
