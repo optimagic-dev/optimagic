@@ -52,7 +52,7 @@ def value_slider(source, value_col, lower_bound_col, upper_bound_col, plots):
 
 def create_group_widget(source, subgroup_col):
     if subgroup_col is None:
-        return None
+        return Div(name="group_widget_placeholder")
     else:
         value_type = source.data[subgroup_col].dtype
         if value_type == float:

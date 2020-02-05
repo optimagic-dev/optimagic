@@ -207,7 +207,8 @@ def _plot_bricks(
     plots = []
     tuples = _create_tuples(df=df, group_cols=group_cols)
     for tup in tuples:
-        fig = doc.get_model_by_name(" ".join(str(x) for x in tup))
+        fig_name = " ".join(str(x) for x in tup)
+        fig = doc.get_model_by_name(fig_name)
         fig.renderers = []
         fig.tools = []
         group_index = df[(df[group_cols] == tup).all(axis=1)].index
