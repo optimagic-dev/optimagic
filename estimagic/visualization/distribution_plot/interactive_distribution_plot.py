@@ -229,7 +229,7 @@ def _plot_bricks(
         )
         plots.append(fig)
 
-    # this has to happen at he end because all plots must be passed to this
+    # this has to happen at the end because all plots must be passed to this
     all_elements[0] = value_slider(
         source=source,
         value_col=value_col,
