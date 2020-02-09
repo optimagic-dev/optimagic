@@ -27,7 +27,7 @@ from estimagic.visualization.distribution_plot.interactive_distribution_plot imp
 
 
 def parameter_distribution_plot(
-    results, group_cols=None, height=None, width=500, x_padding=0.1, num_bins=50,
+    results, group_cols=None, figsize=(500, None), x_padding=0.1, num_bins=50,
 ):
     """Make a comparison plot from a dictionary containing optimization results.
 
@@ -36,6 +36,7 @@ def parameter_distribution_plot(
             can have been extended with 'model_class' and 'model_name'
         group_cols (list):
             List of columns (or index levels) by which to group the parameters.
+        figsize
         height (int):
             height of the figure (i.e. of all plots together, in pixels).
         width (int):
@@ -59,8 +60,7 @@ def parameter_distribution_plot(
         id_col="model_name",
         group_cols=group_cols,
         subgroup_col="model_class" if "model_class" in df.columns else None,
-        figure_height=height,
-        width=width,
+        figsize=figsize,
         x_padding=x_padding,
         num_bins=num_bins,
     )

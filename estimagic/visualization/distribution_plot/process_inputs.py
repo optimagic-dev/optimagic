@@ -15,8 +15,6 @@ def process_inputs(
     id_col,
     group_cols,
     subgroup_col,
-    lower_bound_col,
-    upper_bound_col,
     figure_height,
     x_padding,
     num_bins,
@@ -34,8 +32,6 @@ def process_inputs(
         df=df,
         value_col=value_col,
         group_cols=group_cols,
-        lower_bound_col=lower_bound_col,
-        upper_bound_col=upper_bound_col,
         x_padding=x_padding,
         num_bins=num_bins,
     )

@@ -18,13 +18,13 @@ from bokeh.models.widgets import RangeSlider
 # =====================================================================================
 
 
-def value_slider(source, value_col, lower_bound_col, upper_bound_col, plots):
+def value_slider(source, value_col, plots):
     val_min = source.data["xmin"].min()
     val_max = source.data["xmax"].max()
-    if lower_bound_col is not None:
-        val_min = min(val_min, source.data[lower_bound_col].min())
-    if upper_bound_col is not None:
-        val_max = max(val_max, source.data[upper_bound_col].max())
+    if "ci_lower" in source.column_names:
+        val_min = min(val_min, source.data["ci_lower"].min())
+    if "ci_upper" in source.column_names:
+        val_max = max(val_max, source.data["ci_upper"].max())
     x_range = val_max - val_min
     value_column_slider = RangeSlider(
         start=val_min - 0.02 * x_range,

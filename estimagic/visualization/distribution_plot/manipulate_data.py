@@ -23,16 +23,12 @@ def clean_data(df, value_col, id_col, group_cols, subgroup_col):
     return cleaned
 
 
-def add_hist_cols(
-    df, value_col, group_cols, lower_bound_col, upper_bound_col, x_padding, num_bins
-):
+def add_hist_cols(df, value_col, group_cols, x_padding, num_bins):
     df = df.copy()
     df[["binned_x", "rect_width", "xmin", "xmax"]] = _bin_width_and_midpoints(
         df=df,
         group_cols=group_cols,
         value_col=value_col,
-        lower_bound_col=lower_bound_col,
-        upper_bound_col=upper_bound_col,
         num_bins=num_bins,
         x_padding=x_padding,
     )
@@ -94,16 +90,12 @@ def _create_color_col(sr):
 # =====================================================================================
 
 
-def _bin_width_and_midpoints(
-    df, group_cols, value_col, lower_bound_col, upper_bound_col, num_bins, x_padding
-):
+def _bin_width_and_midpoints(df, group_cols, value_col, num_bins, x_padding):
     bin_width_and_midpoint_func = partial(
         _bin_width_and_midpoints_per_group,
         value_col=value_col,
         num_bins=num_bins,
         x_padding=x_padding,
-        lower_bound_col=lower_bound_col,
-        upper_bound_col=upper_bound_col,
     )
     if len(group_cols) <= 1:
         return bin_width_and_midpoint_func(df)
@@ -114,12 +106,8 @@ def _bin_width_and_midpoints(
         return grouped.apply(bin_width_and_midpoint_func)
 
 
-def _bin_width_and_midpoints_per_group(
-    df, value_col, lower_bound_col, upper_bound_col, num_bins, x_padding
-):
-    xmin, xmax = _calculate_x_bounds(
-        df, value_col, lower_bound_col, upper_bound_col, x_padding
-    )
+def _bin_width_and_midpoints_per_group(df, value_col, num_bins, x_padding):
+    xmin, xmax = _calculate_x_bounds(df, value_col, x_padding)
     bins, rect_width = np.linspace(
         start=xmin, stop=xmax, num=num_bins + 1, retstep=True
     )
@@ -132,13 +120,13 @@ def _bin_width_and_midpoints_per_group(
     return to_add
 
 
-def _calculate_x_bounds(df, value_col, lower_bound_col, upper_bound_col, padding):
+def _calculate_x_bounds(df, value_col, padding):
     raw_min = df[value_col].min()
     raw_max = df[value_col].max()
-    if lower_bound_col is not None:
-        raw_min = min(raw_min, df[lower_bound_col].min())
-    if upper_bound_col is not None:
-        raw_max = max(raw_max, df[upper_bound_col].max())
+    if "ci_lower" in df.columns:
+        raw_min = min(raw_min, df["ci_lower"].min())
+    if "ci_upper" in df.columns:
+        raw_max = max(raw_max, df["ci_upper"].max())
     white_space = (raw_max - raw_min).clip(1e-50) * padding
     x_min = raw_min - white_space
     x_max = raw_max + white_space

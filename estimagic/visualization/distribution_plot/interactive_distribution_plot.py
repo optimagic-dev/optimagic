@@ -20,10 +20,7 @@ def interactive_distribution_plot(
     id_col,
     group_cols=None,
     subgroup_col=None,
-    lower_bound_col=None,
-    upper_bound_col=None,
-    figure_height=None,
-    width=500,
+    figsize=(500, None),
     x_padding=0.1,
     num_bins=50,
 ):
@@ -51,28 +48,20 @@ def interactive_distribution_plot(
         subgroup_col (str, optional):
             Name of a column according to whose values individual bricks will be
             color coded.
-        lower_bound_col (str, optional):
-            Name of the column identifying the lower bound of the whisker.
-        upper_bound_col (str, optional):
-            Name of the column identifying the upper bound of the whisker.
-        figure_height (int, optional):
-            height of the figure (i.e. of all plots together, in pixels).
-        width (int, optional):
-            width of the figure (in pixels).
+        figsize (tuple, optional): width, height in points
         x_padding (float, optional):
             the x_range is extended on each side by this factor of the range of the data
         num_bins (int, optional):
             number of bins
 
     """
+    width, figure_height = figsize
     df, group_cols, plot_height = process_inputs(
         source=source,
         value_col=value_col,
         id_col=id_col,
         group_cols=group_cols,
         subgroup_col=subgroup_col,
-        lower_bound_col=lower_bound_col,
-        upper_bound_col=upper_bound_col,
         figure_height=figure_height,
         x_padding=x_padding,
         num_bins=num_bins,
@@ -90,8 +79,6 @@ def interactive_distribution_plot(
         id_col=id_col,
         group_cols=group_cols,
         subgroup_col=subgroup_col,
-        lower_bound_col=lower_bound_col,
-        upper_bound_col=upper_bound_col,
     )
 
     return source, plots
@@ -163,14 +150,7 @@ def _add_titles_if_group_switch(plots, group_cols, old_group_tup, group_tup):
 
 
 def _plot_bricks(
-    doc,
-    df,
-    value_col,
-    id_col,
-    group_cols,
-    subgroup_col,
-    lower_bound_col,
-    upper_bound_col,
+    doc, df, value_col, id_col, group_cols, subgroup_col,
 ):
     """Create the ColumnDataSource and replace the plots and widgets.
 
@@ -193,10 +173,6 @@ def _plot_bricks(
         subgroup_col (str):
             Name of a column according to whose values individual bricks will be
             color coded.
-        lower_bound_col (str):
-            Name of the column identifying the lower bound of the whisker.
-        upper_bound_col (str):
-            Name of the column identifying the upper bound of the whisker.
 
     """
     all_elements = doc.roots[0].children
@@ -219,24 +195,12 @@ def _plot_bricks(
             widget=widget,
         )
         fig = _add_renderers(
-            fig=fig,
-            source=source,
-            view=view,
-            id_col=id_col,
-            group_cols=group_cols,
-            lower_bound_col=lower_bound_col,
-            upper_bound_col=upper_bound_col,
+            fig=fig, source=source, view=view, id_col=id_col, group_cols=group_cols,
         )
         plots.append(fig)
 
     # this has to happen at the end because all plots must be passed to this
-    all_elements[0] = value_slider(
-        source=source,
-        value_col=value_col,
-        lower_bound_col=lower_bound_col,
-        upper_bound_col=upper_bound_col,
-        plots=plots,
-    )
+    all_elements[0] = value_slider(source=source, value_col=value_col, plots=plots,)
 
     return source, all_elements
 
@@ -252,7 +216,7 @@ def _create_tuples(df, group_cols):
 
 
 def _add_renderers(
-    fig, source, view, id_col, group_cols, lower_bound_col, upper_bound_col
+    fig, source, view, id_col, group_cols,
 ):
     point_glyph = fig.rect(
         source=source,
@@ -269,13 +233,13 @@ def _add_renderers(
         nonselection_alpha=0.1,
     )
 
-    if lower_bound_col is not None and upper_bound_col is not None:
+    if "ci_lower" in source.column_names and "ci_upper" in source.column_names:
         fig.hbar(
             source=source,
             view=view,
             y="dodge",
-            left=lower_bound_col,
-            right=upper_bound_col,
+            left="ci_lower",
+            right="ci_upper",
             height=0.01,
             alpha=0.0,
             selection_alpha=0.7,
