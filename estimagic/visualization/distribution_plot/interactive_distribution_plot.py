@@ -109,20 +109,19 @@ def _create_grid(df, group_cols, plot_height, width):
                 old_group_tup=old_group_tup,
                 group_tup=tup,
             )
-            old_group_tup = tup
-            name = " ".join(str(x) for x in tup)
-            fig_title = "{} {}".format(group_cols[-1].title(), str(tup[-1]).title())
+
             fig = figure(
-                title=fig_title,
+                title="{} {}".format(group_cols[-1].title(), str(tup[-1]).title()),
                 plot_height=plot_height,
                 plot_width=width,
                 tools="reset,save",
                 y_axis_location="left",
                 x_range=(df_slice["xmin"].min(), df_slice["xmax"].max()),
-                name=name,
+                name=" ".join(str(x) for x in tup),
             )
             fig = _style_plot(fig)
             plots.append(fig)
+            old_group_tup = tup
     grid = Column(*plots)
     return grid
 
