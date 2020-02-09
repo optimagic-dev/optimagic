@@ -21,6 +21,7 @@ def clean_data(df, group_cols, subgroup_col):
 
 def add_hist_cols(df, group_cols, x_padding, num_bins):
     df = df.copy()
+    df["unit_height"] = 1
     df[["binned_x", "rect_width", "xmin", "xmax"]] = _bin_width_and_midpoints(
         df=df, group_cols=group_cols, num_bins=num_bins, x_padding=x_padding,
     )

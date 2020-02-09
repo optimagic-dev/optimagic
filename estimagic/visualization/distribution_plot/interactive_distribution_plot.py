@@ -1,4 +1,5 @@
 """Main module for the interactive distribution plot."""
+import numpy as np
 from bokeh.layouts import Column
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import Div
@@ -98,8 +99,10 @@ def _create_grid(df, group_cols, plot_height, width):
         plots.append(fig)
     else:
         gb = df.groupby(group_cols)
-        old_group_tup = tuple(None for name in group_cols)
+        old_group_tup = tuple(np.nan for name in group_cols)
         for tup, df_slice in gb:
+            if not isinstance(tup, tuple):
+                tup = (tup,)
             plots = _add_titles_if_group_switch(
                 plots=plots,
                 group_cols=group_cols,
@@ -108,8 +111,9 @@ def _create_grid(df, group_cols, plot_height, width):
             )
             old_group_tup = tup
             name = " ".join(str(x) for x in tup)
+            fig_title = "{} {}".format(group_cols[-1].title(), str(tup[-1]).title())
             fig = figure(
-                title="{} {}".format(group_cols[-1].title(), str(tup[-1]).title()),
+                title=fig_title,
                 plot_height=plot_height,
                 plot_width=width,
                 tools="reset,save",
@@ -164,7 +168,8 @@ def _plot_bricks(doc, df, group_cols, subgroup_col):
         fig = doc.get_model_by_name(fig_name)
         fig.renderers = []
         fig.tools = []
-        group_index = df[(df[group_cols] == tup).all(axis=1)].index
+        df_slice = df[(df[group_cols] == tup).all(axis=1)]
+        group_index = df_slice.index
         view = create_view(
             source=source,
             group_index=group_index,
@@ -184,7 +189,7 @@ def _create_tuples(df, group_cols):
     if len(group_cols) == 0:
         tuples = ["all"]
     elif len(group_cols) == 1:
-        tuples = df[group_cols[0]].unique().tolist()
+        tuples = [(x,) for x in df[group_cols[0]].unique()]
     else:
         tuples = list(set(zip(*[df[col] for col in group_cols])))
     return tuples
