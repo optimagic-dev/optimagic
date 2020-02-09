@@ -134,7 +134,15 @@ else:
 # -- Options for nbsphinx  ----------------------------------------
 # Execute notebooks before conversion: 'always', 'never', 'auto' (default)
 nbsphinx_execute = "never"
+nbsphinx_prolog = r"""
+{% set docname = 'docs/source/' + env.doc2path(env.docname, base=None) %}
 
+.. only:: html
+
+    .. nbinfo::
+
+        Download the notebook :download:`here  <https://nbviewer.jupyter.org/github/OpenSourceEconomics/estimagic/blob/master/{{ docname }}>`!
+"""
 
 # -- Options for HTML output ----------------------------------------------
 
