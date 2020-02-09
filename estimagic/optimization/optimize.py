@@ -26,8 +26,9 @@ from estimagic.decorators import negative_criterion
 from estimagic.decorators import numpy_interface
 from estimagic.logging.create_database import prepare_database
 from estimagic.logging.update_database import update_scalar_field
+from estimagic.optimization.check_arguments import check_arguments
 from estimagic.optimization.pounders import minimize_pounders_np
-from estimagic.optimization.process_arguments import process_optimization_arguments
+from estimagic.optimization.process_arguments import broadcast_arguments
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.pygmo import minimize_pygmo_np
 from estimagic.optimization.reparametrize import reparametrize_from_internal
@@ -194,7 +195,17 @@ def minimize(
                 :ref:`dashboard` for details.
 
     """
-    arguments = process_optimization_arguments(
+    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
+    constraints = [] if constraints is None else constraints
+    algo_options = {} if algo_options is None else algo_options
+    log_options = {} if log_options is None else log_options
+    db_options = {} if db_options is None else db_options
+    general_options = {} if general_options is None else general_options
+
+    # Gradients are currently not allowed to be passed to minimize.
+    gradient = None
+
+    arguments = broadcast_arguments(
         criterion=criterion,
         params=params,
         algorithm=algorithm,
@@ -202,13 +213,14 @@ def minimize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
-        gradient=None,
+        gradient=gradient,
         gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
         dashboard=dashboard,
         db_options=db_options,
     )
+    check_arguments(arguments)
 
     if len(arguments) == 1:
         # Run only one optimization

@@ -128,6 +128,7 @@ def test_missing_argument():
         minimize(criterion=[], params=params, algorithm="nlopt_neldermead")
 
 
+@pytest.mark.wip
 def test_wrong_type_criterion():
     """
     Make sure an error is raised if an argument has a wrong type.
@@ -137,7 +138,7 @@ def test_wrong_type_criterion():
             [rosen, "error"],
             [params, params],
             ["nlopt_neldermead", "scipy_L-BFGS-B"],
-            general_options={"n_cores": 4},
+            general_options={"n_cores": 1},
         )
 
     with pytest.raises(ValueError):
