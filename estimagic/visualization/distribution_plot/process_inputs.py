@@ -10,30 +10,15 @@ from estimagic.visualization.distribution_plot.manipulate_data import clean_data
 
 
 def process_inputs(
-    source,
-    value_col,
-    id_col,
-    group_cols,
-    subgroup_col,
-    figure_height,
-    x_padding,
-    num_bins,
+    source, id_col, group_cols, subgroup_col, figure_height, x_padding, num_bins,
 ):
     df = _handle_source_type(source)
     group_cols = _process_group_cols(group_cols)
     df = clean_data(
-        df=df,
-        value_col=value_col,
-        id_col=id_col,
-        group_cols=group_cols,
-        subgroup_col=subgroup_col,
+        df=df, id_col=id_col, group_cols=group_cols, subgroup_col=subgroup_col,
     )
     df = add_hist_cols(
-        df=df,
-        value_col=value_col,
-        group_cols=group_cols,
-        x_padding=x_padding,
-        num_bins=num_bins,
+        df=df, group_cols=group_cols, x_padding=x_padding, num_bins=num_bins,
     )
     plot_height = _determine_plot_height(
         figure_height=figure_height, data=df, group_cols=group_cols

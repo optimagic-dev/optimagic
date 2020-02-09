@@ -16,7 +16,6 @@ from estimagic.visualization.distribution_plot.process_inputs import process_inp
 def interactive_distribution_plot(
     doc,
     source,
-    value_col,
     id_col,
     group_cols=None,
     subgroup_col=None,
@@ -26,16 +25,15 @@ def interactive_distribution_plot(
 ):
     """Create an interactive distribution plot from a tidy DataFrame.
 
+    The column for which clickable histograms will be generated must be called "value".
+    The column identifying rows that belong to the same observation must be called "id".
+
     Args:
         doc (bokeh.Document):
             document to which to add the plot
         source (pd.DataFrame or str or pathlib.Path):
             Tidy DataFrame or location of the database file that contains tidy data.
             see: http://vita.had.co.nz/papers/tidy-data.pdf
-        value_col (str):
-            Name of the column for which to draw the histogram.
-            In case of a parameter comparison plot this would be the "value" columns
-            of the params DataFrames returned by maximize or minimize.
         id_col (str):
             Name of the column that identifies
             which values belong to the same observation.
@@ -58,7 +56,6 @@ def interactive_distribution_plot(
     width, figure_height = figsize
     df, group_cols, plot_height = process_inputs(
         source=source,
-        value_col=value_col,
         id_col=id_col,
         group_cols=group_cols,
         subgroup_col=subgroup_col,
@@ -73,12 +70,7 @@ def interactive_distribution_plot(
     doc.add_root(grid)
 
     source, plots = _plot_bricks(
-        doc=doc,
-        df=df,
-        value_col=value_col,
-        id_col=id_col,
-        group_cols=group_cols,
-        subgroup_col=subgroup_col,
+        doc=doc, df=df, id_col=id_col, group_cols=group_cols, subgroup_col=subgroup_col,
     )
 
     return source, plots
@@ -150,22 +142,13 @@ def _add_titles_if_group_switch(plots, group_cols, old_group_tup, group_tup):
 
 
 def _plot_bricks(
-    doc, df, value_col, id_col, group_cols, subgroup_col,
+    doc, df, id_col, group_cols, subgroup_col,
 ):
     """Create the ColumnDataSource and replace the plots and widgets.
 
     Args:
         doc (bokeh.Document): document to which to add the plot.
         df (pd.DataFrame): Tidy DataFrame.
-        value_col (str):
-            Name of the column for which to draw the histogram.
-            In case of a parameter comparison plot this would be the "value" columns
-            of the params DataFrames returned by maximize or minimize.
-        id_col (str):
-            Name of the column that identifies
-            which values belong to the same observation.
-            In case of a parameter comparison plot
-            this would be the "model_name" column.
         group_cols (list):
             Name of the columns that identify groups that will be plotted together.
             In case of a parameter comparison plot this would be the parameter group
@@ -200,7 +183,7 @@ def _plot_bricks(
         plots.append(fig)
 
     # this has to happen at the end because all plots must be passed to this
-    all_elements[0] = value_slider(source=source, value_col=value_col, plots=plots,)
+    all_elements[0] = value_slider(source=source, plots=plots,)
 
     return source, all_elements
 

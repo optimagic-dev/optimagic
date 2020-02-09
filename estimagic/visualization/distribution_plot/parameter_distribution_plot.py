@@ -56,7 +56,6 @@ def parameter_distribution_plot(
     source, grid = interactive_distribution_plot(
         doc=doc,
         source=df,
-        value_col="value",
         id_col="model_name",
         group_cols=group_cols,
         subgroup_col="model_class" if "model_class" in df.columns else None,

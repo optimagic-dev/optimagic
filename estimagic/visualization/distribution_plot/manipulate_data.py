@@ -6,13 +6,9 @@ import numpy as np
 import pandas as pd
 
 
-def clean_data(df, value_col, id_col, group_cols, subgroup_col):
+def clean_data(df, id_col, group_cols, subgroup_col):
     cleaned = _drop_nans_and_sort(
-        df=df,
-        group_cols=group_cols,
-        subgroup_col=subgroup_col,
-        value_col=value_col,
-        id_col=id_col,
+        df=df, group_cols=group_cols, subgroup_col=subgroup_col, id_col=id_col,
     )
     cleaned = _safely_reset_index(df=cleaned)
     if subgroup_col is not None:
@@ -23,14 +19,10 @@ def clean_data(df, value_col, id_col, group_cols, subgroup_col):
     return cleaned
 
 
-def add_hist_cols(df, value_col, group_cols, x_padding, num_bins):
+def add_hist_cols(df, group_cols, x_padding, num_bins):
     df = df.copy()
     df[["binned_x", "rect_width", "xmin", "xmax"]] = _bin_width_and_midpoints(
-        df=df,
-        group_cols=group_cols,
-        value_col=value_col,
-        num_bins=num_bins,
-        x_padding=x_padding,
+        df=df, group_cols=group_cols, num_bins=num_bins, x_padding=x_padding,
     )
 
     df["dodge"] = 0.5 + df.groupby(group_cols + ["binned_x"]).cumcount()
@@ -40,11 +32,11 @@ def add_hist_cols(df, value_col, group_cols, x_padding, num_bins):
 # =====================================================================================
 
 
-def _drop_nans_and_sort(df, group_cols, subgroup_col, value_col, id_col):
+def _drop_nans_and_sort(df, group_cols, subgroup_col, id_col):
     drop_and_sort_cols = group_cols.copy()
     if subgroup_col is not None:
         drop_and_sort_cols.append(subgroup_col)
-    drop_and_sort_cols += [value_col, id_col]
+    drop_and_sort_cols += ["value", id_col]
     df = df.dropna(subset=drop_and_sort_cols, how="any")
     df = df.sort_values(drop_and_sort_cols)
     return df
@@ -90,12 +82,9 @@ def _create_color_col(sr):
 # =====================================================================================
 
 
-def _bin_width_and_midpoints(df, group_cols, value_col, num_bins, x_padding):
+def _bin_width_and_midpoints(df, group_cols, num_bins, x_padding):
     bin_width_and_midpoint_func = partial(
-        _bin_width_and_midpoints_per_group,
-        value_col=value_col,
-        num_bins=num_bins,
-        x_padding=x_padding,
+        _bin_width_and_midpoints_per_group, num_bins=num_bins, x_padding=x_padding,
     )
     if len(group_cols) <= 1:
         return bin_width_and_midpoint_func(df)
@@ -106,13 +95,13 @@ def _bin_width_and_midpoints(df, group_cols, value_col, num_bins, x_padding):
         return grouped.apply(bin_width_and_midpoint_func)
 
 
-def _bin_width_and_midpoints_per_group(df, value_col, num_bins, x_padding):
-    xmin, xmax = _calculate_x_bounds(df, value_col, x_padding)
+def _bin_width_and_midpoints_per_group(df, num_bins, x_padding):
+    xmin, xmax = _calculate_x_bounds(df, x_padding)
     bins, rect_width = np.linspace(
         start=xmin, stop=xmax, num=num_bins + 1, retstep=True
     )
     midpoints = bins[:-1] + rect_width / 2
-    values_midpoints = pd.cut(df[value_col], bins, labels=midpoints).astype(float)
+    values_midpoints = pd.cut(df["value"], bins, labels=midpoints).astype(float)
     to_add = values_midpoints.to_frame(name="binned_x")
     to_add["rect_width"] = rect_width
     to_add["xmin"] = xmin
@@ -120,9 +109,9 @@ def _bin_width_and_midpoints_per_group(df, value_col, num_bins, x_padding):
     return to_add
 
 
-def _calculate_x_bounds(df, value_col, padding):
-    raw_min = df[value_col].min()
-    raw_max = df[value_col].max()
+def _calculate_x_bounds(df, padding):
+    raw_min = df["value"].min()
+    raw_max = df["value"].max()
     if "ci_lower" in df.columns:
         raw_min = min(raw_min, df["ci_lower"].min())
     if "ci_upper" in df.columns:

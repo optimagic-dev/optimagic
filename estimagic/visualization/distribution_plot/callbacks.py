@@ -18,7 +18,7 @@ from bokeh.models.widgets import RangeSlider
 # =====================================================================================
 
 
-def value_slider(source, value_col, plots):
+def value_slider(source, plots):
     val_min = source.data["xmin"].min()
     val_max = source.data["xmax"].max()
     if "ci_lower" in source.column_names:
@@ -31,7 +31,7 @@ def value_slider(source, value_col, plots):
         end=val_max + 0.02 * x_range,
         value=(val_min, val_max),
         step=x_range / 500,
-        title=value_col.title(),
+        title="Value",
         name="value_slider",
     )
 
