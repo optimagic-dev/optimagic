@@ -124,13 +124,16 @@ def _create_grid(df, group_cols, plot_height, width):
 
 
 def _add_titles_if_group_switch(plots, group_cols, old_group_tup, group_tup):
-    for level in range(len(group_cols) - 1):
+    nr_levels = len(group_cols) - 1
+    for level in range(nr_levels):
         old_name = old_group_tup[level]
         new_name = group_tup[level]
         if old_name != new_name:
-            title = "{} {}".format(group_cols[level].title(), str(new_name).title())
-            text_size = min(7, 28 - 4 * level)
-            plots.append(Div(text=title, name=title, default_size=text_size))
+            title = "<b>{} {}</b>".format(
+                group_cols[level].title(), str(new_name).title()
+            )
+            percent = "{}%".format(100 * (1.5 * (nr_levels - level)))
+            plots.append(Div(text=title, name=title, style={"font-size": percent}))
     return plots
 
 
