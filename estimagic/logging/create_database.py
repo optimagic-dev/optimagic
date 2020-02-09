@@ -132,7 +132,7 @@ def prepare_database(
         gradient_status (float): Progress of gradient calculation between 0 and 1.
 
     Returns:
-        database (sqlalchemy.sql.schema.MetaData). The engine that connects
+        database (sqlalchemy.MetaData). The engine that connects
         to the database can be accessed via ``database.bind``.
 
     """
