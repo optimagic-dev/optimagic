@@ -33,7 +33,8 @@ def parameter_distribution_plot(
 
     Args:
         results (list): List of estimagic optimization results where the info
-            can have been extended with 'model_class' and 'model_name'
+            can have been extended with 'model_class' and 'model_name'.
+            'model_name' will be displayed as 'id' in the final plot.
         group_cols (list):
             List of columns (or index levels) by which to group the parameters.
         figsize
@@ -56,7 +57,6 @@ def parameter_distribution_plot(
     source, grid = interactive_distribution_plot(
         doc=doc,
         source=df,
-        id_col="model_name",
         group_cols=group_cols,
         subgroup_col="model_class" if "model_class" in df.columns else None,
         figsize=figsize,
@@ -82,6 +82,7 @@ def _tidy_df_from_results(results):
     df = df[keep].reset_index()
     if "model_class" in df.columns:
         df["model_class"].fillna("No model class", inplace=True)
+    df = df.rename(columns={"model_name": "id"})
     return df
 
 

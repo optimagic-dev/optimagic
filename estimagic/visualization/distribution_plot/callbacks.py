@@ -187,10 +187,9 @@ def add_hover_tool(fig, point_glyph, source, group_cols):
     return fig
 
 
-def add_select_tools(fig, point_glyph, source, id_col):
+def add_select_tools(fig, point_glyph, source):
     select_kwargs = {"source": source}
-    select_code = (
-        """
+    select_code = """
     // adapted from https://stackoverflow.com/a/44996422
 
     var chosen = source.selected.indices;
@@ -200,23 +199,18 @@ def add_select_tools(fig, point_glyph, source, id_col):
 
     var chosen_ids = [];
     for (var i = 0; i < chosen.length; ++ i){
-        chosen_ids.push(source.data['"""
-        + id_col
-        + """'][chosen[i]])
+        chosen_ids.push(source.data['id'][chosen[i]])
     };
 
     var chosen_ids_indices = [];
     for (var i = 0; i < source.data['index'].length; ++ i){
-        if (chosen_ids.includes(source.data['"""
-        + id_col
-        + """'][i])){
+        if (chosen_ids.includes(source.data['id'][i])){
             chosen_ids_indices.push(i)
         };
     };
     source.selected.indices = chosen_ids_indices;
     source.change.emit();
     """
-    )
     select_callback = CustomJS(args=select_kwargs, code=select_code)
     # point_glyph as only renderer assures that when a point is chosen
     # only that brick's id is chosen

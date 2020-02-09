@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 
-def clean_data(df, id_col, group_cols, subgroup_col):
+def clean_data(df, group_cols, subgroup_col):
     cleaned = _drop_nans_and_sort(
-        df=df, group_cols=group_cols, subgroup_col=subgroup_col, id_col=id_col,
+        df=df, group_cols=group_cols, subgroup_col=subgroup_col
     )
     cleaned = _safely_reset_index(df=cleaned)
     if subgroup_col is not None:
@@ -32,11 +32,11 @@ def add_hist_cols(df, group_cols, x_padding, num_bins):
 # =====================================================================================
 
 
-def _drop_nans_and_sort(df, group_cols, subgroup_col, id_col):
+def _drop_nans_and_sort(df, group_cols, subgroup_col):
     drop_and_sort_cols = group_cols.copy()
     if subgroup_col is not None:
         drop_and_sort_cols.append(subgroup_col)
-    drop_and_sort_cols += ["value", id_col]
+    drop_and_sort_cols += ["value", "id"]
     df = df.dropna(subset=drop_and_sort_cols, how="any")
     df = df.sort_values(drop_and_sort_cols)
     return df

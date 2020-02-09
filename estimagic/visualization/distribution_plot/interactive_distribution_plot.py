@@ -16,7 +16,6 @@ from estimagic.visualization.distribution_plot.process_inputs import process_inp
 def interactive_distribution_plot(
     doc,
     source,
-    id_col,
     group_cols=None,
     subgroup_col=None,
     figsize=(500, None),
@@ -34,11 +33,6 @@ def interactive_distribution_plot(
         source (pd.DataFrame or str or pathlib.Path):
             Tidy DataFrame or location of the database file that contains tidy data.
             see: http://vita.had.co.nz/papers/tidy-data.pdf
-        id_col (str):
-            Name of the column that identifies
-            which values belong to the same observation.
-            In case of a parameter comparison plot
-            this would be the "model_name" column.
         group_cols (list):
             Name of the columns that identify groups that will be plotted together.
             In case of a parameter comparison plot this would be the parameter group
@@ -56,7 +50,6 @@ def interactive_distribution_plot(
     width, figure_height = figsize
     df, group_cols, plot_height = process_inputs(
         source=source,
-        id_col=id_col,
         group_cols=group_cols,
         subgroup_col=subgroup_col,
         figure_height=figure_height,
@@ -70,7 +63,7 @@ def interactive_distribution_plot(
     doc.add_root(grid)
 
     source, plots = _plot_bricks(
-        doc=doc, df=df, id_col=id_col, group_cols=group_cols, subgroup_col=subgroup_col,
+        doc=doc, df=df, group_cols=group_cols, subgroup_col=subgroup_col,
     )
 
     return source, plots
@@ -141,9 +134,7 @@ def _add_titles_if_group_switch(plots, group_cols, old_group_tup, group_tup):
     return plots
 
 
-def _plot_bricks(
-    doc, df, id_col, group_cols, subgroup_col,
-):
+def _plot_bricks(doc, df, group_cols, subgroup_col):
     """Create the ColumnDataSource and replace the plots and widgets.
 
     Args:
@@ -177,9 +168,7 @@ def _plot_bricks(
             subgroup_col=subgroup_col,
             widget=widget,
         )
-        fig = _add_renderers(
-            fig=fig, source=source, view=view, id_col=id_col, group_cols=group_cols,
-        )
+        fig = _add_renderers(fig=fig, source=source, view=view, group_cols=group_cols)
         plots.append(fig)
 
     # this has to happen at the end because all plots must be passed to this
@@ -198,9 +187,7 @@ def _create_tuples(df, group_cols):
     return tuples
 
 
-def _add_renderers(
-    fig, source, view, id_col, group_cols,
-):
+def _add_renderers(fig, source, view, group_cols):
     point_glyph = fig.rect(
         source=source,
         view=view,
@@ -234,9 +221,7 @@ def _add_renderers(
     fig = add_hover_tool(
         fig=fig, point_glyph=point_glyph, source=source, group_cols=group_cols
     )
-    fig = add_select_tools(
-        fig=fig, point_glyph=point_glyph, source=source, id_col=id_col
-    )
+    fig = add_select_tools(fig=fig, point_glyph=point_glyph, source=source,)
     return fig
 
 
