@@ -2,6 +2,8 @@
 import numpy as np
 from bokeh.layouts import Column
 from bokeh.models import ColumnDataSource
+from bokeh.models import MultiSelect
+from bokeh.models import Select
 from bokeh.models.widgets import Div
 from bokeh.models.widgets import RangeSlider
 from bokeh.plotting import figure
@@ -59,7 +61,11 @@ def interactive_distribution_plot(
     )
 
     grid = _create_grid(
-        df=df, group_cols=group_cols, plot_height=plot_height, width=width
+        df=df,
+        group_cols=group_cols,
+        subgroup_col=subgroup_col,
+        plot_height=plot_height,
+        width=width,
     )
     doc.add_root(grid)
 
@@ -70,7 +76,7 @@ def interactive_distribution_plot(
     return source, plots
 
 
-def _create_grid(df, group_cols, plot_height, width):
+def _create_grid(df, subgroup_col, group_cols, plot_height, width):
     """Create the empty grid to which the contributions or parameters will be plotted.
 
     Args:
@@ -79,13 +85,43 @@ def _create_grid(df, group_cols, plot_height, width):
             Name of the columns that identify groups that will be plotted together.
             In case of a parameter comparison plot this would be the parameter group
             and parameter name by default.
+        subgroup_col (str, optional):
+            Name of a column according to whose values individual bricks will be
+            color coded.
         plot_height (int): height of the plots in pixels
         width (int): width of the plots in pixels
 
     """
+    cols_to_ignore = [
+        "value",
+        "binned_x",
+        "rect_width",
+        "xmin",
+        "xmax",
+        "dodge",
+        "unit_height",
+        "color",
+    ]
+    col_candidates = [
+        col
+        for col in df.columns
+        if col not in cols_to_ignore and not col.startswith("index")
+    ]
     plots = [
         RangeSlider(start=0, end=1, value=(0, 1), name="placeholder_value_slider"),
         RangeSlider(start=0, end=1, value=(0, 1), name="placeholder_subgroup_widget"),
+        Select(
+            title="Subgroup Column",
+            value=subgroup_col,
+            options=col_candidates,
+            name="subgroup_selector",
+        ),
+        MultiSelect(
+            title="Grouping Columns",
+            value=group_cols,
+            options=col_candidates,
+            name="column_groups_selector",
+        ),
     ]
     if len(group_cols) == 0:
         fig = figure(
