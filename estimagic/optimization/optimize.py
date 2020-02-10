@@ -434,7 +434,7 @@ def _internal_minimize(
         general_options (dict):
             additional configurations for the optimization
 
-        database (sqlalchemy.sql.schema.MetaData). The engine that connects to the
+        database (sqlalchemy.MetaData). The engine that connects to the
             database can be accessed via ``database.bind``.
 
         queue (Queue):
@@ -451,22 +451,14 @@ def _internal_minimize(
         tables=["params_history", "criterion_history", "comparison_plot"],
     )
 
-    exception_decorator = functools.partial(
-        handle_exceptions,
-        database=database,
-        params=params,
-        constraints=constraints,
-        start_params=internal_params,
-        general_options=general_options,
-    )
-
     internal_criterion = create_internal_criterion(
         criterion=criterion,
         params=params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         logging_decorator=logging_decorator,
-        exception_decorator=exception_decorator,
+        general_options=general_options,
+        database=database,
         queue=queue,
         fitness_factor=fitness_factor,
     )
@@ -479,11 +471,10 @@ def _internal_minimize(
         internal_params=internal_params,
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
+        general_options=general_options,
         database=database,
-        exception_decorator=exception_decorator,
         fitness_factor=fitness_factor,
         algorithm=algorithm,
-        general_options=general_options,
     )
 
     current_dir_path = Path(__file__).resolve().parent
@@ -560,7 +551,8 @@ def create_internal_criterion(
     constraints,
     criterion_kwargs,
     logging_decorator,
-    exception_decorator,
+    general_options,
+    database,
     queue,
     fitness_factor,
 ):
@@ -584,6 +576,15 @@ def create_internal_criterion(
             Decorator used for logging information. Either log parameters and fitness
             values during the optimization or log the gradient status.
 
+        general_options (dict):
+            additional configurations for the optimization
+
+        database (sqlalchemy.MetaData). The engine that connects to the
+            database can be accessed via ``database.bind``.
+
+        queue (Queue):
+            queue to which the fitness evaluations and params DataFrames are supplied.
+
         fitness_factor (float):
             multiplicative factor for the fitness displayed in the dashboard.
             Set to -1 for maximizations to plot the fitness that is being maximized.
@@ -598,9 +599,9 @@ def create_internal_criterion(
     """
     c = np.zeros(1)
 
-    @exception_decorator()
+    @handle_exceptions(database, params, constraints, params, general_options)
     @numpy_interface(params, constraints)
-    @logging_decorator()
+    @logging_decorator
     def internal_criterion(p, counter=c):
         criterion_out, comparison_plot_data = criterion(p, **criterion_kwargs)
         if np.isscalar(criterion_out):
@@ -672,11 +673,10 @@ def create_internal_gradient(
     internal_params,
     constraints,
     criterion_kwargs,
+    general_options,
     database,
-    exception_decorator,
     fitness_factor,
     algorithm,
-    general_options,
 ):
     n_internal_params = params["_internal_free"].sum()
     gradient_options = {} if gradient_options is None else gradient_options
@@ -718,7 +718,8 @@ def create_internal_gradient(
         constraints=constraints,
         criterion_kwargs=criterion_kwargs,
         logging_decorator=logging_decorator,
-        exception_decorator=exception_decorator,
+        general_options=general_options,
+        database=database,
         queue=None,
         fitness_factor=fitness_factor,
     )
