@@ -118,13 +118,13 @@ def test_missing_argument():
     """
     Test if error is raised if an important argument is entered as empty list.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(criterion=rosen, params=params, algorithm=[])
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(criterion=rosen, params=[], algorithm="nlopt_neldermead")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(criterion=[], params=params, algorithm="nlopt_neldermead")
 
 
@@ -133,7 +133,7 @@ def test_wrong_type_criterion():
     """
     Make sure an error is raised if an argument has a wrong type.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(
             [rosen, "error"],
             [params, params],
@@ -141,7 +141,7 @@ def test_wrong_type_criterion():
             general_options={"n_cores": 1},
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize("error", params, "nlopt_neldermead", general_options={"n_cores": 4})
 
 
@@ -149,7 +149,7 @@ def test_wrong_type_algorithm():
     """
     Make sure an error is raised if an argument has a wrong type.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(
             [rosen, rosen],
             [params, params],
@@ -157,29 +157,15 @@ def test_wrong_type_algorithm():
             general_options={"n_cores": 4},
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(rosen, params, algorithm=rosen, general_options={"n_cores": 4})
-
-
-def test_wrong_type_constraints():
-    """
-    Make sure an error is raised if an argument has a wrong type.
-    """
-    with pytest.raises(ValueError):
-        minimize(
-            rosen,
-            params,
-            "nlopt_neldermead",
-            constraints={},
-            general_options={"n_cores": 4},
-        )
 
 
 def test_wrong_type_dashboard():
     """
     Make sure an error is raised if an argument has a wrong type.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(
             [rosen, rosen],
             [params, params],
@@ -188,7 +174,7 @@ def test_wrong_type_dashboard():
             general_options={"n_cores": 4},
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(
             rosen,
             params,
@@ -203,7 +189,7 @@ def test_n_cores_not_specified():
     Make sure an error is raised if n_cores is not specified and
     multiple optimizations should be run.
     """
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(
             [rosen, rosen],
             [params, params, params],

@@ -30,7 +30,7 @@ def broadcast_arguments(**arguments):
         elif len(value) == n_optimizations:
             pass
         else:
-            raise ValueError(
+            raise NotImplementedError(
                 f"Argument '{key}' cannot be broadcasted to {n_optimizations} "
                 "optimizations."
             )
