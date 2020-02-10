@@ -140,9 +140,7 @@ nbsphinx_prolog = r"""
 .. only:: html
 
     .. nbinfo::
-        Download the notebook :download:`here
-        <https://nbviewer.jupyter.org/github/OpenSourceEconomics/estimagic/blob/master/
-        {{ docname }}>`!
+        Download the notebook :download:`here <https://nbviewer.jupyter.org/github/OpenSourceEconomics/estimagic/blob/master/{{ docname }}>`!
 """
 
 # -- Options for HTML output ----------------------------------------------
