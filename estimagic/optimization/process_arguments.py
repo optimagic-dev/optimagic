@@ -4,7 +4,14 @@ import sqlalchemy
 
 
 def broadcast_arguments(**arguments):
-    """Broadcast arguments."""
+    """Broadcast arguments.
+
+    All passed keyword arguments are broadcasted to the argument with the most elements.
+
+    If `n` is the maximum number of elements per keyword arguments, single elements are
+    duplicated `n`-times. Arguments with `n` elements are matched by positions.
+
+    """
     # Remove logging as it needs special treatment.
     logging = arguments.pop("logging", False)
 
