@@ -1,10 +1,9 @@
-import warnings
 from collections import namedtuple
 
 import numpy as np
 from fuzzywuzzy import process as fw_process
-from scipy.linalg import ldl
-from scipy.linalg import qr
+from numba import f8
+from numba import guvectorize
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -142,7 +141,49 @@ def propose_algorithms(requested_algo, algos, number=3):
     return proposals
 
 
-def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
+@guvectorize([(f8[:, :], f8, f8[:, :])], "(n,n),()->(n,n)", nopython=True)
+def _internal_robust_cholesky(matrix, threshold, res):
+    """Lower triangular cholesky factor of *matrix* using an eigenvalue decomposition
+    and qr factorization.
+
+    Args:
+        matrix (np.array): Square, symmetric and (almost) positive semi-definite matrix
+        threshold (float): Small negative number. Diagonal elements of D from the LDL
+            decomposition between threshold and zero are set to zero. Default is
+            minus machine accuracy.
+        res:
+    Raises:
+        np.linalg.LinalgError if any eigenvalue of *matrix* is smaller than *threshold*.
+    """
+
+    eigenvalues, eigenvectors = np.linalg.eigh(matrix)
+    for i in range(len(eigenvalues)):
+        if eigenvalues[i] >= 0:
+            eigenvalues[i] = np.sqrt(eigenvalues[i])
+        elif eigenvalues[i] > threshold:
+            eigenvalues[i] = 0
+        else:
+            raise np.linalg.LinAlgError("Eigenvalue below threshold.")
+
+    candidate = eigenvectors * eigenvalues.reshape(1, len(eigenvalues))
+
+    _, r = np.linalg.qr(candidate.T)
+    res[:] = r.T
+
+
+def _make_cholesky_unique(chol):
+    """Make a lower triangular cholesky factor unique.
+    Cholesky factors are only unique with the additional requirement that all diagonal
+    elements are positive. This is done automatically by np.linalg.cholesky.
+    Since we calucate cholesky factors by QR decompositions we have to do it manually.
+    It is obvious from that this is admissible because:
+    chol sign_swither sign_switcher.T chol.T = chol chol.T
+    """
+    sign_switcher = np.sign(np.diagonal(chol))
+    return chol * sign_switcher
+
+
+def robust_cholesky(matrix, threshold=None, return_info=False):
     """Lower triangular cholesky factor of *matrix*.
 
     Args:
@@ -150,83 +191,33 @@ def robust_cholesky(matrix, threshold=None, warn=True, return_info=False):
         threshold (float): Small negative number. Diagonal elements of D from the LDL
             decomposition between threshold and zero are set to zero. Default is
             minus machine accuracy.
-        warn (bool): If True, the user is warned about negative elements in D
-        return_info (bool): If True, also return a dictionary with 'method' and
-            'diagonals'. Method can take the values 'np.linalg.cholesky',
-            'LDL cholesky' and 'LDL cholesky with QR decomposition'.
-            'diagonals' are the diagonal entries of D. They can be used to construct
-            penalty terms for non positive definite matrices. Note that diagonals will
-            also be returned if the standard cholesky decomposition did not fail. This
-            allows for smooth penalty terms that start before actually reaching invalid
-            matrices.
-
+        return_info (bool): If True, also return a dictionary with 'method'. Method can
+            take the values 'np.linalg.cholesky' and 'Eigenvalue QR'.
     Returns:
         chol (np.array): Cholesky factor of matrix
         info (float, optional): see return_info.
-
     Raises:
-        np.linalg.LinalgError if the diagonal entries of D from the LDL decomposition
-        are smaller than threshold.
+        np.linalg.LinalgError if an eigenvalue of *matrix* is below *threshold*.
 
     In contrast to a regular cholesky decomposition, this function will also
     work for matrices that are only positive semi-definite or even indefinite.
-
     For speed and precision reasons we first try a regular cholesky decomposition.
-    If it fails we switch to more robust methods. For this we first take an LDL
-    decomposition and set diagonal elements in D that are negative but above
-    threshold to 0. Then we use the modified D to construct a candidate cholesky
-    factor. If the candidate is not lower triangular, we use a QR decomposition to
-    make it lower triangular.
-
-
+    If it fails we switch to more robust methods.
     """
-    sum_stabilized = 0.0
 
     try:
         chol = np.linalg.cholesky(matrix)
         method = "np.linalg.cholesky"
-        diags = np.diagonal(chol) ** 2
     except np.linalg.LinAlgError:
-        method = "LDL cholesky"
+        method = "Eigenvalue QR"
         threshold = threshold if threshold is not None else -np.finfo(float).eps
+        chol = _internal_robust_cholesky(matrix, threshold)
 
-        lu, d, _ = ldl(matrix)
+    chol_unique = _make_cholesky_unique(chol)
+    info = {"method": method}
 
-        diags = np.diagonal(d).copy()
-
-        for i in range(len(diags)):
-            if diags[i] >= 0:
-                diags[i] = np.sqrt(diags[i])
-            elif diags[i] > threshold:
-                diags[i] = 0
-                sum_stabilized += diags[i]
-            else:
-                raise np.linalg.LinAlgError(
-                    "Diagonal entry below threshold in D from LDL decomposition."
-                )
-
-        if sum_stabilized < 0 and warn:
-            warnings.warn(
-                "Negative diagonal entry has been set to 0 in robust_cholesky.",
-                category=RuntimeWarning,
-            )
-
-        candidate = lu * diags.reshape(1, len(diags))
-
-        is_triangular = (candidate[np.triu_indices(len(matrix), k=1)] == 0).all()
-
-        if is_triangular:
-            chol = candidate
-            method = "LDL cholesky"
-        else:
-            _, r = qr(candidate.T)
-            chol = r.T
-            method = "LDL cholesky with QR decomposition"
-
-    info = {"method": method, "diagonals": diags}
-
-    res = (chol, info) if return_info else chol
-    return res
+    out = (chol_unique, info) if return_info else chol_unique
+    return out
 
 
 def namedtuple_from_dict(field_dict):
