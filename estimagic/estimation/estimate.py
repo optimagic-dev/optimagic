@@ -3,8 +3,9 @@ import numpy as np
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.decorators import aggregate_criterion_output
 from estimagic.decorators import expand_criterion_output
+from estimagic.optimization.broadcast_arguments import broadcast_arguments
+from estimagic.optimization.check_arguments import check_arguments
 from estimagic.optimization.optimize import maximize
-from estimagic.optimization.process_arguments import process_optimization_arguments
 
 
 def maximize_log_likelihood(
@@ -130,21 +131,10 @@ def maximize_log_likelihood(
 
     # To convert the mean log likelihood in the results dictionary to the log
     # likelihood, get the length of contributions for each optimization.
-    arguments = process_optimization_arguments(
-        criterion=extended_loglikelobs,
-        params=params,
-        algorithm=algorithm,
-        criterion_kwargs=criterion_kwargs,
-        constraints=constraints,
-        general_options=general_options,
-        algo_options=algo_options,
-        gradient=None,
-        gradient_options=gradient_options,
-        logging=logging,
-        log_options=log_options,
-        dashboard=dashboard,
-        db_options=db_options,
+    arguments = broadcast_arguments(
+        criterion=log_like_obs, params=params, criterion_kwargs=criterion_kwargs
     )
+    check_arguments(arguments)
 
     contribs_and_cp_data = [
         args_one_run["criterion"](
