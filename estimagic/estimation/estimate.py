@@ -3,9 +3,9 @@ import numpy as np
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.decorators import aggregate_criterion_output
 from estimagic.decorators import expand_criterion_output
+from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_arguments
 from estimagic.optimization.optimize import maximize
-from estimagic.optimization.process_arguments import broadcast_arguments
 
 
 def maximize_log_likelihood(

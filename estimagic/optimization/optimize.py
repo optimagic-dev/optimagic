@@ -26,9 +26,9 @@ from estimagic.decorators import negative_criterion
 from estimagic.decorators import numpy_interface
 from estimagic.logging.create_database import prepare_database
 from estimagic.logging.update_database import update_scalar_field
+from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_arguments
 from estimagic.optimization.pounders import minimize_pounders_np
-from estimagic.optimization.process_arguments import broadcast_arguments
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.pygmo import minimize_pygmo_np
 from estimagic.optimization.reparametrize import reparametrize_from_internal

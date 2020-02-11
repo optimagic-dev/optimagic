@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from estimagic.optimization.process_arguments import broadcast_arguments
+from estimagic.optimization.broadcast_arguments import broadcast_arguments
 
 
 def check_single_argument_types(argument):
