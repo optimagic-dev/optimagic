@@ -1,9 +1,8 @@
 from collections import namedtuple
 
 import numpy as np
+import scipy
 from fuzzywuzzy import process as fw_process
-from numba import f8
-from numba import guvectorize
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -141,10 +140,9 @@ def propose_algorithms(requested_algo, algos, number=3):
     return proposals
 
 
-@guvectorize([(f8[:, :], f8, f8[:, :])], "(n,n),()->(n,n)", nopython=True)
-def _internal_robust_cholesky(matrix, threshold, res):
-    """Lower triangular cholesky factor of *matrix* using an eigenvalue decomposition
-    and qr factorization.
+def _internal_robust_cholesky(matrix, threshold):
+    """Lower triangular cholesky factor of *matrix* using an LDL decomposition
+    and QR factorization.
 
     Args:
         matrix (np.array): Square, symmetric and (almost) positive semi-definite matrix
@@ -153,22 +151,34 @@ def _internal_robust_cholesky(matrix, threshold, res):
             minus machine accuracy.
         res:
     Raises:
-        np.linalg.LinalgError if any eigenvalue of *matrix* is smaller than *threshold*.
+        np.linalg.LinalgError if diagonal entry in D from LDL decomposition is below
+        *threshold*.
     """
+    lu, d, _ = scipy.linalg.ldl(matrix)
 
-    eigenvalues, eigenvectors = np.linalg.eigh(matrix)
-    for i in range(len(eigenvalues)):
-        if eigenvalues[i] >= 0:
-            eigenvalues[i] = np.sqrt(eigenvalues[i])
-        elif eigenvalues[i] > threshold:
-            eigenvalues[i] = 0
+    diags = np.diagonal(d).copy()
+
+    for i in range(len(diags)):
+        if diags[i] >= 0:
+            diags[i] = np.sqrt(diags[i])
+        elif diags[i] > threshold:
+            diags[i] = 0
         else:
-            raise np.linalg.LinAlgError("Eigenvalue below threshold.")
+            raise np.linalg.LinAlgError(
+                "Diagonal entry below threshold in D from LDL decomposition."
+            )
 
-    candidate = eigenvectors * eigenvalues.reshape(1, len(eigenvalues))
+    candidate = lu * diags.reshape(1, len(diags))
 
-    _, r = np.linalg.qr(candidate.T)
-    res[:] = r.T
+    is_triangular = (candidate[np.triu_indices(len(matrix), k=1)] == 0).all()
+
+    if is_triangular:
+        chol = candidate
+    else:
+        _, r = scipy.linalg.qr(candidate.T)
+        chol = r.T
+
+    return chol
 
 
 def _make_cholesky_unique(chol):
@@ -209,7 +219,7 @@ def robust_cholesky(matrix, threshold=None, return_info=False):
         chol = np.linalg.cholesky(matrix)
         method = "np.linalg.cholesky"
     except np.linalg.LinAlgError:
-        method = "Eigenvalue QR"
+        method = "LDL cholesky"
         threshold = threshold if threshold is not None else -np.finfo(float).eps
         chol = _internal_robust_cholesky(matrix, threshold)
 
