@@ -1,8 +1,9 @@
 from collections import namedtuple
 
 import numpy as np
-import scipy
 from fuzzywuzzy import process as fw_process
+from scipy.linalg import ldl
+from scipy.linalg import qr
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -154,7 +155,7 @@ def _internal_robust_cholesky(matrix, threshold):
         np.linalg.LinalgError if diagonal entry in D from LDL decomposition is below
         *threshold*.
     """
-    lu, d, _ = scipy.linalg.ldl(matrix)
+    lu, d, _ = ldl(matrix)
 
     diags = np.diagonal(d).copy()
 
@@ -175,7 +176,7 @@ def _internal_robust_cholesky(matrix, threshold):
     if is_triangular:
         chol = candidate
     else:
-        _, r = scipy.linalg.qr(candidate.T)
+        _, r = qr(candidate.T)
         chol = r.T
 
     return chol
