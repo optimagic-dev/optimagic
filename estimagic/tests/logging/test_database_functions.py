@@ -17,6 +17,7 @@ def database(tmp_path):
         path=tmp_path / "test.db",
         params=params,
         db_options={"a": 3},
+        constraints=[{"loc": "a", "type": "increasing"}],
         optimization_status="success",
     )
 

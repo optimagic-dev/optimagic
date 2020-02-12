@@ -329,11 +329,12 @@ def _single_minimize(
             "The criterion function evaluated at the start parameters returns NaNs."
         )
 
-    database = (
-        prepare_database(logging, params, comparison_plot_data, log_options)
-        if logging
-        else False
-    )
+    if logging:
+        database = prepare_database(
+            logging, params, comparison_plot_data, log_options, constraints
+        )
+    else:
+        database = False
 
     general_options["start_criterion_value"] = fitness_eval
 
