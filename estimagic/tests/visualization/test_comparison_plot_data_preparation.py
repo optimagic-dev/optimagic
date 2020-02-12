@@ -2,6 +2,7 @@
 from collections import namedtuple
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
@@ -58,7 +59,7 @@ def test_consolidate_parameter_attribute_custom_wildcards():
     res = test_module._consolidate_parameter_attribute(
         results=compatible_input, attribute=attribute, wildcards=[0, None]
     )
-    expected = pd.Series(["g1", "g2", "g3", pd.np.nan], index=ind, name="attr")
+    expected = pd.Series(["g1", "g2", "g3", np.nan], index=ind, name="attr")
     pdt.assert_series_equal(res, expected)
 
 
@@ -171,8 +172,8 @@ def test_add_model_class_and_color_known_model_class():
 def test_process_conf_ints_missing():
     df = pd.DataFrame(index=[0, 1, 2], columns=["a", "b", "c"])
     expected = df.copy(deep=True)
-    expected["conf_int_upper"] = pd.np.nan
-    expected["conf_int_lower"] = pd.np.nan
+    expected["conf_int_upper"] = np.nan
+    expected["conf_int_lower"] = np.nan
     res = test_module._process_conf_ints(df)
     pdt.assert_frame_equal(res, expected)
 
@@ -189,7 +190,7 @@ def test_process_conf_ints_present():
 def test_process_conf_ints_raise_error():
     df = pd.DataFrame(index=[0, 1, 2], columns=["a", "b", "c"])
     df["conf_int_lower"] = 3
-    df["conf_int_upper"] = pd.np.nan
+    df["conf_int_upper"] = np.nan
     with pytest.raises(AssertionError):
         test_module._process_conf_ints(df)
 
@@ -219,9 +220,9 @@ def test_calculate_x_bounds_without_nan():
 def test_calculate_x_bounds_with_nan():
     params_data = pd.DataFrame()
     params_data["group"] = ["a", "a", "a"] + ["b", "b", "b"]
-    params_data["value"] = [0, 1, pd.np.nan] + [3, pd.np.nan, 5]
-    params_data["conf_int_lower"] = pd.np.nan
-    params_data["conf_int_upper"] = pd.np.nan
+    params_data["value"] = [0, 1, np.nan] + [3, np.nan, 5]
+    params_data["conf_int_lower"] = np.nan
+    params_data["conf_int_upper"] = np.nan
 
     padding = 0.0
     res_x_min, res_x_max = test_module._calculate_x_bounds(params_data, padding)
@@ -237,9 +238,9 @@ def test_calculate_x_bounds_with_nan():
 def test_calculate_x_bounds_with_padding():
     params_data = pd.DataFrame()
     params_data["group"] = ["a", "a", "a"] + ["b", "b", "b"]
-    params_data["value"] = [0, 1, pd.np.nan] + [3, pd.np.nan, 5]
-    params_data["conf_int_lower"] = pd.np.nan
-    params_data["conf_int_upper"] = pd.np.nan
+    params_data["value"] = [0, 1, np.nan] + [3, np.nan, 5]
+    params_data["conf_int_lower"] = np.nan
+    params_data["conf_int_upper"] = np.nan
 
     padding = 0.1
     res_x_min, res_x_max = test_module._calculate_x_bounds(params_data, padding)
@@ -267,7 +268,7 @@ def test_replace_by_midpoint_without_nan():
 
 def test_replace_by_midpoint_with_nan():
     ind = ["model1", "missing", "corner_right", "corner_left"]
-    values = pd.Series([0.1, pd.np.nan, 0.6, 0.15], index=ind)
+    values = pd.Series([0.1, np.nan, 0.6, 0.15], index=ind)
     group_bins = pd.Series([0.0, 0.15, 0.3, 0.45, 0.6, 0.75], name="group1")
     res = test_module._replace_by_bin_midpoint(values, group_bins)
     expected = pd.Series([0.075, 0.075, 0.525, 0.075], index=ind)
@@ -289,7 +290,7 @@ def test_calculate_dodge_without_nan():
 
 def test_calculate_dodge_with_nan():
     ind = ["small1", "small2", "middle1", "large1", "nan0", "nan1"]
-    values_with_nan = pd.Series([0.05, 0.1, 0.2, 0.61, pd.np.nan, pd.np.nan], index=ind)
+    values_with_nan = pd.Series([0.05, 0.1, 0.2, 0.61, np.nan, np.nan], index=ind)
     group_bins = pd.Series([0.0, 0.15, 0.3, 0.45, 0.6, 0.75], name="group1")
     expected = pd.Series([0.5, 1.5, 0.5, 0.5, 0.5, 1.5], index=ind)
     res = test_module._calculate_dodge(values_with_nan, group_bins)

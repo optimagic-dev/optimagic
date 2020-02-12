@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from estimagic.optimization.process_arguments import process_optimization_arguments
+from estimagic.optimization.broadcast_arguments import broadcast_arguments
 
 
 def check_single_argument_types(argument):
@@ -19,8 +19,9 @@ def check_single_argument_types(argument):
     }
 
     for key, exp_type in key_to_expected_tuple.items():
-        actual_type = type(argument[key])
-        assert actual_type == exp_type, fail_msg.format(key, actual_type, exp_type)
+        if key in argument:
+            actual_type = type(argument[key])
+            assert actual_type == exp_type, fail_msg.format(key, actual_type, exp_type)
 
 
 @pytest.fixture()
@@ -78,14 +79,14 @@ def test_processing_single_optim_with_all_standard_inputs():
     params = pd.DataFrame(np.ones(12).reshape(4, 3))
     algorithm = "scipy_L-BFGS-B"
 
-    res = process_optimization_arguments(criterion, params, algorithm)
+    res = broadcast_arguments(criterion=criterion, params=params, algorithm=algorithm)
 
     check_single_argument_types(res[0])
 
 
 def test_processing_single_optim_with_non_standard_inputs(single_non_standard_inputs):
     kwargs = single_non_standard_inputs
-    res = process_optimization_arguments(**kwargs)
+    res = broadcast_arguments(**kwargs)
 
     check_single_argument_types(res[0])
     assert res[0]["constraints"] == single_non_standard_inputs["constraints"]
@@ -100,19 +101,18 @@ def test_processing_multiple_optim_with_all_standard_inputs():
 
     algorithms = ["scipy_L-BFGS-B", "pygmo_xnes"]
 
-    res = process_optimization_arguments(criterion, params, algorithms)
+    res = broadcast_arguments(criterion=criterion, params=params, algorithm=algorithms)
 
     assert len(res) == 2
     check_single_argument_types(res[0])
     check_single_argument_types(res[1])
-    assert res[0]["constraints"] == []
 
 
 def test_processing_multi_optim_with_non_standard_inputs_same_constraints_for_all(
     multiple_non_standard_inputs,
 ):
     kwargs = multiple_non_standard_inputs
-    res = process_optimization_arguments(**kwargs)
+    res = broadcast_arguments(**kwargs)
 
     check_single_argument_types(res[0])
     assert res[0]["constraints"] == kwargs["constraints"]
@@ -129,7 +129,7 @@ def test_processing_multi_optim_with_non_standard_inputs_different_constraints(
     ]
     kwargs["constraints"] = differing_constraints
 
-    res = process_optimization_arguments(**kwargs)
+    res = broadcast_arguments(**kwargs)
 
     check_single_argument_types(res[0])
     assert res[0]["constraints"] == differing_constraints[0]
