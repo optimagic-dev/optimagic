@@ -33,8 +33,8 @@ implementations of (structural) econometric models.
 
 It is designed with large structural models in mind. However, it is also useful for any
 other estimator that numerically minimizes or maximizes a criterion function (Extremum
-Estimator). Examples include maximum likelihood, generalized method of moments,
-method of simulated moments and indirect inference.
+Estimator). Examples include maximum likelihood, generalized method of moments, method
+of simulated moments and indirect inference.
 
 Key Features
 ============
