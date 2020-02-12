@@ -141,6 +141,43 @@ def propose_algorithms(requested_algo, algos, number=3):
     return proposals
 
 
+def robust_cholesky(matrix, threshold=None, return_info=False):
+    """Lower triangular cholesky factor of *matrix*.
+
+    Args:
+        matrix (np.array): Square, symmetric and (almost) positive semi-definite matrix
+        threshold (float): Small negative number. Diagonal elements of D from the LDL
+            decomposition between threshold and zero are set to zero. Default is
+            minus machine accuracy.
+        return_info (bool): If True, also return a dictionary with 'method'. Method can
+            take the values 'np.linalg.cholesky' and 'Eigenvalue QR'.
+    Returns:
+        chol (np.array): Cholesky factor of matrix
+        info (float, optional): see return_info.
+    Raises:
+        np.linalg.LinalgError if an eigenvalue of *matrix* is below *threshold*.
+
+    In contrast to a regular cholesky decomposition, this function will also
+    work for matrices that are only positive semi-definite or even indefinite.
+    For speed and precision reasons we first try a regular cholesky decomposition.
+    If it fails we switch to more robust methods.
+    """
+
+    try:
+        chol = np.linalg.cholesky(matrix)
+        method = "np.linalg.cholesky"
+    except np.linalg.LinAlgError:
+        method = "LDL cholesky"
+        threshold = threshold if threshold is not None else -np.finfo(float).eps
+        chol = _internal_robust_cholesky(matrix, threshold)
+
+    chol_unique = _make_cholesky_unique(chol)
+    info = {"method": method}
+
+    out = (chol_unique, info) if return_info else chol_unique
+    return out
+
+
 def _internal_robust_cholesky(matrix, threshold):
     """Lower triangular cholesky factor of *matrix* using an LDL decomposition
     and QR factorization.
@@ -192,43 +229,6 @@ def _make_cholesky_unique(chol):
     """
     sign_switcher = np.sign(np.diagonal(chol))
     return chol * sign_switcher
-
-
-def robust_cholesky(matrix, threshold=None, return_info=False):
-    """Lower triangular cholesky factor of *matrix*.
-
-    Args:
-        matrix (np.array): Square, symmetric and (almost) positive semi-definite matrix
-        threshold (float): Small negative number. Diagonal elements of D from the LDL
-            decomposition between threshold and zero are set to zero. Default is
-            minus machine accuracy.
-        return_info (bool): If True, also return a dictionary with 'method'. Method can
-            take the values 'np.linalg.cholesky' and 'Eigenvalue QR'.
-    Returns:
-        chol (np.array): Cholesky factor of matrix
-        info (float, optional): see return_info.
-    Raises:
-        np.linalg.LinalgError if an eigenvalue of *matrix* is below *threshold*.
-
-    In contrast to a regular cholesky decomposition, this function will also
-    work for matrices that are only positive semi-definite or even indefinite.
-    For speed and precision reasons we first try a regular cholesky decomposition.
-    If it fails we switch to more robust methods.
-    """
-
-    try:
-        chol = np.linalg.cholesky(matrix)
-        method = "np.linalg.cholesky"
-    except np.linalg.LinAlgError:
-        method = "LDL cholesky"
-        threshold = threshold if threshold is not None else -np.finfo(float).eps
-        chol = _internal_robust_cholesky(matrix, threshold)
-
-    chol_unique = _make_cholesky_unique(chol)
-    info = {"method": method}
-
-    out = (chol_unique, info) if return_info else chol_unique
-    return out
 
 
 def namedtuple_from_dict(field_dict):
