@@ -35,6 +35,12 @@ def add_hist_cols(df, group_cols, x_padding, num_bins):
 
 
 def _drop_nans_and_sort(df, group_cols, subgroup_col):
+    """Only keep entries that have valid values in the important columns and sort.
+
+    We sort them first by their group_cols and then by the subgroup_col.
+    The later insures that bricks of the same subgroup column are stacked together.
+    Within group stacks bricks are ordered by their value.
+    """
     drop_and_sort_cols = group_cols.copy()
     if subgroup_col is not None:
         drop_and_sort_cols.append(subgroup_col)
@@ -45,6 +51,7 @@ def _drop_nans_and_sort(df, group_cols, subgroup_col):
 
 
 def _safely_reset_index(df):
+    """Rename the index to avoid errors when the ColumnDataSource is constructed."""
     old_name = df.index.name
     if old_name is None or old_name in df.columns:
         i = 0
