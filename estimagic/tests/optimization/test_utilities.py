@@ -105,6 +105,8 @@ def test_index_element_to_string():
 
 
 def random_cov(dim, seed):
+    np.random.seed(seed)
+
     num_elements = int(dim * (dim + 1) / 2)
     chol = np.zeros((dim, dim))
     chol[np.tril_indices(dim)] = np.random.uniform(size=num_elements)
