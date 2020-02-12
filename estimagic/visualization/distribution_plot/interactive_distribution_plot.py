@@ -88,8 +88,8 @@ def _create_grid(df, subgroup_col, group_cols, plot_height, width):
         subgroup_col (str, optional):
             Name of a column according to whose values individual bricks will be
             color coded.
-        plot_height (int): height of the plots in pixels
-        width (int): width of the plots in pixels
+        plot_height (int): height of the plots in pixels.
+        width (int): width of the plots in pixels.
 
     """
     cols_to_ignore = [

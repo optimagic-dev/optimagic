@@ -25,9 +25,14 @@ def get_color_palette(nr_colors):
         return ["firebrick"]
     elif nr_colors == 2:
         return ["darkslateblue", "goldenrod"]
-    elif nr_colors < 20:
-        return bokeh.palettes.Category20[nr_colors]
+    elif nr_colors <= 10:
+        return bokeh.palettes.Category10[nr_colors]
+    elif nr_colors <= 15:
+        b_palette = bokeh.palettes.Category20b[17]
+        to_add = list(b_palette[i] for i in [0, 12, 16, 4, 8])
+        return bokeh.palettes.Category10[10] + to_add[: nr_colors - 10]
     else:
+        # could also just use Category10 to not have shades of the same color
         return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
 
 

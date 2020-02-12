@@ -1,9 +1,10 @@
 """Functions to manipulate data for the interactive distribution plot."""
 from functools import partial
 
-import bokeh.palettes
 import numpy as np
 import pandas as pd
+
+from estimagic.dashboard.plotting_functions import get_color_palette
 
 
 def clean_data(df, group_cols, subgroup_col):
@@ -121,19 +122,3 @@ def _calculate_x_bounds(df, padding):
     x_min = raw_min - white_space
     x_max = raw_max + white_space
     return x_min, x_max
-
-
-# =====================================================================================
-
-
-def get_color_palette(nr_colors):
-    """Return list of colors depending on the number needed."""
-    # color tone palettes: bokeh.palettes.Blues9, Greens9, Reds9, Purples9.
-    if nr_colors == 1:
-        return ["firebrick"]
-    elif nr_colors == 2:
-        return ["darkslateblue", "goldenrod"]
-    elif nr_colors < 20:
-        return bokeh.palettes.Category20[nr_colors]
-    else:
-        return np.random.choice(bokeh.palettes.Category20[20], nr_colors)
