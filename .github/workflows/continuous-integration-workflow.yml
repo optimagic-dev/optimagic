@@ -30,7 +30,7 @@ jobs:
       - name: Install fixes for Python 3.7 on Windows
         if: runner.os == 'Windows' && matrix.python-version == '3.7'
         shell: bash -l {0}
-        run: conda install -c conda-forge numpy scipy conda-build
+        run: conda install -c conda-forge bokeh conda-build numpy scipy
 
       - name: Run pytest.
         shell: bash -l {0}
