@@ -15,7 +15,6 @@ from joblib import Parallel
 from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.config import DEFAULT_DATABASE_NAME
-from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
 from estimagic.decorators import expand_criterion_output
 from estimagic.decorators import handle_exceptions
@@ -492,7 +491,11 @@ def _internal_minimize(
             f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
         )
 
-    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+    bounds = tuple(
+        params.query("_internal_free")[["_internal_lower", "_internal_upper"]]
+        .to_numpy()
+        .T
+    )
 
     if database:
         update_scalar_field(database, "optimization_status", "running")
@@ -704,8 +707,6 @@ def create_internal_gradient(
     else:
         n_gradient_evaluations = gradient_options.pop("n_gradient_evaluations", None)
 
-    database = database if algorithm in OPTIMIZER_SAVE_GRADIENTS else None
-
     logging_decorator = functools.partial(
         log_gradient_status,
         database=database,
@@ -723,7 +724,11 @@ def create_internal_gradient(
         queue=None,
         fitness_factor=fitness_factor,
     )
-    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+    bounds = tuple(
+        params.query("_internal_free")[["_internal_lower", "_internal_upper"]]
+        .to_numpy()
+        .T
+    )
     names = params.query("_internal_free")["name"].tolist()
 
     @log_gradient(database, names)
