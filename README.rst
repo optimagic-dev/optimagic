@@ -16,9 +16,14 @@ estimagic
     :target: https://estimagic.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://dev.azure.com/OpenSourceEconomics/estimagic/_apis/build/status/OpenSourceEconomics.estimagic?branchName=master
-    :target: https://dev.azure.com/OpenSourceEconomics/estimagic/_build/latest?definitionId=1&branchName=master
+.. image:: https://github.com/OpenSourceEconomics/estimagic/workflows/Continuous%20Integration%20Workflow/badge.svg?branch=master
+    :target: https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amaster
 
+.. image:: https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/OpenSourceEconomics/estimagic
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
 
 Introduction
 ============
