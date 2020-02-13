@@ -492,11 +492,7 @@ def _internal_minimize(
             f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
         )
 
-    bounds = tuple(
-        params.query("_internal_free")[["_internal_lower", "_internal_upper"]]
-        .to_numpy()
-        .T
-    )
+    bounds = _internal_bounds_from_params(params)
 
     if database:
         update_scalar_field(database, "optimization_status", "running")
@@ -725,11 +721,7 @@ def create_internal_gradient(
         queue=None,
         fitness_factor=fitness_factor,
     )
-    bounds = tuple(
-        params.query("_internal_free")[["_internal_lower", "_internal_upper"]]
-        .to_numpy()
-        .T
-    )
+    bounds = _internal_bounds_from_params(params)
     names = params.query("_internal_free")["name"].tolist()
 
     @log_gradient(database, names)
@@ -737,3 +729,12 @@ def create_internal_gradient(
         return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
 
     return internal_gradient
+
+
+def _internal_bounds_from_params(params):
+    bounds = tuple(
+        params.query("_internal_free")[["_internal_lower", "_internal_upper"]]
+        .to_numpy()
+        .T
+    )
+    return bounds
