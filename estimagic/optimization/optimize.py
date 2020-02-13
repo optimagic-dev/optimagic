@@ -15,7 +15,6 @@ from joblib import Parallel
 from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.config import DEFAULT_DATABASE_NAME
-from estimagic.config import OPTIMIZER_SAVE_GRADIENTS
 from estimagic.dashboard.server_functions import run_server
 from estimagic.decorators import expand_criterion_output
 from estimagic.decorators import handle_exceptions
@@ -330,11 +329,12 @@ def _single_minimize(
             "The criterion function evaluated at the start parameters returns NaNs."
         )
 
-    database = (
-        prepare_database(logging, params, comparison_plot_data, log_options)
-        if logging
-        else False
-    )
+    if logging:
+        database = prepare_database(
+            logging, params, comparison_plot_data, log_options, constraints
+        )
+    else:
+        database = False
 
     general_options["start_criterion_value"] = fitness_eval
 
@@ -492,7 +492,7 @@ def _internal_minimize(
             f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
         )
 
-    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+    bounds = _internal_bounds_from_params(params)
 
     if database:
         update_scalar_field(database, "optimization_status", "running")
@@ -704,8 +704,6 @@ def create_internal_gradient(
     else:
         n_gradient_evaluations = gradient_options.pop("n_gradient_evaluations", None)
 
-    database = database if algorithm in OPTIMIZER_SAVE_GRADIENTS else None
-
     logging_decorator = functools.partial(
         log_gradient_status,
         database=database,
@@ -723,7 +721,7 @@ def create_internal_gradient(
         queue=None,
         fitness_factor=fitness_factor,
     )
-    bounds = tuple(params.query("_internal_free")[["lower", "upper"]].to_numpy().T)
+    bounds = _internal_bounds_from_params(params)
     names = params.query("_internal_free")["name"].tolist()
 
     @log_gradient(database, names)
@@ -731,3 +729,12 @@ def create_internal_gradient(
         return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
 
     return internal_gradient
+
+
+def _internal_bounds_from_params(params):
+    bounds = tuple(
+        params.query("_internal_free")[["_internal_lower", "_internal_upper"]]
+        .to_numpy()
+        .T
+    )
+    return bounds
