@@ -22,6 +22,10 @@ dependencies:
   - pandas=0.24
   - petsc4py>=3.11
   - pygmo=2.10
+  - pytest
+  - pytest-cov
+  - pytest-mock
+  - pytest-xdist
   - scipy=1.2.1
   - seaborn
   - sphinx
@@ -34,8 +38,5 @@ dependencies:
     - bump2version
     - pdbpp
     - pre-commit
-    - pytest
-    - pytest-mock
-    - pytest-xdist
     - restructuredtext_lint
     - tox-conda
