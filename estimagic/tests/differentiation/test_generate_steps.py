@@ -1,0 +1,144 @@
+import numpy as np
+import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
+from estimagic.differentiation.generate_steps import _calculate_or_validate_base_step
+from estimagic.differentiation.generate_steps import _fillna
+from estimagic.differentiation.generate_steps import _rescale_to_accomodate_bounds
+from estimagic.differentiation.generate_steps import _set_unused_side_to_nan
+from estimagic.differentiation.generate_steps import generate_steps
+
+
+def test_calculate_or_validate_base_step_invalid_too_small():
+    base_step = np.array([1e-10, 0.01, 0.01])
+    min_step = 1e-8
+    with pytest.raises(ValueError):
+        _calculate_or_validate_base_step(base_step, np.ones(3), "jacobian", min_step)
+
+
+def test_calculate_or_validate_base_step_wrong_shape():
+    base_step = np.array([0.01, 0.01, 0.01])
+    min_step = 1e-8
+    with pytest.raises(ValueError):
+        _calculate_or_validate_base_step(base_step, np.ones(2), "jacobian", min_step)
+
+
+def test_calculate_or_validate_base_step_jacobian():
+    x = np.array([0.05, 1, -5])
+    expected = np.array([0.1, 1, 5]) * np.sqrt(np.finfo(float).eps)
+    calculated = _calculate_or_validate_base_step(None, x, "jacobian", 0)
+    aaae(calculated, expected, decimal=12)
+
+
+def test_calculate_or_validate_base_step_binding_min_step():
+    x = np.array([0.05, 1, -5])
+    expected = np.array([0.1, 1, 5]) * np.sqrt(np.finfo(float).eps)
+    expected[0] = 1e-8
+    calculated = _calculate_or_validate_base_step(None, x, "jacobian", 1e-8)
+    aaae(calculated, expected, decimal=12)
+
+
+def test_calculate_or_validate_base_step_hessian():
+    x = np.array([0.05, 1, -5])
+    expected = np.array([0.1, 1, 5]) * np.finfo(float).eps ** (1 / 3)
+    calculated = _calculate_or_validate_base_step(None, x, "hessian", 0)
+    aaae(calculated, expected, decimal=12)
+
+
+def test_set_unused_side_to_nan_forward():
+    pos = np.ones((3, 2))
+    neg = -np.ones((3, 2))
+    method = "forward"
+    x = np.zeros(3)
+    upper_bound = np.array([0.5, 2, 3])
+    lower_bound = np.array([-2, -0.1, -0.1])
+
+    expected_pos = np.array([[np.nan, np.nan], [1, 1], [1, 1]])
+    expected_neg = np.array([[-1, -1], [np.nan, np.nan], [np.nan, np.nan]])
+
+    calculated_pos, calculated_neg = _set_unused_side_to_nan(
+        x, pos, neg, method, lower_bound, upper_bound
+    )
+
+    assert np.allclose(calculated_pos, expected_pos, equal_nan=True)
+    assert np.allclose(calculated_neg, expected_neg, equal_nan=True)
+
+
+def test_set_unused_side_to_nan_backward():
+    pos = np.ones((3, 2))
+    neg = -np.ones((3, 2))
+    method = "backward"
+    x = np.zeros(3)
+    upper_bound = np.array([0.5, 2, 3])
+    lower_bound = np.array([-2, -0.1, -2])
+
+    expected_pos = np.array([[np.nan, np.nan], [1, 1], [np.nan, np.nan]])
+    expected_neg = np.array([[-1, -1], [np.nan, np.nan], [-1, -1]])
+
+    calculated_pos, calculated_neg = _set_unused_side_to_nan(
+        x, pos, neg, method, lower_bound, upper_bound
+    )
+
+    assert np.allclose(calculated_pos, expected_pos, equal_nan=True)
+    assert np.allclose(calculated_neg, expected_neg, equal_nan=True)
+
+
+def test_fillna():
+    a = np.array([np.nan, 3, 4])
+    assert np.allclose(_fillna(a, 0), np.array([0, 3, 4.0]))
+
+
+def test_rescale_to_accomodate_bounds():
+    pos = np.array([[1, 2], [1.5, 3], [1, 2], [3, np.nan]])
+    neg = -pos
+    base_step = np.array([1, 1.5, 2, 3])
+    min_step = 0.1
+    lower_bound = -4 * np.ones(4)
+    upper_bound = np.ones(4) * 2.5
+
+    expected_pos = np.array([[1, 2], [1.25, 2.5], [1, 2], [2.5, np.nan]])
+    expected_neg = -expected_pos
+
+    calculated_pos, calculated_neg = _rescale_to_accomodate_bounds(
+        base_step, pos, neg, lower_bound, upper_bound, min_step
+    )
+
+    np.allclose(calculated_pos, expected_pos, equal_nan=True)
+    np.allclose(calculated_neg, expected_neg, equal_nan=True)
+
+
+def test_rescale_to_accomodate_bounds_binding_min_step():
+    pos = np.array([[1, 2], [1.5, 3], [1, 2]])
+    neg = -pos
+    base_step = np.array([1, 1.5, 2])
+    min_step = np.array([0, 1.4, 0])
+    lower_bound = -4 * np.ones(3)
+    upper_bound = np.ones(3) * 2.5
+
+    expected_pos = np.array([[1, 2], [1.4, 2.8], [1, 2]])
+    expected_neg = -expected_pos
+
+    calculated_pos, calculated_neg = _rescale_to_accomodate_bounds(
+        base_step, pos, neg, lower_bound, upper_bound, min_step
+    )
+
+    aaae(calculated_pos, expected_pos)
+    aaae(calculated_neg, expected_neg)
+
+
+def test_generate_bounds():
+    calculated_steps = generate_steps(
+        x=np.arange(3),
+        method="central",
+        n_steps=2,
+        target="jacobian",
+        base_step=np.array([0.1, 0.2, 0.3]),
+        lower_bound=np.full(3, -np.inf),
+        upper_bound=np.full(3, 0.5),
+    )
+
+    expected_pos = np.array([[0.1, 0.2], [0.2, 0.4], [0.25, 0.5]]).T
+    expected_neg = -expected_pos
+
+    aaae(calculated_steps.pos, expected_pos)
+    aaae(calculated_steps.neg, expected_neg)
