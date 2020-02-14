@@ -518,13 +518,10 @@ def _internal_minimize(
             gradient=internal_gradient,
         )
     elif origin == "tao":
-        crit_val = general_options["start_criterion_value"]
-        len_criterion_value = 1 if np.isscalar(crit_val) else len(crit_val)
         results = minimize_pounders_np(
             internal_criterion,
             internal_params,
             bounds,
-            n_errors=len_criterion_value,
             **algo_options,
         )
     else:
