@@ -34,7 +34,6 @@ def run_dashboard(databases, no_browser=False, port=None):
     }
     for rel_path, db in zip(nice_names, databases):
         partialed = partial(monitoring_app, database=db)
-        print(rel_path)
         apps[f"/{rel_path}"] = Application(FunctionHandler(partialed))
 
     # this is adapted from bokeh.subcommands.serve
@@ -51,8 +50,10 @@ def run_dashboard(databases, no_browser=False, port=None):
 
         address_string = server.address if server.address else "localhost"
 
-        url = "http://{}:{}{}/".format(address_string, server.port, server.prefix)
-        print("Bokeh app running at:", url)
+        print(
+            "Bokeh app running at:",
+            f"http://{address_string}:{server.port}{server.prefix}/",
+        )
         server._loop.start()
         server.start()
 

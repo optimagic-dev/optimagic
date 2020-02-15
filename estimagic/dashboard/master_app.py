@@ -30,27 +30,16 @@ def _create_section_to_entries(database_names, databases):
 
     """
     src_dict = {
-        "running": _name_to_bokeh_row_elements(
-            database_names=database_names, databases=databases, state="running"
-        ),
-        "succeeded": _name_to_bokeh_row_elements(
-            database_names=database_names, databases=databases, state="succeeded"
-        ),
-        "failed": _name_to_bokeh_row_elements(
-            database_names=database_names, databases=databases, state="failed"
-        ),
-        "scheduled": _name_to_bokeh_row_elements(
-            database_names=database_names, databases=databases, state="scheduled"
+        "all": _name_to_bokeh_row_elements(
+            database_names=database_names, databases=databases
         ),
     }
     return src_dict
 
 
-def _name_to_bokeh_row_elements(database_names, databases, state):
-    """"""
+def _name_to_bokeh_row_elements(database_names, databases):
     name_to_row = {}
     for name, db in zip(database_names, databases):
-        # if db["status"] == state:
         name_to_row[name] = [_dashboard_link(name), DashboardToggle(name=name)]
     return ColumnDataSource(name_to_row)
 
