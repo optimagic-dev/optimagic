@@ -252,12 +252,18 @@ def handle_exceptions(database, params, constraints, start_params, general_optio
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
-                start_criterion_value = general_options["start_criterion_value"]
+                # Adjust the criterion value at the start.
+                crit_val = general_options["_start_criterion_value"]
+                if not np.isscalar(crit_val):
+                    crit_val = np.mean(np.square(crit_val))
+                if general_options["_is_maximization"]:
+                    crit_val = -crit_val
+
                 constant, slope = general_options.get(
                     "criterion_exception_penalty", (None, None)
                 )
-                constant = 2 * start_criterion_value if constant is None else constant
-                slope = 0.1 * start_criterion_value if slope is None else slope
+                constant = 2 * crit_val if constant is None else constant
+                slope = 0.1 * crit_val if slope is None else slope
                 raise_exc = general_options.get("criterion_exception_raise", False)
 
                 if raise_exc:
