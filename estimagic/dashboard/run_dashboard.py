@@ -1,4 +1,3 @@
-""""""
 import pathlib
 import socket
 from contextlib import closing
@@ -39,11 +38,8 @@ def run_dashboard(databases, no_browser=False, port=None):
 
         address_string = server.address if server.address else "localhost"
 
-        for route in sorted(apps):
-            url = "http://{}:{}{}{}".format(
-                address_string, server.port, server.prefix, route
-            )
-            print("Bokeh app running at:", url)
+        url = "http://{}:{}{}/".format(address_string, server.port, server.prefix)
+        print("Bokeh app running at:", url)
         server._loop.start()
         server.start()
 
