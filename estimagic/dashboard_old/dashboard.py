@@ -17,8 +17,8 @@ from time import sleep
 import numpy as np
 from bokeh.models.widgets import Tabs
 
-from estimagic.dashboard.convergence_tab import setup_convergence_tab
-from estimagic.dashboard.convergence_tab import update_convergence_data
+from estimagic.dashboard_old.convergence_tab import setup_convergence_tab
+from estimagic.dashboard_old.convergence_tab import update_convergence_data
 
 
 def run_dashboard(doc, queue, stop_signal, db_options, start_param_df, start_fitness):

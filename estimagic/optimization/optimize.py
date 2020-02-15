@@ -15,7 +15,7 @@ from joblib import Parallel
 from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.config import DEFAULT_DATABASE_NAME
-from estimagic.dashboard.server_functions import run_server
+from estimagic.dashboard_old.server_functions import run_server
 from estimagic.decorators import expand_criterion_output
 from estimagic.decorators import handle_exceptions
 from estimagic.decorators import log_evaluation

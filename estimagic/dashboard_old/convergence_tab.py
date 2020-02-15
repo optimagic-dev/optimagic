@@ -4,7 +4,7 @@ from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
 from tornado import gen
 
-from estimagic.dashboard.plotting_functions import plot_time_series
+from estimagic.dashboard_old.plotting_functions import plot_time_series
 from estimagic.optimization.utilities import index_element_to_string
 
 X_NAME = "XxXxITERATIONxXxX"

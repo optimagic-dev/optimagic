@@ -10,7 +10,7 @@ from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
 from bokeh.server.server import Server
 
-from estimagic.dashboard.dashboard import run_dashboard
+from estimagic.dashboard_old.dashboard import run_dashboard
 
 
 def run_server(queue, stop_signal, db_options, start_param_df, start_fitness):
