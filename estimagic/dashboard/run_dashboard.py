@@ -1,12 +1,15 @@
 import pathlib
 import socket
 from contextlib import closing
+from functools import partial
 
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
 from bokeh.server.server import Server
-from monitoring_app import monitoring_app
+
+from estimagic.dashboard.master_app import master_app
+from estimagic.dashboard.monitoring_app import monitoring_app
 
 
 def run_dashboard(databases, no_browser=False, port=None):
@@ -22,7 +25,17 @@ def run_dashboard(databases, no_browser=False, port=None):
     """
     databases, no_browser, port = _process_arguments(databases, no_browser, port)
 
-    apps = {"/": Application(FunctionHandler(monitoring_app))}
+    nice_names = _nice_names(databases)
+    partialed_master_app = partial(
+        master_app, database_names=nice_names, databases=databases
+    )
+    apps = {
+        "/": Application(FunctionHandler(partialed_master_app)),
+    }
+    for rel_path, db in zip(nice_names, databases):
+        partialed = partial(monitoring_app, database=db)
+        print(rel_path)
+        apps[f"/{rel_path}"] = Application(FunctionHandler(partialed))
 
     # this is adapted from bokeh.subcommands.serve
     with report_server_init_errors(port=port):
@@ -73,3 +86,7 @@ def _find_free_port():
         s.bind(("localhost", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+def _nice_names(databases):
+    return databases
