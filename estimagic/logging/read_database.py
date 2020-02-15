@@ -1,8 +1,11 @@
 """Functions to read from from database tables used to log an optimization."""
+import io
+import pickle
 import traceback
 import warnings
 
 import pandas as pd
+from sqlalchemy.sql.sqltypes import BLOB
 
 
 def read_last_iterations(database, tables, n, return_type):
@@ -91,6 +94,8 @@ def read_scalar_field(database, table):
     """
     sel = database.tables[table].select()
     res = _execute_select_statements(sel, database)[0][0][0]
+    if isinstance(database.tables[table].c.value.type, BLOB):
+        res = pickle.load(io.BytesIO(res))
     return res
 
 
