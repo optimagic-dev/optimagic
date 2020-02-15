@@ -2,6 +2,7 @@ import pathlib
 import socket
 from contextlib import closing
 from functools import partial
+from pathlib import Path
 
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
@@ -25,14 +26,14 @@ def run_dashboard(databases, no_browser=False, port=None):
     """
     databases, no_browser, port = _process_arguments(databases, no_browser, port)
 
-    nice_names = _nice_names(databases)
+    names = _nice_names(databases)
     partialed_master_app = partial(
-        master_app, database_names=nice_names, databases=databases
+        master_app, database_names=names, databases=databases
     )
     apps = {
         "/": Application(FunctionHandler(partialed_master_app)),
     }
-    for rel_path, db in zip(nice_names, databases):
+    for rel_path, db in zip(names, databases):
         partialed = partial(monitoring_app, database=db)
         apps[f"/{rel_path}"] = Application(FunctionHandler(partialed))
 
@@ -89,5 +90,56 @@ def _find_free_port():
         return s.getsockname()[1]
 
 
-def _nice_names(databases):
-    return databases
+def _nice_names(path_list):
+    """Generate short but unique names from each path.
+
+    Args:
+        path_list (list): List of strings or pathlib.path.
+
+    Returns:
+        list: List of strings with names.
+
+    Example:
+
+    >>> pl = ["bla/blubb/blabb.db", "a/b", "bla/blabb"]
+    >>> _nice_names(pl)
+    ['blubb/blabb', 'b', 'bla/blabb']
+
+    """
+    path_list = [Path(p).resolve().with_suffix("") for p in path_list]
+    # The assert statement makes sure that the while loop terminates
+    assert len(set(path_list)) == len(
+        path_list
+    ), "path_list must not contain duplicates."
+    short_names = []
+    for path in path_list:
+        parts = tuple(reversed(path.parts))
+        needed_parts = 1
+        candidate = parts[:needed_parts]
+        while _name_clash(candidate, path_list):
+            needed_parts += 1
+            candidate = parts[:needed_parts]
+
+        short_names.append("/".join(reversed(candidate)))
+    return short_names
+
+
+def _name_clash(candidate, path_list, allowed_occurences=1):
+    """Determine if candidate leads to a name clash.
+
+    Args:
+        candidate (tuple): tuple with parts of a path.
+        path_list (list): List of pathlib.path
+        allowed_occurences (int): How often a name can occur before
+            we call it a clash.
+
+    Returns:
+        bool
+
+    """
+    duplicate_counter = -allowed_occurences
+    for path in path_list:
+        parts = tuple(reversed(path.parts))
+        if len(parts) >= len(candidate) and parts[: len(candidate)] == candidate:
+            duplicate_counter += 1
+    return duplicate_counter > 0
