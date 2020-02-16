@@ -4,6 +4,7 @@ from joblib import delayed
 from joblib import Parallel
 
 from estimagic.config import DEFAULT_DATABASE_NAME
+from estimagic.dashboard.run_dashboard import run_dashboard_in_separate_process
 from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_arguments
@@ -189,7 +190,10 @@ def minimize(
 
     check_arguments(arguments)
 
-    optim_arguments, results_arguments = process_arguments(arguments)
+    optim_arguments, db_paths, results_arguments = process_arguments(arguments)
+
+    if len(db_paths) > 0:
+        run_dashboard_in_separate_process(database_paths=db_paths)
 
     if len(arguments) == 1:
         # Run only one optimization

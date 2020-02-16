@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from scipy.optimize._numdiff import approx_derivative
 
-from estimagic.dashboard.run_dashboard import run_dashboard_in_separate_process
 from estimagic.decorators import expand_criterion_output
 from estimagic.decorators import handle_exceptions
 from estimagic.decorators import log_evaluation
@@ -38,9 +37,7 @@ def process_arguments(broadcasted_arguments):
             optim_arguments.append(optim)
             results_arguments.append(res)
 
-    run_dashboard_in_separate_process(database_paths=db_paths)
-
-    return optim_arguments, results_arguments
+    return optim_arguments, db_paths, results_arguments
 
 
 def _process_args_of_one_optimization(
