@@ -1,3 +1,4 @@
+"""Show the development of one optimization's criterion and parameters over time."""
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import Panel
@@ -9,6 +10,12 @@ from estimagic.logging.read_database import read_last_iterations
 
 
 def monitoring_app(doc, database_path):
+    """Create plots showing the development of the criterion and parameters until now.
+
+    Args:
+        doc (bokeh.Document): argument required by bokeh
+        database_path (str or pathlib.Path): path to the database
+    """
     database = load_database(database_path)
     # sachen extrahieren, die ich brauch
     #   lad db_options mit read_scalar_field
@@ -22,6 +29,12 @@ def monitoring_app(doc, database_path):
 
 
 def _setup_convergence_tab(database):
+    """Create the figures and plot available time series of the criterion and parameters.
+
+    Args:
+        database (sqlalchemy.MetaData)
+
+    """
     criterion_values = read_last_iterations(
         database=database, tables="criterion_history", n=-1, return_type="bokeh"
     )
