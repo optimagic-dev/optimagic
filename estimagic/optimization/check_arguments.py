@@ -1,4 +1,5 @@
 import types
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -34,3 +35,7 @@ def check_arguments(arguments):
     ]
     if len(set(only_paths)) != len(only_paths):
         raise ValueError("Paths to databases cannot be identical.")
+
+    for args in arguments:
+        if args["dashboard"] is True and args["logging"] is False:
+            warnings.warn("Dashboard cannot be created because logging is deactivated.")
