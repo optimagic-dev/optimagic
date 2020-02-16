@@ -12,29 +12,32 @@ from bokeh.models import Toggle
 from bokeh.models.widgets import Div
 
 
-def master_app(doc, database_names, databases):
+def master_app(doc, database_names, database_paths):
     """Create the page with the master dashboard.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
         database_names (list):
             list of the shortened names by which to display the different optimizations
-        databases (list): list of paths to the databases.
+        database_paths (list): list of paths to the databases.
     """
     sec_to_elements = _create_section_to_elements(
-        database_names=database_names, databases=databases
+        database_names=database_names, database_paths=database_paths
     )
 
     tabs = _setup_tabs(sec_to_elements=sec_to_elements)
     doc.add_root(tabs)
 
 
-def _create_section_to_elements(database_names, databases):
+def _create_section_to_elements(database_names, database_paths):
     """Map to each section the entries that belong to it.
+
+    .. warning::
+        Only one section "all" at the moment!
 
     Args:
         database_names (list): list of database names
-        databases (list): list of databases
+        database_paths (list): list of paths to databases
     Returns:
         sec_to_elements (dict): A nested dictionary. The first level keys are the
         sections ("running", "succeeded", "failed", "scheduled"). The second level keys
@@ -44,13 +47,13 @@ def _create_section_to_elements(database_names, databases):
     """
     src_dict = {
         "all": _name_to_bokeh_row_elements(
-            database_names=database_names, databases=databases
+            database_names=database_names, database_paths=database_paths
         ),
     }
     return src_dict
 
 
-def _name_to_bokeh_row_elements(database_names, databases):
+def _name_to_bokeh_row_elements(database_names, database_paths):
     """Inner part of the sec_to_elements dictionary.
 
     For each entry that belongs to the section create a clickable link to that
@@ -62,7 +65,7 @@ def _name_to_bokeh_row_elements(database_names, databases):
 
     Args:
         database_names (list): list of database names
-        databases (list): list of databases
+        database_paths (list): list of paths to databases
 
     """
     name_to_row = {}

@@ -13,28 +13,30 @@ from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
 
 
-def run_dashboard(databases, no_browser=False, port=None):
+def run_dashboard(database_paths, no_browser=False, port=None):
     """Start the dashboard pertaining to one or several databases.
 
     Args:
-        databases (str or pathlib.Path or list of them):
+        database_paths (str or pathlib.Path or list of them):
             Path(s) to an sqlite3 file which typically has the file extension ``.db``.
             See :ref:`logging` for details.
         no_browser (bool, optional):
             Whether or not to open the dashboard in the browser.
         port (int, optional): port where to display the dashboard.
     """
-    databases, no_browser, port = _process_arguments(databases, no_browser, port)
+    database_paths, no_browser, port = _process_arguments(
+        database_paths, no_browser, port
+    )
 
-    names = _nice_names(databases)
+    names = _nice_names(database_paths)
     partialed_master_app = partial(
-        master_app, database_names=names, databases=databases
+        master_app, database_names=names, database_paths=database_paths
     )
     apps = {
         "/": Application(FunctionHandler(partialed_master_app)),
     }
-    for rel_path, db in zip(names, databases):
-        partialed = partial(monitoring_app, database=db)
+    for rel_path, db_path in zip(names, database_paths):
+        partialed = partial(monitoring_app, database_path=db_path)
         apps[f"/{rel_path}"] = Application(FunctionHandler(partialed))
 
     # this is adapted from bokeh.subcommands.serve
@@ -59,14 +61,14 @@ def run_dashboard(databases, no_browser=False, port=None):
         server.start()
 
 
-def _process_arguments(databases, no_browser, port):
-    if not isinstance(databases, (list, tuple)):
-        databases = [databases]
+def _process_arguments(database_paths, no_browser, port):
+    if not isinstance(database_paths, (list, tuple)):
+        database_paths = [database_paths]
 
-    for db in databases:
-        if not isinstance(db, (str, pathlib.Path)):
+    for db_path in database_paths:
+        if not isinstance(db_path, (str, pathlib.Path)):
             raise TypeError(
-                f"Databases must be string or pathlib.Path. You supplied {type(db)}."
+                f"database_paths must be string or pathlib.Path. You supplied {type(db_path)}."
             )
 
     if not isinstance(no_browser, bool):
@@ -75,7 +77,7 @@ def _process_arguments(databases, no_browser, port):
     if port is None:
         port = _find_free_port()
 
-    return databases, no_browser, port
+    return database_paths, no_browser, port
 
 
 def _find_free_port():
