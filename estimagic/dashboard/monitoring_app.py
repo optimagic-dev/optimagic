@@ -9,6 +9,7 @@ from estimagic.dashboard_old.plotting_functions import create_wide_figure
 from estimagic.dashboard_old.plotting_functions import get_color_palette
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_last_iterations
+from estimagic.logging.read_database import read_scalar_field
 
 
 def monitoring_app(doc, database_path):
@@ -26,18 +27,15 @@ def monitoring_app(doc, database_path):
         return_type="bokeh",
     )
 
-    # sachen extrahieren, die ich brauch
-    #   lad db_options mit read_scalar_field
-    #   lad params -> für "_internal_free" Parameter, Gruppe ... -> ANSCHAUEN
+    params = read_scalar_field(database, "start_params")
+    db_options = read_scalar_field(database, "db_options")
 
-    # alle Tabellen auf einmal laden -> ColumnDataSources updaten!
-
-    tab1 = _setup_convergence_tab(data=data_dict)
+    tab1 = _setup_convergence_tab(data=data_dict, params=params, db_options=db_options)
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
 
 
-def _setup_convergence_tab(data):
+def _setup_convergence_tab(data, params, db_options):
     """Create the figures and plot available time series of the criterion and parameters.
 
     Args:
