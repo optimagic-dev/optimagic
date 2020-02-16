@@ -194,13 +194,6 @@ def minimize(
                 :ref:`dashboard` for details.
 
     """
-    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
-    constraints = [] if constraints is None else constraints
-    algo_options = {} if algo_options is None else algo_options
-    log_options = {} if log_options is None else log_options
-    db_options = {} if db_options is None else db_options
-    general_options = {} if general_options is None else general_options
-
     # Gradients are currently not allowed to be passed to minimize.
     gradient = None
 
