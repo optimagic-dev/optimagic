@@ -1,7 +1,9 @@
+import asyncio
 import pathlib
 import socket
 from contextlib import closing
 from functools import partial
+from multiprocessing import Process
 from pathlib import Path
 
 from bokeh.application import Application
@@ -11,6 +13,14 @@ from bokeh.server.server import Server
 
 from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
+
+
+def run_dashboard_in_separate_process(database_paths, no_browser=False, port=None):
+    p = Process(
+        target=run_dashboard, args=(database_paths, no_browser, port), daemon=False
+    )
+    p.start()
+    p.join()
 
 
 def run_dashboard(database_paths, no_browser=False, port=None):
@@ -27,6 +37,9 @@ def run_dashboard(database_paths, no_browser=False, port=None):
     database_paths, no_browser, port = _process_arguments(
         database_paths, no_browser, port
     )
+
+    # necessary for the dashboard to work when called from a notebook
+    asyncio.set_event_loop(asyncio.new_event_loop())
 
     names = _nice_names(database_paths)
     partialed_master_app = partial(
@@ -68,7 +81,8 @@ def _process_arguments(database_paths, no_browser, port):
     for db_path in database_paths:
         if not isinstance(db_path, (str, pathlib.Path)):
             raise TypeError(
-                f"database_paths must be string or pathlib.Path. You supplied {type(db_path)}."
+                f"database_paths must be string or pathlib.Path. ",
+                "You supplied {type(db_path)}.",
             )
 
     if not isinstance(no_browser, bool):
