@@ -1,6 +1,4 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
-from collections import namedtuple
-
 import numpy as np
 from joblib import delayed
 from joblib import Parallel
@@ -14,9 +12,6 @@ from estimagic.optimization.process_arguments import process_arguments
 from estimagic.optimization.pygmo import minimize_pygmo_np
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.scipy import minimize_scipy_np
-
-
-QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "fitness"])
 
 
 def maximize(
@@ -214,9 +209,6 @@ def minimize(
         )
 
     results = process_optimization_results(results, results_arguments)
-
-    if len(results) == 1:
-        results = results[0]
     return results
 
 
@@ -292,4 +284,7 @@ def process_optimization_results(results, results_arguments):
             processed_params=start_params,
         )
         new_results.append((res, params))
+
+    if len(new_results) == 1:
+        new_results = new_results[0]
     return new_results

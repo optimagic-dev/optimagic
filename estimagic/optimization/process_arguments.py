@@ -113,21 +113,7 @@ def _process_args_of_one_optimization(
         algorithm=algorithm,
     )
 
-    current_dir_path = Path(__file__).resolve().parent
-    with open(current_dir_path / "algo_dict.json") as j:
-        algos = json.load(j)
-    origin, algo_name = algorithm.split("_", 1)
-
-    try:
-        assert algo_name in algos[origin], "Invalid algorithm requested: {}".format(
-            algorithm
-        )
-    except (AssertionError, KeyError):
-        proposals = propose_algorithms(algorithm, algos)
-        raise NotImplementedError(
-            f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
-        )
-
+    origin, algo_name = _process_algorithm(algorithm)
     bounds = _internal_bounds_from_params(params)
 
     optim_kwargs = {
@@ -325,3 +311,22 @@ def _internal_bounds_from_params(params):
         .T
     )
     return bounds
+
+
+def _process_algorithm(algorithm):
+    current_dir_path = Path(__file__).resolve().parent
+    with open(current_dir_path / "algo_dict.json") as j:
+        algos = json.load(j)
+    origin, algo_name = algorithm.split("_", 1)
+
+    try:
+        assert algo_name in algos[origin], "Invalid algorithm requested: {}".format(
+            algorithm
+        )
+    except (AssertionError, KeyError):
+        proposals = propose_algorithms(algorithm, algos)
+        raise NotImplementedError(
+            f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
+        )
+
+    return origin, algo_name
