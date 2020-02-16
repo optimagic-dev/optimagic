@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize._numdiff import approx_derivative
 
+from estimagic.dashboard.run_dashboard import run_dashboard_in_separate_process
 from estimagic.decorators import expand_criterion_output
 from estimagic.decorators import handle_exceptions
 from estimagic.decorators import log_evaluation
@@ -24,14 +25,21 @@ from estimagic.optimization.utilities import propose_algorithms
 def process_arguments(broadcasted_arguments):
     optim_arguments = []
     results_arguments = []
+    db_paths = []
     for arguments in broadcasted_arguments:
         with warnings.catch_warnings():
             warnings.simplefilter(
                 action="ignore", category=pd.errors.PerformanceWarning
             )
+            record_path = arguments.pop("dashboard")
             optim, res = _process_args_of_one_optimization(**arguments)
+            if record_path:
+                db_paths.append(arguments["logging"])
             optim_arguments.append(optim)
             results_arguments.append(res)
+
+    run_dashboard_in_separate_process(database_paths=db_paths)
+
     return optim_arguments, results_arguments
 
 
@@ -46,7 +54,6 @@ def _process_args_of_one_optimization(
     gradient_options,
     logging,
     log_options,
-    dashboard,
     db_options,
     gradient,
 ):
@@ -77,7 +84,11 @@ def _process_args_of_one_optimization(
 
     if logging:
         database = prepare_database(
-            logging, params, comparison_plot_data, log_options, constraints
+            path=logging,
+            params=params,
+            comparison_plot_data=comparison_plot_data,
+            db_options=db_options,
+            constraints=constraints,
         )
     else:
         database = False
