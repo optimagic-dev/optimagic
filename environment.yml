@@ -27,17 +27,17 @@ dependencies:
   - pytest-cov
   - pytest-mock
   - pytest-xdist
+  - restructuredtext_lint
   - scipy=1.2.1
   - seaborn
   - sphinx
   - sphinx_rtd_theme
   - sphinxcontrib-bibtex
   - sqlalchemy>=1.3
+  - tox-conda
   - pip:
     - black
     - blackcellmagic
     - bump2version
     - pdbpp
     - pre-commit
-    - restructuredtext_lint
-    - tox-conda
