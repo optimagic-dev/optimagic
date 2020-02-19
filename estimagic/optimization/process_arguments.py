@@ -57,23 +57,15 @@ def _process_args_of_one_optimization(
     general_options = general_options.copy()
     params = _pre_process_params(params)
 
-    # Apply decorator two handle criterion functions with one or two returns.
-    criterion = expand_criterion_output(criterion)
-
+    # harmonize criterion interface
     is_maximization = general_options.pop("_maximization", False)
+    fitness_factor = -1 if is_maximization else 1
+    criterion = expand_criterion_output(criterion)
     criterion = negative_criterion(criterion) if is_maximization else criterion
 
-    # first criterion evaluation
-    fitness_factor = -1 if is_maximization else 1
-    criterion_out, comparison_plot_data = criterion(params, **criterion_kwargs)
-    if np.isscalar(criterion_out):
-        fitness_eval = fitness_factor * criterion_out
-    else:
-        fitness_eval = fitness_factor * np.mean(np.square(criterion_out))
-    if np.any(np.isnan(fitness_eval)):
-        raise ValueError(
-            "The criterion function evaluated at the start parameters returns NaNs."
-        )
+    fitness_eval, comparison_plot_data = _first_criterion_eval(
+        criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
+    )
     general_options["start_criterion_value"] = fitness_eval
 
     constraints, params = process_constraints(constraints, params)
@@ -189,6 +181,18 @@ def _pre_process_params(params):
     return params
 
 
+def _first_criterion_eval(criterion, params, criterion_kwargs):
+    criterion_out, comparison_plot_data = criterion(params, **criterion_kwargs)
+    if np.any(np.isnan(criterion_out)):
+        raise ValueError(
+            "The criterion function evaluated at the start parameters returns NaNs."
+        )
+    elif np.isscalar(criterion_out):
+        return criterion_out, comparison_plot_data
+    else:
+        return np.mean(np.square(criterion_out)), comparison_plot_data
+
+
 def create_internal_criterion(
     criterion,
     params,
@@ -225,10 +229,6 @@ def create_internal_criterion(
         database (sqlalchemy.MetaData). The engine that connects to the
             database can be accessed via ``database.bind``.
 
-        fitness_factor (float):
-            multiplicative factor for the fitness displayed in the dashboard.
-            Set to -1 for maximizations to plot the fitness that is being maximized.
-
     Returns:
         internal_criterion (function):
             function that takes an internal_params DataFrame as only argument.
@@ -236,6 +236,11 @@ def create_internal_criterion(
             reparametrizations.
 
     """
+    logging_decorator = functools.partial(
+        log_evaluation,
+        database=database,
+        tables=["params_history", "criterion_history", "comparison_plot"],
+    )
 
     @handle_exceptions(database, params, constraints, params, general_options)
     @numpy_interface(params, constraints)
