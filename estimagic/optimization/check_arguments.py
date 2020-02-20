@@ -1,4 +1,4 @@
-import types
+import typing
 from pathlib import Path
 
 import pandas as pd
@@ -9,11 +9,11 @@ def check_arguments(arguments):
         "general_options": dict,
         "dashboard": bool,
         "db_options": dict,
-        "criterion": types.FunctionType,
+        "criterion": typing.Callable,
         "params": pd.DataFrame,
         "algorithm": str,
         "algo_options": dict,
-        "gradient": (types.FunctionType, type(None)),
+        "gradient": (typing.Callable, type(None)),
         "gradient_options": (dict, type(None)),
         "log_options": dict,
         "criterion_kwargs": dict,
