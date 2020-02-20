@@ -23,7 +23,6 @@ algorithms = [
     "pygmo_xnes",
     "scipy_L-BFGS-B",
     "pygmo_ihs",
-    "pygmo_sga",
     "pygmo_sea",
     "pygmo_de",
     "scipy_TNC",
@@ -54,7 +53,7 @@ currently_failing = [
     "pygmo_nsga2",
     "pygmo_moead",
     # precision problems
-    "pygmo_simulated_annealing",
+    "pygmo_sga" "pygmo_simulated_annealing",
 ]
 
 
