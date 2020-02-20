@@ -74,7 +74,7 @@ Typically you will leave all of those parameters at their default, unless you ha
 very difficult optimization problem. If so, you can find all available options at the
 following links (depending on the origin of the algorithm):
 
-- `pygmo <https://tinyurl.com/y3bgsl4z>`_
+- `pygmo <https://tinyurl.com/uzmlc34>`_
 - `nlopt <https://tinyurl.com/y3dsmaz7>`_
 - `scipy <https://tinyurl.com/y54nmedo>`_
 
