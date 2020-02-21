@@ -20,7 +20,7 @@ dependencies:
   - numdifftools>= 0.9.20
   - numpy=1.16
   - pandas=0.24
-  - petsc4py>=3.11
+  #- petsc4py>=3.11
   - pygmo=2.10
   - scipy=1.2.1
   - seaborn
