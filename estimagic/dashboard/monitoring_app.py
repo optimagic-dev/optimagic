@@ -10,6 +10,7 @@ from estimagic.dashboard_old.plotting_functions import get_color_palette
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_last_iterations
 from estimagic.logging.read_database import read_scalar_field
+from estimagic.optimization.utilities import index_element_to_string
 
 
 def monitoring_app(doc, database_path):
@@ -54,6 +55,16 @@ def _setup_convergence_tab(data, params, db_options):
         title="Criterion",
     )
     plots = [Row(criterion_plot)]
+    group_to_params = _map_groups_to_params(params)
+    for g, group_params in group_to_params.items():
+        group_plot = _plot_time_series(
+            data=data["params_history"],
+            y_keys=group_params,
+            x_name="iteration",
+            title=g,
+        )
+        plots.append(Row(group_plot))
+
     tab = Panel(child=Column(*plots), title="Convergence Tab")
     return tab
 
@@ -104,3 +115,14 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
         plot.legend.location = "top_left"
 
     return plot
+
+
+def _map_groups_to_params(params):
+    """Map the group name to the ColumnDataSource friendly parameter names."""
+    group_to_params = {}
+    for group in params["group"].unique():
+        if group is not None:
+            tup_params = params[params["group"] == group].index
+            str_params = [index_element_to_string(tup) for tup in tup_params]
+            group_to_params[group] = str_params
+    return group_to_params
