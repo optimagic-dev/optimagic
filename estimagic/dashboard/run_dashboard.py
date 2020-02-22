@@ -20,7 +20,7 @@ def run_dashboard_in_separate_process(database_paths, no_browser=False, port=Non
         target=run_dashboard, args=(database_paths, no_browser, port), daemon=False
     )
     p.start()
-    p.join()
+    return p
 
 
 def run_dashboard(database_paths, no_browser=False, port=None):

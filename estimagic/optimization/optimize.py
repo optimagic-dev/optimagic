@@ -193,7 +193,9 @@ def minimize(
     optim_arguments, db_paths, results_arguments = process_arguments(arguments)
 
     if len(db_paths) > 0:
-        run_dashboard_in_separate_process(database_paths=db_paths)
+        dashboard_process = run_dashboard_in_separate_process(database_paths=db_paths)
+    else:
+        dashboard_process = None
 
     if len(arguments) == 1:
         # Run only one optimization
@@ -212,7 +214,9 @@ def minimize(
             for optim_kwargs in optim_arguments
         )
 
-    results = process_optimization_results(results, results_arguments)
+    results = process_optimization_results(
+        results, results_arguments, dashboard_process
+    )
     return results
 
 
@@ -275,7 +279,7 @@ def _internal_minimize(
     return results
 
 
-def process_optimization_results(results, results_arguments):
+def process_optimization_results(results, results_arguments, dashboard_process):
     new_results = []
     for res, args in zip(results, results_arguments):
         start_params = args["params"]
@@ -287,7 +291,7 @@ def process_optimization_results(results, results_arguments):
             post_replacements=start_params["_post_replacements"].to_numpy().astype(int),
             processed_params=start_params,
         )
-        new_results.append((res, params))
+        new_results.append((res, params, dashboard_process))
 
     if len(new_results) == 1:
         new_results = new_results[0]
