@@ -1,5 +1,4 @@
-import types
-import warnings
+import typing
 from pathlib import Path
 
 import pandas as pd
@@ -10,11 +9,11 @@ def check_arguments(arguments):
         "general_options": dict,
         "dashboard": bool,
         "db_options": dict,
-        "criterion": types.FunctionType,
+        "criterion": typing.Callable,
         "params": pd.DataFrame,
         "algorithm": str,
         "algo_options": dict,
-        "gradient": (types.FunctionType, type(None)),
+        "gradient": (typing.Callable, type(None)),
         "gradient_options": (dict, type(None)),
         "log_options": dict,
         "criterion_kwargs": dict,
@@ -35,7 +34,3 @@ def check_arguments(arguments):
     ]
     if len(set(only_paths)) != len(only_paths):
         raise ValueError("Paths to databases cannot be identical.")
-
-    for args in arguments:
-        if args["dashboard"] is True and args["logging"] is False:
-            warnings.warn("Dashboard cannot be created because logging is deactivated.")

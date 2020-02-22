@@ -67,6 +67,7 @@ autodoc_mock_imports = [
     "scipy",
     "sqlalchemy",
     "tornado",
+    "petsc4py",
 ]
 
 extlinks = {
