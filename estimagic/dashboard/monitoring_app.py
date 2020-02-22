@@ -1,12 +1,14 @@
 """Show the development of one optimization's criterion and parameters over time."""
+import random
+
+import bokeh.palettes
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import HoverTool
 from bokeh.models import Panel
 from bokeh.models import Tabs
+from bokeh.plotting import figure
 
-from estimagic.dashboard_old.plotting_functions import create_wide_figure
-from estimagic.dashboard_old.plotting_functions import get_color_palette
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_last_iterations
 from estimagic.logging.read_database import read_scalar_field
@@ -89,9 +91,9 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
     if y_names is None:
         y_names = y_keys
 
-    plot = create_wide_figure(title=title)
+    plot = _create_wide_figure(title=title)
 
-    colors = get_color_palette(nr_colors=len(y_keys))
+    colors = _get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
         line_glyph = plot.line(
             source=data,
@@ -126,3 +128,28 @@ def _map_groups_to_params(params):
             str_params = [index_element_to_string(tup) for tup in tup_params]
             group_to_params[group] = str_params
     return group_to_params
+
+
+def _create_wide_figure(title, tooltips=None):
+    """Return an empty figure of predetermined height and width."""
+    fig = figure(plot_height=350, plot_width=700, title=title, tooltips=tooltips)
+    fig.title.text_font_size = "15pt"
+    fig.min_border_left = 50
+    fig.min_border_right = 50
+    fig.min_border_top = 20
+    fig.min_border_bottom = 50
+    fig.toolbar_location = None
+    return fig
+
+
+def _get_color_palette(nr_colors):
+    """Return list of colors depending on the number needed."""
+    # color tone palettes: bokeh.palettes.Blues9, Greens9, Reds9, Purples9.
+    if nr_colors == 1:
+        return ["firebrick"]
+    elif nr_colors == 2:
+        return ["darkslateblue", "goldenrod"]
+    elif nr_colors < 20:
+        return bokeh.palettes.Category20[nr_colors]
+    else:
+        return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
