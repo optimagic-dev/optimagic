@@ -9,15 +9,25 @@ from pathlib import Path
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
+from bokeh.models import ColumnDataSource
 from bokeh.server.server import Server
 
 from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
+from estimagic.logging.create_database import load_database
+from estimagic.logging.read_database import read_last_iterations
+from estimagic.logging.read_database import read_scalar_field
 
 
 def run_dashboard_in_separate_process(database_paths, no_browser=False, port=None):
     p = Process(
-        target=run_dashboard, args=(database_paths, no_browser, port), daemon=False
+        target=run_dashboard,
+        kwargs={
+            "database_paths": database_paths,
+            "no_browser": no_browser,
+            "port": port,
+        },
+        daemon=False,
     )
     p.start()
     return p
@@ -33,56 +43,32 @@ def run_dashboard(database_paths, no_browser=False, port=None):
         no_browser (bool, optional):
             Whether or not to open the dashboard in the browser.
         port (int, optional): port where to display the dashboard.
+
     """
     database_paths, no_browser, port = _process_arguments(
-        database_paths, no_browser, port
+        database_paths=database_paths, no_browser=no_browser, port=port
     )
 
-    # necessary for the dashboard to work when called from a notebook
-    asyncio.set_event_loop(asyncio.new_event_loop())
+    elements_dict = _common_elements_dict(database_paths=database_paths)
 
-    names = _nice_names(database_paths)
-    partialed_master_app = partial(
-        master_app, database_names=names, database_paths=database_paths
-    )
-    apps = {
-        "/": Application(FunctionHandler(partialed_master_app)),
-    }
-    for rel_path, db_path in zip(names, database_paths):
-        partialed = partial(monitoring_app, database_path=db_path)
-        apps[f"/{rel_path}"] = Application(FunctionHandler(partialed))
+    master_partialed = partial(master_app, elements_dict=elements_dict)
+    apps = {"/": Application(FunctionHandler(master_partialed))}
+    for nice_database_name, inner_dict in elements_dict.items():
+        partialed = partial(monitoring_app, inner_dict=inner_dict)
+        apps[f"/{nice_database_name}"] = Application(FunctionHandler(partialed))
 
-    # this is adapted from bokeh.subcommands.serve
-    with report_server_init_errors(port=port):
-        server = Server(apps, port=port)
-
-        # On a remote server, we do not want to start the dashboard here.
-        if not no_browser:
-
-            def show_callback():
-                server.show("/")
-
-            server.io_loop.add_callback(show_callback)
-
-        address_string = server.address if server.address else "localhost"
-
-        print(
-            "Bokeh app running at:",
-            f"http://{address_string}:{server.port}{server.prefix}/",
-        )
-        server._loop.start()
-        server.start()
+    _start_server(apps=apps, port=port, no_browser=no_browser)
 
 
 def _process_arguments(database_paths, no_browser, port):
     if not isinstance(database_paths, (list, tuple)):
         database_paths = [database_paths]
 
-    for db_path in database_paths:
-        if not isinstance(db_path, (str, pathlib.Path)):
+    for single_database_path in database_paths:
+        if not isinstance(single_database_path, (str, pathlib.Path)):
             raise TypeError(
                 f"database_paths must be string or pathlib.Path. ",
-                "You supplied {type(db_path)}.",
+                "You supplied {type(single_database_path)}.",
             )
 
     if not isinstance(no_browser, bool):
@@ -159,3 +145,76 @@ def _name_clash(candidate, path_list, allowed_occurences=1):
         if len(parts) >= len(candidate) and parts[: len(candidate)] == candidate:
             duplicate_counter += 1
     return duplicate_counter > 0
+
+
+def _common_elements_dict(database_paths):
+    """For each database map their tables to ColumnDataSources.
+
+    Args:
+        database_paths (list): list of the paths to the databases.
+
+    Returns:
+        elements_dict (dict): nested dictionary.
+            The outer keys are the shortened paths to the databases.
+            The inner keys are "nice_database_name", "full_path", "db_options",
+            "start_params" and the table names "criterion_history" and "params_history".
+            The inner values are ColumnDataSources with the initially available data
+            for the table names.
+    """
+    elements_dict = {}
+    database_names = _nice_names(database_paths)
+    for nice_database_name, full_path in zip(database_names, database_paths):
+        inner_dict = {
+            "nice_database_name": nice_database_name,
+            "full_path": full_path,
+        }
+        inner_dict = _update_inner_dict(inner_dict, full_path)
+        elements_dict[nice_database_name] = inner_dict
+    return elements_dict
+
+
+def _update_inner_dict(inner_dict, full_path):
+    database = load_database(full_path)
+
+    full_dict = inner_dict.copy()
+    full_dict["start_params"] = read_scalar_field(database, "start_params")
+    full_dict["db_options"] = read_scalar_field(database, "db_options")
+
+    data_dict = read_last_iterations(
+        database=database,
+        tables=["criterion_history", "params_history"],
+        n=-1,
+        return_type="bokeh",
+    )
+    for table_name, data in data_dict.items():
+        nice_database_name = full_dict["nice_database_name"]
+        full_dict[table_name] = ColumnDataSource(
+            data=data, name=f"{nice_database_name}_{table_name}_cds"
+        )
+    return full_dict
+
+
+def _start_server(apps, port, no_browser):
+    # necessary for the dashboard to work when called from a notebook
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+    # this is adapted from bokeh.subcommands.serve
+    with report_server_init_errors(port=port):
+        server = Server(apps, port=port)
+
+        # On a remote server, we do not want to start the dashboard here.
+        if not no_browser:
+
+            def show_callback():
+                server.show("/")
+
+            server.io_loop.add_callback(show_callback)
+
+        address_string = server.address if server.address else "localhost"
+
+        print(
+            "Bokeh app running at:",
+            f"http://{address_string}:{server.port}{server.prefix}/",
+        )
+        server._loop.start()
+        server.start()

@@ -12,32 +12,40 @@ from bokeh.models import Toggle
 from bokeh.models.widgets import Div
 
 
-def master_app(doc, database_names, database_paths):
+def master_app(doc, elements_dict):
     """Create the page with the master dashboard.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
         database_names (list):
             list of the shortened names by which to display the different optimizations
-        database_paths (list): list of paths to the databases.
-    """
-    sec_to_elements = _create_section_to_elements(
-        database_names=database_names, database_paths=database_paths
-    )
+        elements_dict (dict): nested dictionary.
+            The outer keys are the shortened paths to the databases.
+            The inner keys are "nice_database_name", "full_path", "db_options",
+            "start_params" and the table names "criterion_history" and "params_history".
+            The inner values are ColumnDataSources with the initially available data
+            for the table names.
 
+    """
+    sec_to_elements = _create_section_to_elements(elements_dict=elements_dict)
     tabs = _setup_tabs(sec_to_elements=sec_to_elements)
     doc.add_root(tabs)
 
 
-def _create_section_to_elements(database_names, database_paths):
+def _create_section_to_elements(elements_dict):
     """Map to each section the entries that belong to it.
 
     .. warning::
         Only one section "all" at the moment!
 
     Args:
-        database_names (list): list of database names
-        database_paths (list): list of paths to databases
+        elements_dict (dict): nested dictionary.
+            The outer keys are the shortened paths to the databases.
+            The inner keys are "nice_database_name", "full_path", "db_options",
+            "start_params" and the table names "criterion_history" and "params_history".
+            The inner values are ColumnDataSources with the initially available data
+            for the table names.
+
     Returns:
         sec_to_elements (dict): A nested dictionary. The first level keys are the
         sections ("running", "succeeded", "failed", "scheduled"). The second level keys
@@ -46,14 +54,12 @@ def _create_section_to_elements(database_names, database_paths):
 
     """
     src_dict = {
-        "all": _name_to_bokeh_row_elements(
-            database_names=database_names, database_paths=database_paths
-        ),
+        "all": _name_to_bokeh_row_elements(elements_dict=elements_dict),
     }
     return src_dict
 
 
-def _name_to_bokeh_row_elements(database_names, database_paths):
+def _name_to_bokeh_row_elements(elements_dict):
     """Inner part of the sec_to_elements dictionary.
 
     For each entry that belongs to the section create a clickable link to that
@@ -64,13 +70,19 @@ def _name_to_bokeh_row_elements(database_names, database_paths):
         The button does not work yet!
 
     Args:
-        database_names (list): list of database names
-        database_paths (list): list of paths to databases
-
+        elements_dict (dict): nested dictionary.
+            The outer keys are the shortened paths to the databases.
+            The inner keys are "nice_database_name", "full_path", "db_options",
+            "start_params" and the table names "criterion_history" and "params_history".
+            The inner values are ColumnDataSources with the initially available data
+            for the table names.
     """
     name_to_row = {}
-    for name in database_names:
-        name_to_row[name] = [_dashboard_link(name), _dashboard_toggle(name=name)]
+    for database_name, inner_dict in elements_dict.items():
+        name_to_row[database_name] = [
+            _dashboard_link(database_name),
+            _dashboard_toggle(database_name=database_name),
+        ]
     return ColumnDataSource(name_to_row)
 
 
@@ -81,7 +93,7 @@ def _dashboard_link(name):
     return Div(text=text, name=div_name, width=400)
 
 
-def _dashboard_toggle(name):
+def _dashboard_toggle(database_name):
     """Create a Button that changes color when clicked displaying its boolean state.
 
     .. note::
@@ -93,7 +105,7 @@ def _dashboard_toggle(name):
         button_type="danger",
         width=50,
         height=30,
-        name=f"toggle_{name}",
+        name=f"toggle_{database_name}",
     )
 
     def change_button_color(attr, old, new):

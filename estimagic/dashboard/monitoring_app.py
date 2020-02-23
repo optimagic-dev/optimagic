@@ -3,9 +3,9 @@ import random
 from functools import partial
 
 import bokeh.palettes
+import numpy as np
 from bokeh.layouts import Column
 from bokeh.layouts import Row
-from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
 from bokeh.models import Panel
 from bokeh.models import Tabs
@@ -13,39 +13,31 @@ from bokeh.plotting import figure
 
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_last_iterations
-from estimagic.logging.read_database import read_scalar_field
 from estimagic.optimization.utilities import index_element_to_string
 
 
-def monitoring_app(doc, database_path):
+def monitoring_app(doc, inner_dict):
     """Create plots showing the development of the criterion and parameters until now.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        database_path (str or pathlib.Path): path to the database
+        inner_dict (dict):
+            mapping from table names to ColumnDataSources as well as some other infos.
     """
-    database = load_database(database_path)
-    data_dict = read_last_iterations(
-        database=database,
-        tables=["criterion_history", "params_history"],
-        n=-1,
-        return_type="bokeh",
+
+    tab1 = _setup_convergence_tab(
+        criterion_history=inner_dict["criterion_history"],
+        params_history=inner_dict["params_history"],
+        start_params=inner_dict["start_params"],
+        db_options=inner_dict["db_options"],
     )
-    data_dict = {k: ColumnDataSource(v) for k, v in data_dict.items()}
-
-    params = read_scalar_field(database, "start_params")
-    db_options = read_scalar_field(database, "db_options")
-
-    tab1 = _setup_convergence_tab(data=data_dict, params=params, db_options=db_options)
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
-    plot_new_data = partial(
-        _plot_new_data, doc=doc, database_path=database_path, data_dict=data_dict
-    )
+    plot_new_data = partial(_plot_new_data, doc=doc, inner_dict=inner_dict)
     doc.add_periodic_callback(plot_new_data, period_milliseconds=500)
 
 
-def _setup_convergence_tab(data, params, db_options):
+def _setup_convergence_tab(criterion_history, params_history, start_params, db_options):
     """Create the figures and plot available time series of the criterion and parameters.
 
     Args:
@@ -56,20 +48,17 @@ def _setup_convergence_tab(data, params, db_options):
         tab (bokeh.Panel)
     """
     criterion_plot = _plot_time_series(
-        data=data["criterion_history"],
+        data=criterion_history,
         x_name="iteration",
         y_keys=["value"],
         y_names=["criterion"],
         title="Criterion",
     )
     plots = [Row(criterion_plot)]
-    group_to_params = _map_groups_to_params(params)
+    group_to_params = _map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
         group_plot = _plot_time_series(
-            data=data["params_history"],
-            y_keys=group_params,
-            x_name="iteration",
-            title=g,
+            data=params_history, y_keys=group_params, x_name="iteration", title=g,
         )
         plots.append(Row(group_plot))
 
@@ -161,25 +150,25 @@ def _get_color_palette(nr_colors):
         return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
 
 
-def _plot_new_data(doc, database_path, data_dict):
+def _plot_new_data(doc, inner_dict):
     """Look up new entries in the database and plot them.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        database_path (str or pathlib.Path): path to the database
-        data_dict (dict): dictionary mapping table names to ColumnDataSources.
+        inner_dict (dict):
 
     """
-    database = load_database(database_path)
+    database = load_database(inner_dict["full_path"])
     all_data = read_last_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
         n=-1,
         return_type="bokeh",
     )
-    old_max_iter = max(data_dict["criterion_history"].data["iteration"])
-    new_max_iter = max(all_data["criterion_history"]["iteration"])
-    if old_max_iter < new_max_iter:
-        for table, data in all_data.items():
-            new_data = {k: v[old_max_iter:] for k, v in data.items()}
-            data_dict[table].stream(new_data, rollover=None)
+    old_iterations = inner_dict["criterion_history"].data["iteration"]
+    new_iterations = all_data["criterion_history"]["iteration"]
+    new_indices = [i for i, x in enumerate(new_iterations) if x not in old_iterations]
+
+    for table, data in all_data.items():
+        new_data = {k: np.array(v)[new_indices] for k, v in data.items()}
+        inner_dict[table].stream(new_data, rollover=None)
