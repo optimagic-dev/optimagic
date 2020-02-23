@@ -1,9 +1,11 @@
 """Show the development of one optimization's criterion and parameters over time."""
 import random
+from functools import partial
 
 import bokeh.palettes
 from bokeh.layouts import Column
 from bokeh.layouts import Row
+from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
 from bokeh.models import Panel
 from bokeh.models import Tabs
@@ -29,6 +31,7 @@ def monitoring_app(doc, database_path):
         n=-1,
         return_type="bokeh",
     )
+    data_dict = {k: ColumnDataSource(v) for k, v in data_dict.items()}
 
     params = read_scalar_field(database, "start_params")
     db_options = read_scalar_field(database, "db_options")
@@ -36,6 +39,10 @@ def monitoring_app(doc, database_path):
     tab1 = _setup_convergence_tab(data=data_dict, params=params, db_options=db_options)
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
+    plot_new_data = partial(
+        _plot_new_data, doc=doc, database_path=database_path, data_dict=data_dict
+    )
+    doc.add_periodic_callback(plot_new_data, period_milliseconds=500)
 
 
 def _setup_convergence_tab(data, params, db_options):
@@ -48,7 +55,6 @@ def _setup_convergence_tab(data, params, db_options):
     Returns:
         tab (bokeh.Panel)
     """
-
     criterion_plot = _plot_time_series(
         data=data["criterion_history"],
         x_name="iteration",
@@ -153,3 +159,27 @@ def _get_color_palette(nr_colors):
         return bokeh.palettes.Category20[nr_colors]
     else:
         return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
+
+
+def _plot_new_data(doc, database_path, data_dict):
+    """Look up new entries in the database and plot them.
+
+    Args:
+        doc (bokeh.Document): argument required by bokeh
+        database_path (str or pathlib.Path): path to the database
+        data_dict (dict): dictionary mapping table names to ColumnDataSources.
+
+    """
+    database = load_database(database_path)
+    all_data = read_last_iterations(
+        database=database,
+        tables=["criterion_history", "params_history"],
+        n=-1,
+        return_type="bokeh",
+    )
+    old_max_iter = max(data_dict["criterion_history"].data["iteration"])
+    new_max_iter = max(all_data["criterion_history"]["iteration"])
+    if old_max_iter < new_max_iter:
+        for table, data in all_data.items():
+            new_data = {k: v[old_max_iter:] for k, v in data.items()}
+            data_dict[table].stream(new_data, rollover=None)
