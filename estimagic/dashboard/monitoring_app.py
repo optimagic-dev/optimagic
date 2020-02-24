@@ -1,19 +1,18 @@
 """Show the development of one optimization's criterion and parameters over time."""
-import random
 from functools import partial
 
-import bokeh.palettes
 import numpy as np
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import HoverTool
 from bokeh.models import Panel
 from bokeh.models import Tabs
-from bokeh.plotting import figure
 
+from estimagic.dashboard.utilities import create_wide_figure
+from estimagic.dashboard.utilities import get_color_palette
+from estimagic.dashboard.utilities import map_groups_to_params
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_last_iterations
-from estimagic.optimization.utilities import index_element_to_string
 
 
 def monitoring_app(doc, single_optim_info):
@@ -61,7 +60,7 @@ def _setup_convergence_tab(criterion_history, params_history, start_params):
         title="Criterion",
     )
     plots = [Row(criterion_plot)]
-    group_to_params = _map_groups_to_params(start_params)
+    group_to_params = map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
         group_plot = _plot_time_series(
             data=params_history, y_keys=group_params, x_name="iteration", title=g,
@@ -94,9 +93,9 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
     if y_names is None:
         y_names = y_keys
 
-    plot = _create_wide_figure(title=title)
+    plot = create_wide_figure(title=title)
 
-    colors = _get_color_palette(nr_colors=len(y_keys))
+    colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
         line_glyph = plot.line(
             source=data,
@@ -120,47 +119,6 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
         plot.legend.location = "top_left"
 
     return plot
-
-
-def _map_groups_to_params(params):
-    """Map the group name to the ColumnDataSource friendly parameter names.
-
-    Args:
-        params (pd.DataFrame):
-            DataFrame with the parameter values and additional information such as the
-            "group" column and Index.
-    """
-    group_to_params = {}
-    for group in params["group"].unique():
-        if group is not None:
-            tup_params = params[params["group"] == group].index
-            str_params = [index_element_to_string(tup) for tup in tup_params]
-            group_to_params[group] = str_params
-    return group_to_params
-
-
-def _create_wide_figure(title, tooltips=None):
-    """Return a styled, empty figure of predetermined height and width."""
-    fig = figure(plot_height=350, plot_width=700, title=title, tooltips=tooltips)
-    fig.title.text_font_size = "15pt"
-    fig.min_border_left = 50
-    fig.min_border_right = 50
-    fig.min_border_top = 20
-    fig.min_border_bottom = 50
-    fig.toolbar_location = None
-    return fig
-
-
-def _get_color_palette(nr_colors):
-    """Return list of colors depending on the number needed."""
-    if nr_colors == 1:
-        return ["firebrick"]
-    elif nr_colors == 2:
-        return ["darkslateblue", "goldenrod"]
-    elif nr_colors <= 10:
-        return bokeh.palettes.Category10[nr_colors]
-    else:
-        return random.choices(bokeh.palettes.Turbo256, k=nr_colors)
 
 
 def _plot_new_data(doc, single_optim_info):

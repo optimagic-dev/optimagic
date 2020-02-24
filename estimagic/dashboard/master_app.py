@@ -8,8 +8,10 @@ from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
 from bokeh.models import Tabs
-from bokeh.models import Toggle
 from bokeh.models.widgets import Div
+
+from estimagic.dashboard.utilities import dashboard_link
+from estimagic.dashboard.utilities import dashboard_toggle
 
 
 def master_app(doc, elements_dict):
@@ -80,44 +82,10 @@ def _name_to_bokeh_row_elements(elements_dict):
     name_to_row = {}
     for database_name, inner_dict in elements_dict.items():
         name_to_row[database_name] = [
-            _dashboard_link(database_name),
-            _dashboard_toggle(database_name=database_name),
+            dashboard_link(database_name),
+            dashboard_toggle(database_name=database_name),
         ]
     return ColumnDataSource(name_to_row)
-
-
-def _dashboard_link(name):
-    """Create a link refering to *name*'s monitoring app."""
-    div_name = f"link_{name}"
-    text = f"<a href=./{name}> {name}!</a>"
-    return Div(text=text, name=div_name, width=400)
-
-
-def _dashboard_toggle(database_name):
-    """Create a Button that changes color when clicked displaying its boolean state.
-
-    .. note::
-        This should be a subclass but I did not get that to work.
-
-    """
-    toggle = Toggle(
-        label=" Activate",
-        button_type="danger",
-        width=50,
-        height=30,
-        name=f"toggle_{database_name}",
-    )
-
-    def change_button_color(attr, old, new):
-        if new is True:
-            toggle.button_type = "success"
-            toggle.label = "Deactivate"
-        else:
-            toggle.button_type = "danger"
-            toggle.label = "Activate"
-
-    toggle.on_change("active", change_button_color)
-    return toggle
 
 
 def _setup_tabs(sec_to_elements):
