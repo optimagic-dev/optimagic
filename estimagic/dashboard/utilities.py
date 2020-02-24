@@ -31,17 +31,17 @@ def short_name_to_database_path(path_list):
     ['blubb/blabb', 'b', 'bla/blabb']
 
     """
-    without_suffixes = [Path(p).resolve().with_suffix("") for p in path_list]
+    no_suffixes = [Path(p).resolve().with_suffix("") for p in path_list]
     # The assert statement makes sure that the while loop terminates
-    assert len(set(without_suffixes)) == len(
-        without_suffixes
+    assert len(set(no_suffixes)) == len(
+        no_suffixes
     ), "path_list must not contain duplicates."
     short_name_to_path = {}
-    for path, path_with_suffix in zip(without_suffixes, path_list):
+    for path, path_with_suffix in zip(no_suffixes, path_list):
         parts = tuple(reversed(path.parts))
         needed_parts = 1
         candidate = parts[:needed_parts]
-        while _name_clash(candidate, without_suffixes):
+        while _name_clash(candidate, no_suffixes):
             needed_parts += 1
             candidate = parts[:needed_parts]
 
@@ -72,7 +72,7 @@ def _name_clash(candidate, path_list, allowed_occurences=1):
 
 
 # =====================================================================================
-# Custom Bokeh Elements
+# Custom Styled Bokeh Elements
 # =====================================================================================
 
 
@@ -82,11 +82,6 @@ def dashboard_link(name):
     open_in_new_tab = r'target="_blank"'
     text = f"<a href=./{name} {open_in_new_tab}> {name}!</a>"
     return Div(text=text, name=div_name, width=400)
-
-
-# =====================================================================================
-# Styling Functions
-# =====================================================================================
 
 
 def create_wide_figure(title, tooltips=None):
