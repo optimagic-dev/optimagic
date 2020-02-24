@@ -80,7 +80,7 @@ def _name_to_bokeh_row_elements(elements_dict):
             for the table names.
     """
     name_to_row = {}
-    for database_name, inner_dict in elements_dict.items():
+    for database_name, _ in elements_dict.items():
         name_to_row[database_name] = [
             dashboard_link(database_name),
             dashboard_toggle(database_name=database_name),
