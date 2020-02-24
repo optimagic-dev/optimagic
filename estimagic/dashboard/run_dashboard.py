@@ -1,10 +1,7 @@
 import asyncio
 import pathlib
-import socket
-from contextlib import closing
 from functools import partial
 from multiprocessing import Process
-from pathlib import Path
 
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
@@ -14,6 +11,8 @@ from bokeh.server.server import Server
 
 from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
+from estimagic.dashboard.utilities import find_free_port
+from estimagic.dashboard.utilities import short_and_unique_optimization_names
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_last_iterations
 from estimagic.logging.read_database import read_scalar_field
@@ -89,78 +88,14 @@ def _process_arguments(database_paths, no_browser, port):
             )
 
     if not isinstance(no_browser, bool):
-        raise TypeError(f"no_browser must be a bool. You supplied {type(no_browser)}")
+        raise TypeError(f"no_browser must be a bool. You supplied {type(no_browser)}.")
 
     if port is None:
-        port = _find_free_port()
+        port = find_free_port()
+    elif not isinstance(port, int):
+        raise TypeError(f"port must be an integer. You supplied {type(port)}.")
 
     return database_paths, no_browser, port
-
-
-def _find_free_port():
-    """Find a free port on the localhost.
-
-    Adapted from https://stackoverflow.com/a/45690594
-    """
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(("localhost", 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
-
-
-def _nice_names(path_list):
-    """Generate short but unique names from each path.
-
-    Args:
-        path_list (list): List of strings or pathlib.path.
-
-    Returns:
-        list: List of strings with names.
-
-    Example:
-
-    >>> pl = ["bla/blubb/blabb.db", "a/b", "bla/blabb"]
-    >>> _nice_names(pl)
-    ['blubb/blabb', 'b', 'bla/blabb']
-
-    """
-    path_list = [Path(p).resolve().with_suffix("") for p in path_list]
-    # The assert statement makes sure that the while loop terminates
-    assert len(set(path_list)) == len(
-        path_list
-    ), "path_list must not contain duplicates."
-    short_names = []
-    for path in path_list:
-        parts = tuple(reversed(path.parts))
-        needed_parts = 1
-        candidate = parts[:needed_parts]
-        while _name_clash(candidate, path_list):
-            needed_parts += 1
-            candidate = parts[:needed_parts]
-
-        short_names.append("/".join(reversed(candidate)))
-    return short_names
-
-
-def _name_clash(candidate, path_list, allowed_occurences=1):
-    """Determine if candidate leads to a name clash.
-
-    Args:
-        candidate (tuple): tuple with parts of a path.
-        path_list (list): List of pathlib.path
-        allowed_occurences (int): How often a name can occur before
-            we call it a clash.
-
-    Returns:
-        bool
-
-    """
-    duplicate_counter = -allowed_occurences
-    for path in path_list:
-        parts = tuple(reversed(path.parts))
-        if len(parts) >= len(candidate) and parts[: len(candidate)] == candidate:
-            duplicate_counter += 1
-    return duplicate_counter > 0
 
 
 def _common_elements_dict(database_paths):
@@ -179,7 +114,7 @@ def _common_elements_dict(database_paths):
 
     """
     elements_dict = {}
-    database_names = _nice_names(path_list=database_paths)
+    database_names = short_and_unique_optimization_names(path_list=database_paths)
     for nice_database_name, full_path in zip(database_names, database_paths):
         single_optim_info = {
             "nice_database_name": nice_database_name,

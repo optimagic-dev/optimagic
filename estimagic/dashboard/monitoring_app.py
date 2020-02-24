@@ -10,9 +10,9 @@ from bokeh.models import Tabs
 
 from estimagic.dashboard.utilities import create_wide_figure
 from estimagic.dashboard.utilities import get_color_palette
-from estimagic.dashboard.utilities import map_groups_to_params
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_last_iterations
+from estimagic.optimization.utilities import index_element_to_string
 
 
 def monitoring_app(doc, single_optim_info):
@@ -60,7 +60,7 @@ def _setup_convergence_tab(criterion_history, params_history, start_params):
         title="Criterion",
     )
     plots = [Row(criterion_plot)]
-    group_to_params = map_groups_to_params(start_params)
+    group_to_params = _map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
         group_plot = _plot_time_series(
             data=params_history, y_keys=group_params, x_name="iteration", title=g,
@@ -119,6 +119,23 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
         plot.legend.location = "top_left"
 
     return plot
+
+
+def _map_groups_to_params(params):
+    """Map the group name to the ColumnDataSource friendly parameter names.
+
+    Args:
+        params (pd.DataFrame):
+            DataFrame with the parameter values and additional information such as the
+            "group" column and Index.
+    """
+    group_to_params = {}
+    for group in params["group"].unique():
+        if group is not None:
+            tup_params = params[params["group"] == group].index
+            str_params = [index_element_to_string(tup) for tup in tup_params]
+            group_to_params[group] = str_params
+    return group_to_params
 
 
 def _plot_new_data(doc, single_optim_info):

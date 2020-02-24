@@ -1,34 +1,74 @@
 """Helper functions for the dashboard."""
 import random
+import socket
+from contextlib import closing
+from pathlib import Path
 
 import bokeh.palettes
 from bokeh.models import Toggle
 from bokeh.models.widgets import Div
 from bokeh.plotting import figure
 
-from estimagic.optimization.utilities import index_element_to_string
-
 
 # =====================================================================================
-# Pandas to Bokeh Functions
+# Prettification and Making Compatible of Strings, Names and the Like
 # =====================================================================================
 
 
-def map_groups_to_params(params):
-    """Map the group name to the ColumnDataSource friendly parameter names.
+def short_and_unique_optimization_names(path_list):
+    """Generate short but unique names from each path.
 
     Args:
-        params (pd.DataFrame):
-            DataFrame with the parameter values and additional information such as the
-            "group" column and Index.
+        path_list (list):
+            List of strings or pathlib.path to the optimizations' databases.
+
+    Returns:
+        list: List of strings with names.
+
+    Example:
+
+    >>> pl = ["bla/blubb/blabb.db", "a/b", "bla/blabb"]
+    >>> short_and_unique_optimization_names(pl)
+    ['blubb/blabb', 'b', 'bla/blabb']
+
     """
-    group_to_params = {}
-    for group in params["group"].unique():
-        if group is not None:
-            tup_params = params[params["group"] == group].index
-            str_params = [index_element_to_string(tup) for tup in tup_params]
-            group_to_params[group] = str_params
-    return group_to_params
+    path_list = [Path(p).resolve().with_suffix("") for p in path_list]
+    # The assert statement makes sure that the while loop terminates
+    assert len(set(path_list)) == len(
+        path_list
+    ), "path_list must not contain duplicates."
+    short_names = []
+    for path in path_list:
+        parts = tuple(reversed(path.parts))
+        needed_parts = 1
+        candidate = parts[:needed_parts]
+        while _name_clash(candidate, path_list):
+            needed_parts += 1
+            candidate = parts[:needed_parts]
+
+        short_names.append("/".join(reversed(candidate)))
+    return short_names
+
+
+def _name_clash(candidate, path_list, allowed_occurences=1):
+    """Determine if candidate leads to a name clash.
+
+    Args:
+        candidate (tuple): tuple with parts of a path.
+        path_list (list): List of pathlib.path
+        allowed_occurences (int): How often a name can occur before
+            we call it a clash.
+
+    Returns:
+        bool
+
+    """
+    duplicate_counter = -allowed_occurences
+    for path in path_list:
+        parts = tuple(reversed(path.parts))
+        if len(parts) >= len(candidate) and parts[: len(candidate)] == candidate:
+            duplicate_counter += 1
+    return duplicate_counter > 0
 
 
 # =====================================================================================
@@ -97,3 +137,17 @@ def get_color_palette(nr_colors):
         return bokeh.palettes.Category10[nr_colors]
     else:
         return random.choices(bokeh.palettes.Turbo256, k=nr_colors)
+
+
+# =====================================================================================
+
+
+def find_free_port():
+    """Find a free port on the localhost.
+
+    Adapted from https://stackoverflow.com/a/45690594
+    """
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("localhost", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
