@@ -3,15 +3,19 @@
 This page shows which optimizations are scheduled, running, finished successfully or
 failed. From here the user can monitor any running optimizations.
 """
+from functools import partial
+
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
 from bokeh.models import Tabs
+from bokeh.models import Toggle
 from bokeh.models.widgets import Div
 
 from estimagic.dashboard.utilities import dashboard_link
-from estimagic.dashboard.utilities import dashboard_toggle
+from estimagic.logging.create_database import load_database
+from estimagic.logging.read_database import read_last_iterations
 
 
 def master_app(doc, database_name_to_path):
@@ -23,22 +27,22 @@ def master_app(doc, database_name_to_path):
             mapping from the short, unique names to the full paths to the databases.
 
     """
-    short_database_names = database_name_to_path.keys()
     sec_to_elements = _create_section_to_elements(
-        short_database_names=short_database_names
+        doc=doc, database_name_to_path=database_name_to_path
     )
     tabs = _setup_tabs(sec_to_elements=sec_to_elements)
     doc.add_root(tabs)
 
 
-def _create_section_to_elements(short_database_names):
+def _create_section_to_elements(doc, database_name_to_path):
     """Map to each section the entries that belong to it.
 
     .. warning::
         Only one section "all" at the moment!
 
     Args:
-        short_database_names (list): the shortened, unique paths to the databases.
+        database_name_to_path (dict):
+            mapping from the short, unique names to the full paths to the databases.
 
     Returns:
         sec_to_elements (dict): A nested dictionary. The first level keys are the
@@ -48,12 +52,14 @@ def _create_section_to_elements(short_database_names):
 
     """
     src_dict = {
-        "all": _name_to_bokeh_row_elements(short_database_names=short_database_names),
+        "all": _name_to_bokeh_row_elements(
+            doc=doc, database_name_to_path=database_name_to_path
+        ),
     }
     return src_dict
 
 
-def _name_to_bokeh_row_elements(short_database_names):
+def _name_to_bokeh_row_elements(doc, database_name_to_path):
     """Inner part of the sec_to_elements dictionary.
 
     For each entry that belongs to the section create a clickable link to that
@@ -64,14 +70,12 @@ def _name_to_bokeh_row_elements(short_database_names):
         The button does not work yet!
 
     Args:
-        short_database_names (list): the shortened, unique paths to the databases.
+        database_name_to_path (dict):
+            mapping from the short, unique names to the full paths to the databases.
     """
     name_to_row = {}
-    for database_name in short_database_names:
-        name_to_row[database_name] = [
-            dashboard_link(database_name),
-            dashboard_toggle(database_name=database_name),
-        ]
+    for database_name, database_path in database_name_to_path.items():
+        name_to_row[database_name] = [dashboard_link(database_name)]
     return ColumnDataSource(name_to_row)
 
 

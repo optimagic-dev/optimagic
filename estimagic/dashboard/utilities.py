@@ -5,7 +5,6 @@ from contextlib import closing
 from pathlib import Path
 
 import bokeh.palettes
-from bokeh.models import Toggle
 from bokeh.models.widgets import Div
 from bokeh.plotting import figure
 
@@ -82,33 +81,6 @@ def dashboard_link(name):
     div_name = f"link_{name}"
     text = f"<a href=./{name}> {name}!</a>"
     return Div(text=text, name=div_name, width=400)
-
-
-def dashboard_toggle(database_name):
-    """Create a Button that changes color when clicked displaying its boolean state.
-
-    .. note::
-        This should be a subclass but I did not get that to work.
-
-    """
-    toggle = Toggle(
-        label=" Activate",
-        button_type="danger",
-        width=50,
-        height=30,
-        name=f"toggle_{database_name}",
-    )
-
-    def change_button_color(attr, old, new):
-        if new is True:
-            toggle.button_type = "success"
-            toggle.label = "Deactivate"
-        else:
-            toggle.button_type = "danger"
-            toggle.label = "Activate"
-
-    toggle.on_change("active", change_button_color)
-    return toggle
 
 
 # =====================================================================================

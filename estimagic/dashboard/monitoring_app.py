@@ -8,6 +8,7 @@ from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
 from bokeh.models import Panel
 from bokeh.models import Tabs
+from bokeh.models import Toggle
 
 from estimagic.dashboard.utilities import create_wide_figure
 from estimagic.dashboard.utilities import get_color_palette
@@ -44,22 +45,26 @@ def monitoring_app(doc, short_name, full_path):
     )
 
     tab1 = _setup_convergence_tab(
+        doc=doc,
+        short_name=short_name,
+        full_path=full_path,
         criterion_history=criterion_history,
         params_history=params_history,
         start_params=start_params,
     )
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
-    plot_new_data = partial(
-        _plot_new_data, doc=doc, short_name=short_name, full_path=full_path
-    )
-    doc.add_periodic_callback(plot_new_data, period_milliseconds=500)
 
 
-def _setup_convergence_tab(criterion_history, params_history, start_params):
+def _setup_convergence_tab(
+    doc, short_name, full_path, criterion_history, params_history, start_params
+):
     """Create the figures and plot available time series of the criterion and parameters.
 
     Args:
+        doc (bokeh.Document): argument required by bokeh
+        short_name (str): short and unique name of the database
+        full_path (str or pathlib.Path): path to the database.
         criterion_history (bokeh.ColumnDataSource):
             history of the criterion's values, loaded from the optimization's database.
         params_history (bokeh.ColumnDataSource):
@@ -71,6 +76,9 @@ def _setup_convergence_tab(criterion_history, params_history, start_params):
     Returns:
         tab (bokeh.Panel)
     """
+    toggle = _dashboard_toggle(
+        doc=doc, database_name=short_name, database_path=full_path
+    )
     criterion_plot = _plot_time_series(
         data=criterion_history,
         x_name="iteration",
@@ -78,7 +86,7 @@ def _setup_convergence_tab(criterion_history, params_history, start_params):
         y_names=["criterion"],
         title="Criterion",
     )
-    plots = [Row(criterion_plot)]
+    plots = [Row(toggle), Row(criterion_plot)]
     group_to_params = _map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
         group_plot = _plot_time_series(
@@ -157,17 +165,58 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _plot_new_data(doc, short_name, full_path):
+def _dashboard_toggle(doc, database_name, database_path):
+    """Create a Button that changes color when clicked displaying its boolean state.
+
+    .. note::
+        This should be a subclass but I did not get that to work.
+
+    """
+    toggle = Toggle(
+        label=" Activate",
+        button_type="danger",
+        width=50,
+        height=30,
+        name=f"toggle_{database_name}",
+    )
+
+    def change_button_color(attr, old, new):
+        if new is True:
+            toggle.button_type = "success"
+            toggle.label = "Deactivate"
+            plot_new_data = partial(
+                _update_monitoring_tab,
+                doc=doc,
+                database_name=database_name,
+                database_path=database_path,
+            )
+            # the periodic callback gets an (ex ante unknown) id by bokeh.
+            # It cannot be given a consistent name so I resort to a global variable
+            # to have it available the next time this function is
+            global active_callback
+            active_callback = doc.add_periodic_callback(
+                plot_new_data, period_milliseconds=500
+            )
+        else:
+            toggle.button_type = "danger"
+            toggle.label = "Activate"
+            doc.remove_periodic_callback(active_callback)
+
+    toggle.on_change("active", change_button_color)
+    return toggle
+
+
+def _update_monitoring_tab(doc, database_name, database_path):
     """Callback to look up new entries in the database and plot them.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        short_name (str): short and unique name of the database
-        full_path (str or pathlib.Path): path to the database.
+        database_name (str): short and unique name of the database
+        database_path (str or pathlib.Path): path to the database.
 
     """
 
-    database = load_database(full_path)
+    database = load_database(database_path)
     all_data = read_last_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
@@ -177,9 +226,9 @@ def _plot_new_data(doc, short_name, full_path):
 
     old_data = {
         "criterion_history": doc.get_model_by_name(
-            f"{short_name}_criterion_history_cds"
+            f"{database_name}_criterion_history_cds"
         ),
-        "params_history": doc.get_model_by_name(f"{short_name}_params_history_cds"),
+        "params_history": doc.get_model_by_name(f"{database_name}_params_history_cds"),
     }
 
     for name, old_cds in old_data.items():
