@@ -79,7 +79,8 @@ def _name_clash(candidate, path_list, allowed_occurences=1):
 def dashboard_link(name):
     """Create a link refering to *name*'s monitoring app."""
     div_name = f"link_{name}"
-    text = f"<a href=./{name}> {name}!</a>"
+    open_in_new_tab = r'target="_blank"'
+    text = f"<a href=./{name} {open_in_new_tab}> {name}!</a>"
     return Div(text=text, name=div_name, width=400)
 
 
