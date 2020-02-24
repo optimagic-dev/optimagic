@@ -27,8 +27,8 @@ def short_name_to_database_path(path_list):
     Example:
 
     >>> pl = ["bla/blubb/blabb.db", "a/b", "bla/blabb"]
-    >>> short_and_unique_optimization_names(pl)
-    ['blubb/blabb', 'b', 'bla/blabb']
+    >>> short_name_to_database_path(pl)
+    {'blubb/blabb': 'bla/blubb/blabb.db', 'b': 'a/b', 'bla/blabb': 'bla/blabb'}
 
     """
     no_suffixes = [Path(p).resolve().with_suffix("") for p in path_list]
