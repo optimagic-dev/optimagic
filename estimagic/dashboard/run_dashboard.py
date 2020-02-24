@@ -53,14 +53,31 @@ def run_dashboard(database_paths, no_browser=False, port=None):
 
     master_partialed = partial(master_app, elements_dict=elements_dict)
     apps = {"/": Application(FunctionHandler(master_partialed))}
-    for nice_database_name, inner_dict in elements_dict.items():
-        partialed = partial(monitoring_app, inner_dict=inner_dict)
+    for nice_database_name, single_optim_info in elements_dict.items():
+        partialed = partial(monitoring_app, single_optim_info=single_optim_info)
         apps[f"/{nice_database_name}"] = Application(FunctionHandler(partialed))
 
     _start_server(apps=apps, port=port, no_browser=no_browser)
 
 
 def _process_arguments(database_paths, no_browser, port):
+    """Check arguments and find free port if none was given.
+    Args:
+        database_paths (str or pathlib.Path or list of them):
+            Path(s) to an sqlite3 file which typically has the file extension ``.db``.
+            See :ref:`logging` for details.
+        no_browser (bool):
+            Whether or not to open the dashboard in the browser.
+        port (int or None): port where to display the dashboard.
+
+    Returns:
+        database_paths (str or pathlib.Path or list of them):
+            Path(s) to an sqlite3 file which typically has the file extension ``.db``.
+            See :ref:`logging` for details.
+        no_browser (bool):
+            Whether or not to open the dashboard in the browser.
+        port (int): port where to display the dashboard.
+    """
     if not isinstance(database_paths, (list, tuple)):
         database_paths = [database_paths]
 
@@ -81,8 +98,7 @@ def _process_arguments(database_paths, no_browser, port):
 
 
 def _find_free_port():
-    """
-    Find a free port on the localhost.
+    """Find a free port on the localhost.
 
     Adapted from https://stackoverflow.com/a/45690594
     """
@@ -155,28 +171,43 @@ def _common_elements_dict(database_paths):
 
     Returns:
         elements_dict (dict): nested dictionary.
-            The outer keys are the shortened paths to the databases.
+            The outer keys are the nice names of the databases.
             The inner keys are "nice_database_name", "full_path", "db_options",
-            "start_params" and the table names "criterion_history" and "params_history".
+            "start_params", "criterion_history" and "params_history".
             The inner values are ColumnDataSources with the initially available data
-            for the table names.
+            for "criterion_history" and "params_history".
+
     """
     elements_dict = {}
-    database_names = _nice_names(database_paths)
+    database_names = _nice_names(path_list=database_paths)
     for nice_database_name, full_path in zip(database_names, database_paths):
-        inner_dict = {
+        single_optim_info = {
             "nice_database_name": nice_database_name,
             "full_path": full_path,
         }
-        inner_dict = _update_inner_dict(inner_dict, full_path)
-        elements_dict[nice_database_name] = inner_dict
+        single_optim_info = _add_from_database(
+            single_optim_info=single_optim_info, full_path=full_path
+        )
+        elements_dict[nice_database_name] = single_optim_info
     return elements_dict
 
 
-def _update_inner_dict(inner_dict, full_path):
+def _add_from_database(single_optim_info, full_path):
+    """Add entries to the info dictionary on one optimization from its database.
+
+    Args:
+        single_optim_info (dict): dictionary with information on one optimization
+        full_path (str or pathlib.Path): path to the database
+
+    Returns:
+        full_dict (dict):
+            copy of the single_optim_info with added entries
+            "start_params", "db_options", "criterion_history", "params_history".
+
+    """
     database = load_database(full_path)
 
-    full_dict = inner_dict.copy()
+    full_dict = single_optim_info.copy()
     full_dict["start_params"] = read_scalar_field(database, "start_params")
     full_dict["db_options"] = read_scalar_field(database, "db_options")
 
@@ -195,6 +226,14 @@ def _update_inner_dict(inner_dict, full_path):
 
 
 def _start_server(apps, port, no_browser):
+    """Create and start a bokeh server with the supplied apps.
+
+    Args:
+        apps (dict): mapping from relative paths to bokeh Applications.
+        port (int): port where to show the dashboard.
+        no_browser (bool): whether to show the dashboard in the browser
+
+    """
     # necessary for the dashboard to work when called from a notebook
     asyncio.set_event_loop(asyncio.new_event_loop())
 

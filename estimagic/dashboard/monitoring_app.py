@@ -16,33 +16,39 @@ from estimagic.logging.read_database import read_last_iterations
 from estimagic.optimization.utilities import index_element_to_string
 
 
-def monitoring_app(doc, inner_dict):
+def monitoring_app(doc, single_optim_info):
     """Create plots showing the development of the criterion and parameters until now.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        inner_dict (dict):
+        single_optim_info (dict):
             mapping from table names to ColumnDataSources as well as some other infos.
     """
 
     tab1 = _setup_convergence_tab(
-        criterion_history=inner_dict["criterion_history"],
-        params_history=inner_dict["params_history"],
-        start_params=inner_dict["start_params"],
-        db_options=inner_dict["db_options"],
+        criterion_history=single_optim_info["criterion_history"],
+        params_history=single_optim_info["params_history"],
+        start_params=single_optim_info["start_params"],
     )
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
-    plot_new_data = partial(_plot_new_data, doc=doc, inner_dict=inner_dict)
+    plot_new_data = partial(
+        _plot_new_data, doc=doc, single_optim_info=single_optim_info
+    )
     doc.add_periodic_callback(plot_new_data, period_milliseconds=500)
 
 
-def _setup_convergence_tab(criterion_history, params_history, start_params, db_options):
+def _setup_convergence_tab(criterion_history, params_history, start_params):
     """Create the figures and plot available time series of the criterion and parameters.
 
     Args:
-        data (dict): dictionary containing ColumnDataSources with the time series of
-            the criterion values and parameter values.
+        criterion_history (bokeh.ColumnDataSource):
+            history of the criterion's values, loaded from the optimization's database.
+        params_history (bokeh.ColumnDataSource):
+            history of the parameters' values, loaded from the optimization's database.
+        start_params (pd.DataFrame):
+            DataFrame with the initial parameter values and additional columns,
+            in particular the "group" column.
 
     Returns:
         tab (bokeh.Panel)
@@ -67,8 +73,7 @@ def _setup_convergence_tab(criterion_history, params_history, start_params, db_o
 
 
 def _plot_time_series(data, y_keys, x_name, title, y_names=None):
-    """
-    Plot time series linking the *y_keys* to a common *x_name* variable.
+    """Plot time series linking the *y_keys* to a common *x_name* variable.
 
     Args:
         data (ColumnDataSource):
@@ -81,6 +86,9 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
             title of the plot
         y_names (list):
             if given these replace the y keys for the names of the lines
+
+    Returns:
+        plot (bokeh Figure)
 
     """
     if y_names is None:
@@ -115,7 +123,13 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
 
 
 def _map_groups_to_params(params):
-    """Map the group name to the ColumnDataSource friendly parameter names."""
+    """Map the group name to the ColumnDataSource friendly parameter names.
+
+    Args:
+        params (pd.DataFrame):
+            DataFrame with the parameter values and additional information such as the
+            "group" column and Index.
+    """
     group_to_params = {}
     for group in params["group"].unique():
         if group is not None:
@@ -126,7 +140,7 @@ def _map_groups_to_params(params):
 
 
 def _create_wide_figure(title, tooltips=None):
-    """Return an empty figure of predetermined height and width."""
+    """Return a styled, empty figure of predetermined height and width."""
     fig = figure(plot_height=350, plot_width=700, title=title, tooltips=tooltips)
     fig.title.text_font_size = "15pt"
     fig.min_border_left = 50
@@ -139,36 +153,36 @@ def _create_wide_figure(title, tooltips=None):
 
 def _get_color_palette(nr_colors):
     """Return list of colors depending on the number needed."""
-    # color tone palettes: bokeh.palettes.Blues9, Greens9, Reds9, Purples9.
     if nr_colors == 1:
         return ["firebrick"]
     elif nr_colors == 2:
         return ["darkslateblue", "goldenrod"]
-    elif nr_colors < 20:
-        return bokeh.palettes.Category20[nr_colors]
+    elif nr_colors <= 10:
+        return bokeh.palettes.Category10[nr_colors]
     else:
-        return random.choices(bokeh.palettes.Category20[20], k=nr_colors)
+        return random.choices(bokeh.palettes.Turbo256, k=nr_colors)
 
 
-def _plot_new_data(doc, inner_dict):
-    """Look up new entries in the database and plot them.
+def _plot_new_data(doc, single_optim_info):
+    """Callback to look up new entries in the database and plot them.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        inner_dict (dict):
+        single_optim_info (dict):
+            mapping from table names to ColumnDataSources as well as some other infos.
 
     """
-    database = load_database(inner_dict["full_path"])
+    database = load_database(single_optim_info["full_path"])
     all_data = read_last_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
         n=-1,
         return_type="bokeh",
     )
-    old_iterations = inner_dict["criterion_history"].data["iteration"]
+    old_iterations = single_optim_info["criterion_history"].data["iteration"]
     new_iterations = all_data["criterion_history"]["iteration"]
     new_indices = [i for i, x in enumerate(new_iterations) if x not in old_iterations]
 
     for table, data in all_data.items():
         new_data = {k: np.array(v)[new_indices] for k, v in data.items()}
-        inner_dict[table].stream(new_data, rollover=None)
+        single_optim_info[table].stream(new_data, rollover=None)
