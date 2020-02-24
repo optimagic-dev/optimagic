@@ -15,7 +15,7 @@ from bokeh.plotting import figure
 # =====================================================================================
 
 
-def short_and_unique_optimization_names(path_list):
+def short_name_to_database_path(path_list):
     """Generate short but unique names from each path.
 
     Args:
@@ -32,22 +32,23 @@ def short_and_unique_optimization_names(path_list):
     ['blubb/blabb', 'b', 'bla/blabb']
 
     """
-    path_list = [Path(p).resolve().with_suffix("") for p in path_list]
+    without_suffixes = [Path(p).resolve().with_suffix("") for p in path_list]
     # The assert statement makes sure that the while loop terminates
-    assert len(set(path_list)) == len(
-        path_list
+    assert len(set(without_suffixes)) == len(
+        without_suffixes
     ), "path_list must not contain duplicates."
-    short_names = []
-    for path in path_list:
+    short_name_to_path = {}
+    for path, path_with_suffix in zip(without_suffixes, path_list):
         parts = tuple(reversed(path.parts))
         needed_parts = 1
         candidate = parts[:needed_parts]
-        while _name_clash(candidate, path_list):
+        while _name_clash(candidate, without_suffixes):
             needed_parts += 1
             candidate = parts[:needed_parts]
 
-        short_names.append("/".join(reversed(candidate)))
-    return short_names
+        short_name = "/".join(reversed(candidate))
+        short_name_to_path[short_name] = path_with_suffix
+    return short_name_to_path
 
 
 def _name_clash(candidate, path_list, allowed_occurences=1):

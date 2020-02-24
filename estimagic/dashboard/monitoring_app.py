@@ -4,6 +4,7 @@ from functools import partial
 import numpy as np
 from bokeh.layouts import Column
 from bokeh.layouts import Row
+from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
 from bokeh.models import Panel
 from bokeh.models import Tabs
@@ -12,27 +13,45 @@ from estimagic.dashboard.utilities import create_wide_figure
 from estimagic.dashboard.utilities import get_color_palette
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_last_iterations
+from estimagic.logging.read_database import read_scalar_field
 from estimagic.optimization.utilities import index_element_to_string
 
 
-def monitoring_app(doc, single_optim_info):
+def monitoring_app(doc, short_name, full_path):
     """Create plots showing the development of the criterion and parameters until now.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        single_optim_info (dict):
-            mapping from table names to ColumnDataSources as well as some other infos.
+        short_name (str): short and unique name of the database
+        full_path (str or pathlib.Path): path to the database.
     """
+    database = load_database(full_path)
+    start_params = read_scalar_field(database, "start_params")
+    db_options = read_scalar_field(database, "db_options")
+
+    data_dict = read_last_iterations(
+        database=database,
+        tables=["criterion_history", "params_history"],
+        n=-1,
+        return_type="bokeh",
+    )
+
+    criterion_history = ColumnDataSource(
+        data=data_dict["criterion_history"], name=f"{short_name}_criterion_history_cds"
+    )
+    params_history = ColumnDataSource(
+        data=data_dict["params_history"], name=f"{short_name}_params_history_cds"
+    )
 
     tab1 = _setup_convergence_tab(
-        criterion_history=single_optim_info["criterion_history"],
-        params_history=single_optim_info["params_history"],
-        start_params=single_optim_info["start_params"],
+        criterion_history=criterion_history,
+        params_history=params_history,
+        start_params=start_params,
     )
     tabs = Tabs(tabs=[tab1])
     doc.add_root(tabs)
     plot_new_data = partial(
-        _plot_new_data, doc=doc, single_optim_info=single_optim_info
+        _plot_new_data, doc=doc, short_name=short_name, full_path=full_path
     )
     doc.add_periodic_callback(plot_new_data, period_milliseconds=500)
 
@@ -138,26 +157,38 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _plot_new_data(doc, single_optim_info):
+def _plot_new_data(doc, short_name, full_path):
     """Callback to look up new entries in the database and plot them.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        single_optim_info (dict):
-            mapping from table names to ColumnDataSources as well as some other infos.
+        short_name (str): short and unique name of the database
+        full_path (str or pathlib.Path): path to the database.
 
     """
-    database = load_database(single_optim_info["full_path"])
+
+    database = load_database(full_path)
     all_data = read_last_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
         n=-1,
         return_type="bokeh",
     )
-    old_iterations = single_optim_info["criterion_history"].data["iteration"]
-    new_iterations = all_data["criterion_history"]["iteration"]
-    new_indices = [i for i, x in enumerate(new_iterations) if x not in old_iterations]
 
-    for table, data in all_data.items():
-        new_data = {k: np.array(v)[new_indices] for k, v in data.items()}
-        single_optim_info[table].stream(new_data, rollover=None)
+    old_data = {
+        "criterion_history": doc.get_model_by_name(
+            f"{short_name}_criterion_history_cds"
+        ),
+        "params_history": doc.get_model_by_name(f"{short_name}_params_history_cds"),
+    }
+
+    for name, old_cds in old_data.items():
+        new_data = all_data[name]
+        old_iterations = old_cds.data["iteration"]
+        new_iterations = new_data["iteration"]
+        new_indices = [
+            i for i, x in enumerate(new_iterations) if x not in old_iterations
+        ]
+
+        to_add = {k: np.array(v)[new_indices] for k, v in new_data.items()}
+        old_cds.stream(to_add, rollover=None)

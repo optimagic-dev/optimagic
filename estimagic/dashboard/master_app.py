@@ -14,39 +14,31 @@ from estimagic.dashboard.utilities import dashboard_link
 from estimagic.dashboard.utilities import dashboard_toggle
 
 
-def master_app(doc, elements_dict):
+def master_app(doc, database_name_to_path):
     """Create the page with the master dashboard.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        database_names (list):
-            list of the shortened names by which to display the different optimizations
-        elements_dict (dict): nested dictionary.
-            The outer keys are the shortened paths to the databases.
-            The inner keys are "nice_database_name", "full_path", "db_options",
-            "start_params" and the table names "criterion_history" and "params_history".
-            The inner values are ColumnDataSources with the initially available data
-            for the table names.
+        database_name_to_path (dict):
+            mapping from the short, unique names to the full paths to the databases.
 
     """
-    sec_to_elements = _create_section_to_elements(elements_dict=elements_dict)
+    short_database_names = database_name_to_path.keys()
+    sec_to_elements = _create_section_to_elements(
+        short_database_names=short_database_names
+    )
     tabs = _setup_tabs(sec_to_elements=sec_to_elements)
     doc.add_root(tabs)
 
 
-def _create_section_to_elements(elements_dict):
+def _create_section_to_elements(short_database_names):
     """Map to each section the entries that belong to it.
 
     .. warning::
         Only one section "all" at the moment!
 
     Args:
-        elements_dict (dict): nested dictionary.
-            The outer keys are the shortened paths to the databases.
-            The inner keys are "nice_database_name", "full_path", "db_options",
-            "start_params" and the table names "criterion_history" and "params_history".
-            The inner values are ColumnDataSources with the initially available data
-            for the table names.
+        short_database_names (list): the shortened, unique paths to the databases.
 
     Returns:
         sec_to_elements (dict): A nested dictionary. The first level keys are the
@@ -56,12 +48,12 @@ def _create_section_to_elements(elements_dict):
 
     """
     src_dict = {
-        "all": _name_to_bokeh_row_elements(elements_dict=elements_dict),
+        "all": _name_to_bokeh_row_elements(short_database_names=short_database_names),
     }
     return src_dict
 
 
-def _name_to_bokeh_row_elements(elements_dict):
+def _name_to_bokeh_row_elements(short_database_names):
     """Inner part of the sec_to_elements dictionary.
 
     For each entry that belongs to the section create a clickable link to that
@@ -72,15 +64,10 @@ def _name_to_bokeh_row_elements(elements_dict):
         The button does not work yet!
 
     Args:
-        elements_dict (dict): nested dictionary.
-            The outer keys are the shortened paths to the databases.
-            The inner keys are "nice_database_name", "full_path", "db_options",
-            "start_params" and the table names "criterion_history" and "params_history".
-            The inner values are ColumnDataSources with the initially available data
-            for the table names.
+        short_database_names (list): the shortened, unique paths to the databases.
     """
     name_to_row = {}
-    for database_name, _ in elements_dict.items():
+    for database_name in short_database_names:
         name_to_row[database_name] = [
             dashboard_link(database_name),
             dashboard_toggle(database_name=database_name),
