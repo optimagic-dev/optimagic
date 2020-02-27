@@ -30,6 +30,7 @@ def monitoring_app(doc, short_name, full_path):
     start_params = read_scalar_field(database, "start_params")
     db_options = read_scalar_field(database, "db_options")
 
+    print("db_options not used. They are", db_options)
     data_dict = read_last_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
@@ -44,6 +45,8 @@ def monitoring_app(doc, short_name, full_path):
         data=data_dict["params_history"], name=f"{short_name}_params_history_cds"
     )
 
+    callback_dict = {}
+
     conv_tab = _setup_convergence_tab(
         doc=doc,
         short_name=short_name,
@@ -51,13 +54,21 @@ def monitoring_app(doc, short_name, full_path):
         criterion_history=criterion_history,
         params_history=params_history,
         start_params=start_params,
+        callback_dict=callback_dict,
     )
+
     tabs = Tabs(tabs=[conv_tab])
     doc.add_root(tabs)
 
 
 def _setup_convergence_tab(
-    doc, short_name, full_path, criterion_history, params_history, start_params
+    doc,
+    short_name,
+    full_path,
+    criterion_history,
+    params_history,
+    start_params,
+    callback_dict,
 ):
     """Create the figures and plot available time series of the criterion and parameters.
 
@@ -76,8 +87,11 @@ def _setup_convergence_tab(
     Returns:
         tab (bokeh.Panel)
     """
-    toggle = _dashboard_toggle(
-        doc=doc, database_name=short_name, database_path=full_path
+    toggle = _create_update_button(
+        doc=doc,
+        database_name=short_name,
+        database_path=full_path,
+        callback_dict=callback_dict,
     )
     criterion_plot = _plot_time_series(
         data=criterion_history,
@@ -165,45 +179,43 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _dashboard_toggle(doc, database_name, database_path):
+def _create_update_button(doc, database_name, database_path, callback_dict):
     """Create a Button that changes color when clicked displaying its boolean state.
 
     .. note::
         This should be a subclass but I did not get that to work.
 
     """
-    toggle = Toggle(
-        label=" Activate",
+    update_button = Toggle(
+        label="Update from Database",
         button_type="danger",
         width=50,
         height=30,
-        name=f"toggle_{database_name}",
+        name=f"update_button_{database_name}",
     )
 
-    def change_button_color(attr, old, new):
+    def button_click_callback(attr, old, new):
         if new is True:
-            toggle.button_type = "success"
-            toggle.label = "Deactivate"
             plot_new_data = partial(
                 _update_monitoring_tab,
                 doc=doc,
                 database_name=database_name,
                 database_path=database_path,
             )
-            # the periodic callback gets an (ex ante unknown) id by bokeh.
-            # It cannot be given a consistent name so I resort to a global variable
-            # to have it available the next time this function is
-            global active_callback
-            active_callback = doc.add_periodic_callback(
-                plot_new_data, period_milliseconds=500
+            callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
+                plot_new_data, period_milliseconds=200
             )
+            # change the color
+            update_button.button_type = "success"
+            update_button.label = "Stop Updating from Database"
         else:
-            toggle.button_type = "danger"
-            toggle.label = "Activate"
-            doc.remove_periodic_callback(active_callback)
+            doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
+            # this changes the color
+            update_button.button_type = "danger"
+            update_button.label = "Update from Database"
 
-    toggle.on_change("active", change_button_color)
-    return toggle
+    update_button.on_change("active", button_click_callback)
+    return update_button
 
 
 def _update_monitoring_tab(doc, database_name, database_path):
