@@ -2,27 +2,30 @@
 
 This page shows which optimizations are scheduled, running, finished successfully or
 failed. From here the user can monitor any running optimizations.
-"""
-from functools import partial
 
+.. note::
+    This is a very rudimentary version at the moment with only one tab and no updates.
+    The structure follows a MWE that already implements different updating tabs already
+    and may seem overkill at the moment as a result.
+
+"""
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
 from bokeh.models import Tabs
-from bokeh.models import Toggle
 from bokeh.models.widgets import Div
 
 from estimagic.dashboard.utilities import dashboard_link
-from estimagic.logging.create_database import load_database
-from estimagic.logging.read_database import read_last_iterations
 
 
 def master_app(doc, database_name_to_path):
     """Create the page with the master dashboard.
 
     Args:
-        doc (bokeh.Document): argument required by bokeh
+        doc (bokeh.Document):
+            document where the overview over the optimizations will be displayed
+            by their current stage.
         database_name_to_path (dict):
             mapping from the short, unique names to the full paths to the databases.
 
@@ -45,10 +48,13 @@ def _create_section_to_elements(doc, database_name_to_path):
             mapping from the short, unique names to the full paths to the databases.
 
     Returns:
-        sec_to_elements (dict): A nested dictionary. The first level keys are the
-        sections ("running", "succeeded", "failed", "scheduled"). The second level keys
-        are the database names and the second level values a list consisting of the
-        link to the dashboard and a button to activate tha dashboard.
+        sec_to_elements (dict):
+            The keys are the sections. They will be "running", "succeeded", "failed"
+            and "scheduled" later on. The values are ColumnDataSources.
+            These are basically dictionaries mapping the database name to a list of
+            bokeh elements that make up the entry in the overview table.
+            This consists just of a link to the dashboard at the moment.
+            They are represented as ColumnDataSources to be use callbacks on them.
 
     """
     src_dict = {
@@ -70,11 +76,13 @@ def _name_to_bokeh_row_elements(doc, database_name_to_path):
         The button does not work yet!
 
     Args:
+        doc (bokeh Document)
         database_name_to_path (dict):
             mapping from the short, unique names to the full paths to the databases.
+
     """
     name_to_row = {}
-    for database_name, database_path in database_name_to_path.items():
+    for database_name, _ in database_name_to_path.items():
         name_to_row[database_name] = [dashboard_link(database_name)]
     return ColumnDataSource(name_to_row)
 
@@ -87,8 +95,10 @@ def _setup_tabs(sec_to_elements):
         sections ("running", "succeeded", "failed", "scheduled"). The second level keys
         are the database names and the second level values a list consisting of the
         link to the dashboard and a button to activate tha dashboard.
+
     Returns:
         tabs (bokeh.models.Tabs): a tab for every section in sec_to_elements.
+
     """
     tab_list = []
     for section, name_to_row in sec_to_elements.items():
