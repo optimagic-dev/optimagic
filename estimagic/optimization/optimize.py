@@ -1,4 +1,6 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
+import warnings
+
 import numpy as np
 from joblib import delayed
 from joblib import Parallel
@@ -192,10 +194,17 @@ def minimize(
 
     optim_arguments, db_paths, results_arguments = process_arguments(arguments)
 
-    if len(db_paths) > 0:
-        dashboard_process = run_dashboard_in_separate_process(database_paths=db_paths)
-    else:
-        dashboard_process = None
+    if dashboard is True:
+        if len(db_paths) > 0:
+            dashboard_process = run_dashboard_in_separate_process(
+                database_paths=db_paths
+            )
+        else:
+            warnings.warn(
+                "There is no database to be monitored by the dashboard. ",
+                "Therefore, no dashboard is started.",
+            )
+            dashboard = False
 
     if len(arguments) == 1:
         # Run only one optimization
@@ -217,6 +226,7 @@ def minimize(
     results = process_optimization_results(
         results, results_arguments, dashboard_process
     )
+
     return results
 
 
