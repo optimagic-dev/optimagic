@@ -192,12 +192,21 @@ def minimize(
 
     check_arguments(arguments)
 
-    optim_arguments, db_paths, results_arguments = process_arguments(arguments)
+    optim_arguments = []
+    results_arguments = []
+    database_paths_for_dashboard = []
+
+    for single_arg in arguments:
+        optim_kwargs, database_path, result_kwargs = process_arguments(**single_arg)
+        optim_arguments.append(optim_kwargs)
+        results_arguments.append(result_kwargs)
+        if database_path is not None:
+            database_paths_for_dashboard.append(database_path)
 
     if dashboard is True:
-        if len(db_paths) > 0:
+        if len(database_paths_for_dashboard) > 0:
             dashboard_process = run_dashboard_in_separate_process(
-                database_paths=db_paths
+                database_paths=database_paths_for_dashboard
             )
         else:
             warnings.warn(
@@ -223,9 +232,10 @@ def minimize(
             for optim_kwargs in optim_arguments
         )
 
-    results = process_optimization_results(
-        results, results_arguments, dashboard_process
-    )
+    results = process_optimization_results(results, results_arguments)
+
+    # later only if flag is set to False!
+    dashboard_process.kill()
 
     return results
 
@@ -289,7 +299,7 @@ def _internal_minimize(
     return results
 
 
-def process_optimization_results(results, results_arguments, dashboard_process):
+def process_optimization_results(results, results_arguments):
     new_results = []
     for res, args in zip(results, results_arguments):
         start_params = args["params"]
@@ -301,7 +311,7 @@ def process_optimization_results(results, results_arguments, dashboard_process):
             post_replacements=start_params["_post_replacements"].to_numpy().astype(int),
             processed_params=start_params,
         )
-        new_results.append((res, params, dashboard_process))
+        new_results.append((res, params))
 
     if len(new_results) == 1:
         new_results = new_results[0]

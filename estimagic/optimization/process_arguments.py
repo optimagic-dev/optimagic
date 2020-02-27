@@ -21,26 +21,7 @@ from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
 
-def process_arguments(broadcasted_arguments):
-    optim_arguments = []
-    results_arguments = []
-    db_paths = []
-    for arguments in broadcasted_arguments:
-        with warnings.catch_warnings():
-            warnings.simplefilter(
-                action="ignore", category=pd.errors.PerformanceWarning
-            )
-            record_path = arguments.pop("dashboard")
-            optim, res = _process_args_of_one_optimization(**arguments)
-            if record_path:
-                db_paths.append(arguments["logging"])
-            optim_arguments.append(optim)
-            results_arguments.append(res)
-
-    return optim_arguments, db_paths, results_arguments
-
-
-def _process_args_of_one_optimization(
+def process_arguments(
     criterion,
     params,
     algorithm,
@@ -51,89 +32,95 @@ def _process_args_of_one_optimization(
     gradient_options,
     logging,
     log_options,
+    dashboard,
     db_options,
     gradient,
 ):
-    general_options = general_options.copy()
-    params = _pre_process_params(params)
+    # THIS NEEDS A NICE NAME AND A REALLY GOOD DOCSTRING
+    with warnings.catch_warnings():
+        warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
+        database_path = logging if dashboard else None
 
-    # harmonize criterion interface
-    is_maximization = general_options.pop("_maximization", False)
-    fitness_factor = -1 if is_maximization else 1
-    criterion = expand_criterion_output(criterion)
-    criterion = negative_criterion(criterion) if is_maximization else criterion
+        general_options = general_options.copy()
+        params = _pre_process_params(params)
 
-    fitness_eval, comparison_plot_data = _first_criterion_eval(
-        criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
-    )
-    general_options["start_criterion_value"] = fitness_eval
+        # harmonize criterion interface
+        is_maximization = general_options.pop("_maximization", False)
+        fitness_factor = -1 if is_maximization else 1
+        criterion = expand_criterion_output(criterion)
+        criterion = negative_criterion(criterion) if is_maximization else criterion
 
-    constraints, params = process_constraints(constraints, params)
-    internal_params = reparametrize_to_internal(params, constraints)
-
-    if logging:
-        database = prepare_database(
-            path=logging,
-            params=params,
-            comparison_plot_data=comparison_plot_data,
-            db_options=db_options,
-            constraints=constraints,
+        fitness_eval, comparison_plot_data = _first_criterion_eval(
+            criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
         )
-    else:
-        database = False
+        general_options["start_criterion_value"] = fitness_eval
 
-    logging_decorator = functools.partial(
-        log_evaluation,
-        database=database,
-        tables=["params_history", "criterion_history", "comparison_plot"],
-    )
+        constraints, params = process_constraints(constraints, params)
+        internal_params = reparametrize_to_internal(params, constraints)
 
-    internal_criterion = _create_internal_criterion(
-        criterion=criterion,
-        params=params,
-        constraints=constraints,
-        criterion_kwargs=criterion_kwargs,
-        logging_decorator=logging_decorator,
-        general_options=general_options,
-        database=database,
-        fitness_factor=fitness_factor,
-    )
+        if logging:
+            database = prepare_database(
+                path=logging,
+                params=params,
+                comparison_plot_data=comparison_plot_data,
+                db_options=db_options,
+                constraints=constraints,
+            )
+        else:
+            database = False
 
-    internal_gradient = _create_internal_gradient(
-        gradient=gradient,
-        gradient_options=gradient_options,
-        criterion=criterion,
-        params=params,
-        internal_params=internal_params,
-        constraints=constraints,
-        criterion_kwargs=criterion_kwargs,
-        general_options=general_options,
-        database=database,
-        fitness_factor=fitness_factor,
-        algorithm=algorithm,
-    )
+        logging_decorator = functools.partial(
+            log_evaluation,
+            database=database,
+            tables=["params_history", "criterion_history", "comparison_plot"],
+        )
 
-    origin, algo_name = _process_algorithm(algorithm)
-    bounds = _internal_bounds_from_params(params)
+        internal_criterion = _create_internal_criterion(
+            criterion=criterion,
+            params=params,
+            constraints=constraints,
+            criterion_kwargs=criterion_kwargs,
+            logging_decorator=logging_decorator,
+            general_options=general_options,
+            database=database,
+            fitness_factor=fitness_factor,
+        )
 
-    optim_kwargs = {
-        "internal_criterion": internal_criterion,
-        "internal_params": internal_params,
-        "bounds": bounds,
-        "origin": origin,
-        "algo_name": algo_name,
-        "algo_options": algo_options,
-        "internal_gradient": internal_gradient,
-        "database": database,
-        "general_options": general_options,
-    }
+        internal_gradient = _create_internal_gradient(
+            gradient=gradient,
+            gradient_options=gradient_options,
+            criterion=criterion,
+            params=params,
+            internal_params=internal_params,
+            constraints=constraints,
+            criterion_kwargs=criterion_kwargs,
+            general_options=general_options,
+            database=database,
+            fitness_factor=fitness_factor,
+            algorithm=algorithm,
+        )
 
-    result_kwargs = {
-        "params": params,
-        "constraints": constraints,
-    }
+        origin, algo_name = _process_algorithm(algorithm)
+        bounds = _internal_bounds_from_params(params)
 
-    return optim_kwargs, result_kwargs
+        optim_kwargs = {
+            "internal_criterion": internal_criterion,
+            "internal_params": internal_params,
+            "bounds": bounds,
+            "origin": origin,
+            "algo_name": algo_name,
+            "algo_options": algo_options,
+            "internal_gradient": internal_gradient,
+            "database": database,
+            "general_options": general_options,
+        }
+
+        result_kwargs = {
+            "params": params,
+            "constraints": constraints,
+        }
+
+    return optim_kwargs, database_path, result_kwargs
 
 
 def _pre_process_params(params):
