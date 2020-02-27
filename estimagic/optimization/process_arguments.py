@@ -88,7 +88,7 @@ def _process_args_of_one_optimization(
         tables=["params_history", "criterion_history", "comparison_plot"],
     )
 
-    internal_criterion = create_internal_criterion(
+    internal_criterion = _create_internal_criterion(
         criterion=criterion,
         params=params,
         constraints=constraints,
@@ -99,7 +99,7 @@ def _process_args_of_one_optimization(
         fitness_factor=fitness_factor,
     )
 
-    internal_gradient = create_internal_gradient(
+    internal_gradient = _create_internal_gradient(
         gradient=gradient,
         gradient_options=gradient_options,
         criterion=criterion,
@@ -193,7 +193,7 @@ def _first_criterion_eval(criterion, params, criterion_kwargs):
         return np.mean(np.square(criterion_out)), comparison_plot_data
 
 
-def create_internal_criterion(
+def _create_internal_criterion(
     criterion,
     params,
     constraints,
@@ -236,11 +236,6 @@ def create_internal_criterion(
             reparametrizations.
 
     """
-    logging_decorator = functools.partial(
-        log_evaluation,
-        database=database,
-        tables=["params_history", "criterion_history", "comparison_plot"],
-    )
 
     @handle_exceptions(database, params, constraints, params, general_options)
     @numpy_interface(params, constraints)
@@ -252,7 +247,7 @@ def create_internal_criterion(
     return internal_criterion
 
 
-def create_internal_gradient(
+def _create_internal_gradient(
     gradient,
     gradient_options,
     criterion,
@@ -297,7 +292,7 @@ def create_internal_gradient(
         n_gradient_evaluations=n_gradient_evaluations,
     )
 
-    internal_criterion = create_internal_criterion(
+    internal_criterion = _create_internal_criterion(
         criterion=criterion,
         params=params,
         constraints=constraints,
