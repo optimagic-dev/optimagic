@@ -49,7 +49,9 @@ def run_dashboard(database_paths, no_browser=False, port=None):
     apps = {"/": Application(FunctionHandler(master_partialed))}
 
     for short_name, full_path in database_name_to_path.items():
-        partialed = partial(monitoring_app, short_name=short_name, full_path=full_path)
+        partialed = partial(
+            monitoring_app, database_name=short_name, full_path=full_path
+        )
         apps[f"/{short_name}"] = Application(FunctionHandler(partialed))
 
     _start_server(apps=apps, port=port, no_browser=no_browser)

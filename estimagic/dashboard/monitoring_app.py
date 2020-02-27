@@ -2,6 +2,7 @@
 from functools import partial
 
 import numpy as np
+import pandas as pd
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
@@ -13,48 +14,53 @@ from bokeh.models import Toggle
 from estimagic.dashboard.utilities import create_wide_figure
 from estimagic.dashboard.utilities import get_color_palette
 from estimagic.logging.create_database import load_database
-from estimagic.logging.read_database import read_last_iterations
+from estimagic.logging.read_database import read_new_iterations
 from estimagic.logging.read_database import read_scalar_field
 from estimagic.optimization.utilities import index_element_to_string
 
 
-def monitoring_app(doc, short_name, full_path):
+def monitoring_app(doc, database_name, full_path):
     """Create plots showing the development of the criterion and parameters until now.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        short_name (str): short and unique name of the database
+        database_name (str): short and unique name of the database
         full_path (str or pathlib.Path): path to the database.
     """
     database = load_database(full_path)
     start_params = read_scalar_field(database, "start_params")
     db_options = read_scalar_field(database, "db_options")
 
-    print("db_options not used. They are", db_options)
-    data_dict = read_last_iterations(
+    data_dict, new_last = read_new_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
-        n=-1,
+        last_retrieved=0,
+        limit=5,
         return_type="bokeh",
     )
+    # np.zeros so it's mutable
+    last_retrieved = np.array([new_last])
 
     criterion_history = ColumnDataSource(
-        data=data_dict["criterion_history"], name=f"{short_name}_criterion_history_cds"
+        data=data_dict["criterion_history"],
+        name=f"{database_name}_criterion_history_cds",
     )
     params_history = ColumnDataSource(
-        data=data_dict["params_history"], name=f"{short_name}_params_history_cds"
+        data=data_dict["params_history"], name=f"{database_name}_params_history_cds"
     )
 
     callback_dict = {}
 
     conv_tab = _setup_convergence_tab(
         doc=doc,
-        short_name=short_name,
+        database_name=database_name,
         full_path=full_path,
         criterion_history=criterion_history,
         params_history=params_history,
         start_params=start_params,
         callback_dict=callback_dict,
+        last_retrieved=last_retrieved,
+        **db_options,
     )
 
     tabs = Tabs(tabs=[conv_tab])
@@ -63,18 +69,19 @@ def monitoring_app(doc, short_name, full_path):
 
 def _setup_convergence_tab(
     doc,
-    short_name,
+    database_name,
     full_path,
     criterion_history,
     params_history,
     start_params,
     callback_dict,
+    last_retrieved,
 ):
     """Create the figures and plot available time series of the criterion and parameters.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        short_name (str): short and unique name of the database
+        database_name (str): short and unique name of the database
         full_path (str or pathlib.Path): path to the database.
         criterion_history (bokeh.ColumnDataSource):
             history of the criterion's values, loaded from the optimization's database.
@@ -83,15 +90,17 @@ def _setup_convergence_tab(
         start_params (pd.DataFrame):
             DataFrame with the initial parameter values and additional columns,
             in particular the "group" column.
+        last_retrieved (np.array): last retrieved iteration.
 
     Returns:
         tab (bokeh.Panel)
     """
     activation_button = _create_activation_button(
         doc=doc,
-        database_name=short_name,
+        database_name=database_name,
         database_path=full_path,
         callback_dict=callback_dict,
+        last_retrieved=last_retrieved,
     )
     criterion_plot = _plot_time_series(
         data=criterion_history,
@@ -179,7 +188,9 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _create_activation_button(doc, database_name, database_path, callback_dict):
+def _create_activation_button(
+    doc, database_name, database_path, callback_dict, last_retrieved
+):
     """Create a Button that changes color when clicked displaying its boolean state.
 
     Args:
@@ -187,26 +198,30 @@ def _create_activation_button(doc, database_name, database_path, callback_dict):
         database_name (str): name of the database
         database_path (str or pathlib.Path): path to the database
         callback_dict (dict): dictionary to add and remove the callbacks from
+        last_retrieved (np.array): array to keep track of last retrieved iteration
 
     Returns:
         activation_button (bokeh Toggle)
 
     """
     activation_button = Toggle(
-        label="Update from Database",
+        label="Start Updating from Database",
         button_type="danger",
         width=50,
         height=30,
         name=f"activation_button_{database_name}",
     )
 
-    def button_click_callback(attr, old, new, callback_dict=callback_dict):
+    def button_click_callback(
+        attr, old, new, last_retrieved=last_retrieved, callback_dict=callback_dict
+    ):
         if new is True:
             plot_new_data = partial(
                 _update_monitoring_tab,
                 doc=doc,
                 database_name=database_name,
                 database_path=database_path,
+                last_retrieved=last_retrieved,
             )
             callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
                 plot_new_data, period_milliseconds=200
@@ -218,44 +233,35 @@ def _create_activation_button(doc, database_name, database_path, callback_dict):
             doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
             # this changes the color
             activation_button.button_type = "danger"
-            activation_button.label = "Update from Database"
+            activation_button.label = "Resume Updating from Database"
 
     activation_button.on_change("active", button_click_callback)
     return activation_button
 
 
-def _update_monitoring_tab(doc, database_name, database_path):
+def _update_monitoring_tab(
+    doc, database_name, database_path, last_retrieved, rollover=500
+):
     """Callback to look up new entries in the database and plot them.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
         database_name (str): short and unique name of the database
         database_path (str or pathlib.Path): path to the database.
+        last_retrieved (np.array): array to keep track of last retrieved iteration
+        rollover (int): maximal number of points to show in the plot
 
     """
-
     database = load_database(database_path)
-    all_data = read_last_iterations(
+    new_data, new_last = read_new_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
-        n=-1,
+        last_retrieved=last_retrieved[0],
         return_type="bokeh",
+        limit=20,
     )
+    last_retrieved[:] = new_last
 
-    old_data = {
-        "criterion_history": doc.get_model_by_name(
-            f"{database_name}_criterion_history_cds"
-        ),
-        "params_history": doc.get_model_by_name(f"{database_name}_params_history_cds"),
-    }
-
-    for name, old_cds in old_data.items():
-        new_data = all_data[name]
-        old_iterations = old_cds.data["iteration"]
-        new_iterations = new_data["iteration"]
-        new_indices = [
-            i for i, x in enumerate(new_iterations) if x not in old_iterations
-        ]
-
-        to_add = {k: np.array(v)[new_indices] for k, v in new_data.items()}
-        old_cds.stream(to_add, rollover=None)
+    for table_name, to_add in new_data.items():
+        cds = doc.get_model_by_name(f"{database_name}_{table_name}_cds")
+        cds.stream(to_add, rollover=rollover)
