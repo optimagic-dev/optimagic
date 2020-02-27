@@ -87,7 +87,7 @@ def _setup_convergence_tab(
     Returns:
         tab (bokeh.Panel)
     """
-    toggle = _create_update_button(
+    activation_button = _create_activation_button(
         doc=doc,
         database_name=short_name,
         database_path=full_path,
@@ -100,7 +100,7 @@ def _setup_convergence_tab(
         y_names=["criterion"],
         title="Criterion",
     )
-    plots = [Row(toggle), Row(criterion_plot)]
+    plots = [Row(activation_button), Row(criterion_plot)]
     group_to_params = _map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
         group_plot = _plot_time_series(
@@ -179,22 +179,28 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _create_update_button(doc, database_name, database_path, callback_dict):
+def _create_activation_button(doc, database_name, database_path, callback_dict):
     """Create a Button that changes color when clicked displaying its boolean state.
 
-    .. note::
-        This should be a subclass but I did not get that to work.
+    Args:
+        doc (bokeh Document): document to which add and remove the periodic callback
+        database_name (str): name of the database
+        database_path (str or pathlib.Path): path to the database
+        callback_dict (dict): dictionary to add and remove the callbacks from
+
+    Returns:
+        activation_button (bokeh Toggle)
 
     """
-    update_button = Toggle(
+    activation_button = Toggle(
         label="Update from Database",
         button_type="danger",
         width=50,
         height=30,
-        name=f"update_button_{database_name}",
+        name=f"activation_button_{database_name}",
     )
 
-    def button_click_callback(attr, old, new):
+    def button_click_callback(attr, old, new, callback_dict=callback_dict):
         if new is True:
             plot_new_data = partial(
                 _update_monitoring_tab,
@@ -206,16 +212,16 @@ def _create_update_button(doc, database_name, database_path, callback_dict):
                 plot_new_data, period_milliseconds=200
             )
             # change the color
-            update_button.button_type = "success"
-            update_button.label = "Stop Updating from Database"
+            activation_button.button_type = "success"
+            activation_button.label = "Stop Updating from Database"
         else:
             doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
             # this changes the color
-            update_button.button_type = "danger"
-            update_button.label = "Update from Database"
+            activation_button.button_type = "danger"
+            activation_button.label = "Update from Database"
 
-    update_button.on_change("active", button_click_callback)
-    return update_button
+    activation_button.on_change("active", button_click_callback)
+    return activation_button
 
 
 def _update_monitoring_tab(doc, database_name, database_path):
