@@ -44,7 +44,7 @@ def monitoring_app(doc, short_name, full_path):
         data=data_dict["params_history"], name=f"{short_name}_params_history_cds"
     )
 
-    tab1 = _setup_convergence_tab(
+    conv_tab = _setup_convergence_tab(
         doc=doc,
         short_name=short_name,
         full_path=full_path,
@@ -52,7 +52,7 @@ def monitoring_app(doc, short_name, full_path):
         params_history=params_history,
         start_params=start_params,
     )
-    tabs = Tabs(tabs=[tab1])
+    tabs = Tabs(tabs=[conv_tab])
     doc.add_root(tabs)
 
 

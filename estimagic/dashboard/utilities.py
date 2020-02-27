@@ -9,11 +9,6 @@ from bokeh.models.widgets import Div
 from bokeh.plotting import figure
 
 
-# =====================================================================================
-# Prettification and Making Compatible of Strings, Names and the Like
-# =====================================================================================
-
-
 def short_name_to_database_path(path_list):
     """Generate short but unique names from each path.
 
@@ -71,11 +66,6 @@ def _name_clash(candidate, path_list, allowed_occurences=1):
     return duplicate_counter > 0
 
 
-# =====================================================================================
-# Custom Styled Bokeh Elements
-# =====================================================================================
-
-
 def dashboard_link(name):
     """Create a link refering to *name*'s monitoring app."""
     div_name = f"link_{name}"
@@ -106,9 +96,6 @@ def get_color_palette(nr_colors):
         return bokeh.palettes.Category10[nr_colors]
     else:
         return random.choices(bokeh.palettes.Turbo256, k=nr_colors)
-
-
-# =====================================================================================
 
 
 def find_free_port():

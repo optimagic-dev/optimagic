@@ -57,6 +57,7 @@ def run_dashboard(database_paths, no_browser=False, port=None):
 
 def _process_arguments(database_paths, no_browser, port):
     """Check arguments and find free port if none was given.
+
     Args:
         database_paths (str or pathlib.Path or list of them):
             Path(s) to an sqlite3 file which typically has the file extension ``.db``.
@@ -72,6 +73,7 @@ def _process_arguments(database_paths, no_browser, port):
         no_browser (bool):
             Whether or not to open the dashboard in the browser.
         port (int): port where to display the dashboard.
+
     """
     if not isinstance(database_paths, (list, tuple)):
         database_paths = [database_paths]
@@ -83,9 +85,6 @@ def _process_arguments(database_paths, no_browser, port):
                 "You supplied {type(single_database_path)}.",
             )
     database_name_to_path = short_name_to_database_path(path_list=database_paths)
-
-    if not isinstance(no_browser, bool):
-        raise TypeError(f"no_browser must be a bool. You supplied {type(no_browser)}.")
 
     if port is None:
         port = find_free_port()
