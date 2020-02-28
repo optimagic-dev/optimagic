@@ -44,12 +44,18 @@ def run_dashboard(database_paths, no_browser=False, port=None):
         database_paths=database_paths, no_browser=no_browser, port=port
     )
 
-    master_partialed = partial(master_app, database_name_to_path=database_name_to_path)
+    session_data = _create_session_data(database_name_to_path)
+
+    master_partialed = partial(
+        master_app,
+        database_name_to_path=database_name_to_path,
+        session_data=session_data,
+    )
     apps = {"/": Application(FunctionHandler(master_partialed))}
 
-    for short_name, full_path in database_name_to_path.items():
+    for short_name in database_name_to_path.keys():
         partialed = partial(
-            monitoring_app, database_name=short_name, full_path=full_path
+            monitoring_app, database_name=short_name, session_data=session_data
         )
         apps[f"/{short_name}"] = Application(FunctionHandler(partialed))
 
@@ -100,6 +106,16 @@ def _process_arguments(database_paths, no_browser, port):
         raise TypeError(f"port must be an integer. You supplied {type(port)}.")
 
     return database_name_to_path, no_browser, port
+
+
+def _create_session_data(database_name_to_path):
+    session_data = {"master_app": {}}
+    for database_name, database_path in database_name_to_path.items():
+        session_data[database_name] = {
+            "last_retrieved": 0,
+            "database_path": database_path,
+        }
+    return session_data
 
 
 def _start_server(apps, port, no_browser, path_to_open):

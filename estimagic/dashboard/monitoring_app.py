@@ -18,15 +18,19 @@ from estimagic.logging.read_database import read_scalar_field
 from estimagic.optimization.utilities import index_element_to_string
 
 
-def monitoring_app(doc, database_name, full_path):
+def monitoring_app(doc, database_name, session_data):
     """Create plots showing the development of the criterion and parameters until now.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
         database_name (str): short and unique name of the database
-        full_path (str or pathlib.Path): path to the database.
+        session_data (dict):
+            infos to be passed between and within apps.
+            Keys of this app's entry are:
+            - last_retrieved (int): last iteration currently in the ColumnDataSource
+            - database_path
     """
-    database = load_database(full_path)
+    database = load_database(session_data[database_name]["database_path"])
     start_params = read_scalar_field(database, "start_params")
     db_options = read_scalar_field(database, "db_options")
 
@@ -34,11 +38,10 @@ def monitoring_app(doc, database_name, full_path):
         database=database,
         tables=["criterion_history", "params_history"],
         last_retrieved=0,
-        limit=5,
+        limit=1,
         return_type="bokeh",
     )
-    # np.zeros so it's mutable
-    last_retrieved = np.array([new_last])
+    session_data[database_name]["last_retrieved"] = new_last
 
     criterion_history = ColumnDataSource(
         data=data_dict["criterion_history"],
@@ -58,7 +61,7 @@ def monitoring_app(doc, database_name, full_path):
         params_history=params_history,
         start_params=start_params,
         callback_dict=callback_dict,
-        last_retrieved=last_retrieved,
+        session_data=session_data,
         **db_options,
     )
 
@@ -74,7 +77,7 @@ def _setup_convergence_tab(
     params_history,
     start_params,
     callback_dict,
-    last_retrieved,
+    session_data,
 ):
     """Create the figures and plot available time series of the criterion and parameters.
 
@@ -89,7 +92,11 @@ def _setup_convergence_tab(
         start_params (pd.DataFrame):
             DataFrame with the initial parameter values and additional columns,
             in particular the "group" column.
-        last_retrieved (np.array): last retrieved iteration.
+        session_data (dict):
+            infos to be passed between and within apps.
+            Keys of this app's entry are:
+            - last_retrieved (int): last iteration currently in the ColumnDataSource
+            - database_path
 
     Returns:
         tab (bokeh.Panel)
@@ -99,7 +106,7 @@ def _setup_convergence_tab(
         database_name=database_name,
         database=database,
         callback_dict=callback_dict,
-        last_retrieved=last_retrieved,
+        session_data=session_data,
     )
     criterion_plot = _plot_time_series(
         data=criterion_history,
@@ -188,7 +195,7 @@ def _map_groups_to_params(params):
 
 
 def _create_activation_button(
-    doc, database_name, database, callback_dict, last_retrieved
+    doc, database_name, database, callback_dict, session_data
 ):
     """Create a Button that changes color when clicked displaying its boolean state.
 
@@ -197,7 +204,11 @@ def _create_activation_button(
         database_name (str): name of the database
         database (sqlalchemy.MetaData)
         callback_dict (dict): dictionary to add and remove the callbacks from
-        last_retrieved (np.array): array to keep track of last retrieved iteration
+        session_data (dict):
+            infos to be passed between and within apps.
+            Keys of this app's entry are:
+            - last_retrieved (int): last iteration currently in the ColumnDataSource
+            - database_path
 
     Returns:
         activation_button (bokeh Toggle)
@@ -212,7 +223,7 @@ def _create_activation_button(
     )
 
     def button_click_callback(
-        attr, old, new, last_retrieved=last_retrieved, callback_dict=callback_dict
+        attr, old, new, session_data=session_data, callback_dict=callback_dict
     ):
         if new is True:
             plot_new_data = partial(
@@ -220,7 +231,7 @@ def _create_activation_button(
                 doc=doc,
                 database_name=database_name,
                 database=database,
-                last_retrieved=last_retrieved,
+                session_data=session_data,
             )
             callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
                 plot_new_data, period_milliseconds=200
@@ -238,25 +249,29 @@ def _create_activation_button(
     return activation_button
 
 
-def _update_monitoring_tab(doc, database_name, database, last_retrieved, rollover=500):
+def _update_monitoring_tab(doc, database_name, database, session_data, rollover=500):
     """Callback to look up new entries in the database and plot them.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
         database_name (str): short and unique name of the database
         database (sqlalchemy.MetaData)
-        last_retrieved (np.array): array to keep track of last retrieved iteration
+        session_data (dict):
+            infos to be passed between and within apps.
+            Keys of this app's entry are:
+            - last_retrieved (int): last iteration currently in the ColumnDataSource
+            - database_path
         rollover (int): maximal number of points to show in the plot
 
     """
     new_data, new_last = read_new_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
-        last_retrieved=last_retrieved[0],
+        last_retrieved=session_data[database_name]["last_retrieved"],
         return_type="bokeh",
         limit=20,
     )
-    last_retrieved[:] = new_last
+    session_data[database_name]["last_retrieved"] = new_last
 
     for table_name, to_add in new_data.items():
         cds = doc.get_model_by_name(f"{database_name}_{table_name}_cds")

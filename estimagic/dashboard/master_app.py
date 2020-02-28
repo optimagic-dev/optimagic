@@ -19,7 +19,7 @@ from bokeh.models.widgets import Div
 from estimagic.dashboard.utilities import dashboard_link
 
 
-def master_app(doc, database_name_to_path):
+def master_app(doc, database_name_to_path, session_data):
     """Create the page with the master dashboard.
 
     Args:
@@ -28,6 +28,11 @@ def master_app(doc, database_name_to_path):
             by their current stage.
         database_name_to_path (dict):
             mapping from the short, unique names to the full paths to the databases.
+        session_data (dict):
+            infos to be passed between and within apps.
+            Keys of the monitoring apps' entries are:
+            - last_retrieved (int): last iteration currently in the ColumnDataSource
+            - database_path
 
     """
     sec_to_elements = _create_section_to_elements(
