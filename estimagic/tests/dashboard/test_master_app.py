@@ -14,10 +14,10 @@ def test_master_app():
         "db1": current_dir_path / "db1.db",
         "db2": current_dir_path / "db2.db",
     }
-    master_app.master_app(doc=doc, database_name_to_path=name_to_path)
+    master_app.master_app(doc=doc, database_name_to_path=name_to_path, session_data={})
 
 
-# not testing _create_section_to_elements():
+# not testing _create_section_to_elements()
 
 # not testing name_to_bokeh_row_elements
 
