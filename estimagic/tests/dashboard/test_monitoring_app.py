@@ -11,10 +11,10 @@ def test_monitoring_app():
     # only testing that no Error is raised
     # this implicitely tests _setup_convergence_tab and _plot_time_series
     doc = Document()
-    short_name = "test_db"
+    database_name = "test_db"
     current_dir_path = Path(__file__).resolve().parent
     full_path = current_dir_path / "db1.db"
-    monitoring.monitoring_app(doc=doc, short_name=short_name, full_path=full_path)
+    monitoring.monitoring_app(doc=doc, database_name=database_name, full_path=full_path)
 
 
 def test_map_groups_to_params_group_none():

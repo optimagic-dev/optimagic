@@ -33,13 +33,6 @@ def test_process_arguments_bad_path():
         run_dashboard._process_arguments(database_paths=394, no_browser=True, port=1000)
 
 
-def test_process_arguments_browser_non_boolean():
-    with pytest.raises(TypeError):
-        run_dashboard._process_arguments(
-            database_paths="path/to/database.db", no_browser=2390, port=1000
-        )
-
-
 def test_process_arguments_wrong_port():
     with pytest.raises(TypeError):
         run_dashboard._process_arguments(

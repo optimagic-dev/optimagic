@@ -86,7 +86,7 @@ def test_maximize(algorithm):
             algo_options = {"popsize": 30, "gen": 150}
     else:
         algo_options = {}
-    res_dict, p, db_path = maximize(
+    res_dict, final_params = maximize(
         f, params, algorithm, algo_options=algo_options, logging=False
     )
-    aaae(p["value"].to_numpy(), np.zeros(len(p)), decimal=2)
+    aaae(final_params["value"].to_numpy(), np.zeros(len(final_params)), decimal=2)
