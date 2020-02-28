@@ -13,13 +13,14 @@ def test_monitoring_app():
     doc = Document()
     database_name = "test_db"
     current_dir_path = Path(__file__).resolve().parent
-    full_path = current_dir_path / "db1.db"
-    print("\n\n\n\n", full_path)
-    import os
+    session_data = {
+        "master_app": {},
+        "test_db": {"last_retrieved": 0, "database_path": current_dir_path / "db1.db"},
+    }
 
-    print(os.listdir())
-    print("path present?", full_path in os.listdir())
-    monitoring.monitoring_app(doc=doc, database_name=database_name, full_path=full_path)
+    monitoring.monitoring_app(
+        doc=doc, database_name=database_name, session_data=session_data
+    )
 
 
 def test_map_groups_to_params_group_none():
