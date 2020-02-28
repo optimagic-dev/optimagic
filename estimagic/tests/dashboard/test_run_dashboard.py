@@ -7,12 +7,14 @@ import pytest
 from estimagic.dashboard import run_dashboard
 
 
-def test_run_dashboard_in_separate_process():
+@pytest.fixture()
+def database_paths():
     current_dir_path = Path(__file__).resolve().parent
     database_paths = [current_dir_path / "db1.db", current_dir_path / "db2.db"]
-    p = run_dashboard.run_dashboard_in_separate_process(
-        database_paths, no_browser=True, port=None
-    )
+
+
+def test_run_dashboard_in_separate_process(database_paths):
+    p = run_dashboard.run_dashboard_in_separate_process(database_paths)
     sleep(1)
     p.terminate()
 
@@ -33,10 +35,10 @@ def test_process_arguments_bad_path():
         run_dashboard._process_arguments(database_paths=394, no_browser=True, port=1000)
 
 
-def test_process_arguments_wrong_port():
+def test_process_arguments_wrong_port(database_paths):
     with pytest.raises(TypeError):
         run_dashboard._process_arguments(
-            database_paths="path/to/database.db", no_browser=True, port="False"
+            database_paths=database_paths, no_browser=True, port="False"
         )
 
 

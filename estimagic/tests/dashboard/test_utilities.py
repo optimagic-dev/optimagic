@@ -1,5 +1,4 @@
 """Test helper functions for the dashboard."""
-import socket
 from pathlib import Path
 
 import bokeh.palettes

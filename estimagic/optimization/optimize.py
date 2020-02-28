@@ -78,7 +78,12 @@ def maximize(
         dashboard (bool):
             whether to create and show a dashboard. See :ref:`dashboard` for details.
 
-        dash_options (dict or list of dict): Dictionary with the dashboard options.
+        dash_options (dict or list of dict, optional):
+        Dictionary with the dashboard options. Supported keys are:
+            - port (int): port where to display the dashboard
+            - no_browser (bool): whether to display the dashboard in a browser
+            - rollover (int): how many iterations to keep in the monitoring plots
+
     """
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options

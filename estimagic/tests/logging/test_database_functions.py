@@ -16,7 +16,7 @@ def database(tmp_path):
     database = prepare_database(
         path=tmp_path / "test.db",
         params=params,
-        dash_options={"a": 3},
+        dash_options={"a": 3, "no_browser": True},
         constraints=[{"loc": "a", "type": "increasing"}],
         optimization_status="success",
     )
@@ -37,7 +37,8 @@ def test_start_params_table(database):
 
 
 def test_dash_options_table(database):
-    assert read_scalar_field(database, "dash_options") == {"a": 3}
+    expected = {"a": 3, "port": None, "no_browser": True, "rollover": 500}
+    assert read_scalar_field(database, "dash_options") == expected
 
 
 def test_optimization_status_table(database):

@@ -134,8 +134,7 @@ def prepare_database(
             Contains the data for the comparison plot. Later updates will only deliver
             the value column where as this input has an index and other invariant
             information.
-        dash_options (dict):
-            Dictionary with the dashboard options for the monitoring tab.
+        dash_options (dict): Dictionary with the dashboard options.
         optimization_status (str): One of "scheduled", "running", "success", "failure".
         gradient_status (float): Progress of gradient calculation between 0 and 1.
         constraints (list): List of constraints.
@@ -145,7 +144,14 @@ def prepare_database(
         to the database can be accessed via ``database.bind``.
 
     """
-    dash_options = {} if dash_options is None else dash_options
+    standard_dash_options = {"no_browser": False, "port": None, "rollover": 500}
+    if dash_options is None:
+        dash_options = standard_dash_options
+    else:
+
+        # important for dash_options to be last for standards to be overwritten
+        dash_options = {**standard_dash_options, **dash_options}
+
     gradient_status = float(gradient_status)
     database = load_database(path)
 

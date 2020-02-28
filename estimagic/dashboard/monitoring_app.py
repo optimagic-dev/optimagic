@@ -20,6 +20,9 @@ from estimagic.optimization.utilities import index_element_to_string
 def monitoring_app(doc, database_name, session_data):
     """Create plots showing the development of the criterion and parameters until now.
 
+    Supported options from the dash_options loaded from the database:
+        rollover (int): How many iterations to keep before discarding.
+
     Args:
         doc (bokeh.Document): argument required by bokeh
         database_name (str): short and unique name of the database
@@ -32,7 +35,7 @@ def monitoring_app(doc, database_name, session_data):
     """
     database = load_database(session_data[database_name]["database_path"])
     start_params = read_scalar_field(database, "start_params")
-    dash_options = read_scalar_field(database, "dash_options")
+    rollover = read_scalar_field(database, "dash_options")["rollover"]
 
     data_dict, new_last = read_new_iterations(
         database=database,
@@ -59,7 +62,7 @@ def monitoring_app(doc, database_name, session_data):
         params_history=params_history,
         start_params=start_params,
         session_data=session_data,
-        **dash_options,
+        rollover=rollover,
     )
 
     tabs = Tabs(tabs=[conv_tab])
@@ -74,6 +77,7 @@ def _setup_convergence_tab(
     params_history,
     start_params,
     session_data,
+    rollover,
 ):
     """Create the figures and plot available time series of the criterion and parameters.
 
@@ -93,6 +97,7 @@ def _setup_convergence_tab(
             Keys of this app's entry are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
+        rollover (int): How many iterations to keep before discarding.
 
     Returns:
         tab (bokeh.Panel)
@@ -103,6 +108,7 @@ def _setup_convergence_tab(
         database=database,
         session_data=session_data,
         reset_cds=True,
+        rollover=rollover,
     )
 
     criterion_plot = _plot_time_series(
@@ -191,7 +197,9 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _create_callback_button(doc, database_name, database, session_data, reset_cds):
+def _create_callback_button(
+    doc, database_name, database, session_data, reset_cds, rollover
+):
     """Create a Button that changes color when clicked displaying its boolean state.
 
     Args:
@@ -204,6 +212,7 @@ def _create_callback_button(doc, database_name, database, session_data, reset_cd
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
         reset_cds (bool): whether to reset the ColumnDataSource when deactivating
+        rollover (int): How many iterations to keep before discarding.
 
     Returns:
         activation_button (bokeh Toggle)
@@ -229,6 +238,7 @@ def _create_callback_button(doc, database_name, database, session_data, reset_cd
                 database_name=database_name,
                 database=database,
                 session_data=session_data,
+                rollover=rollover,
             )
             callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
                 plot_new_data, period_milliseconds=200
@@ -254,7 +264,7 @@ def _create_callback_button(doc, database_name, database, session_data, reset_cd
     return callback_button
 
 
-def _update_monitoring_tab(doc, database_name, database, session_data, rollover=500):
+def _update_monitoring_tab(doc, database_name, database, session_data, rollover):
     """Callback to look up new entries in the database and plot them.
 
     Args:
