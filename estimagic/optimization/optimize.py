@@ -29,7 +29,7 @@ def maximize(
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
-    db_options=None,
+    dash_options=None,
 ):
     """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -78,10 +78,7 @@ def maximize(
         dashboard (bool):
             whether to create and show a dashboard. See :ref:`dashboard` for details.
 
-        db_options (dict or list of dict):
-            dictionary with kwargs to be supplied to the run_server function. See
-                :ref:`dashboard` for details.
-
+        dash_options (dict or list of dict): Dictionary with the dashboard options.
     """
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options
@@ -99,7 +96,7 @@ def maximize(
         logging=logging,
         log_options=log_options,
         dashboard=dashboard,
-        db_options=db_options,
+        dash_options=dash_options,
     )
 
     # Change the fitness value. ``results`` is either a tuple of results and params or a
@@ -125,7 +122,7 @@ def minimize(
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
-    db_options=None,
+    dash_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
 
@@ -174,9 +171,7 @@ def minimize(
         dashboard (bool):
             whether to create and show a dashboard. See :ref:`dashboard` for details.
 
-        db_options (dict or list of dict):
-            dictionary with kwargs to be supplied to the run_server function. See
-                :ref:`dashboard` for details.
+        dash_options (dict or list of dict): Dictionary with the dashboard options.
 
     """
     # Gradients are currently not allowed to be passed to minimize.
@@ -195,7 +190,7 @@ def minimize(
         logging=logging,
         log_options=log_options,
         dashboard=dashboard,
-        db_options=db_options,
+        dash_options=dash_options,
     )
 
     check_arguments(arguments)

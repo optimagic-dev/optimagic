@@ -33,7 +33,7 @@ def process_arguments(
     logging,
     log_options,
     dashboard,
-    db_options,
+    dash_options,
     gradient,
 ):
     # THIS NEEDS A NICE NAME AND A REALLY GOOD NOOB FRIENDLY DOCSTRING
@@ -69,7 +69,7 @@ def process_arguments(
                 path=logging,
                 params=params,
                 comparison_plot_data=comparison_plot_data,
-                db_options=db_options,
+                dash_options=dash_options,
                 constraints=constraints,
             )
         else:

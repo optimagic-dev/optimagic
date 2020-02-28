@@ -16,7 +16,7 @@ def broadcast_arguments(**arguments):
         "criterion_kwargs",
         "algo_options",
         "log_options",
-        "db_options",
+        "dash_options",
         "general_options",
     ]
     for arg in dict_args:

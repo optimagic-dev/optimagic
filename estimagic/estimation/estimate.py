@@ -20,7 +20,7 @@ def maximize_log_likelihood(
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
-    db_options=None,
+    dash_options=None,
 ):
     """Estimate parameters via maximum likelihood.
 
@@ -83,9 +83,8 @@ def maximize_log_likelihood(
         dashboard (bool):
             whether to create and show a dashboard. See :ref:`dashboard` for details.
 
-        db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function. See
-                :ref:`dashboard` for details.
+        dash_options (dict):
+            dictionary with kwargs for the dashboard. See :ref:`dashboard` for details.
 
     Returns:
         results (tuple or list of tuples):
@@ -126,7 +125,7 @@ def maximize_log_likelihood(
         logging,
         log_options,
         dashboard,
-        db_options,
+        dash_options,
     )
 
     # To convert the mean log likelihood in the results dictionary to the log
