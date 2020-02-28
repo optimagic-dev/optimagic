@@ -32,7 +32,7 @@ def monitoring_app(doc, database_name, session_data):
     """
     database = load_database(session_data[database_name]["database_path"])
     start_params = read_scalar_field(database, "start_params")
-    db_options = read_scalar_field(database, "db_options")
+    dash_options = read_scalar_field(database, "dash_options")
 
     data_dict, new_last = read_new_iterations(
         database=database,
@@ -59,7 +59,7 @@ def monitoring_app(doc, database_name, session_data):
         params_history=params_history,
         start_params=start_params,
         session_data=session_data,
-        **db_options,
+        **dash_options,
     )
 
     tabs = Tabs(tabs=[conv_tab])
@@ -97,12 +97,14 @@ def _setup_convergence_tab(
     Returns:
         tab (bokeh.Panel)
     """
-    activation_button = _create_activation_button(
+    activation_button = _create_callback_button(
         doc=doc,
         database_name=database_name,
         database=database,
         session_data=session_data,
+        reset_cds=True,
     )
+
     criterion_plot = _plot_time_series(
         data=criterion_history,
         x_name="iteration",
@@ -189,7 +191,7 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _create_activation_button(doc, database_name, database, session_data):
+def _create_callback_button(doc, database_name, database, session_data, reset_cds):
     """Create a Button that changes color when clicked displaying its boolean state.
 
     Args:
@@ -201,20 +203,25 @@ def _create_activation_button(doc, database_name, database, session_data):
             Keys of this app's entry are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
+        reset_cds (bool): whether to reset the ColumnDataSource when deactivating
 
     Returns:
         activation_button (bokeh Toggle)
 
     """
-    activation_button = Toggle(
-        label="Start Updating from Database",
+    callback_button = Toggle(
+        active=False,
+        label="Start Updating from Database" if reset_cds else "",
         button_type="danger",
         width=50,
         height=30,
-        name=f"activation_button_{database_name}",
+        name="{}_button_{}".format(
+            "activation" if reset_cds else "pause", database_name
+        ),
     )
 
     def button_click_callback(attr, old, new, session_data=session_data):
+        callback_dict = session_data[database_name]["callbacks"]
         if new is True:
             plot_new_data = partial(
                 _update_monitoring_tab,
@@ -223,22 +230,28 @@ def _create_activation_button(doc, database_name, database, session_data):
                 database=database,
                 session_data=session_data,
             )
-            session_data[database_name]["callbacks"][
-                "plot_periodic_data"
-            ] = doc.add_periodic_callback(plot_new_data, period_milliseconds=200)
-            # change the color
-            activation_button.button_type = "success"
-            activation_button.label = "Stop Updating from Database"
-        else:
-            doc.remove_periodic_callback(
-                session_data[database_name]["callbacks"]["plot_periodic_data"]
+            callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
+                plot_new_data, period_milliseconds=200
             )
-            # this changes the color
-            activation_button.button_type = "danger"
-            activation_button.label = "Resume Updating from Database"
+            # change the color
+            callback_button.button_type = "success"
+            label = "Reset Plot" if reset_cds else "Stop Updating from Database"
+            callback_button.label = label
+        else:
+            doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
+            # change the color
+            callback_button.button_type = "danger"
+            label = "Restart Plot" if reset_cds else "Resume Updating from Database"
+            callback_button.label = label
+            if reset_cds:
+                for table_name in ["criterion_history", "params_history"]:
+                    cds = doc.get_model_by_name(f"{database_name}_{table_name}_cds")
+                    column_names = cds.data.keys()
+                    cds.data = {name: [] for name in column_names}
+                session_data[database_name]["last_retrieved"] = 0
 
-    activation_button.on_change("active", button_click_callback)
-    return activation_button
+    callback_button.on_change("active", button_click_callback)
+    return callback_button
 
 
 def _update_monitoring_tab(doc, database_name, database, session_data, rollover=500):
@@ -264,8 +277,9 @@ def _update_monitoring_tab(doc, database_name, database, session_data, rollover=
         return_type="bokeh",
         limit=20,
     )
-    session_data[database_name]["last_retrieved"] = new_last
 
     for table_name, to_add in new_data.items():
         cds = doc.get_model_by_name(f"{database_name}_{table_name}_cds")
         cds.stream(to_add, rollover=rollover)
+
+    session_data[database_name]["last_retrieved"] = new_last
