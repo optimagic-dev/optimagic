@@ -56,7 +56,10 @@ def maximize(
             list with constraint dictionaries. See for details.
 
         general_options (dict):
-            additional configurations for the optimization
+            additional configurations for the optimization. Keys can include:
+            - keep_dashboard_alive (bool): if True and dashboard is True the process
+                in which the dashboard is run is not terminated when maximize or
+                minimize finish.
 
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
@@ -64,17 +67,18 @@ def maximize(
         gradient_options (dict):
             Options for the gradient function.
 
-        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
-            file extension ``.db``. If the file does not exist, it will be created. See
-            :ref:`logging` for details.
+        logging (str or pathlib.Path or list thereof):
+            Path to an sqlite3 file which typically has the file extension ``.db``.
+            If the file does not exist, it will be created.
+            See :ref:`logging` for details.
 
-        log_options (dict): Keyword arguments to influence the logging. See
-            :ref:`logging` for details.
+        log_options (dict or list of dict):
+            Keyword arguments to influence the logging. See :ref:`logging` for details.
 
         dashboard (bool):
             whether to create and show a dashboard. See :ref:`dashboard` for details.
 
-        db_options (dict):
+        db_options (dict or list of dict):
             dictionary with kwargs to be supplied to the run_server function. See
                 :ref:`dashboard` for details.
 
@@ -159,17 +163,18 @@ def minimize(
         gradient_options (dict):
             Options for the gradient function.
 
-        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
-            file extension ``.db``. If the file does not exist, it will be created. See
-            :ref:`logging` for details.
+        logging (str or pathlib.Path or list thereof):
+            Path to an sqlite3 file which typically has the file extension ``.db``.
+            If the file does not exist, it will be created.
+            See :ref:`logging` for details.
 
-        log_options (dict): Keyword arguments to influence the logging. See
-            :ref:`logging` for details.
+        log_options (dict or list of dict):
+            Keyword arguments to influence the logging. See :ref:`logging` for details.
 
         dashboard (bool):
             whether to create and show a dashboard. See :ref:`dashboard` for details.
 
-        db_options (dict):
+        db_options (dict or list of dict):
             dictionary with kwargs to be supplied to the run_server function. See
                 :ref:`dashboard` for details.
 
@@ -244,6 +249,23 @@ def minimize(
 
 
 def _single_arg_internal_minimize(kwargs):
+    """Call _internal_minimize with a dictionary of its arguments.
+
+    This is a wrapper for joblib.delayed.
+
+    Args:
+        kwargs (dict): dictionary with the following keys:
+            - internal_criterion
+            - internal_params
+            - bounds
+            - origin
+            - algo_name
+            - algo_options
+            - internal_gradient
+            - database
+            - general_options
+
+    """
     return _internal_minimize(**kwargs)
 
 
