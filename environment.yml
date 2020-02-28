@@ -21,23 +21,23 @@ dependencies:
   - numdifftools>= 0.9.20
   - numpy=1.16
   - pandas=0.24
+  - pdbpp
   - petsc4py>=3.11
   - pygmo=2.10
   - pytest
   - pytest-cov
   - pytest-mock
-  - pytest-xdist<=1.29
+  - pytest-xdist
+  - restructuredtext_lint
   - scipy=1.2.1
   - seaborn
   - sphinx
   - sphinx_rtd_theme
   - sphinxcontrib-bibtex
   - sqlalchemy>=1.3
+  - tox-conda
   - pip:
     - black
     - blackcellmagic
     - bump2version
-    - pdbpp
     - pre-commit
-    - restructuredtext_lint
-    - tox-conda
