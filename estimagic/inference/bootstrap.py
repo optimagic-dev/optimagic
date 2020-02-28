@@ -2,7 +2,7 @@ import pandas as pd
 
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
-from estimagic.inference.bootstrap_samples import get_bootstrap_sample_seeds
+from estimagic.inference.bootstrap_samples import get_seeds
 
 
 def _mean(df):
@@ -45,7 +45,7 @@ def bootstrap(
     df = data.reset_index(drop=True)
 
     if seeds is None:
-        seeds = get_bootstrap_sample_seeds(ndraws)
+        seeds = get_seeds(ndraws)
 
     estimates = get_bootstrap_estimates(df, f, cluster_by, seeds, num_threads)
 

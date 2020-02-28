@@ -6,7 +6,7 @@ from joblib import delayed
 from joblib import Parallel
 
 from estimagic.inference.bootstrap_samples import _get_cluster_index
-from estimagic.inference.bootstrap_samples import get_bootstrap_sample_seeds
+from estimagic.inference.bootstrap_samples import get_seeds
 
 
 def get_bootstrap_estimates(data, f, cluster_by=None, seeds=None, num_threads=1):
@@ -24,7 +24,7 @@ def get_bootstrap_estimates(data, f, cluster_by=None, seeds=None, num_threads=1)
 
     """
     if seeds is None:
-        seeds = get_bootstrap_sample_seeds(1000)
+        seeds = get_seeds(1000)
 
     n = len(data)
 

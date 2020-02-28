@@ -5,7 +5,7 @@ from joblib import delayed
 from joblib import Parallel
 
 
-def get_bootstrap_sample_seeds(ndraws):
+def get_seeds(ndraws):
     """Draw seeds for bootstrap resampling.
 
     Args:
@@ -35,7 +35,7 @@ def get_bootstrap_samples(data, cluster_by=None, seeds=None, num_threads=1):
 
     """
     if seeds is None:
-        seeds = get_bootstrap_sample_seeds(1000)
+        seeds = get_seeds(1000)
 
     n = len(data)
 

@@ -8,3 +8,4 @@ Inference
 
    moments_inference
    likelihood_inference
+   bootstrap
