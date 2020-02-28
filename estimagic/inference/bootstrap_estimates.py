@@ -5,6 +5,7 @@ import pandas as pd
 from joblib import delayed
 from joblib import Parallel
 
+from estimagic.inference.bootstrap_samples import _get_cluster_index
 from estimagic.inference.bootstrap_samples import get_bootstrap_sample_seeds
 
 
@@ -53,26 +54,3 @@ def get_bootstrap_estimates(data, f, cluster_by=None, seeds=None, num_threads=1)
     # need to get column names for estimates dataframe from f?
 
     return pd.DataFrame(estimates)
-
-
-def _get_cluster_index(data, cluster_by):
-    """Divide up the dataframe into clusters by variable cluster_by.
-
-    Args:
-        data (pd.DataFrame): original dataset.
-        cluster_by (str): column name of variable to cluster by.
-
-    Returns:
-        clusters (list): list of arrays of row numbers belonging
-        to the different clusters.
-
-    """
-
-    cluster_vals = data[cluster_by].unique()
-
-    clusters = [
-        np.array(data[data[cluster_by] == val].index.values.tolist())
-        for val in cluster_vals
-    ]
-
-    return clusters

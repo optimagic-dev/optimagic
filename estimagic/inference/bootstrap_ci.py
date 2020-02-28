@@ -21,6 +21,14 @@ def compute_ci(data, f, estimates, ci_method="percentile", alpha=0.05, num_threa
 
     """
 
+    ci_method_list = ["percentile", "bca", "bc", "t", "normal", "basic"]
+    if ci_method not in ci_method_list:
+        raise ValueError(
+            "ci_method must be 'percentile', 'bc',"
+            " 'bca', 't', 'basic' or 'normal', '{method}'"
+            " was supplied".format(method=ci_method)
+        )
+
     funcname = "_ci_" + ci_method
 
     cis = globals()[funcname](data, f, estimates, alpha, num_threads)

@@ -7,8 +7,8 @@ from pandas.testing import assert_frame_equal as afe
 from estimagic.inference.bootstrap import _check_inputs
 from estimagic.inference.bootstrap_ci import _jackknife
 from estimagic.inference.bootstrap_ci import compute_ci
-from estimagic.inference.bootstrap_estimates import _get_cluster_index
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
+from estimagic.inference.bootstrap_samples import _get_cluster_index
 
 FACTORS = list("cni")
 
