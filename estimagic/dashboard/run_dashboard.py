@@ -6,7 +6,6 @@ from multiprocessing import Process
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
-from bokeh.models import ColumnDataSource
 from bokeh.server.server import Server
 
 from estimagic.dashboard.master_app import master_app
@@ -54,7 +53,14 @@ def run_dashboard(database_paths, no_browser=False, port=None):
         )
         apps[f"/{short_name}"] = Application(FunctionHandler(partialed))
 
-    _start_server(apps=apps, port=port, no_browser=no_browser)
+    if len(database_name_to_path) == 1:
+        path_to_open = f"/{list(database_name_to_path.keys())[0]}"
+    else:
+        path_to_open = "/"
+
+    _start_server(
+        apps=apps, port=port, no_browser=no_browser, path_to_open=path_to_open
+    )
 
 
 def _process_arguments(database_paths, no_browser, port):
@@ -96,7 +102,7 @@ def _process_arguments(database_paths, no_browser, port):
     return database_name_to_path, no_browser, port
 
 
-def _start_server(apps, port, no_browser):
+def _start_server(apps, port, no_browser, path_to_open):
     """Create and start a bokeh server with the supplied apps.
 
     Args:
@@ -116,7 +122,7 @@ def _start_server(apps, port, no_browser):
         if not no_browser:
 
             def show_callback():
-                server.show("/")
+                server.show(path_to_open)
 
             server.io_loop.add_callback(show_callback)
 
