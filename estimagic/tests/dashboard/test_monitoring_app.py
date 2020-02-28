@@ -14,7 +14,11 @@ def test_monitoring_app():
     database_name = "test_db"
     current_dir_path = Path(__file__).resolve().parent
     full_path = current_dir_path / "db1.db"
-    print(full_path)
+    print("\n\n\n\n", full_path)
+    import os
+
+    print(os.listdir())
+    print("path present?", full_path in os.listdir())
     monitoring.monitoring_app(doc=doc, database_name=database_name, full_path=full_path)
 
 
