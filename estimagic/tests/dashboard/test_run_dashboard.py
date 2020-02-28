@@ -14,7 +14,7 @@ def test_run_dashboard_in_separate_process():
         database_paths, no_browser=True, port=None
     )
     sleep(1)
-    p.kill()
+    p.terminate()
 
 
 def test_process_arguments_single_path():
