@@ -2,7 +2,6 @@
 from functools import partial
 
 import numpy as np
-import pandas as pd
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
@@ -54,7 +53,7 @@ def monitoring_app(doc, database_name, full_path):
     conv_tab = _setup_convergence_tab(
         doc=doc,
         database_name=database_name,
-        full_path=full_path,
+        database=database,
         criterion_history=criterion_history,
         params_history=params_history,
         start_params=start_params,
@@ -70,7 +69,7 @@ def monitoring_app(doc, database_name, full_path):
 def _setup_convergence_tab(
     doc,
     database_name,
-    full_path,
+    database,
     criterion_history,
     params_history,
     start_params,
@@ -82,7 +81,7 @@ def _setup_convergence_tab(
     Args:
         doc (bokeh.Document): argument required by bokeh
         database_name (str): short and unique name of the database
-        full_path (str or pathlib.Path): path to the database.
+        database (sqlalchemy.MetaData)
         criterion_history (bokeh.ColumnDataSource):
             history of the criterion's values, loaded from the optimization's database.
         params_history (bokeh.ColumnDataSource):
@@ -98,7 +97,7 @@ def _setup_convergence_tab(
     activation_button = _create_activation_button(
         doc=doc,
         database_name=database_name,
-        database_path=full_path,
+        database=database,
         callback_dict=callback_dict,
         last_retrieved=last_retrieved,
     )
@@ -189,14 +188,14 @@ def _map_groups_to_params(params):
 
 
 def _create_activation_button(
-    doc, database_name, database_path, callback_dict, last_retrieved
+    doc, database_name, database, callback_dict, last_retrieved
 ):
     """Create a Button that changes color when clicked displaying its boolean state.
 
     Args:
         doc (bokeh Document): document to which add and remove the periodic callback
         database_name (str): name of the database
-        database_path (str or pathlib.Path): path to the database
+        database (sqlalchemy.MetaData)
         callback_dict (dict): dictionary to add and remove the callbacks from
         last_retrieved (np.array): array to keep track of last retrieved iteration
 
@@ -220,7 +219,7 @@ def _create_activation_button(
                 _update_monitoring_tab,
                 doc=doc,
                 database_name=database_name,
-                database_path=database_path,
+                database=database,
                 last_retrieved=last_retrieved,
             )
             callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
@@ -239,20 +238,17 @@ def _create_activation_button(
     return activation_button
 
 
-def _update_monitoring_tab(
-    doc, database_name, database_path, last_retrieved, rollover=500
-):
+def _update_monitoring_tab(doc, database_name, database, last_retrieved, rollover=500):
     """Callback to look up new entries in the database and plot them.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
         database_name (str): short and unique name of the database
-        database_path (str or pathlib.Path): path to the database.
+        database (sqlalchemy.MetaData)
         last_retrieved (np.array): array to keep track of last retrieved iteration
         rollover (int): maximal number of points to show in the plot
 
     """
-    database = load_database(database_path)
     new_data, new_last = read_new_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
