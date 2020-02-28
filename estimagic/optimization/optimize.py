@@ -148,7 +148,10 @@ def minimize(
             list with constraint dictionaries. See for details.
 
         general_options (dict):
-            additional configurations for the optimization
+            additional configurations for the optimization. Keys can include:
+            - keep_dashboard_alive (bool): if True and dashboard is True the process
+                in which the dashboard is run is not terminated when maximize or
+                minimize finish.
 
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
@@ -232,10 +235,10 @@ def minimize(
             for optim_kwargs in optim_arguments
         )
 
-    results = process_optimization_results(results, results_arguments)
+    if dashboard is True and not results_arguments[0]["keep_dashboard_alive"]:
+        dashboard_process.terminate()
 
-    # later only if flag is set to False!
-    dashboard_process.kill()
+    results = process_optimization_results(results, results_arguments)
 
     return results
 

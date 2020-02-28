@@ -36,12 +36,18 @@ def process_arguments(
     db_options,
     gradient,
 ):
-    # THIS NEEDS A NICE NAME AND A REALLY GOOD DOCSTRING
+    # THIS NEEDS A NICE NAME AND A REALLY GOOD NOOB FRIENDLY DOCSTRING
+    # np.array
+    # logging
+    # Breite des Einsatzgebiets rausstellen
+    # erklären, was ein estimagic Problem ist und was ein internes Problem ist
+
     with warnings.catch_warnings():
         warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
         database_path = logging if dashboard else None
 
         general_options = general_options.copy()
+
         params = _pre_process_params(params)
 
         # harmonize criterion interface
@@ -118,6 +124,7 @@ def process_arguments(
         result_kwargs = {
             "params": params,
             "constraints": constraints,
+            "keep_dashboard_alive": general_options.pop("keep_dashboard_alive", False),
         }
 
     return optim_kwargs, database_path, result_kwargs
