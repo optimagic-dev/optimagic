@@ -1,4 +1,5 @@
 """Test helper functions for the dashboard."""
+import socket
 from pathlib import Path
 
 import bokeh.palettes
@@ -72,19 +73,4 @@ def test_get_color_palette_50():
     assert len(colors) == 50
 
 
-import socket
-
-# from https://snipplr.com/view/19639/test-if-an-ipport-is-open
-def isopen(ip, port):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        s.connect((ip, int(port)))
-        s.shutdown(2)
-        return True
-    except:
-        return False
-
-
-def test_find_free_port():
-    port = utils.find_free_port()
-    isopen("localhost", port)
+# not testing find_free_port

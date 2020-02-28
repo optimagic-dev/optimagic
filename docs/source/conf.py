@@ -99,7 +99,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "estimagic"
-copyright = "2019, Janos Gabler"  # noqa
+copyright = "2020, Janos Gabler"  # noqa
 author = "Janos Gabler"
 
 # The version info for the project you're documenting, acts as replacement for

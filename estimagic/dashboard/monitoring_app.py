@@ -1,7 +1,6 @@
 """Show the development of one optimization's criterion and parameters over time."""
 from functools import partial
 
-import numpy as np
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
