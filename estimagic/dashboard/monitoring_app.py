@@ -28,6 +28,7 @@ def monitoring_app(doc, database_name, session_data):
             Keys of this app's entry are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
+
     """
     database = load_database(session_data[database_name]["database_path"])
     start_params = read_scalar_field(database, "start_params")
@@ -50,8 +51,6 @@ def monitoring_app(doc, database_name, session_data):
         data=data_dict["params_history"], name=f"{database_name}_params_history_cds"
     )
 
-    callback_dict = {}
-
     conv_tab = _setup_convergence_tab(
         doc=doc,
         database_name=database_name,
@@ -59,7 +58,6 @@ def monitoring_app(doc, database_name, session_data):
         criterion_history=criterion_history,
         params_history=params_history,
         start_params=start_params,
-        callback_dict=callback_dict,
         session_data=session_data,
         **db_options,
     )
@@ -75,7 +73,6 @@ def _setup_convergence_tab(
     criterion_history,
     params_history,
     start_params,
-    callback_dict,
     session_data,
 ):
     """Create the figures and plot available time series of the criterion and parameters.
@@ -104,7 +101,6 @@ def _setup_convergence_tab(
         doc=doc,
         database_name=database_name,
         database=database,
-        callback_dict=callback_dict,
         session_data=session_data,
     )
     criterion_plot = _plot_time_series(
@@ -193,16 +189,13 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _create_activation_button(
-    doc, database_name, database, callback_dict, session_data
-):
+def _create_activation_button(doc, database_name, database, session_data):
     """Create a Button that changes color when clicked displaying its boolean state.
 
     Args:
         doc (bokeh Document): document to which add and remove the periodic callback
         database_name (str): name of the database
         database (sqlalchemy.MetaData)
-        callback_dict (dict): dictionary to add and remove the callbacks from
         session_data (dict):
             infos to be passed between and within apps.
             Keys of this app's entry are:
@@ -221,9 +214,7 @@ def _create_activation_button(
         name=f"activation_button_{database_name}",
     )
 
-    def button_click_callback(
-        attr, old, new, session_data=session_data, callback_dict=callback_dict
-    ):
+    def button_click_callback(attr, old, new, session_data=session_data):
         if new is True:
             plot_new_data = partial(
                 _update_monitoring_tab,
@@ -232,14 +223,16 @@ def _create_activation_button(
                 database=database,
                 session_data=session_data,
             )
-            callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
-                plot_new_data, period_milliseconds=200
-            )
+            session_data[database_name]["callbacks"][
+                "plot_periodic_data"
+            ] = doc.add_periodic_callback(plot_new_data, period_milliseconds=200)
             # change the color
             activation_button.button_type = "success"
             activation_button.label = "Stop Updating from Database"
         else:
-            doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
+            doc.remove_periodic_callback(
+                session_data[database_name]["callbacks"]["plot_periodic_data"]
+            )
             # this changes the color
             activation_button.button_type = "danger"
             activation_button.label = "Resume Updating from Database"
@@ -263,10 +256,11 @@ def _update_monitoring_tab(doc, database_name, database, session_data, rollover=
         rollover (int): maximal number of points to show in the plot
 
     """
+    last_retrieved = session_data[database_name]["last_retrieved"]
     new_data, new_last = read_new_iterations(
         database=database,
         tables=["criterion_history", "params_history"],
-        last_retrieved=session_data[database_name]["last_retrieved"],
+        last_retrieved=last_retrieved,
         return_type="bokeh",
         limit=20,
     )

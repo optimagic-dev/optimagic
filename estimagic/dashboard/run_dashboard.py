@@ -114,6 +114,7 @@ def _create_session_data(database_name_to_path):
         session_data[database_name] = {
             "last_retrieved": 0,
             "database_path": database_path,
+            "callbacks": {},
         }
     return session_data
 
