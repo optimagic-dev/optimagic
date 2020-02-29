@@ -6,27 +6,27 @@ import bokeh.palettes
 import estimagic.dashboard.utilities as utils
 
 
-def test_short_name_to_database_path_no_conflicts_in_last_element():
+def test_create_short_database_names_no_conflicts_in_last_element():
     inputs = ["a/db1.db", "b/db2.db", "c/db3.csv"]
     expected_keys = ["db1", "db2", "db3"]
     expected = {k: v for k, v in zip(expected_keys, inputs)}
-    res = utils.short_name_to_database_path(inputs)
+    res = utils.create_short_database_names(inputs)
     assert expected == res
 
 
-def test_short_name_to_database_path_different_stems_same_name():
+def test_create_short_database_names_different_stems_same_name():
     inputs = ["a/db.db", "b/db.db", "c/db.csv"]
     expected_keys = ["a/db", "b/db", "c/db"]
     expected = {k: v for k, v in zip(expected_keys, inputs)}
-    res = utils.short_name_to_database_path(inputs)
+    res = utils.create_short_database_names(inputs)
     assert expected == res
 
 
-def test_short_name_to_database_path_mixed_stems_mixed_names():
+def test_create_short_database_names_mixed_stems_mixed_names():
     inputs = ["a/db.db", "a/db2.db", "c/db.csv"]
     expected_keys = ["a/db", "db2", "c/db"]
     expected = {k: v for k, v in zip(expected_keys, inputs)}
-    res = utils.short_name_to_database_path(inputs)
+    res = utils.create_short_database_names(inputs)
     assert expected == res
 
 

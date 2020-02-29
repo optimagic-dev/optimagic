@@ -1,15 +1,28 @@
 """Test the functions of the monitoring app."""
+import webbrowser
 from pathlib import Path
 
 import pandas as pd
 from bokeh.document import Document
+from bokeh.io import output_file
+from bokeh.io import save
+from bokeh.models import ColumnDataSource
 
 import estimagic.dashboard.monitoring_app as monitoring
 
 
+def test_plot_time_series_with_large_initial_values():
+    cds = ColumnDataSource({"y": [2e17, 1e16, 1e5], "x": [1, 2, 3],})
+    title = "Are large initial values shown?"
+    fig = monitoring._plot_time_series(data=cds, y_keys=["y"], x_name="x", title=title)
+    title = "Test _plot_time_series can handle large initial values."
+    output_file("time_series_initial_value.html", title=title)
+    path = save(obj=fig)
+    webbrowser.open_new_tab("file://" + path)
+
+
 def test_monitoring_app():
-    # only testing that no Error is raised
-    # this implicitely tests _setup_convergence_tab and _plot_time_series
+    """Integration test that no Error is raised when calling the monitoring app."""
     doc = Document()
     database_name = "test_db"
     current_dir_path = Path(__file__).resolve().parent
@@ -59,8 +72,3 @@ def test_map_groups_to_params_group_multi_index():
     expected = {"A": ["beta_exp"], "B": ["cutoff_1", "cutoff_2"]}
     res = monitoring._map_groups_to_params(params)
     assert expected == res
-
-
-# not testing _dashboard_toggle
-
-# not testing _update_monitoring_tab
