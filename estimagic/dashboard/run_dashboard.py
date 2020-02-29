@@ -29,10 +29,19 @@ def run_dashboard_in_separate_process(database_paths):
         p (multiprocessing.Process): Process in which the dashboard is running.
 
     """
-    p = Process(
-        target=run_dashboard, kwargs={"database_paths": database_paths}, daemon=False
-    )
-    p.start()
+    if len(database_paths) == 0:
+        warnings.warn(
+            "There is no database to be monitored by the dashboard. ",
+            "Therefore, no dashboard is started.",
+        )
+        p = None
+    else:
+        p = Process(
+            target=run_dashboard,
+            kwargs={"database_paths": database_paths},
+            daemon=False,
+        )
+        p.start()
     return p
 
 

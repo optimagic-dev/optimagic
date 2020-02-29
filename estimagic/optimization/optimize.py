@@ -39,50 +39,57 @@ def maximize(
     as single arguments in which case they are automatically broadcasted.
 
     Args:
-        criterion (callable or list of callables):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
+        criterion (callable or list of callables): Python function that takes a pandas
+            DataFrame with parameters as the first argument. Supported outputs are:
+                - scalar floating point
+                - np.ndarray: contributions for the tao Pounders algorithm.
+                - tuple of a scalar floating point and a pd.DataFrame:
+                    In this case the first output is the criterion value.
+                    The second output are the comparison_plot_data.
+                    See :ref:`comparison_plot`.
+                    .. warning::
+                        This feature is not implemented in the dashboard yet.
 
-        params (pd.DataFrame or list of pd.DataFrames):
-            See :ref:`params`.
+        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
 
-        algorithm (str or list of strings):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
+        algorithm (str or list of strings): Name of the optimization algorithm.
+            See :ref:`list_of_algorithms`.
 
-        criterion_kwargs (dict or list of dicts):
-            additional keyword arguments for criterion
+        criterion_kwargs (dict or list of dicts): Additional criterion keyword arguments.
 
-        constraints (list or list of lists):
-            list with constraint dictionaries. See for details.
+        constraints (list or list of lists): List with constraint dictionaries.
+            See :ref:`constraints` for details.
 
-        general_options (dict):
-            additional configurations for the optimization. Keys can include:
-            - keep_dashboard_alive (bool): if True and dashboard is True the process
-                in which the dashboard is run is not terminated when maximize or
-                minimize finish.
+        general_options (dict): Additional configurations for the optimization.
+            Keys can include:
+                - keep_dashboard_alive (bool): if True and dashboard is True the process
+                    in which the dashboard is run is not terminated when maximize or
+                    minimize finish.
 
-        algo_options (dict or list of dicts):
-            algorithm specific configurations for the optimization
+        algo_options (dict or list of dicts): Algorithm specific configurations.
 
-        gradient_options (dict):
-            Options for the gradient function.
+        gradient_options (dict): Options for the gradient function.
 
-        logging (str or pathlib.Path or list thereof):
-            Path to an sqlite3 file which typically has the file extension ``.db``.
-            If the file does not exist, it will be created.
+        logging (str or pathlib.Path or list thereof): Path to an sqlite3 file which
+            typically has the file extension ``.db``. If the file does not exist,
+            it will be created. See :ref:`logging` for details.
+
+        log_options (dict or list of dict): Keyword arguments to influence the logging.
             See :ref:`logging` for details.
 
-        log_options (dict or list of dict):
-            Keyword arguments to influence the logging. See :ref:`logging` for details.
+        dashboard (bool): Whether to create and show a dashboard, default is False.
+            See :ref:`dashboard` for details.
 
-        dashboard (bool):
-            whether to create and show a dashboard. See :ref:`dashboard` for details.
+        dash_options (dict or list of dict, optional): Options passed to the dashboard.
+            Supported keys are:
+                - port (int): port where to display the dashboard
+                - no_browser (bool): whether to display the dashboard in a browser
+                - rollover (int): how many iterations to keep in the monitoring plots
 
-        dash_options (dict or list of dict, optional):
-        Dictionary with the dashboard options. Supported keys are:
-            - port (int): port where to display the dashboard
-            - no_browser (bool): whether to display the dashboard in a browser
-            - rollover (int): how many iterations to keep in the monitoring plots
+    Returns:
+        results (tuple or list of tuples): Each tuple consists of the harmonized result
+        info dictionary and the params DataFrame with the minimizing parameter values
+        of the untransformed problem as specified of the user.
 
     """
     # Set a flag for a maximization problem.
@@ -139,7 +146,15 @@ def minimize(
     Args:
         criterion (function or list of functions):
             Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
+            argument. Supported outputs are:
+                - scalar floating point
+                - np.ndarray: contributions for the tao Pounders algorithm.
+                - tuple of a scalar floating point and a pd.DataFrame:
+                    In this case the first output is the criterion value.
+                    The second output are the comparison_plot_data.
+                    See :ref:`comparison_plot`.
+                    .. warning::
+                        This feature is not implemented in the dashboard yet.
 
         params (pd.DataFrame or list of pd.DataFrames):
             See :ref:`params`.
@@ -176,7 +191,16 @@ def minimize(
         dashboard (bool):
             whether to create and show a dashboard. See :ref:`dashboard` for details.
 
-        dash_options (dict or list of dict): Dictionary with the dashboard options.
+        dash_options (dict or list of dict, optional): Options passed to the dashboard.
+            Supported keys are:
+                - port (int): port where to display the dashboard
+                - no_browser (bool): whether to display the dashboard in a browser
+                - rollover (int): how many iterations to keep in the monitoring plots
+
+    Returns:
+        results (tuple or list of tuples): Each tuple consists of the harmonized result
+        info dictionary and the params DataFrame with the minimizing parameter values
+        of the untransformed problem as specified of the user.
 
     """
     # Gradients are currently not allowed to be passed to minimize.
@@ -203,7 +227,6 @@ def minimize(
     optim_arguments = []
     results_arguments = []
     database_paths_for_dashboard = []
-
     for single_arg in arguments:
         optim_kwargs, database_path, result_kwargs = process_arguments(**single_arg)
         optim_arguments.append(optim_kwargs)
@@ -212,16 +235,9 @@ def minimize(
             database_paths_for_dashboard.append(database_path)
 
     if dashboard is True:
-        if len(database_paths_for_dashboard) > 0:
-            dashboard_process = run_dashboard_in_separate_process(
-                database_paths=database_paths_for_dashboard
-            )
-        else:
-            warnings.warn(
-                "There is no database to be monitored by the dashboard. ",
-                "Therefore, no dashboard is started.",
-            )
-            dashboard = False
+        dashboard_process = run_dashboard_in_separate_process(
+            database_paths=database_paths_for_dashboard
+        )
 
     if len(arguments) == 1:
         # Run only one optimization
@@ -240,8 +256,9 @@ def minimize(
             for optim_kwargs in optim_arguments
         )
 
-    if dashboard is True and not results_arguments[0]["keep_dashboard_alive"]:
-        dashboard_process.terminate()
+    if dashboard is True and dashboard_process is not None:
+        if not results_arguments[0]["keep_dashboard_alive"]:
+            dashboard_process.terminate()
 
     results = _process_optimization_results(results, results_arguments)
 
@@ -280,8 +297,35 @@ def _internal_minimize(
     database,
     general_options,
 ):
-    """Run one optimization of the transformed optimization problem."""
+    """Run one optimization of the transformed optimization problem.
 
+    Args:
+        internal_criterion (func): The transformed criterion function.
+            It takes the internal_params np.array as only argument, automatically
+            enforcing constraints specified by the user. It calls the original
+            criterion function after the necessary reparametrizations.
+            If logging is activated it protocols every call automatically to the
+            specified database.
+        internal_params (np.array): One-dimenisonal array with the values of
+            the free parameters.
+        bounds (tuple): tuple of the length of internal_params. Every entry contains
+            the lower and upper bound of the respective internal parameter.
+        origin (str): Name of the package to which the algorithm belongs.
+        algo_name (str): Name of the algorithm.
+        algo_options (dict): Algorithm specific configurations.
+        internal_gradient (func): The internal gradient
+        database (sqlalchemy.MetaData or False). The engine that connects to the
+            database can be accessed via ``database.bind``. This is only used to record
+            the start and end of the optimization
+        general_options (dict): Only used to pass the start_criterion_value in case
+            the tao pounders algorithm is used.
+
+    Returns:
+        results (tuple): Tuple of the harmonized result info dictionary and the params
+            DataFrame with the minimizing parameter values of the untransformed problem
+            as specified of the user.
+
+    """
     if database:
         update_scalar_field(database, "optimization_status", "running")
 
@@ -295,7 +339,6 @@ def _internal_minimize(
             algo_options,
             internal_gradient,
         )
-
     elif origin == "scipy":
         results = minimize_scipy_np(
             internal_criterion,
@@ -334,6 +377,11 @@ def _process_optimization_results(results, results_arguments):
             each element is a dictionary supplying the start params DataFrame
             and the constraints to the original problem.
             The keys are "params", "constraints" and "keep_dashboard_alive".
+
+    Returns:
+        results (tuple): Tuple of the harmonized result info dictionary and the params
+            DataFrame with the minimizing parameter values of the untransformed problem
+            as specified of the user.
 
     """
     new_results = []

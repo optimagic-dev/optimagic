@@ -255,7 +255,7 @@ def _create_internal_criterion(
 
     Returns:
         internal_criterion (function):
-            function that takes an internal_params DataFrame as only argument.
+            function that takes an internal_params np.array as only argument.
             It calls the original criterion function after the necessary
             reparametrizations.
 

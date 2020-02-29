@@ -12,7 +12,7 @@ import estimagic.dashboard.monitoring_app as monitoring
 
 
 def test_plot_time_series_with_large_initial_values():
-    cds = ColumnDataSource({"y": [2e17, 1e16, 1e5], "x": [1, 2, 3],})
+    cds = ColumnDataSource({"y": [2e17, 1e16, 1e5], "x": [1, 2, 3]})
     title = "Are large initial values shown?"
     fig = monitoring._plot_time_series(data=cds, y_keys=["y"], x_name="x", title=title)
     title = "Test _plot_time_series can handle large initial values."

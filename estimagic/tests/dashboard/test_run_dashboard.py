@@ -43,6 +43,3 @@ def test_process_dashboard_args_wrong_port(database_paths):
         run_dashboard._process_dashboard_args(
             database_paths=database_paths, no_browser=True, port="False"
         )
-
-
-# not testing _start_server separately
