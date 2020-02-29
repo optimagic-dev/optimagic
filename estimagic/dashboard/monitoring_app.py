@@ -29,8 +29,9 @@ def monitoring_app(doc, database_name, session_data):
         session_data (dict):
             infos to be passed between and within apps.
             Keys of this app's entry are:
-            - last_retrieved (int): last iteration currently in the ColumnDataSource
-            - database_path
+            - last_retrieved (int): last iteration currently in the ColumnDataSource.
+            - database_path (str or pathlib.Path)
+            - callbacks (dict): dictionary to be populated with callbacks.
 
     """
     database = load_database(session_data["database_path"])
@@ -115,8 +116,9 @@ def _create_initial_convergence_plots(criterion_history, params_history, start_p
         start_params (pd.DataFrame): params DataFrame that includes the "group" column.
 
     Returns:
-        convergence_plots (list):
-            List of bokeh Row elements, each containing one convergence plot.
+        convergence_plots (list): List of bokeh Row elements, each containing one
+            convergence plot.
+
     """
     criterion_plot = _plot_time_series(
         data=criterion_history,

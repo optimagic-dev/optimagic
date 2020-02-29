@@ -13,11 +13,10 @@ def create_short_database_names(path_list):
     """Generate short but unique names from each path for each full database path.
 
     Args:
-        path_list (list):
-            List of strings or pathlib.path to the optimizations' databases.
+        path_list (list): Strings or pathlib.Paths to the optimizations' databases.
 
     Returns:
-        short_name_to_path (dict): mapping from the new unique names to their full path.
+        short_name_to_path (dict): Mapping from the new unique names to their full path.
 
     Example:
 
@@ -49,10 +48,9 @@ def _name_clash(candidate, path_list, allowed_occurences=1):
     """Determine if candidate leads to a name clash.
 
     Args:
-        candidate (tuple): tuple with parts of a path.
-        path_list (list): List of pathlib.path
-        allowed_occurences (int): How often a name can occur before
-            we call it a clash.
+        candidate (tuple): Tuple with parts of a path.
+        path_list (list): List of pathlib.Paths.
+        allowed_occurences (int): How often a name can occur before we call it a clash.
 
     Returns:
         bool
@@ -67,15 +65,32 @@ def _name_clash(candidate, path_list, allowed_occurences=1):
 
 
 def create_dashboard_link(name):
-    """Create a link refering to *name*'s monitoring app."""
+    """Create a link refering to *name*'s monitoring app.
+
+    Args:
+        name (str): Uniqe name of the database.
+
+    Returns:
+        div (bokeh.models.widgets.Div): Link to the database's monitoring page.
+    """
     div_name = f"link_{name}"
     open_in_new_tab = r'target="_blank"'
     text = f"<a href=./{name} {open_in_new_tab}> {name}!</a>"
-    return Div(text=text, name=div_name, width=400)
+    div = Div(text=text, name=div_name, width=400)
+    return div
 
 
 def create_wide_figure(title, tooltips=None):
-    """Return a styled, empty figure of predetermined height and width."""
+    """Return a styled, empty figure of predetermined height and width.
+
+    Args:
+        title (str): Title of the figure.
+        tooltips (list): List of bokeh tooltips to add to the figure.
+
+    Returns:
+        fig (bokeh Figure)
+
+    """
     fig = figure(plot_height=350, plot_width=700, title=title, tooltips=tooltips)
     fig.title.text_font_size = "15pt"
     fig.min_border_left = 50
@@ -87,7 +102,15 @@ def create_wide_figure(title, tooltips=None):
 
 
 def get_color_palette(nr_colors):
-    """Return list of colors depending on the number needed."""
+    """Return list of colors depending on the number needed.
+
+    Args:
+        nr_colors (int): Number of colors needed.
+
+    Returns:
+        list
+
+    """
     if nr_colors == 1:
         return ["firebrick"]
     elif nr_colors == 2:
@@ -102,6 +125,7 @@ def find_free_port():
     """Find a free port on the localhost.
 
     Adapted from https://stackoverflow.com/a/45690594
+
     """
     with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
         s.bind(("localhost", 0))

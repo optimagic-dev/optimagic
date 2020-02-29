@@ -49,6 +49,7 @@ def _create_section_to_elements(doc, database_name_to_path):
         Only one section "all" at the moment!
 
     Args:
+        doc (bokeh Document)
         database_name_to_path (dict):
             mapping from the short, unique names to the full paths to the databases.
 
@@ -82,8 +83,8 @@ def _map_dabase_name_to_bokeh_row_elements(doc, database_name_to_path):
 
     Args:
         doc (bokeh Document)
-        database_name_to_path (dict):
-            mapping from the short, unique names to the full paths to the databases.
+        database_name_to_path (dict): mapping from the short, unique names to the full
+            paths to the databases.
 
     """
     name_to_row = {}
@@ -96,7 +97,7 @@ def _setup_tabs(sec_to_elements):
     """Create tabs for each section in sec_to_elements with titles.
 
     Args:
-        sec_to_elements (dict): A nested dictionary. The first level keys are the
+        sec_to_elements (dict): A nested dictionary. The first level keys will be the
         sections ("running", "succeeded", "failed", "scheduled"). The second level keys
         are the database names and the second level values a list consisting of the
         link to the dashboard and a button to activate tha dashboard.

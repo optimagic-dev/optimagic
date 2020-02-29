@@ -26,7 +26,7 @@ def run_dashboard_in_separate_process(database_paths):
             See :ref:`logging` for details.
 
     Returns:
-        p (multiprocessing.Process): Process in which the dashboard is running.
+        p (multiprocessing.Process or None): Process in which the dashboard is running.
 
     """
     if len(database_paths) == 0:
@@ -91,13 +91,14 @@ def run_dashboard(database_paths, no_browser=None, port=None):
 def _process_dashboard_args(database_paths, no_browser, port):
     """Check arguments and find free port if none was given.
 
+    The no_browser and port arguments override settings from the databases if not None.
+
     Args:
-        database_paths (str or pathlib.Path or list of them):
-            Path(s) to an sqlite3 file which typically has the file extension ``.db``.
-            See :ref:`logging` for details.
-        no_browser (bool):
-            Whether or not to open the dashboard in the browser.
-        port (int or None): port where to display the dashboard.
+        database_paths (str or pathlib.Path or list of them): Path(s) to an sqlite3
+            file which typically has the file extension ``.db``. See :ref:`logging` for
+            details.
+        no_browser (bool or None): Whether or not to open the dashboard in the browser.
+        port (int or None): Port where to display the dashboard.
 
     Returns:
         database_paths (str or pathlib.Path or list of them):
@@ -119,40 +120,51 @@ def _process_dashboard_args(database_paths, no_browser, port):
             )
     database_name_to_path = create_short_database_names(path_list=database_paths)
 
-    all_dash_options = []
+    all_options = []
     for single_database_path in database_paths:
         database = load_database(single_database_path)
         dash_options = read_scalar_field(database, "dash_options")
-        all_dash_options.append(dash_options)
+        all_options.append(dash_options)
 
     if port is None:
-        ports = {
-            d.pop("port", None)
-            for d in all_dash_options
-            if d.pop("port", None) is not None
-        }
+        ports = {d.pop("port", None) for d in all_options}
+        ports = {p for p in ports if p is not None}
         if len(ports) == 0:
             port = find_free_port()
         else:
             port = ports.pop()
             if len(ports) > 1:
                 warnings.warn(f"You supplied more than one port. {port} will be used.")
-
     if not isinstance(port, int):
         raise TypeError(f"port must be an integer. You supplied {type(port)}.")
 
     if no_browser is None:
-        no_browser_vals = {d.pop("no_browser", False) for d in all_dash_options}
+        no_browser_vals = {d.pop("no_browser", False) for d in all_options}
         no_browser = no_browser_vals.pop()
         if len(no_browser_vals) > 1:
             no_browser = False
             warnings.warn(
                 "You supplied both True and False for no_browser. It is set to False."
             )
+
     return database_name_to_path, no_browser, port
 
 
 def _create_session_data(database_name_to_path):
+    """Create a nested dictionary with info to be passed between and within bokeh apps.
+
+    Args:
+        short_name_to_path (dict): mapping from the new unique names to their full path.
+
+    Returns:
+        session_data (dict): Infos to be passed between and within apps.
+            It contains one entry for the master app and one for each monitoring app.
+            The keys of the monitoring app's entries are:
+            - last_retrieved (int): last iteration currently in the ColumnDataSource.
+            - database_path (str or pathlib.Path)
+            - callbacks (dict): dictionary to be populated with callbacks.
+
+    """
     session_data = {"master_app": {}}
     for database_name, database_path in database_name_to_path.items():
         session_data[database_name] = {
