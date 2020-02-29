@@ -14,7 +14,17 @@ def database_paths():
     return database_paths
 
 
+@pytest.fixture()
+def database_name_to_path(database_paths):
+    name_to_path = {
+        "db1": database_paths[0],
+        "db2": database_paths[1],
+    }
+    return name_to_path
+
+
 def test_run_dashboard_in_separate_process(database_paths):
+    # integration test
     p = run_dashboard.run_dashboard_in_separate_process(database_paths)
     sleep(5)
     p.terminate()
@@ -24,9 +34,21 @@ def test_process_dashboard_args_single_path():
     current_dir_path = Path(__file__).resolve().parent
     single_path = current_dir_path / "db1.db"
     database_name_to_path, no_browser, port = run_dashboard._process_dashboard_args(
-        database_paths=single_path, no_browser=True, port=1000
+        database_paths=single_path, no_browser=False, port=1000
     )
     assert database_name_to_path == {"db1": single_path}
+    assert no_browser is False
+    assert port == 1000
+
+
+def test_process_dashboard_args_two_paths(database_paths):
+    database_name_to_path, no_browser, port = run_dashboard._process_dashboard_args(
+        database_paths=database_paths, no_browser=None, port=1000
+    )
+    assert database_name_to_path == {
+        "db1": database_paths[0],
+        "db2": database_paths[1],
+    }
     assert no_browser is True
     assert port == 1000
 
@@ -43,3 +65,21 @@ def test_process_dashboard_args_wrong_port(database_paths):
         run_dashboard._process_dashboard_args(
             database_paths=database_paths, no_browser=True, port="False"
         )
+
+
+def test_create_session_data(database_paths, database_name_to_path):
+    res = run_dashboard._create_session_data(database_name_to_path)
+    expected = {
+        "master_app": {},
+        "db1": {
+            "last_retrieved": 0,
+            "database_path": database_paths[0],
+            "callbacks": {},
+        },
+        "db2": {
+            "last_retrieved": 0,
+            "database_path": database_paths[1],
+            "callbacks": {},
+        },
+    }
+    assert res == expected

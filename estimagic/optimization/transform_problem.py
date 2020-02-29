@@ -415,7 +415,7 @@ def _create_internal_gradient(
         params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
         constraints (list or list of lists): List with constraint dictionaries.
             See :ref:`constraints` for details.
-        criterion_kwargs (dict or list of dicts): Additional criterion keyword arguments.
+        criterion_kwargs (dict or list of dict): Additional criterion keyword arguments.
         general_options (dict): Additional configurations for the optimization.
             Keys can include:
                 - keep_dashboard_alive (bool): if True and dashboard is True the process

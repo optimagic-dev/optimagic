@@ -1,6 +1,4 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
-import warnings
-
 import numpy as np
 from joblib import delayed
 from joblib import Parallel
@@ -52,7 +50,7 @@ def maximize(
         params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
         algorithm (str or list of strings): Name of the optimization algorithm.
             See :ref:`list_of_algorithms`.
-        criterion_kwargs (dict or list of dicts): Additional criterion keyword arguments.
+        criterion_kwargs (dict or list of dict): Additional criterion keyword arguments.
         constraints (list or list of lists): List with constraint dictionaries.
             See :ref:`constraints` for details.
         general_options (dict): Additional configurations for the optimization.
