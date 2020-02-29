@@ -5,6 +5,7 @@ import pandas as pd
 from joblib import delayed
 from joblib import Parallel
 
+from estimagic.inference.bootstrap_ci import _check_inputs
 from estimagic.inference.bootstrap_samples import _get_cluster_index
 from estimagic.inference.bootstrap_samples import get_seeds
 
@@ -12,7 +13,8 @@ from estimagic.inference.bootstrap_samples import get_seeds
 def get_bootstrap_estimates(
     data, f, cluster_by=None, seeds=None, ndraws=1000, num_threads=1
 ):
-    """Calculate the statistic for every drawn sample.
+    """Calculate the statistic f for every bootstrap sample, either by specified seeds
+    or for ndraws random samples.
 
     Args:
         data (pd.DataFrame): original dataset.
@@ -26,6 +28,9 @@ def get_bootstrap_estimates(
         estimates (pd.DataFrame): DataFrame estimates for different bootstrap samples.
 
     """
+
+    _check_inputs(data=data, cluster_by=cluster_by)
+
     if seeds is None:
         seeds = get_seeds(ndraws)
 
@@ -40,7 +45,7 @@ def get_bootstrap_estimates(
     return pd.DataFrame(estimates)
 
 
-def _get_uniform_estimates(data, seeds, num_threads, f=None):
+def _get_uniform_estimates(data, seeds, num_threads=1, f=None):
     """Calculate non-clustered bootstrap estimates. If f is None, return a list of the
     samples.
 
@@ -73,7 +78,7 @@ def _get_uniform_estimates(data, seeds, num_threads, f=None):
     return estimates
 
 
-def _get_clustered_estimates(data, cluster_by, seeds, num_threads, f=None):
+def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
     """Calculate clustered bootstrap estimates. If f is None, return a list of the
     samples.
 

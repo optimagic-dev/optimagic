@@ -1,9 +1,10 @@
 import numpy as np
 
 import estimagic.inference.bootstrap_estimates as est
+from estimagic.inference.bootstrap_ci import _check_inputs
 
 
-def get_seeds(ndraws):
+def get_seeds(ndraws=1000):
     """Draw seeds for bootstrap resampling.
 
     Args:
@@ -20,7 +21,7 @@ def get_seeds(ndraws):
 def get_bootstrap_samples(
     data, cluster_by=None, seeds=None, ndraws=1000, num_threads=1
 ):
-    """Return the drawn bootstrap samples.
+    """Draw and return bootstrap samples, either by specified seeds or number of draws.
 
     Args:
         data (pd.DataFrame): original dataset.
@@ -33,6 +34,9 @@ def get_bootstrap_samples(
         samples (list): list of DataFrames containing resampled data.
 
     """
+
+    _check_inputs(data=data, cluster_by=cluster_by)
+
     if seeds is None:
         seeds = get_seeds(ndraws)
 
