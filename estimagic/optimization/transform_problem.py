@@ -68,7 +68,7 @@ def transform_problem(
         params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
         algorithm (str or list of strings): Name of the optimization algorithm.
             See :ref:`list_of_algorithms`.
-        criterion_kwargs (dict or list of dicts): Additional criterion keyword arguments.
+        criterion_kwargs (dict or list of dict): Additional criterion keyword arguments.
         constraints (list or list of lists): List with constraint dictionaries.
             See :ref:`constraints` for details.
         general_options (dict): Additional configurations for the optimization.
@@ -109,21 +109,20 @@ def transform_problem(
         dashboard=dashboard,
     )
 
+    # harmonize criterion interface
+    is_maximization = general_options.pop("_maximization", False)
+    criterion = expand_criterion_output(criterion)
+    criterion = negative_criterion(criterion) if is_maximization else criterion
+
+    # first criterion evaluation for the database and the pounders algorithm
+    fitness_eval, comparison_plot_data = _evaluate_criterion(
+        criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
+    )
+    general_options = general_options.copy()
+    general_options["start_criterion_value"] = fitness_eval
+
     with warnings.catch_warnings():
         warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-
-        # harmonize criterion interface
-        is_maximization = general_options.pop("_maximization", False)
-        fitness_factor = -1 if is_maximization else 1
-        criterion = expand_criterion_output(criterion)
-        criterion = negative_criterion(criterion) if is_maximization else criterion
-
-        # first criterion evaluation for the database and the pounders algorithm
-        fitness_eval, comparison_plot_data = _evaluate_criterion(
-            criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
-        )
-        general_options = general_options.copy()
-        general_options["start_criterion_value"] = fitness_eval
 
         # transform the user supplied inputs into the internal inputs.
         constraints, params = process_constraints(constraints, params)
@@ -238,7 +237,7 @@ def _set_params_defaults_if_missing(params):
         params (pd.DataFrame): See :ref:`params`.
 
     Returns:
-        params (pd.DataFrame)
+        params (pd.DataFrame): With defaults expanded params DataFrame.
 
     """
     params = params.copy()
@@ -262,6 +261,16 @@ def _set_params_defaults_if_missing(params):
 
 
 def _check_params(params):
+    """Check params has a unique index and contains no columns to be created internally.
+
+    Args:
+        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
+
+    Raises:
+        AssertionError: The index contains duplicates.
+        ValueError: The DataFrame contains internal columns.
+
+    """
     assert (
         not params.index.duplicated().any()
     ), "No duplicates allowed in the index of params."
@@ -327,6 +336,14 @@ def _create_internal_criterion(
 ):
     """Create the internal criterion function.
 
+    The internal criterion function takes a numpy array of free parameters
+    (called internal params) and returns the criterion value of the user supplied
+    problem. The reparametrization of the free parameters to the full paramteres
+    insures that the user supplied constraints are fulfilled for all values the
+    optimizer algorithm could try respecting the bounds created elsewhere.
+
+    If logging is activated, the returned function also logs its calls.
+
     Args:
         criterion (function):
             Python function that takes a pandas DataFrame with parameters as the first
@@ -363,6 +380,7 @@ def _create_internal_criterion(
     @numpy_interface(params, constraints)
     @logging_decorator
     def internal_criterion(p):
+        """Criterion of the transformed problem."""
         criterion_out, comparison_plot_data = criterion(p, **criterion_kwargs)
         return criterion_out, comparison_plot_data
 
@@ -379,6 +397,36 @@ def _create_internal_gradient(
     general_options,
     database,
 ):
+    """Create the internal gradient function.
+
+    Args:
+        gradient (None): Gradients are currently not allowed to be passed to minimize.
+        gradient_options (dict): Options for the gradient function.
+        criterion (callable or list of callables): Python function that takes a pandas
+            DataFrame with parameters as the first argument. Supported outputs are:
+                - scalar floating point
+                - np.ndarray: contributions for the tao Pounders algorithm.
+                - tuple of a scalar floating point and a pd.DataFrame:
+                    In this case the first output is the criterion value.
+                    The second output are the comparison_plot_data.
+                    See :ref:`comparison_plot`.
+                    .. warning::
+                        This feature is not implemented in the dashboard yet.
+        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
+        constraints (list or list of lists): List with constraint dictionaries.
+            See :ref:`constraints` for details.
+        criterion_kwargs (dict or list of dicts): Additional criterion keyword arguments.
+        general_options (dict): Additional configurations for the optimization.
+            Keys can include:
+                - keep_dashboard_alive (bool): if True and dashboard is True the process
+                    in which the dashboard is run is not terminated when maximize or
+                    minimize finish.
+        database (sqlalchemy.MetaData)
+
+    Returns:
+        internal_gradient (function)
+
+    """
     n_internal_params = params["_internal_free"].sum()
     gradient_options = {} if gradient_options is None else gradient_options
 
@@ -452,12 +500,12 @@ def _process_algorithm(algorithm):
     """Identify the algorithm from the user-supplied string.
 
     Args:
-        algorithm (str):
-            Package and name of the algorithm. It should be of the format {pkg}_{name}.
+        algorithm (str): Package and name of the algorithm. It should be of the format
+            {pkg}_{name}.
 
     Returns:
-        origin (str): Name of the package
-        algo_name (str): Name of the algorithm
+        origin (str): Name of the package.
+        algo_name (str): Name of the algorithm.
 
     """
     current_dir_path = Path(__file__).resolve().parent

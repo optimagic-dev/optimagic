@@ -159,8 +159,7 @@ def minimize(
                 minimize finish.
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
-        gradient_options (dict):
-            Options for the gradient function.
+        gradient_options (dict): Options for the gradient function.
         logging (str or pathlib.Path or list thereof):
             Path to an sqlite3 file which typically has the file extension ``.db``.
             If the file does not exist, it will be created.
