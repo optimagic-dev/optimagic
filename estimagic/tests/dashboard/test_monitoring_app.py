@@ -3,22 +3,23 @@ import webbrowser
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from bokeh.document import Document
 from bokeh.io import output_file
 from bokeh.io import save
 from bokeh.models import ColumnDataSource
 
 import estimagic.dashboard.monitoring_app as monitoring
+from estimagic.logging.create_database import load_database
 
 
-def test_plot_time_series_with_large_initial_values():
-    cds = ColumnDataSource({"y": [2e17, 1e16, 1e5], "x": [1, 2, 3]})
-    title = "Are large initial values shown?"
-    fig = monitoring._plot_time_series(data=cds, y_keys=["y"], x_name="x", title=title)
-    title = "Test _plot_time_series can handle large initial values."
-    output_file("time_series_initial_value.html", title=title)
-    path = save(obj=fig)
-    webbrowser.open_new_tab("file://" + path)
+@pytest.fixture()
+def database():
+    database_name = "db1.db"
+    current_dir_path = Path(__file__).resolve().parent
+    database_path = current_dir_path / database_name
+    database = load_database(database_path)
+    return database
 
 
 def test_monitoring_app():
@@ -31,6 +32,35 @@ def test_monitoring_app():
     monitoring.monitoring_app(
         doc=doc, database_name=database_name, session_data=session_data
     )
+
+
+def test_create_bokeh_data_sources(database):
+    tables = ["criterion_history", "params_history"]
+    criterion_history, params_history = monitoring._create_bokeh_data_sources(
+        database=database, tables=tables
+    )
+    assert criterion_history.data == {"iteration": [1], "value": [426.5586492569206]}
+    assert params_history.data == {
+        "iteration": [1],
+        "beta_pared": [0.47738201898674737],
+        "beta_public": [0.22650218067445926],
+        "beta_gpa": [-0.46745804687921866],
+        "cutoff_0": [0.0],
+        "cutoff_1": [2.0],
+    }
+
+
+# skip test create_initial_convergence_plots
+
+
+def test_plot_time_series_with_large_initial_values():
+    cds = ColumnDataSource({"y": [2e17, 1e16, 1e5], "x": [1, 2, 3]})
+    title = "Are large initial values shown?"
+    fig = monitoring._plot_time_series(data=cds, y_keys=["y"], x_name="x", title=title)
+    title = "Test _plot_time_series can handle large initial values."
+    output_file("time_series_initial_value.html", title=title)
+    path = save(obj=fig)
+    webbrowser.open_new_tab("file://" + path)
 
 
 def test_map_groups_to_params_group_none():

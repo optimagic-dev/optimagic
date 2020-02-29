@@ -46,7 +46,7 @@ def test_name_clash_with_clash():
     assert expected == res
 
 
-# no tests for dashboard_link
+# no tests for create_dashboard_link
 
 # no tests for create_wide_figure
 
