@@ -21,7 +21,7 @@ from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
 
-def process_arguments(
+def transform_problem(
     criterion,
     params,
     algorithm,
@@ -29,26 +29,88 @@ def process_arguments(
     constraints,
     general_options,
     algo_options,
+    gradient,
     gradient_options,
     logging,
     log_options,
     dashboard,
     dash_options,
-    gradient,
 ):
-    # THIS NEEDS A NICE NAME AND A REALLY GOOD NOOB FRIENDLY DOCSTRING
-    # np.array
-    # logging
-    # Breite des Einsatzgebiets rausstellen
-    # erklären, was ein estimagic Problem ist und was ein internes Problem ist
+    """Transform the user supplied problem.
+
+    The transformed optimization problem is converted from the original problem
+    consisting of the user supplied criterion, params DataFrame, criterion_kwargs,
+    constraints and gradient (if supplied).
+    In addition, the transformed optimization problem provides sophisticated logging
+    tools under the hood if activated by the user.
+
+    The transformed problem is of the form supported by most algorithms:
+        1. The only constraints are bounds on the parameters.
+        2. The internal_criterion function takes an one dimensional np.array as input.
+        3. The internal criterion function returns a scalar value
+            (except for the case of the tao_pounders algorithm).
+
+    Note that because of the reparametrizations done by estimagic to implement
+    constraints on behalf of the user the internal params cannot be interpreted without
+    reparametrizing it to the full params DataFrame.
+
+    Args:
+        criterion (callable or list of callables): Python function that takes a pandas
+            DataFrame with parameters as the first argument. Supported outputs are:
+                - scalar floating point
+                - np.ndarray: contributions for the tao Pounders algorithm.
+                - tuple of a scalar floating point and a pd.DataFrame:
+                    In this case the first output is the criterion value.
+                    The second output are the comparison_plot_data.
+                    See :ref:`comparison_plot`.
+                    .. warning::
+                        This feature is not implemented in the dashboard yet.
+        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
+        algorithm (str or list of strings): Name of the optimization algorithm.
+            See :ref:`list_of_algorithms`.
+        criterion_kwargs (dict or list of dicts): Additional criterion keyword arguments.
+        constraints (list or list of lists): List with constraint dictionaries.
+            See :ref:`constraints` for details.
+        general_options (dict): Additional configurations for the optimization.
+            Keys can include:
+                - keep_dashboard_alive (bool): if True and dashboard is True the process
+                    in which the dashboard is run is not terminated when maximize or
+                    minimize finish.
+        algo_options (dict or list of dicts): Algorithm specific configurations.
+        gradient_options (dict): Options for the gradient function.
+        logging (str or pathlib.Path or list thereof): Path to an sqlite3 file which
+            typically has the file extension ``.db``. If the file does not exist,
+            it will be created. See :ref:`logging` for details.
+        log_options (dict or list of dict): Keyword arguments to influence the logging.
+            See :ref:`logging` for details.
+        dashboard (bool): Whether to create and show a dashboard, default is False.
+            See :ref:`dashboard` for details.
+        dash_options (dict or list of dict, optional): Options passed to the dashboard.
+            Supported keys are:
+                - port (int): port where to display the dashboard
+                - no_browser (bool): whether to display the dashboard in a browser
+                - rollover (int): how many iterations to keep in the monitoring plots
+
+    Returns:
+        optim_kwargs (dict): Dictionary collecting all arguments that are going to be
+            passed to _internal_minimize.
+        database_path (str or pathlib.Path or None): Path to the database.
+        result_kwargs (dict): Arguments needed to reparametrize back from the internal
+            paramater array to the params DataFrame of the user supplied problem.
+            In addition it contains whether the dashboard process should be kept alive
+            after the optimization(s) terminate(s).
+
+    """
+    optim_kwargs, params, database_path = _pre_process_arguments(
+        params=params,
+        algorithm=algorithm,
+        algo_options=algo_options,
+        logging=logging,
+        dashboard=dashboard,
+    )
 
     with warnings.catch_warnings():
         warnings.simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-        database_path = logging if dashboard else None
-
-        general_options = general_options.copy()
-
-        params = _pre_process_params(params)
 
         # harmonize criterion interface
         is_maximization = general_options.pop("_maximization", False)
@@ -56,81 +118,120 @@ def process_arguments(
         criterion = expand_criterion_output(criterion)
         criterion = negative_criterion(criterion) if is_maximization else criterion
 
+        # first criterion evaluation for the database and the pounders algorithm
         fitness_eval, comparison_plot_data = _evaluate_criterion(
             criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
         )
+        general_options = general_options.copy()
         general_options["start_criterion_value"] = fitness_eval
 
+        # transform the user supplied inputs into the internal inputs.
         constraints, params = process_constraints(constraints, params)
         internal_params = reparametrize_to_internal(params, constraints)
-
-        if logging:
-            database = prepare_database(
-                path=logging,
-                params=params,
-                comparison_plot_data=comparison_plot_data,
-                dash_options=dash_options,
-                constraints=constraints,
-            )
-        else:
-            database = False
-
-        logging_decorator = functools.partial(
-            log_evaluation,
-            database=database,
-            tables=["params_history", "criterion_history", "comparison_plot"],
-        )
-
-        internal_criterion = _create_internal_criterion(
-            criterion=criterion,
-            params=params,
-            constraints=constraints,
-            criterion_kwargs=criterion_kwargs,
-            logging_decorator=logging_decorator,
-            general_options=general_options,
-            database=database,
-            fitness_factor=fitness_factor,
-        )
-
-        internal_gradient = _create_internal_gradient(
-            gradient=gradient,
-            gradient_options=gradient_options,
-            criterion=criterion,
-            params=params,
-            internal_params=internal_params,
-            constraints=constraints,
-            criterion_kwargs=criterion_kwargs,
-            general_options=general_options,
-            database=database,
-            fitness_factor=fitness_factor,
-            algorithm=algorithm,
-        )
-
-        origin, algo_name = _process_algorithm(algorithm)
         bounds = _get_internal_bounds(params)
 
-        optim_kwargs = {
-            "internal_criterion": internal_criterion,
-            "internal_params": internal_params,
-            "bounds": bounds,
-            "origin": origin,
-            "algo_name": algo_name,
-            "algo_options": algo_options,
-            "internal_gradient": internal_gradient,
-            "database": database,
-            "general_options": general_options,
-        }
+    # setup the database to pass it to the internal functions for logging
+    if logging:
+        database = prepare_database(
+            path=logging,
+            params=params,
+            comparison_plot_data=comparison_plot_data,
+            dash_options=dash_options,
+            constraints=constraints,
+            **log_options,
+        )
+    else:
+        database = False
 
-        result_kwargs = {
-            "params": params,
-            "constraints": constraints,
-            "keep_dashboard_alive": general_options.pop("keep_dashboard_alive", False),
-        }
+    # transform the user supplied criterion and gradient function into their
+    # internal counterparts that use internal inputs.
 
+    # this must be passed to _create_internal_criterion because the internal
+    # gradient creates its own internal criterion function whose calls are
+    # logged differently by the database.
+    logging_decorator = functools.partial(
+        log_evaluation,
+        database=database,
+        tables=["params_history", "criterion_history", "comparison_plot"],
+    )
+
+    internal_criterion = _create_internal_criterion(
+        criterion=criterion,
+        params=params,
+        constraints=constraints,
+        criterion_kwargs=criterion_kwargs,
+        logging_decorator=logging_decorator,
+        general_options=general_options,
+        database=database,
+    )
+
+    internal_gradient = _create_internal_gradient(
+        gradient=gradient,
+        gradient_options=gradient_options,
+        criterion=criterion,
+        params=params,
+        constraints=constraints,
+        criterion_kwargs=criterion_kwargs,
+        general_options=general_options,
+        database=database,
+    )
+
+    internal_kwargs = {
+        "internal_criterion": internal_criterion,
+        "internal_params": internal_params,
+        "bounds": bounds,
+        "internal_gradient": internal_gradient,
+        "database": database,
+        "general_options": general_options,
+    }
+    optim_kwargs.update(internal_kwargs)
+
+    result_kwargs = {
+        "params": params,
+        "constraints": constraints,
+        "keep_dashboard_alive": general_options.pop("keep_dashboard_alive", False),
+    }
     return optim_kwargs, database_path, result_kwargs
 
 
-def _pre_process_params(params):
+def _pre_process_arguments(
+    params, algorithm, algo_options, logging, dashboard,
+):
+    """Process user supplied arguments without affecting the optimization problem.
+
+    Args:
+        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
+        algorithm (str or list of strings): Identifier of the optimization algorithm.
+            See :ref:`list_of_algorithms` for supported values.
+        algo_options (dict or list of dicts):
+            algorithm specific configurations for the optimization
+        dashboard (bool): Whether to create and show a dashboard, default is False.
+            See :ref:`dashboard` for details.
+
+    Returns:
+        optim_kwargs (dict): dictionary collecting the arguments that are going to be
+            passed to _internal_minimize
+        params (pd.DataFrame): The expanded params DataFrame with all needed columns.
+            See :ref:`params`.
+        database_path (str or pathlib.Path or None): path to the database.
+
+    """
+    origin, algo_name = _process_algorithm(algorithm)
+    optim_kwargs = {
+        "origin": origin,
+        "algo_name": algo_name,
+        "algo_options": algo_options,
+    }
+
+    params = _set_params_defaults_if_missing(params)
+    _check_params(params)
+
+    database_path = logging if dashboard else None
+
+    return optim_kwargs, params, database_path
+
+
+def _set_params_defaults_if_missing(params):
     """Set defaults and run checks on the user-supplied params.
 
     Args:
@@ -157,7 +258,10 @@ def _pre_process_params(params):
     if "name" not in params.columns:
         names = [index_element_to_string(tup) for tup in params.index]
         params["name"] = names
+    return params
 
+
+def _check_params(params):
     assert (
         not params.index.duplicated().any()
     ), "No duplicates allowed in the index of params."
@@ -180,29 +284,24 @@ def _pre_process_params(params):
             f"This is violated for:\n{invalid_present_columns}."
         )
         raise ValueError(msg)
-    return params
 
 
 def _evaluate_criterion(criterion, params, criterion_kwargs):
     """Evaluate the criterion function for the first time.
 
     The comparison_plot_data output is needed to initialize the database.
-    The criterion value is stored in the general options for the tao algorithm.
+    The criterion value is stored in the general options for the tao pounders algorithm.
 
     Args:
-        criterion (function):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a value or array to be minimized and data for the
-            comparison plot.
-        params (pd.DataFrame):
-            See :ref:`params`.
-        criterion_kwargs (dict):
-            Additional keyword arguments for criterion.
+        criterion (function): Python function that takes a pandas DataFrame with
+            parameters as the first argument and returns a value or array to be
+            minimized and data for the comparison plot.
+        params (pd.DataFrame): See :ref:`params`.
+        criterion_kwargs (dict): Additional keyword arguments for criterion.
 
     Returns:
-        fitness_eval (float): the scalar criterion value.
-        comparison_plot_data (np.array or pd.DataFrame):
-            Data for the comparison_plot, can be empty.
+        fitness_eval (float): The scalar criterion value.
+        comparison_plot_data (np.array or pd.DataFrame): Data for the comparison_plot.
 
     """
     criterion_out, comparison_plot_data = criterion(params, **criterion_kwargs)
@@ -225,7 +324,6 @@ def _create_internal_criterion(
     logging_decorator,
     general_options,
     database,
-    fitness_factor,
 ):
     """Create the internal criterion function.
 
@@ -276,13 +374,10 @@ def _create_internal_gradient(
     gradient_options,
     criterion,
     params,
-    internal_params,
     constraints,
     criterion_kwargs,
     general_options,
     database,
-    fitness_factor,
-    algorithm,
 ):
     n_internal_params = params["_internal_free"].sum()
     gradient_options = {} if gradient_options is None else gradient_options
@@ -324,7 +419,6 @@ def _create_internal_gradient(
         logging_decorator=logging_decorator,
         general_options=general_options,
         database=database,
-        fitness_factor=fitness_factor,
     )
     bounds = _get_internal_bounds(params)
     names = params.query("_internal_free")["name"].tolist()

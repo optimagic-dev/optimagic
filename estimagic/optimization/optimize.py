@@ -11,10 +11,10 @@ from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_arguments
 from estimagic.optimization.pounders import minimize_pounders_np
-from estimagic.optimization.process_arguments import process_arguments
 from estimagic.optimization.pygmo import minimize_pygmo_np
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.scipy import minimize_scipy_np
+from estimagic.optimization.transform_problem import transform_problem
 
 
 def maximize(
@@ -49,42 +49,31 @@ def maximize(
                     See :ref:`comparison_plot`.
                     .. warning::
                         This feature is not implemented in the dashboard yet.
-
         params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
-
         algorithm (str or list of strings): Name of the optimization algorithm.
             See :ref:`list_of_algorithms`.
-
         criterion_kwargs (dict or list of dicts): Additional criterion keyword arguments.
-
         constraints (list or list of lists): List with constraint dictionaries.
             See :ref:`constraints` for details.
-
         general_options (dict): Additional configurations for the optimization.
             Keys can include:
                 - keep_dashboard_alive (bool): if True and dashboard is True the process
                     in which the dashboard is run is not terminated when maximize or
                     minimize finish.
-
         algo_options (dict or list of dicts): Algorithm specific configurations.
-
         gradient_options (dict): Options for the gradient function.
-
         logging (str or pathlib.Path or list thereof): Path to an sqlite3 file which
             typically has the file extension ``.db``. If the file does not exist,
             it will be created. See :ref:`logging` for details.
-
         log_options (dict or list of dict): Keyword arguments to influence the logging.
             See :ref:`logging` for details.
-
         dashboard (bool): Whether to create and show a dashboard, default is False.
             See :ref:`dashboard` for details.
-
         dash_options (dict or list of dict, optional): Options passed to the dashboard.
             Supported keys are:
-                - port (int): port where to display the dashboard
-                - no_browser (bool): whether to display the dashboard in a browser
-                - rollover (int): how many iterations to keep in the monitoring plots
+                - port (int): port where to display the dashboard.
+                - no_browser (bool): whether to display the dashboard in a browser.
+                - rollover (int): how many iterations to keep in the convergence plots.
 
     Returns:
         results (tuple or list of tuples): Each tuple consists of the harmonized result
@@ -155,47 +144,36 @@ def minimize(
                     See :ref:`comparison_plot`.
                     .. warning::
                         This feature is not implemented in the dashboard yet.
-
         params (pd.DataFrame or list of pd.DataFrames):
             See :ref:`params`.
-
         algorithm (str or list of strings):
             specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
         criterion_kwargs (dict or list of dicts):
             additional keyword arguments for criterion
-
         constraints (list or list of lists):
             list with constraint dictionaries. See for details.
-
         general_options (dict):
             additional configurations for the optimization. Keys can include:
             - keep_dashboard_alive (bool): if True and dashboard is True the process
                 in which the dashboard is run is not terminated when maximize or
                 minimize finish.
-
         algo_options (dict or list of dicts):
             algorithm specific configurations for the optimization
-
         gradient_options (dict):
             Options for the gradient function.
-
         logging (str or pathlib.Path or list thereof):
             Path to an sqlite3 file which typically has the file extension ``.db``.
             If the file does not exist, it will be created.
             See :ref:`logging` for details.
-
         log_options (dict or list of dict):
             Keyword arguments to influence the logging. See :ref:`logging` for details.
-
-        dashboard (bool):
-            whether to create and show a dashboard. See :ref:`dashboard` for details.
-
+        dashboard (bool): Whether to create and show a dashboard, default is False.
+            See :ref:`dashboard` for details.
         dash_options (dict or list of dict, optional): Options passed to the dashboard.
             Supported keys are:
-                - port (int): port where to display the dashboard
-                - no_browser (bool): whether to display the dashboard in a browser
-                - rollover (int): how many iterations to keep in the monitoring plots
+                - port (int): port where to display the dashboard.
+                - no_browser (bool): whether to display the dashboard in a browser.
+                - rollover (int): how many iterations to keep in the convergence plots.
 
     Returns:
         results (tuple or list of tuples): Each tuple consists of the harmonized result
@@ -228,7 +206,7 @@ def minimize(
     results_arguments = []
     database_paths_for_dashboard = []
     for single_arg in arguments:
-        optim_kwargs, database_path, result_kwargs = process_arguments(**single_arg)
+        optim_kwargs, database_path, result_kwargs = transform_problem(**single_arg)
         optim_arguments.append(optim_kwargs)
         results_arguments.append(result_kwargs)
         if database_path is not None:
@@ -282,6 +260,11 @@ def _single_arg_internal_minimize(kwargs):
             - database
             - general_options
 
+    Returns:
+        results (tuple): Tuple of the harmonized result info dictionary and the params
+            DataFrame with the minimizing parameter values of the untransformed problem
+            as specified of the user.
+
     """
     return _internal_minimize(**kwargs)
 
@@ -298,6 +281,22 @@ def _internal_minimize(
     general_options,
 ):
     """Run one optimization of the transformed optimization problem.
+
+    The transformed optimization problem is converted from the original problem
+    consisting of the user supplied criterion, params DataFrame, criterion_kwargs,
+    constraints and gradient (if supplied).
+    In addition, the transformed optimization problem provides sophisticated logging
+    tools under the hood if activated by the user.
+
+    The transformed problem is of the form supported by most algorithms:
+        1. The only constraints are bounds on the parameters.
+        2. The internal_criterion function takes an one dimensional np.array as input.
+        3. The internal criterion function returns a scalar value
+            (except for the case of the tao_pounders algorithm).
+
+    Note that because of the reparametrizations done by estimagic to implement
+    constraints on behalf of the user the internal params cannot be interpreted without
+    reparametrizing it to the full params DataFrame.
 
     Args:
         internal_criterion (func): The transformed criterion function.
