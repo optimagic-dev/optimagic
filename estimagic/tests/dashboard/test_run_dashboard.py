@@ -16,7 +16,7 @@ def database_paths():
 
 def test_run_dashboard_in_separate_process(database_paths):
     p = run_dashboard.run_dashboard_in_separate_process(database_paths)
-    sleep(1)
+    sleep(5)
     p.terminate()
 
 
