@@ -13,10 +13,7 @@ def test_monitoring_app():
     doc = Document()
     database_name = "test_db"
     current_dir_path = Path(__file__).resolve().parent
-    session_data = {
-        "master_app": {},
-        "test_db": {"last_retrieved": 0, "database_path": current_dir_path / "db1.db"},
-    }
+    session_data = {"last_retrieved": 0, "database_path": current_dir_path / "db1.db"}
 
     monitoring.monitoring_app(
         doc=doc, database_name=database_name, session_data=session_data

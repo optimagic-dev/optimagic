@@ -61,11 +61,13 @@ def run_dashboard(database_paths, no_browser=None, port=None):
     )
     apps = {"/": Application(FunctionHandler(master_app_func))}
 
-    for short_name in database_name_to_path.keys():
+    for database_name in database_name_to_path.keys():
         partialed = partial(
-            monitoring_app, database_name=short_name, session_data=session_data
+            monitoring_app,
+            database_name=database_name,
+            session_data=session_data[database_name],
         )
-        apps[f"/{short_name}"] = Application(FunctionHandler(partialed))
+        apps[f"/{database_name}"] = Application(FunctionHandler(partialed))
 
     if len(database_name_to_path) == 1:
         path_to_open = f"/{list(database_name_to_path.keys())[0]}"

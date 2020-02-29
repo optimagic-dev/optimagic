@@ -20,8 +20,8 @@ from estimagic.optimization.utilities import index_element_to_string
 def monitoring_app(doc, database_name, session_data):
     """Create plots showing the development of the criterion and parameters until now.
 
-    Supported options from the dash_options loaded from the database:
-        rollover (int): How many iterations to keep before discarding.
+    Options are loaded from the database. Supported options are:
+        - rollover (int): How many iterations to keep before discarding.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
@@ -33,84 +33,91 @@ def monitoring_app(doc, database_name, session_data):
             - database_path
 
     """
-    database = load_database(session_data[database_name]["database_path"])
+    database = load_database(session_data["database_path"])
     start_params = read_scalar_field(database, "start_params")
-    rollover = read_scalar_field(database, "dash_options")["rollover"]
+    dash_options = read_scalar_field(database, "dash_options")
+    rollover = dash_options["rollover"]
 
-    data_dict, new_last = read_new_iterations(
+    tables = ["criterion_history", "params_history"]
+    criterion_history, params_history = _create_bokeh_data_sources(
+        database=database, tables=tables
+    )
+    session_data["last_retrieved"] = 1
+
+    # create initial bokeh elements without callbacks
+    initial_convergence_plots = _create_initial_convergence_plots(
+        criterion_history=criterion_history,
+        params_history=params_history,
+        start_params=start_params,
+    )
+
+    activation_button = Toggle(
+        active=False,
+        label="Start Updating from Database",
+        button_type="danger",
+        width=50,
+        height=30,
+        name="activation_button",
+    )
+
+    # add elements to bokeh Document
+    bokeh_convergence_elements = [Row(activation_button)] + initial_convergence_plots
+    convergence_tab = Panel(
+        child=Column(*bokeh_convergence_elements), title="Convergence Tab"
+    )
+    tabs = Tabs(tabs=[convergence_tab])
+    doc.add_root(tabs)
+
+    # add callbacks
+    activation_callback = _create_activation_callback(
+        button=activation_button,
+        doc=doc,
         database=database,
-        tables=["criterion_history", "params_history"],
+        session_data=session_data,
+        rollover=rollover,
+        tables=tables,
+    )
+    activation_button.on_change("active", activation_callback)
+
+
+def _create_bokeh_data_sources(database, tables):
+    """Load the first entry from the database to initialize the ColumnDataSources.
+
+    Args:
+        database (sqlalchemy.MetaData)
+        tables (list): list of table names to load and convert to ColumnDataSources
+
+    Returns:
+        all_cds (list): list of ColumnDataSources
+
+    """
+    data_dict, _ = read_new_iterations(
+        database=database,
+        tables=tables,
         last_retrieved=0,
         limit=1,
         return_type="bokeh",
     )
-    session_data[database_name]["last_retrieved"] = new_last
 
-    criterion_history = ColumnDataSource(
-        data=data_dict["criterion_history"],
-        name=f"{database_name}_criterion_history_cds",
-    )
-    params_history = ColumnDataSource(
-        data=data_dict["params_history"], name=f"{database_name}_params_history_cds"
-    )
-
-    conv_tab = _setup_convergence_tab(
-        doc=doc,
-        database_name=database_name,
-        database=database,
-        criterion_history=criterion_history,
-        params_history=params_history,
-        start_params=start_params,
-        session_data=session_data,
-        rollover=rollover,
-    )
-
-    tabs = Tabs(tabs=[conv_tab])
-    doc.add_root(tabs)
+    all_cds = []
+    for tab, data in data_dict.items():
+        cds = ColumnDataSource(data=data, name=f"{tab}_cds")
+        all_cds.append(cds)
+    return all_cds
 
 
-def _setup_convergence_tab(
-    doc,
-    database_name,
-    database,
-    criterion_history,
-    params_history,
-    start_params,
-    session_data,
-    rollover,
-):
-    """Create the figures and plot available time series of the criterion and parameters.
+def _create_initial_convergence_plots(criterion_history, params_history, start_params):
+    """Create the initial convergence plots.
 
     Args:
-        doc (bokeh.Document): argument required by bokeh
-        database_name (str): short and unique name of the database
-        database (sqlalchemy.MetaData)
-        criterion_history (bokeh.ColumnDataSource):
-            history of the criterion's values, loaded from the optimization's database.
-        params_history (bokeh.ColumnDataSource):
-            history of the parameters' values, loaded from the optimization's database.
-        start_params (pd.DataFrame):
-            DataFrame with the initial parameter values and additional columns,
-            in particular the "group" column.
-        session_data (dict):
-            infos to be passed between and within apps.
-            Keys of this app's entry are:
-            - last_retrieved (int): last iteration currently in the ColumnDataSource
-            - database_path
-        rollover (int): How many iterations to keep before discarding.
+        criterion_history (bokeh ColumnDataSource)
+        params_history (bokeh ColumnDataSource)
+        start_params (pd.DataFrame): params DataFrame that includes the "group" column.
 
     Returns:
-        tab (bokeh.Panel)
+        convergence_plots (list):
+            List of bokeh Row elements, each containing one convergence plot.
     """
-    activation_button = _create_callback_button(
-        doc=doc,
-        database_name=database_name,
-        database=database,
-        session_data=session_data,
-        reset_cds=True,
-        rollover=rollover,
-    )
-
     criterion_plot = _plot_time_series(
         data=criterion_history,
         x_name="iteration",
@@ -118,16 +125,15 @@ def _setup_convergence_tab(
         y_names=["criterion"],
         title="Criterion",
     )
-    plots = [Row(activation_button), Row(criterion_plot)]
+    convergence_plots = [criterion_plot]
+
     group_to_params = _map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
-        group_plot = _plot_time_series(
+        param_group_plot = _plot_time_series(
             data=params_history, y_keys=group_params, x_name="iteration", title=g,
         )
-        plots.append(Row(group_plot))
-
-    tab = Panel(child=Column(*plots), title="Convergence Tab")
-    return tab
+        convergence_plots.append(Row(param_group_plot))
+    return convergence_plots
 
 
 def _plot_time_series(data, y_keys, x_name, title, y_names=None):
@@ -137,13 +143,13 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
         data (ColumnDataSource):
             data that contain the y_keys and x_name
         y_keys (list):
-            list of the entries in the data that are to be plotted
+            list of the entries in the data that are to be plotted.
         x_name (str):
-            name of the entry in the data that will be on the x axis
+            name of the entry in the data that will be on the x axis.
         title (str):
-            title of the plot
+            title of the plot.
         y_names (list):
-            if given these replace the y keys for the names of the lines
+            if given these replace the y keys for the names of the lines.
 
     Returns:
         plot (bokeh Figure)
@@ -187,6 +193,13 @@ def _map_groups_to_params(params):
         params (pd.DataFrame):
             DataFrame with the parameter values and additional information such as the
             "group" column and Index.
+
+    Returns:
+        group_to_params (dict):
+            Keys are the values of the "group" column. The values are lists with
+            bokeh friendly strings of the index tuples identifying the parameters
+            that belong to this group. Parameters where group is None are ignored.
+
     """
     group_to_params = {}
     for group in params["group"].unique():
@@ -197,99 +210,97 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _create_callback_button(
-    doc, database_name, database, session_data, reset_cds, rollover
-):
-    """Create a Button that changes color when clicked displaying its boolean state.
+def _create_activation_callback(button, doc, database, session_data, rollover, tables):
+    """Define the callback function that starts and resets the convergence plots.
 
     Args:
-        doc (bokeh Document): document to which add and remove the periodic callback
-        database_name (str): name of the database
+        doc (bokeh.Document): argument required by bokeh
         database (sqlalchemy.MetaData)
         session_data (dict):
-            infos to be passed between and within apps.
-            Keys of this app's entry are:
+            this app's entry of infos to be passed between and within apps.
+            The keys are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
-        reset_cds (bool): whether to reset the ColumnDataSource when deactivating
-        rollover (int): How many iterations to keep before discarding.
+        rollover (int): maximal number of points to show in the plot
+        tables (list): list of table names to load and convert to ColumnDataSources
+
 
     Returns:
-        activation_button (bokeh Toggle)
+        callback (func):
+            function that starts the data updating callback when the button state is
+            set to True and resets the convergence plots and stops their updating when
+            the button state is set to False.
 
     """
-    callback_button = Toggle(
-        active=False,
-        label="Start Updating from Database" if reset_cds else "",
-        button_type="danger",
-        width=50,
-        height=30,
-        name="{}_button_{}".format(
-            "activation" if reset_cds else "pause", database_name
-        ),
-    )
 
-    def button_click_callback(attr, old, new, session_data=session_data):
-        callback_dict = session_data[database_name]["callbacks"]
+    def callback(
+        attr,
+        old,
+        new,
+        session_data=session_data,
+        rollover=rollover,
+        doc=doc,
+        database=database,
+        button=button,
+        tables=tables,
+    ):
+        """Start and reset the convergence plots and their updating."""
+        callback_dict = session_data["callbacks"]
         if new is True:
             plot_new_data = partial(
                 _update_monitoring_tab,
                 doc=doc,
-                database_name=database_name,
                 database=database,
                 session_data=session_data,
                 rollover=rollover,
+                tables=tables,
             )
             callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
                 plot_new_data, period_milliseconds=200
             )
-            # change the color
-            callback_button.button_type = "success"
-            label = "Reset Plot" if reset_cds else "Stop Updating from Database"
-            callback_button.label = label
+            # change the button color
+            button.button_type = "success"
+            button.label = "Reset Plot"
         else:
             doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
-            # change the color
-            callback_button.button_type = "danger"
-            label = "Restart Plot" if reset_cds else "Resume Updating from Database"
-            callback_button.label = label
-            if reset_cds:
-                for table_name in ["criterion_history", "params_history"]:
-                    cds = doc.get_model_by_name(f"{database_name}_{table_name}_cds")
-                    column_names = cds.data.keys()
-                    cds.data = {name: [] for name in column_names}
-                session_data[database_name]["last_retrieved"] = 0
+            for table_name in ["criterion_history", "params_history"]:
+                cds = doc.get_model_by_name(f"{table_name}_cds")
+                column_names = cds.data.keys()
+                cds.data = {name: [] for name in column_names}
+            session_data["last_retrieved"] = 0
+            # change the button color
+            button.button_type = "danger"
+            button.label = "Restart Plot"
 
-    callback_button.on_change("active", button_click_callback)
-    return callback_button
+    return callback
 
 
-def _update_monitoring_tab(doc, database_name, database, session_data, rollover):
-    """Callback to look up new entries in the database and plot them.
+def _update_monitoring_tab(doc, database, session_data, tables, rollover):
+    """Callback to look up new entries in the database tables and plot them.
 
     Args:
         doc (bokeh.Document): argument required by bokeh
-        database_name (str): short and unique name of the database
         database (sqlalchemy.MetaData)
         session_data (dict):
             infos to be passed between and within apps.
             Keys of this app's entry are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
+        tables (list): list of table names to load and convert to ColumnDataSources
         rollover (int): maximal number of points to show in the plot
 
     """
-    last_retrieved = session_data[database_name]["last_retrieved"]
+    last_retrieved = session_data["last_retrieved"]
     new_data, new_last = read_new_iterations(
         database=database,
-        tables=["criterion_history", "params_history"],
+        tables=tables,
         last_retrieved=last_retrieved,
         return_type="bokeh",
         limit=20,
     )
 
     for table_name, to_add in new_data.items():
-        cds = doc.get_model_by_name(f"{database_name}_{table_name}_cds")
+        cds = doc.get_model_by_name(f"{table_name}_cds")
         cds.stream(to_add, rollover=rollover)
 
-    session_data[database_name]["last_retrieved"] = new_last
+    session_data["last_retrieved"] = new_last
