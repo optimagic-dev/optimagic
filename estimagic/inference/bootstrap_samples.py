@@ -1,8 +1,6 @@
-import random
-
 import numpy as np
-from joblib import delayed
-from joblib import Parallel
+
+import estimagic.inference.bootstrap_estimates as est
 
 
 def get_seeds(ndraws):
@@ -19,15 +17,16 @@ def get_seeds(ndraws):
     return np.random.randint(0, 2 ** 31, size=ndraws)
 
 
-# REWRITE THIS TO RETURN EITHER INDEXES OR ACTUAL SAMPLES OR DELETE
-# CAN'T I WRITE THIS WITH get_bootstrap_estimates?
-def get_bootstrap_samples(data, cluster_by=None, seeds=None, num_threads=1):
-    """Calculate the statistic for every drawn sample.
+def get_bootstrap_samples(
+    data, cluster_by=None, seeds=None, ndraws=1000, num_threads=1
+):
+    """Return the drawn bootstrap samples.
 
     Args:
         data (pd.DataFrame): original dataset.
         cluster_by (str): column name of the variable to cluster by.
         seeds (np.array): Size ndraws vector of drawn seeds or None.
+        ndraws (int): number of draws, only relevant if seeds is None.
         num_threads (int): number of jobs for parallelization.
 
     Returns:
@@ -35,34 +34,19 @@ def get_bootstrap_samples(data, cluster_by=None, seeds=None, num_threads=1):
 
     """
     if seeds is None:
-        seeds = get_seeds(1000)
-
-    n = len(data)
+        seeds = get_seeds(ndraws)
 
     if cluster_by is None:
 
-        def loop(s):
-
-            np.random.seed(s)
-            draw_ids = np.random.randint(0, n, size=n)
-            draw = data.iloc[draw_ids]
-            return draw
-
-        estimates = Parallel(n_jobs=num_threads)(delayed(loop)(s) for s in seeds)
+        samples = est._get_uniform_estimates(data, seeds, num_threads, f=None)
 
     else:
-        clusters = _get_cluster_index(data, cluster_by)
-        nclusters = len(clusters)
 
-        estimates = []
+        samples = est._get_clustered_estimates(
+            data, cluster_by, seeds, num_threads, f=None
+        )
 
-        for s in seeds:
-            random.seed(s)
-            draw_ids = np.concatenate(random.choices(clusters, k=nclusters))
-            draw = data.iloc[draw_ids]
-            estimates.append(draw)
-
-    return estimates
+    return samples
 
 
 def _get_cluster_index(data, cluster_by):
