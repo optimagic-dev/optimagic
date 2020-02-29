@@ -5,7 +5,7 @@ failed. From here the user can monitor any running optimizations.
 
 .. note::
     This is a very rudimentary version at the moment with only one tab and no updates.
-    The structure follows a MWE that already implements different updating tabs already
+    The structure follows a MWE that implements different updating tabs already
     and may seem overkill at the moment as a result.
 
 """
@@ -16,7 +16,7 @@ from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models.widgets import Div
 
-from estimagic.dashboard.utilities import dashboard_link
+from estimagic.dashboard.utilities import create_dashboard_link
 
 
 def master_app(doc, database_name_to_path, session_data):
@@ -63,14 +63,14 @@ def _create_section_to_elements(doc, database_name_to_path):
 
     """
     src_dict = {
-        "all": _name_to_bokeh_row_elements(
+        "all": _map_dabase_name_to_bokeh_row_elements(
             doc=doc, database_name_to_path=database_name_to_path
         ),
     }
     return src_dict
 
 
-def _name_to_bokeh_row_elements(doc, database_name_to_path):
+def _map_dabase_name_to_bokeh_row_elements(doc, database_name_to_path):
     """Inner part of the sec_to_elements dictionary.
 
     For each entry that belongs to the section create a clickable link to that
@@ -88,7 +88,7 @@ def _name_to_bokeh_row_elements(doc, database_name_to_path):
     """
     name_to_row = {}
     for database_name, _ in database_name_to_path.items():
-        name_to_row[database_name] = [dashboard_link(database_name)]
+        name_to_row[database_name] = [create_dashboard_link(database_name)]
     return ColumnDataSource(name_to_row)
 
 

@@ -11,8 +11,8 @@ from bokeh.server.server import Server
 
 from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
+from estimagic.dashboard.utilities import create_short_database_names
 from estimagic.dashboard.utilities import find_free_port
-from estimagic.dashboard.utilities import short_name_to_database_path
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_scalar_field
 
@@ -108,7 +108,7 @@ def _process_dashboard_args(database_paths, no_browser, port):
                 f"database_paths must be string or pathlib.Path. ",
                 "You supplied {type(single_database_path)}.",
             )
-    database_name_to_path = short_name_to_database_path(path_list=database_paths)
+    database_name_to_path = create_short_database_names(path_list=database_paths)
 
     all_dash_options = []
     for single_database_path in database_paths:

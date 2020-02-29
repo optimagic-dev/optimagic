@@ -213,6 +213,9 @@ def _map_groups_to_params(params):
 def _create_activation_callback(button, doc, database, session_data, rollover, tables):
     """Define the callback function that starts and resets the convergence plots.
 
+    This effectively partials a lot of arguments as bokeh callbacks only support a
+    very limited number of arguments (attr, old, new).
+
     Args:
         doc (bokeh.Document): argument required by bokeh
         database (sqlalchemy.MetaData)
@@ -226,14 +229,14 @@ def _create_activation_callback(button, doc, database, session_data, rollover, t
 
 
     Returns:
-        callback (func):
+        activation_callback (func):
             function that starts the data updating callback when the button state is
             set to True and resets the convergence plots and stops their updating when
             the button state is set to False.
 
     """
 
-    def callback(
+    def activation_callback(
         attr,
         old,
         new,
@@ -272,7 +275,7 @@ def _create_activation_callback(button, doc, database, session_data, rollover, t
             button.button_type = "danger"
             button.label = "Restart Plot"
 
-    return callback
+    return activation_callback
 
 
 def _update_monitoring_tab(doc, database, session_data, tables, rollover):

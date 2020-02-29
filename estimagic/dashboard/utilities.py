@@ -9,20 +9,20 @@ from bokeh.models.widgets import Div
 from bokeh.plotting import figure
 
 
-def short_name_to_database_path(path_list):
-    """Generate short but unique names from each path.
+def create_short_database_names(path_list):
+    """Generate short but unique names from each path for each full database path.
 
     Args:
         path_list (list):
             List of strings or pathlib.path to the optimizations' databases.
 
     Returns:
-        list: List of strings with names.
+        short_name_to_path (dict): mapping from the new unique names to their full path.
 
     Example:
 
     >>> pl = ["bla/blubb/blabb.db", "a/b", "bla/blabb"]
-    >>> short_name_to_database_path(pl)
+    >>> create_short_database_names(pl)
     {'blubb/blabb': 'bla/blubb/blabb.db', 'b': 'a/b', 'bla/blabb': 'bla/blabb'}
 
     """
@@ -66,7 +66,7 @@ def _name_clash(candidate, path_list, allowed_occurences=1):
     return duplicate_counter > 0
 
 
-def dashboard_link(name):
+def create_dashboard_link(name):
     """Create a link refering to *name*'s monitoring app."""
     div_name = f"link_{name}"
     open_in_new_tab = r'target="_blank"'
