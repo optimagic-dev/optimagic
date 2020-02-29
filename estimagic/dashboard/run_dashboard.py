@@ -117,23 +117,24 @@ def _process_dashboard_args(database_paths, no_browser, port):
         all_dash_options.append(dash_options)
 
     if port is None:
-        ports = list(set(d.pop("port", None) for d in all_dash_options))
-        true_ports = [p for p in ports if p is not None]
-        if len(true_ports) == 0:
+        ports = {
+            d.pop("port", None)
+            for d in all_dash_options
+            if d.pop("port", None) is not None
+        }
+        if len(ports) == 0:
             port = find_free_port()
         else:
-            port = ports[0]
-            if len(true_ports) > 1:
+            port = ports.pop()
+            if len(ports) > 1:
                 warnings.warn(f"You supplied more than one port. {port} will be used.")
 
     if not isinstance(port, int):
         raise TypeError(f"port must be an integer. You supplied {type(port)}.")
 
     if no_browser is None:
-        no_browser_vals = list(
-            set(d.pop("no_browser", False) for d in all_dash_options)
-        )
-        no_browser = no_browser_vals[0]
+        no_browser_vals = {d.pop("no_browser", False) for d in all_dash_options}
+        no_browser = no_browser_vals.pop()
         if len(no_browser_vals) > 1:
             no_browser = False
             warnings.warn(

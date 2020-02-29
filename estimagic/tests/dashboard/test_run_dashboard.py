@@ -11,6 +11,7 @@ from estimagic.dashboard import run_dashboard
 def database_paths():
     current_dir_path = Path(__file__).resolve().parent
     database_paths = [current_dir_path / "db1.db", current_dir_path / "db2.db"]
+    return database_paths
 
 
 def test_run_dashboard_in_separate_process(database_paths):
