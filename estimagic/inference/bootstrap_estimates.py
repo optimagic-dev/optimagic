@@ -97,17 +97,17 @@ def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
     clusters = _get_cluster_index(data, cluster_by)
     nclusters = len(clusters)
 
-    estimates = []
-
-    for s in seeds:
+    def loop(s):
         random.seed(s)
         draw_ids = np.concatenate(random.choices(clusters, k=nclusters))
         draw = data.iloc[draw_ids]
 
         if f is None:
-            estimates.append(draw)
+            return draw
 
         else:
-            estimates.append(f(draw))
+            return f(draw)
+
+    estimates = Parallel(n_jobs=num_threads)(delayed(loop)(s) for s in seeds)
 
     return estimates
