@@ -56,7 +56,7 @@ def process_arguments(
         criterion = expand_criterion_output(criterion)
         criterion = negative_criterion(criterion) if is_maximization else criterion
 
-        fitness_eval, comparison_plot_data = _first_criterion_eval(
+        fitness_eval, comparison_plot_data = _evaluate_criterion(
             criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
         )
         general_options["start_criterion_value"] = fitness_eval
@@ -107,7 +107,7 @@ def process_arguments(
         )
 
         origin, algo_name = _process_algorithm(algorithm)
-        bounds = _internal_bounds_from_params(params)
+        bounds = _get_internal_bounds(params)
 
         optim_kwargs = {
             "internal_criterion": internal_criterion,
@@ -131,7 +131,15 @@ def process_arguments(
 
 
 def _pre_process_params(params):
-    """Set defaults and run checks on the user-supplied params."""
+    """Set defaults and run checks on the user-supplied params.
+
+    Args:
+        params (pd.DataFrame): See :ref:`params`.
+
+    Returns:
+        params (pd.DataFrame)
+
+    """
     params = params.copy()
     if "lower" not in params.columns:
         params["lower"] = -np.inf
@@ -175,16 +183,38 @@ def _pre_process_params(params):
     return params
 
 
-def _first_criterion_eval(criterion, params, criterion_kwargs):
+def _evaluate_criterion(criterion, params, criterion_kwargs):
+    """Evaluate the criterion function for the first time.
+
+    The comparison_plot_data output is needed to initialize the database.
+    The criterion value is stored in the general options for the tao algorithm.
+
+    Args:
+        criterion (function):
+            Python function that takes a pandas DataFrame with parameters as the first
+            argument and returns a value or array to be minimized and data for the
+            comparison plot.
+        params (pd.DataFrame):
+            See :ref:`params`.
+        criterion_kwargs (dict):
+            Additional keyword arguments for criterion.
+
+    Returns:
+        fitness_eval (float): the scalar criterion value.
+        comparison_plot_data (np.array or pd.DataFrame):
+            Data for the comparison_plot, can be empty.
+
+    """
     criterion_out, comparison_plot_data = criterion(params, **criterion_kwargs)
     if np.any(np.isnan(criterion_out)):
         raise ValueError(
             "The criterion function evaluated at the start parameters returns NaNs."
         )
     elif np.isscalar(criterion_out):
-        return criterion_out, comparison_plot_data
+        fitness_eval = criterion_out
     else:
-        return np.mean(np.square(criterion_out)), comparison_plot_data
+        fitness_eval = np.mean(np.square(criterion_out))
+    return fitness_eval, comparison_plot_data
 
 
 def _create_internal_criterion(
@@ -296,7 +326,7 @@ def _create_internal_gradient(
         database=database,
         fitness_factor=fitness_factor,
     )
-    bounds = _internal_bounds_from_params(params)
+    bounds = _get_internal_bounds(params)
     names = params.query("_internal_free")["name"].tolist()
 
     @log_gradient(database, names)
@@ -306,7 +336,16 @@ def _create_internal_gradient(
     return internal_gradient
 
 
-def _internal_bounds_from_params(params):
+def _get_internal_bounds(params):
+    """Extract the internal bounds from params.
+
+    Args:
+        params (pd.DataFrame): See :ref:`params`.
+
+    Returns:
+        bounds (tuple): bounds of the free parameters.
+
+    """
     bounds = tuple(
         params.query("_internal_free")[["_internal_lower", "_internal_upper"]]
         .to_numpy()
@@ -316,9 +355,21 @@ def _internal_bounds_from_params(params):
 
 
 def _process_algorithm(algorithm):
+    """Identify the algorithm from the user-supplied string.
+
+    Args:
+        algorithm (str):
+            Package and name of the algorithm. It should be of the format {pkg}_{name}.
+
+    Returns:
+        origin (str): Name of the package
+        algo_name (str): Name of the algorithm
+
+    """
     current_dir_path = Path(__file__).resolve().parent
     with open(current_dir_path / "algo_dict.json") as j:
         algos = json.load(j)
+
     origin, algo_name = algorithm.split("_", 1)
 
     try:

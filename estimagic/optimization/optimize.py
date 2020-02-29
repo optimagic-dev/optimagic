@@ -243,7 +243,7 @@ def minimize(
     if dashboard is True and not results_arguments[0]["keep_dashboard_alive"]:
         dashboard_process.terminate()
 
-    results = process_optimization_results(results, results_arguments)
+    results = _process_optimization_results(results, results_arguments)
 
     return results
 
@@ -324,7 +324,18 @@ def _internal_minimize(
     return results
 
 
-def process_optimization_results(results, results_arguments):
+def _process_optimization_results(results, results_arguments):
+    """Expand the solutions back to the original problems.
+
+    Args:
+        results (list):
+            list of dictionaries with the harmonized results objects.
+        results_arguments (list):
+            each element is a dictionary supplying the start params DataFrame
+            and the constraints to the original problem.
+            The keys are "params", "constraints" and "keep_dashboard_alive".
+
+    """
     new_results = []
     for res, args in zip(results, results_arguments):
         start_params = args["params"]

@@ -21,7 +21,12 @@ def run_dashboard_in_separate_process(database_paths):
     """Run the dashboard in a separate process.
 
     Args:
-        database_paths (str or pathlib.Path or list): path(s) to the database(s).
+        database_paths (str or pathlib.Path or list of them):
+            Path(s) to an sqlite3 file which typically has the file extension ``.db``.
+            See :ref:`logging` for details.
+
+    Returns:
+        p (multiprocessing.Process): Process in which the dashboard is running.
 
     """
     p = Process(
@@ -43,22 +48,22 @@ def run_dashboard(database_paths, no_browser=None, port=None):
         port (int, optional): port where to display the dashboard.
 
     """
-    database_name_to_path, no_browser, port = _process_arguments(
-        database_paths=database_paths, no_browser=no_browser, port=port,
+    database_name_to_path, no_browser, port = _process_dashboard_args(
+        database_paths=database_paths, no_browser=no_browser, port=port
     )
 
     session_data = _create_session_data(database_name_to_path)
 
-    master_partialed = partial(
+    master_app_func = partial(
         master_app,
         database_name_to_path=database_name_to_path,
         session_data=session_data,
     )
-    apps = {"/": Application(FunctionHandler(master_partialed))}
+    apps = {"/": Application(FunctionHandler(master_app_func))}
 
     for short_name in database_name_to_path.keys():
         partialed = partial(
-            monitoring_app, database_name=short_name, session_data=session_data,
+            monitoring_app, database_name=short_name, session_data=session_data
         )
         apps[f"/{short_name}"] = Application(FunctionHandler(partialed))
 
@@ -72,7 +77,7 @@ def run_dashboard(database_paths, no_browser=None, port=None):
     )
 
 
-def _process_arguments(database_paths, no_browser, port):
+def _process_dashboard_args(database_paths, no_browser, port):
     """Check arguments and find free port if none was given.
 
     Args:
@@ -90,8 +95,7 @@ def _process_arguments(database_paths, no_browser, port):
         no_browser (bool):
             Whether or not to open the dashboard in the browser.
         port (int): port where to display the dashboard.
-        path_to_options (dict):
-            mapping from the path of the database to its dashboard options,.
+
     """
     if not isinstance(database_paths, (list, tuple)):
         database_paths = [database_paths]
