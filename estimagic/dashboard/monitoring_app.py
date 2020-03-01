@@ -18,16 +18,15 @@ from estimagic.optimization.utilities import index_element_to_string
 
 
 def monitoring_app(doc, database_name, session_data):
-    """Create plots showing the development of the criterion and parameters until now.
+    """Create plots showing the development of the criterion and parameters.
 
     Options are loaded from the database. Supported options are:
         - rollover (int): How many iterations to keep before discarding.
 
     Args:
-        doc (bokeh.Document): argument required by bokeh
-        database_name (str): short and unique name of the database
-        session_data (dict):
-            infos to be passed between and within apps.
+        doc (bokeh.Document): Argument required by bokeh.
+        database_name (str): Short and unique name of the database.
+        session_data (dict): Infos to be passed between and within apps.
             Keys of this app's entry are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource.
             - database_path (str or pathlib.Path)

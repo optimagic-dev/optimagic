@@ -43,10 +43,14 @@ def master_app(doc, database_name_to_path, session_data):
 
 
 def _create_section_to_elements(doc, database_name_to_path):
-    """Map to each section the entries that belong to it.
+    """Create a dictionary that maps sections to corresponding entries.
 
-    .. warning::
-        Only one section "all" at the moment!
+    The keys are the sections. They will be "running", "succeeded", "failed"
+    and "scheduled" later on. The values are ColumnDataSources.
+    These are basically dictionaries mapping the database name to a list of
+    bokeh elements that make up the entry in the overview table.
+    This consists just of a link to the dashboard at the moment.
+    They are represented as ColumnDataSources to be use callbacks on them.
 
     Args:
         doc (bokeh Document)
@@ -55,12 +59,6 @@ def _create_section_to_elements(doc, database_name_to_path):
 
     Returns:
         sec_to_elements (dict):
-            The keys are the sections. They will be "running", "succeeded", "failed"
-            and "scheduled" later on. The values are ColumnDataSources.
-            These are basically dictionaries mapping the database name to a list of
-            bokeh elements that make up the entry in the overview table.
-            This consists just of a link to the dashboard at the moment.
-            They are represented as ColumnDataSources to be use callbacks on them.
 
     """
     src_dict = {
@@ -75,11 +73,7 @@ def _map_dabase_name_to_bokeh_row_elements(doc, database_name_to_path):
     """Inner part of the sec_to_elements dictionary.
 
     For each entry that belongs to the section create a clickable link to that
-    optimization's monitoring page and a Button to start or pause that
     optimization's monitoring page.
-
-    .. warning::
-        The button does not work yet!
 
     Args:
         doc (bokeh Document)
