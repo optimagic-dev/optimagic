@@ -230,6 +230,37 @@ def _pre_process_arguments(
     return optim_kwargs, params, database_path
 
 
+def _process_algorithm(algorithm):
+    """Identify the algorithm from the user-supplied string.
+
+    Args:
+        algorithm (str): Package and name of the algorithm. It should be of the format
+            {pkg}_{name}.
+
+    Returns:
+        origin (str): Name of the package.
+        algo_name (str): Name of the algorithm.
+
+    """
+    current_dir_path = Path(__file__).resolve().parent
+    with open(current_dir_path / "algo_dict.json") as j:
+        algos = json.load(j)
+
+    origin, algo_name = algorithm.split("_", 1)
+
+    try:
+        assert algo_name in algos[origin], "Invalid algorithm requested: {}".format(
+            algorithm
+        )
+    except (AssertionError, KeyError):
+        proposals = propose_algorithms(algorithm, algos)
+        raise NotImplementedError(
+            f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
+        )
+
+    return origin, algo_name
+
+
 def _set_params_defaults_if_missing(params):
     """Set defaults and run checks on the user-supplied params.
 
@@ -244,12 +275,12 @@ def _set_params_defaults_if_missing(params):
     if "lower" not in params.columns:
         params["lower"] = -np.inf
     else:
-        params["lower"].fillna(-np.inf)
+        params["lower"].fillna(-np.inf, inplace=True)
 
     if "upper" not in params.columns:
         params["upper"] = np.inf
     else:
-        params["upper"].fillna(np.inf)
+        params["upper"].fillna(np.inf, inplace=True)
 
     if "group" not in params.columns:
         params["group"] = "All Parameters"
@@ -485,7 +516,9 @@ def _get_internal_bounds(params):
         params (pd.DataFrame): See :ref:`params`.
 
     Returns:
-        bounds (tuple): bounds of the free parameters.
+        bounds (tuple): Bounds of the free parameters. The tuple has two entries.
+            The first are the lower bounds as numpy array.
+            The second are the upper bounds as numpy array.
 
     """
     bounds = tuple(
@@ -494,34 +527,3 @@ def _get_internal_bounds(params):
         .T
     )
     return bounds
-
-
-def _process_algorithm(algorithm):
-    """Identify the algorithm from the user-supplied string.
-
-    Args:
-        algorithm (str): Package and name of the algorithm. It should be of the format
-            {pkg}_{name}.
-
-    Returns:
-        origin (str): Name of the package.
-        algo_name (str): Name of the algorithm.
-
-    """
-    current_dir_path = Path(__file__).resolve().parent
-    with open(current_dir_path / "algo_dict.json") as j:
-        algos = json.load(j)
-
-    origin, algo_name = algorithm.split("_", 1)
-
-    try:
-        assert algo_name in algos[origin], "Invalid algorithm requested: {}".format(
-            algorithm
-        )
-    except (AssertionError, KeyError):
-        proposals = propose_algorithms(algorithm, algos)
-        raise NotImplementedError(
-            f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
-        )
-
-    return origin, algo_name
