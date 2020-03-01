@@ -1,51 +1,56 @@
 .. _dashboard:
 
-==========================================
-The *dashboard* and *db_options* Arguments
-==========================================
+===============================================
+The *dashboard* and *dash_options* Arguments
+===============================================
 
 Overview
 ---------
 
-Estimagic provides a dashboard that allows to inspect an optimization.
-All estimagic functions that run an optimization have an optional
-boolean argument `dashboard`. When True, the function call will fire
-up a new tab in your default browser that displays the dashboard.
+Estimagic provides a dashboard that allows to inspect any number of optimizations.
+The dashboard visualizes the databases created and updated by the optimizations.
+To start a dashboard you can pass ``dashboard=True`` to any estimagic function that
+runs one or several optimizations.
+Alternatively, you can start a dashboard later by passing the database path(s) to
+``run_dashboard``.
 
-The dashboards shows the evolution of the criterion function and all parameters
-in real time as can be seen below.
+When called, the dashboard will open an overview page of the optimizations' databases
+that were passed to it. If it is just one, it directly opens the page monitoring the
+evolution of the criterion value and parameters. Otherwise, you can select which
+optimization you want to inspect. Once the monitoring application has started
+you can start start the updates and the dashboard will replay the entire optimization
+progress until the current state and then display the evolution in real time.
 
 .. image:: ../images/dashboard.gif
 
 If your params DataFrame has a "group" column, there will be one
-parameter plot for each group.
+parameter plot for each group in the monitoring page.
 
 Options
--------
+--------
 
-All functions with the dashboard argument, also support an optional argument db_options.
+All optimization functions also support an optional argument ``dash_options``.
 It is a dictionary that allows to configure the dashboard. The following entries are
 supported:
 
 - ``rollover (int)`` : If negative, the complete history of criterion function
   evaluations and parameter values from the optimization is stored and displayed in the
-  convergence plots. Otherwise, only the last ``rollover`` values are kept. This is
-  recommended for very long running optimizations.
+  convergence plots. Otherwise, only the last ``rollover`` values are kept.
+  The default value is 500.
 - ``port (int)``: Defaults to a random port over which the notebook can be accessed.
-- ``evaluations_to_skip (int)``: Only store and display data from a subset of the
-  criterion function evaluations. This is recommended for very long running
-  optimizations and for optimizers that take numerical derivatives.
-- ``time_between_updates (float)``: Defaults to 0. Seconds between each update of the
-  convergence plot. A good value is ``evaluations_to_skip`` multiplied with the
-  approximate runtime of criterion function.
 - ``no_browser (bool)``: Defaults to ``False``. On a remote server the dashboard should
   not launch a browser. See :ref:`remote-server` for more information.
+
+``port`` and ``no_browser`` are not database specific and can be supplied to
+``run_dashboard`` to override the  orignial values in ``dash_options`` which are saved
+in the database. ``rollover`` can be supplied specific to each optimization and cannot
+be supplied to ``run_dashboard``.
 
 
 .. _remote-server:
 
 On a remote server
-------------------
+-------------------
 
 Since ``estimagic`` is designed for long running optimizations, it is often run on
 large remote servers. Normally, these servers do not offer a GUI or browser.
@@ -93,15 +98,15 @@ you start estimagic from a .py script, you can just skip the corresponding steps
 5. On your local machine, open ``localhost:10101`` and you should see the Jupyter Lab.
 
 6. Use a notebook to run a maximization or minimization with ``estimagic``. Make sure to
-   add among other options the following two to the ``db_options``.
+   add among other options the following two to the ``dash_options``.
 
    .. code-block:: python
 
        from estimagic.optimization.optimize import maximize, minimize
 
 
-       maximize(..., db_options={"port": 10102, "no_browser": True}, ...)
-       minimize(..., db_options={"port": 10102, "no_browser": True}, ...)
+       maximize(..., dash_options={"port": 10102, "no_browser": True}, ...)
+       minimize(..., dash_options={"port": 10102, "no_browser": True}, ...)
 
    ``"no_browser"`` is ``False`` by default, but it has to be set to ``True`` as the
    dashboard crashes if it does not find a browser.
@@ -115,8 +120,7 @@ you start estimagic from a .py script, you can just skip the corresponding steps
 Implementation
 ---------------
 
-The dashboard is implemented using a Bokeh Server which is run
-in a separate process parallel to the optimization. After the optimization
-terminates, the updates to the dashboard are stopped, but the bokeh server
-will keep running such that interactive features of the plots can still be
-used.
+The dashboard is implemented using a bokeh Server.
+
+As the dashboard only relies on the database, you can create dashboards for any running,
+succeeded or failed optimization.

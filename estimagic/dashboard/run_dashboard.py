@@ -49,12 +49,10 @@ def run_dashboard(database_paths, no_browser=None, port=None):
     """Start the dashboard pertaining to one or several databases.
 
     Args:
-        database_paths (str or pathlib.Path or list of them):
-            Path(s) to an sqlite3 file which typically has the file extension ``.db``.
-            See :ref:`logging` for details.
-        no_browser (bool, optional):
-            Whether or not to open the dashboard in the browser.
-        port (int, optional): port where to display the dashboard.
+        database_paths (str or pathlib.Path or list): Path(s) to an sqlite3 file which
+            typically has the file extension ``.db``. See :ref:`logging` for details.
+        no_browser (bool, optional): If True the dashboard does not open in the browser.
+        port (int, optional): Port where to display the dashboard.
 
     """
     database_name_to_path, no_browser, port = _process_dashboard_args(
