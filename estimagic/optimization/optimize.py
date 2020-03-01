@@ -29,16 +29,17 @@ def maximize(
     dashboard=False,
     dash_options=None,
 ):
-    """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
+    """Maximize criterion using algorithm subject to constraints and bounds.
 
-    Each argument except for ``general_options`` can also be replaced by a list of
+    Each argument except for general_options can also be replaced by a list of
     arguments in which case several optimizations are run in parallel. For this, either
     all arguments must be lists of the same length, or some arguments can be provided
     as single arguments in which case they are automatically broadcasted.
 
     Args:
-        criterion (callable or list of callables): Python function that takes a pandas
-            DataFrame with parameters as the first argument. Supported outputs are:
+        criterion (function or list of functions):
+            Python function that takes a pandas DataFrame with parameters as the first
+            argument. Supported outputs are:
                 - scalar floating point
                 - np.ndarray: contributions for the tao Pounders algorithm.
                 - tuple of a scalar floating point and a pd.DataFrame:
@@ -47,20 +48,22 @@ def maximize(
                     See :ref:`comparison_plot`.
                     .. warning::
                         This feature is not implemented in the dashboard yet.
-        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
-        algorithm (str or list of strings): Name of the optimization algorithm.
+        params (pd.DataFrame or list of pd.DataFrames):
+            See :ref:`params`.
+        algorithm (str or list of strings): Specifies the optimization algorithm.
             See :ref:`list_of_algorithms`.
-        criterion_kwargs (dict or list of dict): Additional criterion keyword arguments.
+        criterion_kwargs (dict or list of dicts): Additional keyword arguments for
+            criterion.
         constraints (list or list of lists): List with constraint dictionaries.
-            See :ref:`constraints` for details.
+            See :ref:`constraints`.
         general_options (dict): Additional configurations for the optimization.
             Keys can include:
-                - keep_dashboard_alive (bool): if True and dashboard is True the process
-                    in which the dashboard is run is not terminated when maximize or
-                    minimize finish.
-        algo_options (dict or list of dicts): Algorithm specific configurations.
+                - keep_dashboard_alive (bool): Do not terminate the dashboard process
+                    after the optimization(s) finish(es).
+        algo_options (dict or list of dicts): Algorithm specific configurations for the
+            optimization.
         gradient_options (dict): Options for the gradient function.
-        logging (str or pathlib.Path or list thereof): Path to an sqlite3 file which
+        logging (str or pathlib.Path or list): Path(s) to (an) sqlite3 file(s) which
             typically has the file extension ``.db``. If the file does not exist,
             it will be created. See :ref:`logging` for details.
         log_options (dict or list of dict): Keyword arguments to influence the logging.
@@ -77,7 +80,6 @@ def maximize(
         results (tuple or list of tuples): Each tuple consists of the harmonized result
         info dictionary and the params DataFrame with the minimizing parameter values
         of the untransformed problem as specified of the user.
-
     """
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options
@@ -144,26 +146,24 @@ def minimize(
                         This feature is not implemented in the dashboard yet.
         params (pd.DataFrame or list of pd.DataFrames):
             See :ref:`params`.
-        algorithm (str or list of strings):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-        criterion_kwargs (dict or list of dicts):
-            additional keyword arguments for criterion
-        constraints (list or list of lists):
-            list with constraint dictionaries. See for details.
-        general_options (dict):
-            additional configurations for the optimization. Keys can include:
-            - keep_dashboard_alive (bool): if True and dashboard is True the process
-                in which the dashboard is run is not terminated when maximize or
-                minimize finish.
-        algo_options (dict or list of dicts):
-            algorithm specific configurations for the optimization
+        algorithm (str or list of strings): Specifies the optimization algorithm.
+            See :ref:`list_of_algorithms`.
+        criterion_kwargs (dict or list of dicts): Additional keyword arguments for
+            criterion.
+        constraints (list or list of lists): List with constraint dictionaries.
+            See :ref:`constraints`.
+        general_options (dict): Additional configurations for the optimization.
+            Keys can include:
+                - keep_dashboard_alive (bool): Do not terminate the dashboard process
+                    after the optimization(s) finish(es).
+        algo_options (dict or list of dicts): Algorithm specific configurations for the
+            optimization.
         gradient_options (dict): Options for the gradient function.
-        logging (str or pathlib.Path or list thereof):
-            Path to an sqlite3 file which typically has the file extension ``.db``.
-            If the file does not exist, it will be created.
+        logging (str or pathlib.Path or list): Path(s) to (an) sqlite3 file(s) which
+            typically has the file extension ``.db``. If the file does not exist,
+            it will be created. See :ref:`logging` for details.
+        log_options (dict or list of dict): Keyword arguments to influence the logging.
             See :ref:`logging` for details.
-        log_options (dict or list of dict):
-            Keyword arguments to influence the logging. See :ref:`logging` for details.
         dashboard (bool): Whether to create and show a dashboard, default is False.
             See :ref:`dashboard` for details.
         dash_options (dict or list of dict, optional): Options passed to the dashboard.
