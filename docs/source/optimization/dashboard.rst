@@ -7,18 +7,17 @@ The *dashboard* and *dash_options* Arguments
 Overview
 ---------
 
-Estimagic provides a dashboard that allows to inspect any number of optimizations.
+Estimagic provides a dashboard that allows to inspect one or several optimizations.
 The dashboard visualizes the databases created and updated by the optimizations.
-To start a dashboard you can pass ``dashboard=True`` to any estimagic function that
-runs one or several optimizations.
-Alternatively, you can start a dashboard later by passing the database path(s) to
-``run_dashboard``.
+To start a dashboard you can pass ``dashboard=True`` to maximize, minimize or the
+estimation functions. Alternatively, you can start a dashboard later by passing the
+database path(s) to ``run_dashboard``.
 
-When called, the dashboard will open an overview page of the optimizations' databases
+When started, the dashboard will open an overview page of the optimizations' databases
 that were passed to it. If it is just one, it directly opens the page monitoring the
 evolution of the criterion value and parameters. Otherwise, you can select which
 optimization you want to inspect. Once the monitoring application has started
-you can start start the updates and the dashboard will replay the entire optimization
+you can start the updates and the dashboard will replay the entire optimization
 progress until the current state and then display the evolution in real time.
 
 .. image:: ../images/dashboard.gif
@@ -41,11 +40,8 @@ supported:
 - ``no_browser (bool)``: Defaults to ``False``. On a remote server the dashboard should
   not launch a browser. See :ref:`remote-server` for more information.
 
-``port`` and ``no_browser`` are not database specific and can be supplied to
-``run_dashboard`` to override the  orignial values in ``dash_options`` which are saved
-in the database. ``rollover`` can be supplied specific to each optimization and cannot
-be supplied to ``run_dashboard``.
-
+``port`` and ``no_browser`` are not specific to one optimization and can be supplied to
+``run_dashboard`` to override the  original values in ``dash_options``.
 
 .. _remote-server:
 
@@ -122,5 +118,7 @@ Implementation
 
 The dashboard is implemented using a bokeh Server.
 
-As the dashboard only relies on the database, you can create dashboards for any running,
+While dashboards are started by maximize or minimize most of the time, they are actually
+completely separate from an optimization and only monitor a database that is updated
+by the optimizers. Thus, you can run dashboards for any running,
 succeeded or failed optimization.

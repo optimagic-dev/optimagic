@@ -12,8 +12,8 @@ optimizer will perform best.
 2. Most optimizers are black boxes that only return when they are done. Meanwhile,
 they don't give you any information on the progress.
 
-3. The problem may be subject to constraints that cannot be passed to the algorithm.
-This can lead to errors that lead the optimization to abort or unfeasible solutions.
+3. The way constraints are specified depends strongly on the algorithm. This makes it
+cumbersome to experiment with several optimizers.
 
 Estimagic reduces or erases these difficulties:
 
@@ -21,14 +21,15 @@ Estimagic reduces or erases these difficulties:
 sequentially or in parallel by just switching a few arguments of the
 ``maximize`` or ``minimize`` functions.
 
-2. Estimagic stores all function calls and more in a database.
-The estimagic dashboard visualizes this database.
-With it you can follow the optimization or explore your optimizer's behavior afterwards.
+2. Estimagic stores all parameters and function values in a database.
+The estimagic dashboard visualizes this database. With the dashboard you can monitor the
+optimization while it is running or explore your optimizer's behavior after the
+algorithm terminated.
 
-3. Estimagic transforms your constrained problem with deterministic reparametrizations.
-These transformations reduce your problem's dimensionality and make errors and
-unfeasible solutions impossible.
-
+3. Estimagic transforms your constrained problem by applying bijective and
+differentiable reparametrizations. These transformations make sure that the optimizer
+can only try parameter vectors that satisfy all constraints and can sometimes reduce
+the dimensionality of the optimization problem substantially.
 
 In the following we first explain the basic interface of estimagic's
 optimization functions. Then, we explain the arguments in detail. This section
