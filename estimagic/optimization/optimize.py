@@ -280,12 +280,12 @@ def _internal_minimize(
     """Run one optimization of the transformed optimization problem.
 
     The transformed optimization problem is converted from the original problem
-    consisting of the user supplied criterion, params DataFrame, criterion_kwargs,
+    which consists of the user supplied criterion, params DataFrame, criterion_kwargs,
     constraints and gradient (if supplied).
     In addition, the transformed optimization problem provides sophisticated logging
-    tools under the hood if activated by the user.
+    tools if activated by the user.
 
-    The transformed problem is of the form supported by most algorithms:
+    The transformed problem can be solved by almost any optimizer package:
         1. The only constraints are bounds on the parameters.
         2. The internal_criterion function takes an one dimensional np.array as input.
         3. The internal criterion function returns a scalar value
@@ -297,7 +297,7 @@ def _internal_minimize(
 
     Args:
         internal_criterion (func): The transformed criterion function.
-            It takes the internal_params np.array as only argument, automatically
+            It takes the internal_params numpy array as only argument, automatically
             enforcing constraints specified by the user. It calls the original
             criterion function after the necessary reparametrizations.
             If logging is activated it protocols every call automatically to the
