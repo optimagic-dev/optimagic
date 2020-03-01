@@ -144,14 +144,6 @@ def prepare_database(
         to the database can be accessed via ``database.bind``.
 
     """
-    standard_dash_options = {"no_browser": False, "port": None, "rollover": 500}
-    if dash_options is None:
-        dash_options = standard_dash_options
-    else:
-
-        # important for dash_options to be last for standards to be overwritten
-        dash_options = {**standard_dash_options, **dash_options}
-
     gradient_status = float(gradient_status)
     database = load_database(path)
 

@@ -45,9 +45,6 @@ def maximize(
                 - tuple of a scalar floating point and a pd.DataFrame:
                     In this case the first output is the criterion value.
                     The second output are the comparison_plot_data.
-                    See :ref:`comparison_plot`.
-                    .. warning::
-                        This feature is not implemented in the dashboard yet.
         params (pd.DataFrame or list of pd.DataFrames):
             See :ref:`params`.
         algorithm (str or list of strings): Specifies the optimization algorithm.
@@ -141,9 +138,6 @@ def minimize(
                 - tuple of a scalar floating point and a pd.DataFrame:
                     In this case the first output is the criterion value.
                     The second output are the comparison_plot_data.
-                    See :ref:`comparison_plot`.
-                    .. warning::
-                        This feature is not implemented in the dashboard yet.
         params (pd.DataFrame or list of pd.DataFrames):
             See :ref:`params`.
         algorithm (str or list of strings): Specifies the optimization algorithm.

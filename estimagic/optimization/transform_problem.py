@@ -39,12 +39,12 @@ def transform_problem(
     """Transform the user supplied problem.
 
     The transformed optimization problem is converted from the original problem
-    consisting of the user supplied criterion, params DataFrame, criterion_kwargs,
+    which consists of the user supplied criterion, params DataFrame, criterion_kwargs,
     constraints and gradient (if supplied).
     In addition, the transformed optimization problem provides sophisticated logging
-    tools under the hood if activated by the user.
+    tools if activated by the user.
 
-    The transformed problem is of the form supported by most algorithms:
+    The transformed problem can be solved by almost any optimizer package:
         1. The only constraints are bounds on the parameters.
         2. The internal_criterion function takes an one dimensional np.array as input.
         3. The internal criterion function returns a scalar value
@@ -101,12 +101,13 @@ def transform_problem(
             after the optimization(s) terminate(s).
 
     """
-    optim_kwargs, params, database_path = _pre_process_arguments(
+    optim_kwargs, params, dash_options, database_path = _pre_process_arguments(
         params=params,
         algorithm=algorithm,
         algo_options=algo_options,
         logging=logging,
         dashboard=dashboard,
+        dash_options=dash_options,
     )
 
     # harmonize criterion interface
@@ -194,7 +195,7 @@ def transform_problem(
 
 
 def _pre_process_arguments(
-    params, algorithm, algo_options, logging, dashboard,
+    params, algorithm, algo_options, logging, dashboard, dash_options
 ):
     """Process user supplied arguments without affecting the optimization problem.
 
@@ -206,6 +207,11 @@ def _pre_process_arguments(
             algorithm specific configurations for the optimization
         dashboard (bool): Whether to create and show a dashboard, default is False.
             See :ref:`dashboard` for details.
+        dash_options (dict or list of dict, optional): Options passed to the dashboard.
+            Supported keys are:
+                - port (int): port where to display the dashboard
+                - no_browser (bool): whether to display the dashboard in a browser
+                - rollover (int): how many iterations to keep in the monitoring plots
 
     Returns:
         optim_kwargs (dict): dictionary collecting the arguments that are going to be
@@ -215,6 +221,10 @@ def _pre_process_arguments(
         database_path (str or pathlib.Path or None): path to the database.
 
     """
+    standard_dash_options = {"no_browser": False, "port": None, "rollover": 500}
+    # important for dash_options to be last for standards to be overwritten
+    dash_options = {**standard_dash_options, **dash_options}
+
     origin, algo_name = _process_algorithm(algorithm)
     optim_kwargs = {
         "origin": origin,
@@ -227,7 +237,7 @@ def _pre_process_arguments(
 
     database_path = logging if dashboard else None
 
-    return optim_kwargs, params, database_path
+    return optim_kwargs, params, dash_options, database_path
 
 
 def _process_algorithm(algorithm):

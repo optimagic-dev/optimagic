@@ -48,7 +48,7 @@ def test_name_clash_with_clash():
 
 # no tests for create_dashboard_link
 
-# no tests for create_wide_figure
+# no tests for create_standard_figure
 
 
 def test_get_color_palette_1():

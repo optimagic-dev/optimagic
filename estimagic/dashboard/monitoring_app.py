@@ -9,12 +9,11 @@ from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models import Toggle
 
-from estimagic.dashboard.utilities import create_wide_figure
+from estimagic.dashboard.utilities import create_standard_figure
 from estimagic.dashboard.utilities import get_color_palette
 from estimagic.logging.create_database import load_database
 from estimagic.logging.read_database import read_new_iterations
 from estimagic.logging.read_database import read_scalar_field
-from estimagic.optimization.utilities import index_element_to_string
 
 
 def monitoring_app(doc, database_name, session_data):
@@ -69,7 +68,8 @@ def monitoring_app(doc, database_name, session_data):
     doc.add_root(tabs)
 
     # add callbacks
-    activation_callback = _create_activation_callback(
+    activation_callback = partial(
+        _activation_callback,
         button=activation_button,
         doc=doc,
         database=database,
@@ -159,7 +159,7 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
     if y_names is None:
         y_names = y_keys
 
-    plot = create_wide_figure(title=title)
+    plot = create_standard_figure(title=title)
 
     colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
@@ -203,80 +203,58 @@ def _map_groups_to_params(params):
 
     """
     group_to_params = {}
-    for group in params["group"].unique():
-        if group is not None:
-            tup_params = params[params["group"] == group].index
-            str_params = [index_element_to_string(tup) for tup in tup_params]
-            group_to_params[group] = str_params
+    actual_groups = [group for group in params["group"].unique() if group is not None]
+    for group in actual_groups:
+        group_to_params[group] = list(params[params["group"] == group]["name"])
     return group_to_params
 
 
-def _create_activation_callback(button, doc, database, session_data, rollover, tables):
-    """Define the callback function that starts and resets the convergence plots.
-
-    This effectively partials a lot of arguments as bokeh callbacks only support a
-    very limited number of arguments (attr, old, new).
+def _activation_callback(
+    attr, old, new, session_data, rollover, doc, database, button, tables,
+):
+    """Start and reset the convergence plots and their updating.
 
     Args:
-        doc (bokeh.Document): argument required by bokeh
+        attr: Required by bokeh.
+        old: Old state of the Button.
+        new: New state of the Button.
+
+        doc (bokeh.Document)
         database (sqlalchemy.MetaData)
-        session_data (dict):
-            this app's entry of infos to be passed between and within apps.
-            The keys are:
+        session_data (dict): This app's entry of infos to be passed between and within
+            apps. The keys are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
-        rollover (int): maximal number of points to show in the plot
-        tables (list): list of table names to load and convert to ColumnDataSources
-
-
-    Returns:
-        activation_callback (func):
-            function that starts the data updating callback when the button state is
-            set to True and resets the convergence plots and stops their updating when
-            the button state is set to False.
+        rollover (int): Maximal number of points to show in the plot.
+        tables (list): List of table names to load and convert to ColumnDataSources.
 
     """
-
-    def activation_callback(
-        attr,
-        old,
-        new,
-        session_data=session_data,
-        rollover=rollover,
-        doc=doc,
-        database=database,
-        button=button,
-        tables=tables,
-    ):
-        """Start and reset the convergence plots and their updating."""
-        callback_dict = session_data["callbacks"]
-        if new is True:
-            plot_new_data = partial(
-                _update_monitoring_tab,
-                doc=doc,
-                database=database,
-                session_data=session_data,
-                rollover=rollover,
-                tables=tables,
-            )
-            callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
-                plot_new_data, period_milliseconds=200
-            )
-            # change the button color
-            button.button_type = "success"
-            button.label = "Reset Plot"
-        else:
-            doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
-            for table_name in ["criterion_history", "params_history"]:
-                cds = doc.get_model_by_name(f"{table_name}_cds")
-                column_names = cds.data.keys()
-                cds.data = {name: [] for name in column_names}
-            session_data["last_retrieved"] = 0
-            # change the button color
-            button.button_type = "danger"
-            button.label = "Restart Plot"
-
-    return activation_callback
+    callback_dict = session_data["callbacks"]
+    if new is True:
+        plot_new_data = partial(
+            _update_monitoring_tab,
+            doc=doc,
+            database=database,
+            session_data=session_data,
+            rollover=rollover,
+            tables=tables,
+        )
+        callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
+            plot_new_data, period_milliseconds=200
+        )
+        # change the button color
+        button.button_type = "success"
+        button.label = "Reset Plot"
+    else:
+        doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
+        for table_name in ["criterion_history", "params_history"]:
+            cds = doc.get_model_by_name(f"{table_name}_cds")
+            column_names = cds.data.keys()
+            cds.data = {name: [] for name in column_names}
+        session_data["last_retrieved"] = 0
+        # change the button color
+        button.button_type = "danger"
+        button.label = "Restart Plot"
 
 
 def _update_monitoring_tab(doc, database, session_data, tables, rollover):

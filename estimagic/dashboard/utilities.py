@@ -80,7 +80,7 @@ def create_dashboard_link(name):
     return div
 
 
-def create_wide_figure(title, tooltips=None):
+def create_standard_figure(title, tooltips=None):
     """Return a styled, empty figure of predetermined height and width.
 
     Args:
