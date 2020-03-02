@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-* respy version used, if any:
+* estimagic version used, if any:
 * Python version, if any:
 * Operating System:
 
