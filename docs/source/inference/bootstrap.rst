@@ -33,7 +33,7 @@ value of some specified stratum variable, from the original dataset with replace
 Sample drawing is implemented by drawing seeds. Seeds can be re-used to calculate
 multiple statistics on the same data points.
 
-.. autofunction:: get_bootstrap_sample_seeds
+.. autofunction:: get_seeds
 
 To be as memory-efficient as possible, the actual drawing of data points is by default
 deferred to the calculation of statistics. However, it is possible to get a list of
@@ -54,50 +54,20 @@ interest, we can use
 
 .. autofunction:: get_results_table
 
-The details of confidence interval calculation are discussed below.
+Here is a jupyter notebook with an example on how to use the bootstrap library:
 
-This module supports the calculation of different types of bootstrap confidence
-intervals.
+.. toctree::
+    :maxdepth: 1
 
-The first supported type is the "percentile" confidence interval.
-Let :math: '\{ \hat{\theta}_1^*, ..., \hat{\theta}_B^*\}' denote the estimates of
-estimator :math: '\hat{\theta}' for the B bootstrap samples. The idea of the percentile
-confidence interval is to simply take the empirical quantiles :math: 'q_{p}^*' of
-this distributions, so we have
+    bootstrap_tutorial.ipynb
 
-.. math:: CI^{percentile} = [q_{\alpha/2}^*, q_{1-\alpha/2}].
+Here is an overview and theoretical background on the supported types of confidence
+intervals:
 
-The second supported confidence interval "normal" is based on a normal approximation.
-Let :math: 's_{\hat{\theta}^{boot}}' be the sample standard error of the distribution
-of bootstrap estimators, :math: 'z_q' the q-quantile of a standard normal
-distribution and :math: '\hat{\theta}' be the full sample estimate of :math: '\theta'.
-Then, the asymptotic normal confidence interval is given by
+.. toctree::
+    :maxdepth: 1
 
-.. math:: CI^{normal} = [\hat{theta} - z_{1- \alpha/2} s_{\hat{\theta}^{boot}},  \hat{theta} + z_{1- \alpha/2} s_{\hat{\theta}^{boot}}].
-
-The bias corrected "bc" bootstrap confidence interval addresses the issue of biased
-estimators. Econometric details are discussed in section 10.17 of :cite:`Hansen2019`.
-Let
-
-.. math:: p^* = \frac{1}{B} \sum_{b=1}^B 1(\hat{\theta}_b^* \leq \hat{\theta})
-
-and define :math: `z_0^* = \Phi^{-1} (p^*)` where :math: `\Phi` is the normal cdf. The
-correction works via correcting significance level. Define
-
-.. math:: x(\alpha) = \Phi(z_\alpha + 2 z_0^*).
-
-Then, the bc confidence interval is given by
-
-.. math:: CI^{bc} = [q_{x(\alpha/2)}^*, q_{x(1-\alpha/2)}^*].
-
-
-
-
-
-
-
-.. math:: V = n^{-1}(Q^{T}WQ)^{-1} (Q^{T}W\Omega WQ) (Q^{T}WQ)^{-1}
-
+    bootstrap_ci.rst
 
 .. bibliography:: ../refs.bib
     :filter: docname in docnames

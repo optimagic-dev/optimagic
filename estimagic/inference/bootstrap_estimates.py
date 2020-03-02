@@ -104,7 +104,6 @@ def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
 
         if f is None:
             return draw
-
         else:
             return f(draw)
 
