@@ -382,7 +382,7 @@ def _process_optimization_results(results, results_arguments):
             fixed_values=start_params["_internal_fixed_value"].to_numpy(),
             pre_replacements=start_params["_pre_replacements"].to_numpy(dtype="int"),
             processed_constraints=args["constraints"],
-            post_replacements=start_params["_post_replacements"].to_numpy().astype(int),
+            post_replacements=start_params["_post_replacements"].to_numpy(dtype="int"),
             processed_params=start_params,
         )
         new_results.append((res, params))
