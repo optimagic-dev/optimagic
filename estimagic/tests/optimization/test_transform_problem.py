@@ -8,7 +8,7 @@ import estimagic.optimization.transform_problem as tp
 from estimagic.decorators import expand_criterion_output
 
 
-@pytest.fixture()
+@pytest.fixture
 def minimal_params():
     user_input = pd.DataFrame(data=[[1], [2], [6]], columns=["value"])
     return user_input

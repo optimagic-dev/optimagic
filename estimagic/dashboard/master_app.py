@@ -82,7 +82,7 @@ def _map_dabase_name_to_bokeh_row_elements(doc, database_name_to_path):
 
     """
     name_to_row = {}
-    for database_name, _ in database_name_to_path.items():
+    for database_name in database_name_to_path:
         name_to_row[database_name] = [create_dashboard_link(database_name)]
     return ColumnDataSource(name_to_row)
 
@@ -103,13 +103,13 @@ def _setup_tabs(sec_to_elements):
     tab_list = []
     for section, name_to_row in sec_to_elements.items():
         text = f"{len(name_to_row.column_names)} optimizations {section}"
-        table_rows = [Row(Div(text=text, width=400), name=section + "_how_many")]
+        table_rows = [Row(Div(text=text, width=400), name=f"{section}_how_many")]
         for name, row in name_to_row.data.items():
             table_rows.append(Row(*row, name=name))
         panel = Panel(
-            child=Column(*table_rows, name=section + "_col"),
+            child=Column(*table_rows, name=f"{section}_col"),
             title=section.capitalize(),
-            name=section + "_panel",
+            name=f"{section}_panel",
         )
         tab_list.append(panel)
     tabs = Tabs(tabs=tab_list, name="tabs")

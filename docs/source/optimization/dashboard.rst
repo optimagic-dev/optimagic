@@ -1,8 +1,8 @@
 .. _dashboard:
 
-===============================================
+============================================
 The *dashboard* and *dash_options* Arguments
-===============================================
+============================================
 
 Overview
 ---------
@@ -26,7 +26,7 @@ If your params DataFrame has a "group" column, there will be one
 parameter plot for each group in the monitoring page.
 
 Options
---------
+-------
 
 All optimization functions also support an optional argument ``dash_options``.
 It is a dictionary that allows to configure the dashboard. The following entries are
@@ -114,7 +114,7 @@ you start estimagic from a .py script, you can just skip the corresponding steps
 
 
 Implementation
----------------
+--------------
 
 The dashboard is implemented using a bokeh Server.
 

@@ -1,8 +1,8 @@
 .. _params:
 
-=========================
+=====================
 The *params* Argument
-=========================
+=====================
 
 The ``params`` DataFrame is an important concept in estimagic. It collects
 information on the dimensionality of the optimization problem, lower and upper
