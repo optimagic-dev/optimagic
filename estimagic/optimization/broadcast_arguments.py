@@ -12,6 +12,20 @@ def broadcast_arguments(**arguments):
     duplicated `n`-times. Arguments with `n` elements are matched by positions.
 
     """
+    dict_args = [
+        "criterion_kwargs",
+        "algo_options",
+        "log_options",
+        "dash_options",
+        "general_options",
+    ]
+    for arg in dict_args:
+        if arg in arguments and arguments[arg] is None:
+            arguments[arg] = {}
+
+    if "constraints" in arguments and arguments["constraints"] is None:
+        arguments["constraints"] = []
+
     # Remove logging as it needs special treatment.
     logging = arguments.pop("logging", False)
 

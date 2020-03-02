@@ -15,7 +15,7 @@ def check_single_argument_types(argument):
         "general_options": dict,
         "algo_options": dict,
         "dashboard": bool,
-        "db_options": dict,
+        "dash_options": dict,
     }
 
     for key, exp_type in key_to_expected_tuple.items():
@@ -40,7 +40,7 @@ def single_non_standard_inputs():
         "general_options": {"n_cores": 1},
         "algo_options": {"maxfun": 5000, "maxiter": 1000},
         "dashboard": False,
-        "db_options": {"port": 3409},
+        "dash_options": {"port": 3409},
     }
     return kwargs
 
@@ -69,7 +69,7 @@ def multiple_non_standard_inputs():
         "general_options": {"n_cores": 1},
         "algo_options": {"maxfun": 5000, "maxiter": 1000},
         "dashboard": False,
-        "db_options": {"port": 3409},
+        "dash_options": {"port": 3409},
     }
     return kwargs
 

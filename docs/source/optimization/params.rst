@@ -33,17 +33,17 @@ Since this is a very project specific choice, estimagic makes absolutely no
 assumptions on your index, so you are completely free to choose whatever you
 want. Below we have a few tips to help you in that choice:
 
-You should choose as many levels as you need to select your parameters in all
-partitions you ever need. In the ordered logit example this was achieved by
+1. **Choose as many levels as you need to select your parameters in all
+partitions you ever need.** In the ordered logit example this was achieved by
 two levels, where the first distinguished cutoffs vs utility parameters and the
 second was the parameter name. In dynamic models with time varying parameters,
-you often need another level for the period. But of course your index should
-also be as parsimonious as possible. In practice we always use between 2 and
+you often need another level for the period. But, of course, your index should
+also be as parsimonious as possible. In practice, we always use between 2 and
 4 levels.
 
-Our recommendation is that you first make a list of the quantities into which
-you have to parse your parameters. Then make a list of all constraints you want
-to express and then decide which index makes those two steps easiest.
+2. To decide what your levels should be, it is often helpful to make a list of the
+quantities into which you have to parse your parameters. Then make a list of all
+constraints you want to express. Build an index that makes those two steps easiest.
 
 The ``"value"`` column
 ======================
@@ -65,8 +65,8 @@ have a bound, you can fill them with ``-np.inf`` and ``np.inf`` respectively.
 
 Note that all optimizers in estimagic can deal with box constraints. However,
 not all more complicated constraints (e.g. "covariance" constraints) are
-compatible with box constraints. If you select an invalid combination you will
-get an error.
+compatible with box constraints. If you select an invalid combination of box constraints
+and other constraints you will get an error.
 
 
 The "draw_lower" and "draw_upper" columns
