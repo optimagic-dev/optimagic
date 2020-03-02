@@ -203,7 +203,7 @@ def minimize(
         if database_path is not None:
             database_paths_for_dashboard.append(database_path)
 
-    if dashboard is True:
+    if dashboard:
         dashboard_process = run_dashboard_in_separate_process(
             database_paths=database_paths_for_dashboard
         )
@@ -225,7 +225,7 @@ def minimize(
             for optim_kwargs in optim_arguments
         )
 
-    if dashboard is True and dashboard_process is not None:
+    if dashboard and dashboard_process is not None:
         if not results_arguments[0]["keep_dashboard_alive"]:
             dashboard_process.terminate()
 
