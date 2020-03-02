@@ -65,6 +65,13 @@ def test_set_params_defaults_if_missing_partial_params(incomplete_params):
     afe(res, expected)
 
 
+def test_index_element_to_string():
+    inputs = [(("a", "b", 1),), (["bla", 5, 6], "~"), ("bla", "*")]
+    expected = ["a_b_1", "bla~5~6", "bla"]
+    for inp, exp in zip(inputs, expected):
+        assert tp._index_element_to_string(*inp) == exp
+
+
 def test_check_params_compliant(minimal_params, incomplete_params):
     # these should just run through without error
     tp._check_params(minimal_params)

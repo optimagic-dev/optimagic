@@ -36,11 +36,6 @@ def test_start_params_table(database):
     assert_frame_equal(read_scalar_field(database, "start_params"), params)
 
 
-def test_dash_options_table(database):
-    expected = {"a": 3, "port": None, "no_browser": True, "rollover": 500}
-    assert read_scalar_field(database, "dash_options") == expected
-
-
 def test_optimization_status_table(database):
     assert read_scalar_field(database, "optimization_status") == "success"
 

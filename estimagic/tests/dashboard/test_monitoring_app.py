@@ -67,6 +67,7 @@ def test_map_groups_to_params_group_none():
     params = pd.DataFrame()
     params["value"] = [0, 1, 2, 3]
     params["group"] = None
+    params["name"] = ["a", "b", "c", "d"]
     params.index = ["a", "b", "c", "d"]
     expected = {}
     res = monitoring._map_groups_to_params(params)
@@ -78,6 +79,7 @@ def test_map_groups_to_params_group_not_none():
     params["value"] = [0, 1, 2, 3]
     params["group"] = [None, "A", "B", "B"]
     params.index = ["a", "b", "c", "d"]
+    params["name"] = ["a", "b", "c", "d"]
     expected = {"A": ["b"], "B": ["c", "d"]}
     res = monitoring._map_groups_to_params(params)
     assert expected == res
@@ -86,6 +88,8 @@ def test_map_groups_to_params_group_not_none():
 def test_map_groups_to_params_group_int_index():
     params = pd.DataFrame()
     params["value"] = [0, 1, 2, 3]
+    params.index = ["0", "1", "2", "3"]
+    params["name"] = ["0", "1", "2", "3"]
     params["group"] = [None, "A", "B", "B"]
     expected = {"A": ["1"], "B": ["2", "3"]}
     res = monitoring._map_groups_to_params(params)
@@ -99,6 +103,7 @@ def test_map_groups_to_params_group_multi_index():
     params["ind1"] = ["beta", "beta", "cutoff", "cutoff"]
     params["ind2"] = ["edu", "exp", 1, 2]
     params.set_index(["ind1", "ind2"], inplace=True)
+    params["name"] = ["beta_edu", "beta_exp", "cutoff_1", "cutoff_2"]
     expected = {"A": ["beta_exp"], "B": ["cutoff_1", "cutoff_2"]}
     res = monitoring._map_groups_to_params(params)
     assert expected == res

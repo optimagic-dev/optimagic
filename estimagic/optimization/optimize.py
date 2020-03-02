@@ -221,7 +221,7 @@ def minimize(
         n_cores = optim_arguments[0]["general_options"]["n_cores"]
 
         results = Parallel(n_jobs=n_cores)(
-            delayed(_single_arg_internal_minimize)(optim_kwargs)
+            delayed(_internal_minimize)(**optim_kwargs)
             for optim_kwargs in optim_arguments
         )
 
@@ -232,32 +232,6 @@ def minimize(
     results = _process_optimization_results(results, results_arguments)
 
     return results
-
-
-def _single_arg_internal_minimize(kwargs):
-    """Call _internal_minimize with a dictionary of its arguments.
-
-    This is a wrapper for joblib.delayed.
-
-    Args:
-        kwargs (dict): dictionary with the following keys:
-            - internal_criterion
-            - internal_params
-            - bounds
-            - origin
-            - algo_name
-            - algo_options
-            - internal_gradient
-            - database
-            - general_options
-
-    Returns:
-        results (tuple): Tuple of the harmonized result info dictionary and the params
-            DataFrame with the minimizing parameter values of the untransformed problem
-            as specified of the user.
-
-    """
-    return _internal_minimize(**kwargs)
 
 
 def _internal_minimize(

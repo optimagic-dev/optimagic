@@ -17,7 +17,6 @@ from estimagic.decorators import numpy_interface
 from estimagic.logging.create_database import prepare_database
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_to_internal
-from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import propose_algorithms
 
 
@@ -296,9 +295,18 @@ def _set_params_defaults_if_missing(params):
         params["group"] = "All Parameters"
 
     if "name" not in params.columns:
-        names = [index_element_to_string(tup) for tup in params.index]
+        names = [_index_element_to_string(tup) for tup in params.index]
         params["name"] = names
     return params
+
+
+def _index_element_to_string(element, separator="_"):
+    if isinstance(element, (tuple, list)):
+        as_strings = [str(entry).replace("-", "_") for entry in element]
+        res_string = separator.join(as_strings)
+    else:
+        res_string = str(element)
+    return res_string
 
 
 def _check_params(params):
