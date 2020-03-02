@@ -46,7 +46,7 @@ supported:
 .. _remote-server:
 
 On a remote server
--------------------
+------------------
 
 Since ``estimagic`` is designed for long running optimizations, it is often run on
 large remote servers. Normally, these servers do not offer a GUI or browser.
