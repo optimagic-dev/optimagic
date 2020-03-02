@@ -3,11 +3,6 @@
 This page shows which optimizations are scheduled, running, finished successfully or
 failed. From here the user can monitor any running optimizations.
 
-.. note::
-    This is a very rudimentary version at the moment with only one tab and no updates.
-    The structure follows a MWE that implements different updating tabs already
-    and may seem overkill at the moment as a result.
-
 """
 from bokeh.layouts import Column
 from bokeh.layouts import Row
