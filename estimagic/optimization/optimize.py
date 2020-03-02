@@ -37,8 +37,8 @@ def maximize(
     as single arguments in which case they are automatically broadcasted.
 
     Args:
-        criterion (function or list of functions):
-            Python function that takes a pandas DataFrame with parameters as the first
+        criterion (callable or list of callables):
+            Python callable that takes a pandas DataFrame with parameters as the first
             argument. Supported outputs are:
                 - scalar floating point
                 - np.ndarray: contributions for the tao Pounders algorithm.
@@ -130,8 +130,8 @@ def minimize(
     as single arguments in which case they are automatically broadcasted.
 
     Args:
-        criterion (function or list of functions):
-            Python function that takes a pandas DataFrame with parameters as the first
+        criterion (callable or list of callables):
+            Python callable that takes a pandas DataFrame with parameters as the first
             argument. Supported outputs are:
                 - scalar floating point
                 - np.ndarray: contributions for the tao Pounders algorithm.

@@ -351,7 +351,7 @@ def _evaluate_criterion(criterion, params, criterion_kwargs):
     The criterion value is stored in the general options for the tao pounders algorithm.
 
     Args:
-        criterion (function): Python function that takes a pandas DataFrame with
+        criterion (callable): Python function that takes a pandas DataFrame with
             parameters as the first argument and returns a value or array to be
             minimized and data for the comparison plot.
         params (pd.DataFrame): See :ref:`params`.
@@ -394,7 +394,7 @@ def _create_internal_criterion(
     If logging is activated, the returned function also logs its calls.
 
     Args:
-        criterion (function):
+        criterion (callable):
             Python function that takes a pandas DataFrame with parameters as the first
             argument and returns a scalar floating point value.
 
