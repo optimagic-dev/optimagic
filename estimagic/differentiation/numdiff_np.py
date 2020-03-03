@@ -10,15 +10,15 @@ from estimagic.optimization.utilities import namedtuple_from_kwargs
 def jacobian(
     func,
     x,
-    method,
-    n_steps,
-    base_steps,
-    lower_bounds,
-    upper_bounds,
-    step_ratio,
-    min_steps,
-    f0,
-    n_processes,
+    method="central",
+    n_steps=1,
+    base_steps=None,
+    lower_bounds=None,
+    upper_bounds=None,
+    step_ratio=2.0,
+    min_steps=None,
+    f0=None,
+    n_processes=1,
 ):
 
     """Evaluate Jacobian of func at x according to specified methods and step options.
@@ -40,11 +40,10 @@ def jacobian(
         step_ratio (float or array): Ratio between two consecutive steps in the
             same direction. default 2.0. Has to be larger than one. step ratio
             is only used if n_steps > 1.
-        min_steps (float, array or "optimal"): Minimal possible step size that can
-            be chosen to accomodate bounds. Default 1e-8 which is square-root of
-            machine accurracy for 64 bit floats. If min_steps is an array, it has to
-            be have the same shape as x. If "optimal", step size is not decreased
-            beyond what is optimal according to the rule of thumb.
+        min_steps (np.ndarray): Minimal possible step sizes that can be chosen to
+            accomodate bounds. Needs to have same length as x. By default min_steps is
+            equal to base_step, i.e step size is not decreased beyond what is optimal
+            according to the rule of thumb.
         f0 (np.ndarray): 1d numpy array with func(x), optional.
         n_processes (int): Number of processes used to parallelize the function
             evaluations. Default 1.
@@ -53,6 +52,12 @@ def jacobian(
     assert (
         upper_bounds - lower_bounds >= 2 * min_steps
     ).all(), "min_steps is too large to fit into bounds."
+
+    if f0 is None:
+        if method in ["forward", "backward"]:
+            f0 = func(x)
+        else:
+            f0 = np.nan
 
     steps = generate_steps(
         x=x,

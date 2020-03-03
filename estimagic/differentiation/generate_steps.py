@@ -8,37 +8,36 @@ def generate_steps(
     method,
     n_steps,
     target,
-    base_steps=None,
-    lower_bounds=None,
-    upper_bounds=None,
-    step_ratio=2.0,
-    min_steps=None,
+    base_steps,
+    lower_bounds,
+    upper_bounds,
+    step_ratio,
+    min_steps,
 ):
     """Generate steps for finite differences with or without Richardson Extrapolation.
 
     Args:
         x (np.ndarray): 1d array at which the derivative is evaluated
-        method (str): One of ["central", "forward", "backward"], default "central".
+        method (str): One of ["central", "forward", "backward"].
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is one if no Richardson extrapolation
             is used.
         target (str): One of ["gradient", "jacobian", "hessian"]. This is used to choose
             the appropriate rule of thumb for the base_steps.
-        base_steps (np.ndarray, optional): 1d array of the same length as x with the
+        base_steps (np.ndarray or None): 1d array of the same length as x with the
             absolute value of the first step. If the base_steps conflicts with bounds,
-            generate_steps will modify it. If base step is not provided, it will be
+            generate_steps will modify it. If base step is None, it will be
             determined as according to the rule of thumb outlined below as long as
             this does not conflict with min_steps
-        lower_bounds (np.ndarray): 1d array with lower bounds for each parameter.
-        upper_bounds (np.ndarray): 1d array with upper bounds for each parameter.
-        step_ratio (float or array): Ratio between two consecutive steps in the
-            same direction. default 2.0. Has to be larger than one. step ratio
+        lower_bounds (np.ndarray or None): 1d array with lower bounds for x.
+        upper_bounds (np.ndarray or None): 1d array with upper bounds for x.
+        step_ratio (float): Ratio between two consecutive steps in the
+            same direction. Has to be larger than one. step ratio
             is only used if n_steps > 1.
-        min_steps (float, array or "optimal"): Minimal possible step size that can
-            be chosen to accomodate bounds. Default 1e-8 which is square-root of
-            machine accurracy for 64 bit floats. If min_steps is an array, it has to
-            be have the same shape as x. If "optimal", step size is not decreased
-            beyond what is optimal according to the rule of thumb.
+        min_steps (np.ndarray or None): Minimal possible step sizes that can be chosen
+            to accomodate bounds. Needs to have same length as x. I None, min_steps is
+            set to base_step, i.e step size is not decreased beyond what is optimal
+            according to the rule of thumb.
 
     Returns:
         steps (namedtuple): Namedtuple with the fields pos and neg. Each field
@@ -78,20 +77,26 @@ def generate_steps(
     base_steps = _calculate_or_validate_base_steps(base_steps, x, target, min_steps)
     min_steps = base_steps if min_steps is None else min_steps
 
+    upper_bounds = np.full(len(x), np.inf) if upper_bounds is None else upper_bounds
+    lower_bounds = np.full(len(x), -np.inf) if lower_bounds is None else lower_bounds
+
+    upper_step_bounds = upper_bounds - x
+    lower_step_bounds = lower_bounds - x
+
     pos = step_ratio ** np.arange(n_steps) * base_steps.reshape(-1, 1)
     neg = -pos.copy()
 
     if method in ["forward", "backward"]:
         pos, neg = _set_unused_side_to_nan(
-            x, pos, neg, method, lower_bounds, upper_bounds
+            x, pos, neg, method, lower_step_bounds, upper_step_bounds
         )
 
     pos, neg = _rescale_to_accomodate_bounds(
-        base_steps, pos, neg, lower_bounds, upper_bounds, min_steps
+        base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
     )
 
-    pos[pos > upper_bounds.reshape(-1, 1)] = np.nan
-    neg[neg < lower_bounds.reshape(-1, 1)] = np.nan
+    pos[pos > upper_step_bounds.reshape(-1, 1)] = np.nan
+    neg[neg < lower_step_bounds.reshape(-1, 1)] = np.nan
 
     steps = namedtuple_from_kwargs(pos=pos.T, neg=neg.T)
 
@@ -107,28 +112,29 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps):
             base_steps = eps ** (1 / 2) * np.maximum(np.abs(x), 0.1)
         else:
             raise ValueError(f"Invalid target: {target}.")
-        base_steps[base_steps < min_steps] = min_steps
+        if min_steps is not None:
+            base_steps[base_steps < min_steps] = min_steps
     elif base_steps.shape != x.shape:
         raise ValueError("base_steps has to have the same shape as x.")
-    elif (base_steps <= min_steps).any():
+    elif min_steps is not None and (base_steps <= min_steps).any():
         raise ValueError("base_steps must be larger than min_steps.")
     return base_steps
 
 
-def _set_unused_side_to_nan(x, pos, neg, method, lower_bounds, upper_bounds):
+def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_bounds):
     pos = pos.copy()
     neg = neg.copy()
     larger_side = np.where(
-        (upper_bounds - x) >= (x - lower_bounds), np.ones_like(x), -1
+        (upper_step_bounds - x) >= (x - lower_step_bounds), np.ones_like(x), -1
     )
     max_abs_step = pos[:, -1]
     if method == "forward":
         side = np.where(
-            (upper_bounds - x) >= max_abs_step, np.ones_like(x), larger_side
+            (upper_step_bounds - x) >= max_abs_step, np.ones_like(x), larger_side
         )
     else:
         side = np.where(
-            (x - lower_bounds) >= max_abs_step, (-np.ones_like(x)), larger_side
+            (x - lower_step_bounds) >= max_abs_step, (-np.ones_like(x)), larger_side
         )
 
     pos[side == -1] = np.nan
@@ -137,13 +143,17 @@ def _set_unused_side_to_nan(x, pos, neg, method, lower_bounds, upper_bounds):
 
 
 def _rescale_to_accomodate_bounds(
-    base_steps, pos, neg, lower_bounds, upper_bounds, min_steps
+    base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
 ):
     """Res
 
     """
-    pos_needed_scaling = _fillna(upper_bounds / np.nanmax(pos, axis=1), 1).clip(0, 1)
-    neg_needed_scaling = _fillna(lower_bounds / np.nanmin(neg, axis=1), 1).clip(0, 1)
+    pos_needed_scaling = _fillna(upper_step_bounds / np.nanmax(pos, axis=1), 1).clip(
+        0, 1
+    )
+    neg_needed_scaling = _fillna(lower_step_bounds / np.nanmin(neg, axis=1), 1).clip(
+        0, 1
+    )
     needed_scaling = np.minimum(pos_needed_scaling, neg_needed_scaling)
 
     min_possible_scaling = min_steps / base_steps

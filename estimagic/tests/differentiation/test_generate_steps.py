@@ -11,16 +11,16 @@ from estimagic.differentiation.generate_steps import generate_steps
 
 def test_calculate_or_validate_base_steps_invalid_too_small():
     base_steps = np.array([1e-10, 0.01, 0.01])
-    min_step = np.full(1e-8, 3)
+    min_steps = np.full(3, 1e-8)
     with pytest.raises(ValueError):
-        _calculate_or_validate_base_steps(base_steps, np.ones(3), "jacobian", min_step)
+        _calculate_or_validate_base_steps(base_steps, np.ones(3), "jacobian", min_steps)
 
 
 def test_calculate_or_validate_base_steps_wrong_shape():
     base_steps = np.array([0.01, 0.01, 0.01])
-    min_step = np.full(1e-8, 3)
+    min_steps = np.full(3, 1e-8)
     with pytest.raises(ValueError):
-        _calculate_or_validate_base_steps(base_steps, np.ones(2), "jacobian", min_step)
+        _calculate_or_validate_base_steps(base_steps, np.ones(2), "jacobian", min_steps)
 
 
 def test_calculate_or_validate_base_steps_jacobian():
@@ -126,7 +126,7 @@ def test_rescale_to_accomodate_bounds_binding_min_step():
     aaae(calculated_neg, expected_neg)
 
 
-def test_generate_bounds():
+def test_generate_steps_binding_min_step():
     calculated_steps = generate_steps(
         x=np.arange(3),
         method="central",
@@ -134,11 +134,32 @@ def test_generate_bounds():
         target="jacobian",
         base_steps=np.array([0.1, 0.2, 0.3]),
         lower_bounds=np.full(3, -np.inf),
-        upper_bounds=np.full(3, 0.5),
+        upper_bounds=np.full(3, 2.5),
+        step_ratio=2.0,
+        min_steps=np.full(3, 1e-8),
     )
 
     expected_pos = np.array([[0.1, 0.2], [0.2, 0.4], [0.25, 0.5]]).T
     expected_neg = -expected_pos
 
+    aaae(calculated_steps.pos, expected_pos)
+    aaae(calculated_steps.neg, expected_neg)
+
+
+def test_generate_steps_min_step_equals_base_step():
+    calculated_steps = generate_steps(
+        x=np.arange(3),
+        method="central",
+        n_steps=2,
+        target="jacobian",
+        base_steps=np.array([0.1, 0.2, 0.3]),
+        lower_bounds=np.full(3, -np.inf),
+        upper_bounds=np.full(3, 2.5),
+        step_ratio=2.0,
+        min_steps=None,
+    )
+
+    expected_pos = np.array([[0.1, 0.2], [0.2, 0.4], [0.3, np.nan]]).T
+    expected_neg = np.array([[-0.1, -0.2], [-0.2, -0.4], [-0.3, -0.6]]).T
     aaae(calculated_steps.pos, expected_pos)
     aaae(calculated_steps.neg, expected_neg)
