@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from estimagic.optimization.utilities import namedtuple_from_kwargs
@@ -95,8 +97,10 @@ def generate_steps(
         base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
     )
 
-    pos[pos > upper_step_bounds.reshape(-1, 1)] = np.nan
-    neg[neg < lower_step_bounds.reshape(-1, 1)] = np.nan
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        pos[pos > upper_step_bounds.reshape(-1, 1)] = np.nan
+        neg[neg < lower_step_bounds.reshape(-1, 1)] = np.nan
 
     steps = namedtuple_from_kwargs(pos=pos.T, neg=neg.T)
 
@@ -104,6 +108,27 @@ def generate_steps(
 
 
 def _calculate_or_validate_base_steps(base_steps, x, target, min_steps):
+    """Validate user provided base_steps or generate them with rule of thumb.
+
+    Args:
+        base_steps (np.ndarray or None): 1d array of the same length as x with the
+            absolute value of the first step. If the base_steps conflicts with bounds,
+            generate_steps will modify it. If base step is None, it will be
+            determined as according to the rule of thumb outlined below as long as
+            this does not conflict with min_steps
+        x (np.ndarray): 1d array at which the derivative is evaluated
+        target (str): One of ["gradient", "jacobian", "hessian"]. This is used to choose
+            the appropriate rule of thumb for the base_steps.
+        min_steps (np.ndarray or None): Minimal possible step sizes that can be chosen
+            to accomodate bounds. Needs to have same length as x. I None, min_steps is
+            set to base_step, i.e step size is not decreased beyond what is optimal
+            according to the rule of thumb.
+
+    Returns:
+        base_steps (np.ndarray): 1d array of the same length as x with the
+            absolute value of the first step.
+
+    """
     if base_steps is None:
         eps = np.finfo(float).eps
         if target == "hessian":
@@ -148,12 +173,14 @@ def _rescale_to_accomodate_bounds(
     """Res
 
     """
-    pos_needed_scaling = _fillna(upper_step_bounds / np.nanmax(pos, axis=1), 1).clip(
-        0, 1
-    )
-    neg_needed_scaling = _fillna(lower_step_bounds / np.nanmin(neg, axis=1), 1).clip(
-        0, 1
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        pos_needed_scaling = _fillna(
+            upper_step_bounds / np.nanmax(pos, axis=1), 1
+        ).clip(0, 1)
+        neg_needed_scaling = _fillna(
+            lower_step_bounds / np.nanmin(neg, axis=1), 1
+        ).clip(0, 1)
     needed_scaling = np.minimum(pos_needed_scaling, neg_needed_scaling)
 
     min_possible_scaling = min_steps / base_steps
