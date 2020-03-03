@@ -2,8 +2,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_equal as aae
+from pandas.testing import assert_series_equal as ase
 
 from estimagic.inference.bootstrap_ci import _check_inputs
+from estimagic.inference.bootstrap_ci import _concatenate_functions
 from estimagic.inference.bootstrap_ci import _jackknife
 from estimagic.inference.bootstrap_ci import compute_ci
 
@@ -51,11 +53,29 @@ def expected():
             [2, 7.666666666666667],
         ]
     )
+
+    out["concat_function_pandas"] = pd.Series(
+        [2.5, 7, 5, 14], index=["x1", "x2", "x1", "x2"]
+    )
+    out["concat_function_numpy"] = np.array([2.5, 7, 5, 14])
+
     return out
 
 
 def g(data):
     return data.mean(axis=0)
+
+
+def g_arr(data):
+    return np.array(data.mean(axis=0))
+
+
+def h(data):
+    return 2 * g(data)
+
+
+def h_arr(data):
+    return 2 * g_arr(data)
 
 
 def test_percentile_ci(setup, expected):
@@ -125,3 +145,14 @@ def test_check_inputs_alpha(setup, expected):
     with pytest.raises(ValueError) as excinfo:
         _check_inputs(data=setup["df"], alpha=alpha)
     assert "Input 'alpha' must be in [0,1]." == str(excinfo.value)
+
+
+def test_concatenate_functions(setup, expected):
+
+    f = _concatenate_functions([g, h], setup["df"])
+    f_mixed = _concatenate_functions([g_arr, h], setup["df"])
+    f_arr = _concatenate_functions([g_arr, h_arr], setup["df"])
+
+    ase(f(setup["df"]), expected["concat_function_pandas"])
+    aae(f_mixed(setup["df"]), expected["concat_function_numpy"])
+    aae(f_arr(setup["df"]), expected["concat_function_numpy"])

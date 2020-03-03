@@ -1,6 +1,7 @@
 import pandas as pd
 
 from estimagic.inference.bootstrap_ci import _check_inputs
+from estimagic.inference.bootstrap_ci import _concatenate_functions
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
 from estimagic.inference.bootstrap_samples import get_seeds
@@ -26,7 +27,8 @@ def bootstrap(
 
     Args:
         data (pandas.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        f (callable): function of the data calculating statistic of interest or list of
+            functions.
         ndraws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
@@ -36,12 +38,14 @@ def bootstrap(
         num_threads (int): number of jobs for parallelization.
 
     Returns:
-        results (pd.DataFrame): DataFrame where k'th row contains mean estimate,
+        results (pandas.DataFrame): DataFrame where k'th row contains mean estimate,
         standard error, and confidence interval of k'th parameter.
 
     """
 
     _check_inputs(data, cluster_by, ci_method, alpha)
+    if isinstance(f, list):
+        f = _concatenate_functions(f, data)
 
     df = data.reset_index(drop=True)
 
@@ -67,18 +71,21 @@ def get_results_table(
 
     Args:
         data (pandas.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        f (callable): function of the data calculating statistic of interest or list of
+            functions.
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         num_threads (int): number of jobs for parallelization.
         alpha (float): significance level of choice.
 
     Returns:
-        results (pd.DataFrame): table of results.
+        results (pandas.DataFrame): table of results.
 
     """
 
     _check_inputs(data=data, ci_method=ci_method, alpha=alpha)
+    if isinstance(f, list):
+        f = _concatenate_functions(f, data)
 
     results = pd.DataFrame(estimates.mean(axis=0), columns=["mean"])
 

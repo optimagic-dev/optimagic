@@ -5,9 +5,6 @@ Bootstrap Inference
 
 In this section we document how to use the bootstrap to approximate the distribution
 of statistics of interest on a given sample.
-We use the notation and formulations provided in chapter 10 of :cite:`Hansen2019`
-
-Bruce E. Hansen - Econometrics,  (https://www.ssc.wisc.edu/~bhansen/econometrics)
 
 The main idea of the bootstrap is to combine three steps: Firstly, generate bootstrap
 samples by drawing from the original data set with replacement. Secondly, calculating
@@ -78,6 +75,3 @@ intervals:
     :maxdepth: 1
 
     bootstrap_ci.rst
-
-.. bibliography:: ../refs.bib
-    :filter: docname in docnames

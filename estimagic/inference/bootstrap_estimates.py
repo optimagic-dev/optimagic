@@ -6,6 +6,7 @@ from joblib import delayed
 from joblib import Parallel
 
 from estimagic.inference.bootstrap_ci import _check_inputs
+from estimagic.inference.bootstrap_ci import _concatenate_functions
 from estimagic.inference.bootstrap_samples import _get_cluster_index
 from estimagic.inference.bootstrap_samples import get_seeds
 
@@ -18,18 +19,22 @@ def get_bootstrap_estimates(
 
     Args:
         data (pandas.DataFrame): original dataset.
-        f (callable): function of the dataset calculating statistic of interest.
+        f (callable): function of the dataset calculating statistic of interest or list
+            of functions.
         cluster_by (str): column name of the variable to cluster by.
         seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         ndraws (int): number of draws, only relevant if seeds is None.
         num_threads (int): number of jobs for parallelization.
 
     Returns:
-        estimates (pd.DataFrame): DataFrame estimates for different bootstrap samples.
+        estimates (pandas.DataFrame): DataFrame estimates for different bootstrap
+            samples.
 
     """
 
     _check_inputs(data=data, cluster_by=cluster_by)
+    if isinstance(f, list):
+        f = _concatenate_functions(f, data)
 
     if seeds is None:
         seeds = get_seeds(ndraws)

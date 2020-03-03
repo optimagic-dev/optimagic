@@ -13,18 +13,22 @@ def compute_ci(data, f, estimates, ci_method="percentile", alpha=0.05, num_threa
 
     Args:
         data (pandas.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        f (callable): function of the data calculating statistic of interest or list of
+            functions.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
         num_threads (int): number of jobs for parallelization.
 
     Returns:
-        cis (pd.DataFrame): DataFrame where k'th row contains CI for k'th parameter.
+        cis (pandas.DataFrame): DataFrame where k'th row contains CI for k'th parameter.
 
     """
 
     _check_inputs(data=data, alpha=alpha, ci_method=ci_method)
+
+    if isinstance(f, list):
+        f = _concatenate_functions(f)
 
     funcname = "_ci_" + ci_method
 
@@ -315,3 +319,31 @@ def _check_inputs(data, cluster_by=None, ci_method="percentile", alpha=0.05):
 
     elif alpha > 1 or alpha < 0:
         raise ValueError("Input 'alpha' must be in [0,1].")
+
+
+def _concatenate_functions(f_list, orig_data):
+    """ Return results of multiple function in one np.array or pd.Series.
+    Args:
+        f_list (list): list of functions that return np.array or pd.Series
+        orig_data (pandas.DataFrame): original dataset.
+
+    Returns:
+        f (callable): function that returns concatenated ouput of functions in f_list
+
+    """
+
+    if all(isinstance(x, pd.Series) for x in [g(orig_data) for g in f_list]):
+
+        def f(data):
+
+            return pd.concat([g(data) for g in f_list])
+
+        return f
+
+    else:
+
+        def f(data):
+
+            return np.concatenate([np.array(g(data)) for g in f_list])
+
+        return f

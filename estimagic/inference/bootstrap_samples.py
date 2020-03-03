@@ -11,7 +11,7 @@ def get_seeds(ndraws=1000):
         ndraws (int): number of bootstrap draws.
 
     Returns:
-        seeds (np.array): vector of randomly drawn seeds.
+        seeds (numpy.array): vector of randomly drawn seeds.
 
     """
 
