@@ -103,15 +103,6 @@ def dimension_to_number_of_triangular_elements(dim):
     return int(dim * (dim + 1) / 2)
 
 
-def index_element_to_string(element, separator="_"):
-    if isinstance(element, (tuple, list)):
-        as_strings = [str(entry).replace("-", "_") for entry in element]
-        res_string = separator.join(as_strings)
-    else:
-        res_string = str(element)
-    return res_string
-
-
 def propose_algorithms(requested_algo, algos, number=3):
     """Propose a a number of algorithms based on similarity to the requested algorithm.
 
@@ -151,9 +142,11 @@ def robust_cholesky(matrix, threshold=None, return_info=False):
             minus machine accuracy.
         return_info (bool): If True, also return a dictionary with 'method'. Method can
             take the values 'np.linalg.cholesky' and 'Eigenvalue QR'.
+
     Returns:
         chol (np.array): Cholesky factor of matrix
         info (float, optional): see return_info.
+
     Raises:
         np.linalg.LinalgError if an eigenvalue of *matrix* is below *threshold*.
 
@@ -187,10 +180,14 @@ def _internal_robust_cholesky(matrix, threshold):
         threshold (float): Small negative number. Diagonal elements of D from the LDL
             decomposition between threshold and zero are set to zero. Default is
             minus machine accuracy.
-        res:
+
+    Returns:
+        chol (np.array): Cholesky factor of matrix.
+
     Raises:
         np.linalg.LinalgError if diagonal entry in D from LDL decomposition is below
         *threshold*.
+
     """
     lu, d, _ = ldl(matrix)
 

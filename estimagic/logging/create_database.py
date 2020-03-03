@@ -80,7 +80,8 @@ def prepare_database(
     path,
     params,
     comparison_plot_data=None,
-    db_options=None,
+    dash_options=None,
+    constraints=None,
     optimization_status="scheduled",
     gradient_status=0,
 ):
@@ -115,9 +116,14 @@ def prepare_database(
     - gradient_status: table with one row and one column called "value" which
       can be any float between 0 and 1 and indicates the progress of the gradient
       calculation. Initialized to ``gradient_status``
-    - db_options: table with one row and one column called "value". It contains
-      a dictionary with the dashboard options. Internally this is a PickleType, so the
-      dictionary must be pickle serializable. Initialized to db_options.
+    - dash_options: table with one row and one column called "value". It contains
+      a dictionary with the dashboard options.
+      Internally this is a PickleType, so the dictionary must be pickle serializable.
+      Initialized to dash_options.
+    - exceptions: table with one column called "value" with exceptions.
+    - constraints: table with one row and one column called "value". It contains the
+      list of constraints. Internally this is a PickleType, so the list must be pickle
+      serializable.
 
 
     Args:
@@ -128,16 +134,16 @@ def prepare_database(
             Contains the data for the comparison plot. Later updates will only deliver
             the value column where as this input has an index and other invariant
             information.
-        db_options (dict): Dashboard options.
+        dash_options (dict): Dictionary with the dashboard options.
         optimization_status (str): One of "scheduled", "running", "success", "failure".
         gradient_status (float): Progress of gradient calculation between 0 and 1.
+        constraints (list): List of constraints.
 
     Returns:
         database (sqlalchemy.MetaData). The engine that connects
         to the database can be accessed via ``database.bind``.
 
     """
-    db_options = {} if db_options is None else db_options
     gradient_status = float(gradient_status)
     database = load_database(path)
 
@@ -151,8 +157,9 @@ def prepare_database(
         "comparison_plot",
         "optimization_status",
         "gradient_status",
-        "db_options",
+        "dash_options",
         "exceptions",
+        "constraints",
     ]
 
     for table in opt_tables:
@@ -168,15 +175,17 @@ def prepare_database(
     _define_one_column_pickle_table(database, "comparison_plot")
     _define_optimization_status_table(database)
     _define_gradient_status_table(database)
-    _define_db_options_table(database)
+    _define_scalar_pickle_table(database, "dash_options")
     _define_string_table(database, "exceptions")
+    _define_scalar_pickle_table(database, "constraints")
     engine = database.bind
     database.create_all(engine)
 
     append_rows(database, "start_params", {"value": params})
     append_rows(database, "optimization_status", {"value": optimization_status})
     append_rows(database, "gradient_status", {"value": gradient_status})
-    append_rows(database, "db_options", {"value": db_options})
+    append_rows(database, "dash_options", {"value": dash_options})
+    append_rows(database, "constraints", {"value": constraints})
 
     if comparison_plot_data is None:
         comparison_plot_data = pd.DataFrame({"value": [np.nan]})
@@ -269,11 +278,11 @@ def _define_gradient_status_table(database):
     return gradstat
 
 
-def _define_db_options_table(database):
-    db_options = Table(
-        "db_options", database, Column("value", PickleType), extend_existing=True
+def _define_scalar_pickle_table(database, name):
+    dash_options = Table(
+        name, database, Column("value", PickleType), extend_existing=True
     )
-    return db_options
+    return dash_options
 
 
 def _define_string_table(database, name):

@@ -4,7 +4,7 @@ from functools import partial
 import numpy as np
 import pandas as pd
 
-from estimagic.dashboard.plotting_functions import get_color_palette
+from estimagic.dashboard.utilities import get_color_palette
 
 
 def clean_data(df, group_cols, subgroup_col):

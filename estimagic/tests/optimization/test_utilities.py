@@ -9,7 +9,6 @@ from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
 from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import cov_to_sds_and_corr
 from estimagic.optimization.utilities import dimension_to_number_of_triangular_elements
-from estimagic.optimization.utilities import index_element_to_string
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 from estimagic.optimization.utilities import robust_cholesky
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
@@ -95,13 +94,6 @@ def test_dimension_to_number_of_triangular_elements():
     expected = [6, 10, 15, 21]
     for inp, exp in zip(inputs, expected):
         assert dimension_to_number_of_triangular_elements(inp) == exp
-
-
-def test_index_element_to_string():
-    inputs = [(("a", "b", 1),), (["bla", 5, 6], "~"), ("bla", "*")]
-    expected = ["a_b_1", "bla~5~6", "bla"]
-    for inp, exp in zip(inputs, expected):
-        assert index_element_to_string(*inp) == exp
 
 
 def random_cov(dim, seed):
