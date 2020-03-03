@@ -6,12 +6,12 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.differentiation.numdiff_np import _consolidate_one_step_one_sided
-from estimagic.differentiation.numdiff_np import _consolidate_one_step_two_sided
+from estimagic.differentiation.numdiff_np import _consolidate_one_step_central
+from estimagic.differentiation.numdiff_np import _consolidate_one_step_forward
 from estimagic.differentiation.numdiff_np import _fill_nans_with_other
 from estimagic.differentiation.numdiff_np import _get_output_shape
-from estimagic.differentiation.numdiff_np import _jacobian
 from estimagic.differentiation.numdiff_np import _nan_skipping_batch_evaluator
+from estimagic.differentiation.numdiff_np import jacobian
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs_jacobian
 
@@ -32,15 +32,15 @@ def test_jacobian(binary_choice_inputs, method):
     fix = binary_choice_inputs
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
 
-    calculated = _jacobian(
+    calculated = jacobian(
         func=func,
         method=method,
         x=fix["params_np"],
         n_steps=1,
-        base_step=None,
-        lower_bound=np.full(fix["params_np"].shape, -np.inf),
-        upper_bound=np.full(fix["params_np"].shape, np.inf),
-        min_step=1e-8,
+        base_steps=None,
+        lower_bounds=np.full(fix["params_np"].shape, -np.inf),
+        upper_bounds=np.full(fix["params_np"].shape, np.inf),
+        min_steps=1e-8,
         step_ratio=2.0,
         f0=func(fix["params_np"]),
         n_processes=1,
@@ -81,19 +81,19 @@ def test_nan_skipping_batch_evaluator():
             aaae(arr_calc, arr_exp)
 
 
-def test_consolidate_one_step_one_sided():
+def test_consolidate_one_step_forward():
     forward = np.ones((1, 4, 3))
     forward[:, :, 0] = np.nan
     backward = np.zeros_like(forward)
 
-    calculated = _consolidate_one_step_one_sided(
+    calculated = _consolidate_one_step_forward(
         {"forward": forward, "backward": backward}
     )
     expected = np.array([[0, 1, 1]] * 4)
     aaae(calculated, expected)
 
 
-def test_consolidate_one_step_two_sided():
+def test_consolidate_one_step_central():
     central = np.full((1, 4, 3), np.nan)
     central[:, :, 2] = 3
     forward = np.ones((1, 4, 3))
@@ -102,7 +102,7 @@ def test_consolidate_one_step_two_sided():
     backward[:, :, 1] = np.nan
 
     expected = np.array([[0, 1, 3]] * 4)
-    calculated = _consolidate_one_step_two_sided(
+    calculated = _consolidate_one_step_central(
         {"forward": forward, "backward": backward, "central": central}
     )
     aaae(calculated, expected)

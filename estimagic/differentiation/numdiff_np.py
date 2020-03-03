@@ -7,37 +7,63 @@ from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.optimization.utilities import namedtuple_from_kwargs
 
 
-def _jacobian(
+def jacobian(
     func,
     x,
     method,
     n_steps,
-    base_step,
-    lower_bound,
-    upper_bound,
-    min_step,
+    base_steps,
+    lower_bounds,
+    upper_bounds,
     step_ratio,
+    min_steps,
     f0,
     n_processes,
 ):
 
-    """
-    func catches exceptions and return a scalar nan in that case.
+    """Evaluate Jacobian of func at x according to specified methods and step options.
+
+    Args:
+        func (callable): Function of which the Jacobian is evaluated.
+        x (np.ndarray): 1d array at which the derivative is evaluated
+        method (str): One of ["central", "forward", "backward"], default "central".
+        n_steps (int): Number of steps needed. For central methods, this is
+            the number of steps per direction. It is one if no Richardson extrapolation
+            is used.
+        base_steps (np.ndarray, optional): 1d array of the same length as x with the
+            absolute value of the first step. If the base_steps conflicts with bounds,
+            generate_steps will modify it. If base step is not provided, it will be
+            determined as according to a rule of thumb as long as this does not
+            conflict with min_steps
+        lower_bounds (np.ndarray): 1d array with lower bounds for each parameter.
+        upper_bounds (np.ndarray): 1d array with upper bounds for each parameter.
+        step_ratio (float or array): Ratio between two consecutive steps in the
+            same direction. default 2.0. Has to be larger than one. step ratio
+            is only used if n_steps > 1.
+        min_steps (float, array or "optimal"): Minimal possible step size that can
+            be chosen to accomodate bounds. Default 1e-8 which is square-root of
+            machine accurracy for 64 bit floats. If min_steps is an array, it has to
+            be have the same shape as x. If "optimal", step size is not decreased
+            beyond what is optimal according to the rule of thumb.
+        f0 (np.ndarray): 1d numpy array with func(x), optional.
+        n_processes (int): Number of processes used to parallelize the function
+            evaluations. Default 1.
+
     """
     assert (
-        upper_bound - lower_bound >= 2 * min_step
-    ).all(), "min_step is too large to fit into bounds."
+        upper_bounds - lower_bounds >= 2 * min_steps
+    ).all(), "min_steps is too large to fit into bounds."
 
     steps = generate_steps(
         x=x,
         method=method,
         n_steps=n_steps,
         target="jacobian",
-        base_step=base_step,
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
+        base_steps=base_steps,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
         step_ratio=step_ratio,
-        min_step=min_step,
+        min_steps=min_steps,
     )
 
     evaluation_points = []
@@ -62,22 +88,62 @@ def _jacobian(
         jac_candidates[m] = getattr(fd, f"jacobian_{m}")(evals, steps, f0)
 
     if n_steps == 1:
-        if method in ["forward", "backward"]:
-            jac = _consolidate_one_step_one_sided(jac_candidates)
+        if method == "forward":
+            jac = _consolidate_one_step_forward(jac_candidates)
+        elif method == "backward":
+            jac = _consolidate_one_step_backward(jac_candidates)
         else:
-            jac = _consolidate_one_step_two_sided(jac_candidates)
+            jac = _consolidate_one_step_central(jac_candidates)
     else:
         raise NotImplementedError("Extrapolation is not yet implemented.")
 
     return jac
 
 
-def _consolidate_one_step_one_sided(candidates):
+def _consolidate_one_step_forward(candidates):
+    """Replace missing forward derivative estimates by corresponding backward estimate.
+
+    Args:
+        candidates (dict): Dictionary with "forward" and "backward" derivative
+            estimates. All derivative estimates are numpy arrays with the same shape.
+
+    Returns:
+        consolidated (np.ndarray): Array of same shape as input derivative estimates.
+
+    """
     consolidated = _fill_nans_with_other(candidates["forward"], candidates["backward"])
     return consolidated.reshape(consolidated.shape[1:])
 
 
-def _consolidate_one_step_two_sided(candidates):
+def _consolidate_one_step_backward(candidates):
+    """Replace missing central derivative estimates by corresponding forward estimate.
+
+    Args:
+        candidates (dict): Dictionary with "forward" and "backward" derivative
+            estimates. All derivative estimates are numpy arrays with the same shape.
+
+    Returns:
+        consolidated (np.ndarray): Array of same shape as input derivative estimates.
+
+    """
+    consolidated = _fill_nans_with_other(candidates["backward"], candidates["forward"])
+    return consolidated.reshape(consolidated.shape[1:])
+
+
+def _consolidate_one_step_central(candidates):
+    """Replace missing central derivative estimates by corresponding one-sided estimate.
+
+    If the central estimate is missing, we first try to replace it by a forward
+    estimate. If this is also missing, by the backward estimate.
+
+    Args:
+        candidates (dict): Dictionary with "forward" and "backward" derivative
+            estimates. All derivative estimates are numpy arrays with the same shape.
+
+    Returns:
+        consolidated (np.ndarray): Array of same shape as input derivative estimates.
+
+    """
     consolidated = candidates["central"]
     for other in ["forward", "backward"]:
         consolidated = _fill_nans_with_other(consolidated, candidates[other])
@@ -85,10 +151,18 @@ def _consolidate_one_step_two_sided(candidates):
 
 
 def _consolidate_extrapolated(candidates):
+    """Get the best possible derivative estimate, given an error estimate.
+
+    See https://tinyurl.com/ubn3nv5 for corresponding code in numdifftools and
+    https://tinyurl.com/snle7mb for an explanation of how errors of Richardson
+    extrapolated derivative estimates can be estimated.
+
+    """
     raise NotImplementedError
 
 
 def _fill_nans_with_other(arr, other):
+    """Replace np.nan entries in arr by corresponding entries in other."""
     assert arr.shape == other.shape, "arr and other must have same shape."
     return np.where(np.isfinite(arr), arr, other)
 
@@ -105,20 +179,17 @@ def _nan_skipping_batch_evaluator(func, arglist, n_processes):
     Returns
         evaluations (list): The function evaluations, same length as arglist.
 
-    The functions is only evaluated at inputs that are not a scalar np.nan.
-    The outputs for the skipped inputs are arrays of the same shape as
-    the result of func, filled with np.nan.
+    The function is only evaluated at inputs that are not a scalar np.nan.
+    The outputs corresponding to skipped inputs as well as for inputs on which func
+    returns a scalar np.nan are arrays of the same shape as the result of func, filled
+    with np.nan.
 
     """
     # extract information
-    nan_indices = []
-    real_args = []
-    for i, arg in enumerate(arglist):
-        if isinstance(arg, float) and np.isnan(arg):
-            nan_indices.append(i)
-        else:
-            real_args.append(arg)
-    nan_indices = set(nan_indices)
+    nan_indices = {
+        i for i, arg in enumerate(arglist) if isinstance(arg, float) and np.isnan(arg)
+    }
+    real_args = [arg for i, arg in enumerate(arglist) if i not in nan_indices]
 
     # evaluate function
     if n_processes == 1:
@@ -130,22 +201,32 @@ def _nan_skipping_batch_evaluator(func, arglist, n_processes):
         evaluations = p.map(func, real_args)
 
     # combine results
-    outshape = _get_output_shape(evaluations)
     evaluations = iter(evaluations)
     results = []
     for i in range(len(arglist)):
         if i in nan_indices:
-            results.append(np.full(outshape, np.nan))
+            results.append(np.nan)
         else:
-            evaluation = next(evaluations)
-            if isinstance(evaluation, float) and np.isnan(evaluation):
-                results.append(np.full(outshape, np.nan))
-            else:
-                results.append(evaluation)
+            results.append(next(evaluations))
+
+    # replace scalar NaNs by arrays filled with NaNs.
+    outshape = _get_output_shape(results)
+    for i in range(len(results)):
+        if isinstance(results[i], float) and np.isnan(results[i]):
+            results[i] = np.full(outshape, np.nan)
 
     return results
 
 
 def _get_output_shape(evals):
+    """Get the output shape of func from evaluations.
+
+    Args:
+        evals (list): Contains np.nan and numpy arrays that all have the same shape.
+
+    Returns:
+        tuple: The shape of the numpy arrays.
+
+    """
     first_relevant = next(x for x in evals if hasattr(x, "shape"))
     return first_relevant.shape

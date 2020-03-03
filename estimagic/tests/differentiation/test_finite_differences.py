@@ -10,6 +10,7 @@ from estimagic.optimization.utilities import namedtuple_from_kwargs
 
 @pytest.fixture(scope="function")
 def jacobian_inputs():
+    """Very contrived test case for finite difference formulae with linear function."""
     steps_pos = np.array([[0.1, 0.1, 0.1, 0.1], [0.2, 0.2, 0.2, 0.2]])
     steps = namedtuple_from_kwargs(pos=steps_pos, neg=-steps_pos)
 
