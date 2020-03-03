@@ -120,9 +120,7 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps):
         target (str): One of ["gradient", "jacobian", "hessian"]. This is used to choose
             the appropriate rule of thumb for the base_steps.
         min_steps (np.ndarray or None): Minimal possible step sizes that can be chosen
-            to accomodate bounds. Needs to have same length as x. I None, min_steps is
-            set to base_step, i.e step size is not decreased beyond what is optimal
-            according to the rule of thumb.
+            to accomodate bounds. Needs to have same length as x.
 
     Returns:
         base_steps (np.ndarray): 1d array of the same length as x with the
@@ -147,20 +145,37 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps):
 
 
 def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_bounds):
+    """Set unused side (i.e. pos or neg) to np.nan.
+
+    A side is not used if:
+    - It was not requested due to one sided derivatives.
+    - It was requested but a side switch was necessary due to bounds.
+
+    Args:
+        x (np.ndarray): 1d array with parameters.
+        pos (np.ndarray): Array with positive steps of shape (n_steps, len(x))
+        neg (np.ndarray): Array with negative steps of shape (n_steps, len(x))
+        method (str): One of ["forward", "backward"]
+        lower_step_bounds (np.ndarray): Lower bounds for steps.
+        upper_step_bounds (np.ndarray): Upper bounds for steps.
+
+    Returns:
+        pos (np.ndarray): Copy of pos with additional NaNs
+        neg (np.ndarray): Copy of neg with additional NaNs
+
+    """
     pos = pos.copy()
     neg = neg.copy()
-    larger_side = np.where(
-        (upper_step_bounds - x) >= (x - lower_step_bounds), np.ones_like(x), -1
-    )
+    larger_side = np.where(upper_step_bounds >= -lower_step_bounds, np.ones_like(x), -1)
     max_abs_step = pos[:, -1]
     if method == "forward":
+        side = np.where(upper_step_bounds >= max_abs_step, np.ones_like(x), larger_side)
+    elif method == "backward":
         side = np.where(
-            (upper_step_bounds - x) >= max_abs_step, np.ones_like(x), larger_side
+            -lower_step_bounds >= max_abs_step, -np.ones_like(x), larger_side
         )
     else:
-        side = np.where(
-            (x - lower_step_bounds) >= max_abs_step, (-np.ones_like(x)), larger_side
-        )
+        raise ValueError("This function only works for forward or backward method.")
 
     pos[side == -1] = np.nan
     neg[side == 1] = np.nan
@@ -170,7 +185,24 @@ def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_b
 def _rescale_to_accomodate_bounds(
     base_steps, pos, neg, lower_step_bounds, upper_step_bounds, min_steps
 ):
-    """Res
+    """Rescale steps to make them compatible with bounds unless this violates min_steps.
+
+    Args:
+        base_steps (np.ndarray or None): 1d array of the same length as x with the
+            absolute value of the first step. If the base_steps conflicts with bounds,
+            generate_steps will modify it. If base step is None, it will be
+            determined as according to the rule of thumb outlined below as long as
+            this does not conflict with min_steps
+        pos (np.ndarray): Array with positive steps of shape (n_steps, len(x))
+        neg (np.ndarray): Array with negative steps of shape (n_steps, len(x))
+        lower_step_bounds (np.ndarray): Lower bounds for steps.
+        upper_step_bounds (np.ndarray): Upper bounds for steps.
+        min_steps (np.ndarray): Minimal possible step sizes that can be chosen
+            to accomodate bounds. Needs to have same length as x.
+
+    Returns:
+        pos (np.ndarray): Copy of pos with rescaled steps.
+        neg (np.ndarray): Copy of neg with rescaled steps.
 
     """
     with warnings.catch_warnings():
