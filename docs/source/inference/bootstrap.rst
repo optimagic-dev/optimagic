@@ -54,6 +54,16 @@ interest, we can use
 
 .. autofunction:: get_results_table
 
+There is also a function to calculate only confidence intervals, given the estimates.
+The code of this function is an adjusted version of the code from Daniel Saxton's
+resample library (https://github.com/dsaxton/resample/). It has been adjusted to allow
+for multi-valued statistics as well as the additional confidence interval types "bc",
+"basic" and "normal".
+
+.. currentmodule:: estimagic.inference.bootstrap
+
+.. autofunction:: compute_ci
+
 Here is a jupyter notebook with an example on how to use the bootstrap library:
 
 .. toctree::

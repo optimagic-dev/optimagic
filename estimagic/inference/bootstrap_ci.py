@@ -6,12 +6,15 @@ from scipy.stats import norm
 
 
 def compute_ci(data, f, estimates, ci_method="percentile", alpha=0.05, num_threads=1):
-    """Compute confidence interval of bootstrap estimates.
+    """Compute confidence interval of bootstrap estimates. Parts of the code of the
+    subfunctions of this function are taken from Daniel Saxton's resample library, as
+    found on https://github.com/dsaxton/resample/ .
+
 
     Args:
-        data (pd.DataFrame): original dataset.
+        data (pandas.DataFrame): original dataset.
         f (callable): function of the data calculating statistic of interest.
-        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
         num_threads (int): number of jobs for parallelization.

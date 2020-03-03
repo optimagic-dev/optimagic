@@ -25,14 +25,14 @@ def bootstrap(
     for statistic of interest in given original sample.
 
     Args:
-        data (pd.DataFrame): original dataset.
+        data (pandas.DataFrame): original dataset.
         f (callable): function of the data calculating statistic of interest.
         ndraws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
         return_seeds (bool): specify whether to return the drawn seeds as 2nd argument.
-        seeds (np.array): array of seeds for bootstrap samples, default is none.
+        seeds (numpy.array): array of seeds for bootstrap samples, default is none.
         num_threads (int): number of jobs for parallelization.
 
     Returns:
@@ -66,7 +66,7 @@ def get_results_table(
     for each estimated parameter.
 
     Args:
-        data (pd.DataFrame): original dataset.
+        data (pandas.DataFrame): original dataset.
         f (callable): function of the data calculating statistic of interest.
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.

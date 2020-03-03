@@ -24,9 +24,9 @@ def get_bootstrap_samples(
     """Draw and return bootstrap samples, either by specified seeds or number of draws.
 
     Args:
-        data (pd.DataFrame): original dataset.
+        data (pandas.DataFrame): original dataset.
         cluster_by (str): column name of the variable to cluster by.
-        seeds (np.array): Size ndraws vector of drawn seeds or None.
+        seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         ndraws (int): number of draws, only relevant if seeds is None.
         num_threads (int): number of jobs for parallelization.
 
@@ -57,7 +57,7 @@ def _get_cluster_index(data, cluster_by):
     """Divide up the dataframe into clusters by variable cluster_by.
 
     Args:
-        data (pd.DataFrame): original dataset.
+        data (pandas.DataFrame): original dataset.
         cluster_by (str): column name of variable to cluster by.
 
     Returns:

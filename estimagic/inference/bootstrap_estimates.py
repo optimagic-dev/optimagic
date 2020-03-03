@@ -17,10 +17,10 @@ def get_bootstrap_estimates(
     or for ndraws random samples.
 
     Args:
-        data (pd.DataFrame): original dataset.
+        data (pandas.DataFrame): original dataset.
         f (callable): function of the dataset calculating statistic of interest.
         cluster_by (str): column name of the variable to cluster by.
-        seeds (np.array): Size ndraws vector of drawn seeds or None.
+        seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         ndraws (int): number of draws, only relevant if seeds is None.
         num_threads (int): number of jobs for parallelization.
 
@@ -50,8 +50,8 @@ def _get_uniform_estimates(data, seeds, num_threads=1, f=None):
     samples.
 
     Args:
-        data (pd.DataFrame): original dataset.
-        seeds (np.array): Size ndraws vector of drawn seeds or None.
+        data (pandas.DataFrame): original dataset.
+        seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         num_threads (int): number of jobs for parallelization.
         f (callable): function of the dataset calculating statistic of interest.
 
@@ -83,9 +83,9 @@ def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
     samples.
 
     Args:
-        data (pd.DataFrame): original dataset.
+        data (pandas.DataFrame): original dataset.
         cluster_by (str): column name of the variable to cluster by.
-        seeds (np.array): Size ndraws vector of drawn seeds or None.
+        seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         num_threads (int): number of jobs for parallelization.
         f (callable): function of the dataset calculating statistic of interest.
 
