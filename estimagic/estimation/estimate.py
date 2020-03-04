@@ -3,8 +3,9 @@ import numpy as np
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.decorators import aggregate_criterion_output
 from estimagic.decorators import expand_criterion_output
+from estimagic.optimization.broadcast_arguments import broadcast_arguments
+from estimagic.optimization.check_arguments import check_arguments
 from estimagic.optimization.optimize import maximize
-from estimagic.optimization.process_arguments import process_optimization_arguments
 
 
 def maximize_log_likelihood(
@@ -19,7 +20,7 @@ def maximize_log_likelihood(
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
     dashboard=False,
-    db_options=None,
+    dash_options=None,
 ):
     """Estimate parameters via maximum likelihood.
 
@@ -82,9 +83,8 @@ def maximize_log_likelihood(
         dashboard (bool):
             whether to create and show a dashboard. See :ref:`dashboard` for details.
 
-        db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function. See
-                :ref:`dashboard` for details.
+        dash_options (dict):
+            dictionary with kwargs for the dashboard. See :ref:`dashboard` for details.
 
     Returns:
         results (tuple or list of tuples):
@@ -102,16 +102,16 @@ def maximize_log_likelihood(
 
     """
     if isinstance(log_like_obs, list):
-        wrapped_loglikeobs = [
+        extended_loglikelobs = [
             expand_criterion_output(crit_func) for crit_func in log_like_obs
         ]
         wrapped_loglikeobs = [
             aggregate_criterion_output(np.mean)(crit_func)
-            for crit_func in wrapped_loglikeobs
+            for crit_func in extended_loglikelobs
         ]
     else:
-        wrapped_loglikeobs = expand_criterion_output(log_like_obs)
-        wrapped_loglikeobs = aggregate_criterion_output(np.mean)(wrapped_loglikeobs)
+        extended_loglikelobs = expand_criterion_output(log_like_obs)
+        wrapped_loglikeobs = aggregate_criterion_output(np.mean)(extended_loglikelobs)
 
     results = maximize(
         wrapped_loglikeobs,
@@ -125,37 +125,23 @@ def maximize_log_likelihood(
         logging,
         log_options,
         dashboard,
-        db_options,
+        dash_options,
     )
 
     # To convert the mean log likelihood in the results dictionary to the log
     # likelihood, get the length of contributions for each optimization.
-    arguments = process_optimization_arguments(
-        criterion=log_like_obs,
-        params=params,
-        algorithm=algorithm,
-        criterion_kwargs=criterion_kwargs,
-        constraints=constraints,
-        general_options=general_options,
-        algo_options=algo_options,
-        gradient=None,
-        gradient_options=gradient_options,
-        logging=logging,
-        log_options=log_options,
-        dashboard=dashboard,
-        db_options=db_options,
+    arguments = broadcast_arguments(
+        criterion=log_like_obs, params=params, criterion_kwargs=criterion_kwargs
     )
+    check_arguments(arguments)
 
-    n_contributions = [
-        len(
-            list(
-                args_one_run["criterion"](
-                    args_one_run["params"], **args_one_run["criterion_kwargs"]
-                )
-            )
+    contribs_and_cp_data = [
+        args_one_run["criterion"](
+            args_one_run["params"], **args_one_run["criterion_kwargs"]
         )
         for args_one_run in arguments
     ]
+    n_contributions = [len(c_and_cp[0]) for c_and_cp in contribs_and_cp_data]
 
     if isinstance(results, list):
         for result, n_contribs in zip(results, n_contributions):

@@ -62,9 +62,7 @@ def rosen_with_guvectorize(x):
 
 
 def test_single_optimization():
-    """
-    Test an easy single optimization.
-    """
+    """Test an easy single optimization."""
     result = minimize(rosen, params, "nlopt_neldermead")[1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
@@ -72,9 +70,7 @@ def test_single_optimization():
 
 
 def test_single_optimization_list_len1():
-    """
-    Test an easy single optimization.
-    """
+    """Test an easy single optimization."""
     result = minimize([rosen], [params], ["nlopt_neldermead"])[1]["value"].to_numpy()
     expected_result = [1, 1, 1, 1, 1]
 
@@ -82,9 +78,7 @@ def test_single_optimization_list_len1():
 
 
 def test_lists_same_size():
-    """
-    Test a parallel optimization: All inputs are a list of the same length.
-    """
+    """Test a parallel optimization: All inputs are a list of the same length."""
     result = minimize(
         [rosen, rosen],
         [params, params],
@@ -102,9 +96,7 @@ def test_lists_same_size():
 
 
 def test_lists_different_size():
-    """
-    Make sure an error is raised if arguments entered as list are of different length
-    """
+    """Test if error is raised if arguments entered as list are of different length."""
     with pytest.raises(ValueError):
         minimize(
             [rosen, rosen],
@@ -115,9 +107,7 @@ def test_lists_different_size():
 
 
 def test_missing_argument():
-    """
-    Test if error is raised if an important argument is entered as empty list.
-    """
+    """Test if error is raised if an important argument is entered as empty list."""
     with pytest.raises(ValueError):
         minimize(criterion=rosen, params=params, algorithm=[])
 
@@ -128,27 +118,24 @@ def test_missing_argument():
         minimize(criterion=[], params=params, algorithm="nlopt_neldermead")
 
 
+@pytest.mark.wip
 def test_wrong_type_criterion():
-    """
-    Make sure an error is raised if an argument has a wrong type.
-    """
-    with pytest.raises(ValueError):
+    """Make sure an error is raised if an argument has a wrong type."""
+    with pytest.raises(TypeError):
         minimize(
             [rosen, "error"],
             [params, params],
             ["nlopt_neldermead", "scipy_L-BFGS-B"],
-            general_options={"n_cores": 4},
+            general_options={"n_cores": 1},
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize("error", params, "nlopt_neldermead", general_options={"n_cores": 4})
 
 
 def test_wrong_type_algorithm():
-    """
-    Make sure an error is raised if an argument has a wrong type.
-    """
-    with pytest.raises(ValueError):
+    """Make sure an error is raised if an argument has a wrong type."""
+    with pytest.raises(TypeError):
         minimize(
             [rosen, rosen],
             [params, params],
@@ -156,29 +143,13 @@ def test_wrong_type_algorithm():
             general_options={"n_cores": 4},
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(rosen, params, algorithm=rosen, general_options={"n_cores": 4})
 
 
-def test_wrong_type_constraints():
-    """
-    Make sure an error is raised if an argument has a wrong type.
-    """
-    with pytest.raises(ValueError):
-        minimize(
-            rosen,
-            params,
-            "nlopt_neldermead",
-            constraints={},
-            general_options={"n_cores": 4},
-        )
-
-
 def test_wrong_type_dashboard():
-    """
-    Make sure an error is raised if an argument has a wrong type.
-    """
-    with pytest.raises(ValueError):
+    """Make sure an error is raised if an argument has a wrong type."""
+    with pytest.raises(TypeError):
         minimize(
             [rosen, rosen],
             [params, params],
@@ -187,7 +158,7 @@ def test_wrong_type_dashboard():
             general_options={"n_cores": 4},
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         minimize(
             rosen,
             params,
@@ -198,22 +169,15 @@ def test_wrong_type_dashboard():
 
 
 def test_n_cores_not_specified():
-    """
-    Make sure an error is raised if n_cores is not specified and
-    multiple optimizations should be run.
-    """
+    """Test that n_cores is not specified and multiple optimizations should be run."""
     with pytest.raises(ValueError):
         minimize(
-            [rosen, rosen],
-            [params, params, params],
-            ["nlopt_neldermead", "scipy_L-BFGS-B"],
+            [rosen, rosen], [params, params], ["nlopt_neldermead", "scipy_L-BFGS-B"],
         )
 
 
 def test_broadcasting():
-    """
-    Test if broadcasting of arguments that are not entered as list works.
-    """
+    """Test if broadcasting of arguments that are not entered as list works."""
     result = minimize(
         rosen,
         params,
@@ -254,9 +218,7 @@ def test_broadcasting_list_len1():
 
 
 def test_list_length_1():
-    """
-    Test if broadcasting of arguments that are entered as list of length 1 works.
-    """
+    """Test if broadcasting of arguments that are entered as list of length 1 works."""
     result = minimize(
         [rosen],
         [params],
@@ -275,9 +237,7 @@ def test_list_length_1():
 
 
 def test_order_of_results():
-    """
-    Test if order is contained.
-    """
+    """Test if order is contained."""
     params_new = params.copy()
     params_new["lower"] = [-1, -1, -1, 1.9, -1]
     result = minimize(
@@ -298,9 +258,7 @@ def test_order_of_results():
 
 
 def test_list_of_constraints():
-    """
-    Test if multiple lists of constraints are added.
-    """
+    """Test if multiple lists of constraints are added."""
     constraints = [{"loc": 3, "type": "fixed", "value": 1.9}]
     result = minimize(
         rosen,
@@ -324,10 +282,7 @@ def test_list_of_constraints():
     'sys.platform == "darwin"', reason="This test doesn't pass Mac azure checks."
 )
 def test_criterion_including_guvectoring():
-    """
-    Test if multiple lists of constraints are added.
-    """
-
+    """Test if multiple lists of constraints are added."""
     result = minimize(
         rosen_with_guvectorize,
         params,
