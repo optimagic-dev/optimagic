@@ -74,9 +74,11 @@ def _get_uniform_estimates(data, seeds, num_threads=1, f=None):
         draw = data.iloc[draw_ids]
 
         if f is None:
-            return draw
+            res = draw
         else:
-            return f(draw)
+            res = f(draw)
+
+        return res
 
     estimates = Parallel(n_jobs=num_threads)(delayed(loop)(s) for s in seeds)
 
@@ -108,9 +110,11 @@ def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
         draw = data.iloc[draw_ids]
 
         if f is None:
-            return draw
+            res = draw
         else:
-            return f(draw)
+            res = f(draw)
+
+        return res
 
     estimates = Parallel(n_jobs=num_threads)(delayed(loop)(s) for s in seeds)
 

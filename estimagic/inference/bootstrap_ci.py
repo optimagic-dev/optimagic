@@ -338,12 +338,10 @@ def _concatenate_functions(f_list, orig_data):
 
             return pd.concat([g(data) for g in f_list])
 
-        return f
-
     else:
 
         def f(data):
 
             return np.concatenate([np.array(g(data)) for g in f_list])
 
-        return f
+    return f

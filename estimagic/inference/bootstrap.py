@@ -54,13 +54,15 @@ def bootstrap(
 
     estimates = get_bootstrap_estimates(df, f, cluster_by, seeds, num_threads)
 
-    results = get_results_table(df, f, estimates, ci_method, alpha, num_threads)
+    table = get_results_table(df, f, estimates, ci_method, alpha, num_threads)
 
     if return_seeds is False:
-        return results
+        res = table
 
     elif return_seeds is True:
-        return results, seeds
+        res = table, seeds
+
+    return res
 
 
 def get_results_table(
@@ -73,7 +75,7 @@ def get_results_table(
         data (pandas.DataFrame): original dataset.
         f (callable): function of the data calculating statistic of interest or list of
             functions.
-        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         num_threads (int): number of jobs for parallelization.
         alpha (float): significance level of choice.
