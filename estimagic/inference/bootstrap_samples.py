@@ -1,6 +1,5 @@
 import numpy as np
 
-import estimagic.inference.bootstrap_estimates as est
 from estimagic.inference.bootstrap_ci import _check_inputs
 
 
@@ -43,11 +42,15 @@ def get_bootstrap_samples(
 
     if cluster_by is None:
 
-        sample_ids = est._get_uniform_estimates(data, seeds, num_threads, f=None)
+        from estimagic.inference.bootstrap_estimates import _get_uniform_estimates
+
+        sample_ids = _get_uniform_estimates(data, seeds, num_threads, f=None)
 
     else:
 
-        sample_ids = est._get_clustered_estimates(
+        from estimagic.inference.bootstrap_estimates import _get_clustered_estimates
+
+        sample_ids = _get_clustered_estimates(
             data, cluster_by, seeds, num_threads, f=None
         )
 
