@@ -16,9 +16,14 @@ estimagic
     :target: https://estimagic.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://dev.azure.com/OpenSourceEconomics/estimagic/_apis/build/status/OpenSourceEconomics.estimagic?branchName=master
-    :target: https://dev.azure.com/OpenSourceEconomics/estimagic/_build/latest?definitionId=1&branchName=master
+.. image:: https://github.com/OpenSourceEconomics/estimagic/workflows/Continuous%20Integration%20Workflow/badge.svg?branch=master
+    :target: https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amaster
 
+.. image:: https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/master/graph/badge.svg
+  :target: https://codecov.io/gh/OpenSourceEconomics/estimagic
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
 
 Introduction
 ============
@@ -28,8 +33,8 @@ implementations of (structural) econometric models.
 
 It is designed with large structural models in mind. However, it is also useful for any
 other estimator that numerically minimizes or maximizes a criterion function (Extremum
-Estimator). Examples include maximum likelihood, generalized method of moments,
-method of simulated moments and indirect inference.
+Estimator). Examples include maximum likelihood, generalized method of moments, method
+of simulated moments and indirect inference.
 
 Key Features
 ============
@@ -97,14 +102,14 @@ worked on this software and you should recognize their effort.
 Roadmap
 =======
 
-Estimagic is still in alpha status and the API might still change. We will try
-to keep the API more stable When we switch versions `0.0.x` to `0.x.x`. Until
-then we want to achieve the following things:
+Estimagic is still in alpha status and the API might still change. We will try to keep
+the API more stable When we switch versions `0.0.x` to `0.x.x`. Until then we want to
+achieve the following things:
 
-- Fully wrapping scipy.optimize and pygmo, including pygmo's capability for
-  parallelized optimizers
-- Convenient and robust functions to calculate covariance matrices of
-  Maximum Likelihood, GMM, MSM and Indirect Inference estimates.
+- Fully wrapping scipy.optimize and pygmo, including pygmo's capability for parallelized
+  optimizers
+- Convenient and robust functions to calculate covariance matrices of Maximum
+  Likelihood, GMM, MSM and Indirect Inference estimates.
 
 Afterwards we want to also implement the following extensions:
 

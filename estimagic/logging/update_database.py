@@ -75,7 +75,7 @@ def _execute_write_statements(statements, database):
         statements (list or sqlalchemy statement): List of sqlalchemy statements
             or single statement that entail a write operation. Examples are Insert,
             Update and Delete.
-        database (sqlalchemy.sql.schema.MetaData): The bind argument must be set.
+        database (sqlalchemy.MetaData): The bind argument must be set.
 
     """
     if not isinstance(statements, (list, tuple)):

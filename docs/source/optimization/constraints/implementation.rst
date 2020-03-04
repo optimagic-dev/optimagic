@@ -93,22 +93,22 @@ that does not satisfy the constraints can be optimal.
 
 While the generality and conceptual simplicity of this approach is attractive, it also
 has its drawbacks. Applying penalties in a naive way can introduce kinks,
-discontinuities and even local optimal into the penalized criterion.
+discontinuities and even local optima into the penalized criterion.
 
 
 What estimagic does
 -------------------
 
-We chose to implement constraints via reparametrizations for the following reason:
+We chose to implement constraints via reparametrizations for the following reasons:
 
 * Reparametrizations ensure that the criterion function is only evaluated at parameters
   that satisfy all constraints. This is not only efficient, but essential if the
   criterion function is only defined for such parameters.
 
 * Reparametrizations can often achieve a substantial dimensionality reduction. In
-  particular fixes and equality constraints are implemented at zero cost, i.e. as
+  particular, fixes and equality constraints are implemented at zero cost, i.e. as
   efficiently as if you directly plug them into your problem. This is important because
-  fixes and equality constraints often makes user code much nicer and more flexible.
+  fixes and equality constraints often make user code much nicer and more flexible.
 
 * It is easier to preserve desirable properties such as convexity and differentiability
   with reparametrizations than with penalties.
@@ -119,8 +119,8 @@ optimizers. More general constraints are only available with optimizers that can
 natively with them. This includes all optimizers from the nlopt and ipopt library.
 
 
-The Nontrivial Reparametrizations
-=================================
+The Non-Trivial Reparametrizations
+===================================
 
 Fixed parameters, equality and pairwise equality constraints can be implemented
 trivially with reparametrizations by simply plugging them into the criterion function.
@@ -134,9 +134,9 @@ Covariance and sdcorr Constraints
 The main difficulty with covariance and sdcorr constraints is to keep the (implied)
 covariance matrix valid, i.e. positive semi-definite. In both cases, :math:`\tilde{x}`
 contains the non-zero elements of the lower triangular cholesky factor of the (implied)
-covariance matrix. For covariance constraints, `g` is then simply then simply the
-product of the cholesky factor with its transpose. For sdcorr covariance matrix that
-results from this is further converted to standard deviations and the unique elements
+covariance matrix. For covariance constraints, `g` is then simply the
+product of the cholesky factor with its transpose. For sdcorr covariance matrix the
+product is further converted to standard deviations and the unique elements
 of a covariance matrix.
 
 Several papers show that the cholesky reparametrization is a very efficient way to
@@ -152,7 +152,7 @@ Linear Constraints
 ------------------
 
 Assume we have m linear constraints on an n-dimensional parameter vector. Then the set
-The set of all parameter vectors that satisfies the constraints can be written as:
+of all parameter vectors that satisfies the constraints can be written as:
 
 .. math::
 
@@ -161,8 +161,8 @@ The set of all parameter vectors that satisfies the constraints can be written a
 
 
 We are looking for a set :math:`\mathbf{\tilde{X}}` that only satisfies box constraints
-and reparametrization. The reparametrization will turn out to be a linear mapping, and
-thus has a matrix representation, say M. We are good if the following holds:
+and reparametrizations. The reparametrizations will turn out to be a linear mapping, and
+thus have a matrix representation, say M. We are good if the following holds:
 
 .. math::
 
@@ -230,10 +230,10 @@ parameters.
 Probability Constraints
 -----------------------
 
-A probability constraint on k parameters mean that all parameters are between zero
-and one and their sum equals one. While those are all linear constraints, they cannot be
-implemented in the way described above, because there are k + 1 constraints for k
-parameters.
+A probability constraint on k parameters means that all parameters lie in
+:math:`[0, 1]` and their sum equals one. While those are all linear constraints,
+they cannot be implemented in the way described above, because there are k + 1
+constraints for k parameters.
 
 Instead we do the following
 

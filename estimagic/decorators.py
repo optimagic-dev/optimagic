@@ -113,8 +113,13 @@ def negative_criterion(criterion):
     return wrapper_negative_criterion
 
 
-def log_evaluation(database, tables):
-    """Log parameters and fitness values."""
+def log_evaluation(func=None, *, database, tables):
+    """Log parameters and fitness values.
+
+    This decorator can be used with and without parentheses and accepts only keyword
+    arguments.
+
+    """
 
     def decorator_log_evaluation(func):
         @functools.wraps(func)
@@ -132,7 +137,10 @@ def log_evaluation(database, tables):
 
         return wrapper_log_evaluation
 
-    return decorator_log_evaluation
+    if callable(func):
+        return decorator_log_evaluation(func)
+    else:
+        return decorator_log_evaluation
 
 
 def aggregate_criterion_output(aggregation_func):
@@ -184,11 +192,14 @@ def log_gradient(database, names):
     return decorator_log_gradient
 
 
-def log_gradient_status(database, n_gradient_evaluations):
+def log_gradient_status(func=None, *, database, n_gradient_evaluations):
     """Log the gradient status.
 
     The gradient status is between 0 and 1 and shows the current share of finished
     function evaluations to compute the gradients.
+
+    This decorator can be used with and without parentheses and accepts only keyword
+    arguments.
 
     """
     counter = itertools.count(1)
@@ -211,7 +222,10 @@ def log_gradient_status(database, n_gradient_evaluations):
 
         return wrapper_log_gradient_status
 
-    return decorator_log_gradient_status
+    if callable(func):
+        return decorator_log_gradient_status(func)
+    else:
+        return decorator_log_gradient_status
 
 
 def handle_exceptions(database, params, constraints, start_params, general_options):
