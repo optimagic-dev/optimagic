@@ -1,8 +1,9 @@
 """Monte Carlo simulations on our estimator."""
 import numpy as np
 import pandas as pd
-from mle_unconstrained import estimate_parameters
 from sklearn.datasets import make_blobs
+
+from estimagic.inference.src.functions.mle_unconstrained import estimate_parameters
 
 
 def create_strata(categories_dict, sample_size, orig_data=None, random=True):
@@ -49,12 +50,12 @@ def create_strata(categories_dict, sample_size, orig_data=None, random=True):
         return orig_data
 
 
-# Test
+# Example
 categories = {"income": "5", "sex": "2", "age": "3"}
-data = create_strata(sample_size=10000, categories=categories, random=True)
+data = create_strata(categories, sample_size=10000, random=True)
 
 # Additional columns. The previous columns were just used to create the strata.
-data["passed_class"] = np.random.randint(0, 1, 10000)
+data["passed_class"] = np.random.randint(0, 2, 10000)
 
 
 def make_stratified_sample(stratified_sample, frac_of_sample):
@@ -86,7 +87,7 @@ data["hours_spent_studying_daily"] = cluster_data
 # SAMPLES
 # independent observations sample
 regular_sample = pd.DataFrame()
-regular_sample["passed_class"] = np.random.randint(0, 1, 10000)
+regular_sample["passed_class"] = np.random.randint(0, 2, 10000)
 regular_sample["hours_spent_studying_daily"] = np.random.randint(0, 10, 10000)
 
 # clustered sample

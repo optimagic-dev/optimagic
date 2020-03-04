@@ -1,14 +1,14 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_almost_equal
-from src.functions.se_estimation import cluster_robust_se
-from src.functions.se_estimation import clustering
-from src.functions.se_estimation import design_options_preprocessing
-from src.functions.se_estimation import robust_se
-from src.functions.se_estimation import sandwich_step
-from src.functions.se_estimation import strata_robust_se
-from src.functions.se_estimation import stratification
+
+from estimagic.inference.src.functions.se_estimation import cluster_robust_se
+from estimagic.inference.src.functions.se_estimation import clustering
+from estimagic.inference.src.functions.se_estimation import design_options_preprocessing
+from estimagic.inference.src.functions.se_estimation import robust_se
+from estimagic.inference.src.functions.se_estimation import sandwich_step
+from estimagic.inference.src.functions.se_estimation import strata_robust_se
+from estimagic.inference.src.functions.se_estimation import stratification
 
 
 @pytest.fixture
@@ -33,16 +33,22 @@ def setup_robust():
         ]
     )
 
+    out["design_dict"] = {"psu": "psu", "strata": "strata", "weight": "weight"}
+
     out["design_options"] = pd.DataFrame(
-        data=[[164, 88], [562, 24], [459, 71], [113, 25], [311, 63]],
-        columns=["psu", "strata"],
+        data=[
+            [164, 88, 0.116953],
+            [562, 24, 0.174999],
+            [459, 71, 0.374608],
+            [113, 25, 0.369494],
+            [311, 63, 0.203738],
+        ],
+        columns=["psu", "strata", "weight"],
     )
 
     out["data"] = out["design_options"].copy()
 
     out["meat"] = np.array([[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]])
-
-    out["design_options_all"] = pd.DataFrame(data=[[]], columns=["", ""])
 
     out["weighted_jacobian"] = np.array(
         [
@@ -73,33 +79,37 @@ def expected_robust():
         ]
     )
 
-    out["cluster_robust_se"] = np.array(
-        [[30.19397978], [5.7291604], [75.14738283], [17.75538399]]
-    )
+    out["cluster_robust_se"] = np.array([[30.1901], [5.7280], [75.1199], [17.7546]])
 
     out["cluster_robust_var"] = np.array(
         [
-            [911.67641484, -172.80970332, 2264.15062153, -534.74220412],
-            [-172.80970332, 32.82327889, -429.14280245, 101.2532081],
-            [2264.15062153, -429.14280245, 5647.12914679, -1333.79168745],
-            [-534.74220412, 101.2532081, -1333.79168745, 315.25366074],
+            [911.411, -172.753, 2264.03, -534.648],
+            [-172.753, 32.8104, -429.901, 101.228],
+            [2263.03, -428.901, 5643, -1333.24],
+            [-534.648, 101.228, -1333.24, 315.225],
         ]
     )
 
-    out["strata_robust_se"] = np.array([[27.0063], [5.1243], [67.2139], [15.8809]])
+    out["strata_robust_se"] = np.array([[27.0028], [5.1233], [67.1893], [15.8802]])
 
     out["strata_robust_var"] = np.array(
         [
-            [729.341, -138.248, 1811.32, -427.794],
-            [-138.248, 26.2586, -343.314, 81.0026],
-            [1811.32, -343.314, 4517.7, -1067.03],
-            [-427.794, 81.0026, -1067.03, 252.203],
+            [729.153, -138.203, 1810.42, -427.719],
+            [-138.203, 26.2483, -343.121, 80.9828],
+            [1810.42, -343.121, 4514.4, -1066.59],
+            [-427.719, 80.9828, -1066.59, 252.18],
         ]
     )
 
     out["design_options"] = pd.DataFrame(
-        data=[[164, 88], [562, 24], [459, 71], [113, 25], [311, 63]],
-        columns=["psu", "strata"],
+        data=[
+            [164, 88, 0.116953],
+            [562, 24, 0.174999],
+            [459, 71, 0.374608],
+            [113, 25, 0.369494],
+            [311, 63, 0.203738],
+        ],
+        columns=["psu", "strata", "weight"],
     )
 
     out["sandwich_se"] = np.array([[72.0984], [26.0388], [505.115], [3.88746]])
@@ -136,56 +146,56 @@ def expected_robust():
 
 def test_clustering(setup_robust, expected_robust):
     cluster_meat = clustering(
-        setup_robust["design_options_all"], setup_robust["weighted_jacobian"]
+        setup_robust["design_options"], setup_robust["weighted_jacobian"]
     )
-    assert_almost_equal(cluster_meat, expected_robust["cluster_meat"], decimal=6)
+    np.allclose(cluster_meat, expected_robust["cluster_meat"])
 
 
 def test_stratification(setup_robust, expected_robust):
     strata_meat = stratification(
-        setup_robust["design_options_all"], setup_robust["weighted_jacobian"]
+        setup_robust["design_options"], setup_robust["weighted_jacobian"]
     )
-    assert_almost_equal(strata_meat, expected_robust["strata_meat"], decimal=6)
+    np.allclose(strata_meat, expected_robust["strata_meat"])
 
 
 def test_sandwich_estimator(setup_robust, expected_robust):
     calc_sandwich_se, calc_sandwich_var = sandwich_step(
         setup_robust["hessian"], setup_robust["meat"]
     )
-    assert_almost_equal(calc_sandwich_var, expected_robust["sandwich_var"], decimal=6)
-    assert_almost_equal(calc_sandwich_se, expected_robust["sandwich_se"], decimal=6)
+    np.allclose(calc_sandwich_var, expected_robust["sandwich_var"])
+    np.allclose(calc_sandwich_se, expected_robust["sandwich_se"])
 
 
 def test_design_specification(setup_robust, expected_robust):
     calc_design_options = design_options_preprocessing(
-        setup_robust["data"], psu="psu", strata="strata", weight=None, fpc=None
+        setup_robust["data"], setup_robust["design_dict"]
     )
-    assert_almost_equal(
-        calc_design_options, expected_robust["design_options"], decimal=5
-    )
+    np.allclose(calc_design_options, expected_robust["design_options"])
 
 
 def test_robust_se(setup_robust, expected_robust):
     calc_robust_se, calc_robust_var = robust_se(
         setup_robust["jacobian"], setup_robust["hessian"]
     )
-    assert_almost_equal(calc_robust_se, expected_robust["robust_stderror"], decimal=5)
-    assert_almost_equal(calc_robust_var, expected_robust["robust_variance"], decimal=3)
+    np.allclose(calc_robust_se, expected_robust["robust_stderror"])
+    np.allclose(calc_robust_var, expected_robust["robust_variance"])
 
 
 def test_cluster_robust_se(setup_robust, expected_robust):
-    calc_robust_cstd, calc_robust_cvar = cluster_robust_se(**setup_robust)
-    assert_almost_equal(
-        calc_robust_cvar, expected_robust["cluster_robust_var"], decimal=6
+    calc_robust_cstd, calc_robust_cvar = cluster_robust_se(
+        setup_robust["jacobian"],
+        setup_robust["hessian"],
+        setup_robust["design_options"],
     )
-    assert_almost_equal(
-        calc_robust_cstd, expected_robust["cluster_robust_se"], decimal=6
-    )
+    np.allclose(calc_robust_cvar, expected_robust["cluster_robust_var"])
+    np.allclose(calc_robust_cstd, expected_robust["cluster_robust_se"])
 
 
 def test_stratified_robust_se(setup_robust, expected_robust):
-    calc_strata_se, calc_strata_var = strata_robust_se(**setup_robust)
-    assert_almost_equal(
-        calc_strata_var, expected_robust["strata_robust_var"], decimal=6
+    calc_strata_se, calc_strata_var = strata_robust_se(
+        setup_robust["jacobian"],
+        setup_robust["hessian"],
+        setup_robust["design_options"],
     )
-    assert_almost_equal(calc_strata_se, expected_robust["strata_robust_se"], decimal=6)
+    np.allclose(calc_strata_var, expected_robust["strata_robust_var"])
+    np.allclose(calc_strata_se, expected_robust["strata_robust_se"])
