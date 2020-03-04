@@ -20,7 +20,7 @@ def get_bootstrap_estimates(
     Args:
         data (pandas.DataFrame): original dataset.
         f (callable): function of the dataset calculating statistic of interest or list
-            of functions.
+            of functions. Needs to return array-like object or pd.Series.
         cluster_by (str): column name of the variable to cluster by.
         seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         ndraws (int): number of draws, only relevant if seeds is None.
@@ -74,7 +74,7 @@ def _get_uniform_estimates(data, seeds, num_threads=1, f=None):
         draw = data.iloc[draw_ids]
 
         if f is None:
-            res = draw
+            res = draw_ids
         else:
             res = f(draw)
 
@@ -110,7 +110,7 @@ def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
         draw = data.iloc[draw_ids]
 
         if f is None:
-            res = draw
+            res = draw_ids
         else:
             res = f(draw)
 
@@ -119,3 +119,7 @@ def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
     estimates = Parallel(n_jobs=num_threads)(delayed(loop)(s) for s in seeds)
 
     return estimates
+
+
+def _mean(df):
+    return df.mean(axis=0)

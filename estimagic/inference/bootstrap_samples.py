@@ -19,7 +19,7 @@ def get_seeds(ndraws=1000):
 
 
 def get_bootstrap_samples(
-    data, cluster_by=None, seeds=None, ndraws=1000, num_threads=1
+    data, cluster_by=None, seeds=None, ndraws=1000, num_threads=1, return_samples=False
 ):
     """Draw and return bootstrap samples, either by specified seeds or number of draws.
 
@@ -29,9 +29,10 @@ def get_bootstrap_samples(
         seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         ndraws (int): number of draws, only relevant if seeds is None.
         num_threads (int): number of jobs for parallelization.
+        return_samples (bool): If true, return samples, else return indices.
 
     Returns:
-        samples (list): list of DataFrames containing resampled data.
+        samples (list): list of DataFrames containing resampled data or ids.
 
     """
 
@@ -42,15 +43,23 @@ def get_bootstrap_samples(
 
     if cluster_by is None:
 
-        samples = est._get_uniform_estimates(data, seeds, num_threads, f=None)
+        sample_ids = est._get_uniform_estimates(data, seeds, num_threads, f=None)
 
     else:
 
-        samples = est._get_clustered_estimates(
+        sample_ids = est._get_clustered_estimates(
             data, cluster_by, seeds, num_threads, f=None
         )
 
-    return samples
+    if return_samples is True:
+
+        result = [data.iloc[ids] for ids in sample_ids]
+
+    else:
+
+        result = sample_ids
+
+    return result
 
 
 def _get_cluster_index(data, cluster_by):

@@ -15,12 +15,12 @@ this distributions, so we have
 
 The second supported confidence interval **"normal"** is based on a normal approximation
 and discussed in Hansen's section 10.9.
-Let :math:`s_{\hat{\theta}^{boot}}` be the sample standard error of the distribution
+Let :math:`s_{boot}` be the sample standard error of the distribution
 of bootstrap estimators, :math:`z_q` the q-quantile of a standard normal
 distribution and :math:`\hat{\theta}` be the full sample estimate of :math:`\theta`.
 Then, the asymptotic normal confidence interval is given by
 
-.. math:: CI^{normal} = [\hat{\theta} - z_{1- \alpha/2} s_{\hat{\theta}^{boot}},  \hat{\theta} + z_{1- \alpha/2} s_{\hat{\theta}^{boot}}].
+.. math:: CI^{normal} = [\hat{\theta} - z_{1- \alpha/2} s_{boot},  \hat{\theta} + z_{1- \alpha/2} s_{boot}].
 
 The bias-corrected **"bc"** bootstrap confidence interval addresses the issue of biased
 estimators. This problem is often present when estimating nonlinear models. Econometric
@@ -58,7 +58,7 @@ and the bias-corrected and accelerated confidence interval is given by
 
 The studentized confidence interval, here called **"t"** type confidence interval first
 studentizes the bootstrap parameter distribution, i.e. applies the transformation
-:math:`\frac{\hat{\theta}_b-\hat{\theta}}{s_{\hat{\theta}^{boot}}}`, and then builds
+:math:`\frac{\hat{\theta}_b-\hat{\theta}}{s_{boot}}`, and then builds
 the confidence interval based on the estimated quantile function of the studentized
 data :math:`\hat{G}`:
 

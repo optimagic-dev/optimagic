@@ -1,9 +1,6 @@
 Bootstrap Inference
 ========================
 
-Function Descriptions
-************************
-
 .. currentmodule:: estimagic.inference.bootstrap
 
 In this section we document how to use the bootstrap to approximate the distribution

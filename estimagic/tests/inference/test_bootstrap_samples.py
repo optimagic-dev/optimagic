@@ -47,8 +47,18 @@ def test_get_seeds():
 
 
 def test_get_bootstrap_samples(setup, expected):
-    samples1 = get_bootstrap_samples(data=setup["df"], seeds=setup["seeds"])
-    samples2 = get_bootstrap_samples(data=setup["df"], seeds=setup["seeds"])
+    sample_ids1 = get_bootstrap_samples(data=setup["df"], seeds=setup["seeds"])
+    sample_ids2 = get_bootstrap_samples(data=setup["df"], seeds=setup["seeds"])
+
+    samples1 = get_bootstrap_samples(
+        data=setup["df"], seeds=setup["seeds"], return_samples=True
+    )
+    samples2 = get_bootstrap_samples(
+        data=setup["df"], seeds=setup["seeds"], return_samples=True
+    )
+
+    for i in range(len(sample_ids1)):
+        aae(sample_ids1[i], sample_ids2[i])
 
     for i in range(len(samples1)):
 
@@ -57,12 +67,28 @@ def test_get_bootstrap_samples(setup, expected):
 
 
 def test_get_bootstrap_samples_cluster(setup, expected):
-    samples1 = get_bootstrap_samples(
+    sample_ids1 = get_bootstrap_samples(
         data=setup["cluster_df"], seeds=setup["seeds"], cluster_by="stratum"
+    )
+    sample_ids2 = get_bootstrap_samples(
+        data=setup["cluster_df"], seeds=setup["seeds"], cluster_by="stratum"
+    )
+    samples1 = get_bootstrap_samples(
+        data=setup["cluster_df"],
+        seeds=setup["seeds"],
+        cluster_by="stratum",
+        return_samples=True,
     )
     samples2 = get_bootstrap_samples(
-        data=setup["cluster_df"], seeds=setup["seeds"], cluster_by="stratum"
+        data=setup["cluster_df"],
+        seeds=setup["seeds"],
+        cluster_by="stratum",
+        return_samples=True,
     )
+
+    for i in range(len(sample_ids1)):
+        aae(sample_ids1[i], sample_ids2[i])
+
     for i in range(len(samples1)):
         afe(samples1[i], samples2[i])
 

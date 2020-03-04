@@ -3,12 +3,9 @@ import pandas as pd
 from estimagic.inference.bootstrap_ci import _check_inputs
 from estimagic.inference.bootstrap_ci import _concatenate_functions
 from estimagic.inference.bootstrap_ci import compute_ci
+from estimagic.inference.bootstrap_estimates import _mean
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
 from estimagic.inference.bootstrap_samples import get_seeds
-
-
-def _mean(df):
-    return df.mean(axis=0)
 
 
 def bootstrap(
@@ -28,7 +25,7 @@ def bootstrap(
     Args:
         data (pandas.DataFrame): original dataset.
         f (callable): function of the data calculating statistic of interest or list of
-            functions.
+            functions. Needs to return array-like object or pd.Series.
         ndraws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
@@ -74,7 +71,7 @@ def get_results_table(
     Args:
         data (pandas.DataFrame): original dataset.
         f (callable): function of the data calculating statistic of interest or list of
-            functions.
+            functions. Needs to return array-like object or pd.Series.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         num_threads (int): number of jobs for parallelization.
