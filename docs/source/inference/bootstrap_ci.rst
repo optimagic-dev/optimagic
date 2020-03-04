@@ -1,6 +1,6 @@
 Bootstrap Confidence Intervals
 ********************************
-We use the notation and formulations provided in chapter 10 of :cite:`Hansen2019`.
+We use the notation and formulations provided in chapter 10 of :cite:`Hansen2020`.
 
 Bruce E. Hansen - Econometrics,  (https://www.ssc.wisc.edu/~bhansen/econometrics)
 
