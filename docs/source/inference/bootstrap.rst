@@ -53,7 +53,7 @@ interest, we can use
 
 There is also a function to calculate only confidence intervals, given the estimates.
 The code of this function is an adjusted version of the code from Daniel Saxton's
-resample library (https://github.com/dsaxton/resample/). It has been adjusted to allow
+resample library :cite:`Saxton2018`. It has been adjusted to allow
 for multi-valued statistics as well as the additional confidence interval types "bc",
 "basic" and "normal".
 
@@ -75,3 +75,6 @@ intervals:
     :maxdepth: 1
 
     bootstrap_ci.rst
+
+.. bibliography:: ../refs.bib
+    :filter: docname in docnames
