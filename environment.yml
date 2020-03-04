@@ -22,7 +22,7 @@ dependencies:
   - numpy=1.16
   - pandas>=0.24,<1.0
   - pdbpp
-  - petsc4py>=3.11
+#  - petsc4py>=3.11
   - pygmo=2.10
   - pytest
   - pytest-cov

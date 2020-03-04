@@ -1,0 +1,25 @@
+#! python
+import os
+
+
+def post_install(ctx):
+    # Install the pdf documentation to the project root directory.
+    ctx.install_files(
+        ctx.srcnode.abspath(),
+        "src/documentation/latexpdf/project_documentation.pdf",
+        postpone=False,
+    )
+    # Now the entire directory tree of the html build, except for hidden stuff.
+    install_root = os.path.join(ctx.srcnode.abspath(), "project_documentation")
+    html_root = ctx.bldnode.find_node("src/documentation/html")
+    for n in html_root.ant_glob("**", remove=False, quiet=True):
+        rel_path = n.path_from(html_root)
+        if not n.name.startswith(".") and not rel_path.startswith("."):
+            ctx.install_as(os.path.join(install_root, rel_path), n, postpone=False)
+
+
+def build(ctx):
+    # Build the documentation in pdf (via LaTeX) and html format.
+    ctx(features="sphinx", builders=["html", "latexpdf"], source="conf.py")
+    # Install only after the build has finished.
+    ctx.add_post_fun(post_install)

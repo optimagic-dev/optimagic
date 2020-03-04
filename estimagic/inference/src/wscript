@@ -1,0 +1,10 @@
+#! python
+
+
+def build(ctx):
+    ctx.recurse("functions")
+    ctx.recurse("examples")
+    # Safety measure -- else the LaTeX scanner might fail because some
+    # '.tex'-source file has not been generated.
+    ctx.add_group()
+    ctx.recurse("documentation")
