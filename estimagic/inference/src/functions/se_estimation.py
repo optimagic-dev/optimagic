@@ -262,7 +262,9 @@ def choose_case(jacobian, hessian, model, design_options, cov_type):
         var (np.array): 2d variance-covariance matrix
 
     """
-    if design_options.empty:
+    if design_options.empty or (
+        "weight" in design_options.columns and len(design_options.columns) == 1
+    ):
         if cov_type == "opg":
             choose_case_se, choose_case_var = outer_product_of_gradients(jacobian)
         elif cov_type == "oim":
@@ -275,7 +277,7 @@ def choose_case(jacobian, hessian, model, design_options, cov_type):
             print("Unsupported or incorrect cov_type specified.")
         return choose_case_se, choose_case_var
 
-    elif ("psu") and ("strata" not in design_options.columns):
+    elif ("psu" in design_options.columns) and ("strata" not in design_options.columns):
         choose_case_se, choose_case_var = cluster_robust_se(
             jacobian, hessian, design_options
         )

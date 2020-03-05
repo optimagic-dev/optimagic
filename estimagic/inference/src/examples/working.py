@@ -12,7 +12,7 @@ formulas = ["eco_friendly ~ ppltrst + male + income"]
 
 
 # Define design dictionary
-design_dict = {"strata": "stratum"}
+design_dict = {"weight": "weight"}
 
 # Define log likelihood keyword arguments
 log_like_kwargs = {"formulas": formulas, "data": orig_data, "model": "logit"}
