@@ -25,8 +25,8 @@ def generate_steps(
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is one if no Richardson extrapolation
             is used.
-        target (str): One of ["gradient", "jacobian", "hessian"]. This is used to choose
-            the appropriate rule of thumb for the base_steps.
+        target (str): One of ["first_derivative", "second_derivative"]. This is used to
+            choose the appropriate rule of thumb for the base_steps.
         base_steps (np.ndarray or None): 1d array of the same length as x with the
             absolute value of the first step. If the base_steps conflicts with bounds,
             generate_steps will modify it. If base step is None, it will be
@@ -134,8 +134,8 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
             determined as according to the rule of thumb outlined below as long as
             this does not conflict with min_steps
         x (np.ndarray): 1d array at which the derivative is evaluated
-        target (str): One of ["gradient", "jacobian", "hessian"]. This is used to choose
-            the appropriate rule of thumb for the base_steps.
+        target (str): One of ["first_derivative", "second_derivative"]. This is used to
+            choose the appropriate rule of thumb for the base_steps.
         min_steps (np.ndarray or None): Minimal possible step sizes that can be chosen
             to accomodate bounds. Needs to have same length as x.
         scaling_factor (np.ndarray or float): Scaling factor which is applied to the
@@ -164,9 +164,9 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
             )
     else:
         eps = np.finfo(float).eps
-        if target == "hessian":
+        if target == "second_derivative":
             base_steps = eps ** (1 / 3) * np.maximum(np.abs(x), 0.1) * scaling_factor
-        elif target in ["gradient", "jacobian"]:
+        elif target == "first_derivative":
             base_steps = eps ** (1 / 2) * np.maximum(np.abs(x), 0.1) * scaling_factor
         else:
             raise ValueError(f"Invalid target: {target}.")
