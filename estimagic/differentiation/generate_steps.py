@@ -11,6 +11,7 @@ def generate_steps(
     n_steps,
     target,
     base_steps,
+    scaling_factor,
     lower_bounds,
     upper_bounds,
     step_ratio,
@@ -31,6 +32,11 @@ def generate_steps(
             generate_steps will modify it. If base step is None, it will be
             determined as according to the rule of thumb outlined below as long as
             this does not conflict with min_steps
+        scaling_factor (np.ndarray or float): Scaling factor which is applied to the
+            base_step. If it is an np.ndarray, it needs to have the same shape as x.
+            scaling_factor is useful if you want to increase or decrease the base_step
+            relative to the rule-of-thumb or user provided base_step, for example to
+            benchmark the effect of the stepsize.
         lower_bounds (np.ndarray or None): 1d array with lower bounds for x.
         upper_bounds (np.ndarray or None): 1d array with upper bounds for x.
         step_ratio (float): Ratio between two consecutive steps in the
@@ -76,7 +82,9 @@ def generate_steps(
         the user will be warned but no error will be raised.
 
     """
-    base_steps = _calculate_or_validate_base_steps(base_steps, x, target, min_steps)
+    base_steps = _calculate_or_validate_base_steps(
+        base_steps, x, target, min_steps, scaling_factor
+    )
     min_steps = base_steps if min_steps is None else min_steps
 
     upper_bounds = np.full(len(x), np.inf) if upper_bounds is None else upper_bounds
@@ -107,7 +115,7 @@ def generate_steps(
     return steps
 
 
-def _calculate_or_validate_base_steps(base_steps, x, target, min_steps):
+def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_factor):
     """Validate user provided base_steps or generate them with rule of thumb.
 
     Args:
@@ -121,26 +129,40 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps):
             the appropriate rule of thumb for the base_steps.
         min_steps (np.ndarray or None): Minimal possible step sizes that can be chosen
             to accomodate bounds. Needs to have same length as x.
+        scaling_factor (np.ndarray or float): Scaling factor which is applied to the
+            base_step. If it is an np.ndarray, it needs to have the same shape as x.
+            scaling_factor is useful if you want to increase or decrease the base_step
+            relative to the rule-of-thumb or user provided base_step, for example to
+            benchmark the effect of the stepsize.
 
     Returns:
         base_steps (np.ndarray): 1d array of the same length as x with the
             absolute value of the first step.
 
     """
-    if base_steps is None:
+    if (scaling_factor <= np.zeros_like(x)).any():
+        raise ValueError("Scaling factor must be strictly positive.")
+
+    if base_steps is not None:
+        if base_steps.shape != x.shape:
+            raise ValueError("base_steps has to have the same shape as x.")
+
+        base_steps = base_steps * scaling_factor
+
+        if min_steps is not None and (base_steps <= min_steps).any():
+            raise ValueError(
+                "scaling_factor * base_steps must be larger than min_steps."
+            )
+    else:
         eps = np.finfo(float).eps
         if target == "hessian":
-            base_steps = eps ** (1 / 3) * np.maximum(np.abs(x), 0.1)
+            base_steps = eps ** (1 / 3) * np.maximum(np.abs(x), 0.1) * scaling_factor
         elif target in ["gradient", "jacobian"]:
-            base_steps = eps ** (1 / 2) * np.maximum(np.abs(x), 0.1)
+            base_steps = eps ** (1 / 2) * np.maximum(np.abs(x), 0.1) * scaling_factor
         else:
             raise ValueError(f"Invalid target: {target}.")
         if min_steps is not None:
             base_steps[base_steps < min_steps] = min_steps
-    elif base_steps.shape != x.shape:
-        raise ValueError("base_steps has to have the same shape as x.")
-    elif min_steps is not None and (base_steps <= min_steps).any():
-        raise ValueError("base_steps must be larger than min_steps.")
     return base_steps
 
 

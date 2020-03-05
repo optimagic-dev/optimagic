@@ -13,20 +13,35 @@ def test_calculate_or_validate_base_steps_invalid_too_small():
     base_steps = np.array([1e-10, 0.01, 0.01])
     min_steps = np.full(3, 1e-8)
     with pytest.raises(ValueError):
-        _calculate_or_validate_base_steps(base_steps, np.ones(3), "jacobian", min_steps)
+        _calculate_or_validate_base_steps(
+            base_steps, np.ones(3), "jacobian", min_steps, scaling_factor=1.0
+        )
 
 
 def test_calculate_or_validate_base_steps_wrong_shape():
     base_steps = np.array([0.01, 0.01, 0.01])
     min_steps = np.full(3, 1e-8)
     with pytest.raises(ValueError):
-        _calculate_or_validate_base_steps(base_steps, np.ones(2), "jacobian", min_steps)
+        _calculate_or_validate_base_steps(
+            base_steps, np.ones(2), "jacobian", min_steps, scaling_factor=1.0
+        )
 
 
 def test_calculate_or_validate_base_steps_jacobian():
     x = np.array([0.05, 1, -5])
     expected = np.array([0.1, 1, 5]) * np.sqrt(np.finfo(float).eps)
-    calculated = _calculate_or_validate_base_steps(None, x, "jacobian", 0)
+    calculated = _calculate_or_validate_base_steps(
+        None, x, "jacobian", 0, scaling_factor=1.0
+    )
+    aaae(calculated, expected, decimal=12)
+
+
+def test_calculate_or_validate_base_steps_jacobian_with_scaling_factor():
+    x = np.array([0.05, 1, -5])
+    expected = np.array([0.1, 1, 5]) * np.sqrt(np.finfo(float).eps) * 2
+    calculated = _calculate_or_validate_base_steps(
+        None, x, "jacobian", 0, scaling_factor=2.0
+    )
     aaae(calculated, expected, decimal=12)
 
 
@@ -34,14 +49,18 @@ def test_calculate_or_validate_base_steps_binding_min_step():
     x = np.array([0.05, 1, -5])
     expected = np.array([0.1, 1, 5]) * np.sqrt(np.finfo(float).eps)
     expected[0] = 1e-8
-    calculated = _calculate_or_validate_base_steps(None, x, "jacobian", 1e-8)
+    calculated = _calculate_or_validate_base_steps(
+        None, x, "jacobian", 1e-8, scaling_factor=1.0
+    )
     aaae(calculated, expected, decimal=12)
 
 
 def test_calculate_or_validate_base_steps_hessian():
     x = np.array([0.05, 1, -5])
     expected = np.array([0.1, 1, 5]) * np.finfo(float).eps ** (1 / 3)
-    calculated = _calculate_or_validate_base_steps(None, x, "hessian", 0)
+    calculated = _calculate_or_validate_base_steps(
+        None, x, "hessian", 0, scaling_factor=1.0
+    )
     aaae(calculated, expected, decimal=12)
 
 
@@ -137,6 +156,7 @@ def test_generate_steps_binding_min_step():
         upper_bounds=np.full(3, 2.5),
         step_ratio=2.0,
         min_steps=np.full(3, 1e-8),
+        scaling_factor=1.0,
     )
 
     expected_pos = np.array([[0.1, 0.2], [0.2, 0.4], [0.25, 0.5]]).T
@@ -157,6 +177,7 @@ def test_generate_steps_min_step_equals_base_step():
         upper_bounds=np.full(3, 2.5),
         step_ratio=2.0,
         min_steps=None,
+        scaling_factor=1.0,
     )
 
     expected_pos = np.array([[0.1, 0.2], [0.2, 0.4], [0.3, np.nan]]).T

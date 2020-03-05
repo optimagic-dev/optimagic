@@ -14,6 +14,7 @@ def jacobian(
     method="central",
     n_steps=1,
     base_steps=None,
+    scaling_factor=1.0,
     lower_bounds=None,
     upper_bounds=None,
     step_ratio=2.0,
@@ -36,6 +37,11 @@ def jacobian(
             generate_steps will modify it. If base step is not provided, it will be
             determined as according to a rule of thumb as long as this does not
             conflict with min_steps
+        scaling_factor (np.ndarray or float): Scaling factor which is applied to the
+            base_step. If it is an np.ndarray, it needs to have the same shape as x.
+            scaling_factor is useful if you want to increase or decrease the base_step
+            relative to the rule-of-thumb or user provided base_step, for example to
+            benchmark the effect of the stepsize.
         lower_bounds (np.ndarray): 1d array with lower bounds for each parameter.
         upper_bounds (np.ndarray): 1d array with upper bounds for each parameter.
         step_ratio (float or array): Ratio between two consecutive steps in the
@@ -68,6 +74,7 @@ def jacobian(
         n_steps=n_steps,
         target="jacobian",
         base_steps=base_steps,
+        scaling_factor=scaling_factor,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         step_ratio=step_ratio,
