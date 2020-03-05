@@ -97,9 +97,6 @@ def generate_steps(
         upper_bounds - lower_bounds >= 2 * min_steps
     ).all(), "min_steps is too large to fit into bounds."
 
-    upper_bounds = np.full(len(x), np.inf) if upper_bounds is None else upper_bounds
-    lower_bounds = np.full(len(x), -np.inf) if lower_bounds is None else lower_bounds
-
     upper_step_bounds = upper_bounds - x
     lower_step_bounds = lower_bounds - x
 

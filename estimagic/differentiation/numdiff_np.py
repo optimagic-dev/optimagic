@@ -3,6 +3,8 @@ from itertools import product
 from multiprocessing import Pool
 
 import numpy as np
+from joblib import delayed
+from joblib import Parallel
 
 import estimagic.differentiation.finite_differences as fd
 from estimagic.decorators import de_scalarize
@@ -205,8 +207,9 @@ def _nan_skipping_batch_evaluator(func, arglist, n_processes):
     if n_processes == 1:
         evaluations = [func(point) for point in real_args]
     else:
-        p = Pool(processes=n_processes)
-        evaluations = p.map(func, real_args)
+        evaluations = Parallel(n_jobs=n_processes)(
+            delayed(func)(point) for point in real_args
+        )
 
     # combine results
     evaluations = iter(evaluations)
