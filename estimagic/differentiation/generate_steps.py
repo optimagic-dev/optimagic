@@ -19,49 +19,15 @@ def generate_steps(
 ):
     """Generate steps for finite differences with or without Richardson Extrapolation.
 
-    Args:
-        x (np.ndarray): 1d array at which the derivative is evaluated
-        method (str): One of ["central", "forward", "backward"].
-        n_steps (int): Number of steps needed. For central methods, this is
-            the number of steps per direction. It is one if no Richardson extrapolation
-            is used.
-        target (str): One of ["first_derivative", "second_derivative"]. This is used to
-            choose the appropriate rule of thumb for the base_steps.
-        base_steps (np.ndarray or None): 1d array of the same length as x with the
-            absolute value of the first step. If the base_steps conflicts with bounds,
-            generate_steps will modify it. If base step is None, it will be
-            determined as according to the rule of thumb outlined below as long as
-            this does not conflict with min_steps
-        scaling_factor (np.ndarray or float): Scaling factor which is applied to the
-            base_step. If it is an np.ndarray, it needs to have the same shape as x.
-            scaling_factor is useful if you want to increase or decrease the base_step
-            relative to the rule-of-thumb or user provided base_step, for example to
-            benchmark the effect of the stepsize.
-        lower_bounds (np.ndarray or None): 1d array with lower bounds for x.
-        upper_bounds (np.ndarray or None): 1d array with upper bounds for x.
-        step_ratio (float): Ratio between two consecutive steps in the
-            same direction. Has to be larger than one. step ratio
-            is only used if n_steps > 1.
-        min_steps (np.ndarray or None): Minimal possible step sizes that can be chosen
-            to accomodate bounds. Needs to have same length as x. I None, min_steps is
-            set to base_step, i.e step size is not decreased beyond what is optimal
-            according to the rule of thumb.
+    steps can be used to construct x-vectors at which the function has to be  evaluated
+    for finite difference formulae. How the vectors are constructed from the steps
+    differs between first and second derivative. Note that both positive and negative
+    steps are returned, even for one-sided methods, because bounds might make it
+    necessary to flip the direction of the method.
 
-    Returns:
-        steps (namedtuple): Namedtuple with the fields pos and neg. Each field
-            contains a numpy array of shape (n_steps, len(x)) with the steps in
-            the corresponding direction. The steps always symmetric, in the sense
-            that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
-
-    steps can be used to construct x-vectors at which the the function has to be
-    evaluated. How the vectors are constructed from the steps differs between first
-    (gradient, jacobian) and second derivatves (hessian). Note that both arrays are
-    returned even for one-sided methods, because bounds might make it necessary to
-    flip the direction of the method.
-
-    The rule of thumb for the generation of base_stepss is:
-    - gradient and jacobian: np.finfo(float) ** (1 / 2) * np.maximum(np.abs(x), 0.1)
-    - hessian: np.finfo(float) ** (1 / 3) * np.maximum(np.abs(x), 0.1)
+    The rule of thumb for the generation of base_steps is:
+    - first_derivative: np.finfo(float) ** (1 / 2) * np.maximum(np.abs(x), 0.1)
+    - second_derivative: np.finfo(float) ** (1 / 3) * np.maximum(np.abs(x), 0.1)
     Where EPS is machine accuracy retrieved by np.finfo(float).eps. This rule of
     thumb is also used in statsmodels and scipy.
 
@@ -78,8 +44,43 @@ def generate_steps(
         usable in the calculation of derivatives. All derivative functions can
         handle NaNs and will produce the best possible derivative estimate given
         the remaining steps. If all steps of one parameter are set to NaN, no
-        derivative estimate will be produced for that parameter. If this happens,
-        the user will be warned but no error will be raised.
+        derivative estimate will be produced for that parameter.
+
+    Args:
+        x (np.ndarray): 1d array at which the derivative is calculated.
+        func_kwargs (dict): Additional keyword arguments for func, optional.
+        method (str): One of ["central", "forward", "backward"], default "central".
+        n_steps (int): Number of steps needed. For central methods, this is
+            the number of steps per direction. It is 1 if no Richardson extrapolation
+            is used.
+        target (str): One of ["first_derivative", "second_derivative"]. This is used to
+            choose the appropriate rule of thumb for the base_steps.
+        base_steps (np.ndarray, optional): 1d array of the same length as x. base_steps
+            * scaling_factor is the absolute value of the first (and possibly only) step
+            used in the finite differences approximation of the derivative. If the
+            base_steps * scaling_factor conflicts with bounds, the actual steps will
+            be adjusted. If base_steps is not provided, it will be determined according
+            to a rule of thumb as long as this does not conflict with min_steps.
+        scaling_factor (np.ndarray or float): Scaling factor which is applied to
+            base_steps. If it is an np.ndarray, it needs to have the same shape as x.
+            scaling_factor is useful if you want to increase or decrease the base_step
+            relative to the rule-of-thumb or user provided base_step, for example to
+            benchmark the effect of the step size. Default 1.
+        lower_bounds (np.ndarray): 1d array with lower bounds for each parameter.
+        upper_bounds (np.ndarray): 1d array with upper bounds for each parameter.
+        step_ratio (float or array): Ratio between two consecutive Richardson
+            extrapolation steps in the same direction. default 2.0. Has to be larger
+            than one. step ratio is only used if n_steps > 1.
+        min_steps (np.ndarray): Minimal possible step sizes that can be chosen to
+            accommodate bounds. Needs to have same length as x. By default min_steps is
+            equal to base_steps, i.e step size is not decreased beyond what is optimal
+            according to the rule of thumb.
+
+    Returns:
+        steps (namedtuple): Namedtuple with the field names pos and neg. Each field
+            contains a numpy array of shape (n_steps, len(x)) with the steps in
+            the corresponding direction. The steps are always symmetric, in the sense
+            that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
 
     """
     if lower_bounds is None:

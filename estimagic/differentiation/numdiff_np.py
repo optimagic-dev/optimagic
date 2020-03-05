@@ -1,4 +1,5 @@
 import functools
+from itertools import product
 from multiprocessing import Pool
 
 import numpy as np
@@ -32,32 +33,37 @@ def first_derivative(
     array. Then the Jacobian of that function is calculated. The resulting derivative
     estimate is always a numpy array.
 
+    Detailed description of all arguments that influence the step size as well as
+    an explanation of how steps are adjusted to bounds in case of a conflict, see:
+    :func:`~estimagic.differentiation.generate_steps.generate_steps`.
+
     Args:
-        func (callable): Function of which the Jacobian is evaluated.
-        x (np.ndarray): 1d array at which the derivative is evaluated
+        func (callable): Function of which the derivative is calculated.
+        x (np.ndarray): 1d array at which the derivative is calculated.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
-            the number of steps per direction. It is one if no Richardson extrapolation
+            the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
-        base_steps (np.ndarray, optional): 1d array of the same length as x with the
-            absolute value of the first step. If the base_steps conflicts with bounds,
-            generate_steps will modify it. If base step is not provided, it will be
-            determined as according to a rule of thumb as long as this does not
-            conflict with min_steps
-        scaling_factor (np.ndarray or float): Scaling factor which is applied to the
-            base_step. If it is an np.ndarray, it needs to have the same shape as x.
+        base_steps (np.ndarray, optional): 1d array of the same length as x. base_steps
+            * scaling_factor is the absolute value of the first (and possibly only) step
+            used in the finite differences approximation of the derivative. If the
+            base_steps * scaling_factor conflicts with bounds, the actual steps will
+            be adjusted. If base_steps is not provided, it will be determined according
+            to a rule of thumb as long as this does not conflict with min_steps.
+        scaling_factor (np.ndarray or float): Scaling factor which is applied to
+            base_steps. If it is an np.ndarray, it needs to have the same shape as x.
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
-            benchmark the effect of the stepsize.
+            benchmark the effect of the step size. Default 1.
         lower_bounds (np.ndarray): 1d array with lower bounds for each parameter.
         upper_bounds (np.ndarray): 1d array with upper bounds for each parameter.
-        step_ratio (float or array): Ratio between two consecutive steps in the
-            same direction. default 2.0. Has to be larger than one. step ratio
-            is only used if n_steps > 1.
+        step_ratio (float or array): Ratio between two consecutive Richardson
+            extrapolation steps in the same direction. default 2.0. Has to be larger
+            than one. step ratio is only used if n_steps > 1.
         min_steps (np.ndarray): Minimal possible step sizes that can be chosen to
-            accomodate bounds. Needs to have same length as x. By default min_steps is
-            equal to base_step, i.e step size is not decreased beyond what is optimal
+            accommodate bounds. Needs to have same length as x. By default min_steps is
+            equal to base_steps, i.e step size is not decreased beyond what is optimal
             according to the rule of thumb.
         f0 (np.ndarray): 1d numpy array with func(x), optional.
         n_processes (int): Number of processes used to parallelize the function
@@ -102,20 +108,19 @@ def first_derivative(
 
     evaluation_points = []
     for step_arr in steps:
-        for i in range(n_steps):
-            for j in range(len(x)):
-                if np.isfinite(step_arr[i, j]):
-                    point = x.copy()
-                    point[j] += step_arr[i, j]
-                    evaluation_points.append(point)
-                else:
-                    evaluation_points.append(np.nan)
+        for i, j in product(range(n_steps), range(len(x))):
+            if np.isfinite(step_arr[i, j]):
+                point = x.copy()
+                point[j] += step_arr[i, j]
+                evaluation_points.append(point)
+            else:
+                evaluation_points.append(np.nan)
 
-    evaluations = _nan_skipping_batch_evaluator(
+    raw_evals = _nan_skipping_batch_evaluator(
         internal_func, evaluation_points, n_processes
     )
 
-    evals = np.array(evaluations).reshape(2, n_steps, len(x), -1)
+    evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
     evals = np.transpose(evals, axes=(0, 1, 3, 2))
     evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
 
@@ -208,6 +213,11 @@ def _fill_nans_with_other(arr, other):
 def _nan_skipping_batch_evaluator(func, arglist, n_processes):
     """Evaluate func at each entry in arglist, skipping np.nan entries.
 
+    The function is only evaluated at inputs that are not a scalar np.nan.
+    The outputs corresponding to skipped inputs as well as for inputs on which func
+    returns a scalar np.nan are arrays of the same shape as the result of func, filled
+    with np.nan.
+
     Args:
         func (function): Python function that returns a numpy array. The shape
             of the output of func has to be the same for all elements in arglist.
@@ -216,11 +226,6 @@ def _nan_skipping_batch_evaluator(func, arglist, n_processes):
 
     Returns
         evaluations (list): The function evaluations, same length as arglist.
-
-    The function is only evaluated at inputs that are not a scalar np.nan.
-    The outputs corresponding to skipped inputs as well as for inputs on which func
-    returns a scalar np.nan are arrays of the same shape as the result of func, filled
-    with np.nan.
 
     """
     # extract information
@@ -231,9 +236,7 @@ def _nan_skipping_batch_evaluator(func, arglist, n_processes):
 
     # evaluate function
     if n_processes == 1:
-        evaluations = []
-        for point in real_args:
-            evaluations.append(func(point))
+        evaluations = [func(point) for point in real_args]
     else:
         p = Pool(processes=n_processes)
         evaluations = p.map(func, real_args)
