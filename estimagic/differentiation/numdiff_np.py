@@ -9,7 +9,7 @@ from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.optimization.utilities import namedtuple_from_kwargs
 
 
-def jacobian(
+def first_derivative(
     func,
     x,
     func_kwargs=None,
@@ -25,7 +25,7 @@ def jacobian(
     n_processes=1,
 ):
 
-    """Evaluate Jacobian of func at x according to specified methods and step options.
+    """Evaluate first derivative of func at x according to specified methods and step options.
 
     Args:
         func (callable): Function of which the Jacobian is evaluated.

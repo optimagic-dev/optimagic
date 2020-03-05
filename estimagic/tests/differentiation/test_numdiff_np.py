@@ -11,7 +11,7 @@ from estimagic.differentiation.numdiff_np import _consolidate_one_step_forward
 from estimagic.differentiation.numdiff_np import _fill_nans_with_other
 from estimagic.differentiation.numdiff_np import _get_output_shape
 from estimagic.differentiation.numdiff_np import _nan_skipping_batch_evaluator
-from estimagic.differentiation.numdiff_np import jacobian
+from estimagic.differentiation.numdiff_np import first_derivative
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs_jacobian
 
@@ -32,7 +32,7 @@ def test_jacobian(binary_choice_inputs, method):
     fix = binary_choice_inputs
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
 
-    calculated = jacobian(
+    calculated = first_derivative(
         func=func,
         method=method,
         x=fix["params_np"],
@@ -54,7 +54,7 @@ def test_jacobian(binary_choice_inputs, method):
 def test_jacobian_works_at_defaults(binary_choice_inputs):
     fix = binary_choice_inputs
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
-    calculated = jacobian(func=func, x=fix["params_np"])
+    calculated = first_derivative(func=func, x=fix["params_np"])
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
     aaae(calculated, expected, decimal=6)
 
