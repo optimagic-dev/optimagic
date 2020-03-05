@@ -6,9 +6,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.differentiation.numdiff_np import _consolidate_one_step_central
-from estimagic.differentiation.numdiff_np import _consolidate_one_step_forward
-from estimagic.differentiation.numdiff_np import _fill_nans_with_other
+from estimagic.differentiation.numdiff_np import _consolidate_one_step_derivatives
 from estimagic.differentiation.numdiff_np import _get_output_shape
 from estimagic.differentiation.numdiff_np import _nan_skipping_batch_evaluator
 from estimagic.differentiation.numdiff_np import first_derivative
@@ -90,14 +88,6 @@ def test_first_derivative_scalar(method):
     aaae(calculated, expected)
 
 
-def test_fill_nans_with_other():
-    a = np.array([[1, np.nan], [np.nan, 3]])
-    b = np.array([[5, 5], [3, 4]])
-    calculated = _fill_nans_with_other(a, b)
-    expected = np.array([[1, 5], [3, 3]])
-    aaae(calculated, expected)
-
-
 def test_get_output_shape():
     a = [np.nan, 7, np.ones((3, 4)), 5]
     assert _get_output_shape(a) == (3, 4)
@@ -120,28 +110,13 @@ def test_nan_skipping_batch_evaluator():
             aaae(arr_calc, arr_exp)
 
 
-def test_consolidate_one_step_forward():
+def test_consolidate_one_step_derivatives():
     forward = np.ones((1, 4, 3))
     forward[:, :, 0] = np.nan
     backward = np.zeros_like(forward)
 
-    calculated = _consolidate_one_step_forward(
-        {"forward": forward, "backward": backward}
+    calculated = _consolidate_one_step_derivatives(
+        {"forward": forward, "backward": backward}, ["forward", "backward"]
     )
     expected = np.array([[0, 1, 1]] * 4)
-    aaae(calculated, expected)
-
-
-def test_consolidate_one_step_central():
-    central = np.full((1, 4, 3), np.nan)
-    central[:, :, 2] = 3
-    forward = np.ones((1, 4, 3))
-    forward[:, :, 0] = np.nan
-    backward = np.zeros_like(forward)
-    backward[:, :, 1] = np.nan
-
-    expected = np.array([[0, 1, 3]] * 4)
-    calculated = _consolidate_one_step_central(
-        {"forward": forward, "backward": backward, "central": central}
-    )
     aaae(calculated, expected)

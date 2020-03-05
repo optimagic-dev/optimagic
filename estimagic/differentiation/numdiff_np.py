@@ -128,13 +128,14 @@ def first_derivative(
     for m in ["forward", "backward", "central"]:
         jac_candidates[m] = getattr(fd, f"jacobian_{m}")(evals, steps, f0)
 
+    orders = {
+        "central": ["central", "forward", "backward"],
+        "forward": ["forward", "backward"],
+        "backward": ["backward", "forward"],
+    }
+
     if n_steps == 1:
-        if method == "forward":
-            jac = _consolidate_one_step_forward(jac_candidates)
-        elif method == "backward":
-            jac = _consolidate_one_step_backward(jac_candidates)
-        else:
-            jac = _consolidate_one_step_central(jac_candidates)
+        jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
     else:
         raise NotImplementedError("Extrapolation is not yet implemented.")
 
@@ -143,53 +144,25 @@ def first_derivative(
     return res
 
 
-def _consolidate_one_step_forward(candidates):
-    """Replace missing forward derivative estimates by corresponding backward estimate.
+def _consolidate_one_step_derivatives(candidates, preference_order):
+    """Replace missing derivative estimates of preferred method with others.
 
     Args:
-        candidates (dict): Dictionary with "forward" and "backward" derivative
-            estimates. All derivative estimates are numpy arrays with the same shape.
+        candidates (dict): Dictionary with derivative estimates from different methods.
+        preference_order (list): Order on (a subset of) the keys in candidates. Earlier
+            entries are preferred.
 
     Returns:
         consolidated (np.ndarray): Array of same shape as input derivative estimates.
 
     """
-    consolidated = _fill_nans_with_other(candidates["forward"], candidates["backward"])
-    return consolidated.reshape(consolidated.shape[1:])
+    preferred, others = preference_order[0], preference_order[1:]
+    consolidated = candidates[preferred].copy()
+    for other in others:
+        consolidated = np.where(
+            np.isfinite(consolidated), consolidated, candidates[other]
+        )
 
-
-def _consolidate_one_step_backward(candidates):
-    """Replace missing central derivative estimates by corresponding forward estimate.
-
-    Args:
-        candidates (dict): Dictionary with "forward" and "backward" derivative
-            estimates. All derivative estimates are numpy arrays with the same shape.
-
-    Returns:
-        consolidated (np.ndarray): Array of same shape as input derivative estimates.
-
-    """
-    consolidated = _fill_nans_with_other(candidates["backward"], candidates["forward"])
-    return consolidated.reshape(consolidated.shape[1:])
-
-
-def _consolidate_one_step_central(candidates):
-    """Replace missing central derivative estimates by corresponding one-sided estimate.
-
-    If the central estimate is missing, we first try to replace it by a forward
-    estimate. If this is also missing, by the backward estimate.
-
-    Args:
-        candidates (dict): Dictionary with "forward" and "backward" derivative
-            estimates. All derivative estimates are numpy arrays with the same shape.
-
-    Returns:
-        consolidated (np.ndarray): Array of same shape as input derivative estimates.
-
-    """
-    consolidated = candidates["central"]
-    for other in ["forward", "backward"]:
-        consolidated = _fill_nans_with_other(consolidated, candidates[other])
     return consolidated.reshape(consolidated.shape[1:])
 
 
@@ -202,12 +175,6 @@ def _consolidate_extrapolated(candidates):
 
     """
     raise NotImplementedError
-
-
-def _fill_nans_with_other(arr, other):
-    """Replace np.nan entries in arr by corresponding entries in other."""
-    assert arr.shape == other.shape, "arr and other must have same shape."
-    return np.where(np.isfinite(arr), arr, other)
 
 
 def _nan_skipping_batch_evaluator(func, arglist, n_processes):
