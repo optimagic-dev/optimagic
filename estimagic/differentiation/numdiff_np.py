@@ -1,6 +1,5 @@
 import functools
 from itertools import product
-from multiprocessing import Pool
 
 import numpy as np
 from joblib import delayed
@@ -35,9 +34,9 @@ def first_derivative(
     array. Then the Jacobian of that function is calculated. The resulting derivative
     estimate is always a numpy array.
 
-    Detailed description of all arguments that influence the step size as well as
-    an explanation of how steps are adjusted to bounds in case of a conflict, see:
-    :func:`~estimagic.differentiation.generate_steps.generate_steps`.
+    Detailed description of all options that influence the step size as well as an
+    xplanation of how steps are adjusted to bounds in case of a conflict,
+    see :func:`~estimagic.differentiation.generate_steps.generate_steps`.
 
     Args:
         func (callable): Function of which the derivative is calculated.
