@@ -12,6 +12,8 @@ from estimagic.differentiation.numdiff_np import _fill_nans_with_other
 from estimagic.differentiation.numdiff_np import _get_output_shape
 from estimagic.differentiation.numdiff_np import _nan_skipping_batch_evaluator
 from estimagic.differentiation.numdiff_np import first_derivative
+from estimagic.examples.numdiff_example_functions_np import logit_loglike
+from estimagic.examples.numdiff_example_functions_np import logit_loglike_gradient
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs_jacobian
 
@@ -28,7 +30,7 @@ methods = ["forward", "backward", "central"]
 
 
 @pytest.mark.parametrize("method", methods)
-def test_jacobian(binary_choice_inputs, method):
+def test_first_derivative_jacobian(binary_choice_inputs, method):
     fix = binary_choice_inputs
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
 
@@ -51,12 +53,41 @@ def test_jacobian(binary_choice_inputs, method):
     aaae(calculated, expected, decimal=6)
 
 
-def test_jacobian_works_at_defaults(binary_choice_inputs):
+def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
     fix = binary_choice_inputs
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
     calculated = first_derivative(func=func, x=fix["params_np"])
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
     aaae(calculated, expected, decimal=6)
+
+
+@pytest.mark.parametrize("method", methods)
+def test_first_derivative_gradient(binary_choice_inputs, method):
+    fix = binary_choice_inputs
+    func = partial(logit_loglike, y=fix["y"], x=fix["x"])
+
+    calculated = first_derivative(
+        func=func,
+        method=method,
+        x=fix["params_np"],
+        n_steps=1,
+        f0=func(fix["params_np"]),
+        n_processes=1,
+    )
+
+    expected = logit_loglike_gradient(fix["params_np"], fix["y"], fix["x"])
+
+    aaae(calculated, expected, decimal=4)
+
+
+@pytest.mark.parametrize("method", methods)
+def test_first_derivative_scalar(method):
+    def f(x):
+        return x ** 2
+
+    calculated = first_derivative(f, 3.0)
+    expected = 6.0
+    aaae(calculated, expected)
 
 
 def test_fill_nans_with_other():
