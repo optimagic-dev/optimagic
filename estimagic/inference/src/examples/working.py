@@ -12,10 +12,10 @@ formulas = ["eco_friendly ~ ppltrst + male + income"]
 
 
 # Define design dictionary
-design_dict = {"psu": "psu", "strata": "stratum", "weight": "weight"}
+design_dict = {"strata": "stratum"}
 
 # Define log likelihood keyword arguments
-log_like_kwargs = {"formulas": formulas, "data": orig_data, "model": "probit"}
+log_like_kwargs = {"formulas": formulas, "data": orig_data, "model": "logit"}
 
 # =============================================================================
 params_df, cov = likelihood_inference(

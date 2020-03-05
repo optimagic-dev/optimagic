@@ -1,9 +1,12 @@
 """Monte Carlo simulations on our estimator."""
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from sklearn.datasets import make_blobs
 
+from estimagic.inference.src.functions.mle_unconstrained import estimate_likelihood
 from estimagic.inference.src.functions.mle_unconstrained import estimate_parameters
+from estimagic.inference.src.functions.se_estimation import design_options_preprocessing
 
 
 def create_strata(categories_dict, sample_size, orig_data=None, random=True):
@@ -94,36 +97,73 @@ regular_sample["hours_spent_studying_daily"] = np.random.randint(0, 10, 10000)
 clustered_sample = data[["passed_class", "hours_spent_studying_daily"]]
 
 # stratified sample
+stratified_sample = data[["passed_class", "hours_spent_studying_daily", "strata"]]
 proportioned_stratified_sample = make_stratified_sample(data, 0.75)[
     ["passed_class", "hours_spent_studying_daily"]
 ]
 
 # Define formula to use estimate_parameters
-formulas = ["passed_class ~ hours_spent_studying_daily"]
+formula = ["passed_class ~ hours_spent_studying_daily"]
+design_option = design_options_preprocessing(data)
+log_like_kwargs = {"formulas": formula, "data": clustered_sample, "model": "logit"}
 
 
 # Setup Monte Carlo sample size, how many samples and zeroed beta matrix
 def monte_carlo_sim(
-    model,
-    n_obs,
-    m_samples,
-    n_parameters,
-    data,
-    formulas,
-    design_option,
-    dashboard=False,
+    n_obs, m_samples, n_parameters, log_like_kwargs, design_option, dashboard=False,
 ):
 
-    beta_matrix = np.zeros((n_parameters + 1, m_samples))
     for m in range(m_samples):
-        mc_sample = data.sample(n_obs)
+        mc_sample = log_like_kwargs["data"].sample(n_obs)
+        mc_kwargs = {
+            "formulas": log_like_kwargs["formulas"],
+            "data": mc_sample,
+            "model": log_like_kwargs["model"],
+        }
         info, params = estimate_parameters(
-            model, formulas, mc_sample, design_option, dashboard=dashboard
+            estimate_likelihood, design_option, mc_kwargs, dashboard=dashboard
         )
         beta_matrix[:, m] = params["value"]
 
     return beta_matrix
 
 
-regular_sample.to_csv("independent_obs.csv")
-clustered_sample.to_csv("clustered_obs.csv")
+beta_matrix = monte_carlo_sim(
+    1000, 500, 1, log_like_kwargs, design_option, dashboard=False
+)
+clu_beta_matrix = monte_carlo_sim(
+    1000, 500, 1, log_like_kwargs, design_option, dashboard=False
+)
+
+str_beta_matrix = np.zeros((2, 500))
+for m in range(500):
+    mc_sample = make_stratified_sample(stratified_sample, 0.10)
+    mc_kwargs = {
+        "formulas": log_like_kwargs["formulas"],
+        "data": mc_sample,
+        "model": log_like_kwargs["model"],
+    }
+    info, params = estimate_parameters(
+        estimate_likelihood, design_option, mc_kwargs, dashboard=False
+    )
+    str_beta_matrix[:, m] = params["value"]
+
+beta_matrix = pd.DataFrame(beta_matrix[1:])
+clu_beta_matrix = pd.DataFrame(clu_beta_matrix[1:])
+str_beta_matrix = pd.DataFrame(str_beta_matrix[1:])
+
+beta_matrix.to_csv("beta_matrix.csv")
+clu_beta_matrix.to_csv("clu_beta_matrix.csv")
+str_beta_matrix.to_csv("str_beta_matrix.csv")
+
+sns.distplot(beta_matrix)
+sns.distplot(clu_beta_matrix)
+sns.distplot(str_beta_matrix)
+
+ind_plot = sns.distplot(beta_matrix)
+clu_plot = sns.distplot(clu_beta_matrix)
+str_plot = sns.distplot(str_beta_matrix)
+
+ind_plot.figure.savefig("ind_plot.png")
+clu_plot.figure.savefig("clu_plot.png")
+str_plot.figure.savefig("str_plot.png")

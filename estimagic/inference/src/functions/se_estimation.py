@@ -1,4 +1,4 @@
-"""Variance estimators for a logit model."""
+"""Variance estimators for maximum likelihood."""
 import numpy as np
 import pandas as pd
 
@@ -19,7 +19,7 @@ def design_options_preprocessing(data, design_dict=None):
             and the values are the respective column names
 
         Example:
-            design_dict = {"psu": "school", "weight": "dweight"}
+            design_dict = {"psu": "school", "strata: "stratum", "weight": "dweight"}
 
         Key-value descriptions:
             psu (string): name of column by which you wish to cluster
@@ -64,6 +64,17 @@ def observed_information_matrix(hessian, model):
 
 
 def outer_product_of_gradients(jacobian):
+    """Outer product of gradients estimator.
+
+    Args:
+        jacobian (np.array): an n x k + 1-dimensional array of first
+            derivatives of the pseudo-log-likelihood function w.r.t. the parameters
+
+    Returns:
+        opg_se (np.array): a 1d array of k + 1 standard errors
+        opg_var (np.array): 2d variance-covariance matrix
+
+    """
     opg_var = np.linalg.inv(np.dot(jacobian.T, jacobian))
     opg_se = np.sqrt(np.diag(opg_var))
     return opg_se, opg_var
@@ -135,6 +146,10 @@ def stratification(design_options, jacobian):
     """
     n_var = len(jacobian[0, :])
     stratum_col = design_options["strata"]
+    if "psu" not in design_options.columns:
+        design_options["psu"] = design_options.index
+    else:
+        pass
     psu_col = design_options["psu"]
     strata_meat = np.zeros([n_var, n_var])
     for stratum in stratum_col.unique():
@@ -266,6 +281,12 @@ def choose_case(jacobian, hessian, model, design_options, cov_type):
         )
         return choose_case_se, choose_case_var
 
+    elif ("strata") and ("psu" not in design_options.columns):
+        choose_case_se, choose_case_var = strata_robust_se(
+            jacobian, hessian, design_options
+        )
+        return choose_case_se, choose_case_var
+
     elif "psu" and "strata" in design_options.columns:
         choose_case_se, choose_case_var = strata_robust_se(
             jacobian, hessian, design_options
@@ -273,7 +294,7 @@ def choose_case(jacobian, hessian, model, design_options, cov_type):
         return choose_case_se, choose_case_var
 
     else:
-        print("Check design options specified")
+        print("Check design options specified.")
 
 
 def se_estimation(cov_type, model, jacobian=None, hessian=None, design_options=None):
@@ -292,8 +313,8 @@ def se_estimation(cov_type, model, jacobian=None, hessian=None, design_options=N
             population/design weight and/or a finite population corrector (fpc)
 
     Returns:
-        se (np.array): a 1d array of k + 1 standard errors
-        var (np.array): 2d variance-covariance matrix
+        est_se (np.array): a 1d array of k + 1 standard errors
+        est_var (np.array): 2d variance-covariance matrix
 
     """
     est_se, est_var = choose_case(jacobian, hessian, model, design_options, cov_type)
@@ -304,17 +325,20 @@ def choose_cov(params, formulas, data, model, design_dict, design_options, cov_t
     """Chooses variance estimation.
 
     Args:
-        params (pd.DataFrame):
-        formulas (string or list of strings)
-        data (pd.DataFrame):
-        criterion (str): "logit" or "probit"
-        design_dict (dict):
-        design_options (pd.DataFrame):
-        cov_type (str)
+        params (pd.DataFrame): The index consists of the parmater names,
+            the "value" column are the parameter values.
+        formulas (string or list of strings): a list of strings to be used by
+        patsy to extract dataframes of the dependent and independent variables
+        data (pd.DataFrame): a pandas dataset
+        model (str): "logit" or "probit"
+        design_dict (dict): dicitonary containing specified design options
+        design_options (pd.DataFrame): dataframe containing psu, stratum,
+            population/design weight and/or a finite population corrector (fpc)
+        cov_type (str): variance estimator.
 
     Returns:
-        se
-        var
+        se (np.array): a 1d array of k + 1 standard errors
+        var (np.array): 2d variance-covariance matrix
 
     """
     if cov_type != "sandwich" and design_dict is not None:
@@ -344,14 +368,17 @@ def inference_table(params, se, var, cov_type="opg"):
     """Creates table parametera, standard errors, and confidence intervals.
 
     Args:
-        params (pd.DataFrame):
-        se
-        var
-        cov_type (str):
+        params (pd.DataFrame): The index consists of the parmater names,
+            the "value" column are the parameter values.
+        se (np.array): a 1d array of k + 1 standard errors
+        var (np.array): 2d variance-covariance matrix
+        cov_type (str): variance estimator.
 
     Returns:
-        params_df (pd.DataFrame):
-        cov (pd.DataFrame):
+        params_df (pd.DataFrame): columns of the parameter values, standard
+            errors, and a 95% confidence interval of the parameter.
+        cov (pd.DataFrame): the variance-covariance matrix with parameter names
+            for the index and columns
 
     """
     params_df = pd.DataFrame()
@@ -367,18 +394,24 @@ def inference_table(params, se, var, cov_type="opg"):
     return params_df, cov
 
 
-def likelihood_inference(log_like_kwargs, design_dict=None, cov_type=None):
-    """
+def likelihood_inference(log_like_kwargs, design_dict=None, cov_type="opg"):
+    """Pseudolikelihood estimation and inference.
 
     Args:
         log_like_kwargs (dict): Additional keyword arguments for the
             likelihood function.
+            Example:
+                log_like_kwargs = {
+                    "formulas": equation,
+                    "data": orig_data,
+                    "model": "probit"
+                }
         design_dict (dict): dicitonary containing specified design options
         cov_type (str): One of ["opg", "oim", "sandwich"]. opg and oim only
-            work when *design_dict* is None
+            work when *design_dict* is None. opg is default.
 
     Returns:
-        params (pd.DataFrame): Copy of params with additional columns
+        params (pd.DataFrame): params that maximize likelihood
             - "standard_error"
             - "ci_lower"
             - "ci_upper"
