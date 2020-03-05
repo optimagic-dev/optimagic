@@ -1,3 +1,4 @@
+import functools
 from multiprocessing import Pool
 
 import numpy as np
@@ -11,6 +12,7 @@ from estimagic.optimization.utilities import namedtuple_from_kwargs
 def jacobian(
     func,
     x,
+    func_kwargs=None,
     method="central",
     n_steps=1,
     base_steps=None,
@@ -28,6 +30,7 @@ def jacobian(
     Args:
         func (callable): Function of which the Jacobian is evaluated.
         x (np.ndarray): 1d array at which the derivative is evaluated
+        func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is one if no Richardson extrapolation
@@ -56,10 +59,14 @@ def jacobian(
             evaluations. Default 1.
 
     """
-    if f0 is None:
-        f0 = func(x)
+    func_kwargs = {} if func_kwargs is None else func_kwargs
+    partialed_func = functools.partial(func, **func_kwargs)
 
-    internal_func = nan_if_exception(func)
+    f0 = partialed_func(x) if f0 is None else f0
+
+    @nan_if_exception
+    def internal_func(x):
+        return partialed_func(x)
 
     steps = generate_steps(
         x=x,
