@@ -56,15 +56,8 @@ def jacobian(
             evaluations. Default 1.
 
     """
-    assert (
-        upper_bounds - lower_bounds >= 2 * min_steps
-    ).all(), "min_steps is too large to fit into bounds."
-
     if f0 is None:
-        if method in ["forward", "backward"]:
-            f0 = func(x)
-        else:
-            f0 = np.nan
+        f0 = func(x)
 
     internal_func = nan_if_exception(func)
 

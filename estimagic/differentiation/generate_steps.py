@@ -82,10 +82,19 @@ def generate_steps(
         the user will be warned but no error will be raised.
 
     """
+    if lower_bounds is None:
+        lower_bounds = np.full(x.shape, -np.inf)
+    if upper_bounds is None:
+        upper_bounds = np.full(x.shape, np.inf)
+
     base_steps = _calculate_or_validate_base_steps(
         base_steps, x, target, min_steps, scaling_factor
     )
     min_steps = base_steps if min_steps is None else min_steps
+
+    assert (
+        upper_bounds - lower_bounds >= 2 * min_steps
+    ).all(), "min_steps is too large to fit into bounds."
 
     upper_bounds = np.full(len(x), np.inf) if upper_bounds is None else upper_bounds
     lower_bounds = np.full(len(x), -np.inf) if lower_bounds is None else lower_bounds
