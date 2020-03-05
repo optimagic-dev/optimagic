@@ -26,7 +26,7 @@ def first_derivative(
     step_ratio=2.0,
     min_steps=None,
     f0=None,
-    n_processes=1,
+    n_cores=1,
 ):
 
     """Evaluate first derivative of func at x according to method and step options.
@@ -68,7 +68,7 @@ def first_derivative(
             equal to base_steps, i.e step size is not decreased beyond what is optimal
             according to the rule of thumb.
         f0 (np.ndarray): 1d numpy array with func(x), optional.
-        n_processes (int): Number of processes used to parallelize the function
+        n_cores (int): Number of processes used to parallelize the function
             evaluations. Default 1.
 
     Returns:
@@ -118,9 +118,7 @@ def first_derivative(
             else:
                 evaluation_points.append(np.nan)
 
-    raw_evals = _nan_skipping_batch_evaluator(
-        internal_func, evaluation_points, n_processes
-    )
+    raw_evals = _nan_skipping_batch_evaluator(internal_func, evaluation_points, n_cores)
 
     evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
     evals = np.transpose(evals, axes=(0, 1, 3, 2))

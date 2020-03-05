@@ -43,7 +43,7 @@ def test_first_derivative_jacobian(binary_choice_inputs, method):
         min_steps=1e-8,
         step_ratio=2.0,
         f0=func(fix["params_np"]),
-        n_processes=1,
+        n_cores=1,
     )
 
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
@@ -70,7 +70,7 @@ def test_first_derivative_gradient(binary_choice_inputs, method):
         x=fix["params_np"],
         n_steps=1,
         f0=func(fix["params_np"]),
-        n_processes=1,
+        n_cores=1,
     )
 
     expected = logit_loglike_gradient(fix["params_np"], fix["y"], fix["x"])
