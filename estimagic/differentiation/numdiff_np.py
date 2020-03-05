@@ -3,6 +3,7 @@ from multiprocessing import Pool
 import numpy as np
 
 import estimagic.differentiation.finite_differences as fd
+from estimagic.decorators import nan_if_exception
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.optimization.utilities import namedtuple_from_kwargs
 
@@ -59,6 +60,8 @@ def jacobian(
         else:
             f0 = np.nan
 
+    internal_func = nan_if_exception(func)
+
     steps = generate_steps(
         x=x,
         method=method,
@@ -82,7 +85,9 @@ def jacobian(
                 else:
                     evaluation_points.append(np.nan)
 
-    evaluations = _nan_skipping_batch_evaluator(func, evaluation_points, n_processes)
+    evaluations = _nan_skipping_batch_evaluator(
+        internal_func, evaluation_points, n_processes
+    )
 
     evals = np.array(evaluations).reshape(2, n_steps, len(x), -1)
     evals = np.transpose(evals, axes=(0, 1, 3, 2))

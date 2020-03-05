@@ -295,3 +295,37 @@ def handle_exceptions(database, params, constraints, start_params, general_optio
         return wrapper_handle_exceptions
 
     return decorator_handle_exceptions
+
+
+def nan_if_exception(func):
+    """Wrap func such that np.nan is returned if func raises an exception.
+
+    KeyboardInterrupt and SystemExit are still raised.
+
+    Examples:
+
+    >>> @nan_if_exception
+    ... def f(x, y):
+    ...     assert x + y >= 5
+    >>> f(1, 2)
+    nan
+
+    >>> def f(x, y):
+    ...     assert x + y >= 5
+    >>> g = nan_if_exception(f)
+    >>> g(1, 2)
+    nan
+
+    """
+
+    @functools.wraps(func)
+    def wrapper_nan_if_exception(params, *args, **kwargs):
+        try:
+            out = func(params, *args, **kwargs)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            out = np.nan
+        return out
+
+    return wrapper_nan_if_exception
