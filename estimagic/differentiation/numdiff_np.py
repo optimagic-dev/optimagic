@@ -4,6 +4,7 @@ from multiprocessing import Pool
 import numpy as np
 
 import estimagic.differentiation.finite_differences as fd
+from estimagic.decorators import de_scalarize
 from estimagic.decorators import nan_if_exception
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.optimization.utilities import namedtuple_from_kwargs
@@ -25,7 +26,11 @@ def first_derivative(
     n_processes=1,
 ):
 
-    """Evaluate first derivative of func at x according to specified methods and step options.
+    """Evaluate first derivative of func at x according to method and step options.
+
+    Internally, the function is converted such that it maps from a 1d array to a 1d
+    array. Then the Jacobian of that function is calculated. The resulting derivative
+    estimate is always a numpy array.
 
     Args:
         func (callable): Function of which the Jacobian is evaluated.
@@ -58,13 +63,27 @@ def first_derivative(
         n_processes (int): Number of processes used to parallelize the function
             evaluations. Default 1.
 
+    Returns:
+        derivative (np.ndarray): The estimated first derivative of func at x.
+            The shape of the output depends on the dimension of x and func(x):
+            f: R -> R leads to shape (1,), usually called derivative
+            f: R^m -> R leads to shape (m, ), usually called Gradient
+            f: R -> R^n leads to shape (n, 1), usually called Jacobian
+            f: R^m -> R^n leads to shape (n, m), usually called Jacobian
+
     """
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
-
     f0 = partialed_func(x) if f0 is None else f0
 
+    x_was_scalar = np.isscalar(x)
+    f_was_scalar = np.isscalar(f0)
+
+    x = np.atleast_1d(x)
+    f0 = np.atleast_1d(f0)
+
     @nan_if_exception
+    @de_scalarize(x_was_scalar)
     def internal_func(x):
         return partialed_func(x)
 
@@ -72,7 +91,7 @@ def first_derivative(
         x=x,
         method=method,
         n_steps=n_steps,
-        target="jacobian",
+        target="first_derivative",
         base_steps=base_steps,
         scaling_factor=scaling_factor,
         lower_bounds=lower_bounds,
@@ -114,7 +133,9 @@ def first_derivative(
     else:
         raise NotImplementedError("Extrapolation is not yet implemented.")
 
-    return jac
+    res = jac.flatten() if f_was_scalar else jac
+
+    return res
 
 
 def _consolidate_one_step_forward(candidates):
