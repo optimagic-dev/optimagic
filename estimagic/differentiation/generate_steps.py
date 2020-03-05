@@ -55,10 +55,10 @@ def generate_steps(
             is used.
         target (str): One of ["first_derivative", "second_derivative"]. This is used to
             choose the appropriate rule of thumb for the base_steps.
-        base_steps (np.ndarray, optional): 1d array of the same length as x. base_steps
-            * scaling_factor is the absolute value of the first (and possibly only) step
-            used in the finite differences approximation of the derivative. If the
-            base_steps * scaling_factor conflicts with bounds, the actual steps will
+        base_steps (np.ndarray, optional): 1d array of the same length as x.
+            base_steps * scaling_factor is the absolute value of the first (and possibly
+            only) step used in the finite differences approximation of the derivative.
+            If base_steps * scaling_factor conflicts with bounds, the actual steps will
             be adjusted. If base_steps is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
         scaling_factor (np.ndarray or float): Scaling factor which is applied to
@@ -126,21 +126,16 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
     """Validate user provided base_steps or generate them with rule of thumb.
 
     Args:
-        base_steps (np.ndarray or None): 1d array of the same length as x with the
-            absolute value of the first step. If the base_steps conflicts with bounds,
-            generate_steps will modify it. If base step is None, it will be
-            determined as according to the rule of thumb outlined below as long as
-            this does not conflict with min_steps
+        base_steps (np.ndarray, optional): 1d array of the same length as x.
+            base_steps * scaling_factor is the absolute value of the first (and possibly
+            only) step used in the finite differences approximation of the derivative.
         x (np.ndarray): 1d array at which the derivative is evaluated
         target (str): One of ["first_derivative", "second_derivative"]. This is used to
             choose the appropriate rule of thumb for the base_steps.
         min_steps (np.ndarray or None): Minimal possible step sizes that can be chosen
             to accomodate bounds. Needs to have same length as x.
-        scaling_factor (np.ndarray or float): Scaling factor which is applied to the
-            base_step. If it is an np.ndarray, it needs to have the same shape as x.
-            scaling_factor is useful if you want to increase or decrease the base_step
-            relative to the rule-of-thumb or user provided base_step, for example to
-            benchmark the effect of the stepsize.
+        scaling_factor (np.ndarray or float): Scaling factor which is applied to
+            base_steps. If it is an np.ndarray, it needs to have the same shape as x.
 
     Returns:
         base_steps (np.ndarray): 1d array of the same length as x with the
@@ -217,11 +212,9 @@ def _rescale_to_accomodate_bounds(
     """Rescale steps to make them compatible with bounds unless this violates min_steps.
 
     Args:
-        base_steps (np.ndarray or None): 1d array of the same length as x with the
-            absolute value of the first step. If the base_steps conflicts with bounds,
-            generate_steps will modify it. If base step is None, it will be
-            determined as according to the rule of thumb outlined below as long as
-            this does not conflict with min_steps
+        base_steps (np.ndarray, optional): 1d array of the same length as x.
+            base_steps * scaling_factor is the absolute value of the first (and possibly
+            only) step used in the finite differences approximation of the derivative.
         pos (np.ndarray): Array with positive steps of shape (n_steps, len(x))
         neg (np.ndarray): Array with negative steps of shape (n_steps, len(x))
         lower_step_bounds (np.ndarray): Lower bounds for steps.
