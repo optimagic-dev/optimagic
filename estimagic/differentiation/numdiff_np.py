@@ -35,7 +35,7 @@ def first_derivative(
     estimate is always a numpy array.
 
     Detailed description of all options that influence the step size as well as an
-    xplanation of how steps are adjusted to bounds in case of a conflict,
+    explanation of how steps are adjusted to bounds in case of a conflict,
     see :func:`~estimagic.differentiation.generate_steps.generate_steps`.
 
     Args:

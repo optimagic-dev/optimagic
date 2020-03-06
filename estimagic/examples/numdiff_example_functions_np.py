@@ -51,7 +51,6 @@ def probit_loglike(params, y, x):
 
 
 def probit_loglikeobs(params, y, x):
-
     q = 2 * y - 1
     return np.log(np.clip(norm.cdf(q * np.dot(x, params)), FLOAT_EPS, 1))
 
