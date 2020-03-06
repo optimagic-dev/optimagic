@@ -22,7 +22,6 @@ dependencies:
   - numpy=1.16
   - pandas>=0.24,<1.0
   - pdbpp
-#  - petsc4py>=3.11
   - pygmo=2.10
   - pytest
   - pytest-cov
@@ -37,6 +36,7 @@ dependencies:
   - sqlalchemy>=1.3
   - tox-conda
   - pip:
+    - petsc4py>=3.11
     - black
     - blackcellmagic
     - bump2version
