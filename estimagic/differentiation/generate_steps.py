@@ -173,7 +173,10 @@ def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_b
 
     A side is not used if:
     - It was not requested due to one sided derivatives.
-    - It was requested but a side switch was necessary due to bounds.
+    - It was requested but a side switch was better due to bounds.
+
+    This function does not yet guarantee that all bounds are fulfilled. It only switches
+    to the side that has more space to the bound if there is a bound violation.
 
     Args:
         x (np.ndarray): 1d array with parameters.
@@ -190,19 +193,21 @@ def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_b
     """
     pos = pos.copy()
     neg = neg.copy()
-    larger_side = np.where(upper_step_bounds >= -lower_step_bounds, np.ones_like(x), -1)
+    better_side = np.where(upper_step_bounds >= -lower_step_bounds, np.ones_like(x), -1)
     max_abs_step = pos[:, -1]
     if method == "forward":
-        side = np.where(upper_step_bounds >= max_abs_step, np.ones_like(x), larger_side)
+        used_side = np.where(
+            upper_step_bounds >= max_abs_step, np.ones_like(x), better_side
+        )
     elif method == "backward":
-        side = np.where(
-            -lower_step_bounds >= max_abs_step, -np.ones_like(x), larger_side
+        used_side = np.where(
+            -lower_step_bounds >= max_abs_step, -np.ones_like(x), better_side
         )
     else:
         raise ValueError("This function only works for forward or backward method.")
 
-    pos[side == -1] = np.nan
-    neg[side == 1] = np.nan
+    pos[used_side == -1] = np.nan
+    neg[used_side == 1] = np.nan
     return pos, neg
 
 
