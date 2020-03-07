@@ -176,7 +176,7 @@ def _consolidate_extrapolated(candidates):
     raise NotImplementedError
 
 
-def _nan_skipping_batch_evaluator(func, arglist, n_processes):
+def _nan_skipping_batch_evaluator(func, arglist, n_cores):
     """Evaluate func at each entry in arglist, skipping np.nan entries.
 
     The function is only evaluated at inputs that are not a scalar np.nan.
@@ -188,7 +188,7 @@ def _nan_skipping_batch_evaluator(func, arglist, n_processes):
         func (function): Python function that returns a numpy array. The shape
             of the output of func has to be the same for all elements in arglist.
         arglist (list): List with inputs for func.
-        n_processes (int): Number of processes.
+        n_cores (int): Number of processes.
 
     Returns
         evaluations (list): The function evaluations, same length as arglist.
@@ -201,12 +201,7 @@ def _nan_skipping_batch_evaluator(func, arglist, n_processes):
     real_args = [arg for i, arg in enumerate(arglist) if i not in nan_indices]
 
     # evaluate function
-    if n_processes == 1:
-        evaluations = [func(point) for point in real_args]
-    else:
-        evaluations = Parallel(n_jobs=n_processes)(
-            delayed(func)(point) for point in real_args
-        )
+    evaluations = Parallel(n_jobs=n_cores)(delayed(func)(point) for point in real_args)
 
     # combine results
     evaluations = iter(evaluations)
