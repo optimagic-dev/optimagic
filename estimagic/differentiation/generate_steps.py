@@ -142,7 +142,7 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
             absolute value of the first step.
 
     """
-    if (scaling_factor <= np.zeros_like(x)).any():
+    if np.any(scaling_factor <= 0):
         raise ValueError("Scaling factor must be strictly positive.")
 
     if base_steps is not None:

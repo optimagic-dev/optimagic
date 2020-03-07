@@ -159,7 +159,7 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
     consolidated = candidates[preferred].copy()
     for other in others:
         consolidated = np.where(
-            np.isfinite(consolidated), consolidated, candidates[other]
+            np.isnan(consolidated), candidates[other], consolidated
         )
 
     return consolidated.reshape(consolidated.shape[1:])
