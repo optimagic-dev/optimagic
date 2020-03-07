@@ -33,7 +33,7 @@ def logit_loglike_gradient(params, y, x):
 
 def logit_loglikeobs_jacobian(params, y, x):
     c = 1 / (1 + np.exp(-(np.dot(x, params))))
-    return (y - c)[:, None] * x
+    return (y - c).reshape(-1, 1) * x
 
 
 def logit_loglike_hessian(params, y, x):
@@ -66,7 +66,7 @@ def probit_loglikeobs_jacobian(params, y, x):
     xb = np.dot(x, params)
     q = 2 * y - 1
     c = q * norm.pdf(q * xb) / np.clip(norm.cdf(q * xb), FLOAT_EPS, 1 - FLOAT_EPS)
-    return c[:, None] * x
+    return c.reshape(-1, 1) * x
 
 
 def probit_loglike_hessian(params, y, x):

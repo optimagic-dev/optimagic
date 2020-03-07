@@ -12,7 +12,7 @@ def jacobian_inputs():
     steps_pos = np.array([[0.1, 0.1, 0.1, 0.1], [0.2, 0.2, 0.2, 0.2]])
     steps = namedtuple_from_kwargs(pos=steps_pos, neg=-steps_pos)
 
-    jac1 = (np.arange(12) + 1).reshape(3, 4)
+    jac1 = (np.arange(1, 13)).reshape(3, 4)
     jac2 = jac1 * 1.1
 
     evals_pos1 = jac1 @ (np.zeros((4, 4)) + np.eye(4) * 0.1)

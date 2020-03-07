@@ -19,10 +19,10 @@ def first_derivative(
     method="central",
     n_steps=1,
     base_steps=None,
-    scaling_factor=1.0,
+    scaling_factor=1,
     lower_bounds=None,
     upper_bounds=None,
-    step_ratio=2.0,
+    step_ratio=2,
     min_steps=None,
     f0=None,
     n_cores=1,
@@ -110,12 +110,12 @@ def first_derivative(
     evaluation_points = []
     for step_arr in steps:
         for i, j in product(range(n_steps), range(len(x))):
-            if np.isfinite(step_arr[i, j]):
+            if np.isnan(step_arr[i, j]):
+                evaluation_points.append(np.nan)
+            else:
                 point = x.copy()
                 point[j] += step_arr[i, j]
                 evaluation_points.append(point)
-            else:
-                evaluation_points.append(np.nan)
 
     raw_evals = _nan_skipping_batch_evaluator(internal_func, evaluation_points, n_cores)
 

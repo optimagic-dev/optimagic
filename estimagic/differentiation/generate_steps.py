@@ -26,10 +26,10 @@ def generate_steps(
     necessary to flip the direction of the method.
 
     The rule of thumb for the generation of base_steps is:
-    - first_derivative: np.finfo(float) ** (1 / 2) * np.maximum(np.abs(x), 0.1)
-    - second_derivative: np.finfo(float) ** (1 / 3) * np.maximum(np.abs(x), 0.1)
-    Where EPS is machine accuracy retrieved by np.finfo(float).eps. This rule of
-    thumb is also used in statsmodels and scipy.
+    - first_derivative: `np.finfo(float).eps ** (1 / 2) * np.maximum(np.abs(x), 0.1)`
+    - second_derivative: `np.finfo(float).eps ** (1 / 3) * np.maximum(np.abs(x), 0.1)`
+    Where `np.finfo(float).eps` is machine accuracy. This rule of thumb
+    is also used in statsmodels and scipy.
 
     The step generation is bound aware and will try to find a good solution if
     any step would violate a bound. For this, we use the following rules until
@@ -157,10 +157,10 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
             )
     else:
         eps = np.finfo(float).eps
-        if target == "second_derivative":
-            base_steps = eps ** (1 / 3) * np.maximum(np.abs(x), 0.1) * scaling_factor
-        elif target == "first_derivative":
+        if target == "first_derivative":
             base_steps = eps ** (1 / 2) * np.maximum(np.abs(x), 0.1) * scaling_factor
+        elif target == "second_derivative":
+            base_steps = eps ** (1 / 3) * np.maximum(np.abs(x), 0.1) * scaling_factor
         else:
             raise ValueError(f"Invalid target: {target}.")
         if min_steps is not None:
@@ -193,15 +193,15 @@ def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_b
     """
     pos = pos.copy()
     neg = neg.copy()
-    better_side = np.where(upper_step_bounds >= -lower_step_bounds, np.ones_like(x), -1)
+    better_side = np.where(upper_step_bounds >= -lower_step_bounds, 1, -1)
     max_abs_step = pos[:, -1]
     if method == "forward":
         used_side = np.where(
-            upper_step_bounds >= max_abs_step, np.ones_like(x), better_side
+            upper_step_bounds >= max_abs_step, 1, better_side
         )
     elif method == "backward":
         used_side = np.where(
-            -lower_step_bounds >= max_abs_step, -np.ones_like(x), better_side
+            -lower_step_bounds >= max_abs_step, -1, better_side
         )
     else:
         raise ValueError("This function only works for forward or backward method.")
