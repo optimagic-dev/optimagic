@@ -39,13 +39,15 @@ def get_bootstrap_estimates(
     if seeds is None:
         seeds = get_seeds(ndraws)
 
+    df = data.reset_index(drop=True)
+
     if cluster_by is None:
 
-        estimates = _get_uniform_estimates(data, seeds, n_cores, f)
+        estimates = _get_uniform_estimates(df, seeds, n_cores, f)
 
     else:
 
-        estimates = _get_clustered_estimates(data, cluster_by, seeds, n_cores, f)
+        estimates = _get_clustered_estimates(df, cluster_by, seeds, n_cores, f)
 
     return pd.DataFrame(estimates)
 
