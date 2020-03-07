@@ -196,13 +196,9 @@ def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_b
     better_side = np.where(upper_step_bounds >= -lower_step_bounds, 1, -1)
     max_abs_step = pos[:, -1]
     if method == "forward":
-        used_side = np.where(
-            upper_step_bounds >= max_abs_step, 1, better_side
-        )
+        used_side = np.where(upper_step_bounds >= max_abs_step, 1, better_side)
     elif method == "backward":
-        used_side = np.where(
-            -lower_step_bounds >= max_abs_step, -1, better_side
-        )
+        used_side = np.where(-lower_step_bounds >= max_abs_step, -1, better_side)
     else:
         raise ValueError("This function only works for forward or backward method.")
 
