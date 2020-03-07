@@ -12,18 +12,18 @@ from estimagic.inference.bootstrap_samples import get_seeds
 
 
 def get_bootstrap_estimates(
-    data, f, cluster_by=None, seeds=None, ndraws=1000, n_cores=1
+    data, f, cluster_by=None, seeds=None, n_draws=1000, n_cores=1
 ):
     """Calculate the statistic f for every bootstrap sample, either by specified seeds
-    or for ndraws random samples.
+    or for n_draws random samples.
 
     Args:
         data (pandas.DataFrame): original dataset.
         f (callable): function of the dataset calculating statistic of interest or list
             of functions. Needs to return array-like object or pd.Series.
         cluster_by (str): column name of the variable to cluster by.
-        seeds (numpy.array): Size ndraws vector of drawn seeds or None.
-        ndraws (int): number of draws, only relevant if seeds is None.
+        seeds (numpy.array): Size n_draws vector of drawn seeds or None.
+        n_draws (int): number of draws, only relevant if seeds is None.
         n_cores (int): number of jobs for parallelization.
 
     Returns:
@@ -37,7 +37,7 @@ def get_bootstrap_estimates(
         f = _concatenate_functions(f, data)
 
     if seeds is None:
-        seeds = get_seeds(ndraws)
+        seeds = get_seeds(n_draws)
 
     df = data.reset_index(drop=True)
 
@@ -58,7 +58,7 @@ def _get_uniform_estimates(data, seeds, n_cores=1, f=None):
 
     Args:
         data (pandas.DataFrame): original dataset.
-        seeds (numpy.array): Size ndraws vector of drawn seeds or None.
+        seeds (numpy.array): Size n_draws vector of drawn seeds or None.
         n_cores (int): number of jobs for parallelization.
         f (callable): function of the dataset calculating statistic of interest.
 
@@ -94,7 +94,7 @@ def _get_clustered_estimates(data, cluster_by, seeds, n_cores=1, f=None):
     Args:
         data (pandas.DataFrame): original dataset.
         cluster_by (str): column name of the variable to cluster by.
-        seeds (numpy.array): Size ndraws vector of drawn seeds or None.
+        seeds (numpy.array): Size n_draws vector of drawn seeds or None.
         n_cores (int): number of jobs for parallelization.
         f (callable): function of the dataset calculating statistic of interest.
 

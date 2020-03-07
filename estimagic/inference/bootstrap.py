@@ -11,7 +11,7 @@ from estimagic.inference.bootstrap_samples import get_seeds
 def bootstrap(
     data,
     f=_mean,
-    ndraws=1000,
+    n_draws=1000,
     cluster_by=None,
     ci_method="percentile",
     alpha=0.05,
@@ -26,7 +26,7 @@ def bootstrap(
         data (pandas.DataFrame): original dataset.
         f (callable): function of the data calculating statistic of interest or list of
             functions. Needs to return array-like object or pd.Series.
-        ndraws (int): number of bootstrap samples to draw.
+        n_draws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
@@ -47,7 +47,7 @@ def bootstrap(
     df = data.reset_index(drop=True)
 
     if seeds is None:
-        seeds = get_seeds(ndraws)
+        seeds = get_seeds(n_draws)
 
     estimates = get_bootstrap_estimates(df, f, cluster_by, seeds, n_cores)
 

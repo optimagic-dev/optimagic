@@ -3,30 +3,30 @@ import numpy as np
 from estimagic.inference.bootstrap_ci import _check_inputs
 
 
-def get_seeds(ndraws=1000):
+def get_seeds(n_draws=1000):
     """Draw seeds for bootstrap resampling.
 
     Args:
-        ndraws (int): number of bootstrap draws.
+        n_draws (int): number of bootstrap draws.
 
     Returns:
         seeds (numpy.array): vector of randomly drawn seeds.
 
     """
 
-    return np.random.randint(0, 2 ** 31, size=ndraws)
+    return np.random.randint(0, 2 ** 31, size=n_draws)
 
 
 def get_bootstrap_samples(
-    data, cluster_by=None, seeds=None, ndraws=1000, n_cores=1, return_samples=False
+    data, cluster_by=None, seeds=None, n_draws=1000, n_cores=1, return_samples=False
 ):
     """Draw and return bootstrap samples, either by specified seeds or number of draws.
 
     Args:
         data (pandas.DataFrame): original dataset.
         cluster_by (str): column name of the variable to cluster by.
-        seeds (numpy.array): Size ndraws vector of drawn seeds or None.
-        ndraws (int): number of draws, only relevant if seeds is None.
+        seeds (numpy.array): Size n_draws vector of drawn seeds or None.
+        n_draws (int): number of draws, only relevant if seeds is None.
         n_cores (int): number of jobs for parallelization.
         return_samples (bool): If true, return samples, else return indices.
 
@@ -38,7 +38,7 @@ def get_bootstrap_samples(
     _check_inputs(data=data, cluster_by=cluster_by)
 
     if seeds is None:
-        seeds = get_seeds(ndraws)
+        seeds = get_seeds(n_draws)
 
     if cluster_by is None:
 
