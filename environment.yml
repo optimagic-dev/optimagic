@@ -16,11 +16,12 @@ dependencies:
   - fuzzywuzzy
   - joblib
   - jupyterlab
+  - matplotlib
   - nbsphinx
   - numba >= 0.12
   - numdifftools>= 0.9.20
   - numpy=1.16
-  - pandas=0.24
+  - pandas=1.0
   - pdbpp
   - petsc4py>=3.11
   - pygmo=2.10
