@@ -5,9 +5,9 @@ import numpy as np
 from joblib import delayed
 from joblib import Parallel
 
-import estimagic.differentiation.finite_differences as fd
 from estimagic.decorators import de_scalarize
 from estimagic.decorators import nan_if_exception
+from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.optimization.utilities import namedtuple_from_kwargs
 
@@ -125,7 +125,7 @@ def first_derivative(
 
     jac_candidates = {}
     for m in ["forward", "backward", "central"]:
-        jac_candidates[m] = getattr(fd, f"jacobian_{m}")(evals, steps, f0)
+        jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, method)
 
     orders = {
         "central": ["central", "forward", "backward"],

@@ -2,9 +2,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.differentiation.finite_differences import jacobian_backward
-from estimagic.differentiation.finite_differences import jacobian_central
-from estimagic.differentiation.finite_differences import jacobian_forward
+from estimagic.differentiation.finite_differences import jacobian
 from estimagic.optimization.utilities import namedtuple_from_kwargs
 
 
@@ -33,19 +31,11 @@ def jacobian_inputs():
     return out
 
 
-def test_jacobian_forward(jacobian_inputs):
+methods = ["forward", "backward", "central"]
+
+
+@pytest.mark.parametrize("method", methods)
+def test_jacobian_finite_differences(jacobian_inputs, method):
     expected_jac = jacobian_inputs.pop("expected_jac")
-    calculated_jac = jacobian_forward(**jacobian_inputs)
-    aaae(calculated_jac, expected_jac)
-
-
-def test_jacobian_backward(jacobian_inputs):
-    expected_jac = jacobian_inputs.pop("expected_jac")
-    calculated_jac = jacobian_backward(**jacobian_inputs)
-    aaae(calculated_jac, expected_jac)
-
-
-def test_jacobian_central(jacobian_inputs):
-    expected_jac = jacobian_inputs.pop("expected_jac")
-    calculated_jac = jacobian_central(**jacobian_inputs)
+    calculated_jac = jacobian(**jacobian_inputs, method=method)
     aaae(calculated_jac, expected_jac)
