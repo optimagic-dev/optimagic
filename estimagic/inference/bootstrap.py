@@ -17,7 +17,7 @@ def bootstrap(
     alpha=0.05,
     seeds=None,
     return_seeds=False,
-    num_threads=1,
+    n_cores=1,
 ):
     """Calculate bootstrap estimates, standard errors and confidence intervals
     for statistic of interest in given original sample.
@@ -32,7 +32,7 @@ def bootstrap(
         alpha (float): significance level of choice.
         return_seeds (bool): specify whether to return the drawn seeds as 2nd argument.
         seeds (numpy.array): array of seeds for bootstrap samples, default is none.
-        num_threads (int): number of jobs for parallelization.
+        n_cores (int): number of jobs for parallelization.
 
     Returns:
         results (pandas.DataFrame): DataFrame where k'th row contains mean estimate,
@@ -49,9 +49,9 @@ def bootstrap(
     if seeds is None:
         seeds = get_seeds(ndraws)
 
-    estimates = get_bootstrap_estimates(df, f, cluster_by, seeds, num_threads)
+    estimates = get_bootstrap_estimates(df, f, cluster_by, seeds, n_cores)
 
-    table = get_results_table(df, f, estimates, ci_method, alpha, num_threads)
+    table = get_results_table(df, f, estimates, ci_method, alpha, n_cores)
 
     if return_seeds is False:
         res = table
@@ -63,7 +63,7 @@ def bootstrap(
 
 
 def get_results_table(
-    data, f, estimates, ci_method="percentile", alpha=0.05, num_threads=1
+    data, f, estimates, ci_method="percentile", alpha=0.05, n_cores=1
 ):
     """Set up results table containing mean, standard deviation and confidence interval
     for each estimated parameter.
@@ -74,7 +74,7 @@ def get_results_table(
             functions. Needs to return array-like object or pd.Series.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
-        num_threads (int): number of jobs for parallelization.
+        n_cores (int): number of jobs for parallelization.
         alpha (float): significance level of choice.
 
     Returns:
@@ -90,7 +90,7 @@ def get_results_table(
 
     results["std"] = estimates.std(axis=0)
 
-    cis = compute_ci(data, f, estimates, ci_method, alpha, num_threads)
+    cis = compute_ci(data, f, estimates, ci_method, alpha, n_cores)
     results["lower_ci"] = cis["lower_ci"]
     results["upper_ci"] = cis["upper_ci"]
 

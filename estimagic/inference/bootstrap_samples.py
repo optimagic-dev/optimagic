@@ -18,7 +18,7 @@ def get_seeds(ndraws=1000):
 
 
 def get_bootstrap_samples(
-    data, cluster_by=None, seeds=None, ndraws=1000, num_threads=1, return_samples=False
+    data, cluster_by=None, seeds=None, ndraws=1000, n_cores=1, return_samples=False
 ):
     """Draw and return bootstrap samples, either by specified seeds or number of draws.
 
@@ -27,7 +27,7 @@ def get_bootstrap_samples(
         cluster_by (str): column name of the variable to cluster by.
         seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         ndraws (int): number of draws, only relevant if seeds is None.
-        num_threads (int): number of jobs for parallelization.
+        n_cores (int): number of jobs for parallelization.
         return_samples (bool): If true, return samples, else return indices.
 
     Returns:
@@ -44,15 +44,13 @@ def get_bootstrap_samples(
 
         from estimagic.inference.bootstrap_estimates import _get_uniform_estimates
 
-        sample_ids = _get_uniform_estimates(data, seeds, num_threads, f=None)
+        sample_ids = _get_uniform_estimates(data, seeds, n_cores, f=None)
 
     else:
 
         from estimagic.inference.bootstrap_estimates import _get_clustered_estimates
 
-        sample_ids = _get_clustered_estimates(
-            data, cluster_by, seeds, num_threads, f=None
-        )
+        sample_ids = _get_clustered_estimates(data, cluster_by, seeds, n_cores, f=None)
 
     if return_samples is True:
 

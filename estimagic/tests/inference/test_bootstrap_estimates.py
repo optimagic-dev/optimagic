@@ -32,7 +32,9 @@ def g(data):
 
 def test_get_bootstrap_estimates(setup):
     estimates1 = get_bootstrap_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
-    estimates2 = get_bootstrap_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
+    estimates2 = get_bootstrap_estimates(
+        data=setup["df"], f=g, seeds=setup["seeds"], n_cores=-1
+    )
     estimates3 = pd.DataFrame(
         _get_uniform_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
     )

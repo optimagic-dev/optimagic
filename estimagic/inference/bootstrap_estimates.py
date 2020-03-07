@@ -12,7 +12,7 @@ from estimagic.inference.bootstrap_samples import get_seeds
 
 
 def get_bootstrap_estimates(
-    data, f, cluster_by=None, seeds=None, ndraws=1000, num_threads=1
+    data, f, cluster_by=None, seeds=None, ndraws=1000, n_cores=1
 ):
     """Calculate the statistic f for every bootstrap sample, either by specified seeds
     or for ndraws random samples.
@@ -24,7 +24,7 @@ def get_bootstrap_estimates(
         cluster_by (str): column name of the variable to cluster by.
         seeds (numpy.array): Size ndraws vector of drawn seeds or None.
         ndraws (int): number of draws, only relevant if seeds is None.
-        num_threads (int): number of jobs for parallelization.
+        n_cores (int): number of jobs for parallelization.
 
     Returns:
         estimates (pandas.DataFrame): DataFrame estimates for different bootstrap
@@ -41,23 +41,23 @@ def get_bootstrap_estimates(
 
     if cluster_by is None:
 
-        estimates = _get_uniform_estimates(data, seeds, num_threads, f)
+        estimates = _get_uniform_estimates(data, seeds, n_cores, f)
 
     else:
 
-        estimates = _get_clustered_estimates(data, cluster_by, seeds, num_threads, f)
+        estimates = _get_clustered_estimates(data, cluster_by, seeds, n_cores, f)
 
     return pd.DataFrame(estimates)
 
 
-def _get_uniform_estimates(data, seeds, num_threads=1, f=None):
+def _get_uniform_estimates(data, seeds, n_cores=1, f=None):
     """Calculate non-clustered bootstrap estimates. If f is None, return a list of the
     samples.
 
     Args:
         data (pandas.DataFrame): original dataset.
         seeds (numpy.array): Size ndraws vector of drawn seeds or None.
-        num_threads (int): number of jobs for parallelization.
+        n_cores (int): number of jobs for parallelization.
         f (callable): function of the dataset calculating statistic of interest.
 
      Returns:
@@ -80,12 +80,12 @@ def _get_uniform_estimates(data, seeds, num_threads=1, f=None):
 
         return res
 
-    estimates = Parallel(n_jobs=num_threads)(delayed(loop)(s) for s in seeds)
+    estimates = Parallel(n_jobs=n_cores)(delayed(loop)(s) for s in seeds)
 
     return estimates
 
 
-def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
+def _get_clustered_estimates(data, cluster_by, seeds, n_cores=1, f=None):
     """Calculate clustered bootstrap estimates. If f is None, return a list of the
     samples.
 
@@ -93,7 +93,7 @@ def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
         data (pandas.DataFrame): original dataset.
         cluster_by (str): column name of the variable to cluster by.
         seeds (numpy.array): Size ndraws vector of drawn seeds or None.
-        num_threads (int): number of jobs for parallelization.
+        n_cores (int): number of jobs for parallelization.
         f (callable): function of the dataset calculating statistic of interest.
 
      Returns:
@@ -116,7 +116,7 @@ def _get_clustered_estimates(data, cluster_by, seeds, num_threads=1, f=None):
 
         return res
 
-    estimates = Parallel(n_jobs=num_threads)(delayed(loop)(s) for s in seeds)
+    estimates = Parallel(n_jobs=n_cores)(delayed(loop)(s) for s in seeds)
 
     return estimates
 
