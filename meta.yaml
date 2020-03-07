@@ -9,6 +9,8 @@ source:
 
 build:
   number: 0
+  entry_points:
+    - estimagic = estimagic.cli:cli
 
 
 requirements:
@@ -18,6 +20,7 @@ requirements:
 
   run:
     - python {{ python }}
+    - click
     - joblib
     - numpy>=1.16.0
     - pandas>=0.24,<1.0
@@ -34,8 +37,9 @@ requirements:
 test:
   commands:
     - py.test
-  files:
-    - estimagic/tests/
+  source_files:
+    - tox.ini
+    - estimagic/tests
   requires:
     - pytest
     - pytest-mock

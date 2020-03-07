@@ -26,6 +26,7 @@ setup(
     author="Janos Gabler",
     author_email="janos.gabler@gmail.com",
     packages=find_packages(exclude=["tests/*"]),
+    entry_points={"console_scripts": ["estimagic=estimagic.cli:cli"]},
     zip_safe=False,
     package_data={"estimagic": ["optimization/algo_dict.json"]},
     include_package_data=True,
