@@ -55,7 +55,8 @@ There is also a function to calculate only confidence intervals, given the estim
 The code of this function is an adjusted version of the code from Daniel Saxton's
 resample library :cite:`Saxton2018`. It has been adjusted to allow
 for multi-valued statistics as well as the additional confidence interval types "bc",
-"basic" and "normal".
+"basic" and "normal". Also, I rewrote the computation of the jackknife estimator
+to get a significant boost.
 
 .. currentmodule:: estimagic.inference.bootstrap
 
