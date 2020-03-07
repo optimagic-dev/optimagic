@@ -1,8 +1,8 @@
 """Finite difference formulae for jacobians and hessians.
 
-To harmonize the interface, all functions in this module take the
-three arguments: the function evaluations `evals`, the steps and the function value at the position of interest `f0`, even though f0 is not used
-for central methods.
+To harmonize the interface, all functions in this module take three arguments:
+the function evaluations `evals`, the steps and the function value at the position of
+interest `f0`, even though f0 is not used for central methods.
 
 All functions in this module should not only work for the simple case
 of one positive and/or one negative step, but also for the Richardson
@@ -83,8 +83,9 @@ def jacobian_central(evals, steps, f0):
             the corresponding direction. The steps always symmetric, in the sense
             that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
         f0 (np.ndarray): Numpy array of length dim_f with the output of the function at
-            the user supplied parameters. This is only an argument to have a unified interface.. 
-            It is not used for calculating the Jacobian with central differences.
+            the user supplied parameters. This is only an argument to have a unified
+            interface. It is not used for calculating the Jacobian with central
+            differences.
 
     Returns:
         np.ndarray: Numpy array of shape (n_steps, dim_f, dim_x) with estimated
