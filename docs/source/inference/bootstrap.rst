@@ -77,5 +77,15 @@ intervals:
 
     bootstrap_ci.rst
 
+Finally, here is another jupyter notebook, containing a Monte Carlo exercise that
+compares the rejection rates resulting from regular and clustered bootstraps in
+data sets where clustering is necessary. The broad idea of this simulation exercise is
+taken from :cite:`CameronMiller2015`.
+
+.. toctree::
+    :maxdepth: 1
+
+    bootstrap_montecarlo_comparison.ipynb
+
 .. bibliography:: ../refs.bib
     :filter: docname in docnames
