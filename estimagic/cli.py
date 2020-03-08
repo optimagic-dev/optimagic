@@ -14,7 +14,7 @@ def cli():
 
 
 @cli.command()
-@click.argument("database", nargs=-1, required=True, type=click.Path(exists=True))
+@click.argument("database", nargs=-1, required=True, type=click.Path())
 @click.option(
     "--port",
     "-p",
