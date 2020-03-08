@@ -4,6 +4,23 @@ import pandas as pd
 from estimagic.differentiation.differentiation import jacobian
 from estimagic.differentiation.differentiation import hessian
 
+def np_jac(log_like_obs, params, method="central", func_kwargs=log_like_kwargs):
+    """We wrote this function because we did not want to touch the
+    differenctiation files.
+
+    """
+    numpy_jacobian = jacobian(log_like_obs, params, method="central", func_kwargs=log_like_kwargs)
+    return numpy_jacobian
+
+
+def np_hess(log_like, params, method="central", func_kwargs=log_like_kwargs):
+    """We wrote this function because we did not want to touch the
+    differenctiation files.
+
+    """
+    numpy_hessian = hessian(log_like, params, method="central", func_kwargs=log_like_kwargs)
+    return numpy_hessian
+
 
 def design_options_preprocessing(data, design_dict=None):
     """Construct design options dataframe for parameter and variance estimation.
@@ -333,18 +350,18 @@ def choose_case(log_like_obs, params, log_like_kwargs, design_options, cov_type)
     if cov_type != "sandwich" and "weight" not in design_options.columns:
         raise Exception("Specifying psu or strata does not allow for oim and opg estimation.")
     if cov_type == "opg":
-        jac = jacobian(log_like_obs, params, method="central", func_kwargs=log_like_kwargs).to_numpy()
+        jac = np_jac(log_like_obs, params, method="central", func_kwargs=log_like_kwargs)
         se, var = variance_estimator(
             jac=jac, design_options=design_options, cov_type=cov_type
         )
     elif cov_type == "oim":
-        hess = hessian(log_like, params, method="central", func_kwargs=log_like_kwargs).to_numpy()
+        hess = np_hess(log_like, params, method="central", func_kwargs=log_like_kwargs)
         se, var = variance_estimator(
             hess=hess, design_options=design_options, cov_type=cov_type
         )
     elif cov_type == "sandwich":
-        jac = jacobian(log_like_obs, params, method="central", func_kwargs=log_like_kwargs).to_numpy()
-        hess = hessian(log_like, params, method="central", func_kwargs=log_like_kwargs).to_numpy()
+        jac = np_jac(log_like_obs, params, method="central", func_kwargs=log_like_kwargs)
+        hess = np_hess(log_like, params, method="central", func_kwargs=log_like_kwargs)
         se, var = variance_estimator(
             jac=jac, hess=hess, design_options=design_options, cov_type=cov_type
         )
