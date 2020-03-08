@@ -46,9 +46,11 @@ def observed_information_matrix(hess):
     """Observed information matrix or BHHH estimator.
 
     Args:
-        hessian (np.array): a k + 1 x k + 1-dimensional array of second derivatives
+        hess (np.array): a k + 1 x k + 1-dimensional array of second derivatives
             of the pseudo-log-likelihood function w.r.t. the parameters
-        model (string): 'logit' or 'probit'
+    Returns:
+        oim_se (np.array): a 1d array of k + 1 standard errors
+        oim_var (np.array): 2d variance-covariance matrix
 
     """
     hess = -hess.copy()
@@ -61,7 +63,7 @@ def outer_product_of_gradients(jac):
     """Outer product of gradients estimator.
 
     Args:
-        jacobian (np.array): an n x k + 1-dimensional array of first
+        jac (np.array): an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
 
     Returns:
@@ -78,7 +80,7 @@ def sandwich_step(hess, meat):
     """The sandwich estimator for variance estimation.
 
     Args:
-        hessian (np.array): 2d numpy array with the hessian of the
+        hess (np.array): 2d numpy array with the hessian of the
             pseudo-log-likelihood function evaluated at `params`
         meat (np.array): the variance of the total scores
 
@@ -102,7 +104,7 @@ def clustering(design_options, jac):
     Args:
         design_options (pd.DataFrame): dataframe containing psu, stratum,
             population/design weight and/or a finite population corrector (fpc)
-        jacobian (np.array): an n x k + 1-dimensional array of first
+        jac (np.array): an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
 
     Returns:
@@ -110,7 +112,7 @@ def clustering(design_options, jac):
             the likelihood equation (Pg.557, 14-10, Greene 7th edition)
 
     """
-    
+
     list_of_clusters = design_options["psu"].unique()
     meat = np.zeros([len(jac[0, :]), len(jac[0, :])])
     for psu in list_of_clusters:
@@ -130,7 +132,7 @@ def stratification(design_options, jac):
     Args:
         design_options (pd.DataFrame): dataframe containing psu, stratum,
             population/design weight and/or a finite population corrector (fpc)
-        jacobian (np.array): an n x k + 1-dimensional array of first
+        jac (np.array): an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
 
     Returns:
@@ -173,14 +175,14 @@ def robust_se(jac, hess):
     """Robust standard errors for binary estimation.
 
     Args:
-        jacobian (np.array): an n x k + 1-dimensional array of first
+        jac (np.array): an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
-        hessian (np.array): a k + 1 x k + 1-dimensional array of second derivatives
+        hess (np.array): a k + 1 x k + 1-dimensional array of second derivatives
             of the pseudo-log-likelihood function w.r.t. the parameters
 
     Returns:
-        robust_se (np.array): a 1d array of k + 1 standard errors
-        robust_var (np.array): 2d variance-covariance matrix
+        se (np.array): a 1d array of k + 1 standard errors
+        var (np.array): 2d variance-covariance matrix
 
     """
     sum_scores = np.dot((jac).T, jac)
@@ -197,9 +199,9 @@ def cluster_robust_se(jac, hess, design_options):
     of clusters increase, the standard errors approach robust standard errors.
 
     Args:
-        jacobian (np.array): an n x k + 1-dimensional array of first
+        jac (np.array): an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
-        hessian (np.array): a k + 1 x k + 1-dimensional array of second derivatives
+        hess (np.array): a k + 1 x k + 1-dimensional array of second derivatives
             of the pseudo-log-likelihood function w.r.t. the parameters
 
     Returns:
@@ -223,9 +225,9 @@ def strata_robust_se(jac, hess, design_options):
     strata, make the psu column take the values of the index.
 
     Args:
-        jacobian (np.array): an n x k + 1-dimensional array of first
+        jac (np.array): an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
-        hessian (np.array): a k + 1 x k + 1-dimensional array of second derivatives
+        hess (np.array): a k + 1 x k + 1-dimensional array of second derivatives
             of the pseudo-log-likelihood function w.r.t. the parameters
         design_options (pd.DataFrame): dataframe containing psu, stratum,
             population/design weight and/or a finite population corrector (fpc)
@@ -244,12 +246,15 @@ def variance_estimator(jac=None, hess=None, design_options=None, cov_type=None):
     """Chooses the appropriate variance estimator.
 
     Args:
-        jacobian (np.array): an n x k + 1-dimensional array of first
+        jac (np.array): an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
-        hessian (np.array): a k + 1 x k + 1-dimensional array of second derivatives
+        hess (np.array): a k + 1 x k + 1-dimensional array of second derivatives
             of the pseudo-log-likelihood function w.r.t. the parameters
         design_options (pd.DataFrame): dataframe containing psu, stratum,
             population/design weight and/or a finite population corrector (fpc)
+        cov_type (str): One of ["opg", "oim", "sandwich"]. opg and oim only
+            work when *design_options* is None. This takes the cov_type specified
+            in the likelihood_inference function.
 
     Returns:
         se (np.array): a 1d array of k + 1 standard errors
@@ -297,16 +302,25 @@ def choose_case(log_like_obs, params, log_like_kwargs, design_options, cov_type)
     """Chooses variance estimation.
 
     Args:
-        params (pd.DataFrame): The index consists of the parmater names,
-            the "value" column are the parameter values.
-        formulas (string or list of strings): a list of strings to be used by
-        patsy to extract dataframes of the dependent and independent variables
-        data (pd.DataFrame): a pandas dataset
-        model (str): "logit" or "probit"
-        design_dict (dict): dicitonary containing specified design options
+        log_like_obs (func): The pseudo-log-likelihood function. It is the
+            log-likelihood contribution per individual.
+        params (pd.DataFrame): The index consists of the paramater names specified
+            by the user, the "value" column is the parameter values.
+        log_like_kwargs (dict): In addition to the params argument directly
+            taken by likelihood_inference function, additional keyword arguments for the
+            likelihood function may include dependent variable, independent variables
+            and design options.
+            Example of simple logit model arguments:
+                log_like_kwargs = {
+                    "y": y,
+                    "x": x,
+                    "design_options": design_options
+                }
         design_options (pd.DataFrame): dataframe containing psu, stratum,
             population/design weight and/or a finite population corrector (fpc)
-        cov_type (str): variance estimator.
+        cov_type (str): One of ["opg", "oim", "sandwich"]. opg and oim only
+            work when *design_options* is empty. This takes the cov_type specified
+            in the likelihood_inference function.
 
     Returns:
         se (np.array): a 1d array of k + 1 standard errors
@@ -315,8 +329,8 @@ def choose_case(log_like_obs, params, log_like_kwargs, design_options, cov_type)
     """
     def log_like(params, **log_like_kwargs):
         return log_like_obs(params, **log_like_kwargs).sum()
-        
-    if cov_type != "sandwich" and "weight" not in design_options.columns):
+
+    if cov_type != "sandwich" and "weight" not in design_options.columns:
         raise Exception("Specifying psu or strata does not allow for oim and opg estimation.")
     if cov_type == "opg":
         jac = jacobian(log_like_obs, params, method="central", func_kwargs=log_like_kwargs).to_numpy()
@@ -343,17 +357,24 @@ def likelihood_inference(log_like_obs, params, log_like_kwargs, design_options, 
     """Pseudolikelihood estimation and inference.
 
     Args:
-        log_like_kwargs (dict): Additional keyword arguments for the
-            likelihood function.
-            Example:
+        log_like_obs (func): The pseudo-log-likelihood function. It is the
+            log-likelihood contribution per individual.
+        log_like_kwargs (dict): In addition to the params argument directly
+            taken by likelihood_inference function, additional keyword arguments for the
+            likelihood function may include dependent variable, independent variables
+            and design options.
+            Example of simple logit model arguments:
                 log_like_kwargs = {
-                    "formulas": equation,
-                    "data": orig_data,
-                    "model": "probit"
+                    "y": y,
+                    "x": x,
+                    "design_options": design_options
                 }
-        design_dict (dict): dicitonary containing specified design options
+        params (pd.DataFrame): The index consists of the paramater names specified
+            by the user, the "value" column is the parameter values.
+        design_options (pd.DataFrame): dataframe containing psu, stratum,
+            population/design weight and/or a finite population corrector (fpc)
         cov_type (str): One of ["opg", "oim", "sandwich"]. opg and oim only
-            work when *design_dict* is None. opg is default.
+            work when *design_options* is empty. opg is default.
 
     Returns:
         params (pd.DataFrame): params that maximize likelihood
