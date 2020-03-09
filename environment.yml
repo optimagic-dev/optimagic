@@ -26,7 +26,6 @@ dependencies:
   - pygmo=2.10
   - pytest
   - pytest-cov
-  - pytest-mock
   - pytest-xdist
   - restructuredtext_lint
   - scipy=1.2.1

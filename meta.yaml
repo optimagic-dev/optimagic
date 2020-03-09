@@ -42,7 +42,6 @@ test:
     - estimagic/tests
   requires:
     - pytest
-    - pytest-mock
 
 about:
   home: https://github.com/OpenSourceEconomics/estimagic

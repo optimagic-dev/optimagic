@@ -3,7 +3,9 @@ from pathlib import Path
 from time import sleep
 
 import pytest
+from click.testing import CliRunner
 
+from estimagic.cli import cli
 from estimagic.dashboard import run_dashboard
 
 
@@ -16,10 +18,7 @@ def database_paths():
 
 @pytest.fixture()
 def database_name_to_path(database_paths):
-    name_to_path = {
-        "db1": database_paths[0],
-        "db2": database_paths[1],
-    }
+    name_to_path = {"db1": database_paths[0], "db2": database_paths[1]}
     return name_to_path
 
 
@@ -45,10 +44,7 @@ def test_process_dashboard_args_two_paths(database_paths):
     database_name_to_path, no_browser, port = run_dashboard._process_dashboard_args(
         database_paths=database_paths, no_browser=None, port=1000
     )
-    assert database_name_to_path == {
-        "db1": database_paths[0],
-        "db2": database_paths[1],
-    }
+    assert database_name_to_path == {"db1": database_paths[0], "db2": database_paths[1]}
     assert no_browser is True
     assert port == 1000
 
@@ -83,3 +79,48 @@ def test_create_session_data(database_paths, database_name_to_path):
         },
     }
     assert res == expected
+
+
+def test_dashboard_cli(monkeypatch):
+    def fake_run_dashboard(database, no_browser, port):
+        assert len(database) == 2
+        assert no_browser is True
+        assert port == 9999
+
+    monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "dashboard",
+            str(Path(__file__).parent / "*.db"),
+            "--no-browser",
+            "--port",
+            "9999",
+        ],
+    )
+
+    assert result.exit_code == 0
+
+
+def test_dashboard_cli_duplicate_paths(monkeypatch):
+    def fake_run_dashboard(database, no_browser, port):
+        assert len(database) == 2
+        assert no_browser is False
+        assert port == 1234
+
+    monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "dashboard",
+            str(Path(__file__).parent / "*.db"),
+            str(Path(__file__).parent / "db1.db"),
+            str(Path(__file__).parent / "db2.db"),
+        ],
+    )
+
+    assert result.exit_code == 0

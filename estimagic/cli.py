@@ -1,4 +1,7 @@
 """This module comprises all CLI capabilities of estimagic."""
+import glob
+from pathlib import Path
+
 import click
 
 from estimagic.dashboard.run_dashboard import run_dashboard
@@ -30,4 +33,9 @@ def cli():
 )
 def dashboard(database, port, no_browser):
     """Start the dashboard to visualize optimizations."""
-    run_dashboard(database, no_browser, port)
+    database_paths = []
+    for path in database:
+        database_paths.extend([Path(path) for path in glob.glob(path)])
+    database_paths = list(set(database_paths))
+
+    run_dashboard(database=database_paths, no_browser=no_browser, port=port)
