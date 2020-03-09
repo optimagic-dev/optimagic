@@ -4,5 +4,5 @@
 Variance Estimation
 *******************
 
-.. automodule:: estimagic.inference.src.functions.se_estimation
+.. automodule:: estimagic.inference.se_estimation
     :members:
