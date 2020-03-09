@@ -26,6 +26,9 @@ def logit(params, y, x, design_options):
         >>> d_opt = pd.DataFrame()
         >>> logit(params, y, x, d_opt)
         array([[-0.04858735, -0.02975042]])
+        >>> d_opt = pd.DataFrame(data=[0.8, 0.2], columns=["weight"])
+        >>> logit(params, y, x, d_opt)
+        array([[-0.03886988, -0.00595008]])
 
     """
     q = 2 * y - 1
@@ -59,6 +62,9 @@ def probit(params, y, x, design_options):
         >>> d_opt = pd.DataFrame()
         >>> probit(params, y, x, d_opt)
         array([[-0.00135081, -0.00023266]])
+        >>> d_opt = pd.DataFrame(data=[0.8, 0.2], columns=["weight"])
+        >>> probit(params, y, x, d_opt)
+        array([[-1.08064797e-03, -4.65312283e-05]])
 
     """
     q = 2 * y - 1

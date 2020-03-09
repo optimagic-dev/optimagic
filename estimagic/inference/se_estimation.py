@@ -363,6 +363,11 @@ def choose_case(log_like_obs, params, log_like_kwargs, design_options, cov_type)
         Traceback (most recent call last):
             ...
         Exception: Incorrect or unsupported cov_type specified.
+        >>> d_opt = pd.DataFrame(data=[1, 2], columns=["psu"])
+        >>> cc(logit, params, logit_kwargs, d_opt, cov_type="opg")
+        Traceback (most recent call last):
+            ...
+        Exception: Specifying psu or strata does not allow for oim and opg estimation.
     """
 
     def log_like(params, **log_like_kwargs):
@@ -434,6 +439,22 @@ def likelihood_inference(
             - "ci_upper": using the 95% critical value of a normal distribution
         params_cov (pd.DataFrame): Covariance matrix of estimated parameters.
             Index and columns are the same as params.index.
+
+    Examples:
+
+        >>> from estimagic.inference.sample_models import logit
+        >>> cc = choose_case
+        >>> params = pd.DataFrame(data=[0.5, 0.5], columns=["value"])
+        >>> x = np.array([[1., 5.], [1., 6.]])
+        >>> y = np.array([[1., 1]])
+        >>> d_opt = pd.DataFrame()
+        >>> logit_kwargs = {"y": y, "x": x, "design_options": d_opt}
+        >>> se, var = cc(logit, params, logit_kwargs, d_opt, cov_type="jacobian")
+        >>> se, var
+        (array([212.37277788,  40.10565957]), array([[45102.19678307, -8486.9195158 ],
+               [-8486.9195158 ,  1608.46392969]]))
+
+        >>> inf_table, cov = inference_table(params, se, var, cov_type="jacobian")
 
     """
     log_like_se, log_like_var = choose_case(
