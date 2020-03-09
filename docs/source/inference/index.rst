@@ -1,20 +1,17 @@
-.. This the robust documentation master file.
+=========
+Inference
+=========
 
-.. You can adapt this file completely to your liking,
-.. but it should at least contain the `toctree` directive.
 
-
-Welcome to the robust project's documentation!
-================================================================================================
+Once your maximum-likelihood function has been setup, Estimagic provides the tools for statistical inference. 
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    moments_inference
-    likelihood_inference
-    se_estimation
-    likelihood_inference_background
-    likelihood_inference_how_to
-    monte_carlo_boostrap		
+
+    interface
+    background.ipynb
+    hot_to.ipynb
+    Monte_Carlo_and_Bootstrap.ipynb
     
     

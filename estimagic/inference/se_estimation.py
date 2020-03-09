@@ -165,8 +165,8 @@ def robust_se(jac, hess):
     Args:
         jac (np.array): "jacobian" - an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
-        hess (np.array): a k + 1 x k + 1-dimensional array of second derivatives
-            of the pseudo-log-likelihood function w.r.t. the parameters
+        hess (np.array): "hessian" - a k + 1 x k + 1-dimensional array of second
+            derivatives of the pseudo-log-likelihood function w.r.t. the parameters
 
     Returns:
         se (np.array): a 1d array of k + 1 standard errors
@@ -449,12 +449,21 @@ def likelihood_inference(
         >>> y = np.array([[1., 1]])
         >>> d_opt = pd.DataFrame()
         >>> logit_kwargs = {"y": y, "x": x, "design_options": d_opt}
-        >>> se, var = cc(logit, params, logit_kwargs, d_opt, cov_type="jacobian")
+        >>> j = "jacobian"
+        >>> se, var = cc(logit, params, logit_kwargs, d_opt, cov_type=j)
         >>> se, var
         (array([212.37277788,  40.10565957]), array([[45102.19678307, -8486.9195158 ],
                [-8486.9195158 ,  1608.46392969]]))
 
         >>> inf_table, cov = inference_table(params, se, var, cov_type="jacobian")
+        >>> li = likelihood_inference
+        >>> li(logit, params, logit_kwargs, d_opt, j) #doctest: +NORMALIZE_WHITESPACE
+        (   value  jacobian_standard_errors    ci_lower    ci_upper
+         0    0.5                212.372778 -415.750645  416.750645
+         1    0.5                 40.105660  -78.107093   79.107093,
+                       0            1
+         0  45102.196783 -8486.919516
+         1  -8486.919516  1608.463930)
 
     """
     log_like_se, log_like_var = choose_case(
