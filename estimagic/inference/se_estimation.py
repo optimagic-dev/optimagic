@@ -124,33 +124,37 @@ def stratification(design_options, jac):
         the likelihood equation
 
     """
-    n_var = len(jac[0, :])
+    n_params = len(jac[0, :])
     stratum_col = design_options["strata"]
+    # Stratification does not require clusters
     if "psu" not in design_options:
         design_options["psu"] = design_options.index
     else:
         pass
     psu_col = design_options["psu"]
-    strata_meat = np.zeros([n_var, n_var])
+    strata_meat = np.zeros([n_params, n_params])
+    # Variance estimation per stratum
     for stratum in stratum_col.unique():
-        n_psu = psu_col[stratum_col == stratum].unique()
-        psu_jac = np.zeros([n_var])
+        psu_in_strata = psu_col[stratum_col == stratum].unique()
+        psu_jac = np.zeros([n_params])
         if "fpc" in design_options:
             fpc = design_options["fpc"][stratum_col == stratum].unique()
         else:
             fpc = 1
-        for psu in n_psu:
+        # psu_jac stacks the sum of the observations for each cluster.
+        for psu in psu_in_strata:
             psu_jac = np.vstack([psu_jac, np.sum(jac[psu_col == psu], axis=0)])
-        psu_jac_mean = np.sum(psu_jac, axis=0) / len(n_psu)
-        if len(n_psu) > 1:
+        psu_jac_mean = np.sum(psu_jac, axis=0) / len(psu_in_strata)
+        if len(psu_in_strata) > 1:
             mid_step = np.dot(
                 (psu_jac[1:] - psu_jac_mean).T, (psu_jac[1:] - psu_jac_mean)
             )
-            strata_meat += fpc * (len(n_psu) / (len(n_psu) - 1)) * mid_step
-        elif len(n_psu) == 1:
+            strata_meat += (
+                fpc * (len(psu_in_strata) / (len(psu_in_strata) - 1)) * mid_step
+            )
+        # Apply "grand-mean" method for single unit stratum
+        elif len(psu_in_strata) == 1:
             strata_meat += fpc * np.dot(psu_jac[1:].T, psu_jac[1:])
-        else:
-            break
 
     return strata_meat
 
@@ -246,6 +250,35 @@ def variance_estimator(jac=None, hess=None, design_options=None, cov_type=None):
         se (np.array): a 1d array of k + 1 standard errors
         var (np.array): 2d variance-covariance matrix
 
+    Examples:
+
+        >>> ve = variance_estimator
+        >>> small_jac = np.array([[0.267383, 1.33691], [0.306403, 1.83842]])
+        >>> small_hess = np.array([[-4053.07, -21604.3], [-21604.3, -137843]])
+        >>> d_opt = pd.DataFrame()
+        >>> j = "jacobian"
+        >>> h = "hessian"
+        >>> s = "sandwich"
+
+        >>> se_jac, var_jac = ve(jac=small_jac, design_options=d_opt, cov_type=j)
+        >>> se_jac, var_jac
+        (array([27.74510442,  4.9636265 ]), array([[ 769.79081933, -137.17437899],
+               [-137.17437899,   24.637588  ]]))
+
+        >>> se_hess, var_hess = ve(hess=small_hess, design_options=d_opt, cov_type=h)
+        >>> se_hess, var_hess
+        (array([0.0387201 , 0.00663951]), array([[ 1.49924600e-03, -2.34978637e-04],
+               [-2.34978637e-04,  4.40831161e-05]]))
+
+        >>> se_s, var_s = ve(jac=small_jac, hess=small_hess, d_opt, cov_type=s)
+        >>> se_s
+        (array([1.28620084e-04, 1.39268467e-05]))
+
+        >>> se, var = ve(hess=small_hess, design_options=d_opt, cov_type="turtles")
+        Traceback (most recent call last):
+            ...
+        Exception: Unsupported or incorrect cov_type specified.
+
     """
     if design_options.empty or (
         "weight" in design_options and len(design_options) == 1
@@ -306,6 +339,30 @@ def choose_case(log_like_obs, params, log_like_kwargs, design_options, cov_type)
         se (np.array): a 1d array of k + 1 standard errors
         var (np.array): 2d variance-covariance matrix
 
+    Examples:
+
+        >>> from estimagic.inference.sample_models import logit
+        >>> from estimagic.inference.sample_models import probit
+        >>> cc = choose_case
+        >>> params = pd.DataFrame(data=[0.5, 0.5], columns=["value"])
+        >>> x = np.array([[1., 5.], [1., 6.]])
+        >>> y = np.array([[1., 1]])
+        >>> d_opt = pd.DataFrame()
+        >>> logit_kwargs = {"y": y, "x": x, "design_options": d_opt}
+
+        >>> cc(logit, params, logit_kwargs, d_opt, cov_type="jacobian")
+        (array([212.37277788,  40.10565957]), array([[45102.19678307, -8486.9195158 ],
+               [-8486.9195158 ,  1608.46392969]]))
+        >>> cc(logit, params, logit_kwargs, d_opt, cov_type="hessian")
+        (array([40.93302927,  7.56841945]), array([[1675.51288498, -308.54018839],
+               [-308.54018839,   57.28097291]]))
+        >>> cc(logit, params, logit_kwargs, d_opt, cov_type="sandwich")
+        (array([11.50709079,  2.08007668]), array([[132.41313852, -23.8377008 ],
+               [-23.8377008 ,   4.32671901]]))
+        >>> cc(logit, params, logit_kwargs, d_opt, cov_type="turtles")
+        Traceback (most recent call last):
+            ...
+        Exception: Incorrect or unsupported cov_type specified.
     """
 
     def log_like(params, **log_like_kwargs):
@@ -416,3 +473,9 @@ def inference_table(params, se, var, cov_type):
     )
     cov = pd.DataFrame(data=var, columns=params.index, index=params.index)
     return params_df, cov
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()
