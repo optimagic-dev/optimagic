@@ -270,9 +270,9 @@ def variance_estimator(jac=None, hess=None, design_options=None, cov_type=None):
         (array([0.0387201 , 0.00663951]), array([[ 1.49924600e-03, -2.34978637e-04],
                [-2.34978637e-04,  4.40831161e-05]]))
 
-        >>> se_s, var_s = ve(jac=small_jac, hess=small_hess, d_opt, cov_type=s)
+        >>> se_s, var_s = ve(small_jac, small_hess, d_opt, cov_type=s)
         >>> se_s
-        (array([1.28620084e-04, 1.39268467e-05]))
+        array([1.28620084e-04, 1.39268467e-05])
 
         >>> se, var = ve(hess=small_hess, design_options=d_opt, cov_type="turtles")
         Traceback (most recent call last):
