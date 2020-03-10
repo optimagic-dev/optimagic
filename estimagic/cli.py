@@ -38,4 +38,4 @@ def dashboard(database, port, no_browser):
         database_paths.extend([Path(path) for path in glob.glob(path)])
     database_paths = list(set(database_paths))
 
-    run_dashboard(database=database_paths, no_browser=no_browser, port=port)
+    run_dashboard(database_paths=database_paths, no_browser=no_browser, port=port)
