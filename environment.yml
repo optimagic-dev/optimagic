@@ -3,6 +3,7 @@ name: estimagic
 channels:
   - conda-forge
   - defaults
+  - opensourceeconomics
 
 dependencies:
 

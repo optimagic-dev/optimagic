@@ -32,7 +32,7 @@ requirements:
     - scipy
     - numdifftools >= 0.9.20
     - fuzzywuzzy
-    - petsc4py >=3.11
+    - petsc4py >=3.11  # [not win]
     - numba
     - statsmodels >=0.9
     - sqlalchemy >=1.3
