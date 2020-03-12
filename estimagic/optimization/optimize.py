@@ -104,7 +104,7 @@ def maximize(
     """
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options
-    general_options["_maximization"] = True
+    general_options["_is_maximization"] = True
 
     results = minimize(
         criterion=criterion,
@@ -314,7 +314,7 @@ def _single_minimize(
     # Apply decorator two handle criterion functions with one or two returns.
     criterion = expand_criterion_output(criterion)
 
-    is_maximization = general_options.pop("_maximization", False)
+    is_maximization = general_options.get("_is_maximization", False)
     criterion = negative_criterion(criterion) if is_maximization else criterion
     fitness_factor = -1 if is_maximization else 1
 
@@ -336,7 +336,7 @@ def _single_minimize(
     else:
         database = False
 
-    general_options["start_criterion_value"] = fitness_eval
+    general_options["_start_criterion_value"] = criterion_out
 
     constraints, params = process_constraints(constraints, params)
     internal_params = reparametrize_to_internal(params, constraints)
@@ -518,6 +518,8 @@ def _internal_minimize(
             gradient=internal_gradient,
         )
     elif origin == "tao":
+        crit_val = general_options["_start_criterion_value"]
+        len_criterion_value = 1 if np.isscalar(crit_val) else len(crit_val)
         results = minimize_pounders_np(
             internal_criterion,
             internal_params,

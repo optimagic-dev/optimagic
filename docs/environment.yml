@@ -1,9 +1,10 @@
 channels:
-  - conda-forge
+  - defaults
 dependencies:
   - python=3.7
   - ipython
-  - nbsphinx
-  - sphinx
-  - sphinx_rtd_theme
-  - sphinxcontrib-bibtex
+  - pip:
+    - sphinx
+    - sphinx_rtd_theme
+    - nbsphinx
+    - sphinxcontrib-bibtex
