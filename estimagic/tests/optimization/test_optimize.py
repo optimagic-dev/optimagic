@@ -64,6 +64,7 @@ def f(params):
 
 @pytest.mark.parametrize("algorithm", algorithms)
 def test_maximize(algorithm):
+    print(algorithm)
     np.random.seed(1234)
     params = pd.Series([1, -1, -1.5, 1.5], name="value").to_frame()
     params["lower"] = -2

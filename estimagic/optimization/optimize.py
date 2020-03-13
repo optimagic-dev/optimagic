@@ -30,12 +30,10 @@ def maximize(
     dash_options=None,
 ):
     """Maximize criterion using algorithm subject to constraints and bounds.
-
     Each argument except for general_options can also be replaced by a list of
     arguments in which case several optimizations are run in parallel. For this, either
     all arguments must be lists of the same length, or some arguments can be provided
     as single arguments in which case they are automatically broadcasted.
-
     Args:
         criterion (callable or list of callables):
             Python callable that takes a pandas DataFrame with parameters as the first
@@ -46,144 +44,7 @@ def maximize(
                     In this case the first output is the criterion value.
                     The second output are the comparison_plot_data.
         params (pd.DataFrame or list of pd.DataFrames):
-            See :ref:`params`.<<<<<<< HEAD
-            delayed(_one_argument_single_minimize)(argument) for argument in arguments
-        )
-
-    return results
-
-
-def _single_minimize(
-    criterion,
-    params,
-    algorithm,
-    criterion_kwargs,
-    constraints,
-    general_options,
-    algo_options,
-    gradient,
-    gradient_options,
-    logging,
-    log_options,
-    dashboard,
-    db_options,
-):
-    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds.
-    Only one minimization.
-
-    Args:
-        criterion (function):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
-
-        params (pd.DataFrame):
             See :ref:`params`.
-
-        algorithm (str):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_kwargs (dict):
-            additional keyword arguments for criterion
-
-        constraints (list):
-            list with constraint dictionaries. See for details.
-
-        general_options (dict):
-            additional configurations for the optimization
-
-        algo_options (dict):
-            algorithm specific configurations for the optimization
-
-        gradient (callable or None):
-            Gradient function.
-
-        gradient_options (dict):
-            Options for the gradient function.
-
-        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
-            file extension ``.db``. If the file does not exist, it will be created. See
-            :ref:`logging` for details.
-
-        log_options (dict): Keyword arguments to influence the logging. See
-            :ref:`logging` for details.
-
-        dashboard (bool):
-            whether to create and show a dashboard
-
-        db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function.
-
-    """
-    simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-    params = _process_params(params)
-
-    # Apply decorator two handle criterion functions with one or two returns.
-    criterion = expand_criterion_output(criterion)
-
-    is_maximization = general_options.get("_is_maximization", False)
-    criterion = negative_criterion(criterion) if is_maximization else criterion
-    fitness_factor = -1 if is_maximization else 1
-
-    criterion_out, comparison_plot_data = criterion(params, **criterion_kwargs)
-    if np.isscalar(criterion_out):
-        fitness_eval = fitness_factor * criterion_out
-    else:
-        fitness_eval = fitness_factor * np.mean(np.square(criterion_out))
-
-    if np.any(np.isnan(fitness_eval)):
-        raise ValueError(
-            "The criterion function evaluated at the start parameters returns NaNs."
-        )
-
-    if logging:
-        database = prepare_database(
-            logging, params, comparison_plot_data, log_options, constraints
-        )
-    else:
-        database = False
-
-    general_options["_start_criterion_value"] = criterion_out
-
-    constraints, params = process_constraints(constraints, params)
-    internal_params = reparametrize_to_internal(params, constraints)
-
-    queue = Queue() if dashboard else None
-    if dashboard:
-        stop_signal = Event()
-        outer_server_process = Process(
-            target=run_server,
-            kwargs={
-                "queue": queue,
-                "db_options": db_options,
-                "start_param_df": params,
-                "start_fitness": fitness_eval,
-                "stop_signal": stop_signal,
-            },
-            daemon=False,
-        )
-        outer_server_process.start()
-
-    result, params = _internal_minimize(
-        criterion=criterion,
-        criterion_kwargs=criterion_kwargs,
-        params=params,
-        internal_params=internal_params,
-        constraints=constraints,
-        algorithm=algorithm,
-        algo_options=algo_options,
-        gradient=gradient,
-        gradient_options=gradient_options,
-        general_options=general_options,
-        database=database,
-        queue=queue,
-        fitness_factor=fitness_factor,
-    )
-
-    if dashboard:
-        stop_signal.set()
-        outer_server_process.terminate()
-=======
-
         algorithm (str or list of strings): Specifies the optimization algorithm.
             See :ref:`list_of_algorithms`.
         criterion_kwargs (dict or list of dicts): Additional keyword arguments for
@@ -209,7 +70,6 @@ def _single_minimize(
                 - port (int): port where to display the dashboard.
                 - no_browser (bool): whether to display the dashboard in a browser.
                 - rollover (int): how many iterations to keep in the convergence plots.
-
     Returns:
         results (tuple or list of tuples): Each tuple consists of the harmonized result
         info dictionary and the params DataFrame with the minimizing parameter values
@@ -217,7 +77,7 @@ def _single_minimize(
     """
     # Set a flag for a maximization problem.
     general_options = {} if general_options is None else general_options
-    general_options["_is_maximization"] = True
+    general_options["_maximization"] = True
 
     results = minimize(
         criterion=criterion,
@@ -260,12 +120,10 @@ def minimize(
     dash_options=None,
 ):
     """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
-
     Each argument except for ``general_options`` can also be replaced by a list of
     arguments in which case several optimizations are run in parallel. For this, either
     all arguments must be lists of the same length, or some arguments can be provided
     as single arguments in which case they are automatically broadcasted.
-
     Args:
         criterion (callable or list of callables):
             Python callable that takes a pandas DataFrame with parameters as the first
@@ -302,12 +160,10 @@ def minimize(
                 - port (int): port where to display the dashboard.
                 - no_browser (bool): whether to display the dashboard in a browser.
                 - rollover (int): how many iterations to keep in the convergence plots.
-
     Returns:
         results (tuple or list of tuples): Each tuple consists of the harmonized result
         info dictionary and the params DataFrame with the minimizing parameter values
         of the untransformed problem as specified of the user.
-
     """
     # Gradients are currently not allowed to be passed to minimize.
     gradient = None
@@ -383,23 +239,19 @@ def _internal_minimize(
     general_options,
 ):
     """Run one optimization of the transformed optimization problem.
-
     The transformed optimization problem is converted from the original problem
     which consists of the user supplied criterion, params DataFrame, criterion_kwargs,
     constraints and gradient (if supplied).
     In addition, the transformed optimization problem provides sophisticated logging
     tools if activated by the user.
-
     The transformed problem can be solved by almost any optimizer package:
         1. The only constraints are bounds on the parameters.
         2. The internal_criterion function takes an one dimensional np.array as input.
         3. The internal criterion function returns a scalar value
             (except for the case of the tao_pounders algorithm).
-
     Note that because of the reparametrizations done by estimagic to implement
     constraints on behalf of the user the internal params cannot be interpreted without
     reparametrizing it to the full params DataFrame.
-
     Args:
         internal_criterion (func): The transformed criterion function.
             It takes the internal_params numpy array as only argument, automatically
@@ -420,12 +272,10 @@ def _internal_minimize(
             the start and end of the optimization
         general_options (dict): Only used to pass the start_criterion_value in case
             the tao pounders algorithm is used.
-
     Returns:
         results (tuple): Tuple of the harmonized result info dictionary and the params
             DataFrame with the minimizing parameter values of the untransformed problem
             as specified of the user.
-
     """
     if database:
         update_scalar_field(database, "optimization_status", "running")
@@ -456,6 +306,7 @@ def _internal_minimize(
             internal_criterion,
             internal_params,
             bounds,
+            n_errors=len_criterion_value,
             **algo_options,
         )
     else:
@@ -469,7 +320,6 @@ def _internal_minimize(
 
 def _process_optimization_results(results, results_arguments):
     """Expand the solutions back to the original problems.
-
     Args:
         results (list):
             list of dictionaries with the harmonized results objects.
@@ -477,12 +327,10 @@ def _process_optimization_results(results, results_arguments):
             each element is a dictionary supplying the start params DataFrame
             and the constraints to the original problem.
             The keys are "params", "constraints" and "keep_dashboard_alive".
-
     Returns:
         results (tuple): Tuple of the harmonized result info dictionary and the params
             DataFrame with the minimizing parameter values of the untransformed problem
             as specified of the user.
-
     """
     new_results = []
     for res, args in zip(results, results_arguments):
