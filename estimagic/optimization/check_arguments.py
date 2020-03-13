@@ -8,7 +8,7 @@ def check_arguments(arguments):
     valid_types = {
         "general_options": dict,
         "dashboard": bool,
-        "db_options": dict,
+        "dash_options": dict,
         "criterion": typing.Callable,
         "params": pd.DataFrame,
         "algorithm": str,

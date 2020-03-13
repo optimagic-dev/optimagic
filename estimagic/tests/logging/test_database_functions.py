@@ -16,7 +16,7 @@ def database(tmp_path):
     database = prepare_database(
         path=tmp_path / "test.db",
         params=params,
-        db_options={"a": 3},
+        dash_options={"a": 3, "no_browser": True},
         constraints=[{"loc": "a", "type": "increasing"}],
         optimization_status="success",
     )
@@ -34,10 +34,6 @@ def test_start_params_table(database):
     params = pd.DataFrame()
     params["name"] = list("abc")
     assert_frame_equal(read_scalar_field(database, "start_params"), params)
-
-
-def test_db_options_table(database):
-    assert read_scalar_field(database, "db_options") == {"a": 3}
 
 
 def test_optimization_status_table(database):
