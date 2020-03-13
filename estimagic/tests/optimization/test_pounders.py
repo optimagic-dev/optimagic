@@ -200,10 +200,18 @@ def test_exception():
     with pytest.raises(Exception):
         minimize_pounders_np(_return_exception, 0)
 
+def test_robustness_multidims():
+    params_start = get_random_params(3)
+    params_true = get_random_params(3)
+
 
 def _nonlinear_criterion(endog, exog, x):
     return endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)
 
+def _multidim_criterion(endog, exog, x):
+    return np.array(endog[0]-exog*x[1]-x[0],
+                    endog[1] - exog * x[2] - x[0]
+                    )
 
 def _ols_criterion(endog, exog, x):
     return endog - x[0] - x[1] * exog
@@ -229,5 +237,13 @@ def _simulate_ols_sample(num_agents, paras):
     exog = np.random.uniform(-5, 5, num_agents)
     error_term = np.random.normal(0, 1, num_agents)
     endog = paras.at[0, "value"] + paras.at[1, "value"] * exog + error_term
+
+    return exog, endog
+
+
+def _simulate_multidim_sample(num_agents, paras):
+    exog = np.random.uniform(-5, 5, num_agents)
+    error_term = np.random.normal(0, 1, num_agents)
+    endog = np.array([paras.at[0, "value"] + paras.at[1, "value"] * exog + error_term
 
     return exog, endog
