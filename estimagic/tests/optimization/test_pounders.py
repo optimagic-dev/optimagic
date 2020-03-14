@@ -36,7 +36,8 @@ def test_robustness_1():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_sample(NUM_AGENTS, true_params, 0.5)
-    objective = functools.partial(_nonlinear_criterion, endog, exog)
+    crit = "nonlinear"
+    objective = functools.partial(_criterion, endog, exog, crit)
     results = minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
 
     np.testing.assert_array_almost_equal(
@@ -51,7 +52,8 @@ def test_robustness_2():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    objective = functools.partial(_ols_criterion, endog, exog)
+    crit = "ols"
+    objective = functools.partial(_criterion, endog, exog, crit)
     results = minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
     calculated = results["x"]
 
@@ -60,6 +62,19 @@ def test_robustness_2():
     expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
     np.testing.assert_almost_equal(calculated, expected, decimal=6)
+
+def test_robustness_3():
+    start_params = get_random_params(3)
+    true_params = get_random_params(3)
+    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
+
+    exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
+    crit = "ols"
+    objective = functools.partial(_criterion, endog, exog, crit)
+    results = minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
+    np.testing.assert_array_almost_equal(
+        true_params["value"], results["x"], decimal=0.1
+    )
 
 
 def test_box_constr():
@@ -71,7 +86,8 @@ def test_box_constr():
     start_params["value"] = get_random_params(2, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    objective = functools.partial(_ols_criterion, endog, exog)
+    crit = "ols"
+    objective = functools.partial(_criterion, endog, exog, crit)
     calculated = minimize_pounders_np(
         objective, start_params["value"].to_numpy(), bounds
     )
@@ -86,7 +102,8 @@ def test_max_iters():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    objective = functools.partial(_ols_criterion, endog, exog)
+    crit = "ols"
+    objective = functools.partial(_criterion, endog, exog)
     calculated = minimize_pounders_np(
         objective, start_params["value"].to_numpy(), bounds, max_iterations=25
     )
@@ -105,7 +122,8 @@ def test_grtol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    objective = functools.partial(_ols_criterion, endog, exog)
+    crit = "ols"
+    objective = functools.partial(_criterion, endog, exog, crit)
     calculated = minimize_pounders_np(
         objective,
         start_params["value"].to_numpy(),
@@ -130,7 +148,8 @@ def test_gatol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    objective = functools.partial(_ols_criterion, endog, exog)
+    crit ="ols"
+    objective = functools.partial(_criterion, endog, exog, crit)
     calculated = minimize_pounders_np(
         objective,
         start_params["value"].to_numpy(),
@@ -154,7 +173,8 @@ def test_gttol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    objective = functools.partial(_ols_criterion, endog, exog)
+    crit = "ols"
+    objective = functools.partial(_criterion, endog, exog, crit)
     calculated = minimize_pounders_np(
         objective,
         start_params["value"].to_numpy(),
@@ -179,7 +199,8 @@ def test_tol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    objective = functools.partial(_ols_criterion, endog, exog)
+    crit = "ols"
+    objective = functools.partial(_criterion, endog, exog, crit)
     calculated = minimize_pounders_np(
         objective,
         start_params["value"].to_numpy(),
@@ -200,21 +221,16 @@ def test_exception():
     with pytest.raises(Exception):
         minimize_pounders_np(_return_exception, 0)
 
-def test_robustness_multidims():
-    params_start = get_random_params(3)
-    params_true = get_random_params(3)
 
-
-def _nonlinear_criterion(endog, exog, x):
-    return endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)
-
-def _multidim_criterion(endog, exog, x):
-    return np.array(endog[0]-exog*x[1]-x[0],
-                    endog[1] - exog * x[2] - x[0]
-                    )
-
-def _ols_criterion(endog, exog, x):
-    return endog - x[0] - x[1] * exog
+def _criterion(endog, exog, crit, x):
+    if crit == "nonlinear":
+        return endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)
+    elif crit == "ols":
+        return endog - x[0] - x[1] * exog
+    elif crit == "multidim":
+        return np.array(endog[0] - exog * x[1] - x[0],
+                        endog[1] - exog * x[2] - x[1]
+                        )
 
 
 def _return_exception(x):
