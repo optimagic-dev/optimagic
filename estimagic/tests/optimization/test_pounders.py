@@ -7,13 +7,14 @@ import pandas as pd
 import pytest
 
 from estimagic.optimization.pounders import minimize_pounders_np
+from estimagic.optimization.optimize import minimize
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="Pounders is not supported on Windows."
 )
 
-
 NUM_AGENTS = 2_000
+algorithm = "tao_pounders"
 
 
 def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np.inf):
@@ -21,8 +22,7 @@ def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np
         {
             "value": np.random.uniform(low, high, size=length),
             "lower": lower_bound,
-            "upper": upper_bound,
-            "_internal_free": True,
+            "upper": upper_bound
         }
     )
 
@@ -38,7 +38,7 @@ def test_robustness_1():
     exog, endog = _simulate_sample(NUM_AGENTS, true_params, 0.5)
     crit = "nonlinear"
     objective = functools.partial(_criterion, endog, exog, crit)
-    results = minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
+    results = minimize(objective, start_params,algorithm)
 
     np.testing.assert_array_almost_equal(
         true_params["value"], results["x"], decimal=0.1
@@ -62,19 +62,6 @@ def test_robustness_2():
     expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
     np.testing.assert_almost_equal(calculated, expected, decimal=6)
-
-def test_robustness_3():
-    start_params = get_random_params(3)
-    true_params = get_random_params(3)
-    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
-
-    exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit = "ols"
-    objective = functools.partial(_criterion, endog, exog, crit)
-    results = minimize_pounders_np(objective, start_params["value"].to_numpy(), bounds)
-    np.testing.assert_array_almost_equal(
-        true_params["value"], results["x"], decimal=0.1
-    )
 
 
 def test_box_constr():
@@ -109,7 +96,7 @@ def test_max_iters():
     )
 
     assert (
-        calculated["conv"] == "user defined" or calculated["conv"] == "step size small"
+            calculated["conv"] == "user defined" or calculated["conv"] == "step size small"
     )
     if calculated["conv"] == 8:
         assert calculated["sol"][0] == 25
@@ -133,8 +120,8 @@ def test_grtol():
     )
 
     assert (
-        calculated["conv"] == "grtol below critical value"
-        or calculated["conv"] == "step size small"
+            calculated["conv"] == "grtol below critical value"
+            or calculated["conv"] == "step size small"
     )
 
     if calculated["conv"] == 4:
@@ -148,7 +135,7 @@ def test_gatol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit ="ols"
+    crit = "ols"
     objective = functools.partial(_criterion, endog, exog, crit)
     calculated = minimize_pounders_np(
         objective,
@@ -159,8 +146,8 @@ def test_gatol():
     )
 
     assert (
-        calculated["conv"] == "gatol below critical value"
-        or calculated["conv"] == "step size small"
+            calculated["conv"] == "gatol below critical value"
+            or calculated["conv"] == "step size small"
     )
     if calculated["conv"] == 3:
         assert calculated["sol"][2] < 1e-4
@@ -184,8 +171,8 @@ def test_gttol():
     )
 
     assert (
-        calculated["conv"] == "gttol below critical value"
-        or calculated["conv"] == "step size small"
+            calculated["conv"] == "gttol below critical value"
+            or calculated["conv"] == "step size small"
     )
 
     if calculated["conv"] == 5:
@@ -222,15 +209,12 @@ def test_exception():
         minimize_pounders_np(_return_exception, 0)
 
 
-def _criterion(endog, exog, crit, x):
+def _criterion(endog, exog, crit, params):
+    x = params["value"].to_numpy()
     if crit == "nonlinear":
         return endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)
     elif crit == "ols":
         return endog - x[0] - x[1] * exog
-    elif crit == "multidim":
-        return np.array(endog[0] - exog * x[1] - x[0],
-                        endog[1] - exog * x[2] - x[1]
-                        )
 
 
 def _return_exception(x):
@@ -241,9 +225,9 @@ def _simulate_sample(num_agents, paras, error_term_high=0.5):
     exog = np.random.uniform(0, 1, num_agents)
     error_term = np.random.normal(0, error_term_high, num_agents)
     endog = (
-        np.exp(-paras.at[0, "value"] * exog)
-        / (paras.at[1, "value"] + paras.at[2, "value"] * exog)
-        + error_term
+            np.exp(-paras.at[0, "value"] * exog)
+            / (paras.at[1, "value"] + paras.at[2, "value"] * exog)
+            + error_term
     )
 
     return exog, endog
@@ -257,9 +241,3 @@ def _simulate_ols_sample(num_agents, paras):
     return exog, endog
 
 
-def _simulate_multidim_sample(num_agents, paras):
-    exog = np.random.uniform(-5, 5, num_agents)
-    error_term = np.random.normal(0, 1, num_agents)
-    endog = np.array([paras.at[0, "value"] + paras.at[1, "value"] * exog + error_term
-
-    return exog, endog
