@@ -124,3 +124,15 @@ def test_dashboard_cli_duplicate_paths(monkeypatch):
     )
 
     assert result.exit_code == 0
+
+
+def test_dashboard_cli_recursively_search_directories(monkeypatch):
+    def fake_run_dashboard(database_paths, no_browser, port):
+        assert len(database_paths) == 2
+
+    monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["dashboard", str(Path(__file__).parent)])
+
+    assert result.exit_code == 0

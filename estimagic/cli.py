@@ -35,7 +35,11 @@ def dashboard(database, port, no_browser):
     """Start the dashboard to visualize optimizations."""
     database_paths = []
     for path in database:
-        database_paths.extend([Path(path) for path in glob.glob(path)])
+        # Search directories recursively for databases. "*" in is_dir() raises error.
+        if "*" not in path and Path(path).is_dir():
+            path = str(Path(path) / "**" / "*.db")
+
+        database_paths.extend([Path(path) for path in glob.glob(path, recursive=True)])
     database_paths = list(set(database_paths))
 
     run_dashboard(database_paths=database_paths, no_browser=no_browser, port=port)
