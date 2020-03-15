@@ -15,7 +15,6 @@ build:
   entry_points:
     - estimagic = estimagic.cli:cli
 
-
 requirements:
   host:
     - python >=3.6,<3.8
