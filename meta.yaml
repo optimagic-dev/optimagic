@@ -5,40 +5,48 @@ package:
   version: {{ data.get('version') }}
 
 source:
-  path: ../estimagic
+  # git_url is nice in that it won't capture devenv stuff.  However, it only captures
+  # committed code, so pay attention.
+  git_url: .
 
 build:
+  noarch: python
   number: 0
-
+  entry_points:
+    - estimagic = estimagic.cli:cli
 
 requirements:
-  build:
-    - python {{ python }}
-    - setuptools
+  host:
+    - python >=3.6,<3.8
 
   run:
-    - python {{ python }}
+    - python >=3.6,<3.8
+    - click
     - joblib
-    - numpy>=1.16.0
-    - pandas>=0.24,<1.0
-    - pygmo>=2.10
-    - bokeh>=1.3
+    - numpy >=1.16
+    - pandas >=0.24,<1
+    - pygmo >=2.10
+    - bokeh >=1.3
     - scipy
-    - numdifftools>= 0.9.20
+    - numdifftools >=0.9.20
     - fuzzywuzzy
-    - petsc4py>=3.11
+    - petsc4py >=3.11
     - numba
-    - statsmodels>=0.9
-    - sqlalchemy>=1.3
+    - statsmodels >=0.9
+    - sqlalchemy >=1.3
 
 test:
-  commands:
-    - py.test
-  files:
-    - estimagic/tests/
   requires:
     - pytest
-    - pytest-mock
+    - pytest-xdist
+  source_files:
+    - tox.ini
+    - estimagic/tests
+  commands:
+    - pytest
+    - estimagic --version
+    - estimagic --help
+    - estimagic dashboard --help
 
 about:
   home: https://github.com/OpenSourceEconomics/estimagic
