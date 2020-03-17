@@ -16,5 +16,4 @@ BibTeX:
       Url    = {https://github.com/OpenSourceEconomics/estimagic}
     }
 
-If you are unsure about which version of respy you are using run: `pip show
-respy`.
+If you are unsure about which version of estimagic you are using run: `conda list estimagic`.
