@@ -131,7 +131,7 @@ def maximize_log_likelihood(
     # To convert the mean log likelihood in the results dictionary to the log
     # likelihood, get the length of contributions for each optimization.
     arguments = broadcast_arguments(
-        criterion=log_like_obs, params=params, criterion_kwargs=criterion_kwargs
+        criterion=extended_loglikelobs, params=params, criterion_kwargs=criterion_kwargs
     )
     check_arguments(arguments)
 
