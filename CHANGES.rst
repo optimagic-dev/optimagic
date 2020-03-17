@@ -6,7 +6,8 @@ chronological order. We follow `semantic versioning <https://semver.org/>`_ and 
 releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
-x.x.x - YYYY-MM-DD
-------------------
+0.0.28 - 2020-03-17
+-------------------
 
-- :gh:`55` implemented something amazing (:ghuser:`janosg`).
+- :gh:`151` estimagic becomes a noarch package. (:ghuser:`janosg`).
+- :gh:`150` adds command line interface to the dashboard (:ghuser:`tobiasraabe`)

@@ -7,7 +7,7 @@ package:
 source:
   # git_url is nice in that it won't capture devenv stuff.  However, it only captures
   # committed code, so pay attention.
-  git_url: .
+  git_url: ../
 
 build:
   noarch: python
@@ -16,6 +16,9 @@ build:
     - estimagic = estimagic.cli:cli
 
 requirements:
+  build:
+    - python
+    - setuptools
   host:
     - python >=3.6,<3.8
 
