@@ -1,0 +1,27 @@
+# The MANIFEST.in specifies which files are copied over from a temporary directory to
+# site-packages after ``pip install``. Examples can be found here:
+# https://www.reddit.com/r/Python/comments/40s8qw/simplify_your_manifestin_commands/ and
+# https://blog.ionelmc.ro/presentations/packaging.
+
+# Test what is included in the package by running ``python setup.py sdist`` and inspect
+# the tarball.
+
+include CHANGES.rst
+include CITATION
+include LICENSE
+include README.rst
+include tox.ini
+include *.sh
+include *.yaml
+include *.yml
+
+graft docs
+graft estimagic
+
+prune docs/_build
+prune docs/getting_started/__tutorial__
+
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude *-checkpoint.ipynb
+global-exclude *.ipynb_checkpoints
