@@ -47,16 +47,18 @@ def test_gradient_status_table(database):
 def test_read_last_iterations_pandas(database):
     tables = ["params_history", "criterion_history"]
     res = read_last_iterations(database, tables, 3, "pandas")
-
-    expected_params = pd.DataFrame(
-        data=[[8, 7.0, 7.0, 7.0], [9, 8, 8, 8], [10, 9, 9, 9]],
-        columns=["iteration", "a", "b", "c"],
-    )
-    expected_params.set_index("iteration", inplace=True)
-    assert_frame_equal(res["params_history"], expected_params)
-
     expected_critvals = pd.Series(
         data=[49, 64, 81.0], index=[8, 9, 10], name="value"
+    ).to_frame()
+    expected_critvals.index.name = "iteration"
+    assert_frame_equal(res["criterion_history"], expected_critvals)
+
+
+def test_read_last_iterations_pandas_with_minus_one(database):
+    tables = ["params_history", "criterion_history"]
+    res = read_last_iterations(database, tables, -1, "pandas")
+    expected_critvals = pd.Series(
+        data=[float(i ** 2) for i in range(10)], index=list(range(1, 11)), name="value"
     ).to_frame()
     expected_critvals.index.name = "iteration"
     assert_frame_equal(res["criterion_history"], expected_critvals)
