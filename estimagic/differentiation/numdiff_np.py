@@ -135,12 +135,13 @@ def first_derivative(
 
     if n_steps == 1:
         jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
+        out = jac.flatten() if f_was_scalar else jac
     else:
-        raise NotImplementedError("Extrapolation is not yet implemented.")
+        res = jac_candidates["central"]  # raise NotImplementedError("Extrapolation is
+        # not yet implemented."
+        out = res, steps
 
-    res = jac.flatten() if f_was_scalar else jac
-
-    return res
+    return out
 
 
 def _consolidate_one_step_derivatives(candidates, preference_order):
@@ -163,7 +164,7 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
     return consolidated.reshape(consolidated.shape[1:])
 
 
-def _consolidate_extrapolated(candidates):
+def _consolidate_extrapolated(candidates, steps, n_steps):
     """Get the best possible derivative estimate, given an error estimate.
 
     See https://tinyurl.com/ubn3nv5 for corresponding code in numdifftools and
