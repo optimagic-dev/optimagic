@@ -31,7 +31,7 @@ dependencies:
   - restructuredtext_lint
   - scipy=1.2.1
   - seaborn
-  - sphinx
+  - sphinx=2.4.4
   - sphinx_rtd_theme
   - sphinxcontrib-bibtex
   - sqlalchemy>=1.3
