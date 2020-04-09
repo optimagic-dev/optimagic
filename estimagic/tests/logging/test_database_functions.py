@@ -102,7 +102,11 @@ def test_handle_exception(database, monkeypatch):
             statements = [statements]
         exception_info = "Mocked"
         upd_db._handle_exception(statements, database, exception_info)
-    monkeypatch.setattr(upd_db, "_execute_write_statements", mock_execute_write_statements)
+
+    monkeypatch.setattr(
+        upd_db, "_execute_write_statements", mock_execute_write_statements
+    )
+
     with pytest.warns(Warning):
         upd_db.update_scalar_field(
             database=database, table="optimization_status", value="failure"
