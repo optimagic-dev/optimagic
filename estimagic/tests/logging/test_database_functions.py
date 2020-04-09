@@ -1,3 +1,6 @@
+from datetime import datetime
+from time import sleep
+
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
@@ -21,11 +24,14 @@ def database(tmp_path):
         optimization_status="success",
     )
 
-    tables = ["params_history", "criterion_history"]
+    tables = ["params_history", "criterion_history", "timestamps"]
     for i in range(10):
         params = pd.Series(index=list("abc"), data=i)
         critval = i ** 2
-        upd_db.append_rows(database, tables, [params, {"value": critval}])
+        time = datetime(year=2020, month=4, day=9, hour=12, minute=41, second=i)
+        rows = [params, {"value": critval}, {"value": time}]
+        upd_db.append_rows(database, tables, rows)
+        sleep(0.1)
 
     return database
 
@@ -111,3 +117,12 @@ def test_handle_exception(database, monkeypatch):
         upd_db.update_scalar_field(
             database=database, table="optimization_status", value="failure"
         )
+
+
+def test_timestamp_reading(database):
+    res = read_last_iterations(database, "timestamps", 3, "bokeh")
+    expected_times = []
+    for i in range(7, 10):
+        time = datetime(year=2020, month=4, day=9, hour=12, minute=41, second=i)
+        expected_times.append(time)
+    assert res["value"] == expected_times
