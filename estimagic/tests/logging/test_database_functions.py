@@ -2,11 +2,11 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+import estimagic.logging.update_database as upd_db
 from estimagic.logging.create_database import prepare_database
 from estimagic.logging.read_database import read_last_iterations
 from estimagic.logging.read_database import read_new_iterations
 from estimagic.logging.read_database import read_scalar_field
-import estimagic.logging.update_database as upd_db
 
 
 @pytest.fixture
