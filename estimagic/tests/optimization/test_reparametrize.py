@@ -119,12 +119,17 @@ def test_reparametrize_from_internal(example_params, all_constraints, case, numb
 
     pc, pp = process_constraints(constraints, params)
 
+    internal_p = params[f"internal_value{number}"][keep].to_numpy()
+    fixed_val = pp["_internal_fixed_value"].to_numpy()
+    pre_repl = pp["_pre_replacements"].to_numpy()
+    post_repl = pp["_post_replacements"].to_numpy()
+
     external = reparametrize_from_internal(
-        internal=params[f"internal_value{number}"][keep].to_numpy(),
-        fixed_values=pp["_internal_fixed_value"].to_numpy(),
-        pre_replacements=pp["_pre_replacements"].to_numpy(),
+        internal=internal_p,
+        fixed_values=fixed_val,
+        pre_replacements=pre_repl,
         processed_constraints=pc,
-        post_replacements=pp["_post_replacements"].to_numpy(),
+        post_replacements=post_repl,
         processed_params=pp,
     )
 
