@@ -1,8 +1,8 @@
-import pickle
 from functools import partial
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -19,8 +19,7 @@ from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs_jac
 @pytest.fixture
 def binary_choice_inputs():
     fix_path = Path(__file__).resolve().parent / "binary_choice_inputs.pickle"
-    with open(fix_path, "rb") as p:
-        inputs = pickle.load(p)
+    inputs = pd.read_pickle(fix_path)
     return inputs
 
 

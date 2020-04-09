@@ -350,6 +350,7 @@ def _process_optimization_results(results, results_arguments):
     """
     new_results = []
     for res, args in zip(results, results_arguments):
+        res["x"] = list(res["x"])
         start_params = args["params"]
         params = reparametrize_from_internal(
             internal=res["x"],

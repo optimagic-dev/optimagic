@@ -13,6 +13,7 @@ provides a comprehensive overview.
 import functools
 import itertools
 import traceback
+from datetime import datetime as dt
 
 import numpy as np
 import pandas as pd
@@ -130,8 +131,13 @@ def log_evaluation(func=None, *, database, tables):
                 adj_params = params.copy().set_index("name")["value"]
                 cp_data = {"value": comparison_plot_data["value"].to_numpy()}
                 crit_val = {"value": criterion_value}
+                timestamp = {"value": dt.now()}
 
-                append_rows(database, tables, [adj_params, crit_val, cp_data])
+                append_rows(
+                    database=database,
+                    tables=tables,
+                    rows=[adj_params, crit_val, cp_data, timestamp],
+                )
 
             return criterion_value
 

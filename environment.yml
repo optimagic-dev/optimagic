@@ -21,7 +21,7 @@ dependencies:
   - numba >= 0.12
   - numdifftools>= 0.9.20
   - numpy=1.16
-  - pandas>=0.24,<1.0
+  - pandas>=0.24
   - pdbpp
   - petsc4py>=3.11
   - pygmo=2.10
@@ -31,7 +31,7 @@ dependencies:
   - restructuredtext_lint
   - scipy=1.2.1
   - seaborn
-  - sphinx
+  - sphinx=2.4.4
   - sphinx_rtd_theme
   - sphinxcontrib-bibtex
   - sqlalchemy>=1.3

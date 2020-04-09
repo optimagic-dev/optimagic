@@ -1,7 +1,7 @@
 """Tests for the logit example."""
-import pickle
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal
 
@@ -12,8 +12,7 @@ from estimagic.examples.logit import logit_loglikeobs
 @pytest.fixture()
 def statsmodels_fixtures():
     fix_path = Path(__file__).resolve().parent / "logit_fixtures.pickle"
-    with open(fix_path, "rb") as p:
-        fix = pickle.load(p)
+    fix = pd.read_pickle(fix_path)
     fix["params"].name = "value"
     fix["params"] = fix["params"].to_frame()
     return fix

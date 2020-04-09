@@ -151,7 +151,7 @@ def transform_problem(
     logging_decorator = functools.partial(
         log_evaluation,
         database=database,
-        tables=["params_history", "criterion_history", "comparison_plot"],
+        tables=["params_history", "criterion_history", "comparison_plot", "timestamps"],
     )
 
     internal_criterion = _create_internal_criterion(
