@@ -6,7 +6,7 @@ from estimagic.logging.create_database import prepare_database
 from estimagic.logging.read_database import read_last_iterations
 from estimagic.logging.read_database import read_new_iterations
 from estimagic.logging.read_database import read_scalar_field
-from estimagic.logging.update_database import append_rows
+import estimagic.logging.update_database as upd_db
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def database(tmp_path):
     for i in range(10):
         params = pd.Series(index=list("abc"), data=i)
         critval = i ** 2
-        append_rows(database, tables, [params, {"value": critval}])
+        upd_db.append_rows(database, tables, [params, {"value": critval}])
 
     return database
 
@@ -87,3 +87,23 @@ def test_read_new_iterations(database):
     assert_frame_equal(res["criterion_history"], expected_critvals)
 
     assert new_last == 9
+
+
+def test_update_scalar_field(database):
+    upd_db.update_scalar_field(
+        database=database, table="optimization_status", value="failure"
+    )
+    assert read_scalar_field(database, "optimization_status") == "failure"
+
+
+def test_handle_exception(database, monkeypatch):
+    def mock_execute_write_statements(statements, database):
+        if not isinstance(statements, (list, tuple)):
+            statements = [statements]
+        exception_info = "Mocked"
+        upd_db._handle_exception(statements, database, exception_info)
+    monkeypatch.setattr(upd_db, "_execute_write_statements", mock_execute_write_statements)
+    with pytest.warns(Warning):
+        upd_db.update_scalar_field(
+            database=database, table="optimization_status", value="failure"
+        )

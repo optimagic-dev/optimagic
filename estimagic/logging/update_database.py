@@ -114,7 +114,7 @@ def _handle_exception(statements, database, exception_info):
             values = stat.compile().params
             timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
             filename = f"{stat.table.name}_{timestamp}.pickle"
-            values.to_pickle(directory / filename)
+            pd.to_pickle(values, directory / filename)
 
     warnings.warn(
         f"Unable to write to database. The data was saved in {directory} instead. The "
