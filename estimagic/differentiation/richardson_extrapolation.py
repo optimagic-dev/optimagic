@@ -1,11 +1,21 @@
-"""Copy code from numdifftools.extrapolation.Richardson"""
+"""Copy code from numdifftools.extrapolation.Richardson
+
+Notes:
+    - correlate with reversed weight is *not* the same as convolve1d
+    - Richardson matrix is matrix with weights from equation 25 in numdifftools docs
+"""
 import numpy as np
 from scipy.linalg import pinv
 from scipy.ndimage.filters import convolve1d
+from scipy.stats import t
+
+
+EPS = np.finfo(float).eps
+TQUANTILE = t(df=1).ppf(0.975)
 
 
 def richardson_extrapolation(
-    sequence, step_sizes, order=1, exponentiation_step=1, num_terms=2, step_ratio=2.0
+    sequence, steps, order=1, exponentiation_step=1, num_terms=2,
 ):
     """Apply Richardson extrapolation to sequence.
 
@@ -27,75 +37,156 @@ def richardson_extrapolation(
             Has dimension (k x n x m), where k denotes the number of sequence elements
             and an element ``sequence[l, :, :]`` denotes the (n x m) dimensional element
 
-        step_sizes (np.ndarray): The step sizes used to construct the sequences.
-            The array is of length k where ``step_sizes[l]`` was used to construct
-            ``sequence[l, :, :]`` for l = 1, ..., k.
+        steps (namedtuple): Namedtuple with the field names pos and neg. Each field
+            contains a numpy array of shape (n_steps, len(x)) with the steps in
+            the corresponding direction. The steps are always symmetric, in the sense
+            that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
 
         order (int): Initial order of the approximation error of sequence elements.
             For central differences derivative approximation ``order`` = 1.
 
         exponentiation_step (int): ?
 
-        num_terms (int?): ? Related to the number of final outputs?
-
-        step_ratio (float): ?
+        num_terms (int): Number of terms needed to construct one estimate. (?)
 
     Returns:
         limit (np.ndarray): The refined limit.
         error (np.ndarray): The error approximation of ``limit``.
-        step_sizes (np.ndarray): ?
 
     """
-    sequence_length = sequence.shape[0]
-    num_steps = len(step_sizes)
+    seq_len = sequence.shape[0]
 
-    assert sequence_length == num_steps
+    steps = steps.pos
+    n_steps = steps.shape[0]
 
-    rule = _rule(
-        sequence_length=sequence_length,
-        num_terms=num_terms,
-        step_ratio=step_ratio,
-        exponentiation_step=exponentiation_step,
-        order=order,
+    assert seq_len == n_steps, (
+        "Length of ``steps`` must coincide with " "length of ``sequence``. "
     )
 
-    nr = rule.size - 1
-    m = sequence_length - nr
-    mm = np.minimum(sequence_length, m + 1)
+    assert num_terms > 0, "``num_terms`` must be greater than zero."
 
-    new_sequence = convolve1d(sequence, rule[::-1], axis=0, origin=nr // 2)
+    assert seq_len - 1 >= num_terms, (
+        "``num_terms`` cannot be greater than " "``seq_len`` - 1. "
+    )
+
+    step_ratio = steps[1, 0] / steps[0, 0]
+
+    richardson_coef = _richardson_coefficients(
+        num_terms, step_ratio, exponentiation_step, order,
+    )
+
+    new_sequence = convolve1d(
+        input=sequence, weights=richardson_coef[::-1], axis=0, origin=num_terms // 2
+    )
+
+    m = seq_len - num_terms
+    mm = m if num_terms >= 2 else seq_len
 
     abserr = _estimate_error(
         new_sequence=new_sequence[:mm],
         old_sequence=sequence,
-        step_sizes=step_sizes,
-        rule=rule,
+        steps=steps,
+        richardson_coef=richardson_coef,
     )
 
     limit = new_sequence[:m]
     error = abserr[:m]
 
-    return limit, error, step_sizes[:m]
+    return limit, error
 
 
-def _rule(sequence_length, num_terms, step_ratio, exponentiation_step, order):
+def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
+    """Return Richardson coefficients.
+
+    Let e := ``exponentiation_step``, r := ``step_ratio``, o := ``order`` and
+    n := ``num_terms``. We build a matrix
+            [[1      1                  ...         1                ],
+             [1    1/(s)**(2*o)         ...  1/(s)**(2*(o+n))        ],
+        R =  [1    1/(s**2)**(2*o)      ...  1/(s**2)**(2*(o+n))     ],
+             [...                       ...        ...               ],
+             [1    1/(s**(n+1))**(2*o)  ...  1/(s**(n+1))**(2*(o+n)) ]],
+
+    which is the weighting matrix in equation 24 in https://tinyurl.com/ybtfj4pm.
+    We then return the first row of R^{-1} as the coefficients, as can be seen in
+    equation 25 in https://tinyurl.com/ybtfj4pm.
+
+    Args:
+        num_terms (int): Number of terms needed to construct one estimate. (?)
+
+        step_ratio (float): Ratio between two consecutive steps. Order is chosen such
+            that ``step_ratio`` >= 1.
+
+        exponentiation_step (int): ?
+
+        order (int): Initial order of the approximation error of sequence elements.
+            For central differences derivative approximation ``order`` = 1.
+
+    Returns:
+        coef (np.ndarray): Array with Richardson coefficients of length num_terms + 1.
+
+    Example:
+    >>> import numpy as np
+    >>> num_terms = 2
+    >>> step_ratio = 2.
+    >>> exponentiation_step = 1
+    >>> order = 1
+    >>> _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order)
+    array([ 0.33333333, -2.        ,  2.66666667])
+
+    """
+    rows, cols = np.ogrid[: num_terms + 1, :num_terms]
+
+    coef_mat = np.ones((num_terms + 1, num_terms + 1))
+    coef_mat[:, 1:] = (1.0 / step_ratio) ** (
+        rows @ (exponentiation_step * cols + order)
+    )
+
+    coef = pinv(coef_mat)[0]
+    return coef
+
+
+def _estimate_error(new_sequence, old_sequence, steps, richardson_coef):
     """
 
     Args:
-        sequence_length:
-        num_terms:
-        step_ratio:
-        exponentiation_step:
-        order:
+        new_sequence:
+        old_sequence:
+        steps:
+        richardson_coef:
 
     Returns:
 
     """
-    num_terms = np.minimum(num_terms, sequence_length - 1)
-    if num_terms > 0:
-        r_mat = _r_matrix(step_ratio, exponentiation_step, num_terms, order)
-        return pinv(r_mat)[0]
-    return np.ones((1,))
+    seq_len = new_sequence.shape[0]
+
+    cov1 = np.sum(richardson_coef ** 2)  # 1 spare dof (degrees or freedom?)
+    fact = np.maximum(TQUANTILE * np.sqrt(cov1), EPS * 10.0)
+
+    if old_sequence.shape[0] < 2:
+        abserr = (np.abs(new_sequence) * EPS + steps) * fact
+    elif seq_len < 2:
+        delta = np.diff(old_sequence, axis=0)
+        tol = np.maximum(np.abs(old_sequence[:-1]), np.abs(old_sequence[1:])) * fact
+        err = np.abs(delta)
+        converged = err <= tol
+        abserr = err[-seq_len:] + np.where(
+            converged[-seq_len:],
+            tol[-seq_len:] * 10,
+            abs(new_sequence - old_sequence[-seq_len:]) * fact,
+        )
+    else:
+        err = np.abs(np.diff(new_sequence, axis=0)) * fact
+        tol = (
+            np.maximum(np.abs(new_sequence[1:]), np.abs(new_sequence[:-1])) * EPS * fact
+        )
+        converged = err <= tol
+        abserr = err + np.where(
+            converged,
+            tol * 10,
+            abs(new_sequence[:-1] - old_sequence[-seq_len + 1 :]) * fact,
+        )
+
+    return abserr
 
 
 def _r_matrix(step_ratio, exponentiation_step, num_terms, order):
@@ -117,50 +208,7 @@ def _r_matrix(step_ratio, exponentiation_step, num_terms, order):
     return r_mat
 
 
-def _estimate_error(new_sequence, old_sequence, step_sizes, rule):
-    """
-
-    Args:
-        new_sequence:
-        old_sequence:
-        step_sizes:
-        rule:
-
-    Returns:
-
-    """
-    m = new_sequence.shape[0]
-    mo = old_sequence.shape[0]
-
-    cov1 = np.sum(rule ** 2)  # 1 spare dof
-    fact = np.maximum(12.7062047361747 * np.sqrt(cov1), np.finfo(float).eps * 10.0)
-
-    if mo < 2:
-        return (np.abs(new_sequence) * np.finfo(float).eps + step_sizes) * fact
-    if m < 2:
-        delta = np.diff(old_sequence, axis=0)
-        tol = np.maximum(np.abs(old_sequence[:-1]), np.abs(old_sequence[1:])) * fact
-        err = np.abs(delta)
-        converged = err <= tol
-        abserr = err[-m:] + np.where(
-            converged[-m:], tol[-m:] * 10, abs(new_sequence - old_sequence[-m:]) * fact
-        )
-        return abserr
-
-    err = np.abs(np.diff(new_sequence, axis=0)) * fact
-    tol = (
-        np.maximum(np.abs(new_sequence[1:]), np.abs(new_sequence[:-1]))
-        * np.finfo(float).eps
-        * fact
-    )
-    converged = err <= tol
-    abserr = err + np.where(
-        converged, tol * 10, abs(new_sequence[:-1] - old_sequence[-m + 1 :]) * fact
-    )
-    return abserr
-
-
-def _convolve(sequence, rule, **kwds):
+def _convolve(sequence, richardson_coef, **kwds):
     """Probably not needed for estimagic.
 
     Wrapper around scipy.ndimage.convolve1d that allows complex input.
@@ -168,7 +216,7 @@ def _convolve(sequence, rule, **kwds):
     dtype = np.result_type(float, np.ravel(sequence)[0])
     seq = np.asarray(sequence, dtype=dtype)
     if np.iscomplexobj(seq):
-        return convolve1d(seq.real, rule, **kwds) + 1j * convolve1d(
-            seq.imag, rule, **kwds
+        return convolve1d(seq.real, richardson_coef, **kwds) + 1j * convolve1d(
+            seq.imag, richardson_coef, **kwds
         )
-    return convolve1d(seq, rule, **kwds)
+    return convolve1d(seq, richardson_coef, **kwds)
