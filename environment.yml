@@ -24,7 +24,7 @@ dependencies:
   - pandas>=0.24
   - pdbpp
   - petsc4py>=3.11
-  - pygmo=2.10
+  - pygmo=2.15
   - pytest
   - pytest-cov
   - pytest-xdist

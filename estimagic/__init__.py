@@ -1,4 +1,4 @@
-__version__ = "0.0.28"
+__version__ = "0.0.29"
 
 
 from estimagic.optimization.optimize import minimize  # noqa: F401
