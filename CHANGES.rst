@@ -6,6 +6,13 @@ chronological order. We follow `semantic versioning <https://semver.org/>`_ and 
 releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
+
+0.0.29 - 2020-04-16
+-------------------
+
+- :gh:`153` adds documentation for the CLI (:ghuser:`tobiasraabe`)
+- :gh:`152` makes estimagic work with pandas 1.0 (:ghuser:`SofiaBadini`)
+
 0.0.28 - 2020-03-17
 -------------------
 
