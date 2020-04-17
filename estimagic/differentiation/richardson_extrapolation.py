@@ -15,7 +15,7 @@ TQUANTILE = t(df=1).ppf(0.975)
 
 
 def richardson_extrapolation(
-    sequence, steps, order=1, exponentiation_step=1, num_terms=2,
+    sequence, steps, num_terms=2, order=1, exponentiation_step=1,
 ):
     """Apply Richardson extrapolation to sequence.
 
@@ -42,12 +42,12 @@ def richardson_extrapolation(
             the corresponding direction. The steps are always symmetric, in the sense
             that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
 
+        num_terms (int): Number of terms needed to construct one estimate. (?)
+
         order (int): Initial order of the approximation error of sequence elements.
             For central differences derivative approximation ``order`` = 1.
 
         exponentiation_step (int): ?
-
-        num_terms (int): Number of terms needed to construct one estimate. (?)
 
     Returns:
         limit (np.ndarray): The refined limit.
@@ -83,10 +83,7 @@ def richardson_extrapolation(
     mm = m if num_terms >= 2 else seq_len
 
     abserr = _estimate_error(
-        new_sequence=new_sequence[:mm],
-        old_sequence=sequence,
-        steps=steps,
-        richardson_coef=richardson_coef,
+        new_seq=new_sequence[:mm], old_seq=sequence, richardson_coef=richardson_coef,
     )
 
     limit = new_sequence[:m]
@@ -100,11 +97,12 @@ def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
 
     Let e := ``exponentiation_step``, r := ``step_ratio``, o := ``order`` and
     n := ``num_terms``. We build a matrix
+
             [[1      1                  ...         1                ],
              [1    1/(s)**(2*o)         ...  1/(s)**(2*(o+n))        ],
         R =  [1    1/(s**2)**(2*o)      ...  1/(s**2)**(2*(o+n))     ],
              [...                       ...        ...               ],
-             [1    1/(s**(n+1))**(2*o)  ...  1/(s**(n+1))**(2*(o+n)) ]],
+             [1    1/(s**(n+1))**(2*o)  ...  1/(s**(n+1))**(2*(o+n)) ]]
 
     which is the weighting matrix in equation 24 in https://tinyurl.com/ybtfj4pm.
     We then return the first row of R^{-1} as the coefficients, as can be seen in
@@ -145,45 +143,39 @@ def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
     return coef
 
 
-def _estimate_error(new_sequence, old_sequence, steps, richardson_coef):
+def _estimate_error(new_seq, old_seq, richardson_coef):  # , steps):
     """
 
     Args:
-        new_sequence:
-        old_sequence:
+        new_seq:
+        old_seq:
         steps:
         richardson_coef:
 
     Returns:
 
     """
-    seq_len = new_sequence.shape[0]
+    seq_len = new_seq.shape[0]
 
     cov1 = np.sum(richardson_coef ** 2)  # 1 spare dof (degrees or freedom?)
     fact = np.maximum(TQUANTILE * np.sqrt(cov1), EPS * 10.0)
 
-    if old_sequence.shape[0] < 2:
-        abserr = (np.abs(new_sequence) * EPS + steps) * fact
-    elif seq_len < 2:
-        delta = np.diff(old_sequence, axis=0)
-        tol = np.maximum(np.abs(old_sequence[:-1]), np.abs(old_sequence[1:])) * fact
+    if seq_len <= 1:
+        delta = np.diff(old_seq, axis=0)
+        tol = np.maximum(np.abs(old_seq[:-1]), np.abs(old_seq[1:])) * fact
         err = np.abs(delta)
         converged = err <= tol
         abserr = err[-seq_len:] + np.where(
             converged[-seq_len:],
             tol[-seq_len:] * 10,
-            abs(new_sequence - old_sequence[-seq_len:]) * fact,
+            abs(new_seq - old_seq[-seq_len:]) * fact,
         )
     else:
-        err = np.abs(np.diff(new_sequence, axis=0)) * fact
-        tol = (
-            np.maximum(np.abs(new_sequence[1:]), np.abs(new_sequence[:-1])) * EPS * fact
-        )
+        err = np.abs(np.diff(new_seq, axis=0)) * fact
+        tol = np.maximum(np.abs(new_seq[1:]), np.abs(new_seq[:-1])) * EPS * fact
         converged = err <= tol
         abserr = err + np.where(
-            converged,
-            tol * 10,
-            abs(new_sequence[:-1] - old_sequence[-seq_len + 1 :]) * fact,
+            converged, tol * 10, abs(new_seq[:-1] - old_seq[-seq_len + 1 :]) * fact,
         )
 
     return abserr
