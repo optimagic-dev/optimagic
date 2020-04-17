@@ -3,6 +3,7 @@
 Notes:
     - correlate with reversed weight is *not* the same as convolve1d
     - Richardson matrix is matrix with weights from equation 25 in numdifftools docs
+    - student t quantile of numdifftools does not coincide with that of scipy.stats.t
 """
 import numpy as np
 from scipy.linalg import pinv
@@ -11,7 +12,7 @@ from scipy.stats import t
 
 
 EPS = np.finfo(float).eps
-TQUANTILE = t(df=1).ppf(0.975)
+TQUANTILE = t(df=1).ppf(0.975)  # 12.7062047361747
 
 
 def richardson_extrapolation(
@@ -80,7 +81,7 @@ def richardson_extrapolation(
     )
 
     m = seq_len - num_terms
-    mm = m if num_terms >= 2 else seq_len
+    mm = m + 1 if num_terms >= 2 else seq_len
 
     abserr = _estimate_error(
         new_seq=new_sequence[:mm], old_seq=sequence, richardson_coef=richardson_coef,
@@ -179,36 +180,3 @@ def _estimate_error(new_seq, old_seq, richardson_coef):  # , steps):
         )
 
     return abserr
-
-
-def _r_matrix(step_ratio, exponentiation_step, num_terms, order):
-    """
-
-    Args:
-        step_ratio (float):
-        exponentiation_step (int):
-        num_terms (int):
-        order (int):
-
-    Returns:
-        r_mat (np.ndarray):
-
-    """
-    rows, cols = np.ogrid[: num_terms + 1, :num_terms]
-    r_mat = np.ones((num_terms + 1, num_terms + 1))
-    r_mat[:, 1:] = (1.0 / step_ratio) ** (rows @ (exponentiation_step * cols + order))
-    return r_mat
-
-
-def _convolve(sequence, richardson_coef, **kwds):
-    """Probably not needed for estimagic.
-
-    Wrapper around scipy.ndimage.convolve1d that allows complex input.
-    """
-    dtype = np.result_type(float, np.ravel(sequence)[0])
-    seq = np.asarray(sequence, dtype=dtype)
-    if np.iscomplexobj(seq):
-        return convolve1d(seq.real, richardson_coef, **kwds) + 1j * convolve1d(
-            seq.imag, richardson_coef, **kwds
-        )
-    return convolve1d(seq, richardson_coef, **kwds)
