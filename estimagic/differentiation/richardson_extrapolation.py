@@ -4,6 +4,11 @@ Notes:
     - correlate with reversed weight is *not* the same as convolve1d
     - Richardson matrix is matrix with weights from equation 25 in numdifftools docs
     - student t quantile of numdifftools does not coincide with that of scipy.stats.t
+
+Problems:
+    - If we do left, right, or central differences is decided beforehand and stored
+      as information in the steps. But for the extrapolation to work we have to choose
+      an order and exponentiation_step for all steps?
 """
 import numpy as np
 from scipy.linalg import pinv
@@ -31,7 +36,7 @@ def richardson_extrapolation(
 
     If we evaluate the right hand side for different stepsizes h we can fit a polynomial
     to that sequence of approximations and use the estimated intercept as a better
-    approximation for L. Further, we can compute estimation error of our approximation.
+    approximation for L. Further, we can compute estimation errors of our approximation.
 
     Args:
         sequence (np.ndarray): The sequence of which we want to approximate the limit.
@@ -43,12 +48,15 @@ def richardson_extrapolation(
             the corresponding direction. The steps are always symmetric, in the sense
             that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
 
-        num_terms (int): Number of terms needed to construct one estimate. (?)
+        num_terms (int): Number of terms needed to construct one estimate.
+            !!! NEEDS MORE EXPLAINATION !!!
 
         order (int): Initial order of the approximation error of sequence elements.
-            For central differences derivative approximation ``order`` = 1.
+            For central difference derivative approximation ``order`` = 2.
 
-        exponentiation_step (int): ?
+        exponentiation_step (int): Step representing the growth of the exponent in
+            the series expansions of the limit.
+            For central difference derivative approximation ``exponentiation_step`` = 2.
 
     Returns:
         limit (np.ndarray): The refined limit.
@@ -70,7 +78,12 @@ def richardson_extrapolation(
         "``num_terms`` cannot be greater than " "``seq_len`` - 1. "
     )
 
-    step_ratio = steps[1, 0] / steps[0, 0]
+    # compute step ratio
+    i = 0
+    step_ratio = np.nan
+    while np.isnan(step_ratio):
+        step_ratio = steps[1].ravel()[i] / steps[0].ravel()[i]
+        i += 1
 
     richardson_coef = _richardson_coefficients(
         num_terms, step_ratio, exponentiation_step, order,
@@ -83,9 +96,7 @@ def richardson_extrapolation(
     m = seq_len - num_terms
     mm = m + 1 if num_terms >= 2 else seq_len
 
-    abserr = _estimate_error(
-        new_seq=new_sequence[:mm], old_seq=sequence, richardson_coef=richardson_coef,
-    )
+    abserr = _estimate_error(new_sequence[:mm], sequence, richardson_coef,)
 
     limit = new_sequence[:m]
     error = abserr[:m]
@@ -94,10 +105,10 @@ def richardson_extrapolation(
 
 
 def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
-    """Return Richardson coefficients.
+    """Compute Richardson coefficients.
 
     Let e := ``exponentiation_step``, r := ``step_ratio``, o := ``order`` and
-    n := ``num_terms``. We build a matrix
+    n := ``num_terms``. We build a matrix of the form
 
             [[1      1                  ...         1                ],
              [1    1/(s)**(2*o)         ...  1/(s)**(2*(o+n))        ],
@@ -110,15 +121,18 @@ def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
     equation 25 in https://tinyurl.com/ybtfj4pm.
 
     Args:
-        num_terms (int): Number of terms needed to construct one estimate. (?)
+        num_terms (int): Number of terms needed to construct one estimate.
+            !!! NEEDS MORE EXPLAINATION !!!
 
         step_ratio (float): Ratio between two consecutive steps. Order is chosen such
             that ``step_ratio`` >= 1.
 
-        exponentiation_step (int): ?
+        exponentiation_step (int): Step representing the growth of the exponent in
+            the series expansions of the limit.
+            For central difference derivative approximation ``exponentiation_step`` = 2.
 
         order (int): Initial order of the approximation error of sequence elements.
-            For central differences derivative approximation ``order`` = 1.
+            For central difference derivative approximation ``order`` = 2.
 
     Returns:
         coef (np.ndarray): Array with Richardson coefficients of length num_terms + 1.
@@ -144,39 +158,46 @@ def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
     return coef
 
 
-def _estimate_error(new_seq, old_seq, richardson_coef):  # , steps):
-    """
+def _estimate_error(new_seq, old_seq, richardson_coef):
+    """Estimate error of multiple Richardson limit approximation.
 
     Args:
-        new_seq:
-        old_seq:
-        steps:
-        richardson_coef:
+        new_seq (np.ndarray): Multiple estimates of the limit of ``old_seq``. The last
+            two dimensions coincide with those of ``old_seq``. The first dimensions
+            denotes the number of different estimates.
+
+        old_seq (np.ndarray): The sequence of which we want to approximate the limit.
+            Has dimension (k x n x m), where k denotes the number of sequence elements
+            and an element ``sequence[l, :, :]`` denotes the (n x m) dimensional element
+
+        richardson_coef (np.ndarray):
 
     Returns:
+        abserr (np.ndarray): The error estimate for each limit approximation in
+            ``new_seq``.
 
     """
-    seq_len = new_seq.shape[0]
+    new_seq_len = new_seq.shape[0]
 
-    cov1 = np.sum(richardson_coef ** 2)  # 1 spare dof (degrees or freedom?)
-    fact = np.maximum(TQUANTILE * np.sqrt(cov1), EPS * 10.0)
+    unnormalized_covariance = np.sum(richardson_coef ** 2)
+    fact = np.maximum(TQUANTILE * np.sqrt(unnormalized_covariance), EPS * 10.0)
 
-    if seq_len <= 1:
+    if new_seq_len <= 1:
         delta = np.diff(old_seq, axis=0)
         tol = np.maximum(np.abs(old_seq[:-1]), np.abs(old_seq[1:])) * fact
         err = np.abs(delta)
         converged = err <= tol
-        abserr = err[-seq_len:] + np.where(
-            converged[-seq_len:],
-            tol[-seq_len:] * 10,
-            abs(new_seq - old_seq[-seq_len:]) * fact,
+        abserr = err[-new_seq_len:] + np.where(
+            converged[-new_seq_len:],
+            tol[-new_seq_len:] * 10,
+            abs(new_seq - old_seq[-new_seq_len:]) * fact,
         )
     else:
         err = np.abs(np.diff(new_seq, axis=0)) * fact
         tol = np.maximum(np.abs(new_seq[1:]), np.abs(new_seq[:-1])) * EPS * fact
         converged = err <= tol
         abserr = err + np.where(
-            converged, tol * 10, abs(new_seq[:-1] - old_seq[-seq_len + 1 :]) * fact,
+            converged, tol * 10, abs(new_seq[:-1] - old_seq[-new_seq_len + 1 :]) * fact,
         )
 
     return abserr
