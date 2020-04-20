@@ -19,7 +19,7 @@ if __name__ == "__main__":
         jac = np.array([[np.cos(x1), -np.sin(x2), 0], [0, 0, np.exp(x3)]])
         return jac
 
-    for ns in range(1, 5):
+    for ns in range(2, 5):
         for nt in range(1, ns):
             sequence, steps = first_derivative(f, np.ones(3), n_steps=ns)
 
