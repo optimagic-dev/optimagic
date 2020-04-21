@@ -353,7 +353,7 @@ def _process_optimization_results(results, results_arguments):
         res["x"] = list(res["x"])
         start_params = args["params"]
         params = reparametrize_from_internal(
-            internal=res["x"],
+            internal=np.array(res["x"]),
             fixed_values=start_params["_internal_fixed_value"].to_numpy(),
             pre_replacements=start_params["_pre_replacements"].to_numpy(dtype="int"),
             processed_constraints=args["constraints"],
