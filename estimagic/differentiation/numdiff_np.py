@@ -9,6 +9,7 @@ from estimagic.decorators import de_scalarize
 from estimagic.decorators import nan_if_exception
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
+from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from estimagic.optimization.utilities import namedtuple_from_kwargs
 
 
@@ -137,9 +138,11 @@ def first_derivative(
         jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
         out = jac.flatten() if f_was_scalar else jac
     else:
-        res = jac_candidates["central"]  # raise NotImplementedError("Extrapolation is
-        # not yet implemented."
-        out = res, steps
+        richardson_candidates = _compute_richardson_candidates(
+            jac_candidates, steps, n_steps
+        )
+        jac = _consolidate_extrapolated(richardson_candidates, steps, n_steps)
+        out = jac.flatten() if f_was_scalar else jac
 
     return out
 
@@ -150,7 +153,7 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
     Args:
         candidates (dict): Dictionary with derivative estimates from different methods.
         preference_order (list): Order on (a subset of) the keys in candidates. Earlier
-            entries are preferred.
+        entries are preferred.
 
     Returns:
         consolidated (np.ndarray): Array of same shape as input derivative estimates.
@@ -164,15 +167,56 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
     return consolidated.reshape(consolidated.shape[1:])
 
 
+def _compute_richardson_candidates(jac_candidates, steps, n_steps):
+    """Compute derivative candidates using Richardson extrapolation.
+
+    Args:
+        jac_candidates (dict): Dictionary with (traditional) derivative estimates from
+            different methods.
+        steps (namedtuple): Namedtuple with the field names pos and neg. Each field
+            contains a numpy array of shape (n_steps, len(x)) with the steps in
+            the corresponding direction. The steps are always symmetric, in the sense
+            that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
+        n_steps (int): Number of steps needed. For central methods, this is
+            the number of steps per direction. It is 1 if no Richardson extrapolation
+            is used.
+
+    Returns:
+        candidates (dict): Dictionary with derivative estimates from different methods.
+    """
+    candidates = {}
+    for method in ["forward", "backwards", "central"]:
+        for num_terms in range(1, n_steps):
+            candidates[method + str(num_terms)] = richardson_extrapolation(
+                jac_candidates[method], steps, method, num_terms
+            )
+
+    return candidates
+
+
 def _consolidate_extrapolated(candidates, steps, n_steps):
-    """Get the best possible derivative estimate, given an error estimate.
+    """
+    Get the best possible derivative estimate, given an error estimate.
 
     See https://tinyurl.com/ubn3nv5 for corresponding code in numdifftools and
     https://tinyurl.com/snle7mb for an explanation of how errors of Richardson
     extrapolated derivative estimates can be estimated.
 
+    Args:
+        candidates (dict): Dictionary with derivative estimates from different methods.
+        steps (namedtuple): Namedtuple with the field names pos and neg. Each field
+            contains a numpy array of shape (n_steps, len(x)) with the steps in
+            the corresponding direction. The steps are always symmetric, in the sense
+            that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
+        n_steps (int): Number of steps needed. For central methods, this is
+            the number of steps per direction. It is 1 if no Richardson extrapolation
+            is used.
+
+    Returns:
+        consolidated (np.ndarray): Array of same shape as input derivative estimates.
+
     """
-    raise NotImplementedError
+    pass
 
 
 def _nan_skipping_batch_evaluator(func, arglist, n_cores):
