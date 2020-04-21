@@ -146,7 +146,9 @@ def some_gradient(params):
     return params["value"]
 
 
-# not testing _create_internal_gradient at the moment
+# not testing _create_internal_gradient with numerical gradient.
+
+
 def test_internal_gradient_with_user_provided_gradient():
     test_params = pd.DataFrame()
     test_params["value"] = [0.5, 1, 2]
