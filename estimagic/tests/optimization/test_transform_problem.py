@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_almost_equal as aae
+from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal as afe
 
 import estimagic.optimization.transform_problem as tp
@@ -140,7 +141,33 @@ def test_evaluate_criterion_array(minimal_params):
 
 # not testing _create_internal_criterion at the moment
 
+
+def some_gradient(params):
+    return params["value"]
+
+
 # not testing _create_internal_gradient at the moment
+def test_internal_gradient_with_user_provided_gradient():
+    test_params = pd.DataFrame()
+    test_params["value"] = [0.5, 1, 2]
+    test_params["name"] = ["a", "b", "c"]
+    test_params["_internal_free"] = True
+    test_params["_internal_fixed_value"] = np.nan
+    test_params["_pre_replacements"] = [0, 1, 2]
+    test_params["_post_replacements"] = -1
+    grad = tp._create_internal_gradient(
+        gradient=some_gradient,
+        gradient_options={},
+        criterion=None,
+        params=test_params,
+        constraints=[],
+        criterion_kwargs={},
+        general_options={},
+        database=False,
+    )
+    calc = grad(np.array([0.5, 1, 2]))
+    aaae(calc, np.array([0.5, 1, 2]))
+    assert isinstance(calc, np.ndarray)
 
 
 def test_get_internal_bounds():
