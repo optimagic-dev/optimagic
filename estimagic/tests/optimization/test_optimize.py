@@ -4,6 +4,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.optimization.optimize import maximize
+from estimagic.optimization.optimize import minimize
 
 
 # =====================================================================================
@@ -90,3 +91,29 @@ def test_maximize(algorithm):
         f, params, algorithm, algo_options=algo_options, logging=False
     )
     aaae(final_params["value"].to_numpy(), np.zeros(len(final_params)), decimal=2)
+
+
+# Test with gradient
+def sum_of_squares(params):
+    return (params["value"] ** 2).sum()
+
+
+def sum_of_squares_gradient(params):
+    return params["value"].to_numpy() * 2
+
+
+some_gradient_algos = ["nlopt_lbfgs", "scipy_L-BFGS-B", "scipy_SLSQP"]
+
+
+@pytest.mark.parametrize("algorithm", some_gradient_algos)
+def test_minimize_with_gradient(algorithm):
+    start_params = pd.DataFrame()
+    start_params["value"] = [1, 2.5, -1]
+    info, params = minimize(
+        criterion=sum_of_squares,
+        params=start_params,
+        algorithm=algorithm,
+        gradient=sum_of_squares_gradient,
+    )
+
+    aaae(info["x"], [0, 0, 0])
