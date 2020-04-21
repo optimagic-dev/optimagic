@@ -1,6 +1,6 @@
 import numpy as np
 from numdifftools import Richardson
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_almost_equal
 
 from estimagic.differentiation.numdiff_np import first_derivative
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
@@ -23,11 +23,13 @@ if __name__ == "__main__":
         for nt in range(1, ns):
             sequence, steps = first_derivative(f, np.ones(3), n_steps=ns)
 
-            r = Richardson(num_terms=nt)
+            r = Richardson(num_terms=nt, step=2, order=2)
 
             result = r(sequence, steps.pos)
 
-            compare = richardson_extrapolation(sequence, steps, num_terms=nt)
+            compare = richardson_extrapolation(
+                sequence, steps, num_terms=nt, method="central"
+            )
 
-            print(assert_array_equal(result[0], compare[0]))
-            print(assert_array_equal(result[1], compare[1]))
+            print(assert_array_almost_equal(result[0], compare[0], decimal=7))
+            print(assert_array_almost_equal(result[1], compare[1], decimal=7))
