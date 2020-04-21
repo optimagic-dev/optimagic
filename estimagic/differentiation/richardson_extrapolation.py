@@ -9,6 +9,22 @@ Problems:
     - If we do left, right, or central differences is decided beforehand and stored
       as information in the steps. But for the extrapolation to work we have to choose
       an order and exponentiation_step for all steps?
+    - For sequences which are more than one dimensional, do we select the best limit
+      approximation elementwise with respect to the estimation error?
+
+Series expansions:
+
+    Central Differences.
+        Derivative approximation via central difference is given by
+            g(h) := [f(x + h) - f(x - h)] / 2h = f'(x) + r(x, h)
+
+        If we expand the remainder term r(x, h) we get
+            r(x, h) = a0*(h**2) + a1*(h**4) + a2*(h**6) + ...
+        with a0 = f''(x) / 2!, a1 = f'''(x) / 3! etc.
+
+        Rearanging terms we can write
+            L := f'(x) = g(h) - r(x, h) = g(h) + O(h**2)
+
 """
 import numpy as np
 from scipy.linalg import pinv
@@ -27,12 +43,12 @@ def richardson_extrapolation(
 
     Suppose you have a series expansion
 
-        L = f(h) + a0 * h^p_0 + a1 * h^p_1+ a2 * h^p_2 + ... ,
+        L = g(h) + a0 * h^p_0 + a1 * h^p_1+ a2 * h^p_2 + ... ,
 
-    where p_i = order + exponentiation_step * i  and f(h) -> L as h -> 0, but f(0) != L.
+    where p_i = order + exponentiation_step * i  and g(h) -> L as h -> 0, but g(0) != L.
 
     With ``order`` = 1 and ``exponentiation_step`` = 1 we therefore get
-        L = f(h) + a0 * h^1 + a1 * h^2 + a2 * h^3 + ...
+        L = g(h) + a0 * h^1 + a1 * h^2 + a2 * h^3 + ...
 
     If we evaluate the right hand side for different stepsizes h we can fit a polynomial
     to that sequence of approximations and use the estimated intercept as a better
@@ -78,7 +94,7 @@ def richardson_extrapolation(
         "``num_terms`` cannot be greater than " "``seq_len`` - 1. "
     )
 
-    # compute step ratio
+    # compute step ratio robust
     i = 0
     step_ratio = np.nan
     while np.isnan(step_ratio):
