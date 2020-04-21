@@ -116,6 +116,7 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient=None,
     gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
@@ -152,6 +153,8 @@ def minimize(
                     after the optimization(s) finish(es).
         algo_options (dict or list of dicts): Algorithm specific configurations for the
             optimization.
+        gradient (callable): Gradient of the criterion function. Takes params as only
+            argument and returns the gradient as numpy array or pandas Series.
         gradient_options (dict): Options for the gradient function.
         logging (str or pathlib.Path or list): Path(s) to (an) sqlite3 file(s) which
             typically has the file extension ``.db``. If the file does not exist,
@@ -172,9 +175,6 @@ def minimize(
         of the untransformed problem as specified of the user.
 
     """
-    # Gradients are currently not allowed to be passed to minimize.
-    gradient = None
-
     arguments = broadcast_arguments(
         criterion=criterion,
         params=params,

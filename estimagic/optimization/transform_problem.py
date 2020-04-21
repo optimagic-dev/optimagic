@@ -478,6 +478,7 @@ def _create_internal_gradient(
     """
     n_internal_params = params["_internal_free"].sum()
     gradient_options = {} if gradient_options is None else gradient_options
+    names = params.query("_internal_free")["name"].tolist()
 
     if gradient is None:
         gradient = approx_derivative
@@ -498,31 +499,37 @@ def _create_internal_gradient(
             raise ValueError(
                 f"Gradient method '{gradient_options['method']} not supported."
             )
+        logging_decorator = functools.partial(
+            log_gradient_status,
+            database=database,
+            n_gradient_evaluations=n_gradient_evaluations,
+        )
+
+        internal_criterion = _create_internal_criterion(
+            criterion=criterion,
+            params=params,
+            constraints=constraints,
+            criterion_kwargs=criterion_kwargs,
+            logging_decorator=logging_decorator,
+            general_options=general_options,
+            database=database,
+        )
+        bounds = _get_internal_bounds(params)
+
+        @log_gradient(database, names)
+        def internal_gradient(x):
+            return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
 
     else:
-        n_gradient_evaluations = gradient_options.pop("n_gradient_evaluations", None)
+        if constraints not in [[], None]:
+            raise NotImplementedError(
+                "A user provided gradient is not compatible with constraints."
+            )
 
-    logging_decorator = functools.partial(
-        log_gradient_status,
-        database=database,
-        n_gradient_evaluations=n_gradient_evaluations,
-    )
-
-    internal_criterion = _create_internal_criterion(
-        criterion=criterion,
-        params=params,
-        constraints=constraints,
-        criterion_kwargs=criterion_kwargs,
-        logging_decorator=logging_decorator,
-        general_options=general_options,
-        database=database,
-    )
-    bounds = _get_internal_bounds(params)
-    names = params.query("_internal_free")["name"].tolist()
-
-    @log_gradient(database, names)
-    def internal_gradient(x):
-        return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
+        @log_gradient(database, names)
+        @numpy_interface(params, constraints)
+        def internal_gradient(p):
+            return gradient(p)
 
     return internal_gradient
 
