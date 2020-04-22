@@ -7,6 +7,12 @@ releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
 
+0.0.30 - 2020-04-22
+-------------------
+
+- :gh:`158` allows to specify a gradient in maximize and minimize (:ghuser:`janosg`)
+
+
 0.0.29 - 2020-04-16
 -------------------
 

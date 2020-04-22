@@ -14,6 +14,7 @@ def check_arguments(arguments):
         "algorithm": str,
         "algo_options": dict,
         "gradient": (typing.Callable, type(None)),
+        "gradient_kwargs": dict,
         "gradient_options": (dict, type(None)),
         "log_options": dict,
         "criterion_kwargs": dict,

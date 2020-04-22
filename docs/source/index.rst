@@ -16,6 +16,7 @@ models in mind, but also "scales down" to simpler use cases like logit or probit
    differentiation/index
    inference/index
    visualization/index
+   how_to/index
    faq
    api/index
    contributing/index
