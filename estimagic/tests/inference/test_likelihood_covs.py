@@ -1,7 +1,7 @@
-import pickle
 from itertools import product
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -22,8 +22,7 @@ def get_expected_covariance(model, cov_method):
 
     """
     fix_name = "{}_{}.pickle".format(model, cov_method)
-    with open(FIX_PATH / fix_name, "rb") as f:
-        expected_cov = pickle.load(f)
+    expected_cov = pd.read_pickle(FIX_PATH / fix_name)
     return expected_cov
 
 
@@ -41,8 +40,7 @@ def get_input(model, input_types):
     inputs = {}
     for typ in input_types:
         fix_name = "{}_{}_matrix.pickle".format(model, typ)
-        with open(FIX_PATH / fix_name, "rb") as f:
-            input_matrix = pickle.load(f)
+        input_matrix = pd.read_pickle(FIX_PATH / fix_name)
         inputs[typ] = input_matrix
     return inputs
 

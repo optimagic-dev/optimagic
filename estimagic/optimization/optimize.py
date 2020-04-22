@@ -5,6 +5,7 @@ from joblib import Parallel
 
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.dashboard.run_dashboard import run_dashboard_in_separate_process
+from estimagic.decorators import negative_gradient
 from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_arguments
@@ -23,6 +24,8 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient=None,
+    gradient_kwargs=None,
     gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
@@ -57,6 +60,9 @@ def maximize(
                     after the optimization(s) finish(es).
         algo_options (dict or list of dicts): Algorithm specific configurations for the
             optimization.
+        gradient (callable): Gradient of the criterion function. Takes params as first
+            argument and returns the gradient as numpy array or pandas Series.
+        gradient_kwargs (dict): Additional keyword arguments for the gradient.
         gradient_options (dict): Options for the gradient function.
         logging (str or pathlib.Path or list): Path(s) to (an) sqlite3 file(s) which
             typically has the file extension ``.db``. If the file does not exist,
@@ -79,6 +85,11 @@ def maximize(
     general_options = {} if general_options is None else general_options
     general_options["_maximization"] = True
 
+    if isinstance(gradient, list):
+        gradient = [negative_gradient(grad) for grad in gradient]
+    else:
+        gradient = negative_gradient(gradient)
+
     results = minimize(
         criterion=criterion,
         params=params,
@@ -87,6 +98,8 @@ def maximize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
+        gradient=gradient,
+        gradient_kwargs=gradient_kwargs,
         gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
@@ -96,13 +109,25 @@ def maximize(
 
     # Change the fitness value. ``results`` is either a tuple of results and params or a
     # list of tuples.
-    if isinstance(results, list):
-        for result in results:
-            result[0]["fitness"] = -result[0]["fitness"]
-    else:
-        results[0]["fitness"] = -results[0]["fitness"]
+    if not isinstance(results, list):
+        results = [results]
+
+    results = [_undo_sign_switch(res) for res in results]
+
+    results = results[0] if len(results) == 1 else results
 
     return results
+
+
+def _undo_sign_switch(res):
+    info, params = res
+    info = info.copy()
+    info["fitness"] = -info["fitness"]
+    if "jacobian" in info and info["jacobian"] is not None:
+        info["jacobian"] = (-np.array(info["jacobian"])).tolist()
+    if "hessian" in info and info["hessian"] is not None:
+        info["hessian"] = (-np.array(info["hessian"])).tolist()
+    return info, params
 
 
 def minimize(
@@ -113,6 +138,8 @@ def minimize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient=None,
+    gradient_kwargs=None,
     gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
@@ -147,6 +174,9 @@ def minimize(
                     after the optimization(s) finish(es).
         algo_options (dict or list of dicts): Algorithm specific configurations for the
             optimization.
+        gradient (callable): Gradient of the criterion function. Takes params as first
+            argument and returns the gradient as numpy array or pandas Series.
+        gradient_kwargs (dict): Additional keyword arguments for the gradient.
         gradient_options (dict): Options for the gradient function.
         logging (str or pathlib.Path or list): Path(s) to (an) sqlite3 file(s) which
             typically has the file extension ``.db``. If the file does not exist,
@@ -165,9 +195,6 @@ def minimize(
         info dictionary and the params DataFrame with the minimizing parameter values
         of the untransformed problem as specified of the user.
     """
-    # Gradients are currently not allowed to be passed to minimize.
-    gradient = None
-
     arguments = broadcast_arguments(
         criterion=criterion,
         params=params,
@@ -177,6 +204,7 @@ def minimize(
         general_options=general_options,
         algo_options=algo_options,
         gradient=gradient,
+        gradient_kwargs=gradient_kwargs,
         gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
@@ -338,9 +366,10 @@ def _process_optimization_results(results, results_arguments):
     """
     new_results = []
     for res, args in zip(results, results_arguments):
+        res["x"] = list(res["x"])
         start_params = args["params"]
         params = reparametrize_from_internal(
-            internal=res["x"],
+            internal=np.array(res["x"]),
             fixed_values=start_params["_internal_fixed_value"].to_numpy(),
             pre_replacements=start_params["_pre_replacements"].to_numpy(dtype="int"),
             processed_constraints=args["constraints"],

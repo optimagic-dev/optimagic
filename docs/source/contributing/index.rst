@@ -8,3 +8,4 @@ Contributing
    how-to
    styleguide
    how-to-add-an-optimizer
+   releases

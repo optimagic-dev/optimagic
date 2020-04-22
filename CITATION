@@ -1,0 +1,19 @@
+
+Please use one of the following samples to cite the estimagic version (change
+x.y) from this installation
+
+Text:
+
+[estimagic]  estimagic x.y, 2019
+Janos Gabler, http://estimagic.readthedocs.io
+
+BibTeX:
+
+@Unpublished{Gabler2019,
+      Title  = {A Python Tool for the Estimation of (Structural) Econometric Models.},
+      Author = {Janos Gabler},
+      Year   = {2019},
+      Url    = {https://github.com/OpenSourceEconomics/estimagic}
+    }
+
+If you are unsure about which version of estimagic you are using run: `conda list estimagic`.

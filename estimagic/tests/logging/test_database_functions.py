@@ -1,12 +1,15 @@
+from datetime import datetime
+from time import sleep
+
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
+import estimagic.logging.update_database as upd_db
 from estimagic.logging.create_database import prepare_database
 from estimagic.logging.read_database import read_last_iterations
 from estimagic.logging.read_database import read_new_iterations
 from estimagic.logging.read_database import read_scalar_field
-from estimagic.logging.update_database import append_rows
 
 
 @pytest.fixture
@@ -21,11 +24,14 @@ def database(tmp_path):
         optimization_status="success",
     )
 
-    tables = ["params_history", "criterion_history"]
+    tables = ["params_history", "criterion_history", "timestamps"]
     for i in range(10):
         params = pd.Series(index=list("abc"), data=i)
         critval = i ** 2
-        append_rows(database, tables, [params, {"value": critval}])
+        time = datetime(year=2020, month=4, day=9, hour=12, minute=41, second=i)
+        rows = [params, {"value": critval}, {"value": time}]
+        upd_db.append_rows(database, tables, rows)
+        sleep(0.1)
 
     return database
 
@@ -47,16 +53,18 @@ def test_gradient_status_table(database):
 def test_read_last_iterations_pandas(database):
     tables = ["params_history", "criterion_history"]
     res = read_last_iterations(database, tables, 3, "pandas")
-
-    expected_params = pd.DataFrame(
-        data=[[8, 7.0, 7.0, 7.0], [9, 8, 8, 8], [10, 9, 9, 9]],
-        columns=["iteration", "a", "b", "c"],
-    )
-    expected_params.set_index("iteration", inplace=True)
-    assert_frame_equal(res["params_history"], expected_params)
-
     expected_critvals = pd.Series(
         data=[49, 64, 81.0], index=[8, 9, 10], name="value"
+    ).to_frame()
+    expected_critvals.index.name = "iteration"
+    assert_frame_equal(res["criterion_history"], expected_critvals)
+
+
+def test_read_last_iterations_pandas_with_minus_one(database):
+    tables = ["params_history", "criterion_history"]
+    res = read_last_iterations(database, tables, -1, "pandas")
+    expected_critvals = pd.Series(
+        data=[float(i ** 2) for i in range(10)], index=list(range(1, 11)), name="value"
     ).to_frame()
     expected_critvals.index.name = "iteration"
     assert_frame_equal(res["criterion_history"], expected_critvals)
@@ -85,3 +93,36 @@ def test_read_new_iterations(database):
     assert_frame_equal(res["criterion_history"], expected_critvals)
 
     assert new_last == 9
+
+
+def test_update_scalar_field(database):
+    upd_db.update_scalar_field(
+        database=database, table="optimization_status", value="failure"
+    )
+    assert read_scalar_field(database, "optimization_status") == "failure"
+
+
+def test_handle_exception(database, monkeypatch):
+    def mock_execute_write_statements(statements, database):
+        if not isinstance(statements, (list, tuple)):
+            statements = [statements]
+        exception_info = "Mocked"
+        upd_db._handle_exception(statements, database, exception_info)
+
+    monkeypatch.setattr(
+        upd_db, "_execute_write_statements", mock_execute_write_statements
+    )
+
+    with pytest.warns(Warning):
+        upd_db.update_scalar_field(
+            database=database, table="optimization_status", value="failure"
+        )
+
+
+def test_timestamp_reading(database):
+    res = read_last_iterations(database, "timestamps", 3, "bokeh")
+    expected_times = []
+    for i in range(7, 10):
+        time = datetime(year=2020, month=4, day=9, hour=12, minute=41, second=i)
+        expected_times.append(time)
+    assert res["value"] == expected_times

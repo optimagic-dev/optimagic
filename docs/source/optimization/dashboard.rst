@@ -7,11 +7,20 @@ The *dashboard* and *dash_options* Arguments
 Overview
 ---------
 
-Estimagic provides a dashboard that allows to inspect one or several optimizations.
-The dashboard visualizes the databases created and updated by the optimizations.
-To start a dashboard you can pass ``dashboard=True`` to maximize, minimize or the
-estimation functions. Alternatively, you can start a dashboard later by passing the
-database path(s) to ``run_dashboard``.
+Estimagic provides a dashboard that allows to inspect one or several optimizations. The
+dashboard visualizes the databases created and updated by the optimizations. To start a
+dashboard you can pass ``dashboard=True`` to maximize, minimize or the estimation
+functions. Alternatively, you can start a dashboard later by typing the following in
+your command-line interface:
+
+.. code-block:: bash
+
+    $ estimagic dashboard db1.db logs/db2.db logs/ **/*.db
+
+As you can see, wildcards and recursive pattern matching are supported to find
+databases. Directories are automatically searched for nested databases. The interface
+also has ``--port`` and ``--no-browser`` options. In case you need help, type
+``estimagic --help`` or ``estimagic dashboard --help``.
 
 When started, the dashboard will open an overview page of the optimizations' databases
 that were passed to it. If it is just one, it directly opens the page monitoring the
@@ -119,6 +128,6 @@ Implementation
 The dashboard is implemented using a bokeh Server.
 
 While dashboards are started by maximize or minimize most of the time, they are actually
-completely separate from an optimization and only monitor a database that is updated
-by the optimizers. Thus, you can run dashboards for any running,
-succeeded or failed optimization.
+completely separate from an optimization and only monitor a database that is updated by
+the optimizers. Thus, you can run dashboards for any running, succeeded or failed
+optimization.
