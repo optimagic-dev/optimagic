@@ -117,6 +117,7 @@ def transform_problem(
     criterion = negative_criterion(criterion) if is_maximization else criterion
 
     # first criterion evaluation for the database and the pounders algorithm
+    print(params)
     fitness_eval, comparison_plot_data = _evaluate_criterion(
         criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
     )

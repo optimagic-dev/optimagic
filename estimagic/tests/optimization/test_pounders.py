@@ -33,15 +33,19 @@ def test_robustness_1():
     np.random.seed(5470)
     true_params = get_random_params(3)
     start_params = get_random_params(3)
-    bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
+
+    def _criterion_pandas(endog, exog, crit, params):
+        x = params["value"].to_numpy()
+        out = _criterion(endog, exog, crit, x)
+        return out
 
     exog, endog = _simulate_sample(NUM_AGENTS, true_params, 0.5)
     crit = "nonlinear"
-    objective = functools.partial(_criterion, endog, exog, crit)
-    results = minimize(objective, start_params,algorithm)
+    objective = functools.partial(_criterion_pandas, endog, exog, crit)
+    results = minimize(objective, start_params, algorithm, logging=None)
 
     np.testing.assert_array_almost_equal(
-        true_params["value"], results["x"], decimal=0.1
+        true_params["value"].values, results[0]["x"], decimal=0.1
     )
 
 
@@ -90,7 +94,7 @@ def test_max_iters():
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     crit = "ols"
-    objective = functools.partial(_criterion, endog, exog)
+    objective = functools.partial(_criterion, endog, exog, crit)
     calculated = minimize_pounders_np(
         objective, start_params["value"].to_numpy(), bounds, max_iterations=25
     )
@@ -209,8 +213,7 @@ def test_exception():
         minimize_pounders_np(_return_exception, 0)
 
 
-def _criterion(endog, exog, crit, params):
-    x = params["value"].to_numpy()
+def _criterion(endog, exog, crit, x):
     if crit == "nonlinear":
         return endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)
     elif crit == "ols":
