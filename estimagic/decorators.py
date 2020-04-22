@@ -273,9 +273,6 @@ def handle_exceptions(database, params, constraints, start_params, general_optio
             except Exception as e:
                 # Adjust the criterion value at the start.
                 start_criterion_value = general_options["start_criterion_value"]
-                if general_options["_is_maximization"]:
-                    start_criterion_value = -start_criterion_value
-
                 constant, slope = general_options.get(
                     "criterion_exception_penalty", (None, None)
                 )
