@@ -146,7 +146,7 @@ def some_gradient(params):
     return params["value"]
 
 
-# not testing _create_internal_gradient with numerical gradient.
+# only testing create_internal_gradient with closed form gradient.
 
 
 def test_internal_gradient_with_user_provided_gradient():
