@@ -117,3 +117,28 @@ def test_minimize_with_gradient(algorithm):
     )
 
     aaae(info["x"], [0, 0, 0])
+
+
+def minus_sum_of_squares(params):
+    return -(params["value"] ** 2).sum()
+
+
+def minus_sum_of_squares_gradient(params):
+    return params["value"].to_numpy() * -2
+
+
+some_gradient_algos = ["nlopt_lbfgs", "scipy_L-BFGS-B", "scipy_SLSQP"]
+
+
+@pytest.mark.parametrize("algorithm", some_gradient_algos)
+def test_maximize_with_gradient(algorithm):
+    start_params = pd.DataFrame()
+    start_params["value"] = [1, 2.5, -1]
+    info, params = maximize(
+        criterion=minus_sum_of_squares,
+        params=start_params,
+        algorithm=algorithm,
+        gradient=minus_sum_of_squares_gradient,
+    )
+
+    aaae(info["x"], [0, 0, 0])

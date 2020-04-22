@@ -114,6 +114,19 @@ def negative_criterion(criterion):
     return wrapper_negative_criterion
 
 
+def negative_gradient(gradient):
+    """Switch the sign of the gradient."""
+    if gradient is None:
+        return None
+    else:
+        functools.wraps(gradient)
+
+        def wrapper_negative_gradient(*args, **kwargs):
+            return -1 * gradient(*args, **kwargs)
+
+        return wrapper_negative_gradient
+
+
 def log_evaluation(func=None, *, database, tables):
     """Log parameters and fitness values.
 

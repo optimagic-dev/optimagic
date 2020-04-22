@@ -5,6 +5,7 @@ from joblib import Parallel
 
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.dashboard.run_dashboard import run_dashboard_in_separate_process
+from estimagic.decorators import negative_gradient
 from estimagic.logging.update_database import update_scalar_field
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_arguments
@@ -87,6 +88,11 @@ def maximize(
     general_options = {} if general_options is None else general_options
     general_options["_maximization"] = True
 
+    if isinstance(gradient, list):
+        gradient = [negative_gradient(grad) for grad in gradient]
+    else:
+        gradient = negative_gradient(gradient)
+
     results = minimize(
         criterion=criterion,
         params=params,
@@ -109,8 +115,12 @@ def maximize(
     if isinstance(results, list):
         for result in results:
             result[0]["fitness"] = -result[0]["fitness"]
+            if "jacobian" in result[0]:
+                result[0]["jacobian"] = -result[0]["jacobian"]
     else:
         results[0]["fitness"] = -results[0]["fitness"]
+        if "jacobian" in results[0]:
+            results[0]["jacobian"] = -results[0]["jacobian"]
 
     return results
 
