@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from estimagic.optimization.pounders import minimize_pounders_np
 from estimagic.optimization.optimize import minimize
+from estimagic.optimization.pounders import minimize_pounders_np
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="Pounders is not supported on Windows."
@@ -22,7 +22,7 @@ def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np
         {
             "value": np.random.uniform(low, high, size=length),
             "lower": lower_bound,
-            "upper": upper_bound
+            "upper": upper_bound,
         }
     )
 
@@ -100,7 +100,7 @@ def test_max_iters():
     )
 
     assert (
-            calculated["conv"] == "user defined" or calculated["conv"] == "step size small"
+        calculated["conv"] == "user defined" or calculated["conv"] == "step size small"
     )
     if calculated["conv"] == 8:
         assert calculated["sol"][0] == 25
@@ -124,8 +124,8 @@ def test_grtol():
     )
 
     assert (
-            calculated["conv"] == "grtol below critical value"
-            or calculated["conv"] == "step size small"
+        calculated["conv"] == "grtol below critical value"
+        or calculated["conv"] == "step size small"
     )
 
     if calculated["conv"] == 4:
@@ -150,8 +150,8 @@ def test_gatol():
     )
 
     assert (
-            calculated["conv"] == "gatol below critical value"
-            or calculated["conv"] == "step size small"
+        calculated["conv"] == "gatol below critical value"
+        or calculated["conv"] == "step size small"
     )
     if calculated["conv"] == 3:
         assert calculated["sol"][2] < 1e-4
@@ -175,8 +175,8 @@ def test_gttol():
     )
 
     assert (
-            calculated["conv"] == "gttol below critical value"
-            or calculated["conv"] == "step size small"
+        calculated["conv"] == "gttol below critical value"
+        or calculated["conv"] == "step size small"
     )
 
     if calculated["conv"] == 5:
@@ -228,9 +228,9 @@ def _simulate_sample(num_agents, paras, error_term_high=0.5):
     exog = np.random.uniform(0, 1, num_agents)
     error_term = np.random.normal(0, error_term_high, num_agents)
     endog = (
-            np.exp(-paras.at[0, "value"] * exog)
-            / (paras.at[1, "value"] + paras.at[2, "value"] * exog)
-            + error_term
+        np.exp(-paras.at[0, "value"] * exog)
+        / (paras.at[1, "value"] + paras.at[2, "value"] * exog)
+        + error_term
     )
 
     return exog, endog
@@ -242,5 +242,3 @@ def _simulate_ols_sample(num_agents, paras):
     endog = paras.at[0, "value"] + paras.at[1, "value"] * exog + error_term
 
     return exog, endog
-
-
