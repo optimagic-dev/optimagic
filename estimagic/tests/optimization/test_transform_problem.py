@@ -142,7 +142,7 @@ def test_evaluate_criterion_array(minimal_params):
 # not testing _create_internal_criterion at the moment
 
 
-def some_gradient(params):
+def some_gradient(params, some_kwarg):
     return params["value"]
 
 
@@ -159,6 +159,7 @@ def test_internal_gradient_with_user_provided_gradient():
     test_params["_post_replacements"] = -1
     grad = tp._create_internal_gradient(
         gradient=some_gradient,
+        gradient_kwargs={"some_kwarg": "bla"},
         gradient_options={},
         criterion=None,
         params=test_params,

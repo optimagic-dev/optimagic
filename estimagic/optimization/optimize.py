@@ -23,6 +23,8 @@ def maximize(
     constraints=None,
     general_options=None,
     algo_options=None,
+    gradient=None,
+    gradient_kwargs=None,
     gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
@@ -59,6 +61,9 @@ def maximize(
                     after the optimization(s) finish(es).
         algo_options (dict or list of dicts): Algorithm specific configurations for the
             optimization.
+        gradient (callable): Gradient of the criterion function. Takes params as first
+            argument and returns the gradient as numpy array or pandas Series.
+        gradient_kwargs (dict): Additional keyword arguments for the gradient.
         gradient_options (dict): Options for the gradient function.
         logging (str or pathlib.Path or list): Path(s) to (an) sqlite3 file(s) which
             typically has the file extension ``.db``. If the file does not exist,
@@ -90,6 +95,8 @@ def maximize(
         constraints=constraints,
         general_options=general_options,
         algo_options=algo_options,
+        gradient=gradient,
+        gradient_kwargs=gradient_kwargs,
         gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
@@ -117,6 +124,7 @@ def minimize(
     general_options=None,
     algo_options=None,
     gradient=None,
+    gradient_kwargs=None,
     gradient_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
@@ -153,8 +161,9 @@ def minimize(
                     after the optimization(s) finish(es).
         algo_options (dict or list of dicts): Algorithm specific configurations for the
             optimization.
-        gradient (callable): Gradient of the criterion function. Takes params as only
+        gradient (callable): Gradient of the criterion function. Takes params as first
             argument and returns the gradient as numpy array or pandas Series.
+        gradient_kwargs (dict): Additional keyword arguments for the gradient.
         gradient_options (dict): Options for the gradient function.
         logging (str or pathlib.Path or list): Path(s) to (an) sqlite3 file(s) which
             typically has the file extension ``.db``. If the file does not exist,
@@ -184,6 +193,7 @@ def minimize(
         general_options=general_options,
         algo_options=algo_options,
         gradient=gradient,
+        gradient_kwargs=gradient_kwargs,
         gradient_options=gradient_options,
         logging=logging,
         log_options=log_options,
