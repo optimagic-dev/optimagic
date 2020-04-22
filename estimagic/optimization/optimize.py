@@ -112,17 +112,25 @@ def maximize(
 
     # Change the fitness value. ``results`` is either a tuple of results and params or a
     # list of tuples.
-    if isinstance(results, list):
-        for result in results:
-            result[0]["fitness"] = -result[0]["fitness"]
-            if "jacobian" in result[0]:
-                result[0]["jacobian"] = -result[0]["jacobian"]
-    else:
-        results[0]["fitness"] = -results[0]["fitness"]
-        if "jacobian" in results[0]:
-            results[0]["jacobian"] = -results[0]["jacobian"]
+    if not isinstance(results, list):
+        results = [results]
+
+    results = [_undo_sign_switch(res) for res in results]
+
+    results = results[0] if len(results) == 1 else results
 
     return results
+
+
+def _undo_sign_switch(res):
+    info, params = res
+    info = info.copy()
+    info["fitness"] = -info["fitness"]
+    if "jacobian" in info and info["jacobian"] is not None:
+        info["jacobian"] = (-np.array(info["jacobian"])).tolist()
+    if "hessian" in info and info["hessian"] is not None:
+        info["hessian"] = (-np.array(info["hessian"])).tolist()
+    return info, params
 
 
 def minimize(
