@@ -104,7 +104,7 @@ def test_evaluate_criterion_scalar(minimal_params):
     expected_fitness_eval = 3
     expected_comparison_plot_data = pd.DataFrame()
     expected_comparison_plot_data["value"] = [np.nan]
-    res_fitness, res_cp_data = tp._evaluate_criterion(
+    res_fitness, res_cp_data, _ = tp._evaluate_criterion(
         expanded_crit, minimal_params, crit_kwargs
     )
     assert res_fitness == expected_fitness_eval
@@ -132,7 +132,7 @@ def test_evaluate_criterion_array(minimal_params):
 
     expected_fitness_eval = 13.66666666666666666666666
     expected_comparison_plot_data = minimal_params
-    res_fitness, res_cp_data = tp._evaluate_criterion(
+    res_fitness, res_cp_data, _ = tp._evaluate_criterion(
         expanded_crit, minimal_params, crit_kwargs
     )
     assert res_fitness == expected_fitness_eval
