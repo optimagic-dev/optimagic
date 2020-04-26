@@ -9,7 +9,10 @@ Problems:
       approximation elementwise with respect to the estimation error?
         A: We do it element wise
 """
+import warnings
+
 import numpy as np
+from numdifftools.extrapolation import dea3
 from scipy import stats
 from scipy.linalg import pinv
 from scipy.ndimage.filters import convolve1d
@@ -281,5 +284,185 @@ def _get_step_ratio(steps):
     ratios = steps[1:, :] / steps[:-1, :]
     ratios = ratios[~np.isnan(ratios)]
 
-    step_ratio = ratios.flatten()[0]
+    step_ratio = ratios.flat[0]
     return step_ratio
+
+
+def get_best_estimate_overall(candidates):
+    """Going through all methods find for each element, the best estimate, where
+    best is given by the error estimate from the richardson extrapolation.
+
+    Args:
+        candidates:
+        steps:
+
+    Returns:
+
+    """
+    # first find minimum over steps for each method
+    candidate_derivatives_at_most_2d = {}
+    candidate_errors_at_most_2d = {}
+
+    for key in candidates.keys():
+        limit = candidates[key]["derivative"]
+        error = candidates[key]["error"]
+
+        best_derivative, best_derivative_error = _get_best_estimate_single_method(
+            limit, error
+        )
+
+        candidate_derivatives_at_most_2d[key] = best_derivative
+        candidate_errors_at_most_2d[key] = best_derivative_error
+
+    # second find minimum over methods
+    best_derivative = _get_best_estimate_along_methods(
+        candidate_derivatives_at_most_2d, candidate_errors_at_most_2d
+    )
+
+    return best_derivative
+
+
+def _get_best_estimate_along_methods(candidate_derivatives, candidate_errors):
+    """
+
+    Args:
+        candidate_derivatives:
+        candidate_errors:
+
+    Returns:
+
+    """
+    errors = np.stack(list(candidate_errors.values()))
+    derivatives = np.stack(list(candidate_derivatives.values()))
+
+    if derivatives.shape[0] == 1:
+        jac_minimal = np.squeeze(derivatives, axis=0)
+    else:
+        try:
+            minimizer = np.nanargmin(errors, axis=0)
+
+            jac_minimal = np.take_along_axis(
+                derivatives, minimizer[np.newaxis, :], axis=0
+            )
+            jac_minimal = np.squeeze(jac_minimal, axis=0)
+        except ValueError:
+            raise ValueError("Richardson extrapolation failing.")
+
+    return jac_minimal
+
+
+def _get_best_estimate_single_method(derivative, errors):
+    """
+
+    Args:
+        derivative:
+        errors:
+        steps:
+        return_info:
+
+    Returns:
+
+    """
+    if derivative.shape[0] == 1:
+        jac_minimal = np.squeeze(derivative, axis=0)
+        error_minimal = np.squeeze(errors, axis=0)
+    else:
+        validated_errors = _adjust_for_outliers(derivative, errors)
+
+        try:
+            minimizer = np.nanargmin(validated_errors, axis=0)
+
+            jac_minimal = np.take_along_axis(
+                derivative, minimizer[np.newaxis, :], axis=0
+            )
+            jac_minimal = np.squeeze(jac_minimal, axis=0)
+            error_minimal = np.nanmin(validated_errors, axis=0)
+        except ValueError:
+            raise ValueError("Richardson extrapolation failing.")
+
+    return jac_minimal, error_minimal
+
+
+def _adjust_for_outliers(derivate, errors):
+    """Adjust for outliers in derivative estimates.
+
+    Args:
+        derivate (np.ndarray):
+        errors (np.ndarray):
+
+    Returns:
+        validated_errors (np.ndarray):
+
+    """
+    validated_errors = errors.copy()
+    validated_errors += _numdifftools_add_error_to_outliers(derivate)
+    return validated_errors
+
+
+def _numdifftools_add_error_to_outliers(derivative, trim_fact=10):
+    """
+    discard any estimate that differs wildly from the
+    median of all estimates. A factor of 10 to 1 in either
+    direction is probably wild enough here. The actual
+    trimming factor is defined as a parameter.
+    """
+    try:
+        median = np.nanmedian(derivative, axis=0)
+        p75 = np.nanpercentile(derivative, 75, axis=0)
+        p25 = np.nanpercentile(derivative, 25, axis=0)
+        iqr = np.abs(p75 - p25)
+    except ValueError as msg:
+        warnings.warn(str(msg))
+        return 0 * derivative
+
+    a_median = np.abs(median)
+    outliers = (
+        (abs(derivative) < (a_median / trim_fact))
+        + (abs(derivative) > (a_median * trim_fact))
+    ) * (a_median > 1e-8) + (
+        (derivative < p25 - 1.5 * iqr) + (p75 + 1.5 * iqr < derivative)
+    )
+    errors = outliers * np.abs(derivative - median)
+    return errors
+
+
+def _numdifftools_get_arg_min(errors):
+    """
+
+    Args:
+        errors:
+
+    Returns:
+
+    """
+    shape = errors.shape
+    try:
+        arg_mins = np.nanargmin(errors, axis=0)
+        min_errors = np.nanmin(errors, axis=0)
+    except ValueError as msg:
+        warnings.warn(str(msg))
+        return np.arange(shape[1])
+
+    for i, min_error in enumerate(min_errors):
+        idx = np.flatnonzero(errors[:, i] == min_error)
+        arg_mins[i] = idx[idx.size // 2]
+
+    return np.ravel_multi_index((arg_mins, np.arange(shape[1])), shape)
+
+
+def _numdifftools_wynn_extrapolate(derivative, steps):
+    derivative, errors = dea3(
+        derivative[0:-2], derivative[1:-1], derivative[2:], symmetric=False
+    )
+    return derivative, errors, steps[2:]
+
+
+def _numdifftools_extrapolate(self, results, steps, shape):
+    if len(results) > 2:
+        der1, errors1, steps = self._wynn_extrapolate(results, steps)
+    else:
+        der1, errors1, steps = self.richardson(results, steps)
+    if len(der1) > 2:
+        der1, errors1, steps = self._wynn_extrapolate(der1, steps)
+    derivative, info = self._get_best_estimate(der1, errors1, steps, shape)
+    return derivative, info
