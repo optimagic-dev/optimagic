@@ -3,17 +3,14 @@
 Notes:
     - Find better description of argument ``num_terms``.
 """
-import warnings
-
 import numpy as np
-from numdifftools.extrapolation import dea3
 from scipy import stats
 from scipy.linalg import pinv
 from scipy.ndimage.filters import convolve1d
 
 
 EPS = np.finfo(float).eps
-TQUANTILE = stats.t(df=1).ppf(0.975)  # 12.7062047361747
+TQUANTILE = stats.t(df=1).ppf(0.975)  # 12.7062047361747 in numdifftools
 
 
 def richardson_extrapolation(sequence, steps, method="central", num_terms=2):
@@ -60,16 +57,13 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=2):
 
     """
     seq_len = sequence.shape[0]
-
     steps = steps.pos
     n_steps = steps.shape[0]
 
     assert seq_len == n_steps, (
         "Length of ``steps`` must coincide with " "length of ``sequence``."
     )
-
     assert num_terms > 0, "``num_terms`` must be greater than zero."
-
     assert (
         seq_len - 1 >= num_terms
     ), "``num_terms`` cannot be greater than ``seq_len`` - 1."
@@ -94,44 +88,6 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=2):
     error = abserr[:m]
 
     return limit, error
-
-
-def get_best_estimate_overall(candidates):
-    """Get best derivative estimate from given candidates.
-
-    Going through candidates select the best derivative estimate element wise using
-    the estimate candidates, where best is defined as minimizing the error estimate
-    from the Richardson extrapolation.
-
-    Args:
-        candidates (dict): Dictionary containing different derivative estimates and
-            their error estimates.
-
-    Returns:
-        best_derivative (np.ndarray): The optimal derivative estimate based on the
-            information in ``candidates``. Has same shape as a derivate estimate in
-            ``candidates``.
-
-    """
-    # first find minimum over steps for each method
-    candidate_derivatives = {}
-    candidate_errors = {}
-
-    for key in candidates.keys():
-        _limit = candidates[key]["derivative"]
-        _error = candidates[key]["error"]
-
-        derivative, error = _get_best_estimate_single_method(_limit, _error)
-
-        candidate_derivatives[key] = derivative
-        candidate_errors[key] = error
-
-    # second find minimum over methods
-    best_derivative = _get_best_estimate_along_methods(
-        candidate_derivatives, candidate_errors
-    )
-
-    return best_derivative
 
 
 def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
@@ -280,7 +236,7 @@ def _get_order_and_exponentiation_step(method):
             series expansions of the limit.
 
     Example:
-    >>>_get_order_and_exponentiation_step('central')
+    >>> _get_order_and_exponentiation_step('central')
     (2, 2)
 
     """
@@ -305,9 +261,9 @@ def _get_step_ratio(steps):
         step_ratio (float): The step ratio used in producing ``steps``.
 
     Example:
-    >>>import numpy as np
-    >>>steps = np.array([[2., np.nan, 2], [4, 4, 4], [8, 8, np.nan]])
-    >>>_get_step_ratio(steps)
+    >>> import numpy as np
+    >>> steps = np.array([[2., np.nan, 2], [4, 4, 4], [8, 8, np.nan]])
+    >>> _get_step_ratio(steps)
     2.0
 
     """
@@ -316,185 +272,3 @@ def _get_step_ratio(steps):
 
     step_ratio = ratios.flat[0]
     return step_ratio
-
-
-def _get_best_estimate_single_method(derivative, errors):
-    """Select best derivative estimates element wise.
-
-    Given a single method, e.g. central differences with 2 num_terms (see above), we get
-    multiple Richardson approximations including estimated errors. Here we select the
-    approximations which result in the lowest error element wise. However, since it can
-    be that one derivative estimate is only an outlier, we adjust for outliers.
-
-    Args:
-        derivative (np.ndarray): Derivative estimates from Richardson approximation.
-            First axis (axis 0) denotes the potentially multiple estimates. Following
-            dimensions represent the dimension of the derivative, i.e. for a classical
-            gradient ``derivative`` has 2 dimensions, while for a classical jacobian
-            ``derivative`` has 3 dimensions.
-
-        errors (np.ndarray): Error estimates of ``derivative`` estimates. Has the same
-            shape as ``derivative``.
-
-    Returns:
-        - jac_minimal (np.ndarray): Best derivate estimates chosen with respect to
-            minimizing ``errors``. Note that the best values are selected element-wise.
-            Has shape ``(derivative.shape[1], derivative.shape[2])``.
-
-        - error_minimal (np.ndarray): Minimal errors selected element-wise along axis
-            0 of ``errors``.
-
-    """
-    if derivative.shape[0] == 1:
-        jac_minimal = np.squeeze(derivative, axis=0)
-        error_minimal = np.squeeze(errors, axis=0)
-    else:
-        validated_errors = _adjust_for_outliers(derivative, errors)
-
-        try:
-            minimizer = np.nanargmin(validated_errors, axis=0)
-
-            jac_minimal = np.take_along_axis(
-                derivative, minimizer[np.newaxis, :], axis=0
-            )
-            jac_minimal = np.squeeze(jac_minimal, axis=0)
-            error_minimal = np.nanmin(validated_errors, axis=0)
-        except ValueError:
-            raise ValueError("Richardson extrapolation failing.")
-
-    return jac_minimal, error_minimal
-
-
-def _get_best_estimate_along_methods(derivatives, errors):
-    """Extract best derivative estimate over different methods.
-
-    Given that for each method, where one method can be for example central differences
-    with two num_terms (see above), we have selected a single best derivative estimate,
-    we select the best derivative estimates element-wise over different methods, where
-    again best is defined as minimizing the approximation error.
-
-    Args:
-        derivatives (OrderedDict): Dictionary containing derivative estimates for
-            different methods.
-
-        errors (OrderedDict): Dictionary containing error estimates for derivates stored
-            in ``derivatives``.
-
-    Returns:
-        jac_minimal (np.ndarray): The optimal derivative estimate over different
-            methods.
-
-    """
-    errors = np.stack(list(errors.values()))
-    derivatives = np.stack(list(derivatives.values()))
-
-    if derivatives.shape[0] == 1:
-        jac_minimal = np.squeeze(derivatives, axis=0)
-    else:
-        try:
-            minimizer = np.nanargmin(errors, axis=0)
-
-            jac_minimal = np.take_along_axis(
-                derivatives, minimizer[np.newaxis, :], axis=0
-            )
-            jac_minimal = np.squeeze(jac_minimal, axis=0)
-        except ValueError:
-            raise ValueError("Richardson extrapolation failing.")
-
-    return jac_minimal
-
-
-def _adjust_for_outliers(derivative, errors):
-    """Adjust for outliers in derivative estimates.
-
-    Args:
-        derivative (np.ndarray): Derivative estimates from Richardson approximation.
-            First axis (axis 0) denotes the potentially multiple estimates. Following
-            dimensions represent the dimension of the derivative, i.e. for a classical
-            gradient ``derivative`` has 2 dimensions, while for a classical jacobian
-            ``derivative`` has 3 dimensions.
-
-        errors (np.ndarray): Error estimates of ``derivative`` estimates. Has the same
-            shape as ``derivative``.
-
-    Returns:
-        validated_errors (np.ndarray):
-
-    """
-    validated_errors = errors.copy()
-    validated_errors += _numdifftools_add_error_to_outliers(derivative)
-    return validated_errors
-
-
-def _numdifftools_add_error_to_outliers(derivative, trim_fact=10):
-    """Add error to outliers.
-
-    Discard any estimate that differs wildly from the median of all estimates. A factor
-    of 10 to 1 in either direction is probably wild enough here. The actual trimming
-    factor is defined as a parameter.
-
-    Args:
-        derivative (np.ndarray): Derivative estimates from Richardson approximation.
-            First axis (axis 0) denotes the potentially multiple estimates. Following
-            dimensions represent the dimension of the derivative, i.e. for a classical
-            gradient ``derivative`` has 2 dimensions, while for a classical jacobian
-            ``derivative`` has 3 dimensions.
-
-        trim_fact:
-
-    Returns:
-        errors
-
-    """
-    try:
-        median = np.nanmedian(derivative, axis=0)
-        p75 = np.nanpercentile(derivative, 75, axis=0)
-        p25 = np.nanpercentile(derivative, 25, axis=0)
-        iqr = np.abs(p75 - p25)
-    except ValueError as msg:
-        warnings.warn(str(msg))
-        return 0 * derivative
-
-    a_median = np.abs(median)
-    outliers = (
-        (abs(derivative) < (a_median / trim_fact))
-        + (abs(derivative) > (a_median * trim_fact))
-    ) * (a_median > 1e-8) + (
-        (derivative < p25 - 1.5 * iqr) + (p75 + 1.5 * iqr < derivative)
-    )
-    errors = outliers * np.abs(derivative - median)
-    return errors
-
-
-def _numdifftools_get_arg_min(errors):
-    shape = errors.shape
-    try:
-        arg_mins = np.nanargmin(errors, axis=0)
-        min_errors = np.nanmin(errors, axis=0)
-    except ValueError as msg:
-        warnings.warn(str(msg))
-        return np.arange(shape[1])
-
-    for i, min_error in enumerate(min_errors):
-        idx = np.flatnonzero(errors[:, i] == min_error)
-        arg_mins[i] = idx[idx.size // 2]
-
-    return np.ravel_multi_index((arg_mins, np.arange(shape[1])), shape)
-
-
-def _numdifftools_wynn_extrapolate(derivative, steps):
-    derivative, errors = dea3(
-        derivative[0:-2], derivative[1:-1], derivative[2:], symmetric=False
-    )
-    return derivative, errors, steps[2:]
-
-
-def _numdifftools_extrapolate(self, results, steps, shape):
-    if len(results) > 2:
-        der1, errors1, steps = self._wynn_extrapolate(results, steps)
-    else:
-        der1, errors1, steps = self.richardson(results, steps)
-    if len(der1) > 2:
-        der1, errors1, steps = self._wynn_extrapolate(der1, steps)
-    derivative, info = self._get_best_estimate(der1, errors1, steps, shape)
-    return derivative, info
