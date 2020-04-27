@@ -1,4 +1,5 @@
 import functools
+from collections import OrderedDict
 from itertools import product
 
 import numpy as np
@@ -167,6 +168,24 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
     return consolidated.reshape(consolidated.shape[1:])
 
 
+def _consolidate_extrapolated(candidates):
+    """Get the best possible derivative estimate, given an error estimate.
+
+    See https://tinyurl.com/ubn3nv5 for corresponding code in numdifftools and
+    https://tinyurl.com/snle7mb for an explanation of how errors of Richardson
+    extrapolated derivative estimates can be estimated.
+
+    Args:
+        candidates (dict): Dictionary with derivative estimates from different methods.
+
+    Returns:
+        consolidated (np.ndarray): Array of same shape as input derivative estimates.
+
+    """
+    consolidated = get_best_estimate_overall(candidates)
+    return consolidated
+
+
 def _compute_richardson_candidates(jac_candidates, steps, n_steps):
     """Compute derivative candidates using Richardson extrapolation.
 
@@ -185,7 +204,7 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
         richardson_candidates (dict): Dictionary with derivative estimates and error
             estimates from different methods.
     """
-    richardson_candidates = {}
+    richardson_candidates = OrderedDict()
     for method in ["forward", "backward", "central"]:
         for num_terms in range(1, n_steps):
             derivative, error = richardson_extrapolation(
@@ -197,24 +216,6 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
             }
 
     return richardson_candidates
-
-
-def _consolidate_extrapolated(candidates):
-    """Get the best possible derivative estimate, given an error estimate.
-
-    See https://tinyurl.com/ubn3nv5 for corresponding code in numdifftools and
-    https://tinyurl.com/snle7mb for an explanation of how errors of Richardson
-    extrapolated derivative estimates can be estimated.
-
-    Args:
-        candidates (dict): Dictionary with derivative estimates from different methods.
-
-    Returns:
-        consolidated (np.ndarray): Array of same shape as input derivative estimates.
-
-    """
-    consolidated = get_best_estimate_overall(candidates)
-    return consolidated
 
 
 def _nan_skipping_batch_evaluator(func, arglist, n_cores):
