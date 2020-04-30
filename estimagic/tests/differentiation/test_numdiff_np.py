@@ -130,7 +130,7 @@ def example_function_gradient_fixtures():
         """f:R^3 -> R"""
         x1, x2, x3 = x[0], x[1], x[2]
         y1 = np.sin(x1) + np.cos(x2) + x3 - x3
-        return np.array([y1])
+        return y1
 
     def fprime(x):
         """Gradient(f)(x):R^3 -> R^3"""

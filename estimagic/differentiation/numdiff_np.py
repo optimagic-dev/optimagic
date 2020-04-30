@@ -153,7 +153,7 @@ def first_derivative(
     derivative = jac.flatten() if f_was_scalar else jac
 
     return_info = n_steps > 1 and return_richardson_info
-    out = derivative, richardson_candidates if return_info else derivative
+    out = (derivative, richardson_candidates) if return_info else derivative
     return out
 
 
