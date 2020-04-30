@@ -28,6 +28,7 @@ def first_derivative(
     min_steps=None,
     f0=None,
     n_cores=1,
+    return_richardson_info=False,
 ):
 
     """Evaluate first derivative of func at x according to method and step options.
@@ -71,6 +72,8 @@ def first_derivative(
         f0 (np.ndarray): 1d numpy array with func(x), optional.
         n_cores (int): Number of processes used to parallelize the function
             evaluations. Default 1.
+        return_richardson_info (bool): Should additional information on the Richardson
+            extrapolation be returned. Has no effect if n_steps = 1.
 
     Returns:
         derivative (np.ndarray): The estimated first derivative of func at x.
@@ -79,6 +82,10 @@ def first_derivative(
             f: R^m -> R leads to shape (m, ), usually called Gradient
             f: R -> R^n leads to shape (n, 1), usually called Jacobian
             f: R^m -> R^n leads to shape (n, m), usually called Jacobian
+
+        info (OrderedDict): Dictionary with all derivative estimates and
+            error estimates for different parameter specifications using Richardson
+            extrapolations. Is only returned if return_richardson_info is True.
 
     """
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -144,7 +151,10 @@ def first_derivative(
         jac = _consolidate_extrapolated(richardson_candidates)
 
     derivative = jac.flatten() if f_was_scalar else jac
-    return derivative
+
+    return_info = n_steps > 1 and return_richardson_info
+    out = derivative, richardson_candidates if return_info else derivative
+    return out
 
 
 def _consolidate_one_step_derivatives(candidates, preference_order):
@@ -203,7 +213,6 @@ def _consolidate_extrapolated(candidates):
     consolidated = _get_best_estimate_along_methods(
         candidate_derivatives, candidate_errors
     )
-
     return consolidated
 
 
@@ -258,25 +267,25 @@ def _get_best_estimate_single_method(derivative, errors):
             shape as ``derivative``.
 
     Returns:
-        - jac_minimal (np.ndarray): Best derivate estimates chosen with respect to
-            minimizing ``errors``. Note that the best values are selected element-wise.
-            Has shape ``(derivative.shape[1], derivative.shape[2])``.
+        - derivative_minimal (np.ndarray): Best derivate estimates chosen with respect
+            to minimizing ``errors``. Note that the best values are selected
+            element-wise. Has shape ``(derivative.shape[1], derivative.shape[2])``.
 
         - error_minimal (np.ndarray): Minimal errors selected element-wise along axis
             0 of ``errors``.
 
     """
     if derivative.shape[0] == 1:
-        jac_minimal = np.squeeze(derivative, axis=0)
+        derivative_minimal = np.squeeze(derivative, axis=0)
         error_minimal = np.squeeze(errors, axis=0)
     else:
         try:
             minimizer = np.nanargmin(errors, axis=0)
 
-            jac_minimal = np.take_along_axis(
+            derivative_minimal = np.take_along_axis(
                 derivative, minimizer[np.newaxis, :], axis=0
             )
-            jac_minimal = np.squeeze(jac_minimal, axis=0)
+            derivative_minimal = np.squeeze(derivative_minimal, axis=0)
             error_minimal = np.nanmin(errors, axis=0)
         except ValueError:
             raise ValueError(
@@ -284,7 +293,7 @@ def _get_best_estimate_single_method(derivative, errors):
                 "along axis 0. "
             )
 
-    return jac_minimal, error_minimal
+    return derivative_minimal, error_minimal
 
 
 def _get_best_estimate_along_methods(derivatives, errors):

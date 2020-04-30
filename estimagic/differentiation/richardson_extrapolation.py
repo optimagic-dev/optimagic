@@ -13,7 +13,7 @@ EPS = np.finfo(float).eps
 TQUANTILE = stats.t(df=1).ppf(0.975)  # 12.7062047361747 in numdifftools
 
 
-def richardson_extrapolation(sequence, steps, method="central", num_terms=2):
+def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
     """Apply Richardson extrapolation to sequence.
 
     Suppose you have a series expansion
@@ -48,8 +48,8 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=2):
 
         method (str): One of ["central", "forward", "backward"], default "central".
 
-        num_terms (int): Number of terms needed to construct one estimate.
-            !!! NEEDS MORE EXPLAINATION !!!
+        num_terms (int): Number of terms needed to construct one estimate. Default is
+            ``steps.shape[0] - 1``.
 
     Returns:
         limit (np.ndarray): The refined limit.
@@ -59,6 +59,7 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=2):
     seq_len = sequence.shape[0]
     steps = steps.pos
     n_steps = steps.shape[0]
+    num_terms = n_steps if num_terms is None else num_terms
 
     assert seq_len == n_steps, (
         "Length of ``steps`` must coincide with " "length of ``sequence``."
@@ -108,8 +109,8 @@ def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
 
 
     Args:
-        num_terms (int): Number of terms needed to construct one estimate.
-            !!! NEEDS MORE EXPLAINATION !!!
+        num_terms (int): Number of terms needed to construct one estimate. Default is
+            ``steps.shape[0] - 1``.
 
         step_ratio (float): Ratio between two consecutive steps. Order is chosen such
             that ``step_ratio`` >= 1.
@@ -268,7 +269,7 @@ def _get_step_ratio(steps):
 
     """
     ratios = steps[1:, :] / steps[:-1, :]
-    ratios = ratios[~np.isnan(ratios)]
+    ratios = ratios[np.isfinite(ratios)]
 
     step_ratio = ratios.flat[0]
     return step_ratio
