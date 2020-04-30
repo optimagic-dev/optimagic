@@ -95,8 +95,8 @@ def first_derivative(
     x_was_scalar = np.isscalar(x)
     f_was_scalar = np.isscalar(f0)
 
-    x = np.atleast_1d(x)
-    f0 = np.atleast_1d(f0)
+    x = np.atleast_1d(x).astype(np.float_)
+    f0 = np.atleast_1d(f0).astype(np.float_)
 
     @nan_if_exception
     @de_scalarize(x_was_scalar)
