@@ -14,7 +14,7 @@ from estimagic.dashboard.monitoring_app import monitoring_app
 from estimagic.dashboard.utilities import create_short_database_names
 from estimagic.dashboard.utilities import find_free_port
 from estimagic.logging.database_utilities import prepare_database
-from estimagic.logging.read_database import read_scalar_field
+from estimagic.logging.database_utilities import read_scalar_field
 
 
 def run_dashboard_in_separate_process(database_paths):

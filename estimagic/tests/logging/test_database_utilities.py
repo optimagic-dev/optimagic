@@ -7,9 +7,9 @@ from pandas.testing import assert_frame_equal
 
 import estimagic.logging.update_database as upd_db
 from estimagic.logging.database_utilities import add_optimization_tables_to_database
-from estimagic.logging.read_database import read_last_iterations
-from estimagic.logging.read_database import read_new_iterations
-from estimagic.logging.read_database import read_scalar_field
+from estimagic.logging.database_utilities import read_last_iterations
+from estimagic.logging.database_utilities import read_new_iterations
+from estimagic.logging.database_utilities import read_scalar_field
 
 
 @pytest.fixture
