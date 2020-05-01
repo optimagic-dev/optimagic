@@ -22,7 +22,7 @@ from sqlalchemy.dialects.sqlite import DATETIME
 from estimagic.logging.update_database import append_rows
 
 
-def prepare_database(path=None, metadata=None):
+def prepare_database(metadata=None, path=None):
     """Return a bound sqlalchemy.MetaData object for the database stored in ``path``.
 
     This is the only acceptable way of creating or loading databases in estimagic!
@@ -33,12 +33,12 @@ def prepare_database(path=None, metadata=None):
     and bind it to the database.
 
     Args:
-        path (str or pathlib.Path): location of the database file. If the file does
-            not exist, it will be created.
         metadata (sqlalchemy.MetaData): MetaData object that might or might not be
             bound to the database under path. In any case it needs to be compatible
             with the database stored under ``path``. For speed reasons, this is not
             checked.
+        path (str or pathlib.Path): location of the database file. If the file does
+            not exist, it will be created.
 
     Returns:
         metadata (sqlalchemy.MetaData). MetaData object that is bound to the database
@@ -48,11 +48,14 @@ def prepare_database(path=None, metadata=None):
     if isinstance(path, str):
         path = Path(path)
 
-    if isinstance(metadata, MetaData) and metadata.bind is None:
-        assert path is not None, "If metadata is not bound, you need to provide a path."
-        engine = create_engine(f"sqlite:///{path}")
-        _make_engine_thread_safe(engine)
-        metadata.bind = engine
+    if isinstance(metadata, MetaData):
+        if metadata.bind is None:
+            assert (
+                path is not None
+            ), "If metadata is not bound, you need to provide a path."
+            engine = create_engine(f"sqlite:///{path}")
+            _make_engine_thread_safe(engine)
+            metadata.bind = engine
     elif metadata is None:
         assert path is not None, "If metadata is None you need to provide a path."
         engine = create_engine(f"sqlite:///{path}")

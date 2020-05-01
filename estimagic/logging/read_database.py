@@ -6,8 +6,10 @@ import warnings
 import pandas as pd
 from sqlalchemy.sql.sqltypes import BLOB
 
+from estimagic.logging.create_database import prepare_database
 
-def read_last_iterations(database, tables, n, return_type):
+
+def read_last_iterations(database, tables, n, return_type, path=None):
     """Read the last n iterations from all tables.
 
     If a table has less than n obervations, all observations are returned.
@@ -23,6 +25,9 @@ def read_last_iterations(database, tables, n, return_type):
             - "bokeh": A dictionary that can be used to stream to a ColumnDataSource.
               It has one key per column and the corresponding values are lists that
               contain the data of that column.
+        path (str or pathlib.Path): Path to the database. Only necessary if database
+            can be un-bound, e.g. if the bind argument was lost due to a pickling step
+            in a parallelized optimization.
 
     Returns:
         result (dict or return_type):
@@ -31,6 +36,7 @@ def read_last_iterations(database, tables, n, return_type):
             dictionary with one entry per table.
 
     """
+    database = prepare_database(metadata=database, path=path)
     if isinstance(tables, (str, int)):
         tables = [tables]
     # sqlalchemy fails silently with many numpy integer types, e.g. np.int64.
@@ -49,7 +55,9 @@ def read_last_iterations(database, tables, n, return_type):
     return result
 
 
-def read_new_iterations(database, tables, last_retrieved, return_type, limit=None):
+def read_new_iterations(
+    database, tables, last_retrieved, return_type, limit=None, path=None
+):
     """Read all iterations after last_retrieved.
 
     Args:
@@ -58,6 +66,10 @@ def read_new_iterations(database, tables, last_retrieved, return_type, limit=Non
         last_retrieved (int): The last iteration that was retrieved.
         return_type (str): one of "list", "pandas", "bokeh"
         limit (int): Only the first ``limit`` rows will be retrieved. Default None.
+        path (str or pathlib.Path): Path to the database. Only necessary if database
+            can be un-bound, e.g. if the bind argument was lost due to a pickling step
+            in a parallelized optimization.
+
 
     Returns:
         result (dict or return_type):
@@ -67,6 +79,7 @@ def read_new_iterations(database, tables, last_retrieved, return_type, limit=Non
         int: The new last_retrieved value.
 
     """
+    database = prepare_database(metadata=database, path=path)
     if isinstance(tables, (str, int)):
         tables = [tables]
     # sqlalchemy fails silently with many numpy integer types, e.g. np.int64.
@@ -88,14 +101,18 @@ def read_new_iterations(database, tables, last_retrieved, return_type, limit=Non
     return result, new_last
 
 
-def read_scalar_field(database, table):
+def read_scalar_field(database, table, path=None):
     """Read the value of a table with one row and one column called "value".
 
     Args:
         database (sqlalchemy.MetaData)
         table (str): Name of the table.
+        path (str or pathlib.Path): Path to the database. Only necessary if database
+            can be un-bound, e.g. if the bind argument was lost due to a pickling step
+            in a parallelized optimization.
 
     """
+    database = prepare_database(metadata=database, path=path)
     sel = database.tables[table].select()
     res = _execute_select_statements(sel, database)[0][0][0]
     if isinstance(database.tables[table].c.value.type, BLOB):

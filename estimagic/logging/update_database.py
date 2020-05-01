@@ -17,7 +17,7 @@ import pandas as pd
 import sqlalchemy
 
 
-def append_rows(database, tables, rows):
+def append_rows(database, tables, rows, path=None):
     """Append rows to one or several tables in one transaction.
 
     Using just one transaction ensures that the iteration counters stay correct in
@@ -30,6 +30,10 @@ def append_rows(database, tables, rows):
         database (sqlalchemy.MetaData):
         tables (str or list): A table name or list of table names.
         rows (dict, pd.Series or list): The data to append.
+        path (str or pathlib.Path): Path to the database. Only necessary if database
+            can be un-bound, e.g. if the bind argument was lost due to a pickling step
+            in a parallelized optimization.
+
 
     """
     if isinstance(tables, str):
@@ -48,13 +52,17 @@ def append_rows(database, tables, rows):
     _execute_write_statements(inserts, database)
 
 
-def update_scalar_field(database, table, value):
+def update_scalar_field(database, table, value, path=None):
     """Update the value of a table with one row and one column called "value".
 
     Args:
         database (sqlalchemy.MetaData)
         table (string): Name of the table to be updated.
         value: The new value of the table.
+        path (str or pathlib.Path): Path to the database. Only necessary if database
+            can be un-bound, e.g. if the bind argument was lost due to a pickling step
+            in a parallelized optimization.
+
 
     """
     value = {"value": value}

@@ -93,6 +93,7 @@ def _create_bokeh_data_sources(database, tables):
     """
     data_dict, _ = read_new_iterations(
         database=database,
+        path=None,
         tables=tables,
         last_retrieved=0,
         limit=1,
@@ -275,6 +276,7 @@ def _update_monitoring_tab(doc, database, session_data, tables, rollover):
     last_retrieved = session_data["last_retrieved"]
     new_data, new_last = read_new_iterations(
         database=database,
+        path=None,
         tables=tables,
         last_retrieved=last_retrieved,
         return_type="bokeh",
