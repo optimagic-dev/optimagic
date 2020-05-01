@@ -14,7 +14,7 @@ from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
 from estimagic.decorators import negative_criterion
 from estimagic.decorators import numpy_interface
-from estimagic.logging.create_database import add_optimization_tables_to_database
+from estimagic.logging.database_utilities import add_optimization_tables_to_database
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import propose_algorithms

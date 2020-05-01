@@ -6,7 +6,7 @@ import warnings
 import pandas as pd
 from sqlalchemy.sql.sqltypes import BLOB
 
-from estimagic.logging.create_database import prepare_database
+from estimagic.logging.database_utilities import prepare_database
 
 
 def read_last_iterations(database, tables, n, return_type, path=None):

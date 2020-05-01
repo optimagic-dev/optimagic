@@ -13,7 +13,7 @@ from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
 from estimagic.dashboard.utilities import create_short_database_names
 from estimagic.dashboard.utilities import find_free_port
-from estimagic.logging.create_database import prepare_database
+from estimagic.logging.database_utilities import prepare_database
 from estimagic.logging.read_database import read_scalar_field
 
 

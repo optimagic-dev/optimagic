@@ -10,7 +10,7 @@ from bokeh.io import save
 from bokeh.models import ColumnDataSource
 
 import estimagic.dashboard.monitoring_app as monitoring
-from estimagic.logging.create_database import prepare_database
+from estimagic.logging.database_utilities import prepare_database
 
 
 @pytest.fixture()
