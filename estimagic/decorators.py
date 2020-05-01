@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 
 from estimagic.config import MAX_CRITERION_PENALTY
-from estimagic.logging.update_database import append_rows
-from estimagic.logging.update_database import update_scalar_field
+from estimagic.logging.database_utilities import append_rows
+from estimagic.logging.database_utilities import update_scalar_field
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 
 

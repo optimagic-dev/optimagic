@@ -5,11 +5,14 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-import estimagic.logging.update_database as upd_db
+import estimagic.logging.database_utilities
+import estimagic.logging.database_utilities as upd_db
 from estimagic.logging.database_utilities import add_optimization_tables_to_database
 from estimagic.logging.database_utilities import read_last_iterations
 from estimagic.logging.database_utilities import read_new_iterations
 from estimagic.logging.database_utilities import read_scalar_field
+
+# for monkeypatching
 
 
 @pytest.fixture
@@ -30,7 +33,7 @@ def database(tmp_path):
         critval = i ** 2
         time = datetime(year=2020, month=4, day=9, hour=12, minute=41, second=i)
         rows = [params, {"value": critval}, {"value": time}]
-        upd_db.append_rows(database, tables, rows)
+        estimagic.logging.database_utilities.append_rows(database, tables, rows)
         sleep(0.1)
 
     return database
@@ -96,7 +99,7 @@ def test_read_new_iterations(database):
 
 
 def test_update_scalar_field(database):
-    upd_db.update_scalar_field(
+    estimagic.logging.database_utilities.update_scalar_field(
         database=database, table="optimization_status", value="failure"
     )
     assert read_scalar_field(database, "optimization_status") == "failure"
@@ -107,14 +110,16 @@ def test_handle_exception(database, monkeypatch):
         if not isinstance(statements, (list, tuple)):
             statements = [statements]
         exception_info = "Mocked"
-        upd_db._handle_exception(statements, database, exception_info)
+        estimagic.logging.database_utilities._handle_exception(
+            statements, database, exception_info
+        )
 
     monkeypatch.setattr(
         upd_db, "_execute_write_statements", mock_execute_write_statements
     )
 
     with pytest.warns(Warning):
-        upd_db.update_scalar_field(
+        estimagic.logging.database_utilities.update_scalar_field(
             database=database, table="optimization_status", value="failure"
         )
 

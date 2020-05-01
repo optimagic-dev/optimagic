@@ -4,6 +4,7 @@ Note: Most functions in this module change their arguments in place since this i
 recommended way of doing things in sqlalchemy and makes sense for database code.
 
 """
+import datetime as dt
 import io
 import traceback
 import warnings
@@ -11,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import sqlalchemy
 from sqlalchemy import BLOB
 from sqlalchemy import Column
 from sqlalchemy import create_engine
@@ -22,8 +24,6 @@ from sqlalchemy import PickleType
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy.dialects.sqlite import DATETIME
-
-from estimagic.logging.update_database import append_rows
 
 
 def prepare_database(metadata=None, path=None):
@@ -498,3 +498,116 @@ def _process_selection_result(database, tables, raw_results, return_type):
     if len(tables) == 1:
         result = list(result.values())[0]
     return result
+
+
+def append_rows(database, tables, rows, path=None):
+    """Append rows to one or several tables in one transaction.
+
+    Using just one transaction ensures that the iteration counters stay correct in
+    parallel optimizations. It is also faster than using several transactions.
+
+    If anything fails, the complete operation is rolled back and the data is stored in
+    pickle files instead.
+
+    Args:
+        database (sqlalchemy.MetaData):
+        tables (str or list): A table name or list of table names.
+        rows (dict, pd.Series or list): The data to append.
+        path (str or pathlib.Path): Path to the database. Only necessary if database
+            can be un-bound, e.g. if the bind argument was lost due to a pickling step
+            in a parallelized optimization.
+
+
+    """
+    if isinstance(tables, str):
+        tables = [tables]
+    if isinstance(rows, (dict, pd.Series)):
+        rows = [rows]
+
+    assert len(tables) == len(rows), "There must be one value per table."
+
+    rows = [dict(val) for val in rows]
+
+    inserts = [
+        database.tables[tab].insert().values(**row) for tab, row in zip(tables, rows)
+    ]
+
+    _execute_write_statements(inserts, database)
+
+
+def update_scalar_field(database, table, value, path=None):
+    """Update the value of a table with one row and one column called "value".
+
+    Args:
+        database (sqlalchemy.MetaData)
+        table (string): Name of the table to be updated.
+        value: The new value of the table.
+        path (str or pathlib.Path): Path to the database. Only necessary if database
+            can be un-bound, e.g. if the bind argument was lost due to a pickling step
+            in a parallelized optimization.
+
+
+    """
+    value = {"value": value}
+    upd = database.tables[table].update().values(**value)
+    _execute_write_statements(upd, database)
+
+
+def _execute_write_statements(statements, database):
+    """Execute all statements in one atomic transaction.
+
+    If any statement fails, the transaction is rolled back, and a warning is issued.
+
+    If the statements contain inserts or updates, the values of that statement are
+    pickled in the same directory as the database.
+
+    Args:
+        statements (list or sqlalchemy statement): List of sqlalchemy statements
+            or single statement that entail a write operation. Examples are Insert,
+            Update and Delete.
+        database (sqlalchemy.MetaData): The bind argument must be set.
+
+    """
+    if not isinstance(statements, (list, tuple)):
+        statements = [statements]
+
+    engine = database.bind
+    conn = engine.connect()
+    # acquire lock
+    trans = conn.begin()
+    try:
+        for stat in statements:
+            conn.execute(stat)
+        # release lock
+        trans.commit()
+        conn.close()
+    except (KeyboardInterrupt, SystemExit):
+        exception_info = traceback.format_exc()
+        trans.rollback()
+        conn.close()
+        _handle_exception(statements, database, exception_info)
+        raise
+    except Exception:
+        exception_info = traceback.format_exc()
+        trans.rollback()
+        conn.close()
+        _handle_exception(statements, database, exception_info)
+
+
+def _handle_exception(statements, database, exception_info):
+    directory = Path(str(database.bind.url)[10:])
+    if not directory.is_dir():
+        directory = Path(".")
+    directory = directory.resolve()
+
+    for stat in statements:
+        if isinstance(stat, (sqlalchemy.sql.dml.Insert, sqlalchemy.sql.dml.Update)):
+            values = stat.compile().params
+            timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+            filename = f"{stat.table.name}_{timestamp}.pickle"
+            pd.to_pickle(values, directory / filename)
+
+    warnings.warn(
+        f"Unable to write to database. The data was saved in {directory} instead. The "
+        f"traceback was:\n\n{exception_info}"
+    )

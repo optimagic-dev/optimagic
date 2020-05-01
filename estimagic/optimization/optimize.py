@@ -8,7 +8,7 @@ from joblib import Parallel
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.dashboard.run_dashboard import run_dashboard_in_separate_process
 from estimagic.decorators import negative_gradient
-from estimagic.logging.update_database import update_scalar_field
+from estimagic.logging.database_utilities import update_scalar_field
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_arguments
 from estimagic.optimization.pounders import minimize_pounders_np
