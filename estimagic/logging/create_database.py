@@ -76,7 +76,7 @@ def _make_engine_thread_safe(engine):
         conn.execute("BEGIN DEFERRED")
 
 
-def prepare_database(
+def add_optimization_tables_to_database(
     path,
     params,
     comparison_plot_data=None,

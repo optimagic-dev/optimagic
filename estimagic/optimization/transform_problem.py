@@ -14,7 +14,7 @@ from estimagic.decorators import log_gradient
 from estimagic.decorators import log_gradient_status
 from estimagic.decorators import negative_criterion
 from estimagic.decorators import numpy_interface
-from estimagic.logging.create_database import prepare_database
+from estimagic.logging.create_database import add_optimization_tables_to_database
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import propose_algorithms
@@ -134,7 +134,7 @@ def transform_problem(
 
     # setup the database to pass it to the internal functions for logging
     if logging:
-        database = prepare_database(
+        database = add_optimization_tables_to_database(
             path=logging,
             params=params,
             comparison_plot_data=comparison_plot_data,

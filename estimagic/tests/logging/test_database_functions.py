@@ -6,7 +6,7 @@ import pytest
 from pandas.testing import assert_frame_equal
 
 import estimagic.logging.update_database as upd_db
-from estimagic.logging.create_database import prepare_database
+from estimagic.logging.create_database import add_optimization_tables_to_database
 from estimagic.logging.read_database import read_last_iterations
 from estimagic.logging.read_database import read_new_iterations
 from estimagic.logging.read_database import read_scalar_field
@@ -16,7 +16,7 @@ from estimagic.logging.read_database import read_scalar_field
 def database(tmp_path):
     params = pd.DataFrame()
     params["name"] = list("abc")
-    database = prepare_database(
+    database = add_optimization_tables_to_database(
         path=tmp_path / "test.db",
         params=params,
         dash_options={"a": 3, "no_browser": True},
