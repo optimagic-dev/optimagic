@@ -22,35 +22,48 @@ from sqlalchemy.dialects.sqlite import DATETIME
 from estimagic.logging.update_database import append_rows
 
 
-def prepare_database(path):
-    """Return database metadata object for the database stored in ``path``.
+def prepare_database(path=None, metadata=None):
+    """Return a bound sqlalchemy.MetaData object for the database stored in ``path``.
 
-    This is the default way of loading a database for read-only purposes in estimagic.
+    This is the only acceptable way of creating or loading databases in estimagic!
+
+    If metadata is a bound MetaData object, it is just returned. If metadata is given
+    but not bound, we bind it to an engine that connects to the database stored under
+    ``path``. If only the path is provided, we generate an appropriate MetaData object
+    and bind it to the database.
 
     Args:
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created.
+        metadata (sqlalchemy.MetaData): MetaData object that might or might not be
+            bound to the database under path. In any case it needs to be compatible
+            with the database stored under ``path``. For speed reasons, this is not
+            checked.
 
     Returns:
-        database (sqlalchemy.MetaData). The engine that connects to the database can be
-            accessed via ``database.bind``.
+        metadata (sqlalchemy.MetaData). MetaData object that is bound to the database
+        under ``path``.
 
     """
     if isinstance(path, str):
         path = Path(path)
 
-    if isinstance(path, Path):
+    if isinstance(metadata, MetaData) and metadata.bind is None:
+        assert path is not None, "If metadata is not bound, you need to provide a path."
         engine = create_engine(f"sqlite:///{path}")
         _make_engine_thread_safe(engine)
-        database = MetaData()
-        database.bind = engine
-        database.reflect()
-    elif isinstance(path, MetaData):
-        database = path
+        metadata.bind = engine
+    elif metadata is None:
+        assert path is not None, "If metadata is None you need to provide a path."
+        engine = create_engine(f"sqlite:///{path}")
+        _make_engine_thread_safe(engine)
+        metadata = MetaData()
+        metadata.bind = engine
+        metadata.reflect()
     else:
-        TypeError("'path' is neither a pathlib.Path nor a sqlalchemy.MetaData.")
+        raise ValueError("metadata must be sqlalchemy.MetaData or None.")
 
-    return database
+    return metadata
 
 
 def _make_engine_thread_safe(engine):
