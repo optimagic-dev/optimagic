@@ -10,7 +10,7 @@ from bokeh.io import save
 from bokeh.models import ColumnDataSource
 
 import estimagic.dashboard.monitoring_app as monitoring
-from estimagic.logging.create_database import load_database
+from estimagic.logging.create_database import prepare_database
 
 
 @pytest.fixture()
@@ -18,7 +18,7 @@ def database():
     database_name = "db1.db"
     current_dir_path = Path(__file__).resolve().parent
     database_path = current_dir_path / database_name
-    database = load_database(database_path)
+    database = prepare_database(database_path)
     return database
 
 

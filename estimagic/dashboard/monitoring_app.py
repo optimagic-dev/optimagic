@@ -11,7 +11,7 @@ from bokeh.models import Toggle
 
 from estimagic.dashboard.utilities import create_standard_figure
 from estimagic.dashboard.utilities import get_color_palette
-from estimagic.logging.create_database import load_database
+from estimagic.logging.create_database import prepare_database
 from estimagic.logging.read_database import read_new_iterations
 from estimagic.logging.read_database import read_scalar_field
 
@@ -32,7 +32,7 @@ def monitoring_app(doc, database_name, session_data):
             - callbacks (dict): dictionary to be populated with callbacks.
 
     """
-    database = load_database(session_data["database_path"])
+    database = prepare_database(session_data["database_path"])
     start_params = read_scalar_field(database, "start_params")
     dash_options = read_scalar_field(database, "dash_options")
     rollover = dash_options["rollover"]

@@ -22,7 +22,7 @@ from sqlalchemy.dialects.sqlite import DATETIME
 from estimagic.logging.update_database import append_rows
 
 
-def load_database(path):
+def prepare_database(path):
     """Return database metadata object for the database stored in ``path``.
 
     This is the default way of loading a database for read-only purposes in estimagic.
@@ -145,7 +145,7 @@ def add_optimization_tables_to_database(
 
     """
     gradient_status = float(gradient_status)
-    database = load_database(path)
+    database = prepare_database(path)
 
     opt_tables = [
         "params_history",

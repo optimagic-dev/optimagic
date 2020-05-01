@@ -13,7 +13,7 @@ from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
 from estimagic.dashboard.utilities import create_short_database_names
 from estimagic.dashboard.utilities import find_free_port
-from estimagic.logging.create_database import load_database
+from estimagic.logging.create_database import prepare_database
 from estimagic.logging.read_database import read_scalar_field
 
 
@@ -120,7 +120,7 @@ def _process_dashboard_args(database_paths, no_browser, port):
 
     all_options = []
     for single_database_path in database_paths:
-        database = load_database(single_database_path)
+        database = prepare_database(single_database_path)
         dash_options = read_scalar_field(database, "dash_options")
         all_options.append(dash_options)
 
