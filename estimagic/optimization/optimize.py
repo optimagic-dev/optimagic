@@ -1,4 +1,6 @@
 """Functional wrapper around the pygmo, nlopt and scipy libraries."""
+import os
+
 import numpy as np
 from joblib import delayed
 from joblib import Parallel
@@ -230,16 +232,11 @@ def minimize(
         )
 
     if len(arguments) == 1:
-        # Run only one optimization
         results = [_internal_minimize(**optim_arguments[0])]
     else:
-        # Run multiple optimizations
-        if "n_cores" not in optim_arguments[0]["general_options"]:
-            raise ValueError(
-                "n_cores need to be specified in general_options"
-                + " if multiple optimizations should be run."
-            )
-        n_cores = optim_arguments[0]["general_options"]["n_cores"]
+        n_cores = optim_arguments[0]["general_options"].get("n_cores", os.cpu_count())
+        # cpu_count() returns None if it cannot determine the number of cpus
+        n_cores = 1 if n_cores is None else n_cores
 
         results = Parallel(n_jobs=n_cores)(
             delayed(_internal_minimize)(**optim_kwargs)

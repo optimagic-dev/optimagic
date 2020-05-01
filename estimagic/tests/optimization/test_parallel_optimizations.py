@@ -95,6 +95,26 @@ def test_lists_same_size():
     assert_array_almost_equal(result_bfgs, expected_result, decimal=4)
 
 
+@pytest.mark.xfail
+def test_two_parallel_optimizations_with_logging(tmp_path):
+    """Test a parallel optimization: All inputs are a list of the same length."""
+    paths = [tmp_path / "neldermead.db", tmp_path / "lbfgsb.db"]
+    result = minimize(
+        [rosen, rosen],
+        [params, params],
+        ["nlopt_neldermead", "scipy_L-BFGS-B"],
+        general_options={"n_cores": 4},
+        logging=paths,
+    )
+
+    result_neldermead = result[0][1]["value"].to_numpy()
+    result_bfgs = result[1][1]["value"].to_numpy()
+    expected_result = [1, 1, 1, 1, 1]
+
+    assert_array_almost_equal(result_neldermead, expected_result, decimal=4)
+    assert_array_almost_equal(result_bfgs, expected_result, decimal=4)
+
+
 def test_lists_different_size():
     """Test if error is raised if arguments entered as list are of different length."""
     with pytest.raises(ValueError):
@@ -164,14 +184,6 @@ def test_wrong_type_dashboard():
             algorithm=rosen,
             dashboard="yes",
             general_options={"n_cores": 4},
-        )
-
-
-def test_n_cores_not_specified():
-    """Test that n_cores is not specified and multiple optimizations should be run."""
-    with pytest.raises(ValueError):
-        minimize(
-            [rosen, rosen], [params, params], ["nlopt_neldermead", "scipy_L-BFGS-B"],
         )
 
 
