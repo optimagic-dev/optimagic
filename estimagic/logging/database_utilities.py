@@ -359,6 +359,11 @@ def read_last_iterations(database, tables, n, return_type, path=None):
     return result
 
 
+# ======================================================================================
+# Read from Database
+# ======================================================================================
+
+
 def read_new_iterations(
     database, tables, last_retrieved, return_type, limit=None, path=None
 ):
@@ -500,6 +505,11 @@ def _process_selection_result(database, tables, raw_results, return_type):
     return result
 
 
+# ======================================================================================
+# Write to database
+# ======================================================================================
+
+
 def append_rows(database, tables, rows, path=None):
     """Append rows to one or several tables in one transaction.
 
@@ -519,6 +529,7 @@ def append_rows(database, tables, rows, path=None):
 
 
     """
+    database = prepare_database(metadata=database, path=path)
     if isinstance(tables, str):
         tables = [tables]
     if isinstance(rows, (dict, pd.Series)):
@@ -548,6 +559,7 @@ def update_scalar_field(database, table, value, path=None):
 
 
     """
+    database = prepare_database(metadata=database, path=path)
     value = {"value": value}
     upd = database.tables[table].update().values(**value)
     _execute_write_statements(upd, database)
