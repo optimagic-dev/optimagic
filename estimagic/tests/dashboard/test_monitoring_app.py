@@ -18,7 +18,7 @@ def database():
     database_name = "db1.db"
     current_dir_path = Path(__file__).resolve().parent
     database_path = current_dir_path / database_name
-    database = prepare_database(database_path)
+    database = prepare_database(path=database_path)
     return database
 
 

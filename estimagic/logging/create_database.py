@@ -158,7 +158,7 @@ def add_optimization_tables_to_database(
 
     """
     gradient_status = float(gradient_status)
-    database = prepare_database(path)
+    database = prepare_database(path=path)
 
     opt_tables = [
         "params_history",

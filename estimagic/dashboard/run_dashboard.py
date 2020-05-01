@@ -120,7 +120,7 @@ def _process_dashboard_args(database_paths, no_browser, port):
 
     all_options = []
     for single_database_path in database_paths:
-        database = prepare_database(single_database_path)
+        database = prepare_database(path=single_database_path)
         dash_options = read_scalar_field(database, "dash_options")
         all_options.append(dash_options)
 
