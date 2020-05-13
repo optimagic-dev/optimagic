@@ -1,6 +1,5 @@
 """Functions to read from from database tables used to log an optimization."""
 import io
-import pickle
 import traceback
 import warnings
 
@@ -100,7 +99,7 @@ def read_scalar_field(database, table):
     sel = database.tables[table].select()
     res = _execute_select_statements(sel, database)[0][0][0]
     if isinstance(database.tables[table].c.value.type, BLOB):
-        res = pickle.load(io.BytesIO(res))
+        res = pd.read_pickle(io.BytesIO(res), compression=None)
     return res
 
 

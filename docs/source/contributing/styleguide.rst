@@ -80,6 +80,9 @@ Your contribution should fulfill the following criteria:
 - Use ``pathlib`` for all file paths operations.
     You can find the pathlib documentation
     `here <https://docs.python.org/3/library/pathlib.html>`_
+- Object serialization.
+    Pickling and unpickling of DataFrames should be done with ``pd.read_pickle``
+    and ``pd.to_pickle``.
 - We prefer a functional style over object oriented programming.
     Unless you have very good reasons for writing a class, we prefer you don't do
     it. You might want to watch `this <https://www.youtube.com/watch?v=o9pEzgHorH0>`_

@@ -18,6 +18,7 @@ def broadcast_arguments(**arguments):
         "log_options",
         "dash_options",
         "general_options",
+        "gradient_kwargs",
     ]
     for arg in dict_args:
         if arg in arguments and arguments[arg] is None:

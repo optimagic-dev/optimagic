@@ -9,7 +9,6 @@ function.
 
 """
 import datetime as dt
-import pickle
 import traceback
 import warnings
 from pathlib import Path
@@ -115,8 +114,7 @@ def _handle_exception(statements, database, exception_info):
             values = stat.compile().params
             timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
             filename = f"{stat.table.name}_{timestamp}.pickle"
-            with open(directory / filename, "wb") as p:
-                pickle.dump(values, p)
+            pd.to_pickle(values, directory / filename)
 
     warnings.warn(
         f"Unable to write to database. The data was saved in {directory} instead. The "

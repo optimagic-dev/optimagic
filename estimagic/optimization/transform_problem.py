@@ -29,6 +29,7 @@ def transform_problem(
     general_options,
     algo_options,
     gradient,
+    gradient_kwargs,
     gradient_options,
     logging,
     log_options,
@@ -77,6 +78,7 @@ def transform_problem(
                     minimize finish.
         algo_options (dict or list of dicts): Algorithm specific configurations.
         gradient_options (dict): Options for the gradient function.
+        gradient_kwargs (dict): Additional keyword arguments for the gradient.
         logging (str or pathlib.Path or list thereof): Path to an sqlite3 file which
             typically has the file extension ``.db``. If the file does not exist,
             it will be created. See :ref:`logging` for details.
@@ -115,10 +117,11 @@ def transform_problem(
     criterion = negative_criterion(criterion) if is_maximization else criterion
 
     # first criterion evaluation for the database and the pounders algorithm
-    fitness_eval, comparison_plot_data = _evaluate_criterion(
+    fitness_eval, comparison_plot_data, raw_result = _evaluate_criterion(
         criterion=criterion, params=params, criterion_kwargs=criterion_kwargs
     )
     general_options = general_options.copy()
+    general_options["_start_criterion_value"] = raw_result
     general_options["start_criterion_value"] = fitness_eval
 
     with warnings.catch_warnings():
@@ -151,7 +154,7 @@ def transform_problem(
     logging_decorator = functools.partial(
         log_evaluation,
         database=database,
-        tables=["params_history", "criterion_history", "comparison_plot"],
+        tables=["params_history", "criterion_history", "comparison_plot", "timestamps"],
     )
 
     internal_criterion = _create_internal_criterion(
@@ -166,6 +169,7 @@ def transform_problem(
 
     internal_gradient = _create_internal_gradient(
         gradient=gradient,
+        gradient_kwargs=gradient_kwargs,
         gradient_options=gradient_options,
         criterion=criterion,
         params=params,
@@ -371,7 +375,7 @@ def _evaluate_criterion(criterion, params, criterion_kwargs):
         fitness_eval = criterion_out
     else:
         fitness_eval = np.mean(np.square(criterion_out))
-    return fitness_eval, comparison_plot_data
+    return fitness_eval, comparison_plot_data, criterion_out
 
 
 def _create_internal_criterion(
@@ -438,6 +442,7 @@ def _create_internal_criterion(
 
 def _create_internal_gradient(
     gradient,
+    gradient_kwargs,
     gradient_options,
     criterion,
     params,
@@ -478,6 +483,7 @@ def _create_internal_gradient(
     """
     n_internal_params = params["_internal_free"].sum()
     gradient_options = {} if gradient_options is None else gradient_options
+    names = params.query("_internal_free")["name"].tolist()
 
     if gradient is None:
         gradient = approx_derivative
@@ -498,31 +504,38 @@ def _create_internal_gradient(
             raise ValueError(
                 f"Gradient method '{gradient_options['method']} not supported."
             )
+        logging_decorator = functools.partial(
+            log_gradient_status,
+            database=database,
+            n_gradient_evaluations=n_gradient_evaluations,
+        )
+
+        internal_criterion = _create_internal_criterion(
+            criterion=criterion,
+            params=params,
+            constraints=constraints,
+            criterion_kwargs=criterion_kwargs,
+            logging_decorator=logging_decorator,
+            general_options=general_options,
+            database=database,
+        )
+        bounds = _get_internal_bounds(params)
+
+        @log_gradient(database, names)
+        def internal_gradient(x):
+            return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
 
     else:
-        n_gradient_evaluations = gradient_options.pop("n_gradient_evaluations", None)
+        gradient = functools.partial(gradient, **gradient_kwargs)
+        if constraints not in [[], None]:
+            raise NotImplementedError(
+                "A user provided gradient is not compatible with constraints."
+            )
 
-    logging_decorator = functools.partial(
-        log_gradient_status,
-        database=database,
-        n_gradient_evaluations=n_gradient_evaluations,
-    )
-
-    internal_criterion = _create_internal_criterion(
-        criterion=criterion,
-        params=params,
-        constraints=constraints,
-        criterion_kwargs=criterion_kwargs,
-        logging_decorator=logging_decorator,
-        general_options=general_options,
-        database=database,
-    )
-    bounds = _get_internal_bounds(params)
-    names = params.query("_internal_free")["name"].tolist()
-
-    @log_gradient(database, names)
-    def internal_gradient(x):
-        return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
+        @log_gradient(database, names)
+        @numpy_interface(params, constraints)
+        def internal_gradient(p):
+            return gradient(p)
 
     return internal_gradient
 
