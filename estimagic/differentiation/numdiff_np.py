@@ -233,6 +233,14 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
     Returns:
         richardson_candidates (OrderedDict): Dictionary with derivative estimates and
             error estimates from different methods.
+            - Keys correspond to the method used, i.e. forward, backward or central
+            differences and the number of terms used in the Richardson extrapolation.
+            - Values represent the corresponding derivative estimate and error
+            estimate, stored as np.ndarrays in a sub-dictionary under "derivative" and
+            "error" respectively, with the first dimensions coinciding with that of an
+            element of ``jac_candidates`` and depending on num_terms, possibly one
+            further dimension.
+
     """
     richardson_candidates = OrderedDict()
     for method in ["forward", "backward", "central"]:
@@ -253,8 +261,7 @@ def _get_best_estimate_single_method(derivative, errors):
 
     Given a single method, e.g. central differences with 2 num_terms (see above), we get
     multiple Richardson approximations including estimated errors. Here we select the
-    approximations which result in the lowest error element wise. However, since it can
-    be that one derivative estimate is only an outlier, we adjust for outliers.
+    approximations which result in the lowest error element wise.
 
     Args:
         derivative (np.ndarray): Derivative estimates from Richardson approximation.
@@ -262,16 +269,15 @@ def _get_best_estimate_single_method(derivative, errors):
             dimensions represent the dimension of the derivative, i.e. for a classical
             gradient ``derivative`` has 2 dimensions, while for a classical jacobian
             ``derivative`` has 3 dimensions.
-
         errors (np.ndarray): Error estimates of ``derivative`` estimates. Has the same
             shape as ``derivative``.
 
     Returns:
-        - derivative_minimal (np.ndarray): Best derivate estimates chosen with respect
+        derivative_minimal (np.ndarray): Best derivate estimates chosen with respect
             to minimizing ``errors``. Note that the best values are selected
             element-wise. Has shape ``(derivative.shape[1], derivative.shape[2])``.
 
-        - error_minimal (np.ndarray): Minimal errors selected element-wise along axis
+        error_minimal (np.ndarray): Minimal errors selected element-wise along axis
             0 of ``errors``.
 
     """
@@ -279,19 +285,14 @@ def _get_best_estimate_single_method(derivative, errors):
         derivative_minimal = np.squeeze(derivative, axis=0)
         error_minimal = np.squeeze(errors, axis=0)
     else:
-        try:
-            minimizer = np.nanargmin(errors, axis=0)
 
-            derivative_minimal = np.take_along_axis(
-                derivative, minimizer[np.newaxis, :], axis=0
-            )
-            derivative_minimal = np.squeeze(derivative_minimal, axis=0)
-            error_minimal = np.nanmin(errors, axis=0)
-        except ValueError:
-            raise ValueError(
-                "Richardson extrapolation failing --cannot compute minimum of errors "
-                "along axis 0. "
-            )
+        minimizer = np.nanargmin(errors, axis=0)
+
+        derivative_minimal = np.take_along_axis(
+            derivative, minimizer[np.newaxis, :], axis=0
+        )
+        derivative_minimal = np.squeeze(derivative_minimal, axis=0)
+        error_minimal = np.nanmin(errors, axis=0)
 
     return derivative_minimal, error_minimal
 
@@ -307,7 +308,6 @@ def _get_best_estimate_along_methods(derivatives, errors):
     Args:
         derivatives (OrderedDict): Dictionary containing derivative estimates for
             different methods.
-
         errors (OrderedDict): Dictionary containing error estimates for derivates stored
             in ``derivatives``.
 
@@ -322,18 +322,10 @@ def _get_best_estimate_along_methods(derivatives, errors):
     if derivatives.shape[0] == 1:
         jac_minimal = np.squeeze(derivatives, axis=0)
     else:
-        try:
-            minimizer = np.nanargmin(errors, axis=0)
+        minimizer = np.nanargmin(errors, axis=0)
 
-            jac_minimal = np.take_along_axis(
-                derivatives, minimizer[np.newaxis, :], axis=0
-            )
-            jac_minimal = np.squeeze(jac_minimal, axis=0)
-        except ValueError:
-            raise ValueError(
-                "Richardson extrapolation failing --cannot compute minimum of errors "
-                "along axis 0. "
-            )
+        jac_minimal = np.take_along_axis(derivatives, minimizer[np.newaxis, :], axis=0)
+        jac_minimal = np.squeeze(jac_minimal, axis=0)
 
     return jac_minimal
 

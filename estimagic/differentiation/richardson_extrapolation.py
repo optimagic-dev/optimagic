@@ -1,8 +1,3 @@
-"""Copy code from numdifftools.extrapolation.Richardson
-
-Notes:
-    - Find better description of argument ``num_terms``.
-"""
 import numpy as np
 from scipy import stats
 from scipy.linalg import pinv
@@ -69,7 +64,7 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
         seq_len - 1 >= num_terms
     ), "``num_terms`` cannot be greater than ``seq_len`` - 1."
 
-    step_ratio = _get_step_ratio(steps)
+    step_ratio = _compute_step_ratio(steps)
     order, exponentiation_step = _get_order_and_exponentiation_step(method)
 
     richardson_coef = _richardson_coefficients(
@@ -195,6 +190,11 @@ def _estimate_error(new_seq, old_seq, richardson_coef):
 def _get_order_and_exponentiation_step(method):
     """Return order and exponentiation step given ``method``.
 
+    Given ``method`` we return the initial order of the approximation error of the
+    sequence under consideration (order) as well as the step size representing the
+    growth of the exponent in the series expansion of the limit (exponentiation_step).
+    See function ``richardson_extrapolation`` for more details.
+
     For different methods, different values of order and exponentiation step apply.
     Consider the following examples, where we continue the notation from function
     ``richardson_extrapolation`` and use O() to denote the Big O Laundau symbol.
@@ -251,7 +251,7 @@ def _get_order_and_exponentiation_step(method):
     return order, exponentiation_step
 
 
-def _get_step_ratio(steps):
+def _compute_step_ratio(steps):
     """Compute the step ratio used in producing ``steps``.
 
     Args:
@@ -264,7 +264,7 @@ def _get_step_ratio(steps):
     Example:
     >>> import numpy as np
     >>> steps = np.array([[2., np.nan, 2], [4, 4, 4], [8, 8, np.nan]])
-    >>> _get_step_ratio(steps)
+    >>> _compute_step_ratio(steps)
     2.0
 
     """
