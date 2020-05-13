@@ -33,7 +33,7 @@ def test_gradient(statsmodels_fixtures, method, extrapolation):
     calculated = gradient(
         logit_loglike,
         fix["params"],
-        method="forward",
+        method=method,
         extrapolation=extrapolation,
         func_kwargs=func_kwargs,
         step_options={"step_ratio": 2.0},
