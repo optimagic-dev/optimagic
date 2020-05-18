@@ -4,15 +4,13 @@ from scipy.optimize._numdiff import approx_derivative
 from scipy.optimize.optimize import _check_unknown_options
 from scipy.optimize.optimize import _line_search_wolfe12
 from scipy.optimize.optimize import _LineSearchError
-from scipy.optimize.optimize import _status_message
-from scipy.optimize.optimize import OptimizeResult
 from scipy.optimize.optimize import vecnorm
 from scipy.optimize.optimize import wrap_function
 
 from estimagic.optimization.scipy import _process_scipy_results
 
 
-def minimize_bhhh(func, x0, bounds, algo_options=None, gradient=None):
+def _minimize_bhhh(func, x0, bounds, algo_options=None, gradient=None):
     """
     Interface for BHHH.
     Args:
@@ -44,7 +42,7 @@ def minimize_bhhh(func, x0, bounds, algo_options=None, gradient=None):
     return results
 
 
-def wrap_function_agg(function, args):
+def wrap_function_aggregate(function, args):
     """
     Wrap the objective function in the BHHH.
 
@@ -60,7 +58,7 @@ def wrap_function_agg(function, args):
     return ncalls, function_wrapper
 
 
-def wrap_function_num_dev(objective_fun, args):
+def wrap_function_num_derivative(function, args):
     """
     Wrap the numerical Jacobian in the BHHH.
 
@@ -69,7 +67,7 @@ def wrap_function_num_dev(objective_fun, args):
 
     def function_wrapper(x0):
         ncalls[0] += 1
-        return approx_derivative(objective_fun, x0, args=args)
+        return approx_derivative(function, x0, args=args)
 
     return ncalls, function_wrapper
 
@@ -82,8 +80,7 @@ def fmin_bhhh(
     args=(),
     tol={"abs": 1e-05, "rel": 1e-08},
     norm=np.Inf,
-    maxiter=None,
-    disp=1,
+    max_iterations=None,
     retall=False,
     callback=None,
 ):
@@ -115,7 +112,7 @@ def fmin_bhhh(
         An optional user-supplied function to call after each
         iteration.  Called as callback(xk), where xk is the
         current parameter vector.
-    maxiter : int, optional
+    max_iterations : int, optional
         Maximum number of iterations to perform.
     disp : bool, optional
         Print convergence message if True.
@@ -128,7 +125,7 @@ def fmin_bhhh(
         Parameters which minimize f, i.e. f(xopt) == fopt.
     fun : float
         Minimum value.
-    jac : ndarray
+    jacobian : ndarray
         Value of gradient at minimum, f'(xopt), which should be near 0.
     hess_inv : ndarray
         Value of 1/f''(xopt), i.e. the inverse hessian matrix.
@@ -142,7 +139,7 @@ def fmin_bhhh(
         3 : NaN result encountered.
     message : str
         Status message on whether the optimizer converged.
-    success : bool
+    status : bool
         Indicating whether optimizer converged.
     allvecs  :  list
         The value of x at each iteration.  Only returned if retall is True.
@@ -164,14 +161,11 @@ def fmin_bhhh(
     Bachelor-Thesis University of Konstanz.
 
     """
-    if not isinstance(args, tuple):
-        args = (args,)
 
     opts = {
         "tol": tol,
         "norm": norm,
-        "disp": disp,
-        "maxiter": maxiter,
+        "max_iterations": max_iterations,
         "return_all": retall,
     }
 
@@ -180,18 +174,16 @@ def fmin_bhhh(
     return res
 
 
-def _minimize_bhhh(
-    fun,
+def minimize_bhhh(
+    func,
     x0,
     bounds=None,
     args=(),
-    jac=None,
+    jacobian=None,
     callback=None,
     tol={"abs": 1e-05, "rel": 1e-08},
     norm=np.Inf,
-    maxiter=None,
-    disp=False,
-    return_all=False,
+    max_iterations=None,
     **unknown_options
 ):
     """
@@ -202,7 +194,7 @@ def _minimize_bhhh(
     -------
     disp : bool
         Set to True to print convergence messages.
-    maxiter : int
+    max_iterations : int
         Maximum number of iterations to perform.
     tol : dict
         Absolute and relative tolerance values.
@@ -213,136 +205,112 @@ def _minimize_bhhh(
 
     _check_unknown_options(unknown_options)
 
-    f = fun
-    fprime = jac
-    retall = return_all
-    k = 0
-    n = len(x0)
+    if not isinstance(args, tuple):
+        args = (args,)
 
-    x0 = np.asarray(x0).flatten()
-    if x0.ndim == 0:
-        x0.shape = (1,)
+    num_iterations = 0
+    num_params = len(x0)
+    status = True
+    # Probably taken care of by estimagic...
+    # x0 = np.asarray(x0).flatten()
+    # if x0.ndim == 0:
+    #     x0.shape = (1,)
 
-    if bounds is None:
-        bounds = np.array([np.inf] * n * 2).reshape((2, n))
-        bounds[0, :] = -bounds[0, :]
-    if bounds.shape[1] != n:
-        raise ValueError("length of x0 != length of bounds")
+    bounds = np.array(bounds)
+    lower_bounds = bounds[0, :]
+    upper_bounds = bounds[1, :]
+    x0 = np.clip(x0, lower_bounds, upper_bounds)
 
-    low = bounds[0, :]
-    up = bounds[1, :]
-    x0 = np.clip(x0, low, up)
+    if max_iterations is None:
+        max_iterations = num_params * 200
 
-    if maxiter is None:
-        maxiter = len(x0) * 200
+    # Need the aggregate function to take only x0 as an argument
+    func_calls, aggregate_func = wrap_function_aggregate(func, args)
 
-    # Need the aggregate functions to take only x0 as an argument
-    func_calls, agg_fun = wrap_function_agg(f, args)
-
-    if not callable(fprime):
-        grad_calls, myfprime = wrap_function_num_dev(f, args)
+    if not callable(jacobian):
+        grad_calls, jacobian_wrapped = wrap_function_num_derivative(func, args)
     else:
-        grad_calls, myfprime = wrap_function(fprime, args)
+        grad_calls, jacobian_wrapped = wrap_function(jacobian, args)
 
-    def agg_fprime(x0):
-        return myfprime(x0).sum(axis=0)
+    def aggregate_jacobian_wrapped(x0):
+        return jacobian_wrapped(x0).sum(axis=0)
 
     # Setup for iteration
-    old_fval = agg_fun(x0)
+    func_value = aggregate_func(x0)
 
-    gf0 = agg_fprime(x0)
-    norm_pg0 = vecnorm(x0 - np.clip(x0 - gf0, low, up), ord=norm)
+    agg_jacobian_start_value = aggregate_jacobian_wrapped(x0)
+    norm_start = vecnorm(
+        x0 - np.clip(x0 - agg_jacobian_start_value, lower_bounds, upper_bounds),
+        ord=norm,
+    )
+    # Set the initial step guess to dx ~ 1
+    old_func_value = func_value + np.linalg.norm(agg_jacobian_start_value) / 2
 
     xk = x0
-    norm_pgk = norm_pg0
 
-    if retall:
-        allvecs = [x0]
-    warnflag = 0
-
-    for _ in range(maxiter):
+    for _ in range(max_iterations):
 
         # Individual
-        gfk_obs = myfprime(xk)
+        jacobian_value = jacobian_wrapped(xk)
 
-        # Aggregate fprime. Might replace by simply summing up gfk_obs
-        gfk = gfk_obs.sum(axis=0)
-        norm_pgk = vecnorm(xk - np.clip(xk - gfk, low, up), ord=norm)
+        # Aggregate fprime.
+        agg_jacobian_value = jacobian_value.sum(axis=0)
+        norm_current = vecnorm(
+            xk - np.clip(xk - agg_jacobian_value, lower_bounds, upper_bounds), ord=norm
+        )
 
         # Check tolerance of gradient norm
-        if norm_pgk <= tol["abs"] + tol["rel"] * norm_pg0:
+        if norm_current <= tol["abs"] + tol["rel"] * norm_start:
             break
 
-        # Sets the initial step guess to dx ~ 1
-        old_old_fval = old_fval + np.linalg.norm(gfk) / 2
-
         # Calculate BHHH hessian and step
-        hk = np.dot(gfk_obs.T, gfk_obs)
-        bk = np.linalg.inv(hk)
-        pk = np.empty(n)
-        pk = -np.dot(bk, gfk)
+        hessian = np.dot(jacobian_value.T, jacobian_value)
+        hessian_inverse = np.linalg.inv(hessian)
+        step = -np.dot(hessian_inverse, agg_jacobian_value)
 
         try:
-            alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = _line_search_wolfe12(
-                agg_fun,
-                agg_fprime,
+            alpha, fc, gc, func_value, old_func_value, gfkp1 = _line_search_wolfe12(
+                aggregate_func,
+                aggregate_jacobian_wrapped,
                 xk,
-                pk,
-                gfk,
-                old_fval,
-                old_old_fval,
+                step,
+                agg_jacobian_value,
+                func_value,
+                old_func_value,
                 amin=1e-100,
                 amax=1e100,
             )
         except _LineSearchError:
-            # Line search failed to find a better solution.
-            warnflag = 2
+            message = "Line search algorithm failed to find a better solution."
+            status = False
             break
 
-        xkp1 = np.clip(xk + alpha_k * pk, low, up)
-        if retall:
-            allvecs.append(xkp1)
-        xk = xkp1
+        xk = np.clip(xk + alpha * step, lower_bounds, upper_bounds)
+
         if callback is not None:
             callback(xk)
-        k += 1
+        num_iterations += 1
 
-        if np.isinf(old_fval):
-            # We correctly found +-Inf as optimal value, or something went
-            # wrong.
-            warnflag = 2
-            break
+    if status is True:
+        if num_iterations >= max_iterations:
+            message = "Maximum number of iterations has been exceeded."
+            status = False
+        elif np.isnan(func_value) or np.isnan(xk).any():
+            message = "NaN result encountered."
+            status = False
+        else:
+            message = "Optimization terminated successfully."
 
-    fval = old_fval
+    results = {}
+    results["status"] = status
+    results["message"] = message
+    results["n_iterations"] = num_iterations
+    results["fitness"] = func_value
+    results["n_evaluations"] = func_calls
+    results["n_evaluations_jacobian"] = grad_calls
+    results["jacobian"] = agg_jacobian_value
+    results["hessian"] = hessian
+    results["hessian_inverse"] = hessian_inverse
+    results["x"] = xk
 
-    if warnflag == 2:
-        msg = _status_message["pr_loss"]
-    elif k >= maxiter:
-        warnflag = 1
-        msg = _status_message["maxiter"]
-    elif np.isnan(fval) or np.isnan(xk).any():
-        warnflag = 3
-        msg = _status_message["nan"]
-    else:
-        msg = _status_message["success"]
-
-    if disp:
-        print("{}{}".format("Warning: " if warnflag != 0 else "", msg))
-        print("         Current function value: %f" % fval)
-        print("         Iterations: %d" % k)
-
-    result = OptimizeResult(
-        fun=fval,
-        jac=gfk,
-        hess_inv=bk,
-        nfev=func_calls[0],
-        njev=grad_calls[0],
-        status=warnflag,
-        success=(warnflag == 0),
-        message=msg,
-        x=xk,
-        nit=k,
-    )
-    if retall:
-        result["allvecs"] = allvecs
-    return result
+    return results

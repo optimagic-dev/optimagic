@@ -7,6 +7,7 @@ from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.dashboard.run_dashboard import run_dashboard_in_separate_process
 from estimagic.decorators import negative_gradient
 from estimagic.logging.update_database import update_scalar_field
+from estimagic.optimization.bhhh import minimize_bhhh
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_arguments
 from estimagic.optimization.pounders import minimize_pounders_np
@@ -335,6 +336,14 @@ def _internal_minimize(
             internal_params,
             bounds,
             n_errors=len_criterion_value,
+            **algo_options,
+        )
+    elif origin == "bhhh":
+        results = minimize_bhhh(
+            internal_criterion,
+            internal_params,
+            bounds=bounds,
+            jacobian=internal_gradient,
             **algo_options,
         )
     else:
