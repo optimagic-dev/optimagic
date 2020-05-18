@@ -338,7 +338,7 @@ def _internal_minimize(
             n_errors=len_criterion_value,
             **algo_options,
         )
-    elif origin == "bhhh":
+    elif origin == "estimagic" and algo_name == "bhhh":
         results = minimize_bhhh(
             internal_criterion,
             internal_params,
