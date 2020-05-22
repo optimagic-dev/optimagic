@@ -114,3 +114,6 @@ venv.bak/
 
 
 *.db
+#tex
+.synctex
+.synctex.gz
