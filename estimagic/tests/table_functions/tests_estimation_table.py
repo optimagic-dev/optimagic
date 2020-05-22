@@ -15,7 +15,7 @@ from estimagic.table_functions.estimation_table import _process_model
 
 # test process_model for different model types
 NamedTup = namedtuple("NamedTup", "params info")
-df_ = pd.read_csv("diabetes.csv", index_col=0)
+df_ = pd.read_csv("./estimagic/tests/table_functions/diabetes.csv", index_col=0)
 est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).fit()
 
 
