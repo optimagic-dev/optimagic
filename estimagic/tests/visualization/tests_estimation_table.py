@@ -7,15 +7,15 @@ import statsmodels.api as sm
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 
-from estimagic.table_functions.estimation_table import _convert_model_to_series
-from estimagic.table_functions.estimation_table import _create_statistics_sr
-from estimagic.table_functions.estimation_table import _process_body_df
-from estimagic.table_functions.estimation_table import _process_model
+from estimagic.visualization.estimation_table import _convert_model_to_series
+from estimagic.visualization.estimation_table import _create_statistics_sr
+from estimagic.visualization.estimation_table import _process_body_df
+from estimagic.visualization.estimation_table import _process_model
 
 
 # test process_model for different model types
 NamedTup = namedtuple("NamedTup", "params info")
-df_ = pd.read_csv("./estimagic/tests/table_functions/diabetes.csv", index_col=0)
+df_ = pd.read_csv("./estimagic/tests/visualization/diabetes.csv", index_col=0)
 est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).fit()
 
 
