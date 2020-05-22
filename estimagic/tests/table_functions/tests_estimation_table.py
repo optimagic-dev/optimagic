@@ -6,7 +6,6 @@ import pandas as pd
 import statsmodels.api as sm
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
-from sklearn import datasets
 
 from estimagic.table_functions.estimation_table import _convert_model_to_series
 from estimagic.table_functions.estimation_table import _create_statistics_sr
@@ -16,10 +15,7 @@ from estimagic.table_functions.estimation_table import _process_model
 
 # test process_model for different model types
 NamedTup = namedtuple("NamedTup", "params info")
-diabetes = datasets.load_diabetes()
-df_ = pd.DataFrame(diabetes.data)
-df_.columns = ["Age", "Sex", "BMI", "ABP", "S1", "S2", "S3", "S4", "S5", "S6"]
-df_["target"] = diabetes.target
+df_ = pd.read_csv("diabetes.csv", index_col=0)
 est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).fit()
 
 
