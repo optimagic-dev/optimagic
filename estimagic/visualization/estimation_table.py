@@ -108,16 +108,15 @@ def estimation_table(
             custom_col_names = name_list
     # Set some defaults:
     if not stats_dict:
-        stats_dict = (
-            {
-                "Observations": "n_obs",
-                "R$^2$": "rsquared",
-                "Adj. R$^2$": "rsquared_adj",
-                "Residual Std. Error": "resid_std_err",
-                "F Statistic": "fvalue",
-                "show_dof": None,
-            },
-        )
+        stats_dict = {
+            "Observations": "n_obs",
+            "R$^2$": "rsquared",
+            "Adj. R$^2$": "rsquared_adj",
+            "Residual Std. Error": "resid_std_err",
+            "F Statistic": "fvalue",
+            "show_dof": None,
+        }
+
     for_index = [mod.params for mod in models]
     com_ind = []
     for d_ in for_index:
