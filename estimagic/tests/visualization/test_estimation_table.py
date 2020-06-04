@@ -12,7 +12,7 @@ from estimagic.visualization.estimation_table import _convert_model_to_series
 from estimagic.visualization.estimation_table import _create_statistics_sr
 from estimagic.visualization.estimation_table import _process_body_df
 from estimagic.visualization.estimation_table import _process_model
-
+from estimagic.visualization.estimation_table import estimation_table
 
 # test process_model for different model types
 NamedTup = namedtuple("NamedTup", "params info")
@@ -20,6 +20,48 @@ fix_path = Path(__file__).resolve().parent / "diabetes.csv"
 
 df_ = pd.read_csv(fix_path, index_col=0)
 est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).fit()
+
+
+def test_estimation_table():
+    models = [est]
+    return_type = "python"
+    res = estimation_table(models, return_type, append_notes=False)
+    exp = {}
+    body_df = """ ,{(1)}
+const,152.13$^{*** }$
+,(2.85)
+Age,37.24$^{ }$
+,(64.12)
+Sex,-106.58$^{* }$
+,(62.13)
+BMI,787.18$^{*** }$
+,(65.42)
+ABP,416.67$^{*** }$
+,(69.49)
+"""
+    exp["body_df"] = pd.read_csv(io.StringIO(body_df)).fillna("")
+    exp["body_df"].set_index(" ", inplace=True, drop=True)
+    exp["body_df"].index.names = ["index"]
+    footer_df = """ ,{(1)}
+Observations,442.0
+R$^2$,0.4
+Adj. R$^2$,0.39
+Residual Std. Error,59.98
+F Statistic,72.91$^{***}$
+"""
+    exp["footer_df"] = pd.read_csv(io.StringIO(footer_df), index_col=[" "])
+    exp["footer_df"].index.names = [None]
+    exp["footer_df"].index = pd.MultiIndex.from_arrays([exp["footer_df"].index])
+    exp["notes_tex"] = "\\midrule\n"
+    exp[
+        "notes_html"
+    ] = """<tr><td colspan="2" style="border-bottom: 1px solid black">
+        </td></tr>"""
+
+    afe(exp["footer_df"], res["footer_df"])
+    afe(exp["body_df"], res["body_df"], check_index_type=False)
+    ase(pd.Series(exp["notes_html"]), pd.Series(res["notes_html"]))
+    ase(pd.Series(exp["notes_tex"]), pd.Series(res["notes_tex"]))
 
 
 def test_process_model_namedtuple():

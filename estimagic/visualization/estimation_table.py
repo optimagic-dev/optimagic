@@ -658,8 +658,7 @@ def _generate_notes_html(append_notes, notes_label, sig_levels, custom_notes, df
                 assert all(
                     isinstance(n, str) for n in custom_notes
                 ), "Data type of custom notes can only be string"
-                if append_notes:
-                    notes_text += "<tr>"
+                notes_text += "<tr>"
                 notes_text += '<td></td><td colspan="'
                 notes_text += str(n_columns + n_levels - 1)
                 notes_text += '" style="text-align: right">'
