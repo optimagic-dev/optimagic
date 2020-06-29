@@ -30,9 +30,10 @@ def estimation_table(
     siunitx_warning=True,
     alignment_warning=True,
 ):
-    r"""Print nice html and LaTex tables provided (lists of) of models. Can return strings
-    of LaTex/html scripts or dictionaries with processed dataframes to be passed to
-    tabular functions, or save tables to path.
+    r"""Generate html and LaTex tables provided (lists of) of models.
+
+    Can return strings of LaTex/html scripts or dictionaries with processed dataframes
+    to be passed to tabular functions, or save tables to path.
 
     Args:
         models(list): list of estimation results. The estimation results should either
@@ -567,7 +568,6 @@ def _process_body_df(
     return df
 
 
-# Generate p-value explanation and other,custom, notes
 def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, df):
     """Generate the LaTex script of the notes section.
 
@@ -687,11 +687,8 @@ def _generate_notes_html(append_notes, notes_label, sig_levels, custom_notes, df
     return notes_text
 
 
-# Extract infromation from stats model results into namedtuple
 def _extract_params_from_sm(model):
-    """Process sm estimation result to retrieve parameters dataframe.
-    Modify to match estimagic parameters DataFrame format
-    """
+    """Convert statsmodels like estimation result to estimagic like params dataframe."""
     to_concat = []
     params_list = ["params", "pvalues", "bse"]
     for col in params_list:
@@ -704,8 +701,7 @@ def _extract_params_from_sm(model):
 
 
 def _extract_info_from_sm(model):
-    """Process sm estimation result to retrieve summary statistics as dict.
-    """
+    """Process statsmodels estimation result to retrieve summary statistics as dict."""
     info = {}
     key_values = [
         "rsquared",

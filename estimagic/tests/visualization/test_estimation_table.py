@@ -1,6 +1,6 @@
 import io
+import textwrap
 from collections import namedtuple
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -8,6 +8,7 @@ import statsmodels.api as sm
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 
+from estimagic.config import DOCS_DIR
 from estimagic.visualization.estimation_table import _convert_model_to_series
 from estimagic.visualization.estimation_table import _create_statistics_sr
 from estimagic.visualization.estimation_table import _process_body_df
@@ -16,7 +17,8 @@ from estimagic.visualization.estimation_table import estimation_table
 
 # test process_model for different model types
 NamedTup = namedtuple("NamedTup", "params info")
-fix_path = Path(__file__).resolve().parent / "diabetes.csv"
+
+fix_path = DOCS_DIR / "source/visualization/diabetes.csv"
 
 df_ = pd.read_csv(fix_path, index_col=0)
 est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).fit()
@@ -27,21 +29,21 @@ def test_estimation_table():
     return_type = "python"
     res = estimation_table(models, return_type, append_notes=False)
     exp = {}
-    body_df = """ ,{(1)}
-const,152.13$^{*** }$
-,(2.85)
-Age,37.24$^{ }$
-,(64.12)
-Sex,-106.58$^{* }$
-,(62.13)
-BMI,787.18$^{*** }$
-,(65.42)
-ABP,416.67$^{*** }$
-,(69.49)
-"""
-    exp["body_df"] = pd.read_csv(io.StringIO(body_df)).fillna("")
-    exp["body_df"].set_index(" ", inplace=True, drop=True)
-    exp["body_df"].index.names = ["index"]
+    body_df = """
+        index,{(1)}
+        const,152.13$^{*** }$
+        ,(2.85)
+        Age,37.24$^{ }$
+        ,(64.12)
+        Sex,-106.58$^{* }$
+        ,(62.13)
+        BMI,787.18$^{*** }$
+        ,(65.42)
+        ABP,416.67$^{*** }$
+        ,(69.49)
+    """
+    exp["body_df"] = _read_csv_string(body_df).fillna("")
+    exp["body_df"].set_index("index", inplace=True)
     footer_df = """ ,{(1)}
 Observations,442.0
 R$^2$,0.4
@@ -254,3 +256,8 @@ def test_process_params_df_columns():
     )
 
     afe(df, exp, check_dtype=False)
+
+
+def _read_csv_string(string, index_cols=None):
+    string = textwrap.dedent(string)
+    return pd.read_csv(io.StringIO(string), index_col=index_cols)
