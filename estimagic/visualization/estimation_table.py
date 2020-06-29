@@ -30,7 +30,7 @@ def estimation_table(
     siunitx_warning=True,
     alignment_warning=True,
 ):
-    """Print nice html and LaTex tables provided (lists of) of models. Can return strings
+    r"""Print nice html and LaTex tables provided (lists of) of models. Can return strings
     of LaTex/html scripts or dictionaries with processed dataframes to be passed to
     tabular functions, or save tables to path.
 
@@ -93,8 +93,8 @@ def estimation_table(
             compilation
         - If the number of models is more than 2, set the value of left_decimals
             to 3 or more to avoid columns overlay in the tex output.
-    """
 
+    """
     assert isinstance(models, list), "Please provide models as a list"
     models = [_process_model(mod) for mod in models]
     # if the value of custom_col_names is the default and EVERY models' attribute
@@ -151,7 +151,7 @@ def estimation_table(
     if return_type == "latex" or str(return_type).endswith(".tex"):
         if siunitx_warning:
             warn(
-                """LaTeX compilation requires the package siunitx and adding
+                r"""LaTeX compilation requires the package siunitx and adding
                     \sisetup{input_symbols =()} to your main tex file. To turn
                     this warning off set value of siunitx_warning = False"""
             )
@@ -308,8 +308,8 @@ def tabular_html(
     # this line removes all the curly braces that were placed in order to get nice latex
     # output. Since Html does not escape them, they need to be removed.
     html_str = re.sub(
-        "(?<=[\d)}{)a-zA-Z])}", "", re.sub("{(?=[}\d(a-zA-Z-])", "", html_str)
-    ).replace("\,", " ")
+        r"(?<=[\d)}{)a-zA-Z])}", "", re.sub(r"{(?=[}\d(a-zA-Z-])", "", html_str)
+    ).replace(r"\,", " ")
     if show_footer:
         stats_str = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
             </td></tr>""".format(
@@ -320,7 +320,7 @@ def tabular_html(
             .split("</thead>\n")[1]
             .split("</tbody>\n</table>")[0]
         )
-        stats_str = re.sub("(?<=[\d)}{)])}", "", re.sub("{(?=[}\d(])", "", stats_str))
+        stats_str = re.sub(r"(?<=[\d)}{)])}", "", re.sub(r"{(?=[}\d(])", "", stats_str))
         html_str += stats_str
     html_str += notes_html
     html_str += "</tbody>\n</table>"
@@ -394,7 +394,7 @@ def _convert_model_to_series(
             inference_sr += (
                 round(df["ci_lower"], sig_digits).replace(np.nan, "").astype("str")
             )
-            inference_sr += "\,;\,"
+            inference_sr += r"\,;\,"
             inference_sr += (
                 round(df["ci_upper"], sig_digits).replace(np.nan, "").astype("str")
             )
@@ -413,7 +413,7 @@ def _convert_model_to_series(
         sr = _combine_series(value_sr, inference_sr)
     else:
         sr = value_sr
-    sr[~sr.apply(lambda x: bool(re.search("\d", x)))] = ""
+    sr[~sr.apply(lambda x: bool(re.search(r"\d", x)))] = ""
     sr.name = ""
     return sr
 
