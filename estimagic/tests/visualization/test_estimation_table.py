@@ -29,7 +29,7 @@ def test_estimation_table():
     return_type = "python"
     res = estimation_table(models, return_type, append_notes=False)
     exp = {}
-    body_df = """
+    body_str = """
         index,{(1)}
         const,152.13$^{*** }$
         ,(2.85)
@@ -42,16 +42,18 @@ def test_estimation_table():
         ABP,416.67$^{*** }$
         ,(69.49)
     """
-    exp["body_df"] = _read_csv_string(body_df).fillna("")
+    exp["body_df"] = _read_csv_string(body_str).fillna("")
     exp["body_df"].set_index("index", inplace=True)
-    footer_df = """ ,{(1)}
-Observations,442.0
-R$^2$,0.4
-Adj. R$^2$,0.39
-Residual Std. Error,59.98
-F Statistic,72.91$^{***}$
-"""
-    exp["footer_df"] = pd.read_csv(io.StringIO(footer_df), index_col=[" "])
+    footer_str = """
+         ,{(1)}
+        Observations,442.0
+        R$^2$,0.4
+        Adj. R$^2$,0.39
+        Residual Std. Error,59.98
+        F Statistic,72.91$^{***}$
+    """
+    exp["footer_df"] = _read_csv_string(footer_str).fillna("")
+    exp["footer_df"].set_index(" ", inplace=True)
     exp["footer_df"].index.names = [None]
     exp["footer_df"].index = pd.MultiIndex.from_arrays([exp["footer_df"].index])
     exp["notes_tex"] = "\\midrule\n"
@@ -96,19 +98,19 @@ def test_process_model_stats_model():
     par_df["standard_error"] = [2.852749, 64.117433, 62.125062, 65.424126, 69.494666]
     par_df["ci_lower"] = [146.526671, -88.775663, -228.678572, 658.594255, 280.088446]
     par_df["ci_upper"] = [157.740298, 163.258084, 15.523532, 915.764371, 553.259097]
-    inf = {}
-    inf["rsquared"] = 0.40026108237714
-    inf["rsquared_adj"] = 0.39477148130050055
-    inf["fvalue"] = 72.91259907398705
-    inf["f_pvalue"] = 2.700722880950139e-47
-    inf["df_model"] = 4.0
-    inf["df_resid"] = 437.0
-    inf["dependent_variable"] = "target"
-    inf["resid_std_err"] = 59.97560860753488
-    inf["n_obs"] = 442.0
+    info_dict = {}
+    info_dict["rsquared"] = 0.40026108237714
+    info_dict["rsquared_adj"] = 0.39477148130050055
+    info_dict["fvalue"] = 72.91259907398705
+    info_dict["f_pvalue"] = 2.700722880950139e-47
+    info_dict["df_model"] = 4.0
+    info_dict["df_resid"] = 437.0
+    info_dict["dependent_variable"] = "target"
+    info_dict["resid_std_err"] = 59.97560860753488
+    info_dict["n_obs"] = 442.0
     res = _process_model(est)
     afe(res.params, par_df)
-    ase(pd.Series(res.info), pd.Series(inf))
+    ase(pd.Series(res.info), pd.Series(info_dict))
 
 
 def test_process_model_dict():
@@ -231,12 +233,14 @@ def test_process_body_df_indices():
         custom_model_names=None,
     )
     # expected:
-    params = """period,variable,a,b,c
-tomorrow,1stvar,1,1,1
-tomorrow,var2,1,1,1
-tomorrow,var3,1,1,1
-"""
-    exp = pd.read_csv(io.StringIO(params), index_col=["period", "variable"])
+    params = """
+        period,variable,a,b,c
+        tomorrow,1stvar,1,1,1
+        tomorrow,var2,1,1,1
+        tomorrow,var3,1,1,1
+    """
+    exp = _read_csv_string(params).fillna("")
+    exp.set_index(["period", "variable"], inplace=True)
     afe(res, exp, check_dtype=False)
 
 

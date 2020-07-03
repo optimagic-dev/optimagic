@@ -464,38 +464,42 @@ def _create_statistics_sr(model, stats_dict, sig_levels, show_stars, sig_digits)
             if applied.
 
     """
-    sr = {}
+    series_dict = {}
     stats_dict = copy(stats_dict)
     if "show_dof" in stats_dict:
         show_dof = stats_dict.pop("show_dof")
     else:
         show_dof = None
     for k in stats_dict:
-        sr[k] = str(round(model.info.get(stats_dict[k], np.nan), sig_digits)).replace(
-            "nan", ""
-        )
-    if "fvalue" in model.info and "F Statistic" in sr:
+        series_dict[k] = str(
+            round(model.info.get(stats_dict[k], np.nan), sig_digits)
+        ).replace("nan", "")
+    if "fvalue" in model.info and "F Statistic" in series_dict:
         if show_stars and "f_pvalue" in model.info:
             sig_bins = [-1] + sorted(sig_levels) + [2]
             sig_icon_fstat = "*" * (
                 len(sig_levels) - np.digitize(model.info["f_pvalue"], sig_bins) + 1
             )
-            sr["F Statistic"] = sr["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
+            series_dict["F Statistic"] = (
+                series_dict["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
+            )
         if show_dof:
-            sr["F Statistic"] = "{" + sr["F Statistic"]
-            sr["F Statistic"] += "(df="
-            sr["F Statistic"] += str(model.info["df_model"])
-            sr["F Statistic"] += ";"
-            sr["F Statistic"] += str(model.info["df_resid"])
-            sr["F Statistic"] += ")}"
+            series_dict["F Statistic"] = "{" + series_dict["F Statistic"]
+            series_dict["F Statistic"] += "(df="
+            series_dict["F Statistic"] += str(model.info["df_model"])
+            series_dict["F Statistic"] += ";"
+            series_dict["F Statistic"] += str(model.info["df_resid"])
+            series_dict["F Statistic"] += ")}"
 
-    if "resid_std_err" in model.info and "Residual Std. Error" in sr:
+    if "resid_std_err" in model.info and "Residual Std. Error" in series_dict:
         if show_dof:
-            sr["Residual Std. Error"] = "{" + sr["Residual Std. Error"]
-            sr["Residual Std. Error"] += "(df="
-            sr["Residual Std. Error"] += str(model.info["df_resid"])
-            sr["Residual Std. Error"] += ")}"
-    stat_sr = pd.Series(sr)
+            series_dict["Residual Std. Error"] = (
+                "{" + series_dict["Residual Std. Error"]
+            )
+            series_dict["Residual Std. Error"] += "(df="
+            series_dict["Residual Std. Error"] += str(model.info["df_resid"])
+            series_dict["Residual Std. Error"] += ")}"
+    stat_sr = pd.Series(series_dict)
     # the follwing is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
     stat_ind = np.empty((len(stat_sr), model.params.index.nlevels - 1), dtype=str)
