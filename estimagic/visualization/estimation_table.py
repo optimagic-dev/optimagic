@@ -607,7 +607,8 @@ def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, d
                     isinstance(n, str) for n in custom_notes
                 ), "Data type of custom notes can only be string"
                 for n in custom_notes:
-                    notes_text += "{}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n".format(
+                    notes_text += """
+                    {}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n""".format(
                         amp_n, n_columns, n
                     )
             elif isinstance(custom_notes, str):
