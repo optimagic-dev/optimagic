@@ -591,8 +591,9 @@ def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, d
     sig_levels = sorted(sig_levels)
     notes_text = "\\midrule\n"
     if append_notes:
-        notes_text += "\\textit{" + notes_label + "}"
-        notes_text += " & \\multicolumn{" + str(n_columns + n_levels - 1) + "}{r}{"
+        notes_text += "\\textit{{{}}} & \\multicolumn{{{}}}{{r}}{{".format(
+            notes_label, str(n_columns + n_levels - 1)
+        )
         for i in range(len(sig_levels) - 1):
             notes_text += "$^{{{}}}$p$<${};".format(
                 "*" * (len(sig_levels) - i), str(sig_levels[i])
