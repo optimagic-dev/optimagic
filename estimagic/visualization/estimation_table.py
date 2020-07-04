@@ -644,10 +644,10 @@ def _generate_notes_html(append_notes, notes_label, sig_levels, custom_notes, df
         n_columns + n_levels
     )
     if append_notes:
-        notes_text += '<tr><td style="text-align: left">' + notes_label + "</td>"
         notes_text += """
-    <td colspan="{}" style="text-align: right">""".format(
-            n_columns + n_levels - 1
+        <tr><td style="text-align: left">{}</td><td colspan="{}"
+        style="text-align: right">""".format(
+            notes_label, n_columns + n_levels - 1
         )
         for i in range(len(sig_levels) - 1):
             notes_text += "<sup>"
