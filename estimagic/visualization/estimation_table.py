@@ -650,9 +650,8 @@ def _generate_notes_html(append_notes, notes_label, sig_levels, custom_notes, df
             notes_label, n_columns + n_levels - 1
         )
         for i in range(len(sig_levels) - 1):
-            notes_text += "<sup>"
-            notes_text += "*" * (len(sig_levels) - i)
-            notes_text += """</sup>p&lt;{}; """.format(sig_levels[i])
+            stars = "*" * (len(sig_levels) - i)
+            notes_text += "<sup>{}</sup>p&lt;{}; ".format(stars, sig_levels[i])
         notes_text += """<sup>*</sup>p&lt;{} </td>""".format(sig_levels[-1])
         if custom_notes:
             if isinstance(custom_notes, list):
