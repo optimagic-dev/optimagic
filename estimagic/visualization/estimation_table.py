@@ -484,7 +484,7 @@ def _create_statistics_sr(model, stats_dict, sig_levels, show_stars, sig_digits)
                 series_dict["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
             )
         if show_dof:
-            fstat_str = "{{{}(df={};{}) }}"
+            fstat_str = "{{{}(df={};{})}}"
             series_dict["F Statistic"] = fstat_str.format(
                 series_dict["F Statistic"],
                 model.info["df_model"],
