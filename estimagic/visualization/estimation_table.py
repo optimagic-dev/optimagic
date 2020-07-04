@@ -594,12 +594,9 @@ def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, d
         notes_text += "\\textit{" + notes_label + "}"
         notes_text += " & \\multicolumn{" + str(n_columns + n_levels - 1) + "}{r}{"
         for i in range(len(sig_levels) - 1):
-            notes_text += "$^{"
-            notes_text += "*" * (len(sig_levels) - i)
-            notes_text += "}$p$<$"
-            notes_text += str(sig_levels[i])
-            notes_text += "; "
-
+            notes_text += "$^{{{}}}$p$<${};".format(
+                "*" * (len(sig_levels) - i), str(sig_levels[i])
+            )
         notes_text += "$^{*}$p$<$" + str(sig_levels[-1]) + "} \\\\\n"
         if custom_notes:
             if isinstance(custom_notes, list):
