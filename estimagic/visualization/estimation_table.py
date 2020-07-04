@@ -597,27 +597,23 @@ def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, d
         # iterate over penultimate sig_level since last item of legend is not
         # followed by a semi column
         for i in range(len(sig_levels) - 1):
-            notes_text += "$^{{{}}}$p$<${};".format(
-                "*" * (len(sig_levels) - i), str(sig_levels[i])
-            )
+            star = "*" * (len(sig_levels) - i)
+            notes_text += "$^{{{}}}$p$<${};".format(star, str(sig_levels[i]))
         notes_text += "$^{*}$p$<$" + str(sig_levels[-1]) + "} \\\\\n"
         if custom_notes:
+            amp_n = "&" * n_levels
             if isinstance(custom_notes, list):
                 assert all(
                     isinstance(n, str) for n in custom_notes
                 ), "Data type of custom notes can only be string"
                 for n in custom_notes:
-                    notes_text += "&" * n_levels + "\\multicolumn{"
-                    notes_text += str(n_columns)
-                    notes_text += "}{r}\\textit{"
-                    notes_text += n
-                    notes_text += "} \\\\\n"
+                    notes_text += "{}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n".format(
+                        amp_n, n_columns, n
+                    )
             elif isinstance(custom_notes, str):
-                notes_text += "&" * n_levels + "\\multicolumn{"
-                notes_text += str(n_columns)
-                notes_text += "}{r}\\textit{"
-                notes_text += custom_notes
-                notes_text += "} \\\\\n"
+                notes_text += "{}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n".format(
+                    amp_n, n_columns, custom_notes
+                )
             else:
                 raise ValueError(
                     "Custom notes can be either a string or a list of strings"
