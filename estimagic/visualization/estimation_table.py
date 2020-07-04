@@ -594,6 +594,8 @@ def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, d
         notes_text += "\\textit{{{}}} & \\multicolumn{{{}}}{{r}}{{".format(
             notes_label, str(n_columns + n_levels - 1)
         )
+        # iterate over penultimate sig_level since last item of legend is not
+        # followed by a semi column
         for i in range(len(sig_levels) - 1):
             notes_text += "$^{{{}}}$p$<${};".format(
                 "*" * (len(sig_levels) - i), str(sig_levels[i])
