@@ -90,13 +90,13 @@ def estimation_table(
 
     Notes:
         - Compiling LaTex tables requires the package siunitx.
-        - Add \sisetup{input_symbol = ()} to your main tex file for proper
+        - Add \sisetup{input-symbols = ()} to your main tex file for proper
             compilation
         - If the number of models is more than 2, set the value of left_decimals
             to 3 or more to avoid columns overlay in the tex output.
 
     """
-    assert isinstance(models, list), "Please provide models as a list"
+    assert isinstance(models, list), "Please, provide models as a list"
     models = [_process_model(mod) for mod in models]
     # if the value of custom_col_names is the default and EVERY models' attribute
     # info has the key estimation_name, replace custom col names with the  value
@@ -484,21 +484,18 @@ def _create_statistics_sr(model, stats_dict, sig_levels, show_stars, sig_digits)
                 series_dict["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
             )
         if show_dof:
-            series_dict["F Statistic"] = "{" + series_dict["F Statistic"]
-            series_dict["F Statistic"] += "(df="
-            series_dict["F Statistic"] += str(model.info["df_model"])
-            series_dict["F Statistic"] += ";"
-            series_dict["F Statistic"] += str(model.info["df_resid"])
-            series_dict["F Statistic"] += ")}"
-
+            fstat_str = "{{{}(df={};{}) }}"
+            series_dict["F Statistic"] = fstat_str.format(
+                series_dict["F Statistic"],
+                model.info["df_model"],
+                model.info["df_resid"],
+            )
     if "resid_std_err" in model.info and "Residual Std. Error" in series_dict:
         if show_dof:
-            series_dict["Residual Std. Error"] = (
-                "{" + series_dict["Residual Std. Error"]
+            rse_str = "{{{}(df={})}}"
+            series_dict["Residual Std. Error"] = rse_str.format(
+                series_dict["Residual Std. Error"], model.info["df_resid"]
             )
-            series_dict["Residual Std. Error"] += "(df="
-            series_dict["Residual Std. Error"] += str(model.info["df_resid"])
-            series_dict["Residual Std. Error"] += ")}"
     stat_sr = pd.Series(series_dict)
     # the follwing is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
