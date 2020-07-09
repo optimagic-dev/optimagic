@@ -84,7 +84,17 @@ def test_first_derivative_scalar(method):
 
     calculated = first_derivative(f, 3.0)
     expected = 6.0
-    aaae(calculated, expected)
+    assert calculated == expected
+
+
+@pytest.mark.parametrize("method", methods)
+def test_first_derivative_scalar_with_return_func_value(method):
+    def f(x):
+        return x ** 2
+
+    calculated = first_derivative(f, 3.0, return_func_value=True)
+    expected = (6.0, 9.0)
+    assert calculated == expected
 
 
 def test_get_output_shape():

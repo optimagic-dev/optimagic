@@ -26,6 +26,7 @@ def first_derivative(
     min_steps=None,
     f0=None,
     n_cores=1,
+    return_func_value=False,
 ):
 
     """Evaluate first derivative of func at x according to method and step options.
@@ -69,6 +70,9 @@ def first_derivative(
         f0 (np.ndarray): 1d numpy array with func(x), optional.
         n_cores (int): Number of processes used to parallelize the function
             evaluations. Default 1.
+        return_func_value (bool): If True, return a tuple with the derivative and the
+            function value at x. Default False. This is useful when using
+            first_derivative during optimization.
 
     Returns:
         derivative (np.ndarray): The estimated first derivative of func at x.
@@ -77,17 +81,16 @@ def first_derivative(
             f: R^m -> R leads to shape (m, ), usually called Gradient
             f: R -> R^n leads to shape (n, 1), usually called Jacobian
             f: R^m -> R^n leads to shape (n, m), usually called Jacobian
+        float or np.ndarray: The function value at x, only returned if return_func_value
+            is True.
 
     """
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
-    f0 = partialed_func(x) if f0 is None else f0
 
     x_was_scalar = np.isscalar(x)
-    f_was_scalar = np.isscalar(f0)
 
     x = np.atleast_1d(x)
-    f0 = np.atleast_1d(f0)
 
     @nan_if_exception
     @de_scalarize(x_was_scalar)
@@ -117,7 +120,19 @@ def first_derivative(
                 point[j] += step_arr[i, j]
                 evaluation_points.append(point)
 
+    # we always evaluate f0, so we can fall back to one-sided derivatives if
+    # two-sided derivatives fail. The extra cost is negligible in most cases.
+    if f0 is None:
+        evaluation_points.append(x)
+
     raw_evals = _nan_skipping_batch_evaluator(internal_func, evaluation_points, n_cores)
+
+    if f0 is None:
+        f0 = raw_evals[-1]
+        raw_evals = raw_evals[:-1]
+
+    f_was_scalar = np.isscalar(f0)
+    f0 = np.atleast_1d(f0)
 
     evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
     evals = np.transpose(evals, axes=(0, 1, 3, 2))
@@ -138,7 +153,10 @@ def first_derivative(
     else:
         raise NotImplementedError("Extrapolation is not yet implemented.")
 
-    res = jac.flatten() if f_was_scalar else jac
+    derivative = jac.flatten() if f_was_scalar else jac
+    func_value = f0[0] if f_was_scalar else f0
+
+    res = (derivative, func_value) if return_func_value else derivative
 
     return res
 
