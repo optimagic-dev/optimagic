@@ -1,4 +1,5 @@
 from collections import namedtuple
+from hashlib import sha1
 
 import numpy as np
 from fuzzywuzzy import process as fw_process
@@ -234,3 +235,8 @@ def namedtuple_from_iterables(field_names, field_entries):
 
     """
     return namedtuple("NamedTuple", field_names)(*field_entries)
+
+
+def hash_array(arr):
+    """Create a hashsum for fast comparison of numpy arrays."""
+    return sha1(arr.tobytes()).hexdigest()
