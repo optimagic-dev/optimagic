@@ -8,6 +8,8 @@ from estimagic.optimization.process_constraints import _process_selectors
 from estimagic.optimization.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
+from estimagic.optimization.process_constraints import process_constraints
+from estimagic.tests.optimization.test_reparametrize import reduce_params
 
 constr1 = {"loc": 0, "type": "equality"}
 expected1 = {"index": [0, 1, 2]}
@@ -89,3 +91,48 @@ def test_apply_killer_constraint_invalid():
     constraints = [{"loc": "a"}, {"loc": "b", "id": 5}, {"kill": 6}]
     with pytest.raises(KeyError):
         _apply_constraint_killers(constraints)
+
+
+invalid_cases = [
+    "basic_probability",
+    "uncorrelated_covariance",
+    "basic_covariance",
+    "basic_increasing",
+    "basic_equality",
+    "query_equality",
+    "basic_sdcorr",
+]
+
+
+@pytest.mark.parametrize("case", invalid_cases)
+def test_valuep_error_if_constraints_are_violated(
+    example_params, all_constraints, case
+):
+    constraints = all_constraints[case]
+    params = reduce_params(example_params, constraints)
+    for val in ["invalid_value0", "invalid_value1"]:
+        params["value"] = params[val]
+
+        with pytest.raises(ValueError):
+            process_constraints(constraints, params)
+
+
+def test_invalid_bound_for_increasing():
+    params = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
+    params["lower"] = [-np.inf, 1, 0.5]
+    params["upper"] = np.nan
+
+    constraints = [{"loc": params.index, "type": "increasing"}]
+
+    with pytest.raises(ValueError):
+        process_constraints(constraints, params)
+
+
+def test_one_bound_is_allowed_for_increasing():
+    params = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
+    params["lower"] = [-np.inf, 1, -np.inf]
+    params["upper"] = [np.inf, 2, np.inf]
+
+    constraints = [{"loc": params.index, "type": "increasing"}]
+
+    process_constraints(constraints, params)
