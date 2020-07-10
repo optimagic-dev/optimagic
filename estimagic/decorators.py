@@ -15,6 +15,7 @@ import itertools
 import traceback
 from datetime import datetime as dt
 
+import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 
@@ -386,3 +387,29 @@ def de_scalarize(x_was_scalar):
         return wrapper_de_scalarize
 
     return decorator_de_scalarize
+
+
+def hide_jax(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        args = [_to_jax(arg) for arg in args]
+        res = func(*args, **kwargs)
+        if isinstance(res, tuple):
+            res = (_from_jax(obj) for obj in res)
+        else:
+            res = _from_jax(res)
+        return res
+
+    return wrapper
+
+
+def _to_jax(obj):
+    if isinstance(obj, (np.ndarray, pd.Series, pd.DataFrame, list)):
+        obj = jnp.array(obj)
+    return obj
+
+
+def _from_jax(obj):
+    if isinstance(obj, jnp.ndarray):
+        obj = np.array(obj)
+    return obj

@@ -5,102 +5,77 @@ from fuzzywuzzy import process as fw_process
 from scipy.linalg import ldl
 from scipy.linalg import qr
 
+from estimagic.decorators import hide_jax
+from estimagic.optimization.kernel_transformations import (
+    chol_params_to_lower_triangular_matrix_jax,
+)
+from estimagic.optimization.kernel_transformations import cov_matrix_to_params_jax
+from estimagic.optimization.kernel_transformations import (
+    cov_matrix_to_sdcorr_params_jax,
+)
+from estimagic.optimization.kernel_transformations import cov_params_to_matrix_jax
+from estimagic.optimization.kernel_transformations import cov_to_sds_and_corr_jax
+from estimagic.optimization.kernel_transformations import (
+    dimension_to_number_of_triangular_elements_jax,
+)
+from estimagic.optimization.kernel_transformations import (
+    number_of_triangular_elements_to_dimension_jax,
+)
+from estimagic.optimization.kernel_transformations import sdcorr_params_to_matrix_jax
+from estimagic.optimization.kernel_transformations import (
+    sdcorr_params_to_sds_and_corr_jax,
+)
+from estimagic.optimization.kernel_transformations import sds_and_corr_to_cov_jax
 
+
+@hide_jax
 def chol_params_to_lower_triangular_matrix(params):
-    dim = number_of_triangular_elements_to_dimension(len(params))
-    mat = np.zeros((dim, dim))
-    mat[np.tril_indices(dim)] = params
-    return mat
+    return chol_params_to_lower_triangular_matrix_jax(params)
 
 
+@hide_jax
 def cov_params_to_matrix(cov_params):
-    """Build covariance matrix from 1d array with its lower triangular elements.
-
-    Args:
-        cov_params (np.array): 1d array with the lower triangular elements of a
-            covariance matrix (in C-order)
-
-    Returns:
-        cov (np.array): a covariance matrix
-
-    """
-    lower = chol_params_to_lower_triangular_matrix(cov_params)
-    cov = lower + np.tril(lower, k=-1).T
-    return cov
+    return cov_params_to_matrix_jax(cov_params)
 
 
+@hide_jax
 def cov_matrix_to_params(cov):
-    return cov[np.tril_indices(len(cov))]
+    return cov_matrix_to_params_jax(cov)
 
 
+@hide_jax
 def sdcorr_params_to_sds_and_corr(sdcorr_params):
-    dim = number_of_triangular_elements_to_dimension(len(sdcorr_params))
-    sds = np.array(sdcorr_params[:dim])
-    corr = np.eye(dim)
-    corr[np.tril_indices(dim, k=-1)] = sdcorr_params[dim:]
-    corr += np.tril(corr, k=-1).T
-    return sds, corr
+    return sdcorr_params_to_sds_and_corr_jax(sdcorr_params)
 
 
+@hide_jax
 def sds_and_corr_to_cov(sds, corr):
-    diag = np.diag(sds)
-    return diag @ corr @ diag
+    return sds_and_corr_to_cov_jax(sds, corr)
 
 
+@hide_jax
 def cov_to_sds_and_corr(cov):
-    sds = np.sqrt(np.diagonal(cov))
-    diag = np.diag(1 / sds)
-    corr = diag @ cov @ diag
-    return sds, corr
+    return cov_to_sds_and_corr_jax(cov)
 
 
+@hide_jax
 def sdcorr_params_to_matrix(sdcorr_params):
-    """Build covariance matrix out of variances and correlations.
-
-    Args:
-        sdcorr_params (np.array): 1d array with parameters. The dimensions of the
-            covariance matrix are inferred automatically. The first dim parameters
-            are assumed to be the variances. The remainder are the lower triangular
-            elements (excluding the diagonal) of a correlation matrix.
-
-    Returns:
-        cov (np.array): a covariance matrix
-
-    """
-    return sds_and_corr_to_cov(*sdcorr_params_to_sds_and_corr(sdcorr_params))
+    return sdcorr_params_to_matrix_jax(sdcorr_params)
 
 
-def cov_matrix_to_sdcorr_params(cov):
-    dim = len(cov)
-    sds, corr = cov_to_sds_and_corr(cov)
-    correlations = corr[np.tril_indices(dim, k=-1)]
-    return np.hstack([sds, correlations])
-
-
+@hide_jax
 def number_of_triangular_elements_to_dimension(num):
-    """Calculate the dimension of a square matrix from number of triangular elements.
-
-    Args:
-        num (int): The number of upper or lower triangular elements in the matrix.
-
-    Examples:
-        >>> number_of_triangular_elements_to_dimension(6)
-        3
-        >>> number_of_triangular_elements_to_dimension(10)
-        4
-
-    """
-    return int(np.sqrt(8 * num + 1) / 2 - 0.5)
+    return number_of_triangular_elements_to_dimension_jax(num)
 
 
+@hide_jax
 def dimension_to_number_of_triangular_elements(dim):
-    """Calculate number of triangular elements from the dimension of a square matrix.
+    return dimension_to_number_of_triangular_elements_jax(dim)
 
-    Args:
-        dim (int): Dimension of a square matrix.
 
-    """
-    return int(dim * (dim + 1) / 2)
+@hide_jax
+def cov_matrix_to_sdcorr_params(cov):
+    return cov_matrix_to_sdcorr_params_jax(cov)
 
 
 def propose_algorithms(requested_algo, algos, number=3):
