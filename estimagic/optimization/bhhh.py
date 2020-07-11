@@ -1,5 +1,6 @@
 # flake8: noqa
 import numpy as np
+from scipy.linalg import solve_triangular
 from scipy.optimize._numdiff import approx_derivative
 from scipy.optimize.optimize import _check_unknown_options
 from scipy.optimize.optimize import _line_search_wolfe12
@@ -82,7 +83,8 @@ def minimize_bhhh(
     max_iterations=None,
     **unknown_options
 ):
-    """Minimize the objective function func(x, *args) using the the quasi-Newton
+    """
+    Minimize the objective function func(x, *args) using the the quasi-Newton
     method and the Berndt, Hall, Hall and Hubert (BHHH) algorithm to approximate
     the Hessian.
     This method works only on objective functions that take the general form
@@ -213,15 +215,21 @@ def minimize_bhhh(
             xk - np.clip(xk - agg_jacobian_value, lower_bounds, upper_bounds), ord=norm
         )
 
+        # Calculate BHHH hessian and the initial step size
+        hessian = np.dot(jacobian_value.T, jacobian_value)
+
+        # get numerically stable inverse
+        lower_triangle = np.linalg.cholesky(hessian)
+        lower_triangle_inverse = solve_triangular(
+            lower_triangle, np.eye(hessian.shape[0]), lower=True
+        )
+        hessian_inverse = np.dot(lower_triangle_inverse.T, lower_triangle_inverse)
+
+        step = -np.dot(hessian_inverse, agg_jacobian_value)
+
         # Check tolerance of gradient norm
         if norm_current <= tol["abs"] + tol["rel"] * norm_start:
             break
-
-        # Calculate BHHH hessian and the initial step size
-        hessian = np.dot(jacobian_value.T, jacobian_value)
-        hessian_inverse = np.linalg.inv(hessian)
-        step = -np.dot(hessian_inverse, agg_jacobian_value)
-
         # Start line searching
         try:
             alpha, fc, gc, func_value, old_func_value, gfkp1 = _line_search_wolfe12(
