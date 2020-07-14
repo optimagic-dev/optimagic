@@ -16,6 +16,13 @@ import traceback
 import warnings
 from datetime import datetime as dt
 
+try:
+    from better_exceptions import format_exception
+except ImportError:
+    from traceback import format_exception
+
+import sys
+
 import jax.numpy as jnp
 import numpy as np
 import pandas as pd
@@ -408,7 +415,7 @@ def catch(
         default: Value that is returned when as the output of func when
             an exception occurs. Can be one of the following:
             - a constant
-            - "__exception__", in this case the caught exception is returned.
+            - "__traceback__", in this case a string with a traceback is returned.
             - callable with the same signature as func.
         warn (bool): If True, the exception is converted to a warning.
         reraise (bool): If True, the exception is raised after handling it.
@@ -422,19 +429,24 @@ def catch(
                 res = func(*args, **kwargs)
             except exclude:
                 raise
-            except exception as exc:
-                info = traceback.format_exc()
+            except exception as e:
+
                 if onerror is not None:
-                    onerror(exc)
-                if warn:
-                    msg = f"The following exception was caught:\n\n{info}"
-                    warnings.warn(msg)
+                    onerror(e)
 
                 if reraise:
-                    raise exc
+                    raise e
 
-                if default == "__exception__":
-                    res = exc
+                exc_info = format_exception(*sys.exc_info())
+                if isinstance(exc_info, list):
+                    exc_info = "".join(exc_info)
+
+                if warn:
+                    msg = f"The following exception was caught:\n\n{exc_info}"
+                    warnings.warn(msg)
+
+                if default == "__traceback__":
+                    res = exc_info
                 elif callable(default):
                     res = default(*args, **kwargs)
                 else:

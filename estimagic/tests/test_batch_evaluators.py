@@ -56,7 +56,7 @@ def test_batch_evaluator_with_handled_exceptions(batch_evaluator, n_cores):
     )
 
     for calc in calculated:
-        assert isinstance(calc, AssertionError)
+        assert isinstance(calc, str)
 
 
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)

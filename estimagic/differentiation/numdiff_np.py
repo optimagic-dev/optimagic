@@ -135,17 +135,18 @@ def first_derivative(
     if f0 is None:
         evaluation_points.append(x)
 
-    be_error_handling = "raise" if error_handling == "raise_strict" else "continue"
+    batch_error_handling = "raise" if error_handling == "raise_strict" else "continue"
 
     raw_evals = _nan_skipping_batch_evaluator(
         func=func,
         arguments=evaluation_points,
         n_cores=n_cores,
-        error_handling=be_error_handling,
+        error_handling=batch_error_handling,
         batch_evaluator=batch_evaluator,
     )
 
-    raw_evals = [val if not _is_exception(val) else np.nan for val in raw_evals]
+    exc_info = "\n\n".join([val for val in raw_evals if isinstance(val, str)])
+    raw_evals = [val if not isinstance(val, str) else np.nan for val in raw_evals]
 
     if f0 is None:
         f0 = raw_evals[-1]
@@ -175,6 +176,9 @@ def first_derivative(
             jac_candidates, steps, n_steps
         )
         jac = _consolidate_extrapolated(richardson_candidates)
+
+    if error_handling in ("raise", "raise_strict") and np.isnan(jac).any():
+        raise Exception(exc_info)
 
     derivative = jac.flatten() if f_was_scalar else jac
 
@@ -424,18 +428,3 @@ def _get_output_shape(evals):
     """
     first_relevant = next(x for x in evals if hasattr(x, "shape"))
     return first_relevant.shape
-
-
-def _is_exception(obj):
-    """Determine is something is an exception or an instance of an exception."""
-    res = False
-    if isinstance(obj, Exception):
-        res = True
-    else:
-        try:
-            issubclass(obj, Exception)
-            res = True
-        except TypeError:
-            pass
-
-    return res

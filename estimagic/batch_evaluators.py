@@ -48,7 +48,7 @@ def pathos_mp_batch_evaluator(
     reraise = error_handling == "raise"
 
     @unpack(symbol=unpack_symbol)
-    @catch(default="__exception__", reraise=reraise)
+    @catch(default="__traceback__", reraise=reraise)
     def internal_func(*args, **kwargs):
         return func(*args, **kwargs)
 
@@ -98,7 +98,7 @@ def joblib_batch_evaluator(
     reraise = error_handling == "raise"
 
     @unpack(symbol=unpack_symbol)
-    @catch(default="__exception__", reraise=reraise)
+    @catch(default="__traceback__", reraise=reraise)
     def internal_func(*args, **kwargs):
         return func(*args, **kwargs)
 
