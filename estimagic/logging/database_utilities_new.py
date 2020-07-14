@@ -98,6 +98,8 @@ def make_optimization_iteration_table(
         Column("timestamp", DATETIME),
         Column("distance_origin", Float),
         Column("distance_ones", Float),
+        Column("terminal_output", String),
+        Column("valid", Boolean),
     ]
     if np.isscalar(first_eval):
         columns.append(Column("value", Float))

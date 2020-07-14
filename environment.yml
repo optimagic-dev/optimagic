@@ -20,6 +20,7 @@ dependencies:
   - nbsphinx
   - numba >= 0.12
   - jax>=0.1.60
+  - pathos>=0.2.6
   - numdifftools>= 0.9.20
   - numpy=1.16
   - pandas>=0.24

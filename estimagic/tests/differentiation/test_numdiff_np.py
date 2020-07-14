@@ -111,7 +111,13 @@ def test_nan_skipping_batch_evaluator():
         np.full(2, np.nan),
         np.array([1, 4]),
     ]
-    calculated = _nan_skipping_batch_evaluator(lambda x: x ** 2, arglist, 1)
+    calculated = _nan_skipping_batch_evaluator(
+        func=lambda x: x ** 2,
+        arguments=arglist,
+        n_cores=1,
+        error_handling="continue",
+        batch_evaluator="joblib",
+    )
     for arr_calc, arr_exp in zip(calculated, expected):
         if np.isnan(arr_exp).all():
             assert np.isnan(arr_calc).all()

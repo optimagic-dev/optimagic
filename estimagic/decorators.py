@@ -13,6 +13,7 @@ provides a comprehensive overview.
 import functools
 import itertools
 import traceback
+import warnings
 from datetime import datetime as dt
 
 import jax.numpy as jnp
@@ -318,40 +319,6 @@ def handle_exceptions(database, params, constraints, start_params, general_optio
     return decorator_handle_exceptions
 
 
-def nan_if_exception(func):
-    """Wrap func such that np.nan is returned if func raises an exception.
-
-    KeyboardInterrupt and SystemExit are still raised.
-
-    Examples:
-
-    >>> @nan_if_exception
-    ... def f(x, y):
-    ...     assert x + y >= 5
-    >>> f(1, 2)
-    nan
-
-    >>> def f(x, y):
-    ...     assert x + y >= 5
-    >>> g = nan_if_exception(f)
-    >>> g(1, 2)
-    nan
-
-    """
-
-    @functools.wraps(func)
-    def wrapper_nan_if_exception(params, *args, **kwargs):
-        try:
-            out = func(params, *args, **kwargs)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            out = np.nan
-        return out
-
-    return wrapper_nan_if_exception
-
-
 def de_scalarize(x_was_scalar):
     """Create a function with non-scalar input and output.
 
@@ -413,3 +380,98 @@ def _from_jax(obj):
     if isinstance(obj, jnp.ndarray):
         obj = np.array(obj)
     return obj
+
+
+def catch(
+    func=None,
+    *,
+    exception=Exception,
+    exclude=(KeyboardInterrupt, SystemExit),
+    onerror=None,
+    default=None,
+    warn=False,
+    reraise=False,
+):
+    """Catch and handle exceptions.
+
+    This decorator can be used with and without additional arguments.
+
+    Args:
+        exception (Exception or tuple): One or several exceptions that
+            are caught and handled. By default all Exceptions are
+            caught and handled.
+        exclude (Exception or tuple): One or several exceptionts that
+            are not caught. By default those are KeyboardInterrupt and
+            SystemExit.
+        onerror (None or Callable): Callable that takes an Exception
+            as only argument. This is called when an exception occurs.
+        default: Value that is returned when as the output of func when
+            an exception occurs. Can be one of the following:
+            - a constant
+            - "__exception__", in this case the caught exception is returned.
+            - callable with the same signature as func.
+        warn (bool): If True, the exception is converted to a warning.
+        reraise (bool): If True, the exception is raised after handling it.
+
+    """
+
+    def decorator_catch(func):
+        @functools.wraps(func)
+        def wrapper_catch(*args, **kwargs):
+            try:
+                res = func(*args, **kwargs)
+            except exclude:
+                raise
+            except exception as exc:
+                info = traceback.format_exc()
+                if onerror is not None:
+                    onerror(exc)
+                if warn:
+                    msg = f"The following exception was caught:\n\n{info}"
+                    warnings.warn(msg)
+
+                if reraise:
+                    raise exc
+
+                if default == "__exception__":
+                    res = exc
+                elif callable(default):
+                    res = default(*args, **kwargs)
+                else:
+                    res = default
+            return res
+
+        return wrapper_catch
+
+    if callable(func):
+        return decorator_catch(func)
+    else:
+        return decorator_catch
+
+
+def unpack(func=None, symbol=None):
+    def decorator_unpack(func):
+        if symbol is None:
+
+            @functools.wraps(func)
+            def wrapper_unpack(arg):
+                return func(arg)
+
+        elif symbol == "*":
+
+            @functools.wraps(func)
+            def wrapper_unpack(arg):
+                return func(*arg)
+
+        elif symbol == "**":
+
+            @functools.wraps(func)
+            def wrapper_unpack(arg):
+                return func(**arg)
+
+        return wrapper_unpack
+
+    if callable(func):
+        return decorator_unpack(func)
+    else:
+        return decorator_unpack

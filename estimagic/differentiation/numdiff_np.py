@@ -2,11 +2,9 @@ import functools
 from itertools import product
 
 import numpy as np
-from joblib import delayed
-from joblib import Parallel
 
+from estimagic import batch_evaluators
 from estimagic.decorators import de_scalarize
-from estimagic.decorators import nan_if_exception
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.optimization.utilities import namedtuple_from_kwargs
@@ -27,6 +25,8 @@ def first_derivative(
     f0=None,
     n_cores=1,
     return_func_value=False,
+    error_handling="continue",
+    batch_evaluator="joblib",
 ):
 
     """Evaluate first derivative of func at x according to method and step options.
@@ -73,6 +73,15 @@ def first_derivative(
         return_func_value (bool): If True, return a tuple with the derivative and the
             function value at x. Default False. This is useful when using
             first_derivative during optimization.
+        error_handling (str): One of "continue" (catch errors and continue to calculate
+            derivative estimates. In this case, some derivative estimates can be
+            missing but no errors are raised), "raise" (catch errors and continue
+            to calculate derivative estimates at fist but raise an error if all
+            evaluations for one parameter failed) and "raise_strict" (raise an error
+            as soon as a function evaluation fails).
+        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators.
 
     Returns:
         derivative (np.ndarray): The estimated first derivative of func at x.
@@ -92,7 +101,6 @@ def first_derivative(
 
     x = np.atleast_1d(x)
 
-    @nan_if_exception
     @de_scalarize(x_was_scalar)
     def internal_func(x):
         return partialed_func(x)
@@ -125,7 +133,17 @@ def first_derivative(
     if f0 is None:
         evaluation_points.append(x)
 
-    raw_evals = _nan_skipping_batch_evaluator(internal_func, evaluation_points, n_cores)
+    be_error_handling = "raise" if error_handling == "raise_strict" else "continue"
+
+    raw_evals = _nan_skipping_batch_evaluator(
+        func=func,
+        arguments=evaluation_points,
+        n_cores=n_cores,
+        error_handling=be_error_handling,
+        batch_evaluator=batch_evaluator,
+    )
+
+    raw_evals = [val if not _is_exception(val) else np.nan for val in raw_evals]
 
     if f0 is None:
         f0 = raw_evals[-1]
@@ -192,8 +210,10 @@ def _consolidate_extrapolated(candidates):
     raise NotImplementedError
 
 
-def _nan_skipping_batch_evaluator(func, arglist, n_cores):
-    """Evaluate func at each entry in arglist, skipping np.nan entries.
+def _nan_skipping_batch_evaluator(
+    func, arguments, n_cores, error_handling, batch_evaluator
+):
+    """Evaluate func at each entry in arguments, skipping np.nan entries.
 
     The function is only evaluated at inputs that are not a scalar np.nan.
     The outputs corresponding to skipped inputs as well as for inputs on which func
@@ -202,27 +222,35 @@ def _nan_skipping_batch_evaluator(func, arglist, n_cores):
 
     Args:
         func (function): Python function that returns a numpy array. The shape
-            of the output of func has to be the same for all elements in arglist.
-        arglist (list): List with inputs for func.
+            of the output of func has to be the same for all elements in arguments.
+        arguments (list): List with inputs for func.
         n_cores (int): Number of processes.
 
     Returns
-        evaluations (list): The function evaluations, same length as arglist.
+        evaluations (list): The function evaluations, same length as arguments.
 
     """
     # extract information
     nan_indices = {
-        i for i, arg in enumerate(arglist) if isinstance(arg, float) and np.isnan(arg)
+        i for i, arg in enumerate(arguments) if isinstance(arg, float) and np.isnan(arg)
     }
-    real_args = [arg for i, arg in enumerate(arglist) if i not in nan_indices]
+    real_args = [arg for i, arg in enumerate(arguments) if i not in nan_indices]
 
-    # evaluate function
-    evaluations = Parallel(n_jobs=n_cores)(delayed(func)(point) for point in real_args)
+    # get the batch evaluator if it was provided as string
+    if not callable(batch_evaluator):
+        batch_evaluator = getattr(
+            batch_evaluators, f"{batch_evaluator}_batch_evaluator"
+        )
+
+    # evaluate functions
+    evaluations = batch_evaluator(
+        func=func, arguments=real_args, n_cores=n_cores, error_handling=error_handling
+    )
 
     # combine results
     evaluations = iter(evaluations)
     results = []
-    for i in range(len(arglist)):
+    for i in range(len(arguments)):
         if i in nan_indices:
             results.append(np.nan)
         else:
@@ -249,3 +277,18 @@ def _get_output_shape(evals):
     """
     first_relevant = next(x for x in evals if hasattr(x, "shape"))
     return first_relevant.shape
+
+
+def _is_exception(obj):
+    """Determine is something is an exception or an instance of an exception."""
+    res = False
+    if isinstance(obj, Exception):
+        res = True
+    else:
+        try:
+            issubclass(obj, Exception)
+            res = True
+        except TypeError:
+            pass
+
+    return res
