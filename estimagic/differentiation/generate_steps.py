@@ -19,7 +19,7 @@ def generate_steps(
 ):
     """Generate steps for finite differences with or without Richardson Extrapolation.
 
-    steps can be used to construct x-vectors at which the function has to be  evaluated
+    steps can be used to construct x-vectors at which the function has to be evaluated
     for finite difference formulae. How the vectors are constructed from the steps
     differs between first and second derivative. Note that both positive and negative
     steps are returned, even for one-sided methods, because bounds might make it
@@ -48,8 +48,7 @@ def generate_steps(
 
     Args:
         x (np.ndarray): 1d array at which the derivative is calculated.
-        func_kwargs (dict): Additional keyword arguments for func, optional.
-        method (str): One of ["central", "forward", "backward"], default "central".
+        method (str): One of ["central", "forward", "backward"]
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
@@ -65,7 +64,7 @@ def generate_steps(
             base_steps. If it is an np.ndarray, it needs to have the same shape as x.
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
-            benchmark the effect of the step size. Default 1.
+            benchmark the effect of the step size.
         lower_bounds (np.ndarray): 1d array with lower bounds for each parameter.
         upper_bounds (np.ndarray): 1d array with upper bounds for each parameter.
         step_ratio (float or array): Ratio between two consecutive Richardson
@@ -117,7 +116,10 @@ def generate_steps(
         pos[pos > upper_step_bounds.reshape(-1, 1)] = np.nan
         neg[neg < lower_step_bounds.reshape(-1, 1)] = np.nan
 
-    steps = namedtuple_from_kwargs(pos=pos.T, neg=neg.T)
+    pos_exact = _make_exact(pos)
+    neg_exact = _make_exact(neg)
+
+    steps = namedtuple_from_kwargs(pos=pos_exact.T, neg=neg_exact.T)
 
     return steps
 
@@ -249,3 +251,12 @@ def _rescale_to_accomodate_bounds(
 
 def _fillna(x, val):
     return np.where(np.isnan(x), val, x)
+
+
+def _make_exact(h):
+    """Make sure h is an exact representable number
+
+    This is important when calculating numerical derivates and is accomplished by adding
+    1.0 and then subtracting 1.0.
+    """
+    return (h + 1.0) - 1.0

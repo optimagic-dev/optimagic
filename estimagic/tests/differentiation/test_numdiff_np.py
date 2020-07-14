@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from numdifftools import Gradient
+from numdifftools import Jacobian
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.differentiation.numdiff_np import _consolidate_one_step_derivatives
@@ -135,3 +137,61 @@ def test_consolidate_one_step_derivatives():
     )
     expected = np.array([[0, 1, 1]] * 4)
     aaae(calculated, expected)
+
+
+@pytest.fixture()
+def example_function_gradient_fixtures():
+    def f(x):
+        """f:R^3 -> R"""
+        x1, x2, x3 = x[0], x[1], x[2]
+        y1 = np.sin(x1) + np.cos(x2) + x3 - x3
+        return y1
+
+    def fprime(x):
+        """Gradient(f)(x):R^3 -> R^3"""
+        x1, x2, x3 = x[0], x[1], x[2]
+        grad = np.array([np.cos(x1), -np.sin(x2), x3 - x3])
+        return grad
+
+    return {"func": f, "func_prime": fprime}
+
+
+@pytest.fixture()
+def example_function_jacobian_fixtures():
+    def f(x):
+        """f:R^3 -> R^2"""
+        x1, x2, x3 = x[0], x[1], x[2]
+        y1, y2 = np.sin(x1) + np.cos(x2), np.exp(x3)
+        return np.array([y1, y2])
+
+    def fprime(x):
+        """Jacobian(f)(x):R^3 -> R^(2x3)"""
+        x1, x2, x3 = x[0], x[1], x[2]
+        jac = np.array([[np.cos(x1), -np.sin(x2), 0], [0, 0, np.exp(x3)]])
+        return jac
+
+    return {"func": f, "func_prime": fprime}
+
+
+def test_first_derivative_gradient_richardson(example_function_gradient_fixtures):
+    f = example_function_gradient_fixtures["func"]
+    fprime = example_function_gradient_fixtures["func_prime"]
+
+    true_grad = fprime(np.ones(3))
+    numdifftools_grad = Gradient(f, order=2, n=3, method="central")(np.ones(3))
+    grad = first_derivative(f, np.ones(3), n_steps=3, method="central")
+
+    aaae(numdifftools_grad, grad)
+    aaae(true_grad, grad)
+
+
+def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures):
+    f = example_function_jacobian_fixtures["func"]
+    fprime = example_function_jacobian_fixtures["func_prime"]
+
+    true_grad = fprime(np.ones(3))
+    numdifftools_grad = Jacobian(f, order=2, n=3, method="central")(np.ones(3))
+    grad = first_derivative(f, np.ones(3), n_steps=3, method="central")
+
+    aaae(numdifftools_grad, grad)
+    aaae(true_grad, grad)

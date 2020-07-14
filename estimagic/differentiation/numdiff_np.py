@@ -1,4 +1,5 @@
 import functools
+from collections import OrderedDict
 from itertools import product
 
 import numpy as np
@@ -7,6 +8,7 @@ from estimagic import batch_evaluators
 from estimagic.decorators import de_scalarize
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
+from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from estimagic.optimization.utilities import namedtuple_from_kwargs
 
 
@@ -24,9 +26,9 @@ def first_derivative(
     min_steps=None,
     f0=None,
     n_cores=1,
-    return_func_value=False,
     error_handling="continue",
     batch_evaluator="joblib",
+    return_func_value=False,
 ):
 
     """Evaluate first derivative of func at x according to method and step options.
@@ -70,9 +72,6 @@ def first_derivative(
         f0 (np.ndarray): 1d numpy array with func(x), optional.
         n_cores (int): Number of processes used to parallelize the function
             evaluations. Default 1.
-        return_func_value (bool): If True, return a tuple with the derivative and the
-            function value at x. Default False. This is useful when using
-            first_derivative during optimization.
         error_handling (str): One of "continue" (catch errors and continue to calculate
             derivative estimates. In this case, some derivative estimates can be
             missing but no errors are raised), "raise" (catch errors and continue
@@ -82,6 +81,9 @@ def first_derivative(
         batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the estimagic batch_evaluators.
+        return_func_value (bool): If True, return a tuple with the derivative and the
+            function value at x. Default False. This is useful when using
+            first_derivative during optimization.
 
     Returns:
         derivative (np.ndarray): The estimated first derivative of func at x.
@@ -99,7 +101,7 @@ def first_derivative(
 
     x_was_scalar = np.isscalar(x)
 
-    x = np.atleast_1d(x)
+    x = np.atleast_1d(x).astype(float)
 
     @de_scalarize(x_was_scalar)
     def internal_func(x):
@@ -169,13 +171,16 @@ def first_derivative(
     if n_steps == 1:
         jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
     else:
-        raise NotImplementedError("Extrapolation is not yet implemented.")
+        richardson_candidates = _compute_richardson_candidates(
+            jac_candidates, steps, n_steps
+        )
+        jac = _consolidate_extrapolated(richardson_candidates)
 
     derivative = jac.flatten() if f_was_scalar else jac
+
     func_value = f0[0] if f_was_scalar else f0
 
     res = (derivative, func_value) if return_func_value else derivative
-
     return res
 
 
@@ -185,7 +190,7 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
     Args:
         candidates (dict): Dictionary with derivative estimates from different methods.
         preference_order (list): Order on (a subset of) the keys in candidates. Earlier
-            entries are preferred.
+        entries are preferred.
 
     Returns:
         consolidated (np.ndarray): Array of same shape as input derivative estimates.
@@ -202,12 +207,154 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
 def _consolidate_extrapolated(candidates):
     """Get the best possible derivative estimate, given an error estimate.
 
+    Going through ``candidates`` select the best derivative estimate element-wise using
+    the estimated candidates, where best is defined as minimizing the error estimate
+    from the Richardson extrapolation.
+
     See https://tinyurl.com/ubn3nv5 for corresponding code in numdifftools and
     https://tinyurl.com/snle7mb for an explanation of how errors of Richardson
     extrapolated derivative estimates can be estimated.
 
+    Args:
+        candidates (OrderedDict): Dictionary containing different derivative estimates
+            and their error estimates.
+
+    Returns:
+        consolidated (np.ndarray): Array of same shape as input derivative estimates.
+
     """
-    raise NotImplementedError
+    # first find minimum over steps for each method
+    candidate_derivatives = OrderedDict()
+    candidate_errors = OrderedDict()
+
+    for key in candidates.keys():
+        _limit = candidates[key]["derivative"]
+        _error = candidates[key]["error"]
+
+        derivative, error = _get_best_estimate_single_method(_limit, _error)
+
+        candidate_derivatives[key] = derivative
+        candidate_errors[key] = error
+
+    # second find minimum over methods
+    consolidated = _get_best_estimate_along_methods(
+        candidate_derivatives, candidate_errors
+    )
+    return consolidated
+
+
+def _compute_richardson_candidates(jac_candidates, steps, n_steps):
+    """Compute derivative candidates using Richardson extrapolation.
+
+    Args:
+        jac_candidates (dict): Dictionary with (traditional) derivative estimates from
+            different methods.
+        steps (namedtuple): Namedtuple with the field names pos and neg. Each field
+            contains a numpy array of shape (n_steps, len(x)) with the steps in
+            the corresponding direction. The steps are always symmetric, in the sense
+            that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
+        n_steps (int): Number of steps needed. For central methods, this is
+            the number of steps per direction. It is 1 if no Richardson extrapolation
+            is used.
+
+    Returns:
+        richardson_candidates (OrderedDict): Dictionary with derivative estimates and
+            error estimates from different methods.
+            - Keys correspond to the method used, i.e. forward, backward or central
+            differences and the number of terms used in the Richardson extrapolation.
+            - Values represent the corresponding derivative estimate and error
+            estimate, stored as np.ndarrays in a sub-dictionary under "derivative" and
+            "error" respectively, with the first dimensions coinciding with that of an
+            element of ``jac_candidates`` and depending on num_terms, possibly one
+            further dimension.
+
+    """
+    richardson_candidates = OrderedDict()
+    for method in ["forward", "backward", "central"]:
+        for num_terms in range(1, n_steps):
+            derivative, error = richardson_extrapolation(
+                jac_candidates[method], steps, method, num_terms
+            )
+            richardson_candidates[method + str(num_terms)] = {
+                "derivative": derivative,
+                "error": error,
+            }
+
+    return richardson_candidates
+
+
+def _get_best_estimate_single_method(derivative, errors):
+    """Select best derivative estimates element wise.
+
+    Given a single method, e.g. central differences with 2 num_terms (see above), we get
+    multiple Richardson approximations including estimated errors. Here we select the
+    approximations which result in the lowest error element wise.
+
+    Args:
+        derivative (np.ndarray): Derivative estimates from Richardson approximation.
+            First axis (axis 0) denotes the potentially multiple estimates. Following
+            dimensions represent the dimension of the derivative, i.e. for a classical
+            gradient ``derivative`` has 2 dimensions, while for a classical jacobian
+            ``derivative`` has 3 dimensions.
+        errors (np.ndarray): Error estimates of ``derivative`` estimates. Has the same
+            shape as ``derivative``.
+
+    Returns:
+        derivative_minimal (np.ndarray): Best derivate estimates chosen with respect
+            to minimizing ``errors``. Note that the best values are selected
+            element-wise. Has shape ``(derivative.shape[1], derivative.shape[2])``.
+
+        error_minimal (np.ndarray): Minimal errors selected element-wise along axis
+            0 of ``errors``.
+
+    """
+    if derivative.shape[0] == 1:
+        derivative_minimal = np.squeeze(derivative, axis=0)
+        error_minimal = np.squeeze(errors, axis=0)
+    else:
+
+        minimizer = np.nanargmin(errors, axis=0)
+
+        derivative_minimal = np.take_along_axis(
+            derivative, minimizer[np.newaxis, :], axis=0
+        )
+        derivative_minimal = np.squeeze(derivative_minimal, axis=0)
+        error_minimal = np.nanmin(errors, axis=0)
+
+    return derivative_minimal, error_minimal
+
+
+def _get_best_estimate_along_methods(derivatives, errors):
+    """Extract best derivative estimate over different methods.
+
+    Given that for each method, where one method can be for example central differences
+    with two num_terms (see above), we have selected a single best derivative estimate,
+    we select the best derivative estimates element-wise over different methods, where
+    again best is defined as minimizing the approximation error.
+
+    Args:
+        derivatives (OrderedDict): Dictionary containing derivative estimates for
+            different methods.
+        errors (OrderedDict): Dictionary containing error estimates for derivates stored
+            in ``derivatives``.
+
+    Returns:
+        jac_minimal (np.ndarray): The optimal derivative estimate over different
+            methods.
+
+    """
+    errors = np.stack(list(errors.values()))
+    derivatives = np.stack(list(derivatives.values()))
+
+    if derivatives.shape[0] == 1:
+        jac_minimal = np.squeeze(derivatives, axis=0)
+    else:
+        minimizer = np.nanargmin(errors, axis=0)
+
+        jac_minimal = np.take_along_axis(derivatives, minimizer[np.newaxis, :], axis=0)
+        jac_minimal = np.squeeze(jac_minimal, axis=0)
+
+    return jac_minimal
 
 
 def _nan_skipping_batch_evaluator(
