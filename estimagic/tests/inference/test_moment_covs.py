@@ -4,7 +4,7 @@ import pytest
 import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal
 
-from estimagic.differentiation.numdiff_np import first_derivative
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.inference.moment_covs import _covariance_moments
 from estimagic.inference.moment_covs import gmm_cov
 from estimagic.inference.moment_covs import sandwich_cov

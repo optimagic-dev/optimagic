@@ -8,10 +8,10 @@ from numdifftools import Gradient
 from numdifftools import Jacobian
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.differentiation.numdiff_np import _consolidate_one_step_derivatives
-from estimagic.differentiation.numdiff_np import _get_output_shape
-from estimagic.differentiation.numdiff_np import _nan_skipping_batch_evaluator
-from estimagic.differentiation.numdiff_np import first_derivative
+from estimagic.differentiation.derivatives import _consolidate_one_step_derivatives
+from estimagic.differentiation.derivatives import _get_output_shape
+from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.examples.numdiff_example_functions_np import logit_loglike
 from estimagic.examples.numdiff_example_functions_np import logit_loglike_gradient
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs
