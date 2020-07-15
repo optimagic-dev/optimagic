@@ -36,7 +36,7 @@ def test_first_derivative_jacobian(binary_choice_inputs, method):
     calculated = first_derivative(
         func=func,
         method=method,
-        x=fix["params_np"],
+        params=fix["params_np"],
         n_steps=1,
         base_steps=None,
         lower_bounds=np.full(fix["params_np"].shape, -np.inf),
@@ -55,7 +55,7 @@ def test_first_derivative_jacobian(binary_choice_inputs, method):
 def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
     fix = binary_choice_inputs
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
-    calculated = first_derivative(func=func, x=fix["params_np"])
+    calculated = first_derivative(func=func, params=fix["params_np"])
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
     aaae(calculated, expected, decimal=6)
 
@@ -68,7 +68,7 @@ def test_first_derivative_gradient(binary_choice_inputs, method):
     calculated = first_derivative(
         func=func,
         method=method,
-        x=fix["params_np"],
+        params=fix["params_np"],
         n_steps=1,
         f0=func(fix["params_np"]),
         n_cores=1,

@@ -100,13 +100,12 @@ def make_optimization_iteration_table(
         Column("distance_ones", Float),
         Column("terminal_output", String),
         Column("valid", Boolean),
+        Column("hash", String),
+        Column("value", Float),
     ]
-    if np.isscalar(first_eval):
-        columns.append(Column("value", Float))
-    elif isinstance(first_eval, (np.ndarray, pd.Series, pd.DataFrame)):
+    if isinstance(first_eval, (np.ndarray, pd.Series, pd.DataFrame)):
         columns.append(Column("contributions", PickleType(pickler=PandasPickler)))
     elif isinstance(first_eval, dict):
-        columns.append(Column("value", Float))
         columns += [
             Column(key, PickleType(pickler=PandasPickler))
             for key in first_eval

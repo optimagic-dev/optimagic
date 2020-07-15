@@ -326,43 +326,6 @@ def handle_exceptions(database, params, constraints, start_params, general_optio
     return decorator_handle_exceptions
 
 
-def de_scalarize(x_was_scalar):
-    """Create a function with non-scalar input and output.
-
-    Examples:
-
-    >>> @de_scalarize(True)
-    ... def f(x):
-    ...     return x
-
-    >>> f(3)
-    Traceback (most recent call last):
-        ...
-    TypeError: 'int' object is not subscriptable
-
-    >>> f(np.array([3]))
-    array([3])
-
-    >>> @de_scalarize(True)
-    ... def g(x):
-    ...     return 3
-
-    >>> g(np.ones(3))
-    array([3])
-
-    """
-
-    def decorator_de_scalarize(func):
-        @functools.wraps(func)
-        def wrapper_de_scalarize(x, *args, **kwargs):
-            x = x[0] if x_was_scalar else x
-            return np.atleast_1d(func(x, *args, **kwargs))
-
-        return wrapper_de_scalarize
-
-    return decorator_de_scalarize
-
-
 def hide_jax(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):

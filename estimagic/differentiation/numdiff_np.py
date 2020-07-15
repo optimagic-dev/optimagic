@@ -3,9 +3,9 @@ from collections import OrderedDict
 from itertools import product
 
 import numpy as np
+import pandas as pd
 
 from estimagic import batch_evaluators
-from estimagic.decorators import de_scalarize
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
@@ -14,7 +14,7 @@ from estimagic.optimization.utilities import namedtuple_from_kwargs
 
 def first_derivative(
     func,
-    x,
+    params,
     func_kwargs=None,
     method="central",
     n_steps=1,
@@ -29,6 +29,7 @@ def first_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
+    key=None,
 ):
 
     """Evaluate first derivative of func at x according to method and step options.
@@ -43,30 +44,35 @@ def first_derivative(
 
     Args:
         func (callable): Function of which the derivative is calculated.
-        x (np.ndarray): 1d array at which the derivative is calculated.
+        params (np.ndarray or pd.DataFrame): 1d numpy array or pandas DataFrame with
+            parameters at which the derivative is calculated. See :ref:`params`.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
-        base_steps (np.ndarray, optional): 1d array of the same length as x. base_steps
-            * scaling_factor is the absolute value of the first (and possibly only) step
-            used in the finite differences approximation of the derivative. If the
-            base_steps * scaling_factor conflicts with bounds, the actual steps will
+        base_steps (np.ndarray, optional): 1d array of the same length as pasams.
+            base_steps * scaling_factor is the absolute value of the first (and possibly
+            only) step used in the finite differences approximation of the derivative.
+            If base_steps * scaling_factor conflicts with bounds, the actual steps will
             be adjusted. If base_steps is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
         scaling_factor (np.ndarray or float): Scaling factor which is applied to
-            base_steps. If it is an np.ndarray, it needs to have the same shape as x.
+            base_steps. If it is an np.ndarray, it needs to be as long as params.
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        lower_bounds (np.ndarray): 1d array with lower bounds for each parameter.
-        upper_bounds (np.ndarray): 1d array with upper bounds for each parameter.
+        lower_bounds (np.ndarray): 1d array with lower bounds for each parameter. If
+            params is a DataFrame and has the columns "lower", this will be taken as
+            lower_bounds instead.
+        upper_bounds (np.ndarray): 1d array with upper bounds for each parameter. If
+            params is a DataFrame and has the columns "upper", this will be taken as
+            upper_bounds instead.
         step_ratio (float or array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. step ratio is only used if n_steps > 1.
         min_steps (np.ndarray): Minimal possible step sizes that can be chosen to
-            accommodate bounds. Needs to have same length as x. By default min_steps is
+            accommodate bounds. Must have same length as params. By default min_steps is
             equal to base_steps, i.e step size is not decreased beyond what is optimal
             according to the rule of thumb.
         f0 (np.ndarray): 1d numpy array with func(x), optional.
@@ -82,30 +88,29 @@ def first_derivative(
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the estimagic batch_evaluators.
         return_func_value (bool): If True, return a tuple with the derivative and the
-            function value at x. Default False. This is useful when using
+            function value at params. Default False. This is useful when using
             first_derivative during optimization.
+        key (str): If func returns a dictionary, take the derivative of
+            func(params)[key].
 
     Returns:
-        derivative (np.ndarray): The estimated first derivative of func at x.
-            The shape of the output depends on the dimension of x and func(x):
+        derivative (np.ndarray): The estimated first derivative of func at params.
+            The shape of the output depends on the dimension of params and func(params):
             f: R -> R leads to shape (1,), usually called derivative
             f: R^m -> R leads to shape (m, ), usually called Gradient
             f: R -> R^n leads to shape (n, 1), usually called Jacobian
             f: R^m -> R^n leads to shape (n, m), usually called Jacobian
-        float or np.ndarray: The function value at x, only returned if return_func_value
-            is True.
+        float or np.ndarray: The function value at params, only returned if
+            return_func_value is True.
 
     """
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
-    x_was_scalar = np.isscalar(x)
+    params_index = params.index if isinstance(params, pd.DataFrame) else None
+    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
 
     x = np.atleast_1d(x).astype(float)
-
-    @de_scalarize(x_was_scalar)
-    def internal_func(x):
-        return partialed_func(x)
 
     steps = generate_steps(
         x=x,
@@ -130,15 +135,19 @@ def first_derivative(
                 point[j] += step_arr[i, j]
                 evaluation_points.append(point)
 
+    evaluation_points = _convert_evaluation_points_to_original(
+        evaluation_points, params
+    )
+
     # we always evaluate f0, so we can fall back to one-sided derivatives if
     # two-sided derivatives fail. The extra cost is negligible in most cases.
     if f0 is None:
-        evaluation_points.append(x)
+        evaluation_points.append(params)
 
     batch_error_handling = "raise" if error_handling == "raise_strict" else "continue"
 
     raw_evals = _nan_skipping_batch_evaluator(
-        func=func,
+        func=partialed_func,
         arguments=evaluation_points,
         n_cores=n_cores,
         error_handling=batch_error_handling,
@@ -152,8 +161,14 @@ def first_derivative(
         f0 = raw_evals[-1]
         raw_evals = raw_evals[:-1]
 
+    func_value = f0
+
+    f0 = f0[key] if isinstance(f0, dict) else f0
     f_was_scalar = np.isscalar(f0)
+    out_index = f0.index if isinstance(f0, pd.Series) else None
     f0 = np.atleast_1d(f0)
+
+    raw_evals = _convert_evals_to_numpy(raw_evals, key)
 
     evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
     evals = np.transpose(evals, axes=(0, 1, 3, 2))
@@ -182,9 +197,45 @@ def first_derivative(
 
     derivative = jac.flatten() if f_was_scalar else jac
 
-    func_value = f0[0] if f_was_scalar else f0
+    derivative = _add_index_to_derivative(derivative, params_index, out_index)
 
     res = (derivative, func_value) if return_func_value else derivative
+    return res
+
+
+def _add_index_to_derivative(derivative, params_index, out_index):
+    if len(derivative.shape) == 1 and params_index is not None:
+        derivative = pd.Series(derivative, index=params_index)
+    if len(derivative.shape) == 2 and (
+        params_index is not None or out_index is not None
+    ):
+        derivative = pd.DataFrame(derivative, columns=params_index, index=out_index)
+    return derivative
+
+
+def _convert_evals_to_numpy(raw_evals, key):
+    raw_evals = [val[key] if isinstance(val, dict) else val for val in raw_evals]
+    raw_evals = [
+        np.array(val) if isinstance(val, pd.Series) else val for val in raw_evals
+    ]
+    raw_evals = [np.atleast_1d(val) for val in raw_evals]
+    return raw_evals
+
+
+def _convert_evaluation_points_to_original(evaluation_points, params):
+    if np.isscalar(params):
+        res = [p[0] if isinstance(p, np.ndarray) else p for p in evaluation_points]
+    elif isinstance(params, pd.DataFrame):
+        res = []
+        for point in evaluation_points:
+            if isinstance(point, np.ndarray):
+                pandas_point = params.copy(deep=True)
+                pandas_point["value"] = point
+                res.append(pandas_point)
+            else:
+                res.append(point)
+    else:
+        res = evaluation_points
     return res
 
 
