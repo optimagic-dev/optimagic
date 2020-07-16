@@ -32,11 +32,15 @@ def first_derivative(
     key=None,
 ):
 
-    """Evaluate first derivative of func at x according to method and step options.
+    """Evaluate first derivative of func at params according to method and step options.
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
     array. Then the Jacobian of that function is calculated. The resulting derivative
     estimate is always a numpy array.
+
+    The parameters and the function output can be pandas objects (Series or DataFrames
+    with value column). In that case the output of first_derivative is also a pandas
+    object and with appropriate index and columns.
 
     Detailed description of all options that influence the step size as well as an
     explanation of how steps are adjusted to bounds in case of a conflict,
@@ -44,8 +48,10 @@ def first_derivative(
 
     Args:
         func (callable): Function of which the derivative is calculated.
-        params (np.ndarray or pd.DataFrame): 1d numpy array or pandas DataFrame with
-            parameters at which the derivative is calculated. See :ref:`params`.
+        params (np.ndarray, pd.Series or pd.DataFrame): 1d numpy array or pandas
+            DataFrame with parameters at which the derivative is calculated. If it is a
+            DataFrame, it can contain the columns "lower" and "upper" for bounds.
+            See :ref:`params`.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
@@ -64,10 +70,10 @@ def first_derivative(
             benchmark the effect of the step size. Default 1.
         lower_bounds (np.ndarray): 1d array with lower bounds for each parameter. If
             params is a DataFrame and has the columns "lower", this will be taken as
-            lower_bounds instead.
+            lower_bounds if now lower_bounds have been provided explicitly.
         upper_bounds (np.ndarray): 1d array with upper bounds for each parameter. If
             params is a DataFrame and has the columns "upper", this will be taken as
-            upper_bounds instead.
+            upper_bounds if no upper_bounds have been provided explicitly.
         step_ratio (float or array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. step ratio is only used if n_steps > 1.
@@ -94,24 +100,32 @@ def first_derivative(
             func(params)[key].
 
     Returns:
-        derivative (np.ndarray): The estimated first derivative of func at params.
-            The shape of the output depends on the dimension of params and func(params):
+        derivative (np.ndarray, pd.Series or pd.DataFrame): The estimated first
+            derivative of func at params. The shape of the output depends on the
+            dimension of params and func(params):
             f: R -> R leads to shape (1,), usually called derivative
             f: R^m -> R leads to shape (m, ), usually called Gradient
             f: R -> R^n leads to shape (n, 1), usually called Jacobian
             f: R^m -> R^n leads to shape (n, m), usually called Jacobian
-        float or np.ndarray: The function value at params, only returned if
-            return_func_value is True.
+        float, dict, np.ndarray or pd.Series: The function value at params, only
+            returned if return_func_value is True.
 
     """
+    lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
+
+    # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
-    params_index = params.index if isinstance(params, pd.DataFrame) else None
-    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
+    # convert params to numpy, but keep label information
+    params_index = (
+        params.index if isinstance(params, (pd.DataFrame, pd.Series)) else None
+    )
 
+    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
     x = np.atleast_1d(x).astype(float)
 
+    # generate the step array
     steps = generate_steps(
         x=x,
         method=method,
@@ -125,6 +139,7 @@ def first_derivative(
         min_steps=min_steps,
     )
 
+    # generate parameter vectors at which func has to be evaluated as numpy arrays
     evaluation_points = []
     for step_arr in steps:
         for i, j in product(range(n_steps), range(len(x))):
@@ -135,6 +150,7 @@ def first_derivative(
                 point[j] += step_arr[i, j]
                 evaluation_points.append(point)
 
+    # convert the numpy arrays to whatever is needed by func
     evaluation_points = _convert_evaluation_points_to_original(
         evaluation_points, params
     )
@@ -144,8 +160,8 @@ def first_derivative(
     if f0 is None:
         evaluation_points.append(params)
 
+    # do the function evaluations, including error handling
     batch_error_handling = "raise" if error_handling == "raise_strict" else "continue"
-
     raw_evals = _nan_skipping_batch_evaluator(
         func=partialed_func,
         arguments=evaluation_points,
@@ -154,22 +170,25 @@ def first_derivative(
         batch_evaluator=batch_evaluator,
     )
 
+    # extract information on exceptions that occurred during function evaluations
     exc_info = "\n\n".join([val for val in raw_evals if isinstance(val, str)])
     raw_evals = [val if not isinstance(val, str) else np.nan for val in raw_evals]
 
+    # store full function value at params as func_value and a processed version of it
+    # that we need to calculate derivatives as f0
     if f0 is None:
         f0 = raw_evals[-1]
         raw_evals = raw_evals[:-1]
-
     func_value = f0
-
     f0 = f0[key] if isinstance(f0, dict) else f0
     f_was_scalar = np.isscalar(f0)
     out_index = f0.index if isinstance(f0, pd.Series) else None
     f0 = np.atleast_1d(f0)
 
+    # convert the raw evaluations to numpy arrays
     raw_evals = _convert_evals_to_numpy(raw_evals, key)
 
+    # apply finite difference formulae
     evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
     evals = np.transpose(evals, axes=(0, 1, 3, 2))
     evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
@@ -178,6 +197,8 @@ def first_derivative(
     for m in ["forward", "backward", "central"]:
         jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, method)
 
+    # get the best derivative estimate out of all derivative estimates that could be
+    # calculated, given the function evaluations.
     orders = {
         "central": ["central", "forward", "backward"],
         "forward": ["forward", "backward"],
@@ -192,34 +213,26 @@ def first_derivative(
         )
         jac = _consolidate_extrapolated(richardson_candidates)
 
+    # raise error if necessary
     if error_handling in ("raise", "raise_strict") and np.isnan(jac).any():
         raise Exception(exc_info)
 
+    # results processing
     derivative = jac.flatten() if f_was_scalar else jac
-
     derivative = _add_index_to_derivative(derivative, params_index, out_index)
-
     res = (derivative, func_value) if return_func_value else derivative
     return res
 
 
-def _add_index_to_derivative(derivative, params_index, out_index):
-    if len(derivative.shape) == 1 and params_index is not None:
-        derivative = pd.Series(derivative, index=params_index)
-    if len(derivative.shape) == 2 and (
-        params_index is not None or out_index is not None
-    ):
-        derivative = pd.DataFrame(derivative, columns=params_index, index=out_index)
-    return derivative
-
-
-def _convert_evals_to_numpy(raw_evals, key):
-    raw_evals = [val[key] if isinstance(val, dict) else val for val in raw_evals]
-    raw_evals = [
-        np.array(val) if isinstance(val, pd.Series) else val for val in raw_evals
-    ]
-    raw_evals = [np.atleast_1d(val) for val in raw_evals]
-    return raw_evals
+def _process_bounds(lower_bounds, upper_bounds, params):
+    lower_bounds = np.atleast_1d(lower_bounds) if lower_bounds is not None else None
+    upper_bounds = np.atleast_1d(upper_bounds) if upper_bounds is not None else None
+    if isinstance(params, pd.DataFrame):
+        if lower_bounds is None and "lower" in params.columns:
+            lower_bounds = params["lower"].to_numpy()
+        if upper_bounds is None and "upper" in params.columns:
+            upper_bounds = params["upper"].to_numpy()
+    return lower_bounds, upper_bounds
 
 
 def _convert_evaluation_points_to_original(evaluation_points, params):
@@ -234,9 +247,23 @@ def _convert_evaluation_points_to_original(evaluation_points, params):
                 res.append(pandas_point)
             else:
                 res.append(point)
+    elif isinstance(params, pd.Series):
+        res = [
+            pd.Series(p, index=params.index) if isinstance(p, np.ndarray) else p
+            for p in evaluation_points
+        ]
     else:
         res = evaluation_points
     return res
+
+
+def _convert_evals_to_numpy(raw_evals, key):
+    raw_evals = [val[key] if isinstance(val, dict) else val for val in raw_evals]
+    raw_evals = [
+        np.array(val) if isinstance(val, pd.Series) else val for val in raw_evals
+    ]
+    raw_evals = [np.atleast_1d(val) for val in raw_evals]
+    return raw_evals
 
 
 def _consolidate_one_step_derivatives(candidates, preference_order):
@@ -479,3 +506,13 @@ def _get_output_shape(evals):
     """
     first_relevant = next(x for x in evals if hasattr(x, "shape"))
     return first_relevant.shape
+
+
+def _add_index_to_derivative(derivative, params_index, out_index):
+    if len(derivative.shape) == 1 and params_index is not None:
+        derivative = pd.Series(derivative, index=params_index)
+    if len(derivative.shape) == 2 and (
+        params_index is not None or out_index is not None
+    ):
+        derivative = pd.DataFrame(derivative, columns=params_index, index=out_index)
+    return derivative
