@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['3.6', '3.7']
+        python-version: ['3.6', '3.7', '3.8']
     steps:
       - uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
@@ -27,8 +27,8 @@ jobs:
         shell: bash -l {0}
         run: conda install -c conda-forge tox-conda
 
-      - name: Install fixes for Python 3.7 on Windows
-        if: runner.os == 'Windows' && matrix.python-version == '3.7'
+      - name: Install fixes for Python 3.8 on Windows
+        if: runner.os == 'Windows' && matrix.python-version == '3.8'
         shell: bash -l {0}
         run: conda install -c conda-forge bokeh conda-build numpy pygmo scipy
 
@@ -37,17 +37,17 @@ jobs:
         run: tox -e pytest -- --cov-report=xml --cov=./
 
       - name: Upload coverage report.
-        if: runner.os == 'Linux' && matrix.python-version == '3.7'
+        if: runner.os == 'Linux' && matrix.python-version == '3.8'
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run sphinx.
-        if: runner.os == 'Linux' && matrix.python-version == '3.7'
+        if: runner.os == 'Linux' && matrix.python-version == '3.8'
         shell: bash -l {0}
         run: tox -e sphinx
 
       - name: Run pre-commits.
-        if: runner.os == 'Linux' && matrix.python-version == '3.7'
+        if: runner.os == 'Linux' && matrix.python-version == '3.8'
         shell: bash -l {0}
         run: tox -e linting
