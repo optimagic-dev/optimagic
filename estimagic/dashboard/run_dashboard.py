@@ -113,8 +113,8 @@ def _process_dashboard_args(database_paths, no_browser, port):
     for single_database_path in database_paths:
         if not isinstance(single_database_path, (str, pathlib.Path)):
             raise TypeError(
-                f"database_paths must be string or pathlib.Path. ",
-                "You supplied {type(single_database_path)}.",
+                "database_paths must be string or pathlib.Path. ",
+                f"You supplied {type(single_database_path)}.",
             )
     database_name_to_path = create_short_database_names(path_list=database_paths)
 

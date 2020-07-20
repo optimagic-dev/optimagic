@@ -31,8 +31,8 @@ jobs:
         shell: bash -l {0}
         run: conda install -c conda-forge tox-conda
 
-      - name: Install fixes for Python 3.8 on Windows
-        if: runner.os == 'Windows' && matrix.python-version == '3.8'
+      - name: Install fixes for Python 3.7 on Windows
+        if: runner.os == 'Windows' && matrix.python-version == '3.7'
         shell: bash -l {0}
         run: conda install -c conda-forge bokeh conda-build numpy pygmo scipy
 
