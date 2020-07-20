@@ -28,7 +28,6 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - restructuredtext_lint
   - scipy>=1.2.1
   - seaborn
   - sphinx>=2.4.4
