@@ -8,7 +8,7 @@ channels:
 dependencies:
 
   - python=3.7
-  - pip=19.0.3
+  - pip
   - anaconda-client
   - bokeh>=1.3
   - click
@@ -18,20 +18,19 @@ dependencies:
   - joblib
   - jupyterlab
   - nbsphinx
-  - numba >= 0.12
-  - numdifftools>= 0.9.20
-  - numpy=1.16
+  - numba>=0.12
+  - numdifftools>=0.9.20
+  - numpy>=1.16
   - pandas>=0.24
   - pdbpp
   - petsc4py>=3.11
-  - pygmo=2.15
+  - pygmo>=2.14
   - pytest
   - pytest-cov
   - pytest-xdist
-  - restructuredtext_lint
-  - scipy=1.2.1
+  - scipy>=1.2.1
   - seaborn
-  - sphinx=2.4.4
+  - sphinx>=2.4.4
   - sphinx_rtd_theme
   - sphinxcontrib-bibtex
   - sqlalchemy>=1.3
