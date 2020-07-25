@@ -1,3 +1,6 @@
+.. _maximize_and_minimize:
+
+
 The *minimize* and *maximize* Functions
 =======================================
 

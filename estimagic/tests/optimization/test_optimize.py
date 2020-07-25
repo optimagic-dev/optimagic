@@ -1,146 +1,120 @@
+"""Test the external interface for optimization."""
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.optimization.optimize import maximize
-from estimagic.optimization.optimize import minimize
+from estimagic.config import ALL_ALGORITHMS
+from estimagic.optimization.optimize_new import minimize
 
 
-# =====================================================================================
-# FIXTURES THAT PASS
-# =====================================================================================
+ALL_ALGORITHMS = list(ALL_ALGORITHMS)
 
-scipy_algos = ["scipy_L-BFGS-B", "scipy_TNC", "scipy_SLSQP"]
+LEAST_SQUARES_ALOGORITHMS = ["tao_pounders"]
 
+SUM_ALGORITHMS = ["bhhh"]
 
-algorithms = [
-    "pygmo_de1220",
-    "pygmo_sade",
-    "pygmo_pso",
-    "pygmo_pso_gen",
-    "pygmo_bee_colony",
-    "pygmo_cmaes",
-    "pygmo_xnes",
-    "scipy_L-BFGS-B",
-    "pygmo_ihs",
-    "pygmo_de",
-    "scipy_TNC",
-    "scipy_SLSQP",
-    "nlopt_cobyla",
-    "nlopt_bobyqa",
-    "nlopt_newuoa",
-    "nlopt_newuoa_bound",
-    "nlopt_praxis",
-    "nlopt_neldermead",
-    "nlopt_sbplx",
-    "nlopt_lbfgs",
-    "nlopt_tnewton",
-    "nlopt_tnewton_precond_restart",
-    "nlopt_tnewton_precond",
-    "nlopt_tnewton_restart",
-    "nlopt_ccsaq",
-    "nlopt_var2",
-    "nlopt_var1",
+SCALAR_ALGORITHMS = [
+    alg
+    for alg in ALL_ALGORITHMS
+    if alg not in LEAST_SQUARES_ALOGORITHMS + SUM_ALGORITHMS
 ]
 
 
-currently_failing = [
-    # gradient based nlopt
-    # runs forever
-    "nlopt_mma",
-    "nlopt_slsqp",
-    # multi objective pygmo optimizers
-    "pygmo_nsga2",
-    "pygmo_moead",
-    # precision problems
-    "pygmo_sea",
-    "pygmo_sga",
-    "pygmo_simulated_annealing",
-]
+def sum_of_squares_dict_criterion(params):
+    out = {
+        "value": (params["value"] ** 2).sum(),
+        "contributions": params["value"].to_numpy() ** 2,
+        "root_contributions": params["value"].to_numpy(),
+    }
+    return out
 
 
-def f(params):
-    x = params["value"].to_numpy()
-    return -x @ x
+def sum_of_squares_dict_criterion_with_pd_objects(params):
+    out = {
+        "value": (params["value"] ** 2).sum(),
+        "contributions": params["value"] ** 2,
+        "root_contributions": params["value"],
+    }
+    return out
 
 
-@pytest.mark.parametrize("algorithm", algorithms)
-def test_maximize(algorithm):
-    np.random.seed(1234)
-    params = pd.Series([1, -1, -1.5, 1.5], name="value").to_frame()
-    params["lower"] = -2
-    params["upper"] = 2
-
-    origin, algo_name = algorithm.split("_", 1)
-    if origin == "pygmo":
-        if algo_name == "simulated_annealing":
-            algo_options = {}
-        elif algo_name in ["ihs"]:
-            algo_options = {"popsize": 1, "gen": 1000}
-        elif algo_name in ["sga"]:
-            algo_options = {"popsize": 50, "gen": 500}
-        elif algo_name in ["sea"]:
-            algo_options = {"popsize": 5, "gen": 7000}
-        elif algo_name == "simulated_annealing":
-            np.random.seed(5471)
-            algo_options = {"n_T_adj": 20, "Tf": 0.0001, "n_range_adj": 20}
-        else:
-            algo_options = {"popsize": 30, "gen": 150}
-    else:
-        algo_options = {}
-    res_dict, final_params = maximize(
-        f, params, algorithm, algo_options=algo_options, logging=False,
-    )
-    aaae(final_params["value"].to_numpy(), np.zeros(len(final_params)), decimal=2)
-
-
-# Test with gradient
-def sum_of_squares(params):
-    return (params["value"] ** 2).sum()
+def sum_of_squares_scalar_criterion(params):
+    return (params["value"].to_numpy() ** 2).sum()
 
 
 def sum_of_squares_gradient(params):
-    return params["value"].to_numpy() * 2
+    return 2 * params["value"].to_numpy()
 
 
-some_gradient_algos = ["nlopt_lbfgs", "scipy_L-BFGS-B", "scipy_SLSQP"]
+def sum_of_squares_jacobian(params):
+    return np.diag(2 * params["value"])
 
 
-@pytest.mark.parametrize("algorithm", some_gradient_algos)
-def test_minimize_with_gradient(algorithm):
-    start_params = pd.DataFrame()
-    start_params["value"] = [1, 2.5, -1]
-    info, params = minimize(
-        criterion=sum_of_squares,
-        params=start_params,
-        algorithm=algorithm,
-        gradient=sum_of_squares_gradient,
+def sum_of_squares_pandas_gradient(params):
+    return 2 * params["value"]
+
+
+def sum_of_squares_pandas_jacobian(params):
+    return pd.DataFrame(np.diag(3 * params["value"]))
+
+
+def sum_of_squares_criterion_and_derivative(params):
+    x = params["value"].to_numpy()
+    return (x ** 2).sum(), 2 * x
+
+
+@pytest.mark.parametrize("algorithm", SCALAR_ALGORITHMS)
+def test_minimization_no_derivative(algorithm):
+    params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
+    params["lower"] = -10
+    params["upper"] = 10
+    batch_options = {"error_handling": "raise", "n_cores": 1}
+    res = minimize(
+        sum_of_squares_scalar_criterion,
+        params,
+        algorithm,
+        batch_evaluator_options=batch_options,
     )
-
-    aaae(info["x"], [0, 0, 0])
-
-
-def minus_sum_of_squares(params):
-    return -(params["value"] ** 2).sum()
+    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(10))
 
 
-def minus_sum_of_squares_gradient(params):
-    return params["value"].to_numpy() * -2
-
-
-some_gradient_algos = ["nlopt_lbfgs", "scipy_L-BFGS-B", "scipy_SLSQP"]
-
-
-@pytest.mark.parametrize("algorithm", some_gradient_algos)
-def test_maximize_with_gradient(algorithm):
-    start_params = pd.DataFrame()
-    start_params["value"] = [1, 2.5, -1]
-    info, params = maximize(
-        criterion=minus_sum_of_squares,
-        params=start_params,
-        algorithm=algorithm,
-        gradient=minus_sum_of_squares_gradient,
+@pytest.mark.parametrize("algorithm", ALL_ALGORITHMS)
+def test_minimization_with_dict_output_no_derivative(algorithm):
+    params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
+    batch_options = {"error_handling": "raise", "n_cores": 1}
+    res = minimize(
+        sum_of_squares_dict_criterion,
+        params,
+        algorithm,
+        batch_evaluator_options=batch_options,
     )
+    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(10))
 
-    aaae(info["x"], [0, 0, 0])
+
+@pytest.mark.parametrize("algorithm", SCALAR_ALGORITHMS)
+def test_minimization_scalar_output_with_derivative(algorithm):
+    params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
+    batch_options = {"error_handling": "raise", "n_cores": 1}
+    res = minimize(
+        sum_of_squares_dict_criterion,
+        params,
+        algorithm,
+        derivative=sum_of_squares_gradient,
+        batch_evaluator_options=batch_options,
+    )
+    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(10))
+
+
+@pytest.mark.parametrize("algorithm", SCALAR_ALGORITHMS)
+def test_minimization_scalar_output_with_criterion_and_derivative(algorithm):
+    params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
+    batch_options = {"error_handling": "raise", "n_cores": 1}
+    res = minimize(
+        sum_of_squares_dict_criterion,
+        params,
+        algorithm,
+        criterion_and_derivative=sum_of_squares_criterion_and_derivative,
+        batch_evaluator_options=batch_options,
+    )
+    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(10))

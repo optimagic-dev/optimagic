@@ -39,16 +39,13 @@ def problem_data():
         "params": np.arange(3),
         "algorithm": "bla",
         "constraints": [{"type": "bla"}],
-        "general_options": {"some_option": True},
         "algo_options": None,
         "derivative": None,
         "derivative_kwargs": None,
-        "derivative_and_value": None,
-        "derivative_and_value_kwargs": None,
+        "criterion_and_derivative": None,
+        "criterion_and_derivative_kwargs": None,
         "numdiff_options": {},
-        "log_options": {"fast": False},
-        "dashboard": False,
-        "dash_options": {"rollover": 20},
+        "log_options": {"fast_logging": False},
     }
     return data
 
@@ -81,13 +78,13 @@ def test_load_database_with_bound_metadata(tmp_path):
 def test_optimization_iteration_table_scalar(tmp_path, iteration_data):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval=5.0)
+    make_optimization_iteration_table(database, first_eval={"output": 0.5})
     append_row(iteration_data, "optimization_iterations", database, path, False)
     res = read_last_rows(database, "optimization_iterations", 1, "list_of_dicts")
     assert isinstance(res, list) and isinstance(res[0], dict)
     res = res[0]
     assert res["rowid"] == 1
-    assert res["internal_gradient"] is None
+    assert res["internal_derivative"] is None
     for key in ["internal_params", "external_params"]:
         assert_array_equal(res[key], iteration_data[key])
 
@@ -98,7 +95,9 @@ def test_optimization_iteration_table_scalar(tmp_path, iteration_data):
 def test_optimization_iteration_table_vector_valued(tmp_path):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval=np.ones(3))
+    make_optimization_iteration_table(
+        database, first_eval={"output": {"contributions": np.ones(3), "value": 0.5}}
+    )
     assert isinstance(
         database.tables["optimization_iterations"].columns["contributions"].type,
         PickleType,
@@ -108,7 +107,9 @@ def test_optimization_iteration_table_vector_valued(tmp_path):
 def test_optimization_iteration_table_dict_valued(tmp_path):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    first_eval = {"contributions": np.ones(3), "value": 5, "bla": pd.DataFrame()}
+    first_eval = {
+        "output": {"contributions": np.ones(3), "value": 5, "bla": pd.DataFrame()}
+    }
     make_optimization_iteration_table(database, first_eval=first_eval)
     for col in ["contributions", "bla"]:
         assert isinstance(

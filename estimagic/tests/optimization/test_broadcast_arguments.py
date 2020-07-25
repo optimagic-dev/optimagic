@@ -12,10 +12,9 @@ def check_single_argument_types(argument):
         "algorithm": str,
         "criterion_kwargs": dict,
         "constraints": list,
-        "general_options": dict,
+        "numdiff_options": dict,
         "algo_options": dict,
-        "dashboard": bool,
-        "dash_options": dict,
+        "error_penalty": dict,
     }
 
     for key, exp_type in key_to_expected_tuple.items():
@@ -37,10 +36,9 @@ def single_non_standard_inputs():
             {"loc": 1, "type": "fixed", "value": 4},
             {"loc": [2, 3], "type": "increasing"},
         ],
-        "general_options": {"n_cores": 1},
+        "numdiff_options": {"n_cores": 1},
         "algo_options": {"maxfun": 5000, "maxiter": 1000},
-        "dashboard": False,
-        "dash_options": {"port": 3409},
+        "error_penalty": {"slope": 0.1, "constant": 100},
     }
     return kwargs
 
@@ -66,10 +64,9 @@ def multiple_non_standard_inputs():
             {"loc": 1, "type": "fixed", "value": 4},
             {"loc": [2, 3], "type": "increasing"},
         ],
-        "general_options": {"n_cores": 1},
+        "numdiff_options": {"n_cores": 1},
         "algo_options": {"maxfun": 5000, "maxiter": 1000},
-        "dashboard": False,
-        "dash_options": {"port": 3409},
+        "error_penalty": {"slope": 0.1, "constant": 100},
     }
     return kwargs
 

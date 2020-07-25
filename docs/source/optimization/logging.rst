@@ -16,9 +16,6 @@ is lost when an optimization has to be aborted or a server is shut down for main
 The sqlite database is also used to exchange data between the optimization and the
 dashboard.
 
-.. Thus, whenever the dashboard is used, a log file is created, even if no
-.. logging is specified by the user.
-
 In addition to parameters and criterion values, we also save all arguments to an
 maximize or minimize in the database as well as other information in the database
 that can help to reproduce an optimization result.
@@ -29,12 +26,7 @@ The logging Argument
 
 ``logging`` can be a string or pathlib.Path that specifies the path to a sqlite3
 database. Typically, those files have the file extension ``.db``. If the file does not
-exist, it will be created for you. If it exists, we will create and potentially
-overwrite tables that are used to log the optimization. The details of what estimagic
-will do with your database file are documented in the following function.
-
-
-.. autofunction:: estimagic.logging.create_database.prepare_database
+exist, it will be created for you.
 
 
 The log_options Argument
@@ -43,6 +35,16 @@ The log_options Argument
 ``log_options`` is a dictionary with keyword arguments that influence the logging
 behavior. The following options are available:
 
-- ``"readme"``: A string with a description of the optimization. This can be helpful to
-  send a message to your future self who might have forgotten why (s)he ran this
-  particular optimization.
+
+- "suffix": A string that is appended to the default table names, separated
+  by an underscore. You can use this if you want to write the log into an
+  existing database where the default names "optimization_iterations",
+  "optimization_status" and "optimization_problem" are already in use.
+- "fast_logging": A boolean that determines if "unsafe" settings are used
+  to speed up write processes to the database. This should only be used for
+  very short running criterion functions where the main purpose of the log
+  is a real-time dashboard and it would not be catastrophic to get a
+  corrupted database in case of a sudden system shutdown. If one evaluation
+  of the criterion function (and gradient if applicable) takes more than
+  100 ms, the logging overhead is negligible.
+- "if_exists": (str) One of "extend", "replace", "raise"

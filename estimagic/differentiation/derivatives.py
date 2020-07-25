@@ -4,12 +4,16 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+from jax import config
 
 from estimagic import batch_evaluators
+from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from estimagic.optimization.utilities import namedtuple_from_kwargs
+
+config.update("jax_enable_x64", True)
 
 
 def first_derivative(
@@ -25,7 +29,7 @@ def first_derivative(
     step_ratio=2,
     min_steps=None,
     f0=None,
-    n_cores=1,
+    n_cores=DEFAULT_N_CORES,
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
@@ -195,7 +199,7 @@ def first_derivative(
 
     jac_candidates = {}
     for m in ["forward", "backward", "central"]:
-        jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, method)
+        jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, m)
 
     # get the best derivative estimate out of all derivative estimates that could be
     # calculated, given the function evaluations.
@@ -258,12 +262,34 @@ def _convert_evaluation_points_to_original(evaluation_points, params):
 
 
 def _convert_evals_to_numpy(raw_evals, key):
-    raw_evals = [val[key] if isinstance(val, dict) else val for val in raw_evals]
-    raw_evals = [
-        np.array(val) if isinstance(val, pd.Series) else val for val in raw_evals
-    ]
-    raw_evals = [np.atleast_1d(val) for val in raw_evals]
-    return raw_evals
+    """harmonize the output of the function evaluations.
+
+    The raw_evals might contain dictionaries of which we only need one entry, scalar
+    np.nan where we need arrays filled with np.nan or pandas objects. The processed
+    evals only contain numpy arrays.
+
+    """
+    # get rid of dictionaries
+    evals = [val[key] if isinstance(val, dict) else val for val in raw_evals]
+    # get rid of pandas objects
+    evals = [np.array(val) if isinstance(val, pd.Series) else val for val in evals]
+
+    # find out the correct output shape
+    try:
+        array = next(x for x in evals if hasattr(x, "shape") or isinstance(x, dict))
+        out_shape = array.shape
+    except StopIteration:
+        out_shape = "scalar"
+
+    # convert to correct output shape
+    if out_shape == "scalar":
+        evals = [np.atleast_1d(val) for val in evals]
+    else:
+        for i in range(len(evals)):
+            if isinstance(evals[i], float) and np.isnan(evals[i]):
+                evals[i] = np.full(out_shape, np.nan)
+
+    return evals
 
 
 def _consolidate_one_step_derivatives(candidates, preference_order):
@@ -446,8 +472,7 @@ def _nan_skipping_batch_evaluator(
 
     The function is only evaluated at inputs that are not a scalar np.nan.
     The outputs corresponding to skipped inputs as well as for inputs on which func
-    returns a scalar np.nan are arrays of the same shape as the result of func, filled
-    with np.nan.
+    returns np.nan are np.nan.
 
     Args:
         func (function): Python function that returns a numpy array. The shape
@@ -485,27 +510,7 @@ def _nan_skipping_batch_evaluator(
         else:
             results.append(next(evaluations))
 
-    # replace scalar NaNs by arrays filled with NaNs.
-    outshape = _get_output_shape(results)
-    for i in range(len(results)):
-        if isinstance(results[i], float) and np.isnan(results[i]):
-            results[i] = np.full(outshape, np.nan)
-
     return results
-
-
-def _get_output_shape(evals):
-    """Get the output shape of func from evaluations.
-
-    Args:
-        evals (list): Contains np.nan and numpy arrays that all have the same shape.
-
-    Returns:
-        tuple: The shape of the numpy arrays.
-
-    """
-    first_relevant = next(x for x in evals if hasattr(x, "shape"))
-    return first_relevant.shape
 
 
 def _add_index_to_derivative(derivative, params_index, out_index):

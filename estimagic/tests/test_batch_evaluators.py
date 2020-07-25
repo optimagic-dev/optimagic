@@ -1,4 +1,5 @@
 import itertools
+import warnings
 
 import pytest
 
@@ -42,21 +43,27 @@ def test_batch_evaluator_without_exceptions(batch_evaluator, n_cores):
 def test_batch_evaluator_with_unhandled_exceptions(batch_evaluator, n_cores):
     with pytest.raises(AssertionError):
         batch_evaluator(
-            func=buggy_func, arguments=list(range(10)), n_cores=n_cores,
+            func=buggy_func,
+            arguments=list(range(10)),
+            n_cores=n_cores,
+            error_handling="raise",
         )
 
 
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_handled_exceptions(batch_evaluator, n_cores):
-    calculated = batch_evaluator(
-        func=buggy_func,
-        arguments=list(range(10)),
-        n_cores=n_cores,
-        error_handling="continue",
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
 
-    for calc in calculated:
-        assert isinstance(calc, str)
+        calculated = batch_evaluator(
+            func=buggy_func,
+            arguments=list(range(10)),
+            n_cores=n_cores,
+            error_handling="continue",
+        )
+
+        for calc in calculated:
+            assert isinstance(calc, str)
 
 
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)

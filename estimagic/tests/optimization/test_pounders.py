@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from estimagic.optimization.optimize import minimize
 from estimagic.optimization.pounders import minimize_pounders_np
 
 pytestmark = pytest.mark.skipif(
@@ -29,27 +28,7 @@ def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np
     return params
 
 
-def test_robustness_1():
-    np.random.seed(5470)
-    true_params = get_random_params(3)
-    start_params = get_random_params(3)
-
-    def _criterion_pandas(endog, exog, crit, params):
-        x = params["value"].to_numpy()
-        out = _criterion(endog, exog, crit, x)
-        return out
-
-    exog, endog = _simulate_sample(NUM_AGENTS, true_params, 0.5)
-    crit = "nonlinear"
-    objective = functools.partial(_criterion_pandas, endog, exog, crit)
-    results = minimize(objective, start_params, algorithm, logging=None)
-
-    np.testing.assert_array_almost_equal(
-        true_params["value"].values, results[0]["x"], decimal=0.1
-    )
-
-
-def test_robustness_2():
+def test_robustness():
     np.random.seed(5471)
     true_params = get_random_params(2)
     start_params = get_random_params(2)

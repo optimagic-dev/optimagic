@@ -9,7 +9,6 @@ from numdifftools import Jacobian
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.differentiation.derivatives import _consolidate_one_step_derivatives
-from estimagic.differentiation.derivatives import _get_output_shape
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.examples.numdiff_example_functions_np import logit_loglike
@@ -55,7 +54,7 @@ def test_first_derivative_jacobian(binary_choice_inputs, method):
 def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
     fix = binary_choice_inputs
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
-    calculated = first_derivative(func=func, params=fix["params_np"])
+    calculated = first_derivative(func=func, params=fix["params_np"], n_cores=1)
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
     aaae(calculated, expected, decimal=6)
 
@@ -84,7 +83,7 @@ def test_first_derivative_scalar(method):
     def f(x):
         return x ** 2
 
-    calculated = first_derivative(f, 3.0)
+    calculated = first_derivative(f, 3.0, n_cores=1)
     expected = 6.0
     assert calculated == expected
 
@@ -94,14 +93,9 @@ def test_first_derivative_scalar_with_return_func_value(method):
     def f(x):
         return x ** 2
 
-    calculated = first_derivative(f, 3.0, return_func_value=True)
+    calculated = first_derivative(f, 3.0, return_func_value=True, n_cores=1)
     expected = (6.0, 9.0)
     assert calculated == expected
-
-
-def test_get_output_shape():
-    a = [np.nan, 7, np.ones((3, 4)), 5]
-    assert _get_output_shape(a) == (3, 4)
 
 
 def test_nan_skipping_batch_evaluator():
@@ -179,7 +173,7 @@ def test_first_derivative_gradient_richardson(example_function_gradient_fixtures
 
     true_grad = fprime(np.ones(3))
     numdifftools_grad = Gradient(f, order=2, n=3, method="central")(np.ones(3))
-    grad = first_derivative(f, np.ones(3), n_steps=3, method="central")
+    grad = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
     aaae(numdifftools_grad, grad)
     aaae(true_grad, grad)
@@ -191,7 +185,7 @@ def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures
 
     true_grad = fprime(np.ones(3))
     numdifftools_grad = Jacobian(f, order=2, n=3, method="central")(np.ones(3))
-    grad = first_derivative(f, np.ones(3), n_steps=3, method="central")
+    grad = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
     aaae(numdifftools_grad, grad)
     aaae(true_grad, grad)

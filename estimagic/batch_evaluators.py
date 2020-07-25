@@ -8,12 +8,13 @@ from joblib import delayed
 from joblib import Parallel
 from pathos.pools import ProcessPool
 
+from estimagic.config import DEFAULT_N_CORES as N_CORES
 from estimagic.decorators import catch
 from estimagic.decorators import unpack
 
 
 def pathos_mp_batch_evaluator(
-    func, arguments, n_cores, error_handling="raise", unpack_symbol=None,
+    func, arguments, n_cores=N_CORES, error_handling="continue", unpack_symbol=None,
 ):
     """Batch evaluator based on pathos.multiprocess.ProcessPool
 
@@ -66,7 +67,7 @@ def pathos_mp_batch_evaluator(
 
 
 def joblib_batch_evaluator(
-    func, arguments, n_cores, error_handling="raise", unpack_symbol=None,
+    func, arguments, n_cores=N_CORES, error_handling="continue", unpack_symbol=None,
 ):
     """Batch evaluator based on joblib's Parallel.
 

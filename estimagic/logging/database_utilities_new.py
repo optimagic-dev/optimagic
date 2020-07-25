@@ -5,7 +5,6 @@ import traceback
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from sqlalchemy import BLOB
 from sqlalchemy import Boolean
@@ -19,6 +18,8 @@ from sqlalchemy import PickleType
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy.dialects.sqlite import DATETIME
+
+from estimagic.exceptions import TableExistsError
 
 
 def load_database(metadata=None, path=None, fast_logging=False):
@@ -80,8 +81,8 @@ def make_optimization_iteration_table(
 
     Args:
         database (sqlalchemy.MetaData): Bound metadata object.
-        first_eval (float, array_like or dict): The output of the first criterion
-            function evaluation.
+        first_eval (dict): The inputs and output of the first criterion evaluation. Has
+            the entries "internal_params", "external_params" and "output".
         table_name (str): Name of the table, optional.
 
     Returns:
@@ -94,21 +95,20 @@ def make_optimization_iteration_table(
         Column("rowid", Integer, primary_key=True),
         Column("external_params", PickleType(pickler=PandasPickler)),
         Column("internal_params", PickleType(pickler=PandasPickler)),
-        Column("internal_gradient", PickleType(pickler=PandasPickler)),
+        Column("internal_derivative", PickleType(pickler=PandasPickler)),
         Column("timestamp", DATETIME),
         Column("distance_origin", Float),
         Column("distance_ones", Float),
-        Column("terminal_output", String),
+        Column("exceptions", String),
         Column("valid", Boolean),
         Column("hash", String),
         Column("value", Float),
     ]
-    if isinstance(first_eval, (np.ndarray, pd.Series, pd.DataFrame)):
-        columns.append(Column("contributions", PickleType(pickler=PandasPickler)))
-    elif isinstance(first_eval, dict):
+
+    if isinstance(first_eval["output"], dict):
         columns += [
             Column(key, PickleType(pickler=PandasPickler))
-            for key in first_eval
+            for key in first_eval["output"]
             if key != "value"
         ]
 
@@ -118,11 +118,9 @@ def make_optimization_iteration_table(
 
     database.create_all(database.bind)
 
-    return database
-
 
 def make_optimization_status_table(
-    database, table_name="optimization_status", if_exists="replace"
+    database, table_name="optimization_status", if_exists="extend"
 ):
     _handle_existing_table(database, table_name, if_exists)
     columns = [
@@ -144,19 +142,21 @@ def make_optimization_problem_table(
         Column("rowid", Integer, primary_key=True),
         Column("direction", String),
         Column("criterion", PickleType(pickler=PandasPickler)),
+        Column("criterion_kwargs", PickleType(pickler=PandasPickler)),
         Column("params", PickleType(pickler=PandasPickler)),
-        Column("algorithm", String),
+        Column("algorithm", PickleType(pickler=PandasPickler)),
         Column("constraints", PickleType(pickler=PandasPickler)),
-        Column("general_options", PickleType(pickler=PandasPickler)),
         Column("algo_options", PickleType(pickler=PandasPickler)),
         Column("derivative", PickleType(pickler=PandasPickler)),
         Column("derivative_kwargs", PickleType(pickler=PandasPickler)),
-        Column("derivative_and_value", PickleType(pickler=PandasPickler)),
-        Column("derivative_and_value_kwargs", PickleType(pickler=PandasPickler)),
+        Column("criterion_and_derivative", PickleType(pickler=PandasPickler)),
+        Column("criterion_and_derivative_kwargs", PickleType(pickler=PandasPickler)),
         Column("numdiff_options", PickleType(pickler=PandasPickler)),
+        Column("logging", PickleType(pickler=PandasPickler)),
         Column("log_options", PickleType(pickler=PandasPickler)),
-        Column("dashboard", Boolean),
-        Column("dash_options", PickleType(pickler=PandasPickler)),
+        Column("error_handling", String),
+        Column("error_penalty", PickleType(pickler=PandasPickler)),
+        Column("cache_size", Integer),
     ]
 
     Table(
@@ -390,7 +390,3 @@ class PandasPickler:
     @staticmethod
     def dumps(*args, **kwargs):
         return pickle.dumps(*args, **kwargs)
-
-
-class TableExistsError(Exception):
-    pass

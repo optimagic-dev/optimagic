@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import sqlalchemy
-
 
 def broadcast_arguments(**arguments):
     """Broadcast arguments.
@@ -15,10 +13,11 @@ def broadcast_arguments(**arguments):
     dict_args = [
         "criterion_kwargs",
         "algo_options",
+        "derivative_kwargs",
+        "criterion_and_derivative_kwargs",
+        "numdiff_options",
         "log_options",
-        "dash_options",
-        "general_options",
-        "gradient_kwargs",
+        "error_penalty",
     ]
     for arg in dict_args:
         if arg in arguments and arguments[arg] is None:
@@ -57,8 +56,7 @@ def broadcast_arguments(**arguments):
                 "optimizations."
             )
 
-    logging = _process_path_or_metadata_for_logging(logging, n_optimizations)
-    arguments.update({"logging": logging})
+    arguments.update({"logging": _process_logging(logging, n_optimizations)})
 
     # Convert arguments from dictionary of lists to lists of dictionaries.
     arguments = [
@@ -69,8 +67,8 @@ def broadcast_arguments(**arguments):
     return arguments
 
 
-def _process_path_or_metadata_for_logging(logging, n_optimizations):
-    """Process paths or sqlalchemy.MetaData object to databases.
+def _process_logging(logging, n_optimizations):
+    """Process paths to databases.
 
     `logging` can be a single value in which case it becomes an iterable with a single
     value to simplify the processing.
@@ -94,24 +92,28 @@ def _process_path_or_metadata_for_logging(logging, n_optimizations):
 
     Example
     -------
-    >>> _process_path_or_metadata_for_logging(False, 1)
+    >>> _process_logging(False, 1)
     [False]
-    >>> _process_path_or_metadata_for_logging(False, 2)
+    >>> _process_logging(False, 2)
     [False, False]
-    >>> _process_path_or_metadata_for_logging([False], 2)
+    >>> _process_logging([False], 2)
     [False, False]
 
     """
     if not isinstance(logging, (tuple, list)):
-        # Handle the special case, where we have one path and multiple optimizations.
-        # Then, add numbers as suffixes to the path.
-        if n_optimizations >= 2 and isinstance(logging, (str, Path)):
+        if not logging:
+            logging = [False] * n_optimizations
+        elif not isinstance(logging, (str, Path)):
+            raise ValueError("logging has to be a pathlib.Path, string or False")
+
+        elif n_optimizations >= 2:
             path = Path(logging).absolute()
             logging = [
                 path.parent / (path.stem + f"_{i}.db") for i in range(n_optimizations)
             ]
         else:
-            logging = [logging] * n_optimizations
+            logging = [Path(logging).absolute()]
+
     else:
         if len(logging) == 1:
             logging = logging * n_optimizations
@@ -123,23 +125,7 @@ def _process_path_or_metadata_for_logging(logging, n_optimizations):
                 "optimizations. Cannot harmonize entries."
             )
 
-    logging = [_process_path_or_metadata(path) for path in logging]
+    # replace everything that evaluates to False by an actual False
+    logging = [path if path else False for path in logging]
 
     return logging
-
-
-def _process_path_or_metadata(path):
-    """Processes an individual path."""
-    if not path:
-        path = False
-    elif isinstance(path, (str, Path)):
-        path = Path(path).absolute()
-    elif isinstance(path, sqlalchemy.MetaData):
-        pass
-    else:
-        raise ValueError(
-            "logging has to be a str/pathlib.Path/sqlalchemy.MetaData, a list of the "
-            "same elements or False."
-        )
-
-    return path

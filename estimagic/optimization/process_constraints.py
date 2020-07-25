@@ -79,9 +79,15 @@ def process_constraints(constraints, params):
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
+        params = params.copy()
         pc = _apply_constraint_killers(constraints)
         check_types(pc)
+        # selectors have to be processed before anything else happens to the params
         pc = _process_selectors(pc, params)
+        if "lower" not in params.columns:
+            params["lower"] = -np.inf
+        if "upper" not in params.columns:
+            params["upper"] = np.inf
         pc = _replace_pairwise_equality_by_equality(pc)
         pc = _process_linear_weights(pc, params)
         check_constraints_are_satisfied(pc, params)
