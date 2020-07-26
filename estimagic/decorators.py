@@ -17,10 +17,11 @@ import numpy as np
 import pandas as pd
 
 from estimagic.exceptions import get_traceback
+from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 
 
-def numpy_interface(params, constraints=None):
+def numpy_interface(params, constraints=None, numpy_output=False):
     """Convert x to params.
 
     This decorated function receives a NumPy array of parameters and converts it to a
@@ -32,8 +33,12 @@ def numpy_interface(params, constraints=None):
     Args:
         params (pandas.DataFrame): See :ref:`params`.
         constraints (list of dict): Contains constraints.
+        numpy_output (bool): Whether pandas objects in the output should also be
+            converted to numpy arrays.
 
     """
+    if "_internal_free" not in params.columns:
+        constraints, params = process_constraints(constraints, params)
 
     def decorator_numpy_interface(func):
         @functools.wraps(func)
@@ -61,7 +66,7 @@ def numpy_interface(params, constraints=None):
 
             criterion_value = func(p, *args, **kwargs)
 
-            if isinstance(criterion_value, (pd.DataFrame, pd.Series)):
+            if isinstance(criterion_value, (pd.DataFrame, pd.Series)) and numpy_output:
                 criterion_value = criterion_value.to_numpy()
 
             return criterion_value
