@@ -4,7 +4,6 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
-from jax import config
 
 from estimagic import batch_evaluators
 from estimagic.config import DEFAULT_N_CORES
@@ -12,8 +11,6 @@ from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
 from estimagic.optimization.utilities import namedtuple_from_kwargs
-
-config.update("jax_enable_x64", True)
 
 
 def first_derivative(
