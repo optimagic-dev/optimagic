@@ -261,7 +261,7 @@ def _update_monitoring_tab(doc, database, session_data, tables, rollover, start_
         rollover (int): maximal number of points to show in the plot
 
     """
-    new_data, new_last = read_new_rows(
+    data, new_last = read_new_rows(
         database=database,
         table_name="optimization_iterations",
         last_retrieved=session_data["last_retrieved"],
@@ -272,18 +272,23 @@ def _update_monitoring_tab(doc, database, session_data, tables, rollover, start_
     # update the criterion plot
     cds = doc.get_model_by_name("criterion_history_cds")
     # todo: remove None entries!
-    crit_data = {"iteration": new_data["rowid"], "criterion": new_data["value"]}
+    missing = [i for i, val in enumerate(data["value"]) if val is None]
+    crit_data = {
+        "iteration": [id_ for i, id_ in enumerate(data["rowid"]) if i not in missing],
+        "criterion": [val for i, val in enumerate(data["value"]) if i not in missing],
+    }
+
     cds.stream(crit_data, rollover=rollover)
 
     # update the parameter plots
     param_names = start_params["name"].tolist()
     cds = doc.get_model_by_name("params_history_cds")
-    params_data = [arr.tolist() for arr in new_data["external_params"]]
+    params_data = [arr.tolist() for arr in data["external_params"]]
     params_data = transpose_nested_list(params_data)
     params_data = dict(zip(param_names, params_data))
     if params_data == {}:
         params_data = {name: [] for name in param_names}
-    params_data["iteration"] = new_data["rowid"]
+    params_data["iteration"] = data["rowid"]
     cds.stream(params_data, rollover=rollover)
 
     # update last retrieved
