@@ -21,7 +21,7 @@ def cli():
 @click.option(
     "--port",
     "-p",
-    default=1234,
+    default=None,
     help="The port the dashboard server will listen on.",
     type=int,
     show_default=True,
@@ -31,7 +31,14 @@ def cli():
     is_flag=True,
     help="Don't open the dashboard in a browser after startup.",
 )
-def dashboard(database, port, no_browser):
+@click.option(
+    "--rollover",
+    default=10_000,
+    help="After how many iterations convergence plots get truncated from the left.",
+    type=int,
+    show_default=True,
+)
+def dashboard(database, port, no_browser, rollover):
     """Start the dashboard to visualize optimizations."""
     database_paths = []
     for path in database:
@@ -42,4 +49,9 @@ def dashboard(database, port, no_browser):
         database_paths.extend([Path(path) for path in glob.glob(path, recursive=True)])
     database_paths = list(set(database_paths))
 
-    run_dashboard(database_paths=database_paths, no_browser=no_browser, port=port)
+    run_dashboard(
+        database_paths=database_paths,
+        no_browser=no_browser,
+        port=port,
+        rollover=rollover,
+    )

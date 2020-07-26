@@ -242,6 +242,9 @@ def _single_optimize(
     processed_constraints, processed_params = process_constraints(constraints, params)
     params = _fill_params_with_defaults(params)
 
+    # todo: remove this
+    problem_data["params"] = params
+
     # get internal parameters and bounds
 
     x = reparametrize_to_internal(
@@ -428,6 +431,7 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
     # create_and_initialize the optimization_problem table
     problem_table_name = _table_name_with_suffix("optimization_problem", suffix)
     make_optimization_problem_table(database, problem_table_name, if_exists)
+
     append_row(problem_data, problem_table_name, database, path, fast_logging)
 
     return database

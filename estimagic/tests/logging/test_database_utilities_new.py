@@ -127,7 +127,7 @@ def test_optimization_status_table(tmp_path):
     for status in ["scheduled", "running", "success"]:
         append_row({"status": status}, "optimization_status", database, path, False)
 
-    res = read_new_rows(database, "optimization_status", 1, "dict_of_lists")
+    res, _ = read_new_rows(database, "optimization_status", 1, "dict_of_lists")
 
     expected = {"rowid": [2, 3], "status": ["running", "success"]}
     assert res == expected
