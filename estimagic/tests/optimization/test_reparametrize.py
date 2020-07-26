@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
-from pandas._testing import assert_series_equal
 
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
@@ -56,7 +55,10 @@ def test_reparametrize_to_internal(example_params, all_constraints, case, number
 
     pc, pp = process_constraints(constraints, params)
 
-    calculated_internal_values = reparametrize_to_internal(pp, pc)
+    calculated_internal_values = reparametrize_to_internal(
+        pp["value"].to_numpy(), pp["_internal_free"].to_numpy(dtype=bool), pc
+    )
+
     calculated_internal_lower = pp["_internal_lower"]
     calculated_internal_upper = pp["_internal_upper"]
 
@@ -80,19 +82,17 @@ def test_reparametrize_from_internal(example_params, all_constraints, case, numb
     pre_repl = pp["_pre_replacements"].to_numpy()
     post_repl = pp["_post_replacements"].to_numpy()
 
-    external = reparametrize_from_internal(
+    calculated_external_value = reparametrize_from_internal(
         internal=internal_p,
         fixed_values=fixed_val,
         pre_replacements=pre_repl,
         processed_constraints=pc,
         post_replacements=post_repl,
-        processed_params=pp,
     )
 
-    calculated_external_value = external["value"]
-    expected_external_value = params["value"]
+    expected_external_value = params["value"].to_numpy()
 
-    assert_series_equal(calculated_external_value, expected_external_value)
+    aaae(calculated_external_value, expected_external_value)
 
 
 def test_linear_constraint():
@@ -131,7 +131,9 @@ def test_covariance_is_inherited_from_pairwise_equality(example_params):
 def back_and_forth_transformation_and_assert(params, constraints):
     pc, pp = process_constraints(constraints, params)
 
-    internal = reparametrize_to_internal(pp, pc)
+    internal = reparametrize_to_internal(
+        pp["value"].to_numpy(), pp["_internal_free"].to_numpy(), pc
+    )
 
     external = reparametrize_from_internal(
         internal=internal,
@@ -139,8 +141,7 @@ def back_and_forth_transformation_and_assert(params, constraints):
         pre_replacements=pp["_pre_replacements"].to_numpy(),
         processed_constraints=pc,
         post_replacements=pp["_post_replacements"].to_numpy(),
-        processed_params=pp,
     )
 
-    assert_series_equal(external["value"], params["value"])
+    aaae(external, params["value"].to_numpy())
     return internal, external

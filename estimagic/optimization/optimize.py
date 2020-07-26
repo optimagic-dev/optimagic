@@ -18,8 +18,8 @@ from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize_new import reparametrize_from_internal
-from estimagic.optimization.reparametrize_new import reparametrize_to_internal
+from estimagic.optimization.reparametrize import reparametrize_from_internal
+from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import propose_algorithms
 

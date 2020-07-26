@@ -1,10 +1,8 @@
 """Handle pc by reparametrizations."""
-import numba as nb
-
 import estimagic.optimization.kernel_transformations as kt
 
 
-def reparametrize_to_internal(processed_params, processed_constraints):
+def reparametrize_to_internal(external, internal_free, processed_constraints):
     """Convert a params DataFrame into a numpy array of internal parameters.
 
     Args:
@@ -12,70 +10,60 @@ def reparametrize_to_internal(processed_params, processed_constraints):
         processed_constraints (list): Processed and consolidated pc.
 
     Returns:
-        internal_params (np.ndarray): 1d numpy array of free reparametrized parameters.
+        internal_params (jax.numpy.ndarray): 1d numpy array of free reparametrized
+            parameters.
 
     """
-    pp = processed_params.copy()
-    internal_values = pp["value"].to_numpy()
+    internal_values = external.copy()
     for constr in processed_constraints:
         func = getattr(kt, f"{constr['type']}_to_internal")
-        index = constr["index"]
-        internal_values[index] = func(internal_values[index], constr)
 
-    return internal_values[pp["_internal_free"]]
+        internal_values[constr["index"]] = func(external[constr["index"]], constr)
+
+    return internal_values[internal_free]
 
 
 def reparametrize_from_internal(
-    internal,
-    fixed_values,
-    pre_replacements,
-    processed_constraints,
-    post_replacements,
-    processed_params,
+    internal, fixed_values, pre_replacements, processed_constraints, post_replacements,
 ):
     """Convert a numpy array of internal parameters to a params DataFrame.
 
     Args:
-        internal (np.ndarray): 1d numpy array with internal parameters
-        fixed_values (np.ndarray): 1d numpy array with internal fixed values
-        pre_replacements (np.ndarray): 1d numpy array with positions of internal
+        internal (jax.numpy.ndarray): 1d numpy array with internal parameters
+        fixed_values (jax.numpy.ndarray): 1d numpy array with internal fixed values
+        pre_replacements (jax.numpy.ndarray): 1d numpy array with positions of internal
             parameters that have to be copied before transformations are applied.
             Negative if no value has to be copied.
         processed_constraints (list): List of processed and consolidated constraint
             dictionaries. Can have the types "linear", "probability", "covariance"
             and "sdcorr".
-        post_replacments (np.ndarray): 1d numpy array with parameter positions.
-        processed_params (pd.DataFrame): See :ref:`params`
+        post_replacments (jax.numpy.ndarray): 1d numpy array with parameter positions.
 
     Returns:
-        updated_params (pd.DataFrame): Copy of pp with replaced values.
+        jax.numpy.ndarray: Array with external parameters
 
     """
     external_values = fixed_values.copy()
-    external_values = _do_pre_replacements(internal, pre_replacements, external_values)
+
+    # do pre-replacements
+    mask = pre_replacements >= 0
+    positions = pre_replacements[mask]
+    external_values[mask] = internal[positions]
+
+    # do transformations
     for constr in processed_constraints:
         func = getattr(kt, f"{constr['type']}_from_internal")
-        index = constr["index"]
-        external_values[index] = func(external_values[index], constr)
-    external_values = _do_post_replacements(post_replacements, external_values)
+        external_values[constr["index"]] = func(
+            external_values[constr["index"]], constr
+        )
 
-    external = processed_params.copy()
-    external["value"] = external_values
+    # do post-replacements
+    mask = post_replacements >= 0
+    positions = post_replacements[mask]
+    external_values[mask] = external_values[positions]
 
-    return external
-
-
-@nb.jit
-def _do_pre_replacements(internal, pre_replacements, container):
-    for external_pos, internal_pos in enumerate(pre_replacements):
-        if internal_pos >= 0:
-            container[external_pos] = internal[internal_pos]
-    return container
+    return external_values
 
 
-@nb.jit
-def _do_post_replacements(post_replacements, container):
-    for i, pos in enumerate(post_replacements):
-        if pos >= 0:
-            container[i] = container[pos]
-    return container
+def convert_external_derivative_to_internal(external_derivative):
+    pass

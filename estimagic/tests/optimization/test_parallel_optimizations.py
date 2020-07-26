@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from estimagic.optimization.optimize_new import minimize
+from estimagic.optimization.optimize import minimize
 
 
 def rosen(x):

@@ -5,7 +5,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.config import ALL_ALGORITHMS
-from estimagic.optimization.optimize_new import minimize
+from estimagic.optimization.optimize import minimize
 
 
 ALL_ALGORITHMS = list(ALL_ALGORITHMS)
