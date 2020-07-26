@@ -1,18 +1,23 @@
-import pytest
-
 import numpy as np
-from numpy.testing import assert_array_almost_equal
+import pytest
 from jax import jacfwd
+from numpy.testing import assert_array_almost_equal
 
-from utilities import cov_matrix_to_sdcorr_params
-
-from estimagic.optimizations.kernel_transformation import covariance_from_internal_jacobian
-from estimagic.optimizations.kernel_transformation import covariance_to_internal_jacobian
-from estimagic.optimizations.kernel_transformation import probability_from_internal_jacobian
-from estimagic.optimizations.kernel_transformation import probability_to_internal_jacobian
+from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
+from estimagic.optimizations.kernel_transformation import (
+    covariance_from_internal_jacobian,
+)
+from estimagic.optimizations.kernel_transformation import (
+    covariance_to_internal_jacobian,
+)
+from estimagic.optimizations.kernel_transformation import (
+    probability_from_internal_jacobian,
+)
+from estimagic.optimizations.kernel_transformation import (
+    probability_to_internal_jacobian,
+)
 from estimagic.optimizations.kernel_transformation import sdcorr_from_internal_jacobian
 from estimagic.optimizations.kernel_transformation import sdcorr_to_internal_jacobian
-
 from estimagic.optimizations.kernel_transformation_jax import covariance_from_internal
 from estimagic.optimizations.kernel_transformation_jax import covariance_to_internal
 from estimagic.optimizations.kernel_transformation_jax import probability_from_internal
@@ -59,8 +64,8 @@ def get_external_probability(dim, seed=0):
 def get_external_sdcorr(dim, seed=0):
     """Return random external sdcorr values given dimension."""
     np.random.seed(seed)
-    X = np.random.randn(dim, 1000)
-    cov = np.cov(X)
+    data = np.random.randn(dim, 1000)
+    cov = np.cov(data)
     external = cov_matrix_to_sdcorr_params(cov)
     return external
 
@@ -80,53 +85,53 @@ def jax_derivatives():
 
 @pytest.mark.parametrize("dim", DIMENSIONS)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_derivative_covariance_from_internal(dim, seed, jax_derivatives):
+def test_covariance_from_internal_jacobian(dim, seed, jax_derivatives):
     internal = get_internal_cholesky(dim)
     jax_deriv = jax_derivatives["covariance_from"](internal)
-    deriv = jacobian_covariance_from_internal(internal)
+    deriv = covariance_from_internal_jacobian(internal)
     assert_array_almost_equal(deriv, jax_deriv, decimal=5)
 
 
 @pytest.mark.parametrize("dim", DIMENSIONS)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_derivative_covariance_to_internal(dim, seed, jax_derivatives):
+def test_covariance_to_internal_jacobian(dim, seed, jax_derivatives):
     external = get_external_covariance(dim)
     jax_deriv = jax_derivatives["covariance_to"](external)
-    deriv = jacobian_covariance_to_internal(external)
+    deriv = covariance_to_internal_jacobian(external)
     assert_array_almost_equal(deriv, jax_deriv, decimal=5)
 
 
 @pytest.mark.parametrize("dim", DIMENSIONS)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_derivative_probability_from_internal(dim, seed, jax_derivatives):
+def test_probability_from_internal_jacobian(dim, seed, jax_derivatives):
     internal = get_internal_probability(dim)
     jax_deriv = jax_derivatives["probability_from"](internal)
-    deriv = jacobian_probability_from_internal(internal)
+    deriv = probability_from_internal_jacobian(internal)
     assert_array_almost_equal(deriv, jax_deriv, decimal=5)
 
 
 @pytest.mark.parametrize("dim", DIMENSIONS)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_derivative_probability_to_internal(dim, seed, jax_derivatives):
+def test_probability_to_internal_jacobian(dim, seed, jax_derivatives):
     external = get_external_probability(dim)
     jax_deriv = jax_derivatives["probability_to"](external)
-    deriv = jacobian_probability_to_internal(external)
+    deriv = probability_to_internal_jacobian(external)
     assert_array_almost_equal(deriv, jax_deriv, decimal=3)
 
 
 @pytest.mark.parametrize("dim", DIMENSIONS)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_derivative_sdcorr_from_internal(dim, seed, jax_derivatives):
+def test_sdcorr_from_internal_jacobian(dim, seed, jax_derivatives):
     internal = get_internal_cholesky(dim)
     jax_deriv = jax_derivatives["sdcorr_from"](internal)
-    deriv = jacobian_sdcorr_from_internal(internal)
+    deriv = sdcorr_from_internal_jacobian(internal)
     assert_array_almost_equal(deriv, jax_deriv, decimal=5)
 
 
 @pytest.mark.parametrize("dim", DIMENSIONS)
 @pytest.mark.parametrize("seed", SEEDS)
-def test_derivative_sdcorr_to_internal(dim, seed, jax_derivatives):
+def test_sdcorr_to_internal_jacobian(dim, seed, jax_derivatives):
     external = get_external_sdcorr(dim)
     jax_deriv = jax_derivatives["sdcorr_to"](external)
-    deriv = jacobian_sdcorr_to_internal(external)
+    deriv = sdcorr_to_internal_jacobian(external)
     assert_array_almost_equal(deriv, jax_deriv, decimal=5)

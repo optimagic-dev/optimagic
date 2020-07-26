@@ -24,7 +24,6 @@ specific cases we refer to posts on math.stackexchange.com.
 
 """
 import numpy as np
-
 from scipy.sparse import csr_matrix
 
 from estimagic.optimization.utilities import chol_params_to_lower_triangular_matrix
@@ -69,7 +68,7 @@ def covariance_to_internal_jacobian(external):
 
     internal = chol[np.tril_indices(len(chol))]
 
-    deriv = jacobian_covariance_from_internal(internal)
+    deriv = covariance_from_internal_jacobian(internal)
     deriv = np.linalg.pinv(deriv)
     return deriv
 
@@ -168,7 +167,7 @@ def sdcorr_to_internal_jacobian(external):
 
     internal = chol[np.tril_indices(len(chol))]
 
-    deriv = jacobian_sdcorr_from_internal(internal)
+    deriv = sdcorr_from_internal_jacobian(internal)
     deriv = np.linalg.pinv(deriv)
     return deriv
 
@@ -211,7 +210,7 @@ def sdcorr_from_internal_jacobian(internal):
     matrix. At last we write :math:`x' := \text{vec}(X)` and
     :math:`p' := \text{vec}(P)`. Using the result stated in the tinyurl above,
     adjusted for the different matrix :math:`A`, we can compute the quantity
-    :math:`(\mathrm{d} p'/ \mathrm{d} x').
+    :math:`(\mathrm{d} p'/ \mathrm{d} x')`.
 
     Finally, since we can define transformation matrices :math:`T` and :math:`L`
     to get :math:`p = T p'` and :math:`x = L x'` (where :math:`L` denotes the
