@@ -13,7 +13,6 @@ provides a comprehensive overview.
 import functools
 import warnings
 
-import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 
@@ -70,32 +69,6 @@ def numpy_interface(params, constraints=None):
         return wrapper_numpy_interface
 
     return decorator_numpy_interface
-
-
-def hide_jax(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        args = [_to_jax(arg) for arg in args]
-        res = func(*args, **kwargs)
-        if isinstance(res, tuple):
-            res = (_from_jax(obj) for obj in res)
-        else:
-            res = _from_jax(res)
-        return res
-
-    return wrapper
-
-
-def _to_jax(obj):
-    if isinstance(obj, (np.ndarray, pd.Series, pd.DataFrame, list)):
-        obj = jnp.array(obj)
-    return obj
-
-
-def _from_jax(obj):
-    if isinstance(obj, jnp.ndarray):
-        obj = np.array(obj)
-    return obj
 
 
 def catch(

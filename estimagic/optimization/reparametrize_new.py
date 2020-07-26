@@ -1,7 +1,4 @@
 """Handle pc by reparametrizations."""
-from jax.ops import index
-from jax.ops import index_update
-
 import estimagic.optimization.kernel_transformations as kt
 
 
@@ -17,15 +14,11 @@ def reparametrize_to_internal(external, internal_free, processed_constraints):
             parameters.
 
     """
-    internal_values = external
+    internal_values = external.copy()
     for constr in processed_constraints:
         func = getattr(kt, f"{constr['type']}_to_internal")
 
-        internal_values = index_update(
-            internal_values,
-            index[constr["index"]],
-            func(internal_values[constr["index"]], constr),
-        )
+        internal_values[constr["index"]] = func(external[constr["index"]], constr)
 
     return internal_values[internal_free]
 
@@ -50,27 +43,27 @@ def reparametrize_from_internal(
         jax.numpy.ndarray: Array with external parameters
 
     """
-    external_values = fixed_values
+    external_values = fixed_values.copy()
 
     # do pre-replacements
     mask = pre_replacements >= 0
     positions = pre_replacements[mask]
-    external_values = index_update(external_values, index[mask], internal[positions])
+    external_values[mask] = internal[positions]
 
     # do transformations
     for constr in processed_constraints:
         func = getattr(kt, f"{constr['type']}_from_internal")
-        external_values = index_update(
-            external_values,
-            index[constr["index"]],
-            func(external_values[constr["index"]], constr),
+        external_values[constr["index"]] = func(
+            external_values[constr["index"]], constr
         )
 
     # do post-replacements
     mask = post_replacements >= 0
     positions = post_replacements[mask]
-    external_values = index_update(
-        external_values, index[mask], external_values[positions]
-    )
+    external_values[mask] = external_values[positions]
 
     return external_values
+
+
+def convert_external_derivative_to_internal(external_derivative):
+    pass
