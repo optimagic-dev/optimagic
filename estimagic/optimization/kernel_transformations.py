@@ -41,7 +41,7 @@ def covariance_to_internal(external_values, constr):
     return chol[np.tril_indices(len(cov))]
 
 
-def covariance_to_internal_jacobian(external):
+def covariance_to_internal_jacobian(external_values, constr):
     """Jacobian of ``covariance_to_internal``.
 
     For reference see docstring of ``jacobian_covariance_from_internal``. In
@@ -57,13 +57,13 @@ def covariance_to_internal_jacobian(external):
         \frac{\mathrm{d}x}{\mathrm{d}c} = (\frac{\mathrm{d}c}{\mathrm{d}x})^{-1}
 
     Args:
-        external (np.ndarray): Row-wise half-vectorized covariance matrix.
+        external_values (np.ndarray): Row-wise half-vectorized covariance matrix
 
     Returns:
         deriv: The Jacobian matrix.
 
     """
-    cov = cov_params_to_matrix(external)
+    cov = cov_params_to_matrix(external_values)
     chol = robust_cholesky(cov)
 
     internal = chol[np.tril_indices(len(chol))]
@@ -80,7 +80,7 @@ def covariance_from_internal(internal_values, constr):
     return cov[np.tril_indices(len(chol))]
 
 
-def covariance_from_internal_jacobian(internal):
+def covariance_from_internal_jacobian(internal_values, constr):
     """Jacobian of ``covariance_from_internal``.
 
     The following result is motivated by https://tinyurl.com/y4pbfxst, which is
@@ -110,13 +110,14 @@ def covariance_from_internal_jacobian(internal):
     where :math:`c := \text{external}` and :math:`x := \text{internal}`.
 
     Args:
-        internal (np.ndarray): Cholesky factors stored in an "internal" format.
+        internal_values (np.ndarray): Cholesky factors stored in an "internal"
+            format.
 
     Returns:
         deriv: The Jacobian matrix.
 
     """
-    chol = chol_params_to_lower_triangular_matrix(internal)
+    chol = chol_params_to_lower_triangular_matrix(internal_values)
     dim = len(chol)
 
     K = _commutation_matrix(dim)
@@ -138,7 +139,7 @@ def sdcorr_to_internal(external_values, constr):
     return chol[np.tril_indices(len(cov))]
 
 
-def sdcorr_to_internal_jacobian(external):
+def sdcorr_to_internal_jacobian(external_values, constr):
     """Derivative of ``sdcorr_to_internal``.
 
     For reference see docstring of ``jacobian_sdcorr_from_internal``. In
@@ -155,14 +156,14 @@ def sdcorr_to_internal_jacobian(external):
         \frac{\mathrm{d}x}{\mathrm{d}p} = (\frac{\mathrm{d}p}{\mathrm{d}x})^{-1}
 
     Args:
-        external (np.ndarray): Row-wise half-vectorized modified correlation
+        external_values (np.ndarray): Row-wise half-vectorized modified correlation
             matrix.
 
     Returns:
         deriv: The Jacobian matrix.
 
     """
-    cov = sdcorr_params_to_matrix(external)
+    cov = sdcorr_params_to_matrix(external_values)
     chol = robust_cholesky(cov)
 
     internal = chol[np.tril_indices(len(chol))]
@@ -179,7 +180,7 @@ def sdcorr_from_internal(internal_values, constr):
     return cov_matrix_to_sdcorr_params(cov)
 
 
-def sdcorr_from_internal_jacobian(internal):
+def sdcorr_from_internal_jacobian(internal_values, constr):
     """Derivative of ``sdcorr_from_internal``.
 
     The following result is motivated by https://tinyurl.com/y6ytlyd9; however
@@ -221,13 +222,14 @@ def sdcorr_from_internal_jacobian(internal):
         \frac{\mathrm{d}p}{\mathrm{d}x} = T \frac{\mathrm{d}p'}{\mathrm{d}x'} D
 
     Args:
-        internal (np.ndarray): Cholesky factors stored in an "internal" format.
+        internal_values (np.ndarray): Cholesky factors stored in an "internal"
+            format.
 
     Returns:
         deriv: The Jacobian matrix.
 
     """
-    X = chol_params_to_lower_triangular_matrix(internal)
+    X = chol_params_to_lower_triangular_matrix(internal_values)
     dim = len(X)
 
     identity = np.eye(dim)
@@ -267,7 +269,7 @@ def probability_to_internal(external_values, constr):
     return external_values / external_values[-1]
 
 
-def probability_to_internal_jacobian(external):
+def probability_to_internal_jacobian(external_values, constr):
     """Jacobian of ``probability_to_internal``.
 
     Let :math:`x = \text{external}`. The function ``probability_to_internal``
@@ -286,16 +288,16 @@ def probability_to_internal_jacobian(external):
         ]
 
     Args:
-        external (np.ndarray): Array of probabilities; sums to one.
+        external_values (np.ndarray): Array of probabilities; sums to one.
 
     Returns:
         deriv: The Jacobian matrix.
 
     """
-    dim = len(external)
+    dim = len(external_values)
 
-    deriv = np.eye(dim) / external[-1]
-    deriv[:, -1] -= external / (external[-1] ** 2)
+    deriv = np.eye(dim) / external_values[-1]
+    deriv[:, -1] -= external_values / (external_values[-1] ** 2)
     deriv[-1, -1] = 0
 
     return deriv
@@ -306,7 +308,7 @@ def probability_from_internal(internal_values, constr):
     return internal_values / internal_values.sum()
 
 
-def probability_from_internal_jacobian(internal):
+def probability_from_internal_jacobian(internal_values, constr):
     """Jacobian of ``probability_from_internal``.
 
     Let :math:`x := \text{internal}`. The function ``probability_from_internal``
@@ -320,17 +322,17 @@ def probability_from_internal_jacobian(internal):
     .. math::  J(f)(x) = \frac{1}{\sigma} I_m - \frac{1}{\sigma^2} 1 x^\top
 
     Args:
-        internal (np.ndarray): Internal (positive) values.
+        internal_values (np.ndarray): Internal (positive) values.
 
     Returns:
         deriv: The Jacobian matrix.
 
     """
-    dim = len(internal)
+    dim = len(internal_values)
 
-    sigma = np.sum(internal)
+    sigma = np.sum(internal_values)
     left = np.eye(dim)
-    right = (np.ones((dim, dim)) * (internal / sigma)).T
+    right = (np.ones((dim, dim)) * (internal_values / sigma)).T
 
     deriv = (left - right) / sigma
     return deriv
@@ -341,9 +343,17 @@ def linear_to_internal(external_values, constr):
     return constr["to_internal"] @ external_values
 
 
+def linear_to_internal_jacobian(external_values, constr):
+    return constr["to_internal"]
+
+
 def linear_from_internal(internal_values, constr):
     """Reparametrize linear constraint from internal."""
     return constr["from_internal"] @ internal_values
+
+
+def linear_from_internal_jacobian(internal_values, constr):
+    return constr["from_internal"]
 
 
 def _elimination_matrix(dim):
