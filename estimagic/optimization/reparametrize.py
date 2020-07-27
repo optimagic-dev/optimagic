@@ -167,7 +167,7 @@ def _pre_replace_matrix(pre_replacements, dim_in, dim_out):
     mask = pre_replacements >= 0
     positions = pre_replacements[mask]
     pre_replacer = np.zeros((dim_out, dim_in))
-    pre_replacer[np.ix_(positions, positions)] = 1
+    pre_replacer[positions, positions] = 1
     return pre_replacer
 
 
@@ -177,7 +177,7 @@ def _post_replace_matrix(post_replacements, dim):
 
     post_replacer = np.eye(dim)
     post_replacer[positions, ] *= 0
-    post_replacer[np.ix_(positions, positions)] = 1
+    post_replacer[positions, positions] = 1
     return post_replacer
 
 
