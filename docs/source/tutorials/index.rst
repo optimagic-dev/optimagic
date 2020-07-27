@@ -1,6 +1,9 @@
-===============
-Getting Started
-===============
+=========
+Tutorials
+=========
+
+
+Tutorials are quick introductions to the basic functionality of estimagic.
 
 .. toctree::
    :maxdepth: 1

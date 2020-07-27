@@ -1,6 +1,10 @@
 
 .. _algorithms:
 
+====================================
+Optimization Algorithms in Estimagic
+====================================
+
 The *algorithm* Argument
 ========================
 
