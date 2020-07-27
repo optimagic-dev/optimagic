@@ -18,9 +18,10 @@ def run_dashboard(database_paths, no_browser, port, rollover):
 
     Args:
         database_paths (str or pathlib.Path or list): Path(s) to an sqlite3 file which
-            typically has the file extension ``.db``. See :ref:`logging` for details.
-        no_browser (bool, optional): If True the dashboard does not open in the browser.
-        port (int, optional): Port where to display the dashboard.
+            typically has the file extension ``.db``.
+        no_browser (bool): If True the dashboard does not open in the browser.
+        port (int): Port where to display the dashboard.
+        rollover (int): After how many iterations the convergence plots are truncated.
 
     """
     database_name_to_path = _process_database_paths(database_paths)
@@ -62,13 +63,11 @@ def _process_database_paths(database_paths):
 
     Args:
         database_paths (str or pathlib.Path or list of them): Path(s) to an sqlite3
-            file which typically has the file extension ``.db``. See :ref:`logging` for
-            details.
+            file which typically has the file extension ``.db``.
 
     Returns:
         database_paths (str or pathlib.Path or list of them):
             Path(s) to an sqlite3 file which typically has the file extension ``.db``.
-            See :ref:`logging` for details.
 
     """
     if not isinstance(database_paths, (list, tuple)):

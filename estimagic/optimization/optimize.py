@@ -69,7 +69,8 @@ def maximize(
             algorithms this is a string with the name of the algorithm. Otherwise it can
             be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries. See :ref:`constraints`.
+        constraints (list): List with constraint dictionaries.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constranits.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable, optional): Function that calculates the first derivative
@@ -94,7 +95,6 @@ def maximize(
             provide a different path for each optimization you are running. You can
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
-            See :ref:`logging` for details.
         log_options (dict): Additional keyword arguments to configure the logging.
             - "suffix": A string that is appended to the default table names, separated
             by an underscore. You can use this if you want to write the log into an
@@ -198,7 +198,8 @@ def minimize(
             algorithms this is a string with the name of the algorithm. Otherwise it can
             be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries. See :ref:`constraints`.
+        constraints (list): List with constraint dictionaries.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constranits.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable, optional): Function that calculates the first derivative
@@ -223,7 +224,6 @@ def minimize(
             provide a different path for each optimization you are running. You can
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
-            See :ref:`logging` for details.
         log_options (dict): Additional keyword arguments to configure the logging.
             - "suffix": A string that is appended to the default table names, separated
             by an underscore. You can use this if you want to write the log into an
@@ -329,7 +329,8 @@ def optimize(
             algorithms this is a string with the name of the algorithm. Otherwise it can
             be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries. See :ref:`constraints`.
+        constraints (list): List with constraint dictionaries.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constranits.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable, optional): Function that calculates the first derivative
@@ -354,7 +355,6 @@ def optimize(
             provide a different path for each optimization you are running. You can
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
-            See :ref:`logging` for details.
         log_options (dict): Additional keyword arguments to configure the logging.
             - "suffix": A string that is appended to the default table names, separated
             by an underscore. You can use this if you want to write the log into an

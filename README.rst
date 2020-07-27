@@ -29,38 +29,47 @@ Introduction
 ============
 
 Estimagic is a Python package that helps to build high-quality and user friendly
-implementations of (structural) econometric models.
+implementations of (structural) econometric models. It is designed with large structural
+models in mind, but also "scales down" to simpler use cases.
 
-It is designed with large structural models in mind. However, it is also useful for any
-other estimator that numerically minimizes or maximizes a criterion function (Extremum
-Estimator). Examples include maximum likelihood, generalized method of moments, method
-of simulated moments and indirect inference.
-
-Key Features
-============
+Estimagic provides tools for nonlinear optimization, numerical differentiation and
+statistical inference.
 
 Optimization
 ------------
 
-- Unified interface to a large number of local and global optimization algorithms.
-- All optimizers can handle linear equality and inequality constraints as well as many
-  other types of constraints.
-- Constraints are specified using parameter names, not positions!
+- Unified interface to a large number of local and global optimization algorithms. Of
+  course we have all algorithms from `scipy.optimize` but many more become available
+  when you install optional dependencies.
+- Efficient reparametrizations make it possible to many types of constraints with any
+  algorithm that supports simple box constraints.
+- The constraints are specified with a very intuitive interface and users can completely
+  abstract from how they are implemented under the hood.
+- Parameters are specified as pandas DataFrames that can have any kind of single or
+  MultiIndex
 - The complete history of parameters and function evaluations is saved in a database.
 - An interactive Dashboard allows to monitor the optimization in real time.
 
-Inference
----------
-
-- Calculate precise numerical derivatives using `Richardson extrapolations
-  <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
-- Calculate standard errors for maximum likelihood an method of simulated moments
-
-Dashboard Example
-=================
 
 .. image:: docs/source/images/dashboard.gif
   :scale: 21 %
+
+
+Differentiation
+---------------
+
+- Calculate precise numerical derivatives using `Richardson extrapolations
+  <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
+- All function evaluations needed for numerical derivatives can be done in parallel with
+  pre-implemented or user provided batch evaluators.
+
+
+Statistical Inference
+---------------------
+
+- Asymptotic standard errors for maximum likelihood an method of simulated moments
+- Bootstrap confidence intervals and standard errors for nonlinear estimators. Of course
+  the bootstrap procedures are parallelized.
 
 
 Installation
@@ -91,10 +100,10 @@ worked on this software and you should recognize their effort.
 
 .. code-block::
 
-    @Unpublished{Gabler2019,
+    @Unpublished{Gabler2020,
       Title  = {A Python Tool for the Estimation of (Structural) Econometric Models.},
       Author = {Janos Gabler},
-      Year   = {2019},
+      Year   = {2020},
       Url    = {https://github.com/OpenSourceEconomics/estimagic}
     }
 

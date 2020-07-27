@@ -5,4 +5,6 @@ Module Reference
 .. toctree::
    :maxdepth: 1
 
-   optimize.rst
+   optimization
+   differentiation
+   batch_evaluators
