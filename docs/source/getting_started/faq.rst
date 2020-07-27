@@ -2,10 +2,6 @@ Frequently Asked Questions
 ==========================
 
 
-1. Covariance constraints and positive definiteness
----------------------------------------------------
-
-
 **Question**: I used a covariance constraint but my covariance matrix is not
 positive definite.
 
