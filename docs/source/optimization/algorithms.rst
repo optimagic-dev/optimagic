@@ -1,5 +1,5 @@
 
-.. _list_of_algorithms:
+.. _algorithms:
 
 The *algorithm* Argument
 ========================
@@ -41,6 +41,9 @@ of the signatures below should simply be ignored.
 
 The other arguments can be set as ``algo_options`` when calling ``maximize`` or
 ``minimize``.
+
+
+.. _list_of_algorithms:
 
 
 Supported Algorithms

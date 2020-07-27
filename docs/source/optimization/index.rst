@@ -48,4 +48,5 @@ estimagic if you desire to do so.
    dashboard
    logging
    algorithms
-   general_options
+   internal_optimizers
+   batch_evaluators

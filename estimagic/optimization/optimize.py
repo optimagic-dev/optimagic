@@ -24,12 +24,262 @@ from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import propose_algorithms
 
 
-def maximize(*args, **kwargs):
-    return optimize("maximize", *args, **kwargs)
+def maximize(
+    criterion,
+    params,
+    algorithm,
+    *,
+    criterion_kwargs=None,
+    constraints=None,
+    algo_options=None,
+    derivative=None,
+    derivative_kwargs=None,
+    criterion_and_derivative=None,
+    criterion_and_derivative_kwargs=None,
+    numdiff_options=None,
+    logging=DEFAULT_DATABASE_NAME,
+    log_options=None,
+    error_handling="raise",
+    error_penalty=None,
+    batch_evaluator="joblib",
+    batch_evaluator_options=None,
+    cache_size=100,
+):
+    """Maximize criterion using algorithm subject to constraints.
+
+    Each argument except for batch_evaluator and batch_evaluator_options can also be
+    replaced by a list of arguments in which case several optimizations are run in
+    parallel. For this, either all arguments must be lists of the same length, or some
+    arguments can be provided as single arguments in which case they are automatically
+    broadcasted.
+
+    Args:
+        criterion (Callable): A function that takes a pandas DataFrame (see
+            :ref:`params`) as first argument and returns one of the following:
+            - scalar floating point or a numpy array (depending on the algorithm)
+            - a dictionary that contains at the entries "value" (a scalar float),
+            "contributions" or "root_contributions" (depending on the algortihm) and
+            any number of additional entries. The additional dict entries will be
+            logged and (if supported) displayed in the dashboard. Check the
+            documentation of your algorithm to see which entries or output type
+            are required.
+        params (pd.DataFrame): A DataFrame with a column called "value" and optional
+            additional columns. See :ref:`params` for detail.
+        algorithm (str or callable): Specifies the optimization algorithm. For supported
+            algorithms this is a string with the name of the algorithm. Otherwise it can
+            be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+        criterion_kwargs (dict): Additional keyword arguments for criterion
+        constraints (list): List with constraint dictionaries. See :ref:`constraints`.
+        algo_options (dict): Algorithm specific configuration of the optimization. See
+            :ref:`list_of_algorithms` for supported options of each algorithm.
+        derivative (callable, optional): Function that calculates the first derivative
+            of criterion. For most algorithm, this is the gradient of the scalar
+            output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
+            require the jacobian of the "contributions" entry of the dict. You will get
+            an error if you provide the wrong type of derivative.
+        derivative_kwargs (dict): Additional keyword arguments for derivative.
+        criterion_and_derivative (callable): Function that returns criterion
+            and derivative as a tuple. This can be used to exploit synergies in the
+            evaluation of both functions. The fist element of the tuple has to be
+            exactly the same as the output of criterion. The second has to be exactly
+            the same as the output of derivative.
+        criterion_and_derivative_kwargs (dict): Additional keyword arguments for
+            criterion and derivative.
+        numdiff_options (dict): Keyword arguments for the calculation of numerical
+            derivatives. See :ref:`first_derivative` for details. Note that the default
+            method is changed to "forward" for speed reasons.
+        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
+            the file extension ``.db``. If the file does not exist, it will be created.
+            When doing parallel optimizations and logging is provided, you have to
+            provide a different path for each optimization you are running. You can
+            disable logging completely by setting it to False, but we highly recommend
+            not to do so. The dashboard can only be used when logging is used.
+            See :ref:`logging` for details.
+        log_options (dict): Additional keyword arguments to configure the logging.
+            - "suffix": A string that is appended to the default table names, separated
+            by an underscore. You can use this if you want to write the log into an
+            existing database where the default names "optimization_iterations",
+            "optimization_status" and "optimization_problem" are already in use.
+            - "fast_logging": A boolean that determines if "unsafe" settings are used
+            to speed up write processes to the database. This should only be used for
+            very short running criterion functions where the main purpose of the log
+            is a real-time dashboard and it would not be catastrophic to get a
+            corrupted database in case of a sudden system shutdown. If one evaluation
+            of the criterion function (and gradient if applicable) takes more than
+            100 ms, the logging overhead is negligible.
+            - "if_exists": (str) One of "extend", "replace", "raise"
+        error_handling (str): Either "raise" or "continue". Note that "continue" does
+            not absolutely guarantee that no error is raised but we try to handle as
+            many errors as possible in that case without aborting the optimization.
+        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
+            (float). If the criterion or gradient raise an error and error_handling is
+            "continue", return ``constant + slope * norm(params - start_params)`` where
+            ``norm`` is the euclidean distance as criterion value and adjust the
+            derivative accordingly. This is meant to guide the optimizer back into a
+            valid region of parameter space (in direction of the start parameters).
+            Note that the constant has to be high enough to ensure that the penalty is
+            actually a bad function value. The default constant is f0 + abs(f0) + 100
+            for minimizations and f0 - abs(f0) - 100 for maximizations, where
+            f0 is the criterion value at start parameters. The default slope is 0.1.
+        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
+        batch_evaluator_options (dict): Additional configurations for the batch
+            batch evaluator. See :ref:`batch_evaluators`.
+        cache_size (int): Number of criterion and derivative evaluations that are cached
+            in memory in case they are needed.
+
+    """
+    return optimize(
+        direction="maximize",
+        criterion=criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        algo_options=algo_options,
+        derivative=derivative,
+        derivative_kwargs=derivative_kwargs,
+        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        numdiff_options=numdiff_options,
+        logging=logging,
+        log_options=log_options,
+        error_handling=error_handling,
+        error_penalty=error_penalty,
+        batch_evaluator=batch_evaluator,
+        batch_evaluator_options=batch_evaluator_options,
+        cache_size=cache_size,
+    )
 
 
-def minimize(*args, **kwargs):
-    return optimize("minimize", *args, **kwargs)
+def minimize(
+    criterion,
+    params,
+    algorithm,
+    *,
+    criterion_kwargs=None,
+    constraints=None,
+    algo_options=None,
+    derivative=None,
+    derivative_kwargs=None,
+    criterion_and_derivative=None,
+    criterion_and_derivative_kwargs=None,
+    numdiff_options=None,
+    logging=DEFAULT_DATABASE_NAME,
+    log_options=None,
+    error_handling="raise",
+    error_penalty=None,
+    batch_evaluator="joblib",
+    batch_evaluator_options=None,
+    cache_size=100,
+):
+    """Minimize criterion using algorithm subject to constraints.
+
+    Each argument except for batch_evaluator and batch_evaluator_options can also be
+    replaced by a list of arguments in which case several optimizations are run in
+    parallel. For this, either all arguments must be lists of the same length, or some
+    arguments can be provided as single arguments in which case they are automatically
+    broadcasted.
+
+    Args:
+        criterion (Callable): A function that takes a pandas DataFrame (see
+            :ref:`params`) as first argument and returns one of the following:
+            - scalar floating point or a numpy array (depending on the algorithm)
+            - a dictionary that contains at the entries "value" (a scalar float),
+            "contributions" or "root_contributions" (depending on the algortihm) and
+            any number of additional entries. The additional dict entries will be
+            logged and (if supported) displayed in the dashboard. Check the
+            documentation of your algorithm to see which entries or output type
+            are required.
+        params (pd.DataFrame): A DataFrame with a column called "value" and optional
+            additional columns. See :ref:`params` for detail.
+        algorithm (str or callable): Specifies the optimization algorithm. For supported
+            algorithms this is a string with the name of the algorithm. Otherwise it can
+            be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+        criterion_kwargs (dict): Additional keyword arguments for criterion
+        constraints (list): List with constraint dictionaries. See :ref:`constraints`.
+        algo_options (dict): Algorithm specific configuration of the optimization. See
+            :ref:`list_of_algorithms` for supported options of each algorithm.
+        derivative (callable, optional): Function that calculates the first derivative
+            of criterion. For most algorithm, this is the gradient of the scalar
+            output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
+            require the jacobian of the "contributions" entry of the dict. You will get
+            an error if you provide the wrong type of derivative.
+        derivative_kwargs (dict): Additional keyword arguments for derivative.
+        criterion_and_derivative (callable): Function that returns criterion
+            and derivative as a tuple. This can be used to exploit synergies in the
+            evaluation of both functions. The fist element of the tuple has to be
+            exactly the same as the output of criterion. The second has to be exactly
+            the same as the output of derivative.
+        criterion_and_derivative_kwargs (dict): Additional keyword arguments for
+            criterion and derivative.
+        numdiff_options (dict): Keyword arguments for the calculation of numerical
+            derivatives. See :ref:`first_derivative` for details. Note that the default
+            method is changed to "forward" for speed reasons.
+        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
+            the file extension ``.db``. If the file does not exist, it will be created.
+            When doing parallel optimizations and logging is provided, you have to
+            provide a different path for each optimization you are running. You can
+            disable logging completely by setting it to False, but we highly recommend
+            not to do so. The dashboard can only be used when logging is used.
+            See :ref:`logging` for details.
+        log_options (dict): Additional keyword arguments to configure the logging.
+            - "suffix": A string that is appended to the default table names, separated
+            by an underscore. You can use this if you want to write the log into an
+            existing database where the default names "optimization_iterations",
+            "optimization_status" and "optimization_problem" are already in use.
+            - "fast_logging": A boolean that determines if "unsafe" settings are used
+            to speed up write processes to the database. This should only be used for
+            very short running criterion functions where the main purpose of the log
+            is a real-time dashboard and it would not be catastrophic to get a
+            corrupted database in case of a sudden system shutdown. If one evaluation
+            of the criterion function (and gradient if applicable) takes more than
+            100 ms, the logging overhead is negligible.
+            - "if_exists": (str) One of "extend", "replace", "raise"
+        error_handling (str): Either "raise" or "continue". Note that "continue" does
+            not absolutely guarantee that no error is raised but we try to handle as
+            many errors as possible in that case without aborting the optimization.
+        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
+            (float). If the criterion or gradient raise an error and error_handling is
+            "continue", return ``constant + slope * norm(params - start_params)`` where
+            ``norm`` is the euclidean distance as criterion value and adjust the
+            derivative accordingly. This is meant to guide the optimizer back into a
+            valid region of parameter space (in direction of the start parameters).
+            Note that the constant has to be high enough to ensure that the penalty is
+            actually a bad function value. The default constant is f0 + abs(f0) + 100
+            for minimizations and f0 - abs(f0) - 100 for maximizations, where
+            f0 is the criterion value at start parameters. The default slope is 0.1.
+        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
+        batch_evaluator_options (dict): Additional configurations for the batch
+            batch evaluator. See :ref:`batch_evaluators`.
+        cache_size (int): Number of criterion and derivative evaluations that are cached
+            in memory in case they are needed.
+
+    """
+    return optimize(
+        direction="minimize",
+        criterion=criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        algo_options=algo_options,
+        derivative=derivative,
+        derivative_kwargs=derivative_kwargs,
+        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        numdiff_options=numdiff_options,
+        logging=logging,
+        log_options=log_options,
+        error_handling=error_handling,
+        error_penalty=error_penalty,
+        batch_evaluator=batch_evaluator,
+        batch_evaluator_options=batch_evaluator_options,
+        cache_size=cache_size,
+    )
 
 
 def optimize(
@@ -68,11 +318,11 @@ def optimize(
             :ref:`params`) as first argument and returns one of the following:
             - scalar floating point or a numpy array (depending on the algorithm)
             - a dictionary that contains at the entries "value" (a scalar float),
-              "contributions" or "root_contributions" (depending on the algortihm) and
-              any number of additional entries. The additional dict entries will be
-              logged and (if supported) displayed in the dashboard. Check the
-              documentation of your algorithm to see which entries or output type
-              are required.
+            "contributions" or "root_contributions" (depending on the algortihm) and
+            any number of additional entries. The additional dict entries will be
+            logged and (if supported) displayed in the dashboard. Check the
+            documentation of your algorithm to see which entries or output type
+            are required.
         params (pd.DataFrame): A DataFrame with a column called "value" and optional
             additional columns. See :ref:`params` for detail.
         algorithm (str or callable): Specifies the optimization algorithm. For supported
@@ -107,16 +357,16 @@ def optimize(
             See :ref:`logging` for details.
         log_options (dict): Additional keyword arguments to configure the logging.
             - "suffix": A string that is appended to the default table names, separated
-              by an underscore. You can use this if you want to write the log into an
-              existing database where the default names "optimization_iterations",
-              "optimization_status" and "optimization_problem" are already in use.
+            by an underscore. You can use this if you want to write the log into an
+            existing database where the default names "optimization_iterations",
+            "optimization_status" and "optimization_problem" are already in use.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
-              to speed up write processes to the database. This should only be used for
-              very short running criterion functions where the main purpose of the log
-              is a real-time dashboard and it would not be catastrophic to get a
-              corrupted database in case of a sudden system shutdown. If one evaluation
-              of the criterion function (and gradient if applicable) takes more than
-              100 ms, the logging overhead is negligible.
+            to speed up write processes to the database. This should only be used for
+            very short running criterion functions where the main purpose of the log
+            is a real-time dashboard and it would not be catastrophic to get a
+            corrupted database in case of a sudden system shutdown. If one evaluation
+            of the criterion function (and gradient if applicable) takes more than
+            100 ms, the logging overhead is negligible.
             - "if_exists": (str) One of "extend", "replace", "raise"
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
