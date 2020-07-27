@@ -5,7 +5,7 @@ import numpy as np
 
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
-from estimagic.logging.database_utilities_new import append_row
+from estimagic.logging.database_utilities import append_row
 from estimagic.optimization.utilities import hash_array
 
 

@@ -9,13 +9,13 @@ from numpy.testing import assert_array_equal
 from sqlalchemy import Float
 from sqlalchemy import PickleType
 
-from estimagic.logging.database_utilities_new import append_row
-from estimagic.logging.database_utilities_new import load_database
-from estimagic.logging.database_utilities_new import make_optimization_iteration_table
-from estimagic.logging.database_utilities_new import make_optimization_problem_table
-from estimagic.logging.database_utilities_new import make_optimization_status_table
-from estimagic.logging.database_utilities_new import read_last_rows
-from estimagic.logging.database_utilities_new import read_new_rows
+from estimagic.logging.database_utilities import append_row
+from estimagic.logging.database_utilities import load_database
+from estimagic.logging.database_utilities import make_optimization_iteration_table
+from estimagic.logging.database_utilities import make_optimization_problem_table
+from estimagic.logging.database_utilities import make_optimization_status_table
+from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.database_utilities import read_new_rows
 
 
 @pytest.fixture

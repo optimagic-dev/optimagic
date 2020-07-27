@@ -11,10 +11,10 @@ from bokeh.models import Toggle
 
 from estimagic.dashboard.utilities import create_standard_figure
 from estimagic.dashboard.utilities import get_color_palette
-from estimagic.logging.database_utilities_new import load_database
-from estimagic.logging.database_utilities_new import read_last_rows
-from estimagic.logging.database_utilities_new import read_new_rows
-from estimagic.logging.database_utilities_new import transpose_nested_list
+from estimagic.logging.database_utilities import load_database
+from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.database_utilities import read_new_rows
+from estimagic.logging.database_utilities import transpose_nested_list
 
 
 def monitoring_app(doc, database_name, session_data, rollover):
