@@ -1,8 +1,6 @@
 import asyncio
 import pathlib
-import warnings
 from functools import partial
-from multiprocessing import Process
 
 from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
@@ -13,39 +11,9 @@ from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
 from estimagic.dashboard.utilities import create_short_database_names
 from estimagic.dashboard.utilities import find_free_port
-from estimagic.logging.database_utilities import prepare_database
-from estimagic.logging.database_utilities import read_scalar_field
 
 
-def run_dashboard_in_separate_process(database_paths):
-    """Run the dashboard in a separate process.
-
-    Args:
-        database_paths (str or pathlib.Path or list of them):
-            Path(s) to an sqlite3 file which typically has the file extension ``.db``.
-            See :ref:`logging` for details.
-
-    Returns:
-        p (multiprocessing.Process or None): Process in which the dashboard is running.
-
-    """
-    if len(database_paths) == 0:
-        warnings.warn(
-            "There is no database to be monitored by the dashboard. ",
-            "Therefore, no dashboard is started.",
-        )
-        p = None
-    else:
-        p = Process(
-            target=run_dashboard,
-            kwargs={"database_paths": database_paths},
-            daemon=False,
-        )
-        p.start()
-    return p
-
-
-def run_dashboard(database_paths, no_browser=None, port=None):
+def run_dashboard(database_paths, no_browser, port, rollover):
     """Start the dashboard pertaining to one or several databases.
 
     Args:
@@ -55,9 +23,11 @@ def run_dashboard(database_paths, no_browser=None, port=None):
         port (int, optional): Port where to display the dashboard.
 
     """
-    database_name_to_path, no_browser, port = _process_dashboard_args(
-        database_paths=database_paths, no_browser=no_browser, port=port
-    )
+    database_name_to_path = _process_database_paths(database_paths)
+
+    port = find_free_port() if port is None else port
+    port = int(port)
+    rollover = int(rollover)
 
     session_data = _create_session_data(database_name_to_path)
 
@@ -73,6 +43,7 @@ def run_dashboard(database_paths, no_browser=None, port=None):
             monitoring_app,
             database_name=database_name,
             session_data=session_data[database_name],
+            rollover=rollover,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))
 
@@ -86,25 +57,18 @@ def run_dashboard(database_paths, no_browser=None, port=None):
     )
 
 
-def _process_dashboard_args(database_paths, no_browser, port):
-    """Check arguments and find free port if none was given.
-
-    The no_browser and port arguments override settings from the databases if not None.
+def _process_database_paths(database_paths):
+    """Process the database paths.
 
     Args:
         database_paths (str or pathlib.Path or list of them): Path(s) to an sqlite3
             file which typically has the file extension ``.db``. See :ref:`logging` for
             details.
-        no_browser (bool or None): Whether or not to open the dashboard in the browser.
-        port (int or None): Port where to display the dashboard.
 
     Returns:
         database_paths (str or pathlib.Path or list of them):
             Path(s) to an sqlite3 file which typically has the file extension ``.db``.
             See :ref:`logging` for details.
-        no_browser (bool):
-            Whether or not to open the dashboard in the browser.
-        port (int): port where to display the dashboard.
 
     """
     if not isinstance(database_paths, (list, tuple)):
@@ -118,34 +82,7 @@ def _process_dashboard_args(database_paths, no_browser, port):
             )
     database_name_to_path = create_short_database_names(path_list=database_paths)
 
-    all_options = []
-    for single_database_path in database_paths:
-        database = prepare_database(path=single_database_path)
-        dash_options = read_scalar_field(database, "dash_options")
-        all_options.append(dash_options)
-
-    if port is None:
-        ports = {d.pop("port", None) for d in all_options}
-        ports = {p for p in ports if p is not None}
-        if len(ports) == 0:
-            port = find_free_port()
-        else:
-            port = ports.pop()
-            if len(ports) > 1:
-                warnings.warn(f"You supplied more than one port. {port} will be used.")
-    if not isinstance(port, int):
-        raise TypeError(f"port must be an integer. You supplied {type(port)}.")
-
-    if no_browser is None:
-        no_browser_vals = {d.pop("no_browser", False) for d in all_options}
-        no_browser = no_browser_vals.pop()
-        if len(no_browser_vals) > 1:
-            no_browser = False
-            warnings.warn(
-                "You supplied both True and False for no_browser. It is set to False."
-            )
-
-    return database_name_to_path, no_browser, port
+    return database_name_to_path
 
 
 def _create_session_data(database_name_to_path):

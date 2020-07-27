@@ -9,13 +9,13 @@ from numpy.testing import assert_array_equal
 from sqlalchemy import Float
 from sqlalchemy import PickleType
 
-from estimagic.logging.database_utilities_new import append_row
-from estimagic.logging.database_utilities_new import load_database
-from estimagic.logging.database_utilities_new import make_optimization_iteration_table
-from estimagic.logging.database_utilities_new import make_optimization_problem_table
-from estimagic.logging.database_utilities_new import make_optimization_status_table
-from estimagic.logging.database_utilities_new import read_last_rows
-from estimagic.logging.database_utilities_new import read_new_rows
+from estimagic.logging.database_utilities import append_row
+from estimagic.logging.database_utilities import load_database
+from estimagic.logging.database_utilities import make_optimization_iteration_table
+from estimagic.logging.database_utilities import make_optimization_problem_table
+from estimagic.logging.database_utilities import make_optimization_status_table
+from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.database_utilities import read_new_rows
 
 
 @pytest.fixture
@@ -127,7 +127,7 @@ def test_optimization_status_table(tmp_path):
     for status in ["scheduled", "running", "success"]:
         append_row({"status": status}, "optimization_status", database, path, False)
 
-    res = read_new_rows(database, "optimization_status", 1, "dict_of_lists")
+    res, _ = read_new_rows(database, "optimization_status", 1, "dict_of_lists")
 
     expected = {"rowid": [2, 3], "status": ["running", "success"]}
     assert res == expected

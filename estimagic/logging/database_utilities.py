@@ -1,10 +1,10 @@
 import datetime
 import io
-import pickle
 import traceback
 import warnings
 from pathlib import Path
 
+import cloudpickle
 import pandas as pd
 from sqlalchemy import BLOB
 from sqlalchemy import Boolean
@@ -19,6 +19,7 @@ from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy.dialects.sqlite import DATETIME
 
+from estimagic.exceptions import get_traceback
 from estimagic.exceptions import TableExistsError
 
 
@@ -93,9 +94,9 @@ def make_optimization_iteration_table(
 
     columns = [
         Column("rowid", Integer, primary_key=True),
-        Column("external_params", PickleType(pickler=PandasPickler)),
-        Column("internal_params", PickleType(pickler=PandasPickler)),
-        Column("internal_derivative", PickleType(pickler=PandasPickler)),
+        Column("external_params", PickleType(pickler=RobustPickler)),
+        Column("internal_params", PickleType(pickler=RobustPickler)),
+        Column("internal_derivative", PickleType(pickler=RobustPickler)),
         Column("timestamp", DATETIME),
         Column("distance_origin", Float),
         Column("distance_ones", Float),
@@ -107,7 +108,7 @@ def make_optimization_iteration_table(
 
     if isinstance(first_eval["output"], dict):
         columns += [
-            Column(key, PickleType(pickler=PandasPickler))
+            Column(key, PickleType(pickler=RobustPickler))
             for key in first_eval["output"]
             if key != "value"
         ]
@@ -141,21 +142,21 @@ def make_optimization_problem_table(
     columns = [
         Column("rowid", Integer, primary_key=True),
         Column("direction", String),
-        Column("criterion", PickleType(pickler=PandasPickler)),
-        Column("criterion_kwargs", PickleType(pickler=PandasPickler)),
-        Column("params", PickleType(pickler=PandasPickler)),
-        Column("algorithm", PickleType(pickler=PandasPickler)),
-        Column("constraints", PickleType(pickler=PandasPickler)),
-        Column("algo_options", PickleType(pickler=PandasPickler)),
-        Column("derivative", PickleType(pickler=PandasPickler)),
-        Column("derivative_kwargs", PickleType(pickler=PandasPickler)),
-        Column("criterion_and_derivative", PickleType(pickler=PandasPickler)),
-        Column("criterion_and_derivative_kwargs", PickleType(pickler=PandasPickler)),
-        Column("numdiff_options", PickleType(pickler=PandasPickler)),
-        Column("logging", PickleType(pickler=PandasPickler)),
-        Column("log_options", PickleType(pickler=PandasPickler)),
+        Column("criterion", PickleType(pickler=RobustPickler)),
+        Column("criterion_kwargs", PickleType(pickler=RobustPickler)),
+        Column("params", PickleType(pickler=RobustPickler)),
+        Column("algorithm", PickleType(pickler=RobustPickler)),
+        Column("constraints", PickleType(pickler=RobustPickler)),
+        Column("algo_options", PickleType(pickler=RobustPickler)),
+        Column("derivative", PickleType(pickler=RobustPickler)),
+        Column("derivative_kwargs", PickleType(pickler=RobustPickler)),
+        Column("criterion_and_derivative", PickleType(pickler=RobustPickler)),
+        Column("criterion_and_derivative_kwargs", PickleType(pickler=RobustPickler)),
+        Column("numdiff_options", PickleType(pickler=RobustPickler)),
+        Column("logging", PickleType(pickler=RobustPickler)),
+        Column("log_options", PickleType(pickler=RobustPickler)),
         Column("error_handling", String),
-        Column("error_penalty", PickleType(pickler=PandasPickler)),
+        Column("error_penalty", PickleType(pickler=RobustPickler)),
         Column("cache_size", Integer),
     ]
 
@@ -233,7 +234,14 @@ def read_new_rows(
     table = database.tables[table_name]
     stmt = table.select().where(table.c.rowid > last_retrieved).limit(limit)
 
-    return _execute_read_statement(database, table_name, stmt, return_type)
+    data = _execute_read_statement(database, table_name, stmt, return_type)
+
+    if return_type == "list_of_dicts":
+        new_last = data[-1]["rowid"] if data else last_retrieved
+    else:
+        new_last = data["rowid"][-1] if data["rowid"] else last_retrieved
+
+    return data, new_last
 
 
 def read_last_rows(
@@ -270,6 +278,8 @@ def _execute_read_statement(database, table_name, statement, return_type):
     elif return_type == "dict_of_lists":
         raw_result = transpose_nested_list(raw_result)
         result = dict(zip(columns, raw_result))
+        if result == {}:
+            result = {col: [] for col in columns}
 
     return result
 
@@ -371,22 +381,41 @@ def _configure_reflect():
     @event.listens_for(Table, "column_reflect")
     def _setup_pickletype(inspector, table, column_info):
         if isinstance(column_info["type"], BLOB):
-            column_info["type"] = PickleType(pickler=PandasPickler)
+            column_info["type"] = PickleType(pickler=RobustPickler)
 
 
-class PandasPickler:
+class RobustPickler:
     @staticmethod
     def loads(data, fix_imports=True, encoding="ASCII", errors="strict", buffers=None):
-        """Use pd.read_pickle instead of pickle.loads. Keyword arguments are ignored.
+        """Robust pickle loading
 
-        This makes no difference for non-pandas objects but makes the de-serialization
-        of pandas objects more robust across pandas versions.
+        We first try to unpickle the object with pd.read_pickle. This makes no
+        difference for non-pandas objects but makes the de-serialization
+        of pandas objects more robust across pandas versions. If that fails, we use
+        cloudpickle. If that fails, we return None but do not raise an error.
 
         See: https://github.com/pandas-dev/pandas/issues/16474
 
         """
-        return pd.read_pickle(io.BytesIO(data), compression=None)
+        try:
+            res = pd.read_pickle(io.BytesIO(data), compression=None)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception:
+            try:
+                res = cloudpickle.loads(data)
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception:
+                res = None
+                tb = get_traceback()
+                warnings.warn(
+                    f"Unable to read PickleType column from database:\n{tb}\n "
+                    "The entry was replaced by None."
+                )
+
+        return res
 
     @staticmethod
-    def dumps(*args, **kwargs):
-        return pickle.dumps(*args, **kwargs)
+    def dumps(obj, protocol=None, *, fix_imports=True, buffer_callback=None):
+        return cloudpickle.dumps(obj, protocol=protocol)

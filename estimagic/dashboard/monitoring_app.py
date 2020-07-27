@@ -11,16 +11,14 @@ from bokeh.models import Toggle
 
 from estimagic.dashboard.utilities import create_standard_figure
 from estimagic.dashboard.utilities import get_color_palette
-from estimagic.logging.database_utilities import prepare_database
-from estimagic.logging.database_utilities import read_new_iterations
-from estimagic.logging.database_utilities import read_scalar_field
+from estimagic.logging.database_utilities import load_database
+from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.database_utilities import read_new_rows
+from estimagic.logging.database_utilities import transpose_nested_list
 
 
-def monitoring_app(doc, database_name, session_data):
+def monitoring_app(doc, database_name, session_data, rollover):
     """Create plots showing the development of the criterion and parameters.
-
-    Options are loaded from the database. Supported options are:
-        - rollover (int): How many iterations to keep before discarding.
 
     Args:
         doc (bokeh.Document): Argument required by bokeh.
@@ -32,16 +30,28 @@ def monitoring_app(doc, database_name, session_data):
             - callbacks (dict): dictionary to be populated with callbacks.
 
     """
-    database = prepare_database(path=session_data["database_path"])
-    start_params = read_scalar_field(database, "start_params")
-    dash_options = read_scalar_field(database, "dash_options")
-    rollover = dash_options["rollover"]
 
-    tables = ["criterion_history", "params_history"]
-    criterion_history, params_history = _create_bokeh_data_sources(
-        database=database, tables=tables
+    database = load_database(path=session_data["database_path"])
+    optimization_problem = read_last_rows(
+        database=database,
+        # todo: need to adjust table_name with suffix if necessary
+        table_name="optimization_problem",
+        n_rows=1,
+        return_type="dict_of_lists",
     )
-    session_data["last_retrieved"] = 1
+    optimization_problem = {key: val[0] for key, val in optimization_problem.items()}
+
+    start_params = optimization_problem["params"]
+    param_names = start_params["name"].tolist()
+    crit_data = {"iteration": [], "criterion": []}
+    criterion_history = ColumnDataSource(crit_data, name="criterion_history_cds")
+
+    params_data = {"iteration": []}
+    for name in param_names:
+        params_data[name] = []
+    params_history = ColumnDataSource(params_data, name="params_history_cds")
+
+    session_data["last_retrieved"] = 0
 
     # create initial bokeh elements without callbacks
     initial_convergence_plots = _create_initial_convergence_plots(
@@ -67,6 +77,8 @@ def monitoring_app(doc, database_name, session_data):
     tabs = Tabs(tabs=[convergence_tab])
     doc.add_root(tabs)
 
+    tables = ["criterion_history", "params_history"]
+
     # add callbacks
     activation_callback = partial(
         _activation_callback,
@@ -76,35 +88,9 @@ def monitoring_app(doc, database_name, session_data):
         session_data=session_data,
         rollover=rollover,
         tables=tables,
+        start_params=start_params,
     )
     activation_button.on_change("active", activation_callback)
-
-
-def _create_bokeh_data_sources(database, tables):
-    """Load the first entry from the database to initialize the ColumnDataSources.
-
-    Args:
-        database (sqlalchemy.MetaData)
-        tables (list): list of table names to load and convert to ColumnDataSources
-
-    Returns:
-        all_cds (list): list of ColumnDataSources
-
-    """
-    data_dict, _ = read_new_iterations(
-        database=database,
-        path=None,
-        tables=tables,
-        last_retrieved=0,
-        limit=1,
-        return_type="bokeh",
-    )
-
-    all_cds = []
-    for tab, data in data_dict.items():
-        cds = ColumnDataSource(data=data, name=f"{tab}_cds")
-        all_cds.append(cds)
-    return all_cds
 
 
 def _create_initial_convergence_plots(criterion_history, params_history, start_params):
@@ -123,7 +109,7 @@ def _create_initial_convergence_plots(criterion_history, params_history, start_p
     criterion_plot = _plot_time_series(
         data=criterion_history,
         x_name="iteration",
-        y_keys=["value"],
+        y_keys=["criterion"],
         y_names=["criterion"],
         title="Criterion",
     )
@@ -211,7 +197,7 @@ def _map_groups_to_params(params):
 
 
 def _activation_callback(
-    attr, old, new, session_data, rollover, doc, database, button, tables,
+    attr, old, new, session_data, rollover, doc, database, button, tables, start_params
 ):
     """Start and reset the convergence plots and their updating.
 
@@ -228,6 +214,7 @@ def _activation_callback(
             - database_path
         rollover (int): Maximal number of points to show in the plot.
         tables (list): List of table names to load and convert to ColumnDataSources.
+        start_params (pd.DataFrame): See :ref:`params`
 
     """
     callback_dict = session_data["callbacks"]
@@ -239,6 +226,7 @@ def _activation_callback(
             session_data=session_data,
             rollover=rollover,
             tables=tables,
+            start_params=start_params,
         )
         callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
             plot_new_data, period_milliseconds=200
@@ -258,7 +246,7 @@ def _activation_callback(
         button.label = "Restart Plot"
 
 
-def _update_monitoring_tab(doc, database, session_data, tables, rollover):
+def _update_monitoring_tab(doc, database, session_data, tables, rollover, start_params):
     """Callback to look up new entries in the database tables and plot them.
 
     Args:
@@ -273,18 +261,35 @@ def _update_monitoring_tab(doc, database, session_data, tables, rollover):
         rollover (int): maximal number of points to show in the plot
 
     """
-    last_retrieved = session_data["last_retrieved"]
-    new_data, new_last = read_new_iterations(
+    data, new_last = read_new_rows(
         database=database,
-        path=None,
-        tables=tables,
-        last_retrieved=last_retrieved,
-        return_type="bokeh",
+        table_name="optimization_iterations",
+        last_retrieved=session_data["last_retrieved"],
+        return_type="dict_of_lists",
         limit=20,
     )
 
-    for table_name, to_add in new_data.items():
-        cds = doc.get_model_by_name(f"{table_name}_cds")
-        cds.stream(to_add, rollover=rollover)
+    # update the criterion plot
+    cds = doc.get_model_by_name("criterion_history_cds")
+    # todo: remove None entries!
+    missing = [i for i, val in enumerate(data["value"]) if val is None]
+    crit_data = {
+        "iteration": [id_ for i, id_ in enumerate(data["rowid"]) if i not in missing],
+        "criterion": [val for i, val in enumerate(data["value"]) if i not in missing],
+    }
 
+    cds.stream(crit_data, rollover=rollover)
+
+    # update the parameter plots
+    param_names = start_params["name"].tolist()
+    cds = doc.get_model_by_name("params_history_cds")
+    params_data = [arr.tolist() for arr in data["external_params"]]
+    params_data = transpose_nested_list(params_data)
+    params_data = dict(zip(param_names, params_data))
+    if params_data == {}:
+        params_data = {name: [] for name in param_names}
+    params_data["iteration"] = data["rowid"]
+    cds.stream(params_data, rollover=rollover)
+
+    # update last retrieved
     session_data["last_retrieved"] = new_last
