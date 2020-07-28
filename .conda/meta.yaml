@@ -31,11 +31,8 @@ requirements:
     - pygmo >=2.14
     - bokeh >=1.3
     - scipy
-    - numdifftools >=0.9.20
     - fuzzywuzzy
     - petsc4py >=3.11
-    - numba
-    - statsmodels >=0.9
     - sqlalchemy >=1.3
 
 test:
