@@ -1,3 +1,4 @@
+from functools import partial
 from itertools import product
 
 import numpy as np
@@ -5,7 +6,9 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.optimization.process_constraints import process_constraints
+from estimagic.optimization.reparametrize import _reparametrize_from_internal_jacobian
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 
@@ -94,6 +97,41 @@ def test_reparametrize_from_internal(example_params, all_constraints, case, numb
     expected_external_value = params["value"].to_numpy()
 
     aaae(calculated_external_value, expected_external_value)
+
+
+@pytest.mark.parametrize("case, number", to_test)
+def test__reparametrize_from_internal_jacobian(
+    example_params, all_constraints, case, number
+):
+    constraints = all_constraints[case]
+    params = reduce_params(example_params, constraints)
+    params["value"] = params[f"value{number}"]
+
+    keep = params[f"internal_value{number}"].notnull()
+
+    pc, pp = process_constraints(constraints, params)
+
+    internal_p = params[f"internal_value{number}"][keep].to_numpy()
+    fixed_val = pp["_internal_fixed_value"].to_numpy()
+    pre_repl = pp["_pre_replacements"].to_numpy()
+    post_repl = pp["_post_replacements"].to_numpy()
+
+    func = partial(
+        reparametrize_from_internal,
+        **{
+            "fixed_values": fixed_val,
+            "pre_replacements": pre_repl,
+            "processed_constraints": pc,
+            "post_replacements": post_repl,
+        },
+    )
+    numerical_jacobian = first_derivative(func, internal_p)
+
+    jacobian = _reparametrize_from_internal_jacobian(
+        internal_p, fixed_val, pre_repl, pc, post_repl
+    )
+
+    aaae(jacobian, numerical_jacobian)
 
 
 def test_linear_constraint():
