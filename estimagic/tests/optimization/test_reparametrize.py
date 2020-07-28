@@ -167,7 +167,7 @@ def test_pre_replace_jacobian(example_params, all_constraints, case, number):
     numerical_deriv = first_derivative(func, internal_p)
     numerical_deriv[np.isnan(numerical_deriv)] = 0
 
-    deriv = pre_replace_jacobian(pre_repl, len(internal_p), len(fixed_val))
+    deriv = pre_replace_jacobian(pre_repl, len(internal_p))
 
     aaae(deriv, numerical_deriv)
 
@@ -194,7 +194,7 @@ def test_post_replace_jacobian(example_params, all_constraints, case, number):
     func = partial(post_replace, **{"post_replacements": post_repl})
     numerical_deriv = first_derivative(func, external)
 
-    deriv = post_replace_jacobian(post_repl, len(fixed_val))
+    deriv = post_replace_jacobian(post_repl)
 
     aaae(deriv, numerical_deriv)
 

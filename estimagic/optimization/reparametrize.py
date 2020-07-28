@@ -1,4 +1,40 @@
-"""Handle pc by reparametrizations."""
+"""Handle constraints by reparametrizations.
+
+The functions in this module allow to convert between internal and external parameter
+vectors.
+
+
+An external parameter vector is the parameter vector as it was specified by the user.
+This external parameter vector might be subject to constraints, such as the condition
+that the first two parameters are equal.
+
+
+
+An internal parameter vector is an internal representation of the parameters in a
+different space. The internal parameters are meaningless and have no direct
+interpretation. However, the internal parameter vector has two important properties:
+1. It is only subject to box constraints
+2. `reparametrize_from_internal(internal_parameter)` always produces a valid external
+   parameter vector (i.e. one that fulfills all constraints.
+
+For more background see :ref:`_implementation_of_constraints`.
+
+The reparametrization from internal can be broken down into three separate steps:
+
+- Writing values from the internal parameter vector into an array that is as long as the
+  external parameters and contains NaNs or values to which parameters have been fixed.
+  We call this step `pre_replace`.
+- Transforming slices of the resulting vector with kernel transformations. Note that
+  this step does not change the length. All kernel transformations have as many input
+  as output parameters and are invertible. We call this step `transformation`. The
+  resulting vector might still contrain NaNs.
+- Fill the NaNs by duplicating values of the transformed parameter vector. We call this
+  step `post_replace`
+
+In the following, let n_external be the length of th external parameter vector and
+n_internal the length of the internal parameter vector.
+
+"""
 import numpy as np
 
 import estimagic.optimization.kernel_transformations as kt
@@ -8,8 +44,12 @@ def reparametrize_to_internal(external, internal_free, processed_constraints):
     """Convert a params DataFrame into a numpy array of internal parameters.
 
     Args:
-        processed_params (DataFrame): A processed params DataFrame. See :ref:`params`.
-        processed_constraints (list): Processed and consolidated pc.
+        external (np.ndarray): 1d array with external parameters.
+        internal_free (np.ndarray): 1d array of lenth n_external that determines
+            which parameters are free.
+        processed_constraints (list): Processed and consolidated constraints. The
+            processed constraints contain information on the transformations that have
+            to be done.
 
     Returns:
         internal_params (numpy.ndarray): 1d numpy array of free reparametrized
@@ -32,14 +72,20 @@ def reparametrize_from_internal(
 
     Args:
         internal (numpy.ndarray): 1d numpy array with internal parameters
-        fixed_values (numpy.ndarray): 1d numpy array with internal fixed values
-        pre_replacements (numpy.ndarray): 1d numpy array with positions of internal
-            parameters that have to be copied before transformations are applied.
-            Negative if no value has to be copied.
+        fixed_values (numpy.ndarray): 1d numpy array of length n_external. It contains
+            NaN for parameters that are not fixed and an internal representation of the
+            value to which a parameter has been fixed for all others.
+        pre_replacements (numpy.ndarray): 1d numpy of length n_external. The i_th
+            element in array contains the position of the internal parameter that has to
+            be copied to the i_th position of the external parameter vector or -1 if no
+            value has to be copied.
         processed_constraints (list): List of processed and consolidated constraint
             dictionaries. Can have the types "linear", "probability", "covariance"
             and "sdcorr".
-        post_replacments (numpy.ndarray): 1d numpy array with parameter positions.
+        post_replacements (numpy.ndarray): 1d numpy array of lenth n_external. The i_th
+            element contains the position a parameter in the transformed parameter
+            vector that has to be copied to duplicated and copied to the i_th position
+            of the external parameter vector.
 
     Returns:
         numpy.ndarray: Array with external parameters
@@ -94,24 +140,28 @@ def convert_external_derivative_to_internal(
         external_derivative (numpy.ndarray): The external derivative evaluated at
             external values mapped from ``internal_values``.
         internal_values (numpy.ndarray): 1d numpy array with internal parameters
-        fixed_values (numpy.ndarray): 1d numpy array with internal fixed values
-        pre_replacements (numpy.ndarray): 1d numpy array with positions of internal
-            parameters that have to be copied before transformations are applied.
-            Negative if no value has to be copied.
+        fixed_values (numpy.ndarray): 1d numpy array of length n_external. It contains
+            NaN for parameters that are not fixed and an internal representation of the
+            value to which a parameter has been fixed for all others.
+        pre_replacements (numpy.ndarray): 1d numpy of length n_external. The i_th
+            element in array contains the position of the internal parameter that has to
+            be copied to the i_th position of the external parameter vector or -1 if no
+            value has to be copied.
         processed_constraints (list): List of processed and consolidated constraint
             dictionaries. Can have the types "linear", "probability", "covariance"
             and "sdcorr".
-        pre_replace_jac (np.ndarray): 2d Array with the jacobian of the
-            pre-replacements.
-        post_replacment_jacobian (np.ndarray): 2d Array with the jacobian of the
-            post replacements.
+        post_replacements (numpy.ndarray): 1d numpy array of lenth n_external. The i_th
+            element contains the position a parameter in the transformed parameter
+            vector that has to be copied to duplicated and copied to the i_th position
+            of the external parameter vector.
+        pre_replace_jac (np.ndarray): 2d Array with the jacobian of pre_replace
+        post_replacment_jacobian (np.ndarray): 2d Array with the jacobian post_replace
 
     Returns:
         deriv (numpy.ndarray): The gradient or Jacobian.
 
     """
     dim_in = len(internal_values)
-    dim_out = len(fixed_values)
 
     pre_replaced = pre_replace(internal_values, fixed_values, pre_replacements)
 
@@ -121,14 +171,12 @@ def convert_external_derivative_to_internal(
         )
 
     if pre_replace_jac is None:
-        pre_replace_jac = pre_replace_jacobian(pre_replacements, dim_in, dim_out)
+        pre_replace_jac = pre_replace_jacobian(pre_replacements, dim_in)
 
     if post_replace_jac is None:
-        post_replace_jac = post_replace_jacobian(post_replacements, dim_out)
+        post_replace_jac = post_replace_jacobian(post_replacements)
 
-    transform_jac = transformation_jacobian(
-        processed_constraints, pre_replaced, dim_out
-    )
+    transform_jac = transformation_jacobian(processed_constraints, pre_replaced)
 
     if len(external_derivative.shape) == 1:
         external_derivative = external_derivative.reshape(1, -1)
@@ -181,10 +229,13 @@ def pre_replace(internal_values, fixed_values, pre_replacements):
 
     Args:
         internal (numpy.ndarray): 1d numpy array with internal parameter.
-        fixed_values (numpy.ndarray): 1d numpy array with internal fixed values.
-        pre_replacements (numpy.ndarray): 1d numpy array with positions of internal
-            parameters that have to be copied before transformations are applied.
-            Negative if no value has to be copied.
+        fixed_values (numpy.ndarray): 1d numpy array of length n_external. It contains
+            NaN for parameters that are not fixed and an internal representation of the
+            value to which a parameter has been fixed for all others.
+        pre_replacements (numpy.ndarray): 1d numpy of length n_external. The i_th
+            element in array contains the position of the internal parameter that has to
+            be copied to the i_th position of the external parameter vector or -1 if no
+            value has to be copied.
 
     Returns:
         pre_replaced (numpy.ndarray): 1d numpy array with pre-replaced params.
@@ -198,7 +249,7 @@ def pre_replace(internal_values, fixed_values, pre_replacements):
     return pre_replaced
 
 
-def pre_replace_jacobian(pre_replacements, dim_in, dim_out):
+def pre_replace_jacobian(pre_replacements, dim_in):
     """Return Jacobian of pre-replacement step.
 
     Remark. The function ``pre_replace`` can have ``np.nan`` in its output. In
@@ -209,16 +260,17 @@ def pre_replace_jacobian(pre_replacements, dim_in, dim_out):
     derivative can differ from the derivative here in these cases.
 
     Args:
-        pre_replacements (numpy.ndarray): 1d numpy array with positions of internal
-            parameters that have to be copied before transformations are applied.
-            Negative if no value has to be copied.
+        pre_replacements (numpy.ndarray): 1d numpy of length n_external. The i_th
+            element in array contains the position of the internal parameter that has to
+            be copied to the i_th position of the external parameter vector or -1 if no
+            value has to be copied.
         dim_in (int): Dimension of the internal parameters.
-        dim_out (int): Dimensions of the external parameters.
 
     Returns:
         jacobian (np.ndarray): The jacobian.
 
     """
+    dim_out = len(pre_replacements)
     mask = pre_replacements >= 0
     position_in = pre_replacements[mask]
     position_out = np.arange(dim_out)[mask]
@@ -228,7 +280,7 @@ def pre_replace_jacobian(pre_replacements, dim_in, dim_out):
     return jacobian
 
 
-def transformation_jacobian(processed_constraints, pre_replaced, dim):
+def transformation_jacobian(processed_constraints, pre_replaced):
     """Return Jacobian of constraint transformation step.
 
     The Jacobian of the constraint transformation step is build as a block matrix
@@ -247,6 +299,7 @@ def transformation_jacobian(processed_constraints, pre_replaced, dim):
         jacobian (numpy.ndarray): The Jacobian.
 
     """
+    dim = len(pre_replaced)
     jacobian = np.eye(dim)
 
     for constr in processed_constraints:
@@ -263,7 +316,10 @@ def post_replace(external_values, post_replacements):
 
     Args:
         external_values (numpy.ndarray): 1d numpy array of external params.
-        post_replacments (numpy.ndarray): 1d numpy array with parameter positions.
+        post_replacements (numpy.ndarray): 1d numpy array of lenth n_external. The i_th
+            element contains the position a parameter in the transformed parameter
+            vector that has to be copied to duplicated and copied to the i_th position
+            of the external parameter vector.
 
     Returns:
         post_replaced (numpy.ndarray): 1d numpy array with post-replaced params.
@@ -276,17 +332,21 @@ def post_replace(external_values, post_replacements):
     return post_replaced
 
 
-def post_replace_jacobian(post_replacements, dim):
+def post_replace_jacobian(post_replacements):
     """Return Jacobian of post-replacement step.
 
     Args:
-        post_replacments (numpy.ndarray): 1d numpy array with parameter positions.
+        post_replacements (numpy.ndarray): 1d numpy array of lenth n_external. The i_th
+            element contains the position a parameter in the transformed parameter
+            vector that has to be copied to duplicated and copied to the i_th position
+            of the external parameter vector.
         dim (int): The dimension of the external parameters.
 
     Returns:
         jacobian (np.ndarray): The Jacobian.
 
     """
+    dim = len(post_replacements)
     mask = post_replacements >= 0
     positions_in = post_replacements[mask]
     positions_out = np.arange(dim)[mask]
