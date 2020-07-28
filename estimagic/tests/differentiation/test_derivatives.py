@@ -4,9 +4,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from numdifftools import Gradient
-from numdifftools import Jacobian
 from numpy.testing import assert_array_almost_equal as aaae
+from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.differentiation.derivatives import _consolidate_one_step_derivatives
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
@@ -171,21 +170,21 @@ def test_first_derivative_gradient_richardson(example_function_gradient_fixtures
     f = example_function_gradient_fixtures["func"]
     fprime = example_function_gradient_fixtures["func_prime"]
 
-    true_grad = fprime(np.ones(3))
-    numdifftools_grad = Gradient(f, order=2, n=3, method="central")(np.ones(3))
-    grad = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
+    true_fprime = fprime(np.ones(3))
+    scipy_fprime = approx_derivative(f, np.ones(3))
+    our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
-    aaae(numdifftools_grad, grad)
-    aaae(true_grad, grad)
+    aaae(scipy_fprime, our_fprime)
+    aaae(true_fprime, our_fprime)
 
 
 def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures):
     f = example_function_jacobian_fixtures["func"]
     fprime = example_function_jacobian_fixtures["func_prime"]
 
-    true_grad = fprime(np.ones(3))
-    numdifftools_grad = Jacobian(f, order=2, n=3, method="central")(np.ones(3))
-    grad = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
+    true_fprime = fprime(np.ones(3))
+    scipy_fprime = approx_derivative(f, np.ones(3))
+    our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
-    aaae(numdifftools_grad, grad)
-    aaae(true_grad, grad)
+    aaae(scipy_fprime, our_fprime)
+    aaae(true_fprime, our_fprime)

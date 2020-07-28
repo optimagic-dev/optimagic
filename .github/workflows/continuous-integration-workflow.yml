@@ -8,14 +8,18 @@ on:
     - '*'
 
 jobs:
+
   run-tests:
+
     name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['3.6', '3.7']
+        python-version: ['3.6', '3.7', '3.8']
+
     steps:
       - uses: actions/checkout@v2
       - uses: goanpeca/setup-miniconda@v1
@@ -37,17 +41,48 @@ jobs:
         run: tox -e pytest -- --cov-report=xml --cov=./
 
       - name: Upload coverage report.
-        if: runner.os == 'Linux' && matrix.python-version == '3.7'
+        if: runner.os == 'Linux' && matrix.python-version == '3.8'
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Run sphinx.
-        if: runner.os == 'Linux' && matrix.python-version == '3.7'
+
+  pre-commit:
+
+    name: Run pre-commit.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: pip install tox
+
+      - name: Run pre-commit
+        run: tox -e pre-commit
+
+
+  docs:
+
+    name: Run documentation.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          auto-update-conda: true
+          python-version: 3.8
+
+      - name: Install core dependencies.
+        shell: bash -l {0}
+        run: conda install -c conda-forge tox-conda
+
+      - name: Build docs
         shell: bash -l {0}
         run: tox -e sphinx
-
-      - name: Run pre-commits.
-        if: runner.os == 'Linux' && matrix.python-version == '3.7'
-        shell: bash -l {0}
-        run: tox -e linting

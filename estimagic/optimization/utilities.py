@@ -16,11 +16,14 @@ def chol_params_to_lower_triangular_matrix(params):
 
 def cov_params_to_matrix(cov_params):
     """Build covariance matrix from 1d array with its lower triangular elements.
+
     Args:
         cov_params (np.array): 1d array with the lower triangular elements of a
             covariance matrix (in C-order)
+
     Returns:
         cov (np.array): a covariance matrix
+
     """
     lower = chol_params_to_lower_triangular_matrix(cov_params)
     cov = lower + np.tril(lower, k=-1).T
@@ -54,13 +57,16 @@ def cov_to_sds_and_corr(cov):
 
 def sdcorr_params_to_matrix(sdcorr_params):
     """Build covariance matrix out of variances and correlations.
+
     Args:
         sdcorr_params (np.array): 1d array with parameters. The dimensions of the
             covariance matrix are inferred automatically. The first dim parameters
             are assumed to be the variances. The remainder are the lower triangular
             elements (excluding the diagonal) of a correlation matrix.
+
     Returns:
         cov (np.array): a covariance matrix
+
     """
     return sds_and_corr_to_cov(*sdcorr_params_to_sds_and_corr(sdcorr_params))
 
@@ -74,21 +80,26 @@ def cov_matrix_to_sdcorr_params(cov):
 
 def number_of_triangular_elements_to_dimension(num):
     """Calculate the dimension of a square matrix from number of triangular elements.
+
     Args:
         num (int): The number of upper or lower triangular elements in the matrix.
+
     Examples:
         >>> number_of_triangular_elements_to_dimension(6)
         3
         >>> number_of_triangular_elements_to_dimension(10)
         4
+
     """
     return int(np.sqrt(8 * num + 1) / 2 - 0.5)
 
 
 def dimension_to_number_of_triangular_elements(dim):
     """Calculate number of triangular elements from the dimension of a square matrix.
+
     Args:
         dim (int): Dimension of a square matrix.
+
     """
     return int(dim * (dim + 1) / 2)
 
@@ -144,8 +155,8 @@ def robust_cholesky(matrix, threshold=None, return_info=False):
     work for matrices that are only positive semi-definite or even indefinite.
     For speed and precision reasons we first try a regular cholesky decomposition.
     If it fails we switch to more robust methods.
-    """
 
+    """
     try:
         chol = np.linalg.cholesky(matrix)
         method = "np.linalg.cholesky"
@@ -208,11 +219,13 @@ def _internal_robust_cholesky(matrix, threshold):
 
 def _make_cholesky_unique(chol):
     """Make a lower triangular cholesky factor unique.
+
     Cholesky factors are only unique with the additional requirement that all diagonal
     elements are positive. This is done automatically by np.linalg.cholesky.
     Since we calucate cholesky factors by QR decompositions we have to do it manually.
     It is obvious from that this is admissible because:
     chol sign_swither sign_switcher.T chol.T = chol chol.T
+
     """
     sign_switcher = np.sign(np.diagonal(chol))
     return chol * sign_switcher
