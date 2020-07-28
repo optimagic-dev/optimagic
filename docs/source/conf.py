@@ -58,8 +58,6 @@ autodoc_mock_imports = [
     "cloudpickle",
     "fuzzywuzzy",
     "joblib",
-    "numba",
-    "numdifftools",
     "numpy",
     "pandas",
     "pytest",
