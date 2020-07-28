@@ -240,6 +240,15 @@ def pre_replace(internal_values, fixed_values, pre_replacements):
     Returns:
         pre_replaced (numpy.ndarray): 1d numpy array with pre-replaced params.
 
+
+    Examples:
+
+        >>> internal_values = np.array([1., 2.])
+        >>> fixed_values = np.array([np.nan, 0, np.nan])
+        >>> pre_replacements = np.array([1, -1, 0])
+        >>> pre_replace(internal_values, fixed_values, pre_replacements)
+        array([2., 0., 1.])
+
     """
     pre_replaced = fixed_values.copy()
 
@@ -268,6 +277,15 @@ def pre_replace_jacobian(pre_replacements, dim_in):
 
     Returns:
         jacobian (np.ndarray): The jacobian.
+
+
+    Examples:
+        # Note: The example is the same as in the doctest of pre_replace
+        >>> pre_replacements = np.array([1, -1, 0])
+        >>> pre_replace_jacobian(pre_replacements, 2)
+        array([[0., 1.],
+               [0., 0.],
+               [1., 0.]])
 
     """
     dim_out = len(pre_replacements)
@@ -323,6 +341,13 @@ def post_replace(external_values, post_replacements):
 
     Returns:
         post_replaced (numpy.ndarray): 1d numpy array with post-replaced params.
+
+    Examples:
+        >>> external_values = np.array([3., 4., np.nan])
+        >>> post_replacements = np.array([-1, -1, 1])
+        >>> post_replace(external_values, post_replacements)
+        array([3., 4., 4.])
+
     """
     post_replaced = external_values.copy()
 
@@ -344,6 +369,16 @@ def post_replace_jacobian(post_replacements):
 
     Returns:
         jacobian (np.ndarray): The Jacobian.
+
+    Examples:
+        # Note: the example is the same as in the doctest of post_replace
+        >>> post_replacements = np.array([-1, -1, 1])
+        >>> post_replace_jacobian(post_replacements)
+        array([[1., 0., 0.],
+               [0., 1., 0.],
+               [0., 1., 0.]])
+
+
 
     """
     dim = len(post_replacements)
