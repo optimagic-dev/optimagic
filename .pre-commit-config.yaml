@@ -1,22 +1,22 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v3.1.0
     hooks:
     -   id: check-merge-conflict
     -   id: debug-statements
     -   id: end-of-file-fixer
 -   repo: https://github.com/asottile/reorder_python_imports
-    rev: v2.0.0
+    rev: v2.3.0
     hooks:
     -   id: reorder-python-imports
         types: [python]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.1.0
+    rev: v3.1.0
     hooks:
     -   id: check-yaml
         exclude: meta.yaml
 -   repo: https://github.com/asottile/blacken-docs
-    rev: v1.6.0
+    rev: v1.7.0
     hooks:
     -   id: blacken-docs
         additional_dependencies: [black]
@@ -27,7 +27,7 @@ repos:
     -   id: black
         types: [python]
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.9
+    rev: 3.8.3
     hooks:
     -   id: flake8
         types: [python]
@@ -40,13 +40,6 @@ repos:
     rev: 0.8.1rc3
     hooks:
         -   id: doc8
--   repo: local
-    hooks:
-    -   id: restructuredtext-lint
-        entry: rst-lint
-        language: system
-        files: '(README.rst)'
-        name: restructuredtext-lint - Is the README PyPi-compliant?
 -   repo: meta
     hooks:
     -   id: check-hooks-apply
