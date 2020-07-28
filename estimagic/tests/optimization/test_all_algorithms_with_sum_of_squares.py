@@ -3,6 +3,7 @@
 sum of squares is abbreviated as sos throughout the module.
 
 """
+import functools
 from itertools import product
 
 import numpy as np
@@ -121,6 +122,7 @@ def switch_sign(func):
         wrapper = None
     else:
 
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             unswitched = func(*args, **kwargs)
             if isinstance(unswitched, dict):

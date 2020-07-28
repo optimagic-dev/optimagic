@@ -460,15 +460,15 @@ def _single_optimize(
 
     problem_data = {
         "direction": direction,
-        "criterion": criterion,
+        # "criterion"-criterion,
         "criterion_kwargs": criterion_kwargs,
         "params": params,
         "algorithm": algorithm,
         "constraints": constraints,
         "algo_options": algo_options,
-        "derivative": derivative,
+        # "derivative"-derivative,
         "derivative_kwargs": derivative_kwargs,
-        "criterion_and_derivative": criterion_and_derivative,
+        # "criterion_and_derivative"-criterion_and_derivative,
         "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
         "numdiff_options": numdiff_options,
         "logging": logging,

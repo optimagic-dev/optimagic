@@ -73,7 +73,8 @@ Structure of the Documentation
                         <div class="card-body flex-fill">
                             <h5 class="card-title">Reference Guides</h5>
                             <p class="card-text">
-                                Overview of functions and modules
+                                Overview of functions and modules as well as
+                                implementation details
                             </p>
                         </div>
                     </div>

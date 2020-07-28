@@ -1,3 +1,4 @@
+from functools import partial
 from itertools import product
 
 import numpy as np
@@ -5,9 +6,18 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.optimization.process_constraints import process_constraints
+from estimagic.optimization.reparametrize import _multiply_from_left
+from estimagic.optimization.reparametrize import _multiply_from_right
+from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
+from estimagic.optimization.reparametrize import post_replace
+from estimagic.optimization.reparametrize import post_replace_jacobian
+from estimagic.optimization.reparametrize import pre_replace
+from estimagic.optimization.reparametrize import pre_replace_jacobian
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
+
 
 to_test = list(
     product(
@@ -95,6 +105,100 @@ def test_reparametrize_from_internal(example_params, all_constraints, case, numb
     aaae(calculated_external_value, expected_external_value)
 
 
+@pytest.mark.parametrize("case, number", to_test)
+def test_reparametrize_from_internal_jacobian(
+    example_params, all_constraints, case, number
+):
+    constraints = all_constraints[case]
+    params = reduce_params(example_params, constraints)
+    params["value"] = params[f"value{number}"]
+
+    keep = params[f"internal_value{number}"].notnull()
+
+    pc, pp = process_constraints(constraints, params)
+
+    internal_p = params[f"internal_value{number}"][keep].to_numpy()
+    fixed_val = pp["_internal_fixed_value"].to_numpy()
+    pre_repl = pp["_pre_replacements"].to_numpy()
+    post_repl = pp["_post_replacements"].to_numpy()
+
+    func = partial(
+        reparametrize_from_internal,
+        **{
+            "fixed_values": fixed_val,
+            "pre_replacements": pre_repl,
+            "processed_constraints": pc,
+            "post_replacements": post_repl,
+        },
+    )
+    numerical_jacobian = first_derivative(func, internal_p)
+
+    # calling convert_external_derivative with identity matrix as external derivative
+    # is just a trick to get out the jacobian of reparametrize_from_internal
+    jacobian = convert_external_derivative_to_internal(
+        external_derivative=np.eye(len(fixed_val)),
+        internal_values=internal_p,
+        fixed_values=fixed_val,
+        pre_replacements=pre_repl,
+        processed_constraints=pc,
+        post_replacements=post_repl,
+    )
+
+    aaae(jacobian, numerical_jacobian)
+
+
+@pytest.mark.parametrize("case, number", to_test)
+def test_pre_replace_jacobian(example_params, all_constraints, case, number):
+    constraints = all_constraints[case]
+    params = reduce_params(example_params, constraints)
+    params["value"] = params[f"value{number}"]
+
+    keep = params[f"internal_value{number}"].notnull()
+
+    pc, pp = process_constraints(constraints, params)
+
+    internal_p = params[f"internal_value{number}"][keep].to_numpy()
+    fixed_val = pp["_internal_fixed_value"].to_numpy()
+    pre_repl = pp["_pre_replacements"].to_numpy()
+
+    func = partial(
+        pre_replace, **{"fixed_values": fixed_val, "pre_replacements": pre_repl}
+    )
+    numerical_deriv = first_derivative(func, internal_p)
+    numerical_deriv[np.isnan(numerical_deriv)] = 0
+
+    deriv = pre_replace_jacobian(pre_repl, len(internal_p))
+
+    aaae(deriv, numerical_deriv)
+
+
+@pytest.mark.parametrize("case, number", to_test)
+def test_post_replace_jacobian(example_params, all_constraints, case, number):
+    constraints = all_constraints[case]
+    params = reduce_params(example_params, constraints)
+    params["value"] = params[f"value{number}"]
+
+    keep = params[f"internal_value{number}"].notnull()
+
+    pc, pp = process_constraints(constraints, params)
+
+    internal_p = params[f"internal_value{number}"][keep].to_numpy()
+    fixed_val = pp["_internal_fixed_value"].to_numpy()
+    pre_repl = pp["_pre_replacements"].to_numpy()
+    post_repl = pp["_post_replacements"].to_numpy()
+
+    external = pre_replace(internal_p, fixed_val, pre_repl)
+    external[np.isnan(external)] = 0  # if not set to zero the numerical differentiation
+    # fails due to potential np.nan.
+
+    func = partial(post_replace, **{"post_replacements": post_repl})
+    numerical_deriv = first_derivative(func, external)
+
+    deriv = post_replace_jacobian(post_repl)
+
+    aaae(deriv, numerical_deriv)
+
+
 def test_linear_constraint():
     params = pd.DataFrame(
         index=pd.MultiIndex.from_product([["a", "b", "c"], [0, 1, 2]]),
@@ -145,3 +249,18 @@ def back_and_forth_transformation_and_assert(params, constraints):
 
     aaae(external, params["value"].to_numpy())
     return internal, external
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_multiply_from_left_and_right(seed):
+    np.random.seed(seed)
+    mat_list = [np.random.uniform(size=(10, 10)) for i in range(5)]
+    a, b, c, d, e = mat_list
+
+    expected = a @ b @ c @ d @ e
+
+    calc_from_left = _multiply_from_left(mat_list)
+    calc_from_right = _multiply_from_right(mat_list)
+
+    aaae(calc_from_left, expected)
+    aaae(calc_from_right, expected)
