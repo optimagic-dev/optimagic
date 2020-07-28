@@ -8,12 +8,14 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.optimization.process_constraints import process_constraints
+from estimagic.optimization.reparametrize import _multiply_from_left
+from estimagic.optimization.reparametrize import _multiply_from_right
+from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
 from estimagic.optimization.reparametrize import post_replace
 from estimagic.optimization.reparametrize import post_replace_jacobian
 from estimagic.optimization.reparametrize import pre_replace
 from estimagic.optimization.reparametrize import pre_replace_jacobian
 from estimagic.optimization.reparametrize import reparametrize_from_internal
-from estimagic.optimization.reparametrize import reparametrize_from_internal_jacobian
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 
 
@@ -131,8 +133,15 @@ def test_reparametrize_from_internal_jacobian(
     )
     numerical_jacobian = first_derivative(func, internal_p)
 
-    jacobian = reparametrize_from_internal_jacobian(
-        internal_p, fixed_val, pre_repl, pc, post_repl
+    # calling convert_external_derivative with identity matrix as external derivative
+    # is just a trick to get out the jacobian of reparametrize_from_internal
+    jacobian = convert_external_derivative_to_internal(
+        external_derivative=np.eye(len(fixed_val)),
+        internal_values=internal_p,
+        fixed_values=fixed_val,
+        pre_replacements=pre_repl,
+        processed_constraints=pc,
+        post_replacements=post_repl,
     )
 
     aaae(jacobian, numerical_jacobian)
@@ -240,3 +249,18 @@ def back_and_forth_transformation_and_assert(params, constraints):
 
     aaae(external, params["value"].to_numpy())
     return internal, external
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_multiply_from_left_and_right(seed):
+    np.random.seed(seed)
+    mat_list = [np.random.uniform(size=(10, 10)) for i in range(5)]
+    a, b, c, d, e = mat_list
+
+    expected = a @ b @ c @ d @ e
+
+    calc_from_left = _multiply_from_left(mat_list)
+    calc_from_right = _multiply_from_right(mat_list)
+
+    aaae(calc_from_left, expected)
+    aaae(calc_from_right, expected)

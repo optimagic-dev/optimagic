@@ -41,7 +41,7 @@ def covariance_to_internal(external_values, constr):
 
 
 def covariance_to_internal_jacobian(external_values, constr):
-    """Jacobian of ``covariance_to_internal``.
+    r"""Jacobian of ``covariance_to_internal``.
 
     For reference see docstring of ``jacobian_covariance_from_internal``. In
     comparison to that function, however, here we want to differentiate the
@@ -80,7 +80,7 @@ def covariance_from_internal(internal_values, constr):
 
 
 def covariance_from_internal_jacobian(internal_values, constr):
-    """Jacobian of ``covariance_from_internal``.
+    r"""Jacobian of ``covariance_from_internal``.
 
     The following result is motivated by https://tinyurl.com/y4pbfxst, which is
     shortly presented again here. For notation see the explaination at the
@@ -139,7 +139,7 @@ def sdcorr_to_internal(external_values, constr):
 
 
 def sdcorr_to_internal_jacobian(external_values, constr):
-    """Derivative of ``sdcorr_to_internal``.
+    r"""Derivative of ``sdcorr_to_internal``.
 
     For reference see docstring of ``jacobian_sdcorr_from_internal``. In
     comparison to that function, however, here we want to differentiate the
@@ -180,7 +180,7 @@ def sdcorr_from_internal(internal_values, constr):
 
 
 def sdcorr_from_internal_jacobian(internal_values, constr):
-    """Derivative of ``sdcorr_from_internal``.
+    r"""Derivative of ``sdcorr_from_internal``.
 
     The following result is motivated by https://tinyurl.com/y6ytlyd9; however
     since the question was formulated with an error the result here is adjusted
@@ -269,7 +269,7 @@ def probability_to_internal(external_values, constr):
 
 
 def probability_to_internal_jacobian(external_values, constr):
-    """Jacobian of ``probability_to_internal``.
+    r"""Jacobian of ``probability_to_internal``.
 
     Let :math:`x = \text{external}`. The function ``probability_to_internal``
     has the following structure
@@ -308,7 +308,7 @@ def probability_from_internal(internal_values, constr):
 
 
 def probability_from_internal_jacobian(internal_values, constr):
-    """Jacobian of ``probability_from_internal``.
+    r"""Jacobian of ``probability_from_internal``.
 
     Let :math:`x := \text{internal}`. The function ``probability_from_internal``
     has the following structure
@@ -356,7 +356,7 @@ def linear_from_internal_jacobian(internal_values, constr):
 
 
 def _elimination_matrix(dim):
-    """Construct (row-wise) elimination matrix.
+    r"""Construct (row-wise) elimination matrix.
 
     Let :math:`A` be a quadratic matrix. Let :math:`\text{vec}(A)` be the
     column-wise vectorization of :math:`A`. Let :math:`\text{vech}(A)` be the
@@ -398,7 +398,7 @@ def _elimination_matrix(dim):
 
 
 def _duplication_matrix(dim):
-    """Return duplication matrix.
+    r"""Return duplication matrix.
 
     Let :math:`A` be a lower-triangular quadratic matrix. Let
     :math:`\text{vec}(A)` be the column-wise vectorization of :math:`A`. Let
@@ -437,7 +437,7 @@ def _duplication_matrix(dim):
 
 
 def _transformation_matrix(dim):
-    """Return transformation matrix.
+    r"""Return transformation matrix.
 
     Let :math:`A` be a quadratic matrix of dimension :math:`m \times m`. Define
     the :math:`m-1 \times m-1` matrix :math:`B` as the lower-triangular matrix
@@ -493,7 +493,7 @@ def _transformation_matrix(dim):
 
 
 def _commutation_matrix(dim):
-    """Return commutation matrix.
+    r"""Return commutation matrix.
 
     Let :math:`A` be a quadratic matrix. Let :math:`\text{vec}(A)` be the
     column-wise vectorization of :math:`A`. Then the corresponding commutation

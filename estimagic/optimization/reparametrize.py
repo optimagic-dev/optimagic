@@ -67,9 +67,11 @@ def convert_external_derivative_to_internal(
     fixed_values,
     pre_replacements,
     processed_constraints,
-    post_replacements,
+    post_replacements=None,
+    pre_replace_jac=None,
+    post_replace_jac=None,
 ):
-    """Compute the derivative of the criterion utilizing an external derivative.
+    r"""Compute the derivative of the criterion utilizing an external derivative.
 
     Denote by :math:`c` the criterion function which is evaluated on the full
     parameter set. Denote by :math:`g` the paramater transform which maps an
@@ -99,68 +101,79 @@ def convert_external_derivative_to_internal(
         processed_constraints (list): List of processed and consolidated constraint
             dictionaries. Can have the types "linear", "probability", "covariance"
             and "sdcorr".
-        post_replacments (numpy.ndarray): 1d numpy array with parameter positions.
+        pre_replace_jac (np.ndarray): 2d Array with the jacobian of the
+            pre-replacements.
+        post_replacment_jacobian (np.ndarray): 2d Array with the jacobian of the
+            post replacements.
 
     Returns:
         deriv (numpy.ndarray): The gradient or Jacobian.
 
     """
-    reparametrize_jacobian = reparametrize_from_internal_jacobian(
-        internal_values,
-        fixed_values,
-        pre_replacements,
-        processed_constraints,
-        post_replacements,
-    )
-    deriv = external_derivative @ reparametrize_jacobian
-    return deriv
-
-
-def reparametrize_from_internal_jacobian(
-    internal_values,
-    fixed_values,
-    pre_replacements,
-    processed_constraints,
-    post_replacements,
-):
-    """Return derivative of parameter transform from internal to external.
-
-    Returns the Jacobian matrix of the mapping from internal to external
-    parameters given a specific internal value. See function
-    ``reparametrize_from_internal`` for the mapping specification.
-
-    Args:
-        internal_values (numpy.ndarray): 1d numpy array with internal parameters
-        fixed_values (numpy.ndarray): 1d numpy array with internal fixed values
-        pre_replacements (numpy.ndarray): 1d numpy array with positions of internal
-            parameters that have to be copied before transformations are applied.
-            Negative if no value has to be copied.
-        processed_constraints (list): List of processed and consolidated constraint
-            dictionaries. Can have the types "linear", "probability", "covariance"
-            and "sdcorr".
-        post_replacments (numpy.ndarray): 1d numpy array with parameter positions.
-
-    Returns:
-        jacobian (numpy.ndarray): The Jacobian matrix.
-
-    """
     dim_in = len(internal_values)
     dim_out = len(fixed_values)
 
-    # jacobian of pre-replacement
-    pre_replace_jac = pre_replace_jacobian(pre_replacements, dim_in, dim_out)
     pre_replaced = pre_replace(internal_values, fixed_values, pre_replacements)
 
-    # jacobian of constraint transformation step
+    if post_replacements is None and post_replace_jac is None:
+        raise ValueError(
+            "either post_replacements or post_replace_jac must be specified."
+        )
+
+    if pre_replace_jac is None:
+        pre_replace_jac = pre_replace_jacobian(pre_replacements, dim_in, dim_out)
+
+    if post_replace_jac is None:
+        post_replace_jac = post_replace_jacobian(post_replacements, dim_out)
+
     transform_jac = transformation_jacobian(
         processed_constraints, pre_replaced, dim_out
     )
 
-    # jacobian of post-replacement
-    post_replace_jac = post_replace_jacobian(post_replacements, dim_out)
+    if len(external_derivative.shape) == 1:
+        external_derivative = external_derivative.reshape(1, -1)
 
-    jacobian = post_replace_jac @ transform_jac @ pre_replace_jac
-    return jacobian
+    tall_external = external_derivative.shape[0] > external_derivative.shape[1]
+
+    mat_list = [
+        external_derivative,
+        post_replace_jac,
+        transform_jac,
+        pre_replace_jac,
+    ]
+
+    if tall_external:
+        deriv = _multiply_from_right(mat_list)
+    else:
+        deriv = _multiply_from_left(mat_list)
+
+    return deriv
+
+
+def _multiply_from_left(mat_list):
+    """Multiply all matrices in the list, starting from the left.
+
+    Note that this only affects the order in which the pairwise multiplications happen,
+    not the actual result.
+
+    """
+    out = mat_list[0]
+    for mat in mat_list[1:]:
+        out = out @ mat
+    return out
+
+
+def _multiply_from_right(mat_list):
+    """Multiply all matrices in the list, starting from the right.
+
+    Note that this only affects the order in which the pairwise multiplications happen,
+    not the actual result.
+
+    """
+    out = mat_list[-1]
+    for mat in reversed(mat_list[:-1]):
+        out = mat @ out
+    return out
 
 
 def pre_replace(internal_values, fixed_values, pre_replacements):
