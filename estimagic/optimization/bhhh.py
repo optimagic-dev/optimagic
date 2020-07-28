@@ -11,14 +11,14 @@ from scipy.optimize.optimize import wrap_function
 
 def wrap_function_aggregate(function, args):
     """
-    Sum the outputs of a vector-valued function fixed at specific values of 
-    arguments. 
+    Sum the outputs of a vector-valued function fixed at specific values of
+    arguments.
 
     Parameters
     ----------
     function : callable function(x, *args)
         A vector-valued function giving out a numpy.array having arguments x
-        as flexible arguments. 
+        as flexible arguments.
     args : tuple
         Addtional arguments passed to function. The function will be evaluated
         at those fixed arguments.
@@ -42,7 +42,7 @@ def wrap_function_aggregate(function, args):
 
 def wrap_function_num_derivative(function, args):
     """
-    Return the numerical Jacobian of a function at given values for certain 
+    Return the numerical Jacobian of a function at given values for certain
     arguments (args).
 
     Parameters
@@ -88,14 +88,14 @@ def minimize_bhhh(
     method and the Berndt, Hall, Hall and Hubert (BHHH) algorithm to approximate
     the Hessian.
     This method works only on objective functions that take the general form
-    f = sum(f_i).   
+    f = sum(f_i).
 
     Parameters
     ----------
     func : callable func(x, *args)
-        Objective function that returns a numpy.array corresponding to 
-        the individual values of f_i. The numpy.array, hence, has the length 
-        corresponding to the amount of individual summands f_i. 
+        Objective function that returns a numpy.array corresponding to
+        the individual values of f_i. The numpy.array, hence, has the length
+        corresponding to the amount of individual summands f_i.
     x0 : numpy.array
         Starting values of the parameters.
     bounds : Tuple[np.ndarray], optional
@@ -106,10 +106,10 @@ def minimize_bhhh(
     args : tuple, optional
         Extra arguments passed to the objective function and its derivative.
     jacobian : callable func'(x, *args), optional
-        Jacobian of the objective function. If None is given then the jacobian 
+        Jacobian of the objective function. If None is given then the jacobian
         will be numerically approximated using scipy.
     callback : callable callback(xk), optional
-        An optional function to call after each iteration. 
+        An optional function to call after each iteration.
         xk is the current guess of the parameter vector.
     tol : dict, optional
         Dictionairy that contains the absolute and relative stopping tolerance.
@@ -128,9 +128,9 @@ def minimize_bhhh(
         x : numpy.array
             The parameter vector found by the algorithm.
         status : bool
-            True if the algorithm conerved. 
+            True if the algorithm conerved.
         message : str
-            Print a message describing that algorithm converged and if not, 
+            Print a message describing that algorithm converged and if not,
             why it did not converge.
         n_iterations : int
             State the number of iterations the algorithm needed.
@@ -139,7 +139,7 @@ def minimize_bhhh(
         n_evaluations : int
             Number of calls of the objective function.
         n_evaluations_jacobian : int
-            Number of calls of the jacobian function. 
+            Number of calls of the jacobian function.
         jacobian : numpy.array
             Value of the aggregate Jacobian at x.
         hessian : numpy.array
@@ -153,8 +153,8 @@ def minimize_bhhh(
     Inference in Nonlinear Structural Models". Annals of Economic and Social
     Measurement. 3 (4): 653–665.
     Buchwald, S. "Implementierung des L-BFGS-B-Verfahrens in Python".
-    Bachelor-Thesis University of Konstanz.   
-    
+    Bachelor-Thesis University of Konstanz.
+
     """
     # process inputs
     _check_unknown_options(unknown_options)
@@ -192,24 +192,25 @@ def minimize_bhhh(
     # Setup for iteration
     func_value = aggregate_func(x0)
 
-    agg_jacobian_start_value = aggregate_jacobian_wrapped(x0)
+    jacobian_value = jacobian_wrapped(x0)
+    agg_jacobian_value = jacobian_value.sum(axis=0)
     norm_start = vecnorm(
-        x0 - np.clip(x0 - agg_jacobian_start_value, lower_bounds, upper_bounds),
-        ord=norm,
+        x0 - np.clip(x0 - agg_jacobian_value, lower_bounds, upper_bounds), ord=norm,
     )
 
     xk = x0
 
     # Set the initial step guess to dx ~ 1
-    old_func_value = func_value + np.linalg.norm(agg_jacobian_start_value) / 2
+    old_func_value = func_value + np.linalg.norm(agg_jacobian_value) / 2
 
-    for _ in range(max_iterations):
+    for iteration in range(max_iterations):
 
-        # Jacobian at current guess
-        jacobian_value = jacobian_wrapped(xk)
+        if iteration != 0:
+            # Jacobian at current guess
+            jacobian_value = jacobian_wrapped(xk)
 
-        # Aggregate Jacobian at current guess
-        agg_jacobian_value = jacobian_value.sum(axis=0)
+            # Aggregate Jacobian at current guess
+            agg_jacobian_value = jacobian_value.sum(axis=0)
 
         norm_current = vecnorm(
             xk - np.clip(xk - agg_jacobian_value, lower_bounds, upper_bounds), ord=norm
