@@ -126,6 +126,9 @@ def first_derivative(
     x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
     x = np.atleast_1d(x).astype(float)
 
+    if np.isnan(x).any():
+        raise ValueError("The parameter vector must not contain NaNs.")
+
     # generate the step array
     steps = generate_steps(
         x=x,
