@@ -466,8 +466,8 @@ def _transformation_matrix(dim):
     Example:
     >>> import numpy as np
     >>> from numpy.testing import assert_array_almost_equal
-    >>> from utilities import cov_matrix_to_sdcorr_params
-    >>> from utilities import cov_to_sds_and_corr
+    >>> from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
+    >>> from estimagic.optimization.utilities import cov_to_sds_and_corr
     >>> cov = np.cov(np.random.randn(10, 4))
     >>> sds, corr = cov_to_sds_and_corr(cov)
     >>> corr[np.diag_indices(len(cov))] = sds

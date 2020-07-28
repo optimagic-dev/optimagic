@@ -188,6 +188,13 @@ def pre_replace(internal_values, fixed_values, pre_replacements):
 def pre_replace_jacobian(pre_replacements, dim_in, dim_out):
     """Return Jacobian of pre-replacement step.
 
+    Remark. The function ``pre_replace`` can have ``np.nan`` in its output. In
+    this case we know from the underlying structure that the derivative of this
+    output with respect to any of the inputs is zero. Here we use this additional
+    knowledge; however, when the derivative is computed using a numerical
+    differentiation technique this will not be the case. Thus the numerical
+    derivative can differ from the derivative here in these cases.
+
     Args:
         pre_replacements (numpy.ndarray): 1d numpy array with positions of internal
             parameters that have to be copied before transformations are applied.
