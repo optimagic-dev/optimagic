@@ -6,7 +6,14 @@ can be used used as batch evaluator in estimagic.
 """
 from joblib import delayed
 from joblib import Parallel
-from pathos.pools import ProcessPool
+
+
+try:
+    from pathos.pools import ProcessPool
+
+    pathos_is_available = True
+except ImportError:
+    pathos_is_available = False
 
 from estimagic.config import DEFAULT_N_CORES as N_CORES
 from estimagic.decorators import catch
@@ -43,6 +50,11 @@ def pathos_mp_batch_evaluator(
         list: The function evaluations.
 
     """
+    if not pathos_is_available:
+        raise NotImplementedError(
+            "To use the pathos_mp_batch_evaluator you need to install pathos."
+        )
+
     _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol)
     n_cores = int(n_cores)
 
