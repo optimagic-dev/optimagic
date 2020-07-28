@@ -46,7 +46,7 @@ def reparametrize_from_internal(
 
     """
     # do pre-replacements
-    external_values = _pre_replace(internal, fixed_values, pre_replacements)
+    external_values = pre_replace(internal, fixed_values, pre_replacements)
 
     # do transformations
     for constr in processed_constraints:
@@ -56,9 +56,7 @@ def reparametrize_from_internal(
         )
 
     # do post-replacements
-    mask = post_replacements >= 0
-    positions = post_replacements[mask]
-    external_values[mask] = external_values[positions]
+    external_values = post_replace(external_values, post_replacements)
 
     return external_values
 
@@ -107,7 +105,7 @@ def convert_external_derivative_to_internal(
         deriv (numpy.ndarray): The gradient or Jacobian.
 
     """
-    reparametrize_jacobian = _reparametrize_from_internal_jacobian(
+    reparametrize_jacobian = reparametrize_from_internal_jacobian(
         internal_values,
         fixed_values,
         pre_replacements,
@@ -118,7 +116,7 @@ def convert_external_derivative_to_internal(
     return deriv
 
 
-def _reparametrize_from_internal_jacobian(
+def reparametrize_from_internal_jacobian(
     internal_values,
     fixed_values,
     pre_replacements,
@@ -150,22 +148,44 @@ def _reparametrize_from_internal_jacobian(
     dim_out = len(fixed_values)
 
     # jacobian of pre-replacement
-    pre_replace_jac = _pre_replace_jacobian(pre_replacements, dim_in, dim_out)
-    pre_replaced = _pre_replace(internal_values, fixed_values, pre_replacements)
+    pre_replace_jac = pre_replace_jacobian(pre_replacements, dim_in, dim_out)
+    pre_replaced = pre_replace(internal_values, fixed_values, pre_replacements)
 
     # jacobian of constraint transformation step
-    transform_jac = _transformation_jacobian(
+    transform_jac = transformation_jacobian(
         processed_constraints, pre_replaced, dim_out
     )
 
     # jacobian of post-replacement
-    post_replace_jac = _post_replace_jacobian(post_replacements, dim_out)
+    post_replace_jac = post_replace_jacobian(post_replacements, dim_out)
 
     jacobian = post_replace_jac @ transform_jac @ pre_replace_jac
     return jacobian
 
 
-def _pre_replace_jacobian(pre_replacements, dim_in, dim_out):
+def pre_replace(internal_values, fixed_values, pre_replacements):
+    """Return pre-replaced parameters.
+
+    Args:
+        internal (numpy.ndarray): 1d numpy array with internal parameter.
+        fixed_values (numpy.ndarray): 1d numpy array with internal fixed values.
+        pre_replacements (numpy.ndarray): 1d numpy array with positions of internal
+            parameters that have to be copied before transformations are applied.
+            Negative if no value has to be copied.
+
+    Returns:
+        pre_replaced (numpy.ndarray): 1d numpy array with pre-replaced params.
+
+    """
+    pre_replaced = fixed_values.copy()
+
+    mask = pre_replacements >= 0
+    positions = pre_replacements[mask]
+    pre_replaced[mask] = internal_values[positions]
+    return pre_replaced
+
+
+def pre_replace_jacobian(pre_replacements, dim_in, dim_out):
     """Return Jacobian of pre-replacement step.
 
     Args:
@@ -188,7 +208,7 @@ def _pre_replace_jacobian(pre_replacements, dim_in, dim_out):
     return jacobian
 
 
-def _transformation_jacobian(processed_constraints, pre_replaced, dim):
+def transformation_jacobian(processed_constraints, pre_replaced, dim):
     """Return Jacobian of constraint transformation step.
 
     The Jacobian of the constraint transformation step is build as a block matrix
@@ -218,7 +238,25 @@ def _transformation_jacobian(processed_constraints, pre_replaced, dim):
     return jacobian
 
 
-def _post_replace_jacobian(post_replacements, dim):
+def post_replace(external_values, post_replacements):
+    """Return post-replaed parameters.
+
+    Args:
+        external_values (numpy.ndarray): 1d numpy array of external params.
+        post_replacments (numpy.ndarray): 1d numpy array with parameter positions.
+
+    Returns:
+        post_replaced (numpy.ndarray): 1d numpy array with post-replaced params.
+    """
+    post_replaced = external_values.copy()
+
+    mask = post_replacements >= 0
+    positions = post_replacements[mask]
+    post_replaced[mask] = post_replaced[positions]
+    return post_replaced
+
+
+def post_replace_jacobian(post_replacements, dim):
     """Return Jacobian of post-replacement step.
 
     Args:
@@ -237,26 +275,3 @@ def _post_replace_jacobian(post_replacements, dim):
     jacobian[positions_out, :] *= 0
     jacobian[positions_out, positions_in] = 1
     return jacobian
-
-
-def _pre_replace(internal_values, fixed_values, pre_replacements):
-    """Return pre-replaced parameters.
-
-    Args:
-        internal (numpy.ndarray): 1d numpy array with internal parameter.
-        fixed_values (numpy.ndarray): 1d numpy array with internal fixed values.
-        pre_replacements (numpy.ndarray): 1d numpy array with positions of internal
-            parameters that have to be copied before transformations are applied.
-            Negative if no value has to be copied.
-
-    Returns:
-        pre_replaced (numpy.ndarray): 1d numpy array with pre-replaced params.
-
-    """
-    pre_replaced = fixed_values.copy()
-
-    # do pre-replacements
-    mask = pre_replacements >= 0
-    positions = pre_replacements[mask]
-    pre_replaced[mask] = internal_values[positions]
-    return pre_replaced

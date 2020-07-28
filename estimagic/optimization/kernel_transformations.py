@@ -24,7 +24,6 @@ specific cases we refer to posts on math.stackexchange.com.
 
 """
 import numpy as np
-from scipy.sparse import csr_matrix
 
 from estimagic.optimization.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
@@ -68,7 +67,7 @@ def covariance_to_internal_jacobian(external_values, constr):
 
     internal = chol[np.tril_indices(len(chol))]
 
-    deriv = covariance_from_internal_jacobian(internal)
+    deriv = covariance_from_internal_jacobian(internal, constr=None)
     deriv = np.linalg.pinv(deriv)
     return deriv
 
@@ -168,7 +167,7 @@ def sdcorr_to_internal_jacobian(external_values, constr):
 
     internal = chol[np.tril_indices(len(chol))]
 
-    deriv = sdcorr_from_internal_jacobian(internal)
+    deriv = sdcorr_from_internal_jacobian(internal, constr=None)
     deriv = np.linalg.pinv(deriv)
     return deriv
 
@@ -523,11 +522,8 @@ def _commutation_matrix(dim):
     """
     row = np.arange(dim ** 2)
     col = row.reshape((dim, dim), order="F").ravel()
-
-    data = np.ones(dim ** 2, dtype=np.int8)
-    sparse_matrix = csr_matrix((data, (row, col)), shape=(dim ** 2, dim ** 2))
-
-    commuter = sparse_matrix.toarray()
+    commuter = np.zeros((dim ** 2, dim ** 2), dtype=np.int8)
+    commuter[row, col] = 1
     return commuter
 
 
