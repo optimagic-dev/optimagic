@@ -142,8 +142,6 @@ def minimize_bhhh(
             Number of calls of the jacobian function.
         jacobian : numpy.array
             Value of the aggregate Jacobian at x.
-        hessian : numpy.array
-            Value of the Hessian matrix at x.
         hessian_inverse : numpy.array
             Value of the inverse Hessian at x.
 
@@ -216,13 +214,10 @@ def minimize_bhhh(
             xk - np.clip(xk - agg_jacobian_value, lower_bounds, upper_bounds), ord=norm
         )
 
-        # Calculate BHHH hessian and the initial step size
-        hessian = np.dot(jacobian_value.T, jacobian_value)
-
-        # get numerically stable inverse
-        lower_triangle = np.linalg.cholesky(hessian)
+        # Calculate numerical stable BHHH hessian inverse and the initial step size
+        lower_triangle = np.linalg.qr(jacobian_value, mode="r").T
         lower_triangle_inverse = solve_triangular(
-            lower_triangle, np.eye(hessian.shape[0]), lower=True
+            lower_triangle, np.eye(lower_triangle.shape[0]), lower=True
         )
         hessian_inverse = np.dot(lower_triangle_inverse.T, lower_triangle_inverse)
 
@@ -274,7 +269,6 @@ def minimize_bhhh(
     results["n_evaluations"] = func_calls[0]
     results["n_evaluations_jacobian"] = grad_calls[0]
     results["jacobian"] = agg_jacobian_value
-    results["hessian"] = hessian
     results["hessian_inverse"] = hessian_inverse
     results["x"] = xk
 
