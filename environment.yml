@@ -36,6 +36,7 @@ dependencies:
   - sphinxcontrib-bibtex
   - sqlalchemy>=1.3
   - tox-conda
+  - statsmodels
   - pip:
     - black
     - blackcellmagic
