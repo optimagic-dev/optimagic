@@ -15,9 +15,9 @@ different space. The internal parameters are meaningless and have no direct
 interpretation. However, the internal parameter vector has two important properties:
 1. It is only subject to box constraints
 2. `reparametrize_from_internal(internal_parameter)` always produces a valid external
-   parameter vector (i.e. one that fulfills all constraints.
+parameter vector (i.e. one that fulfills all constraints.
 
-For more background see :ref:`_implementation_of_constraints`.
+For more background see :ref:`implementation_of_constraints`.
 
 The reparametrization from internal can be broken down into three separate steps:
 
@@ -275,7 +275,6 @@ def pre_replace_jacobian(pre_replacements, dim_in):
 
     Returns:
         jacobian (np.ndarray): The jacobian.
-
 
     Examples:
         # Note: The example is the same as in the doctest of pre_replace

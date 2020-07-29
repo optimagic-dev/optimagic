@@ -1,6 +1,5 @@
 .. _implementation_of_constraints:
 
-
 ===============================
 How Constraints Are Implemented
 ===============================
