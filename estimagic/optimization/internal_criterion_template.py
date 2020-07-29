@@ -69,8 +69,8 @@ def internal_criterion_and_derivative_template(
         params (pd.DataFrame): see :ref:`params`
         reparametrize_from_internal (callable): Function that takes x and returns a
             numpy array with the values of the external parameters.
-        convert_derivative (callable): Function that takes x and the
-            derivative of criterion at the reparametrized x and returns the derivative
+        convert_derivative (callable): Function that takes the derivative of criterion
+            at the external version of x and x and returns the derivative
             of the internal criterion.
         algorithm_info (dict): Dict with the following entries:
             "mandatory_criterion_entries": A list with mandatory entries in the output
@@ -172,7 +172,9 @@ def internal_criterion_and_derivative_template(
             new_criterion, new_external_derivative = criterion_and_derivative(
                 current_params
             )
-            new_derivative = convert_derivative(x, new_external_derivative)
+            new_derivative = convert_derivative(
+                external_derivative=new_external_derivative, internal_values=x
+            )
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
@@ -196,7 +198,9 @@ def internal_criterion_and_derivative_template(
         if "derivative" in to_dos:
             try:
                 new_external_derivative = derivative(current_params)
-                new_derivative = convert_derivative(x, new_external_derivative)
+                new_derivative = convert_derivative(
+                    external_derivative=new_external_derivative, internal_values=x
+                )
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception:

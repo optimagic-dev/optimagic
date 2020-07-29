@@ -18,6 +18,9 @@ from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.process_constraints import process_constraints
+from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
+from estimagic.optimization.reparametrize import post_replace_jacobian
+from estimagic.optimization.reparametrize import pre_replace_jacobian
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import hash_array
@@ -534,18 +537,32 @@ def _single_optimize(
     )
 
     # get partialed reparametrize from internal
+    pre_replacements = processed_params["_pre_replacements"].to_numpy()
+    post_replacements = processed_params["_post_replacements"].to_numpy()
+    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
+
     partialed_reparametrize_from_internal = functools.partial(
         reparametrize_from_internal,
-        fixed_values=processed_params["_internal_fixed_value"].to_numpy(),
-        pre_replacements=processed_params["_pre_replacements"].to_numpy(),
+        fixed_values=fixed_values,
+        pre_replacements=pre_replacements,
         processed_constraints=processed_constraints,
-        post_replacements=processed_params["_post_replacements"].to_numpy(),
+        post_replacements=post_replacements,
     )
 
     # get convert derivative
-    def convert_derivative(x, external_derivative):
-        warnings.warn("Derivative conversion is not yet implemented")
-        return external_derivative
+    pre_replace_jac = pre_replace_jacobian(
+        pre_replacements=pre_replacements, dim_in=len(x)
+    )
+    post_replace_jac = post_replace_jacobian(post_replacements=post_replacements)
+
+    convert_derivative = functools.partial(
+        convert_external_derivative_to_internal,
+        fixed_values=fixed_values,
+        pre_replacements=pre_replacements,
+        processed_constraints=process_constraints,
+        pre_replace_jac=pre_replace_jac,
+        post_replace_jac=post_replace_jac,
+    )
 
     # do first function evaluation
     first_eval = {
