@@ -108,19 +108,9 @@ worked on this software and you should recognize their effort.
     }
 
 
-Roadmap
+Warning
 =======
 
 Estimagic is still in alpha status and the API might still change. We will try to keep
 the API more stable When we switch versions `0.0.x` to `0.x.x`. Until then we want to
 achieve the following things:
-
-- Fully wrapping scipy.optimize and pygmo, including pygmo's capability for parallelized
-  optimizers
-- Convenient and robust functions to calculate covariance matrices of Maximum
-  Likelihood, GMM, MSM and Indirect Inference estimates.
-
-Afterwards we want to also implement the following extensions:
-
-- Support for general nonlinear constraints for some optimizers
-- Confidence intervals based on the profile-likelihood method
