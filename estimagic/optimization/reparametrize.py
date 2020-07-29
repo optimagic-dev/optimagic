@@ -178,9 +178,7 @@ def convert_external_derivative_to_internal(
 
     transform_jac = transformation_jacobian(processed_constraints, pre_replaced)
 
-    if len(external_derivative.shape) == 1:
-        external_derivative = external_derivative.reshape(1, -1)
-
+    external_derivative = np.atleast_2d(external_derivative)
     tall_external = external_derivative.shape[0] > external_derivative.shape[1]
 
     mat_list = [

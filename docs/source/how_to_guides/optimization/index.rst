@@ -10,3 +10,4 @@ Optimization
    how_to_use_constraints.ipynb
    how_to_use_logging
    how_to_use_the_dashboard
+   how_to_handle_errors_during_optimization

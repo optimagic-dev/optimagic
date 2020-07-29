@@ -5,7 +5,7 @@ import warnings
 import numpy as np
 
 import estimagic.batch_evaluators as be
-from estimagic.config import ALL_ALGORITHMS
+from estimagic.config import AVAILABLE_ALGORITHMS
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
@@ -421,8 +421,14 @@ def optimize(
         batch_evaluator_options = {}
 
     batch_evaluator_options["unpack_symbol"] = "**"
+    default_batch_error_handling = "raise" if len(arguments) == 1 else "continue"
+    batch_evaluator_options["error_handling"] = batch_evaluator_options.get(
+        "error_handling", default_batch_error_handling
+    )
 
     res = batch_evaluator(_single_optimize, arguments, **batch_evaluator_options)
+
+    res = [_dummy_result_from_traceback(r) for (r) in res]
 
     res = res[0] if len(res) == 1 else res
 
@@ -518,9 +524,9 @@ def _single_optimize(
 
     if isinstance(algorithm, str):
         try:
-            algorithm = ALL_ALGORITHMS[algorithm]
+            algorithm = AVAILABLE_ALGORITHMS[algorithm]
         except KeyError:
-            proposed = propose_algorithms(algorithm, list(ALL_ALGORITHMS))
+            proposed = propose_algorithms(algorithm, list(AVAILABLE_ALGORITHMS))
             raise ValueError(f"Invalid algorithm: {algorithm}. Did you mean {proposed}")
 
     algo_options = _adjust_options_to_algorithms(
@@ -832,3 +838,22 @@ def _adjust_options_to_algorithms(
         reduced["upper_bounds"] = upper_bounds
 
     return reduced
+
+
+def _dummy_result_from_traceback(candidate):
+    if isinstance(candidate, str):
+        out = {
+            "solution_params": None,
+            "solution_criterion": None,
+            "solution_derivative": None,
+            "solution_hessian": None,
+            "n_criterion_evaluations": None,
+            "n_derivative_evaluations": None,
+            "n_iterations": None,
+            "success": False,
+            "reached_convergence_criterion": None,
+            "message": candidate,
+        }
+    else:
+        out = candidate
+    return out

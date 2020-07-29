@@ -15,7 +15,7 @@ DOCS_DIR = Path(__file__).parent.parent / "docs"
 DEFAULT_N_CORES = 1
 
 
-ALL_ALGORITHMS = dict(inspect.getmembers(scipy_optimizers, inspect.isfunction))
-ALL_ALGORITHMS = {
-    key: val for key, val in ALL_ALGORITHMS.items() if not key.startswith("_")
+AVAILABLE_ALGORITHMS = dict(inspect.getmembers(scipy_optimizers, inspect.isfunction))
+AVAILABLE_ALGORITHMS = {
+    key: val for key, val in AVAILABLE_ALGORITHMS.items() if not key.startswith("_")
 }

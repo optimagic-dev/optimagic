@@ -11,7 +11,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.config import ALL_ALGORITHMS
+from estimagic.config import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
@@ -147,7 +147,7 @@ def switch_sign(func):
 # ======================================================================================
 
 test_cases = []
-for alg in ALL_ALGORITHMS:
+for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
 
 
