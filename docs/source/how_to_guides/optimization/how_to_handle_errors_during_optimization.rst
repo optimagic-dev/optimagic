@@ -46,6 +46,8 @@ we replace the criterion function by a penalty term that can be fix or parameter
 dependent and the optimizer will never know that an error occurred. Note that you will
 still be warned about all errors.
 
+The default error handling is ``"raise"``.
+
 ``error_penalty`` is a dict with the entries "constant" (float) and "slope" (float)
 which determine the value of the penalty. The penalty function is then calculated as
 ``constant + slope * norm(params - start_params)`` where ``norm`` is the euclidean

@@ -15,6 +15,22 @@ from estimagic.config import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
+BOUNDS_FREE_ALGORITHMS = [
+    "scipy_neldermead",
+    "scipy_cg",
+    "scipy_bfgs",
+    "scipy_newton_cg",
+    "scipy_cobyla",
+    "scipy_dogleg",
+    "scipy_trust_ncg",
+    "scipy_trust_exact",
+    "scipy_trust_krylov",
+]
+
+BOUNDS_SUPPORTING_ALLGORITHMS = [
+    alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
+]
+
 
 # ======================================================================================
 # Define example functions
@@ -75,6 +91,7 @@ def sos_criterion_and_jacobian(params):
 
 
 def get_test_cases_for_algorithm(algorithm):
+    """Generate list of all possible argument combinations for algorithm."""
     is_least_squares = algorithm in ["tao_pounders"]
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
@@ -152,12 +169,7 @@ for alg in AVAILABLE_ALGORITHMS:
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
-def test_algorithm_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
-    """Simple test with and without closed form derivatives.
-
-    Basically we just test many ways of specifying the same problem.
-
-    """
+def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
     params["lower"] = -10
     params["upper"] = 10
@@ -165,6 +177,314 @@ def test_algorithm_without_constraints(algo, direction, crit, deriv, crit_and_de
     optimize_func = minimize if direction == "minimize" else maximize
 
     res = optimize_func(
-        criterion=crit, params=params, algorithm=algo, error_handling="raise",
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
     )
     aaae(res["solution_params"]["value"].to_numpy(), np.zeros(10))
+
+
+# constraints are only applicable to algorithms that support bounds
+bound_cases = []
+for alg in BOUNDS_SUPPORTING_ALLGORITHMS:
+    bound_cases += get_test_cases_for_algorithm(alg)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=np.ones((5, 1)), columns=["value"])
+    params["lower"] = [1, -10, -10, -10, -10.0]
+    params["upper"] = [10, 10, 10, 10, -1.0]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+    )
+
+    expected = np.array([1, 0, 0, 0, -1.0])
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
+    params["lower"] = [-10, -10, -10, -10, -10.0]
+    params["upper"] = [10, 10, 10, 10, 10]
+
+    constraints = [{"loc": [1, 3], "type": "fixed", "value": [7.5, -2]}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.array([0, 7.5, 0, -2, 0.0])
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
+    params["lower"] = [-10, -10, -10, -10, -10.0]
+    params["upper"] = [10, 10, 10, 10, 10]
+
+    constraints = [{"loc": [0, 4], "type": "equality"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.zeros(5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_pairwise_equality_constraint(
+    algo, direction, crit, deriv, crit_and_deriv
+):
+    params = pd.DataFrame(data=[[1], [2], [1], [2], [1]], columns=["value"])
+    params["lower"] = [-10, -10, -10, -10, -10.0]
+    params["upper"] = [10, 10, 10, 10, 10]
+
+    constraints = [{"locs": [[0, 1], [2, 3]], "type": "pairwise_equality"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.zeros(5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
+
+    constraints = [{"loc": [0, 1, 2], "type": "increasing"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.zeros(5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
+
+    constraints = [{"loc": [2, 3, 4], "type": "decreasing"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.zeros(5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[1], [2], [0.1], [0.3], [0.6]], columns=["value"])
+
+    constraints = [{"loc": [2, 3, 4], "type": "linear", "value": 1, "weights": 1}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.array([0, 0, 1 / 3, 1 / 3, 1 / 3])
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[0.3], [0.0], [0.6], [0.1], [5]], columns=["value"])
+
+    constraints = [{"loc": [0, 1, 2, 3], "type": "probability"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.array([0.25, 0.25, 0.25, 0.25, 0])
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_covariance_constraint_no_bounds_distance(
+    algo, direction, crit, deriv, crit_and_deriv
+):
+    params = pd.DataFrame(data=[[1], [0.1], [2], [3], [2]], columns=["value"])
+
+    constraints = [{"loc": [0, 1, 2], "type": "covariance"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.zeros(5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_covariance_constraint_bounds_distance(
+    algo, direction, crit, deriv, crit_and_deriv
+):
+    # Note: Robust bounds only have an effect for 3x3 covariance matrices or larger
+    params = pd.DataFrame(data=[[1], [0.1], [2], [0.2], [0.3], [3]], columns=["value"])
+
+    constraints = [
+        {
+            "loc": [0, 1, 2, 3, 4, 5],
+            "type": "covariance",
+            "bounds_distance": 0.1,
+            "robust_bounds": True,
+        }
+    ]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.array([0.1, 0, 0.1, 0, 0, 0.1])
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_sdcorr_constraint_no_bounds_distance(
+    algo, direction, crit, deriv, crit_and_deriv
+):
+    params = pd.DataFrame(data=[[1], [2], [0.1], [3], [2]], columns=["value"])
+
+    constraints = [{"loc": [0, 1, 2], "type": "sdcorr"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.zeros(5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_sdcorr_constraint_bounds_distance(
+    algo, direction, crit, deriv, crit_and_deriv
+):
+    # Note: Robust bounds only have an effect for 3x3 sdcorr matrices or larger
+    params = pd.DataFrame(data=[[1], [2], [3], [0.1], [0.2], [0.3]], columns=["value"])
+
+    constraints = [
+        {
+            "loc": [0, 1, 2, 3, 4, 5],
+            "type": "sdcorr",
+            "bounds_distance": 0.1,
+            "robust_bounds": True,
+        }
+    ]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+
+
+def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():
+    params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
+
+    def raising_crit_and_deriv(params):
+        raise Exception()
+
+    with pytest.raises(Exception):
+        minimize(
+            criterion=sos_scalar_criterion,
+            params=params,
+            algorithm="scipy_lbfgsb",
+            criterion_and_derivative=raising_crit_and_deriv,
+        )

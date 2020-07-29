@@ -313,6 +313,7 @@ def _create_internal_bounds(lower, upper, pc):
             diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             bd = constr.get("bounds_distance", 0)
+            bd = np.sqrt(bd) if constr["type"] == "covariance" else bd
             int_lower.iloc[diag_indices] = np.maximum(int_lower.iloc[diag_indices], bd)
         elif constr["type"] == "probability":
             int_lower.iloc[constr["index"]] = 0

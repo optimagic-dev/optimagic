@@ -559,7 +559,7 @@ def _single_optimize(
         convert_external_derivative_to_internal,
         fixed_values=fixed_values,
         pre_replacements=pre_replacements,
-        processed_constraints=process_constraints,
+        processed_constraints=processed_constraints,
         pre_replace_jac=pre_replace_jac,
         post_replace_jac=post_replace_jac,
     )
