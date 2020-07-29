@@ -37,27 +37,21 @@ def numpy_interface(params, constraints=None, numpy_output=False):
             converted to numpy arrays.
 
     """
-    if "_internal_free" not in params.columns:
-        constraints, params = process_constraints(constraints, params)
+    pc, pp = process_constraints(constraints, params)
 
     def decorator_numpy_interface(func):
         @functools.wraps(func)
         def wrapper_numpy_interface(x, *args, **kwargs):
-            if isinstance(x, pd.DataFrame) and "value" in x.columns:
+            if isinstance(x, pd.DataFrame):
                 p = x
-            elif constraints is None:
-                p = params.copy()
-                p["value"] = x
             elif isinstance(x, np.ndarray):
-                p = reparametrize_from_internal(
+                p = params.copy()
+                p["value"] = reparametrize_from_internal(
                     internal=x,
-                    fixed_values=params["_internal_fixed_value"].to_numpy(),
-                    pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
-                    processed_constraints=constraints,
-                    post_replacements=(
-                        params["_post_replacements"].to_numpy().astype(int)
-                    ),
-                    processed_params=params,
+                    fixed_values=pp["_internal_fixed_value"].to_numpy(),
+                    pre_replacements=pp["_pre_replacements"].to_numpy().astype(int),
+                    processed_constraints=pc,
+                    post_replacements=pp["_post_replacements"].to_numpy().astype(int),
                 )
             else:
                 raise ValueError(
@@ -124,14 +118,14 @@ def catch(
                 if reraise:
                     raise e
 
-                exc_info = get_traceback()
+                tb = get_traceback()
 
                 if warn:
-                    msg = f"The following exception was caught:\n\n{exc_info}"
+                    msg = f"The following exception was caught:\n\n{tb}"
                     warnings.warn(msg)
 
                 if default == "__traceback__":
-                    res = exc_info
+                    res = tb
                 elif callable(default):
                     res = default(*args, **kwargs)
                 else:
