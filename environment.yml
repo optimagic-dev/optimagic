@@ -17,6 +17,7 @@ dependencies:
   - conda-verify
   - fuzzywuzzy
   - joblib
+  - cloudpickle
   - jupyterlab
   - nbsphinx
   - numpy=1.16
