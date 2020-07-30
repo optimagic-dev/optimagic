@@ -158,11 +158,10 @@ def internal_criterion_and_derivative_template(
             new_derivative, new_criterion = first_derivative(func, x, **options)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
-            tb = get_traceback()
-            caught_exceptions.append(tb)
+        except Exception as e:
+            caught_exceptions.append(get_traceback())
             if "criterion" in cache_entry:
-                raise Exception(DERIVATIVE_ERROR_MESSAGE + "\n\n" + tb)
+                raise Exception(DERIVATIVE_ERROR_MESSAGE) from e
 
     elif "criterion_and_derivative" in to_dos:
         try:
@@ -174,11 +173,10 @@ def internal_criterion_and_derivative_template(
             )
         except (KeyboardInterrupt, SystemExit):
             raise
-        except Exception:
-            tb = get_traceback()
-            caught_exceptions.append(tb)
+        except Exception as e:
+            caught_exceptions.append(get_traceback())
             if "criterion" in cache_entry:
-                raise Exception(DERIVATIVE_ERROR_MESSAGE + "\n\n" + tb)
+                raise Exception(DERIVATIVE_ERROR_MESSAGE) from e
 
     else:
         if "criterion" in to_dos:
@@ -186,11 +184,10 @@ def internal_criterion_and_derivative_template(
                 new_criterion = criterion(current_params)
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except Exception:
-                tb = get_traceback()
-                caught_exceptions.append(tb)
+            except Exception as e:
+                caught_exceptions.append(get_traceback())
                 if "derivative" in cache_entry:
-                    raise Exception(CRITERION_ERROR_MESSAGE + "\n\n" + tb)
+                    raise Exception(CRITERION_ERROR_MESSAGE) from e
 
         if "derivative" in to_dos:
             try:
@@ -200,11 +197,10 @@ def internal_criterion_and_derivative_template(
                 )
             except (KeyboardInterrupt, SystemExit):
                 raise
-            except Exception:
-                tb = get_traceback()
-                caught_exceptions.append(tb)
+            except Exception as e:
+                caught_exceptions.append(get_traceback())
                 if "criterion" in cache_entry:
-                    raise Exception(DERIVATIVE_ERROR_MESSAGE + "\n\n" + tb)
+                    raise Exception(DERIVATIVE_ERROR_MESSAGE) from e
 
     if caught_exceptions:
         if error_handling == "continue":

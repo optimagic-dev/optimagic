@@ -75,22 +75,20 @@ def load_database(metadata=None, path=None, fast_logging=False):
     return metadata
 
 
-def make_optimization_iteration_table(
-    database, first_eval, table_name="optimization_iterations", if_exists="extend"
-):
+def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
     """Generate a table for information that is generated with each function evaluation.
 
     Args:
         database (sqlalchemy.MetaData): Bound metadata object.
         first_eval (dict): The inputs and output of the first criterion evaluation. Has
             the entries "internal_params", "external_params" and "output".
-        table_name (str): Name of the table, optional.
 
     Returns:
         database (sqlalchemy.MetaData):Bound metadata object with added table.
 
     """
-    _handle_existing_table(database, table_name, if_exists)
+    table_name = "optimization_iterations"
+    _handle_existing_table(database, "optimization_iterations", if_exists)
 
     columns = [
         Column("rowid", Integer, primary_key=True),
@@ -120,9 +118,8 @@ def make_optimization_iteration_table(
     database.create_all(database.bind)
 
 
-def make_optimization_status_table(
-    database, table_name="optimization_status", if_exists="extend"
-):
+def make_optimization_status_table(database, if_exists="extend"):
+    table_name = "optimization_status"
     _handle_existing_table(database, table_name, if_exists)
     columns = [
         Column("rowid", Integer, primary_key=True),
@@ -134,9 +131,8 @@ def make_optimization_status_table(
     database.create_all(database.bind)
 
 
-def make_optimization_problem_table(
-    database, table_name="optimization_problem", if_exists="extend"
-):
+def make_optimization_problem_table(database, if_exists="extend"):
+    table_name = "optimization_problem"
     _handle_existing_table(database, table_name, if_exists)
 
     columns = [

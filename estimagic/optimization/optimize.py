@@ -652,12 +652,8 @@ def _log_final_status(res, database, path, log_options):
     else:
         status = "failed"
 
-    status_table_name = _table_name_with_suffix(
-        "optimization_status", log_options.get("suffix", None)
-    )
-
     fast_logging = log_options.get("fast_logging", False)
-    append_row({"status": status}, status_table_name, database, path, fast_logging)
+    append_row({"status": status}, "optimization_status", database, path, fast_logging)
 
 
 def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
@@ -685,33 +681,24 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
     fast_logging = log_options.get("fast_logging", False)
     if_exists = log_options.get("if_exists", "extend")
     database = load_database(path=path, fast_logging=fast_logging)
-    suffix = log_options.get("suffix", None)
 
     # create the optimization_iterations table
-    iterations_table_name = _table_name_with_suffix("optimization_iterations", suffix)
     make_optimization_iteration_table(
-        database=database,
-        first_eval=first_eval,
-        table_name=iterations_table_name,
-        if_exists=if_exists,
+        database=database, first_eval=first_eval, if_exists=if_exists,
     )
 
     # create and initialize the optimization_status table
-    status_table_name = _table_name_with_suffix("optimization_status", suffix)
-    make_optimization_status_table(database, status_table_name, if_exists)
-    append_row({"status": "running"}, status_table_name, database, path, fast_logging)
+    make_optimization_status_table(database, if_exists)
+    append_row(
+        {"status": "running"}, "optimization_status", database, path, fast_logging
+    )
 
     # create_and_initialize the optimization_problem table
-    problem_table_name = _table_name_with_suffix("optimization_problem", suffix)
-    make_optimization_problem_table(database, problem_table_name, if_exists)
+    make_optimization_problem_table(database, if_exists)
 
-    append_row(problem_data, problem_table_name, database, path, fast_logging)
+    append_row(problem_data, "optimization_problem", database, path, fast_logging)
 
     return database
-
-
-def _table_name_with_suffix(base, suffix):
-    return base if suffix in (None, "") else base + f"_{suffix}"
 
 
 def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bounds):
