@@ -70,6 +70,7 @@ The arguments  of criterion_and_derivative are:
       criterion function in parallel. If so, caching is disabled.
     - "needs_scaling": Bool. True if the algorithm is not scale invariant. In that case
       we can issue a warning if the user did not scale his problem with estimagic.
+    - "name": The name of the algorithm that can be displayed in error messages
 
 ``criterion_and_derivative`` is the centerpiece of how estimagic achieves its magic.
 It does logging, converts the internal parameters into a DataFrame for the user provided

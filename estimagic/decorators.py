@@ -37,7 +37,12 @@ def numpy_interface(params, constraints=None, numpy_output=False):
             converted to numpy arrays.
 
     """
+    constraints = [] if constraints is None else constraints
     pc, pp = process_constraints(constraints, params)
+
+    fixed_values = pp["_internal_fixed_value"].to_numpy()
+    pre_replacements = pp["_pre_replacements"].to_numpy().astype(int)
+    post_replacements = pp["_post_replacements"].to_numpy().astype(int)
 
     def decorator_numpy_interface(func):
         @functools.wraps(func)
@@ -48,10 +53,10 @@ def numpy_interface(params, constraints=None, numpy_output=False):
                 p = params.copy()
                 p["value"] = reparametrize_from_internal(
                     internal=x,
-                    fixed_values=pp["_internal_fixed_value"].to_numpy(),
-                    pre_replacements=pp["_pre_replacements"].to_numpy().astype(int),
+                    fixed_values=fixed_values,
+                    pre_replacements=pre_replacements,
                     processed_constraints=pc,
-                    post_replacements=pp["_post_replacements"].to_numpy().astype(int),
+                    post_replacements=post_replacements,
                 )
             else:
                 raise ValueError(

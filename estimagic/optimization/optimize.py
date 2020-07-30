@@ -750,7 +750,6 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
         "lower_bounds": lower_bounds,
         "upper_bounds": upper_bounds,
         "error_handling": default_error_handling,
-        "return_func_value": True,
     }
 
     numdiff_options = {**default_numdiff_options, **numdiff_options}

@@ -73,16 +73,12 @@ def internal_criterion_and_derivative_template(
             at the external version of x and x and returns the derivative
             of the internal criterion.
         algorithm_info (dict): Dict with the following entries:
-            "mandatory_criterion_entries": A list with mandatory entries in the output
-                of the criterion function.
-            "contributions_aggregation": One of "sum", "sum_of_squares". Only relevant
-                if "contributions" is a mandatory criterion entry.
-            "derivative_key": One of the mandatory criterion entries. If numerical
-                derivatives are used, this is the output of criterion that is
-                differentiated. If derivatives are provided, we still need this if we
-                have to adjust the derivative for the penalty.
+            "primary_criterion_entry": One of "value", "contributions" and
+                "root_contributinos"
             "parallelizes": Bool that indicates if the algorithm calls the internal
                 criterion function in parallel. If so, caching is disabled.
+            "needs_scaling": bool
+            "name": string
         derivative (callable, optional): (partialed) user provided function that
             calculates the first derivative of criterion. For most algorithm, this is
             the gradient of the scalar output (or "value" entry of the dict). However
@@ -156,6 +152,7 @@ def internal_criterion_and_derivative_template(
         options = numdiff_options.copy()
         options["key"] = algorithm_info["primary_criterion_entry"]
         options["f0"] = cache_entry.get("criterion", None)
+        options["return_func_value"] = True
 
         try:
             new_derivative, new_criterion = first_derivative(func, x, **options)
@@ -225,7 +222,9 @@ def internal_criterion_and_derivative_template(
         cache_entry.get("criterion", new_criterion), algorithm_info
     )
 
-    _check_derivative(cache_entry.get("derivative", new_derivative), algorithm_info)
+    new_derivative = _check_and_harmonize_derivative(
+        cache_entry.get("derivative", new_derivative), algorithm_info
+    )
 
     if (new_criterion is not None or new_derivative is not None) and database:
         _log_new_evaluations(
@@ -289,42 +288,60 @@ def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
     return to_dos
 
 
-def _penalty_and_derivative(x, first_eval, error_penalty, algorithm_info, direction):
+def _penalty_and_derivative(x, first_eval, error_penalty, algorithm_info):
     constant = error_penalty["constant"]
     slope = error_penalty["slope"]
     x0 = first_eval["internal_params"]
-    distance = np.linalg.norm(x - x0)
-
-    scalar_penalty = constant + slope * distance
-    scalar_derivative = slope * 2 * (x - x0)
 
     primary = algorithm_info["primary_criterion_entry"]
-    aggregation = algorithm_info["contributions_aggregation"]
 
     if primary == "value":
-        penalty = scalar_penalty
-        derivative = scalar_derivative
-
+        penalty = _penalty_value(x, constant, slope, x0)
+        derivative = _penalty_value_derivative(x, constant, slope, x0)
     elif primary == "contributions":
-        penalty = np.zeros_like(first_eval["output"][primary])
-        n_contribs = len(penalty)
-        derivative = np.zeros(n_contribs, len(x))
-        if aggregation == "sum":
-            penalty[:] = scalar_penalty / n_contribs
-            derivative[:] = scalar_derivative / n_contribs
-        elif aggregation == "sum_of_squares":
-            penalty[:] = np.sqrt(scalar_penalty / n_contribs)
-            derivative[:] = slope * (x - x0) / np.sqrt(n_contribs * scalar_penalty)
-        else:
-            raise ValueError()
+        dim_out = len(first_eval["output"][primary])
+        penalty = _penalty_contributions(x, constant, slope, x0, dim_out)
+        derivative = _penalty_contributions_derivative(x, constant, slope, x0, dim_out)
+    elif primary == "root_contributions":
+        dim_out = len(first_eval["output"][primary])
+        penalty == _penalty_root_contributions(x, constant, slope, x0, dim_out)
+        derivative = _penalty_root_contributions_derivative(
+            x, constant, slope, x0, dim_out
+        )
     else:
         raise ValueError()
 
-    if direction == "maximize":
-        penalty = -penalty
-        derivative = -derivative
-
     return penalty, derivative
+
+
+def _penalty_value(x, constant, slope, x0, dim_out=None):
+    return constant + slope * np.linalg.norm(x - x0)
+
+
+def _penalty_contributions(x, constant, slope, x0, dim_out):
+    contrib = (constant + slope * np.linalg.norm(x - x0)) / dim_out
+    return np.ones(dim_out) * contrib
+
+
+def _penalty_root_contributions(x, constant, slope, x0, dim_out):
+    contrib = np.sqrt((constant + slope * np.linalg.norm(x - x0)) / dim_out)
+    return np.ones(dim_out) * contrib
+
+
+def _penalty_value_derivative(x, constant, slope, x0, dim_out=None):
+    return slope * (x - x0) / np.linalg.norm(x - x0)
+
+
+def _penalty_contributions_derivative(x, constant, slope, x0, dim_out):
+    row = slope * (x - x0) / (dim_out * np.linalg.norm(x - x0))
+    return np.full((dim_out, len(x)), row)
+
+
+def _penalty_root_contributions_derivative(x, constant, slope, x0, dim_out):
+    inner_deriv = slope * (x - x0) / np.linalg.norm(x - x0)
+    outer_deriv = 0.5 / np.sqrt(_penalty_value(x, constant, slope, x0) * dim_out)
+    row = outer_deriv * inner_deriv
+    return np.full((dim_out, len(x)), row)
 
 
 def _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_size):
@@ -342,7 +359,7 @@ def _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_s
 
 def _check_and_harmonize_criterion_output(output, algorithm_info):
 
-    algo_name = algorithm_info["name"]
+    algo_name = algorithm_info.get("name", "your algorithm")
     primary = algorithm_info["primary_criterion_entry"]
 
     if output is not None:
@@ -366,7 +383,7 @@ def _check_and_harmonize_criterion_output(output, algorithm_info):
     return output
 
 
-def _check_derivative(derivative, algorithm_info):
+def _check_and_harmonize_derivative(derivative, algorithm_info):
     primary = algorithm_info["primary_criterion_entry"]
     if primary == "value" and np.atleast_2d(derivative).shape[0] != 1:
         raise ValueError("The derivative of a scalar optimizer must be a 1d array.")
@@ -377,6 +394,7 @@ def _check_derivative(derivative, algorithm_info):
                 "The derivative of a n optimizer that exploits a sum or sum of squares "
                 "structure must be a 2d array."
             )
+    return derivative
 
 
 def _log_new_evaluations(
