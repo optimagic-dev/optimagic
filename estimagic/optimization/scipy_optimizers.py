@@ -3,6 +3,13 @@ import functools
 import numpy as np
 import scipy
 
+from estimagic.optimization.default_algo_options import GRADIENT_TOLERANCE
+from estimagic.optimization.default_algo_options import LIMITED_MEMORY_STORAGE_LENGTH
+from estimagic.optimization.default_algo_options import MAX_CRITERION_EVALUATIONS
+from estimagic.optimization.default_algo_options import MAX_ITERATIONS
+from estimagic.optimization.default_algo_options import MAX_LINE_SEARCH_STEPS
+from estimagic.optimization.default_algo_options import RELATIVE_CRITERION_TOLERANCE
+
 
 DEFAULT_ALGO_INFO = {
     "primary_criterion_entry": "value",
@@ -17,12 +24,12 @@ def scipy_lbfgsb(
     lower_bounds=None,
     upper_bounds=None,
     *,
-    relative_criterion_tolerance=2e-9,
-    gradient_tolerance=1e-5,
-    max_criterion_evaluations=1_000_000,
-    max_iterations=1_000_000,
-    limited_memory_storage_length=10,
-    max_line_search_steps=20,
+    relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
+    gradient_tolerance=GRADIENT_TOLERANCE,
+    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
+    max_iterations=MAX_ITERATIONS,
+    limited_memory_storage_length=LIMITED_MEMORY_STORAGE_LENGTH,
+    max_line_search_steps=MAX_LINE_SEARCH_STEPS,
 ):
     """Minimize a scalar function of one or more variables using the L-BFGS-B algorithm.
 
