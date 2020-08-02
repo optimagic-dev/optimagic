@@ -344,7 +344,7 @@ def _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_s
     cache_entry = cache.get(x_hash, {}).copy()
     if len(cache) >= cache_size:
         # list(dict) returns keys in insertion order: https://tinyurl.com/o464nrz
-        oldest_entry = list(cache[0])
+        oldest_entry = list(cache)[0]
         del cache[oldest_entry]
     if new_criterion is not None:
         cache_entry["criterion"] = new_criterion
