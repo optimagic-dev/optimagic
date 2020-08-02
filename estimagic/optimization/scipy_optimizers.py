@@ -34,7 +34,7 @@ def scipy_lbfgsb(
     """Minimize a scalar function of one or more variables using the L-BFGS-B algorithm.
 
     The optimizer is taken from scipy, which calls the Fortran code written by the
-    original Authors of the algorithm. The Fortran code includes the corrections
+    original authors of the algorithm. The Fortran code includes the corrections
     and improvements that were introduced in a follow up paper.
 
     lbfgsb is a limited memory version of the original bfgs algorithm, that deals with

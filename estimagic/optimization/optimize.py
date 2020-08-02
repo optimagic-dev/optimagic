@@ -466,7 +466,6 @@ def _single_optimize(
 
     """
     # store all arguments in a dictionary to save them in the database later
-
     problem_data = {
         "direction": direction,
         # "criterion"-criterion,
@@ -505,7 +504,6 @@ def _single_optimize(
     problem_data["params"] = params
 
     # get internal parameters and bounds
-
     x = reparametrize_to_internal(
         params["value"].to_numpy(),
         processed_params["_internal_free"].to_numpy(),
@@ -530,7 +528,7 @@ def _single_optimize(
             algorithm = AVAILABLE_ALGORITHMS[algorithm]
         except KeyError:
             proposed = propose_algorithms(algorithm, list(AVAILABLE_ALGORITHMS))
-            raise ValueError(f"Invalid algorithm: {algorithm}. Did you mean {proposed}")
+            raise ValueError(f"Invalid algorithm: {algorithm}. Did you mean {proposed}?")
 
     algo_options = _adjust_options_to_algorithms(
         algo_options, lower_bounds, upper_bounds, algorithm, algo_name
