@@ -106,6 +106,79 @@ def scipy_lbfgsb(
     return _process_scipy_result(res)
 
 
+def scipy_slsqp(
+    criterion_and_derivative,
+    x,
+    lower_bounds=None,
+    upper_bounds=None,
+    *,
+    relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
+    max_iterations=MAX_ITERATIONS,
+):
+    """Minimize a scalar function of one or more variables using the SLSQP algorithm.
+
+    SLSQP stands for Sequential Least Squares Programming and is a line search algorithm.
+
+    SLSQP is well suited for continuously differentiable scalar optimization problems
+    with up to several hundred parameters.
+
+    The optimizer is taken from scipy, which wraps the SLSQP Optimization subroutine
+    originally implemented by [Dieter Kraft]_.
+
+    scipy's SLSQP implementation natively supports equality and inequality constraints.
+    However, estimagic does not pass constraints on to the algorithm. Instead, it
+    presents the reparametrized criterion to the optimizer such that the problem appears
+    unconstrained to the optimizer since the reparametrizations can yield significant
+    dimensionality reduction.
+
+    Args:
+        relative_criterion_tolerance (float): Precision goal for the value of f in the
+            stopping criterion according to the scipy documentation. Possibly equal to
+            the ACC (for accuracy) argument mentioned in [Dieter Kraft]_ (p.28), where
+            it is only mentioned that an Armijo-type line search is done when ACC > 0.
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    .. [Dieter Kraft] A software package for sequential quadratic programming. 1988.
+            Tech. Rep. DFVLR-FB 88-28, DLR German Aerospace Center –
+            Institute for Flight Mechanics, Koln, Germany.
+            http://degenerateconic.com/wp-content/uploads/2018/03/DFVLR_FB_88_28.pdf
+
+    """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_slsqp"
+
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+
+    gradient = functools.partial(
+        criterion_and_derivative, task="derivative", algorithm_info=algo_info
+    )
+
+    options = {
+        "maxiter": max_iterations,
+        "ftol": relative_criterion_tolerance,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=func,
+        x0=x,
+        method="SLSQP",
+        jac=gradient,
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        options=options,
+    )
+
+    return _process_scipy_result(res)
+
+
+# =====================================================================================
+
+
 def _process_scipy_result(scipy_results_obj):
     # using get with defaults to access dict elements is just a safety measure
     raw_res = {**scipy_results_obj}
@@ -132,6 +205,3 @@ def _get_scipy_bounds(lower_bounds, upper_bounds):
     bounds = bounds.astype("object")
     bounds[mask] = None
     return list(map(tuple, bounds))
-
-
-# ======================================================================================

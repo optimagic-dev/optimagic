@@ -31,6 +31,7 @@ BOUNDS_SUPPORTING_ALLGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
+PRECISION = 4
 
 # ======================================================================================
 # Define example functions
@@ -209,7 +210,7 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
     )
 
     expected = np.array([1, 0, 0, 0, -1.0])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -232,7 +233,7 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     )
 
     expected = np.array([0, 7.5, 0, -2, 0.0])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -255,7 +256,7 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     )
 
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -280,7 +281,7 @@ def test_with_pairwise_equality_constraint(
     )
 
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -301,7 +302,7 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     )
 
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -322,7 +323,7 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     )
 
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -343,7 +344,7 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     )
 
     expected = np.array([0, 0, 1 / 3, 1 / 3, 1 / 3])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -364,7 +365,7 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
     )
 
     expected = np.array([0.25, 0.25, 0.25, 0.25, 0])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -387,7 +388,7 @@ def test_with_covariance_constraint_no_bounds_distance(
     )
 
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -418,7 +419,7 @@ def test_with_covariance_constraint_bounds_distance(
     )
 
     expected = np.array([0.1, 0, 0.1, 0, 0, 0.1])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -441,7 +442,7 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     )
 
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
@@ -472,7 +473,7 @@ def test_with_sdcorr_constraint_bounds_distance(
     )
 
     expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
 
 
 def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():

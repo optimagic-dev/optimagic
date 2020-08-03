@@ -528,7 +528,9 @@ def _single_optimize(
             algorithm = AVAILABLE_ALGORITHMS[algorithm]
         except KeyError:
             proposed = propose_algorithms(algorithm, list(AVAILABLE_ALGORITHMS))
-            raise ValueError(f"Invalid algorithm: {algorithm}. Did you mean {proposed}?")
+            raise ValueError(
+                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
+            )
 
     algo_options = _adjust_options_to_algorithms(
         algo_options, lower_bounds, upper_bounds, algorithm, algo_name
