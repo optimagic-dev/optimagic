@@ -122,20 +122,12 @@ def scipy_slsqp(
     SLSQP is well suited for continuously differentiable scalar optimization problems
     with up to several hundred parameters.
 
-    The optimizer is taken from scipy, which wraps the SLSQP Optimization subroutine
+    The optimizer is taken from scipy which wraps the SLSQP optimization subroutine
     originally implemented by [Dieter Kraft]_.
-
-    scipy's SLSQP implementation natively supports equality and inequality constraints.
-    However, estimagic does not pass constraints on to the algorithm. Instead, it
-    presents the reparametrized criterion to the optimizer such that the problem appears
-    unconstrained to the optimizer since the reparametrizations can yield significant
-    dimensionality reduction.
 
     Args:
         relative_criterion_tolerance (float): Precision goal for the value of f in the
-            stopping criterion according to the scipy documentation. Possibly equal to
-            the ACC (for accuracy) argument mentioned in [Dieter Kraft]_ (p.28), where
-            it is only mentioned that an Armijo-type line search is done when ACC > 0.
+            stopping criterion.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
 
