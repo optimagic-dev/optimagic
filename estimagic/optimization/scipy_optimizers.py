@@ -3,6 +3,8 @@ import functools
 import numpy as np
 import scipy
 
+from estimagic.optimization.default_algo_options import ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.optimization.default_algo_options import ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.default_algo_options import GRADIENT_TOLERANCE
 from estimagic.optimization.default_algo_options import LIMITED_MEMORY_STORAGE_LENGTH
 from estimagic.optimization.default_algo_options import MAX_CRITERION_EVALUATIONS
@@ -163,6 +165,57 @@ def scipy_slsqp(
         jac=gradient,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
+    )
+
+    return _process_scipy_result(res)
+
+
+def scipy_neldermead(
+    criterion_and_derivative,
+    x,
+    *,
+    max_iterations=MAX_ITERATIONS,
+    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
+    absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE + 1e-05,
+    absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE + 1e-05,
+):
+    """Minimize a scalar function using the Nelder-Mead algorithm.
+
+    The Nelder-Mead algorithm is a direct search method (based on function comparison)
+    and is often applied to nonlinear optimization problems for which derivatives are
+    not known.
+    Unlike modern optimization methods, the Nelder–Mead heuristic can converge to a
+    non-stationary point, unless the problem satisfies stronger conditions than are
+    necessary for modern methods.
+
+    Args:
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+        max_criterion_evaluations (int): If the maximum number of function evaluation is
+            reached, the optimization stops but we do not count this as convergence.
+        absolute_params_tolerance (float): Absolute difference in parameters between
+            iterations that is tolerated to declare convergence.
+        absolute_criterion_tolerance (float): Absolute difference in the criterion value
+            between iterations that is tolerated to declare convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_neldermead"
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+    options = {
+        "maxiter": max_iterations,
+        "maxfev": max_criterion_evaluations,
+        "xatol": absolute_params_tolerance,
+        "fatol": absolute_criterion_tolerance,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=func, x0=x, method="Nelder-Mead", options=options,
     )
 
     return _process_scipy_result(res)
