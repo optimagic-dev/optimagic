@@ -117,10 +117,10 @@ def scipy_slsqp(
 ):
     """Minimize a scalar function of one or more variables using the SLSQP algorithm.
 
-    SLSQP stands for Sequential Least Squares Programming and is a line search algorithm.
+    SLSQP stands for Sequential Least Squares Programming.
 
-    SLSQP is well suited for continuously differentiable scalar optimization problems
-    with up to several hundred parameters.
+    SLSQP is a line search algorithm. It is well suited for continuously
+    differentiable scalar optimization problems with up to several hundred parameters.
 
     The optimizer is taken from scipy which wraps the SLSQP optimization subroutine
     originally implemented by [Dieter Kraft]_.
