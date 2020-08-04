@@ -13,7 +13,8 @@ implemented in estimagic, or a function that fulfills the
 :ref:`internal_optimizer_interface`.
 
 
-Which algorithms are available in estimagic depends on the packages a user has installed.
+Which algorithms are available in estimagic depends on the packages a user has
+installed.
 
 
 
@@ -23,9 +24,9 @@ The *algo_options* Argument
 ``algo_options`` is a dictionary with optional keyword arguments that are passed to the
 optimizer.
 
-We align the names of all ``algo_options`` across algorithms. However, not all algorithms
-support all options. Which options are supported and very specific details of what the
-options mean are documented for each algorithm below.
+We align the names of all ``algo_options`` across algorithms. However, not all
+algorithms support all options. Which options are supported and very specific details of
+what the options mean are documented for each algorithm below.
 
 To make it easier to switch between algorithms, we simply ignore non-supported options
 and issue a warning that explains which options have been ignored.

@@ -20,11 +20,6 @@ import os
 import sys
 
 
-# Add custom CSS
-def setup(app):
-    app.add_stylesheet("css/custom.css")
-
-
 sys.path.insert(0, os.path.abspath("../.."))
 
 # Set variable so that todos are shown in local build

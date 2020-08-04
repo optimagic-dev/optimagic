@@ -114,7 +114,7 @@ Optimization
   dashboard.
 
 
-.. image:: images/dashboard.gif
+.. image:: _static/images/dashboard.gif
   :scale: 60 %
   :align: center
 

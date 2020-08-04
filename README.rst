@@ -51,7 +51,7 @@ Optimization
 - An interactive Dashboard allows to monitor the optimization in real time.
 
 
-.. image:: docs/source/images/dashboard.gif
+.. image:: docs/source/_static/images/dashboard.gif
   :scale: 21 %
 
 
