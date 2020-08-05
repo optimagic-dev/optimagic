@@ -278,6 +278,50 @@ def scipy_powell(
     return _process_scipy_result(res)
 
 
+def scipy_bfgs(
+    criterion_and_derivative,
+    x,
+    lower_bounds=None,
+    upper_bounds=None,
+    *,
+    gradient_tolerance=GRADIENT_TOLERANCE,
+    max_iterations=MAX_ITERATIONS,
+):
+    """Minimize a scalar function of one or more variables using the BFGS algorithm.
+
+
+
+    Args:
+        gradient_tolerance (float): Stop if all elements of the projected gradient are
+            smaller than this.
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_bfgs"
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+    gradient = functools.partial(
+        criterion_and_derivative, task="derivative", algorithm_info=algo_info
+    )
+
+    options = {
+        "gtol": gradient_tolerance,
+        "maxiter": max_iterations,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=func, x0=x, method="BFGS", jac=gradient, options=options,
+    )
+
+    return _process_scipy_result(res)
+
+
 # =====================================================================================
 
 
