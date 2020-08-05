@@ -418,6 +418,55 @@ def scipy_newton_cg(
     return _process_scipy_result(res)
 
 
+def scipy_cobyla(
+    criterion_and_derivative, x, *, max_iterations=MAX_ITERATIONS,
+):
+    """Minimize a scalar function of one or more variables using the COBYLA algorithm.
+
+    COBYLA stands for Constrained Optimization By Linear Approximation.
+    It is deriviative-free and supports nonlinear inequality and equality constraints.
+
+    .. note::
+        Constraints are not supported yet.
+
+    Scipy's implementation wraps the FORTRAN implementation of the algorithm.
+
+
+    References:
+        Powell M.J.D. (1994), “A direct search optimization method that models the
+            objective and constraint functions by linear interpolation.”, in Advances in
+            Optimization and Numerical Analysis, eds. S. Gomez and J-P Hennart, Kluwer
+            Academic (Dordrecht), pp. 51-67
+
+        Powell M.J.D. (1998), “Direct search algorithms for optimization calculations”,
+            Acta Numerica 7, 287-336
+
+        Powell M.J.D. (2007),
+            “A view of algorithms for optimization without derivatives”,
+            Cambridge University Technical Report DAMTP 2007/NA03
+
+    Args:
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_cobyla"
+
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+
+    options = {"maxiter": max_iterations}
+
+    res = scipy.optimize.minimize(fun=func, x0=x, method="COBYLA", options=options,)
+
+    return _process_scipy_result(res)
+
+
 # =====================================================================================
 
 
