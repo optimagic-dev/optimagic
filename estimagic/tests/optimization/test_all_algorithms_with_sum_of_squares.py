@@ -17,7 +17,7 @@ from estimagic.optimization.optimize import minimize
 
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
-    "scipy_cg",
+    "scipy_conjugate_gradient",
     "scipy_bfgs",
     "scipy_newton_cg",
     "scipy_cobyla",

@@ -231,7 +231,7 @@ def scipy_powell(
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     max_iterations=MAX_ITERATIONS,
 ):
-    """Minimize a scalar function of using the modified Powell method.
+    """Minimize a scalar function using the modified Powell method.
 
     The criterion function need not be differentiable.
 
@@ -289,7 +289,12 @@ def scipy_bfgs(
 ):
     """Minimize a scalar function of one or more variables using the BFGS algorithm.
 
+    BFGS stands for Broyden-Fletcher-Goldfarb-Shanno algorithm. It is a quasi-Newton
+    method that can be used for solving unconstrained nonlinear optimization problems.
 
+    BFGS is not guaranteed to converge unless the function has a quadratic Taylor
+    expansion near an optimum. However, BFGS can have acceptable performance even
+    for non-smooth optimization instances.
 
     Args:
         gradient_tolerance (float): Stop if all elements of the projected gradient are
@@ -317,6 +322,97 @@ def scipy_bfgs(
 
     res = scipy.optimize.minimize(
         fun=func, x0=x, method="BFGS", jac=gradient, options=options,
+    )
+
+    return _process_scipy_result(res)
+
+
+def scipy_conjugate_gradient(
+    criterion_and_derivative,
+    x,
+    *,
+    gradient_tolerance=GRADIENT_TOLERANCE,
+    max_iterations=MAX_ITERATIONS,
+):
+    """Minimize a function using a nonlinear conjugate gradient algorithm.
+
+    The conjugate gradient method finds functions' local optima using just the gradient.
+
+    Args:
+        gradient_tolerance (float): Stop if all elements of the projected gradient are
+            smaller than this.
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_conjugate_gradient"
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+
+    gradient = functools.partial(
+        criterion_and_derivative, task="derivative", algorithm_info=algo_info
+    )
+
+    options = {
+        "gtol": gradient_tolerance,
+        "maxiter": max_iterations,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=func, x0=x, method="CG", jac=gradient, options=options,
+    )
+
+    return _process_scipy_result(res)
+
+
+def scipy_newton_cg(
+    criterion_and_derivative,
+    x,
+    *,
+    relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
+    max_iterations=MAX_ITERATIONS,
+):
+    """Minimize a scalar function using Newton's conjugate gradient algorithm.
+
+    Newton's conjugate gradient algorithm uses an approximation of the Hessian to find
+    the minimum of a function. It is practical for small and large problems.
+
+    Newton-CG methods are also called truncated Newton methods.
+
+    Reference:
+        Wright & Nocedal, 'Numerical Optimization', 1999, p. 140.
+
+    Args:
+        relative_params_tolerance (float): Stop when the relative movement between
+            parameter vectors is smaller than this.
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_newton_cg"
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+    gradient = functools.partial(
+        criterion_and_derivative, task="derivative", algorithm_info=algo_info
+    )
+
+    options = {
+        "xtol": relative_params_tolerance,
+        "maxiter": max_iterations,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=func, x0=x, method="Newton-CG", jac=gradient, options=options,
     )
 
     return _process_scipy_result(res)
