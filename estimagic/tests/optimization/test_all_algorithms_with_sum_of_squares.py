@@ -31,7 +31,7 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
-atol = 1e-04
+atol = 1e-03
 
 # ======================================================================================
 # Define example functions
@@ -184,6 +184,8 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
     )
+
+    assert res["success"], f"{algo} did not converge."
     aac(res["solution_params"]["value"].to_numpy(), np.zeros(10), atol=atol)
 
 
@@ -195,9 +197,9 @@ for alg in BOUNDS_SUPPORTING_ALGORITHMS:
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
-    params = pd.DataFrame(data=np.ones((5, 1)), columns=["value"])
-    params["lower"] = [1, -10, -10, -10, -10.0]
-    params["upper"] = [10, 10, 10, 10, -1.0]
+    params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
+    params["lower"] = [2.0, -10.0, -10.0, -10.0, -10.0]
+    params["upper"] = [10.0, 10.0, 10.0, 10.0, -1.0]
 
     optimize_func = minimize if direction == "minimize" else maximize
 
@@ -209,14 +211,16 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
         criterion_and_derivative=crit_and_deriv,
     )
 
-    expected = np.array([1, 0, 0, 0, -1.0])
+    assert res["success"], f"{algo} did not converge."
+
+    expected = np.array([2.0, 0.0, 0.0, 0.0, -1.0])
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
-    params["lower"] = [-10, -10, -10, -10, -10.0]
+    params["lower"] = [-10, -10, -10, -10, -10]
     params["upper"] = [10, 10, 10, 10, 10]
 
     constraints = [{"loc": [1, 3], "type": "fixed", "value": [7.5, -2]}]
@@ -231,6 +235,8 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
     )
+
+    assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 7.5, 0, -2, 0.0])
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
@@ -254,6 +260,8 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
     )
+
+    assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
@@ -280,6 +288,8 @@ def test_with_pairwise_equality_constraint(
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.zeros(5)
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
@@ -300,6 +310,8 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
     )
+
+    assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
@@ -322,6 +334,8 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.zeros(5)
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
@@ -343,6 +357,8 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.array([0, 0, 1 / 3, 1 / 3, 1 / 3])
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
@@ -363,6 +379,8 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
     )
+
+    assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.25, 0.25, 0.25, 0.25, 0])
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
@@ -386,6 +404,8 @@ def test_with_covariance_constraint_no_bounds_distance(
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
     )
+
+    assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
@@ -418,6 +438,8 @@ def test_with_covariance_constraint_bounds_distance(
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.array([0.1, 0, 0.1, 0, 0, 0.1])
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
@@ -440,6 +462,8 @@ def test_with_sdcorr_constraint_no_bounds_distance(
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
     )
+
+    assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
@@ -471,6 +495,8 @@ def test_with_sdcorr_constraint_bounds_distance(
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
     )
+
+    assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)

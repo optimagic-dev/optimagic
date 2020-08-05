@@ -11,6 +11,7 @@ from estimagic.optimization.default_algo_options import MAX_CRITERION_EVALUATION
 from estimagic.optimization.default_algo_options import MAX_ITERATIONS
 from estimagic.optimization.default_algo_options import MAX_LINE_SEARCH_STEPS
 from estimagic.optimization.default_algo_options import RELATIVE_CRITERION_TOLERANCE
+from estimagic.optimization.default_algo_options import RELATIVE_PARAMS_TOLERANCE
 
 
 DEFAULT_ALGO_INFO = {
@@ -73,10 +74,8 @@ def scipy_lbfgsb(
         limited_memory_storage_length (int): Maximum number of saved gradients used to
             approximate the hessian matrix.
 
-
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
-
 
     """
     algo_info = DEFAULT_ALGO_INFO.copy()
@@ -216,6 +215,64 @@ def scipy_neldermead(
 
     res = scipy.optimize.minimize(
         fun=func, x0=x, method="Nelder-Mead", options=options,
+    )
+
+    return _process_scipy_result(res)
+
+
+def scipy_powell(
+    criterion_and_derivative,
+    x,
+    lower_bounds=None,
+    upper_bounds=None,
+    *,
+    relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
+    relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
+    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
+    max_iterations=MAX_ITERATIONS,
+):
+    """Minimize a scalar function of using the modified Powell method.
+
+    The criterion function need not be differentiable.
+
+    Powell's method is a conjugate direction method, minimising the function by a
+    bi-directional search in each parameter's dimension.
+
+    Args:
+        relative_params_tolerance (float): Stop when the relative movement between
+            parameter vectors is smaller than this.
+        relative_criterion_tolerance (float): Stop when the relative improvement between
+            two iterations is smaller than this. More formally, this is expressed as
+            ``f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= relative_criterion_tolerance``
+        max_criterion_evaluations (int): If the maximum number of function evaluation is
+            reached, the optimization stops but we do not count this as convergence.
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_powell"
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+
+    options = {
+        "xtol": relative_params_tolerance,
+        "ftol": relative_criterion_tolerance,
+        "maxiter": max_iterations,
+        "maxfev": max_criterion_evaluations,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=func,
+        x0=x,
+        method="Powell",
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        options=options,
     )
 
     return _process_scipy_result(res)
