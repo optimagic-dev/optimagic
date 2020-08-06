@@ -477,6 +477,78 @@ def scipy_cobyla(
     return _process_scipy_result(res)
 
 
+def scipy_truncated_newton(
+    criterion_and_derivative,
+    x,
+    lower_bounds=None,
+    upper_bounds=None,
+    *,
+    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
+    max_iterations=MAX_ITERATIONS,
+    absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
+    absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
+    gradient_tolerance=GRADIENT_TOLERANCE,
+):
+    """Minimize a scalar function using truncated Newton algorithm.
+
+    This function differs from scipy_newton_cg because
+
+    1. scipy_newton_cg's algorithm is written purely in Python using NumPy
+        and scipy while scipy_truncated_newton's algorithm calls a C function.
+    2. scipy_newton_cg's algorithm is only for unconstrained minimization
+        while scipy_truncated_newton's algorithm supports bounds.
+
+    Args:
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+        max_criterion_evaluations (int): If the maximum number of function evaluation is
+            reached, the optimization stops but we do not count this as convergence.
+        absolute_params_tolerance (float): Absolute difference in parameters between
+            iterations after scaling that is tolerated to declare convergence.
+        absolute_criterion_tolerance (float): Absolute difference in the criterion value
+            between iterations after scaling that is tolerated to declare convergence.
+        gradient_tolerance (float): Stop if the value of the projected gradient
+            (after applying x scaling factors) is smaller than this. If
+            gradient_tolerance < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    assert absolute_params_tolerance != 0 or absolute_criterion_tolerance != 0, (
+        "Provide either absolute_params_tolerance or absolute_criterion_tolerance as "
+        + "stopping criterion."
+    )
+
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_truncated_newton"
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+    gradient = functools.partial(
+        criterion_and_derivative, task="derivative", algorithm_info=algo_info
+    )
+
+    options = {
+        "maxiter": max_iterations,
+        "ftol": absolute_criterion_tolerance,
+        "xtol": absolute_params_tolerance,
+        "gtol": gradient_tolerance,
+        "maxfun": max_criterion_evaluations,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=func,
+        x0=x,
+        method="TNC",
+        jac=gradient,
+        options=options,
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+    )
+
+    return _process_scipy_result(res)
+
+
 # =====================================================================================
 
 
