@@ -175,8 +175,8 @@ def scipy_neldermead(
     *,
     max_iterations=MAX_ITERATIONS,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
-    absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE + 1e-05,
-    absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE + 1e-05,
+    absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
+    absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
 
@@ -201,6 +201,11 @@ def scipy_neldermead(
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
+    assert absolute_params_tolerance != 0 or absolute_criterion_tolerance != 0, (
+        "Provide either absolute_params_tolerance or absolute_criterion_tolerance as "
+        + "stopping criterion."
+    )
+
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_neldermead"
     func = functools.partial(
@@ -382,7 +387,13 @@ def scipy_newton_cg(
     Newton's conjugate gradient algorithm uses an approximation of the Hessian to find
     the minimum of a function. It is practical for small and large problems.
 
-    Newton-CG methods are also called truncated Newton methods.
+    Newton-CG methods are also called truncated Newton methods. This function differs
+    scipy_truncated_newton because
+
+    1. scipy_newton_cg's algorithm is written purely in Python using NumPy
+        and scipy while scipy_truncated_newton's algorithm calls a C function.
+    2. scipy_newton_cg's algorithm is only for unconstrained minimization
+        while scipy_truncated_newton's algorithm supports bounds.
 
     Reference:
         Wright & Nocedal, 'Numerical Optimization', 1999, p. 140.
@@ -430,7 +441,6 @@ def scipy_cobyla(
         Constraints are not supported yet.
 
     Scipy's implementation wraps the FORTRAN implementation of the algorithm.
-
 
     References:
         Powell M.J.D. (1994), “A direct search optimization method that models the

@@ -15,6 +15,10 @@ from estimagic.config import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
+###
+AVAILABLE_ALGORITHMS = {"scipy_neldermead": AVAILABLE_ALGORITHMS["scipy_neldermead"]}
+
+
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
     "scipy_conjugate_gradient",
@@ -97,6 +101,17 @@ def get_test_cases_for_algorithm(algorithm):
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
 
+    only_absolute_stop_criterions = ["scipy_neldermead", "scipy_truncated_newton"]
+    if alg in only_absolute_stop_criterions:
+        options = {
+            "absolute_criterion_tolerance": 1e-04,
+            "absolute_params_tolerance": 1e-04,
+        }
+    else:
+        options = {}
+
+    print(options, "\n\n")
+
     directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
 
     crit_funcs = [sos_dict_criterion]
@@ -128,9 +143,10 @@ def get_test_cases_for_algorithm(algorithm):
                 switch_sign(crit),
                 switch_sign(deriv),
                 switch_sign(c_and_d),
+                options,
             )
         else:
-            case = (algorithm, direction, crit, deriv, c_and_d)
+            case = (algorithm, direction, crit, deriv, c_and_d, options)
         test_cases.append(case)
     return test_cases
 
@@ -169,8 +185,10 @@ for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
-def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", test_cases
+)
+def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv, options):
     params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
     params["lower"] = -10 if algo in BOUNDS_SUPPORTING_ALGORITHMS else -np.inf
     params["upper"] = 10 if algo in BOUNDS_SUPPORTING_ALGORITHMS else np.inf
@@ -183,6 +201,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         algorithm=algo,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -195,8 +214,10 @@ for alg in BOUNDS_SUPPORTING_ALGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
-def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
+def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv, options):
     params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
     params["lower"] = [2.0, -10.0, -10.0, -10.0, -10.0]
     params["upper"] = [10.0, 10.0, 10.0, 10.0, -1.0]
@@ -209,6 +230,7 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
         algorithm=algo,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -217,8 +239,10 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
-def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
+def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv, options):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
     params["lower"] = [-10, -10, -10, -10, -10]
     params["upper"] = [10, 10, 10, 10, 10]
@@ -234,6 +258,7 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -242,8 +267,12 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
-def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
+def test_with_equality_constraint(
+    algo, direction, crit, deriv, crit_and_deriv, options
+):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
     params["lower"] = [-10, -10, -10, -10, -10.0]
     params["upper"] = [10, 10, 10, 10, 10]
@@ -259,6 +288,7 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -267,9 +297,11 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
 def test_with_pairwise_equality_constraint(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv, options,
 ):
     params = pd.DataFrame(data=[[1], [2], [1], [2], [1]], columns=["value"])
     params["lower"] = [-10, -10, -10, -10, -10.0]
@@ -286,6 +318,7 @@ def test_with_pairwise_equality_constraint(
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -294,8 +327,12 @@ def test_with_pairwise_equality_constraint(
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
-def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
+def test_with_increasing_constraint(
+    algo, direction, crit, deriv, crit_and_deriv, options
+):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
 
     constraints = [{"loc": [0, 1, 2], "type": "increasing"}]
@@ -309,6 +346,7 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -317,8 +355,12 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
-def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
+def test_with_decreasing_constraint(
+    algo, direction, crit, deriv, crit_and_deriv, options
+):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
 
     constraints = [{"loc": [2, 3, 4], "type": "decreasing"}]
@@ -332,6 +374,7 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -340,8 +383,10 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
-def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
+def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv, options):
     params = pd.DataFrame(data=[[1], [2], [0.1], [0.3], [0.6]], columns=["value"])
 
     constraints = [{"loc": [2, 3, 4], "type": "linear", "value": 1, "weights": 1}]
@@ -355,6 +400,7 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -363,8 +409,12 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
-def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deriv):
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
+def test_with_probability_constraint(
+    algo, direction, crit, deriv, crit_and_deriv, options
+):
     params = pd.DataFrame(data=[[0.3], [0.0], [0.6], [0.1], [5]], columns=["value"])
 
     constraints = [{"loc": [0, 1, 2, 3], "type": "probability"}]
@@ -378,6 +428,7 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -386,9 +437,11 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
 def test_with_covariance_constraint_no_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv, options,
 ):
     params = pd.DataFrame(data=[[1], [0.1], [2], [3], [2]], columns=["value"])
 
@@ -403,6 +456,7 @@ def test_with_covariance_constraint_no_bounds_distance(
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -411,9 +465,11 @@ def test_with_covariance_constraint_no_bounds_distance(
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
 def test_with_covariance_constraint_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv, options,
 ):
     # Note: Robust bounds only have an effect for 3x3 covariance matrices or larger
     params = pd.DataFrame(data=[[1], [0.1], [2], [0.2], [0.3], [3]], columns=["value"])
@@ -436,6 +492,7 @@ def test_with_covariance_constraint_bounds_distance(
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -444,9 +501,11 @@ def test_with_covariance_constraint_bounds_distance(
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
 def test_with_sdcorr_constraint_no_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv, options,
 ):
     params = pd.DataFrame(data=[[1], [2], [0.1], [3], [2]], columns=["value"])
 
@@ -461,6 +520,7 @@ def test_with_sdcorr_constraint_no_bounds_distance(
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
@@ -469,9 +529,11 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol)
 
 
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
+)
 def test_with_sdcorr_constraint_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv, options,
 ):
     # Note: Robust bounds only have an effect for 3x3 sdcorr matrices or larger
     params = pd.DataFrame(data=[[1], [2], [3], [0.1], [0.2], [0.3]], columns=["value"])
@@ -494,6 +556,7 @@ def test_with_sdcorr_constraint_bounds_distance(
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        algo_options=options,
     )
 
     assert res["success"], f"{algo} did not converge."
