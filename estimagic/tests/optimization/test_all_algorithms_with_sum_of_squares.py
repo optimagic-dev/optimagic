@@ -238,8 +238,8 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
-    params["lower"] = [-10, -10, -10, -10, -10.0]
-    params["upper"] = [10, 10, 10, 10, 10]
+    params["lower"] = [-10, -10, -10, -10, -10]
+    params["upper"] = -params["lower"]
 
     constraints = [{"loc": [0, 4], "type": "equality"}]
 

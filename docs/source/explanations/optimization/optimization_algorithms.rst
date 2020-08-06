@@ -76,3 +76,6 @@ With `pygmo` installed
 
 With `petsc4py` installed
 -------------------------
+
+.. automodule:: estimagic.optimization.pounders
+   :members:

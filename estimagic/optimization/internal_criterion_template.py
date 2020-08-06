@@ -381,7 +381,10 @@ def _check_and_harmonize_criterion_output(output, algorithm_info):
 
 def _check_and_harmonize_derivative(derivative, algorithm_info):
     primary = algorithm_info["primary_criterion_entry"]
-    if primary == "value" and np.atleast_2d(derivative).shape[0] != 1:
+
+    if derivative is None:
+        pass
+    elif primary == "value" and np.atleast_2d(derivative).shape[0] != 1:
         raise ValueError("The derivative of a scalar optimizer must be a 1d array.")
 
     elif primary in ("contributions", "root_contributions"):
