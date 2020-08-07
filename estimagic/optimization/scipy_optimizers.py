@@ -561,16 +561,36 @@ def scipy_trust_constr(
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
 
+    It swiches between two implementations depending on the problem definition.
+    It is the most versatile constrained minimization algorithm
+    implemented in SciPy and the most appropriate for large-scale problems.
+    For equality constrained problems it is an implementation of Byrd-Omojokun
+    Trust-Region SQP method described in [17]_ and in [5]_, p. 549. When
+    inequality constraints  are imposed as well, it swiches to the trust-region
+    interior point  method described in [16]_. This interior point algorithm,
+    in turn, solves inequality constraints by introducing slack variables
+    and solving a sequence of equality-constrained barrier problems
+    for progressively smaller values of the barrier parameter.
+    The previously described equality constrained SQP method is
+    used to solve the subproblems with increasing levels of accuracy
+    as the iterate gets closer to a solution.
 
+    It approximizes the Hessian using the Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+    Hessian update strategy.
 
+    References:
 
-    if canonical.n_ineq == 0:
-        method = 'equality_constrained_sqp'
-    else:
-        method = 'tr_interior_point'
-
-
-
+    .. [5] Nocedal, J, and S J Wright. 2006. Numerical Optimization.
+       Springer New York.
+    .. [6] Byrd, R H and P Lu and J. Nocedal. 1995. A Limited Memory
+       Algorithm for Bound Constrained Optimization. SIAM Journal on
+       Scientific and Statistical Computing 16 (5): 1190-1208.
+    .. [16] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
+        An interior point algorithm for large-scale nonlinear  programming.
+        SIAM Journal on Optimization 9.4: 877-900.
+    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
+        implementation of an algorithm for large-scale equality constrained
+        optimization. SIAM Journal on Optimization 8.3: 682-706.
 
     Args:
         gradient_tolerance (float): Tolerance for termination by the norm of the
