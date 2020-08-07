@@ -21,10 +21,6 @@ BOUNDS_FREE_ALGORITHMS = [
     "scipy_bfgs",
     "scipy_newton_cg",
     "scipy_cobyla",
-    "scipy_dogleg",
-    "scipy_trust_ncg",
-    "scipy_trust_exact",
-    "scipy_trust_krylov",
 ]
 
 BOUNDS_SUPPORTING_ALGORITHMS = [
@@ -33,14 +29,16 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
 
 atol = {
     "scipy_lbfgsb": 1e-05,
-    "scipy_slsqp": 1e-04,
     "scipy_neldermead": 1e-05,
-    "scipy_powell": 1e-03,
     "scipy_bfgs": 1e-05,
     "scipy_conjugate_gradient": 1e-05,
     "scipy_newton_cg": 1e-05,
     "scipy_cobyla": 1e-04,
+    "scipy_slsqp": 1e-04,
+    # powell, trust_constr and truncated_newton require large tolerances to run through
+    "scipy_powell": 1e-03,
     "scipy_truncated_newton": 2e-03,
+    "scipy_trust_constr": 5e-03,
 }
 
 # ======================================================================================
@@ -113,6 +111,8 @@ def get_test_cases_for_algorithm(algorithm):
             "absolute_criterion_tolerance": 1e-06,
             "absolute_params_tolerance": 1e-06,
         }
+    elif alg == "scipy_trust_constr":
+        options = {"gradient_tolerance": 1e-07, "relative_params_tolerance": 1e-07}
     else:
         options = {}
 

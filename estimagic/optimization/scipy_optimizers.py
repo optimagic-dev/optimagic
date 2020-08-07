@@ -549,6 +549,72 @@ def scipy_truncated_newton(
     return _process_scipy_result(res)
 
 
+def scipy_trust_constr(
+    criterion_and_derivative,
+    x,
+    lower_bounds=None,
+    upper_bounds=None,
+    *,
+    gradient_tolerance=GRADIENT_TOLERANCE,
+    max_iterations=MAX_ITERATIONS,
+    relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
+):
+    """Minimize a scalar function of one or more variables subject to constraints.
+
+
+
+
+    if canonical.n_ineq == 0:
+        method = 'equality_constrained_sqp'
+    else:
+        method = 'tr_interior_point'
+
+
+
+
+    Args:
+        gradient_tolerance (float): Tolerance for termination by the norm of the
+            Lagrangian gradient. The algorithm will terminate when both the infinity
+            norm (i.e., max abs value) of the Lagrangian gradient and the constraint
+            violation are smaller than the gradient_tolerance.
+        max_iterations (int): If the maximum number of iterations is reached, the
+            optimization stops, but we do not count this as convergence.
+        relative_params_tolerance (float): Tolerance for termination by the change of
+            the independent variable. The algorithm will terminate when the radius of
+            the trust region used in the algorithm is smaller than the
+            relative_params_tolerance.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_trust_constr"
+    func = functools.partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+    )
+    gradient = functools.partial(
+        criterion_and_derivative, task="derivative", algorithm_info=algo_info
+    )
+
+    options = {
+        "gtol": gradient_tolerance,
+        "maxiter": max_iterations,
+        "xtol": relative_params_tolerance,
+    }
+
+    res = scipy.optimize.minimize(
+        fun=func,
+        jac=gradient,
+        x0=x,
+        method="trust-constr",
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        options=options,
+    )
+
+    return _process_scipy_result(res)
+
+
 # =====================================================================================
 
 
