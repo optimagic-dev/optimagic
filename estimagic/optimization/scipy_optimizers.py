@@ -1,3 +1,37 @@
+"""Implement scipy's optimizers.
+
+Some arguments cannot be passed as `algo_option` to estimagic's scipy wrappers:
+    - disp:
+        If set to True would print a convergence message.
+        In estimagic it's always set to its default: False.
+        Refer to estimagic's result dictionary's "success" entry for the convergence
+        message.
+    - return_all:
+        If set to True, a list of the best solution at each iteration is returned.
+        In estimagic it's always set to its default: False.
+        Use estimagic's database and dashboard instead to explore your criterion and
+        algorithm.
+    - tol:
+        This argument of minimize (not an options key) is passed as different types of
+        tolerance (gradient, parameter or criterion, as well as relative or absolute)
+        depending on the selected algorithm. We require the user to explicitely input
+        the tolerance criteria or use our defaults instead.
+    - args:
+        This argument of minimize (not an options key) is partialed into the function
+        for the user. Specify `criterion_kwargs` in `maximize` or `minimize` to have
+        the same behavior.
+
+Scipy's COBYLA, SLSQP and trust-constr support constraints in principle. However, for
+the moment they are not supported.
+
+estimagic does not support the following algorithms at the moment because they require
+the specification of the Hessian:
+    - dogleg
+    - trust-ncg
+    - trust-exact
+    - trust-krylov
+
+"""
 import functools
 
 import numpy as np
@@ -33,6 +67,7 @@ def scipy_lbfgsb(
     max_iterations=MAX_ITERATIONS,
     limited_memory_storage_length=LIMITED_MEMORY_STORAGE_LENGTH,
     max_line_search_steps=MAX_LINE_SEARCH_STEPS,
+    callback=None,
 ):
     """Minimize a scalar function of one or more variables using the L-BFGS-B algorithm.
 
@@ -73,6 +108,7 @@ def scipy_lbfgsb(
             optimization stops, but we do not count this as convergence.
         limited_memory_storage_length (int): Maximum number of saved gradients used to
             approximate the hessian matrix.
+        callback (callable): Called after each iteration.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -102,6 +138,7 @@ def scipy_lbfgsb(
         jac=True,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
+        callback=callback,
     )
 
     return _process_scipy_result(res)
@@ -115,6 +152,8 @@ def scipy_slsqp(
     *,
     relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
+    callback=None,
+    constraints=None,
 ):
     """Minimize a scalar function of one or more variables using the SLSQP algorithm.
 
@@ -131,6 +170,10 @@ def scipy_slsqp(
             stopping criterion.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
+        callback (callable): Called after each iteration.
+        constraints: not supported at the moment. Constraints can only be passed
+            directly as constraints argument to estimagic's `maximize` or `minimize`.
+            See :ref:`implementation_of_constraints` for details.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -141,6 +184,13 @@ def scipy_slsqp(
             http://degenerateconic.com/wp-content/uploads/2018/03/DFVLR_FB_88_28.pdf
 
     """
+    if constraints is not None:
+        raise NotImplementedError(
+            "Constraints passed to SLSQP directly are not supported yet. "
+            + "Please use estimagic's constraint interface for constraints supported "
+            + "by estimagic."
+        )
+
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_slsqp"
 
@@ -164,6 +214,7 @@ def scipy_slsqp(
         jac=gradient,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
+        callback=callback,
     )
 
     return _process_scipy_result(res)
@@ -177,6 +228,8 @@ def scipy_neldermead(
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
     absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
+    adaptive=False,
+    callback=None,
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
 
@@ -187,6 +240,10 @@ def scipy_neldermead(
     non-stationary point, unless the problem satisfies stronger conditions than are
     necessary for modern methods.
 
+    The argument initial_simplex is not supported by estimagic as the internal criterion
+    is passed by estimagic to `scipy_neldermead` and a user supplied initial simplex
+    would in most cases not conform to the internal problem.
+
     Args:
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
@@ -196,6 +253,9 @@ def scipy_neldermead(
             iterations that is tolerated to declare convergence.
         absolute_criterion_tolerance (float): Absolute difference in the criterion value
             between iterations that is tolerated to declare convergence.
+        adaptive (bool): Adapt algorithm parameters to dimensionality of problem.
+            Useful for high-dimensional minimization [1]. Default is False.
+        callback (callable): Called after each iteration.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -219,7 +279,7 @@ def scipy_neldermead(
     }
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="Nelder-Mead", options=options,
+        fun=func, x0=x, method="Nelder-Mead", options=options, callback=callback
     )
 
     return _process_scipy_result(res)
@@ -235,6 +295,7 @@ def scipy_powell(
     relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     max_iterations=MAX_ITERATIONS,
+    callback=None,
 ):
     """Minimize a scalar function using the modified Powell method.
 
@@ -253,6 +314,7 @@ def scipy_powell(
             reached, the optimization stops but we do not count this as convergence.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
+        callback (callable): Called after each iteration.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -278,6 +340,7 @@ def scipy_powell(
         method="Powell",
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
+        callback=callback,
     )
 
     return _process_scipy_result(res)
@@ -291,6 +354,7 @@ def scipy_bfgs(
     *,
     gradient_tolerance=GRADIENT_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
+    callback=None,
 ):
     """Minimize a scalar function of one or more variables using the BFGS algorithm.
 
@@ -306,6 +370,7 @@ def scipy_bfgs(
             smaller than this.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
+        callback (callable): Called after each iteration.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -326,7 +391,7 @@ def scipy_bfgs(
     }
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="BFGS", jac=gradient, options=options,
+        fun=func, x0=x, method="BFGS", jac=gradient, options=options, callback=callback,
     )
 
     return _process_scipy_result(res)
@@ -338,6 +403,7 @@ def scipy_conjugate_gradient(
     *,
     gradient_tolerance=GRADIENT_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
+    callback=None,
 ):
     """Minimize a function using a nonlinear conjugate gradient algorithm.
 
@@ -369,7 +435,7 @@ def scipy_conjugate_gradient(
     }
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="CG", jac=gradient, options=options,
+        fun=func, x0=x, method="CG", jac=gradient, options=options, callback=callback,
     )
 
     return _process_scipy_result(res)
@@ -381,6 +447,7 @@ def scipy_newton_cg(
     *,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
+    callback=None,
 ):
     """Minimize a scalar function using Newton's conjugate gradient algorithm.
 
@@ -403,6 +470,7 @@ def scipy_newton_cg(
             parameter vectors is smaller than this.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
+        callback (callable): Called after each iteration.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -423,14 +491,24 @@ def scipy_newton_cg(
     }
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="Newton-CG", jac=gradient, options=options,
+        fun=func,
+        x0=x,
+        method="Newton-CG",
+        jac=gradient,
+        options=options,
+        callback=callback,
     )
 
     return _process_scipy_result(res)
 
 
 def scipy_cobyla(
-    criterion_and_derivative, x, *, max_iterations=MAX_ITERATIONS,
+    criterion_and_derivative,
+    x,
+    *,
+    max_iterations=MAX_ITERATIONS,
+    callback=None,
+    constraints=None,
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
@@ -458,11 +536,21 @@ def scipy_cobyla(
     Args:
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
+        callback (callable): Called after each iteration.
+        constraints: not supported at the moment. Constraints can only be passed
+            directly as constraints argument to estimagic's `maximize` or `minimize`.
+            See :ref:`implementation_of_constraints` for details.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
+    if constraints is not None:
+        raise NotImplementedError(
+            "Constraints passed to COBYLA directly are not supported yet. "
+            + "Please use estimagic's constraint interface for constraints supported "
+            + "by estimagic."
+        )
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_cobyla"
 
@@ -472,7 +560,9 @@ def scipy_cobyla(
 
     options = {"maxiter": max_iterations}
 
-    res = scipy.optimize.minimize(fun=func, x0=x, method="COBYLA", options=options,)
+    res = scipy.optimize.minimize(
+        fun=func, x0=x, method="COBYLA", options=options, callback=callback
+    )
 
     return _process_scipy_result(res)
 
@@ -488,6 +578,7 @@ def scipy_truncated_newton(
     absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
     absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
     gradient_tolerance=GRADIENT_TOLERANCE,
+    callback=None,
 ):
     """Minimize a scalar function using truncated Newton algorithm.
 
@@ -510,6 +601,7 @@ def scipy_truncated_newton(
         gradient_tolerance (float): Stop if the value of the projected gradient
             (after applying x scaling factors) is smaller than this. If
             gradient_tolerance < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
+        callback (callable): Called after each iteration.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -543,6 +635,7 @@ def scipy_truncated_newton(
         method="TNC",
         jac=gradient,
         options=options,
+        callback=callback,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
     )
 
@@ -558,6 +651,8 @@ def scipy_trust_constr(
     gradient_tolerance=GRADIENT_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
+    callback=None,
+    constraints=None,
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
 
@@ -603,11 +698,30 @@ def scipy_trust_constr(
             the independent variable. The algorithm will terminate when the radius of
             the trust region used in the algorithm is smaller than the
             relative_params_tolerance.
+        callback (callable): Called after each iteration. It must have the signature:
+                ``callback(xk, OptimizeResult state) -> bool``
+            where ``xk`` is the current parameter vector. and ``state``
+            is an `OptimizeResult` object, with the same fields
+            as the ones from the return. If callback returns True
+            the algorithm execution is terminated.
+            For all the other methods, the signature is:
+                ``callback(xk)``
+            where ``xk`` is the current parameter vector.
+        constraints: not supported at the moment. Constraints can only be passed
+            directly as constraints argument to estimagic's `maximize` or `minimize`.
+            See :ref:`implementation_of_constraints` for details.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
+    if constraints is not None:
+        raise NotImplementedError(
+            "Constraints passed to trust_constr directly are not supported yet. "
+            + "Please use estimagic's constraint interface for constraints supported "
+            + "by estimagic."
+        )
+
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_trust_constr"
     func = functools.partial(
@@ -630,6 +744,7 @@ def scipy_trust_constr(
         method="trust-constr",
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
+        callback=callback,
     )
 
     return _process_scipy_result(res)
