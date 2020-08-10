@@ -59,9 +59,9 @@ def scipy_lbfgsb(
     The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
     to scale the parameters.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         relative_criterion_tolerance (float): Stop when the relative improvement between
@@ -137,9 +137,9 @@ def scipy_slsqp(
     The optimizer is taken from scipy which wraps the SLSQP optimization subroutine
     originally implemented by :cite:`Kraft1988`.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         relative_criterion_tolerance (float): Precision goal for the value of f in the
@@ -217,9 +217,9 @@ def scipy_neldermead(
     criterion is passed by estimagic to `scipy_neldermead` and a user supplied initial
     simplex would in most cases not conform to the internal problem.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         max_iterations (int): If the maximum number of iterations is reached, the
@@ -283,21 +283,26 @@ def scipy_powell(
     Powell's method is a conjugate direction method, minimising the function by a
     bi-directional search in each parameter's dimension.
 
-    The argument `direc` which is the initial set of direction vectors is not supported
-    by estimagic as the internal criterion is passed by estimagic to `scipy_powell`
-    and a user supplied initial simplex would in most cases not conform to the
-    internal problem.
+    The argument ``direc`` which is the initial set of direction vectors is not
+    supported by estimagic as the internal criterion is passed by estimagic to
+    ``scipy_powell`` and a user supplied initial simplex would in most cases not
+    conform to the internal problem.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         relative_params_tolerance (float): Stop when the relative movement between
             parameter vectors is smaller than this.
         relative_criterion_tolerance (float): Stop when the relative improvement between
             two iterations is smaller than this. More formally, this is expressed as
-            ``f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= relative_criterion_tolerance``
+
+            .. math::
+
+                \\frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \\leq
+                \\text{relative_criterion_tolerance}
+
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
         max_iterations (int): If the maximum number of iterations is reached, the
@@ -353,9 +358,9 @@ def scipy_bfgs(
     expansion near an optimum. However, BFGS can have acceptable performance even
     for non-smooth optimization instances.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         gradient_tolerance (float): Stop if all elements of the projected gradient are
@@ -407,21 +412,22 @@ def scipy_conjugate_gradient(
 
     The conjugate gradient method finds functions' local optima using just the gradient.
 
-    This conjugate gradient algorithm is based on that of Polak and Ribiere
-    (:cite:`Nocedal2006`, pp. 120-122).
+    This conjugate gradient algorithm is based on that of Polak and Ribiere, detailed
+    in :cite:`Nocedal2006`, pp. 120-122.
 
     Conjugate gradient methods tend to work better when:
-        * the criterion has a unique global minimizing point, and no local minima or
-            other stationary points.
-        * the criterion is, at least locally, reasonably well approximated by a
-            quadratic function.
-        * the criterion is continuous and has a continuous gradient.
-        * the gradient is not too large, e.g., has a norm less than 1000.
-        * The initial guess is reasonably close to the criterion's global minimizer.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    * the criterion has a unique global minimizing point, and no local minima or
+      other stationary points.
+    * the criterion is, at least locally, reasonably well approximated by a
+      quadratic function.
+    * the criterion is continuous and has a continuous gradient.
+    * the gradient is not too large, e.g., has a norm less than 1000.
+    * The initial guess is reasonably close to the criterion's global minimizer.
+
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         gradient_tolerance (float): Stop if all elements of the projected gradient are
@@ -475,19 +481,20 @@ def scipy_newton_cg(
 
     Newton's conjugate gradient algorithm uses an approximation of the Hessian to find
     the minimum of a function. It is practical for small and large problems
-    (:cite:`Nocedal2006`, p. 140).
+    (see :cite:`Nocedal2006`, p. 140).
 
     Newton-CG methods are also called truncated Newton methods. This function differs
     scipy_truncated_newton because
 
-    * scipy_newton_cg's algorithm is written purely in Python using NumPy
-        and scipy while scipy_truncated_newton's algorithm calls a C function.
-    * scipy_newton_cg's algorithm is only for unconstrained minimization
-        while scipy_truncated_newton's algorithm supports bounds.
+    * ``scipy_newton_cg``'s algorithm is written purely in Python using NumPy
+      and scipy while ``scipy_truncated_newton``'s algorithm calls a C function.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    * ``scipy_newton_cg``'s algorithm is only for unconstrained minimization
+      while ``scipy_truncated_newton``'s algorithm supports bounds.
+
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         relative_params_tolerance (float): Stop when the relative movement between
@@ -555,9 +562,9 @@ def scipy_cobyla(
     For more information on COBYLA see :cite:`Powell1994`, :cite:`Powell1998` and
     :cite:`Powell2007`.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         max_iterations (int): If the maximum number of iterations is reached, the
@@ -629,27 +636,27 @@ def scipy_truncated_newton(
 
     This function differs from scipy_newton_cg because
 
-    * scipy_newton_cg's algorithm is written purely in Python using NumPy
-        and scipy while scipy_truncated_newton's algorithm calls a C function.
+    * ``scipy_newton_cg``'s algorithm is written purely in Python using NumPy
+      and scipy while ``scipy_truncated_newton``'s algorithm calls a C function.
 
-    * scipy_newton_cg's algorithm is only for unconstrained minimization
-        while scipy_truncated_newton's algorithm supports bounds.
+    * ``scipy_newton_cg``'s algorithm is only for unconstrained minimization
+      while ``scipy_truncated_newton``'s algorithm supports bounds.
 
-    estimagic does not support the `scale` argument. It allows the user to provide
+    estimagic does not support the ``scale`` argument. It allows the user to provide
     scaling factors for each variable. As estimagic passes the internal parameters and
-    criterion to scipy_truncated_newton the length of the parameter and positions of
+    criterion to ``scipy_truncated_newton`` the length of the parameter and positions of
     the parameters are likely to have changed. The default is up-low for interval
     bounded variables and 1+|x] fo the others.
-    The same applies to offset, though this array would be subtracted from the parameter
-    estimates. By default, the offsets are (up+low)/2 for interval bounded variables
-    and x for the others.
+    The same applies to ``offset``, though this array would be subtracted from the
+    parameter estimates instead. By default, the offsets are (up+low)/2 for interval
+    bounded variables and x for the others.
 
-    `messg_num` is used to control the verbosity of the optimizer and not supported by
-    estimagic.
+    ``messg_num`` is used to control the verbosity of the optimizer and not supported
+    by estimagic.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         func_min_estimate (float): Minimum function value estimate. Defaults to 0.
@@ -663,18 +670,19 @@ def scipy_truncated_newton(
             between iterations after scaling that is tolerated to declare convergence.
         gradient_tolerance (float): Stop if the value of the projected gradient
             (after applying x scaling factors) is smaller than this. If
-            gradient_tolerance < 0.0, gtol is set to 1e-2 * sqrt(accuracy).
+            gradient_tolerance < 0.0, gradient_tolerance is set to
+            1e-2 * sqrt(accuracy).
         max_hess_evaluations_per_iteration (int): Maximum number of hessian*vector
-            evaluations per main iteration. If maxCGit == 0, the direction chosen is
-            -gradient. If maxCGit < 0, maxCGit is set to max(1,min(50,n/2)).
-            Defaults to -1.
+            evaluations per main iteration. If ``max_hess_evaluations == 0``, the
+            direction chosen is ``- gradient``. If ``max_hess_evaluations < 0``,
+            ``max_hess_evaluations`` is set to ``max(1,min(50,n/2))``. Defaults to -1.
         max_step_for_line_search (float): Maximum step for the line search.
             It may be increased during call. If too small, it will be set to 10.0.
             Defaults to 0.
         callback (callable): Called after each iteration.
         func_scaling_factor (float): Scaling factor (in log10) used to control the
             rescaling of the function evaluations. If the scaling factor is 0, rescale
-            at each iteration. This is the default. On the other hand if it is large,
+            at each iteration. This is the default. On the other hand, if it is large
             no rescaling is done. If it is < 0, the scaling factor is set to 1.3.
 
     Returns:
@@ -745,7 +753,7 @@ def scipy_trust_constr(
     For equality constrained problems it is an implementation of Byrd-Omojokun
     Trust-Region SQP method described in :cite:`Lalee1998` and in :cite:`Conn2000`,
     p. 549. When inequality constraints  are imposed as well, it swiches to the
-    trust-region interior point method described in :cited`Byrd1999`.
+    trust-region interior point method described in :cite:`Byrd1999`.
     This interior point algorithm in turn, solves inequality constraints by
     introducing slack variables and solving a sequence of equality-constrained
     barrier problems for progressively smaller values of the barrier parameter.
@@ -756,9 +764,9 @@ def scipy_trust_constr(
     It approximizes the Hessian using the Broyden-Fletcher-Goldfarb-Shanno (BFGS)
     Hessian update strategy.
 
-    Below only details of the optional algorithm options are listed. For the mandatory
+    Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
-    options see :ref:`naming_conventions`.
+    options, see :ref:`naming_conventions`.
 
     Args:
         gradient_tolerance (float): Tolerance for termination by the norm of the
@@ -778,12 +786,11 @@ def scipy_trust_constr(
             problem. For an accurate local approximation the trust-region should be
             large and for an  approximation valid only close to the current point it
             should be a small one. The trust radius is automatically updated throughout
-            the optimization process, with ``initial_tr_radius`` being its initial
+            the optimization process, with ``initial_trust_radius`` being its initial
             value. Default is 1 (recommended in :cite:`Conn2000`, p. 19).
         callback (callable): Called after each iteration. It must have the signature
-            ``callback(xk, OptimizeResult state) -> bool``
-            where ``xk`` is the current parameter vector. and ``state``
-            is an `OptimizeResult` object, with the same fields
+            ``callback(xk, state) -> bool`` where ``xk`` is the current parameter
+            vector and ``state`` is an `OptimizeResult` object, with the same fields
             as the ones from the return. If callback returns True
             the algorithm execution is terminated.
             For all the other methods, the signature is ``callback(xk)``
@@ -838,26 +845,26 @@ def scipy_trust_constr(
         factorization_method (str or None): Method to factorize the Jacobian of the
             constraints. Use None (default) for the auto selection or one of:
 
-            - 'NormalEquation' (requires scikit-sparse)
-            - 'AugmentedSystem'
-            - 'QRFactorization'
-            - 'SVDFactorization'
+            - "NormalEquation" (requires scikit-sparse)
+            - "AugmentedSystem"
+            - "QRFactorization"
+            - "SVDFactorization"
 
-            The methods 'NormalEquation' and 'AugmentedSystem' can be used only
+            The methods "NormalEquation" and "AugmentedSystem" can be used only
             with sparse constraints. The projections required by the algorithm
             will be computed using, respectively, the the normal equation  and the
             augmented system approaches explained in :cite:`Conn2000`, p. 19.
-            'NormalEquation' computes the Cholesky factorization of ``A A.T`` and
-            'AugmentedSystem' performs the LU factorization of an augmented system.
-            They usually provide similar results. 'AugmentedSystem' is used by default
+            "NormalEquation" computes the Cholesky factorization of A A.T and
+            "AugmentedSystem" performs the LU factorization of an augmented system.
+            They usually provide similar results. "AugmentedSystem" is used by default
             for sparse matrices.
-            The methods 'QRFactorization' and 'SVDFactorization' can be used
+            The methods "QRFactorization" and "SVDFactorization" can be used
             only with dense constraints. They compute the required projections
-            using, respectively, QR and SVD factorizations. The 'SVDFactorization'
+            using, respectively, QR and SVD factorizations. The "SVDFactorization"
             method can cope with Jacobian matrices with deficient row rank and will
             be used whenever other factorization methods fail (which may imply the
             conversion of sparse matrices to a dense format when required).
-            By default, 'QRFactorization' is used for dense matrices.
+            By default, "QRFactorization" is used for dense matrices.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
