@@ -280,7 +280,7 @@ def pre_replace_jacobian(pre_replacements, dim_in):
         jacobian (np.ndarray): The jacobian.
 
     Examples:
-        # Note: The example is the same as in the doctest of pre_replace
+        >>> # Note: The example is the same as in the doctest of pre_replace
         >>> pre_replacements = np.array([1, -1, 0])
         >>> pre_replace_jacobian(pre_replacements, 2)
         array([[0., 1.],
@@ -371,7 +371,7 @@ def post_replace_jacobian(post_replacements):
         jacobian (np.ndarray): The Jacobian.
 
     Examples:
-        # Note: the example is the same as in the doctest of post_replace
+        >>> # Note: the example is the same as in the doctest of post_replace
         >>> post_replacements = np.array([-1, -1, 1])
         >>> post_replace_jacobian(post_replacements)
         array([[1., 0., 0.],

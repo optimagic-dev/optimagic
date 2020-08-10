@@ -69,7 +69,7 @@ require the specification of the Hessian:
 - trust-exact
 - trust-krylov
 
-The following arguments are not supported as part of ``algo_option``:
+The following arguments are not supported as part of ``algo_options``:
 
 - ``disp``
     If set to True would print a convergence message.

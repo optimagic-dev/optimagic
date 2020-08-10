@@ -411,13 +411,13 @@ def scipy_conjugate_gradient(
     (:cite:`Nocedal2006`, pp. 120-122).
 
     Conjugate gradient methods tend to work better when:
-    1. the criterion has a unique global minimizing point, and no local minima or
-    other stationary points.
-    2. the criterion is, at least locally, reasonably well approximated by a
-    quadratic function.
-    3. the criterion is continuous and has a continuous gradient.
-    4. the gradient is not too large, e.g., has a norm less than 1000.
-    5. The initial guess is reasonably close to the criterion 's global minimizer.
+        * the criterion has a unique global minimizing point, and no local minima or
+            other stationary points.
+        * the criterion is, at least locally, reasonably well approximated by a
+            quadratic function.
+        * the criterion is continuous and has a continuous gradient.
+        * the gradient is not too large, e.g., has a norm less than 1000.
+        * The initial guess is reasonably close to the criterion's global minimizer.
 
     Below only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
@@ -480,10 +480,10 @@ def scipy_newton_cg(
     Newton-CG methods are also called truncated Newton methods. This function differs
     scipy_truncated_newton because
 
-    1. scipy_newton_cg's algorithm is written purely in Python using NumPy
-    and scipy while scipy_truncated_newton's algorithm calls a C function.
-    2. scipy_newton_cg's algorithm is only for unconstrained minimization
-    while scipy_truncated_newton's algorithm supports bounds.
+    * scipy_newton_cg's algorithm is written purely in Python using NumPy
+        and scipy while scipy_truncated_newton's algorithm calls a C function.
+    * scipy_newton_cg's algorithm is only for unconstrained minimization
+        while scipy_truncated_newton's algorithm supports bounds.
 
     Below only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
@@ -629,10 +629,11 @@ def scipy_truncated_newton(
 
     This function differs from scipy_newton_cg because
 
-    1. scipy_newton_cg's algorithm is written purely in Python using NumPy
-    and scipy while scipy_truncated_newton's algorithm calls a C function.
-    2. scipy_newton_cg's algorithm is only for unconstrained minimization
-    while scipy_truncated_newton's algorithm supports bounds.
+    * scipy_newton_cg's algorithm is written purely in Python using NumPy
+        and scipy while scipy_truncated_newton's algorithm calls a C function.
+
+    * scipy_newton_cg's algorithm is only for unconstrained minimization
+        while scipy_truncated_newton's algorithm supports bounds.
 
     estimagic does not support the `scale` argument. It allows the user to provide
     scaling factors for each variable. As estimagic passes the internal parameters and
