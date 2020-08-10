@@ -1,37 +1,3 @@
-"""Implement scipy's optimizers.
-
-Some arguments cannot be passed as `algo_option` to estimagic's scipy wrappers:
-    - disp:
-        If set to True would print a convergence message.
-        In estimagic it's always set to its default: False.
-        Refer to estimagic's result dictionary's "success" entry for the convergence
-        message.
-    - return_all:
-        If set to True, a list of the best solution at each iteration is returned.
-        In estimagic it's always set to its default: False.
-        Use estimagic's database and dashboard instead to explore your criterion and
-        algorithm.
-    - tol:
-        This argument of minimize (not an options key) is passed as different types of
-        tolerance (gradient, parameter or criterion, as well as relative or absolute)
-        depending on the selected algorithm. We require the user to explicitely input
-        the tolerance criteria or use our defaults instead.
-    - args:
-        This argument of minimize (not an options key) is partialed into the function
-        for the user. Specify `criterion_kwargs` in `maximize` or `minimize` to have
-        the same behavior.
-
-Scipy's COBYLA, SLSQP and trust-constr support constraints in principle. However, for
-the moment they are not supported.
-
-estimagic does not support the following algorithms at the moment because they require
-the specification of the Hessian:
-    - dogleg
-    - trust-ncg
-    - trust-exact
-    - trust-krylov
-
-"""
 import functools
 
 import numpy as np
@@ -86,10 +52,11 @@ def scipy_lbfgsb(
     the hessian using the stored history of gradients and uses the hessian to calculate
     a candidate step size. Then it uses a gradient based line search algorithm to
     determine the actual step length. Since the algorithm always evaluates the gradient
-    and criterion function jointly, the user should provide a `criterion_and_derivative`
-    function that exploits the synergies in the calculation of criterion and gradient.
+    and criterion function jointly, the user should provide a
+    ``criterion_and_derivative`` function that exploits the synergies in the
+    calculation of criterion and gradient.
 
-    The lbfgsb algorithm is almost perfectly scale invariant. It is thus not necessary
+    The lbfgsb algorithm is almost perfectly scale invariant. Thus, it is not necessary
     to scale the parameters.
 
     Below only details of the optional algorithm options are listed. For the mandatory
@@ -99,7 +66,12 @@ def scipy_lbfgsb(
     Args:
         relative_criterion_tolerance (float): Stop when the relative improvement between
             two iterations is smaller than this. More formally, this is expressed as
-            ``f^k - f^{k+1})/max{|f^k|,|f^{k+1}|,1} <= relative_criterion_tolerance``
+
+            .. math::
+
+                \\frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \\leq
+                \\text{relative_criterion_tolerance}
+
         gradient_tolerance (float): Stop if all elements of the projected gradient are
             smaller than this.
         max_criterion_evaluations (int): If the maximum number of function evaluation is
@@ -163,7 +135,11 @@ def scipy_slsqp(
     differentiable scalar optimization problems with up to several hundred parameters.
 
     The optimizer is taken from scipy which wraps the SLSQP optimization subroutine
-    originally implemented by [Dieter Kraft]_.
+    originally implemented by :cite:`Kraft1988`.
+
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
 
     Args:
         relative_criterion_tolerance (float): Precision goal for the value of f in the
@@ -172,16 +148,11 @@ def scipy_slsqp(
             optimization stops, but we do not count this as convergence.
         callback (callable): Called after each iteration.
         constraints: not supported at the moment. Constraints can only be passed
-            directly as constraints argument to estimagic's `maximize` or `minimize`.
-            See :ref:`implementation_of_constraints` for details.
+            directly as constraints argument to estimagic's ``maximize`` or
+            ``minimize``. See :ref:`implementation_of_constraints` for details.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
-
-    .. [Dieter Kraft] A software package for sequential quadratic programming. 1988.
-            Tech. Rep. DFVLR-FB 88-28, DLR German Aerospace Center –
-            Institute for Flight Mechanics, Koln, Germany.
-            http://degenerateconic.com/wp-content/uploads/2018/03/DFVLR_FB_88_28.pdf
 
     """
     if constraints is not None:
@@ -190,6 +161,7 @@ def scipy_slsqp(
             + "Please use estimagic's constraint interface for constraints supported "
             + "by estimagic."
         )
+    constraints = () if constraints is None else constraints
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_slsqp"
@@ -215,6 +187,7 @@ def scipy_slsqp(
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
         callback=callback,
+        constraints=constraints,
     )
 
     return _process_scipy_result(res)
@@ -244,6 +217,10 @@ def scipy_neldermead(
     criterion is passed by estimagic to `scipy_neldermead` and a user supplied initial
     simplex would in most cases not conform to the internal problem.
 
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
+
     Args:
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
@@ -254,17 +231,12 @@ def scipy_neldermead(
         absolute_criterion_tolerance (float): Absolute difference in the criterion value
             between iterations that is tolerated to declare convergence.
         adaptive (bool): Adapt algorithm parameters to dimensionality of problem.
-            Useful for high-dimensional minimization [1]. Default is False.
+            Useful for high-dimensional minimization (:cite:`Gao2012`, p. 259-277).
+            Default is False.
         callback (callable): Called after each iteration.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
-
-    References:
-        [1] Gao, F. and Han, L. Implementing the Nelder-Mead simplex algorithm with
-        adaptive parameters. 2012. Computational Optimization and Applications.
-        51:1, pp. 259-277
-
 
     """
     assert absolute_params_tolerance != 0 or absolute_criterion_tolerance != 0, (
@@ -282,6 +254,7 @@ def scipy_neldermead(
         "maxfev": max_criterion_evaluations,
         "xatol": absolute_params_tolerance,
         "fatol": absolute_criterion_tolerance,
+        "adaptive": adaptive,
     }
 
     res = scipy.optimize.minimize(
@@ -315,6 +288,10 @@ def scipy_powell(
     and a user supplied initial simplex would in most cases not conform to the
     internal problem.
 
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
+
     Args:
         relative_params_tolerance (float): Stop when the relative movement between
             parameter vectors is smaller than this.
@@ -340,8 +317,8 @@ def scipy_powell(
     options = {
         "xtol": relative_params_tolerance,
         "ftol": relative_criterion_tolerance,
-        "maxiter": max_iterations,
         "maxfev": max_criterion_evaluations,
+        "maxiter": max_iterations,
     }
 
     res = scipy.optimize.minimize(
@@ -375,6 +352,10 @@ def scipy_bfgs(
     BFGS is not guaranteed to converge unless the function has a quadratic Taylor
     expansion near an optimum. However, BFGS can have acceptable performance even
     for non-smooth optimization instances.
+
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
 
     Args:
         gradient_tolerance (float): Stop if all elements of the projected gradient are
@@ -427,15 +408,20 @@ def scipy_conjugate_gradient(
     The conjugate gradient method finds functions' local optima using just the gradient.
 
     This conjugate gradient algorithm is based on that of Polak and Ribiere
-    [1]_.
+    (:cite:`Nocedal2006`, pp. 120-122).
+
     Conjugate gradient methods tend to work better when:
     1. the criterion has a unique global minimizing point, and no local minima or
-       other stationary points.
+    other stationary points.
     2. the criterion is, at least locally, reasonably well approximated by a
-       quadratic function.
+    quadratic function.
     3. the criterion is continuous and has a continuous gradient.
     4. the gradient is not too large, e.g., has a norm less than 1000.
     5. The initial guess is reasonably close to the criterion 's global minimizer.
+
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
 
     Args:
         gradient_tolerance (float): Stop if all elements of the projected gradient are
@@ -446,12 +432,10 @@ def scipy_conjugate_gradient(
             "score" that is compared to the gradient tolerance to determine convergence.
             Defaut is infinite which means that the largest entry of the gradient vector
             is compared to the gradient tolerance.
+        callback (callable): Called after each iteration.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
-
-    References:
-        .. [1] Wright & Nocedal, "Numerical Optimization", 1999, pp. 120-122.
 
     """
     algo_info = DEFAULT_ALGO_INFO.copy()
@@ -490,18 +474,20 @@ def scipy_newton_cg(
     """Minimize a scalar function using Newton's conjugate gradient algorithm.
 
     Newton's conjugate gradient algorithm uses an approximation of the Hessian to find
-    the minimum of a function. It is practical for small and large problems.
+    the minimum of a function. It is practical for small and large problems
+    (:cite:`Nocedal2006`, p. 140).
 
     Newton-CG methods are also called truncated Newton methods. This function differs
     scipy_truncated_newton because
 
     1. scipy_newton_cg's algorithm is written purely in Python using NumPy
-        and scipy while scipy_truncated_newton's algorithm calls a C function.
+    and scipy while scipy_truncated_newton's algorithm calls a C function.
     2. scipy_newton_cg's algorithm is only for unconstrained minimization
-        while scipy_truncated_newton's algorithm supports bounds.
+    while scipy_truncated_newton's algorithm supports bounds.
 
-    Reference:
-        Wright & Nocedal, 'Numerical Optimization', 1999, p. 140.
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
 
     Args:
         relative_params_tolerance (float): Stop when the relative movement between
@@ -539,6 +525,8 @@ def scipy_newton_cg(
         jac=gradient,
         options=options,
         callback=callback,
+        hess=hess,
+        hessp=hessp,
     )
 
     return _process_scipy_result(res)
@@ -549,8 +537,10 @@ def scipy_cobyla(
     x,
     *,
     max_iterations=MAX_ITERATIONS,
+    relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
     callback=None,
     constraints=None,
+    constraint_tolerance=2e-4,
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
@@ -562,26 +552,27 @@ def scipy_cobyla(
 
     Scipy's implementation wraps the FORTRAN implementation of the algorithm.
 
-    References:
-        Powell M.J.D. (1994), “A direct search optimization method that models the
-            objective and constraint functions by linear interpolation.”, in Advances in
-            Optimization and Numerical Analysis, eds. S. Gomez and J-P Hennart, Kluwer
-            Academic (Dordrecht), pp. 51-67
+    For more information on COBYLA see :cite:`Powell1994`, :cite:`Powell1998` and
+    :cite:`Powell2007`.
 
-        Powell M.J.D. (1998), “Direct search algorithms for optimization calculations”,
-            Acta Numerica 7, 287-336
-
-        Powell M.J.D. (2007),
-            “A view of algorithms for optimization without derivatives”,
-            Cambridge University Technical Report DAMTP 2007/NA03
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
 
     Args:
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
+        relative_params_tolerance (float): Stop when the relative movement between
+            parameter vectors is smaller than this. In case of COBYLA this is a lower
+            bound on the size of the trust region and can be seen as the required
+            accuracy in the variables but this accuracy is not guaranteed.
+
         callback (callable): Called after each iteration.
         constraints: not supported at the moment. Constraints can only be passed
-            directly as constraints argument to estimagic's `maximize` or `minimize`.
-            See :ref:`implementation_of_constraints` for details.
+            directly as constraints argument to estimagic's ``maximize`` or
+            ``minimize``. See :ref:`implementation_of_constraints` for details.
+        constraint_tolerance (float): absolute tolerance for constraint violations.
+            Default is 2e-4.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -593,6 +584,8 @@ def scipy_cobyla(
             + "Please use estimagic's constraint interface for constraints supported "
             + "by estimagic."
         )
+    constraints = () if constraints is None else constraints
+
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_cobyla"
 
@@ -600,10 +593,16 @@ def scipy_cobyla(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info,
     )
 
-    options = {"maxiter": max_iterations}
+    options = {"maxiter": max_iterations, "catol": constraint_tolerance}
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="COBYLA", options=options, callback=callback
+        fun=func,
+        x0=x,
+        method="COBYLA",
+        options=options,
+        constraints=constraints,
+        callback=callback,
+        tol=relative_params_tolerance,
     )
 
     return _process_scipy_result(res)
@@ -631,9 +630,9 @@ def scipy_truncated_newton(
     This function differs from scipy_newton_cg because
 
     1. scipy_newton_cg's algorithm is written purely in Python using NumPy
-        and scipy while scipy_truncated_newton's algorithm calls a C function.
+    and scipy while scipy_truncated_newton's algorithm calls a C function.
     2. scipy_newton_cg's algorithm is only for unconstrained minimization
-        while scipy_truncated_newton's algorithm supports bounds.
+    while scipy_truncated_newton's algorithm supports bounds.
 
     estimagic does not support the `scale` argument. It allows the user to provide
     scaling factors for each variable. As estimagic passes the internal parameters and
@@ -646,6 +645,10 @@ def scipy_truncated_newton(
 
     `messg_num` is used to control the verbosity of the optimizer and not supported by
     estimagic.
+
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
 
     Args:
         func_min_estimate (float): Minimum function value estimate. Defaults to 0.
@@ -677,11 +680,6 @@ def scipy_truncated_newton(
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
-    assert absolute_params_tolerance != 0 or absolute_criterion_tolerance != 0, (
-        "Provide either absolute_params_tolerance or absolute_criterion_tolerance as "
-        + "stopping criterion."
-    )
-
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_truncated_newton"
     func = functools.partial(
@@ -744,18 +742,22 @@ def scipy_trust_constr(
     It is the most versatile constrained minimization algorithm
     implemented in SciPy and the most appropriate for large-scale problems.
     For equality constrained problems it is an implementation of Byrd-Omojokun
-    Trust-Region SQP method described in [17]_ and in [5]_, p. 549. When
-    inequality constraints  are imposed as well, it swiches to the trust-region
-    interior point  method described in [16]_. This interior point algorithm,
-    in turn, solves inequality constraints by introducing slack variables
-    and solving a sequence of equality-constrained barrier problems
-    for progressively smaller values of the barrier parameter.
+    Trust-Region SQP method described in :cite:`Lalee1998` and in :cite:`Conn2000`,
+    p. 549. When inequality constraints  are imposed as well, it swiches to the
+    trust-region interior point method described in :cited`Byrd1999`.
+    This interior point algorithm in turn, solves inequality constraints by
+    introducing slack variables and solving a sequence of equality-constrained
+    barrier problems for progressively smaller values of the barrier parameter.
     The previously described equality constrained SQP method is
     used to solve the subproblems with increasing levels of accuracy
     as the iterate gets closer to a solution.
 
     It approximizes the Hessian using the Broyden-Fletcher-Goldfarb-Shanno (BFGS)
     Hessian update strategy.
+
+    Below only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options see :ref:`naming_conventions`.
 
     Args:
         gradient_tolerance (float): Tolerance for termination by the norm of the
@@ -776,20 +778,18 @@ def scipy_trust_constr(
             large and for an  approximation valid only close to the current point it
             should be a small one. The trust radius is automatically updated throughout
             the optimization process, with ``initial_tr_radius`` being its initial
-            value. Default is 1 (recommended in [1]_, p. 19).
-        callback (callable): Called after each iteration. It must have the signature:
-                ``callback(xk, OptimizeResult state) -> bool``
+            value. Default is 1 (recommended in :cite:`Conn2000`, p. 19).
+        callback (callable): Called after each iteration. It must have the signature
+            ``callback(xk, OptimizeResult state) -> bool``
             where ``xk`` is the current parameter vector. and ``state``
             is an `OptimizeResult` object, with the same fields
             as the ones from the return. If callback returns True
             the algorithm execution is terminated.
-            For all the other methods, the signature is:
-                ``callback(xk)``
+            For all the other methods, the signature is ``callback(xk)``
             where ``xk`` is the current parameter vector.
-
         constraints: not supported at the moment. Constraints can only be passed
-            directly as constraints argument to estimagic's `maximize` or `minimize`.
-            See :ref:`implementation_of_constraints` for details.
+            directly as constraints argument to estimagic's ``maximize`` or
+            ``minimize``. See :ref:`implementation_of_constraints` for details.
         barrier_tol (float): Threshold on the barrier parameter for the algorithm
             termination. When inequality constraints are present, the algorithm will
             terminate only when the barrier parameter is less than barrier_tol.
@@ -807,10 +807,10 @@ def scipy_trust_constr(
             where ``constr_norm_l2(x)`` is the l2 norm of a vector containing all
             the constraints. The merit function is used for accepting or rejecting
             trial points and ``constr_penalty`` weights the two conflicting goals
-            of reducing objective function and constraints. The penalty is automatically
-            updated throughout the optimization  process, with
+            of reducing objective function and constraints. The penalty is
+            automatically updated throughout the optimization  process, with
             ``initial_constr_penalty`` being its initial value. Default is 1
-            (recommended in [1]_, p 19).
+            (recommended in :cite:`Conn2000`, p 19).
         initial_barrier_parameter (float):
             used only when inequality constraints are present. For dealing with
             optimization problems ``min_x f(x)`` subject to inequality constraints
@@ -819,8 +819,8 @@ def scipy_trust_constr(
             constraints  ``c(x) + s = 0`` instead of the original problem. This
             subproblem is solved for decreasing values of ``barrier_parameter`` and
             with decreasing tolerances for the termination, starting with
-            ``initial_barrier_parameter``. The default is 0.1 (recommended in [1]_
-            p. 19).
+            ``initial_barrier_parameter``. The default is 0.1 (recommended in
+            :cite:`Conn2000`, p. 19).
             Also note that ``barrier_parameter`` is updated with the same prefactor.
         initial_barrier_tolerance (float):
             used only when inequality constraints are present. For dealing with
@@ -832,22 +832,24 @@ def scipy_trust_constr(
             and with decreasing tolerances for the termination, starting with
             ``initial_barrier_parameter`` for the barrier parameter and
             ``initial_barrier_tolerance`` for the barrier tolerance. Default is 0.1
-            (recommended in [1]_ p. 19). Also note that ``barrier_tolerance`` is
-            updated with the same prefactor.
+            (recommended in :cite:`Conn2000` p. 19). Also note that
+            ``barrier_tolerance`` is updated with the same prefactor.
         factorization_method (str or None): Method to factorize the Jacobian of the
             constraints. Use None (default) for the auto selection or one of:
-                - 'NormalEquation' (requires scikit-sparse)
-                - 'AugmentedSystem'
-                - 'QRFactorization'
-                - 'SVDFactorization'
+
+            - 'NormalEquation' (requires scikit-sparse)
+            - 'AugmentedSystem'
+            - 'QRFactorization'
+            - 'SVDFactorization'
+
             The methods 'NormalEquation' and 'AugmentedSystem' can be used only
             with sparse constraints. The projections required by the algorithm
             will be computed using, respectively, the the normal equation  and the
-            augmented system approaches explained in [1]_. 'NormalEquation'
-            computes the Cholesky factorization of ``A A.T`` and 'AugmentedSystem'
-            performs the LU factorization of an augmented system. They usually
-            provide similar results. 'AugmentedSystem' is used by default for
-            sparse matrices.
+            augmented system approaches explained in :cite:`Conn2000`, p. 19.
+            'NormalEquation' computes the Cholesky factorization of ``A A.T`` and
+            'AugmentedSystem' performs the LU factorization of an augmented system.
+            They usually provide similar results. 'AugmentedSystem' is used by default
+            for sparse matrices.
             The methods 'QRFactorization' and 'SVDFactorization' can be used
             only with dense constraints. They compute the required projections
             using, respectively, QR and SVD factorizations. The 'SVDFactorization'
@@ -858,22 +860,6 @@ def scipy_trust_constr(
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
-
-    References:
-
-    .. [1] Conn, A. R., Gould, N. I., & Toint, P. L. Trust region methods. 2000. Siam.
-        p. 19.
-    .. [5] Nocedal, J, and S J Wright. 2006. Numerical Optimization.
-       Springer New York.
-    .. [6] Byrd, R H and P Lu and J. Nocedal. 1995. A Limited Memory
-       Algorithm for Bound Constrained Optimization. SIAM Journal on
-       Scientific and Statistical Computing 16 (5): 1190-1208.
-    .. [16] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal. 1999.
-        An interior point algorithm for large-scale nonlinear  programming.
-        SIAM Journal on Optimization 9.4: 877-900.
-    .. [17] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. 1998. On the
-        implementation of an algorithm for large-scale equality constrained
-        optimization. SIAM Journal on Optimization 8.3: 682-706.
 
     """
     if hess is not None or hessp is not None:
@@ -906,6 +892,7 @@ def scipy_trust_constr(
         "initial_barrier_parameter": initial_barrier_parameter,
         "initial_barrier_tolerance": initial_barrier_tolerance,
         "initial_tr_radius": initial_trust_radius,
+        "factorization_method": factorization_method,
         # don't have "grad" here as we already supply the gradient via the "jac"
         # argument supplied directly to scipy.optimize.minimize.
     }
@@ -919,6 +906,8 @@ def scipy_trust_constr(
         options=options,
         callback=callback,
         constraints=constraints,
+        hess=hess,
+        hessp=hessp,
     )
 
     return _process_scipy_result(res)

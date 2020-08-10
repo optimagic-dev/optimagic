@@ -33,7 +33,7 @@ atol = {
     "scipy_bfgs": 1e-05,
     "scipy_conjugate_gradient": 1e-05,
     "scipy_newton_cg": 1e-05,
-    "scipy_cobyla": 1e-04,
+    "scipy_cobyla": 1e-05,
     "scipy_slsqp": 1e-04,
     # powell, trust_constr and truncated_newton require large tolerances to run through
     "scipy_powell": 1e-03,
