@@ -4,6 +4,7 @@ sum of squares is abbreviated as sos throughout the module.
 
 """
 import functools
+import warnings
 from itertools import product
 
 import numpy as np
@@ -555,15 +556,29 @@ def test_with_sdcorr_constraint_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    if algo == "scipy_trust_constr":
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = optimize_func(
+                criterion=crit,
+                params=params,
+                algorithm=algo,
+                derivative=deriv,
+                criterion_and_derivative=crit_and_deriv,
+                constraints=constraints,
+                algo_options=options,
+            )
+
+    else:
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
