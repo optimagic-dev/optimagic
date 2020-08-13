@@ -301,6 +301,7 @@ def _process_pounders_results(residuals_out, tao):
         "solution_criterion_values": residuals_out.array,
         "gradient_norm": tao.gnorm,
         "criterion_norm": tao.cnorm,
+        "convergence_code": convergence_code,
     }
 
     return results

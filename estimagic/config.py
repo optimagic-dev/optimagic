@@ -1,8 +1,8 @@
 import inspect
 from pathlib import Path
 
-from estimagic.optimization import pounders
 from estimagic.optimization import scipy_optimizers
+from estimagic.optimization import tao_optimizers
 
 DEFAULT_DATABASE_NAME = "logging.db"
 DEFAULT_SEED = 5471
@@ -18,7 +18,7 @@ DEFAULT_N_CORES = 1
 
 AVAILABLE_ALGORITHMS = {
     **dict(inspect.getmembers(scipy_optimizers, inspect.isfunction)),
-    **dict(inspect.getmembers(pounders, inspect.isfunction)),
+    **dict(inspect.getmembers(tao_optimizers, inspect.isfunction)),
 }
 AVAILABLE_ALGORITHMS = {
     key: val for key, val in AVAILABLE_ALGORITHMS.items() if not key.startswith("_")

@@ -6,17 +6,20 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from estimagic.optimization.pounders import tao_pounders
+from estimagic.optimization.tao_optimizers import tao_pounders
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32", reason="Pounders is not supported on Windows."
 )
 
-pytestmark = pytest.mark.skip(reason="Does not work.")
-
 
 NUM_AGENTS = 2_000
-algorithm = "tao_pounders"
+
+
+def test_tao_not_available_on_windows(monkeypatch):
+    monkeypatch.setattr("estimagic.optimization.tao_optimizers.sys.platform", "win32")
+    with pytest.raises(NotImplementedError):
+        tao_pounders(None, None, None, None)
 
 
 def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np.inf):
@@ -31,6 +34,23 @@ def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np
     return params
 
 
+def _make_tao_criterion_function(endog, exog, kind):
+    criterion_func = _ols_criterion if kind == "ols" else _nonlinear_criterion
+    criterion_func = functools.partial(criterion_func, endog=endog, exog=exog)
+
+    def _wrapper_criterion_and_derivative(
+        x, task=None, algorithm_info=None, first_criterion_evaluation=None
+    ):
+        return criterion_func(x=x)
+
+    return functools.partial(
+        _wrapper_criterion_and_derivative,
+        first_criterion_evaluation={
+            "output": {"root_contributions": [None] * len(endog)}
+        },
+    )
+
+
 def test_robustness():
     np.random.seed(5471)
     true_params = get_random_params(2)
@@ -38,16 +58,14 @@ def test_robustness():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit = "ols"
-    objective = functools.partial(_criterion, endog, exog, crit)
-    results = tao_pounders(objective, start_params["value"].to_numpy(), *bounds)
-    calculated = results["x"]
+    objective = _make_tao_criterion_function(endog, exog, "ols")
+    result = tao_pounders(objective, start_params["value"].to_numpy(), *bounds)
 
     x = np.column_stack([np.ones_like(exog), exog])
     y = endog.reshape(len(endog), 1)
     expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
-    np.testing.assert_almost_equal(calculated, expected, decimal=6)
+    np.testing.assert_almost_equal(result["solution_x"], expected, decimal=6)
 
 
 def test_box_constr():
@@ -59,11 +77,11 @@ def test_box_constr():
     start_params["value"] = get_random_params(2, 0.1, 0.2)["value"]
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit = "ols"
-    objective = functools.partial(_criterion, endog, exog, crit)
-    calculated = tao_pounders(objective, start_params["value"].to_numpy(), bounds)
-    assert 0 <= calculated["x"][0] <= 0.3
-    assert 0 <= calculated["x"][1] <= 0.3
+    objective = _make_tao_criterion_function(endog, exog, "ols")
+    result = tao_pounders(objective, start_params["value"].to_numpy(), *bounds)
+
+    assert 0 <= result["solution_x"][0] <= 0.3
+    assert 0 <= result["solution_x"][1] <= 0.3
 
 
 def test_max_iters():
@@ -73,17 +91,14 @@ def test_max_iters():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit = "ols"
-    objective = functools.partial(_criterion, endog, exog, crit)
-    calculated = tao_pounders(
-        objective, start_params["value"].to_numpy(), bounds, max_iterations=25
+    objective = _make_tao_criterion_function(endog, exog, "ols")
+    result = tao_pounders(
+        objective, start_params["value"].to_numpy(), *bounds, max_iterations=25
     )
 
-    assert (
-        calculated["conv"] == "user defined" or calculated["conv"] == "step size small"
-    )
-    if calculated["conv"] == 8:
-        assert calculated["sol"][0] == 25
+    assert result["message"] == "user defined" or result["message"] == "step size small"
+    if result["convergence_code"] == 8:
+        assert result["solution_criterion"][0] == 25
 
 
 def test_grtol():
@@ -93,23 +108,22 @@ def test_grtol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit = "ols"
-    objective = functools.partial(_criterion, endog, exog, crit)
-    calculated = tao_pounders(
+    objective = _make_tao_criterion_function(endog, exog, "ols")
+    result = tao_pounders(
         objective,
         start_params["value"].to_numpy(),
-        bounds=bounds,
-        gatol=False,
-        gttol=False,
+        *bounds,
+        gradient_absolute_tolerance=False,
+        gradient_total_tolerance=False,
     )
 
     assert (
-        calculated["conv"] == "grtol below critical value"
-        or calculated["conv"] == "step size small"
+        result["message"] == "gradient_relative_tolerance below critical value"
+        or result["message"] == "step size small"
     )
 
-    if calculated["conv"] == 4:
-        assert calculated["sol"][2] / calculated["sol"][1] < 10
+    if result["convergence_code"] == 4:
+        assert result["solution_criterion"][2] / result["solution_criterion"][1] < 10
 
 
 def test_gatol():
@@ -119,22 +133,21 @@ def test_gatol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit = "ols"
-    objective = functools.partial(_criterion, endog, exog, crit)
+    objective = _make_tao_criterion_function(endog, exog, "ols")
     calculated = tao_pounders(
         objective,
         start_params["value"].to_numpy(),
-        bounds=bounds,
-        grtol=False,
-        gttol=False,
+        *bounds,
+        gradient_relative_tolerance=False,
+        gradient_total_tolerance=False,
     )
 
     assert (
-        calculated["conv"] == "gatol below critical value"
-        or calculated["conv"] == "step size small"
+        calculated["message"] == "gradient_absolute_tolerance below critical value"
+        or calculated["message"] == "step size small"
     )
-    if calculated["conv"] == 3:
-        assert calculated["sol"][2] < 1e-4
+    if calculated["convergence_code"] == 3:
+        assert calculated["solution_criterion"][2] < 1e-4
 
 
 def test_gttol():
@@ -144,23 +157,22 @@ def test_gttol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit = "ols"
-    objective = functools.partial(_criterion, endog, exog, crit)
+    objective = _make_tao_criterion_function(endog, exog, "ols")
     calculated = tao_pounders(
         objective,
         start_params["value"].to_numpy(),
-        bounds=bounds,
-        grtol=False,
-        gatol=False,
+        *bounds,
+        gradient_relative_tolerance=False,
+        gradient_absolute_tolerance=False,
     )
 
     assert (
-        calculated["conv"] == "gttol below critical value"
-        or calculated["conv"] == "step size small"
+        calculated["message"] == "gradient_total_tolerance below critical value"
+        or calculated["message"] == "step size small"
     )
 
-    if calculated["conv"] == 5:
-        assert calculated["sol"][2] < 1
+    if calculated["convergence_code"] == 5:
+        assert calculated["solution_criterion"][2] < 1
 
 
 def test_tol():
@@ -170,38 +182,31 @@ def test_tol():
     bounds = tuple(true_params[["lower", "upper"]].to_numpy().T)
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
-    crit = "ols"
-    objective = functools.partial(_criterion, endog, exog, crit)
+    objective = _make_tao_criterion_function(endog, exog, "ols")
     calculated = tao_pounders(
         objective,
         start_params["value"].to_numpy(),
-        bounds=bounds,
-        gatol=1e-7,
-        grtol=1e-7,
-        gttol=1e-9,
+        *bounds,
+        gradient_absolute_tolerance=1e-7,
+        gradient_relative_tolerance=1e-7,
+        gradient_total_tolerance=1e-9,
     )
 
-    if calculated["conv"] == 3:
-        assert calculated["sol"][2] < 0.00000001
-    elif calculated["conv"] == 4:
-        assert calculated["sol"][2] / calculated["sol"][1] < 0.00000001
+    if calculated["convergence_code"] == 3:
+        assert calculated["solution_criterion"][2] < 0.00000001
+    elif calculated["convergence_code"] == 4:
+        assert (
+            calculated["solution_criterion"][2] / calculated["solution_criterion"][1]
+            < 0.00000001
+        )
 
 
-def test_exception():
-    np.random.seed(5478)
-    with pytest.raises(Exception):
-        tao_pounders(_return_exception, 0)
+def _nonlinear_criterion(endog, exog, x):
+    return endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)
 
 
-def _criterion(endog, exog, crit, x):
-    if crit == "nonlinear":
-        return endog - np.exp(-x[0] * exog) / (x[1] + x[2] * exog)
-    elif crit == "ols":
-        return endog - x[0] - x[1] * exog
-
-
-def _return_exception(x):
-    raise (Exception)
+def _ols_criterion(endog, exog, x):
+    return endog - x[0] - x[1] * exog
 
 
 def _simulate_sample(num_agents, paras, error_term_high=0.5):
