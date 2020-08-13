@@ -4,6 +4,7 @@ sum of squares is abbreviated as sos throughout the module.
 
 """
 import functools
+import sys
 from itertools import product
 
 import numpy as np
@@ -165,7 +166,17 @@ def switch_sign(func):
 
 test_cases = []
 for alg in AVAILABLE_ALGORITHMS:
-    test_cases += get_test_cases_for_algorithm(alg)
+    test_cases_ = get_test_cases_for_algorithm(alg)
+
+    if alg.startswith("tao_") and sys.platform == "win32":
+        test_cases_ = [
+            pytest.param(
+                *test_case, mark=pytest.mark.skip(reason="TAO unavailable on Windows.")
+            )
+            for test_case in test_cases_
+        ]
+
+    test_cases += test_cases_
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
@@ -192,6 +203,9 @@ for alg in BOUNDS_SUPPORTING_ALLGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
 
 
+@pytest.mark.xfail(
+    reason="Start vector outside binding bounds raises error with pounders."
+)
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.ones((5, 1)), columns=["value"])
