@@ -171,7 +171,7 @@ for alg in AVAILABLE_ALGORITHMS:
     if alg.startswith("tao_") and sys.platform == "win32":
         test_cases_ = [
             pytest.param(
-                *test_case, mark=pytest.mark.skip(reason="TAO unavailable on Windows.")
+                *test_case, marks=pytest.mark.skip(reason="TAO unavailable on Windows.")
             )
             for test_case in test_cases_
         ]
