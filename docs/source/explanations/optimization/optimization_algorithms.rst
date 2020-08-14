@@ -90,6 +90,9 @@ The following arguments are not supported as part of ``algo_options``:
     This argument of minimize (not an options key) is partialed into the function
     for the user. Specify ``criterion_kwargs`` in ``maximize`` or ``minimize`` to
     achieve the same behavior.
+- ``callback``
+    This argument would be called after each iteration and the algorithm would terminate
+    if it returned True.
 
 .. note::
     Scipy's COBYLA, SLSQP and trust-constr support general non linear constraints in

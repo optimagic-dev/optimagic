@@ -117,8 +117,6 @@ def get_test_cases_for_algorithm(algorithm):
     else:
         options = {}
 
-    print(options, "\n\n")
-
     directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
 
     crit_funcs = [sos_dict_criterion]
