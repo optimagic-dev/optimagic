@@ -10,7 +10,7 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_allclose as aac
+from numpy.testing import assert_allclose
 
 from estimagic.config import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
@@ -197,8 +197,8 @@ for alg in AVAILABLE_ALGORITHMS:
 )
 def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv, options):
     params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
-    params["lower"] = -10 if algo in BOUNDS_SUPPORTING_ALGORITHMS else -np.inf
-    params["upper"] = 10 if algo in BOUNDS_SUPPORTING_ALGORITHMS else np.inf
+    params["lower"] = -np.inf
+    params["upper"] = np.inf
 
     optimize_func = minimize if direction == "minimize" else maximize
 
@@ -212,7 +212,12 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv, optio
     )
 
     assert res["success"], f"{algo} did not converge."
-    aac(res["solution_params"]["value"].to_numpy(), np.zeros(10), atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(),
+        np.zeros(10),
+        atol=atol[algo],
+        rtol=0,
+    )
 
 
 # constraints are only applicable to algorithms that support bounds
@@ -226,7 +231,7 @@ for alg in BOUNDS_SUPPORTING_ALGORITHMS:
 )
 def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv, options):
     params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
-    params["lower"] = [2.0, -10.0, -10.0, -10.0, -10.0]
+    params["lower"] = [1.0, -10.0, -10.0, -10.0, -10.0]
     params["upper"] = [10.0, 10.0, 10.0, 10.0, -1.0]
 
     optimize_func = minimize if direction == "minimize" else maximize
@@ -242,8 +247,10 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv, optio
 
     assert res["success"], f"{algo} did not converge."
 
-    expected = np.array([2.0, 0.0, 0.0, 0.0, -1.0])
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    expected = np.array([1.0, 0.0, 0.0, 0.0, -1.0])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -271,7 +278,9 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv, opt
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 7.5, 0, -2, 0.0])
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -301,7 +310,9 @@ def test_with_equality_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -331,7 +342,9 @@ def test_with_pairwise_equality_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -359,7 +372,9 @@ def test_with_increasing_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -387,7 +402,9 @@ def test_with_decreasing_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -413,7 +430,9 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv, op
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 0, 1 / 3, 1 / 3, 1 / 3])
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -441,7 +460,9 @@ def test_with_probability_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.25, 0.25, 0.25, 0.25, 0])
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -469,7 +490,9 @@ def test_with_covariance_constraint_no_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -505,7 +528,9 @@ def test_with_covariance_constraint_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0, 0.1, 0, 0, 0.1])
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -533,7 +558,9 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 @pytest.mark.parametrize(
@@ -556,20 +583,14 @@ def test_with_sdcorr_constraint_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    if algo == "scipy_trust_constr":
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            res = optimize_func(
-                criterion=crit,
-                params=params,
-                algorithm=algo,
-                derivative=deriv,
-                criterion_and_derivative=crit_and_deriv,
-                constraints=constraints,
-                algo_options=options,
-            )
+    warn_msg = (
+        "delta_grad == 0.0. Check if the approximated function is linear. "
+        + "If the function is linear better results can be obtained by defining the "
+        + "Hessian as zero instead of using quasi-Newton approximations."
+    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message=warn_msg)
 
-    else:
         res = optimize_func(
             criterion=crit,
             params=params,
@@ -583,7 +604,9 @@ def test_with_sdcorr_constraint_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
-    aac(res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo])
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+    )
 
 
 def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():
