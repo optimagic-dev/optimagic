@@ -9,7 +9,7 @@ import pytest
 from estimagic.optimization.tao_optimizers import tao_pounders
 
 pytestmark = pytest.mark.skipif(
-    sys.platform == "win32", reason="Pounders is not supported on Windows."
+    sys.platform == "win32", reason="TAO is not available on Windows."
 )
 
 

@@ -33,6 +33,24 @@ BOUNDS_SUPPORTING_ALLGORITHMS = [
 ]
 
 
+def _skip_tao_tests_on_windows(test_cases):
+    """Skip tests involving TAO optimizers on Windows."""
+    new_test_cases = []
+    for test_case in test_cases:
+        if test_case[0].startswith("tao_"):
+            test_case = pytest.param(
+                *test_case,
+                marks=pytest.mark.skipif(
+                    sys.platform == "win32", reason="TAO is not available on Windows."
+                )
+            )
+            new_test_cases.append(test_case)
+        else:
+            new_test_cases.append(test_case)
+
+    return new_test_cases
+
+
 # ======================================================================================
 # Define example functions
 # ======================================================================================
@@ -166,17 +184,8 @@ def switch_sign(func):
 
 test_cases = []
 for alg in AVAILABLE_ALGORITHMS:
-    test_cases_ = get_test_cases_for_algorithm(alg)
-
-    if alg.startswith("tao_") and sys.platform == "win32":
-        test_cases_ = [
-            pytest.param(
-                *test_case, marks=pytest.mark.skip(reason="TAO unavailable on Windows.")
-            )
-            for test_case in test_cases_
-        ]
-
-    test_cases += test_cases_
+    test_cases += get_test_cases_for_algorithm(alg)
+test_cases = _skip_tao_tests_on_windows(test_cases)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
@@ -201,13 +210,14 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
 bound_cases = []
 for alg in BOUNDS_SUPPORTING_ALLGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
+bound_cases = _skip_tao_tests_on_windows(bound_cases)
 
 
-@pytest.mark.xfail(
-    reason="Start vector outside binding bounds raises error with pounders."
-)
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
+    if algo.startswith("tao_"):
+        pytest.xfail("Pounders cannot deal with start vectors outside bounds.")
+
     params = pd.DataFrame(data=np.ones((5, 1)), columns=["value"])
     params["lower"] = [1, -10, -10, -10, -10.0]
     params["upper"] = [10, 10, 10, 10, -1.0]
