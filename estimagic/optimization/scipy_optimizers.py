@@ -209,9 +209,13 @@ def scipy_neldermead(
     The Nelder-Mead algorithm is a direct search method (based on function comparison)
     and is often applied to nonlinear optimization problems for which derivatives are
     not known.
-    Unlike modern optimization methods, the Nelder–Mead heuristic can converge to a
-    non-stationary point, unless the problem satisfies stronger conditions than are
+    Unlike most modern optimization methods, the Nelder–Mead heuristic can converge to
+    a non-stationary point, unless the problem satisfies stronger conditions than are
     necessary for modern methods.
+
+    Nelder-Mead is the the best algorithm to solve a problem but rarely the worst.
+    Its popularity is likely due to historic reasons and much larger than its
+    properties warrant.
 
     The argument `initial_simplex` is not supported by estimagic as the internal
     criterion is passed by estimagic to `scipy_neldermead` and a user supplied initial
@@ -283,10 +287,9 @@ def scipy_powell(
     Powell's method is a conjugate direction method, minimising the function by a
     bi-directional search in each parameter's dimension.
 
-    The argument ``direc`` which is the initial set of direction vectors is not
-    supported by estimagic as the internal criterion is passed by estimagic to
-    ``scipy_powell`` and a user supplied initial simplex would in most cases not
-    conform to the internal problem.
+    The argument ``direc``, which is the initial set of direction vectors and which
+    is part of the scipy interface is not supported by estimagic because it is
+    incompatible with how estimagic handles constraints.
 
     Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those

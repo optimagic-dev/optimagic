@@ -195,7 +195,7 @@ def convert_external_derivative_to_internal(
 
     # return gradient with shape (len(params),)
     if deriv.shape[0] == 1:
-        deriv = deriv[0]
+        deriv = deriv.flatten()
     return deriv
 
 

@@ -92,8 +92,9 @@ The following arguments are not supported as part of ``algo_options``:
     achieve the same behavior.
 
 .. note::
-    Scipy's COBYLA, SLSQP and trust-constr support constraints in principle.
-    However, for the moment they are not supported.
+    Scipy's COBYLA, SLSQP and trust-constr support general non linear constraints in
+    principle. However, for the moment they are not supported.
+
 
 References:
 *********************
