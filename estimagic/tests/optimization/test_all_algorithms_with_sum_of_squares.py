@@ -28,19 +28,7 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
-atol = {
-    "scipy_lbfgsb": 1e-05,
-    "scipy_neldermead": 1e-05,
-    "scipy_bfgs": 1e-05,
-    "scipy_conjugate_gradient": 1e-05,
-    "scipy_newton_cg": 1e-05,
-    "scipy_cobyla": 1e-05,
-    "scipy_slsqp": 1e-04,
-    # powell, trust_constr and truncated_newton require large tolerances to run through
-    "scipy_powell": 1e-03,
-    "scipy_truncated_newton": 2e-03,
-    "scipy_trust_constr": 5e-03,
-}
+IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
 
 # ======================================================================================
 # Define example functions
@@ -92,7 +80,7 @@ def sos_criterion_and_gradient(params):
 
 def sos_criterion_and_jacobian(params):
     x = params["value"].to_numpy()
-    return (x ** 2).sum(), np.diag(2 * x)
+    return {"contributions": x ** 2, "value": (x ** 2).sum()}, np.diag(2 * x)
 
 
 # ======================================================================================
@@ -106,13 +94,7 @@ def get_test_cases_for_algorithm(algorithm):
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
 
-    only_absolute_stop_criterions = ["scipy_neldermead", "scipy_truncated_newton"]
-    if alg in only_absolute_stop_criterions:
-        options = {
-            "absolute_criterion_tolerance": 1e-06,
-            "absolute_params_tolerance": 1e-06,
-        }
-    elif alg == "scipy_trust_constr":
+    if alg == "scipy_trust_constr":
         options = {"gradient_tolerance": 1e-07, "relative_params_tolerance": 1e-07}
     else:
         options = {}
@@ -210,11 +192,9 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv, optio
     )
 
     assert res["success"], f"{algo} did not converge."
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(),
-        np.zeros(10),
-        atol=atol[algo],
-        rtol=0,
+        res["solution_params"]["value"].to_numpy(), np.zeros(10), atol=atol, rtol=0,
     )
 
 
@@ -246,8 +226,9 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv, optio
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([1.0, 0.0, 0.0, 0.0, -1.0])
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -276,8 +257,9 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv, opt
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 7.5, 0, -2, 0.0])
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -308,8 +290,9 @@ def test_with_equality_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -340,8 +323,9 @@ def test_with_pairwise_equality_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -370,8 +354,9 @@ def test_with_increasing_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -400,8 +385,9 @@ def test_with_decreasing_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -428,8 +414,9 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv, op
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 0, 1 / 3, 1 / 3, 1 / 3])
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -458,8 +445,9 @@ def test_with_probability_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.25, 0.25, 0.25, 0.25, 0])
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -488,8 +476,9 @@ def test_with_covariance_constraint_no_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -526,8 +515,9 @@ def test_with_covariance_constraint_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0, 0.1, 0, 0, 0.1])
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -556,8 +546,9 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
@@ -602,8 +593,9 @@ def test_with_sdcorr_constraint_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol[algo], rtol=0
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 

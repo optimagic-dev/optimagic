@@ -6,12 +6,19 @@ import scipy
 from estimagic.optimization.default_algo_options import ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.default_algo_options import ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.default_algo_options import GRADIENT_TOLERANCE
+from estimagic.optimization.default_algo_options import INITIAL_TRUST_RADIUS
 from estimagic.optimization.default_algo_options import LIMITED_MEMORY_STORAGE_LENGTH
 from estimagic.optimization.default_algo_options import MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.default_algo_options import MAX_ITERATIONS
 from estimagic.optimization.default_algo_options import MAX_LINE_SEARCH_STEPS
 from estimagic.optimization.default_algo_options import RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.default_algo_options import RELATIVE_PARAMS_TOLERANCE
+from estimagic.optimization.default_algo_options import (
+    SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
+)
+from estimagic.optimization.default_algo_options import (
+    SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+)
 
 
 DEFAULT_ALGO_INFO = {
@@ -183,8 +190,8 @@ def scipy_neldermead(
     *,
     max_iterations=MAX_ITERATIONS,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
-    absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
-    absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
+    absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    absolute_criterion_tolerance=SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
     adaptive=False,
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
@@ -224,11 +231,6 @@ def scipy_neldermead(
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
-    assert absolute_params_tolerance != 0 or absolute_criterion_tolerance != 0, (
-        "Provide either absolute_params_tolerance or absolute_criterion_tolerance as "
-        + "stopping criterion."
-    )
-
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_neldermead"
     func = functools.partial(
@@ -261,6 +263,10 @@ def scipy_powell(
     max_iterations=MAX_ITERATIONS,
 ):
     """Minimize a scalar function using the modified Powell method.
+
+    .. warning::
+        The Powell algorithm does not minimize a sum of squares function precisely, i.e.
+        with a precision better than 1e-02 but worse than 1e-04 in the parameters.
 
     The criterion function need not be differentiable.
 
@@ -452,6 +458,11 @@ def scipy_newton_cg(
     max_iterations=MAX_ITERATIONS,
 ):
     """Minimize a scalar function using Newton's conjugate gradient algorithm.
+
+    .. warning::
+        The truncated Newton algorithm does not minimize a sum of squares function
+        precisely (i.e. with a precision better than 1e-02 but worse than 1e-04 in
+        the parameters).
 
     Newton's conjugate gradient algorithm uses an approximation of the Hessian to find
     the minimum of a function. It is practical for small and large problems
@@ -659,9 +670,14 @@ def scipy_trust_constr(
     gradient_tolerance=GRADIENT_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
-    initial_trust_radius=1,
+    initial_trust_radius=INITIAL_TRUST_RADIUS,
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
+
+    .. warning::
+        The trust_constr algorithm does not minimize a sum of squares function
+        precisely (i.e. with a precision better than 1e-02 but worse than 1e-04 in
+        the parameters).
 
     .. note::
         Its general nonlinear constraints' handling is not supported yet by estimagic.
@@ -700,13 +716,12 @@ def scipy_trust_constr(
             relative_params_tolerance.
         initial_trust_radius (float): Initial trust radius. The trust radius gives the
             maximum distance between solution points in consecutive iterations.
-            It reflects the
-            trust the algorithm puts in the local approximation of the optimization
-            problem. For an accurate local approximation the trust-region should be
-            large and for an  approximation valid only close to the current point it
-            should be a small one. The trust radius is automatically updated throughout
-            the optimization process, with ``initial_trust_radius`` being its initial
-            value. Default is 1 (recommended in :cite:`Conn2000`, p. 19).
+            It reflects the trust the algorithm puts in the local approximation of the
+            optimization problem. For an accurate local approximation the trust-region
+            should be large and for an approximation valid only close to the current
+            point it should be a small one. The trust radius is automatically updated
+            throughout the optimization process, with ``initial_trust_radius`` being
+            its initial value. Default is 1 (recommended in :cite:`Conn2000`, p. 19).
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
