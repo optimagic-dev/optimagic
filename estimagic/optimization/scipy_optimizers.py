@@ -126,7 +126,7 @@ def scipy_slsqp(
     lower_bounds=None,
     upper_bounds=None,
     *,
-    relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
+    absolute_criterion_tolerance=SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
 ):
     """Minimize a scalar function of one or more variables using the SLSQP algorithm.
@@ -147,7 +147,7 @@ def scipy_slsqp(
     options, see :ref:`naming_conventions`.
 
     Args:
-        relative_criterion_tolerance (float): Precision goal for the value of f in the
+        absolute_criterion_tolerance (float): Precision goal for the value of f in the
             stopping criterion.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
@@ -169,7 +169,9 @@ def scipy_slsqp(
 
     options = {
         "maxiter": max_iterations,
-        "ftol": relative_criterion_tolerance,
+        # this is the absolute criterion tolerance according to
+        # scipy/optimize/slsqp/slsqp_optmz.f:495
+        "ftol": absolute_criterion_tolerance,
     }
 
     res = scipy.optimize.minimize(
@@ -190,9 +192,9 @@ def scipy_neldermead(
     *,
     max_iterations=MAX_ITERATIONS,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
-    absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
     absolute_criterion_tolerance=SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-    adaptive=False,
+    absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    adaptive=None,
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
 
@@ -221,11 +223,15 @@ def scipy_neldermead(
             is reached, the optimization stops but we do not count this as convergence.
         absolute_params_tolerance (float): Absolute difference in parameters between
             iterations that is tolerated to declare convergence.
+            As no relative tolerances can be passed to Nelder-Mead, estimagic sets a
+            non zero default for this.
         absolute_criterion_tolerance (float): Absolute difference in the criterion value
             between iterations that is tolerated to declare convergence.
+            As no relative tolerances can be passed to Nelder-Mead, estimagic sets a
+            non zero default for this.
         adaptive (bool): Adapt algorithm parameters to dimensionality of problem.
             Useful for high-dimensional minimization (:cite:`Gao2012`, p. 259-277).
-            Default is False.
+            scipy's default is False.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -239,10 +245,13 @@ def scipy_neldermead(
     options = {
         "maxiter": max_iterations,
         "maxfev": max_criterion_evaluations,
+        # both tolerances seem to have to be fulfilled for Nelder-Mead to converge.
+        # if not both are specified it does not converge in our tests.
         "xatol": absolute_params_tolerance,
         "fatol": absolute_criterion_tolerance,
-        "adaptive": adaptive,
     }
+    if adaptive is not None:
+        options["adaptive"] = adaptive
 
     res = scipy.optimize.minimize(
         fun=func, x0=x, method="Nelder-Mead", options=options,
@@ -483,7 +492,8 @@ def scipy_newton_cg(
 
     Args:
         relative_params_tolerance (float): Stop when the relative movement between
-            parameter vectors is smaller than this.
+            parameter vectors is smaller than this. Newton CG uses the average relative
+            change in the parameters for determining the convergence.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
 
@@ -518,6 +528,7 @@ def scipy_cobyla(
     *,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
+    initial_trust_radius=INITIAL_TRUST_RADIUS,
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
@@ -525,7 +536,7 @@ def scipy_cobyla(
     It is deriviative-free and supports nonlinear inequality and equality constraints.
 
     .. note::
-        SLSQP's general nonlinear constraints is not supported yet by estimagic.
+        Cobyla's general nonlinear constraints is not supported yet by estimagic.
 
     Scipy's implementation wraps the FORTRAN implementation of the algorithm.
 
@@ -543,6 +554,13 @@ def scipy_cobyla(
             parameter vectors is smaller than this. In case of COBYLA this is a lower
             bound on the size of the trust region and can be seen as the required
             accuracy in the variables but this accuracy is not guaranteed.
+        initial_trust_radius (float): Initial trust radius.
+            Since a linear approximation is likely only good near the current simplex,
+            the linear program is given the further requirement that the solution,
+            which will become the next evaluation point must be within a radius
+            RHO_j from x_j. RHO_j only decreases, never increases. The initial RHO_j is
+            the initial_trust_radius. In this way COBYLA's iterations behave like a
+            trust region algorithm.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -555,7 +573,7 @@ def scipy_cobyla(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info,
     )
 
-    options = {"maxiter": max_iterations}
+    options = {"maxiter": max_iterations, "rhobeg": initial_trust_radius}
 
     res = scipy.optimize.minimize(
         fun=func, x0=x, method="COBYLA", options=options, tol=relative_params_tolerance,
@@ -570,15 +588,18 @@ def scipy_truncated_newton(
     lower_bounds=None,
     upper_bounds=None,
     *,
-    func_min_estimate=0,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     max_iterations=MAX_ITERATIONS,
     absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
     absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
     gradient_tolerance=GRADIENT_TOLERANCE,
-    max_hess_evaluations_per_iteration=-1,
-    max_step_for_line_search=0,
-    func_scaling_factor=0,
+    func_min_estimate=None,
+    max_hess_evaluations_per_iteration=None,
+    max_step_for_line_search=None,
+    func_scaling_factor=None,
+    line_search_severity=None,
+    finitie_difference_precision=None,
+    criterion_rescale_factor=None,
 ):
     """Minimize a scalar function using truncated Newton algorithm.
 
@@ -615,14 +636,24 @@ def scipy_truncated_newton(
         max_hess_evaluations_per_iteration (int): Maximum number of hessian*vector
             evaluations per main iteration. If ``max_hess_evaluations == 0``, the
             direction chosen is ``- gradient``. If ``max_hess_evaluations < 0``,
-            ``max_hess_evaluations`` is set to ``max(1,min(50,n/2))``. Defaults to -1.
+            ``max_hess_evaluations`` is set to ``max(1,min(50,n/2))`` where n is the
+            length of the parameter vector. This is also the default.
         max_step_for_line_search (float): Maximum step for the line search.
-            It may be increased during call. If too small, it will be set to 10.0.
-            Defaults to 0.
+            It may be increased during the optimization. If too small, it will be set
+            to 10.0. By default we use scipy's default.
         func_scaling_factor (float): Scaling factor (in log10) used to control the
             rescaling of the function evaluations. If the scaling factor is 0, rescale
             at each iteration. This is the default. On the other hand, if it is large
             no rescaling is done. If it is < 0, the scaling factor is set to 1.3.
+        line_search_severity (float): Severity of the line search. If < 0 or > 1,
+            set to 0.25. Estimagic defaults to scipy's default.
+        finitie_difference_precision (float): Relative precision for finite difference
+            calculations. If <= machine_precision, set to sqrt(machine_precision).
+            Estimagic defaults to scipy's default.
+        criterion_rescale_factor (float): Scaling factor (in log10) used to trigger
+            criterion rescaling. If 0, rescale at each iteration. If a large value,
+            never rescale. If < 0, rescale is set to 1.3. Estimagic defaults to scipy's
+            default.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -638,16 +669,30 @@ def scipy_truncated_newton(
     )
 
     options = {
+        # scipy/optimize/tnc/tnc.c::809 and 844 show that ftol is the
+        # absolute criterion tolerance
         "ftol": absolute_criterion_tolerance,
+        # scipy/optimize/tnc/tnc.c::856 show sthat xtol is the absolute parameter
+        # tolerance
         "xtol": absolute_params_tolerance,
         "gtol": gradient_tolerance,
         "maxfun": max_criterion_evaluations,
-        "maxCGit": max_hess_evaluations_per_iteration,
-        "stepmx": max_step_for_line_search,
-        "minfev": func_min_estimate,
-        "rescale": func_scaling_factor,
         "maxiter": max_iterations,
     }
+    if max_hess_evaluations_per_iteration is not None:
+        options["maxCGit"] = max_hess_evaluations_per_iteration
+    if max_step_for_line_search is not None:
+        options["stepmx"] = max_step_for_line_search
+    if func_scaling_factor is not None:
+        options["rescale"] = func_scaling_factor
+    if func_min_estimate is not None:
+        options["minfev"] = func_min_estimate
+    if line_search_severity is not None:
+        options["eta"] = line_search_severity
+    if finitie_difference_precision is not None:
+        options["accuracy"] = finitie_difference_precision
+    if criterion_rescale_factor is not None:
+        options["rescale"] = criterion_rescale_factor
 
     res = scipy.optimize.minimize(
         fun=func,

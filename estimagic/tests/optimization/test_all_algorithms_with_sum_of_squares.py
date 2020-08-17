@@ -94,10 +94,11 @@ def get_test_cases_for_algorithm(algorithm):
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
 
-    if alg == "scipy_trust_constr":
-        options = {"gradient_tolerance": 1e-07, "relative_params_tolerance": 1e-07}
-    else:
-        options = {}
+    options = {
+        "gradient_tolerance": 1e-07,
+        "relative_params_tolerance": 1e-07,
+        "absolute_criterion_tolerance": 1e-08,
+    }
 
     directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
 
@@ -182,14 +183,21 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv, optio
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -209,23 +217,32 @@ for alg in BOUNDS_SUPPORTING_ALGORITHMS:
 )
 def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv, options):
     params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
-    params["lower"] = [1.0, -10.0, -10.0, -10.0, -10.0]
+    # the truncated_newton's line search fails if the lower bound of the first
+    # parameter is set to 1.0. With 2.0 truncated_newton also converges.
+    params["lower"] = [2.0, -10.0, -10.0, -10.0, -10.0]
     params["upper"] = [10.0, 10.0, 10.0, 10.0, -1.0]
+    expected = np.array([2.0, 0.0, 0.0, 0.0, -1.0])
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
-    expected = np.array([1.0, 0.0, 0.0, 0.0, -1.0])
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
@@ -244,15 +261,22 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv, opt
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -277,15 +301,22 @@ def test_with_equality_constraint(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -310,15 +341,22 @@ def test_with_pairwise_equality_constraint(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -341,15 +379,22 @@ def test_with_increasing_constraint(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -372,15 +417,22 @@ def test_with_decreasing_constraint(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -401,15 +453,22 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv, op
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -432,15 +491,22 @@ def test_with_probability_constraint(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -463,15 +529,22 @@ def test_with_covariance_constraint_no_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -502,15 +575,22 @@ def test_with_covariance_constraint_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -532,16 +612,22 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     constraints = [{"loc": [0, 1, 2], "type": "sdcorr"}]
 
     optimize_func = minimize if direction == "minimize" else maximize
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
+        warnings.filterwarnings("ignore", message=warn_msg)
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-        algo_options=options,
-    )
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+            algo_options=options,
+        )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -572,13 +658,18 @@ def test_with_sdcorr_constraint_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    warn_msg = (
-        "delta_grad == 0.0. Check if the approximated function is linear. "
-        + "If the function is linear better results can be obtained by defining the "
-        + "Hessian as zero instead of using quasi-Newton approximations."
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
     with warnings.catch_warnings():
+        warn_msg = (
+            r"The following algo_options were ignored because they are not compatible *"
+        )
         warnings.filterwarnings("ignore", message=warn_msg)
+        hess_warn_msg = (
+            "delta_grad == 0.0. Check if the approximated function is linear. "
+            + "If the function is linear better results can be obtained by defining "
+            + "the Hessian as zero instead of using quasi-Newton approximations."
+        )
+        warnings.filterwarnings("ignore", message=hess_warn_msg)
 
         res = optimize_func(
             criterion=crit,
