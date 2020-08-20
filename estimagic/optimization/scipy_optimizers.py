@@ -249,9 +249,8 @@ def scipy_neldermead(
         # if not both are specified it does not converge in our tests.
         "xatol": absolute_params_tolerance,
         "fatol": absolute_criterion_tolerance,
+        "adaptive": adaptive,
     }
-    if adaptive is not None:
-        options["adaptive"] = adaptive
 
     res = scipy.optimize.minimize(
         fun=func, x0=x, method="Nelder-Mead", options=options,
@@ -606,13 +605,12 @@ def scipy_truncated_newton(
     absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
     absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
     gradient_tolerance=GRADIENT_TOLERANCE,
-    func_min_estimate=None,
-    max_hess_evaluations_per_iteration=None,
-    max_step_for_line_search=None,
-    func_scaling_factor=None,
-    line_search_severity=None,
-    finitie_difference_precision=None,
-    criterion_rescale_factor=None,
+    func_min_estimate=0,
+    max_hess_evaluations_per_iteration=-1,
+    max_step_for_line_search=0,
+    line_search_severity=-1,
+    finitie_difference_precision=0,
+    criterion_rescale_factor=-1,
 ):
     """Minimize a scalar function using truncated Newton algorithm.
 
@@ -664,10 +662,6 @@ def scipy_truncated_newton(
         max_step_for_line_search (float): Maximum step for the line search.
             It may be increased during the optimization. If too small, it will be set
             to 10.0. By default we use scipy's default.
-        func_scaling_factor (float): Scaling factor (in log10) used to control the
-            rescaling of the function evaluations. If the scaling factor is 0, rescale
-            at each iteration. This is the default. On the other hand, if it is large
-            no rescaling is done. If it is < 0, the scaling factor is set to 1.3.
         line_search_severity (float): Severity of the line search. If < 0 or > 1,
             set to 0.25. Estimagic defaults to scipy's default.
         finitie_difference_precision (float): Relative precision for finite difference
@@ -701,21 +695,13 @@ def scipy_truncated_newton(
         "gtol": gradient_tolerance,
         "maxfun": max_criterion_evaluations,
         "maxiter": max_iterations,
+        "maxCGit": max_hess_evaluations_per_iteration,
+        "stepmx": max_step_for_line_search,
+        "minfev": func_min_estimate,
+        "eta": line_search_severity,
+        "accuracy": finitie_difference_precision,
+        "rescale": criterion_rescale_factor,
     }
-    if max_hess_evaluations_per_iteration is not None:
-        options["maxCGit"] = max_hess_evaluations_per_iteration
-    if max_step_for_line_search is not None:
-        options["stepmx"] = max_step_for_line_search
-    if func_scaling_factor is not None:
-        options["rescale"] = func_scaling_factor
-    if func_min_estimate is not None:
-        options["minfev"] = func_min_estimate
-    if line_search_severity is not None:
-        options["eta"] = line_search_severity
-    if finitie_difference_precision is not None:
-        options["accuracy"] = finitie_difference_precision
-    if criterion_rescale_factor is not None:
-        options["rescale"] = criterion_rescale_factor
 
     res = scipy.optimize.minimize(
         fun=func,
@@ -765,7 +751,7 @@ def scipy_trust_constr(
     used to solve the subproblems with increasing levels of accuracy
     as the iterate gets closer to a solution.
 
-    It approximizes the Hessian using the Broyden-Fletcher-Goldfarb-Shanno (BFGS)
+    It approximates the Hessian using the Broyden-Fletcher-Goldfarb-Shanno (BFGS)
     Hessian update strategy.
 
     Below, only details of the optional algorithm options are listed. For the mandatory
