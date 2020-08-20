@@ -194,7 +194,7 @@ def scipy_neldermead(
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_criterion_tolerance=SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
-    adaptive=None,
+    adaptive=False,
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
 
@@ -205,7 +205,7 @@ def scipy_neldermead(
     a non-stationary point, unless the problem satisfies stronger conditions than are
     necessary for modern methods.
 
-    Nelder-Mead is the the best algorithm to solve a problem but rarely the worst.
+    Nelder-Mead is never the best algorithm to solve a problem but rarely the worst.
     Its popularity is likely due to historic reasons and much larger than its
     properties warrant.
 
@@ -274,8 +274,10 @@ def scipy_powell(
     """Minimize a scalar function using the modified Powell method.
 
     .. warning::
-        The Powell algorithm does not minimize a sum of squares function precisely, i.e.
-        with a precision better than 1e-02 but worse than 1e-04 in the parameters.
+        In our benchmark using a quadratic objective function, the Powell algorithm
+        did not find the optimum very precisely (less than 4 decimal places).
+        If you require high precision, you should refine an optimum found with Powell
+        with another local optimizer.
 
     The criterion function need not be differentiable.
 
@@ -469,9 +471,10 @@ def scipy_newton_cg(
     """Minimize a scalar function using Newton's conjugate gradient algorithm.
 
     .. warning::
-        The truncated Newton algorithm does not minimize a sum of squares function
-        precisely (i.e. with a precision better than 1e-02 but worse than 1e-04 in
-        the parameters).
+        In our benchmark using a quadratic objective function, the truncated newton
+        algorithm did not find the optimum very precisely (less than 4 decimal places).
+        If you require high precision, you should refine an optimum found with Powell
+        with another local optimizer.
 
     Newton's conjugate gradient algorithm uses an approximation of the Hessian to find
     the minimum of a function. It is practical for small and large problems
@@ -485,6 +488,16 @@ def scipy_newton_cg(
 
     * ``scipy_newton_cg``'s algorithm is only for unconstrained minimization
       while ``scipy_truncated_newton``'s algorithm supports bounds.
+
+    Conjugate gradient methods tend to work better when:
+
+    * the criterion has a unique global minimizing point, and no local minima or
+      other stationary points.
+    * the criterion is, at least locally, reasonably well approximated by a
+      quadratic function.
+    * the criterion is continuous and has a continuous gradient.
+    * the gradient is not too large, e.g., has a norm less than 1000.
+    * The initial guess is reasonably close to the criterion's global minimizer.
 
     Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
@@ -611,6 +624,16 @@ def scipy_truncated_newton(
     * ``scipy_newton_cg``'s algorithm is only for unconstrained minimization
       while ``scipy_truncated_newton``'s algorithm supports bounds.
 
+    Conjugate gradient methods tend to work better when:
+
+    * the criterion has a unique global minimizing point, and no local minima or
+      other stationary points.
+    * the criterion is, at least locally, reasonably well approximated by a
+      quadratic function.
+    * the criterion is continuous and has a continuous gradient.
+    * the gradient is not too large, e.g., has a norm less than 1000.
+    * The initial guess is reasonably close to the criterion's global minimizer.
+
     estimagic does not support the ``scale``  nor ``offset`` argument as they are not
     compatible with the way estimagic handles constraints. It also does not support
     ``messg_num`` which is an additional way to control the verbosity of the optimizer.
@@ -720,9 +743,10 @@ def scipy_trust_constr(
     """Minimize a scalar function of one or more variables subject to constraints.
 
     .. warning::
-        The trust_constr algorithm does not minimize a sum of squares function
-        precisely (i.e. with a precision better than 1e-02 but worse than 1e-04 in
-        the parameters).
+        In our benchmark using a quadratic objective function, the trust_constr
+        algorithm did not find the optimum very precisely (less than 4 decimal places).
+        If you require high precision, you should refine an optimum found with Powell
+        with another local optimizer.
 
     .. note::
         Its general nonlinear constraints' handling is not supported yet by estimagic.
