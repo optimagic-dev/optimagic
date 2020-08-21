@@ -168,7 +168,7 @@ for alg in AVAILABLE_ALGORITHMS:
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
 def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
-    params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
+    params = pd.DataFrame(data=np.ones((2, 1)), columns=["value"])
     params["lower"] = -np.inf
     params["upper"] = np.inf
 
@@ -185,7 +185,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
     assert res["success"], f"{algo} did not converge."
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), np.zeros(10), atol=atol, rtol=0,
+        res["solution_params"]["value"].to_numpy(), np.zeros(2), atol=atol, rtol=0,
     )
 
 
@@ -195,6 +195,7 @@ for alg in BOUNDS_SUPPORTING_ALGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
@@ -222,6 +223,7 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
@@ -250,6 +252,7 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
@@ -278,6 +281,7 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_pairwise_equality_constraint(
     algo, direction, crit, deriv, crit_and_deriv,
@@ -308,6 +312,7 @@ def test_with_pairwise_equality_constraint(
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
@@ -334,6 +339,7 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
@@ -360,6 +366,7 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [0.1], [0.3], [0.6]], columns=["value"])
@@ -386,6 +393,7 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[0.3], [0.0], [0.6], [0.1], [5]], columns=["value"])
@@ -412,6 +420,7 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_covariance_constraint_no_bounds_distance(
     algo, direction, crit, deriv, crit_and_deriv,
@@ -440,6 +449,7 @@ def test_with_covariance_constraint_no_bounds_distance(
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_covariance_constraint_bounds_distance(
     algo, direction, crit, deriv, crit_and_deriv,
@@ -476,6 +486,7 @@ def test_with_covariance_constraint_bounds_distance(
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_sdcorr_constraint_no_bounds_distance(
     algo, direction, crit, deriv, crit_and_deriv,
@@ -503,6 +514,7 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_sdcorr_constraint_bounds_distance(
     algo, direction, crit, deriv, crit_and_deriv,

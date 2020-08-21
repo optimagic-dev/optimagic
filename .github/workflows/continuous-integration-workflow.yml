@@ -38,7 +38,7 @@ jobs:
 
       - name: Run pytest.
         shell: bash -l {0}
-        run: tox -e pytest -- --cov-report=xml --cov=./
+        run: tox -e pytest -- -m "not slow" --cov-report=xml --cov=./
 
       - name: Upload coverage report.
         if: runner.os == 'Linux' && matrix.python-version == '3.8'
