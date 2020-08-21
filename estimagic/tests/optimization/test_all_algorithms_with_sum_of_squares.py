@@ -94,12 +94,6 @@ def get_test_cases_for_algorithm(algorithm):
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
 
-    options = {
-        "gradient_tolerance": 1e-07,
-        "relative_params_tolerance": 1e-07,
-        "absolute_criterion_tolerance": 1e-08,
-    }
-
     directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
 
     crit_funcs = [sos_dict_criterion]
@@ -131,10 +125,9 @@ def get_test_cases_for_algorithm(algorithm):
                 switch_sign(crit),
                 switch_sign(deriv),
                 switch_sign(c_and_d),
-                options,
             )
         else:
-            case = (algorithm, direction, crit, deriv, c_and_d, options)
+            case = (algorithm, direction, crit, deriv, c_and_d)
         test_cases.append(case)
     return test_cases
 
@@ -173,31 +166,21 @@ for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", test_cases
-)
-def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv, options):
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
     params["lower"] = -np.inf
     params["upper"] = np.inf
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+    )
 
     assert res["success"], f"{algo} did not converge."
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -212,10 +195,8 @@ for alg in BOUNDS_SUPPORTING_ALGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
-def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv, options):
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
     # the truncated_newton's line search fails if the lower bound of the first
     # parameter is set to 1.0. With 2.0 truncated_newton also converges.
@@ -225,21 +206,13 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv, optio
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -249,10 +222,8 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv, optio
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
-def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv, options):
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
     params["lower"] = [-10, -10, -10, -10, -10]
     params["upper"] = [10, 10, 10, 10, 10]
@@ -261,22 +232,14 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv, opt
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -287,12 +250,8 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv, opt
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
-def test_with_equality_constraint(
-    algo, direction, crit, deriv, crit_and_deriv, options
-):
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
     params["lower"] = [-10, -10, -10, -10, -10.0]
     params["upper"] = [10, 10, 10, 10, 10]
@@ -301,22 +260,14 @@ def test_with_equality_constraint(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -327,11 +278,9 @@ def test_with_equality_constraint(
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_pairwise_equality_constraint(
-    algo, direction, crit, deriv, crit_and_deriv, options,
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [2], [1], [2], [1]], columns=["value"])
     params["lower"] = [-10, -10, -10, -10, -10.0]
@@ -341,22 +290,14 @@ def test_with_pairwise_equality_constraint(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -367,34 +308,22 @@ def test_with_pairwise_equality_constraint(
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
-def test_with_increasing_constraint(
-    algo, direction, crit, deriv, crit_and_deriv, options
-):
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
 
     constraints = [{"loc": [0, 1, 2], "type": "increasing"}]
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -405,34 +334,22 @@ def test_with_increasing_constraint(
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
-def test_with_decreasing_constraint(
-    algo, direction, crit, deriv, crit_and_deriv, options
-):
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
 
     constraints = [{"loc": [2, 3, 4], "type": "decreasing"}]
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -443,32 +360,22 @@ def test_with_decreasing_constraint(
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
-def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv, options):
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [0.1], [0.3], [0.6]], columns=["value"])
 
     constraints = [{"loc": [2, 3, 4], "type": "linear", "value": 1, "weights": 1}]
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -479,34 +386,22 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv, op
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
-def test_with_probability_constraint(
-    algo, direction, crit, deriv, crit_and_deriv, options
-):
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[0.3], [0.0], [0.6], [0.1], [5]], columns=["value"])
 
     constraints = [{"loc": [0, 1, 2, 3], "type": "probability"}]
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -517,11 +412,9 @@ def test_with_probability_constraint(
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_covariance_constraint_no_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv, options,
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [0.1], [2], [3], [2]], columns=["value"])
 
@@ -529,22 +422,14 @@ def test_with_covariance_constraint_no_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -555,11 +440,9 @@ def test_with_covariance_constraint_no_bounds_distance(
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_covariance_constraint_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv, options,
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     # Note: Robust bounds only have an effect for 3x3 covariance matrices or larger
     params = pd.DataFrame(data=[[1], [0.1], [2], [0.2], [0.3], [3]], columns=["value"])
@@ -575,22 +458,14 @@ def test_with_covariance_constraint_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -601,33 +476,23 @@ def test_with_covariance_constraint_bounds_distance(
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_sdcorr_constraint_no_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv, options,
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [2], [0.1], [3], [2]], columns=["value"])
 
     constraints = [{"loc": [0, 1, 2], "type": "sdcorr"}]
 
     optimize_func = minimize if direction == "minimize" else maximize
-    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
-    with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
-
-        res = optimize_func(
-            criterion=crit,
-            params=params,
-            algorithm=algo,
-            derivative=deriv,
-            criterion_and_derivative=crit_and_deriv,
-            constraints=constraints,
-            algo_options=options,
-        )
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
 
     assert res["success"], f"{algo} did not converge."
 
@@ -638,11 +503,9 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     )
 
 
-@pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv, options", bound_cases
-)
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_sdcorr_constraint_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv, options,
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     # Note: Robust bounds only have an effect for 3x3 sdcorr matrices or larger
     params = pd.DataFrame(data=[[1], [2], [3], [0.1], [0.2], [0.3]], columns=["value"])
@@ -660,10 +523,6 @@ def test_with_sdcorr_constraint_bounds_distance(
 
     # filter ignored algo_options warnings to pass the same tolerances to all algorithms
     with warnings.catch_warnings():
-        warn_msg = (
-            r"The following algo_options were ignored because they are not compatible *"
-        )
-        warnings.filterwarnings("ignore", message=warn_msg)
         hess_warn_msg = (
             "delta_grad == 0.0. Check if the approximated function is linear. "
             + "If the function is linear better results can be obtained by defining "
@@ -678,7 +537,6 @@ def test_with_sdcorr_constraint_bounds_distance(
             derivative=deriv,
             criterion_and_derivative=crit_and_deriv,
             constraints=constraints,
-            algo_options=options,
         )
 
     assert res["success"], f"{algo} did not converge."

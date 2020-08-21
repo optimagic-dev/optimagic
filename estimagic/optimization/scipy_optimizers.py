@@ -721,7 +721,7 @@ def scipy_trust_constr(
     lower_bounds=None,
     upper_bounds=None,
     *,
-    gradient_tolerance=GRADIENT_TOLERANCE,
+    gradient_tolerance=1e-08,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
     initial_trust_radius=INITIAL_TRUST_RADIUS,
@@ -763,6 +763,8 @@ def scipy_trust_constr(
             Lagrangian gradient. The algorithm will terminate when both the infinity
             norm (i.e., max abs value) of the Lagrangian gradient and the constraint
             violation are smaller than the gradient_tolerance.
+            For this algorithm we use scipy's gradient tolerance for trust_constr.
+            This smaller tolerance is needed for the sum of sqares tests to pass.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
         relative_params_tolerance (float): Tolerance for termination by the change of

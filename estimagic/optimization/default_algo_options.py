@@ -27,12 +27,12 @@ LIMITED_MEMORY_STORAGE_LENGTH = 10
 
 # absolute criterion tolerance estimagic requires if no other stopping criterion apart
 # from max iterations etc. is available
-# this is taken from scipy (mean of minimize Nelder-Mead and minimize SLSQP's value)
-SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 0.00001
+# this is taken from scipy (SLSQP's value, smaller than Nelder-Mead)
+SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 1e-08
 
 # absolute parameter tolerance estimagic requires if no other stopping criterion apart
 # from max iterations etc. is available
-# this is taken from scipy (mean of minimize Nelder-Mead and minimize SLSQP's value)
+# this is taken from Nelder-Mead
 SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 0.0001
 
 # recommended for scipy_trust_constr in :cite:`Conn2000`, p. 19.
