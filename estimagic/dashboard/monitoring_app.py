@@ -9,7 +9,7 @@ from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models import Toggle
 
-from estimagic.dashboard.utilities import create_standard_figure
+from estimagic.dashboard.utilities import create_styled_figure
 from estimagic.dashboard.utilities import get_color_palette
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
@@ -146,7 +146,7 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
     if y_names is None:
         y_names = y_keys
 
-    plot = create_standard_figure(title=title)
+    plot = create_styled_figure(title=title)
 
     colors = get_color_palette(nr_colors=len(y_keys))
     for color, y_key, y_name in zip(colors, y_keys, y_names):
