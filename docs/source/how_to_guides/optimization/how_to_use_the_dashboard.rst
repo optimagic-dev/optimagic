@@ -8,10 +8,8 @@ Overview
 ---------
 
 Estimagic provides a dashboard that allows to inspect one or several optimizations. The
-dashboard visualizes the databases created and updated by the optimizations. To start a
-dashboard you can pass ``dashboard=True`` to maximize, minimize or the estimation
-functions. Alternatively, you can start a dashboard later by typing the following in
-your command-line interface:
+dashboard visualizes the databases created and updated by the optimizations.
+You can start a dashboard by typing the following in your command-line interface:
 
 .. code-block:: bash
 
