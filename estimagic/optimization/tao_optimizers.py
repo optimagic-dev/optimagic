@@ -1,12 +1,10 @@
 """This module implements the POUNDERs algorithm."""
 import functools
-import sys
 
 import numpy as np
+from petsc4py import PETSc
 
-if sys.platform != "win32":
-    from petsc4py import PETSc
-
+from estimagic.config import IS_PETSC4PY_INSTALLED
 
 POUNDERS_ALGO_INFO = {
     "primary_criterion_entry": "root_contributions",
@@ -36,8 +34,11 @@ def tao_pounders(
     and therefore may require fewer iterations to arrive at a local optimum than
     Nelder-Mead.
 
-    The criterion function :func:`func` should return an array of the errors NOT an
-    array of the squared errors or anything else.
+    The criterion function :func:`func` should return a dictionary with the following
+    fields:
+
+    1. ``"value"``: The sum of squared (potentially weighted) errors.
+    2. ``"root_contributions"``: An array containing the root (weighted) contributions.
 
     Scaling the problem is necessary such that bounds correspond to the unit hypercube
     :mat:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
@@ -99,8 +100,12 @@ def tao_pounders(
         https://bitbucket.org/petsc/petsc4py
 
     """
-    if sys.platform == "win32":
-        raise NotImplementedError("The pounders algorithm is not available on Windows.")
+    if not IS_PETSC4PY_INSTALLED:
+        raise NotImplementedError(
+            "The petsc4py package is not installed and required for 'tao_pounders'. If "
+            "you are using Linux or MacOS, install the package with 'conda install -c "
+            "conda-forge petsc4py. The package is not available on Windows."
+        )
 
     func = functools.partial(
         criterion_and_derivative, task="criterion", algorithm_info=POUNDERS_ALGO_INFO,

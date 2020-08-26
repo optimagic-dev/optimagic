@@ -4,7 +4,6 @@ sum of squares is abbreviated as sos throughout the module.
 
 """
 import functools
-import sys
 from itertools import product
 
 import numpy as np
@@ -12,7 +11,8 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.config import AVAILABLE_ALGORITHMS
+from estimagic.config import IS_PETSC4PY_INSTALLED
+from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
@@ -33,20 +33,15 @@ BOUNDS_SUPPORTING_ALLGORITHMS = [
 ]
 
 
-def _skip_tao_tests_on_windows(test_cases):
+def _skip_tao_tests_if_petsc4py_not_installed(test_cases):
     """Skip tests involving TAO optimizers on Windows."""
     new_test_cases = []
     for test_case in test_cases:
-        if test_case[0].startswith("tao_"):
+        if test_case[0].startswith("tao_") and not IS_PETSC4PY_INSTALLED:
             test_case = pytest.param(
-                *test_case,
-                marks=pytest.mark.skipif(
-                    sys.platform == "win32", reason="TAO is not available on Windows."
-                )
+                *test_case, marks=pytest.mark.skip(reason="petsc4py is not installed.")
             )
-            new_test_cases.append(test_case)
-        else:
-            new_test_cases.append(test_case)
+        new_test_cases.append(test_case)
 
     return new_test_cases
 
@@ -185,7 +180,7 @@ def switch_sign(func):
 test_cases = []
 for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
-test_cases = _skip_tao_tests_on_windows(test_cases)
+test_cases = _skip_tao_tests_if_petsc4py_not_installed(test_cases)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
@@ -210,7 +205,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
 bound_cases = []
 for alg in BOUNDS_SUPPORTING_ALLGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
-bound_cases = _skip_tao_tests_on_windows(bound_cases)
+bound_cases = _skip_tao_tests_if_petsc4py_not_installed(bound_cases)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)

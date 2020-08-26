@@ -1,26 +1,18 @@
 """Test the wrapper around pounders."""
 import functools
-import sys
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.optimization.optimize import minimize
-from estimagic.optimization.tao_optimizers import tao_pounders
 
-pytestmark = pytest.mark.skipif(
-    sys.platform == "win32", reason="TAO is not available on Windows."
-)
+if not IS_PETSC4PY_INSTALLED:
+    pytestmark = pytest.mark.skip(reason="petsc4py is not installed.")
 
 
 NUM_AGENTS = 2_000
-
-
-def test_tao_not_available_on_windows(monkeypatch):
-    monkeypatch.setattr("estimagic.optimization.tao_optimizers.sys.platform", "win32")
-    with pytest.raises(NotImplementedError):
-        tao_pounders(None, None, None, None)
 
 
 def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np.inf):
