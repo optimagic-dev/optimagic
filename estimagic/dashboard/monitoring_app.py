@@ -5,6 +5,7 @@ from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
+from bokeh.models import Legend
 from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models import Toggle
@@ -147,8 +148,9 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
         y_names = y_keys
 
     plot = create_styled_figure(title=title)
-
+    plot.add_layout(Legend(border_line_color=None), "right")
     colors = get_color_palette(nr_colors=len(y_keys))
+
     for color, y_key, y_name in zip(colors, y_keys, y_names):
         line_glyph = plot.line(
             source=data,

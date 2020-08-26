@@ -89,7 +89,9 @@ def create_styled_figure(title, tooltips=None):
         fig (bokeh Figure)
 
     """
-    fig = figure(plot_height=250, plot_width=500, title=title, tooltips=tooltips)
+    fig = figure(
+        plot_height=250, plot_width=500, title=title.title(), tooltips=tooltips
+    )
     fig.title.text_font_size = "15pt"
 
     # set minimum borders
