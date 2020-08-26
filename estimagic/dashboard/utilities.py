@@ -90,7 +90,7 @@ def create_styled_figure(title, tooltips=None):
 
     """
     fig = figure(
-        plot_height=250, plot_width=500, title=title.title(), tooltips=tooltips
+        plot_height=300, plot_width=800, title=title.title(), tooltips=tooltips
     )
     fig.title.text_font_size = "15pt"
 

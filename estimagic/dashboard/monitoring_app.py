@@ -148,30 +148,33 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
         y_names = y_keys
 
     plot = create_styled_figure(title=title)
-    plot.add_layout(Legend(border_line_color=None), "right")
     colors = get_color_palette(nr_colors=len(y_keys))
 
+    legend_items = [(" " * 60, [])]
     for color, y_key, y_name in zip(colors, y_keys, y_names):
+        if len(y_name) <= 25:
+            label = y_name
+        else:
+            label = y_name[:22] + "..."
         line_glyph = plot.line(
             source=data,
             x=x_name,
             y=y_key,
             line_width=2,
-            legend_label=y_name,
             color=color,
             muted_color=color,
             muted_alpha=0.2,
         )
+        legend_items.append((label, [line_glyph]))
+
     tooltips = [(x_name, "@" + x_name)]
     tooltips += [("param_name", y_name), ("param_value", "@" + y_key)]
     hover = HoverTool(renderers=[line_glyph], tooltips=tooltips)
     plot.tools.append(hover)
 
-    if len(y_key) == 1:
-        plot.legend.visible = False
-    else:
-        plot.legend.click_policy = "mute"
-        plot.legend.location = "top_left"
+    legend = Legend(items=legend_items, border_line_color=None, label_width=100)
+    legend.click_policy = "mute"
+    plot.add_layout(legend, "right")
 
     return plot
 
