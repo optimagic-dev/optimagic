@@ -25,6 +25,7 @@ requirements:
   run:
     - python >=3.6
     - click
+    - cloudpickle
     - joblib
     - numpy >=1.16
     - pandas >=0.24
@@ -38,6 +39,7 @@ test:
   requires:
     - pytest
     - pytest-xdist
+    - statsmodels
   source_files:
     - tox.ini
     - estimagic/tests
