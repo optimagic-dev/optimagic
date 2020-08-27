@@ -2,6 +2,7 @@
 import webbrowser
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from bokeh.document import Document
 from bokeh.io import output_file
@@ -40,6 +41,39 @@ def test_map_groups_to_params_group_none():
     params["name"] = ["a", "b", "c", "d"]
     params.index = ["a", "b", "c", "d"]
     expected = {}
+    res = monitoring._map_groups_to_params(params)
+    assert expected == res
+
+
+def test_map_groups_to_params_group_nan():
+    params = pd.DataFrame()
+    params["value"] = [0, 1, 2, 3]
+    params["group"] = np.nan
+    params["name"] = ["a", "b", "c", "d"]
+    params.index = ["a", "b", "c", "d"]
+    expected = {}
+    res = monitoring._map_groups_to_params(params)
+    assert expected == res
+
+
+def test_map_groups_to_params_group_empty():
+    params = pd.DataFrame()
+    params["value"] = [0, 1, 2, 3]
+    params["group"] = ["", "", "x", "x"]
+    params["name"] = ["a", "b", "c", "d"]
+    params.index = ["a", "b", "c", "d"]
+    expected = {"x": ["c", "d"]}
+    res = monitoring._map_groups_to_params(params)
+    assert expected == res
+
+
+def test_map_groups_to_params_group_false():
+    params = pd.DataFrame()
+    params["value"] = [0, 1, 2, 3]
+    params["group"] = [False, False, "x", "x"]
+    params["name"] = ["a", "b", "c", "d"]
+    params.index = ["a", "b", "c", "d"]
+    expected = {"x": ["c", "d"]}
     res = monitoring._map_groups_to_params(params)
     assert expected == res
 

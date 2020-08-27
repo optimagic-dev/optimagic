@@ -31,11 +31,10 @@ def monitoring_app(doc, database_name, session_data, rollover):
             - callbacks (dict): dictionary to be populated with callbacks.
 
     """
-
     database = load_database(path=session_data["database_path"])
     optimization_problem = read_last_rows(
         database=database,
-        # todo: need to adjust table_name with suffix if necessary
+        # todo: need to adjust table_namnpe with suffix if necessary
         table_name="optimization_problem",
         n_rows=1,
         return_type="dict_of_lists",
@@ -118,14 +117,10 @@ def _create_initial_convergence_plots(criterion_history, params_history, start_p
 
     group_to_params = _map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
-        if g not in ["", None, False] and g == g:  # the last checks that g is not NaN
-            param_group_plot = _plot_time_series(
-                data=params_history,
-                y_keys=group_params,
-                x_name="iteration",
-                title=str(g),
-            )
-            convergence_plots.append(Row(param_group_plot))
+        param_group_plot = _plot_time_series(
+            data=params_history, y_keys=group_params, x_name="iteration", title=str(g),
+        )
+        convergence_plots.append(Row(param_group_plot))
     return convergence_plots
 
 
@@ -156,22 +151,20 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
 
     legend_items = [(" " * 60, [])]
     for color, y_key, y_name in zip(colors, y_keys, y_names):
-        # the last checks that y_key is not NaN
-        if y_key not in ["", None, False] and y_key == y_key:
-            if len(y_name) <= 25:
-                label = y_name
-            else:
-                label = y_name[:22] + "..."
-            line_glyph = plot.line(
-                source=data,
-                x=x_name,
-                y=y_key,
-                line_width=2,
-                color=color,
-                muted_color=color,
-                muted_alpha=0.2,
-            )
-            legend_items.append((label, [line_glyph]))
+        if len(y_name) <= 25:
+            label = y_name
+        else:
+            label = y_name[:22] + "..."
+        line_glyph = plot.line(
+            source=data,
+            x=x_name,
+            y=y_key,
+            line_width=2,
+            color=color,
+            muted_color=color,
+            muted_alpha=0.2,
+        )
+        legend_items.append((label, [line_glyph]))
 
     tooltips = [(x_name, "@" + x_name)]
     tooltips += [("param_name", y_name), ("param_value", "@" + y_key)]
@@ -201,8 +194,11 @@ def _map_groups_to_params(params):
 
     """
     group_to_params = {}
-    actual_groups = [group for group in params["group"].unique() if group is not None]
-    for group in actual_groups:
+    groups_to_plot = []
+    for group in params["group"].unique():
+        if group is not None and group == group and group != "" and group is not False:
+            groups_to_plot.append(group)
+    for group in groups_to_plot:
         group_to_params[group] = list(params[params["group"] == group]["name"])
     return group_to_params
 
