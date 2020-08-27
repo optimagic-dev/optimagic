@@ -1,10 +1,8 @@
 """Helper functions for the dashboard."""
-import random
 import socket
 from contextlib import closing
 from pathlib import Path
 
-import bokeh.palettes
 from bokeh.models.widgets import Div
 from bokeh.plotting import figure
 
@@ -80,7 +78,7 @@ def create_dashboard_link(name):
     return div
 
 
-def create_standard_figure(title, tooltips=None):
+def create_styled_figure(title, tooltips=None):
     """Return a styled, empty figure of predetermined height and width.
 
     Args:
@@ -91,13 +89,30 @@ def create_standard_figure(title, tooltips=None):
         fig (bokeh Figure)
 
     """
-    fig = figure(plot_height=350, plot_width=700, title=title, tooltips=tooltips)
+    fig = figure(
+        plot_height=300, plot_width=800, title=title.title(), tooltips=tooltips
+    )
     fig.title.text_font_size = "15pt"
+
+    # set minimum borders
     fig.min_border_left = 50
     fig.min_border_right = 50
     fig.min_border_top = 20
     fig.min_border_bottom = 50
+
+    # remove toolbar
     fig.toolbar_location = None
+
+    # remove grid
+    fig.grid.visible = False
+    # remove minor ticks
+    fig.axis.minor_tick_line_color = None
+    # remove tick lines
+    fig.axis.major_tick_out = 0
+    fig.axis.major_tick_in = 0
+    # remove outline
+    fig.outline_line_width = 0
+
     return fig
 
 
@@ -111,14 +126,23 @@ def get_color_palette(nr_colors):
         list
 
     """
-    if nr_colors == 1:
-        return ["firebrick"]
-    elif nr_colors == 2:
-        return ["darkslateblue", "goldenrod"]
-    elif nr_colors <= 10:
-        return bokeh.palettes.Category10[nr_colors]
-    else:
-        return random.choices(bokeh.palettes.Turbo256, k=nr_colors)
+    our_colors = [
+        "#547482",
+        "#C87259",
+        "#C2D8C2",
+        "#F1B05D",
+        "#818662",
+        "#6C4A4D",
+        "#7A8C87",
+        "#EE8445",
+        "#C8B05C",
+        "#3C2030",
+        "#C89D64",
+        "#2A3B49",
+    ]
+    n_reps = nr_colors // len(our_colors)
+    remainder = nr_colors % len(our_colors)
+    return n_reps * our_colors + our_colors[:remainder]
 
 
 def find_free_port():

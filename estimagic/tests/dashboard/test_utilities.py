@@ -1,8 +1,6 @@
 """Test helper functions for the dashboard."""
 from pathlib import Path
 
-import bokeh.palettes
-
 import estimagic.dashboard.utilities as utils
 
 
@@ -48,22 +46,25 @@ def test_name_clash_with_clash():
 
 # no tests for create_dashboard_link
 
-# no tests for create_standard_figure
+
+def test_create_styled_figure():
+    utils.create_styled_figure("Hello World")
 
 
 def test_get_color_palette_1():
     colors = utils.get_color_palette(1)
-    assert colors == ["firebrick"]
+    assert colors == ["#547482"]
 
 
 def test_get_color_palette_2():
     colors = utils.get_color_palette(2)
-    assert colors == ["darkslateblue", "goldenrod"]
+    assert colors == ["#547482", "#C87259"]
 
 
 def test_get_color_palette_5():
     colors = utils.get_color_palette(5)
-    assert colors == bokeh.palettes.Category10[5]
+    expected = ["#547482", "#C87259", "#C2D8C2", "#F1B05D", "#818662"]
+    assert colors == expected
 
 
 def test_get_color_palette_50():

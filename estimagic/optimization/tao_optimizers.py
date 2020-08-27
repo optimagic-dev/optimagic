@@ -2,9 +2,13 @@
 import functools
 
 import numpy as np
-from petsc4py import PETSc
 
 from estimagic.config import IS_PETSC4PY_INSTALLED
+
+try:
+    from petsc4py import PETSc
+except ImportError:
+    pass
 
 POUNDERS_ALGO_INFO = {
     "primary_criterion_entry": "root_contributions",

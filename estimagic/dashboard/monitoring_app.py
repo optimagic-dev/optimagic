@@ -5,11 +5,12 @@ from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
 from bokeh.models import HoverTool
+from bokeh.models import Legend
 from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models import Toggle
 
-from estimagic.dashboard.utilities import create_standard_figure
+from estimagic.dashboard.utilities import create_styled_figure
 from estimagic.dashboard.utilities import get_color_palette
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
@@ -117,10 +118,14 @@ def _create_initial_convergence_plots(criterion_history, params_history, start_p
 
     group_to_params = _map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
-        param_group_plot = _plot_time_series(
-            data=params_history, y_keys=group_params, x_name="iteration", title=g,
-        )
-        convergence_plots.append(Row(param_group_plot))
+        if g not in ["", None, False] and g == g:  # the last checks that g is not NaN
+            param_group_plot = _plot_time_series(
+                data=params_history,
+                y_keys=group_params,
+                x_name="iteration",
+                title=str(g),
+            )
+            convergence_plots.append(Row(param_group_plot))
     return convergence_plots
 
 
@@ -144,32 +149,38 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
 
     """
     if y_names is None:
-        y_names = y_keys
+        y_names = [str(key) for key in y_keys]
 
-    plot = create_standard_figure(title=title)
-
+    plot = create_styled_figure(title=title)
     colors = get_color_palette(nr_colors=len(y_keys))
+
+    legend_items = [(" " * 60, [])]
     for color, y_key, y_name in zip(colors, y_keys, y_names):
-        line_glyph = plot.line(
-            source=data,
-            x=x_name,
-            y=y_key,
-            line_width=2,
-            legend_label=y_name,
-            color=color,
-            muted_color=color,
-            muted_alpha=0.2,
-        )
+        # the last checks that y_key is not NaN
+        if y_key not in ["", None, False] and y_key == y_key:
+            if len(y_name) <= 25:
+                label = y_name
+            else:
+                label = y_name[:22] + "..."
+            line_glyph = plot.line(
+                source=data,
+                x=x_name,
+                y=y_key,
+                line_width=2,
+                color=color,
+                muted_color=color,
+                muted_alpha=0.2,
+            )
+            legend_items.append((label, [line_glyph]))
+
     tooltips = [(x_name, "@" + x_name)]
     tooltips += [("param_name", y_name), ("param_value", "@" + y_key)]
     hover = HoverTool(renderers=[line_glyph], tooltips=tooltips)
     plot.tools.append(hover)
 
-    if len(y_key) == 1:
-        plot.legend.visible = False
-    else:
-        plot.legend.click_policy = "mute"
-        plot.legend.location = "top_left"
+    legend = Legend(items=legend_items, border_line_color=None, label_width=100)
+    legend.click_policy = "mute"
+    plot.add_layout(legend, "right")
 
     return plot
 

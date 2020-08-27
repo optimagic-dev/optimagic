@@ -4,12 +4,13 @@ sum of squares is abbreviated as sos throughout the module.
 
 """
 import functools
+import warnings
 from itertools import product
 
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
+from numpy.testing import assert_allclose
 
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
@@ -18,19 +19,17 @@ from estimagic.optimization.optimize import minimize
 
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
-    "scipy_cg",
+    "scipy_conjugate_gradient",
     "scipy_bfgs",
     "scipy_newton_cg",
     "scipy_cobyla",
-    "scipy_dogleg",
-    "scipy_trust_ncg",
-    "scipy_trust_exact",
-    "scipy_trust_krylov",
 ]
 
-BOUNDS_SUPPORTING_ALLGORITHMS = [
+BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
+
+IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
 
 
 def _skip_tao_tests_if_petsc4py_not_installed(test_cases):
@@ -53,7 +52,7 @@ def _skip_tao_tests_if_petsc4py_not_installed(test_cases):
 
 def sos_dict_criterion(params):
     out = {
-        "value": (params["value"] ** 2).sum(),
+        "value": (params["value"].to_numpy() ** 2).sum(),
         "contributions": params["value"].to_numpy() ** 2,
         "root_contributions": params["value"].to_numpy(),
     }
@@ -96,7 +95,7 @@ def sos_criterion_and_gradient(params):
 
 def sos_criterion_and_jacobian(params):
     x = params["value"].to_numpy()
-    return (x ** 2), np.diag(2 * x)
+    return {"contributions": x ** 2, "value": (x ** 2).sum()}, np.diag(2 * x)
 
 
 # ======================================================================================
@@ -185,9 +184,9 @@ test_cases = _skip_tao_tests_if_petsc4py_not_installed(test_cases)
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
 def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
-    params = pd.DataFrame(data=np.ones((10, 1)), columns=["value"])
-    params["lower"] = -10
-    params["upper"] = 10
+    params = pd.DataFrame(data=np.ones((2, 1)), columns=["value"])
+    params["lower"] = -np.inf
+    params["upper"] = np.inf
 
     optimize_func = minimize if direction == "minimize" else maximize
 
@@ -198,24 +197,30 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
     )
-    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(10))
+
+    assert res["success"], f"{algo} did not converge."
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), np.zeros(2), atol=atol, rtol=0,
+    )
 
 
 # constraints are only applicable to algorithms that support bounds
 bound_cases = []
-for alg in BOUNDS_SUPPORTING_ALLGORITHMS:
+for alg in BOUNDS_SUPPORTING_ALGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
 bound_cases = _skip_tao_tests_if_petsc4py_not_installed(bound_cases)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
-    if algo.startswith("tao_"):
-        pytest.xfail("Pounders cannot deal with start vectors outside bounds.")
-
-    params = pd.DataFrame(data=np.ones((5, 1)), columns=["value"])
-    params["lower"] = [1, -10, -10, -10, -10.0]
-    params["upper"] = [10, 10, 10, 10, -1.0]
+    params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
+    # the truncated_newton's line search fails if the lower bound of the first
+    # parameter is set to 1.0. With 2.0 truncated_newton also converges.
+    params["lower"] = [2, -10, -10, -10, -10]
+    params["upper"] = [10, 10, 10, 10, -1]
+    expected = np.array([2, 0, 0, 0, -1])
 
     optimize_func = minimize if direction == "minimize" else maximize
 
@@ -227,14 +232,19 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
         criterion_and_derivative=crit_and_deriv,
     )
 
-    expected = np.array([1, 0, 0, 0, -1.0])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
-    params["lower"] = [-10, -10, -10, -10, -10.0]
+    params["lower"] = [-10, -10, -10, -10, -10]
     params["upper"] = [10, 10, 10, 10, 10]
 
     constraints = [{"loc": [1, 3], "type": "fixed", "value": [7.5, -2]}]
@@ -250,10 +260,16 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.array([0, 7.5, 0, -2, 0.0])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
@@ -273,13 +289,19 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_pairwise_equality_constraint(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [2], [1], [2], [1]], columns=["value"])
     params["lower"] = [-10, -10, -10, -10, -10.0]
@@ -298,10 +320,16 @@ def test_with_pairwise_equality_constraint(
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
@@ -319,10 +347,16 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
@@ -340,10 +374,16 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [0.1], [0.3], [0.6]], columns=["value"])
@@ -361,10 +401,16 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.array([0, 0, 1 / 3, 1 / 3, 1 / 3])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[0.3], [0.0], [0.6], [0.1], [5]], columns=["value"])
@@ -382,13 +428,19 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.array([0.25, 0.25, 0.25, 0.25, 0])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_covariance_constraint_no_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [0.1], [2], [3], [2]], columns=["value"])
 
@@ -405,13 +457,19 @@ def test_with_covariance_constraint_no_bounds_distance(
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_covariance_constraint_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     # Note: Robust bounds only have an effect for 3x3 covariance matrices or larger
     params = pd.DataFrame(data=[[1], [0.1], [2], [0.2], [0.3], [3]], columns=["value"])
@@ -436,20 +494,25 @@ def test_with_covariance_constraint_bounds_distance(
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.array([0.1, 0, 0.1, 0, 0, 0.1])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_sdcorr_constraint_no_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [2], [0.1], [3], [2]], columns=["value"])
 
     constraints = [{"loc": [0, 1, 2], "type": "sdcorr"}]
 
     optimize_func = minimize if direction == "minimize" else maximize
-
     res = optimize_func(
         criterion=crit,
         params=params,
@@ -459,13 +522,19 @@ def test_with_sdcorr_constraint_no_bounds_distance(
         constraints=constraints,
     )
 
+    assert res["success"], f"{algo} did not converge."
+
     expected = np.zeros(5)
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_sdcorr_constraint_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv
+    algo, direction, crit, deriv, crit_and_deriv,
 ):
     # Note: Robust bounds only have an effect for 3x3 sdcorr matrices or larger
     params = pd.DataFrame(data=[[1], [2], [3], [0.1], [0.2], [0.3]], columns=["value"])
@@ -481,17 +550,31 @@ def test_with_sdcorr_constraint_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-    )
+    # filter ignored algo_options warnings to pass the same tolerances to all algorithms
+    with warnings.catch_warnings():
+        hess_warn_msg = (
+            "delta_grad == 0.0. Check if the approximated function is linear. "
+            + "If the function is linear better results can be obtained by defining "
+            + "the Hessian as zero instead of using quasi-Newton approximations."
+        )
+        warnings.filterwarnings("ignore", message=hess_warn_msg)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+        )
+
+    assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=5)
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
 
 
 def test_scipy_lbfgsb_actually_calls_criterion_and_derivative():
