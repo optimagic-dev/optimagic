@@ -12,7 +12,8 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 
-from estimagic.config import AVAILABLE_ALGORITHMS
+from estimagic.config import IS_PETSC4PY_INSTALLED
+from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
@@ -29,6 +30,20 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
 ]
 
 IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
+
+
+def _skip_tao_tests_if_petsc4py_not_installed(test_cases):
+    """Skip tests involving TAO optimizers on Windows."""
+    new_test_cases = []
+    for test_case in test_cases:
+        if test_case[0].startswith("tao_") and not IS_PETSC4PY_INSTALLED:
+            test_case = pytest.param(
+                *test_case, marks=pytest.mark.skip(reason="petsc4py is not installed.")
+            )
+        new_test_cases.append(test_case)
+
+    return new_test_cases
+
 
 # ======================================================================================
 # Define example functions
@@ -164,6 +179,7 @@ def switch_sign(func):
 test_cases = []
 for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
+test_cases = _skip_tao_tests_if_petsc4py_not_installed(test_cases)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
@@ -193,6 +209,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
 bound_cases = []
 for alg in BOUNDS_SUPPORTING_ALGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
+bound_cases = _skip_tao_tests_if_petsc4py_not_installed(bound_cases)
 
 
 @pytest.mark.slow
@@ -201,9 +218,9 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
     # the truncated_newton's line search fails if the lower bound of the first
     # parameter is set to 1.0. With 2.0 truncated_newton also converges.
-    params["lower"] = [2.0, -10.0, -10.0, -10.0, -10.0]
-    params["upper"] = [10.0, 10.0, 10.0, 10.0, -1.0]
-    expected = np.array([2.0, 0.0, 0.0, 0.0, -1.0])
+    params["lower"] = [2, -10, -10, -10, -10]
+    params["upper"] = [10, 10, 10, 10, -1]
+    expected = np.array([2, 0, 0, 0, -1])
 
     optimize_func = minimize if direction == "minimize" else maximize
 
@@ -256,8 +273,8 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
-    params["lower"] = [-10, -10, -10, -10, -10.0]
-    params["upper"] = [10, 10, 10, 10, 10]
+    params["lower"] = [-10, -10, -10, -10, -10]
+    params["upper"] = -params["lower"]
 
     constraints = [{"loc": [0, 4], "type": "equality"}]
 
