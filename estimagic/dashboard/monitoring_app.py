@@ -194,12 +194,9 @@ def _map_groups_to_params(params):
 
     """
     group_to_params = {}
-    groups_to_plot = []
     for group in params["group"].unique():
         if group is not None and group == group and group != "" and group is not False:
-            groups_to_plot.append(group)
-    for group in groups_to_plot:
-        group_to_params[group] = list(params[params["group"] == group]["name"])
+            group_to_params[group] = list(params[params["group"] == group]["name"])
     return group_to_params
 
 
