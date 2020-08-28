@@ -1,4 +1,4 @@
-category,subcategory,name,value0,value1,value2,invalid_value0,invalid_value1,internal_value0,internal_value1,internal_value2,lower,upper,internal_lower,internal_upper
+category,subcategory,name,value0,value1,value2,invalid_value0,invalid_value1,internal_value0,internal_value1,internal_value2,lower_bound,upper_bound,internal_lower,internal_upper
 a,a,0,0.1,0.1,0.1,,,,,,,,,
 a,a,1,0.2,0.9,0.21139216,,,0.2,0.9,0.21139216,,,,
 a,a,2,0.3,0.3,0.3,,,,,,,,,

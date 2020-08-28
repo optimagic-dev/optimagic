@@ -343,7 +343,9 @@ def _consolidate_linear_constraints(linear_pc, pp):
             (weights[involved_parameters] != 0).any(axis=1)
         ].copy(deep=True)
         rhs = right_hand_side.loc[w.index].copy(deep=True)
-        w, rhs = _express_bounds_as_linear_constraints(w, rhs, pp.lower, pp.upper)
+        w, rhs = _express_bounds_as_linear_constraints(
+            w, rhs, pp.lower_bound, pp.upper_bound
+        )
         w, rhs = _rescale_linear_constraints(w, rhs)
         w, rhs = _drop_redundant_linear_constraints(w, rhs)
         _check_consolidated_weights(w, pp)

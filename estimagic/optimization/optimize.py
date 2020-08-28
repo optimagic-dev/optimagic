@@ -770,15 +770,15 @@ def _fill_params_with_defaults(params):
     """
     params = params.copy()
 
-    if "lower" not in params.columns:
-        params["lower"] = -np.inf
+    if "lower_bound" not in params.columns:
+        params["lower_bound"] = -np.inf
     else:
-        params["lower"].fillna(-np.inf, inplace=True)
+        params["lower_bound"].fillna(-np.inf, inplace=True)
 
-    if "upper" not in params.columns:
-        params["upper"] = np.inf
+    if "upper_bound" not in params.columns:
+        params["upper_bound"] = np.inf
     else:
-        params["upper"].fillna(np.inf, inplace=True)
+        params["upper_bound"].fillna(np.inf, inplace=True)
 
     if "group" not in params.columns:
         params["group"] = "All Parameters"
@@ -788,7 +788,7 @@ def _fill_params_with_defaults(params):
         params["name"] = names
 
     # convert value and bounds to float
-    for c in ["value", "lower", "upper"]:
+    for c in ["value", "lower_bound", "upper_bound"]:
         params[c] = params[c].astype(float)
 
     return params

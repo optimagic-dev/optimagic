@@ -51,7 +51,7 @@ def first_derivative(
         func (callable): Function of which the derivative is calculated.
         params (np.ndarray, pd.Series or pd.DataFrame): 1d numpy array or pandas
             DataFrame with parameters at which the derivative is calculated. If it is a
-            DataFrame, it can contain the columns "lower" and "upper" for bounds.
+            DataFrame, it can contain the columns "lower_bound" and "upper_bound" for bounds.
             See :ref:`params`.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
@@ -70,10 +70,10 @@ def first_derivative(
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
         lower_bounds (np.ndarray): 1d array with lower bounds for each parameter. If
-            params is a DataFrame and has the columns "lower", this will be taken as
+            params is a DataFrame and has the columns "lower_bound", this will be taken as
             lower_bounds if now lower_bounds have been provided explicitly.
         upper_bounds (np.ndarray): 1d array with upper bounds for each parameter. If
-            params is a DataFrame and has the columns "upper", this will be taken as
+            params is a DataFrame and has the columns "upper_bound", this will be taken as
             upper_bounds if no upper_bounds have been provided explicitly.
         step_ratio (float or array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
@@ -232,10 +232,10 @@ def _process_bounds(lower_bounds, upper_bounds, params):
     lower_bounds = np.atleast_1d(lower_bounds) if lower_bounds is not None else None
     upper_bounds = np.atleast_1d(upper_bounds) if upper_bounds is not None else None
     if isinstance(params, pd.DataFrame):
-        if lower_bounds is None and "lower" in params.columns:
-            lower_bounds = params["lower"].to_numpy()
-        if upper_bounds is None and "upper" in params.columns:
-            upper_bounds = params["upper"].to_numpy()
+        if lower_bounds is None and "lower_bound" in params.columns:
+            lower_bounds = params["lower_bound"].to_numpy()
+        if upper_bounds is None and "upper_bound" in params.columns:
+            upper_bounds = params["upper_bound"].to_numpy()
     return lower_bounds, upper_bounds
 
 

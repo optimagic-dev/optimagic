@@ -97,7 +97,9 @@ def process_constraints(constraints, params):
         check_for_incompatible_overlaps(pp, pc)
         check_fixes_and_bounds(pp, pc)
 
-        int_lower, int_upper = _create_internal_bounds(pp.lower, pp.upper, pc)
+        int_lower, int_upper = _create_internal_bounds(
+            pp.lower_bound, pp.upper_bound, pc
+        )
         pp["_internal_lower"] = int_lower
         pp["_internal_upper"] = int_upper
         pp["_internal_free"] = _create_internal_free(

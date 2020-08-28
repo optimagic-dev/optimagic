@@ -12,7 +12,7 @@ from estimagic.decorators import unpack
 def test_numpy_interface():
     params = pd.DataFrame()
     params["value"] = np.arange(5)
-    params["lower"] = -1
+    params["lower_bound"] = -1
     params = params.astype(float)
     constraints = [{"loc": np.arange(3), "type": "fixed"}]
 
@@ -32,7 +32,7 @@ def test_numpy_interface_without_constraints():
     params = pd.DataFrame()
     x = np.arange(5)
     params["value"] = x
-    params["lower"] = -1
+    params["lower_bound"] = -1
     params = params.astype(float)
 
     @numpy_interface(params=params)
@@ -43,7 +43,7 @@ def test_numpy_interface_without_constraints():
 
     expected = pd.DataFrame(
         data=[[0.0, -1.0], [1, -1], [2, -1], [3, -1], [4, -1]],
-        columns=["value", "lower"],
+        columns=["value", "lower_bound"],
     )
     assert_frame_equal(calculated, expected)
 

@@ -56,10 +56,10 @@ for the optimization.
 The result of the optimization will contain a copy of ``params`` where the
 original ``"value"`` column has been replaced by the optimal parameters.
 
-The "lower" and "upper" columns
+The "lower_bound" and "upper_bound" columns
 ===============================
 
-``"lower"`` and ``"upper"`` are optional columns with box constraints on the
+``"lower_bound"`` and ``"upper_bound"`` are optional columns with box constraints on the
 parameters. You can also provide just one of them. For parameters that don't
 have a bound, you can fill them with ``-np.inf`` and ``np.inf`` respectively.
 
