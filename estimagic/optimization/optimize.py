@@ -769,7 +769,6 @@ def _fill_params_with_defaults(params):
 
     """
     params = params.copy()
-    params["value"] = params["value"].astype(float)
 
     if "lower" not in params.columns:
         params["lower"] = -np.inf
@@ -787,6 +786,11 @@ def _fill_params_with_defaults(params):
     if "name" not in params.columns:
         names = [_index_element_to_string(tup) for tup in params.index]
         params["name"] = names
+
+    # convert value and bounds to float
+    for c in ["value", "lower", "upper"]:
+        params[c] = params[c].astype(float)
+
     return params
 
 

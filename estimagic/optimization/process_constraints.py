@@ -84,10 +84,10 @@ def process_constraints(constraints, params):
         check_types(pc)
         # selectors have to be processed before anything else happens to the params
         pc = _process_selectors(pc, params)
-        if "lower" not in params.columns:
-            params["lower"] = -np.inf
-        if "upper" not in params.columns:
-            params["upper"] = np.inf
+        if "lower_bound" not in params.columns:
+            params["lower_bound"] = -np.inf
+        if "upper_bound" not in params.columns:
+            params["upper_bound"] = np.inf
         pc = _replace_pairwise_equality_by_equality(pc)
         pc = _process_linear_weights(pc, params)
         check_constraints_are_satisfied(pc, params)
@@ -279,7 +279,7 @@ def _replace_increasing_and_decreasing_by_linear(pc):
                 "index": [smaller, larger],
                 "type": "linear",
                 "weights": np.array([-1, 1]),
-                "lower": 0,
+                "lower_bound": 0,
             }
             linear_constraints.append(linear_constr)
 
@@ -320,8 +320,8 @@ def _create_internal_bounds(lower, upper, pc):
         elif constr["type"] == "linear":
             int_lower.iloc[constr["index"]] = -np.inf
             int_upper.iloc[constr["index"]] = np.inf
-            int_lower.update(constr["right_hand_side"]["lower"])
-            int_upper.update(constr["right_hand_side"]["upper"])
+            int_lower.update(constr["right_hand_side"]["lower_bound"])
+            int_upper.update(constr["right_hand_side"]["upper_bound"])
         else:
             raise TypeError("Invalid constraint type {}".format(constr["type"]))
 
