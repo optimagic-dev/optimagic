@@ -65,11 +65,11 @@ def check_constraints_are_satisfied(pc, params):
             elif typ == "linear":
                 # using sr.dot is important in case weights are a series in wrong order
                 wsum = subset.dot(constr["weights"])
-                if "lower" in constr and wsum < constr["lower"]:
+                if "lower_bound" in constr and wsum < constr["lower_bound"]:
                     raise ValueError(
-                        msg.format("Lower bound of linear constraint violated")
+                        msg.format("Lower_bound bound of linear constraint violated")
                     )
-                elif "upper" in constr and wsum > constr["upper"]:
+                elif "upper_bound" in constr and wsum > constr["upper_bound"]:
                     raise ValueError(
                         msg.format("Upper bound of linear constraint violated")
                     )
@@ -183,7 +183,7 @@ def check_fixes_and_bounds(pp, pc):
             if subset["_is_fixed_to_value"].any():
                 problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(cov_msg.format(constr["type"], problematic))
-            if np.isfinite(subset[["lower", "upper"]]).any(axis=None):
+            if np.isfinite(subset[["lower_bound", "upper_bound"]]).any(axis=None):
                 problematic = (
                     subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
@@ -193,13 +193,13 @@ def check_fixes_and_bounds(pp, pc):
             if subset["_is_fixed_to_value"].any():
                 problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(prob_msg.format(constr["type"], problematic))
-            if np.isfinite(subset[["lower", "upper"]]).any(axis=None):
+            if np.isfinite(subset[["lower_bound", "upper_bound"]]).any(axis=None):
                 problematic = (
                     subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
                 raise ValueError(prob_msg.format(constr["type"], problematic))
 
-    invalid = pp.query("lower >= upper")[["lower", "upper"]]
-    msg = f"lower must be strictly smaller than upper. This is violated for:\n{invalid}"
+    invalid = pp.query("lower_bound >= upper_bound")[["lower_bound", "upper_bound"]]
+    msg = f"lower_bound must be strictly smaller than upper. This is violated for:\n{invalid}"
     if len(invalid) > 0:
         raise ValueError(msg)
