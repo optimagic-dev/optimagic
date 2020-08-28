@@ -200,6 +200,9 @@ def check_fixes_and_bounds(pp, pc):
                 raise ValueError(prob_msg.format(constr["type"], problematic))
 
     invalid = pp.query("lower_bound >= upper_bound")[["lower_bound", "upper_bound"]]
-    msg = f"lower_bound must be strictly smaller than upper. This is violated for:\n{invalid}"
+    msg = (
+        "lower_bound must be strictly smaller than upper_bound. "
+        + f"This is violated for:\n{invalid}"
+    )
     if len(invalid) > 0:
         raise ValueError(msg)
