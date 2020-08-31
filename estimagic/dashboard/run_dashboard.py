@@ -13,7 +13,9 @@ from estimagic.dashboard.utilities import create_short_database_names
 from estimagic.dashboard.utilities import find_free_port
 
 
-def run_dashboard(database_paths, no_browser, port, rollover, jump):
+def run_dashboard(
+    database_paths, no_browser, port, rollover, jump, frequency, update_chunk
+):
     """Start the dashboard pertaining to one or several databases.
 
     Args:
@@ -24,6 +26,10 @@ def run_dashboard(database_paths, no_browser, port, rollover, jump):
         rollover (int): After how many iterations the convergence plots are truncated.
         jump (bool): If True the dashboard will jump directly to the last `rollover`
             observations and not display the full history.
+        frequency (float): Number of seconds to wait between updates of the convergence
+            plots of the criterion and parameter values in the monitoring app.
+        update_chunk (int): Number of values to add at each convergence plot update of
+            the criterion and parameters in the monitoring app.
 
     """
     database_name_to_path = _process_database_paths(database_paths)
@@ -48,6 +54,8 @@ def run_dashboard(database_paths, no_browser, port, rollover, jump):
             session_data=session_data[database_name],
             rollover=rollover,
             jump=jump,
+            frequency=frequency,
+            update_chunk=update_chunk,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))
 

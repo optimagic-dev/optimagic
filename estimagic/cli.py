@@ -44,7 +44,21 @@ def cli():
     type=int,
     show_default=True,
 )
-def dashboard(database, port, no_browser, rollover, jump):
+@click.option(
+    "--frequency",
+    default=1,
+    help="Number of seconds to wait between checking for new entries in the database.",
+    type=float,
+    show_default=True,
+)
+@click.option(
+    "--update_chunk",
+    default=20,
+    help="Upper limit how many new values are updated from the database at one update.",
+    type=int,
+    show_default=True,
+)
+def dashboard(database, port, no_browser, rollover, jump, frequency, update_chunk):
     """Start the dashboard to visualize optimizations."""
     database_paths = []
     for path in database:
@@ -61,4 +75,6 @@ def dashboard(database, port, no_browser, rollover, jump):
         port=port,
         rollover=rollover,
         jump=jump,
+        frequency=frequency,
+        update_chunk=update_chunk,
     )
