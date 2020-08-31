@@ -3,6 +3,8 @@ import socket
 from contextlib import closing
 from pathlib import Path
 
+from bokeh.models import HoverTool
+from bokeh.models import Legend
 from bokeh.models.widgets import Div
 from bokeh.plotting import figure
 
@@ -165,3 +167,79 @@ def find_free_port():
         s.bind(("localhost", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+def plot_time_series(
+    data, y_keys, x_name, title, name=None, y_names=None, logscale=False
+):
+    """Plot time series linking the *y_keys* to a common *x_name* variable.
+
+    Args:
+        data (ColumnDataSource): data that contain the y_keys and x_name
+        y_keys (list): list of the entries in the data that are to be plotted.
+        x_name (str): name of the entry in the data that will be on the x axis.
+        title (str): title of the plot.
+        name (str, optional): name of the plot for later retrieval with bokeh.
+        y_names (list, optional): if given these replace the y keys as line names.
+        logscale (bool, optional): Whether to have a logarithmic scale or a linear one.
+
+    Returns:
+        plot (bokeh Figure)
+
+    """
+    if y_names is None:
+        y_names = [str(key) for key in y_keys]
+
+    plot = create_styled_figure(title=title, name=name, logscale=logscale)
+    colors = get_color_palette(nr_colors=len(y_keys))
+
+    legend_items = [(" " * 60, [])]
+    for color, y_key, y_name in zip(colors, y_keys, y_names):
+        if len(y_name) <= 25:
+            label = y_name
+        else:
+            label = y_name[:22] + "..."
+        line_glyph = plot.line(
+            source=data,
+            x=x_name,
+            y=y_key,
+            line_width=2,
+            color=color,
+            muted_color=color,
+            muted_alpha=0.2,
+        )
+        legend_items.append((label, [line_glyph]))
+
+    tooltips = [(x_name, "@" + x_name)]
+    tooltips += [("param_name", y_name), ("param_value", "@" + y_key)]
+    hover = HoverTool(renderers=[line_glyph], tooltips=tooltips)
+    plot.tools.append(hover)
+
+    legend = Legend(items=legend_items, border_line_color=None, label_width=100)
+    legend.click_policy = "mute"
+    plot.add_layout(legend, "right")
+
+    return plot
+
+
+def map_groups_to_params(params):
+    """Map the group name to the ColumnDataSource friendly parameter names.
+
+    Args:
+        params (pd.DataFrame):
+            DataFrame with the parameter values and additional information such as the
+            "group" column and Index.
+
+    Returns:
+        group_to_params (dict):
+            Keys are the values of the "group" column. The values are lists with
+            bokeh friendly strings of the index tuples identifying the parameters
+            that belong to this group. Parameters where group is None, "" or False
+            are ignored.
+
+    """
+    group_to_params = {}
+    for group in params["group"].unique():
+        if group is not None and group == group and group != "" and group is not False:
+            group_to_params[group] = list(params[params["group"] == group]["name"])
+    return group_to_params
