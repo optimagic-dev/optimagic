@@ -223,6 +223,25 @@ def read_new_rows(
     fast_logging=False,
     limit=None,
 ):
+    """Read all iterations after last_retrieved up to a limit.
+
+    Args:
+        database (sqlalchemy.MetaData)
+        table_name (str): name of the table to retrieve.
+        last_retrieved (int): The last iteration that was retrieved.
+        return_type (str): one of "list", "pandas", "bokeh"
+        limit (int): Only the first ``limit`` rows will be retrieved. Default None.
+        path (str or pathlib.Path): location of the database file. If the file does
+            not exist, it will be created.
+        fast_logging (bool)
+        limit (int): maximum number of rows to extract from the table.
+
+    Returns:
+        result (return_type): up to limit rows after last_retrieved of the
+            `table_name` table as `return_type`.
+        int: The new last_retrieved value.
+
+    """
     database = load_database(database, path, fast_logging)
     last_retrieved = int(last_retrieved)
     limit = int(limit) if limit is not None else limit
@@ -243,6 +262,29 @@ def read_new_rows(
 def read_last_rows(
     database, table_name, n_rows, return_type, path=None, fast_logging=True
 ):
+    """Read the last n_rows rows from a table.
+
+    If a table has less than n_rows rows, the whole table is returned.
+
+    Args:
+        database (sqlalchemy.MetaData)
+        table_name (str): name of the table to retrieve.
+        n_int (int): number of rows to retrieve.
+        return_type (str): one of "list", "pandas", "bokeh"
+            - "list": A list of lists. The first sublist are the columns. The remaining
+              sublists are retrieved rows.
+            - "pandas": A dataframe.
+            - "bokeh": A dictionary that can be used to stream to a ColumnDataSource.
+              It has one key per column and the corresponding values are lists that
+              contain the data of that column.
+        path (str or pathlib.Path): location of the database file. If the file does
+            not exist, it will be created.
+        fast_logging (bool)
+
+    Returns:
+        result (return_type): the last rows of the `table_name` table as `return_type`.
+
+    """
     database = load_database(database, path, fast_logging)
     n_rows = int(n_rows)
 
