@@ -21,9 +21,9 @@ def example_params():
     )
     params = pd.read_csv(p)
     params.set_index(["category", "subcategory", "name"], inplace=True)
-    for col in ["lower", "internal_lower"]:
+    for col in ["lower_bound", "internal_lower"]:
         params[col].fillna(-np.inf, inplace=True)
-    for col in ["upper", "internal_upper"]:
+    for col in ["upper_bound", "internal_upper"]:
         params[col].fillna(np.inf, inplace=True)
     return params
 

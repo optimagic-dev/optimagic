@@ -185,8 +185,8 @@ test_cases = _skip_tao_tests_if_petsc4py_not_installed(test_cases)
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
 def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.ones((2, 1)), columns=["value"])
-    params["lower"] = -np.inf
-    params["upper"] = np.inf
+    params["lower_bound"] = -np.inf
+    params["upper_bound"] = np.inf
 
     optimize_func = minimize if direction == "minimize" else maximize
 
@@ -218,8 +218,8 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.array([5, 8, 8, 8, -5]), columns=["value"])
     # the truncated_newton's line search fails if the lower bound of the first
     # parameter is set to 1.0. With 2.0 truncated_newton also converges.
-    params["lower"] = [2, -10, -10, -10, -10]
-    params["upper"] = [10, 10, 10, 10, -1]
+    params["lower_bound"] = [2, -10, -10, -10, -10]
+    params["upper_bound"] = [10, 10, 10, 10, -1]
     expected = np.array([2, 0, 0, 0, -1])
 
     optimize_func = minimize if direction == "minimize" else maximize
@@ -244,8 +244,8 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
-    params["lower"] = [-10, -10, -10, -10, -10]
-    params["upper"] = [10, 10, 10, 10, 10]
+    params["lower_bound"] = [-10, -10, -10, -10, -10]
+    params["upper_bound"] = [10, 10, 10, 10, 10]
 
     constraints = [{"loc": [1, 3], "type": "fixed", "value": [7.5, -2]}]
 
@@ -273,8 +273,8 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [7.5], [-1], [-2], [1]], columns=["value"])
-    params["lower"] = [-10, -10, -10, -10, -10]
-    params["upper"] = -params["lower"]
+    params["lower_bound"] = [-10, -10, -10, -10, -10]
+    params["upper_bound"] = -params["lower_bound"]
 
     constraints = [{"loc": [0, 4], "type": "equality"}]
 
@@ -304,8 +304,8 @@ def test_with_pairwise_equality_constraint(
     algo, direction, crit, deriv, crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [2], [1], [2], [1]], columns=["value"])
-    params["lower"] = [-10, -10, -10, -10, -10.0]
-    params["upper"] = [10, 10, 10, 10, 10]
+    params["lower_bound"] = [-10, -10, -10, -10, -10.0]
+    params["upper_bound"] = [10, 10, 10, 10, 10]
 
     constraints = [{"locs": [[0, 1], [2, 3]], "type": "pairwise_equality"}]
 

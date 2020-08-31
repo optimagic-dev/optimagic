@@ -19,8 +19,8 @@ def get_random_params(length, low=0, high=1, lower_bound=-np.inf, upper_bound=np
     params = pd.DataFrame(
         {
             "value": np.random.uniform(low, high, size=length),
-            "lower": lower_bound,
-            "upper": upper_bound,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound,
         }
     )
 

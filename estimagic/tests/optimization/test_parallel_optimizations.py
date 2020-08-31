@@ -20,8 +20,8 @@ def rosen(x):
 
 params = pd.DataFrame()
 params["value"] = np.array([1.3, 0.7, 1.0, 1.9, 1.2])
-params["lower"] = [-1.0, -1, -1, -1, -1]
-params["upper"] = [5.0, 5, 5, 5, 5]
+params["lower_bound"] = [-1.0, -1, -1, -1, -1]
+params["upper_bound"] = [5.0, 5, 5, 5, 5]
 
 
 def test_single_optimization_with_list_arguments():

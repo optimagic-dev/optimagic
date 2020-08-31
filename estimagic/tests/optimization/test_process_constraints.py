@@ -119,8 +119,8 @@ def test_valuep_error_if_constraints_are_violated(
 
 def test_invalid_bound_for_increasing():
     params = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
-    params["lower"] = [-np.inf, 1, 0.5]
-    params["upper"] = np.nan
+    params["lower_bound"] = [-np.inf, 1, 0.5]
+    params["upper_bound"] = np.nan
 
     constraints = [{"loc": params.index, "type": "increasing"}]
 
@@ -130,8 +130,8 @@ def test_invalid_bound_for_increasing():
 
 def test_one_bound_is_allowed_for_increasing():
     params = pd.DataFrame(data=[[1], [2], [2.9]], columns=["value"])
-    params["lower"] = [-np.inf, 1, -np.inf]
-    params["upper"] = [np.inf, 2, np.inf]
+    params["lower_bound"] = [-np.inf, 1, -np.inf]
+    params["upper_bound"] = [np.inf, 2, np.inf]
 
     constraints = [{"loc": params.index, "type": "increasing"}]
 
