@@ -184,14 +184,14 @@ def _consolidate_bounds_with_equality_constraints(equality_pc, params):
 
     """
     pp = params.copy()
-    lower = pp["lower"].copy()
-    upper = pp["upper"].copy()
+    lower = pp["lower_bound"].copy()
+    upper = pp["upper_bound"].copy()
     for eq in equality_pc:
         lower.iloc[eq["index"]] = lower.iloc[eq["index"]].max()
         upper.iloc[eq["index"]] = upper.iloc[eq["index"]].min()
 
-    pp["lower"] = lower
-    pp["upper"] = upper
+    pp["lower_bound"] = lower
+    pp["upper_bound"] = upper
 
     return pp
 
@@ -217,8 +217,8 @@ def simplify_covariance_and_sdcorr_constraints(pc, pp):
     sdcorr_constraints, others = _split_constraints(others, "sdcorr")
     to_simplify = cov_constraints + sdcorr_constraints
     pp = pp.copy()
-    lower = pp["lower"].copy()
-    upper = pp["upper"].copy()
+    lower = pp["lower_bound"].copy()
+    upper = pp["upper_bound"].copy()
 
     not_simplifyable = []
     for constr in to_simplify:
@@ -245,8 +245,8 @@ def simplify_covariance_and_sdcorr_constraints(pc, pp):
         else:
             not_simplifyable.append(constr)
 
-    pp["lower"] = lower
-    pp["upper"] = upper
+    pp["lower_bound"] = lower
+    pp["upper_bound"] = upper
 
     return others + not_simplifyable, pp
 
@@ -343,7 +343,9 @@ def _consolidate_linear_constraints(linear_pc, pp):
             (weights[involved_parameters] != 0).any(axis=1)
         ].copy(deep=True)
         rhs = right_hand_side.loc[w.index].copy(deep=True)
-        w, rhs = _express_bounds_as_linear_constraints(w, rhs, pp.lower, pp.upper)
+        w, rhs = _express_bounds_as_linear_constraints(
+            w, rhs, pp.lower_bound, pp.upper_bound
+        )
         w, rhs = _rescale_linear_constraints(w, rhs)
         w, rhs = _drop_redundant_linear_constraints(w, rhs)
         _check_consolidated_weights(w, pp)
@@ -371,23 +373,23 @@ def _transform_linear_constraints_to_pandas_objects(linear_pc, pp):
     Returns:
         weights (pd.DataFrame): DataFrame with one row per constraint and one column
             per parameter. Columns names are the ilocs of the parameters in params.
-        rhs (pd.DataFrame): DataFrame with the columns "value", "lower" and
-            "upper" that collects the right hand sides of the constraints.
+        rhs (pd.DataFrame): DataFrame with the columns "value", "lower_bound" and
+            "upper_bound" that collects the right hand sides of the constraints.
 
     """
     all_weights, all_values, all_lbs, all_ubs = [], [], [], []
     for constr in linear_pc:
         all_weights.append(constr["weights"])
         all_values.append(constr.get("value", np.nan))
-        all_lbs.append(constr.get("lower", -np.inf))
-        all_ubs.append(constr.get("upper", np.inf))
+        all_lbs.append(constr.get("lower_bound", -np.inf))
+        all_ubs.append(constr.get("upper_bound", np.inf))
 
     weights = pd.concat(all_weights, axis=1).T.reset_index()
     weights = weights.reindex(columns=pp.index).fillna(0)
     weights.columns = np.arange(len(weights.columns))
     values = pd.Series(all_values, name="value")
-    lbs = pd.Series(all_lbs, name="lower")
-    ubs = pd.Series(all_ubs, name="upper")
+    lbs = pd.Series(all_lbs, name="lower_bound")
+    ubs = pd.Series(all_ubs, name="upper_bound")
     rhs = pd.concat([values, lbs, ubs], axis=1)
 
     return weights, rhs
@@ -441,7 +443,7 @@ def _plug_fixes_into_linear_weights_and_rhs(
     if len(fixed_ilocs) > 0:
         fixed_values = fixed_value.iloc[fixed_ilocs].to_numpy()
         to_add = weights[fixed_ilocs] @ fixed_values
-        for column in ["lower", "upper", "value"]:
+        for column in ["lower_bound", "upper_bound", "value"]:
             new_rhs[column] = new_rhs[column] + to_add
         for i in fixed_ilocs:
             new_weights[i] = 0
@@ -472,9 +474,9 @@ def _express_bounds_as_linear_constraints(weights, rhs, lower, upper):
     for i in weights.columns:
         new = {}
         if np.isfinite(lower.iloc[i]):
-            new["lower"] = lower.iloc[i]
+            new["lower_bound"] = lower.iloc[i]
         if np.isfinite(upper.iloc[i]):
-            new["upper"] = upper.iloc[i]
+            new["upper_bound"] = upper.iloc[i]
         if new != {}:
             new["weights"] = pd.Series([1], name="w", index=lower.iloc[[i]].index)
             additional_pc.append(new)
@@ -512,11 +514,11 @@ def _rescale_linear_constraints(weights, rhs):
     new_weights = scaling_factor * weights
     scaled_rhs = scaling_factor * rhs
     new_rhs = scaled_rhs.copy()
-    new_rhs["lower"] = scaled_rhs["lower"].where(
-        scaling_factor.flatten() > 0, scaled_rhs["upper"]
+    new_rhs["lower_bound"] = scaled_rhs["lower_bound"].where(
+        scaling_factor.flatten() > 0, scaled_rhs["upper_bound"]
     )
-    new_rhs["upper"] = scaled_rhs["upper"].where(
-        scaling_factor.flatten() > 0, scaled_rhs["lower"]
+    new_rhs["upper_bound"] = scaled_rhs["upper_bound"].where(
+        scaling_factor.flatten() > 0, scaled_rhs["lower_bound"]
     )
 
     return new_weights, new_rhs
@@ -551,15 +553,17 @@ def _drop_redundant_linear_constraints(weights, rhs):
         else:
             raise ValueError
 
-    ub = rhs.groupby("dupl_group")["upper"].min()
-    lb = rhs.groupby("dupl_group")["lower"].max()
+    ub = rhs.groupby("dupl_group")["upper_bound"].min()
+    lb = rhs.groupby("dupl_group")["lower_bound"].max()
     fix = rhs.groupby("dupl_group")["value"].apply(_consolidate_fix)
 
     # remove the bounds for fixed parameters
     ub = ub.where(fix.isnull(), np.inf)
     lb = lb.where(fix.isnull(), -np.inf)
 
-    new_rhs = pd.concat([lb, ub, fix], axis=1, names=["lower", "upper", "value"])
+    new_rhs = pd.concat(
+        [lb, ub, fix], axis=1, names=["lower_bound", "upper_bound", "value"]
+    )
     new_rhs = new_rhs.reindex(weights.index)
 
     return new_weights, new_rhs

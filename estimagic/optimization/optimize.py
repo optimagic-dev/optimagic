@@ -5,13 +5,13 @@ import warnings
 import numpy as np
 
 import estimagic.batch_evaluators as be
-from estimagic.config import AVAILABLE_ALGORITHMS
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_optimization_status_table
+from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
@@ -769,17 +769,16 @@ def _fill_params_with_defaults(params):
 
     """
     params = params.copy()
-    params["value"] = params["value"].astype(float)
 
-    if "lower" not in params.columns:
-        params["lower"] = -np.inf
+    if "lower_bound" not in params.columns:
+        params["lower_bound"] = -np.inf
     else:
-        params["lower"].fillna(-np.inf, inplace=True)
+        params["lower_bound"].fillna(-np.inf, inplace=True)
 
-    if "upper" not in params.columns:
-        params["upper"] = np.inf
+    if "upper_bound" not in params.columns:
+        params["upper_bound"] = np.inf
     else:
-        params["upper"].fillna(np.inf, inplace=True)
+        params["upper_bound"].fillna(np.inf, inplace=True)
 
     if "group" not in params.columns:
         params["group"] = "All Parameters"
@@ -787,6 +786,11 @@ def _fill_params_with_defaults(params):
     if "name" not in params.columns:
         names = [_index_element_to_string(tup) for tup in params.index]
         params["name"] = names
+
+    # convert value and bounds to float
+    for c in ["value", "lower_bound", "upper_bound"]:
+        params[c] = params[c].astype(float)
+
     return params
 
 

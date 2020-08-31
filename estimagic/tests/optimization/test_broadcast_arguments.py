@@ -28,7 +28,7 @@ def single_non_standard_inputs():
     kwargs = {
         "criterion": np.mean,
         "params": pd.DataFrame(
-            np.arange(12).reshape(4, 3), columns=["lower", "value", "upper"]
+            np.arange(12).reshape(4, 3), columns=["lower_bound", "value", "upper_bound"]
         ),
         "algorithm": "scipy_L-BFGS-B",
         "criterion_kwargs": {"keepdims": True, "dtype": float},
@@ -49,10 +49,12 @@ def multiple_non_standard_inputs():
         "criterion": np.mean,
         "params": [
             pd.DataFrame(
-                np.arange(12).reshape(4, 3), columns=["lower", "value", "upper"]
+                np.arange(12).reshape(4, 3),
+                columns=["lower_bound", "value", "upper_bound"],
             ),
             pd.DataFrame(
-                np.arange(12).reshape(4, 3), columns=["lower", "value", "upper"]
+                np.arange(12).reshape(4, 3),
+                columns=["lower_bound", "value", "upper_bound"],
             ),
         ],
         "algorithm": "scipy_L-BFGS-B",

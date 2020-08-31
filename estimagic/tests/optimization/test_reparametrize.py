@@ -205,13 +205,19 @@ def test_linear_constraint():
         data=[[2], [1], [0], [1], [3], [4], [1], [1], [1.0]],
         columns=["value"],
     )
-    params["lower"] = [-1] + [-np.inf] * 8
-    params["upper"] = [1] + [np.inf] * 8
+    params["lower_bound"] = [-1] + [-np.inf] * 8
+    params["upper_bound"] = [1] + [np.inf] * 8
 
     constraints = [
         {"loc": "a", "type": "linear", "weights": [1, -2, 0], "value": 0},
-        {"loc": "b", "type": "linear", "weights": 1 / 3, "upper": 3},
-        {"loc": "c", "type": "linear", "weights": 1, "lower": 0, "upper": 5},
+        {"loc": "b", "type": "linear", "weights": 1 / 3, "upper_bound": 3},
+        {
+            "loc": "c",
+            "type": "linear",
+            "weights": 1,
+            "lower_bound": 0,
+            "upper_bound": 5,
+        },
         {"loc": params.index, "type": "linear", "weights": 1, "value": 14},
         {"loc": "c", "type": "equality"},
     ]

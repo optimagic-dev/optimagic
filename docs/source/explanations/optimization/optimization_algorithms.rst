@@ -1,4 +1,3 @@
-
 .. _algorithms:
 
 ====================================
@@ -126,5 +125,8 @@ With ``pygmo`` installed
 --------------------------
 
 
-With ``petsc4py`` installed
------------------------------
+With `petsc4py` installed
+-------------------------
+
+.. automodule:: estimagic.optimization.tao_optimizers
+   :members:
