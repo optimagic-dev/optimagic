@@ -229,7 +229,7 @@ def read_new_rows(
         database (sqlalchemy.MetaData)
         table_name (str): name of the table to retrieve.
         last_retrieved (int): The last iteration that was retrieved.
-        return_type (str): one of "list", "pandas", "bokeh"
+        return_type (str): either "list_of_dicts" or "dict_of_lists".
         limit (int): Only the first ``limit`` rows will be retrieved. Default None.
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created.
@@ -270,7 +270,7 @@ def read_last_rows(
         database (sqlalchemy.MetaData)
         table_name (str): name of the table to retrieve.
         n_int (int): number of rows to retrieve.
-        return_type (str): one of "list", "pandas", "bokeh"
+        return_type (str): either "list_of_dicts" or "dict_of_lists".
             - "list": A list of lists. The first sublist are the columns. The remaining
               sublists are retrieved rows.
             - "pandas": A dataframe.
@@ -307,6 +307,8 @@ def _execute_read_statement(database, table_name, statement, return_type):
             "Unable to read {table_name} from database. Try again later. The traceback "
             f"was: \n\n{exception_info}"
         )
+        # if we only want to warn we must provide a raw_result to be processed below.
+        raw_result = []
 
     columns = database.tables[table_name].columns.keys()
 
@@ -318,6 +320,11 @@ def _execute_read_statement(database, table_name, statement, return_type):
         result = dict(zip(columns, raw_result))
         if result == {}:
             result = {col: [] for col in columns}
+    else:
+        raise NotImplementedError(
+            "The return_type must be 'list_of_dicts' or 'dict_of_lists', "
+            + f"not {return_type}."
+        )
 
     return result
 
