@@ -78,19 +78,29 @@ def create_dashboard_link(name):
     return div
 
 
-def create_styled_figure(title, tooltips=None):
+def create_styled_figure(title, name=None, tooltips=None, logscale=False):
     """Return a styled, empty figure of predetermined height and width.
 
     Args:
         title (str): Title of the figure.
-        tooltips (list): List of bokeh tooltips to add to the figure.
+        name (str): Name of the plot for later retrieval by bokeh. If not given the
+            title is set as name
+        tooltips (list, optional): List of bokeh tooltips to add to the figure.
+        logscale (bool, optional): Whether to have a logarithmic scale or a linear one.
 
     Returns:
         fig (bokeh Figure)
 
     """
+    name = name if name is not None else title
+    y_axis_type = "log" if logscale else "linear"
     fig = figure(
-        plot_height=300, plot_width=800, title=title.title(), tooltips=tooltips
+        plot_height=300,
+        plot_width=800,
+        title=title.title(),
+        tooltips=tooltips,
+        name=name,
+        y_axis_type=y_axis_type,
     )
     fig.title.text_font_size = "15pt"
 

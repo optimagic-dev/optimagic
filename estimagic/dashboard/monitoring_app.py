@@ -65,7 +65,7 @@ def monitoring_app(doc, database_name, session_data, rollover, jump):
         session_data["last_retrieved"] = 0
 
     # create initial bokeh elements without callbacks
-    initial_convergence_plots = _create_initial_convergence_plots(
+    monitoring_plots = _create_initial_convergence_plots(
         criterion_history=criterion_history,
         params_history=params_history,
         start_params=start_params,
@@ -73,18 +73,26 @@ def monitoring_app(doc, database_name, session_data, rollover, jump):
 
     activation_button = Toggle(
         active=False,
-        label="Start Updating from Database",
+        label="Start Updates from Database",
         button_type="danger",
-        width=50,
+        width=200,
         height=30,
         name="activation_button",
     )
 
-    # add elements to bokeh Document
-    bokeh_convergence_elements = [Row(activation_button)] + initial_convergence_plots
-    convergence_tab = Panel(
-        child=Column(*bokeh_convergence_elements), title="Convergence Tab"
+    logscale_button = Toggle(
+        active=False,
+        label="Show criterion plot on a logarithmic scale",
+        button_type="default",
+        width=200,
+        height=30,
+        name="logscale_button",
     )
+
+    # add elements to bokeh Document
+    button_row = Row(children=[activation_button, logscale_button], name="button_row")
+    column = Column(children=[button_row, *monitoring_plots], name="monitoring_column")
+    convergence_tab = Panel(child=column, title="Convergence Tab")
     tabs = Tabs(tabs=[convergence_tab])
     doc.add_root(tabs)
 
@@ -102,6 +110,8 @@ def monitoring_app(doc, database_name, session_data, rollover, jump):
         start_params=start_params,
     )
     activation_button.on_change("active", activation_callback)
+    logscale_callback = partial(_logscale_callback, button=logscale_button, doc=doc,)
+    logscale_button.on_change("active", logscale_callback)
 
 
 def _create_initial_convergence_plots(criterion_history, params_history, start_params):
@@ -117,14 +127,27 @@ def _create_initial_convergence_plots(criterion_history, params_history, start_p
             convergence plot.
 
     """
-    criterion_plot = _plot_time_series(
+    linear_criterion_plot = _plot_time_series(
         data=criterion_history,
         x_name="iteration",
         y_keys=["criterion"],
         y_names=["criterion"],
         title="Criterion",
+        name="linear_criterion_plot",
+        logscale=False,
     )
-    convergence_plots = [criterion_plot]
+    log_criterion_plot = _plot_time_series(
+        data=criterion_history,
+        x_name="iteration",
+        y_keys=["criterion"],
+        y_names=["criterion"],
+        title="Criterion",
+        name="log_criterion_plot",
+        logscale=True,
+    )
+    log_criterion_plot.visible = False
+
+    convergence_plots = [linear_criterion_plot, log_criterion_plot]
 
     group_to_params = _map_groups_to_params(start_params)
     for g, group_params in group_to_params.items():
@@ -135,20 +158,19 @@ def _create_initial_convergence_plots(criterion_history, params_history, start_p
     return convergence_plots
 
 
-def _plot_time_series(data, y_keys, x_name, title, y_names=None):
+def _plot_time_series(
+    data, y_keys, x_name, title, name=None, y_names=None, logscale=False
+):
     """Plot time series linking the *y_keys* to a common *x_name* variable.
 
     Args:
-        data (ColumnDataSource):
-            data that contain the y_keys and x_name
-        y_keys (list):
-            list of the entries in the data that are to be plotted.
-        x_name (str):
-            name of the entry in the data that will be on the x axis.
-        title (str):
-            title of the plot.
-        y_names (list):
-            if given these replace the y keys for the names of the lines.
+        data (ColumnDataSource): data that contain the y_keys and x_name
+        y_keys (list): list of the entries in the data that are to be plotted.
+        x_name (str): name of the entry in the data that will be on the x axis.
+        title (str): title of the plot.
+        name (str, optional): name of the plot for later retrieval with bokeh.
+        y_names (list, optional): if given these replace the y keys as line names.
+        logscale (bool, optional): Whether to have a logarithmic scale or a linear one.
 
     Returns:
         plot (bokeh Figure)
@@ -157,7 +179,7 @@ def _plot_time_series(data, y_keys, x_name, title, y_names=None):
     if y_names is None:
         y_names = [str(key) for key in y_keys]
 
-    plot = create_styled_figure(title=title)
+    plot = create_styled_figure(title=title, name=name, logscale=logscale)
     colors = get_color_palette(nr_colors=len(y_keys))
 
     legend_items = [(" " * 60, [])]
@@ -228,6 +250,7 @@ def _activation_callback(
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
         rollover (int): Maximal number of points to show in the plot.
+        button (bokeh.models.Toggle)
         tables (list): List of table names to load and convert to ColumnDataSources.
         start_params (pd.DataFrame): See :ref:`params`
 
@@ -259,6 +282,34 @@ def _activation_callback(
         # change the button color
         button.button_type = "danger"
         button.label = "Restart Plot"
+
+
+def _logscale_callback(attr, old, new, button, doc):
+    """Switch between log and linear scale.
+
+    Args:
+        attr: Required by bokeh.
+        old: Old state of the Button.
+        new: New state of the Button.
+        button (bokeh.models.Toggle)
+        doc (bokeh.Document)
+
+    """
+    linear_criterion_plot = doc.get_model_by_name("linear_criterion_plot")
+    log_criterion_plot = doc.get_model_by_name("log_criterion_plot")
+    if new is True:
+        # switch to log scale by
+        # setting the linear plot to invisible and the log plot to visible
+        button.button_type = "primary"
+        button.label = "Show criterion plot on a linear scale"
+        linear_criterion_plot.visible = False
+        log_criterion_plot.visible = True
+    else:
+        # switch to linear scale
+        button.button_type = "default"
+        button.label = "Show criterion plot on a logarithmic scale"
+        log_criterion_plot.visible = False
+        linear_criterion_plot.visible = True
 
 
 def _update_monitoring_tab(doc, database, session_data, tables, rollover, start_params):
