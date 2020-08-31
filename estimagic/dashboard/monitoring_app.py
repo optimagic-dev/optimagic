@@ -18,7 +18,7 @@ from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import transpose_nested_list
 
 
-def monitoring_app(doc, database_name, session_data, rollover):
+def monitoring_app(doc, database_name, session_data, rollover, jump):
     """Create plots showing the development of the criterion and parameters.
 
     Args:
@@ -29,6 +29,8 @@ def monitoring_app(doc, database_name, session_data, rollover):
             - last_retrieved (int): last iteration currently in the ColumnDataSource.
             - database_path (str or pathlib.Path)
             - callbacks (dict): dictionary to be populated with callbacks.
+        jump (bool): If True the dashboard will jump directly to the last `rollover`
+            observations and not display the full history.
 
     """
     database = load_database(path=session_data["database_path"])
@@ -51,7 +53,16 @@ def monitoring_app(doc, database_name, session_data, rollover):
         params_data[name] = []
     params_history = ColumnDataSource(params_data, name="params_history_cds")
 
-    session_data["last_retrieved"] = 0
+    if jump:
+        last_entry = read_last_rows(
+            database=database,
+            table_name="optimization_iterations",
+            n_rows=1,
+            return_type="list_of_dicts",
+        )
+        session_data["last_retrieved"] = last_entry[0]["rowid"] - rollover
+    else:
+        session_data["last_retrieved"] = 0
 
     # create initial bokeh elements without callbacks
     initial_convergence_plots = _create_initial_convergence_plots(

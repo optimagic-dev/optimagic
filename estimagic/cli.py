@@ -32,13 +32,19 @@ def cli():
     help="Don't open the dashboard in a browser after startup.",
 )
 @click.option(
+    "--jump",
+    is_flag=True,
+    help="Jump directly to the last iterations as specified in the rollover "
+    + "instead of replaying the optimization from the beginning.",
+)
+@click.option(
     "--rollover",
     default=10_000,
     help="After how many iterations convergence plots get truncated from the left.",
     type=int,
     show_default=True,
 )
-def dashboard(database, port, no_browser, rollover):
+def dashboard(database, port, no_browser, rollover, jump):
     """Start the dashboard to visualize optimizations."""
     database_paths = []
     for path in database:
@@ -54,4 +60,5 @@ def dashboard(database, port, no_browser, rollover):
         no_browser=no_browser,
         port=port,
         rollover=rollover,
+        jump=jump,
     )

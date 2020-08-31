@@ -58,10 +58,11 @@ def test_create_session_data(database_paths, database_name_to_path):
 
 
 def test_dashboard_cli(monkeypatch):
-    def fake_run_dashboard(database_paths, no_browser, port, rollover):
+    def fake_run_dashboard(database_paths, no_browser, port, rollover, jump):
         assert len(database_paths) == 2
         assert no_browser is True
         assert port == 9999
+        assert jump is True
 
     monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
 
@@ -74,6 +75,7 @@ def test_dashboard_cli(monkeypatch):
             "--no-browser",
             "--port",
             "9999",
+            "--jump",
         ],
     )
 
@@ -81,7 +83,7 @@ def test_dashboard_cli(monkeypatch):
 
 
 def test_dashboard_cli_duplicate_paths(monkeypatch):
-    def fake_run_dashboard(database_paths, no_browser, port, rollover):
+    def fake_run_dashboard(database_paths, no_browser, port, rollover, jump):
         assert len(database_paths) == 2
         assert no_browser is False
         assert port is None
@@ -103,7 +105,7 @@ def test_dashboard_cli_duplicate_paths(monkeypatch):
 
 
 def test_dashboard_cli_recursively_search_directories(monkeypatch):
-    def fake_run_dashboard(database_paths, no_browser, port, rollover):
+    def fake_run_dashboard(database_paths, no_browser, port, rollover, jump):
         assert len(database_paths) == 2
 
     monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)

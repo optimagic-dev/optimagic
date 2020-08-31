@@ -20,7 +20,11 @@ def test_monitoring_app():
     session_data = {"last_retrieved": 0, "database_path": current_dir_path / "db1.db"}
 
     monitoring.monitoring_app(
-        doc=doc, database_name=database_name, session_data=session_data, rollover=10_000
+        doc=doc,
+        database_name=database_name,
+        session_data=session_data,
+        rollover=10_000,
+        jump=False,
     )
 
 
