@@ -41,11 +41,6 @@ def monitoring_app(
     criterion_history, params_history = _create_cds_for_monitoring_app(group_to_params)
 
     # create elements
-    monitoring_plots = _create_initial_convergence_plots(
-        criterion_history=criterion_history,
-        params_history=params_history,
-        group_to_params=group_to_params,
-    )
     button_row = _create_button_row(
         doc=doc,
         database=database,
@@ -54,6 +49,11 @@ def monitoring_app(
         param_names=[name for params in group_to_params.values() for name in params],
         frequency=frequency,
         update_chunk=update_chunk,
+    )
+    monitoring_plots = _create_initial_convergence_plots(
+        criterion_history=criterion_history,
+        params_history=params_history,
+        group_to_params=group_to_params,
     )
 
     # add elements to bokeh Document
@@ -64,6 +64,15 @@ def monitoring_app(
 
 
 def _get_group_to_params_from_database(database):
+    """Map each group name to the parameters' names that belong to it.
+
+    Args:
+        database (sqlalchemy.MetaData): Bound metadata object.
+
+    Returns:
+        group_to_params (dict): keys are the group names, values are parameter names.
+
+    """
     optimization_problem = read_last_rows(
         database=database,
         # todo: need to adjust table_namnpe with suffix if necessary
@@ -77,18 +86,48 @@ def _get_group_to_params_from_database(database):
 
 
 def _create_cds_for_monitoring_app(group_to_params):
+    """Create the ColumnDataSources for saving the criterion and parameter values.
+
+    They will be periodically updated from the database.
+    There is a ColumnDataSource for all parameters and one for the criterion value.
+    The "x" column is called "iteration".
+
+    Args:
+        group_to_params (dict): keys are the group names, values are parameter names.
+
+    Returns:
+        criterion_history (bokeh.ColumnDataSource)
+        params_history (bokeh.ColumnDataSource)
+
+    """
     crit_data = {"iteration": [], "criterion": []}
     criterion_history = ColumnDataSource(crit_data, name="criterion_history_cds")
 
     params_data = {"iteration": []}
     for group_param_names in group_to_params.values():
         for name in group_param_names:
-            params_data[name] = []
+            params_data[str(name)] = []
     params_history = ColumnDataSource(params_data, name="params_history_cds")
     return criterion_history, params_history
 
 
 def _set_last_retrieved(session_data, database, rollover, jump):
+    """Set the last retrieved value.
+
+    As the session_data dictionary is used to communicate between apps, this is done
+    inplace.
+
+    Args:
+        session_data (dict): Infos to be passed between and within apps.
+            Keys of this app's entry are:
+            - last_retrieved (int): last iteration currently in the ColumnDataSource.
+            - database_path (str or pathlib.Path)
+            - callbacks (dict): dictionary to be populated with callbacks.
+        database (sqlalchemy.MetaData): Bound metadata object.
+        rollover (int): Upper limit to how many iterations are displayed.
+        jump (bool): If True jump to the last rollover iterations
+
+    """
     if jump:
         last_entry = read_last_rows(
             database=database,
@@ -96,7 +135,7 @@ def _set_last_retrieved(session_data, database, rollover, jump):
             n_rows=1,
             return_type="list_of_dicts",
         )
-        session_data["last_retrieved"] = last_entry[0]["rowid"] - rollover
+        session_data["last_retrieved"] = max(0, last_entry[0]["rowid"] - rollover)
     else:
         session_data["last_retrieved"] = 0
 
@@ -153,6 +192,7 @@ def _create_initial_convergence_plots(
 def _create_button_row(
     doc, database, session_data, rollover, param_names, frequency, update_chunk,
 ):
+    # (Re)start convergence plot button
     activation_button = Toggle(
         active=False,
         label="Start Updates from Database",
@@ -175,6 +215,7 @@ def _create_button_row(
     )
     activation_button.on_change("active", partialed_activation_callback)
 
+    # switch between linear and logscale button
     logscale_button = Toggle(
         active=False,
         label="Show criterion plot on a logarithmic scale",

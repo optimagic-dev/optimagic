@@ -140,7 +140,7 @@ def _update_monitoring_tab(
     params_data = transpose_nested_list(params_data)
     params_data = dict(zip(param_names, params_data))
     if params_data == {}:
-        params_data = {name: [] for name in param_names}
+        params_data = {str(name): [] for name in param_names}
     params_data["iteration"] = data["rowid"]
     cds.stream(params_data, rollover=rollover)
 
