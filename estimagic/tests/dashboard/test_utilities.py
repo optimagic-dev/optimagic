@@ -175,3 +175,29 @@ def test_map_groups_to_params_group_multi_index():
     expected = {"A": ["beta_exp"], "B": ["cutoff_1", "cutoff_2"]}
     res = utils.map_groups_to_params(params)
     assert expected == res
+
+
+def test_rearrange_to_list_of_twos_single_entry():
+    elements = [1]
+    expected = [[1, None]]
+    res = utils.rearrange_to_list_of_twos(elements)
+    assert res == expected
+
+
+def test_rearrange_to_list_of_twos_even():
+    elements = [
+        1,
+        2,
+        3,
+        4,
+    ]
+    expected = [[1, 2], [3, 4]]
+    res = utils.rearrange_to_list_of_twos(elements)
+    assert res == expected
+
+
+def test_rearrange_to_list_of_twos_uneven():
+    elements = [1, 2, 3, 4, 5]
+    expected = [[1, 2], [3, 4], [5, None]]
+    res = utils.rearrange_to_list_of_twos(elements)
+    assert res == expected

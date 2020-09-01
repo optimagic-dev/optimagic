@@ -243,3 +243,14 @@ def map_groups_to_params(params):
         if group is not None and group == group and group != "" and group is not False:
             group_to_params[group] = list(params[params["group"] == group]["name"])
     return group_to_params
+
+
+def rearrange_to_list_of_twos(elements):
+    """Return list elements in pairs of two."""
+    paired = []
+    for i, entry in enumerate(elements):
+        if i % 2 == 1:
+            paired.append([elements[i - 1], entry])
+        elif i + 1 == len(elements):
+            paired.append([entry, None])
+    return paired

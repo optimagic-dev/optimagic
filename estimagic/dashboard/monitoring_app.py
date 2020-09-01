@@ -1,7 +1,7 @@
 """Show the development of one optimization's criterion and parameters over time."""
 from functools import partial
 
-from bokeh.layouts import Column
+from bokeh.layouts import layout
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
@@ -12,6 +12,7 @@ from estimagic.dashboard.monitoring_callbacks import activation_callback
 from estimagic.dashboard.monitoring_callbacks import logscale_callback
 from estimagic.dashboard.utilities import map_groups_to_params
 from estimagic.dashboard.utilities import plot_time_series
+from estimagic.dashboard.utilities import rearrange_to_list_of_twos
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 
@@ -57,8 +58,8 @@ def monitoring_app(
     )
 
     # add elements to bokeh Document
-    column = Column(children=[button_row, *monitoring_plots], name="monitoring_column")
-    convergence_tab = Panel(child=column, title="Convergence Tab")
+    grid = layout(children=[button_row, *monitoring_plots])
+    convergence_tab = Panel(child=grid, title="Convergence Tab")
     tabs = Tabs(tabs=[convergence_tab])
     doc.add_root(tabs)
 
@@ -179,14 +180,19 @@ def _create_initial_convergence_plots(
     )
     log_criterion_plot.visible = False
 
-    convergence_plots = [linear_criterion_plot, log_criterion_plot]
-
+    param_plots = []
     for g, group_params in group_to_params.items():
         param_group_plot = plot_time_series(
             data=params_history, y_keys=group_params, x_name="iteration", title=str(g),
         )
-        convergence_plots.append(Row(param_group_plot))
-    return convergence_plots
+        param_plots.append(param_group_plot)
+
+    plot_list = [Row(linear_criterion_plot), Row(log_criterion_plot)]
+    if len(param_plots) > 4:
+        plot_list += rearrange_to_list_of_twos(param_plots)
+    else:
+        plot_list += [Row(plot) for plot in param_plots]
+    return plot_list
 
 
 def _create_button_row(
