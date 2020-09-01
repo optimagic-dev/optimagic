@@ -160,6 +160,20 @@ def _create_initial_convergence_plots(
             convergence plot.
 
     """
+    param_plots = []
+    for g, group_params in group_to_params.items():
+        param_group_plot = plot_time_series(
+            data=params_history, y_keys=group_params, x_name="iteration", title=str(g),
+        )
+        param_plots.append(param_group_plot)
+
+    if len(param_plots) > 4:
+        arranged_param_plots = rearrange_to_list_of_twos(param_plots)
+        crit_plot_width = 1600
+    else:
+        arranged_param_plots = [Row(plot) for plot in param_plots]
+        crit_plot_width = 800
+
     linear_criterion_plot = plot_time_series(
         data=criterion_history,
         x_name="iteration",
@@ -168,6 +182,7 @@ def _create_initial_convergence_plots(
         title="Criterion",
         name="linear_criterion_plot",
         logscale=False,
+        plot_width=crit_plot_width,
     )
     log_criterion_plot = plot_time_series(
         data=criterion_history,
@@ -177,21 +192,14 @@ def _create_initial_convergence_plots(
         title="Criterion",
         name="log_criterion_plot",
         logscale=True,
+        plot_width=crit_plot_width,
     )
     log_criterion_plot.visible = False
 
-    param_plots = []
-    for g, group_params in group_to_params.items():
-        param_group_plot = plot_time_series(
-            data=params_history, y_keys=group_params, x_name="iteration", title=str(g),
-        )
-        param_plots.append(param_group_plot)
-
-    plot_list = [Row(linear_criterion_plot), Row(log_criterion_plot)]
-    if len(param_plots) > 4:
-        plot_list += rearrange_to_list_of_twos(param_plots)
-    else:
-        plot_list += [Row(plot) for plot in param_plots]
+    plot_list = [
+        Row(linear_criterion_plot),
+        Row(log_criterion_plot),
+    ] + arranged_param_plots
     return plot_list
 
 

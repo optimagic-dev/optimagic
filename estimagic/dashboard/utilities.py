@@ -80,7 +80,9 @@ def create_dashboard_link(name):
     return div
 
 
-def create_styled_figure(title, name=None, tooltips=None, logscale=False):
+def create_styled_figure(
+    title, name=None, tooltips=None, logscale=False, plot_width=800
+):
     """Return a styled, empty figure of predetermined height and width.
 
     Args:
@@ -98,7 +100,7 @@ def create_styled_figure(title, name=None, tooltips=None, logscale=False):
     y_axis_type = "log" if logscale else "linear"
     fig = figure(
         plot_height=300,
-        plot_width=800,
+        plot_width=plot_width,
         title=title.title(),
         tooltips=tooltips,
         name=name,
@@ -170,7 +172,14 @@ def find_free_port():
 
 
 def plot_time_series(
-    data, y_keys, x_name, title, name=None, y_names=None, logscale=False
+    data,
+    y_keys,
+    x_name,
+    title,
+    name=None,
+    y_names=None,
+    logscale=False,
+    plot_width=800,
 ):
     """Plot time series linking the *y_keys* to a common *x_name* variable.
 
@@ -190,7 +199,9 @@ def plot_time_series(
     if y_names is None:
         y_names = [str(key) for key in y_keys]
 
-    plot = create_styled_figure(title=title, name=name, logscale=logscale)
+    plot = create_styled_figure(
+        title=title, name=name, logscale=logscale, plot_width=plot_width
+    )
     colors = get_color_palette(nr_colors=len(y_keys))
 
     legend_items = [(" " * 60, [])]
