@@ -206,6 +206,21 @@ def _create_initial_convergence_plots(
 def _create_button_row(
     doc, database, session_data, rollover, param_names, frequency, update_chunk,
 ):
+    """Create a row with two buttons, one for (re)starting and one for scale switching.
+
+    Args:
+        doc (bokeh.Document)
+        database (sqlalchemy.MetaData): Bound metadata object.
+        session_data (dict): dictionary with the last retrieved rowid
+        rollover (int): Upper limit to how many iterations are displayed.
+        param_names (list): List of parameter names to check for updates.
+        frequency (float): Number of seconds to wait between updates.
+        update_chunk (int): Number of values to add at each update.
+
+    Returns:
+        bokeh.layouts.Row
+
+    """
     # (Re)start convergence plot button
     activation_button = Toggle(
         active=False,
