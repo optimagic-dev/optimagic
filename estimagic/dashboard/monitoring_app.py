@@ -2,7 +2,7 @@
 from functools import partial
 from pathlib import Path
 
-from bokeh.layouts import layout
+from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
@@ -66,7 +66,7 @@ def monitoring_app(
     )
 
     # add elements to bokeh Document
-    grid = layout(children=[button_row, *monitoring_plots])
+    grid = Column(children=[button_row, *monitoring_plots], sizing_mode="stretch_width")
     convergence_tab = Panel(child=grid, title="Convergence Tab")
     tabs = Tabs(tabs=[convergence_tab])
 
