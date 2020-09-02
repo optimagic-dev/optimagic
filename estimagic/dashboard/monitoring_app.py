@@ -1,5 +1,6 @@
 """Show the development of one optimization's criterion and parameters over time."""
 from functools import partial
+from pathlib import Path
 
 from bokeh.layouts import layout
 from bokeh.layouts import Row
@@ -7,6 +8,8 @@ from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models import Toggle
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
 
 from estimagic.dashboard.monitoring_callbacks import activation_callback
 from estimagic.dashboard.monitoring_callbacks import logscale_callback
@@ -36,6 +39,12 @@ def monitoring_app(
         update_chunk (int): Number of values to add at each update.
 
     """
+    # style the Document
+    template_folder = Path(__file__).resolve().parent
+    env = Environment(loader=FileSystemLoader(template_folder))
+    doc.template = env.get_template("index.html")
+
+    # process inputs
     database = load_database(path=session_data["database_path"])
     _set_last_retrieved(session_data, database, rollover, jump)
     group_to_params = _get_group_to_params_from_database(database)
@@ -61,6 +70,7 @@ def monitoring_app(
     grid = layout(children=[button_row, *monitoring_plots])
     convergence_tab = Panel(child=grid, title="Convergence Tab")
     tabs = Tabs(tabs=[convergence_tab])
+
     doc.add_root(tabs)
 
 
@@ -167,7 +177,7 @@ def _create_initial_convergence_plots(
         )
         param_plots.append(param_group_plot)
 
-    if len(param_plots) > 4:
+    if len(param_plots) > 1:
         arranged_param_plots = rearrange_to_list_of_twos(param_plots)
         crit_plot_width = 1600
     else:
