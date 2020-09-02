@@ -15,7 +15,6 @@ from estimagic.dashboard.monitoring_callbacks import activation_callback
 from estimagic.dashboard.monitoring_callbacks import logscale_callback
 from estimagic.dashboard.utilities import map_groups_to_params
 from estimagic.dashboard.utilities import plot_time_series
-from estimagic.dashboard.utilities import rearrange_to_list_of_twos
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 
@@ -177,12 +176,7 @@ def _create_initial_convergence_plots(
         )
         param_plots.append(param_group_plot)
 
-    if len(param_plots) > 1:
-        arranged_param_plots = rearrange_to_list_of_twos(param_plots)
-        crit_plot_width = 1600
-    else:
-        arranged_param_plots = [Row(plot) for plot in param_plots]
-        crit_plot_width = 800
+    arranged_param_plots = [Row(plot) for plot in param_plots]
 
     linear_criterion_plot = plot_time_series(
         data=criterion_history,
@@ -192,7 +186,6 @@ def _create_initial_convergence_plots(
         title="Criterion",
         name="linear_criterion_plot",
         logscale=False,
-        plot_width=crit_plot_width,
     )
     log_criterion_plot = plot_time_series(
         data=criterion_history,
@@ -202,7 +195,6 @@ def _create_initial_convergence_plots(
         title="Criterion",
         name="log_criterion_plot",
         logscale=True,
-        plot_width=crit_plot_width,
     )
     log_criterion_plot.visible = False
 
