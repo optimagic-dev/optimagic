@@ -31,17 +31,21 @@ def test_monitoring_app():
 
 
 def test_create_cds_for_monitoring_app():
-    group_to_params = {"g1": ["hello", "world"], "g2": ["p1", "p2", 1]}
+    start_params = pd.DataFrame()
+    start_params["group"] = ["g1", "g1", None, "g2", "g2", None, "g3"]
+    start_params["name"] = ["hello", "world", "test", "p1", "p2", "p3", "1"]
     d = {
         "hello": [],
         "world": [],
+        "test": [],
         "p1": [],
         "p2": [],
+        "p3": [],
         "1": [],
         "iteration": [],
     }
     expected_param_cds = ColumnDataSource(data=d, name="params_history_cds")
-    _, params_history = monitoring._create_cds_for_monitoring_app(group_to_params)
+    _, params_history = monitoring._create_cds_for_monitoring_app(start_params)
     assert expected_param_cds.data == params_history.data
 
 

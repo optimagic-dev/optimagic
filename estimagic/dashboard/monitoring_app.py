@@ -45,8 +45,8 @@ def monitoring_app(
     # process inputs
     database = load_database(path=session_data["database_path"])
     _set_last_retrieved(session_data, database, rollover, jump)
-    group_to_params = _get_group_to_params_from_database(database)
-    criterion_history, params_history = _create_cds_for_monitoring_app(group_to_params)
+    start_params, group_to_params = _get_group_to_params_from_database(database)
+    criterion_history, params_history = _create_cds_for_monitoring_app(start_params)
 
     # create elements
     button_row = _create_button_row(
@@ -54,7 +54,7 @@ def monitoring_app(
         database=database,
         session_data=session_data,
         rollover=rollover,
-        param_names=[name for params in group_to_params.values() for name in params],
+        start_params=start_params,
         frequency=frequency,
         update_chunk=update_chunk,
     )
@@ -91,7 +91,7 @@ def _get_group_to_params_from_database(database):
     )
     start_params = optimization_problem["params"][0]
     group_to_params = _map_groups_to_params(start_params)
-    return group_to_params
+    return start_params, group_to_params
 
 
 def _map_groups_to_params(params):
@@ -117,7 +117,7 @@ def _map_groups_to_params(params):
     return group_to_params
 
 
-def _create_cds_for_monitoring_app(group_to_params):
+def _create_cds_for_monitoring_app(start_params):
     """Create the ColumnDataSources for saving the criterion and parameter values.
 
     They will be periodically updated from the database.
@@ -125,7 +125,7 @@ def _create_cds_for_monitoring_app(group_to_params):
     The "x" column is called "iteration".
 
     Args:
-        group_to_params (dict): keys are the group names, values are parameter names.
+        start_params (pd.DataFrame): See :ref:`params`
 
     Returns:
         criterion_history (bokeh.ColumnDataSource)
@@ -135,11 +135,12 @@ def _create_cds_for_monitoring_app(group_to_params):
     crit_data = {"iteration": [], "criterion": []}
     criterion_history = ColumnDataSource(crit_data, name="criterion_history_cds")
 
+    param_names = start_params["name"].tolist()
     params_data = {"iteration": []}
-    for group_param_names in group_to_params.values():
-        for name in group_param_names:
-            params_data[str(name)] = []
+    for name in param_names:
+        params_data[name] = []
     params_history = ColumnDataSource(params_data, name="params_history_cds")
+
     return criterion_history, params_history
 
 
@@ -228,7 +229,7 @@ def _create_initial_convergence_plots(
 
 
 def _create_button_row(
-    doc, database, session_data, rollover, param_names, frequency, update_chunk,
+    doc, database, session_data, rollover, start_params, frequency, update_chunk,
 ):
     """Create a row with two buttons, one for (re)starting and one for scale switching.
 
@@ -237,7 +238,7 @@ def _create_button_row(
         database (sqlalchemy.MetaData): Bound metadata object.
         session_data (dict): dictionary with the last retrieved rowid
         rollover (int): Upper limit to how many iterations are displayed.
-        param_names (list): List of parameter names to check for updates.
+        start_params (pd.DataFrame): See :ref:`params`
         frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
 
@@ -262,7 +263,7 @@ def _create_button_row(
         session_data=session_data,
         rollover=rollover,
         tables=["criterion_history", "params_history"],
-        param_names=param_names,
+        start_params=start_params,
         frequency=frequency,
         update_chunk=update_chunk,
     )
