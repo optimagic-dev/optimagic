@@ -23,11 +23,6 @@ def database_name_to_path(database_paths):
     return name_to_path
 
 
-def test_database_is_there(database_paths):
-    for p in database_paths:
-        assert p.exists(), f"{p} does not exist"
-
-
 def test_process_dashboard_args_single_path():
     single_path = DATABASE_PATH / "db1.db"
     database_name_to_path = _process_database_paths(database_paths=single_path)
