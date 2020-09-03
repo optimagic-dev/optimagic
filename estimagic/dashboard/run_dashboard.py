@@ -1,5 +1,7 @@
 import asyncio
 import pathlib
+import socket
+from contextlib import closing
 from functools import partial
 
 from bokeh.application import Application
@@ -7,10 +9,9 @@ from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
 from bokeh.server.server import Server
 
+from estimagic.dashboard.create_short_database_names import create_short_database_names
 from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
-from estimagic.dashboard.utilities import create_short_database_names
-from estimagic.dashboard.utilities import find_free_port
 
 
 def run_dashboard(
@@ -34,7 +35,7 @@ def run_dashboard(
     """
     database_name_to_path = _process_database_paths(database_paths)
 
-    port = find_free_port() if port is None else port
+    port = _find_free_port() if port is None else port
     port = int(port)
     rollover = int(rollover)
 
@@ -67,6 +68,18 @@ def run_dashboard(
     _start_server(
         apps=apps, port=port, no_browser=no_browser, path_to_open=path_to_open
     )
+
+
+def _find_free_port():
+    """Find a free port on the localhost.
+
+    Adapted from https://stackoverflow.com/a/45690594
+
+    """
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("localhost", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 
 def _process_database_paths(database_paths):

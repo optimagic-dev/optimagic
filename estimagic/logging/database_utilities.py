@@ -271,12 +271,6 @@ def read_last_rows(
         table_name (str): name of the table to retrieve.
         n_int (int): number of rows to retrieve.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
-            - "list": A list of lists. The first sublist are the columns. The remaining
-              sublists are retrieved rows.
-            - "pandas": A dataframe.
-            - "bokeh": A dictionary that can be used to stream to a ColumnDataSource.
-              It has one key per column and the corresponding values are lists that
-              contain the data of that column.
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created.
         fast_logging (bool)

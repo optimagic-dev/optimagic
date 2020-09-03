@@ -13,8 +13,7 @@ from jinja2 import FileSystemLoader
 
 from estimagic.dashboard.monitoring_callbacks import activation_callback
 from estimagic.dashboard.monitoring_callbacks import logscale_callback
-from estimagic.dashboard.utilities import map_groups_to_params
-from estimagic.dashboard.utilities import plot_time_series
+from estimagic.dashboard.plot_functions import plot_time_series
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 
@@ -91,7 +90,30 @@ def _get_group_to_params_from_database(database):
         return_type="dict_of_lists",
     )
     start_params = optimization_problem["params"][0]
-    group_to_params = map_groups_to_params(start_params)
+    group_to_params = _map_groups_to_params(start_params)
+    return group_to_params
+
+
+def _map_groups_to_params(params):
+    """Map the group name to the ColumnDataSource friendly parameter names.
+
+    Args:
+        params (pd.DataFrame):
+            DataFrame with the parameter values and additional information such as the
+            "group" column and Index.
+
+    Returns:
+        group_to_params (dict):
+            Keys are the values of the "group" column. The values are lists with
+            bokeh friendly strings of the index tuples identifying the parameters
+            that belong to this group. Parameters where group is None, "" or False
+            are ignored.
+
+    """
+    group_to_params = {}
+    for group in params["group"].unique():
+        if group is not None and group == group and group != "" and group is not False:
+            group_to_params[group] = list(params[params["group"] == group]["name"])
     return group_to_params
 
 
