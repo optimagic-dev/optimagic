@@ -49,7 +49,10 @@ def test_update_monitoring_tab():
     # it has only 7 entries.
     db_path = Path(__file__).parent / "db1.db"
 
-    assert db_path.exists(), f"{db_path} does not exist."
+    assert db_path.exists(), (
+        f"{db_path} does not exist. "
+        + f"This folder contains {Path(__file__).parent.iterdir()}"
+    )
 
     database = load_database(metadata=None, path=db_path)
 
