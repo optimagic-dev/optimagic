@@ -8,7 +8,7 @@ from estimagic.cli import cli
 from estimagic.dashboard.run_dashboard import _create_session_data
 from estimagic.dashboard.run_dashboard import _process_database_paths
 
-DATABASE_PATH = Path(__file__).resolve().parent / "test_databases"
+DATABASE_PATH = Path(__file__).resolve().parent
 
 
 @pytest.fixture()

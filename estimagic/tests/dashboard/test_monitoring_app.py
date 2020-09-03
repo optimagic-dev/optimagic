@@ -16,7 +16,7 @@ def test_monitoring_app():
     current_dir_path = Path(__file__).resolve().parent
     session_data = {
         "last_retrieved": 0,
-        "database_path": current_dir_path / "test_databases" / "db1.db",
+        "database_path": current_dir_path / "db1.db",
     }
 
     monitoring.monitoring_app(

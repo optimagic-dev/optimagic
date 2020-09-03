@@ -47,7 +47,7 @@ def test_switch_to_linear_scale():
 def test_update_monitoring_tab():
     # note: this test database does not include None in the value column.
     # it has only 7 entries.
-    db_path = Path(__file__).resolve().parent / "test_databases" / "db1.db"
+    db_path = Path(__file__).resolve().parent / "db1.db"
     database = load_database(metadata=None, path=db_path)
 
     crit_data = {"iteration": [3, 5], "criterion": [-10, -10]}
