@@ -19,18 +19,39 @@ def logscale_callback(attr, old, new, button, doc):
     linear_criterion_plot = doc.get_model_by_name("linear_criterion_plot")
     log_criterion_plot = doc.get_model_by_name("log_criterion_plot")
     if new is True:
-        # switch to log scale by
-        # setting the linear plot to invisible and the log plot to visible
-        button.button_type = "primary"
-        button.label = "Show criterion plot on a linear scale"
-        linear_criterion_plot.visible = False
-        log_criterion_plot.visible = True
+        _switch_to_log_scale(button, linear_criterion_plot, log_criterion_plot)
     else:
-        # switch to linear scale
-        button.button_type = "default"
-        button.label = "Show criterion plot on a logarithmic scale"
-        log_criterion_plot.visible = False
-        linear_criterion_plot.visible = True
+        _switch_to_linear_scale(button, linear_criterion_plot, log_criterion_plot)
+
+
+def _switch_to_log_scale(button, linear_criterion_plot, log_criterion_plot):
+    """Make the linear criterion plot invisible, the log plot visible and adjust button.
+
+    Args:
+        button (bokeh.Toggle)
+        linear_criterion_plot (bokeh.Figure)
+        log_criterion_plot (bokeh.Figure)
+
+    """
+    button.button_type = "primary"
+    button.label = "Show criterion plot on a linear scale"
+    linear_criterion_plot.visible = False
+    log_criterion_plot.visible = True
+
+
+def _switch_to_linear_scale(button, linear_criterion_plot, log_criterion_plot):
+    """Make the log criterion plot invisible, the linear plot visible and adjust button.
+
+    Args:
+        button (bokeh.Toggle)
+        linear_criterion_plot (bokeh.Figure)
+        log_criterion_plot (bokeh.Figure)
+
+    """
+    button.button_type = "default"
+    button.label = "Show criterion plot on a logarithmic scale"
+    log_criterion_plot.visible = False
+    linear_criterion_plot.visible = True
 
 
 def activation_callback(
@@ -69,11 +90,14 @@ def activation_callback(
 
     """
     callback_dict = session_data["callbacks"]
-    if new is True:
+    criterion_cds = doc.get_model_by_name("criterion_history_cds")
+    param_cds = doc.get_model_by_name("params_history_cds")
 
+    if new is True:
         plot_new_data = partial(
             _update_monitoring_tab,
-            doc=doc,
+            criterion_cds=criterion_cds,
+            param_cds=param_cds,
             database=database,
             session_data=session_data,
             rollover=rollover,
@@ -84,28 +108,33 @@ def activation_callback(
         callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
             plot_new_data, period_milliseconds=1000 * frequency,
         )
+
         # change the button color
         button.button_type = "success"
         button.label = "Reset Plot"
     else:
         doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
-        for table_name in ["criterion_history", "params_history"]:
-            cds = doc.get_model_by_name(f"{table_name}_cds")
-            column_names = cds.data.keys()
-            cds.data = {name: [] for name in column_names}
+        _reset_column_data_sources([criterion_cds, param_cds])
         session_data["last_retrieved"] = 0
+
         # change the button color
         button.button_type = "danger"
         button.label = "Restart Plot"
 
 
 def _update_monitoring_tab(
-    doc, database, session_data, tables, rollover, start_params, update_chunk
+    database,
+    criterion_cds,
+    param_cds,
+    session_data,
+    tables,
+    rollover,
+    start_params,
+    update_chunk,
 ):
     """Callback to look up new entries in the database tables and plot them.
 
     Args:
-        doc (bokeh.Document): argument required by bokeh
         database (sqlalchemy.MetaData)
         session_data (dict):
             infos to be passed between and within apps.
@@ -116,6 +145,8 @@ def _update_monitoring_tab(
         rollover (int): maximal number of points to show in the plot
         start_params (pd.DataFrame)
         update_chunk (int): Number of values to add at each update.
+        criterion_cds (bokeh.ColumnDataSource)
+        param_cds (bokeh.ColumnDataSource)
 
     """
     data, new_last = read_new_rows(
@@ -127,26 +158,50 @@ def _update_monitoring_tab(
     )
 
     # update the criterion plot
-    criterion_cds = doc.get_model_by_name("criterion_history_cds")
     # todo: remove None entries!
     missing = [i for i, val in enumerate(data["value"]) if val is None]
     crit_data = {
         "iteration": [id_ for i, id_ in enumerate(data["rowid"]) if i not in missing],
         "criterion": [val for i, val in enumerate(data["value"]) if i not in missing],
     }
-
     criterion_cds.stream(crit_data, rollover=rollover)
 
     # update the parameter plots
     param_names = start_params["name"].tolist()
-    param_cds = doc.get_model_by_name("params_history_cds")
+    params_data = _create_params_data_for_update(data, param_names)
+    param_cds.stream(params_data, rollover=rollover)
+
+    # update last retrieved
+    session_data["last_retrieved"] = new_last
+
+
+def _create_params_data_for_update(data, param_names):
+    """Create the dictionary to stream to the param_cds from data and param_names.
+
+    Args:
+        data
+        param_names (list): list of the length of the arrays in data["external_params"]
+
+    Returns:
+        params_data (dict): keys are the parameter names and "iteration". The values
+            are lists of values that will be added to the ColumnDataSources columns.
+
+    """
     params_data = [arr.tolist() for arr in data["external_params"]]
     params_data = transpose_nested_list(params_data)
     params_data = dict(zip(param_names, params_data))
     if params_data == {}:
         params_data = {name: [] for name in param_names}
     params_data["iteration"] = data["rowid"]
-    param_cds.stream(params_data, rollover=rollover)
+    return params_data
 
-    # update last retrieved
-    session_data["last_retrieved"] = new_last
+
+def _reset_column_data_sources(cds_list):
+    """Empty each ColumnDataSource in a list such that it has no entries.
+
+    Args:
+        cds_list (list): list of boheh ColumnDataSources
+    """
+    for cds in cds_list:
+        column_names = cds.data.keys()
+        cds.data = {name: [] for name in column_names}
