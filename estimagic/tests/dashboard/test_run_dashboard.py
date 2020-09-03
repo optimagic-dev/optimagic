@@ -25,7 +25,7 @@ def database_name_to_path(database_paths):
 
 def test_database_is_there(database_paths):
     for p in database_paths:
-        assert p.exists, f"{p} does not exist"
+        assert p.exists(), f"{p} does not exist"
 
 
 def test_process_dashboard_args_single_path():
