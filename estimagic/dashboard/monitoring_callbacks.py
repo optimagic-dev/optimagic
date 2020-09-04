@@ -65,7 +65,7 @@ def activation_callback(
     button,
     tables,
     start_params,
-    frequency,
+    update_frequency,
     update_chunk,
 ):
     """Start and reset the convergence plots and their updating.
@@ -85,7 +85,7 @@ def activation_callback(
         button (bokeh.models.Toggle)
         tables (list): List of table names to load and convert to ColumnDataSources.
         start_params (pd.DataFrame)
-        frequency (float): Number of seconds to wait between updates.
+        update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
 
     """
@@ -106,7 +106,7 @@ def activation_callback(
             update_chunk=update_chunk,
         )
         callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
-            plot_new_data, period_milliseconds=1000 * frequency,
+            plot_new_data, period_milliseconds=1000 * update_frequency,
         )
 
         # change the button color

@@ -19,7 +19,7 @@ from estimagic.logging.database_utilities import read_last_rows
 
 
 def monitoring_app(
-    doc, database_name, session_data, rollover, jump, frequency, update_chunk
+    doc, database_name, session_data, rollover, jump, update_frequency, update_chunk
 ):
     """Create plots showing the development of the criterion and parameters.
 
@@ -31,9 +31,9 @@ def monitoring_app(
             - last_retrieved (int): last iteration currently in the ColumnDataSource.
             - database_path (str or pathlib.Path)
             - callbacks (dict): dictionary to be populated with callbacks.
-        jump (bool): If True the dashboard will jump directly to the last `rollover`
-            observations and not display the full history.
-        frequency (float): Number of seconds to wait between updates.
+        jump (bool): If True the dashboard will start at the last `rollover`
+            observations and start to display the history from there.
+        update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
 
     """
@@ -55,7 +55,7 @@ def monitoring_app(
         session_data=session_data,
         rollover=rollover,
         start_params=start_params,
-        frequency=frequency,
+        update_frequency=update_frequency,
         update_chunk=update_chunk,
     )
     monitoring_plots = _create_initial_convergence_plots(
@@ -158,7 +158,8 @@ def _set_last_retrieved(session_data, database, rollover, jump):
             - callbacks (dict): dictionary to be populated with callbacks.
         database (sqlalchemy.MetaData): Bound metadata object.
         rollover (int): Upper limit to how many iterations are displayed.
-        jump (bool): If True jump to the last rollover iterations
+        jump (bool): If True the dashboard will start at the last `rollover`
+            observations and start to display the history from there.
 
     """
     if jump:
@@ -229,7 +230,7 @@ def _create_initial_convergence_plots(
 
 
 def _create_button_row(
-    doc, database, session_data, rollover, start_params, frequency, update_chunk,
+    doc, database, session_data, rollover, start_params, update_frequency, update_chunk,
 ):
     """Create a row with two buttons, one for (re)starting and one for scale switching.
 
@@ -239,7 +240,7 @@ def _create_button_row(
         session_data (dict): dictionary with the last retrieved rowid
         rollover (int): Upper limit to how many iterations are displayed.
         start_params (pd.DataFrame): See :ref:`params`
-        frequency (float): Number of seconds to wait between updates.
+        update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
 
     Returns:
@@ -264,7 +265,7 @@ def _create_button_row(
         rollover=rollover,
         tables=["criterion_history", "params_history"],
         start_params=start_params,
-        frequency=frequency,
+        update_frequency=update_frequency,
         update_chunk=update_chunk,
     )
     activation_button.on_change("active", partialed_activation_callback)

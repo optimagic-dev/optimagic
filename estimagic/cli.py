@@ -34,8 +34,7 @@ def cli():
 @click.option(
     "--jump",
     is_flag=True,
-    help="Jump directly to the last iterations as specified in the rollover "
-    + "instead of replaying the optimization from the beginning.",
+    help="Jump to start the dashboard at the last rollover iterations.",
 )
 @click.option(
     "--rollover",
@@ -45,20 +44,22 @@ def cli():
     show_default=True,
 )
 @click.option(
-    "--frequency",
+    "--update-frequency",
     default=1,
     help="Number of seconds to wait between checking for new entries in the database.",
     type=float,
     show_default=True,
 )
 @click.option(
-    "--update_chunk",
+    "--update-chunk",
     default=20,
     help="Upper limit how many new values are updated from the database at one update.",
     type=int,
     show_default=True,
 )
-def dashboard(database, port, no_browser, rollover, jump, frequency, update_chunk):
+def dashboard(
+    database, port, no_browser, rollover, jump, update_frequency, update_chunk
+):
     """Start the dashboard to visualize optimizations."""
     database_paths = []
     for path in database:
@@ -75,6 +76,6 @@ def dashboard(database, port, no_browser, rollover, jump, frequency, update_chun
         port=port,
         rollover=rollover,
         jump=jump,
-        frequency=frequency,
+        update_frequency=update_frequency,
         update_chunk=update_chunk,
     )

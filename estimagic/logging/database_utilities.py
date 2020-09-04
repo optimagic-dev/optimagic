@@ -230,7 +230,6 @@ def read_new_rows(
         table_name (str): name of the table to retrieve.
         last_retrieved (int): The last iteration that was retrieved.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
-        limit (int): Only the first ``limit`` rows will be retrieved. Default None.
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created.
         fast_logging (bool)

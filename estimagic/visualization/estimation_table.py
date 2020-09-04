@@ -215,19 +215,19 @@ def tabular_tex(
 ):
     """Return estimation table in LaTeX format as string.
 
-        Args:
-            body_df (DataFrame): the processed dataframe with parameter values and
-                precision (if applied) as strings.
-            footer_df (DataFrame): the processed dataframe with summary statistics as
-                strings.
-            notes_tex (str): a string with LaTex code for the notes section
-            render_options(dict): the pd.to_latex() kwargs to apply if default options
-                need to be updated.
-            lef_decimals (int): see main docstring
-            sig_digits (int): see main docstring
-            show_footer (bool): see main docstring
-        Returns:
-            latex_str (str): the string for LaTex table script.
+    Args:
+        body_df (DataFrame): the processed dataframe with parameter values and
+            precision (if applied) as strings.
+        footer_df (DataFrame): the processed dataframe with summary statistics as
+            strings.
+        notes_tex (str): a string with LaTex code for the notes section
+        render_options(dict): the pd.to_latex() kwargs to apply if default options
+            need to be updated.
+        lef_decimals (int): see main docstring
+        sig_digits (int): see main docstring
+        show_footer (bool): see main docstring
+    Returns:
+        latex_str (str): the string for LaTex table script.
 
     """
     n_levels = body_df.index.nlevels
@@ -329,8 +329,7 @@ def tabular_html(
 
 
 def _process_model(model):
-    """Check model validity, convert to namedtuple.
-    """
+    """Check model validity, convert to namedtuple."""
     if hasattr(model, "params") and hasattr(model, "info"):
         assert isinstance(model.info, dict)
         assert isinstance(model.params, pd.DataFrame)

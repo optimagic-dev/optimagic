@@ -15,7 +15,7 @@ from estimagic.dashboard.monitoring_app import monitoring_app
 
 
 def run_dashboard(
-    database_paths, no_browser, port, rollover, jump, frequency, update_chunk
+    database_paths, no_browser, port, rollover, jump, update_frequency, update_chunk
 ):
     """Start the dashboard pertaining to one or several databases.
 
@@ -25,10 +25,10 @@ def run_dashboard(
         no_browser (bool): If True the dashboard does not open in the browser.
         port (int): Port where to display the dashboard.
         rollover (int): After how many iterations the convergence plots are truncated.
-        jump (bool): If True the dashboard will jump directly to the last `rollover`
-            observations and not display the full history.
-        frequency (float): Number of seconds to wait between updates of the convergence
-            plots of the criterion and parameter values in the monitoring app.
+        jump (bool): If True the dashboard will start at the last `rollover`
+            observations and start to display the history from there.
+        update_frequency (float): Number of seconds to wait between updates of the
+            convergence plots in the monitoring app.
         update_chunk (int): Number of values to add at each convergence plot update of
             the criterion and parameters in the monitoring app.
 
@@ -55,7 +55,7 @@ def run_dashboard(
             session_data=session_data[database_name],
             rollover=rollover,
             jump=jump,
-            frequency=frequency,
+            update_frequency=update_frequency,
             update_chunk=update_chunk,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))

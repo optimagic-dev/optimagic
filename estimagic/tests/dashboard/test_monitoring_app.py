@@ -25,7 +25,7 @@ def test_monitoring_app():
         session_data=session_data,
         rollover=10_000,
         jump=False,
-        frequency=0.1,
+        update_frequency=0.1,
         update_chunk=30,
     )
 
