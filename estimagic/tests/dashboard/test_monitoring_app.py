@@ -49,9 +49,7 @@ def test_create_cds_for_monitoring_app():
     assert expected_param_cds.data == params_history.data
 
 
-def test_set_last_retrieved(monkeypatch):
-    session_data = {}
-
+def test_calculate_strat_point(monkeypatch):
     def fake_read_last_rows(**kwargs):
         return [{"rowid": 20}]
 
@@ -59,16 +57,12 @@ def test_set_last_retrieved(monkeypatch):
         "estimagic.dashboard.monitoring_app.read_last_rows", fake_read_last_rows
     )
 
-    monitoring._set_last_retrieved(
-        session_data=session_data, database=False, rollover=10, jump=True
-    )
+    res = monitoring._calculate_start_point(database=False, rollover=10, jump=True)
 
-    assert session_data == {"last_retrieved": 10}
+    assert res == 10
 
 
-def test_set_last_retrieved_no_negative_value(monkeypatch):
-    session_data = {}
-
+def test_calculate_start_point_no_negative_value(monkeypatch):
     def fake_read_last_rows(**kwargs):
         return [{"rowid": 20}]
 
@@ -76,11 +70,9 @@ def test_set_last_retrieved_no_negative_value(monkeypatch):
         "estimagic.dashboard.monitoring_app.read_last_rows", fake_read_last_rows
     )
 
-    monitoring._set_last_retrieved(
-        session_data=session_data, database=False, rollover=30, jump=True
-    )
+    res = monitoring._calculate_start_point(database=False, rollover=30, jump=True)
 
-    assert session_data == {"last_retrieved": 0}
+    assert res == 0
 
 
 # ====================================================================================

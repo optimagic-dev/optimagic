@@ -44,7 +44,8 @@ def monitoring_app(
 
     # process inputs
     database = load_database(path=session_data["database_path"])
-    _set_last_retrieved(session_data, database, rollover, jump)
+    start_point = _calculate_start_point(database, rollover, jump)
+    session_data["last_retrieved"] = start_point
     start_params, group_to_params = _get_group_to_params_from_database(database)
     criterion_history, params_history = _create_cds_for_monitoring_app(start_params)
 
@@ -144,22 +145,16 @@ def _create_cds_for_monitoring_app(start_params):
     return criterion_history, params_history
 
 
-def _set_last_retrieved(session_data, database, rollover, jump):
-    """Set the last retrieved value.
-
-    As the session_data dictionary is used to communicate between apps, this is done
-    inplace.
+def _calculate_start_point(database, rollover, jump):
+    """Calculate the starting point.
 
     Args:
-        session_data (dict): Infos to be passed between and within apps.
-            Keys of this app's entry are:
-            - last_retrieved (int): last iteration currently in the ColumnDataSource.
-            - database_path (str or pathlib.Path)
-            - callbacks (dict): dictionary to be populated with callbacks.
         database (sqlalchemy.MetaData): Bound metadata object.
         rollover (int): Upper limit to how many iterations are displayed.
         jump (bool): If True the dashboard will start at the last `rollover`
             observations and start to display the history from there.
+    Returns:
+        start_point (int): iteration from which to start the dashboard.
 
     """
     if jump:
@@ -169,9 +164,10 @@ def _set_last_retrieved(session_data, database, rollover, jump):
             n_rows=1,
             return_type="list_of_dicts",
         )
-        session_data["last_retrieved"] = max(0, last_entry[0]["rowid"] - rollover)
+        start_point = max(0, last_entry[0]["rowid"] - rollover)
     else:
-        session_data["last_retrieved"] = 0
+        start_point = 0
+    return start_point
 
 
 def _create_initial_convergence_plots(
