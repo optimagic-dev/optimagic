@@ -2,6 +2,7 @@
 from functools import partial
 from pathlib import Path
 
+import numpy as np
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
@@ -14,6 +15,7 @@ from jinja2 import FileSystemLoader
 from estimagic.dashboard.monitoring_callbacks import activation_callback
 from estimagic.dashboard.monitoring_callbacks import logscale_callback
 from estimagic.dashboard.plot_functions import plot_time_series
+from estimagic.dashboard.update_data_from_database import update_data_from_database
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 
@@ -49,15 +51,29 @@ def monitoring_app(
     start_params, group_to_params = _get_group_to_params_from_database(database)
     criterion_history, params_history = _create_cds_for_monitoring_app(start_params)
 
+    # setup the data updates
+    flag = np.array([False])
+    update_data_partialed = partial(
+        update_data_from_database,
+        doc=doc,
+        flag=flag,
+        database=database,
+        update_frequency=update_frequency,
+        update_chunk=update_chunk,
+        session_data=session_data,
+        criterion_history=criterion_history,
+        params_history=params_history,
+        start_params=start_params,
+    )
+
     # create elements
     button_row = _create_button_row(
         doc=doc,
-        database=database,
         session_data=session_data,
-        rollover=rollover,
-        start_params=start_params,
-        update_frequency=update_frequency,
-        update_chunk=update_chunk,
+        criterion_history=criterion_history,
+        params_history=params_history,
+        flag=flag,
+        update_data_partialed=update_data_partialed,
     )
     monitoring_plots = _create_initial_convergence_plots(
         criterion_history=criterion_history,
@@ -226,7 +242,7 @@ def _create_initial_convergence_plots(
 
 
 def _create_button_row(
-    doc, database, session_data, rollover, start_params, update_frequency, update_chunk,
+    doc, session_data, criterion_history, params_history, flag, update_data_partialed,
 ):
     """Create a row with two buttons, one for (re)starting and one for scale switching.
 
@@ -234,10 +250,6 @@ def _create_button_row(
         doc (bokeh.Document)
         database (sqlalchemy.MetaData): Bound metadata object.
         session_data (dict): dictionary with the last retrieved rowid
-        rollover (int): Upper limit to how many iterations are displayed.
-        start_params (pd.DataFrame): See :ref:`params`
-        update_frequency (float): Number of seconds to wait between updates.
-        update_chunk (int): Number of values to add at each update.
 
     Returns:
         bokeh.layouts.Row
@@ -254,16 +266,14 @@ def _create_button_row(
     )
     partialed_activation_callback = partial(
         activation_callback,
-        button=activation_button,
-        doc=doc,
-        database=database,
         session_data=session_data,
-        rollover=rollover,
-        tables=["criterion_history", "params_history"],
-        start_params=start_params,
-        update_frequency=update_frequency,
-        update_chunk=update_chunk,
+        criterion_history=criterion_history,
+        params_history=params_history,
+        button=activation_button,
+        flag=flag,
+        update_data_partialed=update_data_partialed,
     )
+
     activation_button.on_change("active", partialed_activation_callback)
 
     # switch between linear and logscale button

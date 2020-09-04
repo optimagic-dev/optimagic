@@ -1,8 +1,5 @@
 """Callbacks for the monitoring app."""
-from functools import partial
-
-from estimagic.logging.database_utilities import read_new_rows
-from estimagic.logging.database_utilities import transpose_nested_list
+from threading import Thread
 
 
 def logscale_callback(attr, old, new, button, doc):
@@ -59,14 +56,11 @@ def activation_callback(
     old,
     new,
     session_data,
-    rollover,
-    doc,
-    database,
+    criterion_history,
+    params_history,
     button,
-    tables,
-    start_params,
-    update_frequency,
-    update_chunk,
+    flag,
+    update_data_partialed,
 ):
     """Start and reset the convergence plots and their updating.
 
@@ -75,125 +69,41 @@ def activation_callback(
         old: Old state of the Button.
         new: New state of the Button.
 
-        doc (bokeh.Document)
-        database (sqlalchemy.MetaData)
         session_data (dict): This app's entry of infos to be passed between and within
             apps. The keys are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
-        rollover (int): Maximal number of points to show in the plot.
+        criterion_history (bokeh.ColumnDataSource)
+        params_history (bokeh.ColumnDataSource)
         button (bokeh.models.Toggle)
-        tables (list): List of table names to load and convert to ColumnDataSources.
-        start_params (pd.DataFrame)
-        update_frequency (float): Number of seconds to wait between updates.
-        update_chunk (int): Number of values to add at each update.
+        flag (np.array): Array with one boolean element to start and end updates
+            from the database. Careful, the dtype is np.bool.
+        update_data_partialed (callable): function to periodically update the
+            ColumnDataSources from the database
 
     """
     callback_dict = session_data["callbacks"]
-    criterion_cds = doc.get_model_by_name("criterion_history_cds")
-    param_cds = doc.get_model_by_name("params_history_cds")
 
     if new is True:
-        plot_new_data = partial(
-            _update_monitoring_tab,
-            criterion_cds=criterion_cds,
-            param_cds=param_cds,
-            database=database,
-            session_data=session_data,
-            rollover=rollover,
-            tables=tables,
-            start_params=start_params,
-            update_chunk=update_chunk,
-        )
-        callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
-            plot_new_data, period_milliseconds=1000 * update_frequency,
-        )
+        flag[0] = True
+        thread = Thread(target=update_data_partialed)
+        thread.start()
+        callback_dict["data_update"] = thread
 
         # change the button color
         button.button_type = "success"
         button.label = "Reset Plot"
     else:
-        doc.remove_periodic_callback(callback_dict["plot_periodic_data"])
-        _reset_column_data_sources([criterion_cds, param_cds])
+        flag[0] = False
+        thread = callback_dict.pop("data_update")
+        thread.join()
+
         session_data["last_retrieved"] = 0
+        _reset_column_data_sources([criterion_history, params_history])
 
         # change the button color
         button.button_type = "danger"
         button.label = "Restart Plot"
-
-
-def _update_monitoring_tab(
-    database,
-    criterion_cds,
-    param_cds,
-    session_data,
-    tables,
-    rollover,
-    start_params,
-    update_chunk,
-):
-    """Callback to look up new entries in the database tables and plot them.
-
-    Args:
-        database (sqlalchemy.MetaData)
-        session_data (dict):
-            infos to be passed between and within apps.
-            Keys of this app's entry are:
-            - last_retrieved (int): last iteration currently in the ColumnDataSource
-            - database_path
-        tables (list): list of table names to load and convert to ColumnDataSources
-        rollover (int): maximal number of points to show in the plot
-        start_params (pd.DataFrame)
-        update_chunk (int): Number of values to add at each update.
-        criterion_cds (bokeh.ColumnDataSource)
-        param_cds (bokeh.ColumnDataSource)
-
-    """
-    data, new_last = read_new_rows(
-        database=database,
-        table_name="optimization_iterations",
-        last_retrieved=session_data["last_retrieved"],
-        return_type="dict_of_lists",
-        limit=update_chunk,
-    )
-
-    # update the criterion plot
-    # todo: remove None entries!
-    missing = [i for i, val in enumerate(data["value"]) if val is None]
-    crit_data = {
-        "iteration": [id_ for i, id_ in enumerate(data["rowid"]) if i not in missing],
-        "criterion": [val for i, val in enumerate(data["value"]) if i not in missing],
-    }
-    criterion_cds.stream(crit_data, rollover=rollover)
-
-    # update the parameter plots
-    param_names = start_params["name"].tolist()
-    params_data = _create_params_data_for_update(data, param_names)
-    param_cds.stream(params_data, rollover=rollover)
-
-    # update last retrieved
-    session_data["last_retrieved"] = new_last
-
-
-def _create_params_data_for_update(data, param_names):
-    """Create the dictionary to stream to the param_cds from data and param_names.
-
-    Args:
-        data
-        param_names (list): list of the length of the arrays in data["external_params"]
-
-    Returns:
-        params_data (dict): keys are the parameter names and "iteration". The values
-            are lists of values that will be added to the ColumnDataSources columns.
-
-    """
-    params_data = [arr.tolist() for arr in data["external_params"]]
-    params_data = transpose_nested_list(params_data)
-    params_data = dict(zip(param_names, params_data))
-    if params_data == {}:
-        params_data = {name: [] for name in param_names}
-    params_data["iteration"] = data["rowid"]
-    return params_data
 
 
 def _reset_column_data_sources(cds_list):

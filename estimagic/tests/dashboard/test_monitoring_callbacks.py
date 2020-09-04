@@ -6,11 +6,13 @@ from bokeh.models import ColumnDataSource
 from bokeh.models import Toggle
 from bokeh.plotting import figure
 
-from estimagic.dashboard.monitoring_callbacks import _create_params_data_for_update
 from estimagic.dashboard.monitoring_callbacks import _reset_column_data_sources
 from estimagic.dashboard.monitoring_callbacks import _switch_to_linear_scale
 from estimagic.dashboard.monitoring_callbacks import _switch_to_log_scale
 from estimagic.dashboard.monitoring_callbacks import _update_monitoring_tab
+from estimagic.dashboard.update_data_from_database import (
+    _convert_params_data_for_update,
+)
 from estimagic.logging.database_utilities import load_database
 
 PARAM_NAMES = ["a", "b", "c", "d", "e"]
@@ -114,7 +116,7 @@ def test_update_monitoring_tab():
     assert param_cds.data == expected_param_data
 
 
-def test_create_params_data_for_update():
+def test_convert_params_data_for_update():
     param_names = PARAM_NAMES
 
     data = {
@@ -137,7 +139,7 @@ def test_create_params_data_for_update():
         "e": [2.0, 1.69, 1.89, 1.89, 1.90],
     }
 
-    res = _create_params_data_for_update(data=data, param_names=param_names)
+    res = _convert_params_data_for_update(data=data, param_names=param_names)
     assert res == expected
 
 
