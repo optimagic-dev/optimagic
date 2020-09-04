@@ -29,7 +29,7 @@ def test_covariance_moments_unit():
 
 @pytest.fixture
 def fixtures_gmm_cov():
-    """ The fixture contains a test case for our functions. The expected result was
+    """The fixture contains a test case for our functions. The expected result was
     calculated by hand."""
     fix = {}
     fix["mom_cond"] = np.array([[0.1, 0.3], [0.7, 1.3]])
@@ -64,7 +64,7 @@ def test_sandwich_cov(fixtures_gmm_cov):
 @pytest.fixture()
 def statsmodels_fixture():
     """These fixtures are taken from the statsmodels test battery and adapted towards
-     a random test."""
+    a random test."""
     fix = {}
     num_obs = 100
     num_params = 3

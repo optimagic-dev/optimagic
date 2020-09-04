@@ -223,6 +223,24 @@ def read_new_rows(
     fast_logging=False,
     limit=None,
 ):
+    """Read all iterations after last_retrieved up to a limit.
+
+    Args:
+        database (sqlalchemy.MetaData)
+        table_name (str): name of the table to retrieve.
+        last_retrieved (int): The last iteration that was retrieved.
+        return_type (str): either "list_of_dicts" or "dict_of_lists".
+        path (str or pathlib.Path): location of the database file. If the file does
+            not exist, it will be created.
+        fast_logging (bool)
+        limit (int): maximum number of rows to extract from the table.
+
+    Returns:
+        result (return_type): up to limit rows after last_retrieved of the
+            `table_name` table as `return_type`.
+        int: The new last_retrieved value.
+
+    """
     database = load_database(database, path, fast_logging)
     last_retrieved = int(last_retrieved)
     limit = int(limit) if limit is not None else limit
@@ -243,6 +261,23 @@ def read_new_rows(
 def read_last_rows(
     database, table_name, n_rows, return_type, path=None, fast_logging=True
 ):
+    """Read the last n_rows rows from a table.
+
+    If a table has less than n_rows rows, the whole table is returned.
+
+    Args:
+        database (sqlalchemy.MetaData)
+        table_name (str): name of the table to retrieve.
+        n_int (int): number of rows to retrieve.
+        return_type (str): either "list_of_dicts" or "dict_of_lists".
+        path (str or pathlib.Path): location of the database file. If the file does
+            not exist, it will be created.
+        fast_logging (bool)
+
+    Returns:
+        result (return_type): the last rows of the `table_name` table as `return_type`.
+
+    """
     database = load_database(database, path, fast_logging)
     n_rows = int(n_rows)
 
@@ -265,6 +300,8 @@ def _execute_read_statement(database, table_name, statement, return_type):
             "Unable to read {table_name} from database. Try again later. The traceback "
             f"was: \n\n{exception_info}"
         )
+        # if we only want to warn we must provide a raw_result to be processed below.
+        raw_result = []
 
     columns = database.tables[table_name].columns.keys()
 
@@ -276,6 +313,11 @@ def _execute_read_statement(database, table_name, statement, return_type):
         result = dict(zip(columns, raw_result))
         if result == {}:
             result = {col: [] for col in columns}
+    else:
+        raise NotImplementedError(
+            "The return_type must be 'list_of_dicts' or 'dict_of_lists', "
+            + f"not {return_type}."
+        )
 
     return result
 

@@ -392,14 +392,19 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
 
     optimize_func = minimize if direction == "minimize" else maximize
 
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-    )
+    with warnings.catch_warnings():
+        # in the case of the trust_constr algorithm we want to ignore the warning
+        # that the approximated function appears linear for the tests.
+        warnings.simplefilter(action="ignore", category=UserWarning)
+
+        res = optimize_func(
+            criterion=crit,
+            params=params,
+            algorithm=algo,
+            derivative=deriv,
+            criterion_and_derivative=crit_and_deriv,
+            constraints=constraints,
+        )
 
     assert res["success"], f"{algo} did not converge."
 

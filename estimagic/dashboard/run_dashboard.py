@@ -1,5 +1,7 @@
 import asyncio
 import pathlib
+import socket
+from contextlib import closing
 from functools import partial
 
 from bokeh.application import Application
@@ -7,13 +9,14 @@ from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
 from bokeh.server.server import Server
 
+from estimagic.dashboard.create_short_database_names import create_short_database_names
 from estimagic.dashboard.master_app import master_app
 from estimagic.dashboard.monitoring_app import monitoring_app
-from estimagic.dashboard.utilities import create_short_database_names
-from estimagic.dashboard.utilities import find_free_port
 
 
-def run_dashboard(database_paths, no_browser, port, rollover):
+def run_dashboard(
+    database_paths, no_browser, port, rollover, jump, update_frequency, update_chunk
+):
     """Start the dashboard pertaining to one or several databases.
 
     Args:
@@ -22,11 +25,17 @@ def run_dashboard(database_paths, no_browser, port, rollover):
         no_browser (bool): If True the dashboard does not open in the browser.
         port (int): Port where to display the dashboard.
         rollover (int): After how many iterations the convergence plots are truncated.
+        jump (bool): If True the dashboard will start at the last `rollover`
+            observations and start to display the history from there.
+        update_frequency (float): Number of seconds to wait between updates of the
+            convergence plots in the monitoring app.
+        update_chunk (int): Number of values to add at each convergence plot update of
+            the criterion and parameters in the monitoring app.
 
     """
     database_name_to_path = _process_database_paths(database_paths)
 
-    port = find_free_port() if port is None else port
+    port = _find_free_port() if port is None else port
     port = int(port)
     rollover = int(rollover)
 
@@ -45,6 +54,9 @@ def run_dashboard(database_paths, no_browser, port, rollover):
             database_name=database_name,
             session_data=session_data[database_name],
             rollover=rollover,
+            jump=jump,
+            update_frequency=update_frequency,
+            update_chunk=update_chunk,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))
 
@@ -56,6 +68,18 @@ def run_dashboard(database_paths, no_browser, port, rollover):
     _start_server(
         apps=apps, port=port, no_browser=no_browser, path_to_open=path_to_open
     )
+
+
+def _find_free_port():
+    """Find a free port on the localhost.
+
+    Adapted from https://stackoverflow.com/a/45690594
+
+    """
+    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("localhost", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]
 
 
 def _process_database_paths(database_paths):
