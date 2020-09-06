@@ -16,10 +16,9 @@ setup(
         indirect inference.""",
     license="BSD",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
     ],
     keywords=["econometrics", "statistics", "extremum estimation", "optimization"],
     url="https://github.com/OpenSourceEconomics/estimagic",

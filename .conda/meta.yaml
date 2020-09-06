@@ -43,7 +43,7 @@ test:
     - tox.ini
     - estimagic/tests
   commands:
-    - pytest
+    - pytest -- -m "not slow"
     - estimagic --version
     - estimagic --help
     - estimagic dashboard --help
