@@ -52,7 +52,8 @@ def pathos_mp_batch_evaluator(
     """
     if not pathos_is_available:
         raise NotImplementedError(
-            "To use the pathos_mp_batch_evaluator you need to install pathos."
+            "To use the pathos_mp_batch_evaluator, install pathos with "
+            "conda install -c conda-forge pathos."
         )
 
     _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol)

@@ -1,17 +1,17 @@
 from pathlib import Path
-
+import os
 import numpy as np
 import pandas as pd
 import pytest
 
 
 @pytest.fixture(scope="function", autouse=True)
-def fresh_directory(tmpdir):
+def fresh_directory(tmp_path):
     """Each test is executed in a fresh directory."""
-    tmpdir.chdir()
+    os.chdir(tmp_path)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def example_params():
     p = (
         Path(__file__).resolve().parent
