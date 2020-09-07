@@ -57,7 +57,7 @@ def maximize(
     broadcasted.
 
     Args:
-        criterion (Callable): A function that takes a pandas DataFrame (see
+        criterion (callable): A function that takes a pandas DataFrame (see
             :ref:`params`) as first argument and returns one of the following:
             - scalar floating point or a numpy array (depending on the algorithm)
             - a dictionary that contains at the entries "value" (a scalar float),
@@ -518,10 +518,7 @@ def _single_optimize(
     if isinstance(algorithm, str):
         algo_name = algorithm
     else:
-        try:
-            algo_name = algorithm.name
-        except AttributeError:
-            algo_name = "your algorithm"
+        algo_name = getattr(algorithm, "name", "your algorithm")
 
     if isinstance(algorithm, str):
         try:

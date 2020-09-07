@@ -821,16 +821,16 @@ def _process_scipy_result(scipy_results_obj):
     # using get with defaults to access dict elements is just a safety measure
     raw_res = {**scipy_results_obj}
     processed = {
-        "solution_x": raw_res.get("x", None),
-        "solution_criterion": raw_res.get("fun", None),
-        "solution_derivative": raw_res.get("jac", None),
-        "solution_hessian": raw_res.get("hess", None),
-        "n_criterion_evaluations": raw_res.get("nfev", None),
-        "n_derivative_evaluations": raw_res.get("njac", None),
-        "n_iterations": raw_res.get("nit", None),
-        "success": raw_res.get("success", None),
+        "solution_x": raw_res.get("x"),
+        "solution_criterion": raw_res.get("fun"),
+        "solution_derivative": raw_res.get("jac"),
+        "solution_hessian": raw_res.get("hess"),
+        "n_criterion_evaluations": raw_res.get("nfev"),
+        "n_derivative_evaluations": raw_res.get("njac"),
+        "n_iterations": raw_res.get("nit"),
+        "success": raw_res.get("success"),
         "reached_convergence_criterion": None,
-        "message": raw_res.get("message", None),
+        "message": raw_res.get("message"),
     }
     return processed
 

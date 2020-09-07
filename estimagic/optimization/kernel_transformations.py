@@ -22,6 +22,11 @@ using matrix calculus. See for example 'Matrix Differential Calculus with
 Applications in Statistics and Econometrics' by Magnus and Neudecker. In
 specific cases we refer to posts on math.stackexchange.com.
 
+.. rubric:: References
+
+.. _post_mathoverflow:
+   https://google.github.io/styleguide/pyguide.html
+
 """
 import numpy as np
 
@@ -375,7 +380,7 @@ def _elimination_matrix(dim):
     Returns:
         eliminator (np.ndarray): The elimination matrix.
 
-    Example:
+    Examples:
     >>> import numpy as np
     >>> from numpy.testing import assert_array_almost_equal
     >>> dim = 10
