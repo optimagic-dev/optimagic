@@ -2,6 +2,7 @@
 from functools import partial
 from pathlib import Path
 
+import pandas as pd
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
@@ -46,7 +47,8 @@ def monitoring_app(
     database = load_database(path=session_data["database_path"])
     start_point = _calculate_start_point(database, rollover, jump)
     session_data["last_retrieved"] = start_point
-    start_params, group_to_params = _get_group_to_params_from_database(database)
+    start_params = _get_start_params_with_id_from_database(database)
+    group_to_params = _map_groups_to_params(start_params)
     criterion_history, params_history = _create_cds_for_monitoring_app(start_params)
 
     # create elements
@@ -73,14 +75,15 @@ def monitoring_app(
     doc.add_root(tabs)
 
 
-def _get_group_to_params_from_database(database):
-    """Map each group name to the parameters' names that belong to it.
+def _get_start_params_with_id_from_database(database):
+    """Load the start parameters and add an dashboard id column to it.
 
     Args:
         database (sqlalchemy.MetaData): Bound metadata object.
 
     Returns:
-        group_to_params (dict): keys are the group names, values are parameter names.
+        start_params (pd.DataFrame): start parameters with group column and
+            a dashboard id column to be used in the ColumnDataSources.
 
     """
     optimization_problem = read_last_rows(
@@ -91,8 +94,13 @@ def _get_group_to_params_from_database(database):
         return_type="dict_of_lists",
     )
     start_params = optimization_problem["params"][0]
-    group_to_params = _map_groups_to_params(start_params)
-    return start_params, group_to_params
+    if isinstance(start_params.index, pd.MultiIndex):
+        start_params["dashboard_id"] = [
+            "_".join(str(x) for x in entry) for entry in start_params.index
+        ]
+    else:
+        start_params["dashboard_id"] = start_params.index.astype(str)
+    return start_params
 
 
 def _map_groups_to_params(params):
