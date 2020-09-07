@@ -3,7 +3,12 @@ import functools
 
 import numpy as np
 
+from estimagic.config import ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.config import INITIAL_TRUST_RADIUS
 from estimagic.config import IS_PETSC4PY_INSTALLED
+from estimagic.config import MAX_ITERATIONS
+from estimagic.config import RELATIVE_GRADIENT_TOLERANCE
+from estimagic.config import SCALED_GRADIENT_TOLERANCE
 
 try:
     from petsc4py import PETSc
@@ -24,11 +29,11 @@ def tao_pounders(
     lower_bounds,
     upper_bounds,
     *,
-    gradient_absolute_tolerance=1e-8,
-    gradient_relative_tolerance=1e-8,
-    gradient_total_tolerance=1e-10,
-    initial_trust_region_radius=100,
-    max_iterations=None,
+    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
+    relative_gradient_tolerance=RELATIVE_GRADIENT_TOLERANCE,
+    scaled_gradient_tolerance=SCALED_GRADIENT_TOLERANCE,
+    initial_trust_region_radius=INITIAL_TRUST_RADIUS,
+    max_iterations=MAX_ITERATIONS,
 ):
     r"""Minimize a function using the POUNDERs algorithm.
 
@@ -53,21 +58,21 @@ def tao_pounders(
     vector, :math:`X_0` the initial parameter vector, :math:`g` the gradient, and
     :math:`f` the criterion function.
 
-    ``gradient_absolute_tolerance`` stops the optimization if the norm of the gradient
+    ``absolute_gradient_tolerance`` stops the optimization if the norm of the gradient
     falls below :math:`\epsilon`.
 
     .. math::
 
         ||g(X)|| < \epsilon
 
-    ``gradient_relative_tolerance`` stops the optimization if the norm of the gradient
+    ``relative_gradient_tolerance`` stops the optimization if the norm of the gradient
     relative to the criterion value falls below :math:`epsilon`.
 
     .. math::
 
         ||g(X)|| / |f(X)| < \epsilon
 
-    ``gradient_total_tolerance`` stops the optimization if the norm of the gradient is
+    ``scaled_gradient_tolerance`` stops the optimization if the norm of the gradient is
     lower than some fraction :math:`epsilon` of the norm of the gradient at the initial
     parameters.
 
@@ -76,15 +81,14 @@ def tao_pounders(
         ||g(X)|| / ||g(X0)|| < \epsilon
 
     Args:
-        gradient_absolute_tolerance (float): Stop if relative norm of gradient is less
+        absolute_gradient_tolerance (float): Stop if relative norm of gradient is less
             than this. If set to False the algorithm will not consider
-            gradient_absolute_tolerance. Default is 1e-8.
-        gradient_relative_tolerance (float): Stop if norm of gradient is less than this.
-            If set to False the algorithm will not consider gradient_relative_tolerance.
-            Default is 1e-8.
-        gradient_total_tolerance (float): Stop if norm of gradient is reduced by this
+            absolute_gradient_tolerance.
+        relative_gradient_tolerance (float): Stop if norm of gradient is less than this.
+            If set to False the algorithm will not consider relative_gradient_tolerance.
+        scaled_gradient_tolerance (float): Stop if norm of gradient is reduced by this
             factor. If set to False the algorithm will not consider
-            gradient_relative_tolerance. Default is 1e-10.
+            relative_gradient_tolerance.
         initial_trust_region_radius (float): Sets the radius for the initial trust
             region that the optimizer employs. It must be :math:`> 0`.
         max_iterations (int): Alternative Stopping criterion. If set the routine will
@@ -163,12 +167,12 @@ def tao_pounders(
     tao.setInitial(x)
 
     # Obtain tolerances for the convergence criteria. Since we can not create
-    # gradient_total_tolerance manually we manually set gradient_absolute_tolerance and
-    # or gradient_relative_tolerance to zero once a subset of these two is turned off
-    # and gradient_total_tolerance is still turned on.
-    default_gatol = gradient_absolute_tolerance if gradient_absolute_tolerance else -1
-    default_gttol = gradient_total_tolerance if gradient_total_tolerance else -1
-    default_grtol = gradient_relative_tolerance if gradient_relative_tolerance else -1
+    # scaled_gradient_tolerance manually we manually set absolute_gradient_tolerance and
+    # or relative_gradient_tolerance to zero once a subset of these two is turned off
+    # and scaled_gradient_tolerance is still turned on.
+    default_gatol = absolute_gradient_tolerance if absolute_gradient_tolerance else -1
+    default_gttol = scaled_gradient_tolerance if scaled_gradient_tolerance else -1
+    default_grtol = relative_gradient_tolerance if relative_gradient_tolerance else -1
     # Set tolerances for default convergence tests.
     tao.setTolerances(
         gatol=default_gatol, grtol=default_grtol, gttol=default_gttol,
@@ -178,20 +182,20 @@ def tao_pounders(
     # overwrite others or lead to unclear behavior.
     if max_iterations is not None:
         tao.setConvergenceTest(functools.partial(_max_iters, max_iterations))
-    elif gradient_total_tolerance is False and gradient_absolute_tolerance is False:
+    elif scaled_gradient_tolerance is False and absolute_gradient_tolerance is False:
         tao.setConvergenceTest(
-            functools.partial(_grtol_conv, gradient_relative_tolerance)
+            functools.partial(_grtol_conv, relative_gradient_tolerance)
         )
-    elif gradient_relative_tolerance is False and gradient_total_tolerance is False:
+    elif relative_gradient_tolerance is False and scaled_gradient_tolerance is False:
         tao.setConvergenceTest(
-            functools.partial(_gatol_conv, gradient_absolute_tolerance)
+            functools.partial(_gatol_conv, absolute_gradient_tolerance)
         )
-    elif gradient_total_tolerance is False:
+    elif scaled_gradient_tolerance is False:
         tao.setConvergenceTest(
             functools.partial(
                 _grtol_gatol_conv,
-                gradient_relative_tolerance,
-                gradient_absolute_tolerance,
+                relative_gradient_tolerance,
+                absolute_gradient_tolerance,
             )
         )
 
@@ -235,47 +239,47 @@ def _max_iters(max_iterations, tao):
         tao.setConvergedReason(8)
 
 
-def _gatol_conv(gradient_absolute_tolerance, tao):
-    if tao.getSolutionStatus()[2] >= gradient_absolute_tolerance:
+def _gatol_conv(absolute_gradient_tolerance, tao):
+    if tao.getSolutionStatus()[2] >= absolute_gradient_tolerance:
         return 0
-    elif tao.getSolutionStatus()[2] < gradient_absolute_tolerance:
+    elif tao.getSolutionStatus()[2] < absolute_gradient_tolerance:
         tao.setConvergedReason(3)
 
 
-def _grtol_conv(gradient_relative_tolerance, tao):
+def _grtol_conv(relative_gradient_tolerance, tao):
     if (
         tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        >= gradient_relative_tolerance
+        >= relative_gradient_tolerance
     ):
         return 0
     elif (
         tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        < gradient_relative_tolerance
+        < relative_gradient_tolerance
     ):
         tao.setConvergedReason(4)
 
 
-def _grtol_gatol_conv(gradient_relative_tolerance, gradient_absolute_tolerance, tao):
+def _grtol_gatol_conv(relative_gradient_tolerance, absolute_gradient_tolerance, tao):
     if (
         tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        >= gradient_relative_tolerance
+        >= relative_gradient_tolerance
     ):
         return 0
     elif (
         tao.getSolutionStatus()[2] / tao.getSolutionStatus()[1]
-        < gradient_relative_tolerance
+        < relative_gradient_tolerance
     ):
         tao.setConvergedReason(4)
 
-    elif tao.getSolutionStatus()[2] < gradient_absolute_tolerance:
+    elif tao.getSolutionStatus()[2] < absolute_gradient_tolerance:
         tao.setConvergedReason(3)
 
 
 def _translate_tao_convergence_reason(tao_resaon):
     mapping = {
-        3: "gradient_absolute_tolerance below critical value",
-        4: "gradient_relative_tolerance below critical value",
-        5: "gradient_total_tolerance below critical value",
+        3: "absolute_gradient_tolerance below critical value",
+        4: "relative_gradient_tolerance below critical value",
+        5: "scaled_gradient_tolerance below critical value",
         6: "step size small",
         7: "objective below min value",
         8: "user defined",

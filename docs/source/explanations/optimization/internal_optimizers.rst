@@ -141,10 +141,25 @@ convergence criteria by default. The names are inspired by Nlopt, but more expre
 - **absolute_criterion_tolerance** *(float)*: Stop when the absolute improvement between
   two iterations is smaller than this. To disable it, set it to 0.
 
-- **gradient_tolerance** *(float)*: Stop when all entries of the gradient are smaller
-  than this. For bound constrained
+- **absolute_gradient_tolerance** *(float)*: Stop when all entries (or for some
+  algorithms the norm) of the gradient are smaller than this. For bound constrained
   optimizers this typically refers to a projected gradient. The exact definition should
   be documented for each optimizer. To disable it, set it to zero.
+
+- **relative_gradient_tolerance** *(float)*: Stop when all entries (or for some
+  algorithms the norm) of the gradient, divided by the absolute value of the criterion
+  function is smaller than this. For bound constrained optimizers this typically refers
+  to a projected gradient. The exact definition should be documented for each
+  optimizer. To disable it, set it to zero.
+
+
+- **scaled_gradient_tolerance** *(float)*: Stop when all entries (or for some
+  algorithms the norm) of the gradient, divided by the norm of the gradient at start
+  parameters is smaller than this. For bound constrained optimizers this typically
+  refers to a projected gradient. The exact definition should be documented for each
+  optimizer. To disable it, set it to zero.
+
+- **relative_gradient_tolerance** *(float)*: Stop when
 
 - **relative_params_tolerance** *(float)*:
   Stop when the relative change in parameters between two iterations is smaller than

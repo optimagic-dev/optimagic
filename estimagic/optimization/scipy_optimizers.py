@@ -3,22 +3,18 @@ import functools
 import numpy as np
 import scipy
 
-from estimagic.optimization.default_algo_options import ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.default_algo_options import ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.optimization.default_algo_options import GRADIENT_TOLERANCE
-from estimagic.optimization.default_algo_options import INITIAL_TRUST_RADIUS
-from estimagic.optimization.default_algo_options import LIMITED_MEMORY_STORAGE_LENGTH
-from estimagic.optimization.default_algo_options import MAX_CRITERION_EVALUATIONS
-from estimagic.optimization.default_algo_options import MAX_ITERATIONS
-from estimagic.optimization.default_algo_options import MAX_LINE_SEARCH_STEPS
-from estimagic.optimization.default_algo_options import RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.default_algo_options import RELATIVE_PARAMS_TOLERANCE
-from estimagic.optimization.default_algo_options import (
-    SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-)
-from estimagic.optimization.default_algo_options import (
-    SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
-)
+from estimagic.config import ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.config import ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.config import ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.config import INITIAL_TRUST_RADIUS
+from estimagic.config import LIMITED_MEMORY_STORAGE_LENGTH
+from estimagic.config import MAX_CRITERION_EVALUATIONS
+from estimagic.config import MAX_ITERATIONS
+from estimagic.config import MAX_LINE_SEARCH_STEPS
+from estimagic.config import RELATIVE_CRITERION_TOLERANCE
+from estimagic.config import RELATIVE_PARAMS_TOLERANCE
+from estimagic.config import SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
 
 
 DEFAULT_ALGO_INFO = {
@@ -35,7 +31,7 @@ def scipy_lbfgsb(
     upper_bounds,
     *,
     relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
-    gradient_tolerance=GRADIENT_TOLERANCE,
+    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     max_iterations=MAX_ITERATIONS,
     limited_memory_storage_length=LIMITED_MEMORY_STORAGE_LENGTH,
@@ -78,8 +74,8 @@ def scipy_lbfgsb(
                 \\frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \\leq
                 \\text{relative_criterion_tolerance}
 
-        gradient_tolerance (float): Stop if all elements of the projected gradient are
-            smaller than this.
+        absolute_gradient_tolerance (float): Stop if all elements of the projected
+            gradient are smaller than this.
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
         max_iterations (int): If the maximum number of iterations is reached, the
@@ -102,7 +98,7 @@ def scipy_lbfgsb(
     options = {
         "maxcor": limited_memory_storage_length,
         "ftol": relative_criterion_tolerance,
-        "gtol": gradient_tolerance,
+        "gtol": absolute_gradient_tolerance,
         "maxfun": max_criterion_evaluations,
         "maxiter": max_iterations,
         "maxls": max_line_search_steps,
@@ -341,7 +337,7 @@ def scipy_bfgs(
     lower_bounds,
     upper_bounds,
     *,
-    gradient_tolerance=GRADIENT_TOLERANCE,
+    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
     norm=np.inf,
 ):
@@ -359,8 +355,8 @@ def scipy_bfgs(
     options, see :ref:`naming_conventions`.
 
     Args:
-        gradient_tolerance (float): Stop if all elements of the projected gradient are
-            smaller than this.
+        absolute_gradient_tolerance (float): Stop if all elements of the
+            gradient are smaller than this.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
         norm (float): Order of the vector norm that is used to calculate the gradient's
@@ -382,7 +378,7 @@ def scipy_bfgs(
     )
 
     options = {
-        "gtol": gradient_tolerance,
+        "gtol": absolute_gradient_tolerance,
         "maxiter": max_iterations,
         "norm": norm,
     }
@@ -398,7 +394,7 @@ def scipy_conjugate_gradient(
     criterion_and_derivative,
     x,
     *,
-    gradient_tolerance=GRADIENT_TOLERANCE,
+    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
     norm=np.inf,
 ):
@@ -424,8 +420,8 @@ def scipy_conjugate_gradient(
     options, see :ref:`naming_conventions`.
 
     Args:
-        gradient_tolerance (float): Stop if all elements of the projected gradient are
-            smaller than this.
+        absolute_gradient_tolerance (float): Stop if all elements of the
+            gradient are smaller than this.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
         norm (float): Order of the vector norm that is used to calculate the gradient's
@@ -448,7 +444,7 @@ def scipy_conjugate_gradient(
     )
 
     options = {
-        "gtol": gradient_tolerance,
+        "gtol": absolute_gradient_tolerance,
         "maxiter": max_iterations,
         "norm": norm,
     }
@@ -604,7 +600,7 @@ def scipy_truncated_newton(
     max_iterations=MAX_ITERATIONS,
     absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
     absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
-    gradient_tolerance=GRADIENT_TOLERANCE,
+    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
     func_min_estimate=0,
     max_hess_evaluations_per_iteration=-1,
     max_step_for_line_search=0,
@@ -650,9 +646,9 @@ def scipy_truncated_newton(
             iterations after scaling that is tolerated to declare convergence.
         absolute_criterion_tolerance (float): Absolute difference in the criterion value
             between iterations after scaling that is tolerated to declare convergence.
-        gradient_tolerance (float): Stop if the value of the projected gradient
+        absolute_gradient_tolerance (float): Stop if the value of the projected gradient
             (after applying x scaling factors) is smaller than this. If
-            gradient_tolerance < 0.0, gradient_tolerance is set to
+            absolute_gradient_tolerance < 0.0, absolute_gradient_tolerance is set to
             1e-2 * sqrt(accuracy).
         max_hess_evaluations_per_iteration (int): Maximum number of hessian*vector
             evaluations per main iteration. If ``max_hess_evaluations == 0``, the
@@ -692,7 +688,7 @@ def scipy_truncated_newton(
         # scipy/optimize/tnc/tnc.c::856 show sthat xtol is the absolute parameter
         # tolerance
         "xtol": absolute_params_tolerance,
-        "gtol": gradient_tolerance,
+        "gtol": absolute_gradient_tolerance,
         "maxfun": max_criterion_evaluations,
         "maxiter": max_iterations,
         "maxCGit": max_hess_evaluations_per_iteration,
@@ -721,7 +717,7 @@ def scipy_trust_constr(
     lower_bounds,
     upper_bounds,
     *,
-    gradient_tolerance=1e-08,
+    absolute_gradient_tolerance=1e-08,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
     initial_trust_radius=INITIAL_TRUST_RADIUS,
@@ -759,10 +755,10 @@ def scipy_trust_constr(
     options, see :ref:`naming_conventions`.
 
     Args:
-        gradient_tolerance (float): Tolerance for termination by the norm of the
-            Lagrangian gradient. The algorithm will terminate when both the infinity
+        absolute_gradient_tolerance (float): Tolerance for termination by the norm of
+            the Lagrangian gradient. The algorithm will terminate when both the infinity
             norm (i.e., max abs value) of the Lagrangian gradient and the constraint
-            violation are smaller than the gradient_tolerance.
+            violation are smaller than the absolute_gradient_tolerance.
             For this algorithm we use scipy's gradient tolerance for trust_constr.
             This smaller tolerance is needed for the sum of sqares tests to pass.
         max_iterations (int): If the maximum number of iterations is reached, the
@@ -794,7 +790,7 @@ def scipy_trust_constr(
     )
 
     options = {
-        "gtol": gradient_tolerance,
+        "gtol": absolute_gradient_tolerance,
         "maxiter": max_iterations,
         "xtol": relative_params_tolerance,
         "initial_tr_radius": initial_trust_radius,
