@@ -75,6 +75,7 @@ def process_constraints(constraints, params):
               parameter
 
     """
+    params = process_bounds(params)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
@@ -84,10 +85,7 @@ def process_constraints(constraints, params):
         check_types(pc)
         # selectors have to be processed before anything else happens to the params
         pc = _process_selectors(pc, params)
-        if "lower_bound" not in params.columns:
-            params["lower_bound"] = -np.inf
-        if "upper_bound" not in params.columns:
-            params["upper_bound"] = np.inf
+
         pc = _replace_pairwise_equality_by_equality(pc)
         pc = _process_linear_weights(pc, params)
         check_constraints_are_satisfied(pc, params)
@@ -130,6 +128,16 @@ def _apply_constraint_killers(constraints):
         raise KeyError(f"You try to kill non-existing constraints with ids: {killers}")
 
     return survivors
+
+
+def process_bounds(params):
+    """Fill missing bounds with -np.inf and np.inf."""
+    defaults = pd.DataFrame(
+        {"lower_bound": -np.inf, "upper_bound": np.inf}, index=params.index,
+    )
+    params = params.combine_first(defaults)
+
+    return params
 
 
 def _process_selectors(constraints, params):

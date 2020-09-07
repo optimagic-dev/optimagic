@@ -31,8 +31,8 @@ DEFAULT_ALGO_INFO = {
 def scipy_lbfgsb(
     criterion_and_derivative,
     x,
-    lower_bounds=None,
-    upper_bounds=None,
+    lower_bounds,
+    upper_bounds,
     *,
     relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
     gradient_tolerance=GRADIENT_TOLERANCE,
@@ -123,8 +123,8 @@ def scipy_lbfgsb(
 def scipy_slsqp(
     criterion_and_derivative,
     x,
-    lower_bounds=None,
-    upper_bounds=None,
+    lower_bounds,
+    upper_bounds,
     *,
     absolute_criterion_tolerance=SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
@@ -262,8 +262,8 @@ def scipy_neldermead(
 def scipy_powell(
     criterion_and_derivative,
     x,
-    lower_bounds=None,
-    upper_bounds=None,
+    lower_bounds,
+    upper_bounds,
     *,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
     relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
@@ -338,8 +338,8 @@ def scipy_powell(
 def scipy_bfgs(
     criterion_and_derivative,
     x,
-    lower_bounds=None,
-    upper_bounds=None,
+    lower_bounds,
+    upper_bounds,
     *,
     gradient_tolerance=GRADIENT_TOLERANCE,
     max_iterations=MAX_ITERATIONS,
@@ -597,8 +597,8 @@ def scipy_cobyla(
 def scipy_truncated_newton(
     criterion_and_derivative,
     x,
-    lower_bounds=None,
-    upper_bounds=None,
+    lower_bounds,
+    upper_bounds,
     *,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     max_iterations=MAX_ITERATIONS,
@@ -718,8 +718,8 @@ def scipy_truncated_newton(
 def scipy_trust_constr(
     criterion_and_derivative,
     x,
-    lower_bounds=None,
-    upper_bounds=None,
+    lower_bounds,
+    upper_bounds,
     *,
     gradient_tolerance=1e-08,
     max_iterations=MAX_ITERATIONS,
@@ -812,9 +812,6 @@ def scipy_trust_constr(
     )
 
     return _process_scipy_result(res)
-
-
-# =====================================================================================
 
 
 def _process_scipy_result(scipy_results_obj):

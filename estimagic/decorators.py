@@ -38,6 +38,7 @@ def numpy_interface(params, constraints=None, numpy_output=False):
 
     """
     constraints = [] if constraints is None else constraints
+
     pc, pp = process_constraints(constraints, params)
 
     fixed_values = pp["_internal_fixed_value"].to_numpy()

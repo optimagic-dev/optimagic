@@ -5,6 +5,8 @@ import warnings
 import numpy as np
 
 import estimagic.batch_evaluators as be
+from estimagic.config import CRITERION_PENALTY_CONSTANT
+from estimagic.config import CRITERION_PENALTY_SLOPE
 from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
@@ -17,6 +19,7 @@ from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
+from estimagic.optimization.process_constraints import process_bounds
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
 from estimagic.optimization.reparametrize import post_replace_jacobian
@@ -470,7 +473,6 @@ def _single_optimize(
         "direction": direction,
         # "criterion"-criterion,
         "criterion_kwargs": criterion_kwargs,
-        "params": params,
         "algorithm": algorithm,
         "constraints": constraints,
         "algo_options": algo_options,
@@ -496,11 +498,17 @@ def _single_optimize(
         )
 
     # process params and constraints
+    params = process_bounds(params)
+    for col in ["value", "lower_bound", "upper_bound"]:
+        params[col] = params[col].astype(float)
     _check_params(params)
-    processed_constraints, processed_params = process_constraints(constraints, params)
-    params = _fill_params_with_defaults(params)
 
-    # todo: remove this
+    processed_constraints, processed_params = process_constraints(constraints, params)
+    params = _add_name_and_group_columns_to_params(params)
+
+    # This can only be saved in problem_data now, because we need the group and name
+    # columns in the dashboard but we could not add any columns before calling
+    # process_constraints.
     problem_data["params"] = params
 
     # get internal parameters and bounds
@@ -659,11 +667,15 @@ def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
     first_value = first_value if np.isscalar(first_value) else first_value["value"]
 
     if direction == "minimize":
-        default_constant = first_value + np.abs(first_value) + 100
-        default_slope = 0.1
+        default_constant = (
+            first_value + np.abs(first_value) + CRITERION_PENALTY_CONSTANT
+        )
+        default_slope = CRITERION_PENALTY_SLOPE
     else:
-        default_constant = first_value - np.abs(first_value) - 100
-        default_slope = -0.1
+        default_constant = (
+            first_value - np.abs(first_value) - CRITERION_PENALTY_CONSTANT
+        )
+        default_slope = -CRITERION_PENALTY_SLOPE
 
     error_penalty["constant"] = error_penalty.get("constant", default_constant)
     error_penalty["slope"] = error_penalty.get("slope", default_slope)
@@ -750,13 +762,17 @@ def _check_params(params):
         AssertionError: The index contains duplicates.
 
     """
-    assert (
-        not params.index.duplicated().any()
-    ), "No duplicates allowed in the index of params."
+    if params.index.duplicated().any():
+        raise ValueError("No duplicates allowed in the index of params.")
+
+    invalid_bounds = params.query("lower_bound > value | upper_bound < value")
+
+    if len(invalid_bounds) > 0:
+        raise ValueError(f"value out of bounds for:\n{invalid_bounds.index}")
 
 
-def _fill_params_with_defaults(params):
-    """Set defaults and run checks on the user-supplied params.
+def _add_name_and_group_columns_to_params(params):
+    """Add a group and name column to the params.
 
     Args:
         params (pd.DataFrame): See :ref:`params`.
@@ -767,16 +783,6 @@ def _fill_params_with_defaults(params):
     """
     params = params.copy()
 
-    if "lower_bound" not in params.columns:
-        params["lower_bound"] = -np.inf
-    else:
-        params["lower_bound"].fillna(-np.inf, inplace=True)
-
-    if "upper_bound" not in params.columns:
-        params["upper_bound"] = np.inf
-    else:
-        params["upper_bound"].fillna(np.inf, inplace=True)
-
     if "group" not in params.columns:
         params["group"] = "All Parameters"
 
@@ -785,10 +791,6 @@ def _fill_params_with_defaults(params):
         params["name"] = names
     else:
         params["name"] = params["name"].str.replace("-", "_")
-
-    # convert value and bounds to float
-    for c in ["value", "lower_bound", "upper_bound"]:
-        params[c] = params[c].astype(float)
 
     return params
 

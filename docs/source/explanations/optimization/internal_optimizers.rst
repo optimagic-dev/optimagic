@@ -86,7 +86,8 @@ After convergence or when another stopping criterion is achieved the internal op
 should return a dictionary with the following entries:
 
 - solution_x: The best parameter achieved so far
-- solution_criterion: The value of the criterion at solution_x
+- solution_criterion: The value of the criterion at solution_x. This can be a scalar
+  or dictionary.
 - solution_derivative: The derivative evaluated at solution_x
 - solution_hessian: The (approximate) hessian evaluated at solution_x
 - n_criterion_evaluations: The number of criterion evaluations.
@@ -96,7 +97,9 @@ should return a dictionary with the following entries:
 - reached_convergence_criterion: The name of the reached convergence criterion.
 - message: A string with additional information.
 
-
+If some of the entries are missing, they will automatically be filled with ``None`` and
+no errors are raised. Nevertheless, you should try to return as much information as
+possible.
 
 
 .. _naming_conventions:
