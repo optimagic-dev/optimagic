@@ -1,4 +1,5 @@
 from collections import namedtuple
+from hashlib import sha1
 
 import numpy as np
 from fuzzywuzzy import process as fw_process
@@ -154,8 +155,8 @@ def robust_cholesky(matrix, threshold=None, return_info=False):
     work for matrices that are only positive semi-definite or even indefinite.
     For speed and precision reasons we first try a regular cholesky decomposition.
     If it fails we switch to more robust methods.
-    """
 
+    """
     try:
         chol = np.linalg.cholesky(matrix)
         method = "np.linalg.cholesky"
@@ -218,11 +219,13 @@ def _internal_robust_cholesky(matrix, threshold):
 
 def _make_cholesky_unique(chol):
     """Make a lower triangular cholesky factor unique.
+
     Cholesky factors are only unique with the additional requirement that all diagonal
     elements are positive. This is done automatically by np.linalg.cholesky.
     Since we calucate cholesky factors by QR decompositions we have to do it manually.
     It is obvious from that this is admissible because:
     chol sign_swither sign_switcher.T chol.T = chol chol.T
+
     """
     sign_switcher = np.sign(np.diagonal(chol))
     return chol * sign_switcher
@@ -259,3 +262,8 @@ def namedtuple_from_iterables(field_names, field_entries):
 
     """
     return namedtuple("NamedTuple", field_names)(*field_entries)
+
+
+def hash_array(arr):
+    """Create a hashsum for fast comparison of numpy arrays."""
+    return sha1(arr.tobytes()).hexdigest()

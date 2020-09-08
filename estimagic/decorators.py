@@ -11,55 +11,62 @@ provides a comprehensive overview.
 
 """
 import functools
-import itertools
-import traceback
-from datetime import datetime as dt
+import warnings
 
 import numpy as np
 import pandas as pd
 
-from estimagic.config import MAX_CRITERION_PENALTY
-from estimagic.logging.update_database import append_rows
-from estimagic.logging.update_database import update_scalar_field
+from estimagic.exceptions import get_traceback
+from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 
 
-def numpy_interface(params, constraints=None):
+def numpy_interface(params, constraints=None, numpy_output=False):
     """Convert x to params.
 
-    This decorator receives a NumPy array of parameters and converts it to a
+    This decorated function receives a NumPy array of parameters and converts it to a
     :class:`pandas.DataFrame` which can be handled by the user's criterion function.
+
+    For convenience, the decorated function can also be called directly with a
+    params DataFrame. In that case, the decorator does nothing.
 
     Args:
         params (pandas.DataFrame): See :ref:`params`.
         constraints (list of dict): Contains constraints.
+        numpy_output (bool): Whether pandas objects in the output should also be
+            converted to numpy arrays.
 
     """
+    constraints = [] if constraints is None else constraints
+
+    pc, pp = process_constraints(constraints, params)
+
+    fixed_values = pp["_internal_fixed_value"].to_numpy()
+    pre_replacements = pp["_pre_replacements"].to_numpy().astype(int)
+    post_replacements = pp["_post_replacements"].to_numpy().astype(int)
 
     def decorator_numpy_interface(func):
         @functools.wraps(func)
         def wrapper_numpy_interface(x, *args, **kwargs):
-            # Handle usage in :func:`internal_function` for gradients.
-            if constraints is None:
+            if isinstance(x, pd.DataFrame):
+                p = x
+            elif isinstance(x, np.ndarray):
                 p = params.copy()
-                p["value"] = x
-
-            # Handle usage in :func:`internal_criterion`.
-            else:
-                p = reparametrize_from_internal(
+                p["value"] = reparametrize_from_internal(
                     internal=x,
-                    fixed_values=params["_internal_fixed_value"].to_numpy(),
-                    pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
-                    processed_constraints=constraints,
-                    post_replacements=(
-                        params["_post_replacements"].to_numpy().astype(int)
-                    ),
-                    processed_params=params,
+                    fixed_values=fixed_values,
+                    pre_replacements=pre_replacements,
+                    processed_constraints=pc,
+                    post_replacements=post_replacements,
+                )
+            else:
+                raise ValueError(
+                    "x must be a numpy array or DataFrame with 'value' column."
                 )
 
             criterion_value = func(p, *args, **kwargs)
 
-            if isinstance(criterion_value, (pd.DataFrame, pd.Series)):
+            if isinstance(criterion_value, (pd.DataFrame, pd.Series)) and numpy_output:
                 criterion_value = criterion_value.to_numpy()
 
             return criterion_value
@@ -69,320 +76,99 @@ def numpy_interface(params, constraints=None):
     return decorator_numpy_interface
 
 
-def expand_criterion_output(criterion):
-    """Handle one- or two-element criterion returns.
+def catch(
+    func=None,
+    *,
+    exception=Exception,
+    exclude=(KeyboardInterrupt, SystemExit),
+    onerror=None,
+    default=None,
+    warn=True,
+    reraise=False,
+):
+    """Catch and handle exceptions.
 
-    There are three cases:
+    This decorator can be used with and without additional arguments.
 
-    1. The criterion function returns a scalar. Then, do not include any comparison plot
-       data.
-    2. If the criterion functions returns an array as with maximum likelihood estimation
-       or while using POUNDERs, use the array as data for the comparison plot.
-    3. If the criterion function returns a criterion value and the data for the
-       comparison plot, the return is a tuple.
-
-    """
-
-    @functools.wraps(criterion)
-    def wrappper_expand_criterion_output(*args, **kwargs):
-        out = criterion(*args, **kwargs)
-        if np.isscalar(out):
-            criterion_value = out
-            comparison_plot_data = pd.DataFrame({"value": [np.nan]})
-        elif isinstance(out, np.ndarray):
-            criterion_value = out
-            comparison_plot_data = pd.DataFrame({"value": criterion_value})
-        elif isinstance(out, tuple):
-            criterion_value, comparison_plot_data = out[0], out[1]
-        else:
-            raise NotImplementedError
-
-        return criterion_value, comparison_plot_data
-
-    return wrappper_expand_criterion_output
-
-
-def negative_criterion(criterion):
-    """Turn maximization into minimization by switching the sign."""
-
-    @functools.wraps(criterion)
-    def wrapper_negative_criterion(*args, **kwargs):
-        criterion_value, comparison_plot_data = criterion(*args, **kwargs)
-
-        return -criterion_value, comparison_plot_data
-
-    return wrapper_negative_criterion
-
-
-def negative_gradient(gradient):
-    """Switch the sign of the gradient."""
-    if gradient is None:
-        wrapper_negative_gradient = None
-    else:
-
-        @functools.wraps(gradient)
-        def wrapper_negative_gradient(*args, **kwargs):
-            return -1 * gradient(*args, **kwargs)
-
-    return wrapper_negative_gradient
-
-
-def log_evaluation(func=None, *, database, tables):
-    """Log parameters and fitness values.
-
-    This decorator can be used with and without parentheses and accepts only keyword
-    arguments.
+    Args:
+        exception (Exception or tuple): One or several exceptions that
+            are caught and handled. By default all Exceptions are
+            caught and handled.
+        exclude (Exception or tuple): One or several exceptionts that
+            are not caught. By default those are KeyboardInterrupt and
+            SystemExit.
+        onerror (None or Callable): Callable that takes an Exception
+            as only argument. This is called when an exception occurs.
+        default: Value that is returned when as the output of func when
+            an exception occurs. Can be one of the following:
+            - a constant
+            - "__traceback__", in this case a string with a traceback is returned.
+            - callable with the same signature as func.
+        warn (bool): If True, the exception is converted to a warning.
+        reraise (bool): If True, the exception is raised after handling it.
 
     """
 
-    def decorator_log_evaluation(func):
+    def decorator_catch(func):
         @functools.wraps(func)
-        def wrapper_log_evaluation(params, *args, **kwargs):
-            criterion_value, comparison_plot_data = func(params, *args, **kwargs)
-
-            if database:
-                adj_params = params.copy().set_index("name")["value"]
-                cp_data = {"value": comparison_plot_data["value"].to_numpy()}
-                crit_val = {"value": criterion_value}
-                timestamp = {"value": dt.now()}
-
-                append_rows(
-                    database=database,
-                    tables=tables,
-                    rows=[adj_params, crit_val, cp_data, timestamp],
-                )
-
-            return criterion_value
-
-        return wrapper_log_evaluation
-
-    if callable(func):
-        return decorator_log_evaluation(func)
-    else:
-        return decorator_log_evaluation
-
-
-def aggregate_criterion_output(aggregation_func):
-    """Aggregate the return of of criterion functions with non-scalar output.
-
-    This helper allows to conveniently alter the criterion function of the user for
-    different purposes. For example, the criterion function for maximum likelihood
-    estimation passed to :func:`~estimagic.estimation.estimate.maximize_log_likelihood`
-    returns the log likelihood contributions. For the maximization, we need the mean log
-    likelihood and the sum for the standard error calculations.
-
-    """
-
-    def decorator_aggregate_criterion_output(func):
-        @functools.wraps(func)
-        def wrapper_aggregate_criterion_output(params, *args, **kwargs):
-            criterion_values, comparison_plot_data = func(params, *args, **kwargs)
-
-            criterion_value = aggregation_func(criterion_values)
-
-            return criterion_value, comparison_plot_data
-
-        return wrapper_aggregate_criterion_output
-
-    return decorator_aggregate_criterion_output
-
-
-def log_gradient(database, names):
-    """Log the gradient.
-
-    The gradient is a vector containing the partial derivatives of the criterion
-    function at each of the internal parameters.
-
-    """
-
-    def decorator_log_gradient(func):
-        @functools.wraps(func)
-        def wrapper_log_gradient(*args, **kwargs):
-            gradient = func(*args, **kwargs)
-
-            if database:
-                data = [dict(zip(names, gradient))]
-                append_rows(database, ["gradient_history"], data)
-
-            return gradient
-
-        return wrapper_log_gradient
-
-    return decorator_log_gradient
-
-
-def log_gradient_status(func=None, *, database, n_gradient_evaluations):
-    """Log the gradient status.
-
-    The gradient status is between 0 and 1 and shows the current share of finished
-    function evaluations to compute the gradients.
-
-    This decorator can be used with and without parentheses and accepts only keyword
-    arguments.
-
-    """
-    counter = itertools.count(1)
-
-    def decorator_log_gradient_status(func):
-        @functools.wraps(func)
-        def wrapper_log_gradient_status(params, *args, **kwargs):
-            criterion_value, _ = func(params, *args, **kwargs)
-
-            if database:
-                c = next(counter)
-                if n_gradient_evaluations is None:
-                    status = c
-                else:
-                    status = (c % n_gradient_evaluations) / n_gradient_evaluations
-                    status = 1 if status == 0 else status
-                update_scalar_field(database, "gradient_status", status)
-
-            return criterion_value
-
-        return wrapper_log_gradient_status
-
-    if callable(func):
-        return decorator_log_gradient_status(func)
-    else:
-        return decorator_log_gradient_status
-
-
-def handle_exceptions(database, params, constraints, start_params, general_options):
-    """Handle exceptions in the criterion function.
-
-    This decorator catches any exceptions raised inside the criterion function. If the
-    exception is a :class:`KeyboardInterrupt` or a :class:`SystemExit`, the user wants
-    to stop the optimization and the exception is raised
-
-    For other exceptions, it is assumed that the optimizer proposed parameters which
-    could not be handled by the criterion function. For example, the parameters formed
-    an invalid covariance matrix which lead to an :class:`numpy.linalg.LinAlgError` in
-    the matrix decompositions. Then, we calculate a penalty as a function of the
-    criterion value at the initial parameters and some distance between the initial and
-    the current parameters.
-
-    """
-
-    def decorator_handle_exceptions(func):
-        @functools.wraps(func)
-        def wrapper_handle_exceptions(x, *args, **kwargs):
+        def wrapper_catch(*args, **kwargs):
             try:
-                out = func(x, *args, **kwargs)
-            except (KeyboardInterrupt, SystemExit):
+                res = func(*args, **kwargs)
+            except exclude:
                 raise
-            except Exception as e:
-                # Adjust the criterion value at the start.
-                start_criterion_value = general_options["start_criterion_value"]
-                constant, slope = general_options.get(
-                    "criterion_exception_penalty", (None, None)
-                )
-                constant = 2 * start_criterion_value if constant is None else constant
-                slope = 0.1 * start_criterion_value if slope is None else slope
-                raise_exc = general_options.get("criterion_exception_raise", False)
+            except exception as e:
 
-                if raise_exc:
+                if onerror is not None:
+                    onerror(e)
+
+                if reraise:
                     raise e
+
+                tb = get_traceback()
+
+                if warn:
+                    msg = f"The following exception was caught:\n\n{tb}"
+                    warnings.warn(msg)
+
+                if default == "__traceback__":
+                    res = tb
+                elif callable(default):
+                    res = default(*args, **kwargs)
                 else:
-                    if database:
-                        exception_info = traceback.format_exc()
-                        p = reparametrize_from_internal(
-                            internal=x,
-                            fixed_values=params["_internal_fixed_value"].to_numpy(),
-                            pre_replacements=params["_pre_replacements"]
-                            .to_numpy()
-                            .astype(int),
-                            processed_constraints=constraints,
-                            post_replacements=(
-                                params["_post_replacements"].to_numpy().astype(int)
-                            ),
-                            processed_params=params,
-                        )
-                        msg = (
-                            exception_info
-                            + "\n\n"
-                            + "The parameters are\n\n"
-                            + p["value"].to_csv(sep="\t", header=True)
-                        )
-                        append_rows(database, "exceptions", {"value": msg})
+                    res = default
+            return res
 
-                    out = min(
-                        MAX_CRITERION_PENALTY,
-                        constant + slope * np.linalg.norm(x - start_params),
-                    )
+        return wrapper_catch
 
-            return out
-
-        return wrapper_handle_exceptions
-
-    return decorator_handle_exceptions
+    if callable(func):
+        return decorator_catch(func)
+    else:
+        return decorator_catch
 
 
-def nan_if_exception(func):
-    """Wrap func such that np.nan is returned if func raises an exception.
+def unpack(func=None, symbol=None):
+    def decorator_unpack(func):
+        if symbol is None:
 
-    KeyboardInterrupt and SystemExit are still raised.
+            @functools.wraps(func)
+            def wrapper_unpack(arg):
+                return func(arg)
 
-    Examples:
+        elif symbol == "*":
 
-    >>> @nan_if_exception
-    ... def f(x, y):
-    ...     assert x + y >= 5
-    >>> f(1, 2)
-    nan
+            @functools.wraps(func)
+            def wrapper_unpack(arg):
+                return func(*arg)
 
-    >>> def f(x, y):
-    ...     assert x + y >= 5
-    >>> g = nan_if_exception(f)
-    >>> g(1, 2)
-    nan
+        elif symbol == "**":
 
-    """
+            @functools.wraps(func)
+            def wrapper_unpack(arg):
+                return func(**arg)
 
-    @functools.wraps(func)
-    def wrapper_nan_if_exception(params, *args, **kwargs):
-        try:
-            out = func(params, *args, **kwargs)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception:
-            out = np.nan
-        return out
+        return wrapper_unpack
 
-    return wrapper_nan_if_exception
-
-
-def de_scalarize(x_was_scalar):
-    """Create a function with non-scalar input and output.
-
-    Examples:
-
-    >>> @de_scalarize(True)
-    ... def f(x):
-    ...     return x
-
-    >>> f(3)
-    Traceback (most recent call last):
-        ...
-    TypeError: 'int' object is not subscriptable
-
-    >>> f(np.array([3]))
-    array([3])
-
-    >>> @de_scalarize(True)
-    ... def g(x):
-    ...     return 3
-
-    >>> g(np.ones(3))
-    array([3])
-
-    """
-
-    def decorator_de_scalarize(func):
-        @functools.wraps(func)
-        def wrapper_de_scalarize(x, *args, **kwargs):
-            x = x[0] if x_was_scalar else x
-            return np.atleast_1d(func(x, *args, **kwargs))
-
-        return wrapper_de_scalarize
-
-    return decorator_de_scalarize
+    if callable(func):
+        return decorator_unpack(func)
+    else:
+        return decorator_unpack

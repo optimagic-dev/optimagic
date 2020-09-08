@@ -9,6 +9,7 @@ from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
 from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import cov_to_sds_and_corr
 from estimagic.optimization.utilities import dimension_to_number_of_triangular_elements
+from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 from estimagic.optimization.utilities import robust_cholesky
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
@@ -126,3 +127,12 @@ def test_robust_cholesky_with_extreme_cases():
     for cov in [np.ones((5, 5)), np.zeros((5, 5))]:
         chol = robust_cholesky(cov)
         aaae(chol.dot(chol.T), cov)
+
+
+def test_hash_array():
+    arr1 = np.arange(4)[::2]
+    arr2 = np.array([0, 2])
+
+    arr3 = np.array([0, 3])
+    assert hash_array(arr1) == hash_array(arr2)
+    assert hash_array(arr1) != hash_array(arr3)

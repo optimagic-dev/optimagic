@@ -4,7 +4,7 @@ import pytest
 import statsmodels.api as sm
 from numpy.testing import assert_array_almost_equal
 
-from estimagic.differentiation.differentiation import jacobian
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.inference.moment_covs import _covariance_moments
 from estimagic.inference.moment_covs import gmm_cov
 from estimagic.inference.moment_covs import sandwich_cov
@@ -29,7 +29,7 @@ def test_covariance_moments_unit():
 
 @pytest.fixture
 def fixtures_gmm_cov():
-    """ The fixture contains a test case for our functions. The expected result was
+    """The fixture contains a test case for our functions. The expected result was
     calculated by hand."""
     fix = {}
     fix["mom_cond"] = np.array([[0.1, 0.3], [0.7, 1.3]])
@@ -64,7 +64,7 @@ def test_sandwich_cov(fixtures_gmm_cov):
 @pytest.fixture()
 def statsmodels_fixture():
     """These fixtures are taken from the statsmodels test battery and adapted towards
-     a random test."""
+    a random test."""
     fix = {}
     num_obs = 100
     num_params = 3
@@ -84,7 +84,7 @@ def statsmodels_fixture():
     moment_jac = np.zeros((num_obs, num_params, num_params))
     for i in range(num_obs):
         moment_cond[i, :] = calc_moment_condition(params_df, x[i, :], y[i])
-        moment_jac[i, :, :] = jacobian(
+        moment_jac[i, :, :] = first_derivative(
             calc_moment_condition, params_df, func_kwargs={"x_t": x[i, :], "y_t": y[i]}
         )
     fix["mom_cond"] = moment_cond

@@ -25,28 +25,25 @@ requirements:
   run:
     - python >=3.6
     - click
+    - cloudpickle
     - joblib
     - numpy >=1.16
-    - pandas >=0.24
-    - pygmo >=2.14
+    - pandas >=0.24,<=1.0.5
     - bokeh >=1.3
     - scipy
-    - numdifftools >=0.9.20
     - fuzzywuzzy
-    - petsc4py >=3.11
-    - numba
-    - statsmodels >=0.9
     - sqlalchemy >=1.3
 
 test:
   requires:
     - pytest
     - pytest-xdist
+    - statsmodels
   source_files:
     - tox.ini
     - estimagic/tests
   commands:
-    - pytest
+    - pytest -m "not slow"
     - estimagic --version
     - estimagic --help
     - estimagic dashboard --help

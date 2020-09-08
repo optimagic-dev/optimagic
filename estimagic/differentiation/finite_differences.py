@@ -24,12 +24,12 @@ def jacobian(evals, steps, f0, method):
             contains a numpy array of shape (n_steps, dim_x) with the steps in
             the corresponding direction. The steps are always symmetric, in the sense
             that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
-        f0 (np.ndarray): Numpy array of length dim_f with the output of the function at
-            the user supplied parameters.
+        f0 (numpy.ndarray): Numpy array of length dim_f with the output of the function
+            at the user supplied parameters.
         method (str): One of ["forward", "backward", "central"]
 
     Returns:
-        jac (np.ndarray): Numpy array of shape (n_steps, dim_f, dim_x) with estimated
+        jac (numpy.ndarray): Numpy array of shape (n_steps, dim_f, dim_x) with estimated
             Jacobians. I.e. there are n_step jacobian estimates.
 
     """
