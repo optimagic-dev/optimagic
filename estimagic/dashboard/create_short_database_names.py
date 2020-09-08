@@ -27,7 +27,7 @@ def create_short_database_names(path_list):
         parts = tuple(reversed(path.parts))
         needed_parts = 1
         candidate = parts[:needed_parts]
-        while _name_clash(candidate, no_suffixes):
+        while _causes_name_clash(candidate, no_suffixes):
             needed_parts += 1
             candidate = parts[:needed_parts]
 
@@ -36,7 +36,7 @@ def create_short_database_names(path_list):
     return short_name_to_path
 
 
-def _name_clash(candidate, path_list, allowed_occurences=1):
+def _causes_name_clash(candidate, path_list, allowed_occurences=1):
     """Determine if candidate leads to a name clash.
 
     Args:

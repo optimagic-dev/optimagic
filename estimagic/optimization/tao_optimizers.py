@@ -50,7 +50,7 @@ def tao_pounders(
     2. ``"root_contributions"``: An array containing the root (weighted) contributions.
 
     Scaling the problem is necessary such that bounds correspond to the unit hypercube
-    :mat:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
+    :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
     changes in parameters result in similar order-of-magnitude changes in the criterion
     value(s).
 
@@ -94,18 +94,18 @@ def tao_pounders(
         max_iterations (int): Alternative Stopping criterion. If set the routine will
             stop after the number of specified iterations or after the step size is
             sufficiently small. If the variable is set the default criteria will all be
-            ignored. Default is `None`.
+            ignored.
 
     Returns:
         results (dict): Dictionary with processed optimization results.
 
     References:
-    .. _TAO Users Manual (Revision 3.7):
-        http://web.mit.edu/tao-petsc_v3.7/tao_manual.pdf
-    .. _Solving Derivative-Free Nonlinear Least Squares Problems with POUNDERS:
-        https://www.mcs.anl.gov/papers/P5120-0414.pdf
-    .. _petsc4py on BitBucket:
-        https://bitbucket.org/petsc/petsc4py
+        .. _TAO Users Manual (Revision 3.7):
+            http://web.mit.edu/tao-petsc_v3.7/tao_manual.pdf
+        .. _Solving Derivative-Free Nonlinear Least Squares Problems with POUNDERS:
+            https://www.mcs.anl.gov/papers/P5120-0414.pdf
+        .. _petsc4py on BitBucket:
+            https://bitbucket.org/petsc/petsc4py
 
     """
     if not IS_PETSC4PY_INSTALLED:

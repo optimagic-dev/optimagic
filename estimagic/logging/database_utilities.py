@@ -259,7 +259,7 @@ def read_new_rows(
 
 
 def read_last_rows(
-    database, table_name, n_rows, return_type, path=None, fast_logging=True
+    database, table_name, n_rows, return_type, path=None, fast_logging=False
 ):
     """Read the last n_rows rows from a table.
 
