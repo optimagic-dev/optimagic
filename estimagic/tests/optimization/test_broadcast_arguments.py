@@ -51,12 +51,9 @@ def multiple_non_standard_inputs():
             pd.DataFrame(
                 np.arange(12).reshape(4, 3),
                 columns=["lower_bound", "value", "upper_bound"],
-            ),
-            pd.DataFrame(
-                np.arange(12).reshape(4, 3),
-                columns=["lower_bound", "value", "upper_bound"],
-            ),
-        ],
+            )
+        ]
+        * 2,
         "algorithm": "scipy_L-BFGS-B",
         "criterion_kwargs": [
             {"keepdims": True, "dtype": float},

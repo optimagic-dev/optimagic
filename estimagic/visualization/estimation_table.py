@@ -36,7 +36,7 @@ def estimation_table(
     to be passed to tabular functions, or save tables to path.
 
     Args:
-        models(list): list of estimation results. The estimation results should either
+        models (list): list of estimation results. The estimation results should either
             have attributes info(dict) with summary statistics of the model and params
             (DataFrame) with parameter values, standard erors and/or confidence
             intervals and p values, or a sm regression result can be passed.
@@ -55,7 +55,7 @@ def estimation_table(
         custom_index_names (list): a list of strings to print as the name of the
             parameter/variable column. To print index names, add index_names = True
             in the render options. Default is None.
-        show_inference(bool): a boolean variable for printing precision (standard
+        show_inference (bool): a boolean variable for printing precision (standard
             error/confidence intervals). Defalut is True.
         show_stars (bool): a boolean variable for printing significance stars.
             Default is True.
@@ -216,9 +216,9 @@ def tabular_tex(
     """Return estimation table in LaTeX format as string.
 
     Args:
-        body_df (DataFrame): the processed dataframe with parameter values and
+        body_df (pandas.DataFrame): the processed dataframe with parameter values and
             precision (if applied) as strings.
-        footer_df (DataFrame): the processed dataframe with summary statistics as
+        footer_df (pandas.DataFrame): the processed dataframe with summary statistics as
             strings.
         notes_tex (str): a string with LaTex code for the notes section
         render_options(dict): the pd.to_latex() kwargs to apply if default options
@@ -226,6 +226,7 @@ def tabular_tex(
         lef_decimals (int): see main docstring
         sig_digits (int): see main docstring
         show_footer (bool): see main docstring
+
     Returns:
         latex_str (str): the string for LaTex table script.
 
