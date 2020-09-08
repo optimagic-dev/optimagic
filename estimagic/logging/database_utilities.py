@@ -303,8 +303,6 @@ def read_specific_row(
 ):
     """Read a specific row from a table.
 
-    If this row does not exist, a KeyError is raised.
-
     Args:
         database (sqlalchemy.MetaData)
             table_name (str): name of the table to retrieve.
