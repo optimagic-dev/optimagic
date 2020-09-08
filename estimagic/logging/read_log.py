@@ -21,18 +21,18 @@ def read_optimization_iteration(path, iteration, include_internals=False):
         path (str or pathlib.Path): Path to the sqlite database file used for logging.
             Typically, those have the file extension ``.db``.
         iteration (int): The index of the iteration that should be retrieved. The row_id
-            behaves as Python list indices, i.e. 0 identifies the first iteration,
-            -1 the last one, etc.
+            behaves as Python list indices, i.e. ``0`` identifies the first iteration,
+            ``-1`` the last one, etc.
         include_internals (bool): Whether internally used quantities like the
             internal parameter vector and the corresponding derivative etc. are included
-             in the result. Default False. This should only be used by advanced users.
+            in the result. Default False. This should only be used by advanced users.
 
     Returns:
         dict: The logged information corresponding to the iteration. The keys correspond
             to database columns.
 
     Raises:
-        KeyError if the iteration is out of bounds.
+        KeyError: if the iteration is out of bounds.
 
     """
     database = load_database(path=path, fast_logging=False)

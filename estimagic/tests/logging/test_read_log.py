@@ -33,10 +33,10 @@ def test_read_optimization_iteration(tmp_path):
     assert first_row_calc["rowid"] == 1
     calculated_params = first_row_calc["params"]
     expected_params = pd.DataFrame(data=[0], columns=["value"])
-    assert_frame_equal(calculated_params, expected_params)
+    assert_frame_equal(calculated_params, expected_params, check_dtype=False)
 
     last_row_calc = read_optimization_iteration(path, -1)
     assert last_row_calc["rowid"] == 3
     calculated_params = last_row_calc["params"]
     expected_params = pd.DataFrame(data=[2], columns=["value"])
-    assert_frame_equal(calculated_params, expected_params)
+    assert_frame_equal(calculated_params, expected_params, check_dtype=False)
