@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from estimagic.dashboard.create_short_database_names import _name_clash
+from estimagic.dashboard.create_short_database_names import _causes_name_clash
 from estimagic.dashboard.create_short_database_names import create_short_database_names
 
 
@@ -28,19 +28,19 @@ def test_create_short_database_names_mixed_stems_mixed_names():
     assert expected == res
 
 
-def test_name_clash_no_clash():
+def test_causes_name_clash_no_clash():
     candidate = ("a", "db")
     path_list = [Path("b/db"), Path("c/db"), Path("a/db2")]
     expected = False
-    res = _name_clash(candidate, path_list)
+    res = _causes_name_clash(candidate, path_list)
     assert expected == res
 
 
-def test_name_clash_with_clash():
+def test_causes_name_clash_with_clash():
     candidate = ("db",)
     path_list = [Path("a/db"), Path("b/db"), Path("c/db2")]
     expected = True
-    res = _name_clash(candidate, path_list)
+    res = _causes_name_clash(candidate, path_list)
     assert expected == res
 
 
