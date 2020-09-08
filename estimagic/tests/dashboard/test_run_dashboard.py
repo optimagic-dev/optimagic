@@ -61,9 +61,9 @@ def test_dashboard_cli(monkeypatch):
         database_paths, no_browser, port, rollover, jump, update_frequency, update_chunk
     ):
         assert len(database_paths) == 2
-        assert no_browser is True
+        assert no_browser
         assert port == 9999
-        assert jump is True
+        assert jump
 
     monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
 
@@ -88,7 +88,7 @@ def test_dashboard_cli_duplicate_paths(monkeypatch):
         database_paths, no_browser, port, rollover, jump, update_frequency, update_chunk
     ):
         assert len(database_paths) == 2
-        assert no_browser is False
+        assert not no_browser
         assert port is None
 
     monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)

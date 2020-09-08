@@ -67,7 +67,7 @@ def check_constraints_are_satisfied(pc, params):
                 wsum = subset.dot(constr["weights"])
                 if "lower_bound" in constr and wsum < constr["lower_bound"]:
                     raise ValueError(
-                        msg.format("Lower_bound bound of linear constraint violated")
+                        msg.format("Lower bound of linear constraint is violated")
                     )
                 elif "upper_bound" in constr and wsum > constr["upper_bound"]:
                     raise ValueError(
