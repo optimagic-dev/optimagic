@@ -62,14 +62,16 @@ def maximize(
     Args:
         criterion (callable): A function that takes a pandas DataFrame (see
             :ref:`params`) as first argument and returns one of the following:
-            - scalar floating point or a numpy array (depending on the algorithm)
+
+            - scalar floating point or a :class:`numpy.ndarray` (depending on the
+              algorithm)
             - a dictionary that contains at the entries "value" (a scalar float),
-            "contributions" or "root_contributions" (depending on the algortihm) and
-            any number of additional entries. The additional dict entries will be
-            logged and (if supported) displayed in the dashboard. Check the
-            documentation of your algorithm to see which entries or output type
-            are required.
-        params (pd.DataFrame): A DataFrame with a column called "value" and optional
+              "contributions" or "root_contributions" (depending on the algortihm) and
+              any number of additional entries. The additional dict entries will be
+              logged and (if supported) displayed in the dashboard. Check the
+              documentation of your algorithm to see which entries or output type are
+              required.
+        params (pandas.DataFrame): A DataFrame with a column called "value" and optional
             additional columns. See :ref:`params` for detail.
         algorithm (str or callable): Specifies the optimization algorithm. For supported
             algorithms this is a string with the name of the algorithm. Otherwise it can
@@ -198,7 +200,7 @@ def minimize(
             logged and (if supported) displayed in the dashboard. Check the
             documentation of your algorithm to see which entries or output type
             are required.
-        params (pd.DataFrame): A DataFrame with a column called "value" and optional
+        params (pandas.DataFrame): A DataFrame with a column called "value" and optional
             additional columns. See :ref:`params` for detail.
         algorithm (str or callable): Specifies the optimization algorithm. For supported
             algorithms this is a string with the name of the algorithm. Otherwise it can
