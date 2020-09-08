@@ -86,7 +86,6 @@ def _get_group_to_params_from_database(database):
     """
     optimization_problem = read_last_rows(
         database=database,
-        # todo: need to adjust table_namnpe with suffix if necessary
         table_name="optimization_problem",
         n_rows=1,
         return_type="dict_of_lists",

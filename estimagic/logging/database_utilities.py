@@ -1,3 +1,14 @@
+"""Functions to generate, load, write to and read from databases.
+
+The functions here are meant for internal use in estimagic, e.g. for logging during
+the optimization and reading from the database in the dashboard. They do not require
+detailed knowledge of databases in general but some knowledge of the schema
+(e.g. table names) of the database we use for logging.
+
+Therefore, users who simply want to read the database should use the functions in
+``read_log.py`` instead.
+
+"""
 import datetime
 import io
 import traceback
@@ -285,6 +296,31 @@ def read_last_rows(
     stmt = table.select().order_by(table.c.rowid.desc()).limit(n_rows)
 
     return _execute_read_statement(database, table_name, stmt, return_type)
+
+
+def read_specific_row(
+    database, table_name, rowid, return_type, path=None, fast_logging=False
+):
+    """Read a specific row from a table.
+
+    Args:
+        database (sqlalchemy.MetaData)
+            table_name (str): name of the table to retrieve.
+            n_rows (int): number of rows to retrieve.
+            return_type (str): either "list_of_dicts" or "dict_of_lists".
+            path (str or pathlib.Path): location of the database file.
+            fast_logging (bool)
+
+        Returns:
+            dict or list: The requested row from the database.
+
+    """
+    database = load_database(database, path, fast_logging)
+    rowid = int(rowid)
+    table = database.tables[table_name]
+    stmt = table.select().where(table.c.rowid == rowid)
+    data = _execute_read_statement(database, table_name, stmt, return_type)
+    return data
 
 
 def _execute_read_statement(database, table_name, statement, return_type):

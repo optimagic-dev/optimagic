@@ -35,3 +35,10 @@ Utility functions for parameter handling
 
 .. automodule:: estimagic.optimization.utilities
     :members:
+
+
+Functions to read the optimization log
+--------------------------------------
+
+.. automodule:: estimagic.logging.read_log
+    :members:
