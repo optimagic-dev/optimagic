@@ -1,5 +1,9 @@
 import numpy as np
-from matplotlib.colors import LinearSegmentedColormap
+
+from estimagic.config import IS_MATPLOTLIB_INSTALLED
+
+if IS_MATPLOTLIB_INSTALLED:
+    from matplotlib.colors import LinearSegmentedColormap
 
 
 def get_colors(palette, number, as_cmap=False, skip_dark=0, skip_bright=0):
@@ -26,6 +30,9 @@ def get_colors(palette, number, as_cmap=False, skip_dark=0, skip_bright=0):
     """
     if palette in ["categorical", "ordered"]:
         assert skip_bright == skip_dark == 0
+
+    if not IS_MATPLOTLIB_INSTALLED and as_cmap:
+        raise ValueError("To use as_cmap, install matplotlib.")
 
     if number < 0:
         raise ValueError("Number must be non-negative")
