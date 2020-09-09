@@ -16,6 +16,13 @@ except ImportError:
 else:
     IS_PETSC4PY_INSTALLED = True
 
+try:
+    import matplotlib  # noqa: F401
+except ImportError:
+    IS_MATPLOTLIB_INSTALLED = False
+else:
+    IS_MATPLOTLIB_INSTALLED = True
+
 
 CRITERION_PENALTY_SLOPE = 0.1
 CRITERION_PENALTY_CONSTANT = 100
