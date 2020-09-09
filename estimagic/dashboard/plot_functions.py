@@ -3,34 +3,7 @@ from bokeh.models import HoverTool
 from bokeh.models import Legend
 from bokeh.plotting import figure
 
-
-def get_color_palette(nr_colors):
-    """Return list of colors depending on the number needed.
-
-    Args:
-        nr_colors (int): Number of colors needed.
-
-    Returns:
-        list
-
-    """
-    our_colors = [
-        "#547482",
-        "#C87259",
-        "#C2D8C2",
-        "#F1B05D",
-        "#818662",
-        "#6C4A4D",
-        "#7A8C87",
-        "#EE8445",
-        "#C8B05C",
-        "#3C2030",
-        "#C89D64",
-        "#2A3B49",
-    ]
-    n_reps = nr_colors // len(our_colors)
-    remainder = nr_colors % len(our_colors)
-    return n_reps * our_colors + our_colors[:remainder]
+from estimagic.visualization.colors import get_colors
 
 
 def plot_time_series(
@@ -64,7 +37,7 @@ def plot_time_series(
     plot = create_styled_figure(
         title=title, name=name, logscale=logscale, plot_width=plot_width
     )
-    colors = get_color_palette(nr_colors=len(y_keys))
+    colors = get_colors("categorical", len(y_keys))
 
     legend_items = [(" " * 60, [])]
     for color, y_key, y_name in zip(colors, y_keys, y_names):

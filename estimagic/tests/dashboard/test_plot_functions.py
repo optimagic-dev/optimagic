@@ -12,28 +12,6 @@ def test_create_styled_figure():
     plot_functions.create_styled_figure("Hello World")
 
 
-def test_get_color_palette_1():
-    colors = plot_functions.get_color_palette(1)
-    assert colors == ["#547482"]
-
-
-def test_get_color_palette_2():
-    colors = plot_functions.get_color_palette(2)
-    assert colors == ["#547482", "#C87259"]
-
-
-def test_get_color_palette_5():
-    colors = plot_functions.get_color_palette(5)
-    expected = ["#547482", "#C87259", "#C2D8C2", "#F1B05D", "#818662"]
-    assert colors == expected
-
-
-def test_get_color_palette_50():
-    # only testing that the call works.
-    colors = plot_functions.get_color_palette(50)
-    assert len(colors) == 50
-
-
 # not testing find_free_port
 
 
