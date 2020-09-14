@@ -48,8 +48,10 @@ def monitoring_app(
     database = load_database(path=session_data["database_path"])
     start_point = _calculate_start_point(database, rollover, jump)
     session_data["last_retrieved"] = start_point
-    start_params, group_to_params = _get_group_to_params_from_database(database)
-    criterion_history, params_history = _create_cds_for_monitoring_app(start_params)
+    start_params, group_to_param_ids = _get_group_to_param_ids_from_database(database)
+    criterion_history, params_history = _create_cds_for_monitoring_app(
+        start_params, group_to_param_ids
+    )
 
     # create elements
     button_row = _create_button_row(
@@ -64,7 +66,7 @@ def monitoring_app(
     monitoring_plots = _create_initial_convergence_plots(
         criterion_history=criterion_history,
         params_history=params_history,
-        group_to_params=group_to_params,
+        group_to_param_ids=group_to_param_ids,
         start_params=start_params,
     )
 
@@ -76,14 +78,14 @@ def monitoring_app(
     doc.add_root(tabs)
 
 
-def _get_group_to_params_from_database(database):
+def _get_group_to_param_ids_from_database(database):
     """Map each group name to the parameters' names that belong to it.
 
     Args:
         database (sqlalchemy.MetaData): Bound metadata object.
 
     Returns:
-        group_to_params (dict): keys are the group names, values are parameter names.
+        group_to_param_ids (dict): keys are the group names, values are parameter names.
 
     """
     optimization_problem = read_last_rows(
@@ -94,8 +96,8 @@ def _get_group_to_params_from_database(database):
     )
     start_params = optimization_problem["params"][0]
     start_params["id"] = _create_id_column(start_params)
-    group_to_params = _map_groups_to_param_ids(start_params)
-    return start_params, group_to_params
+    group_to_param_ids = _map_groups_to_param_ids(start_params)
+    return start_params, group_to_param_ids
 
 
 def _create_id_column(df):
@@ -121,21 +123,21 @@ def _map_groups_to_param_ids(params):
             "group" column and Index.
 
     Returns:
-        group_to_params (dict):
+        group_to_param_ids (dict):
             Keys are the values of the "group" column. The values are lists with
             bokeh friendly strings of the index tuples identifying the parameters
             that belong to this group. Parameters where group is None, "" or False
             are ignored.
 
     """
-    group_to_params = {}
+    group_to_param_ids = {}
     for group in params["group"].unique():
         if group is not None and group == group and group != "" and group is not False:
-            group_to_params[group] = list(params[params["group"] == group]["id"])
-    return group_to_params
+            group_to_param_ids[group] = list(params[params["group"] == group]["id"])
+    return group_to_param_ids
 
 
-def _create_cds_for_monitoring_app(start_params):
+def _create_cds_for_monitoring_app(start_params, group_to_param_ids):
     """Create the ColumnDataSources for saving the criterion and parameter values.
 
     They will be periodically updated from the database.
@@ -145,6 +147,7 @@ def _create_cds_for_monitoring_app(start_params):
     Args:
         start_params (pd.DataFrame): See :ref:`params`. It includes a dashboard
             specific id column.
+        group_to_param_ids ()
 
     Returns:
         criterion_history (bokeh.ColumnDataSource)
@@ -154,10 +157,10 @@ def _create_cds_for_monitoring_app(start_params):
     crit_data = {"iteration": [], "criterion": []}
     criterion_history = ColumnDataSource(crit_data, name="criterion_history_cds")
 
-    param_names = start_params["id"].tolist()
+    param_ids = [id_ for id_list in group_to_param_ids.values() for id_ in id_list]
     params_data = {"iteration": []}
-    for name in param_names:
-        params_data[name] = []
+    for id_ in param_ids:
+        params_data[id_] = []
     params_history = ColumnDataSource(params_data, name="params_history_cds")
 
     return criterion_history, params_history
@@ -189,14 +192,14 @@ def _calculate_start_point(database, rollover, jump):
 
 
 def _create_initial_convergence_plots(
-    criterion_history, params_history, group_to_params, start_params,
+    criterion_history, params_history, group_to_param_ids, start_params,
 ):
     """Create the initial convergence plots.
 
     Args:
         criterion_history (bokeh ColumnDataSource)
         params_history (bokeh ColumnDataSource)
-        group_to_params (dict):
+        group_to_param_ids (dict):
             Keys are the values of the "group" column. The values are lists with
             bokeh friendly strings of the index tuples identifying the parameters
             that belong to this group. Parameters where group is None, "" or False
@@ -210,7 +213,7 @@ def _create_initial_convergence_plots(
 
     """
     param_plots = []
-    for group, param_ids in group_to_params.items():
+    for group, param_ids in group_to_param_ids.items():
         param_names = [
             start_params.query(f"id == '{id_}'")["name"].iloc[0] for id_ in param_ids
         ]

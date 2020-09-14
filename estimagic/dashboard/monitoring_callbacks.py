@@ -167,9 +167,13 @@ def _update_monitoring_tab(
     criterion_cds.stream(crit_data, rollover=rollover)
 
     # update the parameter plots
+    # Note: we need **all** parameter ids to correctly map them to the parameter entries
+    # in the database. Only after can we restrict them to the entries we need.
     param_ids = start_params["id"].tolist()
     params_data = _create_params_data_for_update(data, param_ids)
-    param_cds.stream(params_data, rollover=rollover)
+    available_keys = param_cds.data.keys()
+    to_stream = {k: v for k, v in params_data.items() if k in available_keys}
+    param_cds.stream(to_stream, rollover=rollover)
 
     # update last retrieved
     session_data["last_retrieved"] = new_last

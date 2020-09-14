@@ -45,8 +45,16 @@ def test_create_cds_for_monitoring_app():
         "1": [],
         "iteration": [],
     }
-    expected_param_cds = ColumnDataSource(data=d, name="params_history_cds")
-    _, params_history = monitoring._create_cds_for_monitoring_app(start_params)
+    group_to_param_ids = {"g1": ["hello"], "g2": ["p1", "p2"]}
+    expected_param_data = {
+        k: v for k, v in d.items() if k in ["hello", "p1", "p2", "iteration"]
+    }
+    expected_param_cds = ColumnDataSource(
+        data=expected_param_data, name="params_history_cds"
+    )
+    _, params_history = monitoring._create_cds_for_monitoring_app(
+        start_params, group_to_param_ids
+    )
     assert expected_param_cds.data == params_history.data
 
 

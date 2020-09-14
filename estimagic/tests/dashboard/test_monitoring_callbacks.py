@@ -55,7 +55,10 @@ def test_update_monitoring_tab():
 
     param_data = {f"p{i}": [i, i, i] for i in range(6)}
     param_data["iteration"] = [3, 4, 5]
-    param_cds = ColumnDataSource(param_data)
+    plotted_param_data = {
+        k: v for k, v in param_data.items() if k in ["p0", "p2", "p4", "iteration"]
+    }
+    param_cds = ColumnDataSource(plotted_param_data)
 
     start_params = pd.DataFrame()
     start_params["group"] = ["g1", "g1", None, None, "g2", "g2"]
@@ -71,31 +74,19 @@ def test_update_monitoring_tab():
         "criterion": [-10, -10] + [3.371916994681647e-18, 3.3306686770405823e-18],
     }
 
-    expected_param_data = param_data.copy()
+    expected_param_data = plotted_param_data.copy()
     expected_param_data["iteration"] += [6, 7]
     expected_param_data["p0"] += [
         -7.82732387e-10,
         -7.45058016e-10,
     ]
-    expected_param_data["p1"] += [
-        -6.87841756e-10,
-        -7.45058015e-10,
-    ]
     expected_param_data["p2"] += [
         -7.50570405e-10,
-        -7.45058015e-10,
-    ]
-    expected_param_data["p3"] += [
-        -7.52552762e-10,
         -7.45058015e-10,
     ]
     expected_param_data["p4"] += [
         -7.44958198e-10,
         -7.45058015e-10,
-    ]
-    expected_param_data["p5"] += [
-        -7.75542658e-10,
-        -7.45058016e-10,
     ]
 
     _update_monitoring_tab(
