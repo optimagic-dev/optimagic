@@ -276,7 +276,7 @@ def _create_button_row(
     # (Re)start convergence plot button
     activation_button = Toggle(
         active=False,
-        label="Start Updates from Database",
+        label="Start Updating",
         button_type="danger",
         width=200,
         height=30,

@@ -37,6 +37,10 @@ def plot_time_series(
     plot = create_styled_figure(
         title=title, name=name, logscale=logscale, plot_width=plot_width
     )
+    # this ensures that the y range spans at least 0.1
+    plot.y_range.range_padding = 0.05
+    plot.y_range.range_padding_units = "absolute"
+
     colors = get_colors("categorical", len(y_keys))
 
     legend_items = [(" " * 60, [])]
@@ -84,12 +88,12 @@ def create_styled_figure(
         fig (bokeh Figure)
 
     """
-    plot_width = plot_width if plot_width is not None else 800
+    plot_width = plot_width if plot_width is not None else 750
 
     name = name if name is not None else title
     y_axis_type = "log" if logscale else "linear"
     fig = figure(
-        plot_height=300,
+        plot_height=250,
         plot_width=plot_width,
         title=title.title(),
         tooltips=tooltips,
