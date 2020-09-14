@@ -12,10 +12,11 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 
-from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
+
+AVAILABLE_ALGORITHMS = {"estimagic_bhhh": AVAILABLE_ALGORITHMS["estimagic_bhhh"]}
 
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
@@ -32,18 +33,8 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
 IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
 
 
-def _skip_tao_tests_if_petsc4py_not_installed(test_cases):
-    """Skip tests involving TAO optimizers on Windows."""
-    new_test_cases = []
-    for test_case in test_cases:
-        if test_case[0].startswith("tao_") and not IS_PETSC4PY_INSTALLED:
-            test_case = pytest.param(
-                *test_case, marks=pytest.mark.skip(reason="petsc4py is not installed.")
-            )
-        new_test_cases.append(test_case)
-
-    return new_test_cases
-
+LEAST_SQUARES_ALGORITHMS = ["tao_pounders"]
+SUM_ALGORITHMS = ["estimagic_bhhh"]
 
 # ======================================================================================
 # Define example functions
@@ -105,8 +96,8 @@ def sos_criterion_and_jacobian(params):
 
 def get_test_cases_for_algorithm(algorithm):
     """Generate list of all possible argument combinations for algorithm."""
-    is_least_squares = algorithm in ["tao_pounders"]
-    is_sum = algorithm in ["bhhh"]
+    is_least_squares = algorithm in LEAST_SQUARES_ALGORITHMS
+    is_sum = algorithm in SUM_ALGORITHMS
     is_scalar = not (is_least_squares or is_sum)
 
     directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
@@ -179,7 +170,6 @@ def switch_sign(func):
 test_cases = []
 for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
-test_cases = _skip_tao_tests_if_petsc4py_not_installed(test_cases)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
@@ -198,7 +188,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         criterion_and_derivative=crit_and_deriv,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), np.zeros(2), atol=atol, rtol=0,
@@ -209,7 +199,6 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
 bound_cases = []
 for alg in BOUNDS_SUPPORTING_ALGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
-bound_cases = _skip_tao_tests_if_petsc4py_not_installed(bound_cases)
 
 
 @pytest.mark.slow
@@ -232,7 +221,7 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
         criterion_and_derivative=crit_and_deriv,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
@@ -260,7 +249,7 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.array([0, 7.5, 0, -2, 0.0])
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -289,7 +278,7 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.zeros(5)
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -320,7 +309,7 @@ def test_with_pairwise_equality_constraint(
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.zeros(5)
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -347,7 +336,7 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.zeros(5)
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -374,7 +363,7 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.zeros(5)
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -406,7 +395,7 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
             constraints=constraints,
         )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.array([0, 0, 1 / 3, 1 / 3, 1 / 3])
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -433,7 +422,7 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.array([0.25, 0.25, 0.25, 0.25, 0])
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -462,7 +451,7 @@ def test_with_covariance_constraint_no_bounds_distance(
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.zeros(5)
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -499,7 +488,7 @@ def test_with_covariance_constraint_bounds_distance(
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.array([0.1, 0, 0.1, 0, 0, 0.1])
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -527,7 +516,7 @@ def test_with_sdcorr_constraint_no_bounds_distance(
         constraints=constraints,
     )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.zeros(5)
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
@@ -573,7 +562,7 @@ def test_with_sdcorr_constraint_bounds_distance(
             constraints=constraints,
         )
 
-    assert res["success"], f"{algo} did not converge."
+    assert res["success"], f"{algo} did not converge: {res['message']}."
 
     expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04

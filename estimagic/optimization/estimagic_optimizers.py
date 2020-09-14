@@ -1,77 +1,63 @@
 # flake8: noqa
+import functools
+
 import numpy as np
-from scipy.linalg import solve_triangular
-from scipy.optimize._numdiff import approx_derivative
+from scipy.linalg import solve_triangular as _solve_triangular
+from scipy.optimize._numdiff import approx_derivative as _approx_derivative
 from scipy.optimize.optimize import _check_unknown_options
 from scipy.optimize.optimize import _line_search_wolfe12
 from scipy.optimize.optimize import _LineSearchError
-from scipy.optimize.optimize import vecnorm
-from scipy.optimize.optimize import wrap_function
+from scipy.optimize.optimize import vecnorm as _vecnorm
+from scipy.optimize.optimize import wrap_function as _wrap_function
+
+from estimagic.config import ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.config import MAX_ITERATIONS
+from estimagic.config import SCALED_GRADIENT_TOLERANCE
 
 
-def wrap_function_aggregate(function, args):
-    """
-    Sum the outputs of a vector-valued function fixed at specific values of
-    arguments.
+def estimagic_bhhh(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
+    scaled_gradient_tolerance=SCALED_GRADIENT_TOLERANCE,
+    norm=np.Inf,
+    max_iterations=MAX_ITERATIONS
+):
 
-    Parameters
-    ----------
-    function : callable function(x, *args)
-        A vector-valued function giving out a numpy.array having arguments x
-        as flexible arguments.
-    args : tuple
-        Addtional arguments passed to function. The function will be evaluated
-        at those fixed arguments.
+    algo_info = {
+        "primary_criterion_entry": "contributions",
+        "parallelizes": False,
+        "needs_scaling": False,
+        "name": "estimagic_bhhh",
+    }
 
-    Returns
-    -------
-    ncalls : int
-        Number of times the wrap function has been called.
-    function_wrapper : callable function_wrapper(x)
-        Function return the value of function(x, *args)
+    func = functools.partial(
+        criterion_and_derivative, algorithm_info=algo_info, task="criterion",
+    )
 
-    """
-    ncalls = [0]
+    jacobian = functools.partial(
+        criterion_and_derivative, algorithm_info=algo_info, task="derivative",
+    )
 
-    def function_wrapper(*wrapper_args):
-        ncalls[0] += 1
-        return function(*(wrapper_args + args)).sum()
+    bounds = (lower_bounds, upper_bounds)
 
-    return ncalls, function_wrapper
+    tol = {"abs": absolute_gradient_tolerance, "rel": scaled_gradient_tolerance}
 
-
-def wrap_function_num_derivative(function, args):
-    """
-    Return the numerical Jacobian of a function at given values for certain
-    arguments (args).
-
-    Parameters
-    ----------
-    function : callable function(x, *args)
-        Vector-valued function that returns a numpy.array.
-    args : tuple
-        tuple of arguments at which the Jacobian is supposed to be numerically
-        approximated.
-
-    Returns
-    -------
-    ncalls : int
-        Number of times the wrap function has been called.
-    function_wrapper : callable function_wrapper(x)
-        Function that gives out the numerical Jacobian at the specified level
-        of x and the pre set level of args.
-
-    """
-    ncalls = [0]
-
-    def function_wrapper(x0):
-        ncalls[0] += 1
-        return approx_derivative(function, x0, args=args)
-
-    return ncalls, function_wrapper
+    res = _estimagic_bhhh(
+        func=func,
+        x0=x,
+        bounds=bounds,
+        jacobian=jacobian,
+        tol=tol,
+        max_iterations=max_iterations,
+    )
+    return res
 
 
-def minimize_bhhh(
+def _estimagic_bhhh(
     func,
     x0,
     bounds=None,
@@ -177,12 +163,12 @@ def minimize_bhhh(
     if max_iterations is None:
         max_iterations = num_params * 200
 
-    func_calls, aggregate_func = wrap_function_aggregate(func, args)
+    func_calls, aggregate_func = _wrap_function_aggregate(func, args)
 
     if not callable(jacobian):
-        grad_calls, jacobian_wrapped = wrap_function_num_derivative(func, args)
+        grad_calls, jacobian_wrapped = _wrap_function_num_derivative(func, args)
     else:
-        grad_calls, jacobian_wrapped = wrap_function(jacobian, args)
+        grad_calls, jacobian_wrapped = _wrap_function(jacobian, args)
 
     def aggregate_jacobian_wrapped(x0):
         return jacobian_wrapped(x0).sum(axis=0)
@@ -192,7 +178,7 @@ def minimize_bhhh(
 
     jacobian_value = jacobian_wrapped(x0)
     agg_jacobian_value = jacobian_value.sum(axis=0)
-    norm_start = vecnorm(
+    norm_start = _vecnorm(
         x0 - np.clip(x0 - agg_jacobian_value, lower_bounds, upper_bounds), ord=norm,
     )
 
@@ -210,13 +196,13 @@ def minimize_bhhh(
             # Aggregate Jacobian at current guess
             agg_jacobian_value = jacobian_value.sum(axis=0)
 
-        norm_current = vecnorm(
+        norm_current = _vecnorm(
             xk - np.clip(xk - agg_jacobian_value, lower_bounds, upper_bounds), ord=norm
         )
 
         # Calculate numerical stable BHHH hessian inverse and the initial step size
         lower_triangle = np.linalg.qr(jacobian_value, mode="r").T
-        lower_triangle_inverse = solve_triangular(
+        lower_triangle_inverse = _solve_triangular(
             lower_triangle, np.eye(lower_triangle.shape[0]), lower=True
         )
         hessian_inverse = np.dot(lower_triangle_inverse.T, lower_triangle_inverse)
@@ -262,14 +248,74 @@ def minimize_bhhh(
             message = "Optimization terminated successfully."
 
     results = {}
-    results["status"] = status
+    results["success"] = status
     results["message"] = message
     results["n_iterations"] = num_iterations
-    results["fitness"] = func_value
-    results["n_evaluations"] = func_calls[0]
-    results["n_evaluations_jacobian"] = grad_calls[0]
-    results["jacobian"] = agg_jacobian_value
+    results["solution_criterion"] = func_value
+    results["solution_derivative"] = agg_jacobian_value
     results["hessian_inverse"] = hessian_inverse
-    results["x"] = xk
+    results["solution_x"] = xk
 
     return results
+
+
+def _wrap_function_aggregate(function, args):
+    """
+    Sum the outputs of a vector-valued function fixed at specific values of
+    arguments.
+
+    Parameters
+    ----------
+    function : callable function(x, *args)
+        A vector-valued function giving out a numpy.array having arguments x
+        as flexible arguments.
+    args : tuple
+        Addtional arguments passed to function. The function will be evaluated
+        at those fixed arguments.
+
+    Returns
+    -------
+    ncalls : int
+        Number of times the wrap function has been called.
+    function_wrapper : callable function_wrapper(x)
+        Function return the value of function(x, *args)
+
+    """
+    ncalls = [0]
+
+    def function_wrapper(*wrapper_args):
+        ncalls[0] += 1
+        return function(*(wrapper_args + args)).sum()
+
+    return ncalls, function_wrapper
+
+
+def _wrap_function_num_derivative(function, args):
+    """
+    Return the numerical Jacobian of a function at given values for certain
+    arguments (args).
+
+    Parameters
+    ----------
+    function : callable function(x, *args)
+        Vector-valued function that returns a numpy.array.
+    args : tuple
+        tuple of arguments at which the Jacobian is supposed to be numerically
+        approximated.
+
+    Returns
+    -------
+    ncalls : int
+        Number of times the wrap function has been called.
+    function_wrapper : callable function_wrapper(x)
+        Function that gives out the numerical Jacobian at the specified level
+        of x and the pre set level of args.
+
+    """
+    ncalls = [0]
+
+    def function_wrapper(x0):
+        ncalls[0] += 1
+        return _approx_derivative(function, x0, args=args)
+
+    return ncalls, function_wrapper
