@@ -13,7 +13,7 @@ from estimagic.dashboard.monitoring_callbacks import _switch_to_log_scale
 from estimagic.dashboard.monitoring_callbacks import _update_monitoring_tab
 from estimagic.logging.database_utilities import load_database
 
-PARAM_NAMES = ["a", "b", "c", "d", "e"]
+PARAM_IDS = ["a", "b", "c", "d", "e"]
 
 
 def test_switch_to_log_scale():
@@ -59,7 +59,7 @@ def test_update_monitoring_tab():
 
     start_params = pd.DataFrame()
     start_params["group"] = ["g1", "g1", None, None, "g2", "g2"]
-    start_params["name"] = [f"p{i}" for i in range(6)]
+    start_params["id"] = [f"p{i}" for i in range(6)]
 
     session_data = {"last_retrieved": 5}
     tables = []  # not used
@@ -115,7 +115,7 @@ def test_update_monitoring_tab():
 
 
 def test_create_params_data_for_update():
-    param_names = PARAM_NAMES
+    param_ids = PARAM_IDS
 
     data = {
         "rowid": [1, 2, 3, 4, 5],
@@ -137,7 +137,7 @@ def test_create_params_data_for_update():
         "e": [2.0, 1.69, 1.89, 1.89, 1.90],
     }
 
-    res = _create_params_data_for_update(data=data, param_names=param_names)
+    res = _create_params_data_for_update(data=data, param_ids=param_ids)
     assert res == expected
 
 

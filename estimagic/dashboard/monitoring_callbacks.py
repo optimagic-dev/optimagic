@@ -167,20 +167,20 @@ def _update_monitoring_tab(
     criterion_cds.stream(crit_data, rollover=rollover)
 
     # update the parameter plots
-    param_names = start_params["name"].tolist()
-    params_data = _create_params_data_for_update(data, param_names)
+    param_ids = start_params["id"].tolist()
+    params_data = _create_params_data_for_update(data, param_ids)
     param_cds.stream(params_data, rollover=rollover)
 
     # update last retrieved
     session_data["last_retrieved"] = new_last
 
 
-def _create_params_data_for_update(data, param_names):
-    """Create the dictionary to stream to the param_cds from data and param_names.
+def _create_params_data_for_update(data, param_ids):
+    """Create the dictionary to stream to the param_cds from data and param_ids.
 
     Args:
         data
-        param_names (list): list of the length of the arrays in data["external_params"]
+        param_ids (list): list of the length of the arrays in data["external_params"]
 
     Returns:
         params_data (dict): keys are the parameter names and "iteration". The values
@@ -189,9 +189,9 @@ def _create_params_data_for_update(data, param_names):
     """
     params_data = [arr.tolist() for arr in data["external_params"]]
     params_data = transpose_nested_list(params_data)
-    params_data = dict(zip(param_names, params_data))
+    params_data = dict(zip(param_ids, params_data))
     if params_data == {}:
-        params_data = {name: [] for name in param_names}
+        params_data = {name: [] for name in param_ids}
     params_data["iteration"] = data["rowid"]
     return params_data
 

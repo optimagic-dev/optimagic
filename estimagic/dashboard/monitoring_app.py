@@ -65,6 +65,7 @@ def monitoring_app(
         criterion_history=criterion_history,
         params_history=params_history,
         group_to_params=group_to_params,
+        start_params=start_params,
     )
 
     # add elements to bokeh Document
@@ -93,19 +94,25 @@ def _get_group_to_params_from_database(database):
     )
     start_params = optimization_problem["params"][0]
     start_params["id"] = _create_id_column(start_params)
-    group_to_params = _map_groups_to_params(start_params)
+    group_to_params = _map_groups_to_param_ids(start_params)
     return start_params, group_to_params
 
 
 def _create_id_column(df):
     if isinstance(df.index, pd.MultiIndex):
         index_df = df.index.to_frame()
-        return index_df.astype(str).apply(lambda x: "_".join(x), axis=1)
+        ids = index_df.astype(str).apply(lambda x: "_".join(x), axis=1)
     else:
-        return df.index.to_series().astype(str)
+        ids = df.index.to_series().astype(str)
+    # we check in optimize that there are no duplicates in the index but
+    # it is theoretically possible that the ids still have duplicate ids
+    # because everything is converted to strings,
+    # i.e. 1 and "1" would become identical and could introduce duplicates.
+    assert not ids.duplicated().any(), "Duplicates in the dashboard's id column."
+    return ids
 
 
-def _map_groups_to_params(params):
+def _map_groups_to_param_ids(params):
     """Map the group name to the ColumnDataSource friendly parameter names.
 
     Args:
@@ -124,7 +131,7 @@ def _map_groups_to_params(params):
     group_to_params = {}
     for group in params["group"].unique():
         if group is not None and group == group and group != "" and group is not False:
-            group_to_params[group] = list(params[params["group"] == group]["name"])
+            group_to_params[group] = list(params[params["group"] == group]["id"])
     return group_to_params
 
 
@@ -136,7 +143,8 @@ def _create_cds_for_monitoring_app(start_params):
     The "x" column is called "iteration".
 
     Args:
-        start_params (pd.DataFrame): See :ref:`params`
+        start_params (pd.DataFrame): See :ref:`params`. It includes a dashboard
+            specific id column.
 
     Returns:
         criterion_history (bokeh.ColumnDataSource)
@@ -146,7 +154,7 @@ def _create_cds_for_monitoring_app(start_params):
     crit_data = {"iteration": [], "criterion": []}
     criterion_history = ColumnDataSource(crit_data, name="criterion_history_cds")
 
-    param_names = start_params["name"].tolist()
+    param_names = start_params["id"].tolist()
     params_data = {"iteration": []}
     for name in param_names:
         params_data[name] = []
@@ -181,7 +189,7 @@ def _calculate_start_point(database, rollover, jump):
 
 
 def _create_initial_convergence_plots(
-    criterion_history, params_history, group_to_params
+    criterion_history, params_history, group_to_params, start_params,
 ):
     """Create the initial convergence plots.
 
@@ -193,6 +201,8 @@ def _create_initial_convergence_plots(
             bokeh friendly strings of the index tuples identifying the parameters
             that belong to this group. Parameters where group is None, "" or False
             are ignored.
+        start_params (pd.DataFrame): See :ref:`params`. It includes a dashboard
+            specific id column.
 
     Returns:
         convergence_plots (list): List of bokeh Row elements, each containing one
@@ -200,9 +210,16 @@ def _create_initial_convergence_plots(
 
     """
     param_plots = []
-    for g, group_params in group_to_params.items():
+    for group, param_ids in group_to_params.items():
+        param_names = [
+            start_params.query(f"id == '{id_}'")["name"].iloc[0] for id_ in param_ids
+        ]
         param_group_plot = plot_time_series(
-            data=params_history, y_keys=group_params, x_name="iteration", title=str(g),
+            data=params_history,
+            y_keys=param_ids,
+            y_names=param_names,
+            x_name="iteration",
+            title=str(group),
         )
         param_plots.append(param_group_plot)
 
