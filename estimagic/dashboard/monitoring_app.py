@@ -2,6 +2,7 @@
 from functools import partial
 from pathlib import Path
 
+import pandas as pd
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
@@ -91,8 +92,17 @@ def _get_group_to_params_from_database(database):
         return_type="dict_of_lists",
     )
     start_params = optimization_problem["params"][0]
+    start_params["id"] = _create_id_column(start_params)
     group_to_params = _map_groups_to_params(start_params)
     return start_params, group_to_params
+
+
+def _create_id_column(df):
+    if isinstance(df.index, pd.MultiIndex):
+        index_df = df.index.to_frame()
+        return index_df.astype(str).apply(lambda x: "_".join(x), axis=1)
+    else:
+        return df.index.to_series().astype(str)
 
 
 def _map_groups_to_params(params):

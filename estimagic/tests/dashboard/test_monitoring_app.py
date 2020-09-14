@@ -3,6 +3,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pandas.testing as pdt
 from bokeh.document import Document
 from bokeh.models import ColumnDataSource
 
@@ -157,3 +158,30 @@ def test_map_groups_to_params_group_multi_index():
     expected = {"A": ["beta_exp"], "B": ["cutoff_1", "cutoff_2"]}
     res = monitoring._map_groups_to_params(params)
     assert expected == res
+
+
+def test_create_id_column_single_index():
+    start_params = pd.DataFrame()
+    start_params["value"] = [1, 2, 3, 4]
+    start_params["group"] = ["a", "a", "b", "b"]
+    start_params["name"] = ["this", "repeats"] * 2
+    start_params.index = [2, 3, 4, 5]
+
+    res = monitoring._create_id_column(start_params)
+    expected = pd.Series(list("2345"), index=start_params.index)
+    pdt.assert_series_equal(res, expected)
+
+
+def test_create_id_column_multi_index():
+    multi_params = pd.DataFrame()
+    multi_params["value"] = [1, 2, 3, 4]
+    multi_params["group"] = ["a", "a", "b", "b"]
+    multi_params["name"] = ["this", "repeats"] * 2
+    multi_params["3rd level"] = [3, 4, 5, 6]
+    multi_params.set_index(["group", "name", "3rd level"], inplace=True)
+
+    res = monitoring._create_id_column(multi_params)
+    expected = pd.Series(
+        ["a_this_3", "a_repeats_4", "b_this_5", "b_repeats_6"], index=multi_params.index
+    )
+    pdt.assert_series_equal(res, expected)
