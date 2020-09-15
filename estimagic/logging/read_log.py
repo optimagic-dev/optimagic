@@ -83,16 +83,19 @@ def read_optimization_iteration(path, iteration, include_internals=False):
     return data
 
 
-def load_start_params(database):
+def load_start_params(database=None, path=None):
     """Load the start parameters DataFrame.
 
     Args:
-        database (sqlalchemy.MetaData): Bound metadata object.
+        database (sqlalchemy.MetaData)
+        path (str or pathlib.Path): Path to the sqlite database file used for
+            logging. This is slower than providing the database directly.
 
     Returns:
         params (pd.DataFrame): see :ref:`params`.
 
     """
+    database = load_database(metadata=database, path=path, fast_logging=False)
     optimization_problem = read_last_rows(
         database=database,
         table_name="optimization_problem",

@@ -58,7 +58,7 @@ def monitoring_app(
     database = load_database(path=session_data["database_path"])
     start_point = _calculate_start_point(database, rollover, jump)
     session_data["last_retrieved"] = start_point
-    start_params = load_start_params(database)
+    start_params = load_start_params(database=database)
     start_params["id"] = _create_id_column(start_params)
     group_to_param_ids = _map_groups_to_param_values(start_params, "id")
     group_to_param_names = _map_groups_to_param_values(start_params, "name")

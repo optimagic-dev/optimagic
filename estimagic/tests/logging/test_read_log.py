@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 from pandas.testing import assert_frame_equal
@@ -10,8 +12,10 @@ from estimagic.logging.read_log import load_start_params
 from estimagic.logging.read_log import read_optimization_iteration
 
 
-def test_load_start_params(tmp_path):
-    res = load_start_params(tmp_path / "test.db")
+def test_load_start_params():
+    this_folder = Path(__file__).resolve().parent
+    db_path = this_folder.parent / "dashboard" / "db1.db"
+    res = load_start_params(path=db_path)
     assert isinstance(res, pd.DataFrame)
     assert "value" in res.columns
     assert "group" in res.columns
