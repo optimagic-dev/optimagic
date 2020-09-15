@@ -128,7 +128,9 @@ def test_create_params_data_for_update():
         "e": [2.0, 1.69, 1.89, 1.89, 1.90],
     }
 
-    res = _create_params_data_for_update(data=data, param_ids=param_ids)
+    res = _create_params_data_for_update(
+        data=data, param_ids=param_ids, clip_bound=1e100
+    )
     assert res == expected
 
 

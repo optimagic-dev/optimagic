@@ -1,6 +1,8 @@
 """Callbacks for the monitoring app."""
 from functools import partial
 
+import numpy as np
+
 from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import transpose_nested_list
 
@@ -149,6 +151,7 @@ def _update_monitoring_tab(
         param_cds (bokeh.ColumnDataSource)
 
     """
+    clip_bound = 1e40
     data, new_last = read_new_rows(
         database=database,
         table_name="optimization_iterations",
@@ -162,7 +165,11 @@ def _update_monitoring_tab(
     missing = [i for i, val in enumerate(data["value"]) if val is None]
     crit_data = {
         "iteration": [id_ for i, id_ in enumerate(data["rowid"]) if i not in missing],
-        "criterion": [val for i, val in enumerate(data["value"]) if i not in missing],
+        "criterion": [
+            np.clip(val, -clip_bound, clip_bound)
+            for i, val in enumerate(data["value"])
+            if i not in missing
+        ],
     }
     criterion_cds.stream(crit_data, rollover=rollover)
 
@@ -170,7 +177,7 @@ def _update_monitoring_tab(
     # Note: we need **all** parameter ids to correctly map them to the parameter entries
     # in the database. Only after can we restrict them to the entries we need.
     param_ids = start_params["id"].tolist()
-    params_data = _create_params_data_for_update(data, param_ids)
+    params_data = _create_params_data_for_update(data, param_ids, clip_bound)
     available_keys = param_cds.data.keys()
     to_stream = {k: v for k, v in params_data.items() if k in available_keys}
     param_cds.stream(to_stream, rollover=rollover)
@@ -179,19 +186,23 @@ def _update_monitoring_tab(
     session_data["last_retrieved"] = new_last
 
 
-def _create_params_data_for_update(data, param_ids):
+def _create_params_data_for_update(data, param_ids, clip_bound):
     """Create the dictionary to stream to the param_cds from data and param_ids.
 
     Args:
         data
         param_ids (list): list of the length of the arrays in data["external_params"]
+        clip_bound (float)
 
     Returns:
         params_data (dict): keys are the parameter names and "iteration". The values
             are lists of values that will be added to the ColumnDataSources columns.
 
     """
-    params_data = [arr.tolist() for arr in data["external_params"]]
+    params_data = [
+        np.clip(arr, -clip_bound, clip_bound).tolist()
+        for arr in data["external_params"]
+    ]
     params_data = transpose_nested_list(params_data)
     params_data = dict(zip(param_ids, params_data))
     if params_data == {}:
