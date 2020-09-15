@@ -8,14 +8,14 @@ from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
 from estimagic.logging.database_utilities import make_optimization_problem_table
-from estimagic.logging.read_log import load_start_params
 from estimagic.logging.read_log import read_optimization_iteration
+from estimagic.logging.read_log import read_start_params
 
 
-def test_load_start_params():
+def test_read_start_params():
     this_folder = Path(__file__).resolve().parent
     db_path = this_folder.parent / "dashboard" / "db1.db"
-    res = load_start_params(path_or_database=db_path)
+    res = read_start_params(path_or_database=db_path)
     assert isinstance(res, pd.DataFrame)
     assert "value" in res.columns
     assert "group" in res.columns

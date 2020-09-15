@@ -37,14 +37,7 @@ def read_optimization_iteration(path_or_database, iteration, include_internals=F
 
     """
     database = load_database(**_process_path_or_database(path_or_database))
-    optimization_problem = read_last_rows(
-        database=database,
-        table_name="optimization_problem",
-        n_rows=1,
-        return_type="list_of_dicts",
-    )
-    start_params = optimization_problem[0]["params"]
-
+    start_params = read_start_params(path_or_database)
     if iteration >= 0:
         rowid = iteration + 1
     else:
@@ -84,7 +77,7 @@ def read_optimization_iteration(path_or_database, iteration, include_internals=F
     return data
 
 
-def load_start_params(path_or_database):
+def read_start_params(path_or_database):
     """Load the start parameters DataFrame.
 
     Args:

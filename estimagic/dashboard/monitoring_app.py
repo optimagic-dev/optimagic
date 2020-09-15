@@ -18,7 +18,7 @@ from estimagic.dashboard.monitoring_callbacks import logscale_callback
 from estimagic.dashboard.plot_functions import plot_time_series
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
-from estimagic.logging.read_log import load_start_params
+from estimagic.logging.read_log import read_start_params
 
 
 def monitoring_app(
@@ -58,10 +58,10 @@ def monitoring_app(
     database = load_database(path=session_data["database_path"])
     start_point = _calculate_start_point(database, rollover, jump)
     session_data["last_retrieved"] = start_point
-    start_params = load_start_params(path_or_database=database)
+    start_params = read_start_params(path_or_database=database)
     start_params["id"] = _create_id_column(start_params)
-    group_to_param_ids = _map_groups_to_param_values(start_params, "id")
-    group_to_param_names = _map_groups_to_param_values(start_params, "name")
+    group_to_param_ids = _map_groups_to_other_column(start_params, "id")
+    group_to_param_names = _map_groups_to_other_column(start_params, "name")
     criterion_history, params_history = _create_cds_for_monitoring_app(
         group_to_param_ids
     )
@@ -111,8 +111,8 @@ def _create_id_column(df):
     return ids.astype(str)
 
 
-def _map_groups_to_param_values(params, column_name):
-    """Map the group name to lists of one column's values of the groups parameters.
+def _map_groups_to_other_column(params, column_name):
+    """Map the group name to lists of one column's values of the group's parameters.
 
     Args:
         params (pd.DataFrame): Includes the "group" and "id" columns.
@@ -125,9 +125,9 @@ def _map_groups_to_param_values(params, column_name):
 
     """
     to_plot = params[~params["group"].isin([None, False, np.nan, ""])]
-    group_to_inds = to_plot.groupby("group").groups
+    group_to_indices = to_plot.groupby("group").groups
     group_to_values = {}
-    for group, loc in group_to_inds.items():
+    for group, loc in group_to_indices.items():
         group_to_values[group] = to_plot[column_name].loc[loc].tolist()
     return group_to_values
 
