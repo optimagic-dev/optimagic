@@ -191,7 +191,8 @@ def append_row(data, table_name, database, path, fast_logging):
         data (dict): The keys correspond to columns in the database table.
         table_name (str): Name of the database table to which the row is added.
         database (sqlalchemy.MetaData): Sqlachlemy metadata object of the database.
-        path (str or pathlib.Path): Path to the database file.
+        path (str or pathlib.Path): Path to the database file. Using a path is much
+            slower than a MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
 
     """
@@ -242,7 +243,8 @@ def read_new_rows(
         last_retrieved (int): The last iteration that was retrieved.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
         path (str or pathlib.Path): location of the database file. If the file does
-            not exist, it will be created.
+            not exist, it will be created. Using a path is much slower than a
+            MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
         limit (int): maximum number of rows to extract from the table.
 
@@ -282,7 +284,8 @@ def read_last_rows(
         n_int (int): number of rows to retrieve.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
         path (str or pathlib.Path): location of the database file. If the file does
-            not exist, it will be created.
+            not exist, it will be created. Using a path is much slower than a
+            MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
 
     Returns:
@@ -305,14 +308,16 @@ def read_specific_row(
 
     Args:
         database (sqlalchemy.MetaData)
-            table_name (str): name of the table to retrieve.
-            n_rows (int): number of rows to retrieve.
-            return_type (str): either "list_of_dicts" or "dict_of_lists".
-            path (str or pathlib.Path): location of the database file.
-            fast_logging (bool)
+        table_name (str): name of the table to retrieve.
+        n_rows (int): number of rows to retrieve.
+        return_type (str): either "list_of_dicts" or "dict_of_lists".
+        path (str or pathlib.Path): location of the database file.
+            Using a path is much slower than a MetaData object and we
+            advise to only use it as a fallback.
+        fast_logging (bool)
 
-        Returns:
-            dict or list: The requested row from the database.
+    Returns:
+        dict or list: The requested row from the database.
 
     """
     database = load_database(database, path, fast_logging)
