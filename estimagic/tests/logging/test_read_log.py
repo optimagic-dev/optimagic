@@ -6,7 +6,15 @@ from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
 from estimagic.logging.database_utilities import make_optimization_problem_table
+from estimagic.logging.read_log import load_start_params
 from estimagic.logging.read_log import read_optimization_iteration
+
+
+def test_load_start_params(tmp_path):
+    res = load_start_params(tmp_path / "test.db")
+    assert isinstance(res, pd.DataFrame)
+    assert "value" in res.columns
+    assert "group" in res.columns
 
 
 def test_read_optimization_iteration(tmp_path):

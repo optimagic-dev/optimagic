@@ -81,3 +81,23 @@ def read_optimization_iteration(path, iteration, include_internals=False):
             del data[key]
 
     return data
+
+
+def load_start_params(database):
+    """Load the start parameters DataFrame.
+
+    Args:
+        database (sqlalchemy.MetaData): Bound metadata object.
+
+    Returns:
+        params (pd.DataFrame): see :ref:`params`.
+
+    """
+    optimization_problem = read_last_rows(
+        database=database,
+        table_name="optimization_problem",
+        n_rows=1,
+        return_type="dict_of_lists",
+    )
+    start_params = optimization_problem["params"][0]
+    return start_params

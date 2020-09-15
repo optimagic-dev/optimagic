@@ -53,13 +53,11 @@ def test_create_cds_for_monitoring_app():
     expected_param_cds = ColumnDataSource(
         data=expected_param_data, name="params_history_cds"
     )
-    _, params_history = monitoring._create_cds_for_monitoring_app(
-        start_params, group_to_param_ids
-    )
+    _, params_history = monitoring._create_cds_for_monitoring_app(group_to_param_ids)
     assert expected_param_cds.data == params_history.data
 
 
-def test_calculate_strat_point(monkeypatch):
+def test_calculate_start_point(monkeypatch):
     def fake_read_last_rows(**kwargs):
         return [{"rowid": 20}]
 
@@ -85,30 +83,11 @@ def test_calculate_start_point_no_negative_value(monkeypatch):
     assert res == 0
 
 
-def test_create_id_column_single_index():
-    start_params = pd.DataFrame()
-    start_params["value"] = [1, 2, 3, 4]
-    start_params["group"] = ["a", "a", "b", "b"]
-    start_params["name"] = ["this", "repeats"] * 2
-    start_params.index = [2, 3, 4, 5]
-
+def test_create_id_column():
+    start_params = pd.DataFrame(index=[2, 4, 6, 8, 10, 12])
+    start_params["group"] = ["g1", "g2", None, "", False, np.nan]
     res = monitoring._create_id_column(start_params)
-    expected = pd.Series(list("2345"), index=start_params.index)
-    pdt.assert_series_equal(res, expected)
-
-
-def test_create_id_column_multi_index():
-    multi_params = pd.DataFrame()
-    multi_params["value"] = [1, 2, 3, 4]
-    multi_params["group"] = ["a", "a", "b", "b"]
-    multi_params["name"] = ["this", "repeats"] * 2
-    multi_params["3rd level"] = [3, 4, 5, 6]
-    multi_params.set_index(["group", "name", "3rd level"], inplace=True)
-
-    res = monitoring._create_id_column(multi_params)
-    expected = pd.Series(
-        ["a_this_3", "a_repeats_4", "b_this_5", "b_repeats_6"], index=multi_params.index
-    )
+    expected = pd.Series(["0", "1"] + ["None"] * 4, index=start_params.index)
     pdt.assert_series_equal(res, expected)
 
 
@@ -124,7 +103,7 @@ def test_map_groups_to_param_ids_group_none():
     params["id"] = ["a", "b", "c", "d"]
     params.index = ["a", "b", "c", "d"]
     expected = {}
-    res = monitoring._map_groups_to_param_ids(params)
+    res = monitoring._map_groups_to_param_values(params, "id")
     assert expected == res
 
 
@@ -135,7 +114,7 @@ def test_map_groups_to_param_ids_group_nan():
     params["id"] = ["a", "b", "c", "d"]
     params.index = ["a", "b", "c", "d"]
     expected = {}
-    res = monitoring._map_groups_to_param_ids(params)
+    res = monitoring._map_groups_to_param_values(params, "id")
     assert expected == res
 
 
@@ -146,7 +125,7 @@ def test_map_groups_to_param_ids_group_empty():
     params["id"] = ["a", "b", "c", "d"]
     params.index = ["a", "b", "c", "d"]
     expected = {"x": ["c", "d"]}
-    res = monitoring._map_groups_to_param_ids(params)
+    res = monitoring._map_groups_to_param_values(params, "id")
     assert expected == res
 
 
@@ -157,7 +136,7 @@ def test_map_groups_to_param_ids_group_false():
     params["id"] = ["a", "b", "c", "d"]
     params.index = ["a", "b", "c", "d"]
     expected = {"x": ["c", "d"]}
-    res = monitoring._map_groups_to_param_ids(params)
+    res = monitoring._map_groups_to_param_values(params, "id")
     assert expected == res
 
 
@@ -168,7 +147,7 @@ def test_map_groups_to_param_ids_group_not_none():
     params.index = ["a", "b", "c", "d"]
     params["id"] = ["a", "b", "c", "d"]
     expected = {"A": ["b"], "B": ["c", "d"]}
-    res = monitoring._map_groups_to_param_ids(params)
+    res = monitoring._map_groups_to_param_values(params, "id")
     assert expected == res
 
 
@@ -179,7 +158,7 @@ def test_map_groups_to_param_ids_group_int_index():
     params["id"] = ["0", "1", "2", "3"]
     params["group"] = [None, "A", "B", "B"]
     expected = {"A": ["1"], "B": ["2", "3"]}
-    res = monitoring._map_groups_to_param_ids(params)
+    res = monitoring._map_groups_to_param_values(params, "id")
     assert expected == res
 
 
@@ -192,5 +171,5 @@ def test_map_groups_to_param_ids_group_multi_index():
     params.set_index(["ind1", "ind2"], inplace=True)
     params["id"] = ["beta_edu", "beta_exp", "cutoff_1", "cutoff_2"]
     expected = {"A": ["beta_exp"], "B": ["cutoff_1", "cutoff_2"]}
-    res = monitoring._map_groups_to_param_ids(params)
+    res = monitoring._map_groups_to_param_values(params, "id")
     assert expected == res
