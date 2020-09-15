@@ -117,7 +117,7 @@ def propose_algorithms(requested_algo, possibilities, number=3):
         proposals (list(str)): List of proposed algorithms.
 
     Example:
-        >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]}
+        >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
         >>> propose_algorithms("scipy_L-BFGS-B", possibilities, number=1)
         ['scipy_lbfgsb']
         >>> propose_algorithms("L-BFGS-B", possibilities, number=2)
