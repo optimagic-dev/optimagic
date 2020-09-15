@@ -20,7 +20,14 @@ from estimagic.logging.database_utilities import read_last_rows
 
 
 def monitoring_app(
-    doc, database_name, session_data, rollover, jump, update_frequency, update_chunk
+    doc,
+    database_name,
+    session_data,
+    rollover,
+    jump,
+    update_frequency,
+    update_chunk,
+    start_immediately,
 ):
     """Create plots showing the development of the criterion and parameters.
 
@@ -36,6 +43,7 @@ def monitoring_app(
             observations and start to display the history from there.
         update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
+        start_immediately (bool): if True, start the updates immediately.
 
     """
     # style the Document
@@ -76,6 +84,10 @@ def monitoring_app(
     tabs = Tabs(tabs=[convergence_tab])
 
     doc.add_root(tabs)
+
+    if start_immediately:
+        activation_button = doc.get_model_by_name("activation_button")
+        activation_button.active = True
 
 
 def _get_group_to_param_ids_from_database(database):

@@ -151,7 +151,7 @@ def _update_monitoring_tab(
         param_cds (bokeh.ColumnDataSource)
 
     """
-    clip_bound = 1e40
+    clip_bound = np.finfo(float).max
     data, new_last = read_new_rows(
         database=database,
         table_name="optimization_iterations",
@@ -171,17 +171,14 @@ def _update_monitoring_tab(
             if i not in missing
         ],
     }
-    criterion_cds.stream(crit_data, rollover=rollover)
+    stream_data(cds=criterion_cds, data=crit_data, rollover=rollover)
 
     # update the parameter plots
     # Note: we need **all** parameter ids to correctly map them to the parameter entries
     # in the database. Only after can we restrict them to the entries we need.
     param_ids = start_params["id"].tolist()
     params_data = _create_params_data_for_update(data, param_ids, clip_bound)
-    available_keys = param_cds.data.keys()
-    to_stream = {k: v for k, v in params_data.items() if k in available_keys}
-    param_cds.stream(to_stream, rollover=rollover)
-
+    stream_data(cds=param_cds, data=params_data, rollover=rollover)
     # update last retrieved
     session_data["last_retrieved"] = new_last
 
@@ -209,6 +206,22 @@ def _create_params_data_for_update(data, param_ids, clip_bound):
         params_data = {name: [] for name in param_ids}
     params_data["iteration"] = data["rowid"]
     return params_data
+
+
+def stream_data(cds, data, rollover):
+    """Stream only to the available columns of a ColumnDataSource.
+
+    Args:
+        cds (bokeh.ColumnDataSource): to be updated
+        data (dict): keys are the columns of the CDS to which to stream.
+            The values are the entries to be appended. Keys that are not
+            in the columns of **cds** will not be streamed.
+        rollover (int): maximal number of points to show in the plot
+
+    """
+    available_keys = cds.data.keys()
+    to_stream = {k: v for k, v in data.items() if k in available_keys}
+    cds.stream(to_stream, rollover=rollover)
 
 
 def _reset_column_data_sources(cds_list):
