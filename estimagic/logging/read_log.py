@@ -109,9 +109,6 @@ def _process_path_or_database(path_or_database):
 
     Examples:
 
-    >>> _process_path_or_database("bla")
-    {'path': PosixPath('bla'), 'metadata': None, 'fast_logging': False}
-
     >>> from sqlalchemy import MetaData
     >>> database = MetaData()
     >>> _process_path_or_database(database)
