@@ -3,6 +3,20 @@ from bokeh.models import HoverTool
 from bokeh.models import Legend
 from bokeh.plotting import figure
 
+from estimagic.config import GRID_VISIBLE
+from estimagic.config import MAJOR_TICK_IN
+from estimagic.config import MAJOR_TICK_OUT
+from estimagic.config import MIN_BORDER_BOTTOM
+from estimagic.config import MIN_BORDER_LEFT
+from estimagic.config import MIN_BORDER_RIGHT
+from estimagic.config import MIN_BORDER_TOP
+from estimagic.config import MINOR_TICK_LINE_COLOR
+from estimagic.config import OUTLINE_LINE_WIDTH
+from estimagic.config import PLOT_HEIGHT
+from estimagic.config import PLOT_WIDTH
+from estimagic.config import TOOLBAR_LOCATION
+from estimagic.config import Y_RANGE_PADDING
+from estimagic.config import Y_RANGE_PADDING_UNITS
 from estimagic.visualization.colors import get_colors
 
 
@@ -38,8 +52,8 @@ def plot_time_series(
         title=title, name=name, logscale=logscale, plot_width=plot_width
     )
     # this ensures that the y range spans at least 0.1
-    plot.y_range.range_padding = 0.05
-    plot.y_range.range_padding_units = "absolute"
+    plot.y_range.range_padding = Y_RANGE_PADDING
+    plot.y_range.range_padding_units = Y_RANGE_PADDING_UNITS
 
     colors = get_colors("categorical", len(y_keys))
 
@@ -73,7 +87,7 @@ def plot_time_series(
 
 
 def create_styled_figure(
-    title, name=None, tooltips=None, logscale=False, plot_width=None
+    title, name=None, tooltips=None, logscale=False, plot_width=PLOT_WIDTH,
 ):
     """Return a styled, empty figure of predetermined height and width.
 
@@ -88,12 +102,12 @@ def create_styled_figure(
         fig (bokeh Figure)
 
     """
-    plot_width = plot_width if plot_width is not None else 750
+    plot_width = plot_width if plot_width is not None else plot_width
 
     name = name if name is not None else title
     y_axis_type = "log" if logscale else "linear"
     fig = figure(
-        plot_height=250,
+        plot_height=PLOT_HEIGHT,
         plot_width=plot_width,
         title=title.title(),
         tooltips=tooltips,
@@ -103,22 +117,22 @@ def create_styled_figure(
     fig.title.text_font_size = "15pt"
 
     # set minimum borders
-    fig.min_border_left = 50
-    fig.min_border_right = 50
-    fig.min_border_top = 20
-    fig.min_border_bottom = 50
+    fig.min_border_left = MIN_BORDER_LEFT
+    fig.min_border_right = MIN_BORDER_RIGHT
+    fig.min_border_top = MIN_BORDER_TOP
+    fig.min_border_bottom = MIN_BORDER_BOTTOM
 
     # remove toolbar
-    fig.toolbar_location = None
+    fig.toolbar_location = TOOLBAR_LOCATION
 
     # remove grid
-    fig.grid.visible = False
+    fig.grid.visible = GRID_VISIBLE
     # remove minor ticks
-    fig.axis.minor_tick_line_color = None
+    fig.axis.minor_tick_line_color = MINOR_TICK_LINE_COLOR
     # remove tick lines
-    fig.axis.major_tick_out = 0
-    fig.axis.major_tick_in = 0
+    fig.axis.major_tick_out = MAJOR_TICK_OUT
+    fig.axis.major_tick_in = MAJOR_TICK_IN
     # remove outline
-    fig.outline_line_width = 0
+    fig.outline_line_width = OUTLINE_LINE_WIDTH
 
     return fig

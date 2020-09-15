@@ -72,3 +72,23 @@ SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 0.0001
 """float: The absolute parameter tolerance estimagic requires if no other stopping
 criterion apart from max iterations etc. is available. This is taken from Nelder-Mead.
 """
+
+# =================================================================================
+# Dashboard
+# =================================================================================
+
+Y_RANGE_PADDING = 0.05
+Y_RANGE_PADDING_UNITS = "absolute"
+PLOT_WIDTH = 750
+PLOT_HEIGHT = 250
+MIN_BORDER_LEFT = 50
+MIN_BORDER_RIGHT = 50
+MIN_BORDER_TOP = 20
+MIN_BORDER_BOTTOM = 50
+TOOLBAR_LOCATION = None
+GRID_VISIBLE = False
+MINOR_TICK_LINE_COLOR = None
+MAJOR_TICK_OUT = 0
+MINOR_TICK_OUT = 0
+MAJOR_TICK_IN = 0
+OUTLINE_LINE_WIDTH = 0
