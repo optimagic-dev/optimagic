@@ -117,11 +117,11 @@ def propose_algorithms(requested_algo, possibilities, number=3):
         proposals (list(str)): List of proposed algorithms.
 
     Example:
-        >>> possibilities = {"scipy": ["L-BFGS-B", "TNC"], "nlopt": ["lbfgsb"]}
+        >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]}
         >>> propose_algorithms("scipy_L-BFGS-B", possibilities, number=1)
-        ['scipy_L-BFGS-B']
+        ['scipy_lbfgsb']
         >>> propose_algorithms("L-BFGS-B", possibilities, number=2)
-        ['scipy_L-BFGS-B', 'nlopt_lbfgsb']
+        ['scipy_lbfgsb', 'nlopt_lbfgsb']
 
     """
     proposals_w_probs = fw_process.extract(requested_algo, possibilities, limit=number)
