@@ -59,10 +59,10 @@ def plot_time_series(
 
     legend_items = [(" " * 60, [])]
     for color, y_key, y_name in zip(colors, y_keys, y_names):
-        if len(y_name) <= 25:
+        if len(y_name) <= 35:
             label = y_name
         else:
-            label = y_name[:22] + "..."
+            label = "..." + y_name[-32:]
         line_glyph = plot.line(
             source=data,
             x=x_name,
