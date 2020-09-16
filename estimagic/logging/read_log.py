@@ -37,7 +37,7 @@ def read_optimization_iteration(path_or_database, iteration, include_internals=F
 
     """
     database = load_database(**_process_path_or_database(path_or_database))
-    start_params = read_start_params(path_or_database)
+    start_params = read_start_params(database)
     if iteration >= 0:
         rowid = iteration + 1
     else:

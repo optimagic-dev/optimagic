@@ -107,7 +107,7 @@ def test_map_groups_to_param_ids_group_none(group_val):
     params["id"] = ["a", "b", "c", "d"]
     params.index = ["a", "b", "c", "d"]
     expected = {}
-    res = monitoring._map_groups_to_other_column(params, "id")
+    res = monitoring._map_group_to_other_column(params, "id")
     assert expected == res
 
 
@@ -125,7 +125,7 @@ def test_map_groups_to_param_ids_group_not_none(index, ids):
     params.index = index
     params["id"] = ids
     expected = {"A": ["1"], "B": ["2", "3"]}
-    res = monitoring._map_groups_to_other_column(params, "id")
+    res = monitoring._map_group_to_other_column(params, "id")
     assert expected == res
 
 
@@ -138,5 +138,5 @@ def test_map_groups_to_param_ids_group_multi_index():
     params.set_index(["ind1", "ind2"], inplace=True)
     params["id"] = ["beta_edu", "beta_exp", "cutoff_1", "cutoff_2"]
     expected = {"A": ["beta_exp"], "B": ["cutoff_1", "cutoff_2"]}
-    res = monitoring._map_groups_to_other_column(params, "id")
+    res = monitoring._map_group_to_other_column(params, "id")
     assert expected == res

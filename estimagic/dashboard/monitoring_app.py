@@ -60,8 +60,8 @@ def monitoring_app(
     session_data["last_retrieved"] = start_point
     start_params = read_start_params(path_or_database=database)
     start_params["id"] = _create_id_column(start_params)
-    group_to_param_ids = _map_groups_to_other_column(start_params, "id")
-    group_to_param_names = _map_groups_to_other_column(start_params, "name")
+    group_to_param_ids = _map_group_to_other_column(start_params, "id")
+    group_to_param_names = _map_group_to_other_column(start_params, "name")
     criterion_history, params_history = _create_cds_for_monitoring_app(
         group_to_param_ids
     )
@@ -111,7 +111,7 @@ def _create_id_column(df):
     return ids.astype(str)
 
 
-def _map_groups_to_other_column(params, column_name):
+def _map_group_to_other_column(params, column_name):
     """Map the group name to lists of one column's values of the group's parameters.
 
     Args:
