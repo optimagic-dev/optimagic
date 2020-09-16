@@ -28,7 +28,7 @@ def plot_time_series(
     name=None,
     y_names=None,
     logscale=False,
-    plot_width=None,
+    plot_width=PLOT_WIDTH,
 ):
     """Plot time series linking the *y_keys* to a common *x_name* variable.
 
@@ -102,7 +102,7 @@ def create_styled_figure(
         fig (bokeh Figure)
 
     """
-    plot_width = plot_width if plot_width is not None else plot_width
+    assert plot_width is not None
 
     name = name if name is not None else title
     y_axis_type = "log" if logscale else "linear"
