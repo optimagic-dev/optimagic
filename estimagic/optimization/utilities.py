@@ -104,12 +104,12 @@ def dimension_to_number_of_triangular_elements(dim):
     return int(dim * (dim + 1) / 2)
 
 
-def propose_algorithms(requested_algo, algos, number=3):
+def propose_algorithms(requested_algo, possibilities, number=3):
     """Propose a a number of algorithms based on similarity to the requested algorithm.
 
     Args:
         requested_algo (str): From the user requested algorithm.
-        algos (dict(str, list(str))): Dictionary where keys are the package and values
+        possibilities (list(str)): List of available algorithms
             are lists of algorithms.
         number (int) : Number of proposals.
 
@@ -117,16 +117,13 @@ def propose_algorithms(requested_algo, algos, number=3):
         proposals (list(str)): List of proposed algorithms.
 
     Example:
-        >>> algos = {"scipy": ["L-BFGS-B", "TNC"], "nlopt": ["lbfgsb"]}
-        >>> propose_algorithms("scipy_L-BFGS-B", algos, number=1)
-        ['scipy_L-BFGS-B']
-        >>> propose_algorithms("L-BFGS-B", algos, number=2)
-        ['scipy_L-BFGS-B', 'nlopt_lbfgsb']
+        >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
+        >>> propose_algorithms("scipy_L-BFGS-B", possibilities, number=1)
+        ['scipy_lbfgsb']
+        >>> propose_algorithms("L-BFGS-B", possibilities, number=2)
+        ['scipy_lbfgsb', 'nlopt_lbfgsb']
 
     """
-    possibilities = [
-        "_".join([origin, algo_name]) for origin in algos for algo_name in algos[origin]
-    ]
     proposals_w_probs = fw_process.extract(requested_algo, possibilities, limit=number)
     proposals = [proposal[0] for proposal in proposals_w_probs]
 

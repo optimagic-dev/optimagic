@@ -19,7 +19,34 @@ As you can see, wildcards and recursive pattern matching are supported to find
 databases. Directories are automatically searched for nested databases. You can
 configure the behavior of the dashboard with additional command line arguments.
 
-To get a list of all suported arguments type ``estimagic --help``
+To get a list of all suported arguments type ``estimagic dashboard --help`` :
+
+.. code-block:: bash
+
+    $ estimagic dashboard --help
+
+    Usage: estimagic dashboard [OPTIONS] DATABASE...
+
+    Start the dashboard to visualize optimizations.
+
+    Options:
+    -p, --port INTEGER        The port the dashboard server will listen on.
+    --no-browser              Don't open the dashboard in a browser after
+                                startup.
+
+    --jump                    Jump to start the dashboard at the last rollover
+                                iterations.
+
+    --rollover INTEGER        After how many iterations convergence plots get
+                                truncated from the left.  [default: 10000]
+
+    --update-frequency FLOAT  Number of seconds to wait between checking for new
+                                entries in the database.  [default: 1]
+
+    --update-chunk INTEGER    Upper limit how many new values are updated from
+                                the database at one update.  [default: 20]
+
+    -h, --help                Show this message and exit.
 
 
 When started, the dashboard will open an overview page of the optimizations' databases
@@ -28,7 +55,7 @@ evolution of the criterion value and parameters. Otherwise, you can select which
 optimization you want to inspect.
 
 To save resources, the actual monitoring only starts when you click on the
-``start updating from database`` button.
+``Start Updating`` button.
 
 .. image:: ../../_static/images/dashboard.gif
 
@@ -37,6 +64,7 @@ Grouping Parameters into Plots
 ------------------------------
 
 For optimization problems with many parameters, you should group parameters such that:
+
 - Not too many parameters are displayed in a single plot
 - All parameters in one plot have a similar order of magnitude
 

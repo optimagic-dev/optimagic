@@ -2,6 +2,8 @@
 from functools import partial
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
@@ -16,10 +18,18 @@ from estimagic.dashboard.monitoring_callbacks import logscale_callback
 from estimagic.dashboard.plot_functions import plot_time_series
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.read_log import read_start_params
 
 
 def monitoring_app(
-    doc, database_name, session_data, rollover, jump, update_frequency, update_chunk
+    doc,
+    database_name,
+    session_data,
+    rollover,
+    jump,
+    update_frequency,
+    update_chunk,
+    start_immediately,
 ):
     """Create plots showing the development of the criterion and parameters.
 
@@ -35,6 +45,7 @@ def monitoring_app(
             observations and start to display the history from there.
         update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
+        start_immediately (bool): if True, start the updates immediately.
 
     """
     # style the Document
@@ -47,8 +58,13 @@ def monitoring_app(
     database = load_database(path=session_data["database_path"])
     start_point = _calculate_start_point(database, rollover, jump)
     session_data["last_retrieved"] = start_point
-    start_params, group_to_params = _get_group_to_params_from_database(database)
-    criterion_history, params_history = _create_cds_for_monitoring_app(start_params)
+    start_params = read_start_params(path_or_database=database)
+    start_params["id"] = _create_id_column(start_params)
+    group_to_param_ids = _map_group_to_other_column(start_params, "id")
+    group_to_param_names = _map_group_to_other_column(start_params, "name")
+    criterion_history, params_history = _create_cds_for_monitoring_app(
+        group_to_param_ids
+    )
 
     # create elements
     button_row = _create_button_row(
@@ -63,7 +79,8 @@ def monitoring_app(
     monitoring_plots = _create_initial_convergence_plots(
         criterion_history=criterion_history,
         params_history=params_history,
-        group_to_params=group_to_params,
+        group_to_param_ids=group_to_param_ids,
+        group_to_param_names=group_to_param_names,
     )
 
     # add elements to bokeh Document
@@ -73,52 +90,49 @@ def monitoring_app(
 
     doc.add_root(tabs)
 
-
-def _get_group_to_params_from_database(database):
-    """Map each group name to the parameters' names that belong to it.
-
-    Args:
-        database (sqlalchemy.MetaData): Bound metadata object.
-
-    Returns:
-        group_to_params (dict): keys are the group names, values are parameter names.
-
-    """
-    optimization_problem = read_last_rows(
-        database=database,
-        table_name="optimization_problem",
-        n_rows=1,
-        return_type="dict_of_lists",
-    )
-    start_params = optimization_problem["params"][0]
-    group_to_params = _map_groups_to_params(start_params)
-    return start_params, group_to_params
+    if start_immediately:
+        activation_button = doc.get_model_by_name("activation_button")
+        activation_button.active = True
 
 
-def _map_groups_to_params(params):
-    """Map the group name to the ColumnDataSource friendly parameter names.
+def _create_id_column(df):
+    """Create a column that gives the position for plotted parameters and is None else.
 
     Args:
-        params (pd.DataFrame):
-            DataFrame with the parameter values and additional information such as the
-            "group" column and Index.
+        df (pd.DataFrame)
 
     Returns:
-        group_to_params (dict):
-            Keys are the values of the "group" column. The values are lists with
-            bokeh friendly strings of the index tuples identifying the parameters
-            that belong to this group. Parameters where group is None, "" or False
-            are ignored.
+        ids (pd.Series): integer position in the DataFrame unless the group was
+            None, False, np.nan or an empty string.
 
     """
-    group_to_params = {}
-    for group in params["group"].unique():
-        if group is not None and group == group and group != "" and group is not False:
-            group_to_params[group] = list(params[params["group"] == group]["name"])
-    return group_to_params
+    ids = pd.Series(range(len(df)), dtype=object, index=df.index)
+    ids[df["group"].isin([None, False, np.nan, ""])] = None
+    return ids.astype(str)
 
 
-def _create_cds_for_monitoring_app(start_params):
+def _map_group_to_other_column(params, column_name):
+    """Map the group name to lists of one column's values of the group's parameters.
+
+    Args:
+        params (pd.DataFrame): Includes the "group" and "id" columns.
+        column_name (str): name of the column for which to return the parameter values.
+
+    Returns:
+        group_to_values (dict): Keys are the values of the "group" column.
+            The values are lists of parameter values of the parameters belonging
+            to the particular group.
+
+    """
+    to_plot = params[~params["group"].isin([None, False, np.nan, ""])]
+    group_to_indices = to_plot.groupby("group").groups
+    group_to_values = {}
+    for group, loc in group_to_indices.items():
+        group_to_values[group] = to_plot[column_name].loc[loc].tolist()
+    return group_to_values
+
+
+def _create_cds_for_monitoring_app(group_to_param_ids):
     """Create the ColumnDataSources for saving the criterion and parameter values.
 
     They will be periodically updated from the database.
@@ -126,7 +140,8 @@ def _create_cds_for_monitoring_app(start_params):
     The "x" column is called "iteration".
 
     Args:
-        start_params (pd.DataFrame): See :ref:`params`
+        group_to_param_ids (dict): Keys are the groups to be plotted. The values are
+            the ids of the parameters belonging to the particular group.
 
     Returns:
         criterion_history (bokeh.ColumnDataSource)
@@ -136,10 +151,10 @@ def _create_cds_for_monitoring_app(start_params):
     crit_data = {"iteration": [], "criterion": []}
     criterion_history = ColumnDataSource(crit_data, name="criterion_history_cds")
 
-    param_names = start_params["name"].tolist()
-    params_data = {"iteration": []}
-    for name in param_names:
-        params_data[name] = []
+    param_ids = []
+    for id_list in group_to_param_ids.values():
+        param_ids += id_list
+    params_data = {id_: [] for id_ in param_ids + ["iteration"]}
     params_history = ColumnDataSource(params_data, name="params_history_cds")
 
     return criterion_history, params_history
@@ -171,18 +186,17 @@ def _calculate_start_point(database, rollover, jump):
 
 
 def _create_initial_convergence_plots(
-    criterion_history, params_history, group_to_params
+    criterion_history, params_history, group_to_param_ids, group_to_param_names,
 ):
     """Create the initial convergence plots.
 
     Args:
         criterion_history (bokeh ColumnDataSource)
         params_history (bokeh ColumnDataSource)
-        group_to_params (dict):
-            Keys are the values of the "group" column. The values are lists with
-            bokeh friendly strings of the index tuples identifying the parameters
-            that belong to this group. Parameters where group is None, "" or False
-            are ignored.
+        group_to_param_ids (dict): Keys are the groups to be plotted. Values are the
+            ids of the parameters belonging to the respective group.
+        group_to_param_names (dict): Keys are the groups to be plotted. Values are the
+            names of the parameters belonging to the respective group.
 
     Returns:
         convergence_plots (list): List of bokeh Row elements, each containing one
@@ -190,9 +204,14 @@ def _create_initial_convergence_plots(
 
     """
     param_plots = []
-    for g, group_params in group_to_params.items():
+    for group, param_ids in group_to_param_ids.items():
+        param_names = group_to_param_names[group]
         param_group_plot = plot_time_series(
-            data=params_history, y_keys=group_params, x_name="iteration", title=str(g),
+            data=params_history,
+            y_keys=param_ids,
+            y_names=param_names,
+            x_name="iteration",
+            title=str(group),
         )
         param_plots.append(param_group_plot)
 
@@ -246,7 +265,7 @@ def _create_button_row(
     # (Re)start convergence plot button
     activation_button = Toggle(
         active=False,
-        label="Start Updates from Database",
+        label="Start Updating",
         button_type="danger",
         width=200,
         height=30,

@@ -19,7 +19,7 @@ def test_plot_time_series_with_large_initial_values():
     cds = ColumnDataSource({"y": [2e17, 1e16, 1e5], "x": [1, 2, 3]})
     title = "Are large initial values shown?"
     fig = plot_functions.plot_time_series(
-        data=cds, y_keys=["y"], x_name="x", title=title
+        data=cds, y_keys=["y"], x_name="x", title=title, plot_width=1000
     )
     title = "Test _plot_time_series can handle large initial values."
     output_file("time_series_initial_value.html", title=title)

@@ -57,6 +57,7 @@ def run_dashboard(
             jump=jump,
             update_frequency=update_frequency,
             update_chunk=update_chunk,
+            start_immediately=len(database_name_to_path) == 1,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))
 

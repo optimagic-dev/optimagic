@@ -1,28 +1,29 @@
 """Functions to read data from the database used for logging.
 
+The functions in the module are meant for end users of estimagic.
+They do not require any knowledge of databases.
 
-The functions in the module are meant for end users of estimagic. They do not require
-any knowledge of databases. The downside is that they are slower than what one could
-achieve when directly working with the more low-level database utilities.
-
-Thus, they should not be used internally (e.g. in the dashboard) but only to read the
-log interactively.
+When using them internally (e.g. in the dashboard), make sure to supply a database to
+path_or_database. Otherwise, the functions may be very slow.
 
 """
+from pathlib import Path
+
+from sqlalchemy import MetaData
+
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.database_utilities import read_specific_row
 
 
-def read_optimization_iteration(path, iteration, include_internals=False):
+def read_optimization_iteration(path_or_database, iteration, include_internals=False):
     """Get information about an optimization iteration.
 
     Args:
-        path (str or pathlib.Path): Path to the sqlite database file used for logging.
-            Typically, those have the file extension ``.db``.
-        iteration (int): The index of the iteration that should be retrieved. The row_id
-            behaves as Python list indices, i.e. ``0`` identifies the first iteration,
-            ``-1`` the last one, etc.
+        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
+        iteration (int): The index of the iteration that should be retrieved.
+            The row_id behaves as Python list indices, i.e. ``0`` identifies the
+            first iteration, ``-1`` the last one, etc.
         include_internals (bool): Whether internally used quantities like the
             internal parameter vector and the corresponding derivative etc. are included
             in the result. Default False. This should only be used by advanced users.
@@ -35,15 +36,8 @@ def read_optimization_iteration(path, iteration, include_internals=False):
         KeyError: if the iteration is out of bounds.
 
     """
-    database = load_database(path=path, fast_logging=False)
-    optimization_problem = read_last_rows(
-        database=database,
-        table_name="optimization_problem",
-        n_rows=1,
-        return_type="list_of_dicts",
-    )
-    start_params = optimization_problem[0]["params"]
-
+    database = load_database(**_process_path_or_database(path_or_database))
+    start_params = read_start_params(database)
     if iteration >= 0:
         rowid = iteration + 1
     else:
@@ -81,3 +75,53 @@ def read_optimization_iteration(path, iteration, include_internals=False):
             del data[key]
 
     return data
+
+
+def read_start_params(path_or_database):
+    """Load the start parameters DataFrame.
+
+    Args:
+        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
+
+    Returns:
+        params (pd.DataFrame): see :ref:`params`.
+
+    """
+    database = load_database(**_process_path_or_database(path_or_database))
+    optimization_problem = read_last_rows(
+        database=database,
+        table_name="optimization_problem",
+        n_rows=1,
+        return_type="dict_of_lists",
+    )
+    start_params = optimization_problem["params"][0]
+    return start_params
+
+
+def _process_path_or_database(path_or_database):
+    """Make inputs for load_database out of path_or_database.
+
+    Args:
+        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
+
+    Returns:
+        dict: The keys are "path", "metadata" and "fast_logging"
+
+    Examples:
+
+    >>> from sqlalchemy import MetaData
+    >>> database = MetaData()
+    >>> _process_path_or_database(database)
+    {'path': None, 'metadata': MetaData(bind=None), 'fast_logging': False}
+
+    """
+    res = {"path": None, "metadata": None, "fast_logging": False}
+    if isinstance(path_or_database, MetaData):
+        res["metadata"] = path_or_database
+    elif isinstance(path_or_database, (Path, str)):
+        res["path"] = Path(path_or_database)
+    else:
+        raise ValueError(
+            "path_or_database must be a path or sqlalchemy.MetaData object"
+        )
+    return res
