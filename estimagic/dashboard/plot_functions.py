@@ -28,7 +28,7 @@ def plot_time_series(
     name=None,
     y_names=None,
     logscale=False,
-    plot_width=None,
+    plot_width=PLOT_WIDTH,
 ):
     """Plot time series linking the *y_keys* to a common *x_name* variable.
 
@@ -59,10 +59,10 @@ def plot_time_series(
 
     legend_items = [(" " * 60, [])]
     for color, y_key, y_name in zip(colors, y_keys, y_names):
-        if len(y_name) <= 25:
+        if len(y_name) <= 35:
             label = y_name
         else:
-            label = y_name[:22] + "..."
+            label = "..." + y_name[-32:]
         line_glyph = plot.line(
             source=data,
             x=x_name,
@@ -102,7 +102,7 @@ def create_styled_figure(
         fig (bokeh Figure)
 
     """
-    plot_width = plot_width if plot_width is not None else plot_width
+    assert plot_width is not None
 
     name = name if name is not None else title
     y_axis_type = "log" if logscale else "linear"
