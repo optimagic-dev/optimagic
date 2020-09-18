@@ -4,6 +4,7 @@ from bokeh.models import Legend
 from bokeh.plotting import figure
 
 from estimagic.config import GRID_VISIBLE
+from estimagic.config import LEGEND_LABEL_TEXT_FONT_SIZE
 from estimagic.config import MAJOR_TICK_IN
 from estimagic.config import MAJOR_TICK_OUT
 from estimagic.config import MIN_BORDER_BOTTOM
@@ -79,7 +80,12 @@ def plot_time_series(
     hover = HoverTool(renderers=[line_glyph], tooltips=tooltips)
     plot.tools.append(hover)
 
-    legend = Legend(items=legend_items, border_line_color=None, label_width=100)
+    legend = Legend(
+        items=legend_items,
+        border_line_color=None,
+        label_width=100,
+        label_text_font_size=LEGEND_LABEL_TEXT_FONT_SIZE,
+    )
     legend.click_policy = "mute"
     plot.add_layout(legend, "right")
 
