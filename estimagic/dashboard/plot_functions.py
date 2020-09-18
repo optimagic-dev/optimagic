@@ -5,6 +5,7 @@ from bokeh.plotting import figure
 
 from estimagic.config import GRID_VISIBLE
 from estimagic.config import LEGEND_LABEL_TEXT_FONT_SIZE
+from estimagic.config import LEGEND_SPACING
 from estimagic.config import MAJOR_TICK_IN
 from estimagic.config import MAJOR_TICK_OUT
 from estimagic.config import MIN_BORDER_BOTTOM
@@ -58,7 +59,7 @@ def plot_time_series(
 
     colors = get_colors("categorical", len(y_keys))
 
-    legend_items = [(" " * 60, [])]
+    legend_items = []
     for color, y_key, y_name in zip(colors, y_keys, y_names):
         if len(y_name) <= 35:
             label = y_name
@@ -74,6 +75,7 @@ def plot_time_series(
             muted_alpha=0.2,
         )
         legend_items.append((label, [line_glyph]))
+    legend_items.append((" " * 60, []))
 
     tooltips = [(x_name, "@" + x_name)]
     tooltips += [("param_name", y_name), ("param_value", "@" + y_key)]
@@ -85,6 +87,7 @@ def plot_time_series(
         border_line_color=None,
         label_width=100,
         label_text_font_size=LEGEND_LABEL_TEXT_FONT_SIZE,
+        spacing=LEGEND_SPACING,
     )
     legend.click_policy = "mute"
     plot.add_layout(legend, "right")
