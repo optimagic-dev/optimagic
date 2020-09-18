@@ -60,7 +60,11 @@ def cli():
 @click.option(
     "--stride",
     default=1,
-    help="Plot every nth call to the criterion function.",
+    help=(
+        "Plot every stride_th database row in the dashboard. Note that some database "
+        "rows only contain gradient evaluations, thus for some values of stride the "
+        "convergence plot of the criterion function can be empty."
+    ),
     type=int,
     show_default=True,
 )
