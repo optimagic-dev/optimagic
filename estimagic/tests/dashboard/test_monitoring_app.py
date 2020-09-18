@@ -67,7 +67,9 @@ def test_calculate_start_point(monkeypatch):
         "estimagic.dashboard.monitoring_app.read_last_rows", fake_read_last_rows
     )
 
-    res = monitoring._calculate_start_point(database=False, rollover=10, jump=True)
+    res = monitoring._calculate_start_point(
+        database=False, rollover=10, jump=True, stride=1
+    )
 
     assert res == 10
 
@@ -80,7 +82,9 @@ def test_calculate_start_point_no_negative_value(monkeypatch):
         "estimagic.dashboard.monitoring_app.read_last_rows", fake_read_last_rows
     )
 
-    res = monitoring._calculate_start_point(database=False, rollover=30, jump=True)
+    res = monitoring._calculate_start_point(
+        database=False, rollover=30, jump=True, stride=1
+    )
 
     assert res == 0
 
