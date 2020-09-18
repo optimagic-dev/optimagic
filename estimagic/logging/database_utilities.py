@@ -17,6 +17,7 @@ from pathlib import Path
 
 import cloudpickle
 import pandas as pd
+from sqlalchemy import and_
 from sqlalchemy import BLOB
 from sqlalchemy import Boolean
 from sqlalchemy import Column
@@ -257,15 +258,20 @@ def read_new_rows(
         int: The new last_retrieved value.
 
     """
-    if stride != 1:
-        raise NotImplementedError("stride not implemented")
-
     database = load_database(database, path, fast_logging)
     last_retrieved = int(last_retrieved)
     limit = int(limit) if limit is not None else limit
 
     table = database.tables[table_name]
     stmt = table.select().where(table.c.rowid > last_retrieved).limit(limit)
+    if stride == 1:
+        stmt = table.select().where(table.c.rowid > last_retrieved).limit(limit)
+    else:
+        stmt = (
+            table.select()
+            .where(and_(table.c.rowid > last_retrieved, table.c.rowid % stride == 0))
+            .limit(limit)
+        )
 
     data = _execute_read_statement(database, table_name, stmt, return_type)
 
@@ -300,14 +306,19 @@ def read_last_rows(
         result (return_type): the last rows of the `table_name` table as `return_type`.
 
     """
-    if stride != 1:
-        raise NotImplementedError("stride not implemented")
-
     database = load_database(database, path, fast_logging)
     n_rows = int(n_rows)
 
     table = database.tables[table_name]
-    stmt = table.select().order_by(table.c.rowid.desc()).limit(n_rows)
+    if stride == 1:
+        stmt = table.select().order_by(table.c.rowid.desc()).limit(n_rows)
+    else:
+        stmt = (
+            table.select()
+            .order_by(table.c.rowid.desc())
+            .where(table.c.rowid % stride == 0)
+            .limit(n_rows)
+        )
 
     return _execute_read_statement(database, table_name, stmt, return_type)
 
