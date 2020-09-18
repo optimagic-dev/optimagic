@@ -30,6 +30,7 @@ def test_monitoring_app():
         update_frequency=0.1,
         update_chunk=30,
         start_immediately=False,
+        stride=1,
     )
 
 

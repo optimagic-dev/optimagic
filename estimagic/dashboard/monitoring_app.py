@@ -29,6 +29,7 @@ def monitoring_app(
     jump,
     update_frequency,
     update_chunk,
+    stride,
     start_immediately,
 ):
     """Create plots showing the development of the criterion and parameters.
@@ -46,7 +47,13 @@ def monitoring_app(
         update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
         start_immediately (bool): if True, start the updates immediately.
-
+        stride (int): Only plot every nth entry.
+            Note that stride refers to what we call an optimizer iteration.
+            Optimizer iterations can be criterion function evaluations, derivative
+            evaluations or joint evaluations of criterion and derivative.
+            For some optimization algorithms it is possible that some values of stride
+            lead to empty criterion plots, because only derivative evaluations are hit.
+            If you experience this you can fix it by setting a different stride.
     """
     # style the Document
     template_folder = Path(__file__).resolve().parent
@@ -75,6 +82,7 @@ def monitoring_app(
         start_params=start_params,
         update_frequency=update_frequency,
         update_chunk=update_chunk,
+        stride=stride,
     )
     monitoring_plots = _create_initial_convergence_plots(
         criterion_history=criterion_history,
@@ -245,7 +253,14 @@ def _create_initial_convergence_plots(
 
 
 def _create_button_row(
-    doc, database, session_data, rollover, start_params, update_frequency, update_chunk,
+    doc,
+    database,
+    session_data,
+    rollover,
+    start_params,
+    update_frequency,
+    update_chunk,
+    stride,
 ):
     """Create a row with two buttons, one for (re)starting and one for scale switching.
 
@@ -257,7 +272,13 @@ def _create_button_row(
         start_params (pd.DataFrame): See :ref:`params`
         update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
-
+        stride (int): Only plot every nth entry.
+            Note that stride refers to what we call an optimizer iteration.
+            Optimizer iterations can be criterion function evaluations, derivative
+            evaluations or joint evaluations of criterion and derivative.
+            For some optimization algorithms it is possible that some values of stride
+            lead to empty criterion plots, because only derivative evaluations are hit.
+            If you experience this you can fix it by setting a different stride.
     Returns:
         bokeh.layouts.Row
 
@@ -282,6 +303,7 @@ def _create_button_row(
         start_params=start_params,
         update_frequency=update_frequency,
         update_chunk=update_chunk,
+        stride=stride,
     )
     activation_button.on_change("active", partialed_activation_callback)
 

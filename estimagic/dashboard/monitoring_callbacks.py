@@ -69,6 +69,7 @@ def activation_callback(
     start_params,
     update_frequency,
     update_chunk,
+    stride,
 ):
     """Start and reset the convergence plots and their updating.
 
@@ -89,6 +90,13 @@ def activation_callback(
         start_params (pd.DataFrame)
         update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
+        stride (int): Only plot every nth entry.
+            Note that stride refers to what we call an optimizer iteration.
+            Optimizer iterations can be criterion function evaluations, derivative
+            evaluations or joint evaluations of criterion and derivative.
+            For some optimization algorithms it is possible that some values of stride
+            lead to empty criterion plots, because only derivative evaluations are hit.
+            If you experience this you can fix it by setting a different stride.
 
     """
     callback_dict = session_data["callbacks"]
@@ -106,6 +114,7 @@ def activation_callback(
             tables=tables,
             start_params=start_params,
             update_chunk=update_chunk,
+            stride=stride,
         )
         callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
             plot_new_data, period_milliseconds=1000 * update_frequency,
@@ -133,6 +142,7 @@ def _update_monitoring_tab(
     rollover,
     start_params,
     update_chunk,
+    stride,
 ):
     """Callback to look up new entries in the database tables and plot them.
 
@@ -149,6 +159,13 @@ def _update_monitoring_tab(
         update_chunk (int): Number of values to add at each update.
         criterion_cds (bokeh.ColumnDataSource)
         param_cds (bokeh.ColumnDataSource)
+        stride (int): Only plot every nth entry.
+            Note that stride refers to what we call an optimizer iteration.
+            Optimizer iterations can be criterion function evaluations, derivative
+            evaluations or joint evaluations of criterion and derivative.
+            For some optimization algorithms it is possible that some values of stride
+            lead to empty criterion plots, because only derivative evaluations are hit.
+            If you experience this you can fix it by setting a different stride.
 
     """
     clip_bound = np.finfo(float).max
@@ -158,6 +175,7 @@ def _update_monitoring_tab(
         last_retrieved=session_data["last_retrieved"],
         return_type="dict_of_lists",
         limit=update_chunk,
+        stride=stride,
     )
 
     # update the criterion plot

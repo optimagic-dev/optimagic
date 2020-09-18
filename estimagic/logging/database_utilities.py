@@ -234,6 +234,7 @@ def read_new_rows(
     path=None,
     fast_logging=False,
     limit=None,
+    stride=1,
 ):
     """Read all iterations after last_retrieved up to a limit.
 
@@ -247,6 +248,8 @@ def read_new_rows(
             MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
         limit (int): maximum number of rows to extract from the table.
+        stride (int): Only return every n-th iteration.
+            Default is every iteration (stride=1).
 
     Returns:
         result (return_type): up to limit rows after last_retrieved of the
@@ -254,6 +257,9 @@ def read_new_rows(
         int: The new last_retrieved value.
 
     """
+    if stride != 1:
+        raise NotImplementedError("stride not implemented")
+
     database = load_database(database, path, fast_logging)
     last_retrieved = int(last_retrieved)
     limit = int(limit) if limit is not None else limit
@@ -272,7 +278,7 @@ def read_new_rows(
 
 
 def read_last_rows(
-    database, table_name, n_rows, return_type, path=None, fast_logging=False
+    database, table_name, n_rows, return_type, path=None, fast_logging=False, stride=1,
 ):
     """Read the last n_rows rows from a table.
 
@@ -287,11 +293,16 @@ def read_last_rows(
             not exist, it will be created. Using a path is much slower than a
             MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
+        stride (int): Only return every n-th iteration.
+            Default is every iteration (stride=1).
 
     Returns:
         result (return_type): the last rows of the `table_name` table as `return_type`.
 
     """
+    if stride != 1:
+        raise NotImplementedError("stride not implemented")
+
     database = load_database(database, path, fast_logging)
     n_rows = int(n_rows)
 

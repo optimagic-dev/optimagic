@@ -98,6 +98,7 @@ def test_update_monitoring_tab():
         rollover=rollover,
         start_params=start_params,
         update_chunk=update_chunk,
+        stride=1,
     )
 
     assert session_data["last_retrieved"] == 7
