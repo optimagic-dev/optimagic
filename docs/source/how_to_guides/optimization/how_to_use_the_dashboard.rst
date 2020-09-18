@@ -46,8 +46,12 @@ To get a list of all supported arguments type ``estimagic dashboard --help`` :
     --update-chunk INTEGER    Upper limit how many new values are updated from
                                 the database at one update.  [default: 20]
 
-    --stride INTEGER          Plot every nth call to the criterion function.
-                              [default: 1]
+    --stride INTEGER          Plot every stride_th database row in the
+                                dashboard. Note that some database rows only
+                                contain gradient evaluations, thus for some values
+                                of stride the convergence plot of the criterion
+                                function can be empty.  [default: 1]
+
 
 
 When started, the dashboard will open an overview page of the optimizations' databases

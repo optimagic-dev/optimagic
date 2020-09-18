@@ -50,6 +50,7 @@ def monitoring_app(
         stride (int): Plot every stride_th database row in the dashboard. Note that
             some database rows only contain gradient evaluations, thus for some values
             of stride the convergence plot of the criterion function can be empty.
+
     """
     # style the Document
     template_folder = Path(__file__).resolve().parent

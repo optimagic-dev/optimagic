@@ -38,13 +38,9 @@ def run_dashboard(
             convergence plots in the monitoring app.
         update_chunk (int): Number of values to add at each convergence plot update of
             the criterion and parameters in the monitoring app.
-        stride (int): Only plot every nth entry.
-            Note that stride refers to what we call an optimizer iteration.
-            Optimizer iterations can be criterion function evaluations, derivative
-            evaluations or joint evaluations of criterion and derivative.
-            For some optimization algorithms it is possible that some values of stride
-            lead to empty criterion plots, because only derivative evaluations are hit.
-            If you experience this you can fix it by setting a different stride.
+        stride (int): Plot every stride_th database row in the dashboard. Note that
+            some database rows only contain gradient evaluations, thus for some values
+            of stride the convergence plot of the criterion function can be empty.
 
     """
     database_name_to_path = _process_database_paths(database_paths)
