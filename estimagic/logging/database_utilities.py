@@ -17,6 +17,7 @@ from pathlib import Path
 
 import cloudpickle
 import pandas as pd
+from sqlalchemy import and_
 from sqlalchemy import BLOB
 from sqlalchemy import Boolean
 from sqlalchemy import Column
@@ -234,6 +235,7 @@ def read_new_rows(
     path=None,
     fast_logging=False,
     limit=None,
+    stride=1,
 ):
     """Read all iterations after last_retrieved up to a limit.
 
@@ -247,6 +249,8 @@ def read_new_rows(
             MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
         limit (int): maximum number of rows to extract from the table.
+        stride (int): Only return every n-th iteration.
+            Default is every iteration (stride=1).
 
     Returns:
         result (return_type): up to limit rows after last_retrieved of the
@@ -260,6 +264,14 @@ def read_new_rows(
 
     table = database.tables[table_name]
     stmt = table.select().where(table.c.rowid > last_retrieved).limit(limit)
+    if stride == 1:
+        stmt = table.select().where(table.c.rowid > last_retrieved).limit(limit)
+    else:
+        stmt = (
+            table.select()
+            .where(and_(table.c.rowid > last_retrieved, table.c.rowid % stride == 0))
+            .limit(limit)
+        )
 
     data = _execute_read_statement(database, table_name, stmt, return_type)
 
@@ -272,7 +284,7 @@ def read_new_rows(
 
 
 def read_last_rows(
-    database, table_name, n_rows, return_type, path=None, fast_logging=False
+    database, table_name, n_rows, return_type, path=None, fast_logging=False, stride=1,
 ):
     """Read the last n_rows rows from a table.
 
@@ -287,6 +299,8 @@ def read_last_rows(
             not exist, it will be created. Using a path is much slower than a
             MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
+        stride (int): Only return every n-th iteration.
+            Default is every iteration (stride=1).
 
     Returns:
         result (return_type): the last rows of the `table_name` table as `return_type`.
@@ -296,7 +310,15 @@ def read_last_rows(
     n_rows = int(n_rows)
 
     table = database.tables[table_name]
-    stmt = table.select().order_by(table.c.rowid.desc()).limit(n_rows)
+    if stride == 1:
+        stmt = table.select().order_by(table.c.rowid.desc()).limit(n_rows)
+    else:
+        stmt = (
+            table.select()
+            .order_by(table.c.rowid.desc())
+            .where(table.c.rowid % stride == 0)
+            .limit(n_rows)
+        )
 
     return _execute_read_statement(database, table_name, stmt, return_type)
 

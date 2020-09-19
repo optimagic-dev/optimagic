@@ -19,7 +19,7 @@ As you can see, wildcards and recursive pattern matching are supported to find
 databases. Directories are automatically searched for nested databases. You can
 configure the behavior of the dashboard with additional command line arguments.
 
-To get a list of all suported arguments type ``estimagic dashboard --help`` :
+To get a list of all supported arguments type ``estimagic dashboard --help`` :
 
 .. code-block:: bash
 
@@ -46,7 +46,12 @@ To get a list of all suported arguments type ``estimagic dashboard --help`` :
     --update-chunk INTEGER    Upper limit how many new values are updated from
                                 the database at one update.  [default: 20]
 
-    -h, --help                Show this message and exit.
+    --stride INTEGER          Plot every stride_th database row in the
+                                dashboard. Note that some database rows only
+                                contain gradient evaluations, thus for some values
+                                of stride the convergence plot of the criterion
+                                function can be empty.  [default: 1]
+
 
 
 When started, the dashboard will open an overview page of the optimizations' databases

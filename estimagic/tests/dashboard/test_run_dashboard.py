@@ -58,12 +58,20 @@ def test_create_session_data(database_paths, database_name_to_path):
 
 def test_dashboard_cli(monkeypatch):
     def fake_run_dashboard(
-        database_paths, no_browser, port, rollover, jump, update_frequency, update_chunk
+        database_paths,
+        no_browser,
+        port,
+        rollover,
+        jump,
+        update_frequency,
+        update_chunk,
+        stride,
     ):
         assert len(database_paths) == 2
         assert no_browser
         assert port == 9999
         assert jump
+        assert stride == 1
 
     monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
 
@@ -85,11 +93,19 @@ def test_dashboard_cli(monkeypatch):
 
 def test_dashboard_cli_duplicate_paths(monkeypatch):
     def fake_run_dashboard(
-        database_paths, no_browser, port, rollover, jump, update_frequency, update_chunk
+        database_paths,
+        no_browser,
+        port,
+        rollover,
+        jump,
+        update_frequency,
+        update_chunk,
+        stride,
     ):
         assert len(database_paths) == 2
         assert not no_browser
         assert port is None
+        assert stride == 10
 
     monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
 
@@ -101,6 +117,8 @@ def test_dashboard_cli_duplicate_paths(monkeypatch):
             str(Path(__file__).parent / "*.db"),
             str(Path(__file__).parent / "db1.db"),
             str(Path(__file__).parent / "db2.db"),
+            "--stride",
+            "10",
         ],
     )
 
@@ -109,7 +127,14 @@ def test_dashboard_cli_duplicate_paths(monkeypatch):
 
 def test_dashboard_cli_recursively_search_directories(monkeypatch):
     def fake_run_dashboard(
-        database_paths, no_browser, port, rollover, jump, update_frequency, update_chunk
+        database_paths,
+        no_browser,
+        port,
+        rollover,
+        jump,
+        update_frequency,
+        update_chunk,
+        stride,
     ):
         assert len(database_paths) == 2
 

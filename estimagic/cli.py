@@ -57,8 +57,19 @@ def cli():
     type=int,
     show_default=True,
 )
+@click.option(
+    "--stride",
+    default=1,
+    help=(
+        "Plot every stride_th database row in the dashboard. Note that some database "
+        "rows only contain gradient evaluations, thus for some values of stride the "
+        "convergence plot of the criterion function can be empty."
+    ),
+    type=int,
+    show_default=True,
+)
 def dashboard(
-    database, port, no_browser, rollover, jump, update_frequency, update_chunk
+    database, port, no_browser, rollover, jump, update_frequency, update_chunk, stride
 ):
     """Start the dashboard to visualize optimizations."""
     database_paths = []
@@ -78,4 +89,5 @@ def dashboard(
         jump=jump,
         update_frequency=update_frequency,
         update_chunk=update_chunk,
+        stride=stride,
     )

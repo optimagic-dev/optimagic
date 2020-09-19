@@ -147,3 +147,43 @@ def test_optimization_problem_table(tmp_path, problem_data):
             assert_array_equal(res[key], expected)
         else:
             assert res[key] == expected
+
+
+def test_read_new_rows_stride(tmp_path, iteration_data):
+    path = tmp_path / "test.db"
+    database = load_database(path=path)
+    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    for i in range(1, 11):  # sqlalchemy starts counting at 1
+        iteration_data["value"] = i
+        append_row(iteration_data, "optimization_iterations", database, path, False)
+
+    res = read_new_rows(
+        database=database,
+        table_name="optimization_iterations",
+        last_retrieved=1,
+        return_type="dict_of_lists",
+        stride=2,
+    )[0]["value"]
+
+    expected = [2.0, 4.0, 6.0, 8.0, 10.0]
+    assert res == expected
+
+
+def test_read_last_rows_stride(tmp_path, iteration_data):
+    path = tmp_path / "test.db"
+    database = load_database(path=path)
+    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    for i in range(1, 11):  # sqlalchemy starts counting at 1
+        iteration_data["value"] = i
+        append_row(iteration_data, "optimization_iterations", database, path, False)
+
+    res = read_last_rows(
+        database=database,
+        table_name="optimization_iterations",
+        n_rows=3,
+        return_type="dict_of_lists",
+        stride=2,
+    )["value"]
+
+    expected = [10.0, 8.0, 6.0]
+    assert res == expected

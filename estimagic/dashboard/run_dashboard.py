@@ -15,7 +15,14 @@ from estimagic.dashboard.monitoring_app import monitoring_app
 
 
 def run_dashboard(
-    database_paths, no_browser, port, rollover, jump, update_frequency, update_chunk
+    database_paths,
+    no_browser,
+    port,
+    rollover,
+    jump,
+    update_frequency,
+    update_chunk,
+    stride,
 ):
     """Start the dashboard pertaining to one or several databases.
 
@@ -31,6 +38,9 @@ def run_dashboard(
             convergence plots in the monitoring app.
         update_chunk (int): Number of values to add at each convergence plot update of
             the criterion and parameters in the monitoring app.
+        stride (int): Plot every stride_th database row in the dashboard. Note that
+            some database rows only contain gradient evaluations, thus for some values
+            of stride the convergence plot of the criterion function can be empty.
 
     """
     database_name_to_path = _process_database_paths(database_paths)
@@ -57,6 +67,7 @@ def run_dashboard(
             jump=jump,
             update_frequency=update_frequency,
             update_chunk=update_chunk,
+            stride=stride,
             start_immediately=len(database_name_to_path) == 1,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))

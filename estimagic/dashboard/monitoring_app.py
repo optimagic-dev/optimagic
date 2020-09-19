@@ -29,6 +29,7 @@ def monitoring_app(
     jump,
     update_frequency,
     update_chunk,
+    stride,
     start_immediately,
 ):
     """Create plots showing the development of the criterion and parameters.
@@ -46,6 +47,9 @@ def monitoring_app(
         update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
         start_immediately (bool): if True, start the updates immediately.
+        stride (int): Plot every stride_th database row in the dashboard. Note that
+            some database rows only contain gradient evaluations, thus for some values
+            of stride the convergence plot of the criterion function can be empty.
 
     """
     # style the Document
@@ -56,7 +60,7 @@ def monitoring_app(
 
     # process inputs
     database = load_database(path=session_data["database_path"])
-    start_point = _calculate_start_point(database, rollover, jump)
+    start_point = _calculate_start_point(database, rollover, jump, stride)
     session_data["last_retrieved"] = start_point
     start_params = read_start_params(path_or_database=database)
     start_params["id"] = _create_id_column(start_params)
@@ -75,6 +79,7 @@ def monitoring_app(
         start_params=start_params,
         update_frequency=update_frequency,
         update_chunk=update_chunk,
+        stride=stride,
     )
     monitoring_plots = _create_initial_convergence_plots(
         criterion_history=criterion_history,
@@ -160,7 +165,7 @@ def _create_cds_for_monitoring_app(group_to_param_ids):
     return criterion_history, params_history
 
 
-def _calculate_start_point(database, rollover, jump):
+def _calculate_start_point(database, rollover, jump, stride):
     """Calculate the starting point.
 
     Args:
@@ -168,6 +173,10 @@ def _calculate_start_point(database, rollover, jump):
         rollover (int): Upper limit to how many iterations are displayed.
         jump (bool): If True the dashboard will start at the last `rollover`
             observations and start to display the history from there.
+        stride (int): Plot every stride_th database row in the dashboard. Note that
+            some database rows only contain gradient evaluations, thus for some values
+            of stride the convergence plot of the criterion function can be empty.
+
     Returns:
         start_point (int): iteration from which to start the dashboard.
 
@@ -179,7 +188,7 @@ def _calculate_start_point(database, rollover, jump):
             n_rows=1,
             return_type="list_of_dicts",
         )
-        start_point = max(0, last_entry[0]["rowid"] - rollover)
+        start_point = max(0, last_entry[0]["rowid"] - rollover * stride)
     else:
         start_point = 0
     return start_point
@@ -245,7 +254,14 @@ def _create_initial_convergence_plots(
 
 
 def _create_button_row(
-    doc, database, session_data, rollover, start_params, update_frequency, update_chunk,
+    doc,
+    database,
+    session_data,
+    rollover,
+    start_params,
+    update_frequency,
+    update_chunk,
+    stride,
 ):
     """Create a row with two buttons, one for (re)starting and one for scale switching.
 
@@ -257,7 +273,13 @@ def _create_button_row(
         start_params (pd.DataFrame): See :ref:`params`
         update_frequency (float): Number of seconds to wait between updates.
         update_chunk (int): Number of values to add at each update.
-
+        stride (int): Only plot every nth entry.
+            Note that stride refers to what we call an optimizer iteration.
+            Optimizer iterations can be criterion function evaluations, derivative
+            evaluations or joint evaluations of criterion and derivative.
+            For some optimization algorithms it is possible that some values of stride
+            lead to empty criterion plots, because only derivative evaluations are hit.
+            If you experience this you can fix it by setting a different stride.
     Returns:
         bokeh.layouts.Row
 
@@ -282,6 +304,7 @@ def _create_button_row(
         start_params=start_params,
         update_frequency=update_frequency,
         update_chunk=update_chunk,
+        stride=stride,
     )
     activation_button.on_change("active", partialed_activation_callback)
 
