@@ -21,7 +21,7 @@ from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 
 
-def numpy_interface(params, constraints=None, numpy_output=False):
+def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=False):
     """Convert x to params.
 
     This decorated function receives a NumPy array of parameters and converts it to a
@@ -73,7 +73,10 @@ def numpy_interface(params, constraints=None, numpy_output=False):
 
         return wrapper_numpy_interface
 
-    return decorator_numpy_interface
+    if callable(func):
+        return decorator_numpy_interface(func)
+    else:
+        return decorator_numpy_interface
 
 
 def catch(
