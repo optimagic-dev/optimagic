@@ -15,7 +15,7 @@ from estimagic.dashboard.monitoring_app import monitoring_app
 
 
 def run_dashboard(
-    database_paths, no_browser, port, read_database_options,
+    database_paths, no_browser, port, updating_options,
 ):
     """Start the dashboard pertaining to one or several databases.
 
@@ -24,7 +24,7 @@ def run_dashboard(
             typically has the file extension ``.db``.
         no_browser (bool): If True the dashboard does not open in the browser.
         port (int): Port where to display the dashboard.
-        read_database_options (dict): Specification how to update the plotting data.
+        updating_options (dict): Specification how to update the plotting data.
             It contains rollover, update_frequency, update_chunk, jump and stride.
 
     """
@@ -47,7 +47,7 @@ def run_dashboard(
             monitoring_app,
             database_name=database_name,
             session_data=session_data[database_name],
-            read_database_options=read_database_options,
+            updating_options=updating_options,
             start_immediately=len(database_name_to_path) == 1,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))

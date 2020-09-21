@@ -22,7 +22,7 @@ from estimagic.logging.read_log import read_start_params
 
 
 def monitoring_app(
-    doc, database_name, session_data, read_database_options, start_immediately,
+    doc, database_name, session_data, updating_options, start_immediately,
 ):
     """Create plots showing the development of the criterion and parameters.
 
@@ -34,13 +34,10 @@ def monitoring_app(
             - last_retrieved (int): last iteration currently in the ColumnDataSource.
             - database_path (str or pathlib.Path)
             - callbacks (dict): dictionary to be populated with callbacks.
-        read_database_options (dict): Specification how to update the plotting data.
+        updating_options (dict): Specification how to update the plotting data.
             It contains rollover, update_frequency, update_chunk, jump and stride.
 
     """
-    update_from_database_options = read_database_options.copy()
-    jump = update_from_database_options.pop("jump")
-
     # style the Document
     template_folder = Path(__file__).resolve().parent
     # conversion to string from pathlib Path is necessary for FileSystemLoader
@@ -49,7 +46,7 @@ def monitoring_app(
 
     # process inputs
     database = load_database(path=session_data["database_path"])
-    start_point = _calculate_start_point(database, jump, update_from_database_options)
+    start_point = _calculate_start_point(database, updating_options)
     session_data["last_retrieved"] = start_point
     start_params = read_start_params(path_or_database=database)
     start_params["id"] = _create_id_column(start_params)
@@ -65,7 +62,7 @@ def monitoring_app(
         database=database,
         session_data=session_data,
         start_params=start_params,
-        update_from_database_options=update_from_database_options,
+        updating_options=updating_options,
     )
     monitoring_plots = _create_initial_convergence_plots(
         criterion_history=criterion_history,
@@ -151,22 +148,19 @@ def _create_cds_for_monitoring_app(group_to_param_ids):
     return criterion_history, params_history
 
 
-def _calculate_start_point(database, jump, update_from_database_options):
+def _calculate_start_point(database, updating_options):
     """Calculate the starting point.
 
     Args:
         database (sqlalchemy.MetaData): Bound metadata object.
-        jump (bool): Jump to start the dashboard at the last rollover iterations.
-        update_from_database_options (dict): Specification how to update the plotting
-            data. It contains rollover, update_frequency, update_chunk and stride.
+        updating_options (dict): Specification how to update the plotting data.
+            It contains rollover, update_frequency, update_chunk, jump and stride.
 
     Returns:
         start_point (int): iteration from which to start the dashboard.
 
     """
-    rollover = update_from_database_options["rollover"]
-    stride = update_from_database_options["stride"]
-    if jump:
+    if updating_options["jump"]:
         last_entry = read_last_rows(
             database=database,
             table_name="optimization_iterations",
@@ -174,7 +168,7 @@ def _calculate_start_point(database, jump, update_from_database_options):
             return_type="list_of_dicts",
         )
         nr_of_entries = last_entry[0]["rowid"]
-        nr_to_go_back = rollover * stride
+        nr_to_go_back = updating_options["rollover"] * updating_options["stride"]
         start_point = max(0, nr_of_entries - nr_to_go_back)
     else:
         start_point = 0
@@ -241,7 +235,7 @@ def _create_initial_convergence_plots(
 
 
 def _create_button_row(
-    doc, database, session_data, start_params, update_from_database_options,
+    doc, database, session_data, start_params, updating_options,
 ):
     """Create a row with two buttons, one for (re)starting and one for scale switching.
 
@@ -250,8 +244,8 @@ def _create_button_row(
         database (sqlalchemy.MetaData): Bound metadata object.
         session_data (dict): dictionary with the last retrieved rowid
         start_params (pd.DataFrame): See :ref:`params`
-        update_from_database_options (dict): Specification how to update the plotting
-            data. It contains rollover, update_frequency, update_chunk and stride.
+        updating_options (dict): Specification how to update the plotting data.
+            It contains rollover, update_frequency, update_chunk, jump and stride.
 
     Returns:
         bokeh.layouts.Row
@@ -274,7 +268,7 @@ def _create_button_row(
         session_data=session_data,
         tables=["criterion_history", "params_history"],
         start_params=start_params,
-        **update_from_database_options,
+        updating_options=updating_options,
     )
     activation_button.on_change("active", partialed_activation_callback)
 

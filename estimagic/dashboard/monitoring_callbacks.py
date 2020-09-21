@@ -61,15 +61,12 @@ def activation_callback(
     old,
     new,
     session_data,
-    rollover,
     doc,
     database,
     button,
     tables,
     start_params,
-    update_frequency,
-    update_chunk,
-    stride,
+    updating_options,
 ):
     """Start and reset the convergence plots and their updating.
 
@@ -84,15 +81,11 @@ def activation_callback(
             apps. The keys are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
-        rollover (int): Maximal number of points to show in the plot.
         button (bokeh.models.Toggle)
         tables (list): List of table names to load and convert to ColumnDataSources.
         start_params (pd.DataFrame)
-        update_frequency (float): Number of seconds to wait between updates.
-        update_chunk (int): Number of values to add at each update.
-        stride (int): Plot every stride_th database row in the dashboard. Note that
-            some database rows only contain gradient evaluations, thus for some values
-            of stride the convergence plot of the criterion function can be empty.
+        updating_options (dict): Specification how to update the plotting data.
+            It contains rollover, update_frequency, update_chunk, jump and stride.
 
     """
     callback_dict = session_data["callbacks"]
@@ -106,14 +99,15 @@ def activation_callback(
             param_cds=param_cds,
             database=database,
             session_data=session_data,
-            rollover=rollover,
             tables=tables,
             start_params=start_params,
-            update_chunk=update_chunk,
-            stride=stride,
+            rollover=updating_options["rollover"],
+            update_chunk=updating_options["update_chunk"],
+            stride=updating_options["stride"],
         )
         callback_dict["plot_periodic_data"] = doc.add_periodic_callback(
-            plot_new_data, period_milliseconds=1000 * update_frequency,
+            plot_new_data,
+            period_milliseconds=1000 * updating_options["update_frequency"],
         )
 
         # change the button color
