@@ -47,30 +47,30 @@ def generate_steps(
         derivative estimate will be produced for that parameter.
 
     Args:
-        x (np.ndarray): 1d array at which the derivative is calculated.
+        x (numpy.ndarray): 1d array at which the derivative is calculated.
         method (str): One of ["central", "forward", "backward"]
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
         target (str): One of ["first_derivative", "second_derivative"]. This is used to
             choose the appropriate rule of thumb for the base_steps.
-        base_steps (np.ndarray, optional): 1d array of the same length as x.
+        base_steps (numpy.ndarray, optional): 1d array of the same length as x.
             base_steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
             If base_steps * scaling_factor conflicts with bounds, the actual steps will
             be adjusted. If base_steps is not provided, it will be determined according
             to a rule of thumb as long as this does not conflict with min_steps.
-        scaling_factor (np.ndarray or float): Scaling factor which is applied to
-            base_steps. If it is an np.ndarray, it needs to have the same shape as x.
+        scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
+            base_steps. If it is an numpy.ndarray, it needs to have the same shape as x.
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size.
-        lower_bounds (np.ndarray): 1d array with lower bounds for each parameter.
-        upper_bounds (np.ndarray): 1d array with upper bounds for each parameter.
+        lower_bounds (numpy.ndarray): 1d array with lower bounds for each parameter.
+        upper_bounds (numpy.ndarray): 1d array with upper bounds for each parameter.
         step_ratio (float or array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. step ratio is only used if n_steps > 1.
-        min_steps (np.ndarray): Minimal possible step sizes that can be chosen to
+        min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen to
             accommodate bounds. Needs to have same length as x. By default min_steps is
             equal to base_steps, i.e step size is not decreased beyond what is optimal
             according to the rule of thumb.
@@ -128,19 +128,20 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
     """Validate user provided base_steps or generate them with rule of thumb.
 
     Args:
-        base_steps (np.ndarray, optional): 1d array of the same length as x.
+        base_steps (numpy.ndarray, optional): 1d array of the same length as x.
             base_steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
-        x (np.ndarray): 1d array at which the derivative is evaluated
+        x (numpy.ndarray): 1d array at which the derivative is evaluated
         target (str): One of ["first_derivative", "second_derivative"]. This is used to
             choose the appropriate rule of thumb for the base_steps.
-        min_steps (np.ndarray or None): Minimal possible step sizes that can be chosen
-            to accomodate bounds. Needs to have same length as x.
-        scaling_factor (np.ndarray or float): Scaling factor which is applied to
-            base_steps. If it is an np.ndarray, it needs to have the same shape as x.
+        min_steps (numpy.ndarray or None): Minimal possible step sizes that can be
+            chosen to accommodate bounds. Needs to have same length as x.
+        scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
+            base_steps. If it is an :class:`numpy.ndarray`, it needs to have the same
+            shape as x.
 
     Returns:
-        base_steps (np.ndarray): 1d array of the same length as x with the
+        base_steps (numpy.ndarray): 1d array of the same length as x with the
             absolute value of the first step.
 
     """
@@ -148,10 +149,16 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
         raise ValueError("Scaling factor must be strictly positive.")
 
     if base_steps is not None:
+        if np.isscalar(base_steps):
+            base_steps = np.full(len(x), base_steps)
+
         if base_steps.shape != x.shape:
             raise ValueError("base_steps has to have the same shape as x.")
 
         base_steps = base_steps * scaling_factor
+
+        if np.isscalar(min_steps):
+            min_steps = np.full(len(x), min_steps)
 
         if min_steps is not None and (base_steps <= min_steps).any():
             raise ValueError(
@@ -181,16 +188,16 @@ def _set_unused_side_to_nan(x, pos, neg, method, lower_step_bounds, upper_step_b
     to the side that has more space to the bound if there is a bound violation.
 
     Args:
-        x (np.ndarray): 1d array with parameters.
-        pos (np.ndarray): Array with positive steps of shape (n_steps, len(x))
-        neg (np.ndarray): Array with negative steps of shape (n_steps, len(x))
+        x (numpy.ndarray): 1d array with parameters.
+        pos (numpy.ndarray): Array with positive steps of shape (n_steps, len(x))
+        neg (numpy.ndarray): Array with negative steps of shape (n_steps, len(x))
         method (str): One of ["forward", "backward"]
-        lower_step_bounds (np.ndarray): Lower bounds for steps.
-        upper_step_bounds (np.ndarray): Upper bounds for steps.
+        lower_step_bounds (numpy.ndarray): Lower bounds for steps.
+        upper_step_bounds (numpy.ndarray): Upper bounds for steps.
 
     Returns:
-        pos (np.ndarray): Copy of pos with additional NaNs
-        neg (np.ndarray): Copy of neg with additional NaNs
+        pos (numpy.ndarray): Copy of pos with additional NaNs
+        neg (numpy.ndarray): Copy of neg with additional NaNs
 
     """
     pos = pos.copy()
