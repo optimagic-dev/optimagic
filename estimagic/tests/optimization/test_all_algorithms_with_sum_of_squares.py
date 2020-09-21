@@ -13,6 +13,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from estimagic.config import IS_PETSC4PY_INSTALLED
+from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
@@ -32,15 +33,24 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
 IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
 
 
-def _skip_tao_tests_if_petsc4py_not_installed(test_cases):
-    """Skip tests involving TAO optimizers on Windows."""
+def _skip_tests_with_missing_dependencies(test_cases):
+    """Skip tests involving optimizers whose dependencies could not be found."""
+    dependency_present_to_start_str = {
+        IS_PETSC4PY_INSTALLED: "tao_",
+        IS_PYBOBYQA_INSTALLED: "nag_pybobyqa",
+    }
+
     new_test_cases = []
     for test_case in test_cases:
-        if test_case[0].startswith("tao_") and not IS_PETSC4PY_INSTALLED:
-            test_case = pytest.param(
-                *test_case, marks=pytest.mark.skip(reason="petsc4py is not installed.")
-            )
-        new_test_cases.append(test_case)
+        for dependency_present, start_str in dependency_present_to_start_str.items():
+            if test_case[0].startswith(start_str) and not dependency_present:
+                test_case = pytest.param(
+                    *test_case,
+                    marks=pytest.mark.skip(reason="petsc4py is not installed."),
+                )
+            else:
+                print(f"Skipping {start_str}")
+            new_test_cases.append(test_case)
 
     return new_test_cases
 
@@ -179,7 +189,7 @@ def switch_sign(func):
 test_cases = []
 for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
-test_cases = _skip_tao_tests_if_petsc4py_not_installed(test_cases)
+test_cases = _skip_tests_with_missing_dependencies(test_cases)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
@@ -209,7 +219,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
 bound_cases = []
 for alg in BOUNDS_SUPPORTING_ALGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
-bound_cases = _skip_tao_tests_if_petsc4py_not_installed(bound_cases)
+bound_cases = _skip_tests_with_missing_dependencies(bound_cases)
 
 
 @pytest.mark.slow
