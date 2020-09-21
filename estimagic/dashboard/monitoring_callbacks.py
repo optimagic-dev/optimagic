@@ -129,8 +129,8 @@ def _update_monitoring_tab(
     param_cds,
     session_data,
     tables,
-    rollover,
     start_params,
+    rollover,
     update_chunk,
     stride,
 ):
@@ -144,8 +144,8 @@ def _update_monitoring_tab(
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
         tables (list): list of table names to load and convert to ColumnDataSources
-        rollover (int): maximal number of points to show in the plot
         start_params (pd.DataFrame)
+        rollover (int): maximal number of points to show in the plot
         update_chunk (int): Number of values to add at each update.
         criterion_cds (bokeh.ColumnDataSource)
         param_cds (bokeh.ColumnDataSource)
