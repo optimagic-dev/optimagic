@@ -20,17 +20,20 @@ def test_monitoring_app():
         "last_retrieved": 0,
         "database_path": current_dir_path / "db1.db",
     }
+    read_database_options = {
+        "rollover": 10_000,
+        "jump": False,
+        "update_frequency": 0.1,
+        "update_chunk": 30,
+        "stride": 1,
+    }
 
     monitoring.monitoring_app(
         doc=doc,
         database_name=database_name,
         session_data=session_data,
-        rollover=10_000,
-        jump=False,
-        update_frequency=0.1,
-        update_chunk=30,
+        read_database_options=read_database_options,
         start_immediately=False,
-        stride=1,
     )
 
 
@@ -67,8 +70,11 @@ def test_calculate_start_point(monkeypatch):
         "estimagic.dashboard.monitoring_app.read_last_rows", fake_read_last_rows
     )
 
+    update_from_database_options = {"rollover": 10, "stride": 1}
     res = monitoring._calculate_start_point(
-        database=False, rollover=10, jump=True, stride=1
+        database=False,
+        jump=True,
+        update_from_database_options=update_from_database_options,
     )
 
     assert res == 10
@@ -83,7 +89,9 @@ def test_calculate_start_point_no_negative_value(monkeypatch):
     )
 
     res = monitoring._calculate_start_point(
-        database=False, rollover=30, jump=True, stride=1
+        database=False,
+        jump=True,
+        update_from_database_options={"rollover": 30, "stride": 1},
     )
 
     assert res == 0

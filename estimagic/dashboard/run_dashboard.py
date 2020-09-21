@@ -15,14 +15,7 @@ from estimagic.dashboard.monitoring_app import monitoring_app
 
 
 def run_dashboard(
-    database_paths,
-    no_browser,
-    port,
-    rollover,
-    jump,
-    update_frequency,
-    update_chunk,
-    stride,
+    database_paths, no_browser, port, read_database_options,
 ):
     """Start the dashboard pertaining to one or several databases.
 
@@ -31,23 +24,14 @@ def run_dashboard(
             typically has the file extension ``.db``.
         no_browser (bool): If True the dashboard does not open in the browser.
         port (int): Port where to display the dashboard.
-        rollover (int): After how many iterations the convergence plots are truncated.
-        jump (bool): If True the dashboard will start at the last `rollover`
-            observations and start to display the history from there.
-        update_frequency (float): Number of seconds to wait between updates of the
-            convergence plots in the monitoring app.
-        update_chunk (int): Number of values to add at each convergence plot update of
-            the criterion and parameters in the monitoring app.
-        stride (int): Plot every stride_th database row in the dashboard. Note that
-            some database rows only contain gradient evaluations, thus for some values
-            of stride the convergence plot of the criterion function can be empty.
+        read_database_options (dict): Specification how to update the plotting data.
+            It contains rollover, update_frequency, update_chunk, jump and stride.
 
     """
     database_name_to_path = _process_database_paths(database_paths)
 
     port = _find_free_port() if port is None else port
     port = int(port)
-    rollover = int(rollover)
 
     session_data = _create_session_data(database_name_to_path)
 
@@ -63,11 +47,7 @@ def run_dashboard(
             monitoring_app,
             database_name=database_name,
             session_data=session_data[database_name],
-            rollover=rollover,
-            jump=jump,
-            update_frequency=update_frequency,
-            update_chunk=update_chunk,
-            stride=stride,
+            read_database_options=read_database_options,
             start_immediately=len(database_name_to_path) == 1,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))
