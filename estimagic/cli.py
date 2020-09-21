@@ -72,6 +72,14 @@ def dashboard(
     database, port, no_browser, rollover, jump, update_frequency, update_chunk, stride
 ):
     """Start the dashboard to visualize optimizations."""
+    updating_options = {
+        "rollover": int(rollover),
+        "update_frequency": update_frequency,
+        "update_chunk": update_chunk,
+        "stride": stride,
+        "jump": jump,
+    }
+
     database_paths = []
     for path in database:
         # Search directories recursively for databases. "*" in is_dir() raises error.
@@ -85,9 +93,5 @@ def dashboard(
         database_paths=database_paths,
         no_browser=no_browser,
         port=port,
-        rollover=rollover,
-        jump=jump,
-        update_frequency=update_frequency,
-        update_chunk=update_chunk,
-        stride=stride,
+        updating_options=updating_options,
     )

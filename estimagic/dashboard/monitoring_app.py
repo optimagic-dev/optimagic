@@ -22,15 +22,7 @@ from estimagic.logging.read_log import read_start_params
 
 
 def monitoring_app(
-    doc,
-    database_name,
-    session_data,
-    rollover,
-    jump,
-    update_frequency,
-    update_chunk,
-    stride,
-    start_immediately,
+    doc, database_name, session_data, updating_options, start_immediately,
 ):
     """Create plots showing the development of the criterion and parameters.
 
@@ -42,14 +34,8 @@ def monitoring_app(
             - last_retrieved (int): last iteration currently in the ColumnDataSource.
             - database_path (str or pathlib.Path)
             - callbacks (dict): dictionary to be populated with callbacks.
-        jump (bool): If True the dashboard will start at the last `rollover`
-            observations and start to display the history from there.
-        update_frequency (float): Number of seconds to wait between updates.
-        update_chunk (int): Number of values to add at each update.
-        start_immediately (bool): if True, start the updates immediately.
-        stride (int): Plot every stride_th database row in the dashboard. Note that
-            some database rows only contain gradient evaluations, thus for some values
-            of stride the convergence plot of the criterion function can be empty.
+        updating_options (dict): Specification how to update the plotting data.
+            It contains rollover, update_frequency, update_chunk, jump and stride.
 
     """
     # style the Document
@@ -60,7 +46,7 @@ def monitoring_app(
 
     # process inputs
     database = load_database(path=session_data["database_path"])
-    start_point = _calculate_start_point(database, rollover, jump, stride)
+    start_point = _calculate_start_point(database, updating_options)
     session_data["last_retrieved"] = start_point
     start_params = read_start_params(path_or_database=database)
     start_params["id"] = _create_id_column(start_params)
@@ -75,11 +61,8 @@ def monitoring_app(
         doc=doc,
         database=database,
         session_data=session_data,
-        rollover=rollover,
         start_params=start_params,
-        update_frequency=update_frequency,
-        update_chunk=update_chunk,
-        stride=stride,
+        updating_options=updating_options,
     )
     monitoring_plots = _create_initial_convergence_plots(
         criterion_history=criterion_history,
@@ -165,30 +148,28 @@ def _create_cds_for_monitoring_app(group_to_param_ids):
     return criterion_history, params_history
 
 
-def _calculate_start_point(database, rollover, jump, stride):
+def _calculate_start_point(database, updating_options):
     """Calculate the starting point.
 
     Args:
         database (sqlalchemy.MetaData): Bound metadata object.
-        rollover (int): Upper limit to how many iterations are displayed.
-        jump (bool): If True the dashboard will start at the last `rollover`
-            observations and start to display the history from there.
-        stride (int): Plot every stride_th database row in the dashboard. Note that
-            some database rows only contain gradient evaluations, thus for some values
-            of stride the convergence plot of the criterion function can be empty.
+        updating_options (dict): Specification how to update the plotting data.
+            It contains rollover, update_frequency, update_chunk, jump and stride.
 
     Returns:
         start_point (int): iteration from which to start the dashboard.
 
     """
-    if jump:
+    if updating_options["jump"]:
         last_entry = read_last_rows(
             database=database,
             table_name="optimization_iterations",
             n_rows=1,
             return_type="list_of_dicts",
         )
-        start_point = max(0, last_entry[0]["rowid"] - rollover * stride)
+        nr_of_entries = last_entry[0]["rowid"]
+        nr_to_go_back = updating_options["rollover"] * updating_options["stride"]
+        start_point = max(0, nr_of_entries - nr_to_go_back)
     else:
         start_point = 0
     return start_point
@@ -254,14 +235,7 @@ def _create_initial_convergence_plots(
 
 
 def _create_button_row(
-    doc,
-    database,
-    session_data,
-    rollover,
-    start_params,
-    update_frequency,
-    update_chunk,
-    stride,
+    doc, database, session_data, start_params, updating_options,
 ):
     """Create a row with two buttons, one for (re)starting and one for scale switching.
 
@@ -269,17 +243,10 @@ def _create_button_row(
         doc (bokeh.Document)
         database (sqlalchemy.MetaData): Bound metadata object.
         session_data (dict): dictionary with the last retrieved rowid
-        rollover (int): Upper limit to how many iterations are displayed.
         start_params (pd.DataFrame): See :ref:`params`
-        update_frequency (float): Number of seconds to wait between updates.
-        update_chunk (int): Number of values to add at each update.
-        stride (int): Only plot every nth entry.
-            Note that stride refers to what we call an optimizer iteration.
-            Optimizer iterations can be criterion function evaluations, derivative
-            evaluations or joint evaluations of criterion and derivative.
-            For some optimization algorithms it is possible that some values of stride
-            lead to empty criterion plots, because only derivative evaluations are hit.
-            If you experience this you can fix it by setting a different stride.
+        updating_options (dict): Specification how to update the plotting data.
+            It contains rollover, update_frequency, update_chunk, jump and stride.
+
     Returns:
         bokeh.layouts.Row
 
@@ -299,12 +266,9 @@ def _create_button_row(
         doc=doc,
         database=database,
         session_data=session_data,
-        rollover=rollover,
         tables=["criterion_history", "params_history"],
         start_params=start_params,
-        update_frequency=update_frequency,
-        update_chunk=update_chunk,
-        stride=stride,
+        updating_options=updating_options,
     )
     activation_button.on_change("active", partialed_activation_callback)
 
