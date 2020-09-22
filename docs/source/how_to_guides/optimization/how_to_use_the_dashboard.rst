@@ -21,9 +21,7 @@ configure the behavior of the dashboard with additional command line arguments.
 
 To get a list of all supported arguments type ``estimagic dashboard --help`` :
 
-.. code-block:: bash
-
-    $ estimagic dashboard --help
+.. code-block::
 
     Usage: estimagic dashboard [OPTIONS] DATABASE...
 

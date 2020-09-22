@@ -99,18 +99,26 @@ The following arguments are not supported as part of ``algo_options``:
     principle. However, for the moment they are not supported.
 
 
-References:
-*********************
-
-.. bibliography:: ../../refs.bib
-    :filter: docname in docnames
-
 Algorithms:
 *********************
 
 
 .. automodule:: estimagic.optimization.scipy_optimizers
     :members:
+
+
+With ``petsc4py`` installed
+----------------------------
+
+.. automodule:: estimagic.optimization.tao_optimizers
+   :members:
+
+
+With ``pybobyqa`` installed
+----------------------------
+
+.. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
+
 
 
 With ``nlopt`` installed
@@ -125,8 +133,10 @@ With ``pygmo`` installed
 --------------------------
 
 
-With `petsc4py` installed
--------------------------
 
-.. automodule:: estimagic.optimization.tao_optimizers
-   :members:
+References:
+==============
+
+.. bibliography:: ../../refs.bib
+    :filter: docname in docnames
+    :style: unsrt
