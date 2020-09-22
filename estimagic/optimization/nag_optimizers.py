@@ -25,7 +25,7 @@ def nag_pybobyqa(
     *,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
-    initial_trust_radius=None,
+    initial_trust_region_radius=None,
     seek_global_minimum=False,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
@@ -38,6 +38,9 @@ def nag_pybobyqa(
     min_improvement_for_successful_iteration=MIN_IMPROVEMENT_FOR_SUCCESSFUL_ITERATION,
     threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
     trust_region_radius_reduction_when_not_successful=None,
+    clip_criterion_if_overflowing=True,
+    trust_region_increase_factor_after_success=2.0,
+    trust_region_increase_factor_after_large_success=4.0,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -62,7 +65,7 @@ def nag_pybobyqa(
             radius, which determines when a successful termination occurs.
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
-        initial_trust_radius (float): the initial value of the trust region radius.
+        initial_trust_region_radius (float): initial value of the trust region radius.
         seek_global_minimum (bool): Whether to apply the heuristic to escape local
             minima presented in :cite:`Cartis2018a`.
         random_initial_directions (bool): If True, the initial directions are drawn
@@ -110,6 +113,15 @@ def nag_pybobyqa(
             decrease the trust region radius when realized improvement does not match
             the min_improvement_for_successful_iteration. Default is 0.5 for
             deterministic problems or 0.98 if ``criterion_noisy``.
+        clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
+            raise an OverflowError otherwise.
+        trust_region_increase_factor_after_success (float): Ratio by which to increase
+            the trust region radius :math:`\Delta_k` in very successful iterations
+            (:math:`\gamma_{inc}`).
+        trust_region_increase_factor_after_large_success (float):
+            Ratio of the proposed step (:math:`\|s_k\|`) by which to increase the
+            trust region radius (:math:`\Delta_k`) in very successful iterations
+            (:math:`\overline{\gamma}_{inc}`).
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -118,11 +130,14 @@ def nag_pybobyqa(
     if not IS_PYBOBYQA_INSTALLED:
         raise NotImplementedError(
             "The pybobyqa package is not installed and required for 'nag_pybobyqa'. "
-            "You can install it with 'pip install Py-BOBYQA'."
+            "You can install it with 'pip install Py-BOBYQA'. "
+            "For additional installation instructions visit: ",
+            r"https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/"
+            "install.html",
         )
 
-    if initial_trust_radius is None:
-        initial_trust_radius = calculate_initial_trust_region_radius(x)
+    if initial_trust_region_radius is None:
+        initial_trust_region_radius = calculate_initial_trust_region_radius(x)
 
     algo_info = {
         "name": "nag_pybobyqa",
@@ -140,9 +155,11 @@ def nag_pybobyqa(
         "init.run_in_parallel": not intermediate_processing_of_initial_points,
         "general.rounding_error_constant": interpolation_rounding_error_constant,
         "general.safety_step_thresh": threshold_for_safety_step,
-        "general.check_objfun_for_overflow": False,
+        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
         "tr_radius.eta1": min_improvement_for_successful_iteration,
         "tr_radius.eta2": threshold_for_very_succesful_iteration,
+        "tr_radius.gamma_inc": trust_region_increase_factor_after_success,
+        "tr_radius.gamma_inc_overline": trust_region_increase_factor_after_large_success,  # noqa E501
     }
 
     res = pybobyqa.solve(
@@ -150,7 +167,7 @@ def nag_pybobyqa(
         x0=x,
         bounds=(lower_bounds, upper_bounds),
         maxfun=max_criterion_evaluations,
-        rhobeg=initial_trust_radius,
+        rhobeg=initial_trust_region_radius,
         user_params=advanced_options,
         scaling_within_bounds=False,
         do_logging=False,
