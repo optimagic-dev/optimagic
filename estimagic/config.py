@@ -95,7 +95,39 @@ LIMITED_MEMORY_STORAGE_LENGTH = 10
 # Numerical Algorithm Group Tuning Parameters
 
 RANDOM_INITIAL_DIRECTIONS = False
+"""bool: Whether to draw the initial directions randomly or use the coordinate
+directions."""
+
 RANDOM_DIRECTIONS_ORTHOGONAL = True
+"""bool: Whether to make randomly drawn initial directions orthogonal."""
+
+CRITERION_NOISY = False
+"""bool: Whether the criterion function is noisy, i.e. does not always return the
+same value when evaluated at the same parameter values."""
+
+
+def NR_EVALS_PER_POINT(delta, rho, iter, nrestarts):  # noqa: A002, N802
+    """Evaluate the criterion function once at every point.
+
+    This is only applicable for criterion functions with stochastic noise,
+    when averaging multiple evaluations at the same point increases accuracy.
+
+    Args:
+        delta (float): the trust region radius.
+        rho (float): the lower bound on the trust region radius.
+        iter (int): how many iterations the algorithm has been running for.
+        nrestarts (int): how many restarts have been performed
+
+    Returns:
+        nr_evals_per_point (int)
+
+    """
+    return 1
+
+
+NR_INTERPOLATION_POINTS = None
+"""the number of interpolation points to use. The default is to calculate it from the
+problem dimension. See the algorithm's function docstring for details."""
 
 # =================================================================================
 # Dashboard Defaults

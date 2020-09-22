@@ -1,9 +1,11 @@
 """"Implement algorithms by the [Numerical Algorithms Group](https://www.nag.com/)."""
 from functools import partial
 
+from estimagic.config import CRITERION_NOISY
 from estimagic.config import INITIAL_TRUST_RADIUS
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
+from estimagic.config import NR_EVALS_PER_POINT
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
 
@@ -23,8 +25,11 @@ def nag_pybobyqa(
     initial_trust_radius=INITIAL_TRUST_RADIUS,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
+    nr_interpolation_points=None,
+    criterion_noisy=CRITERION_NOISY,
+    nr_evals_per_point=NR_EVALS_PER_POINT,
 ):
-    """Minimize a function using the BOBYQA algorithm.
+    r"""Minimize a function using the BOBYQA algorithm.
 
     BOBYQA is a derivative-free trust-region method.
     It is designed to solve nonlinear local minimization problems.
@@ -49,6 +54,27 @@ def nag_pybobyqa(
             randomly (as opposed to coordinate directions).
         random_directions_orthogonal (bool): If True and random initial directions are
             drawn, the drawn directions are made orthogonal.
+        nr_interpolation_points (int): the number of interpolation points to use.
+            default is 2n+1 for a problem with len(x)=n if not criterion_noisy,
+            otherwise it is set to (n+1)(n+2)/2). Larger values are particularly
+            useful for noisy problems. Py-BOBYQA requires
+
+            .. math::
+                n + 1 \leq nr_interpolation_points \leq (n+1)(n+2)/2.
+
+        criterion_noisy (bool): Whether the criterion function is noisy, i.e. whether
+            it does not always return the same value when evaluated at the same
+            parameters.
+        nr_evals_per_point (func): How often to evaluate the criterion function at each
+            point. The function must take `delta`, `rho`, `iter` and `nrestarts` as
+            arguments and return an integer. This is only applicable for
+            criterion functions with stochastic noise, when averaging multiple
+            evaluations at the same point produces a more accurate value.
+            The input parameters are the trust region radius (delta), the lower bound
+            on the trust region radius (rho), how many iterations the algorithm has
+            been running for (iter), and how many restarts have been performed
+            (nrestarts). Default is no averaging (i.e.
+            nr_evals_per_point(delta, rho, iter, nrestarts) = 1).
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -78,14 +104,16 @@ def nag_pybobyqa(
     res = pybobyqa.solve(
         criterion,
         x0=x,
-        # always pass the bounds as bobyqa would set +/- 1e20 as defaults.
         bounds=(lower_bounds, upper_bounds),
         maxfun=max_criterion_evaluations,
+        rhobeg=initial_trust_radius,
+        user_params=advanced_options,
         scaling_within_bounds=False,
         do_logging=False,
         print_progress=False,
-        rhobeg=initial_trust_radius,
-        user_params=advanced_options,
+        objfun_has_noise=criterion_noisy,
+        nsamples=nr_evals_per_point,
+        npt=nr_interpolation_points,
     )
 
     return _process_nag_result(res)
