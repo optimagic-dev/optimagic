@@ -4,11 +4,11 @@ import functools
 import numpy as np
 
 from estimagic.config import ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.config import INITIAL_TRUST_RADIUS
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import MAX_ITERATIONS
 from estimagic.config import RELATIVE_GRADIENT_TOLERANCE
 from estimagic.config import SCALED_GRADIENT_TOLERANCE
+from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 try:
     from petsc4py import PETSc
@@ -32,7 +32,7 @@ def tao_pounders(
     absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
     relative_gradient_tolerance=RELATIVE_GRADIENT_TOLERANCE,
     scaled_gradient_tolerance=SCALED_GRADIENT_TOLERANCE,
-    initial_trust_region_radius=INITIAL_TRUST_RADIUS,
+    initial_trust_region_radius=None,
     max_iterations=MAX_ITERATIONS,
 ):
     r"""Minimize a function using the POUNDERs algorithm.
@@ -148,7 +148,9 @@ def tao_pounders(
     # want more than pounders.
     tao.setResidual(func_tao, residuals_out)
 
-    if initial_trust_region_radius <= 0:
+    if initial_trust_region_radius is None:
+        initial_trust_region_radius = calculate_initial_trust_region_radius(x)
+    elif initial_trust_region_radius <= 0:
         raise ValueError("The initial trust region radius must be > 0.")
     tao.setInitialTrustRegionRadius(initial_trust_region_radius)
 

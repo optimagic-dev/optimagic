@@ -23,5 +23,7 @@ if IS_PYBOBYQA_INSTALLED:
 
 
 AVAILABLE_ALGORITHMS = {
-    key: val for key, val in AVAILABLE_ALGORITHMS.items() if not key.startswith("_")
+    key: val
+    for key, val in AVAILABLE_ALGORITHMS.items()
+    if not key.startswith("_") and key not in ["calculate_initial_trust_region_radius"]
 }

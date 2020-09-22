@@ -2,7 +2,6 @@
 from functools import partial
 
 from estimagic.config import CRITERION_NOISY
-from estimagic.config import INITIAL_TRUST_RADIUS
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
 from estimagic.config import MIN_IMPROVEMENT_FOR_SUCCESSFUL_ITERATION
@@ -10,6 +9,7 @@ from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
 from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.config import THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION
+from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 try:
     import pybobyqa
@@ -25,7 +25,7 @@ def nag_pybobyqa(
     *,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
-    initial_trust_radius=INITIAL_TRUST_RADIUS,
+    initial_trust_radius=None,
     seek_global_minimum=False,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
@@ -120,6 +120,9 @@ def nag_pybobyqa(
             "The pybobyqa package is not installed and required for 'nag_pybobyqa'. "
             "You can install it with 'pip install Py-BOBYQA'."
         )
+
+    if initial_trust_radius is None:
+        initial_trust_radius = calculate_initial_trust_region_radius(x)
 
     algo_info = {
         "name": "nag_pybobyqa",

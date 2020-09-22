@@ -88,12 +88,6 @@ LIMITED_MEMORY_STORAGE_LENGTH = 10
 # Trust Region Parameters
 # -------------------------
 
-INITIAL_TRUST_RADIUS = 1
-"""float: recommended for scipy_trust_constr in :cite:`Conn2000`, p. 19.
-It is also scipy's default for COBYLA's start Rho, which behaves similar to an
-initial trust radius. pyBOBYQA's default is 0.1 times the norm of the start params
-but no larger than 1."""
-
 MIN_IMPROVEMENT_FOR_SUCCESSFUL_ITERATION = 0.1
 """float: minimum share of predicted improvement that has to be realized for an
 iteration to count as successful."""
