@@ -69,9 +69,9 @@ SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 1e-08
 criterion apart from max iterations etc. is available
 this is taken from scipy (SLSQP's value, smaller than Nelder-Mead)"""
 
-SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 0.0001
+SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 1e-08
 """float: The absolute parameter tolerance estimagic requires if no other stopping
-criterion apart from max iterations etc. is available. This is taken from Nelder-Mead.
+criterion apart from max iterations etc. is available. This is taken from pybobyqa.
 """
 
 # =====================================================================================
@@ -94,6 +94,15 @@ It is also scipy's default for COBYLA's start Rho, which behaves similar to an
 initial trust radius. pyBOBYQA's default is 0.1 times the norm of the start params
 but no larger than 1."""
 
+MIN_IMPROVEMENT_FOR_SUCCESSFUL_ITERATION = 0.1
+"""float: minimum share of predicted improvement that has to be realized for an
+iteration to count as successful."""
+
+THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION = 0.7
+"""float: share of predicted improvement that has to be surpassed for an iteration to
+count as very successful.
+"""
+
 # ---------------------------------------------
 # Numerical Algorithm Group Tuning Parameters
 # ---------------------------------------------
@@ -108,26 +117,6 @@ RANDOM_DIRECTIONS_ORTHOGONAL = True
 CRITERION_NOISY = False
 """bool: Whether the criterion function is noisy, i.e. does not always return the
 same value when evaluated at the same parameter values."""
-
-
-def NR_EVALS_PER_POINT(delta, rho, iter, nrestarts):  # noqa: A002, N802
-    """Evaluate the criterion function once at every point.
-
-    This is only applicable for criterion functions with stochastic noise,
-    when averaging multiple evaluations at the same point increases accuracy.
-
-    Args:
-        delta (float): the trust region radius.
-        rho (float): the lower bound on the trust region radius.
-        iter (int): how many iterations the algorithm has been running for.
-        nrestarts (int): how many restarts have been performed
-
-    Returns:
-        nr_evals_per_point (int)
-
-    """
-    return 1
-
 
 NR_INTERPOLATION_POINTS = None
 """the number of interpolation points to use. The default is to calculate it from the

@@ -5,9 +5,11 @@ from estimagic.config import CRITERION_NOISY
 from estimagic.config import INITIAL_TRUST_RADIUS
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
-from estimagic.config import NR_EVALS_PER_POINT
+from estimagic.config import MIN_IMPROVEMENT_FOR_SUCCESSFUL_ITERATION
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
+from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.config import THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION
 
 try:
     import pybobyqa
@@ -22,12 +24,20 @@ def nag_pybobyqa(
     upper_bounds,
     *,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
+    absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
     initial_trust_radius=INITIAL_TRUST_RADIUS,
+    seek_global_minimum=False,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
     nr_interpolation_points=None,
     criterion_noisy=CRITERION_NOISY,
-    nr_evals_per_point=NR_EVALS_PER_POINT,
+    nr_evals_per_point=None,
+    interpolation_rounding_error_constant=0.1,
+    threshold_for_safety_step=0.5,
+    intermediate_processing_of_initial_points=True,
+    min_improvement_for_successful_iteration=MIN_IMPROVEMENT_FOR_SUCCESSFUL_ITERATION,
+    threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
+    trust_region_radius_reduction_when_not_successful=None,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -48,9 +58,13 @@ def nag_pybobyqa(
     <https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/index.html>`_.
 
     Args:
+        absolute_params_tolerance (float): minimum allowed value of the trust region
+            radius, which determines when a successful termination occurs.
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
         initial_trust_radius (float): the initial value of the trust region radius.
+        seek_global_minimum (bool): Whether to apply the heuristic to escape local
+            minima presented in :cite:`Cartis2018a`.
         random_initial_directions (bool): If True, the initial directions are drawn
             randomly (as opposed to coordinate directions).
         random_directions_orthogonal (bool): If True and random initial directions are
@@ -79,6 +93,23 @@ def nag_pybobyqa(
             and how many restarts have been performed (``nrestarts``).
             Default is no averaging (i.e.
             ``nr_evals_per_point(delta, rho, iter, nrestarts) = 1``).
+        interpolation_rounding_error_constant (float): Internally, all interpolation
+            points are stored with respect to a base point :math:`x_b`; that is,
+            pybobyqa stores :math:`\{y_t-x_b\}`, which reduces the risk of roundoff
+            errors. We shift :math:`x_b` to :math:`x_k` when
+            :math:`\|s_k\| \leq \text{interpolation_rounding_error_constant}\|x_k-x_b\|`
+        threshold_for_safety_step (float): Threshold for when to call the safety step,
+            :math:`\|s_k\| \leq \text{threshold_for_safety_step} \rho_k`.
+        intermediate_processing_of_initial_points (bool): If using random directions,
+            whether to do intermediate processing between point evaluations.
+        min_improvement_for_successful_iteration (float): minimum share of the predicted
+            improvement that has to be realized for an iteration to count as successful.
+        threshold_for_very_succesful_iteration (float): share of predicted improvement
+            that has to be surpassed for an iteration to count as very successful.
+        trust_region_reduction_ratio_when_not_successful (float): ratio by which to
+            decrease the trust region radius when realized improvement does not match
+            the min_improvement_for_successful_iteration. Default is 0.5 for
+            deterministic problems or 0.98 if ``criterion_noisy``.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -103,6 +134,12 @@ def nag_pybobyqa(
     advanced_options = {
         "init.random_initial_directions": random_initial_directions,
         "init.random_directions_make_orthogonal": random_directions_orthogonal,
+        "init.run_in_parallel": not intermediate_processing_of_initial_points,
+        "general.rounding_error_constant": interpolation_rounding_error_constant,
+        "general.safety_step_thresh": threshold_for_safety_step,
+        "general.check_objfun_for_overflow": False,
+        "tr_radius.eta1": min_improvement_for_successful_iteration,
+        "tr_radius.eta2": threshold_for_very_succesful_iteration,
     }
 
     res = pybobyqa.solve(
@@ -118,6 +155,8 @@ def nag_pybobyqa(
         objfun_has_noise=criterion_noisy,
         nsamples=nr_evals_per_point,
         npt=nr_interpolation_points,
+        rhoend=absolute_params_tolerance,
+        seek_global_minimum=seek_global_minimum,
     )
 
     return _process_nag_result(res)
@@ -133,5 +172,6 @@ def _process_nag_result(nag_result_obj):
         "n_criterion_evaluations": nag_result_obj.nx,
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
+        "reached_convergence_criterion": None,
     }
     return processed
