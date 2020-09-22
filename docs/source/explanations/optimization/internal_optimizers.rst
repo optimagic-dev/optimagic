@@ -198,11 +198,6 @@ Optimizer configurations
   typically do better than using the default. Intuitively this can be described as a
   reasonable change in parameters the optimizer can take from the start values.
 
-- **max_trust_radius** *(float)*: The precise definition might depend on an
-  optimizer but typically this is the maximum change allowed for a parameter between
-  two iterations. Note this is very problem specific and you can
-  typically do better than using the default.
-
 - **limited_memory_storage_length** *(int)*: Maximum number of stored objects
   in a limited memory algorithm. Typically this refers to the number of gradient
   evaluations used to approximate the Hessian in Quasi-Newton algorithms.

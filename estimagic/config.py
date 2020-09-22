@@ -81,18 +81,22 @@ criterion apart from max iterations etc. is available. This is taken from Nelder
 MAX_LINE_SEARCH_STEPS = 20
 """int: Inspired by scipy L-BFGS-B."""
 
+LIMITED_MEMORY_STORAGE_LENGTH = 10
+"""int: Taken from scipy L-BFGS-B."""
+
+# -------------------------
+# Trust Region Parameters
+# -------------------------
+
 INITIAL_TRUST_RADIUS = 1
 """float: recommended for scipy_trust_constr in :cite:`Conn2000`, p. 19.
 It is also scipy's default for COBYLA's start Rho, which behaves similar to an
 initial trust radius. pyBOBYQA's default is 0.1 times the norm of the start params
 but no larger than 1."""
 
-MAX_TRUST_RADIUS = 100
-
-LIMITED_MEMORY_STORAGE_LENGTH = 10
-"""int: Taken from scipy L-BFGS-B."""
-
+# ---------------------------------------------
 # Numerical Algorithm Group Tuning Parameters
+# ---------------------------------------------
 
 RANDOM_INITIAL_DIRECTIONS = False
 """bool: Whether to draw the initial directions randomly or use the coordinate
