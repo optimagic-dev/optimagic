@@ -1,6 +1,8 @@
 """"Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/]."""
 from functools import partial
 
+import numpy as np
+
 from estimagic.config import CRITERION_NOISY
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
@@ -41,6 +43,7 @@ def nag_pybobyqa(
     clip_criterion_if_overflowing=True,
     trust_region_increase_factor_after_success=2.0,
     trust_region_increase_factor_after_large_success=4.0,
+    trust_region_lower_bound_decrease_factor=None,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -67,7 +70,8 @@ def nag_pybobyqa(
             reached, the optimization stops but we do not count this as convergence.
         initial_trust_region_radius (float): initial value of the trust region radius.
         seek_global_minimum (bool): Whether to apply the heuristic to escape local
-            minima presented in :cite:`Cartis2018a`.
+            minima presented in :cite:`Cartis2018a`. Only applies for noisy criterion
+            functions.r
         random_initial_directions (bool): If True, the initial directions are drawn
             randomly (as opposed to coordinate directions).
         random_directions_orthogonal (bool): If True and random initial directions are
@@ -122,6 +126,15 @@ def nag_pybobyqa(
             Ratio of the proposed step (:math:`\|s_k\|`) by which to increase the
             trust region radius (:math:`\Delta_k`) in very successful iterations
             (:math:`\overline{\gamma}_{inc}`).
+        trust_region_lower_bound_decrease_factor (float):
+            Ratio to decrease the lower bound on the trust region radius
+            (:math:`\rho_k`) by when it is reduced (:math:`\alpha_1`).
+            Default is 0.9 if ``criterion_noisy`` and 0.1 else.
+        trust_region_update_from_lower_bound_to_trust_region_factor (float):
+            Ratio of the lower bound on the trust region (:math:`\rho_k`) to decrease
+            the actual trust region radius (:math:`\Delta_k`) by when the lower bound
+            is reduced (:math:`\alpha_2`). Default is 0.95 if ``criterion_noisy`` and
+            0.5 else.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -160,6 +173,9 @@ def nag_pybobyqa(
         "tr_radius.eta2": threshold_for_very_succesful_iteration,
         "tr_radius.gamma_inc": trust_region_increase_factor_after_success,
         "tr_radius.gamma_inc_overline": trust_region_increase_factor_after_large_success,  # noqa E501
+        "tr_radius.alpha1": trust_region_lower_bound_decrease_factor,
+        # we do not want the optimizer to stop at some absolute value
+        "model.abs_tol": -np.inf,
     }
 
     res = pybobyqa.solve(
