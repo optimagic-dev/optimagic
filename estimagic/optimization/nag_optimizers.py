@@ -41,9 +41,13 @@ def nag_pybobyqa(
     threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
     trust_region_radius_reduction_when_not_successful=None,
     clip_criterion_if_overflowing=True,
+    absolute_criterion_value_stopping_criterion=-np.inf,
     trust_region_increase_factor_after_success=2.0,
     trust_region_increase_factor_after_large_success=4.0,
     trust_region_lower_bound_decrease_factor=None,
+    threshold_for_insufficient_improvement=1e-8,
+    number_of_insufficient_improvements_to_terminate=None,
+    comparison_period_for_insufficient_improvement=5,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -62,6 +66,15 @@ def nag_pybobyqa(
 
     The detailed documentation of the algorithm can be found `here
     <https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/index.html>`_.
+
+    There are three convergence criteria. The first is a lower bound on the trust region
+    radius. This is approximately equivalent to an absolute parameter tolerance.
+    The second is an absolute criterion value. When the criterion value falls below
+    this threshold, the optimization terminates successfully.
+    The third is a stopping criterion when insufficient improvements have been gained
+    over a certain number of iterations. The (absolute) threshold for what constitutes
+    an insufficient improvement, how many iterations have to be insufficient and with
+    which iteration to compare can all be specified by the user.
 
     Args:
         absolute_params_tolerance (float): minimum allowed value of the trust region
@@ -119,6 +132,8 @@ def nag_pybobyqa(
             deterministic problems or 0.98 if ``criterion_noisy``.
         clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
             raise an OverflowError otherwise.
+        absolute_criterion_value_stopping_criterion (float): Terminate successfully if
+            the criterion value falls below this threshold.
         trust_region_increase_factor_after_success (float): Ratio by which to increase
             the trust region radius :math:`\Delta_k` in very successful iterations
             (:math:`\gamma_{inc}`).
@@ -135,6 +150,18 @@ def nag_pybobyqa(
             the actual trust region radius (:math:`\Delta_k`) by when the lower bound
             is reduced (:math:`\alpha_2`). Default is 0.95 if ``criterion_noisy`` and
             0.5 else.
+        threshold_for_insufficient_improvement (float): Threshold whether an improvement
+            is insufficient. Note: the improvement is divided by the
+            ``comparison_period_for_insufficient_improvement``.
+            So this is the required average improvement per iteration over the
+            comparison period.
+        number_of_insufficient_improvements_to_terminate (int): Number of consecutive
+            insufficient improvements before termination (or restart). Default is
+            :code:`20*len(x0)`.
+        comparison_period_for_insufficient_improvement (int):
+            How many iterations to go back calculate the improvement.
+            For example 5 would mean that each criterion evaluation is compared to the
+            criterion value from 5 iterations before.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -175,7 +202,10 @@ def nag_pybobyqa(
         "tr_radius.gamma_inc_overline": trust_region_increase_factor_after_large_success,  # noqa E501
         "tr_radius.alpha1": trust_region_lower_bound_decrease_factor,
         # we do not want the optimizer to stop at some absolute value
-        "model.abs_tol": -np.inf,
+        "model.abs_tol": absolute_criterion_value_stopping_criterion,
+        "slow.thresh_for_slow": threshold_for_insufficient_improvement,
+        "slow.max_slow_iters": number_of_insufficient_improvements_to_terminate,
+        "slow.history_for_slow": comparison_period_for_insufficient_improvement,
     }
 
     res = pybobyqa.solve(
