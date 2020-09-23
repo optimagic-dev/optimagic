@@ -41,7 +41,7 @@ def nag_pybobyqa(
     threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
     trust_region_radius_reduction_when_not_successful=None,
     clip_criterion_if_overflowing=True,
-    absolute_criterion_value_stopping_criterion=-np.inf,
+    absolute_criterion_value_stopping_criterion=None,
     trust_region_increase_factor_after_success=2.0,
     trust_region_increase_factor_after_large_success=4.0,
     trust_region_lower_bound_decrease_factor=None,
@@ -87,10 +87,10 @@ def nag_pybobyqa(
     The detailed documentation of the algorithm can be found `here
     <https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/index.html>`_.
 
-    There are four convergence criteria:
+    There are four possible convergence criteria:
 
     1. when the trust region radius is reduced below a lower bound. This is
-        approximately equivalent to an absolute parameter tolerance.
+       approximately equivalent to an absolute parameter tolerance.
 
     2. when the criterion value falls below an absolute, user-specified value,
        the optimization terminates successfully.
@@ -101,24 +101,25 @@ def nag_pybobyqa(
        iteration to compare can all be specified by the user.
 
     4. when all evaluations on the trust region points fall within a scaled version of
-       the noise level of the criterion function.
+       the noise level of the criterion function. This is only applicable if the
+       criterion function is noisy.
 
     Args:
-        absolute_params_tolerance (float): minimum allowed value of the trust region
+        absolute_params_tolerance (float): Minimum allowed value of the trust region
             radius, which determines when a successful termination occurs.
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
-        initial_trust_region_radius (float): initial value of the trust region radius.
-        seek_global_minimum (bool): Whether to apply the heuristic to escape local
+        initial_trust_region_radius (float): Initial value of the trust region radius.
+        seek_global_minimum (bool): whether to apply the heuristic to escape local
             minima presented in :cite:`Cartis2018a`. Only applies for noisy criterion
-            functions.r
-        random_initial_directions (bool): If True, the initial directions are drawn
+            functions.
+        random_initial_directions (bool): Whether to draw the initial directions
             randomly (as opposed to coordinate directions).
-        random_directions_orthogonal (bool): If True and random initial directions are
-            drawn, the drawn directions are made orthogonal.
-        nr_interpolation_points (int): the number of interpolation points to use.
-            default is $ 2n+1 $ for a problem with $ len(x)=n $ if not
-            ``criterion_noisy``. Otherwise it is set to $ (n+1)(n+2)/2) $.
+        random_directions_orthogonal (bool): Whether to make random initial directions
+            orthogonal.
+        nr_interpolation_points (int): The number of interpolation points to use.
+            With $n=len(x)$ the default is $2n+1$ if not ``criterion_noisy``.
+            Otherwise, it is set to $(n+1)(n+2)/2)$.
 
             Larger values are particularly useful for noisy problems.
             Py-BOBYQA requires
@@ -142,42 +143,44 @@ def nag_pybobyqa(
             Default is no averaging (i.e.
             ``nr_evals_per_point(delta, rho, iter, nrestarts) = 1``).
         interpolation_rounding_error_constant (float): Internally, all interpolation
-            points are stored with respect to a base point :math:`x_b`; that is,
-            pybobyqa stores :math:`\{y_t-x_b\}`, which reduces the risk of roundoff
-            errors. We shift :math:`x_b` to :math:`x_k` when
-            :math:`\|s_k\| \leq \text{interpolation_rounding_error_constant}\|x_k-x_b\|`
+            points are stored with respect to a base point $x_b$; that is,
+            pybobyqa stores $\{y_t-x_b\}$, which reduces the risk of roundoff
+            errors. We shift $x_b$ to $x_k$ when
+            :math:`\|s_k\| \leq
+            \text{interpolation_rounding_error_constant} \cdot \|x_k-x_b\|`
         threshold_for_safety_step (float): Threshold for when to call the safety step,
-            :math:`\|s_k\| \leq \text{threshold_for_safety_step} \rho_k`.
+            :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`
         intermediate_processing_of_initial_points (bool): If using random directions,
             whether to do intermediate processing between point evaluations.
-        min_improvement_for_successful_iteration (float): minimum share of the predicted
+        min_improvement_for_successful_iteration (float): Minimum share of the predicted
             improvement that has to be realized for an iteration to count as successful.
-        threshold_for_very_succesful_iteration (float): share of predicted improvement
+        threshold_for_very_succesful_iteration (float): Share of predicted improvement
             that has to be surpassed for an iteration to count as very successful.
-        trust_region_reduction_ratio_when_not_successful (float): ratio by which to
+        trust_region_reduction_ratio_when_not_successful (float): Ratio by which to
             decrease the trust region radius when realized improvement does not match
-            the min_improvement_for_successful_iteration. Default is 0.5 for
-            deterministic problems or 0.98 if ``criterion_noisy``.
+            the ``min_improvement_for_successful_iteration``. The default is 0.98 if
+            ``criterion_noisy`` and 0.5 else.
         clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
-            raise an OverflowError otherwise.
+            raise an ``OverflowError`` otherwise.
         absolute_criterion_value_stopping_criterion (float): Terminate successfully if
-            the criterion value falls below this threshold.
+            the criterion value falls below this threshold. This is deactivated
+            (i.e. set to -inf) by default.
         trust_region_increase_factor_after_success (float): Ratio by which to increase
             the trust region radius :math:`\Delta_k` in very successful iterations
             (:math:`\gamma_{inc}`).
         trust_region_increase_factor_after_large_success (float):
-            Ratio of the proposed step (:math:`\|s_k\|`) by which to increase the
+            Ratio of the proposed step ($\|s_k\|$) by which to increase the
             trust region radius (:math:`\Delta_k`) in very successful iterations
             (:math:`\overline{\gamma}_{inc}`).
         trust_region_lower_bound_decrease_factor (float):
-            Ratio to decrease the lower bound on the trust region radius
-            (:math:`\rho_k`) by when it is reduced (:math:`\alpha_1`).
+            Ratio by which to decrease the lower bound on the trust region radius
+            (:math:`\rho_k`) (:math:`\alpha_1`).
             Default is 0.9 if ``criterion_noisy`` and 0.1 else.
         trust_region_update_from_lower_bound_to_trust_region_factor (float):
-            Ratio of the lower bound on the trust region (:math:`\rho_k`) to decrease
-            the actual trust region radius (:math:`\Delta_k`) by when the lower bound
-            is reduced (:math:`\alpha_2`). Default is 0.95 if ``criterion_noisy`` and
-            0.5 else.
+            Ratio of the lower bound on the trust region (:math:`\rho_k`) by which
+            to decrease the actual trust region radius (:math:`\Delta_k`)
+            when the lower bound is reduced (:math:`\alpha_2`). Default is 0.95 if
+            ``criterion_noisy`` and 0.5 else.
         threshold_for_insufficient_improvement (float): Threshold whether an improvement
             is insufficient. Note: the improvement is divided by the
             ``comparison_period_for_insufficient_improvement``.
@@ -185,15 +188,15 @@ def nag_pybobyqa(
             comparison period.
         nr_of_insufficient_improvements_to_terminate (int): Number of consecutive
             insufficient improvements before termination (or restart). Default is
-            :code:`20*len(x0)`.
+            ``20 * len(x)``.
         comparison_period_for_insufficient_improvement (int):
-            How many iterations to go back calculate the improvement.
+            How many iterations to go back to calculate the improvement.
             For example 5 would mean that each criterion evaluation is compared to the
             criterion value from 5 iterations before.
         quit_when_trust_evaluations_within_noise_level (bool): Flag to quit
-            (or restart) if all :math:`f(y_t)` are within noise level of
-            :math:`f(x_k)`. Default is :code:`True` if ``noisy_criterion`` and
-            :code:`False` else.
+            (or restart) if all $f(y_t)$ are within noise level of
+            $f(x_k)$. Default is ``True`` if ``noisy_criterion`` and
+            ``False`` else.
         noise_scale_factor_for_quit (float): Factor of the noise level to use in
             termination criterion.
         multiplicative_noise_level (float): Multiplicative noise level in the
@@ -210,10 +213,10 @@ def nag_pybobyqa(
         use_restarts (bool): whether to do restarts when the lower bound on the trust
             region radius (:math:`\rho_k`) reaches the stopping criterion
             (:math:`\rho_{end}`), or (optionally) when all points are within noise
-            level. Default is :code:`True` if ``criterion_noisy`` or when
+            level. Default is ``True`` if ``criterion_noisy`` or when
             ``seek_global_minimum``.
         max_unsuccessful_restarts (int): maximum number of consecutive unsuccessful
-            restarts allowed (i.e.~restarts which did not reduce the objective further)
+            restarts allowed (i.e. restarts which did not reduce the objective further)
         max_unsuccessful_restarts_total (int): number of total unsuccessful restarts
             allowed. Default is 20 if ``seek_global_optimum`` and else unrestricted.
         trust_region_rescaling_after_unsuccessful_restart (float): Factor by which to
@@ -225,29 +228,29 @@ def nag_pybobyqa(
         nr_points_to_move_at_soft_restart (int): Number of interpolation points to
             move at each soft restart.
         move_current_point_at_soft_restart (bool): Whether to move the current
-            evaluation point (:math:`x_k`) to the best new point evaluated.
+            evaluation point ($x_k$) to the best new point evaluated.
         reuse_criterion_value_at_hard_restart (bool): whether or not to recycle the
             criterion value at the best iterate found when performing a hard restart.
             This saves one objective evaluation.
         max_nr_only_local_improvements_after_soft_restart (int):
             The maximum number of successful steps in a given run where the new
-            objective value is larger than the best value found in a previous run.
-            Default is ``max_criterion_evaluations``.
+            objective value is worse than the best value found in previous runs before
+            terminating. Default is ``max_criterion_evaluations``.
         additional_automatic_restart_detection (bool): Whether or not to
             automatically determine when to restart. This is an extra condition, and
             restarts can still be triggered by small trust region radius, etc.
-        iterations_to_save_for_automatic_restart_detection (int):
-            How many iterations of model changes and trust region radii to store.
             There are two criteria used: trust region radius decreases
             (no increases over the history, more decreases than no changes) and
             change in model Jacobian (consistently increasing trend as measured
             by slope and correlation coefficient of line of best fit).
+        iterations_to_save_for_automatic_restart_detection (int):
+            How many iterations of model changes and trust region radii to store.
         min_model_slope_increase_for_automatic_restart (float):
-            Minimum rate of increase of :math:`\log(\|g_k-g_{k-1}\|)` and
-            :math:`\log(\|H_k-H_{k-1}\|_F)` over past iterations to cause a restart.
+            Minimum rate of increase of $\log(\|g_k-g_{k-1}\|)$ and
+            $\log(\|H_k-H_{k-1}\|_F)$ over past iterations to cause a restart.
         min_correlations_for_automatic_restart (float):
-            Minimum correlation of the data sets :math:`(k, \log(\|g_k-g_{k-1}\|))` and
-            :math:`(k, \log(\|H_k-H_{k-1}\|_F))` required to cause a restart.
+            Minimum correlation of the data sets $(k, \log(\|g_k-g_{k-1}\|))$ and
+            $(k, \log(\|H_k-H_{k-1}\|_F))$ required to cause a restart.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -264,6 +267,8 @@ def nag_pybobyqa(
 
     if initial_trust_region_radius is None:
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
+    if absolute_criterion_value_stopping_criterion is None:
+        absolute_criterion_value_stopping_criterion = (-np.inf,)
 
     algo_info = {
         "name": "nag_pybobyqa",
@@ -287,7 +292,6 @@ def nag_pybobyqa(
         "tr_radius.gamma_inc": trust_region_increase_factor_after_success,
         "tr_radius.gamma_inc_overline": trust_region_increase_factor_after_large_success,  # noqa E501
         "tr_radius.alpha1": trust_region_lower_bound_decrease_factor,
-        # we do not want the optimizer to stop at some absolute value
         "model.abs_tol": absolute_criterion_value_stopping_criterion,
         "slow.thresh_for_slow": threshold_for_insufficient_improvement,
         "slow.max_slow_iters": nr_of_insufficient_improvements_to_terminate,
