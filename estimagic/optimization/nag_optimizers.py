@@ -46,8 +46,28 @@ def nag_pybobyqa(
     trust_region_increase_factor_after_large_success=4.0,
     trust_region_lower_bound_decrease_factor=None,
     threshold_for_insufficient_improvement=1e-8,
-    number_of_insufficient_improvements_to_terminate=None,
+    nr_of_insufficient_improvements_to_terminate=None,
     comparison_period_for_insufficient_improvement=5,
+    quit_when_trust_evaluations_within_noise_level=None,
+    noise_scale_factor_for_quit=1.0,
+    multiplicative_noise_level=None,
+    additive_noise_level=None,
+    scale_interpolation_system=True,
+    frobenius_for_interpolation_problem=True,
+    use_restarts=None,
+    max_unsuccessful_restarts=10,
+    max_unsuccessful_restarts_total=None,
+    trust_region_rescaling_after_unsuccessful_restart=None,
+    trust_region_stop_criterion_scaling_after_restart=1.0,
+    use_soft_restarts=True,
+    nr_points_to_move_at_soft_restart=3,
+    move_current_point_at_soft_restart=True,
+    reuse_criterion_value_at_hard_restart=True,
+    max_nr_only_local_improvements_after_soft_restart=None,
+    additional_automatic_restart_detection=True,
+    iterations_to_save_for_automatic_restart_detection=30,
+    min_model_slope_increase_for_automatic_restart=0.015,
+    min_correlations_for_automatic_restart=0.1,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -67,14 +87,21 @@ def nag_pybobyqa(
     The detailed documentation of the algorithm can be found `here
     <https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/index.html>`_.
 
-    There are three convergence criteria. The first is a lower bound on the trust region
-    radius. This is approximately equivalent to an absolute parameter tolerance.
-    The second is an absolute criterion value. When the criterion value falls below
-    this threshold, the optimization terminates successfully.
-    The third is a stopping criterion when insufficient improvements have been gained
-    over a certain number of iterations. The (absolute) threshold for what constitutes
-    an insufficient improvement, how many iterations have to be insufficient and with
-    which iteration to compare can all be specified by the user.
+    There are four convergence criteria:
+
+    1. when the trust region radius is reduced below a lower bound. This is
+        approximately equivalent to an absolute parameter tolerance.
+
+    2. when the criterion value falls below an absolute, user-specified value,
+       the optimization terminates successfully.
+
+    3. when insufficient improvements have been gained over a certain number of
+       iterations. The (absolute) threshold for what constitutes an insufficient
+       improvement, how many iterations have to be insufficient and with which
+       iteration to compare can all be specified by the user.
+
+    4. when all evaluations on the trust region points fall within a scaled version of
+       the noise level of the criterion function.
 
     Args:
         absolute_params_tolerance (float): minimum allowed value of the trust region
@@ -92,6 +119,7 @@ def nag_pybobyqa(
         nr_interpolation_points (int): the number of interpolation points to use.
             default is $ 2n+1 $ for a problem with $ len(x)=n $ if not
             ``criterion_noisy``. Otherwise it is set to $ (n+1)(n+2)/2) $.
+
             Larger values are particularly useful for noisy problems.
             Py-BOBYQA requires
 
@@ -155,13 +183,71 @@ def nag_pybobyqa(
             ``comparison_period_for_insufficient_improvement``.
             So this is the required average improvement per iteration over the
             comparison period.
-        number_of_insufficient_improvements_to_terminate (int): Number of consecutive
+        nr_of_insufficient_improvements_to_terminate (int): Number of consecutive
             insufficient improvements before termination (or restart). Default is
             :code:`20*len(x0)`.
         comparison_period_for_insufficient_improvement (int):
             How many iterations to go back calculate the improvement.
             For example 5 would mean that each criterion evaluation is compared to the
             criterion value from 5 iterations before.
+        quit_when_trust_evaluations_within_noise_level (bool): Flag to quit
+            (or restart) if all :math:`f(y_t)` are within noise level of
+            :math:`f(x_k)`. Default is :code:`True` if ``noisy_criterion`` and
+            :code:`False` else.
+        noise_scale_factor_for_quit (float): Factor of the noise level to use in
+            termination criterion.
+        multiplicative_noise_level (float): Multiplicative noise level in the
+            criterion. You can only specify ``multiplicative_noise_level`` or
+            ``additive_noise_level``.
+        additive_noise_level (float): Additive noise level in the
+            criterion. You can only specify ``multiplicative_noise_level`` or
+            ``additive_noise_level``.
+        scale_interpolation_system (bool): whether or not to scale the interpolation
+            linear system to improve conditioning.
+        frobenius_for_interpolation_problem (bool): whether to solve the
+            underdetermined quadratic interpolation problem by minimizing the Frobenius
+            norm of the Hessian, or change in Hessian.
+        use_restarts (bool): whether to do restarts when the lower bound on the trust
+            region radius (:math:`\rho_k`) reaches the stopping criterion
+            (:math:`\rho_{end}`), or (optionally) when all points are within noise
+            level. Default is :code:`True` if ``criterion_noisy`` or when
+            ``seek_global_minimum``.
+        max_unsuccessful_restarts (int): maximum number of consecutive unsuccessful
+            restarts allowed (i.e.~restarts which did not reduce the objective further)
+        max_unsuccessful_restarts_total (int): number of total unsuccessful restarts
+            allowed. Default is 20 if ``seek_global_optimum`` and else unrestricted.
+        trust_region_rescaling_after_unsuccessful_restart (float): Factor by which to
+            increase the initial trust region radius (:math:`\rho_{beg}`) after
+            unsuccessful restarts. Default is 1.1 if ``seek_global_optimum`` else 1.
+        trust_region_stop_criterion_scaling_after_restart (float): Factor with which
+            the trust region stopping criterion is multiplied with at each restart.
+        use_soft_restarts (bool): Whether to use soft or hard restarts.
+        nr_points_to_move_at_soft_restart (int): Number of interpolation points to
+            move at each soft restart.
+        move_current_point_at_soft_restart (bool): Whether to move the current
+            evaluation point (:math:`x_k`) to the best new point evaluated.
+        reuse_criterion_value_at_hard_restart (bool): whether or not to recycle the
+            criterion value at the best iterate found when performing a hard restart.
+            This saves one objective evaluation.
+        max_nr_only_local_improvements_after_soft_restart (int):
+            The maximum number of successful steps in a given run where the new
+            objective value is larger than the best value found in a previous run.
+            Default is ``max_criterion_evaluations``.
+        additional_automatic_restart_detection (bool): Whether or not to
+            automatically determine when to restart. This is an extra condition, and
+            restarts can still be triggered by small trust region radius, etc.
+        iterations_to_save_for_automatic_restart_detection (int):
+            How many iterations of model changes and trust region radii to store.
+            There are two criteria used: trust region radius decreases
+            (no increases over the history, more decreases than no changes) and
+            change in model Jacobian (consistently increasing trend as measured
+            by slope and correlation coefficient of line of best fit).
+        min_model_slope_increase_for_automatic_restart (float):
+            Minimum rate of increase of :math:`\log(\|g_k-g_{k-1}\|)` and
+            :math:`\log(\|H_k-H_{k-1}\|_F)` over past iterations to cause a restart.
+        min_correlations_for_automatic_restart (float):
+            Minimum correlation of the data sets :math:`(k, \log(\|g_k-g_{k-1}\|))` and
+            :math:`(k, \log(\|H_k-H_{k-1}\|_F))` required to cause a restart.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -204,8 +290,28 @@ def nag_pybobyqa(
         # we do not want the optimizer to stop at some absolute value
         "model.abs_tol": absolute_criterion_value_stopping_criterion,
         "slow.thresh_for_slow": threshold_for_insufficient_improvement,
-        "slow.max_slow_iters": number_of_insufficient_improvements_to_terminate,
+        "slow.max_slow_iters": nr_of_insufficient_improvements_to_terminate,
         "slow.history_for_slow": comparison_period_for_insufficient_improvement,
+        "noise.quit_on_noise_level": quit_when_trust_evaluations_within_noise_level,
+        "noise.scale_factor_for_quit": noise_scale_factor_for_quit,
+        "noise.multiplicative_noise_level": multiplicative_noise_level,
+        "noise.additive_noise_level": additive_noise_level,
+        "interpolation.precondition": scale_interpolation_system,
+        "interpolation.minimum_change_hessian": frobenius_for_interpolation_problem,
+        "restarts.use_restarts": use_restarts,
+        "restarts.max_unsuccessful_restarts": max_unsuccessful_restarts,
+        "restarts.max_unsuccessful_restarts_total": max_unsuccessful_restarts_total,
+        "restarts.rhobeg_scale_after_unsuccessful_restart": trust_region_rescaling_after_unsuccessful_restart,  # noqa E501
+        "restarts.rhoend_scale": trust_region_stop_criterion_scaling_after_restart,
+        "restarts.use_soft_restarts": use_soft_restarts,
+        "restarts.soft.num_geom_steps": nr_points_to_move_at_soft_restart,
+        "restarts.soft.move_xk": move_current_point_at_soft_restart,
+        "restarts.hard.use_old_fk": reuse_criterion_value_at_hard_restart,
+        "restarts.soft.max_fake_successful_steps": max_nr_only_local_improvements_after_soft_restart,  # noqa: E501
+        "restarts.auto_detect": additional_automatic_restart_detection,
+        "restarts.auto_detect.history": iterations_to_save_for_automatic_restart_detection,  # noqa: E501
+        "restarts.auto_detect.min_chg_model_slope": min_model_slope_increase_for_automatic_restart,  # noqa: E501
+        "restarts.auto_detect.min_correl": min_correlations_for_automatic_restart,
     }
 
     res = pybobyqa.solve(
