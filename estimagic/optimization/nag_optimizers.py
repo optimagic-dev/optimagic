@@ -28,7 +28,7 @@ def nag_pybobyqa(
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
     initial_trust_region_radius=None,
-    seek_global_minimum=False,
+    seek_global_optimum=False,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
     nr_interpolation_points=None,
@@ -110,7 +110,7 @@ def nag_pybobyqa(
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
         initial_trust_region_radius (float): Initial value of the trust region radius.
-        seek_global_minimum (bool): whether to apply the heuristic to escape local
+        seek_global_optimum (bool): whether to apply the heuristic to escape local
             minima presented in :cite:`Cartis2018a`. Only applies for noisy criterion
             functions.
         random_initial_directions (bool): Whether to draw the initial directions
@@ -214,7 +214,7 @@ def nag_pybobyqa(
             region radius (:math:`\rho_k`) reaches the stopping criterion
             (:math:`\rho_{end}`), or (optionally) when all points are within noise
             level. Default is ``True`` if ``criterion_noisy`` or when
-            ``seek_global_minimum``.
+            ``seek_global_optimum``.
         max_unsuccessful_restarts (int): maximum number of consecutive unsuccessful
             restarts allowed (i.e. restarts which did not reduce the objective further)
         max_unsuccessful_restarts_total (int): number of total unsuccessful restarts
@@ -267,8 +267,9 @@ def nag_pybobyqa(
 
     if initial_trust_region_radius is None:
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
+    # -np.inf as a default leads to errors when building the documentation with sphinx.
     if absolute_criterion_value_stopping_criterion is None:
-        absolute_criterion_value_stopping_criterion = (-np.inf,)
+        absolute_criterion_value_stopping_criterion = -np.inf
 
     algo_info = {
         "name": "nag_pybobyqa",
@@ -332,7 +333,7 @@ def nag_pybobyqa(
         nsamples=nr_evals_per_point,
         npt=nr_interpolation_points,
         rhoend=absolute_params_tolerance,
-        seek_global_minimum=seek_global_minimum,
+        seek_global_minimum=seek_global_optimum,
     )
 
     return _process_nag_result(res)
