@@ -127,6 +127,7 @@ cite :cite:`Cartis2018a` additionally.
 The following arguments are not supported as part of ``algo_options``:
 
 - ``scaling_within_bounds``
+- ``init.run_in_parallel``
 - ``do_logging``, ``print_progress`` and all their advanced options.
   Use estimagic's database and dashboard instead to explore your criterion and algorithm.
 

@@ -36,7 +36,6 @@ def nag_pybobyqa(
     nr_evals_per_point=None,
     interpolation_rounding_error_constant=0.1,
     threshold_for_safety_step=0.5,
-    intermediate_processing_of_initial_points=True,
     min_improvement_for_successful_iteration=MIN_IMPROVEMENT_FOR_SUCCESSFUL_ITERATION,
     threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
     trust_region_radius_reduction_when_not_successful=None,
@@ -150,8 +149,6 @@ def nag_pybobyqa(
             \text{interpolation_rounding_error_constant} \cdot \|x_k-x_b\|`
         threshold_for_safety_step (float): Threshold for when to call the safety step,
             :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`
-        intermediate_processing_of_initial_points (bool): If using random directions,
-            whether to do intermediate processing between point evaluations.
         min_improvement_for_successful_iteration (float): Minimum share of the predicted
             improvement that has to be realized for an iteration to count as successful.
         threshold_for_very_succesful_iteration (float): Share of predicted improvement
@@ -284,7 +281,6 @@ def nag_pybobyqa(
     advanced_options = {
         "init.random_initial_directions": random_initial_directions,
         "init.random_directions_make_orthogonal": random_directions_orthogonal,
-        "init.run_in_parallel": not intermediate_processing_of_initial_points,
         "general.rounding_error_constant": interpolation_rounding_error_constant,
         "general.safety_step_thresh": threshold_for_safety_step,
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
