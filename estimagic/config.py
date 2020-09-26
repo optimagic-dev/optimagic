@@ -103,6 +103,22 @@ THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION = 0.7
 count as very successful.
 """
 
+THRESHOLD_FOR_SAFETY_STEP = 0.5
+"""float: Threshold for when to call the safety step,
+:math:`\text{proposed step} \leq \text{threshold_for_safety_step} \cdot
+\text{current_trust_region_radius}`
+"""
+
+TRUST_REGION_INCREASE_AFTER_SUCCESS = 2.0
+"""float: Ratio by which to increase the trust region radius :math:`\Delta_k` in
+very successful iterations (:math:`\gamma_{inc}`)."""
+
+TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS = 4.0
+"""float: Ratio of the proposed step ($\|s_k\|$) by which to increase the trust region
+radius (:math:`\Delta_k`) in very successful iterations
+(:math:`\overline{\gamma}_{inc}`)."""
+
+
 # ---------------------------------------------
 # Numerical Algorithm Group Tuning Parameters
 # ---------------------------------------------
@@ -118,9 +134,16 @@ CRITERION_NOISY = False
 """bool: Whether the criterion function is noisy, i.e. does not always return the
 same value when evaluated at the same parameter values."""
 
-NR_INTERPOLATION_POINTS = None
-"""the number of interpolation points to use. The default is to calculate it from the
-problem dimension. See the algorithm's function docstring for details."""
+INTERPOLATION_ROUNDING_ERROR = 0.1
+"""float: Internally, all the NAG algorithms store interpolation points with respect
+to a base point :math:`x_b`; that is, we store :math:`\{y_t-x_b\}`, which reduces the
+risk of roundoff errors. We shift :math:`x_b` to :math:`x_k` when
+:math:`\text{proposed step} \leq \text{interpolation_rounding_error} \cdot \|x_k-x_b\|`.
+"""
+
+CLIP_CRITERION_IF_OVERFLOWING = True
+"""bool: Whether to clip the criterion if it would raise an ``OverflowError`` otherwise.
+"""
 
 # =================================================================================
 # Dashboard Defaults

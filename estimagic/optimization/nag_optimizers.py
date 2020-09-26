@@ -3,15 +3,20 @@ from functools import partial
 
 import numpy as np
 
+from estimagic.config import CLIP_CRITERION_IF_OVERFLOWING
 from estimagic.config import CRITERION_NOISY
+from estimagic.config import INTERPOLATION_ROUNDING_ERROR
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
 from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.config import THRESHOLD_FOR_SAFETY_STEP
 from estimagic.config import THRESHOLD_FOR_SUCCESSFUL_ITERATION
 from estimagic.config import THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION
+from estimagic.config import TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS
+from estimagic.config import TRUST_REGION_INCREASE_AFTER_SUCCESS
 from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 try:
@@ -37,6 +42,18 @@ def nag_dfols(
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
     criterion_noisy=CRITERION_NOISY,
     n_evals_per_point=None,
+    interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
+    threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
+    clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
+    random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
+    random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
+    threshold_for_successful_iteration=THRESHOLD_FOR_SUCCESSFUL_ITERATION,
+    threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
+    trust_region_reduction_when_not_successful=None,
+    trust_region_increase_after_success=TRUST_REGION_INCREASE_AFTER_SUCCESS,
+    trust_region_increase_after_large_success=TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS,
+    min_trust_region_decrease=None,
+    trust_region_update_from_min_trust_region=None,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -70,6 +87,44 @@ def nag_dfols(
             and how many restarts have been performed, ``n_restarts``.
             The function must return an integer.
             Default is no averaging (i.e. ``n_evals_per_point(...) = 1``).
+        interpolation_rounding_error (float): Internally, all interpolation
+            points are stored with respect to a base point $x_b$; that is,
+            pybobyqa stores $\{y_t-x_b\}$, which reduces the risk of roundoff
+            errors. We shift $x_b$ to $x_k$ when
+            :math:`\|s_k\| \leq
+            \text{interpolation_rounding_error} \cdot \|x_k-x_b\|`
+        threshold_for_safety_step (float): Threshold for when to call the safety step,
+            :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`
+        clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
+            raise an ``OverflowError`` otherwise.
+        random_initial_directions (bool): Whether to draw the initial directions
+            randomly (as opposed to coordinate directions).
+        random_directions_orthogonal (bool): Whether to make random initial directions
+            orthogonal.
+        threshold_for_successful_iteration (float): Minimum share of the predicted
+            improvement that has to be realized for an iteration to count as successful.
+        threshold_for_very_succesful_iteration (float): Share of predicted improvement
+            that has to be surpassed for an iteration to count as very successful.
+        trust_region_reduction_when_not_successful (float): Ratio by which to
+            decrease the trust region radius when realized improvement does not match
+            the ``threshold_for_successful_iteration``. The default is 0.98 if
+            ``criterion_noisy`` and 0.5 else.
+        trust_region_increase_after_success (float): Ratio by which to increase
+            the trust region radius :math:`\Delta_k` in very successful iterations
+            (:math:`\gamma_{inc}`).
+        trust_region_increase_after_large_success (float):
+            Ratio of the proposed step ($\|s_k\|$) by which to increase the
+            trust region radius (:math:`\Delta_k`) in very successful iterations
+            (:math:`\overline{\gamma}_{inc}`).
+        min_trust_region_decrease (float):
+            Ratio by which to decrease the minimal trust region radius
+            (:math:`\rho_k`) (:math:`\alpha_1`).
+            Default is 0.9 if ``criterion_noisy`` and 0.1 else.
+        trust_region_update_from_min_trust_region (float):
+            Ratio of the current minimum trust region (:math:`\rho_k`) by which
+            to decrease the actual trust region radius (:math:`\Delta_k`)
+            when the lower bound is reduced (:math:`\alpha_2`). Default is 0.95 if
+            ``criterion_noisy`` and 0.5 else.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -104,6 +159,20 @@ def nag_dfols(
         "parallelizes": False,
         "needs_scaling": False,
     }
+    advanced_options = {
+        "general.rounding_error_constant": interpolation_rounding_error,
+        "general.safety_step_thresh": threshold_for_safety_step,
+        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
+        "init.random_initial_directions": random_initial_directions,
+        "init.random_directions_make_orthogonal": random_directions_orthogonal,
+        "tr_radius.eta1": threshold_for_successful_iteration,
+        "tr_radius.eta2": threshold_for_very_succesful_iteration,
+        "tr_radius.gamma_dec": trust_region_reduction_when_not_successful,
+        "tr_radius.gamma_inc": trust_region_increase_after_success,
+        "tr_radius.gamma_inc_overline": trust_region_increase_after_large_success,
+        "tr_radius.alpha1": min_trust_region_decrease,
+        "tr_radius.alpha2": trust_region_update_from_min_trust_region,
+    }
     criterion = partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info
     )
@@ -121,8 +190,7 @@ def nag_dfols(
         scaling_within_bounds=False,
         do_logging=False,
         print_progress=False,
-        # to do
-        user_params=None,
+        user_params=advanced_options,
     )
 
     return _process_nag_result(res)
@@ -143,15 +211,15 @@ def nag_pybobyqa(
     n_interpolation_points=None,
     criterion_noisy=CRITERION_NOISY,
     n_evals_per_point=None,
-    interpolation_rounding_error=0.1,
-    threshold_for_safety_step=0.5,
+    interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
+    threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
     threshold_for_successful_iteration=THRESHOLD_FOR_SUCCESSFUL_ITERATION,
     threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
     trust_region_reduction_when_not_successful=None,
-    clip_criterion_if_overflowing=True,
+    clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
     absolute_criterion_value_tolerance=None,
-    trust_region_increase_after_success=2.0,
-    trust_region_increase_after_large_success=4.0,
+    trust_region_increase_after_success=TRUST_REGION_INCREASE_AFTER_SUCCESS,
+    trust_region_increase_after_large_success=TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS,
     min_trust_region_decrease=None,
     trust_region_update_from_min_trust_region=None,
     threshold_for_insufficient_improvement=1e-8,
@@ -255,9 +323,12 @@ def nag_pybobyqa(
             pybobyqa stores $\{y_t-x_b\}$, which reduces the risk of roundoff
             errors. We shift $x_b$ to $x_k$ when
             :math:`\|s_k\| \leq
-            \text{interpolation_rounding_error} \cdot \|x_k-x_b\|`
+            \text{interpolation_rounding_error} \cdot \|x_k-x_b\|` where $s_k$ is the
+            proposed step size.
         threshold_for_safety_step (float): Threshold for when to call the safety step,
             :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`
+            where $s_k$ is the proposed step size and :math:`\rho_k` the current trust
+            region radius.
         threshold_for_successful_iteration (float): Minimum share of the predicted
             improvement that has to be realized for an iteration to count as successful.
         threshold_for_very_succesful_iteration (float): Share of predicted improvement
@@ -279,11 +350,11 @@ def nag_pybobyqa(
             trust region radius (:math:`\Delta_k`) in very successful iterations
             (:math:`\overline{\gamma}_{inc}`).
         min_trust_region_decrease (float):
-            Ratio by which to decrease the lower bound on the trust region radius
+            Ratio by which to decrease the minimal trust region radius
             (:math:`\rho_k`) (:math:`\alpha_1`).
             Default is 0.9 if ``criterion_noisy`` and 0.1 else.
         trust_region_update_from_min_trust_region (float):
-            Ratio of the minimum trust region (:math:`\rho_k`) by which
+            Ratio of the current minimum trust region (:math:`\rho_k`) by which
             to decrease the actual trust region radius (:math:`\Delta_k`)
             when the lower bound is reduced (:math:`\alpha_2`). Default is 0.95 if
             ``criterion_noisy`` and 0.5 else.
@@ -400,11 +471,11 @@ def nag_pybobyqa(
     )
 
     advanced_options = {
-        "init.random_initial_directions": random_initial_directions,
-        "init.random_directions_make_orthogonal": random_directions_orthogonal,
         "general.rounding_error_constant": interpolation_rounding_error,
         "general.safety_step_thresh": threshold_for_safety_step,
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
+        "init.random_initial_directions": random_initial_directions,
+        "init.random_directions_make_orthogonal": random_directions_orthogonal,
         "tr_radius.eta1": threshold_for_successful_iteration,
         "tr_radius.eta2": threshold_for_very_succesful_iteration,
         "tr_radius.gamma_dec": trust_region_reduction_when_not_successful,
