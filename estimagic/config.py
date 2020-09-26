@@ -88,7 +88,7 @@ LIMITED_MEMORY_STORAGE_LENGTH = 10
 # Trust Region Parameters
 # -------------------------
 
-MIN_IMPROVEMENT_FOR_SUCCESSFUL_ITERATION = 0.1
+THRESHOLD_FOR_SUCCESSFUL_ITERATION = 0.1
 """float: minimum share of predicted improvement that has to be realized for an
 iteration to count as successful."""
 
