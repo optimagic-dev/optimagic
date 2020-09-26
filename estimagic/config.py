@@ -9,6 +9,13 @@ DOCS_DIR = Path(__file__).parent.parent / "docs"
 
 DEFAULT_N_CORES = 1
 
+CRITERION_PENALTY_SLOPE = 0.1
+CRITERION_PENALTY_CONSTANT = 100
+
+# =====================================================================================
+# Check Available Packages
+# =====================================================================================
+
 try:
     from petsc4py import PETSc  # noqa: F401
 except ImportError:
@@ -23,10 +30,17 @@ except ImportError:
 else:
     IS_MATPLOTLIB_INSTALLED = True
 
+try:
+    import pybobyqa  # noqa: F401
+except ImportError:
+    IS_PYBOBYQA_INSTALLED = False
+else:
+    IS_PYBOBYQA_INSTALLED = True
 
-CRITERION_PENALTY_SLOPE = 0.1
-CRITERION_PENALTY_CONSTANT = 100
 
+# =====================================================================================
+# Stopping Criteria
+# =====================================================================================
 
 RELATIVE_CRITERION_TOLERANCE = 2e-9
 """float: Inspired by scipy L-BFGS-B defaults, but rounded."""
@@ -50,31 +64,60 @@ ABSOLUTE_PARAMS_TOLERANCE = 0
 MAX_CRITERION_EVALUATIONS = 1_000_000
 MAX_ITERATIONS = 1_000_000
 
-MAX_LINE_SEARCH_STEPS = 20
-"""int: Inspired by scipy L-BFGS-B."""
-
-INITIAL_TRUST_RADIUS = 1
-"""float: recommended for scipy_trust_constr in :cite:`Conn2000`, p. 19.
-It is also scipy's default for COBYLA's the start Rho, which behaves similar to an
-initial trust radius."""
-
-MAX_TRUST_RADIUS = 100
-
-LIMITED_MEMORY_STORAGE_LENGTH = 10
-"""int: Taken from scipy L-BFGS-B."""
-
 SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 1e-08
 """float: absolute criterion tolerance estimagic requires if no other stopping
 criterion apart from max iterations etc. is available
 this is taken from scipy (SLSQP's value, smaller than Nelder-Mead)"""
 
-SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 0.0001
+SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 1e-08
 """float: The absolute parameter tolerance estimagic requires if no other stopping
-criterion apart from max iterations etc. is available. This is taken from Nelder-Mead.
+criterion apart from max iterations etc. is available. This is taken from pybobyqa.
 """
 
+# =====================================================================================
+# Other Common Tuning Parameters for Optimization Algorithms
+# =====================================================================================
+
+MAX_LINE_SEARCH_STEPS = 20
+"""int: Inspired by scipy L-BFGS-B."""
+
+LIMITED_MEMORY_STORAGE_LENGTH = 10
+"""int: Taken from scipy L-BFGS-B."""
+
+# -------------------------
+# Trust Region Parameters
+# -------------------------
+
+THRESHOLD_FOR_SUCCESSFUL_ITERATION = 0.1
+"""float: minimum share of predicted improvement that has to be realized for an
+iteration to count as successful."""
+
+THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION = 0.7
+"""float: share of predicted improvement that has to be surpassed for an iteration to
+count as very successful.
+"""
+
+# ---------------------------------------------
+# Numerical Algorithm Group Tuning Parameters
+# ---------------------------------------------
+
+RANDOM_INITIAL_DIRECTIONS = False
+"""bool: Whether to draw the initial directions randomly or use the coordinate
+directions."""
+
+RANDOM_DIRECTIONS_ORTHOGONAL = True
+"""bool: Whether to make randomly drawn initial directions orthogonal."""
+
+CRITERION_NOISY = False
+"""bool: Whether the criterion function is noisy, i.e. does not always return the
+same value when evaluated at the same parameter values."""
+
+NR_INTERPOLATION_POINTS = None
+"""the number of interpolation points to use. The default is to calculate it from the
+problem dimension. See the algorithm's function docstring for details."""
+
 # =================================================================================
-# Dashboard
+# Dashboard Defaults
 # =================================================================================
 
 Y_RANGE_PADDING = 0.05

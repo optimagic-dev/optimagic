@@ -32,7 +32,7 @@ and issue a warning that explains which options have been ignored.
 
 
 
-How to Read The Algorithms Documentation
+How to Read the Algorithms Documentation
 ========================================
 
 Below we document the supported algorithms. The documentation refers to the internal
@@ -61,7 +61,7 @@ Without Optional Dependencies
 The scipy optimizers
 *********************
 
-estimagic supports all of scipy's algorithms except for the following exceptions that
+estimagic supports all of scipy's algorithms except for the following algorithms that
 require the specification of the Hessian:
 
 - dogleg
@@ -99,18 +99,40 @@ The following arguments are not supported as part of ``algo_options``:
     principle. However, for the moment they are not supported.
 
 
-References:
-*********************
-
-.. bibliography:: ../../refs.bib
-    :filter: docname in docnames
-
 Algorithms:
 *********************
 
 
 .. automodule:: estimagic.optimization.scipy_optimizers
     :members:
+
+
+With ``petsc4py`` installed
+----------------------------
+
+.. automodule:: estimagic.optimization.tao_optimizers
+   :members:
+
+
+With ``pybobyqa`` installed
+----------------------------
+
+`pybobyqa <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_ is provided by
+the `Numerical Algorithms Group <https://www.nag.com/>`_.
+
+Remember to cite :cite:`Powell2009` and :cite:`Cartis2018` when using pybobyqa in
+addition to estimagic. If you take advantage of the ``seek_global_optimum`` option,
+cite :cite:`Cartis2018a` additionally.
+
+The following arguments are not supported as part of ``algo_options``:
+
+- ``scaling_within_bounds``
+- ``init.run_in_parallel``
+- ``do_logging``, ``print_progress`` and all their advanced options.
+  Use estimagic's database and dashboard instead to explore your criterion and algorithm.
+
+.. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
+
 
 
 With ``nlopt`` installed
@@ -125,8 +147,10 @@ With ``pygmo`` installed
 --------------------------
 
 
-With `petsc4py` installed
--------------------------
 
-.. automodule:: estimagic.optimization.tao_optimizers
-   :members:
+References:
+==============
+
+.. bibliography:: ../../refs.bib
+    :filter: docname in docnames
+    :style: unsrt

@@ -6,7 +6,6 @@ import scipy
 from estimagic.config import ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.config import ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.config import ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.config import INITIAL_TRUST_RADIUS
 from estimagic.config import LIMITED_MEMORY_STORAGE_LENGTH
 from estimagic.config import MAX_CRITERION_EVALUATIONS
 from estimagic.config import MAX_ITERATIONS
@@ -15,7 +14,7 @@ from estimagic.config import RELATIVE_CRITERION_TOLERANCE
 from estimagic.config import RELATIVE_PARAMS_TOLERANCE
 from estimagic.config import SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
-
+from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 DEFAULT_ALGO_INFO = {
     "primary_criterion_entry": "value",
@@ -536,7 +535,7 @@ def scipy_cobyla(
     *,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
-    initial_trust_radius=INITIAL_TRUST_RADIUS,
+    initial_trust_radius=None,
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
@@ -580,6 +579,9 @@ def scipy_cobyla(
     func = functools.partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info,
     )
+
+    if initial_trust_radius is None:
+        initial_trust_radius = calculate_initial_trust_region_radius(x)
 
     options = {"maxiter": max_iterations, "rhobeg": initial_trust_radius}
 
@@ -720,7 +722,7 @@ def scipy_trust_constr(
     absolute_gradient_tolerance=1e-08,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
-    initial_trust_radius=INITIAL_TRUST_RADIUS,
+    initial_trust_radius=None,
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
 
@@ -774,7 +776,7 @@ def scipy_trust_constr(
             should be large and for an approximation valid only close to the current
             point it should be a small one. The trust radius is automatically updated
             throughout the optimization process, with ``initial_trust_radius`` being
-            its initial value. Default is 1 (recommended in :cite:`Conn2000`, p. 19).
+            its initial value.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -788,6 +790,9 @@ def scipy_trust_constr(
     gradient = functools.partial(
         criterion_and_derivative, task="derivative", algorithm_info=algo_info
     )
+
+    if initial_trust_radius is None:
+        initial_trust_radius = calculate_initial_trust_region_radius(x)
 
     options = {
         "gtol": absolute_gradient_tolerance,

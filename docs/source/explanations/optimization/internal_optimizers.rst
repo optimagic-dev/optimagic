@@ -159,8 +159,6 @@ convergence criteria by default. The names are inspired by Nlopt, but more expre
   refers to a projected gradient. The exact definition should be documented for each
   optimizer. To disable it, set it to zero.
 
-- **relative_gradient_tolerance** *(float)*: Stop when
-
 - **relative_params_tolerance** *(float)*:
   Stop when the relative change in parameters between two iterations is smaller than
   this. The exact definition of relative change and whether this refers to the maximum
@@ -183,7 +181,7 @@ Other stopping criteria
 
 - **max_iterations** *(int)*: If the maximum number of iterations is reached, the
   optimization stops, but we do not count this as successful convergence. The difference
-  to max_criterion_evaluations is that one iteration might need several criterion
+  to ``max_criterion_evaluations`` is that one iteration might need several criterion
   evaluations, for example in a line search or to determine if the trust region radius
   has to be decreased.
 
@@ -195,13 +193,9 @@ Optimizer configurations
   derivative) evaluations per line search.
 
 - **initial_trust_radius** *(float)*: Note this is very problem specific and you can
-  typically do better than using the default. Intuitively this can be described as a
+  typically do better than using the default. Intuitively, this can be described as a
   reasonable change in parameters the optimizer can take from the start values.
-
-- **max_trust_radius** *(float)*: The precise definition might depend on an
-  optimizer but typically this is the maximum change allowed for a parameter between
-  two iterations. Note this is very problem specific and you can
-  typically do better than using the default.
+  The default is to take 10% of the largest start parameter, but at least 0.1.
 
 - **limited_memory_storage_length** *(int)*: Maximum number of stored objects
   in a limited memory algorithm. Typically this refers to the number of gradient
@@ -219,7 +213,7 @@ Other Conventions
 - All arguments except ``criterion_and_derivative`` and ``x`` should be keyword only
   and have default values that are set to the preferred defaults documented above
   unless there is a good reason to deviate.
-- There should not be arguments that are not used by the optimizer, i.e. only the
+- There should only be arguments used by the optimizer, i.e. only the
   convergence criteria that are actually supported by an optimizer should be part of
   its interface. The signature should also not contain ``*args`` or ``**kwargs``.
 - In particular, if an optimizer does not support bounds, it should not have the bounds
