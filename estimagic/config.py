@@ -37,6 +37,12 @@ except ImportError:
 else:
     IS_PYBOBYQA_INSTALLED = True
 
+try:
+    import dfols  # noqa: F401
+except ImportError:
+    IS_DFOLS_INSTALLED = False
+else:
+    IS_DFOLS_INSTALLED = True
 
 # =====================================================================================
 # Stopping Criteria

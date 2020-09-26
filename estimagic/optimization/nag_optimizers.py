@@ -4,6 +4,7 @@ from functools import partial
 import numpy as np
 
 from estimagic.config import CRITERION_NOISY
+from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
@@ -17,6 +18,80 @@ try:
     import pybobyqa
 except ImportError:
     pass
+
+try:
+    import dfols
+except ImportError:
+    pass
+
+
+def nag_dfols(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
+    initial_trust_region_radius=None,
+):
+    r"""Minimize a function with least squares structure using DFO-LS.
+
+    The DFO-LS algorithm (:cite:`Cartis2018b`) solves
+
+    .. math::
+
+       \min_{x\in\mathbb{R}^n}  &\quad  f(x) := \sum_{i=1}^{m}r_{i}(x)^2 \\
+       \text{s.t.} &\quad  a \
+
+    Args:
+        max_criterion_evaluations (int): If the maximum number of function evaluation is
+            reached, the optimization stops but we do not count this as convergence.
+        initial_trust_region_radius (float): Initial value of the trust region radius.
+
+    Returns:
+        results (dict): See :ref:`internal_optimizer_output` for details.
+
+    """
+    if not IS_DFOLS_INSTALLED:
+        raise NotImplementedError(
+            "The dfols package is not installed and required for 'nag_dfols'. "
+            "You can install it with 'pip install DFOLS'. "
+            "For additional installation instructions visit: ",
+            r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
+        )
+
+    if initial_trust_region_radius is None:
+        initial_trust_region_radius = calculate_initial_trust_region_radius(x)
+
+    algo_info = {
+        "name": "nag_dfols",
+        "primary_criterion_entry": "root_contributions",
+        "parallelizes": False,
+        "needs_scaling": False,
+    }
+    criterion = partial(
+        criterion_and_derivative, task="criterion", algorithm_info=algo_info
+    )
+
+    res = dfols.solve(
+        criterion,
+        x0=x,
+        bounds=(lower_bounds, upper_bounds),
+        maxfun=max_criterion_evaluations,
+        rhobeg=initial_trust_region_radius,
+        # to do
+        npt=None,
+        rhoend=1e-8,
+        nsamples=None,
+        user_params=None,
+        objfun_has_noise=False,
+        #
+        scaling_within_bounds=False,
+        do_logging=False,
+        print_progress=False,
+    )
+
+    return _process_nag_result(res)
 
 
 def nag_pybobyqa(
@@ -353,12 +428,18 @@ def _process_nag_result(nag_result_obj):
     processed = {
         "solution_x": nag_result_obj.x,
         "solution_criterion": nag_result_obj.f,
-        "solution_derivative": nag_result_obj.gradient,
-        "solution_hessian": nag_result_obj.hessian,
         "n_iterations": nag_result_obj.nf,
         "n_criterion_evaluations": nag_result_obj.nx,
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
         "reached_convergence_criterion": None,
     }
+    try:
+        processed["solution_derivative"] = nag_result_obj.gradient
+    except AttributeError:
+        pass
+    try:
+        processed["solution_hessian"] = nag_result_obj.hessian
+    except AttributeError:
+        pass
     return processed

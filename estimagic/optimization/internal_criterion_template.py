@@ -74,7 +74,7 @@ def internal_criterion_and_derivative_template(
             of the internal criterion.
         algorithm_info (dict): Dict with the following entries:
             "primary_criterion_entry": One of "value", "contributions" and
-                "root_contributinos"
+                "root_contributions"
             "parallelizes": Bool that indicates if the algorithm calls the internal
                 criterion function in parallel. If so, caching is disabled.
             "needs_scaling": bool
