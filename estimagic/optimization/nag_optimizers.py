@@ -33,6 +33,10 @@ def nag_dfols(
     *,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     initial_trust_region_radius=None,
+    n_interpolation_points=None,
+    absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    criterion_noisy=CRITERION_NOISY,
+    n_evals_per_point=None,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -47,6 +51,25 @@ def nag_dfols(
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
         initial_trust_region_radius (float): Initial value of the trust region radius.
+        n_interpolation_points (int): The number of interpolation points to use.
+            With $n=len(x)$ the default is $n + 1$. If using restarts, this is the
+            number of points to use in the first run of the solver, before any restarts.
+        absolute_params_tolerance (float): Minimum allowed value of the trust region
+            radius, which determines when a successful termination occurs.
+        criterion_noisy (bool): Whether the criterion function is noisy, i.e. whether
+            it does not always return the same value when evaluated at the same
+            parameters.
+        n_evals_per_point (callable): How often to evaluate the criterion function at
+            each point.
+            This is only applicable for criterion functions with stochastic noise,
+            when averaging multiple evaluations at the same point produces a more
+            accurate value.
+            The input parameters are the ``trust_region_radius`` (``delta``),
+            the ``min_trust_region_radius`` (``rho``),
+            how many iterations the algorithm has been running for, ``n_iterations``
+            and how many restarts have been performed, ``n_restarts``.
+            The function must return an integer.
+            Default is no averaging (i.e. ``n_evals_per_point(...) = 1``).
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -62,6 +85,18 @@ def nag_dfols(
 
     if initial_trust_region_radius is None:
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
+    if n_evals_per_point is not None:
+
+        def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
+            return n_evals_per_point(
+                trust_region_radius=delta,
+                min_trust_region=rho,
+                n_iterations=iter,
+                n_restarts=nrestarts,
+            )
+
+    else:
+        adjusted_n_evals_per_point = None
 
     algo_info = {
         "name": "nag_dfols",
@@ -79,16 +114,15 @@ def nag_dfols(
         bounds=(lower_bounds, upper_bounds),
         maxfun=max_criterion_evaluations,
         rhobeg=initial_trust_region_radius,
-        # to do
-        npt=None,
-        rhoend=1e-8,
-        nsamples=None,
-        user_params=None,
-        objfun_has_noise=False,
-        #
+        npt=n_interpolation_points,
+        rhoend=absolute_params_tolerance,
+        nsamples=adjusted_n_evals_per_point,
+        objfun_has_noise=criterion_noisy,
         scaling_within_bounds=False,
         do_logging=False,
         print_progress=False,
+        # to do
+        user_params=None,
     )
 
     return _process_nag_result(res)
