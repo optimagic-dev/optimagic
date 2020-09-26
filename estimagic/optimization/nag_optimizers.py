@@ -38,7 +38,7 @@ def nag_pybobyqa(
     threshold_for_safety_step=0.5,
     threshold_for_successful_iteration=THRESHOLD_FOR_SUCCESSFUL_ITERATION,
     threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
-    trust_region_radius_reduction_when_not_successful=None,
+    trust_region_reduction_when_not_successful=None,
     clip_criterion_if_overflowing=True,
     absolute_criterion_value_tolerance=None,
     trust_region_increase_after_success=2.0,
@@ -131,17 +131,16 @@ def nag_pybobyqa(
             it does not always return the same value when evaluated at the same
             parameters.
         n_evals_per_point (callable): How often to evaluate the criterion function at
-            each point. The function must take ``delta``, ``rho``, ``iter`` and
-            ``nrestarts`` as arguments and return an integer.
+            each point.
             This is only applicable for criterion functions with stochastic noise,
             when averaging multiple evaluations at the same point produces a more
             accurate value.
-            The input parameters are the trust region radius (``delta``),
-            the lower bound on the trust region radius (``rho``),
-            how many iterations the algorithm has been running for (``iter``)
-            and how many restarts have been performed (``nrestarts``).
-            Default is no averaging (i.e.
-            ``n_evals_per_point(delta, rho, iter, nrestarts) = 1``).
+            The input parameters are the ``trust_region_radius`` (``delta``),
+            the ``min_trust_region_radius`` (``rho``),
+            how many iterations the algorithm has been running for, ``n_iterations``
+            and how many restarts have been performed, ``n_restarts``.
+            The function must return an integer.
+            Default is no averaging (i.e. ``n_evals_per_point(...) = 1``).
         interpolation_rounding_error (float): Internally, all interpolation
             points are stored with respect to a base point $x_b$; that is,
             pybobyqa stores $\{y_t-x_b\}$, which reduces the risk of roundoff
@@ -154,7 +153,7 @@ def nag_pybobyqa(
             improvement that has to be realized for an iteration to count as successful.
         threshold_for_very_succesful_iteration (float): Share of predicted improvement
             that has to be surpassed for an iteration to count as very successful.
-        trust_region_radius_reduction_when_not_successful (float): Ratio by which to
+        trust_region_reduction_when_not_successful (float): Ratio by which to
             decrease the trust region radius when realized improvement does not match
             the ``threshold_for_successful_iteration``. The default is 0.98 if
             ``criterion_noisy`` and 0.5 else.
@@ -268,6 +267,18 @@ def nag_pybobyqa(
     # -np.inf as a default leads to errors when building the documentation with sphinx.
     if absolute_criterion_value_tolerance is None:
         absolute_criterion_value_tolerance = -np.inf
+    if n_evals_per_point is not None:
+
+        def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
+            return n_evals_per_point(
+                trust_region_radius=delta,
+                min_trust_region=rho,
+                n_iterations=iter,
+                n_restarts=nrestarts,
+            )
+
+    else:
+        adjusted_n_evals_per_point = None
 
     algo_info = {
         "name": "nag_pybobyqa",
@@ -287,7 +298,7 @@ def nag_pybobyqa(
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
         "tr_radius.eta1": threshold_for_successful_iteration,
         "tr_radius.eta2": threshold_for_very_succesful_iteration,
-        "tr_radius.gamma_dec": trust_region_radius_reduction_when_not_successful,
+        "tr_radius.gamma_dec": trust_region_reduction_when_not_successful,
         "tr_radius.gamma_inc": trust_region_increase_after_success,
         "tr_radius.gamma_inc_overline": trust_region_increase_after_large_success,
         "tr_radius.alpha1": min_trust_region_decrease,
@@ -329,7 +340,7 @@ def nag_pybobyqa(
         do_logging=False,
         print_progress=False,
         objfun_has_noise=criterion_noisy,
-        nsamples=n_evals_per_point,
+        nsamples=adjusted_n_evals_per_point,
         npt=n_interpolation_points,
         rhoend=absolute_params_tolerance,
         seek_global_minimum=seek_global_optimum,
