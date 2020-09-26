@@ -4,13 +4,16 @@ from functools import partial
 import numpy as np
 
 from estimagic.config import CLIP_CRITERION_IF_OVERFLOWING
+from estimagic.config import COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT
 from estimagic.config import CRITERION_NOISY
 from estimagic.config import INTERPOLATION_ROUNDING_ERROR
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
+from estimagic.config import NOISE_SCALE_FACTOR_FOR_QUIT
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
+from estimagic.config import SCALE_INTERPOLATION_SYSTEM
 from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.config import THRESHOLD_FOR_SAFETY_STEP
 from estimagic.config import THRESHOLD_FOR_SUCCESSFUL_ITERATION
@@ -54,6 +57,15 @@ def nag_dfols(
     trust_region_increase_after_large_success=TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS,
     min_trust_region_decrease=None,
     trust_region_update_from_min_trust_region=None,
+    absolute_criterion_value_tolerance=None,
+    threshold_for_insufficient_improvement=1e-4,
+    n_insufficient_improvements_until_terminate=None,
+    comparison_period_for_insufficient_improvement=COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT,  # noqa: E501
+    quit_when_trust_evaluations_within_noise=None,
+    noise_scale_factor_for_quit=NOISE_SCALE_FACTOR_FOR_QUIT,
+    multiplicative_noise_level=None,
+    additive_noise_level=None,
+    scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -125,6 +137,36 @@ def nag_dfols(
             to decrease the actual trust region radius (:math:`\Delta_k`)
             when the lower bound is reduced (:math:`\alpha_2`). Default is 0.95 if
             ``criterion_noisy`` and 0.5 else.
+        absolute_criterion_value_tolerance (float): Terminate successfully if
+            the criterion value falls below this threshold. This is deactivated
+            (i.e. set to -inf) by default.
+        threshold_for_insufficient_improvement (float): Threshold whether an improvement
+            is insufficient. Note: the improvement is divided by the
+            ``comparison_period_for_insufficient_improvement``.
+            So this is the required average improvement per iteration over the
+            comparison period.
+        n_insufficient_improvements_until_terminate (int): Number of consecutive
+            insufficient improvements before termination (or restart). Default is
+            ``20 * len(x)``.
+        comparison_period_for_insufficient_improvement (int):
+            How many iterations to go back to calculate the improvement.
+            For example 5 would mean that each criterion evaluation is compared to the
+            criterion value from 5 iterations before.
+        quit_when_trust_evaluations_within_noise (bool): Flag to quit
+            (or restart) if all $f(y_t)$ are within noise level of
+            $f(x_k)$. Default is ``True`` if ``noisy_criterion`` and
+            ``False`` else.
+        noise_scale_factor_for_quit (float): Factor of the noise level to use in
+            termination criterion.
+        multiplicative_noise_level (float): Multiplicative noise level in the
+            criterion. You can only specify ``multiplicative_noise_level`` or
+            ``additive_noise_level``.
+        additive_noise_level (float): Additive noise level in the
+            criterion. You can only specify ``multiplicative_noise_level`` or
+            ``additive_noise_level``.
+        scale_interpolation_system (bool): Whether or not to scale the interpolation
+            linear system to improve conditioning.
+
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -140,6 +182,9 @@ def nag_dfols(
 
     if initial_trust_region_radius is None:
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
+    # -np.inf as a default leads to errors when building the documentation with sphinx.
+    if absolute_criterion_value_tolerance is None:
+        absolute_criterion_value_tolerance = -np.inf
     if n_evals_per_point is not None:
 
         def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
@@ -172,6 +217,14 @@ def nag_dfols(
         "tr_radius.gamma_inc_overline": trust_region_increase_after_large_success,
         "tr_radius.alpha1": min_trust_region_decrease,
         "tr_radius.alpha2": trust_region_update_from_min_trust_region,
+        "slow.thresh_for_slow": threshold_for_insufficient_improvement,
+        "slow.max_slow_iters": n_insufficient_improvements_until_terminate,
+        "slow.history_for_slow": comparison_period_for_insufficient_improvement,
+        "noise.quit_on_noise_level": quit_when_trust_evaluations_within_noise,
+        "noise.scale_factor_for_quit": noise_scale_factor_for_quit,
+        "noise.multiplicative_noise_level": multiplicative_noise_level,
+        "noise.additive_noise_level": additive_noise_level,
+        "interpolation.precondition": scale_interpolation_system,
     }
     criterion = partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info
@@ -193,7 +246,7 @@ def nag_dfols(
         user_params=advanced_options,
     )
 
-    return _process_nag_result(res)
+    return _process_nag_result(res, len(x))
 
 
 def nag_pybobyqa(
@@ -224,12 +277,12 @@ def nag_pybobyqa(
     trust_region_update_from_min_trust_region=None,
     threshold_for_insufficient_improvement=1e-8,
     n_insufficient_improvements_until_terminate=None,
-    comparison_period_for_insufficient_improvement=5,
+    comparison_period_for_insufficient_improvement=COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT,  # noqa E501
     quit_when_trust_evaluations_within_noise=None,
-    noise_scale_factor_for_quit=1.0,
+    noise_scale_factor_for_quit=NOISE_SCALE_FACTOR_FOR_QUIT,
     multiplicative_noise_level=None,
     additive_noise_level=None,
-    scale_interpolation_system=True,
+    scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
     frobenius_for_interpolation_problem=True,
     use_restarts=None,
     max_unsuccessful_restarts=10,
@@ -382,12 +435,12 @@ def nag_pybobyqa(
         additive_noise_level (float): Additive noise level in the
             criterion. You can only specify ``multiplicative_noise_level`` or
             ``additive_noise_level``.
-        scale_interpolation_system (bool): whether or not to scale the interpolation
+        scale_interpolation_system (bool): Whether or not to scale the interpolation
             linear system to improve conditioning.
-        frobenius_for_interpolation_problem (bool): whether to solve the
+        frobenius_for_interpolation_problem (bool): Whether to solve the
             underdetermined quadratic interpolation problem by minimizing the Frobenius
             norm of the Hessian, or change in Hessian.
-        use_restarts (bool): whether to do restarts when the lower bound on the trust
+        use_restarts (bool): Whether to do restarts when the lower bound on the trust
             region radius (:math:`\rho_k`) reaches the stopping criterion
             (:math:`\rho_{end}`), or (optionally) when all points are within noise
             level. Default is ``True`` if ``criterion_noisy`` or when
@@ -526,12 +579,11 @@ def nag_pybobyqa(
         seek_global_minimum=seek_global_optimum,
     )
 
-    return _process_nag_result(res)
+    return _process_nag_result(res, len(x))
 
 
-def _process_nag_result(nag_result_obj):
+def _process_nag_result(nag_result_obj, len_x):
     processed = {
-        "solution_x": nag_result_obj.x,
         "solution_criterion": nag_result_obj.f,
         "n_iterations": nag_result_obj.nf,
         "n_criterion_evaluations": nag_result_obj.nx,
@@ -539,6 +591,10 @@ def _process_nag_result(nag_result_obj):
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
         "reached_convergence_criterion": None,
     }
+    if nag_result_obj.x is not None:
+        processed["solution_x"] = nag_result_obj.x
+    else:
+        processed["solution_x"] = np.array([np.nan] * len_x)
     try:
         processed["solution_derivative"] = nag_result_obj.gradient
     except AttributeError:

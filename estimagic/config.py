@@ -145,6 +145,17 @@ CLIP_CRITERION_IF_OVERFLOWING = True
 """bool: Whether to clip the criterion if it would raise an ``OverflowError`` otherwise.
 """
 
+COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT = 5
+"""int: How many iterations to go back to calculate the improvement.
+For example 5 would mean that each criterion evaluation is compared to the
+criterion value from 5 iterations before."""
+
+NOISE_SCALE_FACTOR_FOR_QUIT = 1.0
+"""float: Factor of the noise level to use in termination criterion."""
+
+SCALE_INTERPOLATION_SYSTEM = True
+"""bool: whether to scale the interpolation linear system to improve conditioning."""
+
 # =================================================================================
 # Dashboard Defaults
 # =================================================================================
