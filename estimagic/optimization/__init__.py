@@ -8,14 +8,20 @@ from estimagic.optimization import scipy_optimizers
 from estimagic.optimization import tao_optimizers
 
 
-AVAILABLE_ALGORITHMS = {
+COLLECTED_FUNCTIONS = {
     **dict(inspect.getmembers(scipy_optimizers, inspect.isfunction)),
 }
 
 if IS_PETSC4PY_INSTALLED:
-    AVAILABLE_ALGORITHMS.update(
+    COLLECTED_FUNCTIONS.update(
         **dict(inspect.getmembers(tao_optimizers, inspect.isfunction))
     )
+
+# drop private and helper functions
+AVAILABLE_ALGORITHMS = {}
+for k, v in AVAILABLE_ALGORITHMS.items():
+    if not k.startswith("_") and k != "calculate_initial_trust_region_radius":
+        AVAILABLE_ALGORITHMS[k] = v
 
 if IS_PYBOBYQA_INSTALLED:
     AVAILABLE_ALGORITHMS["nag_pybobyqa"] = nag_optimizers.nag_pybobyqa
