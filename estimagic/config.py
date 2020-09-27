@@ -167,6 +167,9 @@ restart."""
 USE_SOFT_RESTARTS = True
 """bool: Whether to use soft or hard restarts."""
 
+POINTS_TO_MOVE_AT_SOFT_RESTART = 3
+"""int: Number of interpolation points to move at each soft restart."""
+
 MOVE_CURRENT_POINT_AT_SOFT_RESTART = True
 """bool: Whether to move the current evaluation point ($x_k$) to the best new point
 evaluate."""

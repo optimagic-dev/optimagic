@@ -19,6 +19,7 @@ from estimagic.config import MIN_TRUST_REGION_SCALING_AFTER_RESTART
 from estimagic.config import MOVE_CURRENT_POINT_AT_SOFT_RESTART
 from estimagic.config import N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION
 from estimagic.config import NOISE_SCALE_FACTOR_FOR_QUIT
+from estimagic.config import POINTS_TO_MOVE_AT_SOFT_RESTART
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
 from estimagic.config import REUSE_CRITERION_VALUE_AT_HARD_RESTART
@@ -52,6 +53,7 @@ def nag_dfols(
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     initial_trust_region_radius=None,
     n_interpolation_points=None,
+    max_interpolation_points=None,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
     criterion_noisy=CRITERION_NOISY,
     n_evals_per_point=None,
@@ -91,6 +93,8 @@ def nag_dfols(
     n_extra_points_to_move_when_sufficient_improvement=0,
     n_extra_points_to_add_at_restart=0,
     use_momentum_method_to_move_extra_points=False,
+    points_to_move_at_soft_restart=POINTS_TO_MOVE_AT_SOFT_RESTART,
+    n_interpolation_points_to_add_at_restart=0,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -108,6 +112,9 @@ def nag_dfols(
         n_interpolation_points (int): The number of interpolation points to use.
             With $n=len(x)$ the default is $n + 1$. If using restarts, this is the
             number of points to use in the first run of the solver, before any restarts.
+        max_interpolation_points (int): Maximum allowed value of the number of
+            interpolation points, useful if increasing with each restart. The default
+            is `n_interpolation_points`.
         absolute_params_tolerance (float): Minimum allowed value of the trust region
             radius, which determines when a successful termination occurs.
         criterion_noisy (bool): Whether the criterion function is noisy, i.e. whether
@@ -203,6 +210,8 @@ def nag_dfols(
         use_soft_restarts (bool): Whether to use soft or hard restarts.
         move_current_point_at_soft_restart (bool): Whether to move the current
             evaluation point ($x_k$) to the best new point evaluated.
+        points_to_move_at_soft_restart (int): Number of interpolation points to move
+            at each soft restart.
         reuse_criterion_value_at_hard_restart (bool): Whether or not to recycle the
             criterion value at the best iterate found when performing a hard restart.
             This saves one objective evaluation.
@@ -239,6 +248,8 @@ def nag_dfols(
         use_momentum_method_to_move_extra_points (bool): If moving extra points in
             successful iterations, whether to use the 'momentum' method. If not,
             uses geometry-improving steps.
+        n_interpolation_points_to_add_at_restart (int): Amount to increase the number
+            of interpolation points by with each restart.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -315,6 +326,10 @@ def nag_dfols(
         "regression.num_extra_steps": n_extra_points_to_move_when_sufficient_improvement,  # noqa: E501
         "regression.increase_num_extra_steps_with_restart": n_extra_points_to_add_at_restart,  # noqa: E501
         "regression.momentum_extra_steps": use_momentum_method_to_move_extra_points,
+        "restarts.soft.num_geom_steps": points_to_move_at_soft_restart,
+        "restarts.increase_npt": n_interpolation_points_to_add_at_restart > 0,
+        "restarts.increase_npt_amt": n_interpolation_points_to_add_at_restart,
+        "restarts.max_npt": max_interpolation_points,
     }
     criterion = partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info
@@ -380,7 +395,7 @@ def nag_pybobyqa(
     trust_region_scaling_after_unsuccessful_restart=None,
     min_trust_region_scaling_after_restart=MIN_TRUST_REGION_SCALING_AFTER_RESTART,
     use_soft_restarts=USE_SOFT_RESTARTS,
-    points_to_move_at_soft_restart=3,
+    points_to_move_at_soft_restart=POINTS_TO_MOVE_AT_SOFT_RESTART,
     move_current_point_at_soft_restart=MOVE_CURRENT_POINT_AT_SOFT_RESTART,
     reuse_criterion_value_at_hard_restart=REUSE_CRITERION_VALUE_AT_HARD_RESTART,
     max_iterations_without_new_best_after_soft_restart=None,
