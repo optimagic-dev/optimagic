@@ -156,6 +156,47 @@ NOISE_SCALE_FACTOR_FOR_QUIT = 1.0
 SCALE_INTERPOLATION_SYSTEM = True
 """bool: whether to scale the interpolation linear system to improve conditioning."""
 
+MAX_UNSUCCESSFUL_RESTARTS = 10
+"""int: maximum number of consecutive unsuccessful restarts allowed
+(i.e. restarts which did not reduce the objective further)."""
+
+MIN_TRUST_REGION_SCALING_AFTER_RESTART = 1.0
+"""float: Factor with which the trust region stopping criterion is multiplied at each
+restart."""
+
+USE_SOFT_RESTARTS = True
+"""bool: Whether to use soft or hard restarts."""
+
+MOVE_CURRENT_POINT_AT_SOFT_RESTART = True
+"""bool: Whether to move the current evaluation point ($x_k$) to the best new point
+evaluate."""
+
+REUSE_CRITERION_VALUE_AT_HARD_RESTART = True
+"""Whether or not to recycle the
+criterion value at the best iterate found when performing a hard restart.
+This saves one objective evaluation."""
+
+ADDITIONAL_AUTOMATIC_RESTART_DETECTION = True
+"""bool: Whether or not to automatically determine when to restart.
+This is an extra condition, and restarts can still be triggered by small trust region
+radius, etc.. There are two criteria used: trust region radius decreases
+(no increases over the history, more decreases than no changes) and
+change in model Jacobian (consistently increasing trend as measured
+by slope and correlation coefficient of line of best fit)."""
+
+N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION = 30
+"""int: How many iterations of model changes and trust region radii to store."""
+
+MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART = 0.015
+"""float: Minimum rate of increase of log gradients and log Hessians or the Jacobian
+over past iterations to cause a restart."""
+
+MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART = 0.1
+"""float: Minimum correlation of the log Gradient and log Hessian datasets or the
+Jacobian dataset required to cause a restart.
+"""
+
+
 # =================================================================================
 # Dashboard Defaults
 # =================================================================================

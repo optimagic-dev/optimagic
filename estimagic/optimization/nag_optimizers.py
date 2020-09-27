@@ -1,8 +1,10 @@
 """"Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/]."""
+import warnings
 from functools import partial
 
 import numpy as np
 
+from estimagic.config import ADDITIONAL_AUTOMATIC_RESTART_DETECTION
 from estimagic.config import CLIP_CRITERION_IF_OVERFLOWING
 from estimagic.config import COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT
 from estimagic.config import CRITERION_NOISY
@@ -10,9 +12,16 @@ from estimagic.config import INTERPOLATION_ROUNDING_ERROR
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
+from estimagic.config import MAX_UNSUCCESSFUL_RESTARTS
+from estimagic.config import MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART
+from estimagic.config import MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART
+from estimagic.config import MIN_TRUST_REGION_SCALING_AFTER_RESTART
+from estimagic.config import MOVE_CURRENT_POINT_AT_SOFT_RESTART
+from estimagic.config import N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION
 from estimagic.config import NOISE_SCALE_FACTOR_FOR_QUIT
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
+from estimagic.config import REUSE_CRITERION_VALUE_AT_HARD_RESTART
 from estimagic.config import SCALE_INTERPOLATION_SYSTEM
 from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.config import THRESHOLD_FOR_SAFETY_STEP
@@ -20,6 +29,7 @@ from estimagic.config import THRESHOLD_FOR_SUCCESSFUL_ITERATION
 from estimagic.config import THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION
 from estimagic.config import TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS
 from estimagic.config import TRUST_REGION_INCREASE_AFTER_SUCCESS
+from estimagic.config import USE_SOFT_RESTARTS
 from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 try:
@@ -66,6 +76,17 @@ def nag_dfols(
     multiplicative_noise_level=None,
     additive_noise_level=None,
     scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
+    use_restarts=None,
+    max_unsuccessful_restarts=MAX_UNSUCCESSFUL_RESTARTS,
+    min_trust_region_scaling_after_restart=MIN_TRUST_REGION_SCALING_AFTER_RESTART,
+    use_soft_restarts=USE_SOFT_RESTARTS,
+    move_current_point_at_soft_restart=MOVE_CURRENT_POINT_AT_SOFT_RESTART,
+    reuse_criterion_value_at_hard_restart=REUSE_CRITERION_VALUE_AT_HARD_RESTART,
+    max_iterations_without_new_best_after_soft_restart=None,
+    additional_automatic_restart_detection=ADDITIONAL_AUTOMATIC_RESTART_DETECTION,
+    n_iterations_for_automatic_restart_detection=N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION,  # noqa: E501
+    min_model_slope_increase_for_automatic_restart=MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART,  # noqa: E501
+    min_correlations_for_automatic_restart=MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -138,8 +159,8 @@ def nag_dfols(
             when the lower bound is reduced (:math:`\alpha_2`). Default is 0.95 if
             ``criterion_noisy`` and 0.5 else.
         absolute_criterion_value_tolerance (float): Terminate successfully if
-            the criterion value falls below this threshold. This is deactivated
-            (i.e. set to -inf) by default.
+            the criterion value falls below this threshold. This is currently not yet
+            supported by nag_dfols.
         threshold_for_insufficient_improvement (float): Threshold whether an improvement
             is insufficient. Note: the improvement is divided by the
             ``comparison_period_for_insufficient_improvement``.
@@ -166,6 +187,40 @@ def nag_dfols(
             ``additive_noise_level``.
         scale_interpolation_system (bool): Whether or not to scale the interpolation
             linear system to improve conditioning.
+        use_restarts (bool): Whether to do restarts when the lower bound on the trust
+            region radius (:math:`\rho_k`) reaches the stopping criterion
+            (:math:`\rho_{end}`), or (optionally) when all points are within noise
+            level. Default is ``True`` if ``criterion_noisy`` or when
+            ``seek_global_optimum``.
+        max_unsuccessful_restarts (int): maximum number of consecutive unsuccessful
+            restarts allowed (i.e. restarts which did not reduce the objective further)
+        min_trust_region_scaling_after_restart (float): Factor with which
+            the trust region stopping criterion is multiplied at each restart.
+        use_soft_restarts (bool): Whether to use soft or hard restarts.
+        move_current_point_at_soft_restart (bool): Whether to move the current
+            evaluation point ($x_k$) to the best new point evaluated.
+        reuse_criterion_value_at_hard_restart (bool): Whether or not to recycle the
+            criterion value at the best iterate found when performing a hard restart.
+            This saves one objective evaluation.
+        max_iterations_without_new_best_after_soft_restart (int):
+            The maximum number of successful steps in a given run where the new
+            objective value is worse than the best value found in previous runs before
+            terminating. Default is ``max_criterion_evaluations``.
+        additional_automatic_restart_detection (bool): Whether or not to
+            automatically determine when to restart. This is an extra condition, and
+            restarts can still be triggered by small trust region radius, etc.
+            There are two criteria used: trust region radius decreases
+            (no increases over the history, more decreases than no changes) and
+            change in model Jacobian (consistently increasing trend as measured
+            by slope and correlation coefficient of line of best fit).
+        n_iterations_for_automatic_restart_detection (int):
+            How many iterations of model changes and trust region radii to store.
+        min_model_slope_increase_for_automatic_restart (float):
+            Minimum rate of increase of the Jacobian over past iterations to cause a
+            restart.
+        min_correlations_for_automatic_restart (float):
+            Minimum correlation of the Jacobian data set required to cause a restart.
+
 
 
     Returns:
@@ -183,8 +238,11 @@ def nag_dfols(
     if initial_trust_region_radius is None:
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
     # -np.inf as a default leads to errors when building the documentation with sphinx.
-    if absolute_criterion_value_tolerance is None:
-        absolute_criterion_value_tolerance = -np.inf
+    if absolute_criterion_value_tolerance is not None:
+        warnings.warn(
+            "absolute_criterion_value_tolerance is currently not yet supported by "
+            "nag_dfols so this is option is ignored for the moment."
+        )
     if n_evals_per_point is not None:
 
         def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
@@ -225,6 +283,17 @@ def nag_dfols(
         "noise.multiplicative_noise_level": multiplicative_noise_level,
         "noise.additive_noise_level": additive_noise_level,
         "interpolation.precondition": scale_interpolation_system,
+        "restarts.use_restarts": use_restarts,
+        "restarts.max_unsuccessful_restarts": max_unsuccessful_restarts,
+        "restarts.rhoend_scale": min_trust_region_scaling_after_restart,
+        "restarts.use_soft_restarts": use_soft_restarts,
+        "restarts.soft.move_xk": move_current_point_at_soft_restart,
+        "restarts.hard.use_old_rk": reuse_criterion_value_at_hard_restart,
+        "restarts.soft.max_fake_successful_steps": max_iterations_without_new_best_after_soft_restart,  # noqa: E501
+        "restarts.auto_detect": additional_automatic_restart_detection,
+        "restarts.auto_detect.history": n_iterations_for_automatic_restart_detection,  # noqa: E501
+        "restarts.auto_detect.min_chgJ_slope": min_model_slope_increase_for_automatic_restart,  # noqa: E501
+        "restarts.auto_detect.min_correl": min_correlations_for_automatic_restart,
     }
     criterion = partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info
@@ -285,19 +354,19 @@ def nag_pybobyqa(
     scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
     frobenius_for_interpolation_problem=True,
     use_restarts=None,
-    max_unsuccessful_restarts=10,
+    max_unsuccessful_restarts=MAX_UNSUCCESSFUL_RESTARTS,
     max_unsuccessful_restarts_total=None,
     trust_region_scaling_after_unsuccessful_restart=None,
-    min_trust_region_scaling_after_restart=1.0,
-    use_soft_restarts=True,
+    min_trust_region_scaling_after_restart=MIN_TRUST_REGION_SCALING_AFTER_RESTART,
+    use_soft_restarts=USE_SOFT_RESTARTS,
     points_to_move_at_soft_restart=3,
-    move_current_point_at_soft_restart=True,
-    reuse_criterion_value_at_hard_restart=True,
+    move_current_point_at_soft_restart=MOVE_CURRENT_POINT_AT_SOFT_RESTART,
+    reuse_criterion_value_at_hard_restart=REUSE_CRITERION_VALUE_AT_HARD_RESTART,
     max_iterations_without_new_best_after_soft_restart=None,
-    additional_automatic_restart_detection=True,
-    n_iterations_for_automatic_restart_detection=30,
-    min_model_slope_increase_for_automatic_restart=0.015,
-    min_correlations_for_automatic_restart=0.1,
+    additional_automatic_restart_detection=ADDITIONAL_AUTOMATIC_RESTART_DETECTION,
+    n_iterations_for_automatic_restart_detection=N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION,  # noqa: E501
+    min_model_slope_increase_for_automatic_restart=MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART,  # noqa: E501
+    min_correlations_for_automatic_restart=MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -459,7 +528,7 @@ def nag_pybobyqa(
             move at each soft restart.
         move_current_point_at_soft_restart (bool): Whether to move the current
             evaluation point ($x_k$) to the best new point evaluated.
-        reuse_criterion_value_at_hard_restart (bool): whether or not to recycle the
+        reuse_criterion_value_at_hard_restart (bool): Whether or not to recycle the
             criterion value at the best iterate found when performing a hard restart.
             This saves one objective evaluation.
         max_iterations_without_new_best_after_soft_restart (int):
@@ -476,11 +545,11 @@ def nag_pybobyqa(
         n_iterations_for_automatic_restart_detection (int):
             How many iterations of model changes and trust region radii to store.
         min_model_slope_increase_for_automatic_restart (float):
-            Minimum rate of increase of $\log(\|g_k-g_{k-1}\|)$ and
-            $\log(\|H_k-H_{k-1}\|_F)$ over past iterations to cause a restart.
+            Minimum rate of increase of log gradients and log Hessians over past
+            iterations to cause a restart.
         min_correlations_for_automatic_restart (float):
-            Minimum correlation of the data sets $(k, \log(\|g_k-g_{k-1}\|))$ and
-            $(k, \log(\|H_k-H_{k-1}\|_F))$ required to cause a restart.
+            Minimum correlation of the log Gradient and log Hessian datasets
+            required to cause a restart.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
