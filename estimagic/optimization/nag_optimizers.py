@@ -87,6 +87,10 @@ def nag_dfols(
     n_iterations_for_automatic_restart_detection=N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION,  # noqa: E501
     min_model_slope_increase_for_automatic_restart=MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART,  # noqa: E501
     min_correlations_for_automatic_restart=MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART,
+    relative_to_start_value_criterion_tolerance=0.0,
+    n_extra_points_to_move_when_sufficient_improvement=0,
+    n_extra_points_to_add_at_restart=0,
+    use_momentum_method_to_move_extra_points=False,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -220,8 +224,21 @@ def nag_dfols(
             restart.
         min_correlations_for_automatic_restart (float):
             Minimum correlation of the Jacobian data set required to cause a restart.
-
-
+        relative_to_start_value_criterion_tolerance (float):
+            Terminate if a point is reached where the ratio of the criterion value
+            to the criterion value at the start params is below this value, i.e. if
+            :math:`f(x_k)/f(x_0) \leq
+            \text{relative_to_start_value_criterion_tolerance}`. Note this is
+            deactivated unless the lowest mathematically possible criterion value (0.0)
+            is actually achieved.
+        n_extra_points_to_move_when_sufficient_improvement (int): The number of extra
+            points (other than accepting the trust region step) to move. Useful when
+            n_interpolation points > number of parameters + 1.
+        n_extra_points_to_add_at_restart (int): The number by which to increase
+            `n_extra_points_to_move_when_sufficient_improvement` at each restart.
+        use_momentum_method_to_move_extra_points (bool): If moving extra points in
+            successful iterations, whether to use the 'momentum' method. If not,
+            uses geometry-improving steps.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -294,6 +311,10 @@ def nag_dfols(
         "restarts.auto_detect.history": n_iterations_for_automatic_restart_detection,  # noqa: E501
         "restarts.auto_detect.min_chgJ_slope": min_model_slope_increase_for_automatic_restart,  # noqa: E501
         "restarts.auto_detect.min_correl": min_correlations_for_automatic_restart,
+        "model.rel_tol": relative_to_start_value_criterion_tolerance,
+        "regression.num_extra_steps": n_extra_points_to_move_when_sufficient_improvement,  # noqa: E501
+        "regression.increase_num_extra_steps_with_restart": n_extra_points_to_add_at_restart,  # noqa: E501
+        "regression.momentum_extra_steps": use_momentum_method_to_move_extra_points,
     }
     criterion = partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info
