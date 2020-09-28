@@ -101,7 +101,7 @@ def nag_dfols(
     scaling_of_trust_region_step_perturb=None,
     scaling_jacobian_perturb_components=1e-2,
     scaling_jacobian_perturb_floor_of_singular_values=1,
-    jacobian_perturb_floor_of_singular_values_abs=1e-6,
+    jacobian_perturb_abs_floor_for_singular_values=1e-6,
     jacobian_perturb_max_condition_number=1e8,
     geometry_improving_steps_in_initial_step_growth=False,
     safety_steps_in_initial_step_growth=True,
@@ -352,7 +352,7 @@ def nag_dfols(
             added to the Jacobian.
         scaling_jacobian_perturb_floor_of_singular_values (float): Floor singular values
             of the Jacobian at this factor of the last nonzero value.
-        jacobian_perturb_floor_of_singular_values_abs (float): Absolute floor on
+        jacobian_perturb_abs_floor_for_singular_values (float): Absolute floor on
             singular values of the Jacobian.
         jacobian_perturb_max_condition_number (float): Cap on the condition number of
             Jacobian after applying floors to singular values (effectively another
@@ -465,7 +465,7 @@ def nag_dfols(
         "growing.perturb_trust_region_step": perturb_trust_region_step,
         "growing.delta_scale_new_dirns": scaling_of_trust_region_step_perturb,
         "growing.full_rank.scale_factor": scaling_jacobian_perturb_components,
-        "growing.full_rank.min_sing_val": jacobian_perturb_floor_of_singular_values_abs,
+        "growing.full_rank.min_sing_val": jacobian_perturb_abs_floor_for_singular_values,  # noqa: E501
         "growing.full_rank.svd_max_jac_cond": jacobian_perturb_max_condition_number,
         "growing.do_geom_steps": geometry_improving_steps_in_initial_step_growth,
         "growing.safety.do_safety_step": safety_steps_in_initial_step_growth,
