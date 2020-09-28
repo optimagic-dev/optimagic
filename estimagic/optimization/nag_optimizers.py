@@ -392,12 +392,12 @@ def nag_dfols(
     if absolute_criterion_value_tolerance is not None:
         warnings.warn(
             "absolute_criterion_value_tolerance is currently not yet supported by "
-            "nag_dfols so this is option is ignored for the moment."
+            "DF-OLS so this is option is ignored for the moment."
         )
     if jacobian_perturb_floor_of_singular_values_scale is not None:
         warnings.warn(
             "jacobian_perturb_floor_of_singular_values_scale is currently not yet "
-            "supported by nag_dfols so this is option is ignored for the moment."
+            "supported by DF-OLS so this is option is ignored for the moment."
         )
 
     if initial_trust_region_radius is None:
@@ -405,20 +405,12 @@ def nag_dfols(
     # -np.inf as a default leads to errors when building the documentation with sphinx.
 
     n_evals_per_point = _change_evals_per_point_interface(n_evals_per_point)
-
-    allowed_perturb_values = [None, "Jacobian", "trust_region_step"]
-    if perturb_jacobian_or_trust_region_step not in allowed_perturb_values:
-        raise ValueError(
-            "`perturb_jacobian_or_trust_region_step` must be one of "
-            f"{allowed_perturb_values}. "
-            f"You provided {perturb_jacobian_or_trust_region_step}"
-        )
-    if perturb_jacobian_or_trust_region_step is None:
-        perturb_jacobian = None
-        perturb_trust_region_step = None
-    else:
-        perturb_jacobian = perturb_jacobian_or_trust_region_step == "Jacobian"
-        perturb_trust_region_step = not perturb_jacobian
+    (
+        perturb_jacobian,
+        perturb_trust_region_step,
+    ) = _perturb_jacobian_or_trust_region_step_from_user_value(
+        perturb_jacobian_or_trust_region_step
+    )
 
     algo_info = {
         "name": "nag_dfols",
@@ -889,3 +881,21 @@ def _change_evals_per_point_interface(func):
             )
 
         return adjusted_n_evals_per_point
+
+
+def _perturb_jacobian_or_trust_region_step_from_user_value(user_value):
+    """Get perturb_jacobian and perturb_trust_region_step from user value."""
+    allowed_perturb_values = [None, "Jacobian", "trust_region_step"]
+    if user_value not in allowed_perturb_values:
+        raise ValueError(
+            "`perturb_jacobian_or_trust_region_step` must be one of "
+            f"{allowed_perturb_values}. You provided {user_value}."
+        )
+    if user_value is None:
+        perturb_jacobian = None
+        perturb_trust_region_step = None
+    else:
+        perturb_jacobian = user_value == "Jacobian"
+        perturb_trust_region_step = not perturb_jacobian
+
+    return perturb_jacobian, perturb_trust_region_step
