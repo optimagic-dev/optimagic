@@ -833,6 +833,17 @@ def nag_pybobyqa(
 
 
 def _process_nag_result(nag_result_obj, len_x):
+    """Convert the NAG result object to our result dictionary.
+
+    Args:
+        nag_result_obj: NAG result object
+        len_x (int): length of the supplied parameters, i.e. the dimensionality of the
+            problem.
+
+    Returns:
+        results (dict): See :ref:`internal_optimizer_output` for details.
+
+    """
     processed = {
         "solution_criterion": nag_result_obj.f,
         "n_iterations": nag_result_obj.nf,
@@ -857,7 +868,16 @@ def _process_nag_result(nag_result_obj, len_x):
 
 
 def _change_evals_per_point_interface(func):
-    """Change the interface of the user supplied function to the one expected by NAG."""
+    """Change the interface of the user supplied function to the one expected by NAG.
+
+    Args:
+        func (callable or None): function mapping from our names to n_evals_per_point.
+
+    Returns:
+        adjusted_n_evals_per_point (callable): function mapping from the argument names
+            expected by pybobyqa and df-ols to n_evals_per_point.
+
+    """
     if func is not None:
 
         def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
