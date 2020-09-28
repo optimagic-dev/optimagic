@@ -91,16 +91,16 @@ def nag_dfols(
     min_correlations_for_automatic_restart=MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART,
     relative_to_start_value_criterion_tolerance=0.0,
     n_extra_points_to_move_when_sufficient_improvement=0,
-    n_increase_extra_points_to_add_at_restart=0,
     use_momentum_method_to_move_extra_points=False,
+    n_increase_move_points_at_restart=0,
     points_to_move_at_soft_restart=POINTS_TO_MOVE_AT_SOFT_RESTART,
     n_interpolation_points_to_add_at_restart=0,
     n_interpolation_points_to_add_at_hard_restart_additionally=None,
     n_interpolation_points_to_add_initially=None,
     perturb_jacobian_or_trust_region_step=None,
-    trust_region_step_perturb_scaling=None,
-    jacobian_perturb_components_scaling=1e-2,
-    jacobian_perturb_floor_of_singular_values_scale=1,
+    scaling_of_trust_region_step_perturb=None,
+    scaling_jacobian_perturb_components=1e-2,
+    scaling_jacobian_perturb_floor_of_singular_values=1,
     jacobian_perturb_floor_of_singular_values_abs=1e-6,
     jacobian_perturb_max_condition_number=1e8,
     geometry_improving_steps_in_initial_step_growth=False,
@@ -315,9 +315,10 @@ def nag_dfols(
         n_extra_points_to_move_when_sufficient_improvement (int): The number of extra
             points (other than accepting the trust region step) to move. Useful when
             ``n_interpolation_points > len(x) + 1``.
-        n_increase_extra_points_to_add_at_restart (int): The number by which to increase
+        n_increase_move_points_at_restart (int): The number by which to increase
             ``n_extra_points_to_move_when_sufficient_improvement`` at each restart.
         use_momentum_method_to_move_extra_points (bool): If moving extra points in
+            ``n_extra_points_to_move_when_sufficient_improvement`` at each restart.
             successful iterations, whether to use the 'momentum' method. If not,
             uses geometry-improving steps.
         n_interpolation_points_to_add_at_restart (int): Number by which to increase the
@@ -343,13 +344,13 @@ def nag_dfols(
             If "trust_region_step", the trust region step is perturbed by an orthogonal
             direction not yet searched. It is the default if
             ``len(x) < number of root contributions``.
-        trust_region_step_perturb_scaling (float): When adding new search directions,
+        scaling_of_trust_region_step_perturb (float): When adding new search directions,
             the length of the step is the trust region radius multiplied by this value.
             The default is 0.1 if
             ``perturb_jacobian_or_trust_region_step == "trust_region_radius"`` else 1.
-        jacobian_perturb_components_scaling (float): Magnitude of extra components
+        scaling_jacobian_perturb_components (float): Magnitude of extra components
             added to the Jacobian.
-        jacobian_perturb_floor_of_singular_values_scale (float): Floor singular values
+        scaling_jacobian_perturb_floor_of_singular_values (float): Floor singular values
             of the Jacobian at this factor of the last nonzero value.
         jacobian_perturb_floor_of_singular_values_abs (float): Absolute floor on
             singular values of the Jacobian.
@@ -394,9 +395,9 @@ def nag_dfols(
             "absolute_criterion_value_tolerance is currently not yet supported by "
             "DF-OLS so this is option is ignored for the moment."
         )
-    if jacobian_perturb_floor_of_singular_values_scale is not None:
+    if scaling_jacobian_perturb_floor_of_singular_values is not None:
         warnings.warn(
-            "jacobian_perturb_floor_of_singular_values_scale is currently not yet "
+            "scaling_jacobian_perturb_floor_of_singular_values is currently not yet "
             "supported by DF-OLS so this is option is ignored for the moment."
         )
 
@@ -452,8 +453,8 @@ def nag_dfols(
         "restarts.auto_detect.min_correl": min_correlations_for_automatic_restart,
         "model.rel_tol": relative_to_start_value_criterion_tolerance,
         "regression.num_extra_steps": n_extra_points_to_move_when_sufficient_improvement,  # noqa: E501
-        "regression.increase_num_extra_steps_with_restart": n_increase_extra_points_to_add_at_restart,  # noqa: E501
         "regression.momentum_extra_steps": use_momentum_method_to_move_extra_points,
+        "regression.increase_num_extra_steps_with_restart": n_increase_move_points_at_restart,  # noqa: E501
         "restarts.max_npt": max_interpolation_points,
         "restarts.soft.num_geom_steps": points_to_move_at_soft_restart,
         "restarts.increase_npt": n_interpolation_points_to_add_at_restart > 0,
@@ -462,8 +463,8 @@ def nag_dfols(
         "growing.ndirs_initial": n_interpolation_points_to_add_initially,
         "growing.full_rank.use_full_rank_interp": perturb_jacobian,
         "growing.perturb_trust_region_step": perturb_trust_region_step,
-        "growing.delta_scale_new_dirns": trust_region_step_perturb_scaling,
-        "growing.full_rank.scale_factor": jacobian_perturb_components_scaling,
+        "growing.delta_scale_new_dirns": scaling_of_trust_region_step_perturb,
+        "growing.full_rank.scale_factor": scaling_jacobian_perturb_components,
         "growing.full_rank.min_sing_val": jacobian_perturb_floor_of_singular_values_abs,
         "growing.full_rank.svd_max_jac_cond": jacobian_perturb_max_condition_number,
         "growing.do_geom_steps": geometry_improving_steps_in_initial_step_growth,
