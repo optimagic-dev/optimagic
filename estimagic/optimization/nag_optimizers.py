@@ -389,10 +389,6 @@ def nag_dfols(
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
         )
-
-    if initial_trust_region_radius is None:
-        initial_trust_region_radius = calculate_initial_trust_region_radius(x)
-    # -np.inf as a default leads to errors when building the documentation with sphinx.
     if absolute_criterion_value_tolerance is not None:
         warnings.warn(
             "absolute_criterion_value_tolerance is currently not yet supported by "
@@ -404,18 +400,11 @@ def nag_dfols(
             "supported by nag_dfols so this is option is ignored for the moment."
         )
 
-    if n_evals_per_point is not None:
+    if initial_trust_region_radius is None:
+        initial_trust_region_radius = calculate_initial_trust_region_radius(x)
+    # -np.inf as a default leads to errors when building the documentation with sphinx.
 
-        def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
-            return n_evals_per_point(
-                trust_region_radius=delta,
-                min_trust_region=rho,
-                n_iterations=iter,
-                n_restarts=nrestarts,
-            )
-
-    else:
-        adjusted_n_evals_per_point = None
+    n_evals_per_point = _change_evals_per_point_interface(n_evals_per_point)
 
     allowed_perturb_values = [None, "Jacobian", "trust_region_step"]
     if perturb_jacobian_or_trust_region_step not in allowed_perturb_values:
@@ -509,7 +498,7 @@ def nag_dfols(
         rhobeg=initial_trust_region_radius,
         npt=n_interpolation_points,
         rhoend=absolute_params_tolerance,
-        nsamples=adjusted_n_evals_per_point,
+        nsamples=n_evals_per_point,
         objfun_has_noise=criterion_noisy,
         scaling_within_bounds=False,
         do_logging=False,
@@ -772,18 +761,7 @@ def nag_pybobyqa(
     # -np.inf as a default leads to errors when building the documentation with sphinx.
     if absolute_criterion_value_tolerance is None:
         absolute_criterion_value_tolerance = -np.inf
-    if n_evals_per_point is not None:
-
-        def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
-            return n_evals_per_point(
-                trust_region_radius=delta,
-                min_trust_region=rho,
-                n_iterations=iter,
-                n_restarts=nrestarts,
-            )
-
-    else:
-        adjusted_n_evals_per_point = None
+    n_evals_per_point = _change_evals_per_point_interface(n_evals_per_point)
 
     algo_info = {
         "name": "nag_pybobyqa",
@@ -845,7 +823,7 @@ def nag_pybobyqa(
         do_logging=False,
         print_progress=False,
         objfun_has_noise=criterion_noisy,
-        nsamples=adjusted_n_evals_per_point,
+        nsamples=n_evals_per_point,
         npt=n_interpolation_points,
         rhoend=absolute_params_tolerance,
         seek_global_minimum=seek_global_optimum,
@@ -876,3 +854,18 @@ def _process_nag_result(nag_result_obj, len_x):
     except AttributeError:
         pass
     return processed
+
+
+def _change_evals_per_point_interface(func):
+    """Change the interface of the user supplied function to the one expected by NAG."""
+    if func is not None:
+
+        def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
+            return func(
+                trust_region_radius=delta,
+                min_trust_region=rho,
+                n_iterations=iter,
+                n_restarts=nrestarts,
+            )
+
+        return adjusted_n_evals_per_point
