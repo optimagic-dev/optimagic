@@ -2,7 +2,7 @@ import pytest
 
 from estimagic.optimization.nag_optimizers import _change_evals_per_point_interface
 from estimagic.optimization.nag_optimizers import (
-    _perturb_jacobian_or_trust_region_step_from_user_value,
+    _get_fast_start_strategy_from_user_value,
 )
 
 
@@ -21,21 +21,21 @@ def test_change_evals_per_point_interface_func():
     assert res == expected
 
 
-def test_perturb_jacobian_or_trust_region_step_from_user_value_none():
-    res = _perturb_jacobian_or_trust_region_step_from_user_value(None)
+def test_get_fast_start_strategy_from_user_value_auto():
+    res = _get_fast_start_strategy_from_user_value("auto")
     assert res == (None, None)
 
 
-def test_perturb_jacobian_or_trust_region_step_from_user_value_jacobian():
-    res = _perturb_jacobian_or_trust_region_step_from_user_value("Jacobian")
+def test_get_fast_start_strategy_from_user_value_jacobian():
+    res = _get_fast_start_strategy_from_user_value("jacobian")
     assert res == (True, False)
 
 
-def test_perturb_jacobian_or_trust_region_step_from_user_value_trust():
-    res = _perturb_jacobian_or_trust_region_step_from_user_value("trust_region_step")
+def test_get_fast_start_strategy_from_user_value_trust():
+    res = _get_fast_start_strategy_from_user_value("trust_region")
     assert res == (False, True)
 
 
-def test_perturb_jacobian_or_trust_region_step_from_user_value_error():
+def test_get_fast_start_strategy_from_user_value_error():
     with pytest.raises(ValueError):
-        _perturb_jacobian_or_trust_region_step_from_user_value("wrong_input")
+        _get_fast_start_strategy_from_user_value("wrong_input")

@@ -1,4 +1,5 @@
-"""Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/]."""
+"""Implement algorithms by the (Numerical Algorithms
+Group)[https://www.nag.com/]."""
 import warnings
 from functools import partial
 
@@ -96,20 +97,7 @@ def nag_dfols(
     points_to_move_at_soft_restart=POINTS_TO_MOVE_AT_SOFT_RESTART,
     n_interpolation_points_to_add_at_restart=0,
     n_interpolation_points_to_add_at_hard_restart_additionally=None,
-    n_interpolation_points_to_add_initially=None,
-    perturb_jacobian_or_trust_region_step=None,
-    scaling_of_trust_region_step_perturb=None,
-    scaling_jacobian_perturb_components=1e-2,
-    scaling_jacobian_perturb_floor_of_singular_values=1,
-    jacobian_perturb_abs_floor_for_singular_values=1e-6,
-    jacobian_perturb_max_condition_number=1e8,
-    geometry_improving_steps_in_initial_step_growth=False,
-    safety_steps_in_initial_step_growth=True,
-    reduce_trust_region_with_safety_steps_in_initial_step_growth=False,
-    reset_trust_region_radius_after_initial_step_growth=False,
-    reset_min_trust_region_radius_after_initial_step_growth=False,
-    trust_region_decrease_during_initial_step_growth=None,
-    n_search_directions_to_add_when_incomplete=0,
+    fast_start_options=None,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -327,57 +315,63 @@ def nag_dfols(
             Number by which to increase ``n_initial_points_to_add`` with each hard
             restart. To avoid a growing phase, it is best to set it to the same value
             as ``n_interpolation_points_to_add_at_restart``.
-
-        n_interpolation_points_to_add_initially (int): Number of initial
-            interpolation points to add. This should only be changed to a value less
-            than ``len(x)``, and only if the default setup cost of ``len(x) + 1``
-            evaluations of the criterion is impractical.
-            If this is set to be less than the default, the input value of
-            ``n_interpolation_points`` should be set to ``len(x)``.
-            If the default is used, all the below parameters have no effect on DFO-LS.
-            Default is ``n_interpolation_points - 1``.
-        perturb_jacobian_or_trust_region_step ("Jacobian", "trust_region_step" or None):
-            If "Jacobian", the interpolated Jacobian is interpolated to make it full
-            rank, allowing the trust region step to include components in the full
-            search space. This is the default if the number of root contributions is
-            larger than or equal to ``len(x)``.
-            If "trust_region_step", the trust region step is perturbed by an orthogonal
-            direction not yet searched. It is the default if
-            ``len(x) < number of root contributions``.
-        scaling_of_trust_region_step_perturb (float): When adding new search directions,
-            the length of the step is the trust region radius multiplied by this value.
-            The default is 0.1 if
-            ``perturb_jacobian_or_trust_region_step == "trust_region_radius"`` else 1.
-        scaling_jacobian_perturb_components (float): Magnitude of extra components
-            added to the Jacobian.
-        scaling_jacobian_perturb_floor_of_singular_values (float): Floor singular values
-            of the Jacobian at this factor of the last nonzero value.
-        jacobian_perturb_abs_floor_for_singular_values (float): Absolute floor on
-            singular values of the Jacobian.
-        jacobian_perturb_max_condition_number (float): Cap on the condition number of
-            Jacobian after applying floors to singular values (effectively another
-            floor on the smallest singular value, since the largest singular value is
-            fixed).
-        geometry_improving_steps_in_initial_step_growth (bool): While still growing the
-            initial set, whether to do geometry-improving steps in the trust region
-            algorithm.
-        safety_steps_in_initial_step_growth (bool): While still growing the initial set,
-            whether to perform safety steps, or the regular trust region steps.
-        reduce_trust_region_with_safety_steps_in_initial_step_growth (bool):
-            While still growing the initial set, whether to reduce trust region radius
-            in safety steps.
-        reset_trust_region_radius_after_initial_step_growth (bool): Whether or not to
-            reset the trust region radius to its initial value at the end of the growing
-            phase.
-        reset_min_trust_region_radius_after_initial_step_growth (bool): Whether or not
-            to reset the minimum trust region radius (:math:`\rho_k`) to its initial
-            value at the end of the growing phase.
-        trust_region_decrease_during_initial_step_growth (float): Trust region decrease
-            parameter during the growing phase. The default is
-            ``trust_region_reduction_when_not_successful``.
-        n_search_directions_to_add_when_incomplete (int): Number of new search
-            directions to add with each iteration where we do not have a full set of
-            search directions. This approach is not recommended!
+        fast_start_options (dict): Can have the following entries:
+            n_initial_interpolation_points (int): Number of initial interpolation
+                points in addition to the start point. This should only be changed to
+                a value less than ``len(x)``, and only if the default setup cost
+                of ``len(x) + 1`` evaluations of the criterion is impractical.
+                If this is set to be less than the default, the input value of
+                ``n_interpolation_points`` should be set to ``len(x)``.
+                If the default is used, all the other parameters have no effect.
+                Default is ``n_interpolation_points - 1``.
+                If the default setup costs of the evaluations are very large, DF-OLS
+                can start with less than ``len(x)`` points and add points to the trust
+                region model with every iteration.
+            strategy ("jacobian", "trust_region" or "auto"):
+                When there are less interpolation points than ``len(x)`` the model is
+                underdetermined. This can be fixed in two ways:
+                If "jacobian", the interpolated Jacobian is perturbed to have full
+                rank, allowing the trust region step to include components in the full
+                search space. This is the default if
+                ``len(x) \geq number of root contributions``.
+                If "trust_region_step", the trust region step is perturbed by an
+                orthogonal direction not yet searched. It is the default if
+                ``len(x) < number of root contributions``.
+            scaling_of_trust_region_step_perturbation (float):
+                When adding new search directions, the length of the step is the trust
+                region radius multiplied by this value. The default is 0.1 if
+                ``fast_start_strategy == "perturb_trust_region_radius"`` else 1.
+            scaling_jacobian_perturb_components (float): Magnitude of extra components
+                added to the Jacobian.
+            scaling_jacobian_perturb_floor_of_singular_values (float): Floor singular
+                values of the Jacobian at this factor of the last nonzero value.
+            jacobian_perturb_abs_floor_for_singular_values (float): Absolute floor on
+                singular values of the Jacobian.
+            jacobian_perturb_max_condition_number (float): Cap on the condition number
+                of Jacobian after applying floors to singular values
+                (effectively another floor on the smallest singular value, since the
+                largest singular value is fixed).
+            geometry_improving_steps_in_initial_step_growth (bool):
+                While still growing the initial set, whether to do geometry-improving
+                steps in the trust region algorithm.
+            safety_steps_in_initial_step_growth (bool):
+                While still growing the initial set, whether to perform safety steps,
+                or the regular trust region steps.
+            reduce_trust_region_with_safety_steps_in_initial_step_growth (bool):
+                While still growing the initial set, whether to reduce trust region
+                radius in safety steps.
+            reset_trust_region_radius_after_initial_step_growth (bool):
+                Whether or not to reset the trust region radius to its initial value
+                at the end of the growing phase.
+            reset_min_trust_region_radius_after_initial_step_growth (bool):
+                Whether or not to reset the minimum trust region radius
+                (:math:`\rho_k`) to its initial value at the end of the growing phase.
+            trust_region_decrease_during_initial_step_growth (float):
+                Trust region decrease parameter during the growing phase. The default
+                is ``trust_region_reduction_when_not_successful``.
+            n_search_directions_to_add_when_incomplete (int): Number of new search
+                directions to add with each iteration where we do not have a full set
+                of search directions. This approach is not recommended!
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -395,23 +389,45 @@ def nag_dfols(
             "absolute_criterion_value_tolerance is currently not yet supported by "
             "DF-OLS so this is option is ignored for the moment."
         )
-    if scaling_jacobian_perturb_floor_of_singular_values is not None:
-        warnings.warn(
-            "scaling_jacobian_perturb_floor_of_singular_values is currently not yet "
-            "supported by DF-OLS so this is option is ignored for the moment."
-        )
-
     if initial_trust_region_radius is None:
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
     # -np.inf as a default leads to errors when building the documentation with sphinx.
-
     n_evals_per_point = _change_evals_per_point_interface(n_evals_per_point)
+
+    all_fast_start_options = {
+        "min_inital_points": None,
+        "strategy": "auto",
+        "scaling_of_trust_region_step_perturbation": None,
+        "scaling_jacobian_perturb_components": 1e-2,
+        "scaling_jacobian_perturb_floor_of_singular_values": 1,
+        "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
+        "jacobian_perturb_max_condition_number": 1e8,
+        "geometry_improving_steps_in_initial_step_growth": False,
+        "safety_steps_in_initial_step_growth": True,
+        "reduce_trust_region_with_safety_steps_in_initial_step_growth": False,
+        "reset_trust_region_radius_after_initial_step_growth": False,
+        "reset_min_trust_region_radius_after_initial_step_growth": False,
+        "trust_region_decrease_during_initial_step_growth": None,
+        "n_search_directions_to_add_when_incomplete": 0,
+    }
+    if fast_start_options is not None:
+        if "scaling_jacobian_perturb_floor_of_singular_values" in fast_start_options:
+            warnings.warn(
+                "scaling_jacobian_perturb_floor_of_singular_values is currently not "
+                "yet supported by DF-OLS so this is option is ignored for the moment."
+            )
+
+        invalid = [x for x in fast_start_options if x not in all_fast_start_options]
+        assert (
+            len(invalid) == 0
+        ), f"You specified illegal fast_start_options {', '.join(invalid)}. Allowed: "
+        ", ".join(all_fast_start_options.keys())
+
+        all_fast_start_options.update(fast_start_options)
     (
         perturb_jacobian,
         perturb_trust_region_step,
-    ) = _perturb_jacobian_or_trust_region_step_from_user_value(
-        perturb_jacobian_or_trust_region_step
-    )
+    ) = _get_fast_start_strategy_from_user_value(all_fast_start_options.pop("strategy"))
 
     algo_info = {
         "name": "nag_dfols",
@@ -460,23 +476,47 @@ def nag_dfols(
         "restarts.increase_npt": n_interpolation_points_to_add_at_restart > 0,
         "restarts.increase_npt_amt": n_interpolation_points_to_add_at_restart,
         "restarts.hard.increase_ndirs_initial_amt": n_interpolation_points_to_add_at_hard_restart_additionally,  # noqa: E501
-        "growing.ndirs_initial": n_interpolation_points_to_add_initially,
         "growing.full_rank.use_full_rank_interp": perturb_jacobian,
         "growing.perturb_trust_region_step": perturb_trust_region_step,
-        "growing.delta_scale_new_dirns": scaling_of_trust_region_step_perturb,
-        "growing.full_rank.scale_factor": scaling_jacobian_perturb_components,
-        "growing.full_rank.min_sing_val": jacobian_perturb_abs_floor_for_singular_values,  # noqa: E501
-        "growing.full_rank.svd_max_jac_cond": jacobian_perturb_max_condition_number,
-        "growing.do_geom_steps": geometry_improving_steps_in_initial_step_growth,
-        "growing.safety.do_safety_step": safety_steps_in_initial_step_growth,
-        "growing.safety.reduce_delta": reduce_trust_region_with_safety_steps_in_initial_step_growth,  # noqa: E501
+        "growing.ndirs_initial": all_fast_start_options["min_inital_points"],
+        "growing.delta_scale_new_dirns": all_fast_start_options[
+            "scaling_of_trust_region_step_perturbation"
+        ],
+        "growing.full_rank.scale_factor": all_fast_start_options[
+            "scaling_jacobian_perturb_components"
+        ],
+        "growing.full_rank.min_sing_val": all_fast_start_options[
+            "jacobian_perturb_abs_floor_for_singular_values"
+        ],  # noqa: E501
+        "growing.full_rank.svd_max_jac_cond": all_fast_start_options[
+            "jacobian_perturb_max_condition_number"
+        ],
+        "growing.do_geom_steps": all_fast_start_options[
+            "geometry_improving_steps_in_initial_step_growth"
+        ],
+        "growing.safety.do_safety_step": all_fast_start_options[
+            "safety_steps_in_initial_step_growth"
+        ],
+        "growing.safety.reduce_delta": all_fast_start_options[
+            "reduce_trust_region_with_safety_steps_in_initial_step_growth"
+        ],  # noqa: E501
         # growing.safety.full_geom_step cannot be :code:`True` if
         # :code:`growing.safety.reduce_delta` is :code:`True`.
-        "growing.safety.full_geom_step": not reduce_trust_region_with_safety_steps_in_initial_step_growth,  # noqa: E501
-        "growing.reset_delta": reset_trust_region_radius_after_initial_step_growth,
-        "growing.reset_rho": reset_min_trust_region_radius_after_initial_step_growth,
-        "growing.gamma_dec": trust_region_decrease_during_initial_step_growth,
-        "growing.num_new_dirns_each_iter": n_search_directions_to_add_when_incomplete,
+        "growing.safety.full_geom_step": not all_fast_start_options[
+            "reduce_trust_region_with_safety_steps_in_initial_step_growth"
+        ],  # noqa: E501
+        "growing.reset_delta": all_fast_start_options[
+            "reset_trust_region_radius_after_initial_step_growth"
+        ],
+        "growing.reset_rho": all_fast_start_options[
+            "reset_min_trust_region_radius_after_initial_step_growth"
+        ],
+        "growing.gamma_dec": all_fast_start_options[
+            "trust_region_decrease_during_initial_step_growth"
+        ],
+        "growing.num_new_dirns_each_iter": all_fast_start_options[
+            "n_search_directions_to_add_when_incomplete"
+        ],
     }
 
     criterion = partial(
@@ -833,13 +873,12 @@ def _process_nag_result(nag_result_obj, len_x):
         len_x (int): length of the supplied parameters, i.e. the dimensionality of the
             problem.
 
+
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
-
     """
     processed = {
         "solution_criterion": nag_result_obj.f,
-        "n_iterations": nag_result_obj.nf,
         "n_criterion_evaluations": nag_result_obj.nx,
         "message": nag_result_obj.msg,
         "success": nag_result_obj.flag == nag_result_obj.EXIT_SUCCESS,
@@ -861,15 +900,16 @@ def _process_nag_result(nag_result_obj, len_x):
 
 
 def _change_evals_per_point_interface(func):
-    """Change the interface of the user supplied function to the one expected by NAG.
+    """Change the interface of the user supplied function to the one expected
+    by NAG.
 
     Args:
         func (callable or None): function mapping from our names to n_evals_per_point.
 
     Returns:
+    Returns:
         adjusted_n_evals_per_point (callable): function mapping from the argument names
             expected by pybobyqa and df-ols to n_evals_per_point.
-
     """
     if func is not None:
 
@@ -884,19 +924,19 @@ def _change_evals_per_point_interface(func):
         return adjusted_n_evals_per_point
 
 
-def _perturb_jacobian_or_trust_region_step_from_user_value(user_value):
+def _get_fast_start_strategy_from_user_value(user_value):
     """Get perturb_jacobian and perturb_trust_region_step from user value."""
-    allowed_perturb_values = [None, "Jacobian", "trust_region_step"]
+    allowed_perturb_values = ["auto", "jacobian", "trust_region"]
     if user_value not in allowed_perturb_values:
         raise ValueError(
             "`perturb_jacobian_or_trust_region_step` must be one of "
             f"{allowed_perturb_values}. You provided {user_value}."
         )
-    if user_value is None:
+    if user_value == "auto":
         perturb_jacobian = None
         perturb_trust_region_step = None
     else:
-        perturb_jacobian = user_value == "Jacobian"
+        perturb_jacobian = user_value == "jacobian"
         perturb_trust_region_step = not perturb_jacobian
 
     return perturb_jacobian, perturb_trust_region_step
