@@ -150,8 +150,28 @@ COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT = 5
 For example 5 would mean that each criterion evaluation is compared to the
 criterion value from 5 iterations before."""
 
-NOISE_SCALE_FACTOR_FOR_QUIT = 1.0
-"""float: Factor of the noise level to use in termination criterion."""
+CONVERGENCE_NOISE_CRITERION = {
+    "noise_scale_factor_for_quit": 1.0,
+    "active": None,
+    "multiplicative_noise_level": None,
+    "additive_noise_level": None,
+}
+"""dict: Arguments for converging when the evaluations in the trust region all fall
+    within a scaled version of the noise at the point of interest. Entries are:
+        active (bool): Flag to quit (or restart) if
+            all criterion evaluations of the trust region are within the some scaled
+            version of the noise level at the point of interest.
+            Default is ``False`` for smooth problems or ``True`` for noisy problems.
+            The remaining arguments determine this scaling.
+        noise_scale_factor_for_quit (float): Factor of the noise level to use in
+            termination criterion.
+        multiplicative_noise_level (float): Multiplicative noise level in :math:`f`.
+            Can only specify one of multiplicative or additive noise levels.
+            Default is :code:`None`.
+        additive_noise_level (float): Additive noise level in :math:`f`.
+            Can only specify one of multiplicative or additive noise levels.
+            Default is :code:`None`.
+"""
 
 SCALE_INTERPOLATION_SYSTEM = True
 """bool: whether to scale the interpolation linear system to improve conditioning."""

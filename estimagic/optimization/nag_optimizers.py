@@ -8,6 +8,7 @@ import numpy as np
 from estimagic.config import ADDITIONAL_AUTOMATIC_RESTART_DETECTION
 from estimagic.config import CLIP_CRITERION_IF_OVERFLOWING
 from estimagic.config import COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT
+from estimagic.config import CONVERGENCE_NOISE_CRITERION
 from estimagic.config import CRITERION_NOISY
 from estimagic.config import INTERPOLATION_ROUNDING_ERROR
 from estimagic.config import IS_DFOLS_INSTALLED
@@ -19,7 +20,6 @@ from estimagic.config import MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART
 from estimagic.config import MIN_TRUST_REGION_SCALING_AFTER_RESTART
 from estimagic.config import MOVE_CURRENT_POINT_AT_SOFT_RESTART
 from estimagic.config import N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION
-from estimagic.config import NOISE_SCALE_FACTOR_FOR_QUIT
 from estimagic.config import POINTS_TO_MOVE_AT_SOFT_RESTART
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
@@ -43,6 +43,23 @@ try:
     import dfols
 except ImportError:
     pass
+
+TRUST_REGION_FAST_START_OPTIONS = {
+    "min_inital_points": None,
+    "strategy": "auto",
+    "scaling_of_trust_region_step_perturbation": None,
+    "scaling_jacobian_perturb_components": 1e-2,
+    "scaling_jacobian_perturb_floor_of_singular_values": 1,
+    "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
+    "jacobian_perturb_max_condition_number": 1e8,
+    "geometry_improving_steps": False,
+    "safety_steps": True,
+    "reduce_trust_region_with_safety_steps": False,
+    "reset_trust_region_radius_after": False,
+    "reset_min_trust_region_radius_after": False,
+    "trust_region_decrease": None,
+    "n_search_directions_to_add_when_incomplete": 0,
+}
 
 
 def nag_dfols(
@@ -74,10 +91,7 @@ def nag_dfols(
     threshold_for_insufficient_improvement=1e-4,
     n_insufficient_improvements_until_terminate=None,
     comparison_period_for_insufficient_improvement=COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT,  # noqa: E501
-    quit_when_trust_evaluations_within_noise=None,
-    noise_scale_factor_for_quit=NOISE_SCALE_FACTOR_FOR_QUIT,
-    multiplicative_noise_level=None,
-    additive_noise_level=None,
+    convergence_noise_criterion=CONVERGENCE_NOISE_CRITERION,
     scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
     use_restarts=None,
     max_unsuccessful_restarts=MAX_UNSUCCESSFUL_RESTARTS,
@@ -97,7 +111,7 @@ def nag_dfols(
     points_to_move_at_soft_restart=POINTS_TO_MOVE_AT_SOFT_RESTART,
     n_interpolation_points_to_add_at_restart=0,
     n_interpolation_points_to_add_at_hard_restart_additionally=None,
-    fast_start_options=None,
+    trust_region_fast_start=None,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -152,7 +166,7 @@ def nag_dfols(
     4. when all evaluations on the trust region points fall within a scaled version of
        the noise level of the criterion function. This is only applicable if the
        criterion function is noisy. To specify this criterion use
-       ``quit_when_trust_evaluations_within_noise``, ``noise_scale_factor_for_quit``,
+       ``active``, ``noise_scale_factor_for_quit``,
        ``multiplicative_noise_level`` and ``additive_noise_level``.
 
     DF-OLS supports restarting the optimization and dynamically growing the initial set.
@@ -244,7 +258,7 @@ def nag_dfols(
             How many iterations to go back to calculate the improvement.
             For example 5 would mean that each criterion evaluation is compared to the
             criterion value from 5 iterations before.
-        quit_when_trust_evaluations_within_noise (bool): Flag to quit
+        active (bool): Flag to quit
             (or restart) if all $f(y_t)$ are within noise level of
             $f(x_k)$. Default is ``True`` if ``noisy_criterion`` and
             ``False`` else.
@@ -315,7 +329,7 @@ def nag_dfols(
             Number by which to increase ``n_initial_points_to_add`` with each hard
             restart. To avoid a growing phase, it is best to set it to the same value
             as ``n_interpolation_points_to_add_at_restart``.
-        fast_start_options (dict): Can have the following entries:
+        trust_region_fast_start (dict): Can have the following entries:
             n_initial_interpolation_points (int): Number of initial interpolation
                 points in addition to the start point. This should only be changed to
                 a value less than ``len(x)``, and only if the default setup cost
@@ -383,7 +397,7 @@ def nag_dfols(
     if not IS_DFOLS_INSTALLED:
         raise NotImplementedError(
             "The dfols package is not installed and required for 'nag_dfols'. "
-            "You can install it with 'pip install DFOLS'. "
+            "You can install it with 'pip install DFO-LS'. "
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
         )
@@ -396,35 +410,17 @@ def nag_dfols(
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
     # -np.inf as a default leads to errors when building the documentation with sphinx.
     n_evals_per_point = _change_evals_per_point_interface(n_evals_per_point)
-
-    all_fast_start_options = {
-        "min_inital_points": None,
-        "strategy": "auto",
-        "scaling_of_trust_region_step_perturbation": None,
-        "scaling_jacobian_perturb_components": 1e-2,
-        "scaling_jacobian_perturb_floor_of_singular_values": 1,
-        "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
-        "jacobian_perturb_max_condition_number": 1e8,
-        "geometry_improving_steps": False,
-        "safety_steps": True,
-        "reduce_trust_region_with_safety_steps": False,
-        "reset_trust_region_radius_after": False,
-        "reset_min_trust_region_radius_after": False,
-        "trust_region_decrease": None,
-        "n_search_directions_to_add_when_incomplete": 0,
-    }
-    if fast_start_options is not None:
-        invalid = [x for x in fast_start_options if x not in all_fast_start_options]
-        assert (
-            len(invalid) == 0
-        ), f"You specified illegal fast_start_options {', '.join(invalid)}. Allowed: "
-        ", ".join(all_fast_start_options.keys())
-
-        all_fast_start_options.update(fast_start_options)
-    (
-        perturb_jacobian,
-        perturb_trust_region_step,
-    ) = _get_fast_start_strategy_from_user_value(all_fast_start_options.pop("strategy"))
+    convergence_noise_criterion = _build_options_dict(
+        user_input=convergence_noise_criterion,
+        default_options=CONVERGENCE_NOISE_CRITERION,
+    )
+    fast_start_options = _build_options_dict(
+        user_input=trust_region_fast_start,
+        default_options=TRUST_REGION_FAST_START_OPTIONS,
+    )
+    perturb_jacobian, perturb_trust_region = _get_fast_start_strategy_from_user_value(
+        fast_start_options.pop("strategy")
+    )
 
     algo_info = {
         "name": "nag_dfols",
@@ -448,10 +444,16 @@ def nag_dfols(
         "slow.thresh_for_slow": threshold_for_insufficient_improvement,
         "slow.max_slow_iters": n_insufficient_improvements_until_terminate,
         "slow.history_for_slow": comparison_period_for_insufficient_improvement,
-        "noise.quit_on_noise_level": quit_when_trust_evaluations_within_noise,
-        "noise.scale_factor_for_quit": noise_scale_factor_for_quit,
-        "noise.multiplicative_noise_level": multiplicative_noise_level,
-        "noise.additive_noise_level": additive_noise_level,
+        "noise.quit_on_noise_level": convergence_noise_criterion["active"],
+        "noise.scale_factor_for_quit": convergence_noise_criterion[
+            "noise_scale_factor_for_quit"
+        ],
+        "noise.multiplicative_noise_level": convergence_noise_criterion[
+            "multiplicative_noise_level"
+        ],
+        "noise.additive_noise_level": convergence_noise_criterion[
+            "additive_noise_level"
+        ],
         "interpolation.precondition": scale_interpolation_system,
         "restarts.use_restarts": use_restarts,
         "restarts.max_unsuccessful_restarts": max_unsuccessful_restarts,
@@ -474,38 +476,34 @@ def nag_dfols(
         "restarts.increase_npt_amt": n_interpolation_points_to_add_at_restart,
         "restarts.hard.increase_ndirs_initial_amt": n_interpolation_points_to_add_at_hard_restart_additionally,  # noqa: E501
         "growing.full_rank.use_full_rank_interp": perturb_jacobian,
-        "growing.perturb_trust_region_step": perturb_trust_region_step,
-        "growing.ndirs_initial": all_fast_start_options["min_inital_points"],
-        "growing.delta_scale_new_dirns": all_fast_start_options[
+        "growing.perturb_trust_region_step": perturb_trust_region,
+        "growing.ndirs_initial": fast_start_options["min_inital_points"],
+        "growing.delta_scale_new_dirns": fast_start_options[
             "scaling_of_trust_region_step_perturbation"
         ],
-        "growing.full_rank.scale_factor": all_fast_start_options[
+        "growing.full_rank.scale_factor": fast_start_options[
             "scaling_jacobian_perturb_components"
         ],
-        "growing.full_rank.min_sing_val": all_fast_start_options[
+        "growing.full_rank.min_sing_val": fast_start_options[
             "jacobian_perturb_abs_floor_for_singular_values"
         ],  # noqa: E501
-        "growing.full_rank.svd_max_jac_cond": all_fast_start_options[
+        "growing.full_rank.svd_max_jac_cond": fast_start_options[
             "jacobian_perturb_max_condition_number"
         ],
-        "growing.do_geom_steps": all_fast_start_options["geometry_improving_steps"],
-        "growing.safety.do_safety_step": all_fast_start_options["safety_steps"],
-        "growing.safety.reduce_delta": all_fast_start_options[
+        "growing.do_geom_steps": fast_start_options["geometry_improving_steps"],
+        "growing.safety.do_safety_step": fast_start_options["safety_steps"],
+        "growing.safety.reduce_delta": fast_start_options[
             "reduce_trust_region_with_safety_steps"
         ],  # noqa: E501
         # growing.safety.full_geom_step cannot be :code:`True` if
         # :code:`growing.safety.reduce_delta` is :code:`True`.
-        "growing.safety.full_geom_step": not all_fast_start_options[
+        "growing.safety.full_geom_step": not fast_start_options[
             "reduce_trust_region_with_safety_steps"
         ],  # noqa: E501
-        "growing.reset_delta": all_fast_start_options[
-            "reset_trust_region_radius_after"
-        ],
-        "growing.reset_rho": all_fast_start_options[
-            "reset_min_trust_region_radius_after"
-        ],
-        "growing.gamma_dec": all_fast_start_options["trust_region_decrease"],
-        "growing.num_new_dirns_each_iter": all_fast_start_options[
+        "growing.reset_delta": fast_start_options["reset_trust_region_radius_after"],
+        "growing.reset_rho": fast_start_options["reset_min_trust_region_radius_after"],
+        "growing.gamma_dec": fast_start_options["trust_region_decrease"],
+        "growing.num_new_dirns_each_iter": fast_start_options[
             "n_search_directions_to_add_when_incomplete"
         ],
     }
@@ -562,10 +560,7 @@ def nag_pybobyqa(
     threshold_for_insufficient_improvement=1e-8,
     n_insufficient_improvements_until_terminate=None,
     comparison_period_for_insufficient_improvement=COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT,  # noqa E501
-    quit_when_trust_evaluations_within_noise=None,
-    noise_scale_factor_for_quit=NOISE_SCALE_FACTOR_FOR_QUIT,
-    multiplicative_noise_level=None,
-    additive_noise_level=None,
+    convergence_noise_criterion=None,
     scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
     frobenius_for_interpolation_problem=True,
     use_restarts=None,
@@ -707,18 +702,21 @@ def nag_pybobyqa(
             How many iterations to go back to calculate the improvement.
             For example 5 would mean that each criterion evaluation is compared to the
             criterion value from 5 iterations before.
-        quit_when_trust_evaluations_within_noise (bool): Flag to quit
-            (or restart) if all $f(y_t)$ are within noise level of
-            $f(x_k)$. Default is ``True`` if ``noisy_criterion`` and
-            ``False`` else.
-        noise_scale_factor_for_quit (float): Factor of the noise level to use in the
-            noise termination criterion.
-        multiplicative_noise_level (float): Multiplicative noise level in the
-            criterion. You can only specify ``multiplicative_noise_level`` or
-            ``additive_noise_level``.
-        additive_noise_level (float): Additive noise level in the
-            criterion. You can only specify ``multiplicative_noise_level`` or
-            ``additive_noise_level``.
+        convergence_noise_criterion (dict): Arguments for converging when the
+            evaluations in the trust region all fall within a scaled version of the
+            noise at the point of interest. Entries are:
+                active (bool): Flag to quit
+                    (or restart) if all $f(y_t)$ are within noise level of
+                    $f(x_k)$. Default is ``True`` if ``noisy_criterion`` and
+                    ``False`` else.
+                noise_scale_factor_for_quit (float): Factor of the noise level to use
+                    in the noise termination criterion.
+                multiplicative_noise_level (float): Multiplicative noise level in the
+                    criterion. You can only specify ``multiplicative_noise_level`` or
+                    ``additive_noise_level``.
+                additive_noise_level (float): Additive noise level in the
+                    criterion. You can only specify ``multiplicative_noise_level`` or
+                    ``additive_noise_level``.
         scale_interpolation_system (bool): Whether or not to scale the interpolation
             system to improve conditioning.
         frobenius_for_interpolation_problem (bool): Whether to solve the
@@ -786,6 +784,10 @@ def nag_pybobyqa(
     if absolute_criterion_value_tolerance is None:
         absolute_criterion_value_tolerance = -np.inf
     n_evals_per_point = _change_evals_per_point_interface(n_evals_per_point)
+    convergence_noise_criterion = _build_options_dict(
+        user_input=convergence_noise_criterion,
+        default_options=CONVERGENCE_NOISE_CRITERION,
+    )
 
     algo_info = {
         "name": "nag_pybobyqa",
@@ -814,10 +816,16 @@ def nag_pybobyqa(
         "slow.thresh_for_slow": threshold_for_insufficient_improvement,
         "slow.max_slow_iters": n_insufficient_improvements_until_terminate,
         "slow.history_for_slow": comparison_period_for_insufficient_improvement,
-        "noise.quit_on_noise_level": quit_when_trust_evaluations_within_noise,
-        "noise.scale_factor_for_quit": noise_scale_factor_for_quit,
-        "noise.multiplicative_noise_level": multiplicative_noise_level,
-        "noise.additive_noise_level": additive_noise_level,
+        "noise.quit_on_noise_level": convergence_noise_criterion["active"],
+        "noise.scale_factor_for_quit": convergence_noise_criterion[
+            "noise_scale_factor_for_quit"
+        ],
+        "noise.multiplicative_noise_level": convergence_noise_criterion[
+            "multiplicative_noise_level"
+        ],
+        "noise.additive_noise_level": convergence_noise_criterion[
+            "additive_noise_level"
+        ],
         "interpolation.precondition": scale_interpolation_system,
         "interpolation.minimum_change_hessian": frobenius_for_interpolation_problem,
         "restarts.use_restarts": use_restarts,
@@ -913,6 +921,30 @@ def _change_evals_per_point_interface(func):
             )
 
         return adjusted_n_evals_per_point
+
+
+def _build_options_dict(user_input, default_options):
+    """Create the full dictionary of trust region fast start options from user input.
+
+    Args:
+        user_input (dict or None): dictionary to update the default options with.
+            May only contain keys present in the default options.
+        default_options (dict): the default values.
+
+    Returns:
+        full_options (dict)
+
+    """
+    full_options = default_options.copy()
+    user_input = {} if user_input is None else user_input
+    invalid = [x for x in user_input if x not in full_options]
+    if len(invalid) > 0:
+        raise ValueError(
+            f"You specified illegal options {', '.join(invalid)}. Allowed are: "
+            ", ".join(full_options.keys())
+        )
+    full_options.update(user_input)
+    return full_options
 
 
 def _get_fast_start_strategy_from_user_value(user_value):
