@@ -118,6 +118,42 @@ TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS = 4.0
 radius (:math:`\Delta_k`) in very successful iterations
 (:math:`\overline{\gamma}_{inc}`)."""
 
+TRUST_REGION_OPTIONS = {
+    "threshold_successful": THRESHOLD_FOR_SUCCESSFUL_ITERATION,
+    "threshold_very_successful": THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
+    "reduction_when_not_successful": None,
+    "increase_after_success": TRUST_REGION_INCREASE_AFTER_SUCCESS,
+    "increase_after_large_success": TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS,
+    "min_decrease": None,
+    "update_from_min_trust_region": None,
+}
+"""dict: Options how the trust region is contracted and expanded. Possible entries are:
+    threshold_successful (float): Minimum share of the predicted
+        improvement that has to be realized for an iteration to count as successful.
+    threshold_very_succesful (float): Share of predicted improvement
+        that has to be surpassed for an iteration to count as very successful.
+    reduction_when_not_successful (float): Ratio by which to
+        decrease the trust region radius when realized improvement does not match
+        the ``threshold_for_successful_iteration``. The default is 0.98 if
+        ``criterion_noisy`` and 0.5 else.
+    increase_after_success (float): Ratio by which to increase
+        the trust region radius :math:`\Delta_k` in very successful iterations
+        (:math:`\gamma_{inc}` in the notation of the paper).
+    increase_after_large_success (float):
+        Ratio of the proposed step ($\|s_k\|$) by which to increase the
+        trust region radius (:math:`\Delta_k`) in very successful iterations
+        (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
+    min_decrease (float):
+        Ratio by which to decrease the minimal trust region radius
+        (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
+        Default is 0.9 if ``criterion_noisy`` and 0.1 else.
+    update_from_min_trust_region (float):
+        Ratio of the current minimum trust region (:math:`\rho_k`) by which
+        to decrease the actual trust region radius (:math:`\Delta_k`)
+        when the minimum is reduced (:math:`\alpha_2` in the notation of the paper).
+        Default is 0.95 if ``criterion_noisy`` and 0.5 else.
+"""
+
 
 # ---------------------------------------------
 # Numerical Algorithm Group Tuning Parameters

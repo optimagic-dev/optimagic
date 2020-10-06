@@ -27,10 +27,7 @@ from estimagic.config import REUSE_CRITERION_VALUE_AT_HARD_RESTART
 from estimagic.config import SCALE_INTERPOLATION_SYSTEM
 from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.config import THRESHOLD_FOR_SAFETY_STEP
-from estimagic.config import THRESHOLD_FOR_SUCCESSFUL_ITERATION
-from estimagic.config import THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION
-from estimagic.config import TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS
-from estimagic.config import TRUST_REGION_INCREASE_AFTER_SUCCESS
+from estimagic.config import TRUST_REGION_OPTIONS
 from estimagic.config import USE_SOFT_RESTARTS
 from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
@@ -80,13 +77,7 @@ def nag_dfols(
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    threshold_for_successful_iteration=THRESHOLD_FOR_SUCCESSFUL_ITERATION,
-    threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
-    trust_region_reduction_when_not_successful=None,
-    trust_region_increase_after_success=TRUST_REGION_INCREASE_AFTER_SUCCESS,
-    trust_region_increase_after_large_success=TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS,
-    min_trust_region_decrease=None,
-    trust_region_update_from_min_trust_region=None,
+    trust_region_options=None,
     absolute_criterion_value_tolerance=None,
     threshold_for_insufficient_improvement=1e-4,
     n_insufficient_improvements_until_terminate=None,
@@ -219,30 +210,34 @@ def nag_dfols(
             randomly (as opposed to coordinate directions).
         random_directions_orthogonal (bool): Whether to make random initial directions
             orthogonal.
-        threshold_for_successful_iteration (float): Minimum share of the predicted
-            improvement that has to be realized for an iteration to count as successful.
-        threshold_for_very_succesful_iteration (float): Share of predicted improvement
-            that has to be surpassed for an iteration to count as very successful.
-        trust_region_reduction_when_not_successful (float): Ratio by which to
-            decrease the trust region radius when realized improvement does not match
-            the ``threshold_for_successful_iteration``. The default is 0.98 if
-            ``criterion_noisy`` and 0.5 else.
-        trust_region_increase_after_success (float): Ratio by which to increase
-            the trust region radius :math:`\Delta_k` in very successful iterations
-            (:math:`\gamma_{inc}` in the notation of the paper).
-        trust_region_increase_after_large_success (float):
-            Ratio of the proposed step ($\|s_k\|$) by which to increase the
-            trust region radius (:math:`\Delta_k`) in very successful iterations
-            (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
-        min_trust_region_decrease (float):
-            Ratio by which to decrease the minimal trust region radius
-            (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
-            Default is 0.9 if ``criterion_noisy`` and 0.1 else.
-        trust_region_update_from_min_trust_region (float):
-            Ratio of the current minimum trust region (:math:`\rho_k`) by which
-            to decrease the actual trust region radius (:math:`\Delta_k`)
-            when the minimum is reduced (:math:`\alpha_2` in the notation of the paper).
-            Default is 0.95 if ``criterion_noisy`` and 0.5 else.
+        trust_region_options (dict): Options how the trust rgeion is contracted and
+            expanded. Possible entries are:
+                threshold_successful (float): Minimum share of the
+                    predicted improvement that has to be realized for an iteration to
+                    count as successful.
+                threshold_very_successful (float): Share of predicted improvement
+                    that has to be surpassed for an iteration to count as very
+                    successful.
+                reduction_when_not_successful (float): Ratio by which to
+                    decrease the trust region radius when realized improvement does not
+                    match the ``threshold_successful``. The default is 0.98 if
+                    ``criterion_noisy`` and 0.5 else.
+                increase_after_success (float): Ratio by which to increase
+                    the trust region radius :math:`\Delta_k` in very successful
+                    iterations (:math:`\gamma_{inc}` in the notation of the paper).
+                increase_after_large_success (float):
+                    Ratio of the proposed step ($\|s_k\|$) by which to increase the
+                    trust region radius (:math:`\Delta_k`) in very successful iterations
+                    (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
+                min_decrease (float):
+                    Ratio by which to decrease the minimal trust region radius
+                    (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
+                    Default is 0.9 if ``criterion_noisy`` and 0.1 else.
+                update_from_min_trust_region (float):
+                    Ratio of the current minimum trust region (:math:`\rho_k`) by which
+                    to decrease the actual trust region radius (:math:`\Delta_k`)
+                    when the minimum is reduced (:math:`\alpha_2` in the notation of
+                    the paper). Default is 0.95 if ``criterion_noisy`` and 0.5 else.
         absolute_criterion_value_tolerance (float): Terminate successfully if
             the criterion value falls below this threshold. This is not yet
             supported by DF-OLS.
@@ -385,7 +380,7 @@ def nag_dfols(
                 Default is False.
             trust_region_decrease (float):
                 Trust region decrease parameter during the growing phase. The default
-                is ``trust_region_reduction_when_not_successful``.
+                is ``reduction_when_not_successful``.
             n_search_directions_to_add_when_incomplete (int): Number of new search
                 directions to add with each iteration where we do not have a full set
                 of search directions. This approach is not recommended! Default is 0.
@@ -421,6 +416,9 @@ def nag_dfols(
     perturb_jacobian, perturb_trust_region = _get_fast_start_strategy_from_user_value(
         fast_start_options.pop("strategy")
     )
+    trust_region_options = _build_options_dict(
+        user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
+    )
 
     algo_info = {
         "name": "nag_dfols",
@@ -434,13 +432,15 @@ def nag_dfols(
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
         "init.random_initial_directions": random_initial_directions,
         "init.random_directions_make_orthogonal": random_directions_orthogonal,
-        "tr_radius.eta1": threshold_for_successful_iteration,
-        "tr_radius.eta2": threshold_for_very_succesful_iteration,
-        "tr_radius.gamma_dec": trust_region_reduction_when_not_successful,
-        "tr_radius.gamma_inc": trust_region_increase_after_success,
-        "tr_radius.gamma_inc_overline": trust_region_increase_after_large_success,
-        "tr_radius.alpha1": min_trust_region_decrease,
-        "tr_radius.alpha2": trust_region_update_from_min_trust_region,
+        "tr_radius.eta1": trust_region_options["threshold_successful"],
+        "tr_radius.eta2": trust_region_options["threshold_very_successful"],
+        "tr_radius.gamma_dec": trust_region_options["reduction_when_not_successful"],
+        "tr_radius.gamma_inc": trust_region_options["increase_after_success"],
+        "tr_radius.gamma_inc_overline": trust_region_options[
+            "increase_after_large_success"
+        ],
+        "tr_radius.alpha1": trust_region_options["min_decrease"],
+        "tr_radius.alpha2": trust_region_options["update_from_min_trust_region"],
         "slow.thresh_for_slow": threshold_for_insufficient_improvement,
         "slow.max_slow_iters": n_insufficient_improvements_until_terminate,
         "slow.history_for_slow": comparison_period_for_insufficient_improvement,
@@ -548,15 +548,9 @@ def nag_pybobyqa(
     n_evals_per_point=None,
     interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
-    threshold_for_successful_iteration=THRESHOLD_FOR_SUCCESSFUL_ITERATION,
-    threshold_for_very_succesful_iteration=THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
-    trust_region_reduction_when_not_successful=None,
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
+    trust_region_options=None,
     absolute_criterion_value_tolerance=None,
-    trust_region_increase_after_success=TRUST_REGION_INCREASE_AFTER_SUCCESS,
-    trust_region_increase_after_large_success=TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS,
-    min_trust_region_decrease=None,
-    trust_region_update_from_min_trust_region=None,
     threshold_for_insufficient_improvement=1e-8,
     n_insufficient_improvements_until_terminate=None,
     comparison_period_for_insufficient_improvement=COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT,  # noqa E501
@@ -661,35 +655,40 @@ def nag_pybobyqa(
             :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`
             where $s_k$ is the proposed step size and :math:`\rho_k` the current trust
             region radius.
-        threshold_for_successful_iteration (float): Minimum share of the predicted
-            improvement that has to be realized for an iteration to count as successful.
-        threshold_for_very_succesful_iteration (float): Share of predicted improvement
-            that has to be surpassed for an iteration to count as very successful.
-        trust_region_reduction_when_not_successful (float): Ratio by which to
-            decrease the trust region radius when realized improvement does not match
-            the ``threshold_for_successful_iteration``. The default is 0.98 if
-            ``criterion_noisy`` and 0.5 else.
+
+        trust_region_options (dict): Options how the trust rgeion is contracted and
+            expanded. Possible entries are:
+                threshold_successful (float): Minimum share of the predicted
+                    improvement that has to be realized for an iteration to count as
+                    successful.
+                threshold_very_successful (float): Share of predicted improvement
+                    that has to be surpassed for an iteration to count as very
+                    successful.
+                reduction_when_not_successful (float): Ratio by which to
+                    decrease the trust region radius when realized improvement does not
+                    match the ``threshold_successful``. The default is 0.98 if
+                    ``criterion_noisy`` and 0.5 else.
+                increase_after_success (float): Ratio by which to increase
+                    the trust region radius :math:`\Delta_k` in very successful
+                    iterations (:math:`\gamma_{inc}` in the notation of the paper).
+                increase_after_large_success (float):
+                    Ratio of the proposed step ($\|s_k\|$) by which to increase the
+                    trust region radius (:math:`\Delta_k`) in very successful iterations
+                    (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
+                min_decrease (float):
+                    Ratio by which to decrease the minimal trust region radius
+                    (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
+                    Default is 0.9 if ``criterion_noisy`` and 0.1 else.
+                update_from_min_trust_region (float):
+                    Ratio of the current minimum trust region (:math:`\rho_k`) by which
+                    to decrease the actual trust region radius (:math:`\Delta_k`)
+                    when the minimum is reduced (:math:`\alpha_2` in the notation of
+                    the paper). Default is 0.95 if ``criterion_noisy`` and 0.5 else.
         clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
             raise an ``OverflowError`` otherwise.
         absolute_criterion_value_tolerance (float): Terminate successfully if
             the criterion value falls below this threshold. This is deactivated
             (i.e. set to -inf) by default.
-        trust_region_increase_after_success (float): Ratio by which to increase
-            the trust region radius :math:`\Delta_k` in very successful iterations
-            (:math:`\gamma_{inc}` in the notation of the paper).
-        trust_region_increase_after_large_success (float):
-            Ratio of the proposed step ($\|s_k\|$) by which to increase the
-            trust region radius (:math:`\Delta_k`) in very successful iterations
-            (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
-        min_trust_region_decrease (float):
-            Ratio by which to decrease the minimal trust region radius
-            (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
-            Default is 0.9 if ``criterion_noisy`` and 0.1 else.
-        trust_region_update_from_min_trust_region (float):
-            Ratio of the current minimum trust region (:math:`\rho_k`) by which
-            to decrease the actual trust region radius (:math:`\Delta_k`)
-            when the minimum is reduced (:math:`\alpha_2` in the notation of the paper).
-            Default is 0.95 if ``criterion_noisy`` and 0.5 else.
         threshold_for_insufficient_improvement (float): Threshold whether an improvement
             is insufficient. Note: the improvement is divided by the
             ``comparison_period_for_insufficient_improvement``.
@@ -788,6 +787,9 @@ def nag_pybobyqa(
         user_input=convergence_noise_criterion,
         default_options=CONVERGENCE_NOISE_CRITERION,
     )
+    trust_region_options = _build_options_dict(
+        user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
+    )
 
     algo_info = {
         "name": "nag_pybobyqa",
@@ -805,13 +807,15 @@ def nag_pybobyqa(
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
         "init.random_initial_directions": random_initial_directions,
         "init.random_directions_make_orthogonal": random_directions_orthogonal,
-        "tr_radius.eta1": threshold_for_successful_iteration,
-        "tr_radius.eta2": threshold_for_very_succesful_iteration,
-        "tr_radius.gamma_dec": trust_region_reduction_when_not_successful,
-        "tr_radius.gamma_inc": trust_region_increase_after_success,
-        "tr_radius.gamma_inc_overline": trust_region_increase_after_large_success,
-        "tr_radius.alpha1": min_trust_region_decrease,
-        "tr_radius.alpha2": trust_region_update_from_min_trust_region,
+        "tr_radius.eta1": trust_region_options["threshold_successful"],
+        "tr_radius.eta2": trust_region_options["threshold_very_successful"],
+        "tr_radius.gamma_dec": trust_region_options["reduction_when_not_successful"],
+        "tr_radius.gamma_inc": trust_region_options["increase_after_success"],
+        "tr_radius.gamma_inc_overline": trust_region_options[
+            "increase_after_large_success"
+        ],
+        "tr_radius.alpha1": trust_region_options["min_decrease"],
+        "tr_radius.alpha2": trust_region_options["update_from_min_trust_region"],
         "model.abs_tol": absolute_criterion_value_tolerance,
         "slow.thresh_for_slow": threshold_for_insufficient_improvement,
         "slow.max_slow_iters": n_insufficient_improvements_until_terminate,
