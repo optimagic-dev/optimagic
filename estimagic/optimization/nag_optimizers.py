@@ -342,36 +342,39 @@ def nag_dfols(
                 region radius multiplied by this value. The default is 0.1 if
                 ``fast_start_strategy == "perturb_trust_region_radius"`` else 1.
             scaling_jacobian_perturb_components (float): Magnitude of extra components
-                added to the Jacobian.
+                added to the Jacobian. Default is 1e-2.
             scaling_jacobian_perturb_floor_of_singular_values (float): Floor singular
                 values of the Jacobian at this factor of the last nonzero value.
+                As of version 1.2.1 scaling_jacobian_perturb_floor_of_singular_values
+                was not yet supported by DF-OLS.
             jacobian_perturb_abs_floor_for_singular_values (float): Absolute floor on
-                singular values of the Jacobian.
+                singular values of the Jacobian. Default is 1e-6.
             jacobian_perturb_max_condition_number (float): Cap on the condition number
                 of Jacobian after applying floors to singular values
                 (effectively another floor on the smallest singular value, since the
-                largest singular value is fixed).
-            geometry_improving_steps_in_initial_step_growth (bool):
+                largest singular value is fixed). Default is 1e8.
+            geometry_improving_steps (bool):
                 While still growing the initial set, whether to do geometry-improving
-                steps in the trust region algorithm.
-            safety_steps_in_initial_step_growth (bool):
+                steps in the trust region algorithm. Default is False.
+            safety_steps (bool):
                 While still growing the initial set, whether to perform safety steps,
-                or the regular trust region steps.
-            reduce_trust_region_with_safety_steps_in_initial_step_growth (bool):
+                or the regular trust region steps. Default is True.
+            reduce_trust_region_with_safety_steps (bool):
                 While still growing the initial set, whether to reduce trust region
-                radius in safety steps.
-            reset_trust_region_radius_after_initial_step_growth (bool):
+                radius in safety steps. Default is False.
+            reset_trust_region_radius_after (bool):
                 Whether or not to reset the trust region radius to its initial value
-                at the end of the growing phase.
-            reset_min_trust_region_radius_after_initial_step_growth (bool):
+                at the end of the growing phase. Default is False.
+            reset_min_trust_region_radius_after (bool):
                 Whether or not to reset the minimum trust region radius
                 (:math:`\rho_k`) to its initial value at the end of the growing phase.
-            trust_region_decrease_during_initial_step_growth (float):
+                Default is False.
+            trust_region_decrease (float):
                 Trust region decrease parameter during the growing phase. The default
                 is ``trust_region_reduction_when_not_successful``.
             n_search_directions_to_add_when_incomplete (int): Number of new search
                 directions to add with each iteration where we do not have a full set
-                of search directions. This approach is not recommended!
+                of search directions. This approach is not recommended! Default is 0.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -402,21 +405,15 @@ def nag_dfols(
         "scaling_jacobian_perturb_floor_of_singular_values": 1,
         "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
         "jacobian_perturb_max_condition_number": 1e8,
-        "geometry_improving_steps_in_initial_step_growth": False,
-        "safety_steps_in_initial_step_growth": True,
-        "reduce_trust_region_with_safety_steps_in_initial_step_growth": False,
-        "reset_trust_region_radius_after_initial_step_growth": False,
-        "reset_min_trust_region_radius_after_initial_step_growth": False,
-        "trust_region_decrease_during_initial_step_growth": None,
+        "geometry_improving_steps": False,
+        "safety_steps": True,
+        "reduce_trust_region_with_safety_steps": False,
+        "reset_trust_region_radius_after": False,
+        "reset_min_trust_region_radius_after": False,
+        "trust_region_decrease": None,
         "n_search_directions_to_add_when_incomplete": 0,
     }
     if fast_start_options is not None:
-        if "scaling_jacobian_perturb_floor_of_singular_values" in fast_start_options:
-            warnings.warn(
-                "scaling_jacobian_perturb_floor_of_singular_values is currently not "
-                "yet supported by DF-OLS so this is option is ignored for the moment."
-            )
-
         invalid = [x for x in fast_start_options if x not in all_fast_start_options]
         assert (
             len(invalid) == 0
@@ -491,29 +488,23 @@ def nag_dfols(
         "growing.full_rank.svd_max_jac_cond": all_fast_start_options[
             "jacobian_perturb_max_condition_number"
         ],
-        "growing.do_geom_steps": all_fast_start_options[
-            "geometry_improving_steps_in_initial_step_growth"
-        ],
-        "growing.safety.do_safety_step": all_fast_start_options[
-            "safety_steps_in_initial_step_growth"
-        ],
+        "growing.do_geom_steps": all_fast_start_options["geometry_improving_steps"],
+        "growing.safety.do_safety_step": all_fast_start_options["safety_steps"],
         "growing.safety.reduce_delta": all_fast_start_options[
-            "reduce_trust_region_with_safety_steps_in_initial_step_growth"
+            "reduce_trust_region_with_safety_steps"
         ],  # noqa: E501
         # growing.safety.full_geom_step cannot be :code:`True` if
         # :code:`growing.safety.reduce_delta` is :code:`True`.
         "growing.safety.full_geom_step": not all_fast_start_options[
-            "reduce_trust_region_with_safety_steps_in_initial_step_growth"
+            "reduce_trust_region_with_safety_steps"
         ],  # noqa: E501
         "growing.reset_delta": all_fast_start_options[
-            "reset_trust_region_radius_after_initial_step_growth"
+            "reset_trust_region_radius_after"
         ],
         "growing.reset_rho": all_fast_start_options[
-            "reset_min_trust_region_radius_after_initial_step_growth"
+            "reset_min_trust_region_radius_after"
         ],
-        "growing.gamma_dec": all_fast_start_options[
-            "trust_region_decrease_during_initial_step_growth"
-        ],
+        "growing.gamma_dec": all_fast_start_options["trust_region_decrease"],
         "growing.num_new_dirns_each_iter": all_fast_start_options[
             "n_search_directions_to_add_when_incomplete"
         ],
