@@ -1,34 +1,24 @@
-"""Implement algorithms by the (Numerical Algorithms
-Group)[https://www.nag.com/]."""
-import warnings
+"""Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/]."""
 from functools import partial
 
 import numpy as np
 
-from estimagic.config import ADDITIONAL_AUTOMATIC_RESTART_DETECTION
 from estimagic.config import CLIP_CRITERION_IF_OVERFLOWING
-from estimagic.config import COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT
 from estimagic.config import CONVERGENCE_NOISE_CRITERION
 from estimagic.config import CRITERION_NOISY
+from estimagic.config import FAST_START_OPTIONS
 from estimagic.config import INTERPOLATION_ROUNDING_ERROR
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import MAX_CRITERION_EVALUATIONS
-from estimagic.config import MAX_UNSUCCESSFUL_RESTARTS
-from estimagic.config import MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART
-from estimagic.config import MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART
-from estimagic.config import MIN_TRUST_REGION_SCALING_AFTER_RESTART
-from estimagic.config import MOVE_CURRENT_POINT_AT_SOFT_RESTART
-from estimagic.config import N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION
-from estimagic.config import POINTS_TO_MOVE_AT_SOFT_RESTART
 from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.config import RANDOM_INITIAL_DIRECTIONS
-from estimagic.config import REUSE_CRITERION_VALUE_AT_HARD_RESTART
+from estimagic.config import RESTART_OPTIONS
 from estimagic.config import SCALE_INTERPOLATION_SYSTEM
 from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.config import SLOW_IMPROVEMENT_TOLERANCE
 from estimagic.config import THRESHOLD_FOR_SAFETY_STEP
 from estimagic.config import TRUST_REGION_OPTIONS
-from estimagic.config import USE_SOFT_RESTARTS
 from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 try:
@@ -41,23 +31,6 @@ try:
 except ImportError:
     pass
 
-TRUST_REGION_FAST_START_OPTIONS = {
-    "min_inital_points": None,
-    "strategy": "auto",
-    "scaling_of_trust_region_step_perturbation": None,
-    "scaling_jacobian_perturb_components": 1e-2,
-    "scaling_jacobian_perturb_floor_of_singular_values": 1,
-    "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
-    "jacobian_perturb_max_condition_number": 1e8,
-    "geometry_improving_steps": False,
-    "safety_steps": True,
-    "reduce_trust_region_with_safety_steps": False,
-    "reset_trust_region_radius_after": False,
-    "reset_min_trust_region_radius_after": False,
-    "trust_region_decrease": None,
-    "n_search_directions_to_add_when_incomplete": 0,
-}
-
 
 def nag_dfols(
     criterion_and_derivative,
@@ -65,44 +38,28 @@ def nag_dfols(
     lower_bounds,
     upper_bounds,
     *,
-    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
-    initial_trust_region_radius=None,
-    n_interpolation_points=None,
-    max_interpolation_points=None,
-    absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
     criterion_noisy=CRITERION_NOISY,
-    n_evals_per_point=None,
-    interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
-    threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
+    noise_n_evals_per_point=None,
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
+    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
+    absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    absolute_criterion_value_tolerance=None,
+    initial_trust_region_radius=None,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    trust_region_options=None,
-    absolute_criterion_value_tolerance=None,
-    threshold_for_insufficient_improvement=1e-4,
-    n_insufficient_improvements_until_terminate=None,
-    comparison_period_for_insufficient_improvement=COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT,  # noqa: E501
-    convergence_noise_criterion=CONVERGENCE_NOISE_CRITERION,
+    n_interpolation_points=None,
+    interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
+    threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
     scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
-    use_restarts=None,
-    max_unsuccessful_restarts=MAX_UNSUCCESSFUL_RESTARTS,
-    min_trust_region_scaling_after_restart=MIN_TRUST_REGION_SCALING_AFTER_RESTART,
-    use_soft_restarts=USE_SOFT_RESTARTS,
-    move_current_point_at_soft_restart=MOVE_CURRENT_POINT_AT_SOFT_RESTART,
-    reuse_criterion_value_at_hard_restart=REUSE_CRITERION_VALUE_AT_HARD_RESTART,
-    max_iterations_without_new_best_after_soft_restart=None,
-    additional_automatic_restart_detection=ADDITIONAL_AUTOMATIC_RESTART_DETECTION,
-    n_iterations_for_automatic_restart_detection=N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION,  # noqa: E501
-    min_model_slope_increase_for_automatic_restart=MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART,  # noqa: E501
-    min_correlations_for_automatic_restart=MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART,
+    trust_region_options=None,
+    convergence_noise_criterion=CONVERGENCE_NOISE_CRITERION,
+    restart_options=None,
+    slow_improvement_tolerance=None,
     relative_to_start_value_criterion_tolerance=0.0,
     n_extra_points_to_move_when_sufficient_improvement=0,
     use_momentum_method_to_move_extra_points=False,
     n_increase_move_points_at_restart=0,
-    points_to_move_at_soft_restart=POINTS_TO_MOVE_AT_SOFT_RESTART,
-    n_interpolation_points_to_add_at_restart=0,
-    n_interpolation_points_to_add_at_hard_restart_additionally=None,
-    trust_region_fast_start=None,
+    fast_start_options=None,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -172,18 +129,13 @@ def nag_dfols(
         n_interpolation_points (int): The number of interpolation points to use.
             The default is :code:`len(x) + 1`. If using restarts, this is the
             number of points to use in the first run of the solver, before any restarts.
-        max_interpolation_points (int): Maximum allowed value of the number of
-            interpolation points. This is useful if the number of interpolation points
-            increases with each restart, e.g. when
-            ``n_interpolation_points_to_add_at_restart > 0``. The default is
-            ``n_interpolation_points``.
         absolute_params_tolerance (float): Minimum allowed value of the trust region
             radius, which is one criterion for successful termination.
         criterion_noisy (bool): Whether the criterion function is noisy, i.e. whether
             it does not always return the same value when evaluated at the same
             parameters.
-        n_evals_per_point (callable): How often to evaluate the criterion function at
-            each point.
+        noise_n_evals_per_point (callable): How often to evaluate the criterion
+            function at each point.
             This is only applicable for criterion functions with stochastic noise,
             when averaging multiple evaluations at the same point produces a more
             accurate value.
@@ -192,7 +144,7 @@ def nag_dfols(
             how many iterations the algorithm has been running for, ``n_iterations``
             and how many restarts have been performed, ``n_restarts``.
             The function must return an integer.
-            Default is no averaging (i.e. ``n_evals_per_point(trust_region_radius,
+            Default is no averaging (i.e. ``noise_n_evals_per_point(trust_region_radius,
             min_trust_region_radius, n_iterations, n_restarts) = 1``).
         interpolation_rounding_error (float): Internally, all interpolation
             points are stored with respect to a base point $x_b$; that is,
@@ -210,98 +162,18 @@ def nag_dfols(
             randomly (as opposed to coordinate directions).
         random_directions_orthogonal (bool): Whether to make random initial directions
             orthogonal.
-        trust_region_options (dict): Options how the trust rgeion is contracted and
-            expanded. Possible entries are:
-                threshold_successful (float): Minimum share of the
-                    predicted improvement that has to be realized for an iteration to
-                    count as successful.
-                threshold_very_successful (float): Share of predicted improvement
-                    that has to be surpassed for an iteration to count as very
-                    successful.
-                reduction_when_not_successful (float): Ratio by which to
-                    decrease the trust region radius when realized improvement does not
-                    match the ``threshold_successful``. The default is 0.98 if
-                    ``criterion_noisy`` and 0.5 else.
-                increase_after_success (float): Ratio by which to increase
-                    the trust region radius :math:`\Delta_k` in very successful
-                    iterations (:math:`\gamma_{inc}` in the notation of the paper).
-                increase_after_large_success (float):
-                    Ratio of the proposed step ($\|s_k\|$) by which to increase the
-                    trust region radius (:math:`\Delta_k`) in very successful iterations
-                    (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
-                min_decrease (float):
-                    Ratio by which to decrease the minimal trust region radius
-                    (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
-                    Default is 0.9 if ``criterion_noisy`` and 0.1 else.
-                update_from_min_trust_region (float):
-                    Ratio of the current minimum trust region (:math:`\rho_k`) by which
-                    to decrease the actual trust region radius (:math:`\Delta_k`)
-                    when the minimum is reduced (:math:`\alpha_2` in the notation of
-                    the paper). Default is 0.95 if ``criterion_noisy`` and 0.5 else.
+        trust_region_options (dict): Options how the trust region is contracted and
+            expanded.
         absolute_criterion_value_tolerance (float): Terminate successfully if
             the criterion value falls below this threshold. This is not yet
             supported by DF-OLS.
-        threshold_for_insufficient_improvement (float): Threshold whether an improvement
-            is insufficient. Note: the improvement is divided by the
-            ``comparison_period_for_insufficient_improvement``.
-            So this is the required average improvement per iteration over the
-            comparison period.
-        n_insufficient_improvements_until_terminate (int): Number of consecutive
-            insufficient improvements before termination (or restart). Default is
-            ``20 * len(x)``.
-        comparison_period_for_insufficient_improvement (int):
-            How many iterations to go back to calculate the improvement.
-            For example 5 would mean that each criterion evaluation is compared to the
-            criterion value from 5 iterations before.
-        active (bool): Flag to quit
-            (or restart) if all $f(y_t)$ are within noise level of
-            $f(x_k)$. Default is ``True`` if ``noisy_criterion`` and
-            ``False`` else.
-        noise_scale_factor_for_quit (float): Factor of the noise level to use in the
-            noise termination criterion.
-        multiplicative_noise_level (float): Multiplicative noise level in the
-            criterion. You can only specify ``multiplicative_noise_level`` or
-            ``additive_noise_level``.
-        additive_noise_level (float): Additive noise level in the
-            criterion. You can only specify ``multiplicative_noise_level`` or
-            ``additive_noise_level``.
+        slow_improvement_tolerance (dict): Arguments for converging when the evaluations
+            over several iterations only yield small improvements on average.
+        convergence_noise_criterion (dict): Arguments for converging when the
+            evaluations in the trust region all fall within a scaled version of the
+            noise at the point of interest.
         scale_interpolation_system (bool): Whether or not to scale the interpolation
             system to improve conditioning.
-        use_restarts (bool): Whether to do restarts when the minimum trust
-            region radius (:math:`\rho_k`) reaches the stopping criterion
-            (:math:`\rho_{end}`), or (optionally) when all points are within noise
-            level. Default is ``True`` if ``criterion_noisy``.
-        max_unsuccessful_restarts (int): maximum number of consecutive unsuccessful
-            restarts allowed (i.e. restarts which did not outperform the best known
-            value from earlier runs).
-        min_trust_region_scaling_after_restart (float): Factor with which
-            the trust region stopping criterion is multiplied at each restart.
-        use_soft_restarts (bool): Whether to use soft or hard restarts.
-        move_current_point_at_soft_restart (bool): Whether to move the current
-            evaluation point ($x_k$) to the best new point evaluated.
-        points_to_move_at_soft_restart (int): Number of interpolation points to move
-            at each soft restart.
-        reuse_criterion_value_at_hard_restart (bool): Whether or not to recycle the
-            criterion value at the best iterate found when performing a hard restart.
-            This saves one criterion evaluation.
-        max_iterations_without_new_best_after_soft_restart (int):
-            The maximum number of successful steps in a given run where the new
-            criterion value is worse than the best value found in previous runs before
-            terminating. Default is ``max_criterion_evaluations``.
-        additional_automatic_restart_detection (bool): Whether or not to
-            automatically determine when to restart. This is an additional condition
-            and restarts can still be triggered by small trust region radius, etc.
-            There are two criteria used: trust region radius decreases
-            (no increases over the history, more decreases than no changes) and
-            changes in the model Jacobian (consistently increasing trend as measured
-            by slope and correlation coefficient of the line of best fit).
-        n_iterations_for_automatic_restart_detection (int):
-            How many iterations of model changes and trust region radii to store.
-        min_model_slope_increase_for_automatic_restart (float):
-            Minimum rate of increase of the Jacobian over past iterations to cause a
-            restart.
-        min_correlations_for_automatic_restart (float):
-            Minimum correlation of the Jacobian data set required to cause a restart.
         relative_to_start_value_criterion_tolerance (float):
             Terminate if a point is reached where the ratio of the criterion value
             to the criterion value at the start params is below this value, i.e. if
@@ -318,72 +190,8 @@ def nag_dfols(
             ``n_extra_points_to_move_when_sufficient_improvement`` at each restart.
             successful iterations, whether to use the 'momentum' method. If not,
             uses geometry-improving steps.
-        n_interpolation_points_to_add_at_restart (int): Number by which to increase the
-            number of interpolation points by with each restart.
-        n_interpolation_points_to_add_at_hard_restart_additionally (int):
-            Number by which to increase ``n_initial_points_to_add`` with each hard
-            restart. To avoid a growing phase, it is best to set it to the same value
-            as ``n_interpolation_points_to_add_at_restart``.
-        trust_region_fast_start (dict): Can have the following entries:
-            n_initial_interpolation_points (int): Number of initial interpolation
-                points in addition to the start point. This should only be changed to
-                a value less than ``len(x)``, and only if the default setup cost
-                of ``len(x) + 1`` evaluations of the criterion is impractical.
-                If this is set to be less than the default, the input value of
-                ``n_interpolation_points`` should be set to ``len(x)``.
-                If the default is used, all the other parameters have no effect.
-                Default is ``n_interpolation_points - 1``.
-                If the default setup costs of the evaluations are very large, DF-OLS
-                can start with less than ``len(x)`` points and add points to the trust
-                region model with every iteration.
-            strategy ("jacobian", "trust_region" or "auto"):
-                When there are less interpolation points than ``len(x)`` the model is
-                underdetermined. This can be fixed in two ways:
-                If "jacobian", the interpolated Jacobian is perturbed to have full
-                rank, allowing the trust region step to include components in the full
-                search space. This is the default if
-                ``len(x) \geq number of root contributions``.
-                If "trust_region_step", the trust region step is perturbed by an
-                orthogonal direction not yet searched. It is the default if
-                ``len(x) < number of root contributions``.
-            scaling_of_trust_region_step_perturbation (float):
-                When adding new search directions, the length of the step is the trust
-                region radius multiplied by this value. The default is 0.1 if
-                ``fast_start_strategy == "perturb_trust_region_radius"`` else 1.
-            scaling_jacobian_perturb_components (float): Magnitude of extra components
-                added to the Jacobian. Default is 1e-2.
-            scaling_jacobian_perturb_floor_of_singular_values (float): Floor singular
-                values of the Jacobian at this factor of the last nonzero value.
-                As of version 1.2.1 scaling_jacobian_perturb_floor_of_singular_values
-                was not yet supported by DF-OLS.
-            jacobian_perturb_abs_floor_for_singular_values (float): Absolute floor on
-                singular values of the Jacobian. Default is 1e-6.
-            jacobian_perturb_max_condition_number (float): Cap on the condition number
-                of Jacobian after applying floors to singular values
-                (effectively another floor on the smallest singular value, since the
-                largest singular value is fixed). Default is 1e8.
-            geometry_improving_steps (bool):
-                While still growing the initial set, whether to do geometry-improving
-                steps in the trust region algorithm. Default is False.
-            safety_steps (bool):
-                While still growing the initial set, whether to perform safety steps,
-                or the regular trust region steps. Default is True.
-            reduce_trust_region_with_safety_steps (bool):
-                While still growing the initial set, whether to reduce trust region
-                radius in safety steps. Default is False.
-            reset_trust_region_radius_after (bool):
-                Whether or not to reset the trust region radius to its initial value
-                at the end of the growing phase. Default is False.
-            reset_min_trust_region_radius_after (bool):
-                Whether or not to reset the minimum trust region radius
-                (:math:`\rho_k`) to its initial value at the end of the growing phase.
-                Default is False.
-            trust_region_decrease (float):
-                Trust region decrease parameter during the growing phase. The default
-                is ``reduction_when_not_successful``.
-            n_search_directions_to_add_when_incomplete (int): Number of new search
-                directions to add with each iteration where we do not have a full set
-                of search directions. This approach is not recommended! Default is 0.
+        fast_start_options (dict): Options to start the optimization while building the
+            full size of the trust region model.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -396,28 +204,32 @@ def nag_dfols(
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
         )
-    if absolute_criterion_value_tolerance is not None:
-        warnings.warn(
-            "absolute_criterion_value_tolerance is currently not yet supported by "
-            "DF-OLS so this is option is ignored for the moment."
-        )
     if initial_trust_region_radius is None:
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
     # -np.inf as a default leads to errors when building the documentation with sphinx.
-    n_evals_per_point = _change_evals_per_point_interface(n_evals_per_point)
+    if absolute_criterion_value_tolerance is None:
+        absolute_criterion_value_tolerance = -np.inf
+    noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
     convergence_noise_criterion = _build_options_dict(
         user_input=convergence_noise_criterion,
         default_options=CONVERGENCE_NOISE_CRITERION,
     )
+    trust_region_options = _build_options_dict(
+        user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
+    )
+    restart_options = _build_options_dict(
+        user_input=restart_options, default_options=RESTART_OPTIONS,
+    )
+    slow_improvement_tolerance = _build_options_dict(
+        user_input=slow_improvement_tolerance,
+        default_options=SLOW_IMPROVEMENT_TOLERANCE,
+    )
+
     fast_start_options = _build_options_dict(
-        user_input=trust_region_fast_start,
-        default_options=TRUST_REGION_FAST_START_OPTIONS,
+        user_input=fast_start_options, default_options=FAST_START_OPTIONS,
     )
     perturb_jacobian, perturb_trust_region = _get_fast_start_strategy_from_user_value(
         fast_start_options.pop("strategy")
-    )
-    trust_region_options = _build_options_dict(
-        user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
     )
 
     algo_info = {
@@ -441,9 +253,15 @@ def nag_dfols(
         ],
         "tr_radius.alpha1": trust_region_options["min_decrease"],
         "tr_radius.alpha2": trust_region_options["update_from_min_trust_region"],
-        "slow.thresh_for_slow": threshold_for_insufficient_improvement,
-        "slow.max_slow_iters": n_insufficient_improvements_until_terminate,
-        "slow.history_for_slow": comparison_period_for_insufficient_improvement,
+        "slow.thresh_for_slow": slow_improvement_tolerance[
+            "threshold_for_insufficient_improvement"
+        ],
+        "slow.max_slow_iters": slow_improvement_tolerance[
+            "n_insufficient_improvements_until_terminate"
+        ],
+        "slow.history_for_slow": slow_improvement_tolerance[
+            "comparison_period_for_insufficient_improvement"
+        ],
         "noise.quit_on_noise_level": convergence_noise_criterion["active"],
         "noise.scale_factor_for_quit": convergence_noise_criterion[
             "noise_scale_factor_for_quit"
@@ -455,26 +273,41 @@ def nag_dfols(
             "additive_noise_level"
         ],
         "interpolation.precondition": scale_interpolation_system,
-        "restarts.use_restarts": use_restarts,
-        "restarts.max_unsuccessful_restarts": max_unsuccessful_restarts,
-        "restarts.rhoend_scale": min_trust_region_scaling_after_restart,
-        "restarts.use_soft_restarts": use_soft_restarts,
-        "restarts.soft.move_xk": move_current_point_at_soft_restart,
-        "restarts.hard.use_old_rk": reuse_criterion_value_at_hard_restart,
-        "restarts.soft.max_fake_successful_steps": max_iterations_without_new_best_after_soft_restart,  # noqa: E501
-        "restarts.auto_detect": additional_automatic_restart_detection,
-        "restarts.auto_detect.history": n_iterations_for_automatic_restart_detection,  # noqa: E501
-        "restarts.auto_detect.min_chgJ_slope": min_model_slope_increase_for_automatic_restart,  # noqa: E501
-        "restarts.auto_detect.min_correl": min_correlations_for_automatic_restart,
+        "restarts.use_restarts": restart_options["use_restarts"],
+        "restarts.max_unsuccessful_restarts": restart_options["max_unsuccessful"],
+        "restarts.rhoend_scale": restart_options["min_trust_region_scaling_after"],
+        "restarts.use_soft_restarts": restart_options["use_soft"],
+        "restarts.soft.move_xk": restart_options["move_current_point_at_soft"],
+        "restarts.hard.use_old_rk": restart_options["reuse_criterion_value_at_hard"],
+        "restarts.soft.max_fake_successful_steps": restart_options[
+            "max_iterations_without_new_best_after_soft"
+        ],  # noqa: E501
+        "restarts.auto_detect": restart_options["automatic_detection"],
+        "restarts.auto_detect.history": restart_options[
+            "n_iterations_for_automatc_detection"
+        ],  # noqa: E501
+        "restarts.auto_detect.min_chgJ_slope": restart_options[
+            "min_model_slope_increase_for_automatic_detection"
+        ],  # noqa: E501
+        "restarts.auto_detect.min_correl": restart_options[
+            "min_correlations_for_automatic_detection"
+        ],
+        "restarts.soft.num_geom_steps": restart_options["points_to_move_at_soft"],
+        "restarts.max_npt": restart_options["max_interpolation_points"],
+        "restarts.increase_npt": restart_options[
+            "n_interpolation_points_to_add_at_restart"
+        ]
+        > 0,
+        "restarts.increase_npt_amt": restart_options[
+            "n_interpolation_points_to_add_at_restart"
+        ],
+        "restarts.hard.increase_ndirs_initial_amt": restart_options[
+            "n_interpolation_points_to_add_at_hard_restart_additionally"
+        ],
         "model.rel_tol": relative_to_start_value_criterion_tolerance,
         "regression.num_extra_steps": n_extra_points_to_move_when_sufficient_improvement,  # noqa: E501
         "regression.momentum_extra_steps": use_momentum_method_to_move_extra_points,
         "regression.increase_num_extra_steps_with_restart": n_increase_move_points_at_restart,  # noqa: E501
-        "restarts.max_npt": max_interpolation_points,
-        "restarts.soft.num_geom_steps": points_to_move_at_soft_restart,
-        "restarts.increase_npt": n_interpolation_points_to_add_at_restart > 0,
-        "restarts.increase_npt_amt": n_interpolation_points_to_add_at_restart,
-        "restarts.hard.increase_ndirs_initial_amt": n_interpolation_points_to_add_at_hard_restart_additionally,  # noqa: E501
         "growing.full_rank.use_full_rank_interp": perturb_jacobian,
         "growing.perturb_trust_region_step": perturb_trust_region,
         "growing.ndirs_initial": fast_start_options["min_inital_points"],
@@ -520,7 +353,7 @@ def nag_dfols(
         rhobeg=initial_trust_region_radius,
         npt=n_interpolation_points,
         rhoend=absolute_params_tolerance,
-        nsamples=n_evals_per_point,
+        nsamples=noise_n_evals_per_point,
         objfun_has_noise=criterion_noisy,
         scaling_within_bounds=False,
         do_logging=False,
@@ -537,40 +370,25 @@ def nag_pybobyqa(
     lower_bounds,
     upper_bounds,
     *,
+    criterion_noisy=CRITERION_NOISY,
+    clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
+    restart_options=None,
+    seek_global_optimum=False,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    absolute_criterion_value_tolerance=None,
+    convergence_noise_criterion=None,
+    slow_improvement_tolerance=None,
+    noise_n_evals_per_point=None,
     initial_trust_region_radius=None,
-    seek_global_optimum=False,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
     n_interpolation_points=None,
-    criterion_noisy=CRITERION_NOISY,
-    n_evals_per_point=None,
     interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
-    clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
-    trust_region_options=None,
-    absolute_criterion_value_tolerance=None,
-    threshold_for_insufficient_improvement=1e-8,
-    n_insufficient_improvements_until_terminate=None,
-    comparison_period_for_insufficient_improvement=COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT,  # noqa E501
-    convergence_noise_criterion=None,
     scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
+    trust_region_options=None,
     frobenius_for_interpolation_problem=True,
-    use_restarts=None,
-    max_unsuccessful_restarts=MAX_UNSUCCESSFUL_RESTARTS,
-    max_unsuccessful_restarts_total=None,
-    trust_region_scaling_after_unsuccessful_restart=None,
-    min_trust_region_scaling_after_restart=MIN_TRUST_REGION_SCALING_AFTER_RESTART,
-    use_soft_restarts=USE_SOFT_RESTARTS,
-    points_to_move_at_soft_restart=POINTS_TO_MOVE_AT_SOFT_RESTART,
-    move_current_point_at_soft_restart=MOVE_CURRENT_POINT_AT_SOFT_RESTART,
-    reuse_criterion_value_at_hard_restart=REUSE_CRITERION_VALUE_AT_HARD_RESTART,
-    max_iterations_without_new_best_after_soft_restart=None,
-    additional_automatic_restart_detection=ADDITIONAL_AUTOMATIC_RESTART_DETECTION,
-    n_iterations_for_automatic_restart_detection=N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION,  # noqa: E501
-    min_model_slope_increase_for_automatic_restart=MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART,  # noqa: E501
-    min_correlations_for_automatic_restart=MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -633,8 +451,8 @@ def nag_pybobyqa(
         criterion_noisy (bool): Whether the criterion function is noisy, i.e. whether
             it does not always return the same value when evaluated at the same
             parameters.
-        n_evals_per_point (callable): How often to evaluate the criterion function at
-            each point.
+        noise_n_evals_per_point (callable): How often to evaluate the criterion
+            function at each point.
             This is only applicable for criterion functions with stochastic noise,
             when averaging multiple evaluations at the same point produces a more
             accurate value.
@@ -643,7 +461,7 @@ def nag_pybobyqa(
             how many iterations the algorithm has been running for, ``n_iterations``
             and how many restarts have been performed, ``n_restarts``.
             The function must return an integer.
-            Default is no averaging (i.e. ``n_evals_per_point(...) = 1``).
+            Default is no averaging (i.e. ``noise_n_evals_per_point(...) = 1``).
         interpolation_rounding_error (float): Internally, all interpolation
             points are stored with respect to a base point $x_b$; that is,
             pybobyqa stores $\{y_t-x_b\}$, which reduces the risk of roundoff
@@ -655,114 +473,24 @@ def nag_pybobyqa(
             :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`
             where $s_k$ is the proposed step size and :math:`\rho_k` the current trust
             region radius.
-
-        trust_region_options (dict): Options how the trust rgeion is contracted and
-            expanded. Possible entries are:
-                threshold_successful (float): Minimum share of the predicted
-                    improvement that has to be realized for an iteration to count as
-                    successful.
-                threshold_very_successful (float): Share of predicted improvement
-                    that has to be surpassed for an iteration to count as very
-                    successful.
-                reduction_when_not_successful (float): Ratio by which to
-                    decrease the trust region radius when realized improvement does not
-                    match the ``threshold_successful``. The default is 0.98 if
-                    ``criterion_noisy`` and 0.5 else.
-                increase_after_success (float): Ratio by which to increase
-                    the trust region radius :math:`\Delta_k` in very successful
-                    iterations (:math:`\gamma_{inc}` in the notation of the paper).
-                increase_after_large_success (float):
-                    Ratio of the proposed step ($\|s_k\|$) by which to increase the
-                    trust region radius (:math:`\Delta_k`) in very successful iterations
-                    (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
-                min_decrease (float):
-                    Ratio by which to decrease the minimal trust region radius
-                    (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
-                    Default is 0.9 if ``criterion_noisy`` and 0.1 else.
-                update_from_min_trust_region (float):
-                    Ratio of the current minimum trust region (:math:`\rho_k`) by which
-                    to decrease the actual trust region radius (:math:`\Delta_k`)
-                    when the minimum is reduced (:math:`\alpha_2` in the notation of
-                    the paper). Default is 0.95 if ``criterion_noisy`` and 0.5 else.
+        trust_region_options (dict): Options how the trust region is contracted and
+            expanded.
         clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
             raise an ``OverflowError`` otherwise.
         absolute_criterion_value_tolerance (float): Terminate successfully if
             the criterion value falls below this threshold. This is deactivated
             (i.e. set to -inf) by default.
-        threshold_for_insufficient_improvement (float): Threshold whether an improvement
-            is insufficient. Note: the improvement is divided by the
-            ``comparison_period_for_insufficient_improvement``.
-            So this is the required average improvement per iteration over the
-            comparison period.
-        n_insufficient_improvements_until_terminate (int): Number of consecutive
-            insufficient improvements before termination (or restart). Default is
-            ``20 * len(x)``.
-        comparison_period_for_insufficient_improvement (int):
-            How many iterations to go back to calculate the improvement.
-            For example 5 would mean that each criterion evaluation is compared to the
-            criterion value from 5 iterations before.
         convergence_noise_criterion (dict): Arguments for converging when the
             evaluations in the trust region all fall within a scaled version of the
-            noise at the point of interest. Entries are:
-                active (bool): Flag to quit
-                    (or restart) if all $f(y_t)$ are within noise level of
-                    $f(x_k)$. Default is ``True`` if ``noisy_criterion`` and
-                    ``False`` else.
-                noise_scale_factor_for_quit (float): Factor of the noise level to use
-                    in the noise termination criterion.
-                multiplicative_noise_level (float): Multiplicative noise level in the
-                    criterion. You can only specify ``multiplicative_noise_level`` or
-                    ``additive_noise_level``.
-                additive_noise_level (float): Additive noise level in the
-                    criterion. You can only specify ``multiplicative_noise_level`` or
-                    ``additive_noise_level``.
+            noise at the point of interest.
+        slow_improvement_tolerance (dict): Arguments for converging when the evaluations
+            over several iterations only yield small improvements on average.
         scale_interpolation_system (bool): Whether or not to scale the interpolation
             system to improve conditioning.
         frobenius_for_interpolation_problem (bool): Whether to solve the
             underdetermined quadratic interpolation problem by minimizing the Frobenius
             norm of the Hessian, or change in Hessian.
-        use_restarts (bool): Whether to do restarts when the minimum trust
-            region radius (:math:`\rho_k`) reaches the stopping criterion
-            (:math:`\rho_{end}`), or (optionally) when all points are within noise
-            level. Default is ``True`` if ``criterion_noisy`` or when
-            ``seek_global_optimum``.
-        max_unsuccessful_restarts (int): maximum number of consecutive unsuccessful
-            restarts allowed (i.e. restarts which did not outperform the best known
-            value from earlier runs).
-        max_unsuccessful_restarts_total (int): number of total unsuccessful restarts
-            allowed. Default is 20 if ``seek_global_optimum`` and else unrestricted.
-        trust_region_scaling_after_unsuccessful_restart (float): Factor by which to
-            increase the initial trust region radius (:math:`\rho_{beg}`) after
-            unsuccessful restarts. Default is 1.1 if ``seek_global_optimum`` else 1.
-        min_trust_region_scaling_after_restart (float): Factor with which
-            the trust region stopping criterion is multiplied at each restart.
-        use_soft_restarts (bool): Whether to use soft or hard restarts.
-        points_to_move_at_soft_restart (int): Number of interpolation points to
-            move at each soft restart.
-        move_current_point_at_soft_restart (bool): Whether to move the current
-            evaluation point ($x_k$) to the best new point evaluated.
-        reuse_criterion_value_at_hard_restart (bool): Whether or not to recycle the
-            criterion value at the best iterate found when performing a hard restart.
-            This saves one criterion evaluation.
-        max_iterations_without_new_best_after_soft_restart (int):
-            The maximum number of successful steps in a given run where the new
-            criterion value is worse than the best value found in previous runs before
-            terminating. Default is ``max_criterion_evaluations``.
-        additional_automatic_restart_detection (bool): Whether or not to
-            automatically determine when to restart. This is an additional condition
-            and restarts can still be triggered by small trust region radius, etc.
-            There are two criteria used: trust region radius decreases
-            (no increases over the history, more decreases than no changes) and
-            change in model Jacobian (consistently increasing trend as measured
-            by slope and correlation coefficient of line of best fit).
-        n_iterations_for_automatic_restart_detection (int):
-            How many iterations of model changes and trust region radii to store.
-        min_model_slope_increase_for_automatic_restart (float):
-            Minimum rate of increase of log gradients and log Hessians over past
-            iterations to cause a restart.
-        min_correlations_for_automatic_restart (float):
-            Minimum correlation of the log Gradient and log Hessian datasets
-            required to cause a restart.
+        restart_options (dict): Options for restarting the optimization.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -782,13 +510,20 @@ def nag_pybobyqa(
     # -np.inf as a default leads to errors when building the documentation with sphinx.
     if absolute_criterion_value_tolerance is None:
         absolute_criterion_value_tolerance = -np.inf
-    n_evals_per_point = _change_evals_per_point_interface(n_evals_per_point)
+    noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
     convergence_noise_criterion = _build_options_dict(
         user_input=convergence_noise_criterion,
         default_options=CONVERGENCE_NOISE_CRITERION,
     )
     trust_region_options = _build_options_dict(
         user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
+    )
+    restart_options = _build_options_dict(
+        user_input=restart_options, default_options=RESTART_OPTIONS,
+    )
+    slow_improvement_tolerance = _build_options_dict(
+        user_input=slow_improvement_tolerance,
+        default_options=SLOW_IMPROVEMENT_TOLERANCE,
     )
 
     algo_info = {
@@ -817,9 +552,15 @@ def nag_pybobyqa(
         "tr_radius.alpha1": trust_region_options["min_decrease"],
         "tr_radius.alpha2": trust_region_options["update_from_min_trust_region"],
         "model.abs_tol": absolute_criterion_value_tolerance,
-        "slow.thresh_for_slow": threshold_for_insufficient_improvement,
-        "slow.max_slow_iters": n_insufficient_improvements_until_terminate,
-        "slow.history_for_slow": comparison_period_for_insufficient_improvement,
+        "slow.thresh_for_slow": slow_improvement_tolerance[
+            "threshold_for_insufficient_improvement"
+        ],
+        "slow.max_slow_iters": slow_improvement_tolerance[
+            "n_insufficient_improvements_until_terminate"
+        ],
+        "slow.history_for_slow": slow_improvement_tolerance[
+            "comparison_period_for_insufficient_improvement"
+        ],
         "noise.quit_on_noise_level": convergence_noise_criterion["active"],
         "noise.scale_factor_for_quit": convergence_noise_criterion[
             "noise_scale_factor_for_quit"
@@ -832,20 +573,32 @@ def nag_pybobyqa(
         ],
         "interpolation.precondition": scale_interpolation_system,
         "interpolation.minimum_change_hessian": frobenius_for_interpolation_problem,
-        "restarts.use_restarts": use_restarts,
-        "restarts.max_unsuccessful_restarts": max_unsuccessful_restarts,
-        "restarts.max_unsuccessful_restarts_total": max_unsuccessful_restarts_total,
-        "restarts.rhobeg_scale_after_unsuccessful_restart": trust_region_scaling_after_unsuccessful_restart,  # noqa E501
-        "restarts.rhoend_scale": min_trust_region_scaling_after_restart,
-        "restarts.use_soft_restarts": use_soft_restarts,
-        "restarts.soft.num_geom_steps": points_to_move_at_soft_restart,
-        "restarts.soft.move_xk": move_current_point_at_soft_restart,
-        "restarts.hard.use_old_fk": reuse_criterion_value_at_hard_restart,
-        "restarts.soft.max_fake_successful_steps": max_iterations_without_new_best_after_soft_restart,  # noqa: E501
-        "restarts.auto_detect": additional_automatic_restart_detection,
-        "restarts.auto_detect.history": n_iterations_for_automatic_restart_detection,  # noqa: E501
-        "restarts.auto_detect.min_chg_model_slope": min_model_slope_increase_for_automatic_restart,  # noqa: E501
-        "restarts.auto_detect.min_correl": min_correlations_for_automatic_restart,
+        "restarts.use_restarts": restart_options["use_restarts"],
+        "restarts.max_unsuccessful_restarts": restart_options["max_unsuccessful"],
+        "restarts.max_unsuccessful_restarts_total": restart_options[
+            "max_unsuccessful_total"
+        ],
+        "restarts.rhobeg_scale_after_unsuccessful_restart": restart_options[
+            "trust_region_scaling_after_unsuccessful"
+        ],  # noqa E501
+        "restarts.rhoend_scale": restart_options["min_trust_region_scaling_after"],
+        "restarts.use_soft_restarts": restart_options["use_soft"],
+        "restarts.soft.num_geom_steps": restart_options["points_to_move_at_soft"],
+        "restarts.soft.move_xk": restart_options["move_current_point_at_soft"],
+        "restarts.hard.use_old_fk": restart_options["reuse_criterion_value_at_hard"],
+        "restarts.soft.max_fake_successful_steps": restart_options[
+            "max_iterations_without_new_best_after_soft"
+        ],  # noqa: E501
+        "restarts.auto_detect": restart_options["automatic_detection"],
+        "restarts.auto_detect.history": restart_options[
+            "n_iterations_for_automatc_detection"
+        ],  # noqa: E501
+        "restarts.auto_detect.min_chg_model_slope": restart_options[
+            "min_model_slope_increase_for_automatic_detection"
+        ],  # noqa: E501
+        "restarts.auto_detect.min_correl": restart_options[
+            "min_correlations_for_automatic_detection"
+        ],
     }
 
     res = pybobyqa.solve(
@@ -859,7 +612,7 @@ def nag_pybobyqa(
         do_logging=False,
         print_progress=False,
         objfun_has_noise=criterion_noisy,
-        nsamples=n_evals_per_point,
+        nsamples=noise_n_evals_per_point,
         npt=n_interpolation_points,
         rhoend=absolute_params_tolerance,
         seek_global_minimum=seek_global_optimum,
@@ -907,16 +660,16 @@ def _change_evals_per_point_interface(func):
     by NAG.
 
     Args:
-        func (callable or None): function mapping from our names to n_evals_per_point.
+        func (callable or None): function mapping from our names to
+            noise_n_evals_per_point.
 
     Returns:
-    Returns:
-        adjusted_n_evals_per_point (callable): function mapping from the argument names
-            expected by pybobyqa and df-ols to n_evals_per_point.
+        adjusted_noise_n_evals_per_point (callable): function mapping from the
+            argument names expected by pybobyqa and df-ols to noise_n_evals_per_point.
     """
     if func is not None:
 
-        def adjusted_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
+        def adjusted_noise_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
             return func(
                 trust_region_radius=delta,
                 min_trust_region=rho,
@@ -924,7 +677,7 @@ def _change_evals_per_point_interface(func):
                 n_restarts=nrestarts,
             )
 
-        return adjusted_n_evals_per_point
+        return adjusted_noise_n_evals_per_point
 
 
 def _build_options_dict(user_input, default_options):
