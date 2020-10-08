@@ -21,15 +21,11 @@ from estimagic.optimization.algo_options import THRESHOLD_FOR_SAFETY_STEP
 from estimagic.optimization.algo_options import TRUST_REGION_OPTIONS
 from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
-try:
+if IS_PYBOBYQA_INSTALLED:
     import pybobyqa
-except ImportError:
-    pass
 
-try:
+if IS_DFOLS_INSTALLED:
     import dfols
-except ImportError:
-    pass
 
 
 def nag_dfols(
@@ -43,7 +39,6 @@ def nag_dfols(
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
-    absolute_criterion_value_tolerance=None,
     initial_trust_region_radius=None,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
@@ -100,11 +95,10 @@ def nag_dfols(
     1. when the trust region radius is reduced below a minimum
        (``absolute parameter tolerance``).
 
-    2. when the criterion value falls below an absolute, user-specified value,
-       the optimization terminates successfully
-       (``absolute_criterion_value_tolerance``).
-
-       .. note: This is not yet supported by DF-OLS.
+    2. when the improvements of iterations become very small. This is very similar to
+       ``relative_criterion_tolerance`` but ``slow_improvement_tolerance`` is more
+       general allowing to specify not only the threshold for convergence but also
+       a period over which the improvements must have been very small.
 
     3. when a sufficient reduction to the criterion value at the start parameters
        has been reached, i.e. when
@@ -113,9 +107,8 @@ def nag_dfols(
 
     4. when all evaluations on the trust region points fall within a scaled version of
        the noise level of the criterion function. This is only applicable if the
-       criterion function is noisy. To specify this criterion use
-       ``active``, ``noise_scale_factor_for_quit``,
-       ``multiplicative_noise_level`` and ``additive_noise_level``.
+       criterion function is noisy. You can specify this criterion with
+       ``convergence_noise_criterion``.
 
     DF-OLS supports restarting the optimization and dynamically growing the initial set.
     For more information see
@@ -123,14 +116,6 @@ def nag_dfols(
     and :cite:`Cartis2018b`.
 
     Args:
-        max_criterion_evaluations (int): If the maximum number of function evaluation is
-            reached, the optimization stops but we do not count this as convergence.
-        initial_trust_region_radius (float): Initial value of the trust region radius.
-        n_interpolation_points (int): The number of interpolation points to use.
-            The default is :code:`len(x) + 1`. If using restarts, this is the
-            number of points to use in the first run of the solver, before any restarts.
-        absolute_params_tolerance (float): Minimum allowed value of the trust region
-            radius, which is one criterion for successful termination.
         criterion_noisy (bool): Whether the criterion function is noisy, i.e. whether
             it does not always return the same value when evaluated at the same
             parameters.
@@ -146,6 +131,20 @@ def nag_dfols(
             The function must return an integer.
             Default is no averaging (i.e. ``noise_n_evals_per_point(trust_region_radius,
             min_trust_region_radius, n_iterations, n_restarts) = 1``).
+        clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
+            raise an ``OverflowError`` otherwise.
+        max_criterion_evaluations (int): If the maximum number of function evaluation is
+            reached, the optimization stops but we do not count this as convergence.
+        absolute_params_tolerance (float): Minimum allowed value of the trust region
+            radius, which is one criterion for successful termination.
+        initial_trust_region_radius (float): Initial value of the trust region radius.
+        random_initial_directions (bool): Whether to draw the initial directions
+            randomly (as opposed to coordinate directions).
+        random_directions_orthogonal (bool): Whether to make random initial directions
+            orthogonal.
+        n_interpolation_points (int): The number of interpolation points to use.
+            The default is :code:`len(x) + 1`. If using restarts, this is the
+            number of points to use in the first run of the solver, before any restarts.
         interpolation_rounding_error (float): Internally, all interpolation
             points are stored with respect to a base point $x_b$; that is,
             DF-OLS stores $\{y_t-x_b\}$, which reduces the risk of roundoff
@@ -156,17 +155,8 @@ def nag_dfols(
         threshold_for_safety_step (float): Threshold for when to call the safety step,
             :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`, where
             :math:`\|s_k\|` is the proposed step size.
-        clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
-            raise an ``OverflowError`` otherwise.
-        random_initial_directions (bool): Whether to draw the initial directions
-            randomly (as opposed to coordinate directions).
-        random_directions_orthogonal (bool): Whether to make random initial directions
-            orthogonal.
         trust_region_options (dict): Options how the trust region is contracted and
             expanded.
-        absolute_criterion_value_tolerance (float): Terminate successfully if
-            the criterion value falls below this threshold. This is not yet
-            supported by DF-OLS.
         slow_improvement_tolerance (dict): Arguments for converging when the evaluations
             over several iterations only yield small improvements on average.
         convergence_noise_criterion (dict): Arguments for converging when the
@@ -207,8 +197,6 @@ def nag_dfols(
     if initial_trust_region_radius is None:
         initial_trust_region_radius = calculate_initial_trust_region_radius(x)
     # -np.inf as a default leads to errors when building the documentation with sphinx.
-    if absolute_criterion_value_tolerance is None:
-        absolute_criterion_value_tolerance = -np.inf
     noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
     convergence_noise_criterion = _build_options_dict(
         user_input=convergence_noise_criterion,

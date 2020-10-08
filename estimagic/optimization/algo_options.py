@@ -5,26 +5,87 @@ Stopping Criteria
 """
 
 RELATIVE_CRITERION_TOLERANCE = 2e-9
-"""float: Inspired by scipy L-BFGS-B defaults, but rounded."""
+"""float: Stop when the relative improvement between two iterations is below this.
+
+    The exact definition of relative improvement depends on the optimizer and should
+    be documented there. To disable it, set it to 0.
+
+    The default value is inspired by scipy L-BFGS-B defaults, but rounded.
+
+"""
 
 ABSOLUTE_CRITERION_TOLERANCE = 0
-"""float: Disabled by default because it is very problem specific."""
+"""float: Stop when the absolute improvement between two iterations is below this.
+
+    Disabled by default because it is very problem specific.
+
+"""
 
 ABSOLUTE_GRADIENT_TOLERANCE = 1e-5
-"""float: Same as scipy."""
+"""float: Stop when the gradient are smaller than this.
+
+    For some algorithms this criterion refers to all entries, for others to some norm.
+
+    For bound constrained optimizers this typically refers to a projected gradient.
+    The exact definition should be documented for each optimizer.
+
+    The default is the same as scipy. To disable it, set it to zero.
+
+"""
 
 RELATIVE_GRADIENT_TOLERANCE = 1e-8
+"""float: Stop when the gradient, divided by the absolute value of the criterion
+    function is smaller than this. For some algorithms this criterion refers to
+    all entries, for others to some norm.For bound constrained optimizers this
+    typically refers to a projected gradient. The exact definition should be documented
+    for each optimizer. To disable it, set it to zero.
+
+"""
 
 SCALED_GRADIENT_TOLERANCE = 1e-8
+"""float: Stop when all entries (or for some algorithms the norm) of the gradient,
+    divided by the norm of the gradient at start parameters is smaller than this.
+    For bound constrained optimizers this typically refers to a projected gradient.
+    The exact definition should be documented for each optimizer.
+    To disable it, set it to zero.
+
+"""
 
 RELATIVE_PARAMS_TOLERANCE = 1e-5
-"""float: Same as scipy."""
+"""float: Stop when the relative change in parameters is smaller than this.
+    The exact definition of relative change and whether this refers to the maximum
+    change or the average change depends on the algorithm and should be documented
+    there. To disable it, set it to zero. The default is the same as in scipy.
+
+"""
 
 ABSOLUTE_PARAMS_TOLERANCE = 0
-"""float: Disabled by default because it is very problem specific."""
+"""float: Stop when the absolute change in parameters between two iterations is smaller
+    than this. Whether this refers to the maximum change or the average change depends
+    on the algorithm and should be documented there.
+
+    Disabled by default because it is very problem specific. To enable it, set it to a
+    value larger than zero.
+
+"""
 
 MAX_CRITERION_EVALUATIONS = 1_000_000
+"""int:
+    If the maximum number of function evaluation is reached, the optimization stops
+    but we do not count this as successful convergence. The function evaluations used
+    to evaluate a numerical gradient do not count for this.
+
+"""
+
 MAX_ITERATIONS = 1_000_000
+"""int:
+    If the maximum number of iterations is reached, the
+    optimization stops, but we do not count this as successful convergence.
+    The difference to ``max_criterion_evaluations`` is that one iteration might
+    need several criterion evaluations, for example in a line search or to determine
+    if the trust region radius has to be decreased.
+
+"""
 
 SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 1e-08
 """float: absolute criterion tolerance estimagic requires if no other stopping
@@ -39,19 +100,10 @@ criterion apart from max iterations etc. is available. This is taken from pyboby
 
 """
 
-COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT = 5
-"""int: How many iterations to go back to calculate the improvement.
-
-For example 5 would mean that each criterion evaluation is compared to the
-criterion value from 5 iterations before.
-
-"""
-
-
 SLOW_IMPROVEMENT_TOLERANCE = {
     "threshold_for_insufficient_improvement": 1e-8,
     "n_insufficient_improvements_until_terminate": None,
-    "comparison_period_for_insufficient_improvement": COMPARISON_PERIOD_FOR_INSUFFICIENT_IMPROVEMENT,  # noqa E501
+    "comparison_period_for_insufficient_improvement": 5,
 }
 """dict: Specification of when to terminate or restart the optimization because of only
     slow improvements. This is similar to an absolute criterion tolerance only that
@@ -99,6 +151,7 @@ CONVERGENCE_NOISE_CRITERION = {
 
 """
 
+
 """
 =====================================================================================
 Other Common Tuning Parameters for Optimization Algorithms
@@ -117,17 +170,6 @@ Trust Region Parameters
 -------------------------
 """
 
-THRESHOLD_FOR_SUCCESSFUL_ITERATION = 0.1
-"""float: minimum share of predicted improvement to count an iteration as successful.
-
-"""
-
-THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION = 0.7
-"""float: share of predicted improvement that has to be surpassed for an iteration to
-count as very successful.
-
-"""
-
 THRESHOLD_FOR_SAFETY_STEP = 0.5
 r"""float: Threshold for when to call the safety step.
 
@@ -136,25 +178,12 @@ r"""float: Threshold for when to call the safety step.
 
 """
 
-TRUST_REGION_INCREASE_AFTER_SUCCESS = 2.0
-r"""float: Ratio by which to increase the trust region radius :math:`\Delta_k` in
-very successful iterations (:math:`\gamma_{inc}`).
-
-"""
-
-TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS = 4.0
-r"""float: Ratio of the proposed step ($\|s_k\|$) by which to increase the trust region
-radius (:math:`\Delta_k`) in very successful iterations
-(:math:`\overline{\gamma}_{inc}`).
-
-"""
-
 TRUST_REGION_OPTIONS = {
-    "threshold_successful": THRESHOLD_FOR_SUCCESSFUL_ITERATION,
-    "threshold_very_successful": THRESHOLD_FOR_VERY_SUCCESFUL_ITERATION,
+    "threshold_successful": 0.1,
+    "threshold_very_successful": 0.7,
     "reduction_when_not_successful": None,
-    "increase_after_success": TRUST_REGION_INCREASE_AFTER_SUCCESS,
-    "increase_after_large_success": TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS,
+    "increase_after_success": 2.0,
+    "increase_after_large_success": 4.0,
     "min_decrease": None,
     "update_from_min_trust_region": None,
 }
@@ -231,71 +260,20 @@ CLIP_CRITERION_IF_OVERFLOWING = True
 SCALE_INTERPOLATION_SYSTEM = True
 """bool: whether to scale the interpolation linear system to improve conditioning."""
 
-MAX_UNSUCCESSFUL_RESTARTS = 10
-"""int: maximum number of consecutive unsuccessful restarts allowed.
-
-    i.e. The number of restarts which did not improve upon the best known function value
-    up to this point.
-
-"""
-
-MIN_TRUST_REGION_SCALING_AFTER_RESTART = 1.0
-"""float: Factor with which the trust region stopping criterion is multiplied at each
-restart."""
-
-USE_SOFT_RESTARTS = True
-"""bool: Whether to use soft or hard restarts."""
-
-POINTS_TO_MOVE_AT_SOFT_RESTART = 3
-"""int: Number of interpolation points to move at each soft restart."""
-
-MOVE_CURRENT_POINT_AT_SOFT_RESTART = True
-"""bool: Whether to move the current evaluation point ($x_k$) to the best new point."""
-
-REUSE_CRITERION_VALUE_AT_HARD_RESTART = True
-"""Whether or not to recycle the
-criterion value at the best iterate found when performing a hard restart.
-This saves one objective evaluation."""
-
-ADDITIONAL_AUTOMATIC_RESTART_DETECTION = True
-"""bool: Whether or not to automatically determine when to restart.
-
-    This is an extra condition, and restarts can still be triggered by small trust
-    region radius, etc.. There are two criteria used: trust region radius decreases
-    (no increases over the history, more decreases than no changes) and
-    change in model Jacobian (consistently increasing trend as measured
-    by slope and correlation coefficient of line of best fit).
-
-"""
-
-N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION = 30
-"""int: How many iterations of model changes and trust region radii to store."""
-
-MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART = 0.015
-"""float: Minimum rate of increase of log gradients and log Hessians or the Jacobian
-over past iterations to cause a restart.
-
-"""
-
-MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART = 0.1
-"""float: Minimum correlation of the log Gradient and log Hessian datasets or the
-Jacobian dataset required to cause a restart.
-
-"""
 
 RESTART_OPTIONS = {
     "use_restarts": None,
-    "max_unsuccessful": MAX_UNSUCCESSFUL_RESTARTS,
-    "min_trust_region_scaling_after": MIN_TRUST_REGION_SCALING_AFTER_RESTART,
-    "use_soft": USE_SOFT_RESTARTS,
-    "move_current_point_at_soft": MOVE_CURRENT_POINT_AT_SOFT_RESTART,
-    "reuse_criterion_value_at_hard": REUSE_CRITERION_VALUE_AT_HARD_RESTART,
+    "max_unsuccessful": 10,
+    "min_trust_region_scaling_after": 1.0,
+    "use_soft": True,
+    "move_current_point_at_soft": True,
+    "reuse_criterion_value_at_hard": True,
     "max_iterations_without_new_best_after_soft": None,
-    "automatic_detection": ADDITIONAL_AUTOMATIC_RESTART_DETECTION,
-    "n_iterations_for_automatc_detection": N_ITERATIONS_FOR_AUTOMATIC_RESTART_DETECTION,  # noqa: E501
-    "min_model_slope_increase_for_automatic_detection": MIN_MODEL_SLOPE_INCREASE_FOR_AUTOMATIC_RESTART,  # noqa: E501
-    "min_correlations_for_automatic_detection": MIN_CORRELATIONS_FOR_AUTOMATIC_RESTART,
-    "points_to_move_at_soft": POINTS_TO_MOVE_AT_SOFT_RESTART,
+    "automatic_detection": True,
+    "n_iterations_for_automatc_detection": 30,
+    "min_model_slope_increase_for_automatic_detection": 0.015,
+    "min_correlations_for_automatic_detection": 0.1,
+    "points_to_move_at_soft": 3,
     # just bobyqa
     "max_unsuccessful_total": None,
     "trust_region_scaling_after_unsuccessful": None,

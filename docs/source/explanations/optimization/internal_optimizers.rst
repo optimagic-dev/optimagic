@@ -14,7 +14,7 @@ used by passing the algorithm name as ``algorithm`` into ``maximize`` or ``minim
 However, advanced users can also use estimagic with their own algorithm, as long as it
 conforms with the internal optimizer interface.
 
-The advantages of using the algorithm with estimagic, over using it directly are:
+The advantages of using the algorithm with estimagic over using it directly are:
 
 - Estimagic turns an unconstrained optimizer into one that can deal efficiently with a
   wide range of constraints
