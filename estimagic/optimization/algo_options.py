@@ -1,6 +1,8 @@
-# =====================================================================================
-# Stopping Criteria
-# =====================================================================================
+"""
+=====================================================================================
+Stopping Criteria
+=====================================================================================
+"""
 
 RELATIVE_CRITERION_TOLERANCE = 2e-9
 """float: Inspired by scipy L-BFGS-B defaults, but rounded."""
@@ -80,25 +82,28 @@ CONVERGENCE_NOISE_CRITERION = {
 }
 """dict: Arguments for converging when the evaluations in the trust region all fall
     within a scaled version of the noise at the point of interest. Entries are:
-        active (bool): Flag to quit (or restart) if
-            all criterion evaluations of the trust region are within the some scaled
-            version of the noise level at the point of interest.
-            Default is ``False`` for smooth problems or ``True`` for noisy problems.
-            The remaining arguments determine this scaling.
-        noise_scale_factor_for_quit (float): Factor of the noise level to use in
-            termination criterion.
-        multiplicative_noise_level (float): Multiplicative noise level in :math:`f`.
-            Can only specify one of multiplicative or additive noise levels.
-            Default is :code:`None`.
-        additive_noise_level (float): Additive noise level in :math:`f`.
-            Can only specify one of multiplicative or additive noise levels.
-            Default is :code:`None`.
+
+    active (bool): Flag to quit (or restart) if
+        all criterion evaluations of the trust region are within the some scaled
+        version of the noise level at the point of interest.
+        Default is ``False`` for smooth problems or ``True`` for noisy problems.
+        The remaining arguments determine this scaling.
+    noise_scale_factor_for_quit (float): Factor of the noise level to use in
+        termination criterion.
+    multiplicative_noise_level (float): Multiplicative noise level in :math:`f`.
+        Can only specify one of multiplicative or additive noise levels.
+        Default is :code:`None`.
+    additive_noise_level (float): Additive noise level in :math:`f`.
+        Can only specify one of multiplicative or additive noise levels.
+        Default is :code:`None`.
 
 """
 
-# =====================================================================================
-# Other Common Tuning Parameters for Optimization Algorithms
-# =====================================================================================
+"""
+=====================================================================================
+Other Common Tuning Parameters for Optimization Algorithms
+=====================================================================================
+"""
 
 MAX_LINE_SEARCH_STEPS = 20
 """int: Inspired by scipy L-BFGS-B."""
@@ -106,9 +111,11 @@ MAX_LINE_SEARCH_STEPS = 20
 LIMITED_MEMORY_STORAGE_LENGTH = 10
 """int: Taken from scipy L-BFGS-B."""
 
-# -------------------------
-# Trust Region Parameters
-# -------------------------
+"""
+-------------------------
+Trust Region Parameters
+-------------------------
+"""
 
 THRESHOLD_FOR_SUCCESSFUL_ITERATION = 0.1
 """float: minimum share of predicted improvement to count an iteration as successful.
@@ -122,20 +129,21 @@ count as very successful.
 """
 
 THRESHOLD_FOR_SAFETY_STEP = 0.5
-"""float: Threshold for when to call the safety step,
-:math:`\text{proposed step} \leq \text{threshold_for_safety_step} \cdot
-\text{current_trust_region_radius}`.
+r"""float: Threshold for when to call the safety step.
+
+    :math:`\text{proposed step} \leq \text{threshold_for_safety_step} \cdot
+    \text{current_trust_region_radius}`.
 
 """
 
 TRUST_REGION_INCREASE_AFTER_SUCCESS = 2.0
-"""float: Ratio by which to increase the trust region radius :math:`\Delta_k` in
+r"""float: Ratio by which to increase the trust region radius :math:`\Delta_k` in
 very successful iterations (:math:`\gamma_{inc}`).
 
 """
 
 TRUST_REGION_INCREASE_AFTER_LARGE_SUCCESS = 4.0
-"""float: Ratio of the proposed step ($\|s_k\|$) by which to increase the trust region
+r"""float: Ratio of the proposed step ($\|s_k\|$) by which to increase the trust region
 radius (:math:`\Delta_k`) in very successful iterations
 (:math:`\overline{\gamma}_{inc}`).
 
@@ -151,7 +159,9 @@ TRUST_REGION_OPTIONS = {
     "update_from_min_trust_region": None,
 }
 r"""dict: Options how the trust region is contracted and expanded.
+
     Possible entries are:
+
         threshold_successful (float): Minimum share of the predicted
             improvement that has to be realized for an iteration to count as successful.
         threshold_very_succesful (float): Share of predicted improvement
@@ -179,10 +189,11 @@ r"""dict: Options how the trust region is contracted and expanded.
 
 """
 
-
-# ---------------------------------------------
-# Numerical Algorithm Group Tuning Parameters
-# ---------------------------------------------
+"""
+---------------------------------------------
+Numerical Algorithm Group Tuning Parameters
+---------------------------------------------
+"""
 
 RANDOM_INITIAL_DIRECTIONS = False
 """bool: Whether to draw the initial directions randomly.
@@ -293,8 +304,10 @@ RESTART_OPTIONS = {
     "n_interpolation_points_to_add_at_restart": 0,
     "n_interpolation_points_to_add_at_hard_restart_additionally": None,
 }
-"""dict: Options for restarting the optimization.
+r"""dict: Options for restarting the optimization.
+
     Possible entries are:
+
         use_restarts (bool): Whether to do restarts when the minimum trust
             region radius (:math:`\rho_k`) reaches the stopping criterion
             (:math:`\rho_{end}`), or (optionally) when all points are within noise
@@ -302,9 +315,11 @@ RESTART_OPTIONS = {
         max_unsuccessful (int): maximum number of consecutive unsuccessful
             restarts allowed (i.e. restarts which did not outperform the best known
             value from earlier runs).
-        min_trust_region_scaling_after (float): Factor with which
-            the trust region stopping criterion is multiplied at each restart.
+        min_trust_region_scaling_after (float): Factor with which the trust region
+            stopping criterion is multiplied at each restart.
+
         use_soft (bool): Whether to use soft or hard restarts.
+
         move_current_point_at_soft (bool): Whether to move the current
             evaluation point ($x_k$) to the best new point evaluated.
         points_to_move_at_soft (int): Number of interpolation points to move
@@ -370,13 +385,14 @@ FAST_START_OPTIONS = {
     "trust_region_decrease": None,
     "n_search_directions_to_add_when_incomplete": 0,
 }
-"""dict: Options to start the optimization while building the full trust region model.
+r"""dict: Options to start the optimization while building the full trust region model.
 
     To activate this, set the number of points at which to evaluate the criterion
     before doing the first step, `min_initial_points`, to something smaller than the
     number of parameters.
 
     The following options can be specified:
+
         min_initial_points (int): Number of initial interpolation
             points in addition to the start point. This should only be changed to
             a value less than ``len(x)``, and only if the default setup cost
@@ -434,7 +450,7 @@ FAST_START_OPTIONS = {
             Trust region decrease parameter during the growing phase. The default
             is ``reduction_when_not_successful``.
         n_search_directions_to_add_when_incomplete (int): Number of new search
-        directions to add with each iteration where we do not have a full set
-        of search directions. This approach is not recommended! Default is 0.
+            directions to add with each iteration where we do not have a full set
+            of search directions. This approach is not recommended! Default is 0.
 
 """
