@@ -30,6 +30,8 @@ what the options mean are documented for each algorithm below.
 To make it easier to switch between algorithms, we simply ignore non-supported options
 and issue a warning that explains which options have been ignored.
 
+To find more information on ``algo_options`` that more than one algorithm allows for
+see :ref:`algo_options`.
 
 
 How to Read the Algorithms Documentation

@@ -3,17 +3,17 @@ import functools
 import numpy as np
 import scipy
 
-from estimagic.config import ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.config import ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.config import ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.config import LIMITED_MEMORY_STORAGE_LENGTH
-from estimagic.config import MAX_CRITERION_EVALUATIONS
-from estimagic.config import MAX_ITERATIONS
-from estimagic.config import MAX_LINE_SEARCH_STEPS
-from estimagic.config import RELATIVE_CRITERION_TOLERANCE
-from estimagic.config import RELATIVE_PARAMS_TOLERANCE
-from estimagic.config import SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import LIMITED_MEMORY_STORAGE_LENGTH
+from estimagic.optimization.algo_options import MAX_CRITERION_EVALUATIONS
+from estimagic.optimization.algo_options import MAX_ITERATIONS
+from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
+from estimagic.optimization.algo_options import RELATIVE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import RELATIVE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 DEFAULT_ALGO_INFO = {

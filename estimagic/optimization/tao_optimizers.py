@@ -3,11 +3,11 @@ import functools
 
 import numpy as np
 
-from estimagic.config import ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.config import IS_PETSC4PY_INSTALLED
-from estimagic.config import MAX_ITERATIONS
-from estimagic.config import RELATIVE_GRADIENT_TOLERANCE
-from estimagic.config import SCALED_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import MAX_ITERATIONS
+from estimagic.optimization.algo_options import RELATIVE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import SCALED_GRADIENT_TOLERANCE
 from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 try:

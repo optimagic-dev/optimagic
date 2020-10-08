@@ -17,7 +17,7 @@ conforms with the internal optimizer interface.
 The advantages of using the algorithm with estimagic, over using it directly are:
 
 - Estimagic turns an unconstrained optimizer into one that can deal efficiently with a
-  wide range of contstraints
+  wide range of constraints
   (see .. _link: how_to_guides/how_to_use_constranits.ipynb).
 - You can use estimagic's logging capabilities.
 - You get a beautiful real time dashboard to monitor your optimization.
@@ -112,9 +112,9 @@ the convergence criteria, other stopping conditions, and so on. We try to harmon
 those names and their default values where possible.
 
 The preferred default values can be imported from
-``estimagic.optimization.default_algo_options``. If
-you add a new optimizer to estimagic you should only deviate from them if you have good
-reasons.
+``estimagic.optimization.algo_options`` which are documented in :ref:`algo_options`.
+If you add a new optimizer to estimagic you should only deviate from them if you have
+good reasons.
 
 Note that a complete harmonization is not possible nor desirable, because often
 convergence criteria that clearly are the same are implemented slightly different for
@@ -123,7 +123,6 @@ the exact meaning of all options for all optimizers.
 
 
 .. _convergence_criteria:
-
 
 Convergence Criteria
 --------------------

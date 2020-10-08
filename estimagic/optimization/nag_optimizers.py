@@ -3,22 +3,22 @@ from functools import partial
 
 import numpy as np
 
-from estimagic.config import CLIP_CRITERION_IF_OVERFLOWING
-from estimagic.config import CONVERGENCE_NOISE_CRITERION
-from estimagic.config import CRITERION_NOISY
-from estimagic.config import FAST_START_OPTIONS
-from estimagic.config import INTERPOLATION_ROUNDING_ERROR
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
-from estimagic.config import MAX_CRITERION_EVALUATIONS
-from estimagic.config import RANDOM_DIRECTIONS_ORTHOGONAL
-from estimagic.config import RANDOM_INITIAL_DIRECTIONS
-from estimagic.config import RESTART_OPTIONS
-from estimagic.config import SCALE_INTERPOLATION_SYSTEM
-from estimagic.config import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.config import SLOW_IMPROVEMENT_TOLERANCE
-from estimagic.config import THRESHOLD_FOR_SAFETY_STEP
-from estimagic.config import TRUST_REGION_OPTIONS
+from estimagic.optimization.algo_options import CLIP_CRITERION_IF_OVERFLOWING
+from estimagic.optimization.algo_options import CONVERGENCE_NOISE_CRITERION
+from estimagic.optimization.algo_options import CRITERION_NOISY
+from estimagic.optimization.algo_options import FAST_START_OPTIONS
+from estimagic.optimization.algo_options import INTERPOLATION_ROUNDING_ERROR
+from estimagic.optimization.algo_options import MAX_CRITERION_EVALUATIONS
+from estimagic.optimization.algo_options import RANDOM_DIRECTIONS_ORTHOGONAL
+from estimagic.optimization.algo_options import RANDOM_INITIAL_DIRECTIONS
+from estimagic.optimization.algo_options import RESTART_OPTIONS
+from estimagic.optimization.algo_options import SCALE_INTERPOLATION_SYSTEM
+from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import SLOW_IMPROVEMENT_TOLERANCE
+from estimagic.optimization.algo_options import THRESHOLD_FOR_SAFETY_STEP
+from estimagic.optimization.algo_options import TRUST_REGION_OPTIONS
 from estimagic.optimization.utilities import calculate_initial_trust_region_radius
 
 try:

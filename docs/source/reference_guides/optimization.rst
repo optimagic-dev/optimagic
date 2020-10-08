@@ -28,6 +28,16 @@ Enforcing constraints by reparametrizations and bounds
     :members:
 
 
+.. _algo_options:
+
+The Default Algorithm Options
+------------------------------------------------------
+
+.. automodule:: estimagic.optimization.algo_options
+    :members:
+
+
+
 .. _optimization_utilities:
 
 Utility functions for parameter handling
@@ -36,6 +46,8 @@ Utility functions for parameter handling
 .. automodule:: estimagic.optimization.utilities
     :members:
 
+
+.. _read_log:
 
 Functions to read the optimization log
 --------------------------------------
