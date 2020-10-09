@@ -114,7 +114,7 @@ SLOW_IMPROVEMENT_TOLERANCE = {
             is insufficient. Note: the improvement is divided by the
             ``comparison_period_for_insufficient_improvement``.
             So this is the required average improvement per iteration over the
-            comparison period. Default is 1e-8.
+            comparison period.
         n_insufficient_improvements_until_terminate (int): Number of consecutive
             insufficient improvements before termination (or restart). Default is
             ``20 * len(x)``.
@@ -352,7 +352,7 @@ FAST_START_OPTIONS = {
     "strategy": "auto",
     "scaling_of_trust_region_step_perturbation": None,
     "scaling_jacobian_perturb_components": 1e-2,
-    "scaling_jacobian_perturb_floor_of_singular_values": 1,
+    "scaling_jacobian_perturb_floor_of_singular_values": 1,  # not supported yet by NAG
     "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
     "jacobian_perturb_max_condition_number": 1e8,
     "geometry_improving_steps": False,
@@ -399,34 +399,34 @@ r"""dict: Options to start the optimization while building the full trust region
         scaling_jacobian_perturb_components (float): Magnitude of extra components
             added to the Jacobian. Default is 1e-2.
         scaling_jacobian_perturb_floor_of_singular_values (float): Floor singular
-            values of the Jacobian at this factor of the last nonzero value.
-            As of version 1.2.1 scaling_jacobian_perturb_floor_of_singular_values
-            was not yet supported by DF-OLS.
+            values of the Jacobian at this factor of the last non zero value.
+            As of version 1.2.1 this option is not yet supported by DF-OLS.
         jacobian_perturb_abs_floor_for_singular_values (float): Absolute floor on
             singular values of the Jacobian. Default is 1e-6.
         jacobian_perturb_max_condition_number (float): Cap on the condition number
             of Jacobian after applying floors to singular values
             (effectively another floor on the smallest singular value, since the
-            largest singular value is fixed). Default is 1e8.
+            largest singular value is fixed).
         geometry_improving_steps (bool):
             While still growing the initial set, whether to do geometry-improving
-            steps in the trust region algorithm. Default is False.
+            steps in the trust region algorithm.
         safety_steps (bool):
             While still growing the initial set, whether to perform safety steps,
-            or the regular trust region steps. Default is True.
+            or the regular trust region steps.
         reduce_trust_region_with_safety_steps (bool):
             While still growing the initial set, whether to reduce trust region
-            radius in safety steps. Default is False.
+            radius in safety steps.
         reset_trust_region_radius_after (bool):
             Whether or not to reset the trust region radius to its initial value
-            at the end of the growing phase. Default is False.
+            at the end of the growing phase.
         reset_min_trust_region_radius_after (bool):
             Whether or not to reset the minimum trust region radius
             (:math:`\rho_k`) to its initial value at the end of the growing phase.
-            Default is False.
         trust_region_decrease (float):
-            Trust region decrease parameter during the growing phase. The default
-            is ``reduction_when_not_successful``.
+            Ratio by which to decrease the trust region radius when realized
+            improvement does not match the ``threshold_for_successful_iteration``
+            during the growing phase.  By default it is the same as
+            ``reduction_when_not_successful``.
         n_search_directions_to_add_when_incomplete (int): Number of new search
             directions to add with each iteration where we do not have a full set
             of search directions. This approach is not recommended! Default is 0.
