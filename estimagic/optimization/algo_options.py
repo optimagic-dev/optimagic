@@ -352,7 +352,8 @@ FAST_START_OPTIONS = {
     "scaling_jacobian_perturb_floor_of_singular_values": 1,  # not supported yet by NAG
     "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
     "jacobian_perturb_max_condition_number": 1e8,
-    "step_type": "safety",
+    "geometry_improving_steps": False,
+    "safety_steps": True,
     "shrink_upper_radius_in_safety_steps": False,
     "full_geometry_improving_step": False,
     "reset_trust_region_radius_after": False,
@@ -404,8 +405,9 @@ r"""dict: Options to start the optimization while building the full trust region
             of Jacobian after applying floors to singular values
             (effectively another floor on the smallest singular value, since the
             largest singular value is fixed).
-        step_type (str): Whether to do "regular" (i.e. geometry improving) or
-            "safety" steps in the trust region algorithm during the fast start.
+        geometry_improving_steps (bool): Whether to do geometry-improving steps in the
+            trust region algorithm, as per the usual algorithm during the fast start.
+        safety_steps (bool): Whether to perform safety steps.
         shrink_upper_radius_in_safety_steps (bool): During the fast start whether to
             reduce the upper trust region radius in safety steps.
         full_geometry_improving_step (bool): During the fast start whether to do a

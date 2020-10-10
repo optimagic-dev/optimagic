@@ -221,10 +221,6 @@ def nag_dfols(
     fast_start_options = _build_options_dict(
         user_input=fast_start_options, default_options=FAST_START_OPTIONS,
     )
-    if not fast_start_options["step_type"] in ["safety", "regular"]:
-        raise ValueError(
-            "step_type of the fast_start_options must be 'safety' or 'regular'"
-        )
     if (
         fast_start_options["shrink_upper_radius_in_safety_steps"]
         and fast_start_options["full_geometry_improving_step"]
@@ -282,8 +278,8 @@ def nag_dfols(
         "growing.full_rank.svd_max_jac_cond": fast_start_options[
             "jacobian_perturb_max_condition_number"
         ],
-        "growing.do_geom_steps": fast_start_options["step_type"] == "regular",
-        "growing.safety.do_safety_step": fast_start_options["step_type"] == "safety",
+        "growing.do_geom_steps": fast_start_options["geometry_improving_steps"],
+        "growing.safety.do_safety_step": fast_start_options["safety_steps"],
         "growing.safety.reduce_delta": fast_start_options[
             "shrink_upper_radius_in_safety_steps"
         ],
