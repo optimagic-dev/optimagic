@@ -8,7 +8,7 @@ from estimagic.optimization.algo_options import ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import MAX_ITERATIONS
 from estimagic.optimization.algo_options import RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import SCALED_GRADIENT_TOLERANCE
-from estimagic.optimization.utilities import calculate_initial_trust_region_radius
+from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 
 try:
     from petsc4py import PETSc
@@ -32,7 +32,7 @@ def tao_pounders(
     absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
     relative_gradient_tolerance=RELATIVE_GRADIENT_TOLERANCE,
     scaled_gradient_tolerance=SCALED_GRADIENT_TOLERANCE,
-    initial_trust_region_radius=None,
+    trust_region_initial_radius=None,
     max_iterations=MAX_ITERATIONS,
 ):
     r"""Minimize a function using the POUNDERs algorithm.
@@ -91,8 +91,8 @@ def tao_pounders(
         scaled_gradient_tolerance (float): Stop if norm of gradient is reduced by this
             factor. If set to False the algorithm will not consider
             relative_gradient_tolerance.
-        initial_trust_region_radius (float): Sets the radius for the initial trust
-            region that the optimizer employs. It must be :math:`> 0`.
+        trust_region_initial_radius (float): Initial value of the trust region radius.
+            It must be :math:`> 0`.
         max_iterations (int): Alternative Stopping criterion. If set the routine will
             stop after the number of specified iterations or after the step size is
             sufficiently small. If the variable is set the default criteria will all be
@@ -148,11 +148,11 @@ def tao_pounders(
     # want more than pounders.
     tao.setResidual(func_tao, residuals_out)
 
-    if initial_trust_region_radius is None:
-        initial_trust_region_radius = calculate_initial_trust_region_radius(x)
-    elif initial_trust_region_radius <= 0:
+    if trust_region_initial_radius is None:
+        trust_region_initial_radius = calculate_trustregion_initial_radius(x)
+    elif trust_region_initial_radius <= 0:
         raise ValueError("The initial trust region radius must be > 0.")
-    tao.setInitialTrustRegionRadius(initial_trust_region_radius)
+    tao.setInitialTrustRegionRadius(trust_region_initial_radius)
 
     # Add bounds.
     lower_bounds = _initialise_petsc_array(lower_bounds)

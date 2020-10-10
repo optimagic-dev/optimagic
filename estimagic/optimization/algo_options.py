@@ -279,8 +279,8 @@ RESTART_OPTIONS = {
     "trust_region_scaling_after_unsuccessful": None,
     # just dfols
     "max_interpolation_points": None,
-    "n_interpolation_points_to_add_at_restart": 0,
-    "n_interpolation_points_to_add_at_hard_restart_additionally": None,
+    "n_extra_interpolation_points_per_soft_reset": 0,
+    "n_extra_interpolation_points_per_hard_reset": 0,
 }
 r"""dict: Options for restarting the optimization.
 
@@ -337,13 +337,10 @@ r"""dict: Options for restarting the optimization.
             increases with each restart, e.g. when
             ``n_interpolation_points_to_add_at_restart > 0``. The default is
             ``n_interpolation_points``.
-        n_interpolation_points_to_add_at_restart (int): Number by which to increase the
-            number of interpolation points by with each restart.
-        n_interpolation_points_to_add_at_hard_restart_additionally (int):
-            Number by which to increase ``n_initial_points_to_add`` with each hard
-            restart. To avoid a growing phase, it is best to set it to the same value
-            as ``n_interpolation_points_to_add_at_restart``.
-
+        n_extra_interpolation_points_per_soft_reset (int): Number of points to add to
+            the interpolation set with each soft reset.
+        n_extra_interpolation_points_per_hard_reset (int): Number of points to add to
+            the interpolation set with each hard reset.
 """
 
 
@@ -355,9 +352,9 @@ FAST_START_OPTIONS = {
     "scaling_jacobian_perturb_floor_of_singular_values": 1,  # not supported yet by NAG
     "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
     "jacobian_perturb_max_condition_number": 1e8,
-    "geometry_improving_steps": False,
-    "safety_steps": True,
-    "reduce_trust_region_with_safety_steps": False,
+    "step_type": "safety",
+    "shrink_upper_radius_in_safety_steps": False,
+    "full_geometry_improving_step": False,
     "reset_trust_region_radius_after": False,
     "reset_min_trust_region_radius_after": False,
     "trust_region_decrease": None,
@@ -407,15 +404,15 @@ r"""dict: Options to start the optimization while building the full trust region
             of Jacobian after applying floors to singular values
             (effectively another floor on the smallest singular value, since the
             largest singular value is fixed).
-        geometry_improving_steps (bool):
-            While still growing the initial set, whether to do geometry-improving
-            steps in the trust region algorithm.
-        safety_steps (bool):
-            While still growing the initial set, whether to perform safety steps,
-            or the regular trust region steps.
-        reduce_trust_region_with_safety_steps (bool):
-            While still growing the initial set, whether to reduce trust region
-            radius in safety steps.
+        step_type (str): Whether to do "regular" (i.e. geometry improving) or
+            "safety" steps in the trust region algorithm during the fast start.
+        shrink_upper_radius_in_safety_steps (bool): During the fast start whether to
+            reduce the upper trust region radius in safety steps.
+        full_geometry_improving_step (bool): During the fast start whether to do a
+            full geometry-improving step within safety steps (the same as the post fast
+            start phase of the algorithm). Since this involves reducing the upper trust
+            region radius, this can only be `True` if
+            `shrink_upper_radius_in_safety_steps == False`.
         reset_trust_region_radius_after (bool):
             Whether or not to reset the trust region radius to its initial value
             at the end of the growing phase.

@@ -14,7 +14,7 @@ from estimagic.optimization.algo_options import RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
-from estimagic.optimization.utilities import calculate_initial_trust_region_radius
+from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 
 DEFAULT_ALGO_INFO = {
     "primary_criterion_entry": "value",
@@ -535,7 +535,7 @@ def scipy_cobyla(
     *,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
-    initial_trust_radius=None,
+    trustregion_initial_radius=None,
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
@@ -561,13 +561,13 @@ def scipy_cobyla(
             parameter vectors is smaller than this. In case of COBYLA this is a lower
             bound on the size of the trust region and can be seen as the required
             accuracy in the variables but this accuracy is not guaranteed.
-        initial_trust_radius (float): Initial trust radius.
+        trustregion_initial_radius (float): Initial value of the trust region radius.
             Since a linear approximation is likely only good near the current simplex,
             the linear program is given the further requirement that the solution,
             which will become the next evaluation point must be within a radius
             RHO_j from x_j. RHO_j only decreases, never increases. The initial RHO_j is
-            the initial_trust_radius. In this way COBYLA's iterations behave like a
-            trust region algorithm.
+            the `trustregion_initial_radius`. In this way COBYLA's iterations behave
+            like a trust region algorithm.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -580,10 +580,10 @@ def scipy_cobyla(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info,
     )
 
-    if initial_trust_radius is None:
-        initial_trust_radius = calculate_initial_trust_region_radius(x)
+    if trustregion_initial_radius is None:
+        trustregion_initial_radius = calculate_trustregion_initial_radius(x)
 
-    options = {"maxiter": max_iterations, "rhobeg": initial_trust_radius}
+    options = {"maxiter": max_iterations, "rhobeg": trustregion_initial_radius}
 
     res = scipy.optimize.minimize(
         fun=func, x0=x, method="COBYLA", options=options, tol=relative_params_tolerance,
@@ -722,7 +722,7 @@ def scipy_trust_constr(
     absolute_gradient_tolerance=1e-08,
     max_iterations=MAX_ITERATIONS,
     relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
-    initial_trust_radius=None,
+    trustregion_initial_radius=None,
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
 
@@ -769,14 +769,14 @@ def scipy_trust_constr(
             the independent variable. The algorithm will terminate when the radius of
             the trust region used in the algorithm is smaller than the
             relative_params_tolerance.
-        initial_trust_radius (float): Initial trust radius. The trust radius gives the
-            maximum distance between solution points in consecutive iterations.
-            It reflects the trust the algorithm puts in the local approximation of the
-            optimization problem. For an accurate local approximation the trust-region
-            should be large and for an approximation valid only close to the current
-            point it should be a small one. The trust radius is automatically updated
-            throughout the optimization process, with ``initial_trust_radius`` being
-            its initial value.
+        trustregion_initial_radius (float): Initial value of the trust region radius.
+            The trust radius gives the maximum distance between solution points in
+            consecutive iterations. It reflects the trust the algorithm puts in the
+            local approximation of the optimization problem. For an accurate local
+            approximation the trust-region should be large and for an approximation
+            valid only close to the current point it should be a small one.
+            The trust radius is automatically updated throughout the optimization
+            process, with ``trustregion_initial_radius`` being its initial value.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -791,14 +791,14 @@ def scipy_trust_constr(
         criterion_and_derivative, task="derivative", algorithm_info=algo_info
     )
 
-    if initial_trust_radius is None:
-        initial_trust_radius = calculate_initial_trust_region_radius(x)
+    if trustregion_initial_radius is None:
+        trustregion_initial_radius = calculate_trustregion_initial_radius(x)
 
     options = {
         "gtol": absolute_gradient_tolerance,
         "maxiter": max_iterations,
         "xtol": relative_params_tolerance,
-        "initial_tr_radius": initial_trust_radius,
+        "initial_tr_radius": trustregion_initial_radius,
         # don't have "grad" here as we already supply the gradient via the "jac"
         # argument supplied directly to scipy.optimize.minimize.
     }

@@ -20,7 +20,7 @@ if IS_PETSC4PY_INSTALLED:
 # drop private and helper functions
 AVAILABLE_ALGORITHMS = {}
 for k, v in COLLECTED_FUNCTIONS.items():
-    if not k.startswith("_") and k != "calculate_initial_trust_region_radius":
+    if not k.startswith("_") and k != "calculate_trustregion_initial_radius":
         AVAILABLE_ALGORITHMS[k] = v
 
 if IS_PYBOBYQA_INSTALLED:

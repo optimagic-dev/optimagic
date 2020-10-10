@@ -19,7 +19,7 @@ from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_PARAMS_TOLE
 from estimagic.optimization.algo_options import SLOW_IMPROVEMENT_TOLERANCE
 from estimagic.optimization.algo_options import THRESHOLD_FOR_SAFETY_STEP
 from estimagic.optimization.algo_options import TRUST_REGION_OPTIONS
-from estimagic.optimization.utilities import calculate_initial_trust_region_radius
+from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:
     import pybobyqa
@@ -39,7 +39,7 @@ def nag_dfols(
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
-    initial_trust_region_radius=None,
+    trustregion_initial_radius=None,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
     n_interpolation_points=None,
@@ -137,7 +137,7 @@ def nag_dfols(
             reached, the optimization stops but we do not count this as convergence.
         absolute_params_tolerance (float): Minimum allowed value of the trust region
             radius, which is one criterion for successful termination.
-        initial_trust_region_radius (float): Initial value of the trust region radius.
+        trustregion_initial_radius (float): Initial value of the trust region radius.
         random_initial_directions (bool): Whether to draw the initial directions
             randomly (as opposed to coordinate directions).
         random_directions_orthogonal (bool): Whether to make random initial directions
@@ -194,31 +194,6 @@ def nag_dfols(
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
         )
-    if initial_trust_region_radius is None:
-        initial_trust_region_radius = calculate_initial_trust_region_radius(x)
-    # -np.inf as a default leads to errors when building the documentation with sphinx.
-    noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
-    convergence_noise_criterion = _build_options_dict(
-        user_input=convergence_noise_criterion,
-        default_options=CONVERGENCE_NOISE_CRITERION,
-    )
-    trust_region_options = _build_options_dict(
-        user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
-    )
-    restart_options = _build_options_dict(
-        user_input=restart_options, default_options=RESTART_OPTIONS,
-    )
-    slow_improvement_tolerance = _build_options_dict(
-        user_input=slow_improvement_tolerance,
-        default_options=SLOW_IMPROVEMENT_TOLERANCE,
-    )
-
-    fast_start_options = _build_options_dict(
-        user_input=fast_start_options, default_options=FAST_START_OPTIONS,
-    )
-    perturb_jacobian, perturb_trust_region = _get_fast_start_strategy_from_user_value(
-        fast_start_options.pop("strategy")
-    )
 
     algo_info = {
         "name": "nag_dfols",
@@ -226,78 +201,74 @@ def nag_dfols(
         "parallelizes": False,
         "needs_scaling": False,
     }
-    advanced_options = {
-        "general.rounding_error_constant": interpolation_rounding_error,
-        "general.safety_step_thresh": threshold_for_safety_step,
-        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
-        "init.random_initial_directions": random_initial_directions,
-        "init.random_directions_make_orthogonal": random_directions_orthogonal,
-        "tr_radius.eta1": trust_region_options["threshold_successful"],
-        "tr_radius.eta2": trust_region_options["threshold_very_successful"],
-        "tr_radius.gamma_dec": trust_region_options["reduction_when_not_successful"],
-        "tr_radius.gamma_inc": trust_region_options["increase_after_success"],
-        "tr_radius.gamma_inc_overline": trust_region_options[
-            "increase_after_large_success"
-        ],
-        "tr_radius.alpha1": trust_region_options["min_decrease"],
-        "tr_radius.alpha2": trust_region_options["update_from_min_trust_region"],
-        "slow.thresh_for_slow": slow_improvement_tolerance[
-            "threshold_for_insufficient_improvement"
-        ],
-        "slow.max_slow_iters": slow_improvement_tolerance[
-            "n_insufficient_improvements_until_terminate"
-        ],
-        "slow.history_for_slow": slow_improvement_tolerance[
-            "comparison_period_for_insufficient_improvement"
-        ],
-        "noise.quit_on_noise_level": convergence_noise_criterion["active"],
-        "noise.scale_factor_for_quit": convergence_noise_criterion[
-            "noise_scale_factor_for_quit"
-        ],
-        "noise.multiplicative_noise_level": convergence_noise_criterion[
-            "multiplicative_noise_level"
-        ],
-        "noise.additive_noise_level": convergence_noise_criterion[
-            "additive_noise_level"
-        ],
-        "interpolation.precondition": scale_interpolation_system,
-        "restarts.use_restarts": restart_options["use_restarts"],
-        "restarts.max_unsuccessful_restarts": restart_options["max_unsuccessful"],
-        "restarts.rhoend_scale": restart_options["min_trust_region_scaling_after"],
-        "restarts.use_soft_restarts": restart_options["use_soft"],
-        "restarts.soft.move_xk": restart_options["move_current_point_at_soft"],
+
+    advanced_options, restart_options = _create_nag_advanced_options(
+        x=x,
+        trustregion_initial_radius=trustregion_initial_radius,
+        noise_n_evals_per_point=noise_n_evals_per_point,
+        convergence_noise_criterion=convergence_noise_criterion,
+        restart_options=restart_options,
+        slow_improvement_tolerance=slow_improvement_tolerance,
+        interpolation_rounding_error=interpolation_rounding_error,
+        threshold_for_safety_step=threshold_for_safety_step,
+        clip_criterion_if_overflowing=clip_criterion_if_overflowing,
+        random_initial_directions=random_initial_directions,
+        random_directions_orthogonal=random_directions_orthogonal,
+        scale_interpolation_system=scale_interpolation_system,
+        trust_region_options=trust_region_options,
+    )
+
+    fast_start_options = _build_options_dict(
+        user_input=fast_start_options, default_options=FAST_START_OPTIONS,
+    )
+    if not fast_start_options["step_type"] in ["safety", "regular"]:
+        raise ValueError(
+            "step_type of the fast_start_options must be 'safety' or 'regular'"
+        )
+    if (
+        fast_start_options["shrink_upper_radius_in_safety_steps"]
+        and fast_start_options["full_geometry_improving_step"]
+    ):
+        raise ValueError(
+            "full_geometry_improving_step of the fast_start_options can only be True "
+            "if shrink_upper_radius_in_safety_steps is False."
+        )
+    (
+        perturb_jacobian,
+        perturb_trust_region,
+    ) = _get_fast_start_strategy_from_user_value(fast_start_options["strategy"])
+    if (
+        restart_options["n_extra_interpolation_points_per_soft_reset"]
+        < restart_options["n_extra_interpolation_points_per_soft_reset"]
+    ):
+        raise ValueError(
+            "In the restart options 'n_extra_interpolation_points_per_soft_reset must "
+            "be larger or the same as n_extra_interpolation_points_per_hard_reset."
+        )
+
+    dfols_options = {
+        "growing.full_rank.use_full_rank_interp": perturb_jacobian,
+        "growing.perturb_trust_region_step": perturb_trust_region,
         "restarts.hard.use_old_rk": restart_options["reuse_criterion_value_at_hard"],
-        "restarts.soft.max_fake_successful_steps": restart_options[
-            "max_iterations_without_new_best_after_soft"
-        ],  # noqa: E501
-        "restarts.auto_detect": restart_options["automatic_detection"],
-        "restarts.auto_detect.history": restart_options[
-            "n_iterations_for_automatc_detection"
-        ],  # noqa: E501
         "restarts.auto_detect.min_chgJ_slope": restart_options[
             "min_model_slope_increase_for_automatic_detection"
         ],  # noqa: E501
-        "restarts.auto_detect.min_correl": restart_options[
-            "min_correlations_for_automatic_detection"
-        ],
-        "restarts.soft.num_geom_steps": restart_options["points_to_move_at_soft"],
         "restarts.max_npt": restart_options["max_interpolation_points"],
         "restarts.increase_npt": restart_options[
-            "n_interpolation_points_to_add_at_restart"
+            "n_extra_interpolation_points_per_soft_reset"
         ]
         > 0,
         "restarts.increase_npt_amt": restart_options[
-            "n_interpolation_points_to_add_at_restart"
+            "n_extra_interpolation_points_per_soft_reset"
         ],
         "restarts.hard.increase_ndirs_initial_amt": restart_options[
-            "n_interpolation_points_to_add_at_hard_restart_additionally"
-        ],
+            "n_extra_interpolation_points_per_hard_reset"
+        ]
+        - restart_options["n_extra_interpolation_points_per_soft_reset"],
         "model.rel_tol": relative_to_start_value_criterion_tolerance,
         "regression.num_extra_steps": n_extra_points_to_move_when_sufficient_improvement,  # noqa: E501
         "regression.momentum_extra_steps": use_momentum_method_to_move_extra_points,
         "regression.increase_num_extra_steps_with_restart": n_increase_move_points_at_restart,  # noqa: E501
-        "growing.full_rank.use_full_rank_interp": perturb_jacobian,
-        "growing.perturb_trust_region_step": perturb_trust_region,
         "growing.ndirs_initial": fast_start_options["min_inital_points"],
         "growing.delta_scale_new_dirns": fast_start_options[
             "scaling_of_trust_region_step_perturbation"
@@ -311,16 +282,14 @@ def nag_dfols(
         "growing.full_rank.svd_max_jac_cond": fast_start_options[
             "jacobian_perturb_max_condition_number"
         ],
-        "growing.do_geom_steps": fast_start_options["geometry_improving_steps"],
-        "growing.safety.do_safety_step": fast_start_options["safety_steps"],
+        "growing.do_geom_steps": fast_start_options["step_type"] == "regular",
+        "growing.safety.do_safety_step": fast_start_options["step_type"] == "safety",
         "growing.safety.reduce_delta": fast_start_options[
-            "reduce_trust_region_with_safety_steps"
-        ],  # noqa: E501
-        # growing.safety.full_geom_step cannot be :code:`True` if
-        # :code:`growing.safety.reduce_delta` is :code:`True`.
-        "growing.safety.full_geom_step": not fast_start_options[
-            "reduce_trust_region_with_safety_steps"
-        ],  # noqa: E501
+            "shrink_upper_radius_in_safety_steps"
+        ],
+        "growing.safety.full_geom_step": fast_start_options[
+            "full_geometry_improving_step"
+        ],
         "growing.reset_delta": fast_start_options["reset_trust_region_radius_after"],
         "growing.reset_rho": fast_start_options["reset_min_trust_region_radius_after"],
         "growing.gamma_dec": fast_start_options["trust_region_decrease"],
@@ -328,6 +297,8 @@ def nag_dfols(
             "n_search_directions_to_add_when_incomplete"
         ],
     }
+
+    advanced_options.update(dfols_options)
 
     criterion = partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info
@@ -338,7 +309,7 @@ def nag_dfols(
         x0=x,
         bounds=(lower_bounds, upper_bounds),
         maxfun=max_criterion_evaluations,
-        rhobeg=initial_trust_region_radius,
+        rhobeg=trustregion_initial_radius,
         npt=n_interpolation_points,
         rhoend=absolute_params_tolerance,
         nsamples=noise_n_evals_per_point,
@@ -368,7 +339,7 @@ def nag_pybobyqa(
     convergence_noise_criterion=None,
     slow_improvement_tolerance=None,
     noise_n_evals_per_point=None,
-    initial_trust_region_radius=None,
+    trustregion_initial_radius=None,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
     n_interpolation_points=None,
@@ -418,7 +389,7 @@ def nag_pybobyqa(
             radius, which determines when a successful termination occurs.
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
-        initial_trust_region_radius (float): Initial value of the trust region radius.
+        trustregion_initial_radius (float): Initial value of the trust region radius.
         seek_global_optimum (bool): whether to apply the heuristic to escape local
             minima presented in :cite:`Cartis2018a`. Only applies for noisy criterion
             functions.
@@ -493,26 +464,8 @@ def nag_pybobyqa(
             "install.html",
         )
 
-    if initial_trust_region_radius is None:
-        initial_trust_region_radius = calculate_initial_trust_region_radius(x)
-    # -np.inf as a default leads to errors when building the documentation with sphinx.
     if absolute_criterion_value_tolerance is None:
         absolute_criterion_value_tolerance = -np.inf
-    noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
-    convergence_noise_criterion = _build_options_dict(
-        user_input=convergence_noise_criterion,
-        default_options=CONVERGENCE_NOISE_CRITERION,
-    )
-    trust_region_options = _build_options_dict(
-        user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
-    )
-    restart_options = _build_options_dict(
-        user_input=restart_options, default_options=RESTART_OPTIONS,
-    )
-    slow_improvement_tolerance = _build_options_dict(
-        user_input=slow_improvement_tolerance,
-        default_options=SLOW_IMPROVEMENT_TOLERANCE,
-    )
 
     algo_info = {
         "name": "nag_pybobyqa",
@@ -523,78 +476,45 @@ def nag_pybobyqa(
     criterion = partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info
     )
+    advanced_options, restart_options = _create_nag_advanced_options(
+        x=x,
+        trustregion_initial_radius=trustregion_initial_radius,
+        noise_n_evals_per_point=noise_n_evals_per_point,
+        convergence_noise_criterion=convergence_noise_criterion,
+        restart_options=restart_options,
+        slow_improvement_tolerance=slow_improvement_tolerance,
+        interpolation_rounding_error=interpolation_rounding_error,
+        threshold_for_safety_step=threshold_for_safety_step,
+        clip_criterion_if_overflowing=clip_criterion_if_overflowing,
+        random_initial_directions=random_initial_directions,
+        random_directions_orthogonal=random_directions_orthogonal,
+        scale_interpolation_system=scale_interpolation_system,
+        trust_region_options=trust_region_options,
+    )
 
-    advanced_options = {
-        "general.rounding_error_constant": interpolation_rounding_error,
-        "general.safety_step_thresh": threshold_for_safety_step,
-        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
-        "init.random_initial_directions": random_initial_directions,
-        "init.random_directions_make_orthogonal": random_directions_orthogonal,
-        "tr_radius.eta1": trust_region_options["threshold_successful"],
-        "tr_radius.eta2": trust_region_options["threshold_very_successful"],
-        "tr_radius.gamma_dec": trust_region_options["reduction_when_not_successful"],
-        "tr_radius.gamma_inc": trust_region_options["increase_after_success"],
-        "tr_radius.gamma_inc_overline": trust_region_options[
-            "increase_after_large_success"
-        ],
-        "tr_radius.alpha1": trust_region_options["min_decrease"],
-        "tr_radius.alpha2": trust_region_options["update_from_min_trust_region"],
+    pybobyqa_options = {
         "model.abs_tol": absolute_criterion_value_tolerance,
-        "slow.thresh_for_slow": slow_improvement_tolerance[
-            "threshold_for_insufficient_improvement"
-        ],
-        "slow.max_slow_iters": slow_improvement_tolerance[
-            "n_insufficient_improvements_until_terminate"
-        ],
-        "slow.history_for_slow": slow_improvement_tolerance[
-            "comparison_period_for_insufficient_improvement"
-        ],
-        "noise.quit_on_noise_level": convergence_noise_criterion["active"],
-        "noise.scale_factor_for_quit": convergence_noise_criterion[
-            "noise_scale_factor_for_quit"
-        ],
-        "noise.multiplicative_noise_level": convergence_noise_criterion[
-            "multiplicative_noise_level"
-        ],
-        "noise.additive_noise_level": convergence_noise_criterion[
-            "additive_noise_level"
-        ],
-        "interpolation.precondition": scale_interpolation_system,
         "interpolation.minimum_change_hessian": frobenius_for_interpolation_problem,
-        "restarts.use_restarts": restart_options["use_restarts"],
-        "restarts.max_unsuccessful_restarts": restart_options["max_unsuccessful"],
         "restarts.max_unsuccessful_restarts_total": restart_options[
             "max_unsuccessful_total"
         ],
         "restarts.rhobeg_scale_after_unsuccessful_restart": restart_options[
             "trust_region_scaling_after_unsuccessful"
         ],  # noqa E501
-        "restarts.rhoend_scale": restart_options["min_trust_region_scaling_after"],
-        "restarts.use_soft_restarts": restart_options["use_soft"],
-        "restarts.soft.num_geom_steps": restart_options["points_to_move_at_soft"],
-        "restarts.soft.move_xk": restart_options["move_current_point_at_soft"],
         "restarts.hard.use_old_fk": restart_options["reuse_criterion_value_at_hard"],
-        "restarts.soft.max_fake_successful_steps": restart_options[
-            "max_iterations_without_new_best_after_soft"
-        ],  # noqa: E501
-        "restarts.auto_detect": restart_options["automatic_detection"],
-        "restarts.auto_detect.history": restart_options[
-            "n_iterations_for_automatc_detection"
-        ],  # noqa: E501
         "restarts.auto_detect.min_chg_model_slope": restart_options[
             "min_model_slope_increase_for_automatic_detection"
         ],  # noqa: E501
-        "restarts.auto_detect.min_correl": restart_options[
-            "min_correlations_for_automatic_detection"
-        ],
     }
+
+    advanced_options.update(pybobyqa_options)
 
     res = pybobyqa.solve(
         criterion,
         x0=x,
         bounds=(lower_bounds, upper_bounds),
         maxfun=max_criterion_evaluations,
-        rhobeg=initial_trust_region_radius,
+        rhobeg=trustregion_initial_radius,
         user_params=advanced_options,
         scaling_within_bounds=False,
         do_logging=False,
@@ -641,6 +561,101 @@ def _process_nag_result(nag_result_obj, len_x):
     except AttributeError:
         pass
     return processed
+
+
+def _create_nag_advanced_options(
+    x,
+    trustregion_initial_radius,
+    noise_n_evals_per_point,
+    convergence_noise_criterion,
+    restart_options,
+    slow_improvement_tolerance,
+    interpolation_rounding_error,
+    threshold_for_safety_step,
+    clip_criterion_if_overflowing,
+    random_initial_directions,
+    random_directions_orthogonal,
+    scale_interpolation_system,
+    trust_region_options,
+):
+    if trustregion_initial_radius is None:
+        trustregion_initial_radius = calculate_trustregion_initial_radius(x)
+    # -np.inf as a default leads to errors when building the documentation with sphinx.
+    noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
+    convergence_noise_criterion = _build_options_dict(
+        user_input=convergence_noise_criterion,
+        default_options=CONVERGENCE_NOISE_CRITERION,
+    )
+    trust_region_options = _build_options_dict(
+        user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
+    )
+    restart_options = _build_options_dict(
+        user_input=restart_options, default_options=RESTART_OPTIONS,
+    )
+    slow_improvement_tolerance = _build_options_dict(
+        user_input=slow_improvement_tolerance,
+        default_options=SLOW_IMPROVEMENT_TOLERANCE,
+    )
+
+    advanced_options = {
+        "general.rounding_error_constant": interpolation_rounding_error,
+        "general.safety_step_thresh": threshold_for_safety_step,
+        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
+        "init.random_initial_directions": random_initial_directions,
+        "init.random_directions_make_orthogonal": random_directions_orthogonal,
+        "tr_radius.eta1": trust_region_options["threshold_successful"],
+        "tr_radius.eta2": trust_region_options["threshold_very_successful"],
+        "tr_radius.gamma_dec": trust_region_options["reduction_when_not_successful"],
+        "tr_radius.gamma_inc": trust_region_options["increase_after_success"],
+        "tr_radius.gamma_inc_overline": trust_region_options[
+            "increase_after_large_success"
+        ],
+        "tr_radius.alpha1": trust_region_options["min_decrease"],
+        "tr_radius.alpha2": trust_region_options["update_from_min_trust_region"],
+        "general.rounding_error_constant": interpolation_rounding_error,
+        "general.safety_step_thresh": threshold_for_safety_step,
+        "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
+        "init.random_initial_directions": random_initial_directions,
+        "init.random_directions_make_orthogonal": random_directions_orthogonal,
+        "slow.thresh_for_slow": slow_improvement_tolerance[
+            "threshold_for_insufficient_improvement"
+        ],
+        "slow.max_slow_iters": slow_improvement_tolerance[
+            "n_insufficient_improvements_until_terminate"
+        ],
+        "slow.history_for_slow": slow_improvement_tolerance[
+            "comparison_period_for_insufficient_improvement"
+        ],
+        "noise.quit_on_noise_level": convergence_noise_criterion["active"],
+        "noise.scale_factor_for_quit": convergence_noise_criterion[
+            "noise_scale_factor_for_quit"
+        ],
+        "noise.multiplicative_noise_level": convergence_noise_criterion[
+            "multiplicative_noise_level"
+        ],
+        "noise.additive_noise_level": convergence_noise_criterion[
+            "additive_noise_level"
+        ],
+        "interpolation.precondition": scale_interpolation_system,
+        "restarts.use_restarts": restart_options["use_restarts"],
+        "restarts.max_unsuccessful_restarts": restart_options["max_unsuccessful"],
+        "restarts.rhoend_scale": restart_options["min_trust_region_scaling_after"],
+        "restarts.use_soft_restarts": restart_options["use_soft"],
+        "restarts.soft.move_xk": restart_options["move_current_point_at_soft"],
+        "restarts.soft.max_fake_successful_steps": restart_options[
+            "max_iterations_without_new_best_after_soft"
+        ],  # noqa: E501
+        "restarts.auto_detect": restart_options["automatic_detection"],
+        "restarts.auto_detect.history": restart_options[
+            "n_iterations_for_automatc_detection"
+        ],  # noqa: E501
+        "restarts.auto_detect.min_correl": restart_options[
+            "min_correlations_for_automatic_detection"
+        ],
+        "restarts.soft.num_geom_steps": restart_options["points_to_move_at_soft"],
+    }
+
+    return advanced_options, restart_options
 
 
 def _change_evals_per_point_interface(func):

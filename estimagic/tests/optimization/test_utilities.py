@@ -7,7 +7,7 @@ from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
-from estimagic.optimization.utilities import calculate_initial_trust_region_radius
+from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 from estimagic.optimization.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.optimization.utilities import cov_matrix_to_params
 from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
@@ -146,14 +146,14 @@ def test_hash_array():
 def test_initial_trust_radius_small_x():
     x = np.array([0.01, 0.01])
     expected = 0.1
-    res = calculate_initial_trust_region_radius(x)
+    res = calculate_trustregion_initial_radius(x)
     assert expected == pytest.approx(res, abs=1e-8)
 
 
 def test_initial_trust_radius_large_x():
     x = np.array([20.5, 10])
     expected = 2.05
-    res = calculate_initial_trust_region_radius(x)
+    res = calculate_trustregion_initial_radius(x)
     assert expected == pytest.approx(res, abs=1e-8)
 
 

@@ -266,7 +266,7 @@ def hash_array(arr):
     return sha1(arr.tobytes()).hexdigest()
 
 
-def calculate_initial_trust_region_radius(x):
+def calculate_trustregion_initial_radius(x):
     """Calculate the initial trust region radius.
 
     It is calculated as :math:`0.1\max(\|x\|_{\infty}, 1)`.
