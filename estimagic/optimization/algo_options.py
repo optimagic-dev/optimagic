@@ -163,45 +163,50 @@ r"""float: Threshold for when to call the safety step.
 
 """
 
-TRUST_REGION_OPTIONS = {
-    "threshold_successful": 0.1,
-    "threshold_very_successful": 0.7,
-    "reduction_when_not_successful": None,
-    "increase_after_success": 2.0,
-    "increase_after_large_success": 4.0,
-    "min_decrease": None,
-    "update_from_min_trust_region": None,
-}
-r"""dict: Options how the trust region is contracted and expanded.
-
-    Possible entries are:
-
-        threshold_successful (float): Minimum share of the predicted
-            improvement that has to be realized for an iteration to count as successful.
-        threshold_very_succesful (float): Share of predicted improvement
-            that has to be surpassed for an iteration to count as very successful.
-        reduction_when_not_successful (float): Ratio by which to
-            decrease the trust region radius when realized improvement does not match
-            the ``threshold_for_successful_iteration``. The default is 0.98 if
-            the criterion is noisy and 0.5 else.
-        increase_after_success (float): Ratio by which to increase
-            the trust region radius :math:`\Delta_k` in very successful iterations
-            (:math:`\gamma_{inc}` in the notation of the paper).
-        increase_after_large_success (float):
-            Ratio of the proposed step ($\|s_k\|$) by which to increase the
-            trust region radius (:math:`\Delta_k`) in very successful iterations
-            (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
-        min_decrease (float):
-            Ratio by which to decrease the minimal trust region radius
-            (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
-            Default is 0.9 if the criterion is noisy and 0.1 else.
-        update_from_min_trust_region (float):
-            Ratio of the current minimum trust region (:math:`\rho_k`) by which
-            to decrease the actual trust region radius (:math:`\Delta_k`)
-            when the minimum is reduced (:math:`\alpha_2` in the notation of the paper).
-            Default is 0.95 if the criterion is noisy and 0.5 else.
+TRUSTREGION_THRESHOLD_SUCCESSFUL = 0.1
+"""float: Share of the predicted improvement that has to be achieved for a trust
+    region iteration to count as successful.
 
 """
+
+TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL = 0.7
+"""float: Share of predicted improvement that has to be achieved for a trust region
+    iteration to count as very successful.``criterion_noisy``
+
+"""
+
+TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL = None
+"""float: Ratio by which to decrease the trust region radius when realized improvement
+    does not match the ``threshold_successful``. The default is 0.98 if the criterion
+    is noisy and 0.5 else.
+
+"""
+
+TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL = 2.0
+r"""float: Ratio by which to increase the upper trust region radius :math:`\Delta_k`
+    in very successful iterations (:math:`\gamma_{inc}` in the notation of the paper).
+
+"""
+
+TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL = 4.0
+r"""float: Ratio of the proposed step ($\|s_k\|$) by which to increase the upper trust
+    region radius (:math:`\Delta_k`) in very successful iterations
+    (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
+
+"""
+
+TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS = None
+r"""float: Ratio by which to shrink the lower trust region radius (:math:`\rho_k`)
+    (:math:`\alpha_1` in the notation of the paper). Default is 0.9 if
+    the criterion is noisy and 0.1 else.
+
+"""
+
+TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION = None
+r"""float: Ratio of the current lower trust region (:math:`\rho_k`) by which to shrink
+    the upper trust region radius (:math:`\Delta_k`) when the lower one is reduced
+    (:math:`\alpha_2` in the notation of the paper). Default is 0.95 if the
+    criterion is noisy and 0.5 else."""
 
 """
 ---------------------------------------------
@@ -235,7 +240,7 @@ CLIP_CRITERION_IF_OVERFLOWING = True
 """bool: Whether to clip the criterion to avoid ``OverflowError``."""
 
 
-SCALE_INTERPOLATION_SYSTEM = True
+TRUSTREGION_PRECONDITION_INTERPOLATION = True
 """bool: whether to scale the interpolation linear system to improve conditioning."""
 
 

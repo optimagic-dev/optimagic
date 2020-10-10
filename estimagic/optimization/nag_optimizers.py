@@ -13,11 +13,23 @@ from estimagic.optimization.algo_options import NOISE_CORRECTED_CRITERION_TOLERA
 from estimagic.optimization.algo_options import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.optimization.algo_options import RANDOM_INITIAL_DIRECTIONS
 from estimagic.optimization.algo_options import RESTART_OPTIONS
-from estimagic.optimization.algo_options import SCALE_INTERPOLATION_SYSTEM
 from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import SLOW_IMPROVEMENT_TOLERANCE
 from estimagic.optimization.algo_options import THRESHOLD_FOR_SAFETY_STEP
-from estimagic.optimization.algo_options import TRUST_REGION_OPTIONS
+from estimagic.optimization.algo_options import TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL
+from estimagic.optimization.algo_options import (
+    TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,
+)
+from estimagic.optimization.algo_options import TRUSTREGION_PRECONDITION_INTERPOLATION
+from estimagic.optimization.algo_options import (
+    TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
+)
+from estimagic.optimization.algo_options import (
+    TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,
+)
+from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_SUCCESSFUL
+from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
+from estimagic.optimization.algo_options import TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION
 from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:
@@ -42,11 +54,17 @@ def nag_dfols(
     trustregion_initial_radius=None,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    n_interpolation_points=None,
+    trustregion_n_interpolation_points=None,
     interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
-    scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
-    trust_region_options=None,
+    trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
+    trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
+    trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
+    trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
+    trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
+    trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
+    trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
+    trustregion_update_from_min_trust_region=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
     noise_corrected_criterion_tolerance=NOISE_CORRECTED_CRITERION_TOLERANCE,
     restart_options=None,
     slow_improvement_tolerance=None,
@@ -146,8 +164,8 @@ def nag_dfols(
             randomly (as opposed to coordinate directions).
         random_directions_orthogonal (bool): Whether to make random initial directions
             orthogonal.
-        n_interpolation_points (int): The number of interpolation points to use.
-            The default is :code:`len(x) + 1`. If using restarts, this is the
+        trustregion_n_interpolation_points (int): The number of interpolation points to
+            use. The default is :code:`len(x) + 1`. If using restarts, this is the
             number of points to use in the first run of the solver, before any restarts.
         interpolation_rounding_error (float): Internally, all interpolation
             points are stored with respect to a base point $x_b$; that is,
@@ -159,8 +177,30 @@ def nag_dfols(
         threshold_for_safety_step (float): Threshold for when to call the safety step,
             :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`, where
             :math:`\|s_k\|` is the proposed step size.
-        trust_region_options (dict): Options how the trust region is contracted and
-            expanded.
+        trustregion_threshold_successful (float): Share of the predicted improvement
+            that has to be achieved for a trust region iteration to count as successful.
+        trustregion_threshold_very_successful (float): Share of the predicted
+            improvement that has to be achieved for a trust region iteration to count
+            as very successful.
+        trustregion_shrinking_factor_not_successful (float): Ratio by which to shrink
+            the trust region radius when realized improvement does not match the
+            ``threshold_successful``. The default is 0.98 if the criterion is noisy
+            and 0.5 else.
+        trustregion_expansion_factor_successful (float): Ratio by which to increase
+            the upper trust region radius :math:`\Delta_k` in very successful
+            iterations (:math:`\gamma_{inc}` in the notation of the paper).
+        trustregion_expansion_factor_very_successful (float): Ratio of the proposed
+            step ($\|s_k\|$) by which to increase the upper trust on radius
+            (:math:`\Delta_k`) in very successful iterations.
+        trustregion_shrinking_factor_lower_radius (float): Ratio by which to shrink
+            the lower trust region radius (:math:`\rho_k`) (:math:`\alpha_1` in the
+            notation of the paper). Default is 0.9 if the criterion is noisy and 0.1
+            else.
+        trustregion_update_from_min_trust_region (float): Ratio of the current lower
+            trust region (:math:`\rho_k`) by which to shrink the upper trust region
+            radius (:math:`\Delta_k`) when the lower one is reduced (
+            :math:`\alpha_2` in the notation of the paper). Default is 0.95 if the
+            criterion is noisy and 0.5 else.
         slow_improvement_tolerance (dict): Arguments for converging when the evaluations
             over several iterations only yield small improvements on average.
         noise_corrected_criterion_tolerance (float): Stop when the evaluations on the
@@ -172,8 +212,8 @@ def nag_dfols(
         .. warning::
             Very small values, as in most other tolerances don't make sense here.
 
-        scale_interpolation_system (bool): Whether or not to scale the interpolation
-            system to improve conditioning.
+        trustregion_precondition_interpolation (bool): Whether or not to scale the
+            interpolation system to improve conditioning.
         relative_to_start_value_criterion_tolerance (float):
             Terminate if a point is reached where the ratio of the criterion value
             to the criterion value at the start params is below this value, i.e. if
@@ -183,7 +223,7 @@ def nag_dfols(
             is actually achieved.
         n_extra_points_to_move_when_sufficient_improvement (int): The number of extra
             points (other than accepting the trust region step) to move. Useful when
-            ``n_interpolation_points > len(x) + 1``.
+            ``trustregion_n_interpolation_points > len(x) + 1``.
         n_increase_move_points_at_restart (int): The number by which to increase
             ``n_extra_points_to_move_when_sufficient_improvement`` at each restart.
         use_momentum_method_to_move_extra_points (bool): If moving extra points in
@@ -226,8 +266,14 @@ def nag_dfols(
         clip_criterion_if_overflowing=clip_criterion_if_overflowing,
         random_initial_directions=random_initial_directions,
         random_directions_orthogonal=random_directions_orthogonal,
-        scale_interpolation_system=scale_interpolation_system,
-        trust_region_options=trust_region_options,
+        trustregion_precondition_interpolation=trustregion_precondition_interpolation,
+        trustregion_threshold_successful=trustregion_threshold_successful,
+        trustregion_threshold_very_successful=trustregion_threshold_very_successful,
+        trustregion_shrinking_factor_not_successful=trustregion_shrinking_factor_not_successful,  # noqa: E501
+        trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
+        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqao:E501
+        trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
+        trustregion_update_from_min_trust_region=trustregion_update_from_min_trust_region,  # noqa: E501
     )
 
     fast_start_options = _build_options_dict(
@@ -318,7 +364,7 @@ def nag_dfols(
         bounds=(lower_bounds, upper_bounds),
         maxfun=max_criterion_evaluations,
         rhobeg=trustregion_initial_radius,
-        npt=n_interpolation_points,
+        npt=trustregion_n_interpolation_points,
         rhoend=absolute_params_tolerance,
         nsamples=noise_n_evals_per_point,
         objfun_has_noise=noise_additive_level or noise_multiplicative_level,
@@ -351,11 +397,17 @@ def nag_pybobyqa(
     trustregion_initial_radius=None,
     random_initial_directions=RANDOM_INITIAL_DIRECTIONS,
     random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    n_interpolation_points=None,
+    trustregion_n_interpolation_points=None,
     interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
-    scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
-    trust_region_options=None,
+    trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
+    trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
+    trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
+    trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
+    trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
+    trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
+    trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
+    trustregion_update_from_min_trust_region=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
     frobenius_for_interpolation_problem=True,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
@@ -413,15 +465,15 @@ def nag_pybobyqa(
             randomly (as opposed to coordinate directions).
         random_directions_orthogonal (bool): Whether to make random initial directions
             orthogonal.
-        n_interpolation_points (int): The number of interpolation points to use.
-            With $n=len(x)$ the default is $2n+1$ if the criterion is not noisy.
+        trustregion_n_interpolation_points (int): The number of interpolation points to
+            use. With $n=len(x)$ the default is $2n+1$ if the criterion is not noisy.
             Otherwise, it is set to $(n+1)(n+2)/2)$.
 
             Larger values are particularly useful for noisy problems.
             Py-BOBYQA requires
 
             .. math::
-                n + 1 \leq \text{n_interpolation_points} \leq (n+1)(n+2)/2.
+                n + 1 \leq \text{trustregion_n_interpolation_points} \leq (n+1)(n+2)/2.
 
         noise_n_evals_per_point (callable): How often to evaluate the criterion
             function at each point.
@@ -445,8 +497,6 @@ def nag_pybobyqa(
             :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`
             where $s_k$ is the proposed step size and :math:`\rho_k` the current trust
             region radius.
-        trust_region_options (dict): Options how the trust region is contracted and
-            expanded.
         clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
             raise an ``OverflowError`` otherwise.
         absolute_criterion_value_tolerance (float): Terminate successfully if
@@ -463,8 +513,32 @@ def nag_pybobyqa(
 
         slow_improvement_tolerance (dict): Arguments for converging when the evaluations
             over several iterations only yield small improvements on average.
-        scale_interpolation_system (bool): Whether or not to scale the interpolation
-            system to improve conditioning.
+        trustregion_precondition_interpolation (bool): Whether or not to scale the
+            interpolation system to improve conditioning.
+        trustregion_threshold_successful (float): Share of the predicted improvement
+            that has to be achieved for a trust region iteration to count as successful.
+        trustregion_threshold_very_successful (float): Share of the predicted
+            improvement that has to be achieved for a trust region iteration to count
+            as very successful.
+        trustregion_shrinking_factor_not_successful (float): Ratio by which to shrink
+            the trust region radius when realized improvement does not match the
+            ``threshold_successful``. The default is 0.98 if the criterion is noisy
+            and 0.5 else.
+        trustregion_expansion_factor_successful (float): Ratio by which to increase
+            the upper trust region radius :math:`\Delta_k` in very successful
+                iterations (:math:`\gamma_{inc}` in the notation of the paper).
+        trustregion_expansion_factor_very_successful (float): Ratio of the proposed
+            step ($\|s_k\|$) by which to increase the upper trust on radius
+            (:math:`\Delta_k`) in very successful iterations.
+        trustregion_shrinking_factor_lower_radius (float): Ratio by which to shrink
+            the lower trust region radius (:math:`\rho_k`)
+            (:math:`\alpha_1` in the notation of the paper). Default is 0.9 if
+            the criterion is noisy and 0.1 else.
+        trustregion_update_from_min_trust_region (float): Ratio of the current lower
+            trust region (:math:`\rho_k`) by which to shrink upper trust region radius
+            (:math:`\Delta_k`) when the lower one is reduced (:math:`\alpha_2` in the
+            notation of the paper). Default is 0.95 if the criterion is noisy and
+            0.5 else.
         frobenius_for_interpolation_problem (bool): Whether to solve the
             underdetermined quadratic interpolation problem by minimizing the Frobenius
             norm of the Hessian, or change in Hessian.
@@ -509,8 +583,14 @@ def nag_pybobyqa(
         clip_criterion_if_overflowing=clip_criterion_if_overflowing,
         random_initial_directions=random_initial_directions,
         random_directions_orthogonal=random_directions_orthogonal,
-        scale_interpolation_system=scale_interpolation_system,
-        trust_region_options=trust_region_options,
+        trustregion_precondition_interpolation=trustregion_precondition_interpolation,
+        trustregion_threshold_successful=trustregion_threshold_successful,
+        trustregion_threshold_very_successful=trustregion_threshold_very_successful,
+        trustregion_shrinking_factor_not_successful=trustregion_shrinking_factor_not_successful,  # noqa: E501
+        trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
+        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqao:E501
+        trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
+        trustregion_update_from_min_trust_region=trustregion_update_from_min_trust_region,  # noqa: E501
     )
 
     pybobyqa_options = {
@@ -542,7 +622,7 @@ def nag_pybobyqa(
         print_progress=False,
         objfun_has_noise=noise_additive_level or noise_multiplicative_level,
         nsamples=noise_n_evals_per_point,
-        npt=n_interpolation_points,
+        npt=trustregion_n_interpolation_points,
         rhoend=absolute_params_tolerance,
         seek_global_minimum=seek_global_optimum,
     )
@@ -598,8 +678,14 @@ def _create_nag_advanced_options(
     clip_criterion_if_overflowing,
     random_initial_directions,
     random_directions_orthogonal,
-    scale_interpolation_system,
-    trust_region_options,
+    trustregion_precondition_interpolation,
+    trustregion_threshold_successful,
+    trustregion_threshold_very_successful,
+    trustregion_shrinking_factor_not_successful,
+    trustregion_expansion_factor_successful,
+    trustregion_expansion_factor_very_successful,
+    trustregion_shrinking_factor_lower_radius,
+    trustregion_update_from_min_trust_region,
 ):
     if noise_multiplicative_level is not None and noise_additive_level is not None:
         raise ValueError("You cannot specify both multiplicative and additive noise.")
@@ -607,9 +693,6 @@ def _create_nag_advanced_options(
         trustregion_initial_radius = calculate_trustregion_initial_radius(x)
     # -np.inf as a default leads to errors when building the documentation with sphinx.
     noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
-    trust_region_options = _build_options_dict(
-        user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
-    )
     restart_options = _build_options_dict(
         user_input=restart_options, default_options=RESTART_OPTIONS,
     )
@@ -624,15 +707,13 @@ def _create_nag_advanced_options(
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
         "init.random_initial_directions": random_initial_directions,
         "init.random_directions_make_orthogonal": random_directions_orthogonal,
-        "tr_radius.eta1": trust_region_options["threshold_successful"],
-        "tr_radius.eta2": trust_region_options["threshold_very_successful"],
-        "tr_radius.gamma_dec": trust_region_options["reduction_when_not_successful"],
-        "tr_radius.gamma_inc": trust_region_options["increase_after_success"],
-        "tr_radius.gamma_inc_overline": trust_region_options[
-            "increase_after_large_success"
-        ],
-        "tr_radius.alpha1": trust_region_options["min_decrease"],
-        "tr_radius.alpha2": trust_region_options["update_from_min_trust_region"],
+        "tr_radius.eta1": trustregion_threshold_successful,
+        "tr_radius.eta2": trustregion_threshold_very_successful,
+        "tr_radius.gamma_dec": trustregion_shrinking_factor_not_successful,
+        "tr_radius.gamma_inc": trustregion_expansion_factor_successful,
+        "tr_radius.gamma_inc_overline": trustregion_expansion_factor_very_successful,
+        "tr_radius.alpha1": trustregion_shrinking_factor_lower_radius,
+        "tr_radius.alpha2": trustregion_update_from_min_trust_region,
         "general.rounding_error_constant": interpolation_rounding_error,
         "general.safety_step_thresh": threshold_for_safety_step,
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
@@ -652,7 +733,7 @@ def _create_nag_advanced_options(
         "noise.quit_on_noise_level": noise_corrected_criterion_tolerance > 0
         and (noise_multiplicative_level or noise_additive_level),
         "noise.scale_factor_for_quit": noise_corrected_criterion_tolerance,
-        "interpolation.precondition": scale_interpolation_system,
+        "interpolation.precondition": trustregion_precondition_interpolation,
         "restarts.use_restarts": restart_options["use_restarts"],
         "restarts.max_unsuccessful_restarts": restart_options["max_unsuccessful"],
         "restarts.rhoend_scale": restart_options["min_trust_region_scaling_after"],
