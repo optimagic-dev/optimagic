@@ -69,6 +69,18 @@ ABSOLUTE_PARAMS_TOLERANCE = 0
 
 """
 
+NOISE_CORRECTED_CRITERION_TOLERANCE = 1.0
+"""float: Stop when the evaluations on the set of interpolation points all fall within
+    this factor of the noise level. The default is 1, i.e. when all evaluations are
+    within the noise level. If you want to not use this criterion but still flag your
+    criterion function as noisy, set this tolerance to 0.0.
+
+    .. warning::
+        Very small values, as in most other tolerances don't make sense here.
+
+"""
+
+
 MAX_CRITERION_EVALUATIONS = 1_000_000
 """int:
     If the maximum number of function evaluation is reached, the optimization stops
@@ -125,33 +137,6 @@ SLOW_IMPROVEMENT_TOLERANCE = {
 
 """
 
-
-CONVERGENCE_NOISE_CRITERION = {
-    "noise_scale_factor_for_quit": 1.0,
-    "active": None,
-    "multiplicative_noise_level": None,
-    "additive_noise_level": None,
-}
-"""dict: Arguments for converging when the evaluations in the trust region all fall
-    within a scaled version of the noise at the point of interest. Entries are:
-
-    active (bool): Flag to quit (or restart) if
-        all criterion evaluations of the trust region are within the some scaled
-        version of the noise level at the point of interest.
-        Default is ``False`` for smooth problems or ``True`` for noisy problems.
-        The remaining arguments determine this scaling.
-    noise_scale_factor_for_quit (float): Factor of the noise level to use in
-        termination criterion.
-    multiplicative_noise_level (float): Multiplicative noise level in :math:`f`.
-        Can only specify one of multiplicative or additive noise levels.
-        Default is :code:`None`.
-    additive_noise_level (float): Additive noise level in :math:`f`.
-        Can only specify one of multiplicative or additive noise levels.
-        Default is :code:`None`.
-
-"""
-
-
 """
 =====================================================================================
 Other Common Tuning Parameters for Optimization Algorithms
@@ -198,7 +183,7 @@ r"""dict: Options how the trust region is contracted and expanded.
         reduction_when_not_successful (float): Ratio by which to
             decrease the trust region radius when realized improvement does not match
             the ``threshold_for_successful_iteration``. The default is 0.98 if
-            ``criterion_noisy`` and 0.5 else.
+            the criterion is noisy and 0.5 else.
         increase_after_success (float): Ratio by which to increase
             the trust region radius :math:`\Delta_k` in very successful iterations
             (:math:`\gamma_{inc}` in the notation of the paper).
@@ -209,12 +194,12 @@ r"""dict: Options how the trust region is contracted and expanded.
         min_decrease (float):
             Ratio by which to decrease the minimal trust region radius
             (:math:`\rho_k`) (:math:`\alpha_1` in the notation of the paper).
-            Default is 0.9 if ``criterion_noisy`` and 0.1 else.
+            Default is 0.9 if the criterion is noisy and 0.1 else.
         update_from_min_trust_region (float):
             Ratio of the current minimum trust region (:math:`\rho_k`) by which
             to decrease the actual trust region radius (:math:`\Delta_k`)
             when the minimum is reduced (:math:`\alpha_2` in the notation of the paper).
-            Default is 0.95 if ``criterion_noisy`` and 0.5 else.
+            Default is 0.95 if the criterion is noisy and 0.5 else.
 
 """
 
@@ -234,13 +219,6 @@ If `False` use the coordinate directions.
 RANDOM_DIRECTIONS_ORTHOGONAL = True
 """bool: Whether to make randomly drawn initial directions orthogonal."""
 
-CRITERION_NOISY = False
-"""bool: Whether the criterion function is noisy.
-
-    Your function is noisy if it does not always return the same value when evaluated
-    at the same parameter values.
-
-"""
 
 INTERPOLATION_ROUNDING_ERROR = 0.1
 r"""float:
@@ -289,7 +267,7 @@ r"""dict: Options for restarting the optimization.
         use_restarts (bool): Whether to do restarts when the minimum trust
             region radius (:math:`\rho_k`) reaches the stopping criterion
             (:math:`\rho_{end}`), or (optionally) when all points are within noise
-            level. Default is ``True`` if ``criterion_noisy``.
+            level. Default is ``True`` if the criterion is noisy.
         max_unsuccessful (int): maximum number of consecutive unsuccessful
             restarts allowed (i.e. restarts which did not outperform the best known
             value from earlier runs).

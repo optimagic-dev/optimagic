@@ -6,11 +6,10 @@ import numpy as np
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.optimization.algo_options import CLIP_CRITERION_IF_OVERFLOWING
-from estimagic.optimization.algo_options import CONVERGENCE_NOISE_CRITERION
-from estimagic.optimization.algo_options import CRITERION_NOISY
 from estimagic.optimization.algo_options import FAST_START_OPTIONS
 from estimagic.optimization.algo_options import INTERPOLATION_ROUNDING_ERROR
 from estimagic.optimization.algo_options import MAX_CRITERION_EVALUATIONS
+from estimagic.optimization.algo_options import NOISE_CORRECTED_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.optimization.algo_options import RANDOM_INITIAL_DIRECTIONS
 from estimagic.optimization.algo_options import RESTART_OPTIONS
@@ -34,7 +33,8 @@ def nag_dfols(
     lower_bounds,
     upper_bounds,
     *,
-    criterion_noisy=CRITERION_NOISY,
+    noise_multiplicative_level=None,
+    noise_additive_level=None,
     noise_n_evals_per_point=None,
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
@@ -47,7 +47,7 @@ def nag_dfols(
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
     scale_interpolation_system=SCALE_INTERPOLATION_SYSTEM,
     trust_region_options=None,
-    convergence_noise_criterion=CONVERGENCE_NOISE_CRITERION,
+    noise_corrected_criterion_tolerance=NOISE_CORRECTED_CRITERION_TOLERANCE,
     restart_options=None,
     slow_improvement_tolerance=None,
     relative_to_start_value_criterion_tolerance=0.0,
@@ -108,7 +108,7 @@ def nag_dfols(
     4. when all evaluations on the trust region points fall within a scaled version of
        the noise level of the criterion function. This is only applicable if the
        criterion function is noisy. You can specify this criterion with
-       ``convergence_noise_criterion``.
+       ``noise_corrected_criterion_tolerance``.
 
     DF-OLS supports restarting the optimization and dynamically growing the initial set.
     For more information see
@@ -116,12 +116,16 @@ def nag_dfols(
     and :cite:`Cartis2018b`.
 
     Args:
-        criterion_noisy (bool): Whether the criterion function is noisy, i.e. whether
-            it does not always return the same value when evaluated at the same
-            parameters.
+        noise_multiplicative_level (float): Used for determining the presence of noise
+            and the convergence by all interpolation points being within noise level.
+            0 means no multiplicative noise. Only multiplicative or additive is
+            supported.
+        noise_additive_level (float): Used for determining the presence of noise
+            and the convergence by all interpolation points being within noise level.
+            0 means no additive noise. Only multiplicative or additive is supported.
         noise_n_evals_per_point (callable): How often to evaluate the criterion
             function at each point.
-            This is only applicable for criterion functions with stochastic noise,
+            This is only applicable for criterion functions with noise,
             when averaging multiple evaluations at the same point produces a more
             accurate value.
             The input parameters are the ``trust_region_radius`` (:math:`\Delta`),
@@ -159,9 +163,15 @@ def nag_dfols(
             expanded.
         slow_improvement_tolerance (dict): Arguments for converging when the evaluations
             over several iterations only yield small improvements on average.
-        convergence_noise_criterion (dict): Arguments for converging when the
-            evaluations in the trust region all fall within a scaled version of the
-            noise at the point of interest.
+        noise_corrected_criterion_tolerance (float): Stop when the evaluations on the
+            set of interpolation points all fall within this factor of the noise level.
+            The default is 1, i.e. when all evaluations are within the noise level.
+            If you want to not use this criterion but still flag your
+            criterion function as noisy, set this tolerance to 0.0.
+
+        .. warning::
+            Very small values, as in most other tolerances don't make sense here.
+
         scale_interpolation_system (bool): Whether or not to scale the interpolation
             system to improve conditioning.
         relative_to_start_value_criterion_tolerance (float):
@@ -204,9 +214,11 @@ def nag_dfols(
 
     advanced_options, restart_options = _create_nag_advanced_options(
         x=x,
-        trustregion_initial_radius=trustregion_initial_radius,
+        noise_multiplicative_level=noise_multiplicative_level,
+        noise_additive_level=noise_additive_level,
         noise_n_evals_per_point=noise_n_evals_per_point,
-        convergence_noise_criterion=convergence_noise_criterion,
+        noise_corrected_criterion_tolerance=noise_corrected_criterion_tolerance,
+        trustregion_initial_radius=trustregion_initial_radius,
         restart_options=restart_options,
         slow_improvement_tolerance=slow_improvement_tolerance,
         interpolation_rounding_error=interpolation_rounding_error,
@@ -309,7 +321,7 @@ def nag_dfols(
         npt=n_interpolation_points,
         rhoend=absolute_params_tolerance,
         nsamples=noise_n_evals_per_point,
-        objfun_has_noise=criterion_noisy,
+        objfun_has_noise=noise_additive_level or noise_multiplicative_level,
         scaling_within_bounds=False,
         do_logging=False,
         print_progress=False,
@@ -325,14 +337,15 @@ def nag_pybobyqa(
     lower_bounds,
     upper_bounds,
     *,
-    criterion_noisy=CRITERION_NOISY,
+    noise_multiplicative_level=None,
+    noise_additive_level=None,
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
     restart_options=None,
     seek_global_optimum=False,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
     absolute_criterion_value_tolerance=None,
-    convergence_noise_criterion=None,
+    noise_corrected_criterion_tolerance=None,
     slow_improvement_tolerance=None,
     noise_n_evals_per_point=None,
     trustregion_initial_radius=None,
@@ -381,6 +394,13 @@ def nag_pybobyqa(
        criterion function is noisy.
 
     Args:
+        noise_multiplicative_level (float): Used for determining the presence of noise
+            and the convergence by all interpolation points being within noise level.
+            0 means no multiplicative noise. Only multiplicative or additive is
+            supported.
+        noise_additive_level (float): Used for determining the presence of noise
+            and the convergence by all interpolation points being within noise level.
+            0 means no additive noise. Only multiplicative or additive is supported.
         absolute_params_tolerance (float): Minimum allowed value of the trust region
             radius, which determines when a successful termination occurs.
         max_criterion_evaluations (int): If the maximum number of function evaluation is
@@ -394,7 +414,7 @@ def nag_pybobyqa(
         random_directions_orthogonal (bool): Whether to make random initial directions
             orthogonal.
         n_interpolation_points (int): The number of interpolation points to use.
-            With $n=len(x)$ the default is $2n+1$ if not ``criterion_noisy``.
+            With $n=len(x)$ the default is $2n+1$ if the criterion is not noisy.
             Otherwise, it is set to $(n+1)(n+2)/2)$.
 
             Larger values are particularly useful for noisy problems.
@@ -403,12 +423,9 @@ def nag_pybobyqa(
             .. math::
                 n + 1 \leq \text{n_interpolation_points} \leq (n+1)(n+2)/2.
 
-        criterion_noisy (bool): Whether the criterion function is noisy, i.e. whether
-            it does not always return the same value when evaluated at the same
-            parameters.
         noise_n_evals_per_point (callable): How often to evaluate the criterion
             function at each point.
-            This is only applicable for criterion functions with stochastic noise,
+            This is only applicable for criterion functions with noise,
             when averaging multiple evaluations at the same point produces a more
             accurate value.
             The input parameters are the ``trust_region_radius`` (``delta``),
@@ -435,9 +452,15 @@ def nag_pybobyqa(
         absolute_criterion_value_tolerance (float): Terminate successfully if
             the criterion value falls below this threshold. This is deactivated
             (i.e. set to -inf) by default.
-        convergence_noise_criterion (dict): Arguments for converging when the
-            evaluations in the trust region all fall within a scaled version of the
-            noise at the point of interest.
+        noise_corrected_criterion_tolerance (float): Stop when the evaluations on the
+            set of interpolation points all fall within this factor of the noise level.
+            The default is 1, i.e. when all evaluations are within the noise level.
+            If you want to not use this criterion but still flag your
+            criterion function as noisy, set this tolerance to 0.0.
+
+        .. warning::
+            Very small values, as in most other tolerances don't make sense here.
+
         slow_improvement_tolerance (dict): Arguments for converging when the evaluations
             over several iterations only yield small improvements on average.
         scale_interpolation_system (bool): Whether or not to scale the interpolation
@@ -474,9 +497,11 @@ def nag_pybobyqa(
     )
     advanced_options, restart_options = _create_nag_advanced_options(
         x=x,
+        noise_multiplicative_level=noise_multiplicative_level,
+        noise_additive_level=noise_additive_level,
         trustregion_initial_radius=trustregion_initial_radius,
         noise_n_evals_per_point=noise_n_evals_per_point,
-        convergence_noise_criterion=convergence_noise_criterion,
+        noise_corrected_criterion_tolerance=noise_corrected_criterion_tolerance,
         restart_options=restart_options,
         slow_improvement_tolerance=slow_improvement_tolerance,
         interpolation_rounding_error=interpolation_rounding_error,
@@ -515,7 +540,7 @@ def nag_pybobyqa(
         scaling_within_bounds=False,
         do_logging=False,
         print_progress=False,
-        objfun_has_noise=criterion_noisy,
+        objfun_has_noise=noise_additive_level or noise_multiplicative_level,
         nsamples=noise_n_evals_per_point,
         npt=n_interpolation_points,
         rhoend=absolute_params_tolerance,
@@ -561,9 +586,11 @@ def _process_nag_result(nag_result_obj, len_x):
 
 def _create_nag_advanced_options(
     x,
+    noise_multiplicative_level,
+    noise_additive_level,
     trustregion_initial_radius,
     noise_n_evals_per_point,
-    convergence_noise_criterion,
+    noise_corrected_criterion_tolerance,
     restart_options,
     slow_improvement_tolerance,
     interpolation_rounding_error,
@@ -574,14 +601,12 @@ def _create_nag_advanced_options(
     scale_interpolation_system,
     trust_region_options,
 ):
+    if noise_multiplicative_level is not None and noise_additive_level is not None:
+        raise ValueError("You cannot specify both multiplicative and additive noise.")
     if trustregion_initial_radius is None:
         trustregion_initial_radius = calculate_trustregion_initial_radius(x)
     # -np.inf as a default leads to errors when building the documentation with sphinx.
     noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
-    convergence_noise_criterion = _build_options_dict(
-        user_input=convergence_noise_criterion,
-        default_options=CONVERGENCE_NOISE_CRITERION,
-    )
     trust_region_options = _build_options_dict(
         user_input=trust_region_options, default_options=TRUST_REGION_OPTIONS,
     )
@@ -622,16 +647,11 @@ def _create_nag_advanced_options(
         "slow.history_for_slow": slow_improvement_tolerance[
             "comparison_period_for_insufficient_improvement"
         ],
-        "noise.quit_on_noise_level": convergence_noise_criterion["active"],
-        "noise.scale_factor_for_quit": convergence_noise_criterion[
-            "noise_scale_factor_for_quit"
-        ],
-        "noise.multiplicative_noise_level": convergence_noise_criterion[
-            "multiplicative_noise_level"
-        ],
-        "noise.additive_noise_level": convergence_noise_criterion[
-            "additive_noise_level"
-        ],
+        "noise.multiplicative_noise_level": noise_multiplicative_level,
+        "noise.additive_noise_level": noise_additive_level,
+        "noise.quit_on_noise_level": noise_corrected_criterion_tolerance > 0
+        and (noise_multiplicative_level or noise_additive_level),
+        "noise.scale_factor_for_quit": noise_corrected_criterion_tolerance,
         "interpolation.precondition": scale_interpolation_system,
         "restarts.use_restarts": restart_options["use_restarts"],
         "restarts.max_unsuccessful_restarts": restart_options["max_unsuccessful"],
