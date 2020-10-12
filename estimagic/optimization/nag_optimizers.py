@@ -1,4 +1,5 @@
 """Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/]."""
+import warnings
 from functools import partial
 
 import numpy as np
@@ -6,7 +7,6 @@ import numpy as np
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.optimization.algo_options import CLIP_CRITERION_IF_OVERFLOWING
-from estimagic.optimization.algo_options import FAST_START_OPTIONS
 from estimagic.optimization.algo_options import INTERPOLATION_ROUNDING_ERROR
 from estimagic.optimization.algo_options import MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import NOISE_CORRECTED_CRITERION_TOLERANCE
@@ -20,6 +20,7 @@ from estimagic.optimization.algo_options import TRUSTREGION_EXPANSION_FACTOR_SUC
 from estimagic.optimization.algo_options import (
     TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,
 )
+from estimagic.optimization.algo_options import TRUSTREGION_FAST_START_OPTIONS
 from estimagic.optimization.algo_options import TRUSTREGION_PRECONDITION_INTERPOLATION
 from estimagic.optimization.algo_options import (
     TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
@@ -72,7 +73,7 @@ def nag_dfols(
     trustregion_n_extra_points_to_replace_successful=0,
     trustregion_method_to_move_extra_points="geometry_improving",
     n_increase_move_points_at_restart=0,
-    fast_start_options=None,
+    trustregion_fast_start_options=None,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -129,9 +130,8 @@ def nag_dfols(
        ``noise_corrected_criterion_tolerance``.
 
     DF-OLS supports restarting the optimization and dynamically growing the initial set.
-    For more information see
-    `their detailed documentation <https://numericalalgorithmsgroup.github.io/dfols/>`_
-    and :cite:`Cartis2018b`.
+    For more information see `their detailed documentation
+    <https://numericalalgorithmsgroup.github.io/dfols/>`_ and :cite:`Cartis2018b`.
 
     Args:
         noise_multiplicative_level (float): Used for determining the presence of noise
@@ -153,17 +153,11 @@ def nag_dfols(
             The function must return an integer.
             Default is no averaging (i.e. ``noise_n_evals_per_point(trust_region_radius,
             min_trust_region_radius, n_iterations, n_restarts) = 1``).
-        clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
-            raise an ``OverflowError`` otherwise.
-        max_criterion_evaluations (int): If the maximum number of function evaluation is
-            reached, the optimization stops but we do not count this as convergence.
-        absolute_params_tolerance (float): Minimum allowed value of the trust region
-            radius, which is one criterion for successful termination.
-        trustregion_initial_radius (float): Initial value of the trust region radius.
-        random_initial_directions (bool): Whether to draw the initial directions
-            randomly (as opposed to coordinate directions).
-        random_directions_orthogonal (bool): Whether to make random initial directions
-            orthogonal.
+        clip_criterion_if_overflowing (bool): see :ref:`algo_options`.
+        max_criterion_evaluations (int): see :ref:`algo_options`.
+        absolute_params_tolerance (float): see :ref:`algo_options`.
+        random_initial_directions (bool): see :ref:`algo_options`.
+        random_directions_orthogonal (bool): see :ref:`algo_options`.
         trustregion_n_interpolation_points (int): The number of interpolation points to
             use. The default is :code:`len(x) + 1`. If using restarts, this is the
             number of points to use in the first run of the solver, before any restarts.
@@ -182,27 +176,16 @@ def nag_dfols(
         trustregion_threshold_very_successful (float): Share of the predicted
             improvement that has to be achieved for a trust region iteration to count
             as very successful.
-        trustregion_shrinking_factor_not_successful (float): Ratio by which to shrink
-            the trust region radius when realized improvement does not match the
-            ``threshold_successful``. The default is 0.98 if the criterion is noisy
-            and 0.5 else.
+        trustregion_shrinking_factor_not_successful (float): see :ref:`algo_options`.
         trustregion_expansion_factor_successful (float): Ratio by which to increase
             the upper trust region radius :math:`\Delta_k` in very successful
             iterations (:math:`\gamma_{inc}` in the notation of the paper).
-        trustregion_expansion_factor_very_successful (float): Ratio of the proposed
-            step ($\|s_k\|$) by which to increase the upper trust on radius
-            (:math:`\Delta_k`) in very successful iterations.
-        trustregion_shrinking_factor_lower_radius (float): Ratio by which to shrink
-            the lower trust region radius (:math:`\rho_k`) (:math:`\alpha_1` in the
-            notation of the paper). Default is 0.9 if the criterion is noisy and 0.1
-            else.
-        trustregion_update_from_min_trust_region (float): Ratio of the current lower
-            trust region (:math:`\rho_k`) by which to shrink the upper trust region
-            radius (:math:`\Delta_k`) when the lower one is reduced (
-            :math:`\alpha_2` in the notation of the paper). Default is 0.95 if the
-            criterion is noisy and 0.5 else.
+        trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
+        trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
+        trustregion_update_from_min_trust_region (float): see :ref:`algo_options`.
         slow_improvement_tolerance (dict): Arguments for converging when the evaluations
-            over several iterations only yield small improvements on average.
+            over several iterations only yield small improvements on average, see
+            see :ref:`algo_options` for details.
         noise_corrected_criterion_tolerance (float): Stop when the evaluations on the
             set of interpolation points all fall within this factor of the noise level.
             The default is 1, i.e. when all evaluations are within the noise level.
@@ -212,8 +195,7 @@ def nag_dfols(
         .. warning::
             Very small values, as in most other tolerances don't make sense here.
 
-        trustregion_precondition_interpolation (bool): Whether or not to scale the
-            interpolation system to improve conditioning.
+        trustregion_precondition_interpolation (bool): see :ref:`algo_options`.
         relative_to_start_value_criterion_tolerance (float):
             Terminate if a point is reached where the ratio of the criterion value
             to the criterion value at the start params is below this value, i.e. if
@@ -229,8 +211,7 @@ def nag_dfols(
         trustregion_method_to_move_extra_points (str): If moving extra points in
             successful iterations, whether to use geometry improving steps or the
             momentum method. Can be "geometry_improving" or "momentum".
-        fast_start_options (dict): Options to start the optimization while building the
-            full size of the trust region model.
+        trustregion_fast_start_options (dict): see :ref:`algo_options`.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -284,21 +265,26 @@ def nag_dfols(
         trustregion_update_from_min_trust_region=trustregion_update_from_min_trust_region,  # noqa: E501
     )
 
-    fast_start_options = _build_options_dict(
-        user_input=fast_start_options, default_options=FAST_START_OPTIONS,
+    fast_start = _build_options_dict(
+        user_input=trustregion_fast_start_options,
+        default_options=TRUSTREGION_FAST_START_OPTIONS,
     )
+    if fast_start["floor_of_jacobian_singular_values"] != 1:
+        warnings.warn(
+            "Setting the `floor_of_jacobian_singular_values` is not supported by "
+            "DF-OLS as of version 1.2.1."
+        )
     if (
-        fast_start_options["shrink_upper_radius_in_safety_steps"]
-        and fast_start_options["full_geometry_improving_step"]
+        fast_start["shrink_upper_radius_in_safety_steps"]
+        and fast_start["full_geometry_improving_step"]
     ):
         raise ValueError(
-            "full_geometry_improving_step of the fast_start_options can only be True "
-            "if shrink_upper_radius_in_safety_steps is False."
+            "full_geometry_improving_step of the trustregion_fast_start_options can "
+            "only be True if shrink_upper_radius_in_safety_steps is False."
         )
-    (
-        perturb_jacobian,
-        perturb_trust_region,
-    ) = _get_fast_start_strategy_from_user_value(fast_start_options["strategy"])
+
+    (faststart_jac, faststart_step,) = _get_fast_start_method(fast_start["method"])
+
     if (
         restart_options["n_extra_interpolation_points_per_soft_reset"]
         < restart_options["n_extra_interpolation_points_per_soft_reset"]
@@ -309,8 +295,8 @@ def nag_dfols(
         )
 
     dfols_options = {
-        "growing.full_rank.use_full_rank_interp": perturb_jacobian,
-        "growing.perturb_trust_region_step": perturb_trust_region,
+        "growing.full_rank.use_full_rank_interp": faststart_jac,
+        "growing.perturb_trust_region_step": faststart_step,
         "restarts.hard.use_old_rk": restart_options["reuse_criterion_value_at_hard"],
         "restarts.auto_detect.min_chgJ_slope": restart_options[
             "min_model_slope_increase_for_automatic_detection"
@@ -331,32 +317,29 @@ def nag_dfols(
         "regression.num_extra_steps": trustregion_n_extra_points_to_replace_successful,
         "regression.momentum_extra_steps": trustregion_use_momentum,
         "regression.increase_num_extra_steps_with_restart": n_increase_move_points_at_restart,  # noqa: E501
-        "growing.ndirs_initial": fast_start_options["min_inital_points"],
-        "growing.delta_scale_new_dirns": fast_start_options[
-            "scaling_of_trust_region_step_perturbation"
+        "growing.ndirs_initial": fast_start["min_inital_points"],
+        "growing.delta_scale_new_dirns": fast_start[
+            "scale_of_trust_region_step_perturbation"
         ],
-        "growing.full_rank.scale_factor": fast_start_options[
-            "scaling_jacobian_perturb_components"
+        "growing.full_rank.scale_factor": fast_start[
+            "scale_of_jacobian_components_perturbation"
         ],
-        "growing.full_rank.min_sing_val": fast_start_options[
-            "jacobian_perturb_abs_floor_for_singular_values"
-        ],  # noqa: E501
-        "growing.full_rank.svd_max_jac_cond": fast_start_options[
-            "jacobian_perturb_max_condition_number"
+        "growing.full_rank.svd_max_jac_cond": fast_start[
+            "jacobian_max_condition_number"
         ],
-        "growing.do_geom_steps": fast_start_options["geometry_improving_steps"],
-        "growing.safety.do_safety_step": fast_start_options["safety_steps"],
-        "growing.safety.reduce_delta": fast_start_options[
+        "growing.do_geom_steps": fast_start["geometry_improving_steps"],
+        "growing.safety.do_safety_step": fast_start["safety_steps"],
+        "growing.safety.reduce_delta": fast_start[
             "shrink_upper_radius_in_safety_steps"
         ],
-        "growing.safety.full_geom_step": fast_start_options[
-            "full_geometry_improving_step"
+        "growing.safety.full_geom_step": fast_start["full_geometry_improving_step"],
+        "growing.reset_delta": fast_start["reset_trust_region_radius_after_fast_start"],
+        "growing.reset_rho": fast_start[
+            "reset_min_trust_region_radius_after_fast_start"
         ],
-        "growing.reset_delta": fast_start_options["reset_trust_region_radius_after"],
-        "growing.reset_rho": fast_start_options["reset_min_trust_region_radius_after"],
-        "growing.gamma_dec": fast_start_options["trust_region_decrease"],
-        "growing.num_new_dirns_each_iter": fast_start_options[
-            "n_search_directions_to_add_when_incomplete"
+        "growing.gamma_dec": fast_start["shrinking_factor_not_successful"],
+        "growing.num_new_dirns_each_iter": fast_start[
+            "n_extra_search_directions_per_iteration"
         ],
     }
 
@@ -463,16 +446,13 @@ def nag_pybobyqa(
             0 means no additive noise. Only multiplicative or additive is supported.
         absolute_params_tolerance (float): Minimum allowed value of the trust region
             radius, which determines when a successful termination occurs.
-        max_criterion_evaluations (int): If the maximum number of function evaluation is
-            reached, the optimization stops but we do not count this as convergence.
+        max_criterion_evaluations (int): see :ref:`algo_options`.
         trustregion_initial_radius (float): Initial value of the trust region radius.
         seek_global_optimum (bool): whether to apply the heuristic to escape local
             minima presented in :cite:`Cartis2018a`. Only applies for noisy criterion
             functions.
-        random_initial_directions (bool): Whether to draw the initial directions
-            randomly (as opposed to coordinate directions).
-        random_directions_orthogonal (bool): Whether to make random initial directions
-            orthogonal.
+        random_initial_directions (bool): see :ref:`algo_options`.
+        random_directions_orthogonal (bool): see :ref:`algo_options`.
         trustregion_n_interpolation_points (int): The number of interpolation points to
             use. With $n=len(x)$ the default is $2n+1$ if the criterion is not noisy.
             Otherwise, it is set to $(n+1)(n+2)/2)$.
@@ -494,19 +474,9 @@ def nag_pybobyqa(
             and how many restarts have been performed, ``n_restarts``.
             The function must return an integer.
             Default is no averaging (i.e. ``noise_n_evals_per_point(...) = 1``).
-        interpolation_rounding_error (float): Internally, all interpolation
-            points are stored with respect to a base point $x_b$; that is,
-            pybobyqa stores $\{y_t-x_b\}$, which reduces the risk of roundoff
-            errors. We shift $x_b$ to $x_k$ when
-            :math:`\|s_k\| \leq
-            \text{interpolation_rounding_error} \cdot \|x_k-x_b\|` where $s_k$ is the
-            proposed step size.
-        threshold_for_safety_step (float): Threshold for when to call the safety step,
-            :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`
-            where $s_k$ is the proposed step size and :math:`\rho_k` the current trust
-            region radius.
-        clip_criterion_if_overflowing (bool): Whether to clip the criterion if it would
-            raise an ``OverflowError`` otherwise.
+        interpolation_rounding_error (float): see :ref:`algo_options`.
+        threshold_for_safety_step (float): see :ref:`algo_options`.
+        clip_criterion_if_overflowing (bool): see :ref:`algo_options`.
         absolute_criterion_value_tolerance (float): Terminate successfully if
             the criterion value falls below this threshold. This is deactivated
             (i.e. set to -inf) by default.
@@ -516,41 +486,25 @@ def nag_pybobyqa(
             If you want to not use this criterion but still flag your
             criterion function as noisy, set this tolerance to 0.0.
 
-        .. warning::
-            Very small values, as in most other tolerances don't make sense here.
+            .. warning::
+                Very small values, as in most other tolerances don't make sense here.
 
         slow_improvement_tolerance (dict): Arguments for converging when the evaluations
-            over several iterations only yield small improvements on average.
-        trustregion_precondition_interpolation (bool): Whether or not to scale the
-            interpolation system to improve conditioning.
-        trustregion_threshold_successful (float): Share of the predicted improvement
-            that has to be achieved for a trust region iteration to count as successful.
-        trustregion_threshold_very_successful (float): Share of the predicted
-            improvement that has to be achieved for a trust region iteration to count
-            as very successful.
-        trustregion_shrinking_factor_not_successful (float): Ratio by which to shrink
-            the trust region radius when realized improvement does not match the
-            ``threshold_successful``. The default is 0.98 if the criterion is noisy
-            and 0.5 else.
-        trustregion_expansion_factor_successful (float): Ratio by which to increase
-            the upper trust region radius :math:`\Delta_k` in very successful
-                iterations (:math:`\gamma_{inc}` in the notation of the paper).
-        trustregion_expansion_factor_very_successful (float): Ratio of the proposed
-            step ($\|s_k\|$) by which to increase the upper trust on radius
-            (:math:`\Delta_k`) in very successful iterations.
-        trustregion_shrinking_factor_lower_radius (float): Ratio by which to shrink
-            the lower trust region radius (:math:`\rho_k`)
-            (:math:`\alpha_1` in the notation of the paper). Default is 0.9 if
-            the criterion is noisy and 0.1 else.
-        trustregion_update_from_min_trust_region (float): Ratio of the current lower
-            trust region (:math:`\rho_k`) by which to shrink upper trust region radius
-            (:math:`\Delta_k`) when the lower one is reduced (:math:`\alpha_2` in the
-            notation of the paper). Default is 0.95 if the criterion is noisy and
-            0.5 else.
+            over several iterations only yield small improvements on average, see
+            see :ref:`algo_options` for details.
+        trustregion_precondition_interpolation (bool): see :ref:`algo_options`.
+        trustregion_threshold_successful (float): see :ref:`algo_options`.
+        trustregion_threshold_very_successful (float): see :ref:`algo_options`.
+        trustregion_shrinking_factor_not_successful (float): see :ref:`algo_options`.
+        trustregion_expansion_factor_successful (float): see :ref:`algo_options`.
+        trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
+        trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
+        trustregion_update_from_min_trust_region (float): see :ref:`algo_options`.
         trustregion_minimum_change_hession_for_underdetermined_interpolation (bool):
             Whether to solve the underdetermined quadratic interpolation problem by
             minimizing the Frobenius norm of the Hessian, or change in Hessian.
-        restart_options (dict): Options for restarting the optimization.
+        restart_options (dict): Options for restarting the optimization,
+            see :ref:`algo_options` for details.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -669,6 +623,8 @@ def _process_nag_result(nag_result_obj, len_x):
         processed["solution_hessian"] = nag_result_obj.hessian
     except AttributeError:
         pass
+    if processed["message"].startswith("Error (bad input)"):
+        raise ValueError(processed["message"])
     return processed
 
 
@@ -812,19 +768,19 @@ def _build_options_dict(user_input, default_options):
     return full_options
 
 
-def _get_fast_start_strategy_from_user_value(user_value):
-    """Get perturb_jacobian and perturb_trust_region_step from user value."""
-    allowed_perturb_values = ["auto", "jacobian", "trust_region"]
-    if user_value not in allowed_perturb_values:
+def _get_fast_start_method(user_value):
+    """Get fast start method arguments from user value."""
+    allowed_values = ["auto", "jacobian", "trust_region"]
+    if user_value not in allowed_values:
         raise ValueError(
             "`perturb_jacobian_or_trust_region_step` must be one of "
-            f"{allowed_perturb_values}. You provided {user_value}."
+            f"{allowed_values}. You provided {user_value}."
         )
     if user_value == "auto":
-        perturb_jacobian = None
-        perturb_trust_region_step = None
+        faststart_jac = None
+        faststart_step = None
     else:
-        perturb_jacobian = user_value == "jacobian"
-        perturb_trust_region_step = not perturb_jacobian
+        faststart_jac = user_value == "jacobian"
+        faststart_step = not faststart_jac
 
-    return perturb_jacobian, perturb_trust_region_step
+    return faststart_jac, faststart_step

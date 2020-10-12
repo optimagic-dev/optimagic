@@ -2,9 +2,7 @@ import pytest
 
 from estimagic.optimization.nag_optimizers import _build_options_dict
 from estimagic.optimization.nag_optimizers import _change_evals_per_point_interface
-from estimagic.optimization.nag_optimizers import (
-    _get_fast_start_strategy_from_user_value,
-)
+from estimagic.optimization.nag_optimizers import _get_fast_start_method_from_user_value
 
 
 def test_change_evals_per_point_interface_none():
@@ -22,24 +20,24 @@ def test_change_evals_per_point_interface_func():
     assert res == expected
 
 
-def test_get_fast_start_strategy_from_user_value_auto():
-    res = _get_fast_start_strategy_from_user_value("auto")
+def test_get_fast_start_method_from_user_value_auto():
+    res = _get_fast_start_method_from_user_value("auto")
     assert res == (None, None)
 
 
-def test_get_fast_start_strategy_from_user_value_jacobian():
-    res = _get_fast_start_strategy_from_user_value("jacobian")
+def test_get_fast_start_method_from_user_value_jacobian():
+    res = _get_fast_start_method_from_user_value("jacobian")
     assert res == (True, False)
 
 
-def test_get_fast_start_strategy_from_user_value_trust():
-    res = _get_fast_start_strategy_from_user_value("trust_region")
+def test_get_fast_start_method_from_user_value_trust():
+    res = _get_fast_start_method_from_user_value("trust_region")
     assert res == (False, True)
 
 
-def test_get_fast_start_strategy_from_user_value_error():
+def test_get_fast_start_method_from_user_value_error():
     with pytest.raises(ValueError):
-        _get_fast_start_strategy_from_user_value("wrong_input")
+        _get_fast_start_method_from_user_value("wrong_input")
 
 
 def test_build_options_dict_none():

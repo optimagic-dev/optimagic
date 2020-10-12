@@ -327,22 +327,23 @@ r"""dict: Options for restarting the optimization.
 """
 
 
-FAST_START_OPTIONS = {
+TRUSTREGION_FAST_START_OPTIONS = {
     "min_inital_points": None,
-    "strategy": "auto",
-    "scaling_of_trust_region_step_perturbation": None,
-    "scaling_jacobian_perturb_components": 1e-2,
-    "scaling_jacobian_perturb_floor_of_singular_values": 1,  # not supported yet by NAG
-    "jacobian_perturb_abs_floor_for_singular_values": 1e-6,
-    "jacobian_perturb_max_condition_number": 1e8,
+    "method": "auto",
+    "scale_of_trust_region_step_perturbation": None,
+    "scale_of_jacobian_components_perturbation": 1e-2,
+    # the following will be growing.full_rank.min_sing_val
+    # but it not supported yet by DF-OLS.
+    "floor_of_jacobian_singular_values": 1,
+    "jacobian_max_condition_number": 1e8,
     "geometry_improving_steps": False,
     "safety_steps": True,
     "shrink_upper_radius_in_safety_steps": False,
     "full_geometry_improving_step": False,
-    "reset_trust_region_radius_after": False,
-    "reset_min_trust_region_radius_after": False,
-    "trust_region_decrease": None,
-    "n_search_directions_to_add_when_incomplete": 0,
+    "reset_trust_region_radius_after_fast_start": False,
+    "reset_min_trust_region_radius_after_fast_start": False,
+    "shrinking_factor_not_successful": None,
+    "n_extra_search_directions_per_iteration": 0,
 }
 r"""dict: Options to start the optimization while building the full trust region model.
 
@@ -363,7 +364,7 @@ r"""dict: Options to start the optimization while building the full trust region
             If the default setup costs of the evaluations are very large, DF-OLS
             can start with less than ``len(x)`` points and add points to the trust
             region model with every iteration.
-        strategy ("jacobian", "trust_region" or "auto"):
+        method ("jacobian", "trust_region" or "auto"):
             When there are less interpolation points than ``len(x)`` the model is
             underdetermined. This can be fixed in two ways:
             If "jacobian", the interpolated Jacobian is perturbed to have full
@@ -373,24 +374,26 @@ r"""dict: Options to start the optimization while building the full trust region
             If "trust_region_step", the trust region step is perturbed by an
             orthogonal direction not yet searched. It is the default if
             ``len(x) < number of root contributions``.
-        scaling_of_trust_region_step_perturbation (float):
+        scale_of_trust_region_step_perturbation (float):
             When adding new search directions, the length of the step is the trust
             region radius multiplied by this value. The default is 0.1 if
-            ``fast_start_strategy == "perturb_trust_region_radius"`` else 1.
-        scaling_jacobian_perturb_components (float): Magnitude of extra components
-            added to the Jacobian. Default is 1e-2.
-        scaling_jacobian_perturb_floor_of_singular_values (float): Floor singular
+            ``method == "trust_region"`` else 1.
+        scale_of_jacobian_components_perturbation (float): Magnitude of extra
+            components added to the Jacobian. Default is 1e-2.
+        floor_of_jacobian_singular_values (float): Floor singular
             values of the Jacobian at this factor of the last non zero value.
-            As of version 1.2.1 this option is not yet supported by DF-OLS.
-        jacobian_perturb_abs_floor_for_singular_values (float): Absolute floor on
-            singular values of the Jacobian. Default is 1e-6.
-        jacobian_perturb_max_condition_number (float): Cap on the condition number
+            As of version 1.2.1 this option is not yet supported by DF-OLS!
+        scale_of_jacobian_singular_value_floor (float):
+            Floor singular values of the Jacobian at this factor of the last nonzero
+            value.
+        jacobian_max_condition_number (float): Cap on the condition number
             of Jacobian after applying floors to singular values
             (effectively another floor on the smallest singular value, since the
             largest singular value is fixed).
         geometry_improving_steps (bool): Whether to do geometry-improving steps in the
             trust region algorithm, as per the usual algorithm during the fast start.
-        safety_steps (bool): Whether to perform safety steps.
+        safety_steps (bool):
+            Whether to perform safety steps.
         shrink_upper_radius_in_safety_steps (bool): During the fast start whether to
             reduce the upper trust region radius in safety steps.
         full_geometry_improving_step (bool): During the fast start whether to do a
@@ -398,18 +401,18 @@ r"""dict: Options to start the optimization while building the full trust region
             start phase of the algorithm). Since this involves reducing the upper trust
             region radius, this can only be `True` if
             `shrink_upper_radius_in_safety_steps == False`.
-        reset_trust_region_radius_after (bool):
+        reset_trust_region_radius_after_fast_start (bool):
             Whether or not to reset the trust region radius to its initial value
             at the end of the growing phase.
-        reset_min_trust_region_radius_after (bool):
+        reset_min_trust_region_radius_after_fast_start (bool):
             Whether or not to reset the minimum trust region radius
             (:math:`\rho_k`) to its initial value at the end of the growing phase.
-        trust_region_decrease (float):
+        shrinking_factor_not_successful (float):
             Ratio by which to decrease the trust region radius when realized
             improvement does not match the ``threshold_for_successful_iteration``
             during the growing phase.  By default it is the same as
             ``reduction_when_not_successful``.
-        n_search_directions_to_add_when_incomplete (int): Number of new search
+        n_extra_search_directions_per_iteration (int): Number of new search
             directions to add with each iteration where we do not have a full set
             of search directions. This approach is not recommended! Default is 0.
 
