@@ -69,8 +69,8 @@ def nag_dfols(
     restart_options=None,
     slow_improvement_tolerance=None,
     relative_to_start_value_criterion_tolerance=0.0,
-    n_extra_points_to_move_when_sufficient_improvement=0,
-    use_momentum_method_to_move_extra_points=False,
+    trustregion_n_extra_points_to_replace_successful=0,
+    trustregion_method_to_move_extra_points="geometry_improving",
     n_increase_move_points_at_restart=0,
     fast_start_options=None,
 ):
@@ -221,15 +221,14 @@ def nag_dfols(
             \text{relative_to_start_value_criterion_tolerance}`. Note this is
             deactivated unless the lowest mathematically possible criterion value (0.0)
             is actually achieved.
-        n_extra_points_to_move_when_sufficient_improvement (int): The number of extra
+        trustregion_n_extra_points_to_replace_successful (int): The number of extra
             points (other than accepting the trust region step) to move. Useful when
             ``trustregion_n_interpolation_points > len(x) + 1``.
         n_increase_move_points_at_restart (int): The number by which to increase
-            ``n_extra_points_to_move_when_sufficient_improvement`` at each restart.
-        use_momentum_method_to_move_extra_points (bool): If moving extra points in
-            ``n_extra_points_to_move_when_sufficient_improvement`` at each restart.
-            successful iterations, whether to use the 'momentum' method. If not,
-            uses geometry-improving steps.
+            ``trustregion_n_extra_points_to_replace_successful`` at each restart.
+        trustregion_method_to_move_extra_points (str): If moving extra points in
+            successful iterations, whether to use geometry improving steps or the
+            momentum method. Can be "geometry_improving" or "momentum".
         fast_start_options (dict): Options to start the optimization while building the
             full size of the trust region model.
 
@@ -243,6 +242,15 @@ def nag_dfols(
             "You can install it with 'pip install DFO-LS'. "
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
+        )
+    if trustregion_method_to_move_extra_points == "momentum":
+        trustregion_use_momentum = True
+    elif trustregion_method_to_move_extra_points in ["geometry_improving", None]:
+        trustregion_use_momentum = False
+    else:
+        raise ValueError(
+            "trustregion_method_to_move_extra_points must be "
+            "'geometry_improving', 'momentum' or None."
         )
 
     algo_info = {
@@ -271,7 +279,7 @@ def nag_dfols(
         trustregion_threshold_very_successful=trustregion_threshold_very_successful,
         trustregion_shrinking_factor_not_successful=trustregion_shrinking_factor_not_successful,  # noqa: E501
         trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
-        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqao:E501
+        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa:E501
         trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
         trustregion_update_from_min_trust_region=trustregion_update_from_min_trust_region,  # noqa: E501
     )
@@ -320,8 +328,8 @@ def nag_dfols(
         ]
         - restart_options["n_extra_interpolation_points_per_soft_reset"],
         "model.rel_tol": relative_to_start_value_criterion_tolerance,
-        "regression.num_extra_steps": n_extra_points_to_move_when_sufficient_improvement,  # noqa: E501
-        "regression.momentum_extra_steps": use_momentum_method_to_move_extra_points,
+        "regression.num_extra_steps": trustregion_n_extra_points_to_replace_successful,
+        "regression.momentum_extra_steps": trustregion_use_momentum,
         "regression.increase_num_extra_steps_with_restart": n_increase_move_points_at_restart,  # noqa: E501
         "growing.ndirs_initial": fast_start_options["min_inital_points"],
         "growing.delta_scale_new_dirns": fast_start_options[
@@ -408,7 +416,7 @@ def nag_pybobyqa(
     trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
     trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
     trustregion_update_from_min_trust_region=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
-    frobenius_for_interpolation_problem=True,
+    trustregion_minimum_change_hession_for_underdetermined_interpolation=True,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -539,9 +547,9 @@ def nag_pybobyqa(
             (:math:`\Delta_k`) when the lower one is reduced (:math:`\alpha_2` in the
             notation of the paper). Default is 0.95 if the criterion is noisy and
             0.5 else.
-        frobenius_for_interpolation_problem (bool): Whether to solve the
-            underdetermined quadratic interpolation problem by minimizing the Frobenius
-            norm of the Hessian, or change in Hessian.
+        trustregion_minimum_change_hession_for_underdetermined_interpolation (bool):
+            Whether to solve the underdetermined quadratic interpolation problem by
+            minimizing the Frobenius norm of the Hessian, or change in Hessian.
         restart_options (dict): Options for restarting the optimization.
 
     Returns:
@@ -588,14 +596,14 @@ def nag_pybobyqa(
         trustregion_threshold_very_successful=trustregion_threshold_very_successful,
         trustregion_shrinking_factor_not_successful=trustregion_shrinking_factor_not_successful,  # noqa: E501
         trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
-        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqao:E501
+        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa:E501
         trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
         trustregion_update_from_min_trust_region=trustregion_update_from_min_trust_region,  # noqa: E501
     )
 
     pybobyqa_options = {
         "model.abs_tol": absolute_criterion_value_tolerance,
-        "interpolation.minimum_change_hessian": frobenius_for_interpolation_problem,
+        "interpolation.minimum_change_hessian": trustregion_minimum_change_hession_for_underdetermined_interpolation,  # noqa: E501
         "restarts.max_unsuccessful_restarts_total": restart_options[
             "max_unsuccessful_total"
         ],
