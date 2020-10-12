@@ -12,7 +12,7 @@ from estimagic.optimization.algo_options import MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import NOISE_CORRECTED_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import RANDOM_DIRECTIONS_ORTHOGONAL
 from estimagic.optimization.algo_options import RANDOM_INITIAL_DIRECTIONS
-from estimagic.optimization.algo_options import RESTART_OPTIONS
+from estimagic.optimization.algo_options import RESET_OPTIONS
 from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import SLOW_IMPROVEMENT_TOLERANCE
 from estimagic.optimization.algo_options import THRESHOLD_FOR_SAFETY_STEP
@@ -65,14 +65,13 @@ def nag_dfols(
     trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
     trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
-    trustregion_update_from_min_trust_region=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
+    trustregion_update_from_min_trustregion=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
     noise_corrected_criterion_tolerance=NOISE_CORRECTED_CRITERION_TOLERANCE,
-    restart_options=None,
+    trustregion_reset_options=None,
     slow_improvement_tolerance=None,
     relative_to_start_value_criterion_tolerance=0.0,
     trustregion_n_extra_points_to_replace_successful=0,
     trustregion_method_to_move_extra_points="geometry_improving",
-    n_increase_move_points_at_restart=0,
     trustregion_fast_start_options=None,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
@@ -146,13 +145,13 @@ def nag_dfols(
             This is only applicable for criterion functions with noise,
             when averaging multiple evaluations at the same point produces a more
             accurate value.
-            The input parameters are the ``trust_region_radius`` (:math:`\Delta`),
-            the ``min_trust_region_radius`` (:math:`\rho`),
+            The input parameters are the ``trustregion_radius`` (:math:`\Delta`),
+            the ``min_trustregion_radius`` (:math:`\rho`),
             how many iterations the algorithm has been running for, ``n_iterations``
             and how many restarts have been performed, ``n_restarts``.
             The function must return an integer.
-            Default is no averaging (i.e. ``noise_n_evals_per_point(trust_region_radius,
-            min_trust_region_radius, n_iterations, n_restarts) = 1``).
+            Default is no averaging (i.e. ``noise_n_evals_per_point(trustregion_radius,
+            min_trustregion_radius, n_iterations, n_restarts) = 1``).
         clip_criterion_if_overflowing (bool): see :ref:`algo_options`.
         max_criterion_evaluations (int): see :ref:`algo_options`.
         absolute_params_tolerance (float): see :ref:`algo_options`.
@@ -182,7 +181,7 @@ def nag_dfols(
             iterations (:math:`\gamma_{inc}` in the notation of the paper).
         trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
         trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
-        trustregion_update_from_min_trust_region (float): see :ref:`algo_options`.
+        trustregion_update_from_min_trustregion (float): see :ref:`algo_options`.
         slow_improvement_tolerance (dict): Arguments for converging when the evaluations
             over several iterations only yield small improvements on average, see
             see :ref:`algo_options` for details.
@@ -206,8 +205,6 @@ def nag_dfols(
         trustregion_n_extra_points_to_replace_successful (int): The number of extra
             points (other than accepting the trust region step) to move. Useful when
             ``trustregion_n_interpolation_points > len(x) + 1``.
-        n_increase_move_points_at_restart (int): The number by which to increase
-            ``trustregion_n_extra_points_to_replace_successful`` at each restart.
         trustregion_method_to_move_extra_points (str): If moving extra points in
             successful iterations, whether to use geometry improving steps or the
             momentum method. Can be "geometry_improving" or "momentum".
@@ -241,14 +238,14 @@ def nag_dfols(
         "needs_scaling": False,
     }
 
-    advanced_options, restart_options = _create_nag_advanced_options(
+    advanced_options, trustregion_reset_options = _create_nag_advanced_options(
         x=x,
         noise_multiplicative_level=noise_multiplicative_level,
         noise_additive_level=noise_additive_level,
         noise_n_evals_per_point=noise_n_evals_per_point,
         noise_corrected_criterion_tolerance=noise_corrected_criterion_tolerance,
         trustregion_initial_radius=trustregion_initial_radius,
-        restart_options=restart_options,
+        trustregion_reset_options=trustregion_reset_options,
         slow_improvement_tolerance=slow_improvement_tolerance,
         interpolation_rounding_error=interpolation_rounding_error,
         threshold_for_safety_step=threshold_for_safety_step,
@@ -262,7 +259,7 @@ def nag_dfols(
         trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
         trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa:E501
         trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
-        trustregion_update_from_min_trust_region=trustregion_update_from_min_trust_region,  # noqa: E501
+        trustregion_update_from_min_trustregion=trustregion_update_from_min_trustregion,  # noqa: E501
     )
 
     fast_start = _build_options_dict(
@@ -286,8 +283,8 @@ def nag_dfols(
     (faststart_jac, faststart_step,) = _get_fast_start_method(fast_start["method"])
 
     if (
-        restart_options["n_extra_interpolation_points_per_soft_reset"]
-        < restart_options["n_extra_interpolation_points_per_soft_reset"]
+        trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"]
+        < trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"]
     ):
         raise ValueError(
             "In the restart options 'n_extra_interpolation_points_per_soft_reset must "
@@ -297,29 +294,33 @@ def nag_dfols(
     dfols_options = {
         "growing.full_rank.use_full_rank_interp": faststart_jac,
         "growing.perturb_trust_region_step": faststart_step,
-        "restarts.hard.use_old_rk": restart_options["reuse_criterion_value_at_hard"],
-        "restarts.auto_detect.min_chgJ_slope": restart_options[
-            "min_model_slope_increase_for_automatic_detection"
+        "restarts.hard.use_old_rk": trustregion_reset_options[
+            "reuse_criterion_value_at_hard_reset"
+        ],
+        "restarts.auto_detect.min_chgJ_slope": trustregion_reset_options[
+            "auto_detect_min_jacobian_increase"
         ],  # noqa: E501
-        "restarts.max_npt": restart_options["max_interpolation_points"],
-        "restarts.increase_npt": restart_options[
+        "restarts.max_npt": trustregion_reset_options["max_interpolation_points"],
+        "restarts.increase_npt": trustregion_reset_options[
             "n_extra_interpolation_points_per_soft_reset"
         ]
         > 0,
-        "restarts.increase_npt_amt": restart_options[
+        "restarts.increase_npt_amt": trustregion_reset_options[
             "n_extra_interpolation_points_per_soft_reset"
         ],
-        "restarts.hard.increase_ndirs_initial_amt": restart_options[
+        "restarts.hard.increase_ndirs_initial_amt": trustregion_reset_options[
             "n_extra_interpolation_points_per_hard_reset"
         ]
-        - restart_options["n_extra_interpolation_points_per_soft_reset"],
+        - trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"],
         "model.rel_tol": relative_to_start_value_criterion_tolerance,
         "regression.num_extra_steps": trustregion_n_extra_points_to_replace_successful,
         "regression.momentum_extra_steps": trustregion_use_momentum,
-        "regression.increase_num_extra_steps_with_restart": n_increase_move_points_at_restart,  # noqa: E501
+        "regression.increase_num_extra_steps_with_restart": trustregion_reset_options[
+            "n_additional_extra_points_to_replace_per_reset"
+        ],
         "growing.ndirs_initial": fast_start["min_inital_points"],
         "growing.delta_scale_new_dirns": fast_start[
-            "scale_of_trust_region_step_perturbation"
+            "scale_of_trustregion_step_perturbation"
         ],
         "growing.full_rank.scale_factor": fast_start[
             "scale_of_jacobian_components_perturbation"
@@ -333,9 +334,9 @@ def nag_dfols(
             "shrink_upper_radius_in_safety_steps"
         ],
         "growing.safety.full_geom_step": fast_start["full_geometry_improving_step"],
-        "growing.reset_delta": fast_start["reset_trust_region_radius_after_fast_start"],
+        "growing.reset_delta": fast_start["reset_trustregion_radius_after_fast_start"],
         "growing.reset_rho": fast_start[
-            "reset_min_trust_region_radius_after_fast_start"
+            "reset_min_trustregion_radius_after_fast_start"
         ],
         "growing.gamma_dec": fast_start["shrinking_factor_not_successful"],
         "growing.num_new_dirns_each_iter": fast_start[
@@ -377,7 +378,7 @@ def nag_pybobyqa(
     noise_multiplicative_level=None,
     noise_additive_level=None,
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
-    restart_options=None,
+    trustregion_reset_options=None,
     seek_global_optimum=False,
     max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
     absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
@@ -398,7 +399,7 @@ def nag_pybobyqa(
     trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
     trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
-    trustregion_update_from_min_trust_region=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
+    trustregion_update_from_min_trustregion=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
     trustregion_minimum_change_hession_for_underdetermined_interpolation=True,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
@@ -468,8 +469,8 @@ def nag_pybobyqa(
             This is only applicable for criterion functions with noise,
             when averaging multiple evaluations at the same point produces a more
             accurate value.
-            The input parameters are the ``trust_region_radius`` (``delta``),
-            the ``min_trust_region_radius`` (``rho``),
+            The input parameters are the ``trustregion_radius`` (``delta``),
+            the ``min_trustregion_radius`` (``rho``),
             how many iterations the algorithm has been running for, ``n_iterations``
             and how many restarts have been performed, ``n_restarts``.
             The function must return an integer.
@@ -499,11 +500,11 @@ def nag_pybobyqa(
         trustregion_expansion_factor_successful (float): see :ref:`algo_options`.
         trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
         trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
-        trustregion_update_from_min_trust_region (float): see :ref:`algo_options`.
+        trustregion_update_from_min_trustregion (float): see :ref:`algo_options`.
         trustregion_minimum_change_hession_for_underdetermined_interpolation (bool):
             Whether to solve the underdetermined quadratic interpolation problem by
             minimizing the Frobenius norm of the Hessian, or change in Hessian.
-        restart_options (dict): Options for restarting the optimization,
+        trustregion_reset_options (dict): Options for restarting the optimization,
             see :ref:`algo_options` for details.
 
     Returns:
@@ -531,14 +532,14 @@ def nag_pybobyqa(
     criterion = partial(
         criterion_and_derivative, task="criterion", algorithm_info=algo_info
     )
-    advanced_options, restart_options = _create_nag_advanced_options(
+    advanced_options, trustregion_reset_options = _create_nag_advanced_options(
         x=x,
         noise_multiplicative_level=noise_multiplicative_level,
         noise_additive_level=noise_additive_level,
         trustregion_initial_radius=trustregion_initial_radius,
         noise_n_evals_per_point=noise_n_evals_per_point,
         noise_corrected_criterion_tolerance=noise_corrected_criterion_tolerance,
-        restart_options=restart_options,
+        trustregion_reset_options=trustregion_reset_options,
         slow_improvement_tolerance=slow_improvement_tolerance,
         interpolation_rounding_error=interpolation_rounding_error,
         threshold_for_safety_step=threshold_for_safety_step,
@@ -552,21 +553,23 @@ def nag_pybobyqa(
         trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
         trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa:E501
         trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
-        trustregion_update_from_min_trust_region=trustregion_update_from_min_trust_region,  # noqa: E501
+        trustregion_update_from_min_trustregion=trustregion_update_from_min_trustregion,  # noqa: E501
     )
 
     pybobyqa_options = {
         "model.abs_tol": absolute_criterion_value_tolerance,
         "interpolation.minimum_change_hessian": trustregion_minimum_change_hession_for_underdetermined_interpolation,  # noqa: E501
-        "restarts.max_unsuccessful_restarts_total": restart_options[
-            "max_unsuccessful_total"
+        "restarts.max_unsuccessful_restarts_total": trustregion_reset_options[
+            "max_unsuccessful_resets"
         ],
-        "restarts.rhobeg_scale_after_unsuccessful_restart": restart_options[
-            "trust_region_scaling_after_unsuccessful"
+        "restarts.rhobeg_scale_after_unsuccessful_restart": trustregion_reset_options[
+            "trust_region_scaling_at_unsuccessful_reset"
         ],  # noqa E501
-        "restarts.hard.use_old_fk": restart_options["reuse_criterion_value_at_hard"],
-        "restarts.auto_detect.min_chg_model_slope": restart_options[
-            "min_model_slope_increase_for_automatic_detection"
+        "restarts.hard.use_old_fk": trustregion_reset_options[
+            "reuse_criterion_value_at_hard_reset"
+        ],
+        "restarts.auto_detect.min_chg_model_slope": trustregion_reset_options[
+            "auto_detect_min_jacobian_increase"
         ],  # noqa: E501
     }
 
@@ -635,7 +638,7 @@ def _create_nag_advanced_options(
     trustregion_initial_radius,
     noise_n_evals_per_point,
     noise_corrected_criterion_tolerance,
-    restart_options,
+    trustregion_reset_options,
     slow_improvement_tolerance,
     interpolation_rounding_error,
     threshold_for_safety_step,
@@ -649,7 +652,7 @@ def _create_nag_advanced_options(
     trustregion_expansion_factor_successful,
     trustregion_expansion_factor_very_successful,
     trustregion_shrinking_factor_lower_radius,
-    trustregion_update_from_min_trust_region,
+    trustregion_update_from_min_trustregion,
 ):
     if noise_multiplicative_level is not None and noise_additive_level is not None:
         raise ValueError("You cannot specify both multiplicative and additive noise.")
@@ -657,9 +660,13 @@ def _create_nag_advanced_options(
         trustregion_initial_radius = calculate_trustregion_initial_radius(x)
     # -np.inf as a default leads to errors when building the documentation with sphinx.
     noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
-    restart_options = _build_options_dict(
-        user_input=restart_options, default_options=RESTART_OPTIONS,
+    trustregion_reset_options = _build_options_dict(
+        user_input=trustregion_reset_options, default_options=RESET_OPTIONS,
     )
+    if not trustregion_reset_options["reset_type"] in ["soft", "hard"]:
+        raise ValueError(
+            "reset_type in the trustregion_reset_options must be soft or hard."
+        )
     slow_improvement_tolerance = _build_options_dict(
         user_input=slow_improvement_tolerance,
         default_options=SLOW_IMPROVEMENT_TOLERANCE,
@@ -677,7 +684,7 @@ def _create_nag_advanced_options(
         "tr_radius.gamma_inc": trustregion_expansion_factor_successful,
         "tr_radius.gamma_inc_overline": trustregion_expansion_factor_very_successful,
         "tr_radius.alpha1": trustregion_shrinking_factor_lower_radius,
-        "tr_radius.alpha2": trustregion_update_from_min_trust_region,
+        "tr_radius.alpha2": trustregion_update_from_min_trustregion,
         "general.rounding_error_constant": interpolation_rounding_error,
         "general.safety_step_thresh": threshold_for_safety_step,
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,
@@ -698,25 +705,31 @@ def _create_nag_advanced_options(
         and (noise_multiplicative_level or noise_additive_level),
         "noise.scale_factor_for_quit": noise_corrected_criterion_tolerance,
         "interpolation.precondition": trustregion_precondition_interpolation,
-        "restarts.use_restarts": restart_options["use_restarts"],
-        "restarts.max_unsuccessful_restarts": restart_options["max_unsuccessful"],
-        "restarts.rhoend_scale": restart_options["min_trust_region_scaling_after"],
-        "restarts.use_soft_restarts": restart_options["use_soft"],
-        "restarts.soft.move_xk": restart_options["move_current_point_at_soft"],
-        "restarts.soft.max_fake_successful_steps": restart_options[
-            "max_iterations_without_new_best_after_soft"
-        ],  # noqa: E501
-        "restarts.auto_detect": restart_options["automatic_detection"],
-        "restarts.auto_detect.history": restart_options[
-            "n_iterations_for_automatc_detection"
-        ],  # noqa: E501
-        "restarts.auto_detect.min_correl": restart_options[
-            "min_correlations_for_automatic_detection"
+        "restarts.use_restarts": trustregion_reset_options["use_resets"],
+        "restarts.max_unsuccessful_restarts": trustregion_reset_options[
+            "max_consecutive_unsuccessful_resets"
         ],
-        "restarts.soft.num_geom_steps": restart_options["points_to_move_at_soft"],
+        "restarts.rhoend_scale": trustregion_reset_options[
+            "minimal_trustregion_radius_tolerance_scaling_at_reset"
+        ],
+        "restarts.use_soft_restarts": trustregion_reset_options["reset_type"] == "soft",
+        "restarts.soft.move_xk": trustregion_reset_options["move_center_at_soft_reset"],
+        "restarts.soft.max_fake_successful_steps": trustregion_reset_options[
+            "max_iterations_without_new_best_after_soft_reset"
+        ],  # noqa: E501
+        "restarts.auto_detect": trustregion_reset_options["auto_detect"],
+        "restarts.auto_detect.history": trustregion_reset_options[
+            "auto_detect_history"
+        ],  # noqa: E501
+        "restarts.auto_detect.min_correl": trustregion_reset_options[
+            "auto_detect_min_correlations"
+        ],
+        "restarts.soft.num_geom_steps": trustregion_reset_options[
+            "points_to_replace_at_soft_reset"
+        ],
     }
 
-    return advanced_options, restart_options
+    return advanced_options, trustregion_reset_options
 
 
 def _change_evals_per_point_interface(func):
@@ -735,8 +748,8 @@ def _change_evals_per_point_interface(func):
 
         def adjusted_noise_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
             return func(
-                trust_region_radius=delta,
-                min_trust_region=rho,
+                trustregion_radius=delta,
+                min_trustregion=rho,
                 n_iterations=iter,
                 n_restarts=nrestarts,
             )
@@ -770,10 +783,10 @@ def _build_options_dict(user_input, default_options):
 
 def _get_fast_start_method(user_value):
     """Get fast start method arguments from user value."""
-    allowed_values = ["auto", "jacobian", "trust_region"]
+    allowed_values = ["auto", "jacobian", "trustregion"]
     if user_value not in allowed_values:
         raise ValueError(
-            "`perturb_jacobian_or_trust_region_step` must be one of "
+            "`perturb_jacobian_or_trustregion_step` must be one of "
             f"{allowed_values}. You provided {user_value}."
         )
     if user_value == "auto":

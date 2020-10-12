@@ -11,8 +11,8 @@ def test_change_evals_per_point_interface_none():
 
 
 def test_change_evals_per_point_interface_func():
-    def return_args(trust_region_radius, min_trust_region, n_iterations, n_restarts):
-        return trust_region_radius, min_trust_region, n_iterations, n_restarts
+    def return_args(trustregion_radius, min_trustregion, n_iterations, n_restarts):
+        return trustregion_radius, min_trustregion, n_iterations, n_restarts
 
     func = _change_evals_per_point_interface(return_args)
     res = func(delta=0, rho=1, iter=2, nrestarts=3)
@@ -31,7 +31,7 @@ def test_get_fast_start_method_from_user_value_jacobian():
 
 
 def test_get_fast_start_method_from_user_value_trust():
-    res = _get_fast_start_method_from_user_value("trust_region")
+    res = _get_fast_start_method_from_user_value("trustregion")
     assert res == (False, True)
 
 

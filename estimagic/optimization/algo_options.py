@@ -159,7 +159,7 @@ THRESHOLD_FOR_SAFETY_STEP = 0.5
 r"""float: Threshold for when to call the safety step.
 
     :math:`\text{proposed step} \leq \text{threshold_for_safety_step} \cdot
-    \text{current_trust_region_radius}`.
+    \text{current_trustregion_radius}`.
 
 """
 
@@ -244,75 +244,76 @@ TRUSTREGION_PRECONDITION_INTERPOLATION = True
 """bool: whether to scale the interpolation linear system to improve conditioning."""
 
 
-RESTART_OPTIONS = {
-    "use_restarts": None,
-    "max_unsuccessful": 10,
-    "min_trust_region_scaling_after": 1.0,
-    "use_soft": True,
-    "move_current_point_at_soft": True,
-    "reuse_criterion_value_at_hard": True,
-    "max_iterations_without_new_best_after_soft": None,
-    "automatic_detection": True,
-    "n_iterations_for_automatc_detection": 30,
-    "min_model_slope_increase_for_automatic_detection": 0.015,
-    "min_correlations_for_automatic_detection": 0.1,
-    "points_to_move_at_soft": 3,
+RESET_OPTIONS = {
+    "use_resets": None,
+    "minimal_trustregion_radius_tolerance_scaling_at_reset": 1.0,
+    "reset_type": "soft",
+    "move_center_at_soft_reset": True,
+    "reuse_criterion_value_at_hard_reset": True,
+    "max_iterations_without_new_best_after_soft_reset": None,
+    "auto_detect": True,
+    "auto_detect_history": 30,
+    "auto_detect_min_jacobian_increase": 0.015,
+    "auto_detect_min_correlations": 0.1,
+    "points_to_replace_at_soft_reset": 3,
+    "max_consecutive_unsuccessful_resets": 10,
     # just bobyqa
-    "max_unsuccessful_total": None,
-    "trust_region_scaling_after_unsuccessful": None,
+    "max_unsuccessful_resets": None,
+    "trust_region_scaling_at_unsuccessful_reset": None,
     # just dfols
     "max_interpolation_points": None,
     "n_extra_interpolation_points_per_soft_reset": 0,
     "n_extra_interpolation_points_per_hard_reset": 0,
+    "n_additional_extra_points_to_replace_per_reset": 0,
 }
 r"""dict: Options for restarting the optimization.
 
     Possible entries are:
 
-        use_restarts (bool): Whether to do restarts when the minimum trust
+        use_resets (bool): Whether to do resets when the minimum trust
             region radius (:math:`\rho_k`) reaches the stopping criterion
             (:math:`\rho_{end}`), or (optionally) when all points are within noise
             level. Default is ``True`` if the criterion is noisy.
-        max_unsuccessful (int): maximum number of consecutive unsuccessful
-            restarts allowed (i.e. restarts which did not outperform the best known
-            value from earlier runs).
-        min_trust_region_scaling_after (float): Factor with which the trust region
-            stopping criterion is multiplied at each restart.
+        minimal_trustregion_radius_tolerance_scaling_at_reset (float): Factor with
+            which the trust region stopping criterion is multiplied at each restart.
 
-        use_soft (bool): Whether to use soft or hard restarts.
+        reset_type (str): Whether to use "soft" or "hard" resets. Default is "soft".
 
-        move_current_point_at_soft (bool): Whether to move the current
+        move_center_at_soft_reset (bool): Whether to move the current
             evaluation point ($x_k$) to the best new point evaluated.
-        points_to_move_at_soft (int): Number of interpolation points to move
+        points_to_replace_at_soft_reset (int): Number of interpolation points to move
             at each soft restart.
-        reuse_criterion_value_at_hard (bool): Whether or not to recycle the
+        reuse_criterion_value_at_hard_reset (bool): Whether or not to recycle the
             criterion value at the best iterate found when performing a hard restart.
             This saves one criterion evaluation.
-        max_iterations_without_new_best_after_soft (int):
+        max_iterations_without_new_best_after_soft_reset (int):
             The maximum number of successful steps in a given run where the new
             criterion value is worse than the best value found in previous runs before
             terminating. Default is ``max_criterion_evaluations``.
-        automatic_detection (bool): Whether or not to
+        auto_detect (bool): Whether or not to
             automatically determine when to restart. This is an additional condition
-            and restarts can still be triggered by small trust region radius, etc.
+            and resets can still be triggered by small trust region radius, etc.
             There are two criteria used: trust region radius decreases
             (no increases over the history, more decreases than no changes) and
             changes in the model Jacobian (consistently increasing trend as measured
             by slope and correlation coefficient of the line of best fit).
-        n_iterations_for_automatc_detection (int):
+        auto_detect_history (int):
             How many iterations of model changes and trust region radii to store.
-        min_model_slope_increase_for_automatic_detection (float):
+        auto_detect_min_jacobian_increase (float):
             Minimum rate of increase of the Jacobian over past iterations to cause a
             restart.
-        min_correlations_for_automatic_detection (float):
+        auto_detect_min_correlations (float):
             Minimum correlation of the Jacobian data set required to cause a restart.
+        max_consecutive_unsuccessful_resets (int): maximum number of consecutive
+            unsuccessful resets allowed (i.e. resets which did not outperform the
+            best known value from earlier runs).
 
     Only used when using nag_bobyqa:
-        max_unsuccessful_total (int): number of total unsuccessful restarts
+        max_unsuccessful_resets (int): number of total unsuccessful resets
             allowed. Default is 20 if ``seek_global_optimum`` and else unrestricted.
-        trust_region_scaling_after_unsuccessful (float): Factor by which to
+        trust_region_scaling_at_unsuccessful_reset (float): Factor by which to
             increase the initial trust region radius (:math:`\rho_{beg}`) after
-            unsuccessful restarts. Default is 1.1 if ``seek_global_optimum`` else 1.
+            unsuccessful resets. Default is 1.1 if ``seek_global_optimum`` else 1.
 
     Only used when usinge nag_dfols:
         max_interpolation_points (int): Maximum allowed value of the number of
@@ -324,13 +325,17 @@ r"""dict: Options for restarting the optimization.
             the interpolation set with each soft reset.
         n_extra_interpolation_points_per_hard_reset (int): Number of points to add to
             the interpolation set with each hard reset.
+        n_additional_extra_points_to_replace_per_reset (int): This parameter modifies
+            ``n_extra_points_to_replace_successful``. With each reset
+            ``n_extra_points_to_replace_successful`` is increased by this number.
+
 """
 
 
 TRUSTREGION_FAST_START_OPTIONS = {
     "min_inital_points": None,
     "method": "auto",
-    "scale_of_trust_region_step_perturbation": None,
+    "scale_of_trustregion_step_perturbation": None,
     "scale_of_jacobian_components_perturbation": 1e-2,
     # the following will be growing.full_rank.min_sing_val
     # but it not supported yet by DF-OLS.
@@ -340,8 +345,8 @@ TRUSTREGION_FAST_START_OPTIONS = {
     "safety_steps": True,
     "shrink_upper_radius_in_safety_steps": False,
     "full_geometry_improving_step": False,
-    "reset_trust_region_radius_after_fast_start": False,
-    "reset_min_trust_region_radius_after_fast_start": False,
+    "reset_trustregion_radius_after_fast_start": False,
+    "reset_min_trustregion_radius_after_fast_start": False,
     "shrinking_factor_not_successful": None,
     "n_extra_search_directions_per_iteration": 0,
 }
@@ -364,20 +369,20 @@ r"""dict: Options to start the optimization while building the full trust region
             If the default setup costs of the evaluations are very large, DF-OLS
             can start with less than ``len(x)`` points and add points to the trust
             region model with every iteration.
-        method ("jacobian", "trust_region" or "auto"):
+        method ("jacobian", "trustregion" or "auto"):
             When there are less interpolation points than ``len(x)`` the model is
             underdetermined. This can be fixed in two ways:
             If "jacobian", the interpolated Jacobian is perturbed to have full
             rank, allowing the trust region step to include components in the full
             search space. This is the default if
             ``len(x) \geq number of root contributions``.
-            If "trust_region_step", the trust region step is perturbed by an
+            If "trustregion_step", the trust region step is perturbed by an
             orthogonal direction not yet searched. It is the default if
             ``len(x) < number of root contributions``.
-        scale_of_trust_region_step_perturbation (float):
+        scale_of_trustregion_step_perturbation (float):
             When adding new search directions, the length of the step is the trust
             region radius multiplied by this value. The default is 0.1 if
-            ``method == "trust_region"`` else 1.
+            ``method == "trustregion"`` else 1.
         scale_of_jacobian_components_perturbation (float): Magnitude of extra
             components added to the Jacobian. Default is 1e-2.
         floor_of_jacobian_singular_values (float): Floor singular
@@ -401,10 +406,10 @@ r"""dict: Options to start the optimization while building the full trust region
             start phase of the algorithm). Since this involves reducing the upper trust
             region radius, this can only be `True` if
             `shrink_upper_radius_in_safety_steps == False`.
-        reset_trust_region_radius_after_fast_start (bool):
+        reset_trustregion_radius_after_fast_start (bool):
             Whether or not to reset the trust region radius to its initial value
             at the end of the growing phase.
-        reset_min_trust_region_radius_after_fast_start (bool):
+        reset_min_trustregion_radius_after_fast_start (bool):
             Whether or not to reset the minimum trust region radius
             (:math:`\rho_k`) to its initial value at the end of the growing phase.
         shrinking_factor_not_successful (float):

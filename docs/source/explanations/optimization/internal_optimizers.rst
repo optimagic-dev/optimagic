@@ -191,7 +191,7 @@ Optimizer configurations
 - **max_line_search_steps** *(int)*: Maximum number of criterion (and possibly
   derivative) evaluations per line search.
 
-- **trust_region_initial_radius** *(float)*: Note this is very problem specific and
+- **trustregion_initial_radius** *(float)*: Note this is very problem specific and
   you can typically do better than using the default. Intuitively, this can be
   described as a reasonable change in parameters the optimizer can take from the
   start values. The default is to take 10% of the largest start parameter, but at
