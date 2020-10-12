@@ -32,9 +32,11 @@ from estimagic.optimization.algo_options import (
 from estimagic.optimization.algo_options import (
     TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,
 )
+from estimagic.optimization.algo_options import (
+    TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS,
+)
 from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_SUCCESSFUL
 from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
-from estimagic.optimization.algo_options import TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION
 from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:
@@ -74,9 +76,9 @@ def nag_dfols(
     trustregion_reset_options=None,
     trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
     trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
+    trustregion_shrinking_factor_upper_radius=TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS,
     trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
     trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
-    trustregion_update_from_min_trustregion=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -117,7 +119,8 @@ def nag_dfols(
     1. when the lower trust region radius is shrunk below a minimum
        (``convergence_minimal_trustregion_radius_tolerance``).
 
-    2. when the improvements of iterations become very small. This is very similar to
+    2. when the improvements of iterations become very small
+       (``convergence_slow_progress``). This is very similar to
        ``relative_criterion_tolerance`` but ``convergence_slow_progress`` is more
        general allowing to specify not only the threshold for convergence but also
        a period over which the improvements must have been very small.
@@ -184,9 +187,7 @@ def nag_dfols(
             ``noise_n_evals_per_point(...) = 1``).
         random_directions_orthogonal (bool): see :ref:`algo_options`.
         stopping_max_criterion_evaluations (int): see :ref:`algo_options`.
-        threshold_for_safety_step (float): Threshold for when to call the safety step,
-            :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`, where
-            :math:`\|s_k\|` is the proposed step size.
+        threshold_for_safety_step (float): see :ref:`algo_options`.
         trustregion_expansion_factor_successful (float): see :ref:`algo_options`.
         trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
         trustregion_fast_start_options (dict): see :ref:`algo_options`.
@@ -203,12 +204,12 @@ def nag_dfols(
         trustregion_precondition_interpolation (bool): see :ref:`algo_options`.
         trustregion_shrinking_factor_not_successful (float): see :ref:`algo_options`.
         trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
+        trustregion_shrinking_factor_upper_radius (float): see :ref:`algo_options`.
         trustregion_threshold_successful (float): Share of the predicted improvement
             that has to be achieved for a trust region iteration to count as successful.
         trustregion_threshold_very_successful (float): Share of the predicted
             improvement that has to be achieved for a trust region iteration to count
             as very successful.
-        trustregion_update_from_min_trustregion (float): see :ref:`algo_options`.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -259,7 +260,7 @@ def nag_dfols(
         trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
         trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa:E501
         trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
-        trustregion_update_from_min_trustregion=trustregion_update_from_min_trustregion,  # noqa: E501
+        trustregion_shrinking_factor_upper_radius=trustregion_shrinking_factor_upper_radius,  # noqa: E501
     )
 
     fast_start = _build_options_dict(
@@ -399,9 +400,9 @@ def nag_pybobyqa(
     trustregion_reset_options=None,
     trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
     trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
+    trustregion_shrinking_factor_upper_radius=TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS,
     trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
     trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
-    trustregion_update_from_min_trustregion=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -504,10 +505,10 @@ def nag_pybobyqa(
         trustregion_reset_options (dict): Options for resetting the optimization,
             see :ref:`algo_options` for details.
         trustregion_shrinking_factor_not_successful (float): see :ref:`algo_options`.
+        trustregion_shrinking_factor_upper_radius (float): see :ref:`algo_options`.
         trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
         trustregion_threshold_successful (float): see :ref:`algo_options`.
         trustregion_threshold_very_successful (float): see :ref:`algo_options`.
-        trustregion_update_from_min_trustregion (float): see :ref:`algo_options`.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -555,7 +556,7 @@ def nag_pybobyqa(
         trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
         trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa:E501
         trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
-        trustregion_update_from_min_trustregion=trustregion_update_from_min_trustregion,  # noqa: E501
+        trustregion_shrinking_factor_upper_radius=trustregion_shrinking_factor_upper_radius,  # noqa: E501
     )
 
     pybobyqa_options = {
@@ -654,7 +655,7 @@ def _create_nag_advanced_options(
     trustregion_expansion_factor_successful,
     trustregion_expansion_factor_very_successful,
     trustregion_shrinking_factor_lower_radius,
-    trustregion_update_from_min_trustregion,
+    trustregion_shrinking_factor_upper_radius,
 ):
     if noise_multiplicative_level is not None and noise_additive_level is not None:
         raise ValueError("You cannot specify both multiplicative and additive noise.")
@@ -685,7 +686,7 @@ def _create_nag_advanced_options(
         "tr_radius.gamma_inc": trustregion_expansion_factor_successful,
         "tr_radius.gamma_inc_overline": trustregion_expansion_factor_very_successful,
         "tr_radius.alpha1": trustregion_shrinking_factor_lower_radius,
-        "tr_radius.alpha2": trustregion_update_from_min_trustregion,
+        "tr_radius.alpha2": trustregion_shrinking_factor_upper_radius,
         "general.rounding_error_constant": interpolation_rounding_error,
         "general.safety_step_thresh": threshold_for_safety_step,
         "general.check_objfun_for_overflow": clip_criterion_if_overflowing,

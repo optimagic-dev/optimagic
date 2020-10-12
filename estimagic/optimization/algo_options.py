@@ -1,6 +1,14 @@
 """
+The order is the following:
+
+1. Convergence and Stopping Criteria
+2. Trust Region Parameters
+3. Other Numerical Algorithm Group Tuning Parameters
+
+"""
+"""
 =====================================================================================
-Stopping Criteria
+1. Stopping Criteria
 =====================================================================================
 """
 
@@ -142,7 +150,7 @@ CONVERGENCE_SLOW_PROGRESS = {
 
 """
 =====================================================================================
-Other Common Tuning Parameters for Optimization Algorithms
+2. Other Common Tuning Parameters for Optimization Algorithms
 =====================================================================================
 """
 
@@ -152,18 +160,18 @@ MAX_LINE_SEARCH_STEPS = 20
 LIMITED_MEMORY_STORAGE_LENGTH = 10
 """int: Taken from scipy L-BFGS-B."""
 
-"""
--------------------------
-Trust Region Parameters
--------------------------
-"""
-
 THRESHOLD_FOR_SAFETY_STEP = 0.5
 r"""float: Threshold for when to call the safety step (:math:`\gamma_s`).
 
     :math:`\text{proposed step} \leq \text{threshold_for_safety_step} \cdot
     \text{current_lower_trustregion_radius}`.
 
+"""
+
+"""
+-------------------------
+Trust Region Parameters
+-------------------------
 """
 
 TRUSTREGION_THRESHOLD_SUCCESSFUL = 0.1
@@ -205,7 +213,7 @@ r"""float: Ratio by which to shrink the lower trust region radius (:math:`\rho_k
 
 """
 
-TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION = None
+TRUSTREGION_SHRINKING_FACTOR_UPPER_RADIUS = None
 r"""float: Ratio of the current lower trust region (:math:`\rho_k`) by which to shrink
     the upper trust region radius (:math:`\Delta_k`) when the lower one is shrunk
     (:math:`\alpha_2` in the notation of the paper). Default is 0.95 if the
@@ -309,13 +317,16 @@ r"""dict: Options for reseting the optimization.
             best known value from earlier runs).
 
     Only used when using nag_bobyqa:
-        max_unsuccessful_resets (int): number of total unsuccessful resets
-            allowed. Default is 20 if ``seek_global_optimum`` and else unrestricted.
+
+        max_unsuccessful_resets (int):
+            number of total unsuccessful resets allowed.
+            Default is 20 if ``seek_global_optimum`` and else unrestricted.
         trust_region_scaling_at_unsuccessful_reset (float): Factor by which to
             expand the initial lower trust region radius (:math:`\rho_{beg}`) after
             unsuccessful resets. Default is 1.1 if ``seek_global_optimum`` else 1.
 
     Only used when using nag_dfols:
+
         max_interpolation_points (int): Maximum allowed value of the number of
             interpolation points. This is useful if the number of interpolation points
             increases with each reset, e.g. when
