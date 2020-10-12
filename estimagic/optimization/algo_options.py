@@ -4,7 +4,7 @@ Stopping Criteria
 =====================================================================================
 """
 
-RELATIVE_CRITERION_TOLERANCE = 2e-9
+CONVERGENCE_RELATIVE_CRITERION_TOLERANCE = 2e-9
 """float: Stop when the relative improvement between two iterations is below this.
 
     The exact definition of relative improvement depends on the optimizer and should
@@ -14,14 +14,14 @@ RELATIVE_CRITERION_TOLERANCE = 2e-9
 
 """
 
-ABSOLUTE_CRITERION_TOLERANCE = 0
+CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE = 0
 """float: Stop when the absolute improvement between two iterations is below this.
 
     Disabled by default because it is very problem specific.
 
 """
 
-ABSOLUTE_GRADIENT_TOLERANCE = 1e-5
+CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE = 1e-5
 """float: Stop when the gradient are smaller than this.
 
     For some algorithms this criterion refers to all entries, for others to some norm.
@@ -33,7 +33,7 @@ ABSOLUTE_GRADIENT_TOLERANCE = 1e-5
 
 """
 
-RELATIVE_GRADIENT_TOLERANCE = 1e-8
+CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE = 1e-8
 """float: Stop when the gradient, divided by the absolute value of the criterion
     function is smaller than this. For some algorithms this criterion refers to
     all entries, for others to some norm.For bound constrained optimizers this
@@ -42,7 +42,7 @@ RELATIVE_GRADIENT_TOLERANCE = 1e-8
 
 """
 
-SCALED_GRADIENT_TOLERANCE = 1e-8
+CONVERGENCE_SCALED_GRADIENT_TOLERANCE = 1e-8
 """float: Stop when all entries (or for some algorithms the norm) of the gradient,
     divided by the norm of the gradient at start parameters is smaller than this.
     For bound constrained optimizers this typically refers to a projected gradient.
@@ -51,7 +51,7 @@ SCALED_GRADIENT_TOLERANCE = 1e-8
 
 """
 
-RELATIVE_PARAMS_TOLERANCE = 1e-5
+CONVERGENCE_RELATIVE_PARAMS_TOLERANCE = 1e-5
 """float: Stop when the relative change in parameters is smaller than this.
     The exact definition of relative change and whether this refers to the maximum
     change or the average change depends on the algorithm and should be documented
@@ -59,7 +59,7 @@ RELATIVE_PARAMS_TOLERANCE = 1e-5
 
 """
 
-ABSOLUTE_PARAMS_TOLERANCE = 0
+CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE = 0
 """float: Stop when the absolute change in parameters between two iterations is smaller
     than this. Whether this refers to the maximum change or the average change depends
     on the algorithm and should be documented there.
@@ -69,7 +69,7 @@ ABSOLUTE_PARAMS_TOLERANCE = 0
 
 """
 
-NOISE_CORRECTED_CRITERION_TOLERANCE = 1.0
+CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE = 1.0
 """float: Stop when the evaluations on the set of interpolation points all fall within
     this factor of the noise level. The default is 1, i.e. when all evaluations are
     within the noise level. If you want to not use this criterion but still flag your
@@ -80,8 +80,11 @@ NOISE_CORRECTED_CRITERION_TOLERANCE = 1.0
 
 """
 
+CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE = 1e-8
+"""float: Stop when the minimal trust region radius falls below this value."""
 
-MAX_CRITERION_EVALUATIONS = 1_000_000
+
+STOPPING_MAX_CRITERION_EVALUATIONS = 1_000_000
 """int:
     If the maximum number of function evaluation is reached, the optimization stops
     but we do not count this as successful convergence. The function evaluations used
@@ -89,7 +92,7 @@ MAX_CRITERION_EVALUATIONS = 1_000_000
 
 """
 
-MAX_ITERATIONS = 1_000_000
+STOPPING_MAX_ITERATIONS = 1_000_000
 """int:
     If the maximum number of iterations is reached, the
     optimization stops, but we do not count this as successful convergence.
@@ -99,38 +102,38 @@ MAX_ITERATIONS = 1_000_000
 
 """
 
-SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 1e-08
+CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE = 1e-08
 """float: absolute criterion tolerance estimagic requires if no other stopping
 criterion apart from max iterations etc. is available
 this is taken from scipy (SLSQP's value, smaller than Nelder-Mead).
 
 """
 
-SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 1e-08
+CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE = 1e-08
 """float: The absolute parameter tolerance estimagic requires if no other stopping
 criterion apart from max iterations etc. is available. This is taken from pybobyqa.
 
 """
 
-SLOW_IMPROVEMENT_TOLERANCE = {
-    "threshold_for_insufficient_improvement": 1e-8,
-    "n_insufficient_improvements_until_terminate": None,
-    "comparison_period_for_insufficient_improvement": 5,
+CONVERGENCE_SLOW_PROGRESS = {
+    "threshold_to_characterize_as_slow": 1e-8,
+    "max_insufficient_improvements": None,
+    "comparison_period": 5,
 }
 """dict: Specification of when to terminate or restart the optimization because of only
     slow improvements. This is similar to an absolute criterion tolerance only that
     instead of a single improvement the average over several iterations must be small.
 
     Possible entries are:
-        threshold_for_insufficient_improvement (float): Threshold whether an improvement
+        threshold_to_characterize_as_slow (float): Threshold whether an improvement
             is insufficient. Note: the improvement is divided by the
-            ``comparison_period_for_insufficient_improvement``.
+            ``comparison_period``.
             So this is the required average improvement per iteration over the
             comparison period.
-        n_insufficient_improvements_until_terminate (int): Number of consecutive
+        max_insufficient_improvements (int): Number of consecutive
             insufficient improvements before termination (or restart). Default is
             ``20 * len(x)``.
-        comparison_period_for_insufficient_improvement (int):
+        comparison_period (int):
             How many iterations to go back to calculate the improvement.
             For example 5 would mean that each criterion evaluation is compared to the
             criterion value from 5 iterations before.
@@ -214,10 +217,9 @@ Numerical Algorithm Group Tuning Parameters
 ---------------------------------------------
 """
 
-RANDOM_INITIAL_DIRECTIONS = False
-"""bool: Whether to draw the initial directions randomly.
-
-If `False` use the coordinate directions.
+INITIAL_DIRECTIONS = "coordinate"
+"""string: How to draw the initial directions. Possible values are "coordinate" for
+    coordinate directions (the default) or "random".
 
 """
 
@@ -226,9 +228,7 @@ RANDOM_DIRECTIONS_ORTHOGONAL = True
 
 
 INTERPOLATION_ROUNDING_ERROR = 0.1
-r"""float:
-
-    Internally, all the NAG algorithms store interpolation points with respect
+r"""float: Internally, all the NAG algorithms store interpolation points with respect
     to a base point :math:`x_b`; that is, we store :math:`\{y_t-x_b\}`,
     which reduces the risk of roundoff errors. We shift :math:`x_b` to :math:`x_k` when
     :math:`\text{proposed step} \leq \text{interpolation_rounding_error} \cdot

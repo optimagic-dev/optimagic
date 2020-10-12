@@ -4,10 +4,10 @@ import functools
 import numpy as np
 
 from estimagic.config import IS_PETSC4PY_INSTALLED
-from estimagic.optimization.algo_options import ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import MAX_ITERATIONS
-from estimagic.optimization.algo_options import RELATIVE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import SCALED_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 
 try:
@@ -29,11 +29,11 @@ def tao_pounders(
     lower_bounds,
     upper_bounds,
     *,
-    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
-    relative_gradient_tolerance=RELATIVE_GRADIENT_TOLERANCE,
-    scaled_gradient_tolerance=SCALED_GRADIENT_TOLERANCE,
+    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    scaled_gradient_tolerance=CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
     trustregion_initial_radius=None,
-    max_iterations=MAX_ITERATIONS,
+    max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     r"""Minimize a function using the POUNDERs algorithm.
 

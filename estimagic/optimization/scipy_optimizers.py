@@ -3,17 +3,21 @@ import functools
 import numpy as np
 import scipy
 
-from estimagic.optimization.algo_options import ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.optimization.algo_options import ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import (
+    CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
+)
+from estimagic.optimization.algo_options import (
+    CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+)
 from estimagic.optimization.algo_options import LIMITED_MEMORY_STORAGE_LENGTH
-from estimagic.optimization.algo_options import MAX_CRITERION_EVALUATIONS
-from estimagic.optimization.algo_options import MAX_ITERATIONS
 from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
-from estimagic.optimization.algo_options import RELATIVE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import RELATIVE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
+from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 
 DEFAULT_ALGO_INFO = {
@@ -29,10 +33,10 @@ def scipy_lbfgsb(
     lower_bounds,
     upper_bounds,
     *,
-    relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
-    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
-    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
-    max_iterations=MAX_ITERATIONS,
+    relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    max_iterations=STOPPING_MAX_ITERATIONS,
     limited_memory_storage_length=LIMITED_MEMORY_STORAGE_LENGTH,
     max_line_search_steps=MAX_LINE_SEARCH_STEPS,
 ):
@@ -121,8 +125,8 @@ def scipy_slsqp(
     lower_bounds,
     upper_bounds,
     *,
-    absolute_criterion_tolerance=SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-    max_iterations=MAX_ITERATIONS,
+    absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
+    max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     """Minimize a scalar function of one or more variables using the SLSQP algorithm.
 
@@ -185,10 +189,10 @@ def scipy_neldermead(
     criterion_and_derivative,
     x,
     *,
-    max_iterations=MAX_ITERATIONS,
-    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
-    absolute_criterion_tolerance=SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-    absolute_params_tolerance=SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    max_iterations=STOPPING_MAX_ITERATIONS,
+    max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
+    absolute_params_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
     adaptive=False,
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
@@ -260,10 +264,10 @@ def scipy_powell(
     lower_bounds,
     upper_bounds,
     *,
-    relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
-    relative_criterion_tolerance=RELATIVE_CRITERION_TOLERANCE,
-    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
-    max_iterations=MAX_ITERATIONS,
+    relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     """Minimize a scalar function using the modified Powell method.
 
@@ -336,8 +340,8 @@ def scipy_bfgs(
     lower_bounds,
     upper_bounds,
     *,
-    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
-    max_iterations=MAX_ITERATIONS,
+    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    max_iterations=STOPPING_MAX_ITERATIONS,
     norm=np.inf,
 ):
     """Minimize a scalar function of one or more variables using the BFGS algorithm.
@@ -393,8 +397,8 @@ def scipy_conjugate_gradient(
     criterion_and_derivative,
     x,
     *,
-    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
-    max_iterations=MAX_ITERATIONS,
+    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    max_iterations=STOPPING_MAX_ITERATIONS,
     norm=np.inf,
 ):
     """Minimize a function using a nonlinear conjugate gradient algorithm.
@@ -459,8 +463,8 @@ def scipy_newton_cg(
     criterion_and_derivative,
     x,
     *,
-    relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
-    max_iterations=MAX_ITERATIONS,
+    relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     """Minimize a scalar function using Newton's conjugate gradient algorithm.
 
@@ -533,8 +537,8 @@ def scipy_cobyla(
     criterion_and_derivative,
     x,
     *,
-    max_iterations=MAX_ITERATIONS,
-    relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
+    max_iterations=STOPPING_MAX_ITERATIONS,
+    relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     trustregion_initial_radius=None,
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
@@ -598,11 +602,11 @@ def scipy_truncated_newton(
     lower_bounds,
     upper_bounds,
     *,
-    max_criterion_evaluations=MAX_CRITERION_EVALUATIONS,
-    max_iterations=MAX_ITERATIONS,
-    absolute_criterion_tolerance=ABSOLUTE_CRITERION_TOLERANCE,
-    absolute_params_tolerance=ABSOLUTE_PARAMS_TOLERANCE,
-    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
+    max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    max_iterations=STOPPING_MAX_ITERATIONS,
+    absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
     func_min_estimate=0,
     max_hess_evaluations_per_iteration=-1,
     max_step_for_line_search=0,
@@ -720,8 +724,8 @@ def scipy_trust_constr(
     upper_bounds,
     *,
     absolute_gradient_tolerance=1e-08,
-    max_iterations=MAX_ITERATIONS,
-    relative_params_tolerance=RELATIVE_PARAMS_TOLERANCE,
+    max_iterations=STOPPING_MAX_ITERATIONS,
+    relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     trustregion_initial_radius=None,
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
