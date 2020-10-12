@@ -81,7 +81,7 @@ CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE = 1.0
 """
 
 CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE = 1e-8
-"""float: Stop when the minimal trust region radius falls below this value."""
+"""float: Stop when the lower trust region radius falls below this value."""
 
 
 STOPPING_MAX_CRITERION_EVALUATIONS = 1_000_000
@@ -98,7 +98,7 @@ STOPPING_MAX_ITERATIONS = 1_000_000
     optimization stops, but we do not count this as successful convergence.
     The difference to ``max_criterion_evaluations`` is that one iteration might
     need several criterion evaluations, for example in a line search or to determine
-    if the trust region radius has to be decreased.
+    if the trust region radius has to be shrunk.
 
 """
 
@@ -120,7 +120,7 @@ CONVERGENCE_SLOW_PROGRESS = {
     "max_insufficient_improvements": None,
     "comparison_period": 5,
 }
-"""dict: Specification of when to terminate or restart the optimization because of only
+"""dict: Specification of when to terminate or reset the optimization because of only
     slow improvements. This is similar to an absolute criterion tolerance only that
     instead of a single improvement the average over several iterations must be small.
 
@@ -131,7 +131,7 @@ CONVERGENCE_SLOW_PROGRESS = {
             So this is the required average improvement per iteration over the
             comparison period.
         max_insufficient_improvements (int): Number of consecutive
-            insufficient improvements before termination (or restart). Default is
+            insufficient improvements before termination (or reset). Default is
             ``20 * len(x)``.
         comparison_period (int):
             How many iterations to go back to calculate the improvement.
@@ -159,10 +159,10 @@ Trust Region Parameters
 """
 
 THRESHOLD_FOR_SAFETY_STEP = 0.5
-r"""float: Threshold for when to call the safety step.
+r"""float: Threshold for when to call the safety step (:math:`\gamma_s`).
 
     :math:`\text{proposed step} \leq \text{threshold_for_safety_step} \cdot
-    \text{current_trustregion_radius}`.
+    \text{current_lower_trustregion_radius}`.
 
 """
 
@@ -179,20 +179,20 @@ TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL = 0.7
 """
 
 TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL = None
-"""float: Ratio by which to decrease the trust region radius when realized improvement
-    does not match the ``threshold_successful``. The default is 0.98 if the criterion
-    is noisy and 0.5 else.
+"""float: Ratio by which to shrink the upper trust region radius when realized
+    improvement does not match the ``threshold_successful``. The default is 0.98
+    if the criterion is noisy and 0.5 else.
 
 """
 
 TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL = 2.0
-r"""float: Ratio by which to increase the upper trust region radius :math:`\Delta_k`
+r"""float: Ratio by which to expand the upper trust region radius :math:`\Delta_k`
     in very successful iterations (:math:`\gamma_{inc}` in the notation of the paper).
 
 """
 
 TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL = 4.0
-r"""float: Ratio of the proposed step ($\|s_k\|$) by which to increase the upper trust
+r"""float: Ratio of the proposed step ($\|s_k\|$) by which to expand the upper trust
     region radius (:math:`\Delta_k`) in very successful iterations
     (:math:`\overline{\gamma}_{inc}` in the notation of the paper).
 
@@ -207,7 +207,7 @@ r"""float: Ratio by which to shrink the lower trust region radius (:math:`\rho_k
 
 TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION = None
 r"""float: Ratio of the current lower trust region (:math:`\rho_k`) by which to shrink
-    the upper trust region radius (:math:`\Delta_k`) when the lower one is reduced
+    the upper trust region radius (:math:`\Delta_k`) when the lower one is shrunk
     (:math:`\alpha_2` in the notation of the paper). Default is 0.95 if the
     criterion is noisy and 0.5 else."""
 
@@ -266,34 +266,34 @@ RESET_OPTIONS = {
     "n_extra_interpolation_points_per_hard_reset": 0,
     "n_additional_extra_points_to_replace_per_reset": 0,
 }
-r"""dict: Options for restarting the optimization.
+r"""dict: Options for reseting the optimization.
 
     Possible entries are:
 
-        use_resets (bool): Whether to do resets when the minimum trust
+        use_resets (bool): Whether to do resets when the lower trust
             region radius (:math:`\rho_k`) reaches the stopping criterion
-            (:math:`\rho_{end}`), or (optionally) when all points are within noise
-            level. Default is ``True`` if the criterion is noisy.
+            (:math:`\rho_{end}`), or (optionally) when all interpolation points are
+            within noise level. Default is ``True`` if the criterion is noisy.
         minimal_trustregion_radius_tolerance_scaling_at_reset (float): Factor with
-            which the trust region stopping criterion is multiplied at each restart.
+            which the trust region stopping criterion is multiplied at each reset.
 
         reset_type (str): Whether to use "soft" or "hard" resets. Default is "soft".
 
-        move_center_at_soft_reset (bool): Whether to move the current
-            evaluation point ($x_k$) to the best new point evaluated.
+        move_center_at_soft_reset (bool): Whether to move the trust region center
+            ($x_k$) to the best new point evaluated in stead of keeping it constant.
         points_to_replace_at_soft_reset (int): Number of interpolation points to move
-            at each soft restart.
+            at each soft reset.
         reuse_criterion_value_at_hard_reset (bool): Whether or not to recycle the
-            criterion value at the best iterate found when performing a hard restart.
+            criterion value at the best iterate found when performing a hard reset.
             This saves one criterion evaluation.
         max_iterations_without_new_best_after_soft_reset (int):
             The maximum number of successful steps in a given run where the new
             criterion value is worse than the best value found in previous runs before
             terminating. Default is ``max_criterion_evaluations``.
         auto_detect (bool): Whether or not to
-            automatically determine when to restart. This is an additional condition
-            and resets can still be triggered by small trust region radius, etc.
-            There are two criteria used: trust region radius decreases
+            automatically determine when to reset. This is an additional condition
+            and resets can still be triggered by small upper trust region radius, etc.
+            There are two criteria used: upper trust region radius shrinkage
             (no increases over the history, more decreases than no changes) and
             changes in the model Jacobian (consistently increasing trend as measured
             by slope and correlation coefficient of the line of best fit).
@@ -301,9 +301,9 @@ r"""dict: Options for restarting the optimization.
             How many iterations of model changes and trust region radii to store.
         auto_detect_min_jacobian_increase (float):
             Minimum rate of increase of the Jacobian over past iterations to cause a
-            restart.
+            reset.
         auto_detect_min_correlations (float):
-            Minimum correlation of the Jacobian data set required to cause a restart.
+            Minimum correlation of the Jacobian data set required to cause a reset.
         max_consecutive_unsuccessful_resets (int): maximum number of consecutive
             unsuccessful resets allowed (i.e. resets which did not outperform the
             best known value from earlier runs).
@@ -312,14 +312,14 @@ r"""dict: Options for restarting the optimization.
         max_unsuccessful_resets (int): number of total unsuccessful resets
             allowed. Default is 20 if ``seek_global_optimum`` and else unrestricted.
         trust_region_scaling_at_unsuccessful_reset (float): Factor by which to
-            increase the initial trust region radius (:math:`\rho_{beg}`) after
+            expand the initial lower trust region radius (:math:`\rho_{beg}`) after
             unsuccessful resets. Default is 1.1 if ``seek_global_optimum`` else 1.
 
-    Only used when usinge nag_dfols:
+    Only used when using nag_dfols:
         max_interpolation_points (int): Maximum allowed value of the number of
             interpolation points. This is useful if the number of interpolation points
-            increases with each restart, e.g. when
-            ``n_interpolation_points_to_add_at_restart > 0``. The default is
+            increases with each reset, e.g. when
+            ``n_extra_interpolation_points_per_soft_reset > 0``. The default is
             ``n_interpolation_points``.
         n_extra_interpolation_points_per_soft_reset (int): Number of points to add to
             the interpolation set with each soft reset.
@@ -352,9 +352,9 @@ TRUSTREGION_FAST_START_OPTIONS = {
 }
 r"""dict: Options to start the optimization while building the full trust region model.
 
-    To activate this, set the number of points at which to evaluate the criterion
-    before doing the first step, `min_initial_points`, to something smaller than the
-    number of parameters.
+    To activate this, set the number of interpolation points at which to evaluate the
+    criterion before doing the first step, `min_initial_points`, to something smaller
+    than the number of parameters.
 
     The following options can be specified:
 
@@ -367,8 +367,8 @@ r"""dict: Options to start the optimization while building the full trust region
             If the default is used, all the other parameters have no effect.
             Default is ``n_interpolation_points - 1``.
             If the default setup costs of the evaluations are very large, DF-OLS
-            can start with less than ``len(x)`` points and add points to the trust
-            region model with every iteration.
+            can start with less than ``len(x)`` interpolation points and add points
+            to the trust region model with every iteration.
         method ("jacobian", "trustregion" or "auto"):
             When there are less interpolation points than ``len(x)`` the model is
             underdetermined. This can be fixed in two ways:
@@ -400,22 +400,22 @@ r"""dict: Options to start the optimization while building the full trust region
         safety_steps (bool):
             Whether to perform safety steps.
         shrink_upper_radius_in_safety_steps (bool): During the fast start whether to
-            reduce the upper trust region radius in safety steps.
+            shrink the upper trust region radius in safety steps.
         full_geometry_improving_step (bool): During the fast start whether to do a
             full geometry-improving step within safety steps (the same as the post fast
             start phase of the algorithm). Since this involves reducing the upper trust
             region radius, this can only be `True` if
             `shrink_upper_radius_in_safety_steps == False`.
         reset_trustregion_radius_after_fast_start (bool):
-            Whether or not to reset the trust region radius to its initial value
-            at the end of the growing phase.
+            Whether or not to reset the upper trust region radius to its initial value
+            at the end of the fast start phase.
         reset_min_trustregion_radius_after_fast_start (bool):
             Whether or not to reset the minimum trust region radius
-            (:math:`\rho_k`) to its initial value at the end of the growing phase.
+            (:math:`\rho_k`) to its initial value at the end of the fast start phase.
         shrinking_factor_not_successful (float):
-            Ratio by which to decrease the trust region radius when realized
+            Ratio by which to shrink the trust region radius when realized
             improvement does not match the ``threshold_for_successful_iteration``
-            during the growing phase.  By default it is the same as
+            during the fast start phase.  By default it is the same as
             ``reduction_when_not_successful``.
         n_extra_search_directions_per_iteration (int): Number of new search
             directions to add with each iteration where we do not have a full set

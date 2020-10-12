@@ -50,33 +50,33 @@ def nag_dfols(
     lower_bounds,
     upper_bounds,
     *,
-    noise_multiplicative_level=None,
-    noise_additive_level=None,
-    noise_n_evals_per_point=None,
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     convergence_minimal_trustregion_radius_tolerance=CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,  # noqa: E501
-    trustregion_initial_radius=None,
+    convergence_noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,  # noqa: E501
+    convergence_scaled_criterion_tolerance=0.0,
+    convergence_slow_progress=None,
     initial_directions=INITIAL_DIRECTIONS,
-    random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    trustregion_n_interpolation_points=None,
     interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
+    noise_additive_level=None,
+    noise_multiplicative_level=None,
+    noise_n_evals_per_point=None,
+    random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
-    trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
-    trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
-    trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
-    trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
     trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
-    trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
-    trustregion_update_from_min_trustregion=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
-    noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,
-    trustregion_reset_options=None,
-    convergence_slow_progress=None,
-    convergence_scaled_criterion_tolerance=0.0,
-    trustregion_n_extra_points_to_replace_successful=0,
-    trustregion_method_to_move_extra_points="geometry_improving",
     trustregion_fast_start_options=None,
+    trustregion_initial_radius=None,
+    trustregion_method_to_move_extra_points="geometry_improving",
+    trustregion_n_extra_points_to_replace_successful=0,
+    trustregion_n_interpolation_points=None,
+    trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
+    trustregion_reset_options=None,
+    trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
+    trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
+    trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
+    trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
+    trustregion_update_from_min_trustregion=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
@@ -114,8 +114,8 @@ def nag_dfols(
 
     There are four possible convergence criteria:
 
-    1. when the trust region radius is reduced below a minimum
-       (``absolute parameter tolerance``).
+    1. when the lower trust region radius is shrunk below a minimum
+       (``convergence_minimal_trustregion_radius_tolerance``).
 
     2. when the improvements of iterations become very small. This is very similar to
        ``relative_criterion_tolerance`` but ``convergence_slow_progress`` is more
@@ -127,73 +127,30 @@ def nag_dfols(
        :math:`\frac{f(x)}{f(x_0)} \leq
        \text{convergence_scaled_criterion_tolerance}`
 
-    4. when all evaluations on the trust region points fall within a scaled version of
+    4. when all evaluations on the interpolation points fall within a scaled version of
        the noise level of the criterion function. This is only applicable if the
        criterion function is noisy. You can specify this criterion with
-       ``noise_corrected_criterion_tolerance``.
+       ``convergence_noise_corrected_criterion_tolerance``.
 
-    DF-OLS supports restarting the optimization and dynamically growing the initial set.
+    DF-OLS supports resetting the optimization and doing a fast start by
+    starting with a smaller interpolation set and growing it dynamically.
     For more information see `their detailed documentation
     <https://numericalalgorithmsgroup.github.io/dfols/>`_ and :cite:`Cartis2018b`.
 
     Args:
-        noise_multiplicative_level (float): Used for determining the presence of noise
-            and the convergence by all interpolation points being within noise level.
-            0 means no multiplicative noise. Only multiplicative or additive is
-            supported.
-        noise_additive_level (float): Used for determining the presence of noise
-            and the convergence by all interpolation points being within noise level.
-            0 means no additive noise. Only multiplicative or additive is supported.
-        noise_n_evals_per_point (callable): How often to evaluate the criterion
-            function at each point.
-            This is only applicable for criterion functions with noise,
-            when averaging multiple evaluations at the same point produces a more
-            accurate value.
-            The input parameters are the ``trustregion_radius`` (:math:`\Delta`),
-            the ``min_trustregion_radius`` (:math:`\rho`),
-            how many iterations the algorithm has been running for, ``n_iterations``
-            and how many restarts have been performed, ``n_restarts``.
-            The function must return an integer.
-            Default is no averaging (i.e. ``noise_n_evals_per_point(trustregion_radius,
-            min_trustregion_radius, n_iterations, n_restarts) = 1``).
         clip_criterion_if_overflowing (bool): see :ref:`algo_options`.
-        stopping_max_criterion_evaluations (int): see :ref:`algo_options`.
         convergence_minimal_trustregion_radius_tolerance (float): see
             :ref:`algo_options`.
-        initial_directions (str): see :ref:`algo_options`.
-        random_directions_orthogonal (bool): see :ref:`algo_options`.
-        trustregion_n_interpolation_points (int): The number of interpolation points to
-            use. The default is :code:`len(x) + 1`. If using restarts, this is the
-            number of points to use in the first run of the solver, before any restarts.
-        interpolation_rounding_error (float): see :ref:`algo_options`.
-        threshold_for_safety_step (float): Threshold for when to call the safety step,
-            :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`, where
-            :math:`\|s_k\|` is the proposed step size.
-        trustregion_threshold_successful (float): Share of the predicted improvement
-            that has to be achieved for a trust region iteration to count as successful.
-        trustregion_threshold_very_successful (float): Share of the predicted
-            improvement that has to be achieved for a trust region iteration to count
-            as very successful.
-        trustregion_shrinking_factor_not_successful (float): see :ref:`algo_options`.
-        trustregion_expansion_factor_successful (float): Ratio by which to increase
-            the upper trust region radius :math:`\Delta_k` in very successful
-            iterations (:math:`\gamma_{inc}` in the notation of the paper).
-        trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
-        trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
-        trustregion_update_from_min_trustregion (float): see :ref:`algo_options`.
-        convergence_slow_progress (dict): Arguments for converging when the evaluations
-            over several iterations only yield small improvements on average, see
-            see :ref:`algo_options` for details.
-        noise_corrected_criterion_tolerance (float): Stop when the evaluations on the
-            set of interpolation points all fall within this factor of the noise level.
+        convergence_noise_corrected_criterion_tolerance (float): Stop when the
+            evaluations on the set of interpolation points all fall within this factor
+            of the noise level.
             The default is 1, i.e. when all evaluations are within the noise level.
             If you want to not use this criterion but still flag your
             criterion function as noisy, set this tolerance to 0.0.
 
-        .. warning::
-            Very small values, as in most other tolerances don't make sense here.
+            .. warning::
+                Very small values, as in most other tolerances don't make sense here.
 
-        trustregion_precondition_interpolation (bool): see :ref:`algo_options`.
         convergence_scaled_criterion_tolerance (float):
             Terminate if a point is reached where the ratio of the criterion value
             to the criterion value at the start params is below this value, i.e. if
@@ -201,13 +158,57 @@ def nag_dfols(
             \text{convergence_scaled_criterion_tolerance}`. Note this is
             deactivated unless the lowest mathematically possible criterion value (0.0)
             is actually achieved.
-        trustregion_n_extra_points_to_replace_successful (int): The number of extra
-            points (other than accepting the trust region step) to move. Useful when
-            ``trustregion_n_interpolation_points > len(x) + 1``.
-        trustregion_method_to_move_extra_points (str): If moving extra points in
+        convergence_slow_progress (dict): Arguments for converging when the evaluations
+            over several iterations only yield small improvements on average, see
+            see :ref:`algo_options` for details.
+        initial_directions (str): see :ref:`algo_options`.
+        interpolation_rounding_error (float): see :ref:`algo_options`.
+        noise_additive_level (float): Used for determining the presence of noise
+            and the convergence by all interpolation points being within noise level.
+            0 means no additive noise. Only multiplicative or additive is supported.
+        noise_multiplicative_level (float): Used for determining the presence of noise
+            and the convergence by all interpolation points being within noise level.
+            0 means no multiplicative noise. Only multiplicative or additive is
+            supported.
+        noise_n_evals_per_point (callable): How often to evaluate the criterion
+            function at each point.
+            This is only applicable for criterion functions with noise,
+            when averaging multiple evaluations at the same point produces a more
+            accurate value.
+            The input parameters are the ``upper_trustregion_radius`` (:math:`\Delta`),
+            the ``lower_trustregion_radius`` (:math:`\rho`),
+            how many iterations the algorithm has been running for, ``n_iterations``
+            and how many resets have been performed, ``n_resets``.
+            The function must return an integer.
+            Default is no averaging (i.e.
+            ``noise_n_evals_per_point(...) = 1``).
+        random_directions_orthogonal (bool): see :ref:`algo_options`.
+        stopping_max_criterion_evaluations (int): see :ref:`algo_options`.
+        threshold_for_safety_step (float): Threshold for when to call the safety step,
+            :math:`\|s_k\| \leq \text{threshold_for_safety_step} \cdot \rho_k`, where
+            :math:`\|s_k\|` is the proposed step size.
+        trustregion_expansion_factor_successful (float): see :ref:`algo_options`.
+        trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
+        trustregion_fast_start_options (dict): see :ref:`algo_options`.
+        trustregion_initial_radius (float): Initial value of the trust region radius.
+        trustregion_method_to_move_extra_points (str): If replacing extra points in
             successful iterations, whether to use geometry improving steps or the
             momentum method. Can be "geometry_improving" or "momentum".
-        trustregion_fast_start_options (dict): see :ref:`algo_options`.
+        trustregion_n_extra_points_to_replace_successful (int): The number of extra
+            points (other than accepting the trust region step) to replace. Useful when
+            ``trustregion_n_interpolation_points > len(x) + 1``.
+        trustregion_n_interpolation_points (int): The number of interpolation points to
+            use. The default is :code:`len(x) + 1`. If using resets, this is the
+            number of points to use in the first run of the solver, before any resets.
+        trustregion_precondition_interpolation (bool): see :ref:`algo_options`.
+        trustregion_shrinking_factor_not_successful (float): see :ref:`algo_options`.
+        trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
+        trustregion_threshold_successful (float): Share of the predicted improvement
+            that has to be achieved for a trust region iteration to count as successful.
+        trustregion_threshold_very_successful (float): Share of the predicted
+            improvement that has to be achieved for a trust region iteration to count
+            as very successful.
+        trustregion_update_from_min_trustregion (float): see :ref:`algo_options`.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -242,7 +243,7 @@ def nag_dfols(
         noise_multiplicative_level=noise_multiplicative_level,
         noise_additive_level=noise_additive_level,
         noise_n_evals_per_point=noise_n_evals_per_point,
-        noise_corrected_criterion_tolerance=noise_corrected_criterion_tolerance,
+        convergence_noise_corrected_criterion_tolerance=convergence_noise_corrected_criterion_tolerance,  # noqa: E501
         trustregion_initial_radius=trustregion_initial_radius,
         trustregion_reset_options=trustregion_reset_options,
         convergence_slow_progress=convergence_slow_progress,
@@ -286,8 +287,9 @@ def nag_dfols(
         < trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"]
     ):
         raise ValueError(
-            "In the restart options 'n_extra_interpolation_points_per_soft_reset must "
-            "be larger or the same as n_extra_interpolation_points_per_hard_reset."
+            "In the trustregion_reset_options "
+            "'n_extra_interpolation_points_per_soft_reset' must "
+            "be larger or the same as 'n_extra_interpolation_points_per_hard_reset'."
         )
 
     dfols_options = {
@@ -374,32 +376,32 @@ def nag_pybobyqa(
     lower_bounds,
     upper_bounds,
     *,
-    noise_multiplicative_level=None,
-    noise_additive_level=None,
     clip_criterion_if_overflowing=CLIP_CRITERION_IF_OVERFLOWING,
-    trustregion_reset_options=None,
+    convergence_criterion_value=None,
+    convergence_minimal_trustregion_radius_tolerance=CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,  # noqa: E501
+    convergence_noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,  # noqa: E501
+    convergence_slow_progress=None,
+    initial_directions=INITIAL_DIRECTIONS,
+    interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
+    noise_additive_level=None,
+    noise_multiplicative_level=None,
+    noise_n_evals_per_point=None,
+    random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
     seek_global_optimum=False,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
-    convergence_minimal_trustregion_radius_tolerance=CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,  # noqa: E501
-    convergence_criterion_value=None,
-    noise_corrected_criterion_tolerance=CONVERGENCE_NOISE_CORRECTED_CRITERION_TOLERANCE,
-    convergence_slow_progress=None,
-    noise_n_evals_per_point=None,
-    trustregion_initial_radius=None,
-    initial_directions=INITIAL_DIRECTIONS,
-    random_directions_orthogonal=RANDOM_DIRECTIONS_ORTHOGONAL,
-    trustregion_n_interpolation_points=None,
-    interpolation_rounding_error=INTERPOLATION_ROUNDING_ERROR,
     threshold_for_safety_step=THRESHOLD_FOR_SAFETY_STEP,
-    trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
-    trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
-    trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
-    trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
     trustregion_expansion_factor_successful=TRUSTREGION_EXPANSION_FACTOR_SUCCESSFUL,
     trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
-    trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
-    trustregion_update_from_min_trustregion=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
+    trustregion_initial_radius=None,
     trustregion_minimum_change_hession_for_underdetermined_interpolation=True,
+    trustregion_n_interpolation_points=None,
+    trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
+    trustregion_reset_options=None,
+    trustregion_shrinking_factor_not_successful=TRUSTREGION_SHRINKING_FACTOR_NOT_SUCCESSFUL,  # noqa: E501
+    trustregion_shrinking_factor_lower_radius=TRUSTREGION_SHRINKING_FACTOR_LOWER_RADIUS,
+    trustregion_threshold_successful=TRUSTREGION_THRESHOLD_SUCCESSFUL,
+    trustregion_threshold_very_successful=TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL,
+    trustregion_update_from_min_trustregion=TRUSTREGION_UPDATE_FROM_MIN_TRUST_REGION,
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
@@ -421,7 +423,7 @@ def nag_pybobyqa(
 
     There are four possible convergence criteria:
 
-    1. when the trust region radius is reduced below a minimum. This is
+    1. when the trust region radius is shrunk below a minimum. This is
        approximately equivalent to an absolute parameter tolerance.
 
     2. when the criterion value falls below an absolute, user-specified value,
@@ -432,57 +434,21 @@ def nag_pybobyqa(
        improvement, how many iterations have to be insufficient and with which
        iteration to compare can all be specified by the user.
 
-    4. when all evaluations on the trust region points fall within a scaled version of
+    4. when all evaluations on the interpolation points fall within a scaled version of
        the noise level of the criterion function. This is only applicable if the
        criterion function is noisy.
 
     Args:
-        noise_multiplicative_level (float): Used for determining the presence of noise
-            and the convergence by all interpolation points being within noise level.
-            0 means no multiplicative noise. Only multiplicative or additive is
-            supported.
-        noise_additive_level (float): Used for determining the presence of noise
-            and the convergence by all interpolation points being within noise level.
-            0 means no additive noise. Only multiplicative or additive is supported.
-        convergence_minimal_trustregion_radius_tolerance (float): Minimum allowed
-            value of the trust region radius, which determines when a successful
-            termination occurs.
-        stopping_max_criterion_evaluations (int): see :ref:`algo_options`.
-        trustregion_initial_radius (float): Initial value of the trust region radius.
-        seek_global_optimum (bool): whether to apply the heuristic to escape local
-            minima presented in :cite:`Cartis2018a`. Only applies for noisy criterion
-            functions.
-        initial_directions (str): see :ref:`algo_options`.
-        random_directions_orthogonal (bool): see :ref:`algo_options`.
-        trustregion_n_interpolation_points (int): The number of interpolation points to
-            use. With $n=len(x)$ the default is $2n+1$ if the criterion is not noisy.
-            Otherwise, it is set to $(n+1)(n+2)/2)$.
-
-            Larger values are particularly useful for noisy problems.
-            Py-BOBYQA requires
-
-            .. math::
-                n + 1 \leq \text{trustregion_n_interpolation_points} \leq (n+1)(n+2)/2.
-
-        noise_n_evals_per_point (callable): How often to evaluate the criterion
-            function at each point.
-            This is only applicable for criterion functions with noise,
-            when averaging multiple evaluations at the same point produces a more
-            accurate value.
-            The input parameters are the ``trustregion_radius`` (``delta``),
-            the ``min_trustregion_radius`` (``rho``),
-            how many iterations the algorithm has been running for, ``n_iterations``
-            and how many restarts have been performed, ``n_restarts``.
-            The function must return an integer.
-            Default is no averaging (i.e. ``noise_n_evals_per_point(...) = 1``).
-        interpolation_rounding_error (float): see :ref:`algo_options`.
-        threshold_for_safety_step (float): see :ref:`algo_options`.
         clip_criterion_if_overflowing (bool): see :ref:`algo_options`.
         convergence_criterion_value (float): Terminate successfully if
             the criterion value falls below this threshold. This is deactivated
             (i.e. set to -inf) by default.
-        noise_corrected_criterion_tolerance (float): Stop when the evaluations on the
-            set of interpolation points all fall within this factor of the noise level.
+        convergence_minimal_trustregion_radius_tolerance (float): Minimum allowed
+            value of the trust region radius, which determines when a successful
+            termination occurs.
+        convergence_noise_corrected_criterion_tolerance (float): Stop when the
+            evaluations on the set of interpolation points all fall within this
+            factor of the noise level.
             The default is 1, i.e. when all evaluations are within the noise level.
             If you want to not use this criterion but still flag your
             criterion function as noisy, set this tolerance to 0.0.
@@ -493,19 +459,55 @@ def nag_pybobyqa(
         convergence_slow_progress (dict): Arguments for converging when the evaluations
             over several iterations only yield small improvements on average, see
             see :ref:`algo_options` for details.
-        trustregion_precondition_interpolation (bool): see :ref:`algo_options`.
-        trustregion_threshold_successful (float): see :ref:`algo_options`.
-        trustregion_threshold_very_successful (float): see :ref:`algo_options`.
-        trustregion_shrinking_factor_not_successful (float): see :ref:`algo_options`.
+        initial_directions (str): see :ref:`algo_options`.
+        interpolation_rounding_error (float): see :ref:`algo_options`.
+        noise_additive_level (float): Used for determining the presence of noise
+            and the convergence by all interpolation points being within noise level.
+            0 means no additive noise. Only multiplicative or additive is supported.
+        noise_multiplicative_level (float): Used for determining the presence of noise
+            and the convergence by all interpolation points being within noise level.
+            0 means no multiplicative noise. Only multiplicative or additive is
+            supported.
+        noise_n_evals_per_point (callable): How often to evaluate the criterion
+            function at each point.
+            This is only applicable for criterion functions with noise,
+            when averaging multiple evaluations at the same point produces a more
+            accurate value.
+            The input parameters are the ``upper_trustregion_radius`` (``delta``),
+            the ``lower_trustregion_radius`` (``rho``),
+            how many iterations the algorithm has been running for, ``n_iterations``
+            and how many resets have been performed, ``n_resets``.
+            The function must return an integer.
+            Default is no averaging (i.e. ``noise_n_evals_per_point(...) = 1``).
+        random_directions_orthogonal (bool): see :ref:`algo_options`.
+        seek_global_optimum (bool): whether to apply the heuristic to escape local
+            minima presented in :cite:`Cartis2018a`. Only applies for noisy criterion
+            functions.
+        stopping_max_criterion_evaluations (int): see :ref:`algo_options`.
+        threshold_for_safety_step (float): see :ref:`algo_options`.
         trustregion_expansion_factor_successful (float): see :ref:`algo_options`.
         trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
-        trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
-        trustregion_update_from_min_trustregion (float): see :ref:`algo_options`.
+        trustregion_initial_radius (float): Initial value of the trust region radius.
         trustregion_minimum_change_hession_for_underdetermined_interpolation (bool):
             Whether to solve the underdetermined quadratic interpolation problem by
             minimizing the Frobenius norm of the Hessian, or change in Hessian.
-        trustregion_reset_options (dict): Options for restarting the optimization,
+        trustregion_n_interpolation_points (int): The number of interpolation points to
+            use. With $n=len(x)$ the default is $2n+1$ if the criterion is not noisy.
+            Otherwise, it is set to $(n+1)(n+2)/2)$.
+
+            Larger values are particularly useful for noisy problems.
+            Py-BOBYQA requires
+
+            .. math::
+                n + 1 \leq \text{trustregion_n_interpolation_points} \leq (n+1)(n+2)/2.
+        trustregion_precondition_interpolation (bool): see :ref:`algo_options`.
+        trustregion_reset_options (dict): Options for resetting the optimization,
             see :ref:`algo_options` for details.
+        trustregion_shrinking_factor_not_successful (float): see :ref:`algo_options`.
+        trustregion_shrinking_factor_lower_radius (float): see :ref:`algo_options`.
+        trustregion_threshold_successful (float): see :ref:`algo_options`.
+        trustregion_threshold_very_successful (float): see :ref:`algo_options`.
+        trustregion_update_from_min_trustregion (float): see :ref:`algo_options`.
 
     Returns:
         results (dict): See :ref:`internal_optimizer_output` for details.
@@ -538,7 +540,7 @@ def nag_pybobyqa(
         noise_additive_level=noise_additive_level,
         trustregion_initial_radius=trustregion_initial_radius,
         noise_n_evals_per_point=noise_n_evals_per_point,
-        noise_corrected_criterion_tolerance=noise_corrected_criterion_tolerance,
+        convergence_noise_corrected_criterion_tolerance=convergence_noise_corrected_criterion_tolerance,  # noqa: E501
         trustregion_reset_options=trustregion_reset_options,
         convergence_slow_progress=convergence_slow_progress,
         interpolation_rounding_error=interpolation_rounding_error,
@@ -637,7 +639,7 @@ def _create_nag_advanced_options(
     noise_additive_level,
     trustregion_initial_radius,
     noise_n_evals_per_point,
-    noise_corrected_criterion_tolerance,
+    convergence_noise_corrected_criterion_tolerance,
     trustregion_reset_options,
     convergence_slow_progress,
     interpolation_rounding_error,
@@ -698,9 +700,9 @@ def _create_nag_advanced_options(
         "slow.history_for_slow": convergence_slow_progress["comparison_period"],
         "noise.multiplicative_noise_level": noise_multiplicative_level,
         "noise.additive_noise_level": noise_additive_level,
-        "noise.quit_on_noise_level": noise_corrected_criterion_tolerance > 0
+        "noise.quit_on_noise_level": convergence_noise_corrected_criterion_tolerance > 0
         and (noise_multiplicative_level or noise_additive_level),
-        "noise.scale_factor_for_quit": noise_corrected_criterion_tolerance,
+        "noise.scale_factor_for_quit": convergence_noise_corrected_criterion_tolerance,
         "interpolation.precondition": trustregion_precondition_interpolation,
         "restarts.use_restarts": trustregion_reset_options["use_resets"],
         "restarts.max_unsuccessful_restarts": trustregion_reset_options[
@@ -745,10 +747,10 @@ def _change_evals_per_point_interface(func):
 
         def adjusted_noise_n_evals_per_point(delta, rho, iter, nrestarts):  # noqa: A002
             return func(
-                trustregion_radius=delta,
-                min_trustregion=rho,
+                upper_trustregion_radius=delta,
+                lower_trustregion_radius=rho,
                 n_iterations=iter,
-                n_restarts=nrestarts,
+                n_resets=nrestarts,
             )
 
         return adjusted_noise_n_evals_per_point
