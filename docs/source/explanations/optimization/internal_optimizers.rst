@@ -14,10 +14,10 @@ used by passing the algorithm name as ``algorithm`` into ``maximize`` or ``minim
 However, advanced users can also use estimagic with their own algorithm, as long as it
 conforms with the internal optimizer interface.
 
-The advantages of using the algorithm with estimagic, over using it directly are:
+The advantages of using the algorithm with estimagic over using it directly are:
 
 - Estimagic turns an unconstrained optimizer into one that can deal efficiently with a
-  wide range of contstraints
+  wide range of constraints
   (see .. _link: how_to_guides/how_to_use_constranits.ipynb).
 - You can use estimagic's logging capabilities.
 - You get a beautiful real time dashboard to monitor your optimization.
@@ -112,9 +112,9 @@ the convergence criteria, other stopping conditions, and so on. We try to harmon
 those names and their default values where possible.
 
 The preferred default values can be imported from
-``estimagic.optimization.default_algo_options``. If
-you add a new optimizer to estimagic you should only deviate from them if you have good
-reasons.
+``estimagic.optimization.algo_options`` which are documented in :ref:`algo_options`.
+If you add a new optimizer to estimagic you should only deviate from them if you have
+good reasons.
 
 Note that a complete harmonization is not possible nor desirable, because often
 convergence criteria that clearly are the same are implemented slightly different for
@@ -123,7 +123,6 @@ the exact meaning of all options for all optimizers.
 
 
 .. _convergence_criteria:
-
 
 Convergence Criteria
 --------------------
@@ -192,10 +191,11 @@ Optimizer configurations
 - **max_line_search_steps** *(int)*: Maximum number of criterion (and possibly
   derivative) evaluations per line search.
 
-- **initial_trust_radius** *(float)*: Note this is very problem specific and you can
-  typically do better than using the default. Intuitively, this can be described as a
-  reasonable change in parameters the optimizer can take from the start values.
-  The default is to take 10% of the largest start parameter, but at least 0.1.
+- **trustregion_initial_radius** *(float)*: Note this is very problem specific and
+  you can typically do better than using the default. Intuitively, this can be
+  described as a reasonable change in parameters the optimizer can take from the
+  start values. The default is to take 10% of the largest start parameter, but at
+  least 0.1.
 
 - **limited_memory_storage_length** *(int)*: Maximum number of stored objects
   in a limited memory algorithm. Typically this refers to the number of gradient

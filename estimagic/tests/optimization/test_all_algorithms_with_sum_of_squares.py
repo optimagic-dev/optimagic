@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 
+from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
@@ -38,6 +39,7 @@ def _skip_tests_with_missing_dependencies(test_cases):
     dependency_present_to_start_str = {
         IS_PETSC4PY_INSTALLED: "tao_",
         IS_PYBOBYQA_INSTALLED: "nag_pybobyqa",
+        IS_DFOLS_INSTALLED: "nag_dfols",
     }
 
     new_test_cases = []
@@ -115,7 +117,7 @@ def sos_criterion_and_jacobian(params):
 
 def get_test_cases_for_algorithm(algorithm):
     """Generate list of all possible argument combinations for algorithm."""
-    is_least_squares = algorithm in ["tao_pounders"]
+    is_least_squares = algorithm in ["tao_pounders", "nag_dfols"]
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
 

@@ -13,10 +13,10 @@ your criterion function or derivative. Even though estimagic makes it simple to 
 your optimization from the last parameter value, this is annoying. Below is a very short
 list of things you can do to avoid this behavior:
 
-- Set bounds for your parameters, that prevent extreme parameter constellations
+- Set bounds for your parameters, that prevent extreme parameter constellations.
 - Use the ``bounds_distance`` option with a not too small value for ``covariance`` and
-  ``sdcorr`` constraints. For details see
-  .. _link: ../../docs/source/how_to_guides/how_to_use_constranits.ipynb
+  ``sdcorr`` constraints. For details see the
+  `How To Guide on Constraints <./how_to_use_constraints.html>`_.
 - Use :func:`~estimagic.optimization.utilities.robust_cholesky` instead of normal
   cholesky decompositions or try to avoid cholesky decompositions by restructuring
   your algorithm.
@@ -24,7 +24,9 @@ list of things you can do to avoid this behavior:
   numbers, the exponential function is only well defined roughly between -700 and 700.
   Below it is -inf, above it is inf. Sometimes you can use ``scipy.special.logsumexp``
   to avoid unsafe evaluations of the exponential function. Otherwise you can avoid
-  problems by setting bounds. In the worst case, use clipping.
+  problems by setting bounds. In the worst case, use clipping. Note, however, that
+  clipping leads to flat regions in your criterion function which can lead to erroneous
+  convergence.
 
 
 The Two Levels of Error Handling
