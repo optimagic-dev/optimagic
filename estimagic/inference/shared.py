@@ -109,6 +109,9 @@ def calculate_inference_quantities(params, free_cov):
     free["p_value"] = 1.96 * scipy.stats.norm.sf(np.abs(tvalues))
     free["ci_lower"] = free["value"] - 1.96 * free["standard_error"]
     free["ci_upper"] = free["value"] + 1.96 * free["standard_error"]
+    free["stars"] = pd.cut(
+        free["p_value"], bins=[-1, 0.01, 0.05, 0.1, 2], labels=["***", "**", "*", ""]
+    )
 
     res = free.reindex(params.index)
     res["value"] = params["value"]
