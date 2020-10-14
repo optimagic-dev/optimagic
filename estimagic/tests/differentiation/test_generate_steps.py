@@ -9,12 +9,40 @@ from estimagic.differentiation.generate_steps import _set_unused_side_to_nan
 from estimagic.differentiation.generate_steps import generate_steps
 
 
+def test_scalars_as_base_steps():
+    steps_scalar = _calculate_or_validate_base_steps(
+        0.1, np.ones(3), "first_derivative", None, scaling_factor=1
+    )
+
+    steps_array = _calculate_or_validate_base_steps(
+        np.full(3, 0.1), np.ones(3), "first_derivative", None, scaling_factor=1
+    )
+
+    aaae(steps_scalar, steps_array)
+
+
+def test_scalars_as_min_steps():
+    steps_scalar = _calculate_or_validate_base_steps(
+        0.1, np.ones(3), "first_derivative", 0.12, scaling_factor=1.5
+    )
+
+    steps_array = _calculate_or_validate_base_steps(
+        np.full(3, 0.1),
+        np.ones(3),
+        "first_derivative",
+        np.full(3, 0.12),
+        scaling_factor=1.5,
+    )
+
+    aaae(steps_scalar, steps_array)
+
+
 def test_calculate_or_validate_base_steps_invalid_too_small():
     base_steps = np.array([1e-10, 0.01, 0.01])
     min_steps = np.full(3, 1e-8)
     with pytest.raises(ValueError):
         _calculate_or_validate_base_steps(
-            base_steps, np.ones(3), "first_derivative", min_steps, scaling_factor=1.0
+            base_steps, np.ones(3), "first_derivative", min_steps, scaling_factor=1
         )
 
 
@@ -23,7 +51,7 @@ def test_calculate_or_validate_base_steps_wrong_shape():
     min_steps = np.full(3, 1e-8)
     with pytest.raises(ValueError):
         _calculate_or_validate_base_steps(
-            base_steps, np.ones(2), "first_derivative", min_steps, scaling_factor=1.0
+            base_steps, np.ones(2), "first_derivative", min_steps, scaling_factor=1
         )
 
 

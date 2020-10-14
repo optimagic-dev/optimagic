@@ -3,12 +3,12 @@ import functools
 
 import numpy as np
 
-from estimagic.config import ABSOLUTE_GRADIENT_TOLERANCE
-from estimagic.config import INITIAL_TRUST_RADIUS
 from estimagic.config import IS_PETSC4PY_INSTALLED
-from estimagic.config import MAX_ITERATIONS
-from estimagic.config import RELATIVE_GRADIENT_TOLERANCE
-from estimagic.config import SCALED_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 
 try:
     from petsc4py import PETSc
@@ -29,15 +29,17 @@ def tao_pounders(
     lower_bounds,
     upper_bounds,
     *,
-    absolute_gradient_tolerance=ABSOLUTE_GRADIENT_TOLERANCE,
-    relative_gradient_tolerance=RELATIVE_GRADIENT_TOLERANCE,
-    scaled_gradient_tolerance=SCALED_GRADIENT_TOLERANCE,
-    initial_trust_region_radius=INITIAL_TRUST_RADIUS,
-    max_iterations=MAX_ITERATIONS,
+    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    scaled_gradient_tolerance=CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
+    trustregion_initial_radius=None,
+    max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     r"""Minimize a function using the POUNDERs algorithm.
 
-    POUNDERs can be a useful tool for economists who estimate structural models using
+    POUNDERs (:cite:`Benson2017`, :cite:`Wild2015`, `GitLab repository
+    <https://gitlab.com/petsc/petsc/-/tree/master/src/binding/petsc4py/>`_)
+    can be a useful tool for economists who estimate structural models using
     indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
     POUNDERs is tailored for minimizing a non-linear sum of squares objective function,
     and therefore may require fewer iterations to arrive at a local optimum than
@@ -89,8 +91,8 @@ def tao_pounders(
         scaled_gradient_tolerance (float): Stop if norm of gradient is reduced by this
             factor. If set to False the algorithm will not consider
             relative_gradient_tolerance.
-        initial_trust_region_radius (float): Sets the radius for the initial trust
-            region that the optimizer employs. It must be :math:`> 0`.
+        trustregion_initial_radius (float): Initial value of the trust region radius.
+            It must be :math:`> 0`.
         max_iterations (int): Alternative Stopping criterion. If set the routine will
             stop after the number of specified iterations or after the step size is
             sufficiently small. If the variable is set the default criteria will all be
@@ -98,14 +100,6 @@ def tao_pounders(
 
     Returns:
         results (dict): Dictionary with processed optimization results.
-
-    References:
-        .. _TAO Users Manual (Revision 3.7):
-            http://web.mit.edu/tao-petsc_v3.7/tao_manual.pdf
-        .. _Solving Derivative-Free Nonlinear Least Squares Problems with POUNDERS:
-            https://www.mcs.anl.gov/papers/P5120-0414.pdf
-        .. _petsc4py on BitBucket:
-            https://bitbucket.org/petsc/petsc4py
 
     """
     if not IS_PETSC4PY_INSTALLED:
@@ -154,9 +148,11 @@ def tao_pounders(
     # want more than pounders.
     tao.setResidual(func_tao, residuals_out)
 
-    if initial_trust_region_radius <= 0:
+    if trustregion_initial_radius is None:
+        trustregion_initial_radius = calculate_trustregion_initial_radius(x)
+    elif trustregion_initial_radius <= 0:
         raise ValueError("The initial trust region radius must be > 0.")
-    tao.setInitialTrustRegionRadius(initial_trust_region_radius)
+    tao.setInitialTrustRegionRadius(trustregion_initial_radius)
 
     # Add bounds.
     lower_bounds = _initialise_petsc_array(lower_bounds)

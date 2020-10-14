@@ -264,3 +264,19 @@ def namedtuple_from_iterables(field_names, field_entries):
 def hash_array(arr):
     """Create a hashsum for fast comparison of numpy arrays."""
     return sha1(arr.tobytes()).hexdigest()
+
+
+def calculate_trustregion_initial_radius(x):
+    """Calculate the initial trust region radius.
+
+    It is calculated as :math:`0.1\max(\|x\|_{\infty}, 1)`.
+
+    Args:
+        x (np.ndarray): the start parameter values.
+
+    Returns:
+        trust_radius (float): initial trust radius
+
+    """
+    x_norm = np.linalg.norm(x, ord=np.inf)
+    return 0.1 * max(x_norm, 1)
