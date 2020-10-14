@@ -69,7 +69,7 @@ def nag_dfols(
     trustregion_expansion_factor_very_successful=TRUSTREGION_EXPANSION_FACTOR_VERY_SUCCESSFUL,  # noqa: E501
     trustregion_fast_start_options=None,
     trustregion_initial_radius=None,
-    trustregion_method_to_move_extra_points="geometry_improving",
+    trustregion_method_to_replace_extra_points="geometry_improving",
     trustregion_n_extra_points_to_replace_successful=0,
     trustregion_n_interpolation_points=None,
     trustregion_precondition_interpolation=TRUSTREGION_PRECONDITION_INTERPOLATION,
@@ -192,7 +192,7 @@ def nag_dfols(
         trustregion_expansion_factor_very_successful (float): see :ref:`algo_options`.
         trustregion_fast_start_options (dict): see :ref:`algo_options`.
         trustregion_initial_radius (float): Initial value of the trust region radius.
-        trustregion_method_to_move_extra_points (str): If replacing extra points in
+        trustregion_method_to_replace_extra_points (str): If replacing extra points in
             successful iterations, whether to use geometry improving steps or the
             momentum method. Can be "geometry_improving" or "momentum".
         trustregion_n_extra_points_to_replace_successful (int): The number of extra
@@ -222,13 +222,13 @@ def nag_dfols(
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
         )
-    if trustregion_method_to_move_extra_points == "momentum":
+    if trustregion_method_to_replace_extra_points == "momentum":
         trustregion_use_momentum = True
-    elif trustregion_method_to_move_extra_points in ["geometry_improving", None]:
+    elif trustregion_method_to_replace_extra_points in ["geometry_improving", None]:
         trustregion_use_momentum = False
     else:
         raise ValueError(
-            "trustregion_method_to_move_extra_points must be "
+            "trustregion_method_to_replace_extra_points must be "
             "'geometry_improving', 'momentum' or None."
         )
 
