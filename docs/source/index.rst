@@ -1,18 +1,58 @@
 =========
-Estimagic
+estimagic
 =========
 
-Estimagic is a Python package that helps to build high-quality and user friendly
-implementations of (structural) econometric models. It is designed with large structural
-models in mind, but also "scales down" to simple cases.
+estimagic is a Python package that provides high-quality and user-friendly tools
+to fit large scale empirical models to data and make inferences about the estimated
+model parameters. It is especially suited to solve difficult constrained optimization
+problems.
 
-Estimagic provides tools for nonlinear optimization, numerical differentiation and
-statistical inference.
+estimagic provides several advantages over similar packages, including a unified
+interface that supports a large number of local and global optimization algorithms
+and the possibility of monitoring the optimization procedure via a beautiful
+interactive dashboard.
+
+estimagic provides tools for nonlinear optimization, numerical differentiation
+and statistical inference.
+
+Tools
+=====
+
+Optimization
+------------
+
+- estimagic wraps all algorithms from *scipy.optimize* and many more become
+  available when installing optional dependencies.
+- estimagic can automatically implement many types of constraints via
+  reparametrization, with any optmizer that supports simple box constraints.
+- estimagic encourages name-based parameters handling. Parameters are specified
+  as pandas DataFrames that can have any kind of single or MultiIndex. This is
+  especially useful when specifying constraints.
+- The complete history of parameters and function evaluations are saved in a
+  database for maximum reproducibility and displayed in real time via an
+  interactive dashboard.
+
+  .. image:: _static/images/dashboard.gif
+    :scale: 80 %
+    :align: center
+
+Numerical differentiation
+-------------------------
+- estimagic can calculate precise numerical derivatives using `Richardson extrapolations
+  <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
+- Function evaluations needed for numerical derivatives can be done in parallel
+  with pre-implemented or user provided batch evaluators.
+
+Statistical inference
+---------------------
+- estimagic provides asymptotic standard errors for maximum likelihood and method
+  of simulated moments.
+- estimagic also provides bootstrap confidence intervals and standard errors.
+  Of course the bootstrap procedures are parallelized.
 
 
-Structure of the Documentation
+Structure of the documentation
 ==============================
-
 
 .. raw:: html
 
@@ -27,7 +67,7 @@ Structure of the Documentation
                         <div class="card-body flex-fill">
                             <h5 class="card-title">Getting Started</h5>
                             <p class="card-text">
-                                New users of estimagic should read this first
+                                New users of estimagic should read this firs.t
                             </p>
                         </div>
                     </div>
@@ -71,10 +111,10 @@ Structure of the Documentation
                              alt="reference guides icon" height="52"
                         >
                         <div class="card-body flex-fill">
-                            <h5 class="card-title">Reference Guides</h5>
+                            <h5 class="card-title">API Reference</h5>
                             <p class="card-text">
                                 Overview of functions and modules as well as
-                                implementation details
+                                implementation details.
                             </p>
                         </div>
                     </div>
@@ -82,8 +122,6 @@ Structure of the Documentation
             </div>
         </div>
     </div>
-
-
 
 .. toctree::
    :maxdepth: 1
@@ -94,62 +132,12 @@ Structure of the Documentation
    explanations/index
    reference_guides/index
 
-
-
-Highlights
-==========
-
-Optimization
-------------
-
-- Unified interface to a large number of local and global optimization algorithms. Of
-  course we have all algorithms from `scipy.optimize` but many more become available
-  when you install optional dependencies.
-- Parameters are specified as pandas DataFrames that can have any kind of single or
-  MultiIndex
-- Many types of constraints can be used with any optimizer that supports simple box
-  constraints. Constraints are specified using parameter names, not positions.
-- The complete history of parameters and function evaluations is saved in a database for
-  maximum reproducibility. They are also displayed in real time in an interactive
-  dashboard.
-
-
-.. image:: _static/images/dashboard.gif
-  :scale: 60 %
-  :align: center
-
-
-Numerical Differentiation
--------------------------
-
-- Calculate precise numerical derivatives using `Richardson extrapolations
-  <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
-- All function evaluations needed for numerical derivatives can be done in parallel with
-  pre-implemented or user provided batch evaluators.
-
-
-Statistical Inference
----------------------
-
-- Asymptotic standard errors for maximum likelihood an method of simulated moments
-- Bootstrap confidence intervals and standard errors for nonlinear estimators. Of course
-  the bootstrap procedures are parallelized.
-
-
-Additional Topics
-=================
+**Useful links for search:** :ref:`genindex` | :ref:`modindex` | :ref:`search`
 
 .. toctree::
-   :maxdepth: 1
+  :maxdepth: 1
+  :hidden:
 
-   contributing/index
-   changes
-   credits
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+  contributing/index
+  changes
+  credits
