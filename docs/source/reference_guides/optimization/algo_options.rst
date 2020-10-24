@@ -1,6 +1,6 @@
 .. _algo_options:
 
-The Default Algorithm Options
+The default algorithm options
 ------------------------------------------------------
 
 .. automodule:: estimagic.optimization.algo_options

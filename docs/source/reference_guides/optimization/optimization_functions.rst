@@ -1,6 +1,6 @@
 .. _maximize_and_minimize:
 
-Optimization Functions
+Optimization functions
 ----------------------
 
 .. automodule:: estimagic.optimization.optimize

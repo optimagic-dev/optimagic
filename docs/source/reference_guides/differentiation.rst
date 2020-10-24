@@ -1,9 +1,9 @@
-Differentiation Tools
+Differentiation tools
 =====================
 
 .. _first_derivative:
 
-Numerical First Derivatives
+Numerical first derivatives
 ---------------------------
 
 
