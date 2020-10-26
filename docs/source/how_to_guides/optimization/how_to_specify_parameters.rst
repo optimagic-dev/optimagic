@@ -1,7 +1,7 @@
 .. _params:
 
 ===============================
-How to Specify Start Parameters
+How to specify start parameters
 ===============================
 
 The ``params`` DataFrame is an important concept in estimagic. It collects

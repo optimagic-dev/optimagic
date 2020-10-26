@@ -1,10 +1,10 @@
 .. _algorithms:
 
 ====================================
-Optimization Algorithms in Estimagic
+Optimization algorithms in estimagic
 ====================================
 
-The *algorithm* Argument
+The *algorithm* argument
 ========================
 
 The ``algorithm`` argument can either be string with the name of a algorithm that is
@@ -17,7 +17,7 @@ installed.
 
 
 
-The *algo_options* Argument
+The *algo_options* argument
 ===========================
 
 ``algo_options`` is a dictionary with optional keyword arguments that are passed to the
@@ -34,7 +34,7 @@ To find more information on ``algo_options`` that more than one algorithm allows
 see :ref:`algo_options`.
 
 
-How to Read the Algorithms Documentation
+How to read the algorithms documentation
 ========================================
 
 Below we document the supported algorithms. The documentation refers to the internal
@@ -52,11 +52,11 @@ The other arguments can be set as ``algo_options`` when calling ``maximize`` or
 .. _list_of_algorithms:
 
 
-Supported Algorithms
+Supported algorithms
 ====================
 
 
-Without Optional Dependencies
+Without optional dependencies
 -----------------------------
 
 *********************
@@ -131,7 +131,8 @@ The following arguments are not supported as part of ``algo_options``:
 - ``scaling_within_bounds``
 - ``init.run_in_parallel``
 - ``do_logging``, ``print_progress`` and all their advanced options.
-  Use estimagic's database and dashboard instead to explore your criterion and algorithm.
+  Use estimagic's database and dashboard instead to explore your criterion and
+  algorithm.
 
 .. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
 
@@ -149,7 +150,8 @@ The following arguments are not supported as part of ``algo_options``:
 - ``scaling_within_bounds``
 - ``init.run_in_parallel``
 - ``do_logging``, ``print_progress`` and all their advanced options.
-  Use estimagic's database and dashboard instead to explore your criterion and algorithm.
+  Use estimagic's database and dashboard instead to explore your criterion
+  and algorithm.
 
 .. autofunction:: estimagic.optimization.nag_optimizers.nag_dfols
 

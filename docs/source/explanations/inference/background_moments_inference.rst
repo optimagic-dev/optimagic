@@ -1,4 +1,4 @@
-Moments Based Estimation
+Moments-based estimation
 ========================
 
 .. currentmodule:: estimagic.inference.moment_covs

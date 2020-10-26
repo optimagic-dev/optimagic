@@ -2,21 +2,21 @@
 .. _internal_optimizer_interface:
 
 =================================
-Internal Optimizers for Estimagic
+Internal optimizers for estimagic
 =================================
 
 
 Introduction
 ============
 
-Estimagic provides a large collection of optimization algorithm that can be
+estimagic provides a large collection of optimization algorithm that can be
 used by passing the algorithm name as ``algorithm`` into ``maximize`` or ``minimize``.
 However, advanced users can also use estimagic with their own algorithm, as long as it
 conforms with the internal optimizer interface.
 
 The advantages of using the algorithm with estimagic over using it directly are:
 
-- Estimagic turns an unconstrained optimizer into one that can deal efficiently with a
+- estimagic turns an unconstrained optimizer into one that can deal efficiently with a
   wide range of constraints
   (see .. _link: how_to_guides/how_to_use_constranits.ipynb).
 - You can use estimagic's logging capabilities.
@@ -33,7 +33,7 @@ transformed problem.
 
 
 
-The Internal Optimizer Interface
+The internal optimizer interface
 ================================
 
 An internal optimizer is a function that minimizes an objective function it has two
@@ -78,7 +78,7 @@ criterion function, handles errors and more.
 
 .. _internal_optimizer_output:
 
-Output of Internal Optimizers
+Output of internal optimizers
 =============================
 
 
@@ -104,7 +104,7 @@ possible.
 
 .. _naming_conventions:
 
-Naming Conventions for Optional Arguments
+Naming conventions for optional arguments
 =========================================
 
 Many optimizers have similar but slightly different names for arguments that configure
@@ -124,7 +124,7 @@ the exact meaning of all options for all optimizers.
 
 .. _convergence_criteria:
 
-Convergence Criteria
+Convergence criteria
 --------------------
 
 Declare convergence when any of the convergence criteria is satisfied:
@@ -202,7 +202,7 @@ Optimizer configurations
   evaluations used to approximate the Hessian in Quasi-Newton algorithms.
 
 
-Other Conventions
+Other conventions
 =================
 
 - Internal optimizer are functions and should thus adhere to python naming conventions,

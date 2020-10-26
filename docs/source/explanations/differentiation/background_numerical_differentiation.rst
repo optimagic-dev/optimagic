@@ -1,4 +1,4 @@
-Background and Methods
+Background and methods
 ======================
 
 In this section we explain the mathematical background of forward, backward

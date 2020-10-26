@@ -1,7 +1,7 @@
 .. _implementation_of_constraints:
 
 ===============================
-How Constraints Are Implemented
+How constraints are implemented
 ===============================
 
 Most of the optimizers wrapped in estimagic cannot deal natively with anything but box
@@ -26,7 +26,7 @@ explain what both approaches are, why we chose the reparametrization approach ov
 penalties and which reparametrizations we are using for each type of constraint.
 
 
-Possible Approaches
+Possible approaches
 ===================
 
 
@@ -121,7 +121,7 @@ optimizers. More general constraints are only available with optimizers that can
 natively with them. This includes all optimizers from the nlopt and ipopt library.
 
 
-The Non-Trivial Reparametrizations
+The non-trivial reparametrizations
 ===================================
 
 Fixed parameters, equality and pairwise equality constraints can be implemented
@@ -130,7 +130,7 @@ Increasing and decreasing constraints are internally implemented as linear const
 The following section explains how the other constraints are implemented:
 
 
-Covariance and sdcorr Constraints
+Covariance and sdcorr constraints
 ---------------------------------
 
 The main difficulty with covariance and sdcorr constraints is to keep the (implied)
@@ -150,7 +150,7 @@ or other constraints on any of the involved parameters.
 
 .. _linear_constraint_implementation:
 
-Linear Constraints
+Linear constraints
 ------------------
 
 Assume we have m linear constraints on an n-dimensional parameter vector. Then the set
@@ -229,7 +229,7 @@ constraints as involved parameters. This includes any box constraints on the inv
 parameters.
 
 
-Probability Constraints
+Probability constraints
 -----------------------
 
 A probability constraint on k parameters means that all parameters lie in
