@@ -138,6 +138,6 @@ Structure of the documentation
   :maxdepth: 1
   :hidden:
 
-  contributing/index
+  development/index
   changes
   credits

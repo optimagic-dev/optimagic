@@ -3,7 +3,7 @@ When (not) to use estimagic
 ===========================
 
 estimagic provides tools for the estimation of empirical models, not for the
-implementation of the model themselves. Consider the following workflow:
+implementation of the models themselves. Consider the following workflow:
 
 - | **The user sets up a model**, either programming it from scratches or using
     an already-existing implementation. As an example, the model can be a set of
@@ -11,18 +11,18 @@ implementation of the model themselves. Consider the following workflow:
     model components.
 
 - | **The user choose an estimation method** to fit the model's parameters to
-    the observed data, for instance Maximum Likelihood or Method of Simulated Moments.
+    the observed data, for instance maximum likelihood or method of simulated moments.
 
 - | Given the chosen estimation method, **the user constructs the criterion function**.
     To continue our example, the criterion function will be the (negative) log-likelihood
-    if Maximum Likelihood is chosen as an estimation method, or the (wighted) distance
-    between simulated and observed moments for the Method of Simulated Moments.
+    for maximum likelihood, or the (weighted) distance between simulated and observed #
+    moments for method of simulated moments.
 
 This criterion function is then passed to estimagic for optimization and inference
 on the estimated parameters.
 
 estimagic is flexible enough to handle derivative-based and derivative-free optimization,
-optimization errors and many type of constraints, but it may not be the tool you are
+optimization errors, and many type of constraints, but it may not be the tool you are
 looking for if your optimization problem has certain features. We provide a list of
 these features below.
 
@@ -36,7 +36,7 @@ is not a good fit because of two reasons:
 
 * | The optimization algorithms in estimagic are either derivative-free or make
     some use of second-order information, for instance using the Hessian or the
-    approximated Hessian.
+    approximate Hessian.
   | Derivative-free optimization algorithms are suitable whenever the criterion
     function has many local optima, it is discontinuous or non-differentiable,
     but do not scale well to high-dimensional problems (because of the computational
@@ -75,8 +75,8 @@ A well-behaved or specialized problem
 ======================================
 If you have a very well behaved problem (for instance, you know your criterion is
 convex or you have a linear programming problem), you should consider using a specialized
-library, such as ``cvxopt`` or ``PuLP``.  While estimagic would work for these
-kind of problems, using libraries that exploit the additional knowledge will be faster.
+library, such as ``cvxopt`` or ``PuLP``.  While estimagic would work, using libraries 
+that exploit the additional knowledge will be faster.
 
 
 Discrete optimization

@@ -1,6 +1,5 @@
 .. _implementation_of_constraints:
 
-===============================
 How constraints are implemented
 ===============================
 
@@ -27,12 +26,11 @@ penalties and which reparametrizations we are using for each type of constraint.
 
 
 Possible approaches
-===================
+-------------------
 
 
 Reparametrizations
-------------------
-
+~~~~~~~~~~~~~~~~~~
 
 In the reparametrization approach need to find an invertible mapping `g` such as well
 as two `k'` dimensional vectors `l` and `u` such that:
@@ -86,7 +84,7 @@ reduction.
 
 
 Penalties
----------
+~~~~~~~~~
 
 The penalty approach is conceptually much simpler. Whenever :math:`C(x) \neq 0`, a
 penalty term is added to the criterion function. If the penalty term is large enough
@@ -122,7 +120,7 @@ natively with them. This includes all optimizers from the nlopt and ipopt librar
 
 
 The non-trivial reparametrizations
-===================================
+----------------------------------
 
 Fixed parameters, equality and pairwise equality constraints can be implemented
 trivially with reparametrizations by simply plugging them into the criterion function.
@@ -131,7 +129,7 @@ The following section explains how the other constraints are implemented:
 
 
 Covariance and sdcorr constraints
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The main difficulty with covariance and sdcorr constraints is to keep the (implied)
 covariance matrix valid, i.e. positive semi-definite. In both cases, :math:`\tilde{x}`
@@ -151,7 +149,7 @@ or other constraints on any of the involved parameters.
 .. _linear_constraint_implementation:
 
 Linear constraints
-------------------
+~~~~~~~~~~~~~~~~~~
 
 Assume we have m linear constraints on an n-dimensional parameter vector. Then the set
 of all parameter vectors that satisfies the constraints can be written as:
@@ -230,7 +228,7 @@ parameters.
 
 
 Probability constraints
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 A probability constraint on k parameters means that all parameters lie in
 :math:`[0, 1]` and their sum equals one. While those are all linear constraints,
@@ -251,7 +249,7 @@ A limitation of this approach is that there can be no additional fixes, box cons
 or other constraints on any of the involved parameters.
 
 
-**References:**
+**References**
 
 .. bibliography:: ../../refs.bib
     :filter: docname in docnames
