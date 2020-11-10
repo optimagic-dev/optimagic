@@ -506,12 +506,12 @@ def _single_optimize(
     _check_params(params)
 
     processed_constraints, processed_params = process_constraints(constraints, params)
-    params = _add_name_and_group_columns_to_params(params)
+    params_with_name_and_group = _add_name_and_group_columns_to_params(params)
 
     # This can only be saved in problem_data now, because we need the group and name
     # columns in the dashboard but we could not add any columns before calling
     # process_constraints.
-    problem_data["params"] = params
+    problem_data["params"] = params_with_name_and_group
 
     # get internal parameters and bounds
     x = reparametrize_to_internal(
