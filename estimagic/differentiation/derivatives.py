@@ -301,7 +301,7 @@ def _consolidate_one_step_derivatives(candidates, preference_order):
         entries are preferred.
 
     Returns:
-        consolidated (np.ndarray): Array of same shape as input derivative estimates.
+        consolidated (numpy.ndarray): Array of same shape as input derivative estimates.
 
     """
     preferred, others = preference_order[0], preference_order[1:]
@@ -328,7 +328,7 @@ def _consolidate_extrapolated(candidates):
             and their error estimates.
 
     Returns:
-        consolidated (np.ndarray): Array of same shape as input derivative estimates.
+        consolidated (numpy.ndarray): Array of same shape as input derivative estimates.
 
     """
     # first find minimum over steps for each method
@@ -371,9 +371,9 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
             - Keys correspond to the method used, i.e. forward, backward or central
             differences and the number of terms used in the Richardson extrapolation.
             - Values represent the corresponding derivative estimate and error
-            estimate, stored as np.ndarrays in a sub-dictionary under "derivative" and
-            "error" respectively, with the first dimensions coinciding with that of an
-            element of ``jac_candidates`` and depending on num_terms, possibly one
+            estimate, stored as numpy.ndarrays in a sub-dictionary under "derivative"
+            and "error" respectively, with the first dimensions coinciding with that of
+            an element of ``jac_candidates`` and depending on num_terms, possibly one
             further dimension.
 
     """
@@ -399,20 +399,20 @@ def _get_best_estimate_single_method(derivative, errors):
     approximations which result in the lowest error element wise.
 
     Args:
-        derivative (np.ndarray): Derivative estimates from Richardson approximation.
+        derivative (numpy.ndarray): Derivative estimates from Richardson approximation.
             First axis (axis 0) denotes the potentially multiple estimates. Following
             dimensions represent the dimension of the derivative, i.e. for a classical
             gradient ``derivative`` has 2 dimensions, while for a classical jacobian
             ``derivative`` has 3 dimensions.
-        errors (np.ndarray): Error estimates of ``derivative`` estimates. Has the same
-            shape as ``derivative``.
+        errors (numpy.ndarray): Error estimates of ``derivative`` estimates. Has the
+            same shape as ``derivative``.
 
     Returns:
-        derivative_minimal (np.ndarray): Best derivate estimates chosen with respect
+        derivative_minimal (numpy.ndarray): Best derivate estimates chosen with respect
             to minimizing ``errors``. Note that the best values are selected
             element-wise. Has shape ``(derivative.shape[1], derivative.shape[2])``.
 
-        error_minimal (np.ndarray): Minimal errors selected element-wise along axis
+        error_minimal (numpy.ndarray): Minimal errors selected element-wise along axis
             0 of ``errors``.
 
     """
@@ -447,7 +447,7 @@ def _get_best_estimate_along_methods(derivatives, errors):
             in ``derivatives``.
 
     Returns:
-        jac_minimal (np.ndarray): The optimal derivative estimate over different
+        jac_minimal (numpy.ndarray): The optimal derivative estimate over different
             methods.
 
     """

@@ -222,19 +222,19 @@ def _rescale_to_accomodate_bounds(
     """Rescale steps to make them compatible with bounds unless this violates min_steps.
 
     Args:
-        base_steps (np.ndarray, optional): 1d array of the same length as x.
+        base_steps (numpy.ndarray, optional): 1d array of the same length as x.
             base_steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
-        pos (np.ndarray): Array with positive steps of shape (n_steps, len(x))
-        neg (np.ndarray): Array with negative steps of shape (n_steps, len(x))
-        lower_step_bounds (np.ndarray): Lower bounds for steps.
-        upper_step_bounds (np.ndarray): Upper bounds for steps.
-        min_steps (np.ndarray): Minimal possible step sizes that can be chosen
+        pos (numpy.ndarray): Array with positive steps of shape (n_steps, len(x))
+        neg (numpy.ndarray): Array with negative steps of shape (n_steps, len(x))
+        lower_step_bounds (numpy.ndarray): Lower bounds for steps.
+        upper_step_bounds (numpy.ndarray): Upper bounds for steps.
+        min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen
             to accomodate bounds. Needs to have same length as x.
 
     Returns:
-        pos (np.ndarray): Copy of pos with rescaled steps.
-        neg (np.ndarray): Copy of neg with rescaled steps.
+        pos (numpy.ndarray): Copy of pos with rescaled steps.
+        neg (numpy.ndarray): Copy of neg with rescaled steps.
 
     """
     with warnings.catch_warnings():
@@ -265,5 +265,6 @@ def _make_exact(h):
 
     This is important when calculating numerical derivates and is accomplished by adding
     1.0 and then subtracting 1.0.
+
     """
     return (h + 1.0) - 1.0

@@ -60,7 +60,7 @@ def internal_criterion_and_derivative_template(
     That is the reason why this function is called a template.
 
     Args:
-        x (np.ndarray): 1d numpy array with internal parameters.
+        x (numpy.ndarray): 1d numpy array with internal parameters.
         task (str): One of "criterion", "derivative" and "criterion_and_derivative".
         direction (str): One of "maximize" or "minimize"
         criterion (callable): (partialed) user provided criterion function that takes a
@@ -114,7 +114,7 @@ def internal_criterion_and_derivative_template(
         cache_size (int): Number of evaluations that are kept in cache. Default 10.
 
     Returns:
-        float, np.ndarray or tuple: If task=="criterion" it returns the output of
+        float, numpy.ndarray or tuple: If task=="criterion" it returns the output of
             criterion which can be a float or 1d numpy array. If task=="derivative" it
             returns the first derivative of criterion, which is a numpy array.
             If task=="criterion_and_derivative" it returns both as a tuple.

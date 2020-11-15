@@ -31,7 +31,7 @@ def weighting_matrix(moment_func, data, estimation_principle, weight_type="diago
             'optimal', 'optimal_bootstrap', 'diagonal', 'diagonal_bootstrap']
 
     Returns:
-        weights (np.ndarray): A positive semi-definite weighting matrix for minimum
+        weights (numpy.ndarray): A positive semi-definite weighting matrix for minimum
             distance estimators.
 
     """

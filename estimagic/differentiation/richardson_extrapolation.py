@@ -28,9 +28,10 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
 
 
     Args:
-        sequence (np.ndarray): The sequence of which we want to approximate the limit.
-            Has dimension (k x n x m), where k denotes the number of sequence elements
-            and an element ``sequence[l, :, :]`` denotes the (n x m) dimensional element
+        sequence (numpy.ndarray): The sequence of which we want to approximate the
+            limit. Has dimension (k x n x m), where k denotes the number of sequence
+            elements and an element ``sequence[l, :, :]`` denotes the (n x m)
+            dimensional element
 
         steps (namedtuple): Namedtuple with the field names pos and neg. Each field
             contains a numpy array of shape (n_steps, len(x)) with the steps in
@@ -43,8 +44,8 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
             ``steps.shape[0] - 1``.
 
     Returns:
-        limit (np.ndarray): The refined limit.
-        error (np.ndarray): The error approximation of ``limit``.
+        limit (numpy.ndarray): The refined limit.
+        error (numpy.ndarray): The error approximation of ``limit``.
 
     """
     seq_len = sequence.shape[0]
@@ -114,7 +115,7 @@ def _richardson_coefficients(num_terms, step_ratio, exponentiation_step, order):
             For central difference derivative approximation ``order`` = 2.
 
     Returns:
-        coef (np.ndarray): Richardson coefficients, array has length num_terms + 1.
+        coef (numpy.ndarray): Richardson coefficients, array has length num_terms + 1.
 
     Example:
     >>> import numpy as np
@@ -141,19 +142,19 @@ def _estimate_error(new_seq, old_seq, richardson_coef):
     """Estimate error of multiple Richardson limit approximation.
 
     Args:
-        new_seq (np.ndarray): Multiple estimates of the limit of ``old_seq``. The last
-            two dimensions coincide with those of ``old_seq``. The first dimensions
+        new_seq (numpy.ndarray): Multiple estimates of the limit of ``old_seq``. The
+            last two dimensions coincide with those of ``old_seq``. The first dimensions
             denotes the number of different estimates.
 
-        old_seq (np.ndarray): The sequence of which we want to approximate the limit.
+        old_seq (numpy.ndarray): The sequence of which we want to approximate the limit.
             Has dimension (k x n x m), where k denotes the number of sequence elements
             and an element ``sequence[l, :, :]`` denotes the (n x m) dimensional element
 
-        richardson_coef (np.ndarray): Richardson coefficients. See function
+        richardson_coef (numpy.ndarray): Richardson coefficients. See function
             ``_richardson_coefficient`` for details.
 
     Returns:
-        abserr (np.ndarray): The error estimate for each limit approximation in
+        abserr (numpy.ndarray): The error estimate for each limit approximation in
             ``new_seq``.
 
     """
@@ -253,7 +254,7 @@ def _compute_step_ratio(steps):
     """Compute the step ratio used in producing ``steps``.
 
     Args:
-        steps (np.ndarray): Array of shape (n_steps, len(x)) with the steps in the
+        steps (numpy.ndarray): Array of shape (n_steps, len(x)) with the steps in the
             corresponding direction.
 
     Returns:

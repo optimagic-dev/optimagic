@@ -272,7 +272,7 @@ def calculate_trustregion_initial_radius(x):
     It is calculated as :math:`0.1\max(\|x\|_{\infty}, 1)`.
 
     Args:
-        x (np.ndarray): the start parameter values.
+        x (numpy.ndarray): the start parameter values.
 
     Returns:
         trust_radius (float): initial trust radius

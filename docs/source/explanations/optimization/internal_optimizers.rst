@@ -54,13 +54,13 @@ optimizer. Neither the mandatory arguments, nor the bounds should have a default
 
 The only non-trivial argument is ``criterion_and_derivative``. This is a callable that
 accepts three arguments and returns the output of the user provided criterion function
-(float or dict), the output of a user provided or numerical derivative (np.ndarray) or
+(float or dict), the output of a user provided or numerical derivative (numpy.ndarray) or
 both. For more details on valid outputs of the criterion function see
 :ref:`maximize_and_minimize`.
 
 The arguments  of criterion_and_derivative are:
 
-- x (np.ndarray): A one dimensional vector with free parameters
+- x (numpy.ndarray): A one dimensional vector with free parameters
 - task (str): One of "criterion", "derivative" and "criterion_and_derivative"
 - algorithm_info (dict): Dict with the following entries:
     - "primary_criterion_entry": For optimizers that minimize a scalar function this has

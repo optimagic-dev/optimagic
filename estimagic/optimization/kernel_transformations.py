@@ -61,7 +61,7 @@ def covariance_to_internal_jacobian(external_values, constr):
         \frac{\mathrm{d}x}{\mathrm{d}c} = (\frac{\mathrm{d}c}{\mathrm{d}x})^{-1}
 
     Args:
-        external_values (np.ndarray): Row-wise half-vectorized covariance matrix
+        external_values (numpy.ndarray): Row-wise half-vectorized covariance matrix
 
     Returns:
         deriv: The Jacobian matrix.
@@ -114,7 +114,7 @@ def covariance_from_internal_jacobian(internal_values, constr):
     where :math:`c := \text{external}` and :math:`x := \text{internal}`.
 
     Args:
-        internal_values (np.ndarray): Cholesky factors stored in an "internal"
+        internal_values (numpy.ndarray): Cholesky factors stored in an "internal"
             format.
 
     Returns:
@@ -160,7 +160,7 @@ def sdcorr_to_internal_jacobian(external_values, constr):
         \frac{\mathrm{d}x}{\mathrm{d}p} = (\frac{\mathrm{d}p}{\mathrm{d}x})^{-1}
 
     Args:
-        external_values (np.ndarray): Row-wise half-vectorized modified correlation
+        external_values (numpy.ndarray): Row-wise half-vectorized modified correlation
             matrix.
 
     Returns:
@@ -226,7 +226,7 @@ def sdcorr_from_internal_jacobian(internal_values, constr):
         \frac{\mathrm{d}p}{\mathrm{d}x} = T \frac{\mathrm{d}p'}{\mathrm{d}x'} D
 
     Args:
-        internal_values (np.ndarray): Cholesky factors stored in an "internal"
+        internal_values (numpy.ndarray): Cholesky factors stored in an "internal"
             format.
 
     Returns:
@@ -292,7 +292,7 @@ def probability_to_internal_jacobian(external_values, constr):
         ]
 
     Args:
-        external_values (np.ndarray): Array of probabilities; sums to one.
+        external_values (numpy.ndarray): Array of probabilities; sums to one.
 
     Returns:
         deriv: The Jacobian matrix.
@@ -326,7 +326,7 @@ def probability_from_internal_jacobian(internal_values, constr):
     .. math::  J(f)(x) = \frac{1}{\sigma} I_m - \frac{1}{\sigma^2} 1 x^\top
 
     Args:
-        internal_values (np.ndarray): Internal (positive) values.
+        internal_values (numpy.ndarray): Internal (positive) values.
 
     Returns:
         deriv: The Jacobian matrix.
@@ -378,7 +378,7 @@ def _elimination_matrix(dim):
         dim (int): The dimension.
 
     Returns:
-        eliminator (np.ndarray): The elimination matrix.
+        eliminator (numpy.ndarray): The elimination matrix.
 
     Examples:
     >>> import numpy as np
@@ -424,7 +424,7 @@ def _duplication_matrix(dim):
         dim (int): The dimension.
 
     Returns:
-        duplicator (np.ndarray): The duplication matrix.
+        duplicator (numpy.ndarray): The duplication matrix.
 
     Example:
     >>> import numpy as np
@@ -466,7 +466,7 @@ def _transformation_matrix(dim):
         dim (int): The dimension.
 
     Returns:
-        transformer (np.ndarray): The transformation matrix.
+        transformer (numpy.ndarray): The transformation matrix.
 
     Example:
     >>> import numpy as np
@@ -541,7 +541,7 @@ def _unit_vector_or_zeros(index, size):
         size (int): Dimension of the resulting vector.
 
     Returns:
-        u (np.ndarray): The unit or zero vector.
+        u (numpy.ndarray): The unit or zero vector.
 
     Example:
     >>> import numpy as np

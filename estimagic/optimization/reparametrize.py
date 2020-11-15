@@ -44,8 +44,8 @@ def reparametrize_to_internal(external, internal_free, processed_constraints):
     """Convert a params DataFrame into a numpy array of internal parameters.
 
     Args:
-        external (np.ndarray): 1d array with external parameters.
-        internal_free (np.ndarray): 1d array of lenth n_external that determines
+        external (numpy.ndarray): 1d array with external parameters.
+        internal_free (numpy.ndarray): 1d array of lenth n_external that determines
             which parameters are free.
         processed_constraints (list): Processed and consolidated constraints. The
             processed constraints contain information on the transformations that have
@@ -154,8 +154,9 @@ def convert_external_derivative_to_internal(
             element contains the position a parameter in the transformed parameter
             vector that has to be copied to duplicated and copied to the i_th position
             of the external parameter vector.
-        pre_replace_jac (np.ndarray): 2d Array with the jacobian of pre_replace
-        post_replacment_jacobian (np.ndarray): 2d Array with the jacobian post_replace
+        pre_replace_jac (numpy.ndarray): 2d Array with the jacobian of pre_replace
+        post_replacment_jacobian (numpy.ndarray): 2d Array with the jacobian
+            post_replace
 
     Returns:
         deriv (numpy.ndarray): The gradient or Jacobian.
@@ -277,7 +278,7 @@ def pre_replace_jacobian(pre_replacements, dim_in):
         dim_in (int): Dimension of the internal parameters.
 
     Returns:
-        jacobian (np.ndarray): The jacobian.
+        jacobian (numpy.ndarray): The jacobian.
 
     Examples:
         >>> # Note: The example is the same as in the doctest of pre_replace
@@ -368,7 +369,7 @@ def post_replace_jacobian(post_replacements):
         dim (int): The dimension of the external parameters.
 
     Returns:
-        jacobian (np.ndarray): The Jacobian.
+        jacobian (numpy.ndarray): The Jacobian.
 
     Examples:
         >>> # Note: the example is the same as in the doctest of post_replace
