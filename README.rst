@@ -28,48 +28,55 @@ estimagic
 Introduction
 ============
 
-Estimagic is a Python package that helps to build high-quality and user friendly
-implementations of (structural) econometric models. It is designed with large structural
-models in mind, but also "scales down" to simpler use cases.
+estimagic is a Python package that provides high-quality and user-friendly tools
+to fit large scale empirical models to data and make inferences about the estimated
+model parameters. It is especially suited to solve difficult constrained optimization
+problems.
 
-Estimagic provides tools for nonlinear optimization, numerical differentiation and
-statistical inference.
+estimagic provides several advantages over similar packages, including a unified
+interface that supports a large number of local and global optimization algorithms
+and the possibility of monitoring the optimization procedure via a beautiful
+interactive dashboard.
+
+estimagic provides tools for nonlinear optimization, numerical differentiation
+and statistical inference.
+
 
 Optimization
 ------------
 
-- Unified interface to a large number of local and global optimization algorithms. Of
-  course we have all algorithms from `scipy.optimize` but many more become available
-  when you install optional dependencies.
-- Efficient reparametrizations make it possible to many types of constraints with any
-  algorithm that supports simple box constraints.
-- The constraints are specified with a very intuitive interface and users can completely
-  abstract from how they are implemented under the hood.
-- Parameters are specified as pandas DataFrames that can have any kind of single or
-  MultiIndex
-- The complete history of parameters and function evaluations is saved in a database.
-- An interactive Dashboard allows to monitor the optimization in real time.
+- estimagic wraps all algorithms from *scipy.optimize* and many more become
+  available when installing optional dependencies.
+- estimagic can automatically implement many types of constraints via
+  reparametrization, with any optmizer that supports simple box constraints.
+- estimagic encourages name-based parameters handling. Parameters are specified
+  as pandas DataFrames that can have any kind of single or MultiIndex. This is
+  especially useful when specifying constraints.
+- The complete history of parameters and function evaluations are saved in a
+  database for maximum reproducibility and displayed in real time via an
+  interactive dashboard.
 
 
 .. image:: docs/source/_static/images/dashboard.gif
   :scale: 21 %
 
 
-Differentiation
----------------
+Numerical differentiation
+-------------------------
 
-- Calculate precise numerical derivatives using `Richardson extrapolations
+- estimagic can calculate precise numerical derivatives using `Richardson extrapolations
   <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
-- All function evaluations needed for numerical derivatives can be done in parallel with
-  pre-implemented or user provided batch evaluators.
+- Function evaluations needed for numerical derivatives can be done in parallel
+  with pre-implemented or user provided batch evaluators.
 
 
 Statistical Inference
 ---------------------
 
-- Asymptotic standard errors for maximum likelihood an method of simulated moments
-- Bootstrap confidence intervals and standard errors for nonlinear estimators. Of course
-  the bootstrap procedures are parallelized.
+- estimagic provides asymptotic standard errors for maximum likelihood and method
+  of simulated moments.
+- estimagic also provides bootstrap confidence intervals and standard errors.
+  Of course the bootstrap procedures are parallelized.
 
 
 Installation

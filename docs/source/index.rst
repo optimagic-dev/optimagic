@@ -67,7 +67,7 @@ Structure of the documentation
                         <div class="card-body flex-fill">
                             <h5 class="card-title">Getting Started</h5>
                             <p class="card-text">
-                                New users of estimagic should read this firs.t
+                                New users of estimagic should read this first.
                             </p>
                         </div>
                     </div>
