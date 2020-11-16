@@ -213,7 +213,10 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
     assert res["success"], f"{algo} did not converge."
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
-        res["solution_params"]["value"].to_numpy(), np.zeros(2), atol=atol, rtol=0,
+        res["solution_params"]["value"].to_numpy(),
+        np.zeros(2),
+        atol=atol,
+        rtol=0,
     )
 
 
@@ -313,7 +316,11 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
 @pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_pairwise_equality_constraint(
-    algo, direction, crit, deriv, crit_and_deriv,
+    algo,
+    direction,
+    crit,
+    deriv,
+    crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [2], [1], [2], [1]], columns=["value"])
     params["lower_bound"] = [-10, -10, -10, -10, -10.0]
@@ -457,7 +464,11 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
 @pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_covariance_constraint_no_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv,
+    algo,
+    direction,
+    crit,
+    deriv,
+    crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [0.1], [2], [3], [2]], columns=["value"])
 
@@ -486,7 +497,11 @@ def test_with_covariance_constraint_no_bounds_distance(
 @pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_covariance_constraint_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv,
+    algo,
+    direction,
+    crit,
+    deriv,
+    crit_and_deriv,
 ):
     # Note: Robust bounds only have an effect for 3x3 covariance matrices or larger
     params = pd.DataFrame(data=[[1], [0.1], [2], [0.2], [0.3], [3]], columns=["value"])
@@ -523,7 +538,11 @@ def test_with_covariance_constraint_bounds_distance(
 @pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_sdcorr_constraint_no_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv,
+    algo,
+    direction,
+    crit,
+    deriv,
+    crit_and_deriv,
 ):
     params = pd.DataFrame(data=[[1], [2], [0.1], [3], [2]], columns=["value"])
 
@@ -551,7 +570,11 @@ def test_with_sdcorr_constraint_no_bounds_distance(
 @pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
 def test_with_sdcorr_constraint_bounds_distance(
-    algo, direction, crit, deriv, crit_and_deriv,
+    algo,
+    direction,
+    crit,
+    deriv,
+    crit_and_deriv,
 ):
     # Note: Robust bounds only have an effect for 3x3 sdcorr matrices or larger
     params = pd.DataFrame(data=[[1], [2], [3], [0.1], [0.2], [0.3]], columns=["value"])

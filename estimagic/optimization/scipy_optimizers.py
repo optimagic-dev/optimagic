@@ -159,7 +159,9 @@ def scipy_slsqp(
     algo_info["name"] = "scipy_slsqp"
 
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
 
     gradient = functools.partial(
@@ -239,7 +241,9 @@ def scipy_neldermead(
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_neldermead"
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
     options = {
         "maxiter": max_iterations,
@@ -252,7 +256,10 @@ def scipy_neldermead(
     }
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="Nelder-Mead", options=options,
+        fun=func,
+        x0=x,
+        method="Nelder-Mead",
+        options=options,
     )
 
     return _process_scipy_result(res)
@@ -313,7 +320,9 @@ def scipy_powell(
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_powell"
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
 
     options = {
@@ -374,7 +383,9 @@ def scipy_bfgs(
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_bfgs"
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
     gradient = functools.partial(
         criterion_and_derivative, task="derivative", algorithm_info=algo_info
@@ -387,7 +398,11 @@ def scipy_bfgs(
     }
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="BFGS", jac=gradient, options=options,
+        fun=func,
+        x0=x,
+        method="BFGS",
+        jac=gradient,
+        options=options,
     )
 
     return _process_scipy_result(res)
@@ -439,7 +454,9 @@ def scipy_conjugate_gradient(
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_conjugate_gradient"
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
 
     gradient = functools.partial(
@@ -453,7 +470,11 @@ def scipy_conjugate_gradient(
     }
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="CG", jac=gradient, options=options,
+        fun=func,
+        x0=x,
+        method="CG",
+        jac=gradient,
+        options=options,
     )
 
     return _process_scipy_result(res)
@@ -515,7 +536,9 @@ def scipy_newton_cg(
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_newton_cg"
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
     gradient = functools.partial(
         criterion_and_derivative, task="derivative", algorithm_info=algo_info
@@ -527,7 +550,11 @@ def scipy_newton_cg(
     }
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="Newton-CG", jac=gradient, options=options,
+        fun=func,
+        x0=x,
+        method="Newton-CG",
+        jac=gradient,
+        options=options,
     )
 
     return _process_scipy_result(res)
@@ -581,7 +608,9 @@ def scipy_cobyla(
     algo_info["name"] = "scipy_cobyla"
 
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
 
     if trustregion_initial_radius is None:
@@ -590,7 +619,11 @@ def scipy_cobyla(
     options = {"maxiter": max_iterations, "rhobeg": trustregion_initial_radius}
 
     res = scipy.optimize.minimize(
-        fun=func, x0=x, method="COBYLA", options=options, tol=relative_params_tolerance,
+        fun=func,
+        x0=x,
+        method="COBYLA",
+        options=options,
+        tol=relative_params_tolerance,
     )
 
     return _process_scipy_result(res)
@@ -681,7 +714,9 @@ def scipy_truncated_newton(
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_truncated_newton"
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
     gradient = functools.partial(
         criterion_and_derivative, task="derivative", algorithm_info=algo_info
@@ -789,7 +824,9 @@ def scipy_trust_constr(
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_trust_constr"
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
     )
     gradient = functools.partial(
         criterion_and_derivative, task="derivative", algorithm_info=algo_info

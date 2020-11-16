@@ -22,7 +22,8 @@ Installing optional dependencies
 
 Only the ``scipy`` optimizers are a mandatory dependency of estimagic. Other algorithms
 become available if you install more packages. We make this optional because most of the
-time you will use at least one additional package, but only very rarely you will need all of them.
+time you will use at least one additional package, but only very rarely you will need all
+of them.
 
 
 For an overview of all optimizers and the packages you need to install to enable them

@@ -81,7 +81,9 @@ def test_lists_different_size():
     """Test if error is raised if arguments entered as list are of different length."""
     with pytest.raises(ValueError):
         minimize(
-            [rosen, rosen], [params, params, params], ["scipy_lbfgsb", "scipy_lbfgsb"],
+            [rosen, rosen],
+            [params, params, params],
+            ["scipy_lbfgsb", "scipy_lbfgsb"],
         )
 
 
@@ -101,7 +103,9 @@ def test_wrong_type_criterion():
     """Make sure an error is raised if an argument has a wrong type."""
     with pytest.raises(TypeError):
         minimize(
-            [rosen, "error"], [params, params], ["scipy_lbfgsb", "scipy_lbfgsb"],
+            [rosen, "error"],
+            [params, params],
+            ["scipy_lbfgsb", "scipy_lbfgsb"],
         )
 
     with pytest.raises(TypeError):
@@ -153,7 +157,11 @@ def test_list_of_constraints():
     """Test if multiple lists of constraints are added."""
     constraints = [{"loc": 3, "type": "fixed", "value": 1.9}]
     result = minimize(
-        rosen, params, "scipy_lbfgsb", constraints=[[], constraints], logging=False,
+        rosen,
+        params,
+        "scipy_lbfgsb",
+        constraints=[[], constraints],
+        logging=False,
     )
     result_unrestricted = result[0]["solution_params"]["value"].to_numpy()
     result_restricted = result[1]["solution_params"]["value"]

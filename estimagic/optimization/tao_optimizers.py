@@ -110,7 +110,9 @@ def tao_pounders(
         )
 
     func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=POUNDERS_ALGO_INFO,
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=POUNDERS_ALGO_INFO,
     )
 
     x = _initialise_petsc_array(x)
@@ -171,7 +173,9 @@ def tao_pounders(
     default_grtol = relative_gradient_tolerance if relative_gradient_tolerance else -1
     # Set tolerances for default convergence tests.
     tao.setTolerances(
-        gatol=default_gatol, grtol=default_grtol, gttol=default_gttol,
+        gatol=default_gatol,
+        grtol=default_grtol,
+        gttol=default_gttol,
     )
 
     # Set user defined convergence tests. Beware that specifying multiple tests could

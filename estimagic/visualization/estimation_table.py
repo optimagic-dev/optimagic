@@ -354,7 +354,12 @@ def _process_model(model):
 
 
 def _convert_model_to_series(
-    df, sig_levels, sig_digits, show_inference, confidence_intervals, show_stars,
+    df,
+    sig_levels,
+    sig_digits,
+    show_inference,
+    confidence_intervals,
+    show_stars,
 ):
     """Return processed value series with significance stars and inference information.
 
