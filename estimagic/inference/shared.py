@@ -10,7 +10,7 @@ from estimagic.optimization.reparametrize import reparametrize_to_internal
 def transform_covariance(
     params, internal_cov, constraints, n_samples, bounds_handling,
 ):
-    """Transform in internal covariance matrix to an external one, given constraints.
+    """Transform the internal covariance matrix to an external one, given constraints.
 
     Args:
         params (pd.DataFrame): DataFrame where the "value" column contains estimated
