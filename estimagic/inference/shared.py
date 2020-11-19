@@ -75,7 +75,7 @@ def transform_covariance(
             )
             transformed_free.append(transformed[is_free])
 
-            free_cov = np.cov(np.array(transformed_free), rowvar=False,)
+        free_cov = np.cov(np.array(transformed_free), rowvar=False,)
 
     else:
         free_cov = internal_cov

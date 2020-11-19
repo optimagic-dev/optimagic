@@ -31,10 +31,14 @@ def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=Fa
     params DataFrame. In that case, the decorator does nothing.
 
     Args:
+        func (callable): The function to which the decorator is applied.
         params (pandas.DataFrame): See :ref:`params`.
         constraints (list of dict): Contains constraints.
         numpy_output (bool): Whether pandas objects in the output should also be
             converted to numpy arrays.
+
+    Returns:
+        callable
 
     """
     constraints = [] if constraints is None else constraints
