@@ -1,5 +1,5 @@
-Module Reference
-================
+API Reference
+=============
 
 
 .. toctree::
@@ -8,3 +8,4 @@ Module Reference
    optimization
    differentiation
    batch_evaluators
+   tables

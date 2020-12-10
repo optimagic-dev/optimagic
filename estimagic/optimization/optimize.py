@@ -694,7 +694,9 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
 
     # create the optimization_iterations table
     make_optimization_iteration_table(
-        database=database, first_eval=first_eval, if_exists=if_exists,
+        database=database,
+        first_eval=first_eval,
+        if_exists=if_exists,
     )
 
     # create and initialize the optimization_status table

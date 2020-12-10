@@ -1,12 +1,10 @@
-Moments Based Estimation
+Moments-based estimation
 ========================
 
 .. currentmodule:: estimagic.inference.moment_covs
 
 In this section we document how to calculate standard errors of a GMM or MSM estimator.
 We use the notation and formulations provided in section 13.25 of :cite:`Hansen2019`
-
-Bruce E. Hansen - Econometrics,  (https://www.ssc.wisc.edu/~bhansen/econometrics)
 
 The distribution of the estimator is shaped by the moment conditions, which are
 functions of the estimated parameter :math:`\beta` to the real numbers. We denote the

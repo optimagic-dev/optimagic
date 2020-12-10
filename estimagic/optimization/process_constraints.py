@@ -133,7 +133,8 @@ def _apply_constraint_killers(constraints):
 def process_bounds(params):
     """Fill missing bounds with -np.inf and np.inf."""
     defaults = pd.DataFrame(
-        {"lower_bound": -np.inf, "upper_bound": np.inf}, index=params.index,
+        {"lower_bound": -np.inf, "upper_bound": np.inf},
+        index=params.index,
     )
     params = params.combine_first(defaults)
 

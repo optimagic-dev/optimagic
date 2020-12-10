@@ -1,7 +1,7 @@
 .. _dashboard:
 
 ========================
-How To Use the Dashboard
+How to use the dashboard
 ========================
 
 Overview

@@ -1,11 +1,10 @@
 .. _algorithms:
 
-====================================
-Optimization Algorithms in Estimagic
+Optimization algorithms in estimagic
 ====================================
 
-The *algorithm* Argument
-========================
+The *algorithm* argument
+------------------------
 
 The ``algorithm`` argument can either be string with the name of a algorithm that is
 implemented in estimagic, or a function that fulfills the
@@ -17,8 +16,8 @@ installed.
 
 
 
-The *algo_options* Argument
-===========================
+The *algo_options* argument
+---------------------------
 
 ``algo_options`` is a dictionary with optional keyword arguments that are passed to the
 optimizer.
@@ -34,8 +33,8 @@ To find more information on ``algo_options`` that more than one algorithm allows
 see :ref:`algo_options`.
 
 
-How to Read the Algorithms Documentation
-========================================
+How to read the algorithms documentation
+----------------------------------------
 
 Below we document the supported algorithms. The documentation refers to the internal
 optimizer interface (see :ref:`internal_optimizer_interface`). However, those functions
@@ -52,19 +51,24 @@ The other arguments can be set as ``algo_options`` when calling ``maximize`` or
 .. _list_of_algorithms:
 
 
-Supported Algorithms
-====================
+Supported algorithms
+--------------------
+
+All the algorithms
+~~~~~~~~~~~~~~~~~~
+
+.. automodule:: estimagic.optimization.scipy_optimizers
+    :members:
 
 
-Without Optional Dependencies
------------------------------
+Without optional dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*********************
 The scipy optimizers
-*********************
+^^^^^^^^^^^^^^^^^^^^
 
-estimagic supports all of scipy's algorithms except for the following algorithms that
-require the specification of the Hessian:
+estimagic supports all of `scipy` algorithms except for the following algorithms
+that require the specification of the Hessian:
 
 - dogleg
 - trust-ncg
@@ -93,31 +97,23 @@ The following arguments are not supported as part of ``algo_options``:
     for the user. Specify ``criterion_kwargs`` in ``maximize`` or ``minimize`` to
     achieve the same behavior.
 - ``callback``
-    This argument would be called after each iteration and the algorithm would terminate
-    if it returned True.
+    This argument would be called after each iteration and the algorithm would
+    terminate if it returned True.
 
 .. note::
-    Scipy's COBYLA, SLSQP and trust-constr support general non linear constraints in
-    principle. However, for the moment they are not supported.
-
-
-Algorithms:
-*********************
-
-
-.. automodule:: estimagic.optimization.scipy_optimizers
-    :members:
+    `scipy`'s COBYLA, SLSQP and trust-constr support general non linear constraints
+    in principle. However, for the moment they are not supported.
 
 
 With ``petsc4py`` installed
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: estimagic.optimization.tao_optimizers
    :members:
 
 
 With ``pybobyqa`` installed
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 `pybobyqa <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_ is provided by
 the `Numerical Algorithms Group <https://www.nag.com/>`_.
@@ -131,13 +127,14 @@ The following arguments are not supported as part of ``algo_options``:
 - ``scaling_within_bounds``
 - ``init.run_in_parallel``
 - ``do_logging``, ``print_progress`` and all their advanced options.
-  Use estimagic's database and dashboard instead to explore your criterion and algorithm.
+  Use estimagic's database and dashboard instead to explore your criterion and
+  algorithm.
 
 .. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
 
 
 With ``dfols`` installed
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 `DF-OLS <https://numericalalgorithmsgroup.github.io/dfols/>`_ is provided by
 the `Numerical Algorithms Group <https://www.nag.com/>`_.
@@ -149,26 +146,26 @@ The following arguments are not supported as part of ``algo_options``:
 - ``scaling_within_bounds``
 - ``init.run_in_parallel``
 - ``do_logging``, ``print_progress`` and all their advanced options.
-  Use estimagic's database and dashboard instead to explore your criterion and algorithm.
+  Use estimagic's database and dashboard instead to explore your criterion
+  and algorithm.
 
 .. autofunction:: estimagic.optimization.nag_optimizers.nag_dfols
 
 
 With ``nlopt`` installed
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 With ``cyipopt`` installed
----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 With ``pygmo`` installed
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
-References:
-==============
+**References**
 
 .. bibliography:: ../../refs.bib
     :filter: docname in docnames

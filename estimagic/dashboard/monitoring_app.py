@@ -22,7 +22,11 @@ from estimagic.logging.read_log import read_start_params
 
 
 def monitoring_app(
-    doc, database_name, session_data, updating_options, start_immediately,
+    doc,
+    database_name,
+    session_data,
+    updating_options,
+    start_immediately,
 ):
     """Create plots showing the development of the criterion and parameters.
 
@@ -176,7 +180,10 @@ def _calculate_start_point(database, updating_options):
 
 
 def _create_initial_convergence_plots(
-    criterion_history, params_history, group_to_param_ids, group_to_param_names,
+    criterion_history,
+    params_history,
+    group_to_param_ids,
+    group_to_param_names,
 ):
     """Create the initial convergence plots.
 
@@ -235,7 +242,11 @@ def _create_initial_convergence_plots(
 
 
 def _create_button_row(
-    doc, database, session_data, start_params, updating_options,
+    doc,
+    database,
+    session_data,
+    start_params,
+    updating_options,
 ):
     """Create a row with two buttons, one for (re)starting and one for scale switching.
 
@@ -282,7 +293,9 @@ def _create_button_row(
         name="logscale_button",
     )
     partialed_logscale_callback = partial(
-        logscale_callback, button=logscale_button, doc=doc,
+        logscale_callback,
+        button=logscale_button,
+        doc=doc,
     )
     logscale_button.on_change("active", partialed_logscale_callback)
 

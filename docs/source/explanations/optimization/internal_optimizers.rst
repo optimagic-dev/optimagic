@@ -1,22 +1,17 @@
 
 .. _internal_optimizer_interface:
 
+Internal optimizers for estimagic
 =================================
-Internal Optimizers for Estimagic
-=================================
 
-
-Introduction
-============
-
-Estimagic provides a large collection of optimization algorithm that can be
+estimagic provides a large collection of optimization algorithm that can be
 used by passing the algorithm name as ``algorithm`` into ``maximize`` or ``minimize``.
 However, advanced users can also use estimagic with their own algorithm, as long as it
 conforms with the internal optimizer interface.
 
 The advantages of using the algorithm with estimagic over using it directly are:
 
-- Estimagic turns an unconstrained optimizer into one that can deal efficiently with a
+- estimagic turns an unconstrained optimizer into one that can deal efficiently with a
   wide range of constraints
   (see .. _link: how_to_guides/how_to_use_constranits.ipynb).
 - You can use estimagic's logging capabilities.
@@ -32,9 +27,8 @@ problem into a simpler problem and then calling "internal optimizers" to solve t
 transformed problem.
 
 
-
-The Internal Optimizer Interface
-================================
+The internal optimizer interface
+--------------------------------
 
 An internal optimizer is a function that minimizes an objective function it has two
 mandatory arguments:
@@ -78,9 +72,9 @@ criterion function, handles errors and more.
 
 .. _internal_optimizer_output:
 
-Output of Internal Optimizers
-=============================
 
+Output of internal optimizers
+-----------------------------
 
 After convergence or when another stopping criterion is achieved the internal optimizer
 should return a dictionary with the following entries:
@@ -104,8 +98,8 @@ possible.
 
 .. _naming_conventions:
 
-Naming Conventions for Optional Arguments
-=========================================
+Naming conventions for optional arguments
+-----------------------------------------
 
 Many optimizers have similar but slightly different names for arguments that configure
 the convergence criteria, other stopping conditions, and so on. We try to harmonize
@@ -124,7 +118,7 @@ the exact meaning of all options for all optimizers.
 
 .. _convergence_criteria:
 
-Convergence Criteria
+Convergence criteria
 --------------------
 
 Declare convergence when any of the convergence criteria is satisfied:
@@ -173,7 +167,6 @@ convergence criteria by default. The names are inspired by Nlopt, but more expre
 Other stopping criteria
 -----------------------
 
-
 - **max_criterion_evaluations** *(int)*: If the maximum number of function evaluation is
   reached, the optimization stops but we do not count this as successful convergence.
   The function evaluations used to evaluate a numerical gradient do not count for this.
@@ -202,8 +195,8 @@ Optimizer configurations
   evaluations used to approximate the Hessian in Quasi-Newton algorithms.
 
 
-Other Conventions
-=================
+Other conventions
+-----------------
 
 - Internal optimizer are functions and should thus adhere to python naming conventions,
   for functions (i.e. only consist of lowercase letters and individual words should be

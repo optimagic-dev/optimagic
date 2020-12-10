@@ -76,7 +76,8 @@ def test_calculate_start_point(monkeypatch):
         "jump": True,
     }
     res = monitoring._calculate_start_point(
-        database=False, updating_options=updating_options,
+        database=False,
+        updating_options=updating_options,
     )
 
     assert res == 10
@@ -91,7 +92,8 @@ def test_calculate_start_point_no_negative_value(monkeypatch):
     )
 
     res = monitoring._calculate_start_point(
-        database=False, updating_options={"rollover": 30, "stride": 1, "jump": True},
+        database=False,
+        updating_options={"rollover": 30, "stride": 1, "jump": True},
     )
 
     assert res == 0

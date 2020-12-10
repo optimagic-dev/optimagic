@@ -33,7 +33,9 @@ def add_x_and_y(x, y):
 def test_batch_evaluator_without_exceptions(batch_evaluator, n_cores):
 
     calculated = batch_evaluator(
-        func=double, arguments=list(range(10)), n_cores=n_cores,
+        func=double,
+        arguments=list(range(10)),
+        n_cores=n_cores,
     )
 
     expected = list(range(0, 20, 2))

@@ -3,7 +3,7 @@ Installation
 ============
 
 
-Basic Installation
+Basic installation
 ==================
 
 The package can be installed via conda. To do so, type the following commands in
@@ -17,13 +17,13 @@ conda to find all dependencies of estimagic. The second line installs estimagic
 and its mandatory dependencies.
 
 
-Installing Optional Dependencies
+Installing optional dependencies
 ================================
 
-Only the scipy optimizers are a mandatory dependency of estimagic. Other algorithms
-become available if you install more packages. The reason why we make this optional
-is not that we think scipy is enough! Most of the time you will use at least one
-additional package, but only very rarely you will need all of them.
+Only the ``scipy`` optimizers are a mandatory dependency of estimagic. Other algorithms
+become available if you install more packages. We make this optional because most of the
+time you will use at least one additional package, but only very rarely you will need all
+of them.
 
 
 For an overview of all optimizers and the packages you need to install to enable them

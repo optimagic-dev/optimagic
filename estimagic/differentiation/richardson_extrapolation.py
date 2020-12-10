@@ -64,7 +64,10 @@ def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
     order, exponentiation_step = _get_order_and_exponentiation_step(method)
 
     richardson_coef = _richardson_coefficients(
-        num_terms, step_ratio, exponentiation_step, order,
+        num_terms,
+        step_ratio,
+        exponentiation_step,
+        order,
     )
 
     new_sequence = convolve1d(
@@ -179,7 +182,9 @@ def _estimate_error(new_seq, old_seq, richardson_coef):
         tol = np.maximum(np.abs(new_seq[1:]), np.abs(new_seq[:-1])) * eps * fact
         converged = err <= tol
         abserr = err + np.where(
-            converged, tol * 10, abs(new_seq[:-1] - old_seq[-new_seq_len + 1 :]) * fact,
+            converged,
+            tol * 10,
+            abs(new_seq[:-1] - old_seq[-new_seq_len + 1 :]) * fact,
         )
 
     return abserr

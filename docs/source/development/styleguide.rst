@@ -4,7 +4,10 @@
 Styleguide
 ==========
 
-Your contribution should fulfill the following criteria:
+Your contribution should fulfill the criteria provided below.
+
+Styleguide for the codebase
+---------------------------
 
 - Functions have no side effect.
     If you modify a mutable argument, make a copy at the beginning of the function.
@@ -89,3 +92,37 @@ Your contribution should fulfill the following criteria:
 - Don't use global variables unless absolutely necessary
     Exceptions are global variables from a config file that replace magic numbers.
     Never use mutable global variables!
+
+Styleguide for the documentation
+--------------------------------
+
+- General.
+    The documentation is rendered with `Sphinx <https://www.sphinx-doc.org/en/master/>`_
+    and  written in **reStructuredText.** How-to guides are usually Jupyter notebooks.
+
+- Purpose of documents.
+    Our documentation is inspired by the `system <https://documentation.divio.com/>`_
+    developed by Daniele Procida.
+
+      - How-to guides are problem-oriented and show how to achieved specific tasks.
+      - Explanations contain information on theoretical
+        concepts underlying estimagic, such as numerical differentiation and
+        moment-based estimation.
+      - The API Reference section contains auto-generated API reference
+        documentation and provides additional details about the implementation.
+
+- Headings.
+    Only the first letter of a title is capitalized. Moreover, use the following
+    order of headings:
+
+      - === (main heading)
+      - -\\-\\-
+      - ~~~
+      - ^^^
+      - """
+
+- Format.
+    The code formatting in .rst files is ensured by blacken-docs. For Jupyter
+    notebooks, use the
+    `jupyterlab-code-formatter <https://jupyterlab-code-formatter.readthedocs.io/en/latest/>`_
+    with the black formatter.

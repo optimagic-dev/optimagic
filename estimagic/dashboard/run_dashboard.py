@@ -15,7 +15,10 @@ from estimagic.dashboard.monitoring_app import monitoring_app
 
 
 def run_dashboard(
-    database_paths, no_browser, port, updating_options,
+    database_paths,
+    no_browser,
+    port,
+    updating_options,
 ):
     """Start the dashboard pertaining to one or several databases.
 

@@ -66,7 +66,11 @@ def reparametrize_to_internal(external, internal_free, processed_constraints):
 
 
 def reparametrize_from_internal(
-    internal, fixed_values, pre_replacements, processed_constraints, post_replacements,
+    internal,
+    fixed_values,
+    pre_replacements,
+    processed_constraints,
+    post_replacements,
 ):
     """Convert a numpy array of internal parameters to a params DataFrame.
 

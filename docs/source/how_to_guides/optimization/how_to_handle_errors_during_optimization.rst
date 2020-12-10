@@ -1,11 +1,11 @@
 .. _optimization_error_handling:
 
 ========================================
-How to Handle Errors During Optimization
+How to handle errors during optimization
 ========================================
 
 
-Try to Avoid Errors
+Try to avoid errors
 ===================
 
 Often, optimizers try quite extreme parameter vectors, which then can raise errors in
@@ -28,15 +28,15 @@ list of things you can do to avoid this behavior:
   convergence.
 
 
-The Two Levels of Error Handling
+The two levels of error handling
 ================================
 
 Despite all efforts, some errors cannot be avoided. Therefore, you have a lot of control
 over error handling during the optimizations. The three levels on which you can
 configure it are:
 
-The ``error_handling`` and ``eror_penalty`` arguments of ``maximize`` and ``minimize``
---------------------------------------------------------------------------------------
+The ``error_handling`` and ``error_penalty`` arguments of ``maximize`` and ``minimize``
+---------------------------------------------------------------------------------------
 
 These two arguments determine if the optimization algorithms sees an
 error that might occur during the criterion or gradient evaluation.

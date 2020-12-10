@@ -8,7 +8,11 @@ from estimagic.optimization.reparametrize import reparametrize_to_internal
 
 
 def transform_covariance(
-    params, internal_cov, constraints, n_samples, bounds_handling,
+    params,
+    internal_cov,
+    constraints,
+    n_samples,
+    bounds_handling,
 ):
     """Transform the internal covariance matrix to an external one, given constraints.
 
@@ -54,7 +58,9 @@ def transform_covariance(
             processed_constraints=processed_constraints,
         )
         sample = np.random.multivariate_normal(
-            mean=internal_mean, cov=internal_cov, size=n_samples,
+            mean=internal_mean,
+            cov=internal_cov,
+            size=n_samples,
         )
         transformed_free = []
         for params_vec in sample:
@@ -75,7 +81,10 @@ def transform_covariance(
             )
             transformed_free.append(transformed[is_free])
 
-        free_cov = np.cov(np.array(transformed_free), rowvar=False,)
+        free_cov = np.cov(
+            np.array(transformed_free),
+            rowvar=False,
+        )
 
     else:
         free_cov = internal_cov

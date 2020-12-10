@@ -281,7 +281,10 @@ def nag_dfols(
             "only be True if shrink_upper_radius_in_safety_steps is False."
         )
 
-    (faststart_jac, faststart_step,) = _get_fast_start_method(fast_start["method"])
+    (
+        faststart_jac,
+        faststart_step,
+    ) = _get_fast_start_method(fast_start["method"])
 
     if (
         trustregion_reset_options["n_extra_interpolation_points_per_soft_reset"]
@@ -664,7 +667,8 @@ def _create_nag_advanced_options(
     # -np.inf as a default leads to errors when building the documentation with sphinx.
     noise_n_evals_per_point = _change_evals_per_point_interface(noise_n_evals_per_point)
     trustregion_reset_options = _build_options_dict(
-        user_input=trustregion_reset_options, default_options=RESET_OPTIONS,
+        user_input=trustregion_reset_options,
+        default_options=RESET_OPTIONS,
     )
     if trustregion_reset_options["reset_type"] not in ["soft", "hard"]:
         raise ValueError(
@@ -673,7 +677,8 @@ def _create_nag_advanced_options(
     if initial_directions not in ["coordinate", "random"]:
         raise ValueError("inital_directions must be either 'coordinate' or 'random'.")
     convergence_slow_progress = _build_options_dict(
-        user_input=convergence_slow_progress, default_options=CONVERGENCE_SLOW_PROGRESS,
+        user_input=convergence_slow_progress,
+        default_options=CONVERGENCE_SLOW_PROGRESS,
     )
 
     advanced_options = {

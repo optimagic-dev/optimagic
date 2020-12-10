@@ -96,7 +96,11 @@ def plot_time_series(
 
 
 def create_styled_figure(
-    title, name=None, tooltips=None, logscale=False, plot_width=PLOT_WIDTH,
+    title,
+    name=None,
+    tooltips=None,
+    logscale=False,
+    plot_width=PLOT_WIDTH,
 ):
     """Return a styled, empty figure of predetermined height and width.
 

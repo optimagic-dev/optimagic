@@ -1,11 +1,10 @@
-Differentiation Tools
+Differentiation tools
 =====================
 
 .. _first_derivative:
 
-Numerical First Derivatives
+Numerical first derivatives
 ---------------------------
-
 
 .. automodule:: estimagic.differentiation.derivatives
     :members: first_derivative
