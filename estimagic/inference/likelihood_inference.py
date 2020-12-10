@@ -113,7 +113,9 @@ def do_likelihood_inference(
         numdiff_options["key"] = "contributions"
 
         internal_jac = first_derivative(
-            internal_loglike, internal_params, **numdiff_options,
+            internal_loglike,
+            internal_params,
+            **numdiff_options,
         )
         internal_cov = cov_jacobian(internal_jac)
     else:
