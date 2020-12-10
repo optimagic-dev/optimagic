@@ -300,7 +300,7 @@ def _penalty_and_derivative(x, first_eval, error_penalty, algorithm_info):
         derivative = _penalty_contributions_derivative(x, constant, slope, x0, dim_out)
     elif primary == "root_contributions":
         dim_out = len(first_eval["output"][primary])
-        penalty == _penalty_root_contributions(x, constant, slope, x0, dim_out)
+        penalty = _penalty_root_contributions(x, constant, slope, x0, dim_out)
         derivative = _penalty_root_contributions_derivative(
             x, constant, slope, x0, dim_out
         )
