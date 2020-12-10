@@ -55,7 +55,7 @@ def test_batch_evaluator_with_unhandled_exceptions(batch_evaluator, n_cores):
         )
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Too slow on Mac OS CI server.")
+@pytest.mark.slow
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_handled_exceptions(batch_evaluator, n_cores):
     with warnings.catch_warnings():
