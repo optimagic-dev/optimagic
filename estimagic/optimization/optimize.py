@@ -813,7 +813,7 @@ def _adjust_options_to_algorithms(
     """Reduce the algo_options and check if bounds are compatible with algorithm."""
 
     # convert algo option keys to valid Python arguments
-    algo_options = {key.replace(".", " ", 1): val for key, val in algo_options.items()}
+    algo_options = {key.replace(".", "_"): val for key, val in algo_options.items()}
 
     valid = set(inspect.signature(algorithm).parameters)
 

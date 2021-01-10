@@ -92,8 +92,8 @@ def test_grtol():
         start_params,
         "tao_pounders",
         algo_options={
-            "absolute_gradient_tolerance": False,
-            "scaled_gradient_tolerance": False,
+            "convergence.absolute_gradient_tolerance": False,
+            "convergence.scaled_gradient_tolerance": False,
         },
     )
 
@@ -119,8 +119,8 @@ def test_gatol():
         start_params,
         "tao_pounders",
         algo_options={
-            "relative_gradient_tolerance": False,
-            "scaled_gradient_tolerance": False,
+            "convergence.relative_gradient_tolerance": False,
+            "convergence.scaled_gradient_tolerance": False,
         },
     )
 
@@ -145,8 +145,8 @@ def test_gttol():
         start_params,
         "tao_pounders",
         algo_options={
-            "relative_gradient_tolerance": False,
-            "absolute_gradient_tolerance": False,
+            "convergence.relative_gradient_tolerance": False,
+            "convergence.absolute_gradient_tolerance": False,
         },
     )
 
@@ -172,9 +172,9 @@ def test_tol():
         start_params,
         "tao_pounders",
         algo_options={
-            "absolute_gradient_tolerance": 1e-7,
-            "relative_gradient_tolerance": 1e-7,
-            "scaled_gradient_tolerance": 1e-9,
+            "convergence.absolute_gradient_tolerance": 1e-7,
+            "convergence.relative_gradient_tolerance": 1e-7,
+            "convergence.scaled_gradient_tolerance": 1e-9,
         },
     )
 
