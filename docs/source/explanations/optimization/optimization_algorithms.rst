@@ -22,8 +22,34 @@ The *algo_options* argument
 ``algo_options`` is a dictionary with optional keyword arguments that are passed to the
 optimizer.
 
-We align the names of all ``algo_options`` across algorithms. However, not all
-algorithms support all options. Which options are supported and very specific details of
+We align the names of all ``algo_options`` across algorithms.
+
+Since some optimizers support many tuning parameters we group some of them by the
+first part of their name (e.g. all convergence criteria names start with
+``convergence``).
+Below, all option names contain only `_`.
+However, to make the group membership more visible, you can also pass them with
+dot notation.
+For example, if you wanted to set some tuning parameters of `nag_dfols` you could
+specify your algo options like this:
+
+.. code-block:: python
+
+    algo_options = {
+        "convergence.scaled_criterion_tolerance": 0.0,
+        "convergence.noise_corrected_criterion_tolerance": 1.1,
+        "trustregion.shrinking_factor.not_successful": 0.4,
+        "trustregion.shrinking_factor.lower_radius": 0.2,
+        "trustregion.shrinking_factor.upper_radius": 0.8,
+        "trustregion.threshold_successful": 0.2,
+        "trustregion.threshold_very_successful": 0.9,
+    }
+
+Estimagic then automatically replaces the ``.`` with ``_`` before passing them to the
+internal optimizer.
+
+However, not all algorithms support all options. Which options are supported and
+very specific details of
 what the options mean are documented for each algorithm below.
 
 To make it easier to switch between algorithms, we simply ignore non-supported options

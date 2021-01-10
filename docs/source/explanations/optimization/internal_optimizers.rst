@@ -105,6 +105,11 @@ Many optimizers have similar but slightly different names for arguments that con
 the convergence criteria, other stopping conditions, and so on. We try to harmonize
 those names and their default values where possible.
 
+Since some optimizers support many tuning parameters we group some of them by the
+first part of their name (e.g. all convergence criteria names start with
+``convergence``). See :ref:`list_of_algorithms` for the signatures of the provided
+internal optimizers.
+
 The preferred default values can be imported from
 ``estimagic.optimization.algo_options`` which are documented in :ref:`algo_options`.
 If you add a new optimizer to estimagic you should only deviate from them if you have
@@ -114,85 +119,6 @@ Note that a complete harmonization is not possible nor desirable, because often
 convergence criteria that clearly are the same are implemented slightly different for
 different optimizers. However, complete transparency is possible and we try to document
 the exact meaning of all options for all optimizers.
-
-
-.. _convergence_criteria:
-
-Convergence criteria
---------------------
-
-Declare convergence when any of the convergence criteria is satisfied:
-
-In general, the defaults are inspired by scipy because Nlopt deactivates all
-convergence criteria by default. The names are inspired by Nlopt, but more expressive.
-
-
-- **relative_criterion_tolerance** *(float)*: Stop when the relative improvement between
-  two iterations is smaller than this. The exact definition of relative improvement
-  depends on the optimizer and should be documented  there. To disable it, set it to 0.
-
-- **absolute_criterion_tolerance** *(float)*: Stop when the absolute improvement between
-  two iterations is smaller than this. To disable it, set it to 0.
-
-- **absolute_gradient_tolerance** *(float)*: Stop when all entries (or for some
-  algorithms the norm) of the gradient are smaller than this. For bound constrained
-  optimizers this typically refers to a projected gradient. The exact definition should
-  be documented for each optimizer. To disable it, set it to zero.
-
-- **relative_gradient_tolerance** *(float)*: Stop when all entries (or for some
-  algorithms the norm) of the gradient, divided by the absolute value of the criterion
-  function is smaller than this. For bound constrained optimizers this typically refers
-  to a projected gradient. The exact definition should be documented for each
-  optimizer. To disable it, set it to zero.
-
-
-- **scaled_gradient_tolerance** *(float)*: Stop when all entries (or for some
-  algorithms the norm) of the gradient, divided by the norm of the gradient at start
-  parameters is smaller than this. For bound constrained optimizers this typically
-  refers to a projected gradient. The exact definition should be documented for each
-  optimizer. To disable it, set it to zero.
-
-- **relative_params_tolerance** *(float)*:
-  Stop when the relative change in parameters between two iterations is smaller than
-  this. The exact definition of relative change and whether this refers to the maximum
-  change or the average change depends on the algorithm and should be documented there.
-  To disable it, set it to zero.
-
-- **absolute_params_tolerance** *(float)*: Stop when the absolute change in parameters
-  between two iterations is smaller than this. Whether this refers to the maximum
-  change or the average change depends on the algorithm and should be documented there.
-  To disable it, set it to zero.
-
-
-Other stopping criteria
------------------------
-
-- **max_criterion_evaluations** *(int)*: If the maximum number of function evaluation is
-  reached, the optimization stops but we do not count this as successful convergence.
-  The function evaluations used to evaluate a numerical gradient do not count for this.
-
-- **max_iterations** *(int)*: If the maximum number of iterations is reached, the
-  optimization stops, but we do not count this as successful convergence. The difference
-  to ``max_criterion_evaluations`` is that one iteration might need several criterion
-  evaluations, for example in a line search or to determine if the trust region radius
-  has to be decreased.
-
-
-Optimizer configurations
-------------------------
-
-- **max_line_search_steps** *(int)*: Maximum number of criterion (and possibly
-  derivative) evaluations per line search.
-
-- **trustregion_initial_radius** *(float)*: Note this is very problem specific and
-  you can typically do better than using the default. Intuitively, this can be
-  described as a reasonable change in parameters the optimizer can take from the
-  start values. The default is to take 10% of the largest start parameter, but at
-  least 0.1.
-
-- **limited_memory_storage_length** *(int)*: Maximum number of stored objects
-  in a limited memory algorithm. Typically this refers to the number of gradient
-  evaluations used to approximate the Hessian in Quasi-Newton algorithms.
 
 
 Other conventions
