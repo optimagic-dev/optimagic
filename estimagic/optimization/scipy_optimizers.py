@@ -33,10 +33,10 @@ def scipy_lbfgsb(
     lower_bounds,
     upper_bounds,
     *,
-    relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
-    max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
-    max_iterations=STOPPING_MAX_ITERATIONS,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     limited_memory_storage_length=LIMITED_MEMORY_STORAGE_LENGTH,
     max_line_search_steps=MAX_LINE_SEARCH_STEPS,
 ):
@@ -69,20 +69,22 @@ def scipy_lbfgsb(
     options, see :ref:`naming_conventions`.
 
     Args:
-        relative_criterion_tolerance (float): Stop when the relative improvement between
-            two iterations is smaller than this. More formally, this is expressed as
+        convergence_relative_criterion_tolerance (float): Stop when the relative
+            improvement between two iterations is smaller than this.
+            More formally, this is expressed as
 
             .. math::
 
                 \\frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \\leq
                 \\text{relative_criterion_tolerance}
 
-        absolute_gradient_tolerance (float): Stop if all elements of the projected
-            gradient are smaller than this.
-        max_criterion_evaluations (int): If the maximum number of function evaluation is
-            reached, the optimization stops but we do not count this as convergence.
-        max_iterations (int): If the maximum number of iterations is reached, the
-            optimization stops, but we do not count this as convergence.
+        convergence_absolute_gradient_tolerance (float): Stop if all elements of the
+            projected gradient are smaller than this.
+        stopping_max_criterion_evaluations (int): If the maximum number of function
+            evaluation is reached, the optimization stops but we do not count
+            this as convergence.
+        stopping_max_iterations (int): If the maximum number of iterations is reached,
+            the optimization stops, but we do not count this as convergence.
         limited_memory_storage_length (int): Maximum number of saved gradients used to
             approximate the hessian matrix.
 
@@ -100,10 +102,10 @@ def scipy_lbfgsb(
 
     options = {
         "maxcor": limited_memory_storage_length,
-        "ftol": relative_criterion_tolerance,
-        "gtol": absolute_gradient_tolerance,
-        "maxfun": max_criterion_evaluations,
-        "maxiter": max_iterations,
+        "ftol": convergence_relative_criterion_tolerance,
+        "gtol": convergence_absolute_gradient_tolerance,
+        "maxfun": stopping_max_criterion_evaluations,
+        "maxiter": stopping_max_iterations,
         "maxls": max_line_search_steps,
     }
 
@@ -125,7 +127,7 @@ def scipy_slsqp(
     lower_bounds,
     upper_bounds,
     *,
-    absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
     max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     """Minimize a scalar function of one or more variables using the SLSQP algorithm.
@@ -146,8 +148,8 @@ def scipy_slsqp(
     options, see :ref:`naming_conventions`.
 
     Args:
-        absolute_criterion_tolerance (float): Precision goal for the value of f in the
-            stopping criterion.
+        convergence_absolute_criterion_tolerance (float): Precision goal
+            for the value of f in the stopping criterion.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
 
@@ -172,7 +174,7 @@ def scipy_slsqp(
         "maxiter": max_iterations,
         # this is the absolute criterion tolerance according to
         # scipy/optimize/slsqp/slsqp_optmz.f:495
-        "ftol": absolute_criterion_tolerance,
+        "ftol": convergence_absolute_criterion_tolerance,
     }
 
     res = scipy.optimize.minimize(
@@ -193,8 +195,8 @@ def scipy_neldermead(
     *,
     max_iterations=STOPPING_MAX_ITERATIONS,
     max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
-    absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-    absolute_params_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
+    convergence_absolute_params_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,  # noqa: E501
     adaptive=False,
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
@@ -222,14 +224,14 @@ def scipy_neldermead(
             optimization stops, but we do not count this as convergence.
         max_criterion_evaluations (int): If the maximum number of function evaluation
             is reached, the optimization stops but we do not count this as convergence.
-        absolute_params_tolerance (float): Absolute difference in parameters between
-            iterations that is tolerated to declare convergence.
+        convergence_absolute_params_tolerance (float): Absolute difference in
+            parameters between iterations that is tolerated to declare convergence.
             As no relative tolerances can be passed to Nelder-Mead, estimagic sets a
             non zero default for this.
-        absolute_criterion_tolerance (float): Absolute difference in the criterion value
-            between iterations that is tolerated to declare convergence.
-            As no relative tolerances can be passed to Nelder-Mead, estimagic sets a
-            non zero default for this.
+        convergence_absolute_criterion_tolerance (float): Absolute difference in
+            the criterion value between iterations that is tolerated to declare
+            convergence. As no relative tolerances can be passed to Nelder-Mead,
+            estimagic sets a non zero default for this.
         adaptive (bool): Adapt algorithm parameters to dimensionality of problem.
             Useful for high-dimensional minimization (:cite:`Gao2012`, p. 259-277).
             scipy's default is False.
@@ -250,8 +252,8 @@ def scipy_neldermead(
         "maxfev": max_criterion_evaluations,
         # both tolerances seem to have to be fulfilled for Nelder-Mead to converge.
         # if not both are specified it does not converge in our tests.
-        "xatol": absolute_params_tolerance,
-        "fatol": absolute_criterion_tolerance,
+        "xatol": convergence_absolute_params_tolerance,
+        "fatol": convergence_absolute_criterion_tolerance,
         "adaptive": adaptive,
     }
 
@@ -349,7 +351,7 @@ def scipy_bfgs(
     lower_bounds,
     upper_bounds,
     *,
-    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
     max_iterations=STOPPING_MAX_ITERATIONS,
     norm=np.inf,
 ):
@@ -367,7 +369,7 @@ def scipy_bfgs(
     options, see :ref:`naming_conventions`.
 
     Args:
-        absolute_gradient_tolerance (float): Stop if all elements of the
+        convergence_absolute_gradient_tolerance (float): Stop if all elements of the
             gradient are smaller than this.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
@@ -392,7 +394,7 @@ def scipy_bfgs(
     )
 
     options = {
-        "gtol": absolute_gradient_tolerance,
+        "gtol": convergence_absolute_gradient_tolerance,
         "maxiter": max_iterations,
         "norm": norm,
     }
@@ -412,7 +414,7 @@ def scipy_conjugate_gradient(
     criterion_and_derivative,
     x,
     *,
-    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
     max_iterations=STOPPING_MAX_ITERATIONS,
     norm=np.inf,
 ):
@@ -438,7 +440,7 @@ def scipy_conjugate_gradient(
     options, see :ref:`naming_conventions`.
 
     Args:
-        absolute_gradient_tolerance (float): Stop if all elements of the
+        convergence_absolute_gradient_tolerance (float): Stop if all elements of the
             gradient are smaller than this.
         max_iterations (int): If the maximum number of iterations is reached, the
             optimization stops, but we do not count this as convergence.
@@ -464,7 +466,7 @@ def scipy_conjugate_gradient(
     )
 
     options = {
-        "gtol": absolute_gradient_tolerance,
+        "gtol": convergence_absolute_gradient_tolerance,
         "maxiter": max_iterations,
         "norm": norm,
     }
@@ -637,9 +639,9 @@ def scipy_truncated_newton(
     *,
     max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     max_iterations=STOPPING_MAX_ITERATIONS,
-    absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
-    absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
     func_min_estimate=0,
     max_hess_evaluations_per_iteration=-1,
     max_step_for_line_search=0,
@@ -681,13 +683,15 @@ def scipy_truncated_newton(
             optimization stops, but we do not count this as convergence.
         max_criterion_evaluations (int): If the maximum number of function evaluation is
             reached, the optimization stops but we do not count this as convergence.
-        absolute_params_tolerance (float): Absolute difference in parameters between
-            iterations after scaling that is tolerated to declare convergence.
-        absolute_criterion_tolerance (float): Absolute difference in the criterion value
+        convergence_absolute_params_tolerance (float): Absolute difference in parameters
             between iterations after scaling that is tolerated to declare convergence.
-        absolute_gradient_tolerance (float): Stop if the value of the projected gradient
-            (after applying x scaling factors) is smaller than this. If
-            absolute_gradient_tolerance < 0.0, absolute_gradient_tolerance is set to
+        convergence_absolute_criterion_tolerance (float): Absolute difference in the
+            criterion value between iterations after scaling that is tolerated
+            to declare convergence.
+        convergence_absolute_gradient_tolerance (float): Stop if the value of the
+            projected gradient (after applying x scaling factors) is smaller than this.
+            If convergence_absolute_gradient_tolerance < 0.0,
+            convergence_absolute_gradient_tolerance is set to
             1e-2 * sqrt(accuracy).
         max_hess_evaluations_per_iteration (int): Maximum number of hessian*vector
             evaluations per main iteration. If ``max_hess_evaluations == 0``, the
@@ -725,11 +729,11 @@ def scipy_truncated_newton(
     options = {
         # scipy/optimize/tnc/tnc.c::809 and 844 show that ftol is the
         # absolute criterion tolerance
-        "ftol": absolute_criterion_tolerance,
+        "ftol": convergence_absolute_criterion_tolerance,
         # scipy/optimize/tnc/tnc.c::856 show sthat xtol is the absolute parameter
         # tolerance
-        "xtol": absolute_params_tolerance,
-        "gtol": absolute_gradient_tolerance,
+        "xtol": convergence_absolute_params_tolerance,
+        "gtol": convergence_absolute_gradient_tolerance,
         "maxfun": max_criterion_evaluations,
         "maxiter": max_iterations,
         "maxCGit": max_hess_evaluations_per_iteration,
@@ -758,9 +762,9 @@ def scipy_trust_constr(
     lower_bounds,
     upper_bounds,
     *,
-    absolute_gradient_tolerance=1e-08,
+    convergence_absolute_gradient_tolerance=1e-08,
     max_iterations=STOPPING_MAX_ITERATIONS,
-    relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     trustregion_initial_radius=None,
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
@@ -796,10 +800,11 @@ def scipy_trust_constr(
     options, see :ref:`naming_conventions`.
 
     Args:
-        absolute_gradient_tolerance (float): Tolerance for termination by the norm of
-            the Lagrangian gradient. The algorithm will terminate when both the infinity
-            norm (i.e., max abs value) of the Lagrangian gradient and the constraint
-            violation are smaller than the absolute_gradient_tolerance.
+        convergence_absolute_gradient_tolerance (float): Tolerance for termination
+            by the norm of the Lagrangian gradient. The algorithm will terminate
+            when both the infinity norm (i.e., max abs value) of the Lagrangian
+            gradient and the constraint violation are smaller than the
+            convergence_absolute_gradient_tolerance.
             For this algorithm we use scipy's gradient tolerance for trust_constr.
             This smaller tolerance is needed for the sum of sqares tests to pass.
         max_iterations (int): If the maximum number of iterations is reached, the
@@ -836,9 +841,9 @@ def scipy_trust_constr(
         trustregion_initial_radius = calculate_trustregion_initial_radius(x)
 
     options = {
-        "gtol": absolute_gradient_tolerance,
+        "gtol": convergence_absolute_gradient_tolerance,
         "maxiter": max_iterations,
-        "xtol": relative_params_tolerance,
+        "xtol": convergence_relative_params_tolerance,
         "initial_tr_radius": trustregion_initial_radius,
         # don't have "grad" here as we already supply the gradient via the "jac"
         # argument supplied directly to scipy.optimize.minimize.

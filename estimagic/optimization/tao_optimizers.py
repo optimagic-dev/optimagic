@@ -29,9 +29,9 @@ def tao_pounders(
     lower_bounds,
     upper_bounds,
     *,
-    absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
-    relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
-    scaled_gradient_tolerance=CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
+    convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    convergence_scaled_gradient_tolerance=CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
     trustregion_initial_radius=None,
     max_iterations=STOPPING_MAX_ITERATIONS,
 ):
@@ -168,9 +168,21 @@ def tao_pounders(
     # scaled_gradient_tolerance manually we manually set absolute_gradient_tolerance and
     # or relative_gradient_tolerance to zero once a subset of these two is turned off
     # and scaled_gradient_tolerance is still turned on.
-    default_gatol = absolute_gradient_tolerance if absolute_gradient_tolerance else -1
-    default_gttol = scaled_gradient_tolerance if scaled_gradient_tolerance else -1
-    default_grtol = relative_gradient_tolerance if relative_gradient_tolerance else -1
+    default_gatol = (
+        convergence_absolute_gradient_tolerance
+        if convergence_absolute_gradient_tolerance
+        else -1
+    )
+    default_gttol = (
+        convergence_scaled_gradient_tolerance
+        if convergence_scaled_gradient_tolerance
+        else -1
+    )
+    default_grtol = (
+        convergence_relative_gradient_tolerance
+        if convergence_relative_gradient_tolerance
+        else -1
+    )
     # Set tolerances for default convergence tests.
     tao.setTolerances(
         gatol=default_gatol,
@@ -182,20 +194,26 @@ def tao_pounders(
     # overwrite others or lead to unclear behavior.
     if max_iterations is not None:
         tao.setConvergenceTest(functools.partial(_max_iters, max_iterations))
-    elif scaled_gradient_tolerance is False and absolute_gradient_tolerance is False:
+    elif (
+        convergence_scaled_gradient_tolerance is False
+        and convergence_absolute_gradient_tolerance is False
+    ):
         tao.setConvergenceTest(
-            functools.partial(_grtol_conv, relative_gradient_tolerance)
+            functools.partial(_grtol_conv, convergence_relative_gradient_tolerance)
         )
-    elif relative_gradient_tolerance is False and scaled_gradient_tolerance is False:
+    elif (
+        convergence_relative_gradient_tolerance is False
+        and convergence_scaled_gradient_tolerance is False
+    ):
         tao.setConvergenceTest(
-            functools.partial(_gatol_conv, absolute_gradient_tolerance)
+            functools.partial(_gatol_conv, convergence_absolute_gradient_tolerance)
         )
-    elif scaled_gradient_tolerance is False:
+    elif convergence_scaled_gradient_tolerance is False:
         tao.setConvergenceTest(
             functools.partial(
                 _grtol_gatol_conv,
-                relative_gradient_tolerance,
-                absolute_gradient_tolerance,
+                convergence_relative_gradient_tolerance,
+                convergence_absolute_gradient_tolerance,
             )
         )
 
