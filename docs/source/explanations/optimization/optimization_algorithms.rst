@@ -54,13 +54,6 @@ The other arguments can be set as ``algo_options`` when calling ``maximize`` or
 Supported algorithms
 --------------------
 
-All the algorithms
-~~~~~~~~~~~~~~~~~~
-
-.. automodule:: estimagic.optimization.scipy_optimizers
-    :members:
-
-
 Without optional dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -103,6 +96,14 @@ The following arguments are not supported as part of ``algo_options``:
 .. note::
     `scipy`'s COBYLA, SLSQP and trust-constr support general non linear constraints
     in principle. However, for the moment they are not supported.
+
+
+
+.. automodule:: estimagic.optimization.scipy_optimizers
+    :members:
+
+.. # .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_lbfgsb
+
 
 
 With ``petsc4py`` installed
