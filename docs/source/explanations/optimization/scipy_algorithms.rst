@@ -320,9 +320,11 @@ The following arguments are not supported as part of ``algo_options``:
 
 .. raw:: html
 
+                    </span>
                 </div>
             </div>
         </div>
+    </div>
 
 
 **References**
