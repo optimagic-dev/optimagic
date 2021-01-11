@@ -86,8 +86,8 @@ Algorithms from scipy
 .. _scipy_algorithms:
 
 
-estimagic supports most ``scipy`` algorithms without requiring the user to install
-additional dependencies.
+estimagic supports most ``scipy`` algorithms. You do not need to install additional
+dependencies to use them:
 
 
 .. raw:: html
@@ -100,7 +100,7 @@ additional dependencies.
                 <div class="d-flex flex-row tutorial-card-header-1">
                     <div class="d-flex flex-row tutorial-card-header-2">
                         <button class="btn btn-dark btn-sm"></button>
-                        L-BFGS-B
+                        scipy_lbfgsb
                     </div>
                     <span class="badge gs-badge-link">
 
@@ -112,14 +112,13 @@ additional dependencies.
             <div id="collapseOne" class="collapse" data-parent="#accordion">
                 <div class="card-body">
 
-
 .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_lbfgsb
 
 
 .. raw:: html
 
-                        </span>
-                    </div>
+                        </div>
+                    </span>
                 </div>
             </div>
 
@@ -128,7 +127,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            SLSQP
+                            scipy_slsqp
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -139,7 +138,6 @@ additional dependencies.
                 </div>
                 <div id="collapseTwo" class="collapse" data-parent="#accordion">
                     <div class="card-body">
-
 
 .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_slsqp
 
@@ -156,7 +154,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            Nelder-Mead
+                            scipy_neldermead
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -183,7 +181,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            Modified Powell Method
+                            scipy_powell
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -210,7 +208,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            BFGS
+                            scipy_bfgs
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -237,7 +235,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            Conjugate Gradient
+                            scipy_conjugate_gradient
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -264,7 +262,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            Newton's Conjugate Gradient
+                            scipy_newton_cg
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -292,7 +290,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            COBYLA
+                            scipy_cobyla
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -319,7 +317,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            Truncated Newton
+                            scipy_truncated_newton
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -346,7 +344,7 @@ additional dependencies.
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            Trust Region for Constrained Problems
+                            scipy_trust_constr
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -360,6 +358,56 @@ additional dependencies.
 
 .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_trust_constr
 
+.. raw:: html
+
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+.. _tao_algorithms:
+
+Algorithms from the Toolkit for Advanced Optimization (TAO)
+-----------------------------------------------------------
+
+At the moment, estimagic only supports
+`TAO's <https://www.anl.gov/mcs/tao-toolkit-for-advanced-optimization>`_
+POUNDERs algorithm.
+
+The `POUNDERs algorithm <https://www.mcs.anl.gov/papers/P5120-0414.pdf>`_
+by Stefan Wild is tailored to minimize a non-linear sum of squares
+objective function. Remember to cite :cite:`Wild2015` when using POUNDERs in
+addition to estimagic.
+
+To use POUNDERs you need to have
+`petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
+
+.. raw:: html
+
+    <div class="container">
+    <div id="accordion" class="shadow tutorial-accordion">
+
+        <div class="card tutorial-card">
+            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapsePounders">
+                <div class="d-flex flex-row tutorial-card-header-1">
+                    <div class="d-flex flex-row tutorial-card-header-2">
+                        <button class="btn btn-dark btn-sm"></button>
+                        tao_pounders
+                    </div>
+                    <span class="badge gs-badge-link">
+
+.. raw:: html
+
+                    </span>
+                </div>
+            </div>
+            <div id="collapsePounders" class="collapse" data-parent="#accordion">
+                <div class="card-body">
+
+.. autofunction:: estimagic.optimization.tao_optimizers.tao_pounders
 
 
 .. raw:: html
@@ -372,77 +420,12 @@ additional dependencies.
 
 
 
-The following ``scipy`` algorithms are not supported because they
-require the specification of the Hessian:
-
-- dogleg
-- trust-ncg
-- trust-exact
-- trust-krylov
-
-The following arguments are not supported as part of ``algo_options``:
-
-- ``disp``
-    If set to True would print a convergence message.
-    In estimagic it's always set to its default False.
-    Refer to estimagic's result dictionary's "success" entry for the convergence
-    message.
-- ``return_all``
-    If set to True, a list of the best solution at each iteration is returned.
-    In estimagic it's always set to its default False.
-    Use estimagic's database and dashboard instead to explore your criterion and
-    algorithm.
-- ``tol``
-    This argument of minimize (not an options key) is passed as different types of
-    tolerance (gradient, parameter or criterion, as well as relative or absolute)
-    depending on the selected algorithm. We require the user to explicitely input
-    the tolerance criteria or use our defaults instead.
-- ``args``
-    This argument of minimize (not an options key) is partialed into the function
-    for the user. Specify ``criterion_kwargs`` in ``maximize`` or ``minimize`` to
-    achieve the same behavior.
-- ``callback``
-    This argument would be called after each iteration and the algorithm would
-    terminate if it returned True.
-
-.. note::
-    `scipy`'s COBYLA, SLSQP and trust-constr support general non linear constraints
-    in principle. However, for the moment they are not supported.
-
-
-
-
-.. _tao_algorithms:
-
-
-
-Algorithms from the Toolkit for Advanced Optimization (TAO)
------------------------------------------------------------
-
-
-
-At the moment, estimagic only supports
-`TAO's <https://www.anl.gov/mcs/tao-toolkit-for-advanced-optimization>_`
-POUNDERs algorithm.
-
-
-The `POUNDERs algorithm <https://www.mcs.anl.gov/papers/P5120-0414.pdf>`_
-by Stefan Wild is tailored to minimize a non-linear sum of squares
-objective function. Remember to cite :cite:`Wild2015` when using POUNDERs in
-addition to estimagic.
-
-To use POUNDERs you need to have
-`petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
-
-.. autofunction:: estimagic.optimization.tao_optimizers.tao_pounders
-
 
 .. _nag_algorithms:
 
 
 Algorithms from the Numerical Algorithms Group (NAG)
 ----------------------------------------------------
-
 
 Currently, estimagic supports the
 `Derivative-Free Optimizer for Least-Squares Minimization (DF-OLS)
@@ -454,25 +437,17 @@ To use DF-OLS you need to have
 `the dfols package <https://tinyurl.com/y5ztv4yc>`_ installed.
 BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
 
-Their following arguments are not supported as ``algo_options``:
-
-- ``scaling_within_bounds``
-- ``init.run_in_parallel``
-- ``do_logging``, ``print_progress`` and all their advanced options.
-  Use estimagic's database and dashboard instead to explore your criterion
-  and algorithm.
-
 .. raw:: html
 
     <div class="container">
     <div id="accordion" class="shadow tutorial-accordion">
 
         <div class="card tutorial-card">
-            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseOne">
+            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseDFOLS">
                 <div class="d-flex flex-row tutorial-card-header-1">
                     <div class="d-flex flex-row tutorial-card-header-2">
                         <button class="btn btn-dark btn-sm"></button>
-                        DF-OLS
+                    nag_dfols
                     </div>
                     <span class="badge gs-badge-link">
 
@@ -481,10 +456,11 @@ Their following arguments are not supported as ``algo_options``:
                     </span>
                 </div>
             </div>
-            <div id="collapseOne" class="collapse" data-parent="#accordion">
+            <div id="collapseDFOLS" class="collapse" data-parent="#accordion">
                 <div class="card-body">
 
 .. autofunction:: estimagic.optimization.nag_optimizers.nag_dfols
+
 .. raw:: html
 
                         </span>
@@ -493,11 +469,11 @@ Their following arguments are not supported as ``algo_options``:
             </div>
 
             <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
+                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseBOBYQA">
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            BOBYQA
+                            nag_pybobyqa
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -506,17 +482,15 @@ Their following arguments are not supported as ``algo_options``:
                         </span>
                     </div>
                 </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
+                <div id="collapseBOBYQA" class="collapse" data-parent="#accordion">
                     <div class="card-body">
 
-
-
-
 .. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
-
 .. raw:: html
 
                     </span>
+                </div>
+                </div>
                 </div>
             </div>
         </div>

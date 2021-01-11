@@ -1,4 +1,14 @@
-"""Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/]."""
+"""Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/].
+
+The following arguments are not supported as ``algo_options``:
+
+- ``scaling_within_bounds``
+- ``init.run_in_parallel``
+- ``do_logging``, ``print_progress`` and all their advanced options.
+  Use estimagic's database and dashboard instead to explore your criterion
+  and algorithm.
+
+"""
 import warnings
 from functools import partial
 
