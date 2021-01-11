@@ -289,8 +289,8 @@ def scipy_powell(
     lower_bounds,
     upper_bounds,
     *,
-    relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
-    relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
 ):
@@ -321,10 +321,11 @@ def scipy_powell(
     options, see :ref:`naming_conventions`.
 
     Args:
-        relative_params_tolerance (float): Stop when the relative movement between
-            parameter vectors is smaller than this.
-        relative_criterion_tolerance (float): Stop when the relative improvement between
-            two iterations is smaller than this. More formally, this is expressed as
+        convergence_relative_params_tolerance (float): Stop when the relative movement
+            between parameter vectors is smaller than this.
+        convergence_relative_criterion_tolerance (float): Stop when the relative
+            improvement between two iterations is smaller than this.
+            More formally, this is expressed as
 
             .. math::
 
@@ -350,8 +351,8 @@ def scipy_powell(
     )
 
     options = {
-        "xtol": relative_params_tolerance,
-        "ftol": relative_criterion_tolerance,
+        "xtol": convergence_relative_params_tolerance,
+        "ftol": convergence_relative_criterion_tolerance,
         "maxfev": stopping_max_criterion_evaluations,
         "maxiter": stopping_max_iterations,
     }
@@ -518,7 +519,7 @@ def scipy_newton_cg(
     criterion_and_derivative,
     x,
     *,
-    relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     """Minimize a scalar function using Newton's conjugate gradient algorithm.
@@ -562,9 +563,9 @@ def scipy_newton_cg(
     options, see :ref:`naming_conventions`.
 
     Args:
-        relative_params_tolerance (float): Stop when the relative movement between
-            parameter vectors is smaller than this. Newton CG uses the average relative
-            change in the parameters for determining the convergence.
+        convergence_relative_params_tolerance (float): Stop when the relative movement
+            between parameter vectors is smaller than this. Newton CG uses the average
+            relative change in the parameters for determining the convergence.
         stopping_max_iterations (int): If the maximum number of iterations is reached,
             the optimization stops, but we do not count this as convergence.
 
@@ -584,7 +585,7 @@ def scipy_newton_cg(
     )
 
     options = {
-        "xtol": relative_params_tolerance,
+        "xtol": convergence_relative_params_tolerance,
         "maxiter": stopping_max_iterations,
     }
 
@@ -604,7 +605,7 @@ def scipy_cobyla(
     x,
     *,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
-    relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     trustregion_initial_radius=None,
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
@@ -632,10 +633,10 @@ def scipy_cobyla(
     Args:
         stopping_max_iterations (int): If the maximum number of iterations is reached,
             the optimization stops, but we do not count this as convergence.
-        relative_params_tolerance (float): Stop when the relative movement between
-            parameter vectors is smaller than this. In case of COBYLA this is a lower
-            bound on the size of the trust region and can be seen as the required
-            accuracy in the variables but this accuracy is not guaranteed.
+        convergence_relative_params_tolerance (float): Stop when the relative movement
+            between parameter vectors is smaller than this. In case of COBYLA this is
+            a lower bound on the size of the trust region and can be seen as the
+            required accuracy in the variables but this accuracy is not guaranteed.
         trustregion_initial_radius (float): Initial value of the trust region radius.
             Since a linear approximation is likely only good near the current simplex,
             the linear program is given the further requirement that the solution,
@@ -667,7 +668,7 @@ def scipy_cobyla(
         x0=x,
         method="COBYLA",
         options=options,
-        tol=relative_params_tolerance,
+        tol=convergence_relative_params_tolerance,
     )
 
     return _process_scipy_result(res)
@@ -862,10 +863,10 @@ def scipy_trust_constr(
             This smaller tolerance is needed for the sum of sqares tests to pass.
         stopping_max_iterations (int): If the maximum number of iterations is reached,
             the optimization stops, but we do not count this as convergence.
-        relative_params_tolerance (float): Tolerance for termination by the change of
-            the independent variable. The algorithm will terminate when the radius of
-            the trust region used in the algorithm is smaller than the
-            relative_params_tolerance.
+        convergence_relative_params_tolerance (float): Tolerance for termination by
+            the change of the independent variable. The algorithm will terminate when
+            the radius of the trust region used in the algorithm is smaller than the
+            convergence_relative_params_tolerance.
         trustregion_initial_radius (float): Initial value of the trust region radius.
             The trust radius gives the maximum distance between solution points in
             consecutive iterations. It reflects the trust the algorithm puts in the

@@ -33,7 +33,7 @@ def tao_pounders(
     convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
     convergence_scaled_gradient_tolerance=CONVERGENCE_SCALED_GRADIENT_TOLERANCE,
     trustregion_initial_radius=None,
-    max_iterations=STOPPING_MAX_ITERATIONS,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     r"""Minimize a function using the POUNDERs algorithm.
 
@@ -98,10 +98,10 @@ def tao_pounders(
             relative_gradient_tolerance.
         trustregion_initial_radius (float): Initial value of the trust region radius.
             It must be :math:`> 0`.
-        max_iterations (int): Alternative Stopping criterion. If set the routine will
-            stop after the number of specified iterations or after the step size is
-            sufficiently small. If the variable is set the default criteria will all be
-            ignored.
+        stopping_max_iterations (int): Alternative Stopping criterion.
+            If set the routine will stop after the number of specified iterations or
+            after the step size is sufficiently small. If the variable is set the
+            default criteria will all be ignored.
 
     Returns:
         results (dict): Dictionary with processed optimization results.
@@ -197,8 +197,8 @@ def tao_pounders(
 
     # Set user defined convergence tests. Beware that specifying multiple tests could
     # overwrite others or lead to unclear behavior.
-    if max_iterations is not None:
-        tao.setConvergenceTest(functools.partial(_max_iters, max_iterations))
+    if stopping_max_iterations is not None:
+        tao.setConvergenceTest(functools.partial(_max_iters, stopping_max_iterations))
     elif (
         convergence_scaled_gradient_tolerance is False
         and convergence_absolute_gradient_tolerance is False
