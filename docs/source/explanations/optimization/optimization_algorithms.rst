@@ -7,7 +7,7 @@ The *algorithm* argument
 ------------------------
 
 The ``algorithm`` argument can either be string with the name of a algorithm that is
-implemented in estimagic, or a function that fulfills the
+implemented in estimagic, or a function that fulfills the interface laid out in
 :ref:`internal_optimizer_interface`.
 
 Which algorithms are available in estimagic depends on the packages a user has
@@ -80,9 +80,8 @@ Supported Algorithms
     :maxdepth: 1
 
     The Scipy Algorithms (No Additional Requirements) <scipy_algorithms>
-    Tao Pounders (Requires ``petsc4py``) <tao_algorithms>
-    DF-OLS (Requires ``dfols``) <nag_dfols>
-    PyBOBYQA (Requires ``pybobyqa``) <nag_pybobyqa>
+    The Toolkit for Advanced Optimization's (TAO) Pounders Algorithm <tao_algorithms>
+    The Numerical Algorithm Group's Algorithms <nag_algorithms>
 
 
 .. With ``nlopt`` installed
