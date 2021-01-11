@@ -37,6 +37,11 @@ def tao_pounders(
 ):
     r"""Minimize a function using the POUNDERs algorithm.
 
+    Do not call this function directly but pass its name "tao_pounders" to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
+
     POUNDERs (:cite:`Benson2017`, :cite:`Wild2015`, `GitLab repository
     <https://gitlab.com/petsc/petsc/-/tree/master/src/binding/petsc4py/>`_)
     can be a useful tool for economists who estimate structural models using

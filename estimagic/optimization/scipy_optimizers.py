@@ -42,6 +42,11 @@ def scipy_lbfgsb(
 ):
     """Minimize a scalar function of one or more variables using the L-BFGS-B algorithm.
 
+    Do not call this function directly but pass its name "scipy_lbfgsb" to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
+
     The optimizer is taken from scipy, which calls the Fortran code written by the
     original authors of the algorithm. The Fortran code includes the corrections
     and improvements that were introduced in a follow up paper.
@@ -132,6 +137,11 @@ def scipy_slsqp(
 ):
     """Minimize a scalar function of one or more variables using the SLSQP algorithm.
 
+    Do not call this function directly but pass its name "scipy_slsqp" to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
+
     SLSQP stands for Sequential Least Squares Programming.
 
     SLSQP is a line search algorithm. It is well suited for continuously
@@ -200,6 +210,11 @@ def scipy_neldermead(
     adaptive=False,
 ):
     """Minimize a scalar function using the Nelder-Mead algorithm.
+
+    Do not call this function directly but pass its name scipy_neldermead to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
 
     The Nelder-Mead algorithm is a direct search method (based on function comparison)
     and is often applied to nonlinear optimization problems for which derivatives are
@@ -281,6 +296,11 @@ def scipy_powell(
 ):
     """Minimize a scalar function using the modified Powell method.
 
+    Do not call this function directly but pass its name "scipy_powell" to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
+
     .. warning::
         In our benchmark using a quadratic objective function, the Powell algorithm
         did not find the optimum very precisely (less than 4 decimal places).
@@ -359,6 +379,11 @@ def scipy_bfgs(
 ):
     """Minimize a scalar function of one or more variables using the BFGS algorithm.
 
+    Do not call this function directly but pass its name "scipy_bfgs" to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
+
     BFGS stands for Broyden-Fletcher-Goldfarb-Shanno algorithm. It is a quasi-Newton
     method that can be used for solving unconstrained nonlinear optimization problems.
 
@@ -421,6 +446,11 @@ def scipy_conjugate_gradient(
     norm=np.inf,
 ):
     """Minimize a function using a nonlinear conjugate gradient algorithm.
+
+    Do not call this function directly but pass its name "scipy_conjugate_gradient"
+    to estimagic's maximize or minimize function as `algorithm` argument.
+    Specify your desired arguments as a dictionary and pass them as `algo_options`
+    to minimize or maximize.
 
     The conjugate gradient method finds functions' local optima using just the gradient.
 
@@ -492,6 +522,11 @@ def scipy_newton_cg(
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
 ):
     """Minimize a scalar function using Newton's conjugate gradient algorithm.
+
+    Do not call this function directly but pass its name "scipy_newton_cg" to
+    estimagic's maximize or minimize function as `algorithm` argument.
+    Specify your desired arguments as a dictionary and pass them as `algo_options`
+    to minimize or maximize.
 
     .. warning::
         In our benchmark using a quadratic objective function, the truncated newton
@@ -574,6 +609,11 @@ def scipy_cobyla(
 ):
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
+    Do not call this function directly but pass its name "scipy_cobyla" to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
+
     COBYLA stands for Constrained Optimization By Linear Approximation.
     It is deriviative-free and supports nonlinear inequality and equality constraints.
 
@@ -652,6 +692,11 @@ def scipy_truncated_newton(
     criterion_rescale_factor=-1,
 ):
     """Minimize a scalar function using truncated Newton algorithm.
+
+    Do not call this function directly but pass its name "scipy_truncated_newton"
+    to estimagic's maximize or minimize function as `algorithm` argument.
+    Specify your desired arguments as a dictionary and pass them as `algo_options`
+    to minimize or maximize.
 
     This function differs from scipy_newton_cg because
 
@@ -771,6 +816,11 @@ def scipy_trust_constr(
     trustregion_initial_radius=None,
 ):
     """Minimize a scalar function of one or more variables subject to constraints.
+
+    Do not call this function directly but pass its name "scipy_trust_constr" to
+    estimagic's maximize or minimize function as `algorithm` argument.
+    Specify your desired arguments as a dictionary and pass them as `algo_options`
+    to minimize or maximize.
 
     .. warning::
         In our benchmark using a quadratic objective function, the trust_constr
