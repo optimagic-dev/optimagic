@@ -56,8 +56,8 @@ for the optimization.
 The result of the optimization will contain a copy of ``params`` where the
 original ``"value"`` column has been replaced by the optimal parameters.
 
-The "lower_bound" and "upper_bound" columns
-===========================================
+The ``"lower_bound"`` and ``"upper_bound"`` columns
+====================================================
 
 ``"lower_bound"`` and ``"upper_bound"`` are optional columns with box constraints on the
 parameters. You can also provide just one of them. For parameters that don't
@@ -69,8 +69,8 @@ compatible with box constraints. If you select an invalid combination of box con
 and other constraints you will get an error.
 
 
-The "draw_lower" and "draw_upper" columns
-=========================================
+The ``"draw_lower"`` and ``"draw_upper"`` columns
+==================================================
 
 ``"draw_lower"`` and ``"draw_upper"`` are optional columns that are only used
 if random start values are drawn, for example in genetic algorithms or when
@@ -80,8 +80,8 @@ unconstrained but still generate random start values.
 
 
 
-The "group" column
-==================
+The ``"group"`` column
+=======================
 
 ``"group"`` is an optional column of strings that is only used for visualization
 purposes. It can be used to partition the parameter into groups that have

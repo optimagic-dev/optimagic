@@ -1,4 +1,14 @@
-"""Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/]."""
+"""Implement algorithms by the (Numerical Algorithms Group)[https://www.nag.com/].
+
+The following arguments are not supported as ``algo_options``:
+
+- ``scaling_within_bounds``
+- ``init.run_in_parallel``
+- ``do_logging``, ``print_progress`` and all their advanced options.
+  Use estimagic's database and dashboard instead to explore your criterion
+  and algorithm.
+
+"""
 import warnings
 from functools import partial
 
@@ -82,8 +92,14 @@ def nag_dfols(
 ):
     r"""Minimize a function with least squares structure using DFO-LS.
 
+    Do not call this function directly but pass its name "nag_dfols" to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
+
     The DFO-LS algorithm :cite:`Cartis2018b` is designed to solve the nonlinear
-    least-squares minimization problem (with optional bound constraints)
+    least-squares minimization problem (with optional bound constraints).
+    Remember to cite :cite:`Cartis2018b` when using DF-OLS in addition to estimagic.
 
     .. math::
 
@@ -409,9 +425,18 @@ def nag_pybobyqa(
 ):
     r"""Minimize a function using the BOBYQA algorithm.
 
+    Do not call this function directly but pass its name "nag_pybobyqa" to estimagic's
+    maximize or minimize function as `algorithm` argument. Specify your desired
+    arguments as a dictionary and pass them as `algo_options` to minimize or
+    maximize.
+
     BOBYQA (:cite:`Powell2009`, :cite:`Cartis2018`, :cite:`Cartis2018a`) is a
     derivative-free trust-region method. It is designed to solve nonlinear local
     minimization problems.
+
+    Remember to cite :cite:`Powell2009` and :cite:`Cartis2018` when using pybobyqa in
+    addition to estimagic. If you take advantage of the ``seek_global_optimum`` option,
+    cite :cite:`Cartis2018a` additionally.
 
     There are two main situations when using a derivative-free algorithm like BOBYQA
     is preferable to derivative-based algorithms:

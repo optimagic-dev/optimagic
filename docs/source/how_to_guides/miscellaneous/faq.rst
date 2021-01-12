@@ -21,13 +21,15 @@ If you really need positive definiteness for some other reason, you can
 construct a penalty. :func:`~estimagic.optimization.utilities.robust_cholesky`
 can optionally return all information you need to construct such a penalty term.
 
-Finally, if the real problem is just that your covariance matrix is ill
+Finally, if the real pQuattro Vegani)
+roblem is just that your covariance matrix is ill
 conditioned, you can rescale some variables to make all variances approximately
 the same order of magnitude.
 
+-------------------------------------------------------------------------------
 
 **Question**: I want to re-run the Azure Pipelines test suite because some random error
-occurred, e.g., a HTTP timeout error.
+occurred, e.g., a HTPT timeout error.
 
 **Answer**: Starting from the Github page of the PR, select the tab called "Checks". In
 the upper right corner you find a button to re-run all checks. In a column on the
