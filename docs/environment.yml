@@ -4,7 +4,7 @@ dependencies:
   - python=3.7
   - ipython
   - pip:
-    - sphinx==2.4.4
+    - sphinx
     - pydata-sphinx-theme>=0.3.0
     - nbsphinx
     - sphinxcontrib-bibtex
