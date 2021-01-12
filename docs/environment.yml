@@ -5,7 +5,7 @@ dependencies:
   - ipython
   - pip:
     - sphinx
-    - parso=0.8.0
+    - parso==0.8.0
     - pydata-sphinx-theme>=0.3.0
     - nbsphinx
     - sphinxcontrib-bibtex
