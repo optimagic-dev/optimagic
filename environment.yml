@@ -40,3 +40,5 @@ dependencies:
     - blackcellmagic
     - bump2version
     - pre-commit
+    - Py-BOBYQA
+    - DFO-LS

@@ -13,3 +13,4 @@ Optimization
    how_to_use_logging
    how_to_use_the_dashboard
    how_to_handle_errors_during_optimization
+   how_to_choose_optimizer
