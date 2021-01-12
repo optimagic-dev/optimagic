@@ -35,6 +35,7 @@ dependencies:
   - sqlalchemy>=1.3
   - tox-conda
   - statsmodels
+  - dill
   - pip:
     - black
     - blackcellmagic
