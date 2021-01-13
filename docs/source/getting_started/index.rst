@@ -4,7 +4,7 @@ Getting Started
 
 
 This section is a quick introduction to the basic functionality of estimagic.
-Contains not only introductions to estimagic, but also very brief introductions to
+It contains not only introductions to estimagic, but also very brief introductions to
 numerical optimization and differentiation.
 
 .. toctree::
