@@ -7,7 +7,7 @@ channels:
 
 dependencies:
 
-  - python=3.7
+  - python=3.8
   - pip
   - anaconda-client
   - bokeh>=1.3
