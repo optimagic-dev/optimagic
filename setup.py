@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="estimagic",
-    version="0.1.1",
+    version="0.1.2",
     description="Tools for the estimation of (structural) econometric models.",
     long_description="""
         Estimagic is a Python package that helps to build high-quality and user
