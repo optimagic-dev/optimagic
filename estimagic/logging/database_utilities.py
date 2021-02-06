@@ -143,23 +143,18 @@ def make_optimization_status_table(database, if_exists="extend"):
     database.create_all(database.bind)
 
 
-def make_optimization_problem_table(database, if_exists="extend"):
+def make_optimization_problem_table(
+    database, if_exists="extend", save_all_arguments=True
+):
     table_name = "optimization_problem"
     _handle_existing_table(database, table_name, if_exists)
 
     columns = [
         Column("rowid", Integer, primary_key=True),
         Column("direction", String),
-        Column("criterion", PickleType(pickler=RobustPickler)),
-        Column("criterion_kwargs", PickleType(pickler=RobustPickler)),
         Column("params", PickleType(pickler=RobustPickler)),
         Column("algorithm", PickleType(pickler=RobustPickler)),
-        Column("constraints", PickleType(pickler=RobustPickler)),
         Column("algo_options", PickleType(pickler=RobustPickler)),
-        Column("derivative", PickleType(pickler=RobustPickler)),
-        Column("derivative_kwargs", PickleType(pickler=RobustPickler)),
-        Column("criterion_and_derivative", PickleType(pickler=RobustPickler)),
-        Column("criterion_and_derivative_kwargs", PickleType(pickler=RobustPickler)),
         Column("numdiff_options", PickleType(pickler=RobustPickler)),
         Column("logging", PickleType(pickler=RobustPickler)),
         Column("log_options", PickleType(pickler=RobustPickler)),
@@ -167,6 +162,19 @@ def make_optimization_problem_table(database, if_exists="extend"):
         Column("error_penalty", PickleType(pickler=RobustPickler)),
         Column("cache_size", Integer),
     ]
+
+    if save_all_arguments:
+        columns += [
+            Column("criterion", PickleType(pickler=RobustPickler)),
+            Column("criterion_kwargs", PickleType(pickler=RobustPickler)),
+            Column("constraints", PickleType(pickler=RobustPickler)),
+            Column("derivative", PickleType(pickler=RobustPickler)),
+            Column("derivative_kwargs", PickleType(pickler=RobustPickler)),
+            Column("criterion_and_derivative", PickleType(pickler=RobustPickler)),
+            Column(
+                "criterion_and_derivative_kwargs", PickleType(pickler=RobustPickler)
+            ),
+        ]
 
     Table(
         table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True

@@ -23,7 +23,7 @@ def test_covariance_moments_random():
 
 def test_covariance_moments_unit():
     moment_cond = np.reshape(np.arange(12), (3, 4))
-    control = np.full((4, 4), 32, dtype=np.float) / 3
+    control = np.full((4, 4), 32, dtype=float) / 3
     assert_array_almost_equal(_covariance_moments(moment_cond), control)
 
 

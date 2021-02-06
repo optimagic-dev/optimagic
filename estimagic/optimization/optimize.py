@@ -116,6 +116,9 @@ def maximize(
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
             - "if_exists": (str) One of "extend", "replace", "raise"
+            - "save_all_arguments": (bool). If True, all arguments to maximize
+              that can be pickled are saved in the log file. Otherwise, only the
+              information needed by the dashboard is saved. Default False.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -245,6 +248,9 @@ def minimize(
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
             - "if_exists": (str) One of "extend", "replace", "raise"
+            - "save_all_arguments": (bool). If True, all arguments to minimize
+              that can be pickled are saved in the log file. Otherwise, only the
+              information needed by the dashboard is saved. Default False.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -376,6 +382,9 @@ def optimize(
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
             - "if_exists": (str) One of "extend", "replace", "raise"
+            - "save_all_arguments": (bool). If True, all arguments to
+              optimize that can be pickled are saved in the log file. Otherwise, only
+              the information needed by the dashboard is saved. Default False.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -690,6 +699,7 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
     path = logging
     fast_logging = log_options.get("fast_logging", False)
     if_exists = log_options.get("if_exists", "extend")
+    save_all_arguments = log_options.get("save_all_arguments", False)
     database = load_database(path=path, fast_logging=fast_logging)
 
     # create the optimization_iterations table
@@ -706,8 +716,20 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
     )
 
     # create_and_initialize the optimization_problem table
-    make_optimization_problem_table(database, if_exists)
-
+    make_optimization_problem_table(database, if_exists, save_all_arguments)
+    if not save_all_arguments:
+        not_saved = [
+            "criterion",
+            "criterion_kwargs",
+            "constraints",
+            "derivative",
+            "derivative_kwargs",
+            "criterion_and_derivative",
+            "criterion_and_derivative_kwargs",
+        ]
+        problem_data = {
+            key: val for key, val in problem_data.items() if key not in not_saved
+        }
     append_row(problem_data, "optimization_problem", database, path, fast_logging)
 
     return database

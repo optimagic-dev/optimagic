@@ -10,6 +10,7 @@ The package can be installed via conda. To do so, type the following commands in
 a terminal or shell:
 
 ``$ conda config --add channels conda-forge``
+
 ``$ conda install -c opensourceeconomics estimagic``
 
 The first line adds conda-forge to your conda channels. This is necessary for
@@ -20,9 +21,9 @@ and its mandatory dependencies.
 Installing optional dependencies
 ================================
 
-Only the ``scipy`` optimizers are a mandatory dependency of estimagic. Other algorithms
+Only ``scipy`` is a mandatory dependency of estimagic. Other algorithms
 become available if you install more packages. We make this optional because most of the
-time you will use at least one additional package, but only very rarely you will need all
+time you will use at least one additional package, but only very rarely will you need all
 of them.
 
 
@@ -32,14 +33,14 @@ see :ref:`list_of_algorithms`.
 
 To enable all algorithms at once, do the following:
 
-``conda install nlopt``
+.. ``conda install nlopt``
 
 ``pip install Py-BOBYQA``
 
-``pip install DFOLS``
+``pip install DFO-LS``
 
-``conda install petsc4py`` (Not available on windows)
+``conda install petsc4py`` (Not available on Windows)
 
-``conda install cyipopt`` (Not available on windows)
+.. ``conda install cyipopt`` (Not available on Windows)
 
-``conda install pygmo``
+.. ``conda install pygmo``
