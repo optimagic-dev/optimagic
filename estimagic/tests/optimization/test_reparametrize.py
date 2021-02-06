@@ -41,7 +41,7 @@ def reduce_params(params, constraints):
     all_locs = []
     for constr in constraints:
         if "query" in constr:
-            all_locs = ["i", "j"]
+            all_locs = ["i", "j1", "j2"]
         elif isinstance(constr["loc"], tuple):
             all_locs.append(constr["loc"][0])
         elif isinstance(constr["loc"], list):

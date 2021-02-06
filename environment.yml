@@ -20,8 +20,8 @@ dependencies:
   - cloudpickle
   - jupyterlab
   - nbsphinx
-  - numpy=1.16
-  - pandas<=1.0.5
+  - numpy
+  - pandas
   - pdbpp
   - petsc4py>=3.11
   - pytest
