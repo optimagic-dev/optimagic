@@ -208,6 +208,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         algorithm=algo,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
+        log_options={"save_all_arguments": False},
     )
 
     assert res["success"], f"{algo} did not converge."
