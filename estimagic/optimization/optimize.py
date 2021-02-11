@@ -19,7 +19,6 @@ from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
-from estimagic.optimization.process_constraints import process_bounds
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
 from estimagic.optimization.reparametrize import post_replace_jacobian
@@ -28,6 +27,8 @@ from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import propose_algorithms
+from estimagic.parameter_handling import add_default_bounds_to_params
+from estimagic.parameter_handling import check_params_index_is_valid
 
 
 def maximize(
@@ -509,10 +510,10 @@ def _single_optimize(
         )
 
     # process params and constraints
-    params = process_bounds(params)
+    params = add_default_bounds_to_params(params)
     for col in ["value", "lower_bound", "upper_bound"]:
         params[col] = params[col].astype(float)
-    _check_params(params)
+    check_params_index_is_valid(params)
 
     processed_constraints, processed_params = process_constraints(constraints, params)
 
@@ -775,25 +776,6 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 
     numdiff_options = {**default_numdiff_options, **numdiff_options}
     return numdiff_options
-
-
-def _check_params(params):
-    """Check params has a unique index.
-
-    Args:
-        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
-
-    Raises:
-        AssertionError: The index contains duplicates.
-
-    """
-    if params.index.duplicated().any():
-        raise ValueError("No duplicates allowed in the index of params.")
-
-    invalid_bounds = params.query("lower_bound > value | upper_bound < value")
-
-    if len(invalid_bounds) > 0:
-        raise ValueError(f"value out of bounds for:\n{invalid_bounds.index}")
 
 
 def _add_name_and_group_columns_to_params(params):

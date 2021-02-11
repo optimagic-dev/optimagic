@@ -40,6 +40,7 @@ from estimagic.optimization.check_constraints import check_for_incompatible_over
 from estimagic.optimization.check_constraints import check_types
 from estimagic.optimization.consolidate_constraints import consolidate_constraints
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
+from estimagic.parameter_handling import add_default_bounds_to_params
 
 
 def process_constraints(constraints, params):
@@ -75,7 +76,7 @@ def process_constraints(constraints, params):
               parameter
 
     """
-    params = process_bounds(params)
+    params = add_default_bounds_to_params(params)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
@@ -106,17 +107,6 @@ def process_constraints(constraints, params):
         pp["_internal_fixed_value"] = _create_internal_fixed_value(pp._fixed_value, pc)
 
         return pc, pp
-
-
-def process_bounds(params):
-    """Fill missing bounds with -np.inf and np.inf."""
-    defaults = pd.DataFrame(
-        {"lower_bound": -np.inf, "upper_bound": np.inf},
-        index=params.index,
-    )
-    params = params.combine_first(defaults)
-
-    return params
 
 
 def _process_selectors(constraints, params):
