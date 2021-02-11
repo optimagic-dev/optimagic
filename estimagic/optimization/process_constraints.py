@@ -81,10 +81,9 @@ def process_constraints(constraints, params):
             "ignore", message="indexing past lexsort depth may impact performance."
         )
         params = params.copy()
-        pc = _apply_constraint_killers(constraints)
-        check_types(pc)
+        check_types(constraints)
         # selectors have to be processed before anything else happens to the params
-        pc = _process_selectors(pc, params)
+        pc = _process_selectors(constraints, params)
 
         pc = _replace_pairwise_equality_by_equality(pc)
         pc = _process_linear_weights(pc, params)
@@ -107,27 +106,6 @@ def process_constraints(constraints, params):
         pp["_internal_fixed_value"] = _create_internal_fixed_value(pp._fixed_value, pc)
 
         return pc, pp
-
-
-def _apply_constraint_killers(constraints):
-    """Filter out constraints that have a killer."""
-    killers, real_constraints = set(), []
-    for constr in constraints:
-        if "kill" in constr and len(constr) == 1:
-            killers.add(constr["kill"])
-        else:
-            real_constraints.append(constr)
-
-    survivors = []
-    for constr in real_constraints:
-        if constr.get("id", None) not in killers:
-            survivors.append(constr)
-        killers.discard(constr.get("id", None))
-
-    if killers:
-        raise KeyError(f"You try to kill non-existing constraints with ids: {killers}")
-
-    return survivors
 
 
 def process_bounds(params):
