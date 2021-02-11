@@ -15,7 +15,7 @@ What does well scaled mean
 ==========================
 
 In short, an optimization problem is well scaled if a fixed step in any direction yields
- a roughly similar sized change in the criterion function.
+a roughly similar sized change in the criterion function.
 
 In practice, this can never be achieved perfectly (at least for nonlinear problems).
 However, one can easily improve over simply ignoring the problem altogether.
@@ -58,7 +58,7 @@ Disadvantages
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
     minimize(
-        criterion=sphere_with_noise,
+        criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",
         scaling=True,
@@ -108,7 +108,7 @@ Disadvantages
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
     minimize(
-        criterion=sphere_with_noise,
+        criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",
         scaling=True,
@@ -120,10 +120,12 @@ Divide by gradient
 ------------------
 
 Dividing all parameters by the gradient of the criterion function at the start values
-means that around the start values the problem is scaled optimally. In practice, we do
-not take the exact gradient, but a numerical gradient calculated with a very large step
-size. This is more robust for noisy or wiggly functions.
+means that around the start values the problem is scaled optimally. However, for very
+nonlinear functions, it does not guarantee optimal scaling anywhere else.
 
+In practice, we do not take the exact gradient, but a numerical gradient calculated with
+a very large step size (compared to the rule of thumb for optimal step sizes for
+numerical derivatives). This is more robust for noisy or wiggly functions.
 
 Advantages
 
@@ -136,6 +138,8 @@ Disadvantages
 - Not robust for very noisy or very wiggly functions
 - Depends on start values
 - Parameters with zero gradient need special treatment
+- Numerical derivatives are themselves sensitive to scaling and the rule of thumb for
+  step sizes basically uses the ``"start_values"`` approach to solve this problem.
 
 
 .. code-block:: python
@@ -149,7 +153,7 @@ Disadvantages
     start_params["upper_bound"] = 2 * np.arange(5) + 1
 
     minimize(
-        criterion=sphere_with_noise,
+        criterion=sphere,
         params=start_params,
         algorithm="scipy_lbfgsb",
         scaling=True,
@@ -157,8 +161,28 @@ Disadvantages
     )
 
 
-Notes on the Syntax
--------------------
+Remarks
+=======
+
+
+What is the ``clipping_value``
+------------------------------
+
+In all of the above heuristics, the parameter vector is divided (elementwise) by some
+other vector and it is possible that some entries of the divisor are zero or close
+to zero.
+
+The clipping value bounds the elements of the divisor away from zero. It should be set
+to a strictly non-zero number for the ``"start_values"`` and ``"gradient"`` approach.
+The ``"bounds"`` approach avoids division by exact zeros by construction. The
+``"clipping_value"`` can still be used to avoid extreme upscaling of parameters with
+very tight bounds. However, this means that the bounds of the re-scaled problem are
+not exactly [0, 1] for all parameters.
+
+
+Default values
+--------------
+
 
 Scaling is disabled by default. If enabled, but no ``scaling_options`` are provided,
 we use the ``"start_values"`` method with a ``"clipping_value"`` of 0.1. This is the
