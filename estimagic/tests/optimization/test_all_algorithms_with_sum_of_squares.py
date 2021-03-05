@@ -19,19 +19,22 @@ from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
+
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
     "scipy_conjugate_gradient",
     "scipy_bfgs",
     "scipy_newton_cg",
     "scipy_cobyla",
+    # TODO: Remove least_squares. It supports bounds but not constraints.
+    "scipy_least_squares"
 ]
 
 BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
-IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
+IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr", "scipy_least_squares"]
 
 
 def _skip_tests_with_missing_dependencies(test_cases):
@@ -117,7 +120,7 @@ def sos_criterion_and_jacobian(params):
 
 def get_test_cases_for_algorithm(algorithm):
     """Generate list of all possible argument combinations for algorithm."""
-    is_least_squares = algorithm in ["tao_pounders", "nag_dfols"]
+    is_least_squares = algorithm in ["tao_pounders", "nag_dfols", "scipy_least_squares"]
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
 

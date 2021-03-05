@@ -955,6 +955,43 @@ def scipy_trust_constr(
     return _process_scipy_result(res)
 
 
+def scipy_least_squares(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds
+):
+    """
+    TODO: Add Documentation.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = "scipy_least_squares"
+    func = functools.partial(
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
+    )
+
+    gradient = functools.partial(
+        criterion_and_derivative, task="derivative", algorithm_info=algo_info
+    )
+
+    res = scipy.optimize.least_squares(
+        fun=func,
+        x0=x,
+        jac=gradient,
+        # Don't use _get_scipy_bounds, b.c. least_squares uses np.inf
+        bounds=(lower_bounds, upper_bounds),
+        # TODO: Check for additional parameters that can be used here
+    )
+
+    return _process_scipy_result(res)
+
+
 def _process_scipy_result(scipy_results_obj):
     # using get with defaults to access dict elements is just a safety measure
     raw_res = {**scipy_results_obj}
