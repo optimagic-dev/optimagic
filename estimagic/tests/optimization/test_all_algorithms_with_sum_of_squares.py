@@ -26,8 +26,6 @@ BOUNDS_FREE_ALGORITHMS = [
     "scipy_bfgs",
     "scipy_newton_cg",
     "scipy_cobyla",
-    # TODO: Remove least_squares. It supports bounds but not constraints.
-    "scipy_least_squares"
 ]
 
 BOUNDS_SUPPORTING_ALGORITHMS = [

@@ -44,6 +44,7 @@ import numpy as np
 import scipy
 
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
@@ -959,7 +960,13 @@ def scipy_least_squares(
     criterion_and_derivative,
     x,
     lower_bounds,
-    upper_bounds
+    upper_bounds,
+    *,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    relative_step_size_diff_approx=None,
+    method="trf"
 ):
     """
     TODO: Add Documentation.
@@ -968,6 +975,10 @@ def scipy_least_squares(
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
+
+    if method not in ["trf", "dogbox", "lm"]:
+        raise ValueError(f"Method {method} is not supported within scipy_least_squares.")
+
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_least_squares"
     func = functools.partial(
@@ -986,7 +997,11 @@ def scipy_least_squares(
         jac=gradient,
         # Don't use _get_scipy_bounds, b.c. least_squares uses np.inf
         bounds=(lower_bounds, upper_bounds),
-        # TODO: Check for additional parameters that can be used here
+        max_nfev=stopping_max_criterion_evaluations,
+        ftol=convergence_relative_criterion_tolerance,
+        gtol=convergence_relative_gradient_tolerance,
+        method=method,
+        diff_step=relative_step_size_diff_approx,
     )
 
     return _process_scipy_result(res)
@@ -1001,7 +1016,7 @@ def _process_scipy_result(scipy_results_obj):
         "solution_derivative": raw_res.get("jac"),
         "solution_hessian": raw_res.get("hess"),
         "n_criterion_evaluations": raw_res.get("nfev"),
-        "n_derivative_evaluations": raw_res.get("njac"),
+        "n_derivative_evaluations": raw_res.get("njac") or raw_res.get("njev"),
         "n_iterations": raw_res.get("nit"),
         "success": raw_res.get("success"),
         "reached_convergence_criterion": None,
