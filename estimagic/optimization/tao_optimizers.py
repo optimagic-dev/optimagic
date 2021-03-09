@@ -43,7 +43,7 @@ def tao_pounders(
     maximize.
 
     POUNDERs (:cite:`Benson2017`, :cite:`Wild2015`, `GitLab repository
-    <https://gitlab.com/petsc/petsc/-/tree/master/src/binding/petsc4py/>`_)
+    <https://gitlab.com/petsc/petsc4py/-/tree/master>`_)
     can be a useful tool for economists who estimate structural models using
     indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
     POUNDERs is tailored for minimizing a non-linear sum of squares objective function,
