@@ -44,10 +44,10 @@ import numpy as np
 import scipy
 
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
-from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
@@ -966,10 +966,10 @@ def scipy_least_squares(
     convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     relative_step_size_diff_approx=None,
-    method="trf"
+    method="trf",
 ):
     """
-    TODO: Add Documentation.
+    Add Documentation.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -977,7 +977,9 @@ def scipy_least_squares(
     """
 
     if method not in ["trf", "dogbox", "lm"]:
-        raise ValueError(f"Method {method} is not supported within scipy_least_squares.")
+        raise ValueError(
+            f"Method {method} is not supported within scipy_least_squares."
+        )
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_least_squares"

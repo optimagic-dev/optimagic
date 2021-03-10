@@ -32,7 +32,12 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
-IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr", "scipy_least_squares"]
+IMPRECISE_ALGOS = [
+    "scipy_powell",
+    "scipy_truncated_newton",
+    "scipy_trust_constr",
+    "scipy_least_squares",
+]
 
 
 def _skip_tests_with_missing_dependencies(test_cases):
