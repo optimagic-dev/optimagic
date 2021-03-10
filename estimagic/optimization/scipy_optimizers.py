@@ -966,6 +966,8 @@ def scipy_least_squares(
     convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     relative_step_size_diff_approx=None,
+    tr_solver=None,
+    tr_solver_options=None,
     method="trf",
 ):
     """
@@ -980,6 +982,9 @@ def scipy_least_squares(
         raise ValueError(
             f"Method {method} is not supported within scipy_least_squares."
         )
+
+    if tr_solver_options is None:
+        tr_solver_options = {}
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_least_squares"
@@ -1004,6 +1009,8 @@ def scipy_least_squares(
         gtol=convergence_relative_gradient_tolerance,
         method=method,
         diff_step=relative_step_size_diff_approx,
+        tr_solver=tr_solver,
+        tr_options=tr_solver_options,
     )
 
     return _process_scipy_result(res)
