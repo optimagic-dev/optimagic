@@ -36,7 +36,8 @@ IMPRECISE_ALGOS = [
     "scipy_powell",
     "scipy_truncated_newton",
     "scipy_trust_constr",
-    "scipy_least_squares",
+    "scipy_ls_trf",
+    "scipy_ls_dogbox",
 ]
 
 
@@ -123,7 +124,12 @@ def sos_criterion_and_jacobian(params):
 
 def get_test_cases_for_algorithm(algorithm):
     """Generate list of all possible argument combinations for algorithm."""
-    is_least_squares = algorithm in ["tao_pounders", "nag_dfols", "scipy_least_squares"]
+    is_least_squares = algorithm in [
+        "tao_pounders",
+        "nag_dfols",
+        "scipy_ls_trf",
+        "scipy_ls_dogbox",
+    ]
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
 

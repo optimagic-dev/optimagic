@@ -956,14 +956,14 @@ def scipy_trust_constr(
     return _process_scipy_result(res)
 
 
-def scipy_least_squares(
+def _scipy_least_squares(
     criterion_and_derivative,
     x,
     lower_bounds,
     upper_bounds,
     *,
-    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    convergence_relative_criterion_tol=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_relative_gradient_tol=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     relative_step_size_diff_approx=None,
     tr_solver=None,
@@ -987,7 +987,7 @@ def scipy_least_squares(
         tr_solver_options = {}
 
     algo_info = DEFAULT_ALGO_INFO.copy()
-    algo_info["name"] = "scipy_least_squares"
+    algo_info["name"] = f"scipy_ls_{method}"
     func = functools.partial(
         criterion_and_derivative,
         task="criterion",
@@ -1005,8 +1005,8 @@ def scipy_least_squares(
         # Don't use _get_scipy_bounds, b.c. least_squares uses np.inf
         bounds=(lower_bounds, upper_bounds),
         max_nfev=stopping_max_criterion_evaluations,
-        ftol=convergence_relative_criterion_tolerance,
-        gtol=convergence_relative_gradient_tolerance,
+        ftol=convergence_relative_criterion_tol,
+        gtol=convergence_relative_gradient_tol,
         method=method,
         diff_step=relative_step_size_diff_approx,
         tr_solver=tr_solver,
@@ -1014,6 +1014,62 @@ def scipy_least_squares(
     )
 
     return _process_scipy_result(res)
+
+
+def scipy_ls_trf(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_criterion_tol=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_relative_gradient_tol=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    relative_step_size_diff_approx=None,
+    tr_solver=None,
+    tr_solver_options=None,
+):
+    return _scipy_least_squares(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        convergence_relative_criterion_tol=convergence_relative_criterion_tol,
+        convergence_relative_gradient_tol=convergence_relative_gradient_tol,
+        stopping_max_criterion_evaluations=stopping_max_criterion_evaluations,
+        relative_step_size_diff_approx=relative_step_size_diff_approx,
+        tr_solver=tr_solver,
+        tr_solver_options=tr_solver_options,
+        method="trf",
+    )
+
+
+def scipy_ls_dogbox(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_criterion_tol=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_relative_gradient_tol=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    relative_step_size_diff_approx=None,
+    tr_solver=None,
+    tr_solver_options=None,
+):
+    return _scipy_least_squares(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        convergence_relative_criterion_tol=convergence_relative_criterion_tol,
+        convergence_relative_gradient_tol=convergence_relative_gradient_tol,
+        stopping_max_criterion_evaluations=stopping_max_criterion_evaluations,
+        relative_step_size_diff_approx=relative_step_size_diff_approx,
+        tr_solver=tr_solver,
+        tr_solver_options=tr_solver_options,
+        method="dogbox",
+    )
 
 
 def _process_scipy_result(scipy_results_obj):
