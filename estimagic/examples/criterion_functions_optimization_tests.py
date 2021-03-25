@@ -88,8 +88,8 @@ def rosenbrock_gradient(params):
 
 
 def rosenbrock_pandas_gradient(params):
-    return
+    return pd.Series(rosenbrock_gradient(params))
 
 
 def rosenbrock_criterion_and_gradient(params):
-    return
+    return rosenbrock_scalar_criterion(params), rosenbrock_gradient(params)
