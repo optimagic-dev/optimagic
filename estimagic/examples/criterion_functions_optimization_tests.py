@@ -40,6 +40,20 @@ def trid_criterion_and_gradient(params):
     ).sum(), 2 * (x - 1) - l1 - l2
 
 
+def trid_dict_criterion(params):
+    out = {
+        "value": trid_scalar_criterion(params),
+    }
+    return out
+
+
+def trid_dict_criterion_with_pd_objects(params):
+    out = {
+        "value": pd.Series(trid_scalar_criterion(params)),
+    }
+    return out
+
+
 def rotated_hyper_ellipsoid_scalar_criterion(params):
     val = 0
     for i in range(len(params["value"])):
@@ -63,6 +77,35 @@ def rotated_hyper_ellipsoid_criterion_and_gradient(params):
         val += (params["value"][: i + 1] ** 2).sum()
     x = params["value"].to_numpy()
     return val, np.arange(2 * len(x), 0, -2) * x
+
+
+def rotated_hyper_ellipsoid_contributions(params):
+    x = params["value"].to_numpy()
+    dim = len(params)
+    out = np.zeros(dim)
+    for i in range(dim):
+        out[i] = (x[: i + 1] ** 2).sum()
+    return out
+
+
+def rotated_hyper_ellipsoid_dict_criterion(params):
+    out = {
+        "value": rotated_hyper_ellipsoid_scalar_criterion(params),
+        "contributions": rotated_hyper_ellipsoid_contributions(params),
+        "root_contributions": np.sqrt(rotated_hyper_ellipsoid_contributions(params)),
+    }
+    return out
+
+
+def rotated_hyper_ellipsoid_dict_criterion_with_pd_objects(params):
+    out = {
+        "value": pd.Series(rotated_hyper_ellipsoid_scalar_criterion(params)),
+        "contributions": pd.Series(rotated_hyper_ellipsoid_contributions(params)),
+        "root_contributions": pd.Series(
+            np.sqrt(rotated_hyper_ellipsoid_contributions(params))
+        ),
+    }
+    return out
 
 
 def rosenbrock_scalar_criterion(params):
@@ -95,37 +138,20 @@ def rosenbrock_criterion_and_gradient(params):
     return rosenbrock_scalar_criterion(params), rosenbrock_gradient(params)
 
 
-def trid_dict_criterion(params):
-    out = {
-        "value": trid_scalar_criterion(params),
-    }
-    return out
-
-
-def rotated_hyper_ellipsoid_dict_criterion(params):
-    out = {
-        "value": rotated_hyper_ellipsoid_scalar_criterion(params),
-    }
+def rosenbrock_contributions(params):
+    x = params["value"].to_numpy()
+    dim = len(params)
+    out = np.zeros(dim)
+    for i in range(dim - 1):
+        out[i] = ((x[i + 1] - x[i] ** 2) ** 2) * 100 + ((x[i] - 1) ** 2)
     return out
 
 
 def rosenbrock_dict_criterion(params):
     out = {
         "value": rosenbrock_scalar_criterion(params),
-    }
-    return out
-
-
-def trid_dict_criterion_with_pd_objects(params):
-    out = {
-        "value": pd.Series(trid_scalar_criterion(params)),
-    }
-    return out
-
-
-def rotated_hyper_ellipsoid_dict_criterion_with_pd_objects(params):
-    out = {
-        "value": pd.Series(rotated_hyper_ellipsoid_scalar_criterion(params)),
+        "contributions": rosenbrock_contributions(params),
+        "root_contributions": np.sqrt(rosenbrock_contributions(params)),
     }
     return out
 
@@ -133,5 +159,7 @@ def rotated_hyper_ellipsoid_dict_criterion_with_pd_objects(params):
 def rosenbrock_dict_criterion_with_pd_objects(params):
     out = {
         "value": pd.Series(rosenbrock_scalar_criterion(params)),
+        "contributions": pd.Series(rosenbrock_contributions(params)),
+        "root_contributions": pd.Series(np.sqrt(rosenbrock_contributions(params))),
     }
     return out
