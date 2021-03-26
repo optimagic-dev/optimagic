@@ -93,3 +93,45 @@ def rosenbrock_pandas_gradient(params):
 
 def rosenbrock_criterion_and_gradient(params):
     return rosenbrock_scalar_criterion(params), rosenbrock_gradient(params)
+
+
+def trid_dict_criterion(params):
+    out = {
+        "value": trid_scalar_criterion(params),
+    }
+    return out
+
+
+def rotated_hyper_ellipsoid_dict_criterion(params):
+    out = {
+        "value": rotated_hyper_ellipsoid_scalar_criterion(params),
+    }
+    return out
+
+
+def rosenbrock_dict_criterion(params):
+    out = {
+        "value": rosenbrock_scalar_criterion(params),
+    }
+    return out
+
+
+def trid_dict_criterion_with_pd_objects(params):
+    out = {
+        "value": pd.Series(trid_scalar_criterion(params)),
+    }
+    return out
+
+
+def rotated_hyper_ellipsoid_dict_criterion_with_pd_objects(params):
+    out = {
+        "value": pd.Series(rotated_hyper_ellipsoid_scalar_criterion(params)),
+    }
+    return out
+
+
+def rosenbrock_dict_criterion_with_pd_objects(params):
+    out = {
+        "value": pd.Series(rosenbrock_scalar_criterion(params)),
+    }
+    return out
