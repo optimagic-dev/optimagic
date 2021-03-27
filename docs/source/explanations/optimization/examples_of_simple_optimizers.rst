@@ -49,7 +49,7 @@ Potential Problems:
                 <div id="collapseOne" class="collapse" data-parent="#accordion">
                     <div class="card-body">
 
-    .. image:: ../../_static/images/derivate_based_line_search_algorithm.gif
+    .. image:: ../../_static/images/final_result/derivate_based_line_search_algorithm.gif
 
 
 
@@ -77,7 +77,7 @@ Potential Problems:
                     <div id="collapseTwo" class="collapse" data-parent="#accordion">
                         <div class="card-body">
 
-    .. image:: ../../_static/images/L_BFGS_B.gif
+    .. image:: ../../_static/images/final_result/L_BFGS_B.gif
     
 
 
@@ -129,7 +129,7 @@ Potential Problems:
                     <div id="collapseThree" class="collapse" data-parent="#accordion">
                         <div class="card-body">
 
-    .. image:: ../../_static/images/derivative_based_trust_region_algorithm.gif
+    .. image:: ../../_static/images/final_result/derivative_based_trust_region_algorithm.gif
 
 
 
@@ -157,7 +157,7 @@ Potential Problems:
                     <div id="collapseFour" class="collapse" data-parent="#accordion">
                         <div class="card-body">
 
-    .. image:: ../../_static/images/Trust_NCG.gif
+    .. image:: ../../_static/images/final_result/Trust_NCG.gif
 
 
 Derivative free algorithms 
@@ -206,7 +206,7 @@ Basic Idea:
                 <div id="collapseFive" class="collapse" data-parent="#accordion">
                     <div class="card-body">
 
-    .. image:: ../../_static/images/derivative_free_direct_search_algorithm.gif
+    .. image:: ../../_static/images/final_result/derivative_free_direct_search_algorithm.gif
 
 
 
@@ -234,7 +234,7 @@ Basic Idea:
                     <div id="collapseSix" class="collapse" data-parent="#accordion">
                         <div class="card-body">
 
-    .. image:: ../../_static/images/Nelder_Mead.gif
+    .. image:: ../../_static/images/final_result/Nelder_Mead.gif
 
 
 
@@ -282,7 +282,7 @@ Basic Idea:
                     <div id="collapseSeven" class="collapse" data-parent="#accordion">
                         <div class="card-body">
 
-    .. image:: ../../_static/images/derivate_free_trust_region_algorithm.gif
+    .. image:: ../../_static/images/final_result/derivate_free_trust_region_algorithm.gif
 
 
 
@@ -312,5 +312,5 @@ Basic Idea:
                     </div>
                     <div id="collapseEight" class="collapse" data-parent="#accordion">
                         <div class="card-body">
-    .. image:: ../../_static/images/Cobyla.gif
+    .. image:: ../../_static/images/final_result/Cobyla.gif
 

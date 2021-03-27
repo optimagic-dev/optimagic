@@ -1,0 +1,5 @@
+Initial evaluation: candidate value worse than original value
+Do not accept candidate value, switch directionIteration 1: candidate value better than original value
+Accept candidate value, increase step lengthIteration 2: candidate value better than original value
+Accept candidate value, increase step lengthIteration 3: candidate value worse than original valueDo not accept new point, make step smallerIteration 4: Will eventually converge around here
+From iteration 3 we know that we will do worse further right

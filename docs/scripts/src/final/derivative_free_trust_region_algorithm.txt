@@ -1,0 +1,9 @@
+Actual improvement / expected improvement large (around 1)
+Accept the new point, increase trust region radius
+Actual improvement / expected improvement large (around 1) again
+Accept new point, increase trust regionActual improvement / expected improvement large (around 1)
+But step length is small accept new point, decrease trust region
+Actual improvement / expected improvement reasonable
+Step length is small accept new point, decrease trust region
+Actual improvement / expected improvement large (around 1)
+Step length is large accept new point, increase trust region

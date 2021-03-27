@@ -1,0 +1,10 @@
+Initial evaluation: large gradient, low curvature 
+Make a big stepIteration 1: large gradient, large curvature 
+Make a smaller stepIteration 2: very small gradient, low curvature 
+Make a very small stepIteration 3: very small gradient, low curvature 
+Make a very small stepIteration 4: medium-sized gradient, low curvature 
+Make a larger step againIteration 5: medium-sized gradient, larger curvature 
+Make a small stepIteration 6: reverse direction due to gradient 
+Convergence based on gradient ≈ zero criterion
+
+

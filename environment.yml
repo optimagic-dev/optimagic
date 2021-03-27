@@ -4,6 +4,7 @@ channels:
   - conda-forge
   - defaults
   - opensourceeconomics
+  - pytask
 
 dependencies:
 
@@ -35,7 +36,22 @@ dependencies:
   - sqlalchemy>=1.3
   - tox-conda
   - statsmodels
+  
   - dill
+
+  - ipykernel
+  - matplotlib
+  - mkl
+  - mkl-service
+  - imageio
+
+  - estimagic
+
+  - pytask>=0.0.11
+  - pytask-latex>=0.0.10
+  - python-graphviz
+
+  - virtualenv=20.0.33
   - pip:
     - black
     - blackcellmagic
