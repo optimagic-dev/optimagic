@@ -1035,6 +1035,12 @@ def scipy_ls_trf(
     to estimagic's maximize or minimize function as `algorithm` argument.
     Specify your desired arguments as a dictionary and pass them as `algo_options`
     to minimize or maximize.
+    
+    The algorithm iteratively solves trust-region subproblems augmented by a special
+    diagonal quadratic term and with trust-region shape determined by the distance
+    from the bounds and the direction of the gradient. This enhancements help to
+    avoid making steps directly into bounds and efficiently explore the whole space
+    of variables.
 
     This function differs from scipy_ls_dogbox because it is more 'robust' in
     bounded and unbounded problems, but can be potentially outperformed especially
@@ -1114,11 +1120,16 @@ def scipy_ls_dogbox(
     to estimagic's maximize or minimize function as `algorithm` argument.
     Specify your desired arguments as a dictionary and pass them as `algo_options`
     to minimize or maximize.
+    
+    It operates in a trust-region framework, but considers rectangular trust regions
+    as opposed to conventional ellipsoids. The intersection of a current trust
+    region and initial bounds is again rectangular, so on each iteration a quadratic
+    minimization problem subject to bound constraints is solved approximately by
+    Powell’s dogleg method.
 
     This function differs from scipy_ls_dogbox because it is not as 'robust', more
     efficient for bounded problems with a small number of variables, but exhibits
     slow convergence when the rank of Jacobian is less than the number of variables.
-
 
     Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
