@@ -1,9 +1,11 @@
-import numpy as np
-import pandas as pd
 import os
 import sys
+
+import numpy as np
+import pandas as pd
 import seaborn as sns
-sns.set_style('white')
+
+sns.set_style("white")
 import matplotlib.pyplot as plt
 import statsmodels.formula.api as sm
 from scipy.optimize import minimize
@@ -27,6 +29,7 @@ WEIGHTS = [
     2.5090819960943964e-09,
 ]
 
+
 def example_criterion(x):
     x = _unpack_x(x)
     exponents = np.arange(len(WEIGHTS))
@@ -48,7 +51,7 @@ def example_hessian(x):
 def _unpack_x(x):
     if hasattr(x, "__len__"):
         assert len(x) == 1
-        
+
     if isinstance(x, pd.DataFrame):
         res = x["value"].to_numpy()[0]
     elif isinstance(x, pd.Series):
@@ -58,4 +61,3 @@ def _unpack_x(x):
     else:
         res = float(x)
     return res
-

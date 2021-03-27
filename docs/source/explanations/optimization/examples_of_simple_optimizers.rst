@@ -313,4 +313,3 @@ Basic Idea:
                     <div id="collapseEight" class="collapse" data-parent="#accordion">
                         <div class="card-body">
     .. image:: ../../_static/images/final_result/Cobyla.gif
-
