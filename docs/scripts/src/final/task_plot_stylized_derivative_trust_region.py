@@ -29,7 +29,7 @@ def plot_derivative_based_trust_region(textstr, save_path):
             radius = start_radius
             start_radius -= 1
         fig, ax, x = tools.plot_trust_region_algo(
-            x, radius, surrogate_func=tools.regression_surrogate
+            x, radius, surrogate_func=tools.taylor_expansion
         )
         fig.set_size_inches(8, 6)
         plt.subplots_adjust(bottom=0.2)

@@ -19,7 +19,7 @@ def plot_derivate_based_line_search_algorithm(textstr, save_path):
     x = start_x
     n_frames = 10
 
-    for i in range(8):
+    for i in range(7):
         fig, ax, x = tools.plot_line_search(x)
         fig.set_size_inches(8, 6)
         plt.subplots_adjust(bottom=0.2)
@@ -44,9 +44,7 @@ def plot_derivate_based_line_search_algorithm(textstr, save_path):
 
 
 @pytask.mark.depends_on(SRC / "final" / "derivate_based_line_search_algorithm.txt")
-@pytask.mark.produces(
-    BLD / "images" / "final_result" / "derivate_based_line_search_algorithm.gif"
-)
+@pytask.mark.produces(BLD / "images" / "final_result" / "derivate_based_line_search_algorithm.gif")
 def task_plot_locations(depends_on, produces):
     # Load locations after each round
     with open(depends_on, "r") as f:
