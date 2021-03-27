@@ -44,7 +44,9 @@ def plot_derivate_based_line_search_algorithm(textstr, save_path):
 
 
 @pytask.mark.depends_on(SRC / "final" / "derivate_based_line_search_algorithm.txt")
-@pytask.mark.produces(BLD / "images" / "final_result" / "derivate_based_line_search_algorithm.gif")
+@pytask.mark.produces(
+    BLD / "images" / "final_result" / "derivate_based_line_search_algorithm.gif"
+)
 def task_plot_locations(depends_on, produces):
     # Load locations after each round
     with open(depends_on, "r") as f:
