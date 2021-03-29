@@ -28,7 +28,7 @@ from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import propose_algorithms
 from estimagic.parameter_handling import add_default_bounds_to_params
-from estimagic.parameter_handling import check_params_index_is_valid
+from estimagic.parameter_handling import check_params_are_valid
 
 
 def maximize(
@@ -513,7 +513,7 @@ def _single_optimize(
     params = add_default_bounds_to_params(params)
     for col in ["value", "lower_bound", "upper_bound"]:
         params[col] = params[col].astype(float)
-    check_params_index_is_valid(params)
+    check_params_are_valid(params)
 
     processed_constraints, processed_params = process_constraints(constraints, params)
 
