@@ -971,7 +971,7 @@ def _scipy_least_squares(
     method="trf",
 ):
     """
-    Internal function used by the scipy_ls_ functions.
+    Internal function used by the scipy_ls_trf and scipy_ls_dogbox functions.
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
 
@@ -1035,11 +1035,11 @@ def scipy_ls_trf(
     to estimagic's maximize or minimize function as `algorithm` argument.
     Specify your desired arguments as a dictionary and pass them as `algo_options`
     to minimize or maximize.
-    
+
     The algorithm iteratively solves trust-region subproblems augmented by a special
     diagonal quadratic term and with trust-region shape determined by the distance
-    from the bounds and the direction of the gradient. This enhancements help to
-    avoid making steps directly into bounds and efficiently explore the whole space
+    from the bounds and the direction of the gradient. These enhancements help to
+    avoid making steps directly into the bounds and efficiently explore the whole space
     of variables.
 
     This function differs from scipy_ls_dogbox because it is more 'robust' in
@@ -1120,7 +1120,8 @@ def scipy_ls_dogbox(
     to estimagic's maximize or minimize function as `algorithm` argument.
     Specify your desired arguments as a dictionary and pass them as `algo_options`
     to minimize or maximize.
-    
+
+
     It operates in a trust-region framework, but considers rectangular trust regions
     as opposed to conventional ellipsoids. The intersection of a current trust
     region and initial bounds is again rectangular, so on each iteration a quadratic
