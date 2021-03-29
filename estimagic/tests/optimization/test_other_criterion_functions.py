@@ -1,6 +1,6 @@
 """ Test the external interface for optimization with different implementations
 of three criterion functions: trid, rotated_hyper_ellipsoid, and rosenbrock,
-for a subset of/all algorithms.
+for a representative subset of available algorithms.
 
 """
 import functools
@@ -61,7 +61,7 @@ from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
 
-# Running all took ~7 hrs. Running one ~50 minutes. Hence, run tests on a representative
+# Running all took ~7 hrs. Running one ~50 minutes. Hence, run tests on a
 # subset of algorithms.
 # 1 scipy algorithm, 1 least squares.
 rep_algo_list = ["scipy_lbfgsb", "nag_dfols"]
@@ -97,11 +97,9 @@ def _skip_tests_with_missing_dependencies(test_cases):
 
 # Trid cannot be written as a least squares problem. Hence, we do not generate
 # testcases with least_squares algorithms here.
-
-
 def get_trid_test_cases_for_algorithm(algorithm):
     """Given trid function, generate list of all possible argument combinations
-    for algorithm."""
+    for each algorithm."""
     is_least_squares = algorithm in ["nag_dfols"]
     is_scalar = not (is_least_squares)
 
@@ -148,8 +146,8 @@ def get_trid_test_cases_for_algorithm(algorithm):
 
 
 def get_rhe_test_cases_for_algorithm(algorithm):
-    """Given rhe function, generate list of all possible argument
-    combinations for algorithm."""
+    """Given rotated_hyper_ellipsoid function, generate list of
+    all possible argument combinations for each algorithm."""
     is_least_squares = algorithm in ["nag_dfols"]
     is_scalar = not (is_least_squares)
 
@@ -193,7 +191,7 @@ def get_rhe_test_cases_for_algorithm(algorithm):
 
 def get_rosenbrock_test_cases_for_algorithm(algorithm):
     """Given rosenbrock function, generate list of all possible argument
-    combinations for algorithm."""
+    combinations for each algorithm."""
     is_least_squares = algorithm in ["nag_dfols"]
     is_scalar = not (is_least_squares)
 
@@ -266,7 +264,6 @@ for alg in rep_algo_list:
 
 test_cases = trid_test_cases + rhe_test_cases + rosenbrock_test_cases
 test_cases = _skip_tests_with_missing_dependencies(test_cases)
-test_cases[0][2].__name__.startswith("trid")
 test_cases
 
 
@@ -302,4 +299,315 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         expected,
         atol=atol,
         rtol=0,
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[1], [3], [2]], columns=["value"])
+    params["lower_bound"] = [-5, -5, -5]
+    params["upper_bound"] = [5, 5, 5]
+
+    constraints = [{"loc": [0], "type": "fixed", "value": [1]}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.array([1, 2.666666667, 2.333333333])
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([1, 0, 0])
+    else:
+        expected = np.ones(3)
+
+    assert res["success"], f"{algo} did not converge."
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[2], [2], [2]], columns=["value"])
+    params["lower_bound"] = [-5, -5, -5]
+    params["upper_bound"] = -params["lower_bound"]
+
+    constraints = [{"loc": [0, 1, 2], "type": "equality"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.array([3, 3, 3])
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0, 0, 0])
+    else:
+        expected = np.ones(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_pairwise_equality_constraint(
+    algo,
+    direction,
+    crit,
+    deriv,
+    crit_and_deriv,
+):
+    params = pd.DataFrame(data=[[2], [2], [3]], columns=["value"])
+    params["lower_bound"] = [-5, -5, -5]
+    params["upper_bound"] = [5, 5, 5]
+
+    constraints = [{"locs": [0, 1], "type": "pairwise_equality"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.array([3.333333333, 3.333333333, 2.666666667])
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0, 0, 0])
+    else:
+        expected = np.ones(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[1], [2], [3]], columns=["value"])
+
+    constraints = [{"loc": [1, 2], "type": "increasing"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.array([2.666666667, 3.3333333, 3.3333333])
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0, 0, 0])
+    else:
+        expected = np.ones(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[2], [1], [3]], columns=["value"])
+
+    constraints = [{"loc": [0, 1], "type": "decreasing"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.empty(3)
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0, 0, 0])
+    else:
+        expected = np.ones(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[2], [1], [3]], columns=["value"])
+
+    constraints = [{"loc": [0, 1], "type": "linear", "value": 4, "weights": [1, 2]}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.array([1.185185185, 1.4074074069999998, 1.703703704])
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0.571428571, 1.714285714, 0])
+    else:
+        expected = np.empty(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deriv):
+    params = pd.DataFrame(data=[[0.5], [0.5], [3]], columns=["value"])
+
+    constraints = [{"loc": [0, 1], "type": "probability"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.array([0.272727273, 0.727272727, 1.363636364])
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0.4, 0.6, 0])
+    else:
+        expected = np.empty(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_covariance_constraint_no_bounds_distance(
+    algo,
+    direction,
+    crit,
+    deriv,
+    crit_and_deriv,
+):
+    params = pd.DataFrame(data=[[1], [1], [1]], columns=["value"])
+
+    constraints = [{"loc": [0, 1, 2], "type": "covariance"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.empty(3)
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0, 0, 0])
+    else:
+        expected = np.ones(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_sdcorr_constraint_no_bounds_distance(
+    algo,
+    direction,
+    crit,
+    deriv,
+    crit_and_deriv,
+):
+    params = pd.DataFrame(data=[[1], [1], [1]], columns=["value"])
+
+    constraints = [{"loc": [0, 1, 2], "type": "sdcorr"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.empty(3)
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0, 0, 0])
+    else:
+        expected = np.ones(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
