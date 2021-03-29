@@ -74,29 +74,46 @@ rep_algo_list = ["scipy_lbfgsb", "nag_dfols"]
 
 def _skip_tests_with_missing_dependencies(test_cases):
     """Skip tests involving optimizers whose dependencies could not be found."""
-    dependency_present_to_start_str = {
-        IS_PETSC4PY_INSTALLED: "tao_",
-        IS_PYBOBYQA_INSTALLED: "nag_pybobyqa",
-        IS_DFOLS_INSTALLED: "nag_dfols",
-    }
-
     new_test_cases = []
     for test_case in test_cases:
-        for dependency_present, start_str in dependency_present_to_start_str.items():
-            if test_case[0].startswith(start_str) and not dependency_present:
-                test_case = pytest.param(
-                    *test_case,
-                    marks=pytest.mark.skip(reason="petsc4py is not installed."),
-                )
-            else:
-                print(f"Skipping {start_str}")
-            new_test_cases.append(test_case)
+        needs_skipping, reason = _get_skipping_info(test_case)
+        if needs_skipping:
+            test_case = pytest.param(
+                *test_case,
+                marks=pytest.mark.skip(reason=reason),
+            )
+
+        new_test_cases.append(test_case)
 
     return new_test_cases
 
 
-# Trid cannot be written as a least squares problem. Hence, we do not generate
-# testcases with least_squares algorithms here.
+def _get_skipping_info(test_case):
+    installation_info = {
+        "tao_": IS_PETSC4PY_INSTALLED,
+        "nag_pyobobyqa": IS_PYBOBYQA_INSTALLED,
+        "nag_dfols": IS_DFOLS_INSTALLED,
+    }
+
+    reasons = {
+        "tao_": "petsc4py is not installed",
+        "nag_pybobyqa": "pybobyqa is not installed",
+        "nag_dols": "dfols is not installed",
+    }
+
+    algo_name = test_case[0]
+    needs_skipping = False
+    reason = None
+    for substring, is_installed in installation_info.items():
+        if algo_name.startswith(substring) and not is_installed:
+            needs_skipping = True
+            reason = reasons[substring]
+
+    return needs_skipping, reason
+
+
+# Trid function cannot be represented as a least squares problem. Hence we do not
+# generate testcases involving least_squares algorithms
 def get_trid_test_cases_for_algorithm(algorithm):
     """Given trid function, generate list of all possible argument combinations
     for each algorithm."""
@@ -601,6 +618,42 @@ def test_with_sdcorr_constraint_no_bounds_distance(
 
     if crit.__name__.startswith("trid"):
         expected = np.empty(3)
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.array([0, 0, 0])
+    else:
+        expected = np.ones(3)
+    assert res["success"], f"{algo} did not converge."
+
+    atol = 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
+def test_with_equality_and_fixed_constraint(
+    algo, direction, crit, deriv, crit_and_deriv
+):
+    params = pd.DataFrame(data=[[2], [2], [2]], columns=["value"])
+    params["lower_bound"] = [-5, -5, -5]
+    params["upper_bound"] = -params["lower_bound"]
+
+    constraints = [{"loc": [0, 1, 2], "type": "equality"}]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    if crit.__name__.startswith("trid"):
+        expected = np.array([3, 3, 3])
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0, 0, 0])
     else:
