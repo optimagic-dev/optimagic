@@ -15,16 +15,10 @@ from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.examples.criterion_functions_optimization_tests import (
-    rosenbrock_contributions,
-)
-from estimagic.examples.criterion_functions_optimization_tests import (
     rosenbrock_criterion_and_gradient,
 )
 from estimagic.examples.criterion_functions_optimization_tests import (
     rosenbrock_dict_criterion,
-)
-from estimagic.examples.criterion_functions_optimization_tests import (
-    rosenbrock_dict_criterion_with_pd_objects,
 )
 from estimagic.examples.criterion_functions_optimization_tests import (
     rosenbrock_gradient,
@@ -36,16 +30,10 @@ from estimagic.examples.criterion_functions_optimization_tests import (
     rosenbrock_scalar_criterion,
 )
 from estimagic.examples.criterion_functions_optimization_tests import (
-    rotated_hyper_ellipsoid_contributions,
-)
-from estimagic.examples.criterion_functions_optimization_tests import (
     rotated_hyper_ellipsoid_criterion_and_gradient,
 )
 from estimagic.examples.criterion_functions_optimization_tests import (
     rotated_hyper_ellipsoid_dict_criterion,
-)
-from estimagic.examples.criterion_functions_optimization_tests import (
-    rotated_hyper_ellipsoid_dict_criterion_with_pd_objects,
 )
 from estimagic.examples.criterion_functions_optimization_tests import (
     rotated_hyper_ellipsoid_gradient,
@@ -62,9 +50,6 @@ from estimagic.examples.criterion_functions_optimization_tests import (
 from estimagic.examples.criterion_functions_optimization_tests import (
     trid_dict_criterion,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
-    trid_dict_criterion_with_pd_objects,
-)
 from estimagic.examples.criterion_functions_optimization_tests import trid_gradient
 from estimagic.examples.criterion_functions_optimization_tests import (
     trid_pandas_gradient,
@@ -78,14 +63,9 @@ from estimagic.optimization.optimize import minimize
 
 # Running all took ~7 hrs. Running one ~50 minutes. Hence, run tests on a representative
 # subset of algorithms.
-# 1 supporting bounds, 1 bounds-free, 1 least squares
-rep_algo_list = ["scipy_bfgs", "scipy_neldermead", "nag_dfols"]
+# 1 scipy algorithm, 1 least squares.
+rep_algo_list = ["scipy_lbfgsb", "nag_dfols"]
 
-BOUNDS_FREE_ALGORITHMS = ["scipy_neldermead"]
-BOUNDS_SUPPORTING_ALGORITHMS = [
-    alg for alg in rep_algo_list if alg not in BOUNDS_FREE_ALGORITHMS
-]
-BOUNDS_SUPPORTING_ALGORITHMS
 
 # ======================================================================================
 # Helper functions for tests
@@ -115,9 +95,62 @@ def _skip_tests_with_missing_dependencies(test_cases):
     return new_test_cases
 
 
-def get_test_cases_for_algorithm(algorithm):
-    """Generate list of all possible argument combinations for algorithm."""
-    is_least_squares = algorithm in ["tao_pounders", "nag_dfols"]
+# Trid cannot be written as a least squares problem. Hence, we do not generate
+# testcases with least_squares algorithms here.
+
+
+def get_trid_test_cases_for_algorithm(algorithm):
+    """Given trid function, generate list of all possible argument combinations
+    for algorithm."""
+    is_least_squares = algorithm in ["nag_dfols"]
+    is_scalar = not (is_least_squares)
+
+    if is_scalar:
+        directions = ["maximize", "minimize"]
+    else:
+        pass
+
+    crit_funcs = [trid_dict_criterion]
+    if is_scalar:
+        crit_funcs.append(trid_scalar_criterion)
+
+    if is_scalar:
+        derivatives = [trid_gradient, trid_pandas_gradient, None]
+    else:
+        pass
+
+    if is_scalar:
+        crit_and_derivs = [trid_criterion_and_gradient, None]
+    else:
+        pass
+
+    test_cases = []
+
+    if is_scalar:
+
+        prod_list = [directions, crit_funcs, derivatives, crit_and_derivs]
+
+        for direction, crit, deriv, c_and_d in product(*prod_list):
+            if direction == "maximize":
+                case = (
+                    algorithm,
+                    direction,
+                    switch_sign(crit),
+                    switch_sign(deriv),
+                    switch_sign(c_and_d),
+                )
+            else:
+                case = (algorithm, direction, crit, deriv, c_and_d)
+            test_cases.append(case)
+    else:
+        pass
+    return test_cases
+
+
+def get_rhe_test_cases_for_algorithm(algorithm):
+    """Given rhe function, generate list of all possible argument
+    combinations for algorithm."""
+    is_least_squares = algorithm in ["nag_dfols"]
     is_scalar = not (is_least_squares)
 
     directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
@@ -132,12 +165,51 @@ def get_test_cases_for_algorithm(algorithm):
             rotated_hyper_ellipsoid_pandas_gradient,
             None,
         ]
-
     else:
         derivatives = [None]
 
     if is_scalar:
         crit_and_derivs = [rotated_hyper_ellipsoid_criterion_and_gradient, None]
+    else:
+        crit_and_derivs = [None]
+
+    prod_list = [directions, crit_funcs, derivatives, crit_and_derivs]
+
+    test_cases = []
+    for direction, crit, deriv, c_and_d in product(*prod_list):
+        if direction == "maximize":
+            case = (
+                algorithm,
+                direction,
+                switch_sign(crit),
+                switch_sign(deriv),
+                switch_sign(c_and_d),
+            )
+        else:
+            case = (algorithm, direction, crit, deriv, c_and_d)
+        test_cases.append(case)
+    return test_cases
+
+
+def get_rosenbrock_test_cases_for_algorithm(algorithm):
+    """Given rosenbrock function, generate list of all possible argument
+    combinations for algorithm."""
+    is_least_squares = algorithm in ["nag_dfols"]
+    is_scalar = not (is_least_squares)
+
+    directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
+
+    crit_funcs = [rosenbrock_dict_criterion]
+    if is_scalar:
+        crit_funcs.append(rosenbrock_scalar_criterion)
+
+    if is_scalar:
+        derivatives = [rosenbrock_gradient, rosenbrock_pandas_gradient, None]
+    else:
+        derivatives = [None]
+
+    if is_scalar:
+        crit_and_derivs = [rosenbrock_criterion_and_gradient, None]
     else:
         crit_and_derivs = [None]
 
@@ -184,16 +256,21 @@ def switch_sign(func):
     return wrapper
 
 
-# ======================================================================================
-# Actual tests
-# ======================================================================================
-
-test_cases = []
+trid_test_cases = []
+rhe_test_cases = []
+rosenbrock_test_cases = []
 for alg in rep_algo_list:
-    test_cases += get_test_cases_for_algorithm(alg)
+    trid_test_cases += get_trid_test_cases_for_algorithm(alg)
+    rhe_test_cases += get_rhe_test_cases_for_algorithm(alg)
+    rosenbrock_test_cases += get_rosenbrock_test_cases_for_algorithm(alg)
+
+test_cases = trid_test_cases + rhe_test_cases + rosenbrock_test_cases
 test_cases = _skip_tests_with_missing_dependencies(test_cases)
+test_cases[0][2].__name__.startswith("trid")
+test_cases
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
 def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=np.array([1, 2, 3]), columns=["value"])
@@ -211,11 +288,18 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         log_options={"save_all_arguments": False},
     )
 
+    if crit.__name__.startswith("trid"):
+        expected = np.array([3, 4, 3])
+    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
+        expected = np.zeros(3)
+    else:
+        expected = np.ones(3)
+
     assert res["success"], f"{algo} did not converge."
     atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(),
-        np.zeros(3),
+        expected,
         atol=atol,
         rtol=0,
     )
