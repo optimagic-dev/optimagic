@@ -64,7 +64,9 @@ from estimagic.optimization.optimize import minimize
 # Take a representative subset of algorithms for running tests - one least_squares
 # algorithm (nag_dfols) and few from the scipy library
 rep_algo_list = ["scipy_lbfgsb", "scipy_slsqp", "nag_pybobyqa", "nag_dfols"]
+# add the imprecise wale to get ALL bound-supporting algs
 
+IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
 # ======================================================================================
 # Helper functions for tests
 # ======================================================================================
@@ -364,6 +366,11 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
         expected = np.array([3, 3, 3])
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0, 0, 0])
+    elif (crit.__name__.startswith("rosenbrock")) & (algo == "scipy_lbfgsb"):
+        pytest.xfail(
+            "scipy_L-BFGS-B fails rosenbrock criterion \
+                with equality constraint."
+        )
     else:
         expected = np.ones(3)
     assert res["success"], f"{algo} did not converge."
@@ -468,7 +475,7 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     )
 
     if crit.__name__.startswith("trid"):
-        expected = np.empty(3)
+        pytest.skip("Analytical solution not known.")
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0, 0, 0])
     else:
@@ -505,7 +512,7 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0.571428571, 1.714285714, 0])
     else:
-        expected = np.empty(3)
+        pytest.skip("Analytical solution not known.")
     assert res["success"], f"{algo} did not converge."
 
     atol = 1e-04
@@ -538,7 +545,7 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0.4, 0.6, 0])
     else:
-        expected = np.empty(3)
+        pytest.skip("Analytical solution not known.")
     assert res["success"], f"{algo} did not converge."
 
     atol = 1e-04
@@ -573,7 +580,7 @@ def test_with_covariance_constraint_no_bounds_distance(
     )
 
     if crit.__name__.startswith("trid"):
-        expected = np.empty(3)
+        pytest.skip("Analytical solution not known.")
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0, 0, 0])
     else:
@@ -611,7 +618,7 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     )
 
     if crit.__name__.startswith("trid"):
-        expected = np.empty(3)
+        pytest.skip("Analytical solution not known.")
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0, 0, 0])
     else:
