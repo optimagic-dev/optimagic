@@ -74,13 +74,13 @@ and whether ``criterion_and_derivative`` has been provided or not.
 To illustrate, an example of a 'complete' testcase testing the ``scipy_lbfgsb``
 algorithm for the fixed_constraint case would be:
 
-```
+``
 test_with_fixed_constraint[scipy_lbfgsb-minimize-rosenbrock_dict_criterion-
 rosenbrock_gradient-rosenbrock_criterion_and_gradient]
-```
+``
 
 Testcase with the gradient not specified and ``criterion_and_derivative`` not specified:
 
-```
+``
 test_with_fixed_constraint[scipy_lbfgsb-minimize-rosenbrock_scalar_criterion-None-None]>
-```
+``
