@@ -15,11 +15,13 @@ or benchmark functions:
   Global minima: :math:`x* = (0, 0, 0), \quad f(x*) = 0`
 
 
+
 * Trid
 
   :math:`f({x}) = \Sigma^{D}_{i=1}(x_{i} - 1)^2 - \Sigma^{D}_{i=2}(x_i x_{i-1})`
 
   :math:`D=3 \rightarrow f({x}) = (x_1-1)^2 + (x_2-1)^2 + (x_3-1)^2 - x_2 x_1 - x_3 x_2`
+
 
 
 * Rotated hyper ellipsoid
@@ -29,6 +31,7 @@ or benchmark functions:
   :math:`D=3 \rightarrow f({x}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)`
 
 
+
 * Rosenbrock
 
   :math:`\Sigma^{D-1}_{i=1}(100(x_i+1 - x_i^2)^2 + (x_i - 1)^2)`
@@ -36,6 +39,7 @@ or benchmark functions:
   :math:`D=3 \rightarrow f({x}) = 100(x_2 - x_1^2) + (x_1 - 1)^2`
 
   Global minimum: :math:`x* = (1, 1, 1)`
+
 
 
 We implement each function and its gradient in different ways, taking
@@ -98,7 +102,7 @@ by the algorithms, for each corresponding testcase.
                 <div class="d-flex flex-row tutorial-card-header-1">
                     <div class="d-flex flex-row tutorial-card-header-2">
                         <button class="btn btn-dark btn-sm"></button>
-                        No constraint case
+                        Solution for three dimension-case
                     </div>
                     <span class="badge gs-badge-link">
 
