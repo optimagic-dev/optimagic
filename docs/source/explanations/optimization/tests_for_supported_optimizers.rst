@@ -4,13 +4,12 @@ How all supported optimization algorithms are tested
 
 estimagic provides a unified interface for running optimizations
 with algorithms from different optimization libraries and
-additionally, allows setting different types of constraints to the optimization problem.
+additionally allows setting different types of constraints to the optimization problem.
+To test the external interface of all supported algorithms, we consider four criterion
+or benchmark functions and test each algorithm with all types of constraints.
 
 Benchmark functions for testing
 ==============================================
-
-To test the external interface of all supported algorithms, we consider four criterion
-or benchmark functions:
 
 ****************
 Trid function
