@@ -53,14 +53,14 @@ def _skip_tests_with_missing_dependencies(test_cases):
 def _get_skipping_info(test_case):
     installation_info = {
         "tao_": IS_PETSC4PY_INSTALLED,
-        "nag_pyobobyqa": IS_PYBOBYQA_INSTALLED,
+        "nag_pybobyqa": IS_PYBOBYQA_INSTALLED,
         "nag_dfols": IS_DFOLS_INSTALLED,
     }
 
     reasons = {
         "tao_": "petsc4py is not installed",
         "nag_pybobyqa": "pybobyqa is not installed",
-        "nag_dols": "dfols is not installed",
+        "nag_dfols": "dfols is not installed",
     }
 
     algo_name = test_case[0]

@@ -61,11 +61,9 @@ from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
 
-# Running all took ~7 hrs. Running one ~50 minutes. Hence, run tests on a
-# subset of algorithms.
-# 1 scipy algorithm, 1 least squares.
-rep_algo_list = ["scipy_lbfgsb", "nag_dfols"]
-
+# Take a representative subset of algorithms for running tests - one least_squares
+# algorithm (nag_dfols) and few from the scipy library
+rep_algo_list = ["scipy_lbfgsb", "scipy_slsqp", "nag_pybobyqa", "nag_dfols"]
 
 # ======================================================================================
 # Helper functions for tests
@@ -91,14 +89,14 @@ def _skip_tests_with_missing_dependencies(test_cases):
 def _get_skipping_info(test_case):
     installation_info = {
         "tao_": IS_PETSC4PY_INSTALLED,
-        "nag_pyobobyqa": IS_PYBOBYQA_INSTALLED,
+        "nag_pybobyqa": IS_PYBOBYQA_INSTALLED,
         "nag_dfols": IS_DFOLS_INSTALLED,
     }
 
     reasons = {
         "tao_": "petsc4py is not installed",
         "nag_pybobyqa": "pybobyqa is not installed",
-        "nag_dols": "dfols is not installed",
+        "nag_dfols": "dfols is not installed",
     }
 
     algo_name = test_case[0]
@@ -162,69 +160,51 @@ def get_trid_test_cases_for_algorithm(algorithm):
     return test_cases
 
 
-def get_rhe_test_cases_for_algorithm(algorithm):
-    """Given rotated_hyper_ellipsoid function, generate list of
-    all possible argument combinations for each algorithm."""
+# Define dictionaries with different implementations of each criterion function as keys
+rosenbrock_criterion_functions = {
+    "scalar_criterion": rosenbrock_scalar_criterion,
+    "dict_criterion": rosenbrock_dict_criterion,
+    "criterion_and_derivative": rosenbrock_criterion_and_gradient,
+    "gradient": rosenbrock_gradient,
+    "pandas_gradient": rosenbrock_pandas_gradient,
+}
+
+rhe_criterion_functions = {
+    "scalar_criterion": rotated_hyper_ellipsoid_scalar_criterion,
+    "dict_criterion": rotated_hyper_ellipsoid_dict_criterion,
+    "criterion_and_derivative": rotated_hyper_ellipsoid_criterion_and_gradient,
+    "gradient": rotated_hyper_ellipsoid_gradient,
+    "pandas_gradient": rotated_hyper_ellipsoid_pandas_gradient,
+}
+
+
+def get_test_cases_for_algorithm_and_criterion(algorithm, criterion_functions):
+    """Generate list of all possible argument combinations for each criterion
+    function and algorithm.
+    Args:
+    criterion_functions (dict)
+    .....
+    """
     is_least_squares = algorithm in ["nag_dfols"]
     is_scalar = not (is_least_squares)
 
     directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
 
-    crit_funcs = [rotated_hyper_ellipsoid_dict_criterion]
+    crit_funcs = [criterion_functions["dict_criterion"]]
     if is_scalar:
-        crit_funcs.append(rotated_hyper_ellipsoid_scalar_criterion)
+        crit_funcs.append(criterion_functions["scalar_criterion"])
 
     if is_scalar:
         derivatives = [
-            rotated_hyper_ellipsoid_gradient,
-            rotated_hyper_ellipsoid_pandas_gradient,
+            criterion_functions["gradient"],
+            criterion_functions["pandas_gradient"],
             None,
         ]
     else:
         derivatives = [None]
 
     if is_scalar:
-        crit_and_derivs = [rotated_hyper_ellipsoid_criterion_and_gradient, None]
-    else:
-        crit_and_derivs = [None]
-
-    prod_list = [directions, crit_funcs, derivatives, crit_and_derivs]
-
-    test_cases = []
-    for direction, crit, deriv, c_and_d in product(*prod_list):
-        if direction == "maximize":
-            case = (
-                algorithm,
-                direction,
-                switch_sign(crit),
-                switch_sign(deriv),
-                switch_sign(c_and_d),
-            )
-        else:
-            case = (algorithm, direction, crit, deriv, c_and_d)
-        test_cases.append(case)
-    return test_cases
-
-
-def get_rosenbrock_test_cases_for_algorithm(algorithm):
-    """Given rosenbrock function, generate list of all possible argument
-    combinations for each algorithm."""
-    is_least_squares = algorithm in ["nag_dfols"]
-    is_scalar = not (is_least_squares)
-
-    directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
-
-    crit_funcs = [rosenbrock_dict_criterion]
-    if is_scalar:
-        crit_funcs.append(rosenbrock_scalar_criterion)
-
-    if is_scalar:
-        derivatives = [rosenbrock_gradient, rosenbrock_pandas_gradient, None]
-    else:
-        derivatives = [None]
-
-    if is_scalar:
-        crit_and_derivs = [rosenbrock_criterion_and_gradient, None]
+        crit_and_derivs = [criterion_functions["criterion_and_derivative"], None]
     else:
         crit_and_derivs = [None]
 
@@ -276,8 +256,13 @@ rhe_test_cases = []
 rosenbrock_test_cases = []
 for alg in rep_algo_list:
     trid_test_cases += get_trid_test_cases_for_algorithm(alg)
-    rhe_test_cases += get_rhe_test_cases_for_algorithm(alg)
-    rosenbrock_test_cases += get_rosenbrock_test_cases_for_algorithm(alg)
+    rhe_test_cases += get_test_cases_for_algorithm_and_criterion(
+        alg, rhe_criterion_functions
+    )
+    rosenbrock_test_cases += get_test_cases_for_algorithm_and_criterion(
+        alg, rosenbrock_criterion_functions
+    )
+
 
 test_cases = trid_test_cases + rhe_test_cases + rosenbrock_test_cases
 test_cases = _skip_tests_with_missing_dependencies(test_cases)
@@ -299,7 +284,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         algorithm=algo,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
-        log_options={"save_all_arguments": False},
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -337,6 +322,7 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -371,6 +357,7 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -411,6 +398,7 @@ def test_with_pairwise_equality_constraint(
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -443,6 +431,7 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -475,6 +464,7 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -507,6 +497,7 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -539,6 +530,7 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -577,6 +569,7 @@ def test_with_covariance_constraint_no_bounds_distance(
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
@@ -614,46 +607,11 @@ def test_with_sdcorr_constraint_no_bounds_distance(
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
+        logging=False,
     )
 
     if crit.__name__.startswith("trid"):
         expected = np.empty(3)
-    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
-        expected = np.array([0, 0, 0])
-    else:
-        expected = np.ones(3)
-    assert res["success"], f"{algo} did not converge."
-
-    atol = 1e-04
-    assert_allclose(
-        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
-    )
-
-
-@pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
-def test_with_equality_and_fixed_constraint(
-    algo, direction, crit, deriv, crit_and_deriv
-):
-    params = pd.DataFrame(data=[[2], [2], [2]], columns=["value"])
-    params["lower_bound"] = [-5, -5, -5]
-    params["upper_bound"] = -params["lower_bound"]
-
-    constraints = [{"loc": [0, 1, 2], "type": "equality"}]
-
-    optimize_func = minimize if direction == "minimize" else maximize
-
-    res = optimize_func(
-        criterion=crit,
-        params=params,
-        algorithm=algo,
-        derivative=deriv,
-        criterion_and_derivative=crit_and_deriv,
-        constraints=constraints,
-    )
-
-    if crit.__name__.startswith("trid"):
-        expected = np.array([3, 3, 3])
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0, 0, 0])
     else:
