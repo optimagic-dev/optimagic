@@ -8,7 +8,6 @@ def TikTakOptimize(criterion,
                    local_search_algorithm,
                    num_points,
                    num_restarts,
-                   *,
                    sampling=None,
                    mixing_weight=None,
                    algo_options=None,
@@ -52,6 +51,7 @@ def TikTakOptimize(criterion,
             See :ref:`list_of_algorithms` for supported options of each algorithm.
         logging #TODO
     """
+    print(algo_options)
 
     lower_bounds = bounds["lower_bounds"]
     lower_bounds  = lower_bounds.to_numpy()
@@ -94,7 +94,6 @@ def TikTakOptimize(criterion,
     # take the best Imax
     xstarts = list(xstarts[:num_restarts])
     
-
     #define some parameters for the local searches
     best_so_far = {
         "solution_x": 0,
@@ -108,7 +107,7 @@ def TikTakOptimize(criterion,
         new_task = xstarts.pop()
 
         #compute the convex combination of this sample point and the "best" so far
-        if mixing_weight == None: #by default, we implement the algorithm supplied by Arnoud, Guvenen, and Kleinenberg
+        if mixing_weight == None: #by default, we implement the formula supplied by Arnoud, Guvenen, and Kleinenberg
             term = (i / num_restarts)**(1/2)
             max_term = max([0.1, term])
             theta = min([max_term, 0.995])

@@ -22,8 +22,10 @@ n = 10 # the dimension of our problem
    
 lower_bounds = [domain[0] for i in range(n)]  # lower bounds on each dimension
 upper_bounds = [domain[1] for i in range(n)]  # upper bounds on each dimension
-bounds_dict = {"lower_bounds": lower_bounds,
-                  "upper_bounds": upper_bounds}
+bounds_dict = {
+   "lower_bounds": lower_bounds,
+   "upper_bounds": upper_bounds
+}
 
 ## define all the arguments for our optimization
 criterion = Griewank
@@ -31,8 +33,8 @@ bounds = pd.DataFrame(bounds_dict)
 local_search_algorithm = "scipy_neldermead"
 num_points = 1000
 num_restarts = 100
-#shrink_after = 30
-algo_options = {"convergence_absolute_criterion_tolerance": 1e-1}
+algo_options = {"convergence.absolute_criterion_tolerance": 1e-3,
+                "convergence.absolute_params_tolerance": 1e-3}
 logging = False
    
 #run the algorithm
@@ -42,7 +44,6 @@ solution = TikTakOptimize(
    local_search_algorithm=local_search_algorithm,
    num_points=num_points,
    num_restarts=num_restarts,
-   #shrink_after=shrink_after,
    algo_options=algo_options                                 
 )
 
