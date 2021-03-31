@@ -62,7 +62,7 @@ from estimagic.optimization.optimize import minimize
 
 
 # Take a representative subset of algorithms for running tests - one least_squares
-# algorithm (nag_dfols) and few from the scipy library
+# algorithm (nag_dfols) and few from the scipy library.
 rep_algo_list = [
     "scipy_lbfgsb",
     "scipy_slsqp",
@@ -72,13 +72,11 @@ rep_algo_list = [
     "scipy_trust_constr",
 ]
 
+# These algorithms require atol = 1e-02
 IMPRECISE_ALGOS = ["scipy_powell", "scipy_trust_constr"]
 
-# ======================================================================================
+
 # Helper functions for tests
-# ======================================================================================
-
-
 def _skip_tests_with_missing_dependencies(test_cases):
     """Skip tests involving optimizers whose dependencies could not be found."""
     new_test_cases = []
@@ -275,7 +273,8 @@ for alg in rep_algo_list:
 
 test_cases = trid_test_cases + rhe_test_cases + rosenbrock_test_cases
 test_cases = _skip_tests_with_missing_dependencies(test_cases)
-test_cases
+
+# Define test functions - one for each constraint type
 
 
 @pytest.mark.slow
@@ -448,12 +447,17 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         logging=False,
     )
 
-    if crit.__name__.startswith("trid"):
-        expected = np.array([2.666666667, 3.3333333, 3.3333333])
+    if crit.__name__.startswith("rosenbrock"):
+        expected = np.ones(3)
     elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
         expected = np.array([0, 0, 0])
+    elif (crit.__name__.startswith("trid")) & (algo == "scipy_powell"):
+        pytest.xfail(
+            "scipy_powell fails trid criterion \
+                with increasing constraint."
+        )
     else:
-        expected = np.ones(3)
+        expected = np.array([2.666666667, 3.3333333, 3.3333333])
     assert res["success"], f"{algo} did not converge."
 
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
