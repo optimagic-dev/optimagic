@@ -63,10 +63,17 @@ from estimagic.optimization.optimize import minimize
 
 # Take a representative subset of algorithms for running tests - one least_squares
 # algorithm (nag_dfols) and few from the scipy library
-rep_algo_list = ["scipy_lbfgsb", "scipy_slsqp", "nag_pybobyqa", "nag_dfols"]
-# add the imprecise wale to get ALL bound-supporting algs
+rep_algo_list = [
+    "scipy_lbfgsb",
+    "scipy_slsqp",
+    "nag_pybobyqa",
+    "nag_dfols",
+    "scipy_powell",
+    "scipy_trust_constr",
+]
 
-IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
+IMPRECISE_ALGOS = ["scipy_powell", "scipy_trust_constr"]
+
 # ======================================================================================
 # Helper functions for tests
 # ======================================================================================
@@ -110,56 +117,6 @@ def _get_skipping_info(test_case):
             reason = reasons[substring]
 
     return needs_skipping, reason
-
-
-# Trid function cannot be represented as a least squares problem. Hence we do not
-# generate testcases involving least_squares algorithms
-def get_trid_test_cases_for_algorithm(algorithm):
-    """Given trid function, generate list of all possible argument combinations
-    for each algorithm."""
-    is_least_squares = algorithm in ["nag_dfols"]
-    is_scalar = not (is_least_squares)
-
-    if is_scalar:
-        directions = ["maximize", "minimize"]
-    else:
-        pass
-
-    crit_funcs = [trid_dict_criterion]
-    if is_scalar:
-        crit_funcs.append(trid_scalar_criterion)
-
-    if is_scalar:
-        derivatives = [trid_gradient, trid_pandas_gradient, None]
-    else:
-        pass
-
-    if is_scalar:
-        crit_and_derivs = [trid_criterion_and_gradient, None]
-    else:
-        pass
-
-    test_cases = []
-
-    if is_scalar:
-
-        prod_list = [directions, crit_funcs, derivatives, crit_and_derivs]
-
-        for direction, crit, deriv, c_and_d in product(*prod_list):
-            if direction == "maximize":
-                case = (
-                    algorithm,
-                    direction,
-                    switch_sign(crit),
-                    switch_sign(deriv),
-                    switch_sign(c_and_d),
-                )
-            else:
-                case = (algorithm, direction, crit, deriv, c_and_d)
-            test_cases.append(case)
-    else:
-        pass
-    return test_cases
 
 
 # Define dictionaries with different implementations of each criterion function as keys
@@ -225,6 +182,56 @@ def get_test_cases_for_algorithm_and_criterion(algorithm, criterion_functions):
         else:
             case = (algorithm, direction, crit, deriv, c_and_d)
         test_cases.append(case)
+    return test_cases
+
+
+# Trid function cannot be represented as a least squares problem. Hence we do not
+# generate testcases involving least_squares algorithms
+def get_trid_test_cases_for_algorithm(algorithm):
+    """Given trid function, generate list of all possible argument combinations
+    for each algorithm."""
+    is_least_squares = algorithm in ["nag_dfols"]
+    is_scalar = not (is_least_squares)
+
+    if is_scalar:
+        directions = ["maximize", "minimize"]
+    else:
+        pass
+
+    crit_funcs = [trid_dict_criterion]
+    if is_scalar:
+        crit_funcs.append(trid_scalar_criterion)
+
+    if is_scalar:
+        derivatives = [trid_gradient, trid_pandas_gradient, None]
+    else:
+        pass
+
+    if is_scalar:
+        crit_and_derivs = [trid_criterion_and_gradient, None]
+    else:
+        pass
+
+    test_cases = []
+
+    if is_scalar:
+
+        prod_list = [directions, crit_funcs, derivatives, crit_and_derivs]
+
+        for direction, crit, deriv, c_and_d in product(*prod_list):
+            if direction == "maximize":
+                case = (
+                    algorithm,
+                    direction,
+                    switch_sign(crit),
+                    switch_sign(deriv),
+                    switch_sign(c_and_d),
+                )
+            else:
+                case = (algorithm, direction, crit, deriv, c_and_d)
+            test_cases.append(case)
+    else:
+        pass
     return test_cases
 
 
@@ -297,7 +304,7 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         expected = np.ones(3)
 
     assert res["success"], f"{algo} did not converge."
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(),
         expected,
@@ -335,7 +342,7 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
         expected = np.ones(3)
 
     assert res["success"], f"{algo} did not converge."
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -368,14 +375,14 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
         expected = np.array([0, 0, 0])
     elif (crit.__name__.startswith("rosenbrock")) & (algo == "scipy_lbfgsb"):
         pytest.xfail(
-            "scipy_L-BFGS-B fails rosenbrock criterion \
+            "scipy_L-BFGS-B fail rosenbrock criterion \
                 with equality constraint."
         )
     else:
         expected = np.ones(3)
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -416,7 +423,7 @@ def test_with_pairwise_equality_constraint(
         expected = np.ones(3)
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -449,7 +456,7 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         expected = np.ones(3)
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -482,7 +489,7 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
         expected = np.ones(3)
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -515,7 +522,7 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
         pytest.skip("Analytical solution not known.")
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -548,7 +555,7 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
         pytest.skip("Analytical solution not known.")
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -587,7 +594,7 @@ def test_with_covariance_constraint_no_bounds_distance(
         expected = np.ones(3)
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -625,7 +632,7 @@ def test_with_sdcorr_constraint_no_bounds_distance(
         expected = np.ones(3)
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-04
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
