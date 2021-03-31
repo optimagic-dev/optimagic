@@ -31,8 +31,8 @@ bounds = pd.DataFrame(bounds_dict)
 local_search_algorithm = "scipy_neldermead"
 num_points = 1000
 num_restarts = 100
-shrink_after = 30
-algo_options = {"convergence_absolute_criterion_tolerance": 1e-8}
+#shrink_after = 30
+algo_options = {"convergence_absolute_criterion_tolerance": 1e-1}
 logging = False
    
 #run the algorithm
@@ -42,7 +42,7 @@ solution = TikTakOptimize(
    local_search_algorithm=local_search_algorithm,
    num_points=num_points,
    num_restarts=num_restarts,
-   shrink_after=shrink_after,
+   #shrink_after=shrink_after,
    algo_options=algo_options                                 
 )
 

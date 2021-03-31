@@ -8,9 +8,9 @@ def TikTakOptimize(criterion,
                    local_search_algorithm,
                    num_points,
                    num_restarts,
-                   shrink_after,
                    *,
                    sampling=None,
+                   mixing_weight=None,
                    algo_options=None,
                    logging=False):
     """
@@ -36,12 +36,18 @@ def TikTakOptimize(criterion,
         num_points (int): the number of initial points to sample in the parameter space.
         num_restarts (int): the number of initial sample points from which to perform
             local optimization. this value must be smaller than num_points. 
-        shtrink_after (int): after this many local optimization searches, the global 
-            algorithm starts to adjust the weight of previous and future points in the
-            search process.
         sampling (str): specifies the procedure for random or quasi-random sampling. 
             See chaospy documentation of  an overview of possible rules: 
             https://chaospy.readthedocs.io/en/master/reference/sampling.html#low-discrepancy-sequences
+        mixing_weight (callable): As TikTak performs local optimizations on a set 
+            of sample points, the algorithm computes a convex combination of each successive 
+            point and the "best" point sampled yet. Users may supply their own functions
+            for computing this convex combination. This user-supplied function must take only 
+            one argument ``i`` (integer), where ``i`` is the number of points sampled so far out 
+            of the total ``num_restarts`` supplied above. The function must return a float between 0 and 1.
+            This output `theta` will serve as the "weight" assigned to the best point so far,
+            compared to the current point in the sampling process. By default, we implement 
+            the mixing weight formula described by Arnoud, Guvenen and Kleinenberg in the paper linked above. 
         algo_options (dict): Algorithm specific configuration of the local optimization. 
             See :ref:`list_of_algorithms` for supported options of each algorithm.
         logging #TODO
@@ -90,19 +96,27 @@ def TikTakOptimize(criterion,
     
 
     #define some parameters for the local searches
-    best_so_far = {"solution_criterion": 1e10}
+    best_so_far = {
+        "solution_x": 0,
+        "solution_criterion": 1e10}
     result_trackers = []
-    num_jobs = len(xstarts)
+    #num_jobs = len(xstarts)
     num_func_evals = 0
 
-    for i in range(num_jobs):
-        ishrink = shrink_after #local_search_options["shrink_after"]
+    for i in range(num_restarts):
+        #ishrink = shrink_after #local_search_options["shrink_after"]
         new_task = xstarts.pop()
 
-        if i >= ishrink: # shrink towards best so far
-            #TODO: implement theta that's more closely aligned with Guvenen paper
-            theta = 0.02 + (0.98-0.02)*float(i-ishrink)/float(num_jobs-ishrink)  # when i = ishrink, place 2% weight on best, when i = Imax place 98% weight on max
-            new_task = theta*best_so_far['solution_x'] + (1-theta)*new_task
+        #compute the convex combination of this sample point and the "best" so far
+        if mixing_weight == None: #by default, we implement the algorithm supplied by Arnoud, Guvenen, and Kleinenberg
+            term = (i / num_restarts)**(1/2)
+            max_term = max([0.1, term])
+            theta = min([max_term, 0.995])
+
+        else: #otherwise, users have supplied their own function
+            theta = mixing_weight(i)
+
+        new_task = theta*best_so_far['solution_x'] + (1-theta)*new_task
 
         #params dataframe
         params = df_wrapper(new_task)
