@@ -47,7 +47,7 @@ into account the types of objective functions that estimagic's
 ``minimize`` and ``maximize`` accepts  for optimization. All algorithms accept
 criterion functions specified in a dictionary, while a subset also accept the criterion
 specified in scalar form. Likewise, if specified, the gradient of a criterion can be
-an nd.array or a pandas object. We test for all possible cases.
+an np.ndarray or a pandas object. We test for all possible cases.
 For instance, for rotated hyper ellipsoid, we implement the following functions:
 
 * rotated_hyper_ellipsoid_scalar_criterion

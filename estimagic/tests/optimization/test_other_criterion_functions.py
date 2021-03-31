@@ -137,10 +137,7 @@ rhe_criterion_functions = {
 
 def get_test_cases_for_algorithm_and_criterion(algorithm, criterion_functions):
     """Generate list of all possible argument combinations for each criterion
-    function and algorithm.
-    Args:
-    criterion_functions (dict)
-    .....
+    function (specified as a dictionary) and algorithm.
     """
     is_least_squares = algorithm in ["nag_dfols"]
     is_scalar = not (is_least_squares)
