@@ -1,9 +1,7 @@
 Richardson Extrapolation
 ========================
 
-In this section we introduce the mathematical machinery of *Richardson's method*. x is
-used for the pandas DataFrame with parameters. We index the entries of x as a
-n-dimensional vector, where n is the number of variables in params.
+In this section we introduce the mathematical machinery of *Richardson's method*.
 
 
 Motivation
@@ -31,21 +29,18 @@ Taylor's Theorem (assuming that :math:`f` has a Taylor representation):
 
 .. math::
 
-    f(x+h) &= f(x) + f'(x)h + f''(x)\frac{h^2}{2} + f'''(x)\frac{h^3}{6} + \dots \\
-    f(x-h) &= f(x \\) - f'(x)h - f''(x)\frac{h^2}{2} - f'''(x)\frac{h^3}{6} + \dots
-
-
-.. math::
-
-    &\implies f(x+h) + f(x-h) = 2hf'(x) + 2\frac{h^3}{6} f'''(x) + 2\frac{h^5}{5!}
-    f^{(5)}(x) + \dots \\ &\implies g(h) \stackrel{def}{=} \frac{f(x+h) + f(x-h)}{2h} =
-    f'(x) + h^2 \frac{f'''(x)}{3!} + h^4 \frac{f^{(5)(x)}}{5!} + \dots \\ &\implies g(h)
-    = f'(x) + \sum_{i=0}^{\infty} a_i h^{2+2i} = f'(x) + \mathcal{O}(h^2)
+    f(x+h) &= f(x) + f'(x)h + f''(x)\frac{h^2}{2} + f'''(x)\frac{h^3}{6} +
+    \dots\\ f(x-h) &= f(x) - f'(x)h - f''(x)\frac{h^2}{2} -
+    f'''(x)\frac{h^3}{6} + \dots\\[1em] \implies& f(x+h) + f(x-h) = 2hf'(x) +
+    2\frac{h^3}{6} f'''(x) + 2\frac{h^5}{5!} f^{(5)}(x) + \dots \\ \implies&
+    g(h) \stackrel{def}{=} \frac{f(x+h) + f(x-h)}{2h} = f'(x) + h^2
+    \frac{f'''(x)}{3!} + h^4 \frac{f^{(5)(x)}}{5!} + \dots \\ \implies& g(h) =
+    f'(x) + \sum_{i=0}^{\infty} a_i h^{2+2i} = f'(x) + \mathcal{O}(h^2)
 
 
 where :math:`\mathcal{O}(\cdot)` denotes the Landau notation. If we were to use
-Richardson's method here, we could improve the error from `\mathcal{O}(h^2)` to
-`\mathcal{O}(h^3)`.
+Richardson's method here, we could improve the error from :math:`\mathcal{O}(h^2)` to
+:math:`\mathcal{O}(h^3)`.
 
 
 General case
@@ -58,8 +53,10 @@ In general we consider sequences that can be written as:
     g(h) = L + \sum_{i=0}^{\infty} a_i h^{\theta +i \phi,}
 
 
-where :math:`L \in \mathbb{R}` denotes the limit of interest, :math:`\theta` the base
-order of the approximation and :math:`\phi` the exponential step.
+where :math:`L \in \mathbb{R}` denotes the limit of interest, :math:`\theta`
+the base order of the approximation and :math:`\phi` the exponential step. So
+Richardson's method works for general sequences. We are mostly interested in
+the sequences arising when estimation derivatives.
 
 
 Example (contd.)
@@ -82,16 +79,16 @@ Richardson Extrapolation
 ------------------------
 
 From the above table we see that, in general, central differences have a lower
-approximation error (:math:`\mathcal{O}(h^2)`) than forward or backward differences
-(:math:`\mathcal{O}(h)`).
+approximation error :math:`\mathcal{O}(h^2)` than forward or backward differences
+:math:`\mathcal{O}(h)`.
 
 
-    Question: Can we improve upon this further?
+    **Question**: Can we improve upon this further?
 
 
 Let us evaluate :math:`g` at multiple values :math:`h_0, h_1, h_2, \dots`, where it will
 turn out to be useful to choose values `h, h/2,  h/4, h/8, \dots` given some prechosen
-:math:`h > 0`. More generally :math:`\{ h_n \}_n,` `h_n = h/2^n` for :math:`n \in
+:math:`h > 0`. More generally :math:`\{ h_n \}_n, h_n = h/2^n` for :math:`n \in
 \mathbb{N}`. This allows us to write
 
 
@@ -109,11 +106,11 @@ Now approximate the :math:`g(h_n)` by dropping all elements in the infinite sum 
 
 .. math::
 
-    g(h) &= \tilde{g}(h) + \eta(h) := L + \sum_{i=0}^{1} a_i h^{\theta +i \phi} \eta
-    (h)\\ g(h/2) &= \tilde{g}(h/2) + \eta(h/2) := L + \sum_{i=0}^{1} a_i h^{\theta
-    +i \phi} \frac{1}{2^{\theta +i \phi}} \eta (h)\\ g(h/4) &= \tilde{g}(h/4) +
-    \eta(h/4) := L + \sum_{i=0}^{1} a_i h^{\theta +i \phi} \frac{1}{4^{\theta +i
-    \phi}}\\ &\vdots
+    g(h) &= \tilde{g}(h) + \eta(h) := L + \sum_{i=0}^{1} a_i h^{\theta +i \phi}
+    \\ g(h/2) &= \tilde{g}(h/2) + \eta(h/2) := L + \sum_{i=0}^{1} a_i h^{\theta
+    +i \phi} \frac{1}{2^{\theta +i \phi}}\\ g(h/4) &= \tilde{g}(h/4) +
+    \eta(h/4) := L + \sum_{i=0}^{1} a_i h^{\theta +i \phi} \frac{1}{4^{\theta
+    +i \phi}}\\ &\vdots
 
 
 Notice that we are now able to summarize the equations as
@@ -164,7 +161,7 @@ Remark
 ######
 
 To get a better intuition for (:math:`\ast`) consider :math:`H` in more
-detail.  For the sake of clarity let `\theta = \phi = 2`.
+detail.  For the sake of clarity let :math:`\theta = \phi = 2`.
 
 .. math::
 
@@ -223,6 +220,9 @@ quadratic). We then have, using (:math:`\ast`)
      + H^{-1} \eta
 
 
+To get a better view on the error rate consider our ongoing example again.
+
+
 
 Example (contd.)
 ################
@@ -273,4 +273,4 @@ Further, since for central differences :math:`\theta = \phi = 2` we have :math:`
      \implies \hat{L} = \{H^{-1} g \}_1 = L + \mathcal{O}(h^6)
 
 
-And so indeed we improved on the error rate.
+And so indeed we improved the error rate.
