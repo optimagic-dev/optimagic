@@ -206,7 +206,7 @@ def first_derivative(
         jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, m)
 
     # save function evaluations to accessible data frame
-    tidy_evals = _convert_evaluation_data_to_tidy_frame(params_index, steps, evals)
+    tidy_evals = _convert_evaluation_data_to_tidy_frame(steps, evals)
 
     # get the best derivative estimate out of all derivative estimates that could be
     # calculated, given the function evaluations.
@@ -269,7 +269,7 @@ def _convert_evaluation_points_to_original(evaluation_points, params):
     return res
 
 
-def _convert_evaluation_data_to_tidy_frame(params_index, steps, evals):
+def _convert_evaluation_data_to_tidy_frame(steps, evals):
     """Convert evaluation data to tidy data frame.
 
     Args:
@@ -290,8 +290,7 @@ def _convert_evaluation_data_to_tidy_frame(params_index, steps, evals):
 
     """
     n_steps, dim_f, dim_x = evals.pos.shape
-    if params_index is None:
-        params_index = range(dim_x)
+    params_index = range(dim_x)
 
     dfs = []
     for direction, step_arr, eval_arr in zip(("pos", "neg"), steps, evals):
@@ -304,6 +303,7 @@ def _convert_evaluation_data_to_tidy_frame(params_index, steps, evals):
             .sort_values("step_number")
             .reset_index(drop=True)
         )
+        tidy_steps.step = tidy_steps.step.abs()
         tidy_evaluations = (
             pd.concat((tidy_steps, pd.DataFrame(eval_arr)), axis=1)
             .melt(

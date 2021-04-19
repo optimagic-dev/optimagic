@@ -1,19 +1,23 @@
 from functools import partial
+from io import StringIO
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
+from pandas.testing import assert_frame_equal
 from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.differentiation.derivatives import _consolidate_one_step_derivatives
+from estimagic.differentiation.derivatives import _convert_evaluation_data_to_tidy_frame
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.examples.numdiff_example_functions_np import logit_loglike
 from estimagic.examples.numdiff_example_functions_np import logit_loglike_gradient
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs_jacobian
+from estimagic.optimization.utilities import namedtuple_from_kwargs
 
 
 @pytest.fixture
@@ -188,3 +192,24 @@ def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures
 
     aaae(scipy_fprime, our_fprime)
     aaae(true_fprime, our_fprime)
+
+
+def test_convert_evaluation_data_to_tidy_frame():
+    arr = np.arange(4).reshape(2, 2)
+    arr2 = arr.reshape(2, 1, 2)
+    steps = namedtuple_from_kwargs(pos=arr, neg=-arr)
+    evals = namedtuple_from_kwargs(pos=arr2, neg=-arr2)
+    expected = """sign,step_number,dim_x,dim_f,step,eval
+    pos,0,0,0,0,0
+    pos,0,1,0,1,1
+    pos,1,0,0,2,2
+    pos,1,1,0,3,3
+    neg,0,0,0,0,0
+    neg,0,1,0,1,-1
+    neg,1,0,0,2,-2
+    neg,1,1,0,3,-3
+    """
+    expected = pd.read_csv(StringIO(expected))
+    expected.sign = expected.sign.str.strip()
+    got = _convert_evaluation_data_to_tidy_frame(steps, evals)
+    assert_frame_equal(expected, got.reset_index())
