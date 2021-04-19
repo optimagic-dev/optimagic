@@ -212,4 +212,4 @@ def test_convert_evaluation_data_to_tidy_frame():
     expected = pd.read_csv(StringIO(expected))
     expected.sign = expected.sign.str.strip()
     got = _convert_evaluation_data_to_tidy_frame(steps, evals)
-    assert_frame_equal(expected, got.reset_index())
+    assert_frame_equal(expected, got.reset_index(), check_dtype=False)
