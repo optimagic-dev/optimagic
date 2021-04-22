@@ -30,23 +30,22 @@ Taylor's Theorem (assuming that :math:`f` has a Taylor representation):
 .. math::
 
     f(x+h) &= f(x) + f'(x)h + f''(x)\frac{h^2}{2} + f'''(x)\frac{h^3}{6} +
-    \dots\\ f(x-h) &= f(x) - f'(x)h - f''(x)\frac{h^2}{2} -
-    f'''(x)\frac{h^3}{6} + \dots\\[1em] \implies& f(x+h) + f(x-h) = 2hf'(x) +
+    \dots\\ f(x-h) &= f(x) - f'(x)h + f''(x)\frac{h^2}{2} -
+    f'''(x)\frac{h^3}{6} - \dots\\[1em] \implies& f(x+h) - f(x-h) = 2hf'(x) +
     2\frac{h^3}{6} f'''(x) + 2\frac{h^5}{5!} f^{(5)}(x) + \dots \\ \implies&
-    g(h) \stackrel{def}{=} \frac{f(x+h) + f(x-h)}{2h} = f'(x) + h^2
-    \frac{f'''(x)}{3!} + h^4 \frac{f^{(5)(x)}}{5!} + \dots \\ \implies& g(h) =
+    g(h) \stackrel{def}{=} \frac{f(x+h) - f(x-h)}{2h} = f'(x) + h^2
+    \frac{f'''(x)}{3!} + h^4 \frac{f^{(5)}(x)}{5!} + \dots \\ \implies& g(h) =
     f'(x) + \sum_{i=0}^{\infty} a_i h^{2+2i} = f'(x) + \mathcal{O}(h^2)
 
 
-where :math:`\mathcal{O}(\cdot)` denotes the Landau notation. If we were to use
-Richardson's method here, we could improve the error from :math:`\mathcal{O}(h^2)` to
-:math:`\mathcal{O}(h^3)`.
+where :math:`\mathcal{O}(\cdot)` denotes the Landau notation. Richardson's method can be
+used to improve the error rate :math:`\mathcal{O}(h^2)`.
 
 
 General case
 ------------
 
-In general we consider sequences that can be written as:
+In general Richardson's method considers sequences that can be written as:
 
 .. math::
 
@@ -54,9 +53,9 @@ In general we consider sequences that can be written as:
 
 
 where :math:`L \in \mathbb{R}` denotes the limit of interest, :math:`\theta`
-the base order of the approximation and :math:`\phi` the exponential step. So
-Richardson's method works for general sequences. We are mostly interested in
-the sequences arising when estimation derivatives.
+the *base order of the approximation* and :math:`\phi` the *exponential step*. Allthough
+Richardson's method works for general sequences, we are mostly interested in
+the sequences arising when estimating derivatives.
 
 
 Example (contd.)

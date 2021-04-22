@@ -97,7 +97,7 @@ def test_first_derivative_scalar_with_return_func_value(method):
         return x ** 2
 
     calculated = first_derivative(f, 3.0, return_func_value=True, n_cores=1)
-    expected = (6.0, 9.0)
+    expected = (6.0, {"func_value": 9.0})
     assert calculated == expected
 
 
@@ -200,16 +200,15 @@ def test_convert_evaluation_data_to_tidy_frame():
     steps = namedtuple_from_kwargs(pos=arr, neg=-arr)
     evals = namedtuple_from_kwargs(pos=arr2, neg=-arr2)
     expected = """sign,step_number,dim_x,dim_f,step,eval
-    pos,0,0,0,0,0
-    pos,0,1,0,1,1
-    pos,1,0,0,2,2
-    pos,1,1,0,3,3
-    neg,0,0,0,0,0
-    neg,0,1,0,1,-1
-    neg,1,0,0,2,-2
-    neg,1,1,0,3,-3
+    1,0,0,0,0,0
+    1,0,1,0,1,1
+    1,1,0,0,2,2
+    1,1,1,0,3,3
+    -1,0,0,0,0,0
+    -1,0,1,0,1,-1
+    -1,1,0,0,2,-2
+    -1,1,1,0,3,-3
     """
     expected = pd.read_csv(StringIO(expected))
-    expected.sign = expected.sign.str.strip()
     got = _convert_evaluation_data_to_tidy_frame(steps, evals)
     assert_frame_equal(expected, got.reset_index(), check_dtype=False)
