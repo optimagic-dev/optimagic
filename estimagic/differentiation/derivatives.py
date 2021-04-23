@@ -1,5 +1,6 @@
 import functools
 from collections import OrderedDict
+from itertools import compress
 from itertools import product
 
 import numpy as np
@@ -30,6 +31,7 @@ def first_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
+    return_tidy_evals=False,
     key=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
@@ -94,8 +96,12 @@ def first_derivative(
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the estimagic batch_evaluators.
         return_func_value (bool): If True, return a tuple with the derivative and the
-            function value at params. Default False. This is useful when using
-            first_derivative during optimization.
+            function value at params contained in dict. Default False. This is useful
+            when using first_derivative during optimization.
+        return_tidy_evals (bool): If True, return a tuple with the derivative and the
+            function value at all params values that have been generated for the
+            derivative estimation, combined in a tidy data frame, stored in a dict.
+            Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
@@ -108,8 +114,10 @@ def first_derivative(
             - f: R^m -> R leads to shape (m, ), usually called Gradient
             - f: R -> R^n leads to shape (n, 1), usually called Jacobian
             - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
-        float, dict, numpy.ndarray or pandas.Series: The function value at params, only
-            returned if return_func_value is True.
+
+        dict: The function value at params, only return if return_func_value is True
+            and the function evaluation at all generated steps in a tidy frame, only
+            returned if return_tidy_evals is True. Keys: "func_values" and "tidy_evals".
 
     """
     lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
@@ -201,6 +209,9 @@ def first_derivative(
     for m in ["forward", "backward", "central"]:
         jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, m)
 
+    # save function evaluations to accessible data frame
+    tidy_evals = _convert_evaluation_data_to_tidy_frame(steps, evals)
+
     # get the best derivative estimate out of all derivative estimates that could be
     # calculated, given the function evaluations.
     orders = {
@@ -224,7 +235,11 @@ def first_derivative(
     # results processing
     derivative = jac.flatten() if f_was_scalar else jac
     derivative = _add_index_to_derivative(derivative, params_index, out_index)
-    res = (derivative, func_value) if return_func_value else derivative
+
+    add = {"func_value": func_value, "tidy_evals": tidy_evals}
+    add = dict(compress(add.items(), [return_func_value, return_tidy_evals]))
+
+    res = derivative if len(add) == 0 else (derivative, add)
     return res
 
 
@@ -259,6 +274,58 @@ def _convert_evaluation_points_to_original(evaluation_points, params):
     else:
         res = evaluation_points
     return res
+
+
+def _convert_evaluation_data_to_tidy_frame(steps, evals):
+    """Convert evaluation data to tidy data frame.
+
+    Args:
+        params_index (pd.Series.Index, pd.DataFrame.Index): Parameter names. If
+            None then parameters are enumerated.
+        steps (namedtuple): Namedtuple with field names pos and neg. Is generated
+            by :func:`~estimagic.differentiation.generate_steps.generate_steps`.
+        evals (namedtuple): Namedtuple with field names pos and neg. Contains
+            function evaluation corresponding to steps.
+
+    Returns:
+        df (pd.DataFrame): Tidy data frame with index (sign, step_number, dim_x
+            dim_f), where sign corresponds to pos or neg in steps and evals,
+            step_number indexes the step, dim_x is the dimension of the input
+            vector and dim_f is the dimension of the function output. The data
+            is given by the two columns step and eval. The data frame has
+            2 * n_steps * dim_x * dim_f rows.
+
+    """
+    n_steps, dim_f, dim_x = evals.pos.shape
+    params_index = range(dim_x)
+
+    dfs = []
+    for direction, step_arr, eval_arr in zip((1, -1), steps, evals):
+        tidy_steps = (
+            pd.DataFrame(step_arr, columns=params_index)
+            .reset_index()
+            .rename(columns={"index": "step_number"})
+            .melt(id_vars="step_number", var_name="dim_x", value_name="step")
+            .sort_values("step_number")
+            .reset_index(drop=True)
+            .apply(lambda col: col.abs() if col.name == "step" else col)
+        )
+        eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
+        tidy_evaluations = (
+            pd.concat((tidy_steps, pd.DataFrame(eval_arr)), axis=1)
+            .melt(
+                id_vars=["step_number", "dim_x", "step"],
+                var_name="dim_f",
+                value_name="eval",
+            )
+            .assign(**{"sign": direction})
+            .set_index(["sign", "step_number", "dim_x", "dim_f"])
+            .sort_index()
+        )
+        dfs.append(tidy_evaluations)
+
+    df = pd.concat(dfs).convert_dtypes().astype({"step": float, "eval": float})
+    return df
 
 
 def _convert_evals_to_numpy(raw_evals, key):
