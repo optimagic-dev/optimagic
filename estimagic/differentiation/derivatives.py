@@ -31,7 +31,8 @@ def first_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_tidy_evals=False,
+    return_evals=False,
+    return_jac_cand=False,
     key=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
@@ -95,12 +96,14 @@ def first_derivative(
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the estimagic batch_evaluators.
-        return_func_value (bool): If True, return a tuple with the derivative and the
-            function value at params contained in dict. Default False. This is useful
-            when using first_derivative during optimization.
-        return_tidy_evals (bool): If True, return a tuple with the derivative and the
-            function value at all params values that have been generated for the
-            derivative estimation, combined in a tidy data frame, stored in a dict.
+        return_func_value (bool): If True, return a tuple with the derivative and a dict
+            containing function value at params. Default False. This is useful when
+            using first_derivative during optimization.
+        return_evals (bool): If True, return a tuple with the derivative and a dict
+            containing the function value evaluated at all parameters considered for the
+            derivative estimation in a data frame; under key "df_evals". Default False.
+        return_jac_cand (bool): If True, return a tuple with the derivative and a dict
+            containing jacobian candidates in a data frame; under key "df_jac_cand".
             Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
@@ -115,9 +118,11 @@ def first_derivative(
             - f: R -> R^n leads to shape (n, 1), usually called Jacobian
             - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
 
-        dict: The function value at params, only return if return_func_value is True
-            and the function evaluation at all generated steps in a tidy frame, only
-            returned if return_tidy_evals is True. Keys: "func_values" and "tidy_evals".
+        info (dict): Function value at params (key: "func_value"), function evaluations
+            at all parameters considered (key: "df_evals") and derivative candidates
+            (key: "df_jac_cand"), if the respective bools "return_func_value",
+            "return_evals" and "return_jac_cand" are True. If only a subset of the bools
+            is True then only the subset is returned.
 
     """
     lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
@@ -210,7 +215,7 @@ def first_derivative(
         jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, m)
 
     # save function evaluations to accessible data frame
-    tidy_evals = _convert_evaluation_data_to_tidy_frame(steps, evals)
+    df_evals = _convert_evaluation_data_to_frame(steps, evals)
 
     # get the best derivative estimate out of all derivative estimates that could be
     # calculated, given the function evaluations.
@@ -222,11 +227,15 @@ def first_derivative(
 
     if n_steps == 1:
         jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
+        df_jac_cand = _convert_jac_candidates_to_frame(jac_candidates, df_evals)
     else:
         richardson_candidates = _compute_richardson_candidates(
             jac_candidates, steps, n_steps
         )
         jac = _consolidate_extrapolated(richardson_candidates)
+        df_jac_cand = _convert_jac_candidates_to_frame(
+            richardson_candidates, df_evals, from_richardson=True
+        )
 
     # raise error if necessary
     if error_handling in ("raise", "raise_strict") and np.isnan(jac).any():
@@ -236,10 +245,16 @@ def first_derivative(
     derivative = jac.flatten() if f_was_scalar else jac
     derivative = _add_index_to_derivative(derivative, params_index, out_index)
 
-    add = {"func_value": func_value, "tidy_evals": tidy_evals}
-    add = dict(compress(add.items(), [return_func_value, return_tidy_evals]))
+    info = {
+        "func_value": func_value,
+        "tidy_evals": df_evals,
+        "df_jac_cand": df_jac_cand,
+    }
+    info = dict(
+        compress(info.items(), [return_func_value, return_evals, return_jac_cand])
+    )
 
-    res = derivative if len(add) == 0 else (derivative, add)
+    res = derivative if len(info) == 0 else (derivative, info)
     return res
 
 
@@ -276,8 +291,8 @@ def _convert_evaluation_points_to_original(evaluation_points, params):
     return res
 
 
-def _convert_evaluation_data_to_tidy_frame(steps, evals):
-    """Convert evaluation data to tidy data frame.
+def _convert_evaluation_data_to_frame(steps, evals):
+    """Convert evaluation data to (tidy) data frame.
 
     Args:
         params_index (pd.Series.Index, pd.DataFrame.Index): Parameter names. If
@@ -301,7 +316,7 @@ def _convert_evaluation_data_to_tidy_frame(steps, evals):
 
     dfs = []
     for direction, step_arr, eval_arr in zip((1, -1), steps, evals):
-        tidy_steps = (
+        df_steps = (
             pd.DataFrame(step_arr, columns=params_index)
             .reset_index()
             .rename(columns={"index": "step_number"})
@@ -311,8 +326,8 @@ def _convert_evaluation_data_to_tidy_frame(steps, evals):
             .apply(lambda col: col.abs() if col.name == "step" else col)
         )
         eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
-        tidy_evaluations = (
-            pd.concat((tidy_steps, pd.DataFrame(eval_arr)), axis=1)
+        df_evals = (
+            pd.concat((df_steps, pd.DataFrame(eval_arr)), axis=1)
             .melt(
                 id_vars=["step_number", "dim_x", "step"],
                 var_name="dim_f",
@@ -322,10 +337,29 @@ def _convert_evaluation_data_to_tidy_frame(steps, evals):
             .set_index(["sign", "step_number", "dim_x", "dim_f"])
             .sort_index()
         )
-        dfs.append(tidy_evaluations)
+        dfs.append(df_evals)
 
     df = pd.concat(dfs).convert_dtypes().astype({"step": float, "eval": float})
     return df
+
+
+def _convert_jac_candidates_to_frame(jac_candidates, df_evals, from_richardson=False):
+    """Convert jacobian candidates to (tidy) data frame.
+
+    Args:
+        jac_candidates (dict): Dict with keys "central", "forward", "backward", each
+            containing the respective jacobian candidate. If from_richardson is True
+            each item is itself a dict with items for each step size.
+        df_evals (pd.DataFrame): Data frame returned by
+        :func:`_convert_evaluation_data_to_frame`.
+        from_richardson (bool): If True, assumes that jac_candidates contains
+            candidates from richardson extrapolation. Default False.
+
+    Returns:
+        df (pd.DataFrame): The data in a tidy frame.
+
+    """
+    pass
 
 
 def _convert_evals_to_numpy(raw_evals, key):
