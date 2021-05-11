@@ -6,9 +6,10 @@ First, it allows TikTak to automatically sample a set of Sobol points.
 Second, it provides TikTak with a custom set of starting points to test
 the custom_sample feature. 
 """
+import chaospy
 import numpy as np
 import pandas as pd
-import chaospy
+
 from estimagic.optimization.tiktak import TikTakOptimize
 
 
@@ -21,6 +22,7 @@ def Griewank(params):
     i = np.arange(1, d + 1)
     res = 2 + np.sum(X ** 2 / 200) - np.prod(np.cos(X / np.sqrt(i)))
     return res
+
 
 domain = (-100, 100)  # domain of the Griewank function
 true_min = 1  # the real min. value of the Griewank function
@@ -70,31 +72,25 @@ print(f"Number of function evaluations was {n_criterion_evals}")
 # Second, Test of User-Provided Custom Sample
 #############################################
 
-#define a dataframe of custom starting points
-#first, generate a set of random points points
+# define a dataframe of custom starting points
+# first, generate a set of random points points
 distribution = chaospy.Iid(chaospy.Uniform(0, 1), n)
-xstarts = distribution.sample(
-    num_points, rule="random"
-)
+xstarts = distribution.sample(num_points, rule="random")
 
-#generate array versions of the bounds
-lower_array = bounds["lower_bounds"].to_numpy() 
-upper_array = bounds["upper_bounds"].to_numpy() 
- 
+# generate array versions of the bounds
+lower_array = bounds["lower_bounds"].to_numpy()
+upper_array = bounds["upper_bounds"].to_numpy()
+
 # spread out the sample within the bounds
 xstarts = (
-    lower_array[:, np.newaxis]
-    + (upper_array - lower_array)[:, np.newaxis] * xstarts
-)  
-
-#define the custom starting points as a dataframe
-custom_sample = pd.DataFrame(
-    data=xstarts,
-    index = [f"x_{i}" for i in range(10)]
+    lower_array[:, np.newaxis] + (upper_array - lower_array)[:, np.newaxis] * xstarts
 )
 
+# define the custom starting points as a dataframe
+custom_sample = pd.DataFrame(data=xstarts, index=[f"x_{i}" for i in range(10)])
 
-#run the algorithm again with custom starting points
+
+# run the algorithm again with custom starting points
 solution = TikTakOptimize(
     criterion=criterion,
     local_search_algorithm=local_search_algorithm,
