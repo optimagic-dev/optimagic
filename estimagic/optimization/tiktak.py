@@ -7,11 +7,12 @@ from estimagic.optimization.optimize import minimize
 
 def TikTakOptimize(
     criterion,
-    bounds,
     local_search_algorithm,
-    num_points,
     num_restarts,
     sampling=None,
+    bounds=None,
+    num_points=None,
+    custom_sample=None,
     mixing_weight=None,
     algo_options=None,
     logging=False,
@@ -29,19 +30,30 @@ def TikTakOptimize(
     Args:
         criterion (Callable): A function that takes a pandas DataFrame (see
             :ref:`params`) as first argument and returns a scalar floating point.
-        bounds (pandas.DataFrame): A DataFrame with one column called "lower_bounds" and
-            another called "upper_bounds," with an entry in each column for every dimension
-            of the optimization problem.
         local_search_algorithm (str or callable): Specifies the optimization algorithm.
             For supported algorithms this is a string with the name of the algorithm.
             Otherwise it can be a callable with the estimagic algorithm interface. See
             :ref:`algorithms`.
-        num_points (int): the number of initial points to sample in the parameter space.
         num_restarts (int): the number of initial sample points from which to perform
-            local optimization. this value must be smaller than num_points.
+            local optimization. If automatically generating sample points, this value must 
+            be smaller than num_points. If providing a custom set of sample points, this value 
+            must be smaller than the number of columns in your custom_sample dataframe (see below)/
         sampling (str): specifies the procedure for random or quasi-random sampling.
             See chaospy documentation of  an overview of possible rules:
             https://chaospy.readthedocs.io/en/master/reference/sampling.html#low-discrepancy-sequences
+            In addition to chaospy's sampling rules, we also allow users to input a custom set of 
+            starting points as a datfarame. In that case, set this argument to "custom".
+        bounds (pandas.DataFrame): A DataFrame with one column called "lower_bounds" and
+            another called "upper_bounds," with an entry in each column for every dimension
+            of the optimization problem. Not required if the user provides a custom sample. 
+        num_points (int): the number of initial points to sample in the parameter space. 
+            Not required if the user provides a custom sample. 
+        custom_sample (pandas.DataFrame): A dataframe of custom starting points. Set sampling to "custom" 
+            if you plan to use this argument. Each column of the dataframe should be a distinct point in 
+            the sample. Each row of the dataframe should be a parameter of the point. So if you want to pass a 
+            sample of 100 10-dimensional starting points, your dataframe should have 10 rows and 100 columns. 
+            If you do not specify this argument, you must specify bounds and num_points so that TikTak
+            can automatically generate a sample. 
         mixing_weight (callable): As TikTak performs local optimizations on a set
             of sample points, the algorithm computes a convex combination of each successive
             point and the "best" point sampled yet. Users may supply their own functions
@@ -55,41 +67,58 @@ def TikTakOptimize(
             See :ref:`list_of_algorithms` for supported options of each algorithm.
         logging #TODO
     """
-    print(algo_options)
-
-    lower_bounds = bounds["lower_bounds"]
-    lower_bounds = lower_bounds.to_numpy()
-    lower_bounds = lower_bounds.transpose()
-
-    upper_bounds = bounds["upper_bounds"]
-    upper_bounds = upper_bounds.to_numpy()
-    upper_bounds = upper_bounds.transpose()
-
+    
     def df_wrapper(array):
         df = pd.DataFrame(
             data=array, columns=["value"], index=[f"x_{i}" for i in range(len(array))]
         )
         return df
 
-    nparam = len(lower_bounds)
+    # Users must either provide a custom sample of points,
+    # or all the information necessary for TikTak to sample points.
 
-    # the default sampling method depends on nparam
-    if sampling == None:
-        if nparam <= 15:
-            sampling = "sobol"
-        else:
-            sampling = "random"
+    #If the user provide custom sample points, use them instead of sampling manually
+    if sampling == "custom":
+        
+        xstarts = custom_sample.to_numpy().transpose()
 
-    # start the global search for initial points
-    distribution = chaospy.Iid(chaospy.Uniform(0, 1), nparam)
-    xstarts = distribution.sample(
-        num_points, rule=sampling
-    )  # generate a sample based on the sampling rule
-    xstarts = np.transpose(xstarts)  # transpose the array of samples
-    xstarts = (
-        lower_bounds[np.newaxis, :]
-        + (upper_bounds - lower_bounds)[np.newaxis, :] * xstarts
-    )  # spread out the sample within the bounds
+    
+    #If the user provided sufficient information, perform the sampling process
+    elif (bounds is not None) & (num_points is not None):    
+        lower_bounds = bounds["lower_bounds"]
+        lower_bounds = lower_bounds.to_numpy()
+        lower_bounds = lower_bounds.transpose()
+
+        upper_bounds = bounds["upper_bounds"]
+        upper_bounds = upper_bounds.to_numpy()
+        upper_bounds = upper_bounds.transpose()
+
+        nparam = len(lower_bounds)
+
+        # the default sampling method depends on nparam
+        if sampling == None:
+            if nparam <= 15:
+                sampling = "sobol"
+            else:
+                sampling = "random"
+        
+        # start the global search for initial points
+        distribution = chaospy.Iid(chaospy.Uniform(0, 1), nparam)
+        xstarts = distribution.sample(
+            num_points, rule=sampling
+        )  # generate a sample based on the sampling rule
+        xstarts = np.transpose(xstarts)  # transpose the array of samples
+        xstarts = (
+            lower_bounds[np.newaxis, :]
+            + (upper_bounds - lower_bounds)[np.newaxis, :] * xstarts
+        )  # spread out the sample within the bounds
+
+    #If the user did not provide custom starting points and did not provide
+    # enough information for the function to sample, raise an error. 
+    else: 
+        print("ERROR: User did not provide enough information to sample starting points")
+        #TODO: error handling
+    
 
     # --- evaluate the criterion function on each starting point ----
     dfxstarts = [df_wrapper(point) for point in xstarts]
