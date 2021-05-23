@@ -1,4 +1,5 @@
 import functools
+import re
 from collections import OrderedDict
 from itertools import compress
 from itertools import product
@@ -227,15 +228,12 @@ def first_derivative(
 
     if n_steps == 1:
         jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
-        df_jac_cand = _convert_jac_candidates_to_frame(jac_candidates, df_evals)
     else:
         richardson_candidates = _compute_richardson_candidates(
             jac_candidates, steps, n_steps
         )
-        jac = _consolidate_extrapolated(richardson_candidates)
-        df_jac_cand = _convert_jac_candidates_to_frame(
-            richardson_candidates, df_evals, from_richardson=True
-        )
+        jac, updated_candidates = _consolidate_extrapolated(richardson_candidates)
+        df_jac_cand = _convert_richardson_candidates_to_frame(*updated_candidates)
 
     # raise error if necessary
     if error_handling in ("raise", "raise_strict") and np.isnan(jac).any():
@@ -245,15 +243,10 @@ def first_derivative(
     derivative = jac.flatten() if f_was_scalar else jac
     derivative = _add_index_to_derivative(derivative, params_index, out_index)
 
-    info = {
-        "func_value": func_value,
-        "tidy_evals": df_evals,
-        "df_jac_cand": df_jac_cand,
-    }
+    info = {"func_value": func_value, "df_evals": df_evals, "df_jac_cand": df_jac_cand}
     info = dict(
         compress(info.items(), [return_func_value, return_evals, return_jac_cand])
     )
-
     res = derivative if len(info) == 0 else (derivative, info)
     return res
 
@@ -343,23 +336,35 @@ def _convert_evaluation_data_to_frame(steps, evals):
     return df
 
 
-def _convert_jac_candidates_to_frame(jac_candidates, df_evals, from_richardson=False):
-    """Convert jacobian candidates to (tidy) data frame.
+def _convert_richardson_candidates_to_frame(jac, err):
+    """Convert (richardson) jacobian candidates and errors to pandas data frame.
 
     Args:
-        jac_candidates (dict): Dict with keys "central", "forward", "backward", each
-            containing the respective jacobian candidate. If from_richardson is True
-            each item is itself a dict with items for each step size.
-        df_evals (pd.DataFrame): Data frame returned by
-        :func:`_convert_evaluation_data_to_frame`.
-        from_richardson (bool): If True, assumes that jac_candidates contains
-            candidates from richardson extrapolation. Default False.
+        jac (dict): Dict with richardson jacobian candidates.
+        err (dict): Dict with errors corresponding to richardson jacobian candidates.
 
     Returns:
-        df (pd.DataFrame): The data in a tidy frame.
+        df (pd.DataFrame): Frame with column "value" and index
+            ["method", "num_term", "dim_x", "dim_f"]
+            with respective meaning: type of method used, e.g. central or foward;
+            kind of value, e.g. derivative or error.
 
     """
-    pass
+    dim_f, dim_x = jac["forward1"].shape
+    dfs = []
+    for key, value in jac.items():
+        method, num_term = re.findall(r"(\w+?)(\d+)", key)[0]
+        df = pd.DataFrame(value.T, columns=range(dim_f))
+        df = df.assign(**{"dim_x": range(dim_x)})
+        df = df.melt(id_vars="dim_x", var_name="dim_f", value_name="der")
+        df = df.assign(
+            **{"method": method, "num_term": int(num_term), "err": err[key].T.flatten()}
+        )
+        dfs.append(df)
+
+    df = pd.concat(dfs)
+    df = df.set_index(["method", "num_term", "dim_x", "dim_f"])
+    return df
 
 
 def _convert_evals_to_numpy(raw_evals, key):
@@ -430,26 +435,27 @@ def _consolidate_extrapolated(candidates):
 
     Returns:
         consolidated (np.ndarray): Array of same shape as input derivative estimates.
+        candidate_der (dict): Best derivative estimate given method.
 
     """
     # first find minimum over steps for each method
-    candidate_derivatives = OrderedDict()
-    candidate_errors = OrderedDict()
+    candidate_der_dict = {}
+    candidate_err_dict = {}
 
     for key in candidates.keys():
-        _limit = candidates[key]["derivative"]
-        _error = candidates[key]["error"]
-
-        derivative, error = _get_best_estimate_single_method(_limit, _error)
-
-        candidate_derivatives[key] = derivative
-        candidate_errors[key] = error
+        _der = candidates[key]["derivative"]
+        _err = candidates[key]["error"]
+        derivative, error = _select_minimizer_along_axis(_der, _err)
+        candidate_der_dict[key] = derivative
+        candidate_err_dict[key] = error
 
     # second find minimum over methods
-    consolidated = _get_best_estimate_along_methods(
-        candidate_derivatives, candidate_errors
-    )
-    return consolidated
+    candidate_der = np.stack(list(candidate_der_dict.values()))
+    candidate_err = np.stack(list(candidate_err_dict.values()))
+    consolidated, _ = _select_minimizer_along_axis(candidate_der, candidate_err)
+
+    updated_candidates = (candidate_der_dict, candidate_err_dict)
+    return consolidated, updated_candidates
 
 
 def _compute_richardson_candidates(jac_candidates, steps, n_steps):
@@ -492,12 +498,11 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
     return richardson_candidates
 
 
-def _get_best_estimate_single_method(derivative, errors):
+def _select_minimizer_along_axis(derivative, errors):
     """Select best derivative estimates element wise.
 
-    Given a single method, e.g. central differences with 2 num_terms (see above), we get
-    multiple Richardson approximations including estimated errors. Here we select the
-    approximations which result in the lowest error element wise.
+    Select elements from ``derivative`` which correspond to minimum in ``errors`` along
+    first axis.
 
     Args:
         derivative (np.ndarray): Derivative estimates from Richardson approximation.
@@ -518,52 +523,15 @@ def _get_best_estimate_single_method(derivative, errors):
 
     """
     if derivative.shape[0] == 1:
-        derivative_minimal = np.squeeze(derivative, axis=0)
+        jac_minimal = np.squeeze(derivative, axis=0)
         error_minimal = np.squeeze(errors, axis=0)
     else:
-
         minimizer = np.nanargmin(errors, axis=0)
-
-        derivative_minimal = np.take_along_axis(
-            derivative, minimizer[np.newaxis, :], axis=0
-        )
-        derivative_minimal = np.squeeze(derivative_minimal, axis=0)
+        jac_minimal = np.take_along_axis(derivative, minimizer[np.newaxis, :], axis=0)
+        jac_minimal = np.squeeze(jac_minimal, axis=0)
         error_minimal = np.nanmin(errors, axis=0)
 
-    return derivative_minimal, error_minimal
-
-
-def _get_best_estimate_along_methods(derivatives, errors):
-    """Extract best derivative estimate over different methods.
-
-    Given that for each method, where one method can be for example central differences
-    with two num_terms (see above), we have selected a single best derivative estimate,
-    we select the best derivative estimates element-wise over different methods, where
-    again best is defined as minimizing the approximation error.
-
-    Args:
-        derivatives (OrderedDict): Dictionary containing derivative estimates for
-            different methods.
-        errors (OrderedDict): Dictionary containing error estimates for derivates stored
-            in ``derivatives``.
-
-    Returns:
-        jac_minimal (np.ndarray): The optimal derivative estimate over different
-            methods.
-
-    """
-    errors = np.stack(list(errors.values()))
-    derivatives = np.stack(list(derivatives.values()))
-
-    if derivatives.shape[0] == 1:
-        jac_minimal = np.squeeze(derivatives, axis=0)
-    else:
-        minimizer = np.nanargmin(errors, axis=0)
-
-        jac_minimal = np.take_along_axis(derivatives, minimizer[np.newaxis, :], axis=0)
-        jac_minimal = np.squeeze(jac_minimal, axis=0)
-
-    return jac_minimal
+    return jac_minimal, error_minimal
 
 
 def _nan_skipping_batch_evaluator(
