@@ -1,6 +1,13 @@
 """Functions for inferences in maximum likelihood models."""
 import numpy as np
 
+from estimagic.optimization.utilities import robust_inverse
+
+LINALG_MSG = (
+    "Do only use this covariance matrix or standard errors based of it for diagnostic "
+    "purposes, not in actual publications."
+)
+
 
 def cov_hessian(hessian):
     """Covariance based on the negative inverse of the hessian of loglike.
@@ -24,7 +31,7 @@ def cov_hessian(hessian):
 
     """
     info_matrix = -1 * (hessian)
-    cov_hes = np.linalg.inv(info_matrix)
+    cov_hes = robust_inverse(info_matrix, msg=LINALG_MSG)
 
     return cov_hes
 
@@ -43,7 +50,7 @@ def cov_jacobian(jacobian):
 
     """
     info_matrix = np.dot((jacobian.T), jacobian)
-    cov_jac = np.linalg.inv(info_matrix)
+    cov_jac = robust_inverse(info_matrix, msg=LINALG_MSG)
 
     return cov_jac
 
