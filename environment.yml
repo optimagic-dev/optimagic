@@ -37,7 +37,6 @@ dependencies:
   - tox-conda
   - statsmodels
   - dill
-  - imageio
   - pytask>=0.0.11
 
   - pip:
@@ -47,3 +46,5 @@ dependencies:
     - pre-commit
     - Py-BOBYQA
     - DFO-LS
+    - gif
+    - gif[matplotlib]
