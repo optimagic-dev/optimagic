@@ -323,8 +323,7 @@ def _convert_evaluation_data_to_tidy_frame(steps, evals):
             .sort_index()
         )
         dfs.append(tidy_evaluations)
-
-    df = pd.concat(dfs).convert_dtypes().astype({"step": float, "eval": float})
+    df = pd.concat(dfs).astype({"step": float, "eval": float})
     return df
 
 
