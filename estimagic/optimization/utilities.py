@@ -176,7 +176,7 @@ def robust_inverse(matrix, msg=""):
     """Calculate the inverse or pseudo-inverse of a matrix.
 
     The difference to calling a pseudo inverse directly is that this function will
-    emit a warning if the matrix is non-singular.
+    emit a warning if the matrix is singular.
 
     Args:
         matrix (np.ndarray)
@@ -184,7 +184,7 @@ def robust_inverse(matrix, msg=""):
     """
     header = (
         "Standard matrix inversion failed due to LinAlgError described below. "
-        "Therefore a pseudo inverse was calculated instead. "
+        "A pseudo inverse was calculated instead. "
     )
     if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError("Matrix must be square.")

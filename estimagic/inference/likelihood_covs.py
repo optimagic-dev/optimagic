@@ -4,7 +4,7 @@ import numpy as np
 from estimagic.optimization.utilities import robust_inverse
 
 LINALG_MSG = (
-    "Do only use this covariance matrix or standard errors based of it for diagnostic "
+    "Taking the inverse of the information matrix failed. Only ever use this covariance matrix or standard errors based on it for diagnostic purposes, not for drawing conclusions."
     "purposes, not in actual publications."
 )
 
