@@ -17,6 +17,7 @@ from estimagic.optimization.utilities import dimension_to_number_of_triangular_e
 from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 from estimagic.optimization.utilities import robust_cholesky
+from estimagic.optimization.utilities import robust_inverse
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
 from estimagic.optimization.utilities import sdcorr_params_to_sds_and_corr
 from estimagic.optimization.utilities import sds_and_corr_to_cov
@@ -132,6 +133,21 @@ def test_robust_cholesky_with_extreme_cases():
     for cov in [np.ones((5, 5)), np.zeros((5, 5))]:
         chol = robust_cholesky(cov)
         aaae(chol.dot(chol.T), cov)
+
+
+def test_robust_inverse_nonsingular():
+    mat = np.eye(3) + 0.2
+    expected = np.linalg.inv(mat)
+    calculated = robust_inverse(mat)
+    aaae(calculated, expected)
+
+
+def test_robust_inverse_singular():
+    mat = np.zeros((5, 5))
+    expected = np.zeros((5, 5))
+    with pytest.warns(UserWarning, match="LinAlgError"):
+        calculated = robust_inverse(mat)
+    aaae(calculated, expected)
 
 
 def test_hash_array():
