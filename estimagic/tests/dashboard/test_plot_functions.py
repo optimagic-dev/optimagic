@@ -1,6 +1,7 @@
 """Test helper functions for the dashboard."""
 import webbrowser
 
+import pytest
 from bokeh.io import output_file
 from bokeh.io import save
 from bokeh.models import ColumnDataSource
@@ -15,6 +16,7 @@ def test_create_styled_figure():
 # not testing find_free_port
 
 
+@pytest.mark.slow
 def test_plot_time_series_with_large_initial_values():
     cds = ColumnDataSource({"y": [2e17, 1e16, 1e5], "x": [1, 2, 3]})
     title = "Are large initial values shown?"
