@@ -1,31 +1,31 @@
 
 .. _examples_of_simple_optimizers:
 
-====================
-Visualize simple optimizers
-====================
+================================================================
+Introduction to basic types of numerical optimization algorithms
+================================================================
 
-At this page visualization of different types of optimizers are presented.
 
-Derivative based algorithms 
+Derivative based algorithms
 ===========================
-.. _type_of_algorithms_for_based:
 
-1. Line search
----------------------
+Line search algorithms
+----------------------
 
-Basic Idea:
-    1. Use first derivative to get search direction
-    2. Use approximated second derivative to guess step length
-    3. Use a line search algorithm to see how far to go in the search direction
+Basic idea
+^^^^^^^^^^
+1. Use first derivative to get search direction
+2. Use approximated second derivative to guess step length
+3. Use a line search algorithm to see how far to go in the search direction
 
-Potential Problems: 
-    - Line search stays a 1d problem even with many parameters
-    - Only solved approximately
-    - Quite complicated if you really want to understand it
-    - Most of the time accepts the first guess   
+Remarks
+^^^^^^^
 
-.. _example_algorithms_for_based_direct:
+- Line search stays a 1d problem even with many parameters
+- The line search subproblem is only solved approximately for speed reasons
+- The exact termination conditions for the line search subproblem are complicated
+  but most of the time the first guess is accepted.
+
 
     .. raw:: html
 
@@ -37,7 +37,7 @@ Potential Problems:
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            Stylized optimizer -- Derivate based line search 
+                            Stylized optimizer -- Derivate based line search
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -78,31 +78,37 @@ Potential Problems:
                         <div class="card-body">
 
     .. image:: ../../_static/images/final_result/L_BFGS_B.gif
-    
 
 
-2. Trust region
----------------------
+
+Derivative based trust-region algorithms
+----------------------------------------
 
 
-Basic Idea:
-    1. Fix a trust region radius
-    2. Construct a Taylor expansion of the function based on function value, gradient, and (approximation to) Hessian 
-    3. Minimize the Taylor expansion within the trust region
-    4. Evaluate function again at the argmin of the Taylor expansion
-    5. Compare expected and actual improvement
-    6. Accept the new parameters if actual improvement is good enough
-    7. Potentially modify the trust region radius (This is a very important and very complicated step)
-    8.	Go back to 2.
+Basic idea
+^^^^^^^^^^
 
-Potential Problems: 
-    - Most of the time, the approximation was not very good but sent us in the right direction
-    - After a successful iteration, the trust region radius is increased
-    - At some point it becomes too large and needs to be decreased
-    - From now on the algorithm would converge soon because of a zero gradient
-    - Even when it converges, the trust region radius does not shrink to zero       
+1. Fix a trust region radius
+2. Construct a Taylor expansion of the function based on function value,
+   gradient, and (approximation to) Hessian
+3. Minimize the Taylor expansion within the trust region
+4. Evaluate function again at the argmin of the Taylor expansion
+5. Compare expected and actual improvement
+6. Accept the new parameters if actual improvement is good enough.
+7. Potentially modify the trust region radius (This is a very important and
+   step that differst across algorithms)
+8.  Go back to 2.
 
-.. _example_algorithms_for_based_trust:
+
+Remarks
+^^^^^^^
+- Most of the time, the approximation was not very good but sent us in the
+  right direction
+- After a successful iteration, the trust region radius is increased
+- At some point it becomes too large and needs to be decreased
+- From now on the algorithm would converge soon because of a zero gradient
+- Even when it converges, the trust region radius does not shrink to zero
+
 
 
     .. raw:: html
@@ -117,7 +123,7 @@ Potential Problems:
                         <div class="d-flex flex-row tutorial-card-header-1">
                             <div class="d-flex flex-row tutorial-card-header-2">
                                 <button class="btn btn-dark btn-sm"></button>
-                            Stylized optimizer -- Derivative based trust region 
+                            Stylized optimizer -- Derivative based trust region
                             </div>
                             <span class="badge gs-badge-link">
 
@@ -160,7 +166,7 @@ Potential Problems:
     .. image:: ../../_static/images/final_result/Trust_NCG.gif
 
 
-Derivative free algorithms 
+Derivative free algorithms
 ==========================
 .. _type_of_algorithms_for_free:
 
@@ -194,7 +200,7 @@ Basic Idea:
                     <div class="d-flex flex-row tutorial-card-header-1">
                         <div class="d-flex flex-row tutorial-card-header-2">
                             <button class="btn btn-dark btn-sm"></button>
-                            Stylized optimizer -- Derivate free direct search 
+                            Stylized optimizer -- Derivate free direct search
                         </div>
                         <span class="badge gs-badge-link">
 
@@ -270,7 +276,7 @@ Basic Idea:
                         <div class="d-flex flex-row tutorial-card-header-1">
                             <div class="d-flex flex-row tutorial-card-header-2">
                                 <button class="btn btn-dark btn-sm"></button>
-                            Stylized optimizer -- Derivate free trust region 
+                            Stylized optimizer -- Derivate free trust region
                             </div>
                             <span class="badge gs-badge-link">
 

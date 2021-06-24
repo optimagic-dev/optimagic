@@ -1,17 +1,11 @@
 import os
-import sys
 
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import pytask
-import seaborn as sns
 import src.model_code.functions_plotting as tools
-import statsmodels.formula.api as sm
-from scipy.optimize import minimize
 from src.config import BLD
-from src.config import SRC
 from src.model_code.example_function import example_criterion
 
 
