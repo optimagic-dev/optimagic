@@ -87,7 +87,7 @@ def trid_dict_criterion(params):
 
     Returns:
         Dictionary with the following entries:
-        "value" (a scalar float): rotated hyper ellipsoid function output.
+        "value" (a scalar float): trid function output.
     """
     out = {
         "value": trid_scalar_criterion(params),
