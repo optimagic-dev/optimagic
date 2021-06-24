@@ -129,7 +129,7 @@ def _combine_params_data(results, parameter_groups, parameter_names, color_dict)
     model_names = _construct_model_names(results)
     res_dfs = []
     for mod_name, res in zip(model_names, results):
-        small_params = res.params[res.params.columns & relevant].copy()
+        small_params = res.params[res.params.columns.intersection(relevant)].copy()
         params = pd.concat([small_params, parameter_groups, parameter_names], axis=1)
         params["model"] = mod_name
         params = _add_model_class_and_color(

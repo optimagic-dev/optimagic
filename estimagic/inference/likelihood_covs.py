@@ -1,12 +1,8 @@
 """Functions for inferences in maximum likelihood models."""
 import numpy as np
 
+from estimagic.exceptions import INVALID_INFERENCE_MSG
 from estimagic.optimization.utilities import robust_inverse
-
-LINALG_MSG = (
-    "Taking the inverse of the information matrix failed. Only ever use this covariance matrix or standard errors based on it for diagnostic purposes, not for drawing conclusions."
-    "purposes, not in actual publications."
-)
 
 
 def cov_hessian(hessian):
@@ -31,7 +27,7 @@ def cov_hessian(hessian):
 
     """
     info_matrix = -1 * (hessian)
-    cov_hes = robust_inverse(info_matrix, msg=LINALG_MSG)
+    cov_hes = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
 
     return cov_hes
 
@@ -50,7 +46,7 @@ def cov_jacobian(jacobian):
 
     """
     info_matrix = np.dot((jacobian.T), jacobian)
-    cov_jac = robust_inverse(info_matrix, msg=LINALG_MSG)
+    cov_jac = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
 
     return cov_jac
 
