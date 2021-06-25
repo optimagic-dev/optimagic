@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal as aae
+from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_series_equal as ase
 
 from estimagic.inference.bootstrap_ci import _check_inputs
@@ -82,37 +82,37 @@ def test_percentile_ci(setup, expected):
     percentile_ci = compute_ci(
         setup["df"], g, setup["estimates"], ci_method="percentile"
     )
-    aae(percentile_ci, expected["percentile_ci"])
+    aaae(percentile_ci, expected["percentile_ci"])
 
 
 def test_normal_ci(setup, expected):
     normal_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="normal")
-    aae(normal_ci, expected["normal_ci"])
+    aaae(normal_ci, expected["normal_ci"])
 
 
 def test_basic_ci(setup, expected):
     basic_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="basic")
-    aae(basic_ci, expected["basic_ci"])
+    aaae(basic_ci, expected["basic_ci"])
 
 
 def test_bc_ci(setup, expected):
     bc_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="bc")
-    aae(bc_ci, expected["bc_ci"])
+    aaae(bc_ci, expected["bc_ci"])
 
 
 def test_bca_ci(setup, expected):
     bca_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="bca")
-    aae(bca_ci, expected["bca_ci"])
+    aaae(bca_ci, expected["bca_ci"])
 
 
 def test_t_ci(setup, expected):
     t_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="t")
-    aae(t_ci, expected["t_ci"])
+    aaae(t_ci, expected["t_ci"])
 
 
 def test_jackknife(setup, expected):
     jk_estimates = _jackknife(setup["df"], g)
-    aae(jk_estimates, expected["jk_estimates"])
+    aaae(jk_estimates, expected["jk_estimates"])
 
 
 def test_check_inputs_data(setup, expected):
@@ -135,9 +135,12 @@ def test_check_inputs_ci_method(setup, expected):
     ci_method = 4
     with pytest.raises(ValueError) as excinfo:
         _check_inputs(data=setup["df"], ci_method=ci_method)
-    assert "ci_method must be 'percentile', 'bc',"
-    " 'bca', 't', 'basic' or 'normal', '{method}'"
-    f" was supplied" == str(excinfo.value)
+    expected_msg = (
+        "ci_method must be 'percentile', 'bc',"
+        f" 'bca', 't', 'basic' or 'normal', '{ci_method}'"
+        f" was supplied"
+    )
+    assert str(excinfo.value) == expected_msg
 
 
 def test_check_inputs_alpha(setup, expected):
@@ -154,5 +157,5 @@ def test_concatenate_functions(setup, expected):
     f_arr = _concatenate_functions([g_arr, h_arr], setup["df"])
 
     ase(f(setup["df"]), expected["concat_function_pandas"])
-    aae(f_mixed(setup["df"]), expected["concat_function_numpy"])
-    aae(f_arr(setup["df"]), expected["concat_function_numpy"])
+    aaae(f_mixed(setup["df"]), expected["concat_function_numpy"])
+    aaae(f_arr(setup["df"]), expected["concat_function_numpy"])
