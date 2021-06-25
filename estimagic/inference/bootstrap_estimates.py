@@ -65,7 +65,7 @@ def _get_uniform_estimates(data, seeds, n_cores=1, f=None):
      Returns:
          estimates (list): list of estimates for different bootstrap samples.
 
-     """
+    """
 
     n = len(data)
 
@@ -101,7 +101,7 @@ def _get_clustered_estimates(data, cluster_by, seeds, n_cores=1, f=None):
      Returns:
          estimates (list): list of estimates for different bootstrap samples.
 
-     """
+    """
 
     clusters = _get_cluster_index(data, cluster_by)
     nclusters = len(clusters)

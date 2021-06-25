@@ -221,17 +221,17 @@ def _ci_normal(data, f, estimates, alpha, n_cores):
 def _ci_basic(data, f, estimates, alpha, n_cores):
     """Compute basic bootstrap confidence interval of bootstrap estimates.
 
-     Args:
-         data (pd.DataFrame): original dataset.
-         f (callable): function of the data calculating statistic of interest.
-         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
-         alpha (float): significance level of choice.
-         n_cores (int): number of jobs for parallelization.
+    Args:
+        data (pd.DataFrame): original dataset.
+        f (callable): function of the data calculating statistic of interest.
+        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        alpha (float): significance level of choice.
+        n_cores (int): number of jobs for parallelization.
 
-     Returns:
-         cis (np.array): array where k'th row contains CI for k'th parameter.
+    Returns:
+        cis (np.array): array where k'th row contains CI for k'th parameter.
 
-     """
+    """
 
     num_params = estimates.shape[1]
     boot_est = estimates.values
@@ -291,7 +291,7 @@ def _eqf(sample):
 
 
 def _check_inputs(data, cluster_by=None, ci_method="percentile", alpha=0.05):
-    """ Check validity of inputs.
+    """Check validity of inputs.
     Args:
         data (pd.DataFrame): original dataset.
         cluster_by (str): column name of variable to cluster by.
@@ -322,7 +322,7 @@ def _check_inputs(data, cluster_by=None, ci_method="percentile", alpha=0.05):
 
 
 def _concatenate_functions(f_list, orig_data):
-    """ Return results of multiple function in one np.array or pd.Series.
+    """Return results of multiple function in one np.array or pd.Series.
     Args:
         f_list (list): list of functions that return np.array or pd.Series
         orig_data (pandas.DataFrame): original dataset.
