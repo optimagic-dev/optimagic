@@ -71,7 +71,7 @@ def test_max_iters():
         criterion_func,
         start_params,
         "tao_pounders",
-        algo_options={"max_iterations": 25},
+        algo_options={"stopping.max_iterations": 25},
     )
 
     assert result["message"] == "user defined" or result["message"] == "step size small"
