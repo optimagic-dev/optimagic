@@ -6,9 +6,11 @@ import numpy as np
 import pandas as pd
 import pytask
 import seaborn as sns
+import statsmodels.formula.api as sm
 from scipy.optimize import minimize
 
-gif.options.matplotlib["dpi"] = 300
+
+gif.options.matplotlib["dpi"] = 200
 
 OUT = Path(__file__).resolve().parent.parent / "source" / "_static" / "images"
 
@@ -120,7 +122,7 @@ def _generate_stylized_line_search_data():
 
     x = 2
     data = []
-    for i in range(8):
+    for remark in remarks:
         f_val = example_criterion(x)
         grad_val = example_gradient(x)
         hess_val = np.clip(example_hessian(x), 0.1, np.inf)
@@ -144,7 +146,7 @@ def _generate_stylized_line_search_data():
         iteration_data = {
             "evaluated_x": evaluated_x,
             "new_x": new_x,
-            "remark": remarks[i],
+            "remark": remark,
             "aux_line": aux_line,
         }
 
@@ -179,7 +181,7 @@ def _generate_stylized_direct_search_data():
 
     data = []
     x = 2
-    for i in range(5):
+    for i, remark in enumerate(remarks):
         if i == 0:
             other = x - 2
         elif i <= 3:
@@ -195,7 +197,7 @@ def _generate_stylized_direct_search_data():
         iteration_data = {
             "evaluated_x": [x, other],
             "new_x": new_x,
-            "remark": remarks[i],
+            "remark": remark,
         }
         data.append(iteration_data)
         x = new_x
@@ -203,10 +205,127 @@ def _generate_stylized_direct_search_data():
     return data
 
 
-STYLIZED_ALGORITHMS = {
-    "direct_search": _generate_stylized_direct_search_data,
-    "line_search": _generate_stylized_line_search_data,
-}
+def _generate_stylized_gradient_based_trust_region_data():
+    remarks = [
+        "Actual vs. expected improvement is large. Accept point, increase radius",
+        "Actual vs. expected improvement < 1 but large. Accept point, increase radius.",
+        "Actual vs. expected improvement is negative. Reject point, decrease radius.",
+        "Actual vs. expected improvement is around 1. Accept point, increase radius.",
+        "Actual vs. expected improvement is around 1. Accept point, increase radius.",
+        "Convergence because gradient norm is close to zero.",
+    ]
+
+    data = []
+    x = 2
+    radius = 2
+    for i, remark in enumerate(remarks):
+        if i == 0:
+            pass
+        elif i <= 2:
+            radius += 1
+        elif i == 3:
+            radius = 2
+        else:
+            radius += 1
+
+        aux_x = list(np.linspace(x - radius, x + radius, 50))
+        aux_y = [_taylor_expansion(point, x) for point in aux_x]
+
+        new_x = aux_x[np.argmin(aux_y)]
+
+        iteration_data = {
+            "evaluated_x": [x],
+            "new_x": new_x,
+            "remark": remark,
+            "aux_line": {"x": aux_x, "y": aux_y},
+        }
+
+        data.append(iteration_data)
+        x = new_x
+
+    return data
+
+
+def _generate_stylized_gradient_free_trust_region_data():
+    remarks = [
+        "Actual vs. expected improvement is large. Accept point, increase radius.",
+        "Actual vs. expected improvement is large. Accept point, increase radius.",
+        (
+            "Actual vs. expected improvement is large but step length is small. "
+            "Accept point, decrease radius."
+        ),
+        (
+            "Actual vs. expected improvement is reasonable but step length is small. "
+            "Accept point, decrease radius."
+        ),
+        (
+            "Actual vs. expected improvement large but absolute improvement is small. "
+            "Accept new point but decrease radius"
+        ),
+        "Absolute improvement is small. Accept new point but decrease radius.",
+        "Convergence because trust region radius shrinks to zero.",
+    ]
+
+    data = []
+    x = 2
+    radius = 2
+    for i, remark in enumerate(remarks):
+        if i == 0:
+            pass
+        elif i <= 2:
+            radius += 1
+        else:
+            radius = max(0.1, radius - 1)
+
+        aux_x = list(np.linspace(x - radius, x + radius, 50))
+        aux_y = [_regression_surrogate(point, x, radius) for point in aux_x]
+
+        new_x = aux_x[np.argmin(aux_y)]
+
+        iteration_data = {
+            "evaluated_x": [x],
+            "new_x": new_x,
+            "remark": remark,
+            "aux_line": {"x": aux_x, "y": aux_y},
+        }
+
+        data.append(iteration_data)
+        x = new_x
+
+    return data
+
+
+def _taylor_expansion(x, x0):
+    """Evaluate taylor expansion around x0 at x."""
+    x = _unpack_x(x)
+    x0 = _unpack_x(x0)
+    f = example_criterion(x0)
+    f_prime = example_gradient(x0)
+    f_double_prime = example_hessian(x0)
+
+    diff = x - x0
+    res = f + f_prime * diff + f_double_prime * 0.5 * diff ** 2
+    return res
+
+
+def _regression_surrogate(x, x0, radius):
+    """Evaluate a regression based surrogate model at x.
+
+    x0 and radius define the trust region in which evaluation points are sampled.
+
+    """
+    x = _unpack_x(x)
+    x0 = _unpack_x(x0)
+    deviations = [-radius, 0, radius]
+
+    evaluations = [example_criterion(x0 + deviation) for deviation in deviations]
+    df = pd.DataFrame()
+    df["x"] = deviations
+    df["y"] = evaluations
+    params = sm.ols(formula="y ~ x + I(x**2)", data=df).fit().params
+    vec = np.array([1, (x - x0), (x - x0) ** 2])
+    return params @ vec
+
 
 # ======================================================================================
 # Make convergence gifs
@@ -214,10 +333,9 @@ STYLIZED_ALGORITHMS = {
 
 algorithms = ["Cobyla", "L-BFGS-B", "Nelder-Mead", "trust-ncg"]
 
-PARMETRIZATON = [(OUT / f"{algo.lower()}.gif", algo) for algo in algorithms]
+PARMETRIZATON = [(OUT / f"history_{algo.lower()}.gif", algo) for algo in algorithms]
 
 
-@pytask.mark.skip
 @pytask.mark.parametrize("produces, algorithm", PARMETRIZATON)
 def task_create_convergence_gif(produces, algorithm):
     start_x = np.array([2])
@@ -227,7 +345,7 @@ def task_create_convergence_gif(produces, algorithm):
     )
 
     # repeat the last point to show it longer in the gif
-    points = res.history + [res.history[-1]] * 5
+    points = res.history + [res.history[-1]] * 2
 
     @gif.frame
     def _plot_history(points):
@@ -250,6 +368,12 @@ def task_create_convergence_gif(produces, algorithm):
 # ======================================================================================
 # Make explanation gifs
 # ======================================================================================
+STYLIZED_ALGORITHMS = {
+    "direct_search": _generate_stylized_direct_search_data,
+    "line_search": _generate_stylized_line_search_data,
+    "gradient_based_trust_region": _generate_stylized_gradient_based_trust_region_data,
+    "gradient_free_trust_region": _generate_stylized_gradient_free_trust_region_data,
+}
 
 PARMETRIZATON = [(OUT / f"stylized_{algo}.gif", algo) for algo in STYLIZED_ALGORITHMS]
 
@@ -258,7 +382,7 @@ PARMETRIZATON = [(OUT / f"stylized_{algo}.gif", algo) for algo in STYLIZED_ALGOR
 def task_create_stylized_algo_gif(produces, algorithm):
     plot_data = STYLIZED_ALGORITHMS[algorithm]()
     # repeat the last point to show it longer in the gif
-    plot_data = plot_data + [plot_data[-1]] * 5
+    plot_data = plot_data + [plot_data[-1]] * 2
 
     @gif.frame
     def visualize_step(evaluated_x, new_x, aux_line=None, remark=None):
@@ -289,4 +413,4 @@ def task_create_stylized_algo_gif(produces, algorithm):
     for data in plot_data:
         frames.append(visualize_step(**data))
 
-    gif.save(frames, produces, duration=2.5, unit="s")
+    gif.save(frames, produces, duration=7.5, unit="s")
