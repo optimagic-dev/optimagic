@@ -7,5 +7,6 @@ API Reference
 
    optimization
    differentiation
+   inference
    batch_evaluators
    tables
