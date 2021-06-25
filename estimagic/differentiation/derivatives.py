@@ -228,6 +228,7 @@ def first_derivative(
 
     if n_steps == 1:
         jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
+        df_jac_cand = None
     else:
         richardson_candidates = _compute_richardson_candidates(
             jac_candidates, steps, n_steps

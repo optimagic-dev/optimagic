@@ -10,7 +10,7 @@ from pandas.testing import assert_frame_equal
 from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.differentiation.derivatives import _consolidate_one_step_derivatives
-from estimagic.differentiation.derivatives import _convert_evaluation_data_to_tidy_frame
+from estimagic.differentiation.derivatives import _convert_evaluation_data_to_frame
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.examples.numdiff_example_functions_np import logit_loglike
@@ -194,7 +194,7 @@ def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures
     aaae(true_fprime, our_fprime)
 
 
-def test_convert_evaluation_data_to_tidy_frame():
+def test_convert_evaluation_data_to_frame():
     arr = np.arange(4).reshape(2, 2)
     arr2 = arr.reshape(2, 1, 2)
     steps = namedtuple_from_kwargs(pos=arr, neg=-arr)
@@ -210,5 +210,5 @@ def test_convert_evaluation_data_to_tidy_frame():
     -1,1,1,0,3,-3
     """
     expected = pd.read_csv(StringIO(expected))
-    got = _convert_evaluation_data_to_tidy_frame(steps, evals)
+    got = _convert_evaluation_data_to_frame(steps, evals)
     assert_frame_equal(expected, got.reset_index(), check_dtype=False)
