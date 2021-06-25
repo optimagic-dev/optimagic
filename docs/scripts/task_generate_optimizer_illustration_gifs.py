@@ -10,6 +10,8 @@ from scipy.optimize import minimize
 
 gif.options.matplotlib["dpi"] = 300
 
+OUT = Path(__file__).resolve().parent.parent / "source" / "_static" / "images"
+
 
 # ======================================================================================
 # Define example function
@@ -100,16 +102,122 @@ def plot_function():
 
 
 # ======================================================================================
+# Define self explaining stylized optimizers
+# ======================================================================================
+
+
+def _generate_stylized_line_search_data():
+    remarks = [
+        "Initial evaluation: Large gradient, low curvature: Make a big step.",
+        "Iteration 1: Large gradient, large curvature: Make a smaller step.",
+        "Iteration 2: Very small gradient, low curvature: Make a very small step.",
+        "Iteration 3: Very small gradient, low curvature: Make a very small step.",
+        "Iteration 4: Medium-sized gradient, low curvature: Make a larger step again.",
+        "Iteration 5: Medium-sized gradient, larger curvature: Make a small step.",
+        "Iteration 6: Reverse direction due to sign switch in gradient ",
+        "Convergence because gradient is approximately zero",
+    ]
+
+    x = 2
+    data = []
+    for i in range(8):
+        f_val = example_criterion(x)
+        grad_val = example_gradient(x)
+        hess_val = np.clip(example_hessian(x), 0.1, np.inf)
+        base_step = -1 / hess_val * grad_val
+
+        aux_line = {
+            "x": [x - 2, x, x + 2],
+            "y": [f_val - 2 * grad_val, f_val, f_val + 2 * grad_val],
+        }
+
+        new_value = np.inf
+        evaluated_x = [x]
+        evaluated_y = [f_val]
+        alpha = 1
+        while new_value >= f_val:
+            new_x = x + alpha * base_step
+            new_value = example_criterion(new_x)
+            evaluated_x.append(new_x)
+            evaluated_y.append(new_value)
+
+        iteration_data = {
+            "evaluated_x": evaluated_x,
+            "new_x": new_x,
+            "remark": remarks[i],
+            "aux_line": aux_line,
+        }
+
+        data.append(iteration_data)
+        x = new_x
+    return data
+
+
+def _generate_stylized_direct_search_data():
+    remarks = [
+        (
+            "Initial evaluation: candidate value worse than original value. "
+            "Do not accept candidate value, switch direction."
+        ),
+        (
+            "Iteration 1: candidate value better than original value. "
+            "Accept candidate value, increase step length."
+        ),
+        (
+            "Iteration 2: candidate value better than original value. "
+            "Accept candidate value, increase step length."
+        ),
+        (
+            "Iteration 3: candidate value worse than original value. "
+            "Do not accept new point, make step smaller."
+        ),
+        (
+            "Iteration 4: Will eventually converge around here. "
+            "From iteration 3 we know that we will do worse further right."
+        ),
+    ]
+
+    data = []
+    x = 2
+    for i in range(5):
+        if i == 0:
+            other = x - 2
+        elif i <= 3:
+            other = x + i + 1
+        else:
+            other = x + 2
+
+        evaluated_x = [x, other]
+        evaluated_y = [example_criterion(x), example_criterion(other)]
+        argmin_index = np.argmin(evaluated_y)
+        new_x = evaluated_x[argmin_index]
+
+        iteration_data = {
+            "evaluated_x": [x, other],
+            "new_x": new_x,
+            "remark": remarks[i],
+        }
+        data.append(iteration_data)
+        x = new_x
+
+    return data
+
+
+STYLIZED_ALGORITHMS = {
+    "direct_search": _generate_stylized_direct_search_data,
+    "line_search": _generate_stylized_line_search_data,
+}
+
+# ======================================================================================
 # Make convergence gifs
 # ======================================================================================
-DOCS_ROOT = Path(__file__).resolve().parent.parent
-STATIC_DIR = DOCS_ROOT / "source" / "_static" / "images"
 
 algorithms = ["Cobyla", "L-BFGS-B", "Nelder-Mead", "trust-ncg"]
 
-PARMETRIZATON = [(STATIC_DIR / f"{algo.lower()}.gif", algo) for algo in algorithms]
+PARMETRIZATON = [(OUT / f"{algo.lower()}.gif", algo) for algo in algorithms]
 
 
+@pytask.mark.skip
 @pytask.mark.parametrize("produces, algorithm", PARMETRIZATON)
 def task_create_convergence_gif(produces, algorithm):
     start_x = np.array([2])
@@ -136,4 +244,49 @@ def task_create_convergence_gif(produces, algorithm):
     for i in range(len(points)):
         frames.append(_plot_history(points[: i + 1]))
 
-    gif.save(frames, produces, duration=5, unit="s", between="startend")
+    gif.save(frames, produces, duration=2.5, unit="s")
+
+
+# ======================================================================================
+# Make explanation gifs
+# ======================================================================================
+
+PARMETRIZATON = [(OUT / f"stylized_{algo}.gif", algo) for algo in STYLIZED_ALGORITHMS]
+
+
+@pytask.mark.parametrize("produces, algorithm", PARMETRIZATON)
+def task_create_stylized_algo_gif(produces, algorithm):
+    plot_data = STYLIZED_ALGORITHMS[algorithm]()
+    # repeat the last point to show it longer in the gif
+    plot_data = plot_data + [plot_data[-1]] * 5
+
+    @gif.frame
+    def visualize_step(evaluated_x, new_x, aux_line=None, remark=None):
+        fig, ax = plot_function()
+        sns.rugplot(x=evaluated_x)
+        ax.plot([new_x], [example_criterion(new_x)], marker="*")
+        if aux_line is not None:
+            sns.lineplot(x=aux_line["x"], y=aux_line["y"])
+        if remark is not None:
+            plt.subplots_adjust(bottom=0.25)
+            plt.figtext(
+                0.5,
+                0.05,
+                remark,
+                multialignment="center",
+                ha="center",
+                wrap=True,
+                fontsize=14,
+                bbox={
+                    "facecolor": "white",
+                    "alpha": 0.5,
+                    "pad": 5,
+                    "edgecolor": "#ffffff00",
+                },
+            )
+
+    frames = []
+    for data in plot_data:
+        frames.append(visualize_step(**data))
+
+    gif.save(frames, produces, duration=2.5, unit="s")
