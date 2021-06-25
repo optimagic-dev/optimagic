@@ -36,7 +36,7 @@ def derivative_plot(
         grid_points (int): Number of grid points used for plotting x-axis. Default 50.
 
     Returns:
-        grid (sns.FacetGrid): Plot.
+        fig (matplotlib.pyplot.figure): The figure.
 
     """
     df = df_evals.reset_index()  # remove index from main data for plotting
