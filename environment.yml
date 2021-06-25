@@ -4,6 +4,7 @@ channels:
   - conda-forge
   - defaults
   - opensourceeconomics
+  - pytask
 
 dependencies:
 
@@ -36,6 +37,8 @@ dependencies:
   - tox-conda
   - statsmodels
   - dill
+  - pytask>=0.0.11
+
   - pip:
     - black
     - blackcellmagic
@@ -43,3 +46,5 @@ dependencies:
     - pre-commit
     - Py-BOBYQA
     - DFO-LS
+    - gif
+    - gif[matplotlib]
