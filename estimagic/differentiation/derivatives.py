@@ -341,10 +341,9 @@ def _convert_richardson_candidates_to_frame(jac, err):
         err (dict): Dict with errors corresponding to richardson jacobian candidates.
 
     Returns:
-        df (pandas.DataFrame): Frame with column "value" and index
-            ["method", "num_term", "dim_x", "dim_f"]
-            with respective meaning: type of method used, e.g. central or foward;
-            kind of value, e.g. derivative or error.
+        df (pandas.DataFrame): Frame with column "der" and "err" and index ["method",
+            "num_term", "dim_x", "dim_f"] with respective meaning: type of method used,
+            e.g. central or foward; kind of value, e.g. derivative or error.
 
     """
     dim_f, dim_x = jac["forward1"].shape
