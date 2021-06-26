@@ -432,7 +432,8 @@ def _consolidate_extrapolated(candidates):
 
     Returns:
         consolidated (np.ndarray): Array of same shape as input derivative estimates.
-        candidate_der (dict): Best derivative estimate given method.
+        candidate_der_dict (dict): Best derivative estimate given method.
+        candidate_err_dict (dict): Errors corresponding to best derivatives given method
 
     """
     # first find minimum over steps for each method
