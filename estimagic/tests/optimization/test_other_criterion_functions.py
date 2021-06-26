@@ -292,18 +292,20 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
         logging=False,
     )
 
-    if crit.__name__.startswith("trid"):
-        expected = np.array([3, 4, 3])
-    elif crit.__name__.startswith("rotated_hyper_ellipsoid"):
-        expected = np.zeros(3)
-    else:
-        expected = np.ones(3)
+    expected_results = {
+        trid_dict_criterion: np.array([3, 4, 3]),
+        trid_scalar_criterion: np.array([3, 4, 3]),
+        rotated_hyper_ellipsoid_dict_criterion: np.zeros(3),
+        rotated_hyper_ellipsoid_scalar_criterion: np.zeros(3),
+        rosenbrock_dict_criterion: np.ones(3),
+        rosenbrock_scalar_criterion: np.ones(3),
+    }
 
     assert res["success"], f"{algo} did not converge."
     atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(),
-        expected,
+        expected_results[crit],
         atol=atol,
         rtol=0,
     )
