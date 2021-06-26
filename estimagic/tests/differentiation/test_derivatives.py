@@ -11,6 +11,9 @@ from scipy.optimize._numdiff import approx_derivative
 
 from estimagic.differentiation.derivatives import _consolidate_one_step_derivatives
 from estimagic.differentiation.derivatives import _convert_evaluation_data_to_frame
+from estimagic.differentiation.derivatives import (
+    _convert_richardson_candidates_to_frame,
+)
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.examples.numdiff_example_functions_np import logit_loglike
@@ -212,3 +215,31 @@ def test_convert_evaluation_data_to_frame():
     expected = pd.read_csv(StringIO(expected))
     got = _convert_evaluation_data_to_frame(steps, evals)
     assert_frame_equal(expected, got.reset_index(), check_dtype=False)
+
+
+def test__convert_richardson_candidates_to_frame():
+    jac = {
+        "forward1": np.array([[0, 1], [2, 3]]),
+        "forward2": np.array([[0.5, 1], [2, 3]]),
+    }
+    err = {
+        "forward1": np.array([[0, 0], [0, 1]]),
+        "forward2": np.array([[1, 0], [0, 0]]),
+    }
+
+    expected = [
+        ["forward", 1, 0, 0, 0, 0],
+        ["forward", 1, 1, 0, 1, 0],
+        ["forward", 1, 0, 1, 2, 0],
+        ["forward", 1, 1, 1, 3, 1],
+        ["forward", 2, 0, 0, 0.5, 1],
+        ["forward", 2, 1, 0, 1, 0],
+        ["forward", 2, 0, 1, 2, 0],
+        ["forward", 2, 1, 1, 3, 0],
+    ]
+    expected = pd.DataFrame(
+        expected, columns=["method", "num_term", "dim_x", "dim_f", "der", "err"]
+    )
+    expected = expected.set_index(["method", "num_term", "dim_x", "dim_f"])
+    got = _convert_richardson_candidates_to_frame(jac, err)
+    assert_frame_equal(got, expected)
