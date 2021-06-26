@@ -242,4 +242,4 @@ def test__convert_richardson_candidates_to_frame():
     )
     expected = expected.set_index(["method", "num_term", "dim_x", "dim_f"])
     got = _convert_richardson_candidates_to_frame(jac, err)
-    assert_frame_equal(got, expected)
+    assert_frame_equal(got, expected, check_dtype=False)
