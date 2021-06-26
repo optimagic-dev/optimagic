@@ -2,9 +2,11 @@ import itertools
 
 import numpy as np
 import pandas as pd
+import pytest
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_series_equal
 
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.visualization.derivative_plot import (
     _get_dims_from_data_if_no_user_input_else_forward,
 )
@@ -14,6 +16,7 @@ from estimagic.visualization.derivative_plot import (
 from estimagic.visualization.derivative_plot import (
     _select_eval_with_lowest_and_highest_step,
 )
+from estimagic.visualization.derivative_plot import derivative_plot
 
 
 def test__get_dims_from_data_if_no_user_input_else_forward():
@@ -95,3 +98,54 @@ def test__select_eval_with_lowest_and_highest_step():
     expected = np.array([[0.0, 1.1], [0.3, 10]])
 
     assert_array_equal(got, expected)
+
+
+def _powerset(iterable):
+    s = list(iterable)
+    pset = itertools.chain.from_iterable(
+        itertools.combinations(s, r) for r in range(len(s) + 1)
+    )
+    pset = [e for e in pset if len(e) > 0]
+    pset = list(map(lambda x: x if len(x) > 1 else x[0], pset))
+    return pset
+
+
+def f1(x):
+    y1 = np.sin(x[0]) + np.cos(x[1]) + x[2]
+    return y1
+
+
+def f2(x):
+    y1 = (x[0] - 1) ** 2 + x[1]
+    y2 = (x[1] - 1) ** 3
+    return np.array([y1, y2])
+
+
+def f3(x):
+    y1 = np.exp(x[0])
+    y2 = np.cos(x[0])
+    return np.array([y1, y2])
+
+
+example_functions = [(f1, np.ones(3)), (f2, np.ones(2)), (f3, np.ones(1))]
+
+
+@pytest.mark.parametrize("func_and_params", example_functions)
+@pytest.mark.parametrize("n_steps", range(2, 5))
+def test_derivative_plot(func_and_params, n_steps):
+    func, params = func_and_params
+    _, info = first_derivative(
+        func,
+        params,
+        n_steps=n_steps,
+        return_evals=True,
+        return_func_value=True,
+        return_jac_cand=True,
+    )
+    fig = derivative_plot(
+        info["df_evals"],
+        info["df_jac_cand"],
+        info["func_value"],
+        params,
+    )
+    fig.clf()

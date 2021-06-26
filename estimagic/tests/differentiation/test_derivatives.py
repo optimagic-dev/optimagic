@@ -15,6 +15,7 @@ from estimagic.differentiation.derivatives import (
     _convert_richardson_candidates_to_frame,
 )
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
+from estimagic.differentiation.derivatives import _select_minimizer_along_axis
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.examples.numdiff_example_functions_np import logit_loglike
 from estimagic.examples.numdiff_example_functions_np import logit_loglike_gradient
@@ -226,7 +227,6 @@ def test__convert_richardson_candidates_to_frame():
         "forward1": np.array([[0, 0], [0, 1]]),
         "forward2": np.array([[1, 0], [0, 0]]),
     }
-
     expected = [
         ["forward", 1, 0, 0, 0, 0],
         ["forward", 1, 1, 0, 1, 0],
@@ -243,3 +243,11 @@ def test__convert_richardson_candidates_to_frame():
     expected = expected.set_index(["method", "num_term", "dim_x", "dim_f"])
     got = _convert_richardson_candidates_to_frame(jac, err)
     assert_frame_equal(got, expected, check_dtype=False)
+
+
+def test__select_minimizer_along_axis():
+    der = np.array([[[0, 1], [2, 3]], [[4, 5], [6, 7]]])
+    err = np.array([[[0, 1], [1, 0]], [[1, 0], [0, 1]]])
+    expected = (np.array([[0, 5], [6, 3]]), np.array([[0, 0], [0, 0]]))
+    got = _select_minimizer_along_axis(der, err)
+    aaae(expected, got)

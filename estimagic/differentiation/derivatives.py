@@ -349,12 +349,12 @@ def _convert_richardson_candidates_to_frame(jac, err):
     dim_f, dim_x = jac["forward1"].shape
     dfs = []
     for key, value in jac.items():
-        method, num_term = re.findall(r"(\w+?)(\d+)", key)[0]
+        method, num_term = _split_into_str_and_int(key)
         df = pd.DataFrame(value.T, columns=range(dim_f))
         df = df.assign(**{"dim_x": range(dim_x)})
         df = df.melt(id_vars="dim_x", var_name="dim_f", value_name="der")
         df = df.assign(
-            **{"method": method, "num_term": int(num_term), "err": err[key].T.flatten()}
+            **{"method": method, "num_term": num_term, "err": err[key].T.flatten()}
         )
         dfs.append(df)
 
@@ -587,3 +587,23 @@ def _add_index_to_derivative(derivative, params_index, out_index):
     ):
         derivative = pd.DataFrame(derivative, columns=params_index, index=out_index)
     return derivative
+
+
+def _split_into_str_and_int(s):
+    """Splits string in str and int parts.
+
+    Args:
+        s (str): The string.
+
+    Returns:
+        str_part (str): The str part.
+        int_part (int): The int part.
+
+    Example:
+    >>> s = "forward1"
+    >>> _split_into_str_and_int(s)
+    ('foward', 1)
+
+    """
+    str_part, int_part = re.findall(r"(\w+?)(\d+)", s)[0]
+    return str_part, int(int_part)
