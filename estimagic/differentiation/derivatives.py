@@ -602,7 +602,7 @@ def _split_into_str_and_int(s):
     Example:
     >>> s = "forward1"
     >>> _split_into_str_and_int(s)
-    ('foward', 1)
+    ('forward', 1)
 
     """
     str_part, int_part = re.findall(r"(\w+?)(\d+)", s)[0]
