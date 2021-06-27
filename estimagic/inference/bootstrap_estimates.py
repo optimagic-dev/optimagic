@@ -5,10 +5,10 @@ import pandas as pd
 from joblib import delayed
 from joblib import Parallel
 
-from estimagic.inference.bootstrap_ci import check_inputs
-from estimagic.inference.bootstrap_ci import concatenate_functions
-from estimagic.inference.bootstrap_samples import get_cluster_index
-from estimagic.inference.bootstrap_samples import get_seeds
+from estimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.inference.bootstrap_helpers import concatenate_functions
+from estimagic.inference.bootstrap_helpers import get_cluster_index
+from estimagic.inference.bootstrap_helpers import get_seeds
 
 
 def get_bootstrap_estimates(

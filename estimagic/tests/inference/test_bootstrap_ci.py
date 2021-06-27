@@ -5,9 +5,9 @@ from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_series_equal as ase
 
 from estimagic.inference.bootstrap_ci import _jackknife
-from estimagic.inference.bootstrap_ci import check_inputs
 from estimagic.inference.bootstrap_ci import compute_ci
-from estimagic.inference.bootstrap_ci import concatenate_functions
+from estimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.inference.bootstrap_helpers import concatenate_functions
 
 
 @pytest.fixture

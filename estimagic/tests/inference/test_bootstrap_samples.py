@@ -4,9 +4,9 @@ import pytest
 from numpy.testing import assert_array_equal as aae
 from pandas.testing import assert_frame_equal as afe
 
+from estimagic.inference.bootstrap_helpers import get_cluster_index
+from estimagic.inference.bootstrap_helpers import get_seeds
 from estimagic.inference.bootstrap_samples import get_bootstrap_samples
-from estimagic.inference.bootstrap_samples import get_cluster_index
-from estimagic.inference.bootstrap_samples import get_seeds
 
 
 @pytest.fixture

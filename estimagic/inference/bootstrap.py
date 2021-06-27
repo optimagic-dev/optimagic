@@ -1,11 +1,11 @@
 import pandas as pd
 
-from estimagic.inference.bootstrap_ci import check_inputs
 from estimagic.inference.bootstrap_ci import compute_ci
-from estimagic.inference.bootstrap_ci import concatenate_functions
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
 from estimagic.inference.bootstrap_estimates import mean
-from estimagic.inference.bootstrap_samples import get_seeds
+from estimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.inference.bootstrap_helpers import concatenate_functions
+from estimagic.inference.bootstrap_helpers import get_seeds
 
 
 def bootstrap(
