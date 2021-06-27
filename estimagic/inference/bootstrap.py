@@ -11,12 +11,11 @@ from estimagic.inference.bootstrap_samples import get_seeds
 def bootstrap(
     data,
     f=_mean,
-    n_draws=1000,
+    n_draws=1_000,
     cluster_by=None,
     ci_method="percentile",
     alpha=0.05,
     seeds=None,
-    return_seeds=False,
     n_cores=1,
 ):
     """Calculate bootstrap estimates, standard errors and confidence intervals
@@ -30,7 +29,6 @@ def bootstrap(
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
-        return_seeds (bool): specify whether to return the drawn seeds as 2nd argument.
         seeds (numpy.array): array of seeds for bootstrap samples, default is none.
         n_cores (int): number of jobs for parallelization.
 
@@ -53,13 +51,7 @@ def bootstrap(
 
     table = get_results_table(df, f, estimates, ci_method, alpha, n_cores)
 
-    if return_seeds is False:
-        res = table
-
-    elif return_seeds is True:
-        res = table, seeds
-
-    return res
+    return table
 
 
 def get_results_table(

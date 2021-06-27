@@ -22,7 +22,10 @@ of bootstrap estimators, :math:`z_q` the q-quantile of a standard normal
 distribution and :math:`\hat{\theta}` be the full sample estimate of :math:`\theta`.
 Then, the asymptotic normal confidence interval is given by
 
-.. math:: CI^{normal} = [\hat{\theta} - z_{1- \alpha/2} s_{boot},  \hat{\theta} + z_{1- \alpha/2} s_{boot}].
+.. math::
+
+    CI^{normal} = [\hat{\theta} - z_{1- \alpha/2} s_{boot},
+    \hat{\theta} + z_{1- \alpha/2} s_{boot}].
 
 The bias-corrected **"bc"** bootstrap confidence interval addresses the issue of biased
 estimators. This problem is often present when estimating nonlinear models. Econometric
@@ -46,7 +49,11 @@ Downsides of this confidence interval are that it takes quite a lot of time to c
 since it features calculating leave-one-out estimates of the original sample.
 Formally, again, the significance levels are adjusted. Define
 
-.. math:: \hat{a}=\frac{\sum_{i=1}^{n}\left(\bar{\theta}-\hat{\theta}_{(-i)}\right)^{3}}{6\left(\sum_{i=1}^{n}\left(\bar{\theta}-\hat{\theta}_{(-i)}\right)^{2}\right)^{3 / 2}},
+.. math::
+
+    \hat{a}=\frac{\sum_{i=1}^{n}\left(\bar{\theta}-\hat{\theta}_{(-i)}\right)^{3}}
+    {6\left(\sum_{i=1}^{n}\left(\bar{\theta}-\hat{\theta}_{(-i)}\right)^{2}
+    \right)^{3 / 2}},
 
 where :math:`\bar{\theta}=\frac{1}{n} \sum_{i=1}^{n} \widehat{\theta}_{(-i)}`.
 This is an estimator for the skewness of :math:`\hat{\theta}`. Then, the corrected
@@ -64,13 +71,18 @@ studentizes the bootstrap parameter distribution, i.e. applies the transformatio
 the confidence interval based on the estimated quantile function of the studentized
 data :math:`\hat{G}`:
 
-.. math:: CI^{t} = \left[\hat{\theta}+\hat{\sigma} \hat{G}^{-1}(\alpha / 2), \hat{\theta}+\hat{\sigma} \hat{G}^{-1}(1-\alpha / 2)\right]
+.. math::
+
+    CI^{t} = \left[\hat{\theta}+\hat{\sigma} \hat{G}^{-1}(\alpha / 2),
+    \hat{\theta}+\hat{\sigma} \hat{G}^{-1}(1-\alpha / 2)\right]
 
 The final supported confidence interval method is the **"basic"** bootstrap confidence
 interval, which is derived in section 3.4 of :cite:`Wassermann2006`, where it is called
 the pivotal confidence interval. It is given by
 
-.. math:: CI^{basic} = \left[\hat{\theta}+\left(\hat{\theta}-\hat{\theta}_{u}^{\star}\right), \hat{\theta}+\left(\hat{\theta}-\hat{\theta}_{l}^{\star}\right)\right],
+.. math::
+    CI^{basic} = \left[\hat{\theta}+\left(\hat{\theta}-\hat{\theta}_{u}^{\star}\right),
+    \hat{\theta}+\left(\hat{\theta}-\hat{\theta}_{l}^{\star}\right)\right],
 
 where :math:`\hat{\theta}_{u}^{\star}` denotes the :math:`1-\alpha/2` empirical quantile
 of the bootstrap estimate distribution for parameter :math:`\theta` and

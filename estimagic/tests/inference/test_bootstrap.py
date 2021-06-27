@@ -43,4 +43,4 @@ def test_get_results_table(setup, expected):
         data=setup["df"], f=g, estimates=setup["estimates"], ci_method="percentile"
     )
 
-    afe(results, expected["results"], check_less_precise=True)
+    afe(results, expected["results"], rtol=1e-3)
