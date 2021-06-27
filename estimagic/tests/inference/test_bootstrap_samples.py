@@ -4,8 +4,8 @@ import pytest
 from numpy.testing import assert_array_equal as aae
 from pandas.testing import assert_frame_equal as afe
 
-from estimagic.inference.bootstrap_samples import _get_cluster_index
 from estimagic.inference.bootstrap_samples import get_bootstrap_samples
+from estimagic.inference.bootstrap_samples import get_cluster_index
 from estimagic.inference.bootstrap_samples import get_seeds
 
 
@@ -94,6 +94,6 @@ def test_get_bootstrap_samples_cluster(setup, expected):
 
 
 def test_get_cluster_index(setup, expected):
-    cluster_index = _get_cluster_index(setup["cluster_df"], cluster_by="stratum")
+    cluster_index = get_cluster_index(setup["cluster_df"], cluster_by="stratum")
     for i in range(len(cluster_index)):
         aae(cluster_index[i], expected["cluster_index"][i])

@@ -5,9 +5,9 @@ import pandas as pd
 from joblib import delayed
 from joblib import Parallel
 
-from estimagic.inference.bootstrap_ci import _check_inputs
-from estimagic.inference.bootstrap_ci import _concatenate_functions
-from estimagic.inference.bootstrap_samples import _get_cluster_index
+from estimagic.inference.bootstrap_ci import check_inputs
+from estimagic.inference.bootstrap_ci import concatenate_functions
+from estimagic.inference.bootstrap_samples import get_cluster_index
 from estimagic.inference.bootstrap_samples import get_seeds
 
 
@@ -32,9 +32,9 @@ def get_bootstrap_estimates(
 
     """
 
-    _check_inputs(data=data, cluster_by=cluster_by)
+    check_inputs(data=data, cluster_by=cluster_by)
     if isinstance(f, list):
-        f = _concatenate_functions(f, data)
+        f = concatenate_functions(f, data)
 
     if seeds is None:
         seeds = get_seeds(n_draws)
@@ -43,16 +43,16 @@ def get_bootstrap_estimates(
 
     if cluster_by is None:
 
-        estimates = _get_uniform_estimates(df, seeds, n_cores, f)
+        estimates = get_uniform_estimates(df, seeds, n_cores, f)
 
     else:
 
-        estimates = _get_clustered_estimates(df, cluster_by, seeds, n_cores, f)
+        estimates = get_clustered_estimates(df, cluster_by, seeds, n_cores, f)
 
     return pd.DataFrame(estimates)
 
 
-def _get_uniform_estimates(data, seeds, n_cores=1, f=None):
+def get_uniform_estimates(data, seeds, n_cores=1, f=None):
     """Calculate non-clustered bootstrap estimates. If f is None, return a list of the
     samples.
 
@@ -87,7 +87,7 @@ def _get_uniform_estimates(data, seeds, n_cores=1, f=None):
     return estimates
 
 
-def _get_clustered_estimates(data, cluster_by, seeds, n_cores=1, f=None):
+def get_clustered_estimates(data, cluster_by, seeds, n_cores=1, f=None):
     """Calculate clustered bootstrap estimates. If f is None, return a list of the
     samples.
 
@@ -103,7 +103,7 @@ def _get_clustered_estimates(data, cluster_by, seeds, n_cores=1, f=None):
 
     """
 
-    clusters = _get_cluster_index(data, cluster_by)
+    clusters = get_cluster_index(data, cluster_by)
     nclusters = len(clusters)
 
     def loop(s):
@@ -123,5 +123,5 @@ def _get_clustered_estimates(data, cluster_by, seeds, n_cores=1, f=None):
     return estimates
 
 
-def _mean(df):
+def mean(df):
     return df.mean(axis=0)

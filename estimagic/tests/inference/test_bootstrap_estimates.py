@@ -3,9 +3,9 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal as afe
 
-from estimagic.inference.bootstrap_estimates import _get_clustered_estimates
-from estimagic.inference.bootstrap_estimates import _get_uniform_estimates
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
+from estimagic.inference.bootstrap_estimates import get_clustered_estimates
+from estimagic.inference.bootstrap_estimates import get_uniform_estimates
 
 
 @pytest.fixture
@@ -36,10 +36,10 @@ def test_get_bootstrap_estimates(setup):
         data=setup["df"], f=g, seeds=setup["seeds"], n_cores=-1
     )
     estimates3 = pd.DataFrame(
-        _get_uniform_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
+        get_uniform_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
     )
     estimates4 = pd.DataFrame(
-        _get_uniform_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
+        get_uniform_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
     )
 
     afe(estimates1, estimates2)
@@ -55,12 +55,12 @@ def test_get_bootstrap_estimates_cluster(setup):
         data=setup["cluster_df"], f=g, cluster_by="stratum", seeds=setup["seeds"]
     )
     estimates3 = pd.DataFrame(
-        _get_clustered_estimates(
+        get_clustered_estimates(
             data=setup["cluster_df"], f=g, cluster_by="stratum", seeds=setup["seeds"]
         )
     )
     estimates4 = pd.DataFrame(
-        _get_clustered_estimates(
+        get_clustered_estimates(
             data=setup["cluster_df"], f=g, cluster_by="stratum", seeds=setup["seeds"]
         )
     )

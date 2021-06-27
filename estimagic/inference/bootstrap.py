@@ -1,16 +1,16 @@
 import pandas as pd
 
-from estimagic.inference.bootstrap_ci import _check_inputs
-from estimagic.inference.bootstrap_ci import _concatenate_functions
+from estimagic.inference.bootstrap_ci import check_inputs
 from estimagic.inference.bootstrap_ci import compute_ci
-from estimagic.inference.bootstrap_estimates import _mean
+from estimagic.inference.bootstrap_ci import concatenate_functions
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
+from estimagic.inference.bootstrap_estimates import mean
 from estimagic.inference.bootstrap_samples import get_seeds
 
 
 def bootstrap(
     data,
-    f=_mean,
+    f=mean,
     n_draws=1_000,
     cluster_by=None,
     ci_method="percentile",
@@ -38,9 +38,9 @@ def bootstrap(
 
     """
 
-    _check_inputs(data, cluster_by, ci_method, alpha)
+    check_inputs(data, cluster_by, ci_method, alpha)
     if isinstance(f, list):
-        f = _concatenate_functions(f, data)
+        f = concatenate_functions(f, data)
 
     df = data.reset_index(drop=True)
 
@@ -74,9 +74,9 @@ def get_results_table(
 
     """
 
-    _check_inputs(data=data, ci_method=ci_method, alpha=alpha)
+    check_inputs(data=data, ci_method=ci_method, alpha=alpha)
     if isinstance(f, list):
-        f = _concatenate_functions(f, data)
+        f = concatenate_functions(f, data)
 
     results = pd.DataFrame(estimates.mean(axis=0), columns=["mean"])
 

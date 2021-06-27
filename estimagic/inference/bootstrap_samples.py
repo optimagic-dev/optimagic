@@ -1,6 +1,6 @@
 import numpy as np
 
-from estimagic.inference.bootstrap_ci import _check_inputs
+from estimagic.inference.bootstrap_ci import check_inputs
 
 
 def get_seeds(n_draws=1000):
@@ -35,22 +35,22 @@ def get_bootstrap_samples(
 
     """
 
-    _check_inputs(data=data, cluster_by=cluster_by)
+    check_inputs(data=data, cluster_by=cluster_by)
 
     if seeds is None:
         seeds = get_seeds(n_draws)
 
     if cluster_by is None:
 
-        from estimagic.inference.bootstrap_estimates import _get_uniform_estimates
+        from estimagic.inference.bootstrap_estimates import get_uniform_estimates
 
-        sample_ids = _get_uniform_estimates(data, seeds, n_cores, f=None)
+        sample_ids = get_uniform_estimates(data, seeds, n_cores, f=None)
 
     else:
 
-        from estimagic.inference.bootstrap_estimates import _get_clustered_estimates
+        from estimagic.inference.bootstrap_estimates import get_clustered_estimates
 
-        sample_ids = _get_clustered_estimates(data, cluster_by, seeds, n_cores, f=None)
+        sample_ids = get_clustered_estimates(data, cluster_by, seeds, n_cores, f=None)
 
     if return_samples is True:
 
@@ -63,7 +63,7 @@ def get_bootstrap_samples(
     return result
 
 
-def _get_cluster_index(data, cluster_by):
+def get_cluster_index(data, cluster_by):
     """Divide up the dataframe into clusters by variable cluster_by.
 
     Args:

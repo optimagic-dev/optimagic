@@ -4,10 +4,10 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_series_equal as ase
 
-from estimagic.inference.bootstrap_ci import _check_inputs
-from estimagic.inference.bootstrap_ci import _concatenate_functions
 from estimagic.inference.bootstrap_ci import _jackknife
+from estimagic.inference.bootstrap_ci import check_inputs
 from estimagic.inference.bootstrap_ci import compute_ci
+from estimagic.inference.bootstrap_ci import concatenate_functions
 
 
 @pytest.fixture
@@ -118,14 +118,14 @@ def test_jackknife(setup, expected):
 def test_check_inputs_data(setup, expected):
     data = "this is not a data frame"
     with pytest.raises(ValueError) as excinfo:
-        _check_inputs(data=data)
+        check_inputs(data=data)
     assert "Input 'data' must be DataFrame." == str(excinfo.value)
 
 
 def test_check_inputs_cluster_by(setup, expected):
     cluster_by = "this is not a column name of df"
     with pytest.raises(ValueError) as excinfo:
-        _check_inputs(data=setup["df"], cluster_by=cluster_by)
+        check_inputs(data=setup["df"], cluster_by=cluster_by)
     assert "Input 'cluster_by' must be None or a column name of DataFrame." == str(
         excinfo.value
     )
@@ -134,7 +134,7 @@ def test_check_inputs_cluster_by(setup, expected):
 def test_check_inputs_ci_method(setup, expected):
     ci_method = 4
     with pytest.raises(ValueError) as excinfo:
-        _check_inputs(data=setup["df"], ci_method=ci_method)
+        check_inputs(data=setup["df"], ci_method=ci_method)
     expected_msg = (
         "ci_method must be 'percentile', 'bc',"
         f" 'bca', 't', 'basic' or 'normal', '{ci_method}'"
@@ -146,15 +146,15 @@ def test_check_inputs_ci_method(setup, expected):
 def test_check_inputs_alpha(setup, expected):
     alpha = 666
     with pytest.raises(ValueError) as excinfo:
-        _check_inputs(data=setup["df"], alpha=alpha)
+        check_inputs(data=setup["df"], alpha=alpha)
     assert "Input 'alpha' must be in [0,1]." == str(excinfo.value)
 
 
 def test_concatenate_functions(setup, expected):
 
-    f = _concatenate_functions([g, h], setup["df"])
-    f_mixed = _concatenate_functions([g_arr, h], setup["df"])
-    f_arr = _concatenate_functions([g_arr, h_arr], setup["df"])
+    f = concatenate_functions([g, h], setup["df"])
+    f_mixed = concatenate_functions([g_arr, h], setup["df"])
+    f_arr = concatenate_functions([g_arr, h_arr], setup["df"])
 
     ase(f(setup["df"]), expected["concat_function_pandas"])
     aaae(f_mixed(setup["df"]), expected["concat_function_numpy"])

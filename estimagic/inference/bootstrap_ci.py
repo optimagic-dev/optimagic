@@ -25,10 +25,10 @@ def compute_ci(data, f, estimates, ci_method="percentile", alpha=0.05, n_cores=1
 
     """
 
-    _check_inputs(data=data, alpha=alpha, ci_method=ci_method)
+    check_inputs(data=data, alpha=alpha, ci_method=ci_method)
 
     if isinstance(f, list):
-        f = _concatenate_functions(f)
+        f = concatenate_functions(f)
 
     funcname = "_ci_" + ci_method
 
@@ -290,7 +290,7 @@ def _eqf(sample):
     return f
 
 
-def _check_inputs(data, cluster_by=None, ci_method="percentile", alpha=0.05):
+def check_inputs(data, cluster_by=None, ci_method="percentile", alpha=0.05):
     """Check validity of inputs.
     Args:
         data (pd.DataFrame): original dataset.
@@ -321,7 +321,7 @@ def _check_inputs(data, cluster_by=None, ci_method="percentile", alpha=0.05):
         raise ValueError("Input 'alpha' must be in [0,1].")
 
 
-def _concatenate_functions(f_list, orig_data):
+def concatenate_functions(f_list, orig_data):
     """Return results of multiple function in one np.array or pd.Series.
     Args:
         f_list (list): list of functions that return np.array or pd.Series
