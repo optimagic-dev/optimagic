@@ -244,4 +244,4 @@ def test_penalty_derivatives(func, deriv):
     )
     expected = first_derivative(partialed, x)
 
-    aaae(calculated, expected)
+    aaae(calculated, expected["derivative"])

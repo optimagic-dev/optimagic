@@ -84,9 +84,10 @@ def statsmodels_fixture():
     moment_jac = np.zeros((num_obs, num_params, num_params))
     for i in range(num_obs):
         moment_cond[i, :] = calc_moment_condition(params_df, x[i, :], y[i])
-        moment_jac[i, :, :] = first_derivative(
+        derivative_dict = first_derivative(
             calc_moment_condition, params_df, func_kwargs={"x_t": x[i, :], "y_t": y[i]}
         )
+        moment_jac[i, :, :] = derivative_dict["derivative"]
     fix["mom_cond"] = moment_cond
     fix["mom_cond_jacob"] = moment_jac
     fix["weighting_matrix"] = np.eye(num_params)
