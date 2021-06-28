@@ -1,12 +1,12 @@
 =======================================================================
-How all supported optimization algorithms are tested
+How supported optimization algorithms are tested
 =======================================================================
 
-estimagic provides a unified interface for running optimizations
-with algorithms from different optimization libraries and
-additionally allows setting different types of constraints to the optimization problem.
-To test the external interface of all supported algorithms, we consider four criterion
-or benchmark functions and test each algorithm with all types of constraints.
+estimagic provides a unified interface that supports a large number of optimization
+algorithms from different libraries. Additionally, it allows setting constraints to
+the optimization problem.
+To test the external interface of all supported algorithms, we consider some criterion
+or benchmark functions and test each algorithm with every type of constraint.
 
 Benchmark functions for testing
 ==============================================
@@ -19,7 +19,7 @@ Trid function
 
 
 *********************************
-Rotated hyper ellipsoid function
+Rotated Hyper Ellipsoid function
 *********************************
 
   :math:`f({x}) = \Sigma^{D}_{i=1} \Sigma^{i}_{j=1}x_j^2`
@@ -33,7 +33,7 @@ Rosenbrock function
 
 
 ******************************
-Sum of squares function
+Sphere function
 ******************************
 
   :math:`f({x}) = \Sigma^{D}_{i=1} ix_{i}^2`
@@ -42,12 +42,11 @@ Sum of squares function
 How testcases are implemented
 ==================================
 
-We implement each function and its gradient in different ways, taking
-into account the types of objective functions that estimagic's
-``minimize`` and ``maximize`` accepts  for optimization. All algorithms accept
-criterion functions specified in a dictionary, while a subset also accept the criterion
-specified in scalar form. Likewise, if specified, the gradient of a criterion can be
-an np.ndarray or a pandas object. We test for all possible cases.
+We consider different implementations of each criterion and its gradient. All
+algorithms accept criterion functions specified in a dictionary, while a subset
+also accept the criterion specified in scalar form. Likewise, if specified, the
+gradient of a criterion can be an np.ndarray or a pandas object. We test for all
+possible cases.
 For instance, for rotated hyper ellipsoid, we implement the following functions:
 
 * rotated_hyper_ellipsoid_scalar_criterion
@@ -59,21 +58,23 @@ For instance, for rotated hyper ellipsoid, we implement the following functions:
   ellipsoid function, as a pandas object.
 * rotated_hyper_ellipsoid_criterion_and_gradient
 
-These criterion functions are specified in the ``examples`` directory. See docstrings
-for all relevant details relating to each implementation.
+These criterion functions are specified in the ``examples`` directory. For an overview
+of all constraints supported in estimagic, please see
+`this how-to guide`_.
 
-For testing the external interface, we write several test functions, each considers the
-case of one constraint. Given the constraint, the test function considers all possible
+.. _this how-to guide: ../../how_to_guides/optimization/how_to_specify_constraints.rst
+
+We write several test functions, each corresponding to the case of one constraint.
+Given the constraint, the test function considers all possible
 combinations of - algorithm, to maximize or to minimize, criterion function
-implementation, gradient function implementation for that criterion (if provided),
+implementation, gradient implementation for that criterion (if provided),
 and whether ``criterion_and_derivative`` has been provided or not.
 
 Below we show the calculations behind the true values, for each testcase (one criterion
-and one constraint). The test functions compare these values with the solutions returned
-by the algorithms, for each corresponding testcase.
+and one constraint).
 
 ********************************************************************
-Trid: Solutions for three dimension-case
+Trid: Solutions for three-dimension case
 ********************************************************************
   :math:`f({x}) = (x_1-1)^2 + (x_2-1)^2 + (x_3-1)^2 - x_2 x_1 - x_3 x_2`
 
@@ -437,7 +438,7 @@ Solution unavailable.
 
 
 ********************************************************************
-Rotated Hyper Ellipsoid: Solutions for three dimension-case
+Rotated Hyper Ellipsoid: Solutions for three-dimension case
 ********************************************************************
 
   :math:`f({x}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)`
@@ -769,7 +770,7 @@ Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
 
 ********************************************************************
-Rosenbrock: Solutions for three dimension-case
+Rosenbrock: Solutions for three-dimension case
 ********************************************************************
 
   :math:`f({x}) = 100(x_2 - x_1^2) + (x_1 - 1)^2`
