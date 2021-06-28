@@ -1,7 +1,6 @@
 import functools
 import re
 from collections import OrderedDict
-from itertools import compress
 from itertools import product
 
 import numpy as np
@@ -32,8 +31,7 @@ def first_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_evals=False,
-    return_jac_cand=False,
+    return_info=True,
     key=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
@@ -97,33 +95,36 @@ def first_derivative(
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the estimagic batch_evaluators.
-        return_func_value (bool): If True, return a tuple with the derivative and a dict
-            containing function value at params. Default False. This is useful when
-            using first_derivative during optimization.
-        return_evals (bool): If True, return a tuple with the derivative and a dict
-            containing the function value evaluated at all parameters considered for the
-            derivative estimation in a data frame; under key "df_evals". Default False.
-        return_jac_cand (bool): If True, return a tuple with the derivative and a dict
-            containing jacobian candidates in a data frame; under key "df_jac_cand".
-            Default False.
+        return_func_value (bool): If True, return function value at params, stored in
+            output dict under "func_value". Default False. This is useful when using
+            first_derivative during optimization.
+        return_info (bool): If True, return additional information on function
+            evaluations and internal derivative candidates, stored in output dict under
+            "func_evals" and "derivative_candidates". Derivative candidates are only
+            returned if n_steps > 1. Default True.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
     Returns:
-        derivative (numpy.ndarray, pandas.Series or pandas.DataFrame): The estimated
-            first derivative of func at params. The shape of the output depends on the
-            dimension of params and func(params):
+        result (dict): Result dictionary with keys:
+            - "derivative" (numpy.ndarray, pandas.Series or pandas.DataFrame): The
+                estimated first derivative of func at params. The shape of the output
+                depends on the dimension of params and func(params):
 
-            - f: R -> R leads to shape (1,), usually called derivative
-            - f: R^m -> R leads to shape (m, ), usually called Gradient
-            - f: R -> R^n leads to shape (n, 1), usually called Jacobian
-            - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
+                - f: R -> R leads to shape (1,), usually called derivative
+                - f: R^m -> R leads to shape (m, ), usually called Gradient
+                - f: R -> R^n leads to shape (n, 1), usually called Jacobian
+                - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
 
-        info (dict): Function value at params (key: "func_value"), function evaluations
-            at all parameters considered (key: "df_evals") and derivative candidates
-            (key: "df_jac_cand"), if the respective bools "return_func_value",
-            "return_evals" and "return_jac_cand" are True. If only a subset of the bools
-            is True then only the subset is returned.
+            - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
+                value at params, returned if return_func_value is True.
+
+            - "func_evals" (pandas.DataFrame): Function evaluations produced by internal
+                derivative method, returned if return_info is True.
+
+            - "derivative_candidates" (pandas.DataFrame): Derivative candidates from
+                Richardson extrapolation, returned if return_info is True and n_steps >
+                1.
 
     """
     lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
@@ -215,9 +216,6 @@ def first_derivative(
     for m in ["forward", "backward", "central"]:
         jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, m)
 
-    # save function evaluations to accessible data frame
-    df_evals = _convert_evaluation_data_to_frame(steps, evals)
-
     # get the best derivative estimate out of all derivative estimates that could be
     # calculated, given the function evaluations.
     orders = {
@@ -228,13 +226,12 @@ def first_derivative(
 
     if n_steps == 1:
         jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
-        df_jac_cand = None
+        updated_candidates = None
     else:
         richardson_candidates = _compute_richardson_candidates(
             jac_candidates, steps, n_steps
         )
         jac, updated_candidates = _consolidate_extrapolated(richardson_candidates)
-        df_jac_cand = _convert_richardson_candidates_to_frame(*updated_candidates)
 
     # raise error if necessary
     if error_handling in ("raise", "raise_strict") and np.isnan(jac).any():
@@ -244,12 +241,13 @@ def first_derivative(
     derivative = jac.flatten() if f_was_scalar else jac
     derivative = _add_index_to_derivative(derivative, params_index, out_index)
 
-    info = {"func_value": func_value, "df_evals": df_evals, "df_jac_cand": df_jac_cand}
-    info = dict(
-        compress(info.items(), [return_func_value, return_evals, return_jac_cand])
-    )
-    res = derivative if len(info) == 0 else (derivative, info)
-    return res
+    result = {"derivative": derivative}
+    if return_func_value:
+        result["func_value"] = func_value
+
+    info = _collect_additional_info(return_info, steps, evals, updated_candidates)
+    result = {**result, **info}
+    return result
 
 
 def _process_bounds(lower_bounds, upper_bounds, params):
@@ -607,3 +605,21 @@ def _split_into_str_and_int(s):
     """
     str_part, int_part = re.findall(r"(\w+?)(\d+)", s)[0]
     return str_part, int(int_part)
+
+
+def _collect_additional_info(return_info, steps, evals, updated_candidates):
+    """Combine additional information in dict if return_info is True."""
+    info = {}
+    if return_info:
+        # save function evaluations to accessible data frame
+        func_evals = _convert_evaluation_data_to_frame(steps, evals)
+        info["func_evals"] = func_evals
+
+        if updated_candidates is not None:
+            # combine derivative candidates in accessible data frame
+            derivative_candidates = _convert_richardson_candidates_to_frame(
+                *updated_candidates
+            )
+            info["derivative_candidates"] = derivative_candidates
+
+    return info

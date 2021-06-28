@@ -6,14 +6,7 @@ import numpy as np
 
 
 def derivative_plot(
-    df_evals,
-    df_jac_cand,
-    func_value,
-    params,
-    dim_x=None,
-    dim_f=None,
-    height=None,
-    width=None,
+    derivative_result,
 ):
     """Plot evaluations and derivative estimates.
 
@@ -23,36 +16,35 @@ def derivative_plot(
     done by filling the area between the derivative estimate with lowest and highest
     step size, respectively. Do not confuse these bands with statistical errors.
 
+    This function does not require the params vector as plots are displayed relative to
+    the point at which the derivative is calculated.
+
     Args:
-        df_evals (pd.DataFrame): Frame containing func evaluations (long-format).
-        df_jac_cand (pd.DataFrame): Frame containing jacobian candidates (long-format).
-        func_value (np.ndarray): Func value at original params vector.
-        params (np.ndarray): Initial params vector.
-        dim_x (iterable): Input dimensions to consider. Default None, selects all.
-        dim_f (iterable): Output dimensions to consider. Default None, selects all.
-        height (float): Figure Height. Default None, which sets single fig-height to 11.
-        width (float): Figure width. Default None, which sets single fig-width to 10.
+        derivative_result (dict): The result dictionary of call to
+            :func:`~estimagic.differentiation.derivatives.first_derivative` with
+            return_info and return_func_value set to True.
 
     Returns:
         fig (matplotlib.pyplot.figure): The figure.
 
     """
-    df = df_evals.reset_index()  # remove index from main data for plotting
-    df = df.assign(**{"step": df.step * df.sign})
-    df_evals = df.set_index(["sign", "step_number", "dim_x", "dim_f"])
+    func_value = derivative_result["func_value"]
+    func_evals = derivative_result["func_evals"]
+    derivative_candidates = derivative_result["derivative_candidates"]
 
-    # subset data keeping inquired dimensions
-    dim_x, dim_f = _get_dims_from_data_if_no_user_input_else_forward(df, dim_x, dim_f)
-    df_evals = df_evals.query("dim_x in @dim_x & dim_f in @dim_f")
+    # remove index from main data for plotting
+    df = func_evals.reset_index()
+    df = df.assign(**{"step": df.step * df.sign})
+    func_evals = df.set_index(["sign", "step_number", "dim_x", "dim_f"])
 
     # prepare derivative data
-    df_der = _select_derivative_with_minimal_error(df_jac_cand)
+    df_der = _select_derivative_with_minimal_error(derivative_candidates)
     df_der_method = _select_derivative_with_minimal_error(
-        df_jac_cand, given_method=True
+        derivative_candidates, given_method=True
     )
 
     # auxiliary
-    grid_points = 2  # we do not need more grid points since all lines are affine
+    grid_points = 2  # we do not need more than 2 grid points since all lines are affine
     func_value = np.atleast_1d(func_value)
     max_steps = df.groupby("dim_x")["step"].max()
     palette = {
@@ -63,9 +55,14 @@ def derivative_plot(
         -1: "orange",
     }
 
+    # dimensions of problem. dimensions of params vector span the vertical axis while
+    # dimensions of output span the horizontal axis of produced figure
+    dim_x = range(df["dim_x"].max() + 1)
+    dim_f = range(df["dim_f"].max() + 1)
+
     # plot
-    width = 10 * len(dim_f) if width is None else width
-    height = 11 * len(dim_x) if height is None else height
+    width = 10 * len(dim_f)
+    height = 11 * len(dim_x)
 
     fig, axes = plt.subplots(len(dim_x), len(dim_f), figsize=(width, height))
     axes = np.atleast_2d(axes)
@@ -87,7 +84,7 @@ def derivative_plot(
         x_grid = np.linspace(-max_steps[row], max_steps[row], grid_points)
 
         # plot function evaluations scatter points
-        _scatter_data = df_evals.loc[:, :, row, col]
+        _scatter_data = func_evals.loc[:, :, row, col]
         ax.scatter(
             _scatter_data["step"],
             _scatter_data["eval"],
@@ -117,7 +114,7 @@ def derivative_plot(
 
         # fill area
         for sign in [1, -1]:
-            _x_y = _select_eval_with_lowest_and_highest_step(df_evals, sign, row, col)
+            _x_y = _select_eval_with_lowest_and_highest_step(func_evals, sign, row, col)
             diff = _x_y - np.array([0, y0])
             slope = diff[:, 1] / diff[:, 0]
             _y = y0 + x_grid * slope.reshape(-1, 1)
@@ -133,26 +130,6 @@ def derivative_plot(
         fontsize=14,
     )
     return fig
-
-
-def _get_dims_from_data_if_no_user_input_else_forward(df, dim_x, dim_f):
-    """Select dimensions from data or pass user input through if not None.
-
-    Args:
-        df (pandas.DataFrame): Frame containing data on evaluations.
-        dim_x (list-like or None): Dimensions of x to consider.
-        dim_f (list-like or None): Dimensions of f to consider.
-
-    Returns:
-        dims (tuple[numpy.ndarray[1d]]): Dimensions to consider.
-
-    """
-    dimensions = df[["dim_x", "dim_f"]].max()
-    dims = (
-        np.atleast_1d(x) if x is not None else range(dimensions[n] + 1)
-        for x, n in zip((dim_x, dim_f), ("dim_x", "dim_f"))
-    )
-    return dims
 
 
 def _select_derivative_with_minimal_error(df_jac_cand, given_method=False):

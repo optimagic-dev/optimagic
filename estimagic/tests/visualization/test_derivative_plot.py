@@ -8,40 +8,12 @@ from pandas.testing import assert_series_equal
 
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.visualization.derivative_plot import (
-    _get_dims_from_data_if_no_user_input_else_forward,
-)
-from estimagic.visualization.derivative_plot import (
     _select_derivative_with_minimal_error,
 )
 from estimagic.visualization.derivative_plot import (
     _select_eval_with_lowest_and_highest_step,
 )
 from estimagic.visualization.derivative_plot import derivative_plot
-
-
-def test__get_dims_from_data_if_no_user_input_else_forward():
-    dim_x = [0, 1, 2, 3, 4]
-    dim_f = [0, 1, 2]
-    data = itertools.product(dim_x, dim_f)
-    df = pd.DataFrame(data, columns=["dim_x", "dim_f"])
-
-    # with input
-    got_with_input = _get_dims_from_data_if_no_user_input_else_forward(
-        df, [0, 1], [1, 2]
-    )
-    expected_with_input = (np.array([0, 1]), np.array([1, 2]))
-
-    for got, expected in zip(got_with_input, expected_with_input):
-        assert_array_equal(got, expected)
-
-    # without input
-    got_without_input = _get_dims_from_data_if_no_user_input_else_forward(
-        df, None, None
-    )
-    expected_without_input = (np.array([0, 1, 2, 3, 4]), np.array([0, 1, 2]))
-
-    for got, expected in zip(got_without_input, expected_without_input):
-        assert_array_equal(got, expected)
 
 
 def test__select_derivative_with_minimal_error():
@@ -134,18 +106,12 @@ example_functions = [(f1, np.ones(3)), (f2, np.ones(2)), (f3, np.ones(1))]
 @pytest.mark.parametrize("n_steps", range(2, 5))
 def test_derivative_plot(func_and_params, n_steps):
     func, params = func_and_params
-    _, info = first_derivative(
+    derivative = first_derivative(
         func,
         params,
         n_steps=n_steps,
-        return_evals=True,
         return_func_value=True,
-        return_jac_cand=True,
+        return_info=True,
     )
-    fig = derivative_plot(
-        info["df_evals"],
-        info["df_jac_cand"],
-        info["func_value"],
-        params,
-    )
+    fig = derivative_plot(derivative)
     fig.clf()

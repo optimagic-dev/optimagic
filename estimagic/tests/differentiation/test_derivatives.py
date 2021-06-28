@@ -1,5 +1,4 @@
 from functools import partial
-from io import StringIO
 from pathlib import Path
 
 import numpy as np
@@ -55,7 +54,7 @@ def test_first_derivative_jacobian(binary_choice_inputs, method):
 
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
 
-    aaae(calculated, expected, decimal=6)
+    aaae(calculated["derivative"], expected, decimal=6)
 
 
 def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
@@ -63,7 +62,7 @@ def test_first_derivative_jacobian_works_at_defaults(binary_choice_inputs):
     func = partial(logit_loglikeobs, y=fix["y"], x=fix["x"])
     calculated = first_derivative(func=func, params=fix["params_np"], n_cores=1)
     expected = logit_loglikeobs_jacobian(fix["params_np"], fix["y"], fix["x"])
-    aaae(calculated, expected, decimal=6)
+    aaae(calculated["derivative"], expected, decimal=6)
 
 
 @pytest.mark.parametrize("method", methods)
@@ -82,7 +81,7 @@ def test_first_derivative_gradient(binary_choice_inputs, method):
 
     expected = logit_loglike_gradient(fix["params_np"], fix["y"], fix["x"])
 
-    aaae(calculated, expected, decimal=4)
+    aaae(calculated["derivative"], expected, decimal=4)
 
 
 @pytest.mark.parametrize("method", methods)
@@ -92,7 +91,7 @@ def test_first_derivative_scalar(method):
 
     calculated = first_derivative(f, 3.0, n_cores=1)
     expected = 6.0
-    assert calculated == expected
+    assert calculated["derivative"] == expected
 
 
 @pytest.mark.parametrize("method", methods)
@@ -100,8 +99,10 @@ def test_first_derivative_scalar_with_return_func_value(method):
     def f(x):
         return x ** 2
 
-    calculated = first_derivative(f, 3.0, return_func_value=True, n_cores=1)
-    expected = (6.0, {"func_value": 9.0})
+    calculated = first_derivative(
+        f, 3.0, return_func_value=True, return_info=False, n_cores=1
+    )
+    expected = {"derivative": 6.0, "func_value": 9.0}
     assert calculated == expected
 
 
@@ -182,8 +183,8 @@ def test_first_derivative_gradient_richardson(example_function_gradient_fixtures
     scipy_fprime = approx_derivative(f, np.ones(3))
     our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
-    aaae(scipy_fprime, our_fprime)
-    aaae(true_fprime, our_fprime)
+    aaae(scipy_fprime, our_fprime["derivative"])
+    aaae(true_fprime, our_fprime["derivative"])
 
 
 def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures):
@@ -194,8 +195,8 @@ def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures
     scipy_fprime = approx_derivative(f, np.ones(3))
     our_fprime = first_derivative(f, np.ones(3), n_steps=3, method="central", n_cores=1)
 
-    aaae(scipy_fprime, our_fprime)
-    aaae(true_fprime, our_fprime)
+    aaae(scipy_fprime, our_fprime["derivative"])
+    aaae(true_fprime, our_fprime["derivative"])
 
 
 def test_convert_evaluation_data_to_frame():
@@ -203,17 +204,19 @@ def test_convert_evaluation_data_to_frame():
     arr2 = arr.reshape(2, 1, 2)
     steps = namedtuple_from_kwargs(pos=arr, neg=-arr)
     evals = namedtuple_from_kwargs(pos=arr2, neg=-arr2)
-    expected = """sign,step_number,dim_x,dim_f,step,eval
-    1,0,0,0,0,0
-    1,0,1,0,1,1
-    1,1,0,0,2,2
-    1,1,1,0,3,3
-    -1,0,0,0,0,0
-    -1,0,1,0,1,-1
-    -1,1,0,0,2,-2
-    -1,1,1,0,3,-3
-    """
-    expected = pd.read_csv(StringIO(expected))
+    expected = [
+        [1, 0, 0, 0, 0, 0],
+        [1, 0, 1, 0, 1, 1],
+        [1, 1, 0, 0, 2, 2],
+        [1, 1, 1, 0, 3, 3],
+        [-1, 0, 0, 0, 0, 0],
+        [-1, 0, 1, 0, 1, -1],
+        [-1, 1, 0, 0, 2, -2],
+        [-1, 1, 1, 0, 3, -3],
+    ]
+    expected = pd.DataFrame(
+        expected, columns=["sign", "step_number", "dim_x", "dim_f", "step", "eval"]
+    )
     got = _convert_evaluation_data_to_frame(steps, evals)
     assert_frame_equal(expected, got.reset_index(), check_dtype=False)
 
