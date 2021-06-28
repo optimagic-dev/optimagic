@@ -180,8 +180,8 @@ def get_test_cases_for_algorithm_and_criterion(algorithm, criterion_functions):
     return test_cases
 
 
-# Trid function cannot be represented as a least squares problem. Hence we do not
-# generate testcases involving least_squares algorithms
+# Trid function cannot be represented as a least squares problem. Hence we skip
+# testcases involving least_squares algorithms
 def get_trid_test_cases_for_algorithm(algorithm):
     """Given trid function, generate list of all possible argument combinations
     for each algorithm."""
