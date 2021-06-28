@@ -7,8 +7,6 @@ from fuzzywuzzy import process as fw_process
 from scipy.linalg import ldl
 from scipy.linalg import qr
 
-from estimagic.exceptions import get_traceback
-
 
 def chol_params_to_lower_triangular_matrix(params):
     dim = number_of_triangular_elements_to_dimension(len(params))
@@ -192,8 +190,7 @@ def robust_inverse(matrix, msg=""):
         out = np.linalg.inv(matrix)
     except np.linalg.LinAlgError:
         out = np.linalg.pinv(matrix)
-        tb = get_traceback()
-        warnings.warn(header + msg + "\n\n" + tb)
+        warnings.warn(header + msg)
     except Exception:
         raise
 
