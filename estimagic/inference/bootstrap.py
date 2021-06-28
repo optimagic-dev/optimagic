@@ -10,7 +10,7 @@ from estimagic.inference.bootstrap_helpers import get_seeds
 
 def bootstrap(
     data,
-    f=mean,
+    outcome=mean,
     n_draws=1_000,
     cluster_by=None,
     ci_method="percentile",
@@ -23,8 +23,8 @@ def bootstrap(
 
     Args:
         data (pandas.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest or list of
-            functions. Needs to return array-like object or pd.Series.
+        outcome (callable): function of the data calculating statistic of interest.
+            Needs to return array-like object or pd.Series.
         n_draws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
@@ -39,31 +39,31 @@ def bootstrap(
     """
 
     check_inputs(data, cluster_by, ci_method, alpha)
-    if isinstance(f, list):
-        f = concatenate_functions(f, data)
+    if isinstance(outcome, list):
+        outcome = concatenate_functions(outcome, data)
 
     df = data.reset_index(drop=True)
 
     if seeds is None:
         seeds = get_seeds(n_draws)
 
-    estimates = get_bootstrap_estimates(df, f, cluster_by, seeds, n_cores)
+    estimates = get_bootstrap_estimates(df, outcome, cluster_by, seeds, n_cores)
 
-    table = get_results_table(df, f, estimates, ci_method, alpha, n_cores)
+    table = get_results_table(df, outcome, estimates, ci_method, alpha, n_cores)
 
     return table
 
 
 def get_results_table(
-    data, f, estimates, ci_method="percentile", alpha=0.05, n_cores=1
+    data, outcome, estimates, ci_method="percentile", alpha=0.05, n_cores=1
 ):
     """Set up results table containing mean, standard deviation and confidence interval
     for each estimated parameter.
 
     Args:
         data (pandas.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest or list of
-            functions. Needs to return array-like object or pd.Series.
+        outcome (callable): function of the data calculating statistic of interest.
+            Needs to return array-like object or pd.Series.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         n_cores (int): number of jobs for parallelization.
@@ -75,14 +75,14 @@ def get_results_table(
     """
 
     check_inputs(data=data, ci_method=ci_method, alpha=alpha)
-    if isinstance(f, list):
-        f = concatenate_functions(f, data)
+    if isinstance(outcome, list):
+        outcome = concatenate_functions(outcome, data)
 
     results = pd.DataFrame(estimates.mean(axis=0), columns=["mean"])
 
     results["std"] = estimates.std(axis=0)
 
-    cis = compute_ci(data, f, estimates, ci_method, alpha, n_cores)
+    cis = compute_ci(data, outcome, estimates, ci_method, alpha, n_cores)
     results["lower_ci"] = cis["lower_ci"]
     results["upper_ci"] = cis["upper_ci"]
 

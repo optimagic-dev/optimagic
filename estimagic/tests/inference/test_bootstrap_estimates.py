@@ -31,15 +31,17 @@ def g(data):
 
 
 def test_get_bootstrap_estimates(setup):
-    estimates1 = get_bootstrap_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
+    estimates1 = get_bootstrap_estimates(
+        data=setup["df"], outcome=g, seeds=setup["seeds"]
+    )
     estimates2 = get_bootstrap_estimates(
-        data=setup["df"], f=g, seeds=setup["seeds"], n_cores=-1
+        data=setup["df"], outcome=g, seeds=setup["seeds"], n_cores=-1
     )
     estimates3 = pd.DataFrame(
-        get_uniform_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
+        get_uniform_estimates(data=setup["df"], seeds=setup["seeds"], outcome=g)
     )
     estimates4 = pd.DataFrame(
-        get_uniform_estimates(data=setup["df"], f=g, seeds=setup["seeds"])
+        get_uniform_estimates(data=setup["df"], seeds=setup["seeds"], outcome=g)
     )
 
     afe(estimates1, estimates2)
@@ -49,19 +51,25 @@ def test_get_bootstrap_estimates(setup):
 
 def test_get_bootstrap_estimates_cluster(setup):
     estimates1 = get_bootstrap_estimates(
-        data=setup["cluster_df"], f=g, cluster_by="stratum", seeds=setup["seeds"]
+        data=setup["cluster_df"], outcome=g, cluster_by="stratum", seeds=setup["seeds"]
     )
     estimates2 = get_bootstrap_estimates(
-        data=setup["cluster_df"], f=g, cluster_by="stratum", seeds=setup["seeds"]
+        data=setup["cluster_df"], outcome=g, cluster_by="stratum", seeds=setup["seeds"]
     )
     estimates3 = pd.DataFrame(
         get_clustered_estimates(
-            data=setup["cluster_df"], f=g, cluster_by="stratum", seeds=setup["seeds"]
+            data=setup["cluster_df"],
+            cluster_by="stratum",
+            seeds=setup["seeds"],
+            outcome=g,
         )
     )
     estimates4 = pd.DataFrame(
         get_clustered_estimates(
-            data=setup["cluster_df"], f=g, cluster_by="stratum", seeds=setup["seeds"]
+            data=setup["cluster_df"],
+            cluster_by="stratum",
+            seeds=setup["seeds"],
+            outcome=g,
         )
     )
 

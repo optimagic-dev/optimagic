@@ -29,11 +29,13 @@ def get_bootstrap_samples(
 
     if cluster_by is None:
 
-        sample_ids = get_uniform_estimates(data, seeds, n_cores, f=None)
+        sample_ids = get_uniform_estimates(data, seeds, n_cores, outcome=None)
 
     else:
 
-        sample_ids = get_clustered_estimates(data, cluster_by, seeds, n_cores, f=None)
+        sample_ids = get_clustered_estimates(
+            data, cluster_by, seeds, n_cores, outcome=None
+        )
 
     if return_samples is True:
 

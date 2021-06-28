@@ -8,7 +8,7 @@ from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_helpers import concatenate_functions
 
 
-def compute_ci(data, f, estimates, ci_method="percentile", alpha=0.05, n_cores=1):
+def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_cores=1):
     """Compute confidence interval of bootstrap estimates. Parts of the code of the
     subfunctions of this function are taken from Daniel Saxton's resample library, as
     found on https://github.com/dsaxton/resample/ .
@@ -16,8 +16,8 @@ def compute_ci(data, f, estimates, ci_method="percentile", alpha=0.05, n_cores=1
 
     Args:
         data (pandas.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest or list of
-            functions. Needs to return array-like object or pd.Series.
+        outcome (callable): function of the data calculating statistic of interest.
+            Needs to return array-like object or pd.Series.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
@@ -30,24 +30,24 @@ def compute_ci(data, f, estimates, ci_method="percentile", alpha=0.05, n_cores=1
 
     check_inputs(data=data, alpha=alpha, ci_method=ci_method)
 
-    if isinstance(f, list):
-        f = concatenate_functions(f)
+    if isinstance(outcome, list):
+        outcome = concatenate_functions(outcome)
 
     funcname = "_ci_" + ci_method
 
-    cis = globals()[funcname](data, f, estimates, alpha, n_cores)
+    cis = globals()[funcname](data, outcome, estimates, alpha, n_cores)
 
     return pd.DataFrame(
         cis, index=estimates.columns.tolist(), columns=["lower_ci", "upper_ci"]
     )
 
 
-def _ci_percentile(data, f, estimates, alpha, n_cores):
+def _ci_percentile(data, outcome, estimates, alpha, n_cores):
     """Compute percentile type confidence interval of bootstrap estimates.
 
     Args:
         data (pd.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        outcome (callable): function of the data calculating statistic of interest.
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
@@ -69,12 +69,12 @@ def _ci_percentile(data, f, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_bca(data, f, estimates, alpha, n_cores):
+def _ci_bca(data, outcome, estimates, alpha, n_cores):
     """Compute bca type confidence interval of bootstrap estimates.
 
     Args:
         data (pd.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        outcome (callable): function of the data calculating statistic of interest.
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
@@ -88,9 +88,9 @@ def _ci_bca(data, f, estimates, alpha, n_cores):
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
-    theta = f(data)
+    theta = outcome(data)
 
-    jack_est = _jackknife(data, f, n_cores)
+    jack_est = _jackknife(data, outcome, n_cores)
     jack_mean = np.mean(jack_est, axis=0)
 
     for k in range(num_params):
@@ -116,12 +116,12 @@ def _ci_bca(data, f, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_bc(data, f, estimates, alpha, n_cores):
+def _ci_bc(data, outcome, estimates, alpha, n_cores):
     """Compute bc type confidence interval of bootstrap estimates.
 
     Args:
         data (pd.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        outcome (callable): function of the data calculating statistic of interest.
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
@@ -135,7 +135,7 @@ def _ci_bc(data, f, estimates, alpha, n_cores):
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
-    theta = f(data)
+    theta = outcome(data)
 
     for k in range(num_params):
 
@@ -155,12 +155,12 @@ def _ci_bc(data, f, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_t(data, f, estimates, alpha, n_cores):
+def _ci_t(data, outcome, estimates, alpha, n_cores):
     """Compute studentized confidence interval of bootstrap estimates.
 
     Args:
         data (pd.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        outcome (callable): function of the data calculating statistic of interest.
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
@@ -173,7 +173,7 @@ def _ci_t(data, f, estimates, alpha, n_cores):
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-    theta = f(data)
+    theta = outcome(data)
 
     for k in range(num_params):
 
@@ -190,12 +190,12 @@ def _ci_t(data, f, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_normal(data, f, estimates, alpha, n_cores):
+def _ci_normal(data, outcome, estimates, alpha, n_cores):
     """Compute approximate normal confidence interval of bootstrap estimates.
 
     Args:
         data (pd.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        outcome (callable): function of the data calculating statistic of interest.
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
@@ -208,7 +208,7 @@ def _ci_normal(data, f, estimates, alpha, n_cores):
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-    theta = f(data)
+    theta = outcome(data)
 
     for k in range(num_params):
 
@@ -221,12 +221,12 @@ def _ci_normal(data, f, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_basic(data, f, estimates, alpha, n_cores):
+def _ci_basic(data, outcome, estimates, alpha, n_cores):
     """Compute basic bootstrap confidence interval of bootstrap estimates.
 
     Args:
         data (pd.DataFrame): original dataset.
-        f (callable): function of the data calculating statistic of interest.
+        outcome (callable): function of the data calculating statistic of interest.
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
@@ -239,7 +239,7 @@ def _ci_basic(data, f, estimates, alpha, n_cores):
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-    theta = f(data)
+    theta = outcome(data)
 
     for k in range(num_params):
 
@@ -252,7 +252,7 @@ def _ci_basic(data, f, estimates, alpha, n_cores):
     return cis
 
 
-def _jackknife(data, f, n_cores=1):
+def _jackknife(data, outcome, n_cores=1):
     """Calculate leave-one-out estimator.
 
     Args:
@@ -269,7 +269,7 @@ def _jackknife(data, f, n_cores=1):
     def loop(i):
 
         df = data.drop(index=i)
-        return f(df)
+        return outcome(df)
 
     jk_estimates = Parallel(n_jobs=n_cores)(delayed(loop)(i) for i in range(n))
 

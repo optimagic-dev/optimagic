@@ -40,7 +40,10 @@ def g(data):
 def test_get_results_table(setup, expected):
 
     results = get_results_table(
-        data=setup["df"], f=g, estimates=setup["estimates"], ci_method="percentile"
+        data=setup["df"],
+        outcome=g,
+        estimates=setup["estimates"],
+        ci_method="percentile",
     )
 
     # use rounding to adjust precision because there is no other way of handling this
