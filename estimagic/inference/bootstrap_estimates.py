@@ -118,7 +118,3 @@ def get_clustered_estimates(data, cluster_by, seeds, n_cores=1, outcome=None):
     estimates = Parallel(n_jobs=n_cores)(delayed(loop)(s) for s in seeds)
 
     return estimates
-
-
-def mean(df):
-    return df.mean(axis=0)
