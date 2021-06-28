@@ -84,7 +84,7 @@ def derivative_plot(
         x_grid = np.linspace(-max_steps[row], max_steps[row], grid_points)
 
         # plot function evaluations scatter points
-        _scatter_data = func_evals.loc[:, :, row, col]
+        _scatter_data = func_evals.loc[slice(None), slice(None), row, col]
         ax.scatter(
             _scatter_data["step"],
             _scatter_data["eval"],
