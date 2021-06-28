@@ -6,7 +6,6 @@ from joblib import delayed
 from joblib import Parallel
 
 from estimagic.inference.bootstrap_helpers import check_inputs
-from estimagic.inference.bootstrap_helpers import concatenate_functions
 from estimagic.inference.bootstrap_helpers import get_cluster_index
 from estimagic.inference.bootstrap_helpers import get_seeds
 
@@ -33,8 +32,6 @@ def get_bootstrap_estimates(
     """
 
     check_inputs(data=data, cluster_by=cluster_by)
-    if isinstance(outcome, list):
-        outcome = concatenate_functions(outcome, data)
 
     if seeds is None:
         seeds = get_seeds(n_draws)

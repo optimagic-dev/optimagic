@@ -33,32 +33,6 @@ def check_inputs(data, cluster_by=None, ci_method="percentile", alpha=0.05):
         raise ValueError("Input 'alpha' must be in [0,1].")
 
 
-def concatenate_functions(f_list, orig_data):
-    """Return results of multiple function in one np.array or pd.Series.
-    Args:
-        f_list (list): list of functions that return np.array or pd.Series
-        orig_data (pandas.DataFrame): original dataset.
-
-    Returns:
-        f (callable): function that returns concatenated ouput of functions in f_list
-
-    """
-
-    if all(isinstance(x, pd.Series) for x in [g(orig_data) for g in f_list]):
-
-        def f(data):
-
-            return pd.concat([g(data) for g in f_list])
-
-    else:
-
-        def f(data):
-
-            return np.concatenate([np.array(g(data)) for g in f_list])
-
-    return f
-
-
 def get_seeds(n_draws=1000):
     """Draw seeds for bootstrap resampling.
 

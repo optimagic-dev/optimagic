@@ -5,7 +5,6 @@ from joblib import Parallel
 from scipy.stats import norm
 
 from estimagic.inference.bootstrap_helpers import check_inputs
-from estimagic.inference.bootstrap_helpers import concatenate_functions
 
 
 def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_cores=1):
@@ -29,9 +28,6 @@ def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_c
     """
 
     check_inputs(data=data, alpha=alpha, ci_method=ci_method)
-
-    if isinstance(outcome, list):
-        outcome = concatenate_functions(outcome)
 
     funcname = "_ci_" + ci_method
 

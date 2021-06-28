@@ -4,7 +4,6 @@ from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
 from estimagic.inference.bootstrap_estimates import mean
 from estimagic.inference.bootstrap_helpers import check_inputs
-from estimagic.inference.bootstrap_helpers import concatenate_functions
 from estimagic.inference.bootstrap_helpers import get_seeds
 
 
@@ -39,8 +38,6 @@ def bootstrap(
     """
 
     check_inputs(data, cluster_by, ci_method, alpha)
-    if isinstance(outcome, list):
-        outcome = concatenate_functions(outcome, data)
 
     df = data.reset_index(drop=True)
 
@@ -75,8 +72,6 @@ def get_results_table(
     """
 
     check_inputs(data=data, ci_method=ci_method, alpha=alpha)
-    if isinstance(outcome, list):
-        outcome = concatenate_functions(outcome, data)
 
     results = pd.DataFrame(estimates.mean(axis=0), columns=["mean"])
 
