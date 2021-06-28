@@ -1,6 +1,6 @@
 import functools
+import re
 from collections import OrderedDict
-from itertools import compress
 from itertools import product
 
 import numpy as np
@@ -31,7 +31,7 @@ def first_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_tidy_evals=False,
+    return_info=True,
     key=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
@@ -95,29 +95,36 @@ def first_derivative(
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or Callable with the same interface
             as the estimagic batch_evaluators.
-        return_func_value (bool): If True, return a tuple with the derivative and the
-            function value at params contained in dict. Default False. This is useful
-            when using first_derivative during optimization.
-        return_tidy_evals (bool): If True, return a tuple with the derivative and the
-            function value at all params values that have been generated for the
-            derivative estimation, combined in a tidy data frame, stored in a dict.
-            Default False.
+        return_func_value (bool): If True, return function value at params, stored in
+            output dict under "func_value". Default False. This is useful when using
+            first_derivative during optimization.
+        return_info (bool): If True, return additional information on function
+            evaluations and internal derivative candidates, stored in output dict under
+            "func_evals" and "derivative_candidates". Derivative candidates are only
+            returned if n_steps > 1. Default True.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
     Returns:
-        derivative (numpy.ndarray, pandas.Series or pandas.DataFrame): The estimated
-            first derivative of func at params. The shape of the output depends on the
-            dimension of params and func(params):
+        result (dict): Result dictionary with keys:
+            - "derivative" (numpy.ndarray, pandas.Series or pandas.DataFrame): The
+                estimated first derivative of func at params. The shape of the output
+                depends on the dimension of params and func(params):
 
-            - f: R -> R leads to shape (1,), usually called derivative
-            - f: R^m -> R leads to shape (m, ), usually called Gradient
-            - f: R -> R^n leads to shape (n, 1), usually called Jacobian
-            - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
+                - f: R -> R leads to shape (1,), usually called derivative
+                - f: R^m -> R leads to shape (m, ), usually called Gradient
+                - f: R -> R^n leads to shape (n, 1), usually called Jacobian
+                - f: R^m -> R^n leads to shape (n, m), usually called Jacobian
 
-        dict: The function value at params, only return if return_func_value is True
-            and the function evaluation at all generated steps in a tidy frame, only
-            returned if return_tidy_evals is True. Keys: "func_values" and "tidy_evals".
+            - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
+                value at params, returned if return_func_value is True.
+
+            - "func_evals" (pandas.DataFrame): Function evaluations produced by internal
+                derivative method, returned if return_info is True.
+
+            - "derivative_candidates" (pandas.DataFrame): Derivative candidates from
+                Richardson extrapolation, returned if return_info is True and n_steps >
+                1.
 
     """
     lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
@@ -209,9 +216,6 @@ def first_derivative(
     for m in ["forward", "backward", "central"]:
         jac_candidates[m] = finite_differences.jacobian(evals, steps, f0, m)
 
-    # save function evaluations to accessible data frame
-    tidy_evals = _convert_evaluation_data_to_tidy_frame(steps, evals)
-
     # get the best derivative estimate out of all derivative estimates that could be
     # calculated, given the function evaluations.
     orders = {
@@ -222,11 +226,12 @@ def first_derivative(
 
     if n_steps == 1:
         jac = _consolidate_one_step_derivatives(jac_candidates, orders[method])
+        updated_candidates = None
     else:
         richardson_candidates = _compute_richardson_candidates(
             jac_candidates, steps, n_steps
         )
-        jac = _consolidate_extrapolated(richardson_candidates)
+        jac, updated_candidates = _consolidate_extrapolated(richardson_candidates)
 
     # raise error if necessary
     if error_handling in ("raise", "raise_strict") and np.isnan(jac).any():
@@ -236,11 +241,13 @@ def first_derivative(
     derivative = jac.flatten() if f_was_scalar else jac
     derivative = _add_index_to_derivative(derivative, params_index, out_index)
 
-    add = {"func_value": func_value, "tidy_evals": tidy_evals}
-    add = dict(compress(add.items(), [return_func_value, return_tidy_evals]))
+    result = {"derivative": derivative}
+    if return_func_value:
+        result["func_value"] = func_value
 
-    res = derivative if len(add) == 0 else (derivative, add)
-    return res
+    info = _collect_additional_info(return_info, steps, evals, updated_candidates)
+    result = {**result, **info}
+    return result
 
 
 def _process_bounds(lower_bounds, upper_bounds, params):
@@ -276,24 +283,21 @@ def _convert_evaluation_points_to_original(evaluation_points, params):
     return res
 
 
-def _convert_evaluation_data_to_tidy_frame(steps, evals):
-    """Convert evaluation data to tidy data frame.
+def _convert_evaluation_data_to_frame(steps, evals):
+    """Convert evaluation data to (tidy) data frame.
 
     Args:
-        params_index (pd.Series.Index, pd.DataFrame.Index): Parameter names. If
-            None then parameters are enumerated.
-        steps (namedtuple): Namedtuple with field names pos and neg. Is generated
-            by :func:`~estimagic.differentiation.generate_steps.generate_steps`.
-        evals (namedtuple): Namedtuple with field names pos and neg. Contains
-            function evaluation corresponding to steps.
+        steps (namedtuple): Namedtuple with field names pos and neg. Is generated by
+            :func:`~estimagic.differentiation.generate_steps.generate_steps`.
+        evals (namedtuple): Namedtuple with field names pos and neg. Contains function
+            evaluation corresponding to steps.
 
     Returns:
-        df (pd.DataFrame): Tidy data frame with index (sign, step_number, dim_x
-            dim_f), where sign corresponds to pos or neg in steps and evals,
-            step_number indexes the step, dim_x is the dimension of the input
-            vector and dim_f is the dimension of the function output. The data
-            is given by the two columns step and eval. The data frame has
-            2 * n_steps * dim_x * dim_f rows.
+        df (pandas.DataFrame): Tidy data frame with index (sign, step_number, dim_x
+            dim_f), where sign corresponds to pos or neg in steps and evals, step_number
+            indexes the step, dim_x is the dimension of the input vector and dim_f is
+            the dimension of the function output. The data is given by the two columns
+            step and eval. The data frame has 2 * n_steps * dim_x * dim_f rows.
 
     """
     n_steps, dim_f, dim_x = evals.pos.shape
@@ -301,7 +305,7 @@ def _convert_evaluation_data_to_tidy_frame(steps, evals):
 
     dfs = []
     for direction, step_arr, eval_arr in zip((1, -1), steps, evals):
-        tidy_steps = (
+        df_steps = (
             pd.DataFrame(step_arr, columns=params_index)
             .reset_index()
             .rename(columns={"index": "step_number"})
@@ -311,8 +315,8 @@ def _convert_evaluation_data_to_tidy_frame(steps, evals):
             .apply(lambda col: col.abs() if col.name == "step" else col)
         )
         eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
-        tidy_evaluations = (
-            pd.concat((tidy_steps, pd.DataFrame(eval_arr)), axis=1)
+        df_evals = (
+            pd.concat((df_steps, pd.DataFrame(eval_arr)), axis=1)
             .melt(
                 id_vars=["step_number", "dim_x", "step"],
                 var_name="dim_f",
@@ -322,8 +326,38 @@ def _convert_evaluation_data_to_tidy_frame(steps, evals):
             .set_index(["sign", "step_number", "dim_x", "dim_f"])
             .sort_index()
         )
-        dfs.append(tidy_evaluations)
+        dfs.append(df_evals)
     df = pd.concat(dfs).astype({"step": float, "eval": float})
+    return df
+
+
+def _convert_richardson_candidates_to_frame(jac, err):
+    """Convert (richardson) jacobian candidates and errors to pandas data frame.
+
+    Args:
+        jac (dict): Dict with richardson jacobian candidates.
+        err (dict): Dict with errors corresponding to richardson jacobian candidates.
+
+    Returns:
+        df (pandas.DataFrame): Frame with column "der" and "err" and index ["method",
+            "num_term", "dim_x", "dim_f"] with respective meaning: type of method used,
+            e.g. central or foward; kind of value, e.g. derivative or error.
+
+    """
+    dim_f, dim_x = jac["forward1"].shape
+    dfs = []
+    for key, value in jac.items():
+        method, num_term = _split_into_str_and_int(key)
+        df = pd.DataFrame(value.T, columns=range(dim_f))
+        df = df.assign(**{"dim_x": range(dim_x)})
+        df = df.melt(id_vars="dim_x", var_name="dim_f", value_name="der")
+        df = df.assign(
+            **{"method": method, "num_term": num_term, "err": err[key].T.flatten()}
+        )
+        dfs.append(df)
+
+    df = pd.concat(dfs)
+    df = df.set_index(["method", "num_term", "dim_x", "dim_f"])
     return df
 
 
@@ -395,26 +429,28 @@ def _consolidate_extrapolated(candidates):
 
     Returns:
         consolidated (np.ndarray): Array of same shape as input derivative estimates.
+        candidate_der_dict (dict): Best derivative estimate given method.
+        candidate_err_dict (dict): Errors corresponding to best derivatives given method
 
     """
     # first find minimum over steps for each method
-    candidate_derivatives = OrderedDict()
-    candidate_errors = OrderedDict()
+    candidate_der_dict = {}
+    candidate_err_dict = {}
 
     for key in candidates.keys():
-        _limit = candidates[key]["derivative"]
-        _error = candidates[key]["error"]
-
-        derivative, error = _get_best_estimate_single_method(_limit, _error)
-
-        candidate_derivatives[key] = derivative
-        candidate_errors[key] = error
+        _der = candidates[key]["derivative"]
+        _err = candidates[key]["error"]
+        derivative, error = _select_minimizer_along_axis(_der, _err)
+        candidate_der_dict[key] = derivative
+        candidate_err_dict[key] = error
 
     # second find minimum over methods
-    consolidated = _get_best_estimate_along_methods(
-        candidate_derivatives, candidate_errors
-    )
-    return consolidated
+    candidate_der = np.stack(list(candidate_der_dict.values()))
+    candidate_err = np.stack(list(candidate_err_dict.values()))
+    consolidated, _ = _select_minimizer_along_axis(candidate_der, candidate_err)
+
+    updated_candidates = (candidate_der_dict, candidate_err_dict)
+    return consolidated, updated_candidates
 
 
 def _compute_richardson_candidates(jac_candidates, steps, n_steps):
@@ -457,12 +493,11 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
     return richardson_candidates
 
 
-def _get_best_estimate_single_method(derivative, errors):
+def _select_minimizer_along_axis(derivative, errors):
     """Select best derivative estimates element wise.
 
-    Given a single method, e.g. central differences with 2 num_terms (see above), we get
-    multiple Richardson approximations including estimated errors. Here we select the
-    approximations which result in the lowest error element wise.
+    Select elements from ``derivative`` which correspond to minimum in ``errors`` along
+    first axis.
 
     Args:
         derivative (np.ndarray): Derivative estimates from Richardson approximation.
@@ -483,52 +518,15 @@ def _get_best_estimate_single_method(derivative, errors):
 
     """
     if derivative.shape[0] == 1:
-        derivative_minimal = np.squeeze(derivative, axis=0)
+        jac_minimal = np.squeeze(derivative, axis=0)
         error_minimal = np.squeeze(errors, axis=0)
     else:
-
         minimizer = np.nanargmin(errors, axis=0)
-
-        derivative_minimal = np.take_along_axis(
-            derivative, minimizer[np.newaxis, :], axis=0
-        )
-        derivative_minimal = np.squeeze(derivative_minimal, axis=0)
+        jac_minimal = np.take_along_axis(derivative, minimizer[np.newaxis, :], axis=0)
+        jac_minimal = np.squeeze(jac_minimal, axis=0)
         error_minimal = np.nanmin(errors, axis=0)
 
-    return derivative_minimal, error_minimal
-
-
-def _get_best_estimate_along_methods(derivatives, errors):
-    """Extract best derivative estimate over different methods.
-
-    Given that for each method, where one method can be for example central differences
-    with two num_terms (see above), we have selected a single best derivative estimate,
-    we select the best derivative estimates element-wise over different methods, where
-    again best is defined as minimizing the approximation error.
-
-    Args:
-        derivatives (OrderedDict): Dictionary containing derivative estimates for
-            different methods.
-        errors (OrderedDict): Dictionary containing error estimates for derivates stored
-            in ``derivatives``.
-
-    Returns:
-        jac_minimal (np.ndarray): The optimal derivative estimate over different
-            methods.
-
-    """
-    errors = np.stack(list(errors.values()))
-    derivatives = np.stack(list(derivatives.values()))
-
-    if derivatives.shape[0] == 1:
-        jac_minimal = np.squeeze(derivatives, axis=0)
-    else:
-        minimizer = np.nanargmin(errors, axis=0)
-
-        jac_minimal = np.take_along_axis(derivatives, minimizer[np.newaxis, :], axis=0)
-        jac_minimal = np.squeeze(jac_minimal, axis=0)
-
-    return jac_minimal
+    return jac_minimal, error_minimal
 
 
 def _nan_skipping_batch_evaluator(
@@ -587,3 +585,41 @@ def _add_index_to_derivative(derivative, params_index, out_index):
     ):
         derivative = pd.DataFrame(derivative, columns=params_index, index=out_index)
     return derivative
+
+
+def _split_into_str_and_int(s):
+    """Splits string in str and int parts.
+
+    Args:
+        s (str): The string.
+
+    Returns:
+        str_part (str): The str part.
+        int_part (int): The int part.
+
+    Example:
+    >>> s = "forward1"
+    >>> _split_into_str_and_int(s)
+    ('forward', 1)
+
+    """
+    str_part, int_part = re.findall(r"(\w+?)(\d+)", s)[0]
+    return str_part, int(int_part)
+
+
+def _collect_additional_info(return_info, steps, evals, updated_candidates):
+    """Combine additional information in dict if return_info is True."""
+    info = {}
+    if return_info:
+        # save function evaluations to accessible data frame
+        func_evals = _convert_evaluation_data_to_frame(steps, evals)
+        info["func_evals"] = func_evals
+
+        if updated_candidates is not None:
+            # combine derivative candidates in accessible data frame
+            derivative_candidates = _convert_richardson_candidates_to_frame(
+                *updated_candidates
+            )
+            info["derivative_candidates"] = derivative_candidates
+
+    return info

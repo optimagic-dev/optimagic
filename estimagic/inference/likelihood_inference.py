@@ -117,7 +117,7 @@ def do_likelihood_inference(
             internal_params,
             **numdiff_options,
         )
-        internal_cov = cov_jacobian(internal_jac)
+        internal_cov = cov_jacobian(internal_jac["derivative"])
     else:
         raise NotImplementedError("Hessian calculation is not yet implemented.")
 
