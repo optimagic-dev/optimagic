@@ -43,4 +43,6 @@ def test_get_results_table(setup, expected):
         data=setup["df"], f=g, estimates=setup["estimates"], ci_method="percentile"
     )
 
-    afe(results, expected["results"], rtol=1e-3)
+    # use rounding to adjust precision because there is no other way of handling this
+    # such that it is compatible across all supported pandas versions.
+    afe(results.round(2), expected["results"].round(2))
