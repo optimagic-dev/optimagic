@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal as afe
 
+from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_estimates import (
     _get_bootstrap_estimates_from_indices,
 )
@@ -32,6 +33,7 @@ def test_bootstrap_estimates_from_indices_without_errors(data):
         outcome=functools.partial(np.mean, axis=0),
         n_cores=1,
         error_handling="raise",
+        batch_evaluator=joblib_batch_evaluator,
     )
 
     expected = pd.DataFrame([[3.0, 6.0], [2, 8]], columns=["x1", "x2"])

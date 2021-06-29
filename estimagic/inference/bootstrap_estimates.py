@@ -1,6 +1,6 @@
 import pandas as pd
 
-from estimagic.batch_evaluators import joblib_batch_evaluator as batch_evaluator
+from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 
@@ -13,6 +13,7 @@ def get_bootstrap_estimates(
     n_draws=1000,
     n_cores=1,
     error_handling="continue",
+    batch_evaluator=joblib_batch_evaluator,
 ):
     """Draw bootstrap samples and calculate outcomes.
 
@@ -27,6 +28,9 @@ def get_bootstrap_estimates(
         error_handling (str): One of "continue", "raise". Default "continue" which means
             that bootstrap estimates are only calculated for those samples where no
             errors occur and a warning is produced if any error occurs.
+        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
 
     Returns:
         estimates (pandas.DataFrame): Outcomes for different bootstrap samples. The
@@ -49,13 +53,19 @@ def get_bootstrap_estimates(
         outcome=outcome,
         n_cores=n_cores,
         error_handling=error_handling,
+        batch_evaluator=batch_evaluator,
     )
 
     return estimates
 
 
 def _get_bootstrap_estimates_from_indices(
-    indices, data, outcome, n_cores, error_handling
+    indices,
+    data,
+    outcome,
+    n_cores,
+    error_handling,
+    batch_evaluator,
 ):
 
     arguments = [{"data": data, "indices": ind, "outcome": outcome} for ind in indices]

@@ -1,5 +1,6 @@
 import pandas as pd
 
+from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
 from estimagic.inference.bootstrap_helpers import check_inputs
@@ -15,6 +16,7 @@ def bootstrap(
     seed=None,
     n_cores=1,
     error_handling="continue",
+    batch_evaluator=joblib_batch_evaluator,
 ):
     """Calculate bootstrap estimates, standard errors and confidence intervals
     for statistic of interest in given original sample.
@@ -32,6 +34,9 @@ def bootstrap(
         error_handling (str): One of "continue", "raise". Default "continue" which means
             that bootstrap estimates are only calculated for those samples where no
             errors occur and a warning is produced if any error occurs.
+        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
 
     Returns:
         results (pandas.DataFrame): DataFrame where k'th row contains mean estimate,
@@ -48,6 +53,7 @@ def bootstrap(
         seed=seed,
         n_cores=n_cores,
         error_handling=error_handling,
+        batch_evaluator=batch_evaluator,
     )
 
     table = get_results_table(data, outcome, estimates, ci_method, alpha, n_cores)
