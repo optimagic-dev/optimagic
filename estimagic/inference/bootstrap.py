@@ -56,12 +56,12 @@ def bootstrap(
         batch_evaluator=batch_evaluator,
     )
 
-    table = get_results_table(data, outcome, estimates, ci_method, alpha, n_cores)
+    table = bootstrap_from_outcomes(data, outcome, estimates, ci_method, alpha, n_cores)
 
     return table
 
 
-def get_results_table(
+def bootstrap_from_outcomes(
     data, outcome, bootstrap_outcomes, ci_method="percentile", alpha=0.05, n_cores=1
 ):
     """Set up results table containing mean, standard deviation and confidence interval

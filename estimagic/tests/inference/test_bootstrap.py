@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal as afe
 
-from estimagic.inference.bootstrap import get_results_table
+from estimagic.inference.bootstrap import bootstrap_from_outcomes
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def g(data):
 
 def test_get_results_table(setup, expected):
 
-    results = get_results_table(
+    results = bootstrap_from_outcomes(
         data=setup["df"],
         outcome=g,
         bootstrap_outcomes=setup["estimates"],
