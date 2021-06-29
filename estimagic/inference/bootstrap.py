@@ -2,8 +2,8 @@ import pandas as pd
 
 from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_ci import compute_ci
-from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
 from estimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 
 
 def bootstrap(
@@ -46,7 +46,7 @@ def bootstrap(
 
     check_inputs(data, cluster_by, ci_method, alpha)
 
-    estimates = get_bootstrap_estimates(
+    estimates = get_bootstrap_outcomes(
         data=data,
         outcome=outcome,
         cluster_by=cluster_by,

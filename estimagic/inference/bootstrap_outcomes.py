@@ -5,7 +5,7 @@ from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 
 
-def get_bootstrap_estimates(
+def get_bootstrap_outcomes(
     data,
     outcome,
     cluster_by=None,
@@ -47,7 +47,7 @@ def get_bootstrap_estimates(
         n_draws=n_draws,
     )
 
-    estimates = _get_bootstrap_estimates_from_indices(
+    estimates = _get_bootstrap_outcomes_from_indices(
         indices=indices,
         data=data,
         outcome=outcome,
@@ -59,7 +59,7 @@ def get_bootstrap_estimates(
     return estimates
 
 
-def _get_bootstrap_estimates_from_indices(
+def _get_bootstrap_outcomes_from_indices(
     indices,
     data,
     outcome,
