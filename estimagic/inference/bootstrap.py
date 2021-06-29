@@ -62,7 +62,7 @@ def bootstrap(
 
 
 def get_results_table(
-    data, outcome, estimates, ci_method="percentile", alpha=0.05, n_cores=1
+    data, outcome, bootstrap_outcomes, ci_method="percentile", alpha=0.05, n_cores=1
 ):
     """Set up results table containing mean, standard deviation and confidence interval
     for each estimated parameter.
@@ -71,7 +71,8 @@ def get_results_table(
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
             Needs to return array-like object or pd.Series.
-        estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
+        bootstrap_outcomes (pandas.DataFrame): DataFrame of bootstrap_outcomes in the
+            bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         n_cores (int): number of jobs for parallelization.
         alpha (float): significance level of choice.
@@ -83,11 +84,11 @@ def get_results_table(
 
     check_inputs(data=data, ci_method=ci_method, alpha=alpha)
 
-    results = pd.DataFrame(estimates.mean(axis=0), columns=["mean"])
+    results = pd.DataFrame(bootstrap_outcomes.mean(axis=0), columns=["mean"])
 
-    results["std"] = estimates.std(axis=0)
+    results["std"] = bootstrap_outcomes.std(axis=0)
 
-    cis = compute_ci(data, outcome, estimates, ci_method, alpha, n_cores)
+    cis = compute_ci(data, outcome, bootstrap_outcomes, ci_method, alpha, n_cores)
     results["lower_ci"] = cis["lower_ci"]
     results["upper_ci"] = cis["upper_ci"]
 

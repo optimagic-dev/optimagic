@@ -42,7 +42,7 @@ def test_get_results_table(setup, expected):
     results = get_results_table(
         data=setup["df"],
         outcome=g,
-        estimates=setup["estimates"],
+        bootstrap_outcomes=setup["estimates"],
         ci_method="percentile",
     )
 
