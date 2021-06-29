@@ -12,10 +12,9 @@ def check_single_argument_types(argument):
         "algorithm": str,
         "criterion_kwargs": dict,
         "constraints": list,
-        "general_options": dict,
+        "numdiff_options": dict,
         "algo_options": dict,
-        "dashboard": bool,
-        "db_options": dict,
+        "error_penalty": dict,
     }
 
     for key, exp_type in key_to_expected_tuple.items():
@@ -29,7 +28,7 @@ def single_non_standard_inputs():
     kwargs = {
         "criterion": np.mean,
         "params": pd.DataFrame(
-            np.arange(12).reshape(4, 3), columns=["lower", "value", "upper"]
+            np.arange(12).reshape(4, 3), columns=["lower_bound", "value", "upper_bound"]
         ),
         "algorithm": "scipy_L-BFGS-B",
         "criterion_kwargs": {"keepdims": True, "dtype": float},
@@ -37,10 +36,9 @@ def single_non_standard_inputs():
             {"loc": 1, "type": "fixed", "value": 4},
             {"loc": [2, 3], "type": "increasing"},
         ],
-        "general_options": {"n_cores": 1},
+        "numdiff_options": {"n_cores": 1},
         "algo_options": {"maxfun": 5000, "maxiter": 1000},
-        "dashboard": False,
-        "db_options": {"port": 3409},
+        "error_penalty": {"slope": 0.1, "constant": 100},
     }
     return kwargs
 
@@ -51,12 +49,11 @@ def multiple_non_standard_inputs():
         "criterion": np.mean,
         "params": [
             pd.DataFrame(
-                np.arange(12).reshape(4, 3), columns=["lower", "value", "upper"]
-            ),
-            pd.DataFrame(
-                np.arange(12).reshape(4, 3), columns=["lower", "value", "upper"]
-            ),
-        ],
+                np.arange(12).reshape(4, 3),
+                columns=["lower_bound", "value", "upper_bound"],
+            )
+        ]
+        * 2,
         "algorithm": "scipy_L-BFGS-B",
         "criterion_kwargs": [
             {"keepdims": True, "dtype": float},
@@ -66,10 +63,9 @@ def multiple_non_standard_inputs():
             {"loc": 1, "type": "fixed", "value": 4},
             {"loc": [2, 3], "type": "increasing"},
         ],
-        "general_options": {"n_cores": 1},
+        "numdiff_options": {"n_cores": 1},
         "algo_options": {"maxfun": 5000, "maxiter": 1000},
-        "dashboard": False,
-        "db_options": {"port": 3409},
+        "error_penalty": {"slope": 0.1, "constant": 100},
     }
     return kwargs
 

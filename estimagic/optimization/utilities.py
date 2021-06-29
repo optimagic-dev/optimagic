@@ -1,9 +1,13 @@
+import warnings
 from collections import namedtuple
+from hashlib import sha1
 
 import numpy as np
 from fuzzywuzzy import process as fw_process
 from scipy.linalg import ldl
 from scipy.linalg import qr
+
+from estimagic.exceptions import get_traceback
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -103,21 +107,12 @@ def dimension_to_number_of_triangular_elements(dim):
     return int(dim * (dim + 1) / 2)
 
 
-def index_element_to_string(element, separator="_"):
-    if isinstance(element, (tuple, list)):
-        as_strings = [str(entry).replace("-", "_") for entry in element]
-        res_string = separator.join(as_strings)
-    else:
-        res_string = str(element)
-    return res_string
-
-
-def propose_algorithms(requested_algo, algos, number=3):
+def propose_algorithms(requested_algo, possibilities, number=3):
     """Propose a a number of algorithms based on similarity to the requested algorithm.
 
     Args:
         requested_algo (str): From the user requested algorithm.
-        algos (dict(str, list(str))): Dictionary where keys are the package and values
+        possibilities (list(str)): List of available algorithms
             are lists of algorithms.
         number (int) : Number of proposals.
 
@@ -125,16 +120,13 @@ def propose_algorithms(requested_algo, algos, number=3):
         proposals (list(str)): List of proposed algorithms.
 
     Example:
-        >>> algos = {"scipy": ["L-BFGS-B", "TNC"], "nlopt": ["lbfgsb"]}
-        >>> propose_algorithms("scipy_L-BFGS-B", algos, number=1)
-        ['scipy_L-BFGS-B']
-        >>> propose_algorithms("L-BFGS-B", algos, number=2)
-        ['scipy_L-BFGS-B', 'nlopt_lbfgsb']
+        >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
+        >>> propose_algorithms("scipy_L-BFGS-B", possibilities, number=1)
+        ['scipy_lbfgsb']
+        >>> propose_algorithms("L-BFGS-B", possibilities, number=2)
+        ['scipy_lbfgsb', 'nlopt_lbfgsb']
 
     """
-    possibilities = [
-        "_".join([origin, algo_name]) for origin in algos for algo_name in algos[origin]
-    ]
     proposals_w_probs = fw_process.extract(requested_algo, possibilities, limit=number)
     proposals = [proposal[0] for proposal in proposals_w_probs]
 
@@ -163,8 +155,8 @@ def robust_cholesky(matrix, threshold=None, return_info=False):
     work for matrices that are only positive semi-definite or even indefinite.
     For speed and precision reasons we first try a regular cholesky decomposition.
     If it fails we switch to more robust methods.
-    """
 
+    """
     try:
         chol = np.linalg.cholesky(matrix)
         method = "np.linalg.cholesky"
@@ -177,6 +169,34 @@ def robust_cholesky(matrix, threshold=None, return_info=False):
     info = {"method": method}
 
     out = (chol_unique, info) if return_info else chol_unique
+    return out
+
+
+def robust_inverse(matrix, msg=""):
+    """Calculate the inverse or pseudo-inverse of a matrix.
+
+    The difference to calling a pseudo inverse directly is that this function will
+    emit a warning if the matrix is singular.
+
+    Args:
+        matrix (np.ndarray)
+
+    """
+    header = (
+        "Standard matrix inversion failed due to LinAlgError described below. "
+        "A pseudo inverse was calculated instead. "
+    )
+    if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("Matrix must be square.")
+    try:
+        out = np.linalg.inv(matrix)
+    except np.linalg.LinAlgError:
+        out = np.linalg.pinv(matrix)
+        tb = get_traceback()
+        warnings.warn(header + msg + "\n\n" + tb)
+    except Exception:
+        raise
+
     return out
 
 
@@ -227,11 +247,13 @@ def _internal_robust_cholesky(matrix, threshold):
 
 def _make_cholesky_unique(chol):
     """Make a lower triangular cholesky factor unique.
+
     Cholesky factors are only unique with the additional requirement that all diagonal
     elements are positive. This is done automatically by np.linalg.cholesky.
     Since we calucate cholesky factors by QR decompositions we have to do it manually.
     It is obvious from that this is admissible because:
     chol sign_swither sign_switcher.T chol.T = chol chol.T
+
     """
     sign_switcher = np.sign(np.diagonal(chol))
     return chol * sign_switcher
@@ -268,3 +290,26 @@ def namedtuple_from_iterables(field_names, field_entries):
 
     """
     return namedtuple("NamedTuple", field_names)(*field_entries)
+
+
+def hash_array(arr):
+    """Create a hashsum for fast comparison of numpy arrays."""
+    # make sure array can be represented exactly in floating point numbers
+    arr = 1 + arr - 1
+    return sha1(arr.tobytes()).hexdigest()
+
+
+def calculate_trustregion_initial_radius(x):
+    """Calculate the initial trust region radius.
+
+    It is calculated as :math:`0.1\max(\|x\|_{\infty}, 1)`.
+
+    Args:
+        x (np.ndarray): the start parameter values.
+
+    Returns:
+        trust_radius (float): initial trust radius
+
+    """
+    x_norm = np.linalg.norm(x, ord=np.inf)
+    return 0.1 * max(x_norm, 1)

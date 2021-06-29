@@ -1,9 +1,20 @@
 """Functions for inferences in maximum likelihood models."""
 import numpy as np
 
+from estimagic.exceptions import INVALID_INFERENCE_MSG
+from estimagic.optimization.utilities import robust_inverse
+
 
 def cov_hessian(hessian):
     """Covariance based on the negative inverse of the hessian of loglike.
+
+    While this method makes slightly weaker statistical assumptions than a covariance
+    estimate based on the outer product of gradients, it is numerically much more
+    problematic for the following reasons:
+
+    - It is much more difficult to estimate a hessian numerically or with automatic
+      differentiation than it is to estimate the gradient / jacobian
+    - The resulting hessian might not be positive definite and thus not invertible.
 
     Args:
         hessian (np.array): 2d array hessian matrix of dimension (nparams, nparams)
@@ -16,7 +27,7 @@ def cov_hessian(hessian):
 
     """
     info_matrix = -1 * (hessian)
-    cov_hes = np.linalg.inv(info_matrix)
+    cov_hes = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
 
     return cov_hes
 
@@ -35,7 +46,7 @@ def cov_jacobian(jacobian):
 
     """
     info_matrix = np.dot((jacobian.T), jacobian)
-    cov_jac = np.linalg.inv(info_matrix)
+    cov_jac = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
 
     return cov_jac
 

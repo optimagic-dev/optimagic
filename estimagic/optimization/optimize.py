@@ -1,740 +1,895 @@
-"""Functional wrapper around the pygmo, nlopt and scipy libraries."""
 import functools
-import json
-from collections import namedtuple
-from multiprocessing import Event
-from multiprocessing import Process
-from multiprocessing import Queue
-from pathlib import Path
-from warnings import simplefilter
+import inspect
+import warnings
 
 import numpy as np
-import pandas as pd
-from joblib import delayed
-from joblib import Parallel
-from scipy.optimize._numdiff import approx_derivative
 
+import estimagic.batch_evaluators as be
+from estimagic.config import CRITERION_PENALTY_CONSTANT
+from estimagic.config import CRITERION_PENALTY_SLOPE
 from estimagic.config import DEFAULT_DATABASE_NAME
-from estimagic.dashboard.server_functions import run_server
-from estimagic.decorators import expand_criterion_output
-from estimagic.decorators import handle_exceptions
-from estimagic.decorators import log_evaluation
-from estimagic.decorators import log_gradient
-from estimagic.decorators import log_gradient_status
-from estimagic.decorators import negative_criterion
-from estimagic.decorators import numpy_interface
-from estimagic.logging.create_database import prepare_database
-from estimagic.logging.update_database import update_scalar_field
+from estimagic.logging.database_utilities import append_row
+from estimagic.logging.database_utilities import load_database
+from estimagic.logging.database_utilities import make_optimization_iteration_table
+from estimagic.logging.database_utilities import make_optimization_problem_table
+from estimagic.logging.database_utilities import make_optimization_status_table
+from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
-from estimagic.optimization.check_arguments import check_arguments
-from estimagic.optimization.pounders import minimize_pounders_np
+from estimagic.optimization.check_arguments import check_argument
+from estimagic.optimization.internal_criterion_template import (
+    internal_criterion_and_derivative_template,
+)
+from estimagic.optimization.process_constraints import process_bounds
 from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.pygmo import minimize_pygmo_np
+from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
+from estimagic.optimization.reparametrize import post_replace_jacobian
+from estimagic.optimization.reparametrize import pre_replace_jacobian
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
-from estimagic.optimization.scipy import minimize_scipy_np
-from estimagic.optimization.utilities import index_element_to_string
+from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import propose_algorithms
-
-
-QueueEntry = namedtuple("QueueEntry", ["iteration", "params", "fitness"])
 
 
 def maximize(
     criterion,
     params,
     algorithm,
+    *,
     criterion_kwargs=None,
     constraints=None,
-    general_options=None,
     algo_options=None,
-    gradient_options=None,
+    derivative=None,
+    derivative_kwargs=None,
+    criterion_and_derivative=None,
+    criterion_and_derivative_kwargs=None,
+    numdiff_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
-    dashboard=False,
-    db_options=None,
+    error_handling="raise",
+    error_penalty=None,
+    batch_evaluator="joblib",
+    batch_evaluator_options=None,
+    cache_size=100,
 ):
-    """Maximize *criterion* using *algorithm* subject to *constraints* and bounds.
+    """Maximize criterion using algorithm subject to constraints.
 
-    Each argument except for ``general_options`` can also be replaced by a list of
-    arguments in which case several optimizations are run in parallel. For this, either
-    all arguments must be lists of the same length, or some arguments can be provided
-    as single arguments in which case they are automatically broadcasted.
+    Each argument except for batch_evaluator and batch_evaluator_options can also be
+    replaced by a list of arguments in which case several optimizations are run in
+    parallel. For this, either all arguments must be lists of the same length, or some
+    arguments can be provided as single arguments in which case they are automatically
+    broadcasted.
 
     Args:
-        criterion (callable or list of callables):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
+        criterion (callable): A function that takes a pandas DataFrame (see
+            :ref:`params`) as first argument and returns one of the following:
 
-        params (pd.DataFrame or list of pd.DataFrames):
-            See :ref:`params`.
-
-        algorithm (str or list of strings):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_kwargs (dict or list of dicts):
-            additional keyword arguments for criterion
-
-        constraints (list or list of lists):
-            list with constraint dictionaries. See for details.
-
-        general_options (dict):
-            additional configurations for the optimization
-
-        algo_options (dict or list of dicts):
-            algorithm specific configurations for the optimization
-
-        gradient_options (dict):
-            Options for the gradient function.
-
-        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
-            file extension ``.db``. If the file does not exist, it will be created. See
-            :ref:`logging` for details.
-
-        log_options (dict): Keyword arguments to influence the logging. See
-            :ref:`logging` for details.
-
-        dashboard (bool):
-            whether to create and show a dashboard. See :ref:`dashboard` for details.
-
-        db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function. See
-                :ref:`dashboard` for details.
+            - scalar floating point or a :class:`numpy.ndarray` (depending on the
+              algorithm)
+            - a dictionary that contains at the entries "value" (a scalar float),
+              "contributions" or "root_contributions" (depending on the algortihm) and
+              any number of additional entries. The additional dict entries will be
+              logged and (if supported) displayed in the dashboard. Check the
+              documentation of your algorithm to see which entries or output type are
+              required.
+        params (pandas.DataFrame): A DataFrame with a column called "value" and optional
+            additional columns. See :ref:`params` for detail.
+        algorithm (str or callable): Specifies the optimization algorithm. For supported
+            algorithms this is a string with the name of the algorithm. Otherwise it can
+            be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+        criterion_kwargs (dict): Additional keyword arguments for criterion
+        constraints (list): List with constraint dictionaries.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+        algo_options (dict): Algorithm specific configuration of the optimization. See
+            :ref:`list_of_algorithms` for supported options of each algorithm.
+        derivative (callable, optional): Function that calculates the first derivative
+            of criterion. For most algorithm, this is the gradient of the scalar
+            output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
+            require the jacobian of the "contributions" entry of the dict. You will get
+            an error if you provide the wrong type of derivative.
+        derivative_kwargs (dict): Additional keyword arguments for derivative.
+        criterion_and_derivative (callable): Function that returns criterion
+            and derivative as a tuple. This can be used to exploit synergies in the
+            evaluation of both functions. The fist element of the tuple has to be
+            exactly the same as the output of criterion. The second has to be exactly
+            the same as the output of derivative.
+        criterion_and_derivative_kwargs (dict): Additional keyword arguments for
+            criterion and derivative.
+        numdiff_options (dict): Keyword arguments for the calculation of numerical
+            derivatives. See :ref:`first_derivative` for details. Note that the default
+            method is changed to "forward" for speed reasons.
+        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
+            the file extension ``.db``. If the file does not exist, it will be created.
+            When doing parallel optimizations and logging is provided, you have to
+            provide a different path for each optimization you are running. You can
+            disable logging completely by setting it to False, but we highly recommend
+            not to do so. The dashboard can only be used when logging is used.
+        log_options (dict): Additional keyword arguments to configure the logging.
+            - "suffix": A string that is appended to the default table names, separated
+            by an underscore. You can use this if you want to write the log into an
+            existing database where the default names "optimization_iterations",
+            "optimization_status" and "optimization_problem" are already in use.
+            - "fast_logging": A boolean that determines if "unsafe" settings are used
+            to speed up write processes to the database. This should only be used for
+            very short running criterion functions where the main purpose of the log
+            is a real-time dashboard and it would not be catastrophic to get a
+            corrupted database in case of a sudden system shutdown. If one evaluation
+            of the criterion function (and gradient if applicable) takes more than
+            100 ms, the logging overhead is negligible.
+            - "if_exists": (str) One of "extend", "replace", "raise"
+            - "save_all_arguments": (bool). If True, all arguments to maximize
+              that can be pickled are saved in the log file. Otherwise, only the
+              information needed by the dashboard is saved. Default False.
+        error_handling (str): Either "raise" or "continue". Note that "continue" does
+            not absolutely guarantee that no error is raised but we try to handle as
+            many errors as possible in that case without aborting the optimization.
+        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
+            (float). If the criterion or gradient raise an error and error_handling is
+            "continue", return ``constant + slope * norm(params - start_params)`` where
+            ``norm`` is the euclidean distance as criterion value and adjust the
+            derivative accordingly. This is meant to guide the optimizer back into a
+            valid region of parameter space (in direction of the start parameters).
+            Note that the constant has to be high enough to ensure that the penalty is
+            actually a bad function value. The default constant is f0 + abs(f0) + 100
+            for minimizations and f0 - abs(f0) - 100 for maximizations, where
+            f0 is the criterion value at start parameters. The default slope is 0.1.
+        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
+        batch_evaluator_options (dict): Additional configurations for the batch
+            batch evaluator. See :ref:`batch_evaluators`.
+        cache_size (int): Number of criterion and derivative evaluations that are cached
+            in memory in case they are needed.
 
     """
-    # Set a flag for a maximization problem.
-    general_options = {} if general_options is None else general_options
-    general_options["_maximization"] = True
-
-    results = minimize(
+    return optimize(
+        direction="maximize",
         criterion=criterion,
         params=params,
         algorithm=algorithm,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
-        general_options=general_options,
         algo_options=algo_options,
-        gradient_options=gradient_options,
+        derivative=derivative,
+        derivative_kwargs=derivative_kwargs,
+        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        numdiff_options=numdiff_options,
         logging=logging,
         log_options=log_options,
-        dashboard=dashboard,
-        db_options=db_options,
+        error_handling=error_handling,
+        error_penalty=error_penalty,
+        batch_evaluator=batch_evaluator,
+        batch_evaluator_options=batch_evaluator_options,
+        cache_size=cache_size,
     )
-
-    # Change the fitness value. ``results`` is either a tuple of results and params or a
-    # list of tuples.
-    if isinstance(results, list):
-        for result in results:
-            result[0]["fitness"] = -result[0]["fitness"]
-    else:
-        results[0]["fitness"] = -results[0]["fitness"]
-
-    return results
 
 
 def minimize(
     criterion,
     params,
     algorithm,
+    *,
     criterion_kwargs=None,
     constraints=None,
-    general_options=None,
     algo_options=None,
-    gradient_options=None,
+    derivative=None,
+    derivative_kwargs=None,
+    criterion_and_derivative=None,
+    criterion_and_derivative_kwargs=None,
+    numdiff_options=None,
     logging=DEFAULT_DATABASE_NAME,
     log_options=None,
-    dashboard=False,
-    db_options=None,
+    error_handling="raise",
+    error_penalty=None,
+    batch_evaluator="joblib",
+    batch_evaluator_options=None,
+    cache_size=100,
 ):
-    """Minimize *criterion* using *algorithm* subject to *constraints* and bounds.
+    """Minimize criterion using algorithm subject to constraints.
 
-    Each argument except for ``general_options`` can also be replaced by a list of
-    arguments in which case several optimizations are run in parallel. For this, either
-    all arguments must be lists of the same length, or some arguments can be provided
-    as single arguments in which case they are automatically broadcasted.
+    Each argument except for batch_evaluator and batch_evaluator_options can also be
+    replaced by a list of arguments in which case several optimizations are run in
+    parallel. For this, either all arguments must be lists of the same length, or some
+    arguments can be provided as single arguments in which case they are automatically
+    broadcasted.
 
     Args:
-        criterion (function or list of functions):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
-
-        params (pd.DataFrame or list of pd.DataFrames):
-            See :ref:`params`.
-
-        algorithm (str or list of strings):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_kwargs (dict or list of dicts):
-            additional keyword arguments for criterion
-
-        constraints (list or list of lists):
-            list with constraint dictionaries. See for details.
-
-        general_options (dict):
-            additional configurations for the optimization
-
-        algo_options (dict or list of dicts):
-            algorithm specific configurations for the optimization
-
-        gradient_options (dict):
-            Options for the gradient function.
-
-        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
-            file extension ``.db``. If the file does not exist, it will be created. See
-            :ref:`logging` for details.
-
-        log_options (dict): Keyword arguments to influence the logging. See
-            :ref:`logging` for details.
-
-        dashboard (bool):
-            whether to create and show a dashboard. See :ref:`dashboard` for details.
-
-        db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function. See
-                :ref:`dashboard` for details.
+        criterion (Callable): A function that takes a pandas DataFrame (see
+            :ref:`params`) as first argument and returns one of the following:
+            - scalar floating point or a numpy array (depending on the algorithm)
+            - a dictionary that contains at the entries "value" (a scalar float),
+            "contributions" or "root_contributions" (depending on the algortihm) and
+            any number of additional entries. The additional dict entries will be
+            logged and (if supported) displayed in the dashboard. Check the
+            documentation of your algorithm to see which entries or output type
+            are required.
+        params (pandas.DataFrame): A DataFrame with a column called "value" and optional
+            additional columns. See :ref:`params` for detail.
+        algorithm (str or callable): Specifies the optimization algorithm. For supported
+            algorithms this is a string with the name of the algorithm. Otherwise it can
+            be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+        criterion_kwargs (dict): Additional keyword arguments for criterion
+        constraints (list): List with constraint dictionaries.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constranits.ipynb
+        algo_options (dict): Algorithm specific configuration of the optimization. See
+            :ref:`list_of_algorithms` for supported options of each algorithm.
+        derivative (callable, optional): Function that calculates the first derivative
+            of criterion. For most algorithm, this is the gradient of the scalar
+            output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
+            require the jacobian of the "contributions" entry of the dict. You will get
+            an error if you provide the wrong type of derivative.
+        derivative_kwargs (dict): Additional keyword arguments for derivative.
+        criterion_and_derivative (callable): Function that returns criterion
+            and derivative as a tuple. This can be used to exploit synergies in the
+            evaluation of both functions. The fist element of the tuple has to be
+            exactly the same as the output of criterion. The second has to be exactly
+            the same as the output of derivative.
+        criterion_and_derivative_kwargs (dict): Additional keyword arguments for
+            criterion and derivative.
+        numdiff_options (dict): Keyword arguments for the calculation of numerical
+            derivatives. See :ref:`first_derivative` for details. Note that the default
+            method is changed to "forward" for speed reasons.
+        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
+            the file extension ``.db``. If the file does not exist, it will be created.
+            When doing parallel optimizations and logging is provided, you have to
+            provide a different path for each optimization you are running. You can
+            disable logging completely by setting it to False, but we highly recommend
+            not to do so. The dashboard can only be used when logging is used.
+        log_options (dict): Additional keyword arguments to configure the logging.
+            - "suffix": A string that is appended to the default table names, separated
+            by an underscore. You can use this if you want to write the log into an
+            existing database where the default names "optimization_iterations",
+            "optimization_status" and "optimization_problem" are already in use.
+            - "fast_logging": A boolean that determines if "unsafe" settings are used
+            to speed up write processes to the database. This should only be used for
+            very short running criterion functions where the main purpose of the log
+            is a real-time dashboard and it would not be catastrophic to get a
+            corrupted database in case of a sudden system shutdown. If one evaluation
+            of the criterion function (and gradient if applicable) takes more than
+            100 ms, the logging overhead is negligible.
+            - "if_exists": (str) One of "extend", "replace", "raise"
+            - "save_all_arguments": (bool). If True, all arguments to minimize
+              that can be pickled are saved in the log file. Otherwise, only the
+              information needed by the dashboard is saved. Default False.
+        error_handling (str): Either "raise" or "continue". Note that "continue" does
+            not absolutely guarantee that no error is raised but we try to handle as
+            many errors as possible in that case without aborting the optimization.
+        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
+            (float). If the criterion or gradient raise an error and error_handling is
+            "continue", return ``constant + slope * norm(params - start_params)`` where
+            ``norm`` is the euclidean distance as criterion value and adjust the
+            derivative accordingly. This is meant to guide the optimizer back into a
+            valid region of parameter space (in direction of the start parameters).
+            Note that the constant has to be high enough to ensure that the penalty is
+            actually a bad function value. The default constant is f0 + abs(f0) + 100
+            for minimizations and f0 - abs(f0) - 100 for maximizations, where
+            f0 is the criterion value at start parameters. The default slope is 0.1.
+        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
+        batch_evaluator_options (dict): Additional configurations for the batch
+            batch evaluator. See :ref:`batch_evaluators`.
+        cache_size (int): Number of criterion and derivative evaluations that are cached
+            in memory in case they are needed.
 
     """
-    criterion_kwargs = {} if criterion_kwargs is None else criterion_kwargs
-    constraints = [] if constraints is None else constraints
-    algo_options = {} if algo_options is None else algo_options
-    log_options = {} if log_options is None else log_options
-    db_options = {} if db_options is None else db_options
-    general_options = {} if general_options is None else general_options
-
-    # Gradients are currently not allowed to be passed to minimize.
-    gradient = None
-
-    arguments = broadcast_arguments(
+    return optimize(
+        direction="minimize",
         criterion=criterion,
         params=params,
         algorithm=algorithm,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
-        general_options=general_options,
         algo_options=algo_options,
-        gradient=gradient,
-        gradient_options=gradient_options,
+        derivative=derivative,
+        derivative_kwargs=derivative_kwargs,
+        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        numdiff_options=numdiff_options,
         logging=logging,
         log_options=log_options,
-        dashboard=dashboard,
-        db_options=db_options,
+        error_handling=error_handling,
+        error_penalty=error_penalty,
+        batch_evaluator=batch_evaluator,
+        batch_evaluator_options=batch_evaluator_options,
+        cache_size=cache_size,
     )
-    check_arguments(arguments)
-
-    if len(arguments) == 1:
-        # Run only one optimization
-        arguments = arguments[0]
-        results = _single_minimize(**arguments)
-    else:
-        # Run multiple optimizations
-        if dashboard:
-            raise NotImplementedError(
-                "Dashboard cannot be used for multiple optimizations, yet."
-            )
-
-        # set up multiprocessing
-        if "n_cores" not in arguments[0]["general_options"]:
-            raise ValueError(
-                "n_cores need to be specified in general_options"
-                + " if multiple optimizations should be run."
-            )
-        n_cores = arguments[0]["general_options"]["n_cores"]
-
-        results = Parallel(n_jobs=n_cores)(
-            delayed(_one_argument_single_minimize)(argument) for argument in arguments
-        )
-
-    return results
 
 
-def _single_minimize(
+def optimize(
+    direction,
     criterion,
     params,
     algorithm,
+    *,
+    criterion_kwargs=None,
+    constraints=None,
+    algo_options=None,
+    derivative=None,
+    derivative_kwargs=None,
+    criterion_and_derivative=None,
+    criterion_and_derivative_kwargs=None,
+    numdiff_options=None,
+    logging=DEFAULT_DATABASE_NAME,
+    log_options=None,
+    error_handling="raise",
+    error_penalty=None,
+    batch_evaluator="joblib",
+    batch_evaluator_options=None,
+    cache_size=100,
+):
+    """Minimize or maximize criterion using algorithm subject to constraints.
+
+    Each argument except for batch_evaluator and batch_evaluator_options can also be
+    replaced by a list of arguments in which case several optimizations are run in
+    parallel. For this, either all arguments must be lists of the same length, or some
+    arguments can be provided as single arguments in which case they are automatically
+    broadcasted.
+
+    Args:
+        direction (str): One of "maximize" or "minimize".
+        criterion (Callable): A function that takes a pandas DataFrame (see
+            :ref:`params`) as first argument and returns one of the following:
+            - scalar floating point or a numpy array (depending on the algorithm)
+            - a dictionary that contains at the entries "value" (a scalar float),
+            "contributions" or "root_contributions" (depending on the algortihm) and
+            any number of additional entries. The additional dict entries will be
+            logged and (if supported) displayed in the dashboard. Check the
+            documentation of your algorithm to see which entries or output type
+            are required.
+        params (pd.DataFrame): A DataFrame with a column called "value" and optional
+            additional columns. See :ref:`params` for detail.
+        algorithm (str or callable): Specifies the optimization algorithm. For supported
+            algorithms this is a string with the name of the algorithm. Otherwise it can
+            be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+        criterion_kwargs (dict): Additional keyword arguments for criterion
+        constraints (list): List with constraint dictionaries.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constranits.ipynb
+        algo_options (dict): Algorithm specific configuration of the optimization. See
+            :ref:`list_of_algorithms` for supported options of each algorithm.
+        derivative (callable, optional): Function that calculates the first derivative
+            of criterion. For most algorithm, this is the gradient of the scalar
+            output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
+            require the jacobian of the "contributions" entry of the dict. You will get
+            an error if you provide the wrong type of derivative.
+        derivative_kwargs (dict): Additional keyword arguments for derivative.
+        criterion_and_derivative (callable): Function that returns criterion
+            and derivative as a tuple. This can be used to exploit synergies in the
+            evaluation of both functions. The fist element of the tuple has to be
+            exactly the same as the output of criterion. The second has to be exactly
+            the same as the output of derivative.
+        criterion_and_derivative_kwargs (dict): Additional keyword arguments for
+            criterion and derivative.
+        numdiff_options (dict): Keyword arguments for the calculation of numerical
+            derivatives. See :ref:`first_derivative` for details. Note that the default
+            method is changed to "forward" for speed reasons.
+        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
+            the file extension ``.db``. If the file does not exist, it will be created.
+            When doing parallel optimizations and logging is provided, you have to
+            provide a different path for each optimization you are running. You can
+            disable logging completely by setting it to False, but we highly recommend
+            not to do so. The dashboard can only be used when logging is used.
+        log_options (dict): Additional keyword arguments to configure the logging.
+            - "suffix": A string that is appended to the default table names, separated
+            by an underscore. You can use this if you want to write the log into an
+            existing database where the default names "optimization_iterations",
+            "optimization_status" and "optimization_problem" are already in use.
+            - "fast_logging": A boolean that determines if "unsafe" settings are used
+            to speed up write processes to the database. This should only be used for
+            very short running criterion functions where the main purpose of the log
+            is a real-time dashboard and it would not be catastrophic to get a
+            corrupted database in case of a sudden system shutdown. If one evaluation
+            of the criterion function (and gradient if applicable) takes more than
+            100 ms, the logging overhead is negligible.
+            - "if_exists": (str) One of "extend", "replace", "raise"
+            - "save_all_arguments": (bool). If True, all arguments to
+              optimize that can be pickled are saved in the log file. Otherwise, only
+              the information needed by the dashboard is saved. Default False.
+        error_handling (str): Either "raise" or "continue". Note that "continue" does
+            not absolutely guarantee that no error is raised but we try to handle as
+            many errors as possible in that case without aborting the optimization.
+        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
+            (float). If the criterion or gradient raise an error and error_handling is
+            "continue", return ``constant + slope * norm(params - start_params)`` where
+            ``norm`` is the euclidean distance as criterion value and adjust the
+            derivative accordingly. This is meant to guide the optimizer back into a
+            valid region of parameter space (in direction of the start parameters).
+            Note that the constant has to be high enough to ensure that the penalty is
+            actually a bad function value. The default constant is f0 + abs(f0) + 100
+            for minimizations and f0 - abs(f0) - 100 for maximizations, where
+            f0 is the criterion value at start parameters. The default slope is 0.1.
+        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
+        batch_evaluator_options (dict): Additional configurations for the batch
+            batch evaluator. See :ref:`batch_evaluators`.
+        cache_size (int): Number of criterion and derivative evaluations that are cached
+            in memory in case they are needed.
+
+    """
+    arguments = broadcast_arguments(
+        direction=direction,
+        criterion=criterion,
+        params=params,
+        algorithm=algorithm,
+        criterion_kwargs=criterion_kwargs,
+        constraints=constraints,
+        algo_options=algo_options,
+        derivative=derivative,
+        derivative_kwargs=derivative_kwargs,
+        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        numdiff_options=numdiff_options,
+        logging=logging,
+        log_options=log_options,
+        error_handling=error_handling,
+        error_penalty=error_penalty,
+        cache_size=cache_size,
+    )
+
+    # do rough sanity checks before actual optimization for quicker feedback
+    for arg in arguments:
+        check_argument(arg)
+
+    if isinstance(batch_evaluator, str):
+        batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
+
+    if batch_evaluator_options is None:
+        batch_evaluator_options = {}
+
+    batch_evaluator_options["unpack_symbol"] = "**"
+    default_batch_error_handling = "raise" if len(arguments) == 1 else "continue"
+    batch_evaluator_options["error_handling"] = batch_evaluator_options.get(
+        "error_handling", default_batch_error_handling
+    )
+
+    res = batch_evaluator(_single_optimize, arguments, **batch_evaluator_options)
+
+    res = [_dummy_result_from_traceback(r) for (r) in res]
+
+    res = res[0] if len(res) == 1 else res
+
+    return res
+
+
+def _single_optimize(
+    direction,
+    criterion,
     criterion_kwargs,
+    params,
+    algorithm,
     constraints,
-    general_options,
     algo_options,
-    gradient,
-    gradient_options,
+    derivative,
+    derivative_kwargs,
+    criterion_and_derivative,
+    criterion_and_derivative_kwargs,
+    numdiff_options,
     logging,
     log_options,
-    dashboard,
-    db_options,
+    error_handling,
+    error_penalty,
+    cache_size,
 ):
-    """Minimize * criterion * using * algorithm * subject to * constraints * and bounds.
-    Only one minimization.
+    """Minimize or maximize *criterion* using *algorithm* subject to *constraints*.
 
-    Args:
-        criterion (function):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
-
-        params (pd.DataFrame):
-            See :ref:`params`.
-
-        algorithm (str):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        criterion_kwargs (dict):
-            additional keyword arguments for criterion
-
-        constraints (list):
-            list with constraint dictionaries. See for details.
-
-        general_options (dict):
-            additional configurations for the optimization
-
-        algo_options (dict):
-            algorithm specific configurations for the optimization
-
-        gradient (callable or None):
-            Gradient function.
-
-        gradient_options (dict):
-            Options for the gradient function.
-
-        logging (str or pathlib.Path): Path to an sqlite3 file which typically has the
-            file extension ``.db``. If the file does not exist, it will be created. See
-            :ref:`logging` for details.
-
-        log_options (dict): Keyword arguments to influence the logging. See
-            :ref:`logging` for details.
-
-        dashboard (bool):
-            whether to create and show a dashboard
-
-        db_options (dict):
-            dictionary with kwargs to be supplied to the run_server function.
-
-    """
-    simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-    params = _process_params(params)
-
-    # Apply decorator two handle criterion functions with one or two returns.
-    criterion = expand_criterion_output(criterion)
-
-    is_maximization = general_options.pop("_maximization", False)
-    criterion = negative_criterion(criterion) if is_maximization else criterion
-    fitness_factor = -1 if is_maximization else 1
-
-    criterion_out, comparison_plot_data = criterion(params, **criterion_kwargs)
-    if np.isscalar(criterion_out):
-        fitness_eval = fitness_factor * criterion_out
-    else:
-        fitness_eval = fitness_factor * np.mean(np.square(criterion_out))
-
-    if np.any(np.isnan(fitness_eval)):
-        raise ValueError(
-            "The criterion function evaluated at the start parameters returns NaNs."
-        )
-
-    if logging:
-        database = prepare_database(
-            logging, params, comparison_plot_data, log_options, constraints
-        )
-    else:
-        database = False
-
-    general_options["start_criterion_value"] = fitness_eval
-
-    constraints, params = process_constraints(constraints, params)
-    internal_params = reparametrize_to_internal(params, constraints)
-
-    queue = Queue() if dashboard else None
-    if dashboard:
-        stop_signal = Event()
-        outer_server_process = Process(
-            target=run_server,
-            kwargs={
-                "queue": queue,
-                "db_options": db_options,
-                "start_param_df": params,
-                "start_fitness": fitness_eval,
-                "stop_signal": stop_signal,
-            },
-            daemon=False,
-        )
-        outer_server_process.start()
-
-    result, params = _internal_minimize(
-        criterion=criterion,
-        criterion_kwargs=criterion_kwargs,
-        params=params,
-        internal_params=internal_params,
-        constraints=constraints,
-        algorithm=algorithm,
-        algo_options=algo_options,
-        gradient=gradient,
-        gradient_options=gradient_options,
-        general_options=general_options,
-        database=database,
-        queue=queue,
-        fitness_factor=fitness_factor,
-    )
-
-    if dashboard:
-        stop_signal.set()
-        outer_server_process.terminate()
-
-    return result, params
-
-
-def _one_argument_single_minimize(kwargs):
-    """Wrapper for single_minimize to use kwargs with multiprocessing."""
-    return _single_minimize(**kwargs)
-
-
-def _internal_minimize(
-    criterion,
-    criterion_kwargs,
-    params,
-    internal_params,
-    constraints,
-    algorithm,
-    algo_options,
-    gradient,
-    gradient_options,
-    general_options,
-    database,
-    queue,
-    fitness_factor,
-):
-    """Create the internal criterion function and minimize it.
-
-    Args:
-        criterion (function):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
-
-        criterion_kwargs (dict):
-            additional keyword arguments for criterion
-
-        params (pd.DataFrame):
-            See :ref:`params`.
-
-        internal_params (DataFrame):
-            See :ref:`params`.
-
-        constraints (list):
-            list with constraint dictionaries. See for details.
-
-        algorithm (str):
-            specifies the optimization algorithm. See :ref:`list_of_algorithms`.
-
-        algo_options (dict):
-            algorithm specific configurations for the optimization
-
-        gradient (callable or None):
-            Gradient function.
-
-        gradient_options (dict):
-            Options for the gradient function.
-
-        general_options (dict):
-            additional configurations for the optimization
-
-        database (sqlalchemy.MetaData). The engine that connects to the
-            database can be accessed via ``database.bind``.
-
-        queue (Queue):
-            queue to which the fitness evaluations and params DataFrames are supplied.
-
-        fitness_factor (float):
-            multiplicative factor for the fitness displayed in the dashboard.
-            Set to -1 for maximizations to plot the fitness that is being maximized.
-
-    """
-    logging_decorator = functools.partial(
-        log_evaluation,
-        database=database,
-        tables=["params_history", "criterion_history", "comparison_plot"],
-    )
-
-    internal_criterion = create_internal_criterion(
-        criterion=criterion,
-        params=params,
-        constraints=constraints,
-        criterion_kwargs=criterion_kwargs,
-        logging_decorator=logging_decorator,
-        general_options=general_options,
-        database=database,
-        queue=queue,
-        fitness_factor=fitness_factor,
-    )
-
-    internal_gradient = create_internal_gradient(
-        gradient=gradient,
-        gradient_options=gradient_options,
-        criterion=criterion,
-        params=params,
-        internal_params=internal_params,
-        constraints=constraints,
-        criterion_kwargs=criterion_kwargs,
-        general_options=general_options,
-        database=database,
-        fitness_factor=fitness_factor,
-        algorithm=algorithm,
-    )
-
-    current_dir_path = Path(__file__).resolve().parent
-    with open(current_dir_path / "algo_dict.json") as j:
-        algos = json.load(j)
-    origin, algo_name = algorithm.split("_", 1)
-
-    try:
-        assert algo_name in algos[origin], "Invalid algorithm requested: {}".format(
-            algorithm
-        )
-    except (AssertionError, KeyError):
-        proposals = propose_algorithms(algorithm, algos)
-        raise NotImplementedError(
-            f"{algorithm} is not a valid choice. Did you mean one of {proposals}?"
-        )
-
-    bounds = _internal_bounds_from_params(params)
-
-    if database:
-        update_scalar_field(database, "optimization_status", "running")
-
-    if origin in ["nlopt", "pygmo"]:
-        results = minimize_pygmo_np(
-            internal_criterion,
-            internal_params,
-            bounds,
-            origin,
-            algo_name,
-            algo_options,
-            internal_gradient,
-        )
-
-    elif origin == "scipy":
-        results = minimize_scipy_np(
-            internal_criterion,
-            internal_params,
-            bounds=bounds,
-            algo_name=algo_name,
-            algo_options=algo_options,
-            gradient=internal_gradient,
-        )
-    elif origin == "tao":
-        crit_val = general_options["start_criterion_value"]
-        len_criterion_value = 1 if np.isscalar(crit_val) else len(crit_val)
-        results = minimize_pounders_np(
-            internal_criterion,
-            internal_params,
-            bounds,
-            n_errors=len_criterion_value,
-            **algo_options,
-        )
-    else:
-        raise NotImplementedError("Invalid algorithm requested.")
-
-    if database:
-        update_scalar_field(database, "optimization_status", results["status"])
-
-    params = reparametrize_from_internal(
-        internal=results["x"],
-        fixed_values=params["_internal_fixed_value"].to_numpy(),
-        pre_replacements=params["_pre_replacements"].to_numpy().astype(int),
-        processed_constraints=constraints,
-        post_replacements=params["_post_replacements"].to_numpy().astype(int),
-        processed_params=params,
-    )
-
-    return results, params
-
-
-def create_internal_criterion(
-    criterion,
-    params,
-    constraints,
-    criterion_kwargs,
-    logging_decorator,
-    general_options,
-    database,
-    queue,
-    fitness_factor,
-):
-    """Create the internal criterion function.
-
-    Args:
-        criterion (function):
-            Python function that takes a pandas DataFrame with parameters as the first
-            argument and returns a scalar floating point value.
-
-        params (pd.DataFrame):
-            See :ref:`params`.
-
-        constraints (list):
-            list with constraint dictionaries. See for details.
-
-        criterion_kwargs (dict):
-            additional keyword arguments for criterion
-
-        logging_decorator (callable):
-            Decorator used for logging information. Either log parameters and fitness
-            values during the optimization or log the gradient status.
-
-        general_options (dict):
-            additional configurations for the optimization
-
-        database (sqlalchemy.MetaData). The engine that connects to the
-            database can be accessed via ``database.bind``.
-
-        queue (Queue):
-            queue to which the fitness evaluations and params DataFrames are supplied.
-
-        fitness_factor (float):
-            multiplicative factor for the fitness displayed in the dashboard.
-            Set to -1 for maximizations to plot the fitness that is being maximized.
+    See the docstring of ``optimize`` for an explanation of all arguments.
 
     Returns:
-        internal_criterion (function):
-            function that takes an internal_params DataFrame as only argument.
-            It calls the original criterion function after the necessary
-            reparametrizations and passes the results to the dashboard queue if given
-            before returning the fitness evaluation.
+        dict: The optimization result.
 
     """
-    c = np.zeros(1)
+    # store all arguments in a dictionary to save them in the database later
+    problem_data = {
+        "direction": direction,
+        # "criterion"-criterion,
+        "criterion_kwargs": criterion_kwargs,
+        "algorithm": algorithm,
+        "constraints": constraints,
+        "algo_options": algo_options,
+        # "derivative"-derivative,
+        "derivative_kwargs": derivative_kwargs,
+        # "criterion_and_derivative"-criterion_and_derivative,
+        "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
+        "numdiff_options": numdiff_options,
+        "logging": logging,
+        "log_options": log_options,
+        "error_handling": error_handling,
+        "error_penalty": error_penalty,
+        "cache_size": int(cache_size),
+    }
 
-    @handle_exceptions(database, params, constraints, params, general_options)
-    @numpy_interface(params, constraints)
-    @logging_decorator
-    def internal_criterion(p, counter=c):
-        criterion_out, comparison_plot_data = criterion(p, **criterion_kwargs)
-        if np.isscalar(criterion_out):
-            fitness_eval = criterion_out
-        else:
-            # Todo: This is a temporary fix for POUNDERs which returns an array.
-            fitness_eval = np.mean(np.square(criterion_out))
+    # partial the kwargs into corresponding functions
+    criterion = functools.partial(criterion, **criterion_kwargs)
+    if derivative is not None:
+        derivative = functools.partial(derivative, **derivative_kwargs)
+    if criterion_and_derivative is not None:
+        criterion_and_derivative = functools.partial(
+            criterion_and_derivative, **criterion_and_derivative_kwargs
+        )
 
-        if queue is not None:
-            queue.put(
-                QueueEntry(
-                    iteration=counter[0],
-                    params=p,
-                    fitness=fitness_factor * fitness_eval,
-                )
+    # process params and constraints
+    params = process_bounds(params)
+    for col in ["value", "lower_bound", "upper_bound"]:
+        params[col] = params[col].astype(float)
+    _check_params(params)
+
+    processed_constraints, processed_params = process_constraints(constraints, params)
+
+    # name and group column are needed in the dashboard but could lead to problems
+    # if present anywhere else
+    params_with_name_and_group = _add_name_and_group_columns_to_params(params)
+    problem_data["params"] = params_with_name_and_group
+
+    # get internal parameters and bounds
+    x = reparametrize_to_internal(
+        params["value"].to_numpy(),
+        processed_params["_internal_free"].to_numpy(),
+        processed_constraints,
+    )
+
+    free = processed_params.query("_internal_free")
+    lower_bounds = free["_internal_lower"].to_numpy()
+    upper_bounds = free["_internal_upper"].to_numpy()
+
+    # process algorithm and algo_options
+    if isinstance(algorithm, str):
+        algo_name = algorithm
+    else:
+        algo_name = getattr(algorithm, "name", "your algorithm")
+
+    if isinstance(algorithm, str):
+        try:
+            algorithm = AVAILABLE_ALGORITHMS[algorithm]
+        except KeyError:
+            proposed = propose_algorithms(algorithm, list(AVAILABLE_ALGORITHMS))
+            raise ValueError(
+                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
             )
-        counter += 1
 
-        return criterion_out, comparison_plot_data
+    algo_options = _adjust_options_to_algorithms(
+        algo_options, lower_bounds, upper_bounds, algorithm, algo_name
+    )
 
-    return internal_criterion
+    # get partialed reparametrize from internal
+    pre_replacements = processed_params["_pre_replacements"].to_numpy()
+    post_replacements = processed_params["_post_replacements"].to_numpy()
+    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
+
+    partialed_reparametrize_from_internal = functools.partial(
+        reparametrize_from_internal,
+        fixed_values=fixed_values,
+        pre_replacements=pre_replacements,
+        processed_constraints=processed_constraints,
+        post_replacements=post_replacements,
+    )
+
+    # get convert derivative
+    pre_replace_jac = pre_replace_jacobian(
+        pre_replacements=pre_replacements, dim_in=len(x)
+    )
+    post_replace_jac = post_replace_jacobian(post_replacements=post_replacements)
+
+    convert_derivative = functools.partial(
+        convert_external_derivative_to_internal,
+        fixed_values=fixed_values,
+        pre_replacements=pre_replacements,
+        processed_constraints=processed_constraints,
+        pre_replace_jac=pre_replace_jac,
+        post_replace_jac=post_replace_jac,
+    )
+
+    # do first function evaluation
+    first_eval = {
+        "internal_params": x,
+        "external_params": params,
+        "output": criterion(params),
+    }
+
+    # fill numdiff_options with defaults
+    numdiff_options = _fill_numdiff_options_with_defaults(
+        numdiff_options, lower_bounds, upper_bounds
+    )
+
+    # create and initialize the database
+    if not logging:
+        database = False
+    else:
+        database = _create_and_initialize_database(
+            logging, log_options, first_eval, problem_data
+        )
+
+    # set default error penalty
+    error_penalty = _fill_error_penalty_with_defaults(
+        error_penalty, first_eval, direction
+    )
+
+    # create cache
+    x_hash = hash_array(x)
+    cache = {x_hash: {"criterion": first_eval["output"]}}
+
+    # partial the internal_criterion_and_derivative_template
+    internal_criterion_and_derivative = functools.partial(
+        internal_criterion_and_derivative_template,
+        direction=direction,
+        criterion=criterion,
+        params=params,
+        reparametrize_from_internal=partialed_reparametrize_from_internal,
+        convert_derivative=convert_derivative,
+        derivative=derivative,
+        criterion_and_derivative=criterion_and_derivative,
+        numdiff_options=numdiff_options,
+        database=database,
+        database_path=logging,
+        log_options=log_options,
+        error_handling=error_handling,
+        error_penalty=error_penalty,
+        first_criterion_evaluation=first_eval,
+        cache=cache,
+        cache_size=cache_size,
+    )
+
+    res = algorithm(internal_criterion_and_derivative, x, **algo_options)
+
+    p = params.copy()
+    p["value"] = partialed_reparametrize_from_internal(res["solution_x"])
+    res["solution_params"] = p
+
+    if "solution_criterion" not in res:
+        res["solution_criterion"] = criterion(p)
+
+    # in the long run we can get some of those from the database if logging was used.
+    optional_entries = [
+        "solution_derivative",
+        "solution_hessian",
+        "n_criterion_evaluations",
+        "n_derivative_evaluations",
+        "n_iterations",
+        "success",
+        "reached_convergence_criterion",
+        "message",
+    ]
+
+    for entry in optional_entries:
+        res[entry] = res.get(entry, f"Not reported by {algo_name}")
+
+    if logging:
+        _log_final_status(res, database, logging, log_options)
+
+    return res
 
 
-def _process_params(params):
-    assert (
-        not params.index.duplicated().any()
-    ), "No duplicates allowed in the index of params."
+def _log_final_status(res, database, path, log_options):
+    if isinstance(res["success"], str) and res["success"].startswith("Not reported"):
+        status = "unknown"
+    elif res["success"]:
+        status = "finished successfully"
+    else:
+        status = "failed"
+
+    fast_logging = log_options.get("fast_logging", False)
+    append_row({"status": status}, "optimization_status", database, path, fast_logging)
+
+
+def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
+    error_penalty = error_penalty.copy()
+    first_value = first_eval["output"]
+    first_value = first_value if np.isscalar(first_value) else first_value["value"]
+
+    if direction == "minimize":
+        default_constant = (
+            first_value + np.abs(first_value) + CRITERION_PENALTY_CONSTANT
+        )
+        default_slope = CRITERION_PENALTY_SLOPE
+    else:
+        default_constant = (
+            first_value - np.abs(first_value) - CRITERION_PENALTY_CONSTANT
+        )
+        default_slope = -CRITERION_PENALTY_SLOPE
+
+    error_penalty["constant"] = error_penalty.get("constant", default_constant)
+    error_penalty["slope"] = error_penalty.get("slope", default_slope)
+
+    return error_penalty
+
+
+def _create_and_initialize_database(logging, log_options, first_eval, problem_data):
+
+    # extract information
+    path = logging
+    fast_logging = log_options.get("fast_logging", False)
+    if_exists = log_options.get("if_exists", "extend")
+    save_all_arguments = log_options.get("save_all_arguments", False)
+    database = load_database(path=path, fast_logging=fast_logging)
+
+    # create the optimization_iterations table
+    make_optimization_iteration_table(
+        database=database,
+        first_eval=first_eval,
+        if_exists=if_exists,
+    )
+
+    # create and initialize the optimization_status table
+    make_optimization_status_table(database, if_exists)
+    append_row(
+        {"status": "running"}, "optimization_status", database, path, fast_logging
+    )
+
+    # create_and_initialize the optimization_problem table
+    make_optimization_problem_table(database, if_exists, save_all_arguments)
+    if not save_all_arguments:
+        not_saved = [
+            "criterion",
+            "criterion_kwargs",
+            "constraints",
+            "derivative",
+            "derivative_kwargs",
+            "criterion_and_derivative",
+            "criterion_and_derivative_kwargs",
+        ]
+        problem_data = {
+            key: val for key, val in problem_data.items() if key not in not_saved
+        }
+    append_row(problem_data, "optimization_problem", database, path, fast_logging)
+
+    return database
+
+
+def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bounds):
+    method = numdiff_options.get("method", "forward")
+    default_error_handling = "raise" if method == "central" else "raise_strict"
+
+    relevant = {
+        "method",
+        "n_steps",
+        "base_steps",
+        "scaling_factor",
+        "lower_bounds",
+        "upper_bounds",
+        "step_ratio",
+        "min_steps",
+        "n_cores",
+        "error_handling",
+        "batch_evaluator",
+    }
+
+    ignored = [option for option in numdiff_options if option not in relevant]
+
+    if ignored:
+        warnings.warn(
+            "The following numdiff options were ignored because they will be set "
+            f"internally during the optimization:\n\n{ignored}"
+        )
+
+    numdiff_options = {
+        key: val for key, val in numdiff_options.items() if key in relevant
+    }
+
+    # only define the ones that deviate from the normal defaults
+    default_numdiff_options = {
+        "method": "forward",
+        "lower_bounds": lower_bounds,
+        "upper_bounds": upper_bounds,
+        "error_handling": default_error_handling,
+    }
+
+    numdiff_options = {**default_numdiff_options, **numdiff_options}
+    return numdiff_options
+
+
+def _check_params(params):
+    """Check params has a unique index.
+
+    Args:
+        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
+
+    Raises:
+        AssertionError: The index contains duplicates.
+
+    """
+    if params.index.duplicated().any():
+        raise ValueError("No duplicates allowed in the index of params.")
+
+    invalid_bounds = params.query("lower_bound > value | upper_bound < value")
+
+    if len(invalid_bounds) > 0:
+        raise ValueError(f"value out of bounds for:\n{invalid_bounds.index}")
+
+
+def _add_name_and_group_columns_to_params(params):
+    """Add a group and name column to the params.
+
+    Args:
+        params (pd.DataFrame): See :ref:`params`.
+
+    Returns:
+        params (pd.DataFrame): With defaults expanded params DataFrame.
+
+    """
     params = params.copy()
-    if "lower" not in params.columns:
-        params["lower"] = -np.inf
-    else:
-        params["lower"].fillna(-np.inf)
-
-    if "upper" not in params.columns:
-        params["upper"] = np.inf
-    else:
-        params["upper"].fillna(np.inf)
 
     if "group" not in params.columns:
         params["group"] = "All Parameters"
 
     if "name" not in params.columns:
-        names = [index_element_to_string(tup) for tup in params.index]
+        names = [_index_element_to_string(tup) for tup in params.index]
         params["name"] = names
+    else:
+        params["name"] = params["name"].str.replace("-", "_")
 
-    assert "_fixed" not in params.columns, "Invalid column name _fixed in params_df."
-
-    invalid_names = ["_fixed_value", "_is_fixed_to_value", "_is_fixed_to_other"]
-    invalid_present_columns = []
-    for col in params.columns:
-        if col in invalid_names or col.startswith("_internal"):
-            invalid_present_columns.append(col)
-
-    if len(invalid_present_columns) > 0:
-        msg = (
-            "Column names starting with '_internal' and as well as any other of the "
-            f"following columns are not allowed in params:\n{invalid_names}."
-            f"This is violated for:\n{invalid_present_columns}."
-        )
-        raise ValueError(msg)
     return params
 
 
-def create_internal_gradient(
-    gradient,
-    gradient_options,
-    criterion,
-    params,
-    internal_params,
-    constraints,
-    criterion_kwargs,
-    general_options,
-    database,
-    fitness_factor,
-    algorithm,
-):
-    n_internal_params = params["_internal_free"].sum()
-    gradient_options = {} if gradient_options is None else gradient_options
-
-    if gradient is None:
-        gradient = approx_derivative
-        default_options = {
-            "method": "2-point",
-            "rel_step": None,
-            "f0": None,
-            "sparsity": None,
-            "as_linear_operator": False,
-        }
-        gradient_options = {**default_options, **gradient_options}
-
-        if gradient_options["method"] == "2-point":
-            n_gradient_evaluations = 2 * n_internal_params
-        elif gradient_options["method"] == "3-point":
-            n_gradient_evaluations = 3 * n_internal_params
-        else:
-            raise ValueError(
-                f"Gradient method '{gradient_options['method']} not supported."
-            )
-
+def _index_element_to_string(element, separator="_"):
+    if isinstance(element, (tuple, list)):
+        as_strings = [str(entry).replace("-", "_") for entry in element]
+        res_string = separator.join(as_strings)
     else:
-        n_gradient_evaluations = gradient_options.pop("n_gradient_evaluations", None)
-
-    logging_decorator = functools.partial(
-        log_gradient_status,
-        database=database,
-        n_gradient_evaluations=n_gradient_evaluations,
-    )
-
-    internal_criterion = create_internal_criterion(
-        criterion=criterion,
-        params=params,
-        constraints=constraints,
-        criterion_kwargs=criterion_kwargs,
-        logging_decorator=logging_decorator,
-        general_options=general_options,
-        database=database,
-        queue=None,
-        fitness_factor=fitness_factor,
-    )
-    bounds = _internal_bounds_from_params(params)
-    names = params.query("_internal_free")["name"].tolist()
-
-    @log_gradient(database, names)
-    def internal_gradient(x):
-        return gradient(internal_criterion, x, bounds=bounds, **gradient_options)
-
-    return internal_gradient
+        res_string = str(element)
+    return res_string
 
 
-def _internal_bounds_from_params(params):
-    bounds = tuple(
-        params.query("_internal_free")[["_internal_lower", "_internal_upper"]]
-        .to_numpy()
-        .T
-    )
-    return bounds
+def _adjust_options_to_algorithms(
+    algo_options, lower_bounds, upper_bounds, algorithm, algo_name
+):
+    """Reduce the algo_options and check if bounds are compatible with algorithm."""
+
+    # convert algo option keys to valid Python arguments
+    algo_options = {key.replace(".", "_"): val for key, val in algo_options.items()}
+
+    valid = set(inspect.signature(algorithm).parameters)
+
+    if isinstance(algorithm, functools.partial):
+        partialed_in = set(algorithm.args).union(set(algorithm.keywords))
+        valid = valid.difference(partialed_in)
+
+    reduced = {key: val for key, val in algo_options.items() if key in valid}
+
+    ignored = {key: val for key, val in algo_options.items() if key not in valid}
+
+    if ignored:
+        warnings.warn(
+            "The following algo_options were ignored because they are not compatible "
+            f"with {algo_name}:\n\n {ignored}"
+        )
+
+    if "lower_bounds" not in valid and not (lower_bounds == -np.inf).all():
+        raise ValueError(
+            f"{algo_name} does not support lower bounds but your optimization "
+            "problem has lower bounds (either because you specified them explicitly "
+            "or because they were implied by other constraints)."
+        )
+
+    if "upper_bounds" not in valid and not (upper_bounds == np.inf).all():
+        raise ValueError(
+            f"{algo_name} does not support upper bounds but your optimization "
+            "problem has upper bounds (either because you specified them explicitly "
+            "or because they were implied by other constraints)."
+        )
+
+    if "lower_bounds" in valid:
+        reduced["lower_bounds"] = lower_bounds
+
+    if "upper_bounds" in valid:
+        reduced["upper_bounds"] = upper_bounds
+
+    return reduced
+
+
+def _dummy_result_from_traceback(candidate):
+    if isinstance(candidate, str):
+        out = {
+            "solution_params": None,
+            "solution_criterion": None,
+            "solution_derivative": None,
+            "solution_hessian": None,
+            "n_criterion_evaluations": None,
+            "n_derivative_evaluations": None,
+            "n_iterations": None,
+            "success": False,
+            "reached_convergence_criterion": None,
+            "message": candidate,
+        }
+    else:
+        out = candidate
+    return out

@@ -18,6 +18,8 @@ In particular we would like to thank:
   contributing code for the calculation of likelihood standard errors
 - Moritz Mendel (`mo2561057 <https://github.com/mo2561057>`_) for wrapping the pounders
   algorithm from TAO
+- Tim Mensinger (`timmens <https://github.com/timmens>`_) for contributions to numerical
+  differentiation and closed form derivatives for the constraints.
 
 If you want to find your name here as well, please contact us or browse through our
 Issues and submit a Pull Request.

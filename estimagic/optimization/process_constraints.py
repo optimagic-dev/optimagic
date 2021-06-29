@@ -75,13 +75,17 @@ def process_constraints(constraints, params):
               parameter
 
     """
+    params = process_bounds(params)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
+        params = params.copy()
         pc = _apply_constraint_killers(constraints)
         check_types(pc)
+        # selectors have to be processed before anything else happens to the params
         pc = _process_selectors(pc, params)
+
         pc = _replace_pairwise_equality_by_equality(pc)
         pc = _process_linear_weights(pc, params)
         check_constraints_are_satisfied(pc, params)
@@ -91,7 +95,9 @@ def process_constraints(constraints, params):
         check_for_incompatible_overlaps(pp, pc)
         check_fixes_and_bounds(pp, pc)
 
-        int_lower, int_upper = _create_internal_bounds(pp.lower, pp.upper, pc)
+        int_lower, int_upper = _create_internal_bounds(
+            pp.lower_bound, pp.upper_bound, pc
+        )
         pp["_internal_lower"] = int_lower
         pp["_internal_upper"] = int_upper
         pp["_internal_free"] = _create_internal_free(
@@ -122,6 +128,17 @@ def _apply_constraint_killers(constraints):
         raise KeyError(f"You try to kill non-existing constraints with ids: {killers}")
 
     return survivors
+
+
+def process_bounds(params):
+    """Fill missing bounds with -np.inf and np.inf."""
+    defaults = pd.DataFrame(
+        {"lower_bound": -np.inf, "upper_bound": np.inf},
+        index=params.index,
+    )
+    params = params.combine_first(defaults)
+
+    return params
 
 
 def _process_selectors(constraints, params):
@@ -273,7 +290,7 @@ def _replace_increasing_and_decreasing_by_linear(pc):
                 "index": [smaller, larger],
                 "type": "linear",
                 "weights": np.array([-1, 1]),
-                "lower": 0,
+                "lower_bound": 0,
             }
             linear_constraints.append(linear_constr)
 
@@ -307,14 +324,15 @@ def _create_internal_bounds(lower, upper, pc):
             diag_positions = [0] + np.cumsum(range(2, dim + 1)).tolist()
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             bd = constr.get("bounds_distance", 0)
+            bd = np.sqrt(bd) if constr["type"] == "covariance" else bd
             int_lower.iloc[diag_indices] = np.maximum(int_lower.iloc[diag_indices], bd)
         elif constr["type"] == "probability":
             int_lower.iloc[constr["index"]] = 0
         elif constr["type"] == "linear":
             int_lower.iloc[constr["index"]] = -np.inf
             int_upper.iloc[constr["index"]] = np.inf
-            int_lower.update(constr["right_hand_side"]["lower"])
-            int_upper.update(constr["right_hand_side"]["upper"])
+            int_lower.update(constr["right_hand_side"]["lower_bound"])
+            int_upper.update(constr["right_hand_side"]["upper_bound"])
         else:
             raise TypeError("Invalid constraint type {}".format(constr["type"]))
 

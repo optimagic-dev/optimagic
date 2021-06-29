@@ -3,15 +3,21 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from estimagic.config import IS_DFOLS_INSTALLED
+from estimagic.config import IS_PETSC4PY_INSTALLED
+from estimagic.config import IS_PYBOBYQA_INSTALLED
+from estimagic.optimization import AVAILABLE_ALGORITHMS
+from estimagic.optimization.utilities import calculate_trustregion_initial_radius
 from estimagic.optimization.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.optimization.utilities import cov_matrix_to_params
 from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
 from estimagic.optimization.utilities import cov_params_to_matrix
 from estimagic.optimization.utilities import cov_to_sds_and_corr
 from estimagic.optimization.utilities import dimension_to_number_of_triangular_elements
-from estimagic.optimization.utilities import index_element_to_string
+from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 from estimagic.optimization.utilities import robust_cholesky
+from estimagic.optimization.utilities import robust_inverse
 from estimagic.optimization.utilities import sdcorr_params_to_matrix
 from estimagic.optimization.utilities import sdcorr_params_to_sds_and_corr
 from estimagic.optimization.utilities import sds_and_corr_to_cov
@@ -97,13 +103,6 @@ def test_dimension_to_number_of_triangular_elements():
         assert dimension_to_number_of_triangular_elements(inp) == exp
 
 
-def test_index_element_to_string():
-    inputs = [(("a", "b", 1),), (["bla", 5, 6], "~"), ("bla", "*")]
-    expected = ["a_b_1", "bla~5~6", "bla"]
-    for inp, exp in zip(inputs, expected):
-        assert index_element_to_string(*inp) == exp
-
-
 def random_cov(dim, seed):
     np.random.seed(seed)
 
@@ -134,3 +133,49 @@ def test_robust_cholesky_with_extreme_cases():
     for cov in [np.ones((5, 5)), np.zeros((5, 5))]:
         chol = robust_cholesky(cov)
         aaae(chol.dot(chol.T), cov)
+
+
+def test_robust_inverse_nonsingular():
+    mat = np.eye(3) + 0.2
+    expected = np.linalg.inv(mat)
+    calculated = robust_inverse(mat)
+    aaae(calculated, expected)
+
+
+def test_robust_inverse_singular():
+    mat = np.zeros((5, 5))
+    expected = np.zeros((5, 5))
+    with pytest.warns(UserWarning, match="LinAlgError"):
+        calculated = robust_inverse(mat)
+    aaae(calculated, expected)
+
+
+def test_hash_array():
+    arr1 = np.arange(4)[::2]
+    arr2 = np.array([0, 2])
+
+    arr3 = np.array([0, 3])
+    assert hash_array(arr1) == hash_array(arr2)
+    assert hash_array(arr1) != hash_array(arr3)
+
+
+def test_initial_trust_radius_small_x():
+    x = np.array([0.01, 0.01])
+    expected = 0.1
+    res = calculate_trustregion_initial_radius(x)
+    assert expected == pytest.approx(res, abs=1e-8)
+
+
+def test_initial_trust_radius_large_x():
+    x = np.array([20.5, 10])
+    expected = 2.05
+    res = calculate_trustregion_initial_radius(x)
+    assert expected == pytest.approx(res, abs=1e-8)
+
+
+def test_available_algorithms():
+    present_algo_names = AVAILABLE_ALGORITHMS.keys()
+    assert "scipy_lbfgsb" in present_algo_names
+    assert ("nag_dfols" in present_algo_names) is IS_DFOLS_INSTALLED
+    assert ("tao_pounders" in present_algo_names) is IS_PETSC4PY_INSTALLED
+    assert ("nag_pybobyqa" in present_algo_names) is IS_PYBOBYQA_INSTALLED

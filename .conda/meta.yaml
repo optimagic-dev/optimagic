@@ -1,0 +1,57 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: estimagic
+  version: {{ data.get('version') }}
+
+source:
+  # git_url is nice in that it won't capture devenv stuff.  However, it only captures
+  # committed code, so pay attention.
+  git_url: ../
+
+build:
+  noarch: python
+  number: 0
+  entry_points:
+    - estimagic = estimagic.cli:cli
+
+requirements:
+  build:
+    - python
+    - setuptools
+  host:
+    - python >=3.6
+
+  run:
+    - python >=3.6
+    - click
+    - cloudpickle
+    - joblib
+    - numpy >=1.16
+    - pandas >=0.24
+    - bokeh >=1.3
+    - scipy
+    - fuzzywuzzy
+    - sqlalchemy >=1.3
+    - seaborn
+    - dill
+
+test:
+  requires:
+    - pytest
+    - pytest-xdist
+    - statsmodels
+  source_files:
+    - tox.ini
+    - estimagic/tests
+  commands:
+    - pytest -m "not slow"
+    - estimagic --version
+    - estimagic --help
+    - estimagic dashboard --help
+
+about:
+  home: https://github.com/OpenSourceEconomics/estimagic
+  license: BSD
+  license_file: LICENSE
+  summary: Tools for the estimation of (structural) econometric models.

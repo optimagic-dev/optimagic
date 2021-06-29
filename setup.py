@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="estimagic",
-    version="0.0.26",
+    version="0.1.4",
     description="Tools for the estimation of (structural) econometric models.",
     long_description="""
         Estimagic is a Python package that helps to build high-quality and user
@@ -16,16 +16,16 @@ setup(
         indirect inference.""",
     license="BSD",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
     ],
     keywords=["econometrics", "statistics", "extremum estimation", "optimization"],
     url="https://github.com/OpenSourceEconomics/estimagic",
     author="Janos Gabler",
     author_email="janos.gabler@gmail.com",
     packages=find_packages(exclude=["tests/*"]),
+    entry_points={"console_scripts": ["estimagic=estimagic.cli:cli"]},
     zip_safe=False,
     package_data={"estimagic": ["optimization/algo_dict.json"]},
     include_package_data=True,
