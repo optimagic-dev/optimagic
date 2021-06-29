@@ -5,6 +5,7 @@ from numpy.testing import assert_array_equal as aae
 from pandas.testing import assert_frame_equal as afe
 
 from estimagic.inference.bootstrap_samples import _convert_cluster_ids_to_indices
+from estimagic.inference.bootstrap_samples import _get_bootstrap_samples_from_indices
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 from estimagic.inference.bootstrap_samples import get_bootstrap_samples
 
@@ -48,9 +49,13 @@ def test_convert_cluster_ids_to_indices():
     aae(calculated, expected)
 
 
-def test_get_bootstrap_samples():
+def test_get_bootstrap_samples_from_indices():
     indices = [np.array([0, 1])]
     data = pd.DataFrame(np.arange(6).reshape(3, 2))
     expected = pd.DataFrame(np.arange(4).reshape(2, 2))
-    calculated = get_bootstrap_samples(data, indices)[0]
+    calculated = _get_bootstrap_samples_from_indices(data, indices)[0]
     afe(calculated, expected)
+
+
+def test_get_bootstrap_samples_runs(data):
+    get_bootstrap_samples(data, n_draws=2, seed=1234)

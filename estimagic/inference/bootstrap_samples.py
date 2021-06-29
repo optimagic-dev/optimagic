@@ -50,7 +50,33 @@ def _convert_cluster_ids_to_indices(cluster_col, drawn_clusters):
     return bootstrap_indices
 
 
-def get_bootstrap_samples(data, bootstrap_indices):
+def get_bootstrap_samples(data, cluster_by=None, seed=None, n_draws=1000):
+    """Draw bootstrap samples.
+
+    If you have memory issues you should use get_bootstrap_indices instead and construct
+    the full samples only as needed.
+
+    Args:
+        data (pandas.DataFrame): original dataset.
+        cluster_by (str): column name of the variable to cluster by.
+        seed (int): Random seed.
+        n_draws (int): number of draws, only relevant if seeds is None.
+
+    Returns:
+        list: list of resampled datasets.
+
+    """
+    indices = get_bootstrap_indices(
+        data=data,
+        cluster_by=cluster_by,
+        seed=seed,
+        n_draws=n_draws,
+    )
+    datasets = _get_bootstrap_samples_from_indices(data=data, bootstrap_indices=indices)
+    return datasets
+
+
+def _get_bootstrap_samples_from_indices(data, bootstrap_indices):
     """convert bootstrap indices into actual bootstrap samples.
 
     Args:
