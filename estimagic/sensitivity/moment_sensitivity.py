@@ -1,18 +1,17 @@
-"""
-This module provides local sensitivity measurements
-for general method of moments (MDE/CMD).
+"""Implement local sensitivity measures for method of moments.
 
 measures:
 m1: Andrews, Gentzkow & Shapiro
 (https://academic.oup.com/qje/article/132/4/1553/3861634)
 
-epsilon 2~6: Honoré, Jørgensen & de Paula
+epsilon 2-6: Honore, Jorgensen & de Paula
 (https://papers.srn.com/abstract=3518640)
+
 """
 import numpy as np
 import pandas as pd
 
-from estimagic.differentiation.differentiation import jacobian
+from estimagic.differentiation.derivatives import first_derivative
 
 
 def moment_sensitivity(
@@ -44,11 +43,16 @@ def moment_sensitivity(
     func1_kwargs = {} if func1_kwargs is None else func1_kwargs
     func2_kwargs = {} if func2_kwargs is None else func2_kwargs
 
-    # g (pd.DataFrame): Jacobian matrix
-    g = jacobian(
-        func=func1, params=params, func_kwargs=func1_kwargs, extrapolation=False
+    derivative_dict = first_derivative(
+        func=func1,
+        params=params,
+        func_kwargs=func1_kwargs,
     )
-    g = g.to_numpy()
+
+    g = derivative_dict["derivative"]
+
+    if isinstance(g, (pd.Series, pd.DataFrame)):
+        g = g.to_numpy()
 
     s = _calc_moments_variance(func2, params, func2_kwargs)
 
@@ -134,7 +138,7 @@ def _sandwich_plus(a, b, c):
 
 
 def _calc_moments_variance(func2, params, func2_kwargs):
-    """ calculate asymptotic variance-covariance matrix of the sample moments,
+    """calculate asymptotic variance-covariance matrix of the sample moments,
     s := Var(g) = E[g'],
     which is also the inverse of the optimal weight matrix.
 
@@ -264,7 +268,7 @@ def _calc_sensitivity_m2(g, sigma_opt, optimal_weight_matrix):
 
 
 def _calc_sensitivity_m3(m1, weight_matrix):
-    """ calculate m3, the lost precision in sigma if
+    """calculate m3, the lost precision in sigma if
     the k-th moment is subject to additional noise,
     using non-optimal weight matrix.
 
@@ -295,7 +299,7 @@ def _calc_sensitivity_m3(m1, weight_matrix):
 
 
 def _calc_sensitivity_m4(g, s, sigma, weight_matrix):
-    """ calculates the change in sigma
+    """calculates the change in sigma
     if completely exclude the k-th moment.
 
     args:
@@ -328,7 +332,7 @@ def _calc_sensitivity_m4(g, s, sigma, weight_matrix):
 
 
 def _calc_sensitivity_m5(g, s, sigma_opt):
-    """ compare the precision of gm estimator
+    """compare the precision of gm estimator
     with or without including the k-th moment.
 
     args:
@@ -364,7 +368,7 @@ def _calc_sensitivity_m5(g, s, sigma_opt):
 
 
 def _calc_sensitivity_m6(g, s, sigma, weight_matrix):
-    """ calculates how far theweight matrix is to being optimal.
+    """calculates how far theweight matrix is to being optimal.
 
     args:
         g (np.array): Jacobian
