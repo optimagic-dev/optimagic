@@ -18,16 +18,19 @@ def data():
 
 
 def test_get_bootstrap_indices_randomization_works_without_clustering(data):
+    np.random.seed(1234)
     res = get_bootstrap_indices(data, n_draws=2)
     assert set(res[0]) != set(res[1])
 
 
 def test_get_bootstrap_indices_radomization_works_with_clustering(data):
+    np.random.seed(1234)
     res = get_bootstrap_indices(data, cluster_by="hh", n_draws=2)
     assert set(res[0]) != set(res[1])
 
 
 def test_clustering_leaves_households_intact(data):
+    np.random.seed(1234)
     indices = get_bootstrap_indices(data, cluster_by="hh", n_draws=1)[0]
     sampled = data.iloc[indices]
     sampled_households = sampled["hh"].unique()
