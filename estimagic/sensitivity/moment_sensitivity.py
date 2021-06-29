@@ -134,7 +134,7 @@ def _sandwich_plus(a, b, c):
 
 
 def _calc_moments_variance(func2, params, func2_kwargs):
-    """ calculate asymptotic variance-covariance matrix of the sample moments,
+    """calculate asymptotic variance-covariance matrix of the sample moments,
     s := Var(g) = E[g'],
     which is also the inverse of the optimal weight matrix.
 
@@ -264,7 +264,7 @@ def _calc_sensitivity_m2(g, sigma_opt, optimal_weight_matrix):
 
 
 def _calc_sensitivity_m3(m1, weight_matrix):
-    """ calculate m3, the lost precision in sigma if
+    """calculate m3, the lost precision in sigma if
     the k-th moment is subject to additional noise,
     using non-optimal weight matrix.
 
@@ -295,7 +295,7 @@ def _calc_sensitivity_m3(m1, weight_matrix):
 
 
 def _calc_sensitivity_m4(g, s, sigma, weight_matrix):
-    """ calculates the change in sigma
+    """calculates the change in sigma
     if completely exclude the k-th moment.
 
     args:
@@ -328,7 +328,7 @@ def _calc_sensitivity_m4(g, s, sigma, weight_matrix):
 
 
 def _calc_sensitivity_m5(g, s, sigma_opt):
-    """ compare the precision of gm estimator
+    """compare the precision of gm estimator
     with or without including the k-th moment.
 
     args:
@@ -364,7 +364,7 @@ def _calc_sensitivity_m5(g, s, sigma_opt):
 
 
 def _calc_sensitivity_m6(g, s, sigma, weight_matrix):
-    """ calculates how far theweight matrix is to being optimal.
+    """calculates how far theweight matrix is to being optimal.
 
     args:
         g (np.array): Jacobian
