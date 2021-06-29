@@ -1,48 +1,65 @@
-from estimagic.inference.bootstrap_estimates import get_clustered_estimates
-from estimagic.inference.bootstrap_estimates import get_uniform_estimates
-from estimagic.inference.bootstrap_helpers import check_inputs
-from estimagic.inference.bootstrap_helpers import get_seeds
+import numpy as np
+import pandas as pd
 
 
-def get_bootstrap_samples(
-    data, cluster_by=None, seeds=None, n_draws=1000, n_cores=1, return_samples=False
-):
-    """Draw and return bootstrap samples, either by specified seeds or number of draws.
+def get_bootstrap_indices(data, cluster_by=None, seed=None, n_draws=1000):
+    """Draw positional indices for the construction of bootstrap samples.
+
+    Storing the positional indices instead of the full bootstrap samples saves a lot
+    of memory for datasets with many variables.
 
     Args:
         data (pandas.DataFrame): original dataset.
         cluster_by (str): column name of the variable to cluster by.
-        seeds (numpy.array): Size n_draws vector of drawn seeds or None.
+        seed (int): Random seed.
         n_draws (int): number of draws, only relevant if seeds is None.
-        n_cores (int): number of jobs for parallelization.
-        return_samples (bool): If true, return samples, else return indices.
 
     Returns:
-        samples (list): list of DataFrames containing resampled data or ids.
+        list: list of numpy arrays with positional indices
 
     """
+    np.random.seed(seed)
 
-    check_inputs(data=data, cluster_by=cluster_by)
-
-    if seeds is None:
-        seeds = get_seeds(n_draws)
-
+    n_obs = len(data)
     if cluster_by is None:
-
-        sample_ids = get_uniform_estimates(data, seeds, n_cores, outcome=None)
-
+        bootstrap_indices = list(np.random.randint(0, n_obs, size=(n_draws, n_obs)))
     else:
-
-        sample_ids = get_clustered_estimates(
-            data, cluster_by, seeds, n_cores, outcome=None
+        clusters = data[cluster_by].unique()
+        drawn_clusters = np.random.choice(
+            clusters, size=(n_draws, len(clusters)), replace=True
         )
 
-    if return_samples is True:
+        bootstrap_indices = _convert_cluster_ids_to_indices(
+            data[cluster_by], drawn_clusters
+        )
 
-        result = [data.iloc[ids] for ids in sample_ids]
+    return bootstrap_indices
 
-    else:
 
-        result = sample_ids
+def _convert_cluster_ids_to_indices(cluster_col, drawn_clusters):
+    """Convert the drawn clusters to positional indices of individual observations.
 
-    return result
+    Args:
+        cluster_col (pandas.Series):
+
+    """
+    bootstrap_indices = []
+    cluster_to_locs = pd.Series(np.arange(len(cluster_col)), index=cluster_col)
+    for draw in drawn_clusters:
+        bootstrap_indices.append(cluster_to_locs[draw].to_numpy())
+    return bootstrap_indices
+
+
+def get_bootstrap_samples(data, bootstrap_indices):
+    """convert bootstrap indices into actual bootstrap samples.
+
+    Args:
+        data (pandas.DataFrame): original dataset.
+        bootstrap_indices (list): List with numpy arrays containing positional indices
+            of observations in data.
+
+    Returns:
+        list: list of DataFrames
+    """
+    out = [data.iloc[idx] for idx in bootstrap_indices]
+    return out

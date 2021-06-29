@@ -3,7 +3,6 @@ import pandas as pd
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
 from estimagic.inference.bootstrap_helpers import check_inputs
-from estimagic.inference.bootstrap_helpers import get_seeds
 
 
 def bootstrap(
@@ -13,8 +12,9 @@ def bootstrap(
     cluster_by=None,
     ci_method="percentile",
     alpha=0.05,
-    seeds=None,
+    seed=None,
     n_cores=1,
+    error_handling="continue",
 ):
     """Calculate bootstrap estimates, standard errors and confidence intervals
     for statistic of interest in given original sample.
@@ -29,6 +29,9 @@ def bootstrap(
         alpha (float): significance level of choice.
         seeds (numpy.array): array of seeds for bootstrap samples, default is none.
         n_cores (int): number of jobs for parallelization.
+        error_handling (str): One of "continue", "raise". Default "continue" which means
+            that bootstrap estimates are only calculated for those samples where no
+            errors occur and a warning is produced if any error occurs.
 
     Returns:
         results (pandas.DataFrame): DataFrame where k'th row contains mean estimate,
@@ -38,14 +41,16 @@ def bootstrap(
 
     check_inputs(data, cluster_by, ci_method, alpha)
 
-    df = data.reset_index(drop=True)
+    estimates = get_bootstrap_estimates(
+        data=data,
+        outcome=outcome,
+        cluster_by=cluster_by,
+        seed=seed,
+        n_cores=n_cores,
+        error_handling=error_handling,
+    )
 
-    if seeds is None:
-        seeds = get_seeds(n_draws)
-
-    estimates = get_bootstrap_estimates(df, outcome, cluster_by, seeds, n_cores)
-
-    table = get_results_table(df, outcome, estimates, ci_method, alpha, n_cores)
+    table = get_results_table(data, outcome, estimates, ci_method, alpha, n_cores)
 
     return table
 

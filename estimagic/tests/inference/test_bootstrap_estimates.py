@@ -1,78 +1,79 @@
+import functools
+
 import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal as afe
 
+from estimagic.inference.bootstrap_estimates import (
+    _get_bootstrap_estimates_from_indices,
+)
 from estimagic.inference.bootstrap_estimates import get_bootstrap_estimates
-from estimagic.inference.bootstrap_estimates import get_clustered_estimates
-from estimagic.inference.bootstrap_estimates import get_uniform_estimates
 
 
 @pytest.fixture
-def setup():
-    out = {}
+def data():
+    df = pd.DataFrame([[1, 10], [2, 7], [3, 6], [4, 5]], columns=["x1", "x2"])
+    return df
 
-    out["df"] = pd.DataFrame(
-        np.array([[1, 10], [2, 7], [3, 6], [4, 5]]), columns=["x1", "x2"]
+
+def test_get_bootstrap_estimates_runs(data):
+    get_bootstrap_estimates(
+        data=data,
+        outcome=functools.partial(np.mean, axis=0),
+        n_draws=5,
     )
 
-    out["cluster_df"] = pd.DataFrame(
-        np.array([[1, 10, 2], [2, 7, 2], [3, 6, 1], [4, 5, 2]]),
-        columns=["x1", "x2", "stratum"],
+
+def test_bootstrap_estimates_from_indices_without_errors(data):
+    calculated = _get_bootstrap_estimates_from_indices(
+        indices=[np.array([1, 3]), np.array([0, 2])],
+        data=data,
+        outcome=functools.partial(np.mean, axis=0),
+        n_cores=1,
+        error_handling="raise",
     )
 
-    out["seeds"] = [1, 2, 3, 4, 5]
-
-    return out
-
-
-def g(data):
-    return data.mean(axis=0)
+    expected = pd.DataFrame([[3.0, 6.0], [2, 8]], columns=["x1", "x2"])
+    afe(calculated, expected)
 
 
-def test_get_bootstrap_estimates(setup):
-    estimates1 = get_bootstrap_estimates(
-        data=setup["df"], outcome=g, seeds=setup["seeds"]
-    )
-    estimates2 = get_bootstrap_estimates(
-        data=setup["df"], outcome=g, seeds=setup["seeds"], n_cores=-1
-    )
-    estimates3 = pd.DataFrame(
-        get_uniform_estimates(data=setup["df"], seeds=setup["seeds"], outcome=g)
-    )
-    estimates4 = pd.DataFrame(
-        get_uniform_estimates(data=setup["df"], seeds=setup["seeds"], outcome=g)
-    )
+def test_get_bootstrap_estimates_with_error_and_raise(data):
+    def _raise_assertion_error(data):
+        assert 1 == 2
 
-    afe(estimates1, estimates2)
-    afe(estimates2, estimates3)
-    afe(estimates3, estimates4)
-
-
-def test_get_bootstrap_estimates_cluster(setup):
-    estimates1 = get_bootstrap_estimates(
-        data=setup["cluster_df"], outcome=g, cluster_by="stratum", seeds=setup["seeds"]
-    )
-    estimates2 = get_bootstrap_estimates(
-        data=setup["cluster_df"], outcome=g, cluster_by="stratum", seeds=setup["seeds"]
-    )
-    estimates3 = pd.DataFrame(
-        get_clustered_estimates(
-            data=setup["cluster_df"],
-            cluster_by="stratum",
-            seeds=setup["seeds"],
-            outcome=g,
+    with pytest.raises(AssertionError):
+        get_bootstrap_estimates(
+            data=data, outcome=_raise_assertion_error, n_draws=2, error_handling="raise"
         )
-    )
-    estimates4 = pd.DataFrame(
-        get_clustered_estimates(
-            data=setup["cluster_df"],
-            cluster_by="stratum",
-            seeds=setup["seeds"],
-            outcome=g,
-        )
-    )
 
-    afe(estimates1, estimates2)
-    afe(estimates2, estimates3)
-    afe(estimates3, estimates4)
+
+def test_get_bootstrap_estimates_with_all_errors_and_continue(data):
+    def _raise_assertion_error(data):
+        assert 1 == 2
+
+    with pytest.warns(UserWarning):
+        with pytest.raises(RuntimeError):
+            get_bootstrap_estimates(
+                data=data,
+                outcome=_raise_assertion_error,
+                n_draws=2,
+                error_handling="continue",
+            )
+
+
+def test_get_bootstrap_estimates_with_some_errors_and_continue(data):
+    def _raise_assertion_error_sometimes(data):
+        assert np.random.uniform() > 0.5
+        return data.mean()
+
+    with pytest.warns(UserWarning):
+        res = get_bootstrap_estimates(
+            data=data,
+            outcome=_raise_assertion_error_sometimes,
+            n_draws=100,
+            error_handling="continue",
+            seed=123,
+        )
+
+    assert 30 <= len(res) <= 70

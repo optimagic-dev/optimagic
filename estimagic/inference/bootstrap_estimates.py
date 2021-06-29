@@ -1,120 +1,95 @@
-import random
-
-import numpy as np
 import pandas as pd
-from joblib import delayed
-from joblib import Parallel
 
+from estimagic.batch_evaluators import joblib_batch_evaluator as batch_evaluator
 from estimagic.inference.bootstrap_helpers import check_inputs
-from estimagic.inference.bootstrap_helpers import get_cluster_index
-from estimagic.inference.bootstrap_helpers import get_seeds
+from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 
 
 def get_bootstrap_estimates(
-    data, outcome, cluster_by=None, seeds=None, n_draws=1000, n_cores=1
+    data,
+    outcome,
+    cluster_by=None,
+    seed=None,
+    n_draws=1000,
+    n_cores=1,
+    error_handling="continue",
 ):
-    """Calculate the statistic f for every bootstrap sample, either by specified seeds
-    or for n_draws random samples.
+    """Draw bootstrap samples and calculate outcomes.
 
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the dataset calculating statistic of interest.
             Needs to return array-like object or pd.Series.
         cluster_by (str): column name of the variable to cluster by.
-        seeds (numpy.array): Size n_draws vector of drawn seeds or None.
+        seed (int): Random seed.
         n_draws (int): number of draws, only relevant if seeds is None.
         n_cores (int): number of jobs for parallelization.
+        error_handling (str): One of "continue", "raise". Default "continue" which means
+            that bootstrap estimates are only calculated for those samples where no
+            errors occur and a warning is produced if any error occurs.
 
     Returns:
-        estimates (pandas.DataFrame): DataFrame estimates for different bootstrap
-            samples.
+        estimates (pandas.DataFrame): Outcomes for different bootstrap samples. The
+            columns are the index of the result of ``outcome``.
 
     """
 
     check_inputs(data=data, cluster_by=cluster_by)
 
-    if seeds is None:
-        seeds = get_seeds(n_draws)
+    indices = get_bootstrap_indices(
+        data=data,
+        cluster_by=cluster_by,
+        seed=seed,
+        n_draws=n_draws,
+    )
 
-    df = data.reset_index(drop=True)
+    estimates = _get_bootstrap_estimates_from_indices(
+        indices=indices,
+        data=data,
+        outcome=outcome,
+        n_cores=n_cores,
+        error_handling=error_handling,
+    )
 
-    if cluster_by is None:
+    return estimates
 
-        estimates = get_uniform_estimates(df, seeds, n_cores, outcome)
 
+def _get_bootstrap_estimates_from_indices(
+    indices, data, outcome, n_cores, error_handling
+):
+
+    arguments = [{"data": data, "indices": ind, "outcome": outcome} for ind in indices]
+
+    raw_estimates = batch_evaluator(
+        _take_indices_and_calculate_outcome,
+        arguments,
+        n_cores=n_cores,
+        unpack_symbol="**",
+        error_handling=error_handling,
+    )
+
+    estimates = [est for est in raw_estimates if not isinstance(est, str)]
+    tracebacks = [est for est in raw_estimates if isinstance(est, str)]
+
+    if estimates:
+        estimates_df = pd.concat(estimates, axis=1).T
     else:
+        msg = (
+            "Calculating of all bootstrap outcomes failed. The tracebacks of the "
+            "raised Exceptions are reproduced below:"
+        )
+        raise RuntimeError(msg + "\n\n" + "\n\n".join(tracebacks))
 
-        estimates = get_clustered_estimates(df, cluster_by, seeds, n_cores, outcome)
+    if tracebacks:
+        msg = (
+            "Calculating bootstrap outcomes failed for some samples. Those samples "
+            "are excluded from the calculation of bootstrap standard errors and "
+            "confidence intervals, rendering them invalid. Do not use them for "
+            "anything but diagnostic purposes. Check warnings for more information. "
+        )
 
-    return pd.DataFrame(estimates)
-
-
-def get_uniform_estimates(data, seeds, n_cores=1, outcome=None):
-    """Calculate non-clustered bootstrap estimates. If f is None, return a list of the
-    samples.
-
-    Args:
-        data (pandas.DataFrame): original dataset.
-        seeds (numpy.array): Size n_draws vector of drawn seeds or None.
-        n_cores (int): number of jobs for parallelization.
-        outcome (callable): function of the dataset calculating statistic of interest.
-
-     Returns:
-         estimates (list): list of estimates for different bootstrap samples.
-
-    """
-
-    n = len(data)
-
-    def loop(s):
-
-        np.random.seed(s)
-        draw_ids = np.random.randint(0, n, size=n)
-        draw = data.iloc[draw_ids]
-
-        if outcome is None:
-            res = draw_ids
-        else:
-            res = outcome(draw)
-
-        return res
-
-    estimates = Parallel(n_jobs=n_cores)(delayed(loop)(s) for s in seeds)
-
-    return estimates
+    return estimates_df
 
 
-def get_clustered_estimates(data, cluster_by, seeds, n_cores=1, outcome=None):
-    """Calculate clustered bootstrap estimates. If f is None, return a list of the
-    samples.
-
-    Args:
-        data (pandas.DataFrame): original dataset.
-        cluster_by (str): column name of the variable to cluster by.
-        seeds (numpy.array): Size n_draws vector of drawn seeds or None.
-        n_cores (int): number of jobs for parallelization.
-        outcome (callable): function of the dataset calculating statistic of interest.
-
-     Returns:
-         estimates (list): list of estimates for different bootstrap samples.
-
-    """
-
-    clusters = get_cluster_index(data, cluster_by)
-    nclusters = len(clusters)
-
-    def loop(s):
-        random.seed(s)
-        draw_ids = np.concatenate(random.choices(clusters, k=nclusters))
-        draw = data.iloc[draw_ids]
-
-        if outcome is None:
-            res = draw_ids
-        else:
-            res = outcome(draw)
-
-        return res
-
-    estimates = Parallel(n_jobs=n_cores)(delayed(loop)(s) for s in seeds)
-
-    return estimates
+def _take_indices_and_calculate_outcome(indices, data, outcome):
+    return outcome(data.iloc[indices])
