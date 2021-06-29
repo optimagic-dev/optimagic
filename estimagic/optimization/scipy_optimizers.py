@@ -47,6 +47,7 @@ from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_T
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
@@ -955,6 +956,173 @@ def scipy_trust_constr(
     return _process_scipy_result(res)
 
 
+def scipy_ls_trf(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_criterion_tol=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_relative_gradient_tol=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    relative_step_size_diff_approx=None,
+    tr_solver=None,
+    tr_solver_options=None,
+):
+    """
+    Minimize a scalar function using a trust region reflective method.
+
+    Do not call this function directly but pass its name "scipy_truncated_newton"
+    to estimagic's maximize or minimize function as `algorithm` argument.
+    Specify your desired arguments as a dictionary and pass them as `algo_options`
+    to minimize or maximize.
+
+    The algorithm iteratively solves trust-region subproblems augmented by a special
+    diagonal quadratic term and with trust-region shape determined by the distance
+    from the bounds and the direction of the gradient. These enhancements help to
+    avoid making steps directly into the bounds and efficiently explore the whole space
+    of variables.
+
+    This function differs from scipy_ls_dogbox because it is more 'robust' in
+    bounded and unbounded problems, but can be potentially outperformed especially
+    in bounded problems with a small number of variables.
+
+    Below, only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options, see :ref:`naming_conventions`.
+
+    Args:
+        convergence_relative_criterion_tol (float): Stop when the relative improvement
+                between two iterations is below this.
+        convergence_relative_gradient_tol (float): Stop when the gradient, divided
+            by the absolute value of the criterion function is smaller than this.
+        stopping_max_criterion_evaluations (int): If the maximum number of function
+            evaluation is reached, the optimization stops but we do not count this as
+            convergence.
+        relative_step_size_diff_approx (array_like): Determines the relative step size
+            for the finite difference approximation of the Jacobian. The actual
+            step is computed as `x * diff_step`.
+        tr_solver (str): Method for solving trust-region subproblems, relevant only
+            for 'trf' and 'dogbox' methods.
+            * 'exact' is suitable for not very large problems with dense
+              Jacobian matrices. The computational complexity per iteration is
+              comparable to a singular value decomposition of the Jacobian
+              matrix.
+            * 'lsmr' is suitable for problems with sparse and large Jacobian
+              matrices. It uses the iterative procedure
+              `scipy.sparse.linalg.lsmr` for finding a solution of a linear
+              least-squares problem and only requires matrix-vector product
+              evaluations.
+            If None (default), the solver is chosen based on the type of Jacobian
+            returned on the first iteration.
+        tr_solver_options (dict):  Keyword options passed to trust-region solver.
+            * ``tr_solver='exact'``: `tr_options` are ignored.
+            * ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+              Additionally,  supports  'regularize' option
+              (bool, default is True), which adds a regularization term to the
+              normal equation, which improves convergence if the Jacobian is
+              rank-deficient.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+    """
+    return _scipy_least_squares(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        convergence_relative_criterion_tol=convergence_relative_criterion_tol,
+        convergence_relative_gradient_tol=convergence_relative_gradient_tol,
+        stopping_max_criterion_evaluations=stopping_max_criterion_evaluations,
+        relative_step_size_diff_approx=relative_step_size_diff_approx,
+        tr_solver=tr_solver,
+        tr_solver_options=tr_solver_options,
+        method="trf",
+    )
+
+
+def scipy_ls_dogbox(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_criterion_tol=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_relative_gradient_tol=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    relative_step_size_diff_approx=None,
+    tr_solver=None,
+    tr_solver_options=None,
+):
+    """
+    Minimize a scalar function using a rectangular trust region method.
+
+    Do not call this function directly but pass its name "scipy_truncated_newton"
+    to estimagic's maximize or minimize function as `algorithm` argument.
+    Specify your desired arguments as a dictionary and pass them as `algo_options`
+    to minimize or maximize.
+
+
+    It operates in a trust-region framework, but considers rectangular trust regions
+    as opposed to conventional ellipsoids. The intersection of a current trust
+    region and initial bounds is again rectangular, so on each iteration a quadratic
+    minimization problem subject to bound constraints is solved approximately by
+    Powell’s dogleg method.
+
+    This function differs from scipy_ls_dogbox because it is not as 'robust', more
+    efficient for bounded problems with a small number of variables, but exhibits
+    slow convergence when the rank of Jacobian is less than the number of variables.
+
+    Below, only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options, see :ref:`naming_conventions`.
+
+    Args:
+        convergence_relative_criterion_tol (float): Stop when the relative improvement
+                between two iterations is below this.
+        convergence_relative_gradient_tol (float): Stop when the gradient, divided
+            by the absolute value of the criterion function is smaller than this.
+        stopping_max_criterion_evaluations (int): If the maximum number of function
+            evaluation is reached, the optimization stops but we do not count this as
+            convergence.
+        relative_step_size_diff_approx (array_like): Determines the relative step size
+            for the finite difference approximation of the Jacobian. The actual
+            step is computed as `x * diff_step`.
+        tr_solver (str): Method for solving trust-region subproblems, relevant only
+            for 'trf' and 'dogbox' methods.
+            * 'exact' is suitable for not very large problems with dense
+              Jacobian matrices. The computational complexity per iteration is
+              comparable to a singular value decomposition of the Jacobian
+              matrix.
+            * 'lsmr' is suitable for problems with sparse and large Jacobian
+              matrices. It uses the iterative procedure
+              `scipy.sparse.linalg.lsmr` for finding a solution of a linear
+              least-squares problem and only requires matrix-vector product
+              evaluations.
+            If None (default), the solver is chosen based on the type of Jacobian
+            returned on the first iteration.
+        tr_solver_options (dict):  Keyword options passed to trust-region solver.
+            * ``tr_solver='exact'``: `tr_options` are ignored.
+            * ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+    """
+    return _scipy_least_squares(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        convergence_relative_criterion_tol=convergence_relative_criterion_tol,
+        convergence_relative_gradient_tol=convergence_relative_gradient_tol,
+        stopping_max_criterion_evaluations=stopping_max_criterion_evaluations,
+        relative_step_size_diff_approx=relative_step_size_diff_approx,
+        tr_solver=tr_solver,
+        tr_solver_options=tr_solver_options,
+        method="dogbox",
+    )
+
+
 def _process_scipy_result(scipy_results_obj):
     # using get with defaults to access dict elements is just a safety measure
     raw_res = {**scipy_results_obj}
@@ -964,7 +1132,7 @@ def _process_scipy_result(scipy_results_obj):
         "solution_derivative": raw_res.get("jac"),
         "solution_hessian": raw_res.get("hess"),
         "n_criterion_evaluations": raw_res.get("nfev"),
-        "n_derivative_evaluations": raw_res.get("njac"),
+        "n_derivative_evaluations": raw_res.get("njac") or raw_res.get("njev"),
         "n_iterations": raw_res.get("nit"),
         "success": raw_res.get("success"),
         "reached_convergence_criterion": None,
@@ -981,3 +1149,62 @@ def _get_scipy_bounds(lower_bounds, upper_bounds):
     bounds = bounds.astype("object")
     bounds[mask] = None
     return list(map(tuple, bounds))
+
+
+def _scipy_least_squares(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_criterion_tol=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_relative_gradient_tol=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    relative_step_size_diff_approx=None,
+    tr_solver=None,
+    tr_solver_options=None,
+    method="trf",
+):
+    """
+    Internal function used by the scipy_ls_trf and scipy_ls_dogbox functions.
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+
+    if method not in ["trf", "dogbox", "lm"]:
+        raise ValueError(
+            f"Method {method} is not supported within scipy_least_squares."
+        )
+
+    if tr_solver_options is None:
+        tr_solver_options = {}
+
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info["name"] = f"scipy_ls_{method}"
+    func = functools.partial(
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
+    )
+
+    gradient = functools.partial(
+        criterion_and_derivative, task="derivative", algorithm_info=algo_info
+    )
+
+    res = scipy.optimize.least_squares(
+        fun=func,
+        x0=x,
+        jac=gradient,
+        # Don't use _get_scipy_bounds, b.c. least_squares uses np.inf
+        bounds=(lower_bounds, upper_bounds),
+        max_nfev=stopping_max_criterion_evaluations,
+        ftol=convergence_relative_criterion_tol,
+        gtol=convergence_relative_gradient_tol,
+        method=method,
+        diff_step=relative_step_size_diff_approx,
+        tr_solver=tr_solver,
+        tr_options=tr_solver_options,
+    )
+
+    return _process_scipy_result(res)
