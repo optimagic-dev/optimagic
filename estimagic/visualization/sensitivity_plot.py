@@ -52,7 +52,8 @@ def moment_sensitivity_plot(sensitivity):
 
         # Use the same x axis limits on all columns and add better labels
         g.set(
-            xlabel="", ylabel="",
+            xlabel="",
+            ylabel="",
         )
 
         # Use semantically meaningful titles for the columns
