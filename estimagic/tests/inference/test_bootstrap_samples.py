@@ -25,8 +25,7 @@ def test_get_bootstrap_indices_randomization_works_without_clustering(data):
 
 
 def test_get_bootstrap_indices_radomization_works_with_clustering(data):
-    np.random.seed(1234)
-    res = get_bootstrap_indices(data, cluster_by="hh", n_draws=2)
+    res = get_bootstrap_indices(data, cluster_by="hh", n_draws=2, seed=12345)
     assert set(res[0]) != set(res[1])
 
 
