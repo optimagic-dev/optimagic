@@ -18,7 +18,7 @@ def moment_sensitivity_plot(sensitivity):
 
     number_sens = len(sensitivity)
 
-    df_columns = sensitivity[0]["name"].to_list()
+    df_columns = sensitivity[0].index.get_level_values("name").to_list()
     number_params = len(df_columns)
 
     for i in range(number_sens):

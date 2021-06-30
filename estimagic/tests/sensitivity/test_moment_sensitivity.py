@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
+from numpy.testing import assert_array_almost_equal as aaae
 from scipy import stats
 
 from estimagic.sensitivity.moment_sensitivity import moment_sensitivity
@@ -187,4 +187,6 @@ def test_moments_value(sens_input, sens_output):
     )
 
     for i in range(len(calc_sens)):
-        assert_frame_equal(calc_sens[i], sens_output["sens"][i], check_less_precise=4)
+        calculated = calc_sens[i]
+        expected = sens_output["sens"][i]
+        aaae(calculated.to_numpy(), expected.to_numpy())
