@@ -1,11 +1,10 @@
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy import stats
 
+from estimagic.config import TEST_DIR
 from estimagic.sensitivity.moment_sensitivity import moment_sensitivity
 
 pd.set_option("precision", 6)
@@ -13,14 +12,9 @@ pd.set_option("precision", 6)
 params_index = [["beta"], ["intersection", "x1", "x2"]]
 params_index = pd.MultiIndex.from_product(params_index, names=["type", "name"])
 
-x_path = Path(__file__).resolve().parent / "fixtures" / "moment_sensitivity_x.csv"
-y_path = Path(__file__).resolve().parent / "fixtures" / "moment_sensitivity_y.csv"
-
-x_data = pd.read_csv(x_path, header=None)
-x_data.columns = ["intertsection", "x1", "x2"]
-
-y_data = pd.read_csv(y_path, header=None)
-y_data.columns = ["y_probit"]
+data = pd.read_csv(TEST_DIR / "sensitivity" / "sensitivity_probit_example_data.csv")
+y_data = data[["y"]]
+x_data = data[["intercept", "x1", "x2"]]
 
 
 def calc_moments_expectation(params, x, y, estimate_y=True):
