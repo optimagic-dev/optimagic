@@ -13,18 +13,16 @@ def moment_sensitivity_plot(sensitivity):
         sensitivity (pd.DataFrame or list of pd.DataFrame)
     """
 
-    if type(sensitivity) is not list:
-        sensitivity = [sensitivity]
-
     number_sens = len(sensitivity)
 
-    df_columns = sensitivity[0].index.get_level_values("name").to_list()
+    measures = list(sensitivity.keys())
+    df_columns = sensitivity[measures[0]].index.get_level_values("name").to_list()
     number_params = len(df_columns)
 
     figures = []
 
-    for i in range(number_sens):
-        df = sensitivity[i].copy(deep=True)
+    for name, df in sensitivity.items():
+        df = df.copy(deep=True)
         df.iloc[:, -number_sens:] = df.iloc[:, -number_sens:].abs()
 
         df = df.T[-number_sens:]
@@ -73,7 +71,7 @@ def moment_sensitivity_plot(sensitivity):
         sns.despine(bottom=True)
 
         plt.subplots_adjust(top=0.9)
-        g.fig.suptitle("Sensitivity " + str(i + 1))
+        g.fig.suptitle(name)
 
         figures.append(g)
 

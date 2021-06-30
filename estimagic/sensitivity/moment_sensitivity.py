@@ -14,6 +14,36 @@ import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
 
 
+EXPLANATIONS = {
+    "sensitivity_to_bias": (
+        "How strongly would the parameter estimates be biased if the kth moment was "
+        "misspecified, i.e not zero in expectation?"
+    ),
+    "fundamental_sensitivity_to_noise": (
+        "How much precision would be lost if the kth moment was subject to a little "
+        "additional noise if the optimal weighting matrix is used?"
+    ),
+    "actual_sensitivity_to_noise": (
+        "How much precision would be lost if the kth moment was subjet to a little "
+        "additional noise if the current weighting matrix is used?"
+    ),
+    "actual_sensitivity_to_removal": (
+        "How much precision would be lost if the kth moment was excluded from "
+        "the estimation if the current weighting matrix is used."
+    ),
+    "fundamental_sensitivity_to_removal": (
+        "How much precision would be lost if the kth moment was excluded from "
+        "the estimation with if the optimal weighting matrix is used?"
+    ),
+    "sensitivity_to_weighting": (
+        "How would the precision change if the weight of the kth moment is increased "
+        "a little?"
+    ),
+}
+
+MEASURES = list(EXPLANATIONS.keys())
+
+
 def moment_sensitivity(
     func1,
     func2,
@@ -88,11 +118,8 @@ def moment_sensitivity(
     epsilon6 = _calc_sensitivity_epsilon(m6, weight_matrix, sigma)
     epsilon6.index = params.index
 
-    sensitivity = [m1, epsilon2, epsilon3, epsilon4, epsilon5, epsilon6]
-
-    if save_csv is True:
-        for i in range(len(sensitivity)):
-            sensitivity[i].to_csv("sensitivity_" + str(i + 1) + ".csv")
+    res_list = [m1, epsilon2, epsilon3, epsilon4, epsilon5, epsilon6]
+    sensitivity = dict(zip(EXPLANATIONS, res_list))
 
     return sensitivity
 
