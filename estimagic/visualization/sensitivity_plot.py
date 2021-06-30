@@ -21,8 +21,9 @@ def moment_sensitivity_plot(sensitivity):
     df_columns = sensitivity[0].index.get_level_values("name").to_list()
     number_params = len(df_columns)
 
+    figures = []
+
     for i in range(number_sens):
-        plt.clf()
         df = sensitivity[i].copy(deep=True)
         df.iloc[:, -number_sens:] = df.iloc[:, -number_sens:].abs()
 
@@ -74,6 +75,6 @@ def moment_sensitivity_plot(sensitivity):
         plt.subplots_adjust(top=0.9)
         g.fig.suptitle("Sensitivity " + str(i + 1))
 
-        g.savefig("sensitivity_plot" + str(i + 1) + ".png")
+        figures.append(g)
 
-    return "Figures saved."
+    return figures
