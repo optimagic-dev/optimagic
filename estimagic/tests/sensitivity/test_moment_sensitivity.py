@@ -19,7 +19,7 @@ x_data = data[["intercept", "x1", "x2"]]
 
 
 def calc_moments_expectation(params, x, y, estimate_y=True):
-    """This is the func1 in sensitivity module.
+    """This is the moment_func in sensitivity module.
 
     Args:
         params (pd.DataFrame): see :ref:`params`
@@ -39,7 +39,7 @@ def calc_moments_expectation(params, x, y, estimate_y=True):
 
 
 def calc_moments_value(params, x, y, estimate_y=True):
-    """This is the func2 in sensitivity module.
+    """This is the moment_contributions_func in sensitivity module.
 
     Args:
         params (pd.DataFrame): see :ref:`params`
@@ -80,8 +80,8 @@ def calc_moments_value(params, x, y, estimate_y=True):
 @pytest.fixture
 def sens_input():
     out = {}
-    out["func1"] = calc_moments_expectation
-    out["func2"] = calc_moments_value
+    out["moment_func"] = calc_moments_expectation
+    out["moment_contributions_func"] = calc_moments_value
     out["params"] = pd.DataFrame(
         data=[[0.57735], [0.57735], [0.57735]], index=params_index, columns=["value"]
     )
@@ -145,8 +145,8 @@ def expected():
 @pytest.mark.parametrize("measure", MEASURES)
 def test_moments_value(sens_input, expected, measure):
     calculated = moment_sensitivity(
-        func1=sens_input["func1"],
-        func2=sens_input["func2"],
+        moment_func=sens_input["moment_func"],
+        moment_contributions_func=sens_input["moment_contributions_func"],
         params=sens_input["params"],
         func1_kwargs=sens_input["func_kwargs"],
         func2_kwargs=sens_input["func_kwargs"],
