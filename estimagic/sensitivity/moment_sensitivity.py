@@ -48,10 +48,8 @@ def moment_sensitivity(
     moment_func,
     moment_contributions_func,
     params,
-    func1_kwargs=None,
-    func2_kwargs=None,
+    kwargs=None,
     weight_matrix=None,
-    save_csv=False,
 ):
     """Return all six (6) measurements,
     and save as six (6) .csv files.
@@ -60,23 +58,20 @@ def moment_sensitivity(
         moment_func (function): moment function (expectations)
         moment_contributions_func (function): moment function (actual values)
         params (pd.DataFrame): see :ref:`params`
-        func1_kwargs (dict): additional arguments for moment_func
-        func2_kwargs (dict): additional arguments for moment_contributions_func
+        kwargs (dict): additional arguments for the functions
         weight_matrix (np.array): user defined weight matrix.
-                                  If not specified, use the optimal weight matrix.
-        save_csv (boolean): save the sensitivity measures as csv tables.
+            If not specified, use the optimal weight matrix.
 
     Returns:
         sensitivity (list of pd.DataFrame)
     """
 
-    func1_kwargs = {} if func1_kwargs is None else func1_kwargs
-    func2_kwargs = {} if func2_kwargs is None else func2_kwargs
+    kwargs = {} if kwargs is None else kwargs
 
     derivative_dict = first_derivative(
         func=moment_func,
         params=params,
-        func_kwargs=func1_kwargs,
+        func_kwargs=kwargs,
     )
 
     g = derivative_dict["derivative"]
@@ -84,7 +79,7 @@ def moment_sensitivity(
     if isinstance(g, (pd.Series, pd.DataFrame)):
         g = g.to_numpy()
 
-    s = _calc_moments_variance(moment_contributions_func, params, func2_kwargs)
+    s = _calc_moments_variance(moment_contributions_func, params, kwargs)
 
     weight_opt = np.linalg.inv(s)
     sigma_opt = _calc_estimator_variance(g, s, weight_opt)
@@ -164,7 +159,7 @@ def _sandwich_plus(a, b, c):
     return sandwich
 
 
-def _calc_moments_variance(moment_contributions_func, params, func2_kwargs):
+def _calc_moments_variance(moment_contributions_func, params, kwargs):
     """calculate asymptotic variance-covariance matrix of the sample moments,
     s := Var(g) = E[g'],
     which is also the inverse of the optimal weight matrix.
@@ -172,14 +167,14 @@ def _calc_moments_variance(moment_contributions_func, params, func2_kwargs):
     args:
         moment_contributions_func (function): moment function (actual values)
         params (pd.DataFrame): see :ref:`params`
-        func2_kwargs (dict): additional positional arguments for
+        kwargs (dict): additional positional arguments for
             moment_contributions_func.
 
     Return:
         s (np.array)
     """
 
-    mom_value = moment_contributions_func(params, **func2_kwargs)
+    mom_value = moment_contributions_func(params, **kwargs)
     mom_value = mom_value.to_numpy()
 
     s = np.cov(mom_value, ddof=0)

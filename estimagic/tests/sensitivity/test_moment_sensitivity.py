@@ -148,8 +148,7 @@ def test_moments_value(sens_input, expected, measure):
         moment_func=sens_input["moment_func"],
         moment_contributions_func=sens_input["moment_contributions_func"],
         params=sens_input["params"],
-        func1_kwargs=sens_input["func_kwargs"],
-        func2_kwargs=sens_input["func_kwargs"],
+        kwargs=sens_input["func_kwargs"],
     )
 
     aaae(calculated[measure].to_numpy(), expected[measure].to_numpy())
