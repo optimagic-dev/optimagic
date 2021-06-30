@@ -103,8 +103,8 @@ def estimation_table(
     # of this key.
     if not custom_col_names:
         name_list = []
-        for i in range(len(models)):
-            name_list.append(models[i].info.get("estimation_name", ""))
+        for model in models:
+            name_list.append(model.info.get("estimation_name", ""))
         if "" not in name_list:
             custom_col_names = name_list
     # Set some defaults:
@@ -338,7 +338,7 @@ def _process_model(model):
     else:
         NamedTup = namedtuple("NamedTup", "params info")
         if isinstance(model, dict):
-            processed_model = NamedTup(params=model["params"], info=model["info"])
+            processed_model = NamedTup(params=model["params"], info=model.get('info', {}))
         else:
             try:
                 processed_model = NamedTup(
