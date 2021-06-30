@@ -339,6 +339,8 @@ def _process_model(model):
         NamedTup = namedtuple("NamedTup", "params info")
         if isinstance(model, dict):
             processed_model = NamedTup(params=model["params"], info=model.get('info', {}))
+        elif isinstance(model, pd.DataFrame):
+            processed_model = NamedTup(params=model, info={})
         else:
             try:
                 processed_model = NamedTup(
