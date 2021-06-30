@@ -351,7 +351,6 @@ def _process_model(model):
                 raise
             except BaseException:
                 raise TypeError("Model {} does not have valid format".format(model))
-
     return processed_model
 
 
@@ -377,6 +376,8 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
+    if 'p_value' in df.columns:
+        df = df.rename(columns={'p_value':'pvalue'})
     if show_stars:
         sig_bins = [-1] + sorted(sig_levels) + [2]
         value_sr = round(df["value"], sig_digits).replace(np.nan, "").astype("str")
