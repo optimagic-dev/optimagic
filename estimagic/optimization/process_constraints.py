@@ -43,12 +43,14 @@ from estimagic.optimization.utilities import number_of_triangular_elements_to_di
 from estimagic.parameter_handling import add_default_bounds_to_params
 
 
-def process_constraints(constraints, params):
+def process_constraints(constraints, params, scaling_factor=None, scaling_offset=None):
     """Process, consolidate and check constraints.
 
     Args:
         constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
 
     Returns:
 
@@ -95,7 +97,7 @@ def process_constraints(constraints, params):
         check_for_incompatible_overlaps(pp, pc)
         check_fixes_and_bounds(pp, pc)
 
-        int_lower, int_upper = _create_internal_bounds(
+        int_lower, int_upper = _create_unscaled_internal_bounds(
             pp.lower_bound, pp.upper_bound, pc
         )
         pp["_internal_lower"] = int_lower
@@ -103,6 +105,14 @@ def process_constraints(constraints, params):
         pp["_internal_free"] = _create_internal_free(
             pp._is_fixed_to_value, pp._is_fixed_to_other, pc
         )
+
+        for col in ["_internal_lower", "_internal_upper"]:
+            pp[col] = _scale_bound_to_internal(
+                pp[col],
+                pp._internal_free,
+                scaling_factor=scaling_factor,
+                scaling_offset=scaling_offset,
+            )
         pp["_pre_replacements"] = _create_pre_replacements(pp._internal_free)
         pp["_internal_fixed_value"] = _create_internal_fixed_value(pp._fixed_value, pc)
 
@@ -266,7 +276,7 @@ def _replace_increasing_and_decreasing_by_linear(pc):
     return processed
 
 
-def _create_internal_bounds(lower, upper, pc):
+def _create_unscaled_internal_bounds(lower, upper, pc):
     """Create columns with bounds for the internal parameter vector.
 
     The columns have the length of the external params and will be reduced later.
@@ -377,3 +387,16 @@ def _create_internal_fixed_value(fixed_value, pc):
             int_fix.update(constr["right_hand_side"]["value"])
 
     return int_fix
+
+
+def _scale_bound_to_internal(bound_sr, internal_free, scaling_factor, scaling_offset):
+    sr = bound_sr.copy(deep=True)
+    free_bounds = bound_sr[internal_free].to_numpy()
+    if scaling_offset is not None:
+        free_bounds = free_bounds - scaling_offset
+
+    if scaling_factor is not None:
+        free_bounds = free_bounds / scaling_offset
+
+    sr[internal_free] = free_bounds
+    return sr
