@@ -140,7 +140,7 @@ def maximize(
             in memory in case they are needed.
 
     """
-    return optimize(
+    return _optimize(
         direction="maximize",
         criterion=criterion,
         params=params,
@@ -272,7 +272,7 @@ def minimize(
             in memory in case they are needed.
 
     """
-    return optimize(
+    return _optimize(
         direction="minimize",
         criterion=criterion,
         params=params,
@@ -295,27 +295,27 @@ def minimize(
     )
 
 
-def optimize(
+def _optimize(
     direction,
     criterion,
     params,
     algorithm,
     *,
-    criterion_kwargs=None,
-    constraints=None,
-    algo_options=None,
-    derivative=None,
-    derivative_kwargs=None,
-    criterion_and_derivative=None,
-    criterion_and_derivative_kwargs=None,
-    numdiff_options=None,
-    logging=False,
-    log_options=None,
-    error_handling="raise",
-    error_penalty=None,
-    batch_evaluator="joblib",
-    batch_evaluator_options=None,
-    cache_size=100,
+    criterion_kwargs,
+    constraints,
+    algo_options,
+    derivative,
+    derivative_kwargs,
+    criterion_and_derivative,
+    criterion_and_derivative_kwargs,
+    numdiff_options,
+    logging,
+    log_options,
+    error_handling,
+    error_penalty,
+    batch_evaluator,
+    batch_evaluator_options,
+    cache_size,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
