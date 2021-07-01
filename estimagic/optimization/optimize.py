@@ -7,7 +7,6 @@ import numpy as np
 import estimagic.batch_evaluators as be
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
-from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
@@ -43,7 +42,7 @@ def maximize(
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
     numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
+    logging=False,
     log_options=None,
     error_handling="raise",
     error_penalty=None,
@@ -177,7 +176,7 @@ def minimize(
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
     numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
+    logging=False,
     log_options=None,
     error_handling="raise",
     error_penalty=None,
@@ -310,7 +309,7 @@ def optimize(
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
     numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
+    logging=False,
     log_options=None,
     error_handling="raise",
     error_penalty=None,
