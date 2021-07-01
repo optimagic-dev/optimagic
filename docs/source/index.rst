@@ -28,7 +28,7 @@ Optimization
 - estimagic encourages name-based parameters handling. Parameters are specified
   as pandas DataFrames with any kind of single or MultiIndex. See :ref:`params`.
 - The complete history of parameters and function evaluations are saved in a
-  database for maximum reproducibility. `How to use logging`_
+  database for maximum reproducibility. See `How to use logging`_
 - The progress of the optimization is displayed in real time via an
   interactive dashboard. See :ref:`dashboard`.
 
