@@ -119,5 +119,50 @@ Warning
 =======
 
 Estimagic is still in alpha status and the API might still change. We will try to keep
-the API more stable When we switch versions `0.0.x` to `0.x.x`. Until then we want to
-achieve the following things:
+the API more stable When we reach version `0.2.0`. 
+
+Roadmap
+=======
+
+Version `0.1.5`
+---------------
+
+- Move things that do not have stable interfaces to `estimagic.experimental` where 
+  possible and raise warnings else (e.g. scaling, TikTok)
+- Make imports for stable things nicer (first_derivative, ...)
+- Support bootstrap (experimental)
+- Support basic sensitivity analysis for moments based estimation (experimental)
+- Support scaling of optimization problems (experimental)
+- Support multi start optimizations as in TikTok (experimental)
+
+
+Version `0.1.6`
+---------------
+
+- Improve packaging and upload on conda-forge
+- Split up into several packages to keep runtimes for the test suites manageable 
+    - estimagic-optimization
+    - estimagic-differentiation
+    - estimagic-inference
+- Internal refactoring of constraints code
+
+Version `0.2.0` (Stable interfaces for inference)
+-------------------------------------------------
+
+- Find a good example model that can be estimated with ML, MSM, GMM and II for test 
+  cases and documentation
+- Improve interfaces for all inference and sensitivity analysis functions
+- Make tutorials that show full workflows for each estimation principle 
+- Promote estimagic via blogposts
+
+Versions `0.2.x` (Add functionality)
+------------------------------------
+
+- Wrap nlopt and ipopt 
+- Implement a flexible toolkit for optimization of noisy functions 
+- Wrap pygmo 
+- Add code for numerical second derivatives 
+- Make dashboard options configurable in GUI
+- Improve the appearance of the current Dashboard
+- Add a dashboard tab for numerical derivatives 
+- Add a dashboard tab for bootstrapping 
