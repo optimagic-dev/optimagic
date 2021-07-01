@@ -105,6 +105,29 @@ def test_reparametrize_from_internal(example_params, all_constraints, case, numb
     aaae(calculated_external_value, expected_external_value)
 
 
+def test_scaling_cancels_itself():
+    params = pd.DataFrame()
+    params["value"] = np.arange(10) + 10
+    params["lower_bound"] = np.arange(10)
+    params["upper_bound"] = 25
+
+    pc, pp = process_constraints([], params)
+
+    internal = reparametrize_to_internal(
+        pp["value"].to_numpy(), pp["_internal_free"].to_numpy(dtype=bool), pc
+    )
+
+    external = reparametrize_from_internal(
+        internal=internal,
+        fixed_values=pp["_internal_fixed_value"].to_numpy(),
+        pre_replacements=pp["_pre_replacements"].to_numpy(),
+        processed_constraints=pc,
+        post_replacements=pp["_post_replacements"].to_numpy(),
+    )
+
+    aaae(external, params["value"].to_numpy())
+
+
 @pytest.mark.parametrize("case, number", to_test)
 def test_reparametrize_from_internal_jacobian(
     example_params, all_constraints, case, number
