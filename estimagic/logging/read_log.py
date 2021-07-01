@@ -112,7 +112,7 @@ def _process_path_or_database(path_or_database):
     >>> from sqlalchemy import MetaData
     >>> database = MetaData()
     >>> _process_path_or_database(database)
-    {'path': None, 'metadata': MetaData(bind=None), 'fast_logging': False}
+    {'path': None, 'metadata': MetaData(), 'fast_logging': False}
 
     """
     res = {"path": None, "metadata": None, "fast_logging": False}
