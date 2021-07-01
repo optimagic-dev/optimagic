@@ -1,3 +1,6 @@
+
+.. _constraints: 
+
 ===========================
 How to specify constraints
 ===========================
