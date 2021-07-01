@@ -25,3 +25,10 @@ def get_traceback():
     if isinstance(tb, list):
         tb = "".join(tb)
     return tb
+
+
+INVALID_INFERENCE_MSG = (
+    "Taking the inverse of the information matrix failed. Only ever use this "
+    "covariance matrix or standard errors based on it for diagnostic purposes, not for "
+    "drawing conclusions."
+)

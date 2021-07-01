@@ -5,6 +5,9 @@ Bruce E. Hansen - Econometrics (https://www.ssc.wisc.edu/~bhansen/econometrics).
 """
 import numpy as np
 
+from estimagic.exceptions import INVALID_INFERENCE_MSG
+from estimagic.optimization.utilities import robust_inverse
+
 
 def gmm_cov(mom_cond, mom_cond_jacob, weighting_matrix):
     """
@@ -52,6 +55,8 @@ def _covariance_moments(mom_cond):
 
 
 def sandwich_cov(q_hat, weighting_matrix, omega, nobs):
-    bread = np.linalg.inv(q_hat.T @ weighting_matrix @ q_hat)
+    bread = robust_inverse(
+        q_hat.T @ weighting_matrix @ q_hat, msg=INVALID_INFERENCE_MSG
+    )
     butter = q_hat.T @ weighting_matrix @ omega @ weighting_matrix @ q_hat
     return bread @ butter @ bread / nobs

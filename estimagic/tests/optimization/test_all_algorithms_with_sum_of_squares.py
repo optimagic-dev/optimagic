@@ -19,6 +19,7 @@ from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
+
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
     "scipy_conjugate_gradient",
@@ -31,30 +32,53 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
-IMPRECISE_ALGOS = ["scipy_powell", "scipy_truncated_newton", "scipy_trust_constr"]
+IMPRECISE_ALGOS = [
+    "scipy_powell",
+    "scipy_truncated_newton",
+    "scipy_trust_constr",
+    "scipy_ls_trf",
+    "scipy_ls_dogbox",
+]
 
 
 def _skip_tests_with_missing_dependencies(test_cases):
     """Skip tests involving optimizers whose dependencies could not be found."""
-    dependency_present_to_start_str = {
-        IS_PETSC4PY_INSTALLED: "tao_",
-        IS_PYBOBYQA_INSTALLED: "nag_pybobyqa",
-        IS_DFOLS_INSTALLED: "nag_dfols",
-    }
-
     new_test_cases = []
     for test_case in test_cases:
-        for dependency_present, start_str in dependency_present_to_start_str.items():
-            if test_case[0].startswith(start_str) and not dependency_present:
-                test_case = pytest.param(
-                    *test_case,
-                    marks=pytest.mark.skip(reason="petsc4py is not installed."),
-                )
-            else:
-                print(f"Skipping {start_str}")
-            new_test_cases.append(test_case)
+        needs_skipping, reason = _get_skipping_info(test_case)
+        if needs_skipping:
+            test_case = pytest.param(
+                *test_case,
+                marks=pytest.mark.skip(reason=reason),
+            )
+
+        new_test_cases.append(test_case)
 
     return new_test_cases
+
+
+def _get_skipping_info(test_case):
+    installation_info = {
+        "tao_": IS_PETSC4PY_INSTALLED,
+        "nag_pybobyqa": IS_PYBOBYQA_INSTALLED,
+        "nag_dfols": IS_DFOLS_INSTALLED,
+    }
+
+    reasons = {
+        "tao_": "petsc4py is not installed",
+        "nag_pybobyqa": "pybobyqa is not installed",
+        "nag_dfols": "dfols is not installed",
+    }
+
+    algo_name = test_case[0]
+    needs_skipping = False
+    reason = None
+    for substring, is_installed in installation_info.items():
+        if algo_name.startswith(substring) and not is_installed:
+            needs_skipping = True
+            reason = reasons[substring]
+
+    return needs_skipping, reason
 
 
 # ======================================================================================
@@ -117,7 +141,12 @@ def sos_criterion_and_jacobian(params):
 
 def get_test_cases_for_algorithm(algorithm):
     """Generate list of all possible argument combinations for algorithm."""
-    is_least_squares = algorithm in ["tao_pounders", "nag_dfols"]
+    is_least_squares = algorithm in [
+        "tao_pounders",
+        "nag_dfols",
+        "scipy_ls_trf",
+        "scipy_ls_dogbox",
+    ]
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
 

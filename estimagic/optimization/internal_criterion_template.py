@@ -155,7 +155,9 @@ def internal_criterion_and_derivative_template(
         options["return_func_value"] = True
 
         try:
-            new_derivative, new_criterion = first_derivative(func, x, **options)
+            derivative_dict = first_derivative(func, x, **options)
+            new_derivative = derivative_dict["derivative"]
+            new_criterion = derivative_dict["func_value"]
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
