@@ -555,3 +555,43 @@ def _unit_vector_or_zeros(index, size):
     if index != -1:
         u[index] = 1
     return u
+
+
+def scale_to_internal(vec, scaling_factor, scaling_offset):
+    """Scale a parameter vector from external scale to internal one.
+
+    Args:
+        vec (np.ndarray): Internal parameter vector with external scale.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+    Returns:
+        np.ndarray: vec with internal scale
+
+    """
+    if scaling_offset is not None:
+        vec = vec - scaling_offset
+
+    if scaling_factor is not None:
+        vec = vec / scaling_factor
+
+    return vec
+
+
+def scale_from_internal(vec, scaling_factor, scaling_offset):
+    """Scale a parameter vector from internal scale to external one.
+
+    Args:
+        vec (np.ndarray): Internal parameter vector with external scale.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+    Returns:
+        np.ndarray: vec with external scale
+
+    """
+    if scaling_factor is not None:
+        vec = vec * scaling_factor
+
+    if scaling_offset is not None:
+        vec = vec + scaling_offset
+
+    return vec

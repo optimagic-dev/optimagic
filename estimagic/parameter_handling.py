@@ -2,8 +2,8 @@
 
 High level means:
 
-- All functions are save to use directly with user input
-- Defaults are filled automatically
+- Functions are save to use directly with user input (if applicable)
+- Defaults are filled automatically (if applicable)
 - Robust checks and error handling
 
 """

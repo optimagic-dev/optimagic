@@ -39,6 +39,7 @@ from estimagic.optimization.check_constraints import check_fixes_and_bounds
 from estimagic.optimization.check_constraints import check_for_incompatible_overlaps
 from estimagic.optimization.check_constraints import check_types
 from estimagic.optimization.consolidate_constraints import consolidate_constraints
+from estimagic.optimization.kernel_transformations import scale_to_internal
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
 from estimagic.parameter_handling import add_default_bounds_to_params
 
@@ -392,11 +393,8 @@ def _create_internal_fixed_value(fixed_value, pc):
 def _scale_bound_to_internal(bound_sr, internal_free, scaling_factor, scaling_offset):
     sr = bound_sr.copy(deep=True)
     free_bounds = bound_sr[internal_free].to_numpy()
-    if scaling_offset is not None:
-        free_bounds = free_bounds - scaling_offset
 
-    if scaling_factor is not None:
-        free_bounds = free_bounds / scaling_offset
+    scaled = scale_to_internal(free_bounds, scaling_factor, scaling_offset)
 
-    sr[internal_free] = free_bounds
+    sr[internal_free] = scaled
     return sr

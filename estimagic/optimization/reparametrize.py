@@ -71,13 +71,11 @@ def reparametrize_to_internal(
 
     internal = with_internal_values[internal_free]
 
-    if scaling_offset is not None:
-        internal = internal - scaling_offset
+    scaled = kt.scale_to_internal(
+        internal, scaling_factor=scaling_factor, scaling_offset=scaling_offset
+    )
 
-    if scaling_factor is not None:
-        internal = internal / scaling_factor
-
-    return internal
+    return scaled
 
 
 def reparametrize_from_internal(
@@ -114,11 +112,10 @@ def reparametrize_from_internal(
         numpy.ndarray: Array with external parameters
 
     """
-    if scaling_factor is not None:
-        internal = internal * scaling_factor
-
-    if scaling_offset is not None:
-        internal = internal + scaling_offset
+    # undo scaling
+    internal = kt.scale_from_internal(
+        internal, scaling_factor=scaling_factor, scaling_offset=scaling_offset
+    )
 
     # do pre-replacements
     external_values = pre_replace(internal, fixed_values, pre_replacements)
