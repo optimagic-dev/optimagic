@@ -18,16 +18,16 @@ from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
-from estimagic.optimization.reparametrize import post_replace_jacobian
-from estimagic.optimization.reparametrize import pre_replace_jacobian
-from estimagic.optimization.reparametrize import reparametrize_from_internal
-from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import propose_algorithms
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.reparametrize import convert_external_derivative_to_internal
+from estimagic.parameters.reparametrize import post_replace_jacobian
+from estimagic.parameters.reparametrize import pre_replace_jacobian
+from estimagic.parameters.reparametrize import reparametrize_from_internal
+from estimagic.parameters.reparametrize import reparametrize_to_internal
 
 
 def maximize(

@@ -34,13 +34,13 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from estimagic.optimization.check_constraints import check_constraints_are_satisfied
-from estimagic.optimization.check_constraints import check_fixes_and_bounds
-from estimagic.optimization.check_constraints import check_for_incompatible_overlaps
-from estimagic.optimization.check_constraints import check_types
-from estimagic.optimization.consolidate_constraints import consolidate_constraints
-from estimagic.optimization.kernel_transformations import scale_to_internal
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
+from estimagic.parameters.check_constraints import check_constraints_are_satisfied
+from estimagic.parameters.check_constraints import check_fixes_and_bounds
+from estimagic.parameters.check_constraints import check_for_incompatible_overlaps
+from estimagic.parameters.check_constraints import check_types
+from estimagic.parameters.consolidate_constraints import consolidate_constraints
+from estimagic.parameters.kernel_transformations import scale_to_internal
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 
 

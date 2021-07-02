@@ -36,7 +36,7 @@ n_internal the length of the internal parameter vector.
 """
 import numpy as np
 
-import estimagic.optimization.kernel_transformations as kt
+import estimagic.parameters.kernel_transformations as kt
 
 
 def reparametrize_to_internal(

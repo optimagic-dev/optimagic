@@ -17,8 +17,8 @@ import numpy as np
 import pandas as pd
 
 from estimagic.exceptions import get_traceback
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import reparametrize_from_internal
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.reparametrize import reparametrize_from_internal
 
 
 def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=False):

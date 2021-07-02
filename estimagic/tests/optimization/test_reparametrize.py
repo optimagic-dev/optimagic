@@ -7,17 +7,17 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.differentiation.derivatives import first_derivative
-from estimagic.optimization.kernel_transformations import scale_to_internal
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import _multiply_from_left
-from estimagic.optimization.reparametrize import _multiply_from_right
-from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
-from estimagic.optimization.reparametrize import post_replace
-from estimagic.optimization.reparametrize import post_replace_jacobian
-from estimagic.optimization.reparametrize import pre_replace
-from estimagic.optimization.reparametrize import pre_replace_jacobian
-from estimagic.optimization.reparametrize import reparametrize_from_internal
-from estimagic.optimization.reparametrize import reparametrize_to_internal
+from estimagic.parameters.kernel_transformations import scale_to_internal
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.reparametrize import _multiply_from_left
+from estimagic.parameters.reparametrize import _multiply_from_right
+from estimagic.parameters.reparametrize import convert_external_derivative_to_internal
+from estimagic.parameters.reparametrize import post_replace
+from estimagic.parameters.reparametrize import post_replace_jacobian
+from estimagic.parameters.reparametrize import pre_replace
+from estimagic.parameters.reparametrize import pre_replace_jacobian
+from estimagic.parameters.reparametrize import reparametrize_from_internal
+from estimagic.parameters.reparametrize import reparametrize_to_internal
 
 
 to_test = list(

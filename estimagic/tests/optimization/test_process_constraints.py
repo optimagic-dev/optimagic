@@ -3,11 +3,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from estimagic.optimization.process_constraints import _process_selectors
-from estimagic.optimization.process_constraints import (
+from estimagic.parameters.process_constraints import _process_selectors
+from estimagic.parameters.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
-from estimagic.optimization.process_constraints import process_constraints
+from estimagic.parameters.process_constraints import process_constraints
 from estimagic.tests.optimization.test_reparametrize import reduce_params
 
 constr1 = {"loc": 0, "type": "equality"}
