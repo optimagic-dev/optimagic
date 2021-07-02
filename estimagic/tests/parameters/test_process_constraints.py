@@ -8,7 +8,7 @@ from estimagic.parameters.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
 from estimagic.parameters.process_constraints import process_constraints
-from estimagic.tests.optimization.test_reparametrize import reduce_params
+from estimagic.tests.parameters.test_reparametrize import reduce_params
 
 constr1 = {"loc": 0, "type": "equality"}
 expected1 = {"index": [0, 1, 2]}
