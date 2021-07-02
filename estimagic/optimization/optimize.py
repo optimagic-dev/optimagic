@@ -18,14 +18,13 @@ from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
+from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.parameters.process_constraints import process_constraints
 from estimagic.parameters.reparametrize import convert_external_derivative_to_internal
 from estimagic.parameters.reparametrize import post_replace_jacobian
 from estimagic.parameters.reparametrize import pre_replace_jacobian
-from estimagic.parameters.reparametrize import reparametrize_from_internal
-from estimagic.parameters.reparametrize import reparametrize_to_internal
 from estimagic.utilities import hash_array
 from estimagic.utilities import propose_algorithms
 
@@ -521,12 +520,14 @@ def _single_optimize(
     params_with_name_and_group = _add_name_and_group_columns_to_params(params)
     problem_data["params"] = params_with_name_and_group
 
-    # get internal parameters and bounds
-    x = reparametrize_to_internal(
-        params["value"].to_numpy(),
-        processed_params["_internal_free"].to_numpy(),
-        processed_constraints,
+    params_to_internal, params_from_internal = get_reparametrize_functions(
+        params=params,
+        constraints=constraints,
+        # ### needs scaling
     )
+
+    # get internal parameters and bounds
+    x = params_to_internal(params["value"].to_numpy())
 
     free = processed_params.query("_internal_free")
     lower_bounds = free["_internal_lower"].to_numpy()
@@ -555,14 +556,6 @@ def _single_optimize(
     pre_replacements = processed_params["_pre_replacements"].to_numpy()
     post_replacements = processed_params["_post_replacements"].to_numpy()
     fixed_values = processed_params["_internal_fixed_value"].to_numpy()
-
-    partialed_reparametrize_from_internal = functools.partial(
-        reparametrize_from_internal,
-        fixed_values=fixed_values,
-        pre_replacements=pre_replacements,
-        processed_constraints=processed_constraints,
-        post_replacements=post_replacements,
-    )
 
     # get convert derivative
     pre_replace_jac = pre_replace_jacobian(
@@ -614,7 +607,7 @@ def _single_optimize(
         direction=direction,
         criterion=criterion,
         params=params,
-        reparametrize_from_internal=partialed_reparametrize_from_internal,
+        reparametrize_from_internal=params_from_internal,
         convert_derivative=convert_derivative,
         derivative=derivative,
         criterion_and_derivative=criterion_and_derivative,
@@ -632,7 +625,7 @@ def _single_optimize(
     res = algorithm(internal_criterion_and_derivative, x, **algo_options)
 
     p = params.copy()
-    p["value"] = partialed_reparametrize_from_internal(res["solution_x"])
+    p["value"] = params_from_internal(res["solution_x"])
     res["solution_params"] = p
 
     if "solution_criterion" not in res:
