@@ -124,9 +124,8 @@ means that around the start values the problem is scaled optimally. However, for
 nonlinear functions, it does not guarantee optimal scaling anywhere else.
 
 In practice, we do not take the exact gradient, but a numerical gradient calculated with
-a very large step size (compared to the rule of thumb for optimal step sizes for
-numerical derivatives which is based on the magnitude of the parameter values at which
-the derivative is taken). This is more robust for noisy or wiggly functions.
+a very large step size (100 times larger than the rule of thumb for optimal step sizes 
+by default). This is more robust for noisy or wiggly functions.
 
 Advantages
 
@@ -158,8 +157,15 @@ Disadvantages
         params=start_params,
         algorithm="scipy_lbfgsb",
         scaling=True,
-        scaling_options={"method": "gradient", "clipping_value": 0.1},
+        scaling_options={
+            "method": "gradient",
+            "clipping_value": 0.1,
+            numdiff_options: {"n_cores": 2, "scaling_factor": 100},
+        },
     )
+
+The numdiff options allow to configure the calculation of the numerical gradient. See
+:ref:`first_derivative` for available options.
 
 
 Influencing the magnitude of parameters
