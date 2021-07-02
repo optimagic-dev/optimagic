@@ -15,8 +15,8 @@ from estimagic.optimization.reparametrize import post_replace_jacobian
 from estimagic.optimization.reparametrize import pre_replace_jacobian
 from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
-from estimagic.parameter_handling import add_default_bounds_to_params
-from estimagic.parameter_handling import check_params_are_valid
+from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
+from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 
 
 def get_reparametrize_functions(

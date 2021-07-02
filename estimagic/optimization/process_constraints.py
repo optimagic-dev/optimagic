@@ -41,7 +41,7 @@ from estimagic.optimization.check_constraints import check_types
 from estimagic.optimization.consolidate_constraints import consolidate_constraints
 from estimagic.optimization.kernel_transformations import scale_to_internal
 from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
-from estimagic.parameter_handling import add_default_bounds_to_params
+from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 
 
 def process_constraints(constraints, params, scaling_factor=None, scaling_offset=None):

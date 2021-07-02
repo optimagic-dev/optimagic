@@ -26,8 +26,8 @@ from estimagic.optimization.reparametrize import reparametrize_from_internal
 from estimagic.optimization.reparametrize import reparametrize_to_internal
 from estimagic.optimization.utilities import hash_array
 from estimagic.optimization.utilities import propose_algorithms
-from estimagic.parameter_handling import add_default_bounds_to_params
-from estimagic.parameter_handling import check_params_are_valid
+from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
+from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 
 
 def maximize(
