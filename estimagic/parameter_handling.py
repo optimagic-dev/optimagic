@@ -11,54 +11,6 @@ import numpy as np
 import pandas as pd
 
 
-def get_reparametrize_functions(params, constraints, scaling_factor, scaling_offset):
-    """Construct functions to map between internal and external parameters.
-
-    All required information is partialed into the functions.
-
-    Args:
-        params (pandas.DataFrame): See :ref:`params`.
-        constraints (list): List of constraint dictionaries.
-        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used
-
-    Returns:
-        func: Function that maps an external parameter vector to an internal one
-        func: Function that maps an internal parameter vector to an external one
-
-    """
-    if (scaling_factor, scaling_offset) != (None, None):
-        raise NotImplementedError()
-
-    params = add_default_bounds_to_params(params)
-    check_params_are_valid(params)
-
-
-def get_derivative_conversion_functions(
-    params, constraints, scaling_factor, scaling_offset
-):
-    """Construct functions to map between internal and external derivatives.
-
-    All required information is partialed into the functions.
-
-    Args:
-        params (pandas.DataFrame): See :ref:`params`.
-        constraints (list): List of constraint dictionaries.
-        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used
-
-
-    Returns:
-        func: Function that maps an external derivative to an internal one
-        func: Function that maps an internal derivative to an external one
-
-    """
-    if (scaling_factor, scaling_offset) != (None, None):
-        raise NotImplementedError()
-
-    pass
-
-
 def add_default_bounds_to_params(params):
     """Fill missing bounds with -np.inf and np.inf."""
     defaults = pd.DataFrame(

@@ -1,0 +1,117 @@
+"""High level functions to convert between parameter vectors.
+
+High level means:
+
+- Functions are save to use directly with user input (if applicable)
+- Defaults are filled automatically (if applicable)
+- Robust checks and error handling
+
+"""
+import functools
+
+from estimagic.optimization.process_constraints import process_constraints
+from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
+from estimagic.optimization.reparametrize import post_replace_jacobian
+from estimagic.optimization.reparametrize import pre_replace_jacobian
+from estimagic.optimization.reparametrize import reparametrize_from_internal
+from estimagic.optimization.reparametrize import reparametrize_to_internal
+from estimagic.parameter_handling import add_default_bounds_to_params
+from estimagic.parameter_handling import check_params_are_valid
+
+
+def get_reparametrize_functions(
+    params, constraints, scaling_factor=None, scaling_offset=None
+):
+    """Construct functions to map between internal and external parameters.
+
+    All required information is partialed into the functions.
+
+    Args:
+        params (pandas.DataFrame): See :ref:`params`.
+        constraints (list): List of constraint dictionaries.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used
+
+    Returns:
+        func: Function that maps an external parameter vector to an internal one
+        func: Function that maps an internal parameter vector to an external one
+
+    """
+    params = add_default_bounds_to_params(params)
+    check_params_are_valid(params)
+    processed_constraints, processed_params = process_constraints(constraints, params)
+
+    # get partialed reparametrize from internal
+    pre_replacements = processed_params["_pre_replacements"].to_numpy()
+    post_replacements = processed_params["_post_replacements"].to_numpy()
+    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
+
+    # get partialed reparametrize to internal
+    internal_free = processed_params["_internal_free"].to_numpy()
+
+    partialed_to_internal = functools.partial(
+        reparametrize_to_internal,
+        internal_free=internal_free,
+        processed_constraints=processed_constraints,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
+
+    partialed_from_internal = functools.partial(
+        reparametrize_from_internal,
+        fixed_values=fixed_values,
+        pre_replacements=pre_replacements,
+        processed_constraints=processed_constraints,
+        post_replacements=post_replacements,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
+
+    return partialed_to_internal, partialed_from_internal
+
+
+def get_derivative_conversion_function(
+    params, constraints, scaling_factor=None, scaling_offset=None
+):
+    """Construct functions to map between internal and external derivatives.
+
+    All required information is partialed into the functions.
+
+    Args:
+        params (pandas.DataFrame): See :ref:`params`.
+        constraints (list): List of constraint dictionaries.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used
+
+
+    Returns:
+        func: Function that converts an external derivative to an internal one
+
+    """
+    params = add_default_bounds_to_params(params)
+    check_params_are_valid(params)
+    processed_constraints, processed_params = process_constraints(constraints, params)
+
+    pre_replacements = processed_params["_pre_replacements"].to_numpy()
+    post_replacements = processed_params["_post_replacements"].to_numpy()
+    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
+
+    dim_internal = int(processed_params["_internal_free"].sum())
+
+    pre_replace_jac = pre_replace_jacobian(
+        pre_replacements=pre_replacements, dim_in=dim_internal
+    )
+    post_replace_jac = post_replace_jacobian(post_replacements=post_replacements)
+
+    convert_derivative = functools.partial(
+        convert_external_derivative_to_internal,
+        fixed_values=fixed_values,
+        pre_replacements=pre_replacements,
+        processed_constraints=processed_constraints,
+        pre_replace_jac=pre_replace_jac,
+        post_replace_jac=post_replace_jac,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
+
+    return convert_derivative
