@@ -16,7 +16,7 @@ def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_c
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Needs to return array-like object or pd.Series.
+            Needs to return a pandas Series.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.

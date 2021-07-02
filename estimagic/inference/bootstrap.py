@@ -24,7 +24,7 @@ def bootstrap(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Needs to return array-like object or pd.Series.
+            Needs to return a pandas Series.
         n_draws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
@@ -70,7 +70,7 @@ def bootstrap_from_outcomes(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Needs to return array-like object or pd.Series.
+            Needs to return a pandas Series.
         bootstrap_outcomes (pandas.DataFrame): DataFrame of bootstrap_outcomes in the
             bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.

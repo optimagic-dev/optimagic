@@ -54,16 +54,15 @@ interest, we can use
 There is also a function to calculate only confidence intervals, given the estimates.
 The code of this function is an adjusted version of the code from Daniel Saxton's
 resample library :cite:`Saxton2018`. It has been adjusted to allow
-for multi-valued statistics as well as the additional confidence interval types "bc",
-"basic" and "normal". Also, I rewrote the computation of the jackknife estimator
-to get a significant boost.
+for the additional confidence interval types "bc", "basic" and "normal". Moreover,
+it is faster.
 
 .. currentmodule:: estimagic.inference.bootstrap
 
 .. autofunction:: compute_ci
 
 
-The the supported types of confidence are explained in more detail
+The supported types of confidence are explained in more detail
 here: :ref:`bootstrap_cis`
 
 
