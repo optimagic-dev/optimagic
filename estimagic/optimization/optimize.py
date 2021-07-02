@@ -7,7 +7,6 @@ import numpy as np
 import estimagic.batch_evaluators as be
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
-from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
@@ -44,7 +43,7 @@ def maximize(
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
     numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
+    logging=False,
     log_options=None,
     error_handling="raise",
     error_penalty=None,
@@ -142,7 +141,7 @@ def maximize(
             in memory in case they are needed.
 
     """
-    return optimize(
+    return _optimize(
         direction="maximize",
         criterion=criterion,
         params=params,
@@ -178,7 +177,7 @@ def minimize(
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
     numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
+    logging=False,
     log_options=None,
     error_handling="raise",
     error_penalty=None,
@@ -274,7 +273,7 @@ def minimize(
             in memory in case they are needed.
 
     """
-    return optimize(
+    return _optimize(
         direction="minimize",
         criterion=criterion,
         params=params,
@@ -297,27 +296,27 @@ def minimize(
     )
 
 
-def optimize(
+def _optimize(
     direction,
     criterion,
     params,
     algorithm,
     *,
-    criterion_kwargs=None,
-    constraints=None,
-    algo_options=None,
-    derivative=None,
-    derivative_kwargs=None,
-    criterion_and_derivative=None,
-    criterion_and_derivative_kwargs=None,
-    numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
-    log_options=None,
-    error_handling="raise",
-    error_penalty=None,
-    batch_evaluator="joblib",
-    batch_evaluator_options=None,
-    cache_size=100,
+    criterion_kwargs,
+    constraints,
+    algo_options,
+    derivative,
+    derivative_kwargs,
+    criterion_and_derivative,
+    criterion_and_derivative_kwargs,
+    numdiff_options,
+    logging,
+    log_options,
+    error_handling,
+    error_penalty,
+    batch_evaluator,
+    batch_evaluator_options,
+    cache_size,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
