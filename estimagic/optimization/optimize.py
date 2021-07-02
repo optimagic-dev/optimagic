@@ -18,13 +18,11 @@ from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
+from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.parameters.process_constraints import process_constraints
-from estimagic.parameters.reparametrize import convert_external_derivative_to_internal
-from estimagic.parameters.reparametrize import post_replace_jacobian
-from estimagic.parameters.reparametrize import pre_replace_jacobian
 from estimagic.utilities import hash_array
 from estimagic.utilities import propose_algorithms
 
@@ -552,24 +550,11 @@ def _single_optimize(
         algo_options, lower_bounds, upper_bounds, algorithm, algo_name
     )
 
-    # get partialed reparametrize from internal
-    pre_replacements = processed_params["_pre_replacements"].to_numpy()
-    post_replacements = processed_params["_post_replacements"].to_numpy()
-    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
-
     # get convert derivative
-    pre_replace_jac = pre_replace_jacobian(
-        pre_replacements=pre_replacements, dim_in=len(x)
-    )
-    post_replace_jac = post_replace_jacobian(post_replacements=post_replacements)
-
-    convert_derivative = functools.partial(
-        convert_external_derivative_to_internal,
-        fixed_values=fixed_values,
-        pre_replacements=pre_replacements,
-        processed_constraints=processed_constraints,
-        pre_replace_jac=pre_replace_jac,
-        post_replace_jac=post_replace_jac,
+    convert_derivative = get_derivative_conversion_function(
+        params=params,
+        constraints=constraints,
+        # ### needs scaling
     )
 
     # do first function evaluation
