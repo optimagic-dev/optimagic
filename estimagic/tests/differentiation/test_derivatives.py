@@ -20,7 +20,7 @@ from estimagic.examples.numdiff_example_functions_np import logit_loglike
 from estimagic.examples.numdiff_example_functions_np import logit_loglike_gradient
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs
 from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs_jacobian
-from estimagic.optimization.utilities import namedtuple_from_kwargs
+from estimagic.utilities import namedtuple_from_kwargs
 
 
 @pytest.fixture

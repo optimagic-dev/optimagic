@@ -8,7 +8,7 @@ from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TO
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
-from estimagic.optimization.utilities import calculate_trustregion_initial_radius
+from estimagic.utilities import calculate_trustregion_initial_radius
 
 try:
     from petsc4py import PETSc

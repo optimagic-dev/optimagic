@@ -6,8 +6,8 @@ import warnings
 
 import numpy as np
 
-from estimagic.optimization.utilities import cov_params_to_matrix
-from estimagic.optimization.utilities import sdcorr_params_to_matrix
+from estimagic.utilities import cov_params_to_matrix
+from estimagic.utilities import sdcorr_params_to_matrix
 
 
 def check_constraints_are_satisfied(pc, params):
