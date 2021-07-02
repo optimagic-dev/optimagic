@@ -180,7 +180,7 @@ def test_reparametrize_from_internal_jacobian(
         scaling_offset=scaling_offset,
     )
 
-    aaae(jacobian, numerical_jacobian)
+    aaae(jacobian, numerical_jacobian["derivative"])
 
 
 @pytest.mark.parametrize("case, number", to_test)
@@ -200,7 +200,7 @@ def test_pre_replace_jacobian(example_params, all_constraints, case, number):
     func = partial(
         pre_replace, **{"fixed_values": fixed_val, "pre_replacements": pre_repl}
     )
-    numerical_deriv = first_derivative(func, internal_p)
+    numerical_deriv = first_derivative(func, internal_p)["derivative"]
     numerical_deriv[np.isnan(numerical_deriv)] = 0
 
     deriv = pre_replace_jacobian(pre_repl, len(internal_p))
@@ -232,7 +232,7 @@ def test_post_replace_jacobian(example_params, all_constraints, case, number):
 
     deriv = post_replace_jacobian(post_repl)
 
-    aaae(deriv, numerical_deriv)
+    aaae(deriv, numerical_deriv["derivative"])
 
 
 def test_linear_constraint():

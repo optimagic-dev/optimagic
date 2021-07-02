@@ -1,3 +1,4 @@
+import warnings
 from collections import namedtuple
 from hashlib import sha1
 
@@ -5,6 +6,8 @@ import numpy as np
 from fuzzywuzzy import process as fw_process
 from scipy.linalg import ldl
 from scipy.linalg import qr
+
+from estimagic.exceptions import get_traceback
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -169,6 +172,34 @@ def robust_cholesky(matrix, threshold=None, return_info=False):
     return out
 
 
+def robust_inverse(matrix, msg=""):
+    """Calculate the inverse or pseudo-inverse of a matrix.
+
+    The difference to calling a pseudo inverse directly is that this function will
+    emit a warning if the matrix is singular.
+
+    Args:
+        matrix (np.ndarray)
+
+    """
+    header = (
+        "Standard matrix inversion failed due to LinAlgError described below. "
+        "A pseudo inverse was calculated instead. "
+    )
+    if len(matrix.shape) != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("Matrix must be square.")
+    try:
+        out = np.linalg.inv(matrix)
+    except np.linalg.LinAlgError:
+        out = np.linalg.pinv(matrix)
+        tb = get_traceback()
+        warnings.warn(header + msg + "\n\n" + tb)
+    except Exception:
+        raise
+
+    return out
+
+
 def _internal_robust_cholesky(matrix, threshold):
     """Lower triangular cholesky factor of *matrix* using an LDL decomposition
     and QR factorization.
@@ -263,6 +294,8 @@ def namedtuple_from_iterables(field_names, field_entries):
 
 def hash_array(arr):
     """Create a hashsum for fast comparison of numpy arrays."""
+    # make sure array can be represented exactly in floating point numbers
+    arr = 1 + arr - 1
     return sha1(arr.tobytes()).hexdigest()
 
 

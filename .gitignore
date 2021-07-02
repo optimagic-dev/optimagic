@@ -117,3 +117,6 @@ venv.bak/
 
 
 *.db
+
+
+.pytask.sqlite3
