@@ -143,6 +143,7 @@ def convert_external_derivative_to_internal(
     pre_replace_jac=None,
     post_replace_jac=None,
     scaling_factor=None,
+    scaling_offset=None,
 ):
     r"""Compute the derivative of the criterion utilizing an external derivative.
 
@@ -184,6 +185,7 @@ def convert_external_derivative_to_internal(
         pre_replace_jac (np.ndarray): 2d Array with the jacobian of pre_replace
         post_replacment_jacobian (np.ndarray): 2d Array with the jacobian post_replace
         scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no_scaling_factor is used.
 
 
     Returns:
@@ -191,8 +193,13 @@ def convert_external_derivative_to_internal(
 
     """
     dim_in = len(internal_values)
+    internal_unscaled_values = kt.scale_from_internal(
+        internal_values,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
 
-    pre_replaced = pre_replace(internal_values, fixed_values, pre_replacements)
+    pre_replaced = pre_replace(internal_unscaled_values, fixed_values, pre_replacements)
 
     if post_replacements is None and post_replace_jac is None:
         raise ValueError(

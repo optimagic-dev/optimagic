@@ -7,6 +7,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.differentiation.derivatives import first_derivative
+from estimagic.optimization.kernel_transformations import scale_to_internal
 from estimagic.optimization.process_constraints import process_constraints
 from estimagic.optimization.reparametrize import _multiply_from_left
 from estimagic.optimization.reparametrize import _multiply_from_right
@@ -140,14 +141,18 @@ def test_reparametrize_from_internal_jacobian(
 
     pc, pp = process_constraints(constraints, params)
 
-    internal_p = params[f"internal_value{number}"][keep].to_numpy()
+    n_free = int(pp._internal_free.sum())
+    scaling_factor = np.ones(n_free) * 2  # np.arange(n_free) + 1
+    scaling_offset = np.arange(n_free) - 1
+
+    internal_p = scale_to_internal(
+        params[f"internal_value{number}"][keep].to_numpy(),
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
     fixed_val = pp["_internal_fixed_value"].to_numpy()
     pre_repl = pp["_pre_replacements"].to_numpy()
     post_repl = pp["_post_replacements"].to_numpy()
-
-    n_free = int(pp._internal_free.sum())
-    scaling_factor = np.ones(n_free) * 2  # np.arange(n_free) + 1
-    scaling_offset = np.zeros(n_free)  # np.arange(n_free) - 1
 
     func = partial(
         reparametrize_from_internal,
@@ -172,6 +177,7 @@ def test_reparametrize_from_internal_jacobian(
         processed_constraints=pc,
         post_replacements=post_repl,
         scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
     )
 
     aaae(jacobian, numerical_jacobian)
