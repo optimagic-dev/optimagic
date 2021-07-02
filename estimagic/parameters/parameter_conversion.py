@@ -39,7 +39,13 @@ def get_reparametrize_functions(
     """
     params = add_default_bounds_to_params(params)
     check_params_are_valid(params)
-    processed_constraints, processed_params = process_constraints(constraints, params)
+
+    processed_constraints, processed_params = process_constraints(
+        constraints=constraints,
+        params=params,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
 
     # get partialed reparametrize from internal
     pre_replacements = processed_params["_pre_replacements"].to_numpy()
@@ -90,7 +96,12 @@ def get_derivative_conversion_function(
     """
     params = add_default_bounds_to_params(params)
     check_params_are_valid(params)
-    processed_constraints, processed_params = process_constraints(constraints, params)
+    processed_constraints, processed_params = process_constraints(
+        constraints=constraints,
+        params=params,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
 
     pre_replacements = processed_params["_pre_replacements"].to_numpy()
     post_replacements = processed_params["_post_replacements"].to_numpy()
@@ -115,3 +126,20 @@ def get_derivative_conversion_function(
     )
 
     return convert_derivative
+
+
+def get_internal_bounds(params, constraints, scaling_factor=None, scaling_offset=None):
+    params = add_default_bounds_to_params(params)
+    check_params_are_valid(params)
+
+    _, processed_params = process_constraints(
+        constraints=constraints,
+        params=params,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
+
+    free = processed_params.query("_internal_free")
+    lower_bounds = free["_internal_lower"].to_numpy()
+    upper_bounds = free["_internal_upper"].to_numpy()
+    return lower_bounds, upper_bounds

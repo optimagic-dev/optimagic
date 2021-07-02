@@ -19,10 +19,10 @@ from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
+from estimagic.parameters.parameter_conversion import get_internal_bounds
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
-from estimagic.parameters.process_constraints import process_constraints
 from estimagic.utilities import hash_array
 from estimagic.utilities import propose_algorithms
 
@@ -511,8 +511,6 @@ def _single_optimize(
         params[col] = params[col].astype(float)
     check_params_are_valid(params)
 
-    processed_constraints, processed_params = process_constraints(constraints, params)
-
     # name and group column are needed in the dashboard but could lead to problems
     # if present anywhere else
     params_with_name_and_group = _add_name_and_group_columns_to_params(params)
@@ -527,9 +525,11 @@ def _single_optimize(
     # get internal parameters and bounds
     x = params_to_internal(params["value"].to_numpy())
 
-    free = processed_params.query("_internal_free")
-    lower_bounds = free["_internal_lower"].to_numpy()
-    upper_bounds = free["_internal_upper"].to_numpy()
+    lower_bounds, upper_bounds = get_internal_bounds(
+        params=params,
+        constraints=constraints,
+        # ### needs scaling
+    )
 
     # process algorithm and algo_options
     if isinstance(algorithm, str):
