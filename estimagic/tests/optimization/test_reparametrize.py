@@ -7,11 +7,11 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.differentiation.derivatives import first_derivative
-from estimagic.parameters.kernel_transformations import scale_to_internal
+from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
+from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 from estimagic.parameters.process_constraints import process_constraints
 from estimagic.parameters.reparametrize import _multiply_from_left
 from estimagic.parameters.reparametrize import _multiply_from_right
-from estimagic.parameters.reparametrize import convert_external_derivative_to_internal
 from estimagic.parameters.reparametrize import post_replace
 from estimagic.parameters.reparametrize import post_replace_jacobian
 from estimagic.parameters.reparametrize import pre_replace
@@ -64,11 +64,16 @@ def test_reparametrize_to_internal(example_params, all_constraints, case, number
     expected_internal_lower = params["internal_lower"]
     expected_internal_upper = params["internal_upper"]
 
-    pc, pp = process_constraints(constraints, params)
-
-    calculated_internal_values = reparametrize_to_internal(
-        pp["value"].to_numpy(), pp["_internal_free"].to_numpy(dtype=bool), pc
+    to_internal, _ = get_reparametrize_functions(
+        params=params,
+        constraints=constraints,
+        scaling_factor=None,
+        scaling_offset=None,
     )
+
+    _, pp = process_constraints(constraints, params)
+
+    calculated_internal_values = to_internal(pp["value"].to_numpy())
 
     calculated_internal_lower = pp["_internal_lower"]
     calculated_internal_upper = pp["_internal_upper"]
@@ -86,21 +91,15 @@ def test_reparametrize_from_internal(example_params, all_constraints, case, numb
 
     keep = params[f"internal_value{number}"].notnull()
 
-    pc, pp = process_constraints(constraints, params)
-
-    internal_p = params[f"internal_value{number}"][keep].to_numpy()
-    fixed_val = pp["_internal_fixed_value"].to_numpy()
-    pre_repl = pp["_pre_replacements"].to_numpy()
-    post_repl = pp["_post_replacements"].to_numpy()
-
-    calculated_external_value = reparametrize_from_internal(
-        internal=internal_p,
-        fixed_values=fixed_val,
-        pre_replacements=pre_repl,
-        processed_constraints=pc,
-        post_replacements=post_repl,
+    _, from_internal = get_reparametrize_functions(
+        params=params,
+        constraints=constraints,
+        scaling_factor=None,
+        scaling_offset=None,
     )
 
+    internal_p = params[f"internal_value{number}"][keep].to_numpy()
+    calculated_external_value = from_internal(internal_p)
     expected_external_value = params["value"].to_numpy()
 
     aaae(calculated_external_value, expected_external_value)
@@ -112,19 +111,15 @@ def test_scaling_cancels_itself():
     params["lower_bound"] = np.arange(10)
     params["upper_bound"] = 25
 
-    pc, pp = process_constraints([], params)
-
-    internal = reparametrize_to_internal(
-        pp["value"].to_numpy(), pp["_internal_free"].to_numpy(dtype=bool), pc
+    to_internal, from_internal = get_reparametrize_functions(
+        params=params,
+        constraints=[],
+        scaling_factor=None,
+        scaling_offset=None,
     )
 
-    external = reparametrize_from_internal(
-        internal=internal,
-        fixed_values=pp["_internal_fixed_value"].to_numpy(),
-        pre_replacements=pp["_pre_replacements"].to_numpy(),
-        processed_constraints=pc,
-        post_replacements=pp["_post_replacements"].to_numpy(),
-    )
+    internal = to_internal(params["value"].to_numpy())
+    external = from_internal(internal)
 
     aaae(external, params["value"].to_numpy())
 
@@ -137,47 +132,35 @@ def test_reparametrize_from_internal_jacobian(
     params = reduce_params(example_params, constraints)
     params["value"] = params[f"value{number}"]
 
-    keep = params[f"internal_value{number}"].notnull()
-
-    pc, pp = process_constraints(constraints, params)
+    _, pp = process_constraints(constraints, params)
 
     n_free = int(pp._internal_free.sum())
     scaling_factor = np.ones(n_free) * 2  # np.arange(n_free) + 1
     scaling_offset = np.arange(n_free) - 1
 
-    internal_p = scale_to_internal(
-        params[f"internal_value{number}"][keep].to_numpy(),
+    params_to_internal, params_from_internal = get_reparametrize_functions(
+        params=params,
+        constraints=constraints,
         scaling_factor=scaling_factor,
         scaling_offset=scaling_offset,
     )
-    fixed_val = pp["_internal_fixed_value"].to_numpy()
-    pre_repl = pp["_pre_replacements"].to_numpy()
-    post_repl = pp["_post_replacements"].to_numpy()
 
-    func = partial(
-        reparametrize_from_internal,
-        **{
-            "fixed_values": fixed_val,
-            "pre_replacements": pre_repl,
-            "processed_constraints": pc,
-            "post_replacements": post_repl,
-            "scaling_factor": scaling_factor,
-            "scaling_offset": scaling_offset,
-        },
+    internal_p = params_to_internal(params["value"].to_numpy())
+
+    numerical_jacobian = first_derivative(params_from_internal, internal_p)
+
+    derivative_to_internal = get_derivative_conversion_function(
+        params=params,
+        constraints=constraints,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
     )
-    numerical_jacobian = first_derivative(func, internal_p)
 
     # calling convert_external_derivative with identity matrix as external derivative
     # is just a trick to get out the jacobian of reparametrize_from_internal
-    jacobian = convert_external_derivative_to_internal(
-        external_derivative=np.eye(len(fixed_val)),
+    jacobian = derivative_to_internal(
+        external_derivative=np.eye(len(params)),
         internal_values=internal_p,
-        fixed_values=fixed_val,
-        pre_replacements=pre_repl,
-        processed_constraints=pc,
-        post_replacements=post_repl,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
     )
 
     aaae(jacobian, numerical_jacobian["derivative"])
