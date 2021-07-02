@@ -145,6 +145,10 @@ def test_reparametrize_from_internal_jacobian(
     pre_repl = pp["_pre_replacements"].to_numpy()
     post_repl = pp["_post_replacements"].to_numpy()
 
+    n_free = int(pp._internal_free.sum())
+    scaling_factor = np.ones(n_free) * 2  # np.arange(n_free) + 1
+    scaling_offset = np.zeros(n_free)  # np.arange(n_free) - 1
+
     func = partial(
         reparametrize_from_internal,
         **{
@@ -152,6 +156,8 @@ def test_reparametrize_from_internal_jacobian(
             "pre_replacements": pre_repl,
             "processed_constraints": pc,
             "post_replacements": post_repl,
+            "scaling_factor": scaling_factor,
+            "scaling_offset": scaling_offset,
         },
     )
     numerical_jacobian = first_derivative(func, internal_p)
@@ -165,6 +171,7 @@ def test_reparametrize_from_internal_jacobian(
         pre_replacements=pre_repl,
         processed_constraints=pc,
         post_replacements=post_repl,
+        scaling_factor=scaling_factor,
     )
 
     aaae(jacobian, numerical_jacobian)
