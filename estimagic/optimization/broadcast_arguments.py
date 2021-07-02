@@ -18,6 +18,7 @@ def broadcast_arguments(**arguments):
         "numdiff_options",
         "log_options",
         "error_penalty",
+        "scaling_options",
     ]
     for arg in dict_args:
         if arg in arguments and arguments[arg] is None:

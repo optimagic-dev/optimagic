@@ -23,6 +23,7 @@ def check_argument(argument):
         "error_handling": str,
         "error_penalty": dict,
         "cache_size": (int, float),
+        "scaling_options": dict,
     }
 
     for arg in argument:

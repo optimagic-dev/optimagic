@@ -31,13 +31,13 @@ def calculate_scaling_factor_and_offset(
         constraints=constraints,
     )
 
-    x = to_internal(params["value"])
+    x = to_internal(params["value"].to_numpy())
 
     if method in ("bounds", "gradient"):
         lower_bounds, upper_bounds = get_internal_bounds(params, constraints)
 
     if method == "start_values":
-        raw_factor = np.clip(x.abs(), clipping_value, np.inf)
+        raw_factor = np.clip(np.abs(x), clipping_value, np.inf)
         scaling_offset = None
     elif method == "bounds":
         raw_factor = upper_bounds - lower_bounds
@@ -62,7 +62,7 @@ def calculate_scaling_factor_and_offset(
 
         gradient = first_derivative(func, x, **numdiff_options)["derivative"]
 
-        raw_factor = np.clip(gradient.abs(), clipping_value, np.inf)
+        raw_factor = np.clip(np.abs(gradient), clipping_value, np.inf)
         scaling_offset = None
 
     scaling_factor = raw_factor / magnitude
