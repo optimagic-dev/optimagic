@@ -125,7 +125,8 @@ nonlinear functions, it does not guarantee optimal scaling anywhere else.
 
 In practice, we do not take the exact gradient, but a numerical gradient calculated with
 a very large step size (compared to the rule of thumb for optimal step sizes for
-numerical derivatives). This is more robust for noisy or wiggly functions.
+numerical derivatives which is based on the magnitude of the parameter values at which
+the derivative is taken). This is more robust for noisy or wiggly functions.
 
 Advantages
 
@@ -160,6 +161,43 @@ Disadvantages
         scaling_options={"method": "gradient", "clipping_value": 0.1},
     )
 
+
+Influencing the magnitude of parameters
+=======================================
+
+The above approaches align the scale of parameters relative to each other. However, the
+overall magnitude is set rather arbitrarily. For example when dividing by start values,
+the magnitude of the scaled parameters is around one. When dividing by bounds, it is 
+somewhere between zero and one. 
+
+For the performance of numerical optimizers only the relative scales are important. 
+
+However, influencing the overall magnitude can be helpful to trick some optimizers
+into doing things they do not want to do. For example, when there is a minimal allowed
+initial trust region radius, increasing the magnitude of parameters allows to 
+effectively make the trust region radius smaller. 
+
+Setting the magnitude means simply adding one more entry to the scaling options. For
+example, if you want to scale by bounds and increase the magnitude by a factor of five:
+
+
+.. code-block:: python
+
+    def sphere(params):
+        return (params["value"] ** 2).sum()
+
+
+    start_params = pd.DataFrame(data=np.arange(5), columns=["value"])
+    start_params["lower_bound"] = 0
+    start_params["upper_bound"] = 2 * np.arange(5) + 1
+
+    minimize(
+        criterion=sphere,
+        params=start_params,
+        algorithm="scipy_lbfgsb",
+        scaling=True,
+        scaling_options={"method": "bounds", clipping_value: 0.0, "magnitude": 5},
+    )
 
 Remarks
 =======
