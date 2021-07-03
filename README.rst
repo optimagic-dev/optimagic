@@ -120,9 +120,10 @@ Warning
 
 Estimagic is still in beta status and the API might still change. With version `0.2.0`
 we start to mark experimental functionality with warnings. Everything that does not
-throw such warnings will not change without notice. With version `0.3.0` we will support
-full estimation workflows (optimization, inference and sensitivity analysis) with stable
-APIs. 
+throw such warnings will not change without notice. With version `0.3.0` we will
+try to keep the API for full estimation workflows (optimization, inference and
+sensitivity analysis) more stable and use deprecation cycles for breaking changes.
+
 
 Roadmap
 =======
@@ -130,24 +131,26 @@ Roadmap
 Version `0.2.0`
 ---------------
 
-- Raise warnings for all things that are still considered experimental. Conversely, 
+- Raise warnings for all things that are still considered experimental. Conversely,
   everything that does not throw an experimental warning is from now on stable and
   breaking changes require deprecations.
 - `estimagic.optimization.utilities` becomes `estimagic.utilities` (breaking change)
 - Return of `first_derivative` becomes a dict (breaking change)
-- Logging disabled by default (breaking change)
+- Logging disabled by default (potentially breaking change)
 - Support bootstrap (experimental)
 - Support basic sensitivity analysis for moments based estimation (experimental)
 - Support scaling of optimization problems (experimental)
 
 Version `0.2.1`
-- Support multi start optimizations as in TikTok (experimental)
+---------------
+
+- Support multi start optimizations as in TikTak (experimental)
 
 Version `0.2.2`
 ---------------
 
 - Improve packaging and upload on conda-forge
-- Split up into several packages to keep runtimes for the test suites manageable 
+- Split up into several packages to keep runtimes for the test suites manageable
     - estimagic-optimization
     - estimagic-differentiation
     - estimagic-inference
@@ -158,23 +161,23 @@ Version `0.2.x`
 
 Improve interfaces of inference functions but still keep them experimental
 
-Version `0.3.0` (Stable API for inference)
-------------------------------------------
+Version `0.3.0` (getting rid of experimental warnings)
+------------------------------------------------------
 
-- Find a good example model that can be estimated with ML, MSM, GMM and II for test 
+- Find a good example model that can be estimated with ML, MSM, GMM and II for test
   cases and documentation
 - Have stable interfaces for all inference and sensitivity analysis functions
-- Make tutorials that show full workflows for each estimation principle 
+- Make tutorials that show full workflows for each estimation principle
 - Promote estimagic via blogposts
 
-Versions `0.3.x` (Add functionality)
-------------------------------------
+Additionally planned Features
+-----------------------------
 
-- Wrap nlopt and ipopt 
-- Implement a flexible toolkit for optimization of noisy functions 
-- Wrap pygmo 
-- Add code for numerical second derivatives 
+- Wrap nlopt and ipopt
+- Implement a flexible toolkit for optimization of noisy functions
+- Wrap pygmo
+- Add code for numerical second derivatives
 - Make dashboard options configurable in GUI
 - Improve the appearance of the current Dashboard
-- Add a dashboard tab for numerical derivatives 
-- Add a dashboard tab for bootstrapping 
+- Add a dashboard tab for numerical derivatives
+- Add a dashboard tab for bootstrapping
