@@ -118,25 +118,32 @@ worked on this software and you should recognize their effort.
 Warning
 =======
 
-Estimagic is still in alpha status and the API might still change. We will try to keep
-the API more stable When we reach version `0.2.0`. 
+Estimagic is still in beta status and the API might still change. With version `0.2.0`
+we start to mark experimental functionality with warnings. Everything that does not
+throw such warnings will not change without notice. With version `0.3.0` we will support
+full estimation workflows (optimization, inference and sensitivity analysis) with stable
+APIs. 
 
 Roadmap
 =======
 
-Version `0.1.5`
+Version `0.2.0`
 ---------------
 
-- Move things that do not have stable interfaces to `estimagic.experimental` where 
-  possible and raise warnings else (e.g. scaling, TikTok)
-- Make imports for stable things nicer (first_derivative, ...)
+- Raise warnings for all things that are still considered experimental. Conversely, 
+  everything that does not throw an experimental warning is from now on stable and
+  breaking changes require deprecations.
+- `estimagic.optimization.utilities` becomes `estimagic.utilities` (breaking change)
+- Return of `first_derivative` becomes a dict (breaking change)
+- Logging disabled by default (breaking change)
 - Support bootstrap (experimental)
 - Support basic sensitivity analysis for moments based estimation (experimental)
 - Support scaling of optimization problems (experimental)
+
+Version `0.2.1`
 - Support multi start optimizations as in TikTok (experimental)
 
-
-Version `0.1.6`
+Version `0.2.2`
 ---------------
 
 - Improve packaging and upload on conda-forge
@@ -146,16 +153,21 @@ Version `0.1.6`
     - estimagic-inference
 - Internal refactoring of constraints code
 
-Version `0.2.0` (Stable interfaces for inference)
--------------------------------------------------
+Version `0.2.x`
+---------------
+
+Improve interfaces of inference functions but still keep them experimental
+
+Version `0.3.0` (Stable API for inference)
+------------------------------------------
 
 - Find a good example model that can be estimated with ML, MSM, GMM and II for test 
   cases and documentation
-- Improve interfaces for all inference and sensitivity analysis functions
+- Have stable interfaces for all inference and sensitivity analysis functions
 - Make tutorials that show full workflows for each estimation principle 
 - Promote estimagic via blogposts
 
-Versions `0.2.x` (Add functionality)
+Versions `0.3.x` (Add functionality)
 ------------------------------------
 
 - Wrap nlopt and ipopt 
