@@ -10,3 +10,4 @@ API Reference
    inference
    batch_evaluators
    tables
+   utilities

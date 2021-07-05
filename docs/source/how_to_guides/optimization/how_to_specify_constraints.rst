@@ -310,7 +310,7 @@ To look at the resulting covariance matrix, we can use another estimagic functio
 
 .. code-block:: python
 
-    from estimagic.optimization.utilities import cov_params_to_matrix
+    from estimagic.utilities import cov_params_to_matrix
 
     cov_params_to_matrix(df.loc["shocks_cov", "value"])
 
@@ -377,7 +377,7 @@ And, of course, there is another helper function in the utilities module:
 
 .. code-block:: python
 
-    from estimagic.optimization.utilities import sdcorr_params_to_sds_and_corr
+    from estimagic.utilities import sdcorr_params_to_sds_and_corr
 
     sds, corr = sdcorr_params_to_sds_and_corr(df.loc["shocks_sdcorr", "value"])
 
