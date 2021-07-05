@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   sodipodi:docname="estimagic_logo.svg"
+   inkscape:version="1.0 (6e3e5246a0, 2020-05-07)"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 46.171299 9.6890106"
+   height="9.6890106mm"
+   width="46.171299mm">
+  <defs
+     id="defs2">
+    <rect
+       id="rect863"
+       height="70.228638"
+       width="150.11868"
+       y="90.625877"
+       x="109.88199" />
+    <rect
+       id="rect12"
+       height="137.95145"
+       width="175.03011"
+       y="22.261885"
+       x="18.349932" />
+  </defs>
+  <sodipodi:namedview
+     inkscape:window-maximized="0"
+     inkscape:window-y="27"
+     inkscape:window-x="2312"
+     inkscape:window-height="970"
+     inkscape:window-width="1528"
+     inkscape:snap-text-baseline="true"
+     showgrid="false"
+     inkscape:document-rotation="0"
+     inkscape:current-layer="layer1"
+     inkscape:document-units="mm"
+     inkscape:cy="334.23446"
+     inkscape:cx="24.01961"
+     inkscape:zoom="0.49497475"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     transform="translate(-148.10558,-105.03488)"
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Layer 1">
+    <text
+       style="font-size:10.5833px;line-height:1.25;font-family:Lato;-inkscape-font-specification:'Lato, Normal';white-space:pre;shape-inside:url(#rect12);"
+       id="text10"
+       xml:space="preserve" />
+    <text
+       id="text18"
+       y="112.79244"
+       x="148.10558"
+       style="font-size:10.5833px;line-height:1.25;font-family:Lato;-inkscape-font-specification:'Lato, Normal';fill:#130654;fill-opacity:1;stroke-width:0.264583"
+       xml:space="preserve"><tspan
+         style="fill:#130654;fill-opacity:1;stroke-width:0.264583"
+         y="112.79244"
+         x="148.10558"
+         id="tspan16"
+         sodipodi:role="line"> estimagic</tspan></text>
+    <text
+       style="font-size:10.5833px;line-height:1.25;font-family:Lato;-inkscape-font-specification:'Lato, Normal';white-space:pre;shape-inside:url(#rect863);"
+       id="text861"
+       xml:space="preserve" />
+  </g>
+</svg>
