@@ -162,13 +162,12 @@ by default). This is more robust for noisy or wiggly functions.
         scaling_options={
             "method": "gradient",
             "clipping_value": 0.1,
-            numdiff_options: {"n_cores": 2, "scaling_factor": 100},
+            "numdiff_options": {"n_cores": 2, "scaling_factor": 100},
         },
     )
 
-The `numdiff_options` argument of `minimize` / `maximize` allow to configure the
-calculation of the numerical gradient. See
-:ref:`first_derivative` for available options.
+The `numdiff_options` argument of the scaling options allow to configure the calculation
+of the numerical gradient. See :ref:`first_derivative` for available options.
 
 
 Influencing the magnitude of parameters

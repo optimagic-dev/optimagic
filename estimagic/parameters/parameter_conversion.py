@@ -33,8 +33,10 @@ def get_reparametrize_functions(
         scaling_offset (np.ndarray or None): If None, no scaling offset is used
 
     Returns:
-        func: Function that maps an external parameter vector to an internal one
-        func: Function that maps an internal parameter vector to an external one
+        to_internal (func): Function that maps an external parameter vector to an
+            internal one
+        from_internal (func): Function that maps an internal parameter vector to an
+            external one
 
     """
     params = add_default_bounds_to_params(params)

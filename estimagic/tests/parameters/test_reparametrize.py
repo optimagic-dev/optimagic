@@ -114,8 +114,8 @@ def test_scaling_cancels_itself():
     to_internal, from_internal = get_reparametrize_functions(
         params=params,
         constraints=[],
-        scaling_factor=None,
-        scaling_offset=None,
+        scaling_factor=np.arange(10) + 1,
+        scaling_offset=np.ones(10),
     )
 
     internal = to_internal(params["value"].to_numpy())

@@ -48,6 +48,7 @@ def test_optimizations_with_scaling(algorithm, scaling_options):
         constraints=constraints,
         algorithm=algorithm,
         scaling_options=scaling_options,
+        derivative=sos_gradient,
     )
 
     expected_solution = np.array([0, 0, 0, 3, 4])

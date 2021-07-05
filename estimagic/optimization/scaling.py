@@ -5,8 +5,8 @@ after the reparametrizations for constraints have been applied.
 
 The order of applying the operations is the following:
 
-to internal: (x - scaling_offset) / scaling_factor
-from internal: x * scaling_factor + scaling_offset
+to internal: (external - scaling_offset) / scaling_factor
+from internal: internal * scaling_factor + scaling_offset
 
 """
 import numpy as np

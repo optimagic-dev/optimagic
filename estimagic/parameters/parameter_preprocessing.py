@@ -4,7 +4,7 @@ High level means:
 
 - Functions are save to use directly with user input (if applicable)
 - Defaults are filled automatically (if applicable)
-- Robust checks and error handling
+- Functions include robustness checks and error handling
 
 """
 import numpy as np
@@ -23,7 +23,7 @@ def add_default_bounds_to_params(params):
 
 
 def check_params_are_valid(params):
-    """Check params has a unique index.
+    """Check params has a unique index and valid bounds.
 
     Args:
         params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.

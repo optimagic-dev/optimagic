@@ -11,7 +11,11 @@ samples by drawing from the original data set with replacement. Secondly, calcul
 the statistic of interest from these resampled data, and finally, using the various
 estimates to draw inference on the distribution of the true statistic of interest.
 
-The main function of this module takes care of all of these three steps and returns a
+Parts of the bootstrap functionality is based on  Daniel Saxton's resample library
+:cite:`Saxton2018`. It has been adjusted to allow for the additional confidence interval
+types "bc", "basic" and "normal". Moreover, it is faster.
+
+The main bootstrap function takes care of all three steps and returns a
 table containing means, standard errors and confidence intervals for the estimated
 parameters.
 
@@ -46,16 +50,6 @@ To calculate mean, standard deviation, and a confidence interval of the statisti
 interest from the bootstrap outcomes, we can use
 
 .. autofunction:: bootstrap_from_outcomes
-
-There is also a function to calculate only confidence intervals, given the estimates.
-The code of this function is an adjusted version of the code from Daniel Saxton's
-resample library :cite:`Saxton2018`. It has been adjusted to allow
-for the additional confidence interval types "bc", "basic" and "normal". Moreover,
-it is faster.
-
-.. currentmodule:: estimagic.inference.bootstrap
-
-.. autofunction:: compute_ci
 
 
 The supported types of confidence are explained in more detail here:

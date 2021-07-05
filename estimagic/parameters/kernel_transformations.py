@@ -564,6 +564,7 @@ def scale_to_internal(vec, scaling_factor, scaling_offset):
         vec (np.ndarray): Internal parameter vector with external scale.
         scaling_factor (np.ndarray or None): If None, no scaling factor is used.
         scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+
     Returns:
         np.ndarray: vec with internal scale
 
@@ -584,6 +585,7 @@ def scale_from_internal(vec, scaling_factor, scaling_offset):
         vec (np.ndarray): Internal parameter vector with external scale.
         scaling_factor (np.ndarray or None): If None, no scaling factor is used.
         scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+
     Returns:
         np.ndarray: vec with external scale
 

@@ -414,6 +414,9 @@ def _optimize(
             batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling_options (dict or None): Options to configure the internal scaling ot
+            the parameter vector. By default no rescaling is done. See :ref:`scaling`
+            for details and recommendations.
 
     """
     arguments = broadcast_arguments(
@@ -484,7 +487,7 @@ def _single_optimize(
 ):
     """Minimize or maximize *criterion* using *algorithm* subject to *constraints*.
 
-    See the docstring of ``optimize`` for an explanation of all arguments.
+    See the docstring of ``_optimize`` for an explanation of all arguments.
 
     Returns:
         dict: The optimization result.
@@ -550,7 +553,6 @@ def _single_optimize(
 
     # get internal parameters and bounds
     x = params_to_internal(params["value"].to_numpy())
-
     lower_bounds, upper_bounds = get_internal_bounds(
         params=params,
         constraints=constraints,
