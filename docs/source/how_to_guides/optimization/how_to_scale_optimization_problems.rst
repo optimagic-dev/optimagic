@@ -5,7 +5,7 @@ How to scale optimization problems
 ==================================
 
 
-Real world optimization problems often comprise Parameters of vastly different orders of
+Real world optimization problems often comprise parameters of vastly different orders of
 magnitudes. This is typically not a problem for gradient based optimization algorithms
 but can considerably slow down derivative free optimizers. Below we describe three
 simple heuristics to improve the scaling of optimization problems and discuss the pros
@@ -35,17 +35,17 @@ range and a change in that parameter will only lead to a relatively small change
 the criterion function. If this is the case, the scaling of the optimization problem
 can be improved by simply dividing all parameter vectors by the start parameters.
 
-Advantages
+**Advantages:**
 
-- very simply
+- very simple
 - works with any type of constraints
 
-Disadvantages
+**Disadvantages:**
 
 - Makes scaling dependent on start values
 - Parameters with zero start value need special treatment
 
-
+**How to specify this scaling:**
 
 .. code-block:: python
 
@@ -73,29 +73,30 @@ In many optimization problems one has additional information on bounds of the pa
 space. Some of these bounds are hard (e.g. probabilities or variances are non negative),
 others are soft and derived from simple considerations (e.g. if a time discount factor
 were smaller than 0.7, we would not observe anyone to pursue a university degree in a
-structural model of educational choices or if an infection probability was higher
-than 20 % for distant contacts the covid pandemic would have been over after a
-month). For parameters than strongly influence the criterion function, the bounds
-stemming from these considerations are typically tighter as for parameters that have
-a small effect on the criterion function.
+structural model of educational choices or if an infection probability was higher than
+20% for distant contacts the covid pandemic would have been over after a month). For
+parameters that strongly influence the criterion function, the bounds stemming from these
+considerations are typically tighter than for parameters that have a small effect on the
+criterion function.
 
-Thus a natural approach to improve the scaling of the optimization problem is to re-map
-all parameters such that the bounds [0, 1] for all parameters. This has the additional
-advantage that absolute and relative convergence criteria on parameter changes become
-the same.
+Thus, a natural approach to improve the scaling of the optimization problem is to re-map
+all parameters such that the bounds are [0, 1] for all parameters. This has the
+additional advantage that absolute and relative convergence criteria on parameter changes
+become the same.
 
-Advantages
+**Advantages:**
 
 - very simple
 - works well in many practical applications
 - scaling is independent of start value
 - No problems with division by zero
 
-Disadvantages
+**Disadvantages:**
 
 - Only works if all parameters have bounds
 - This prohibits some kinds of other constraints in estimagic
 
+**How to specify this scaling:**
 
 .. code-block:: python
 
@@ -112,7 +113,7 @@ Disadvantages
         params=start_params,
         algorithm="scipy_lbfgsb",
         scaling=True,
-        scaling_options={"method": "bounds", clipping_value: 0.0},
+        scaling_options={"method": "bounds", "clipping_value": 0.0},
     )
 
 
@@ -127,12 +128,12 @@ In practice, we do not take the exact gradient, but a numerical gradient calcula
 a very large step size (100 times larger than the rule of thumb for optimal step sizes 
 by default). This is more robust for noisy or wiggly functions.
 
-Advantages
+**Advantages:**
 
 - Optimal scaling near start values
 - Less arbitrary than other methods
 
-Disadvantages
+**Disadvantages:**
 
 - Computationally expensive
 - Not robust for very noisy or very wiggly functions
@@ -141,6 +142,7 @@ Disadvantages
 - Numerical derivatives are themselves sensitive to scaling and the rule of thumb for
   step sizes basically uses the ``"start_values"`` approach to solve this problem.
 
+**How to specify this scaling:**
 
 .. code-block:: python
 
@@ -164,7 +166,8 @@ Disadvantages
         },
     )
 
-The numdiff options allow to configure the calculation of the numerical gradient. See
+The `numdiff_options` argument of `minimize` / `maximize` allow to configure the
+calculation of the numerical gradient. See
 :ref:`first_derivative` for available options.
 
 
@@ -230,6 +233,6 @@ Default values
 
 Scaling is disabled by default. If enabled, but no ``scaling_options`` are provided,
 we use the ``"start_values"`` method with a ``"clipping_value"`` of 0.1. This is the
-default method because it can be used for all optimization problems and low
+default method because it can be used for all optimization problems and has low
 computational cost. We strongly recommend you read the above guidelines and choose the
 method that is most suitable for your problem.
