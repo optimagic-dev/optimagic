@@ -34,20 +34,24 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from estimagic.optimization.check_constraints import check_constraints_are_satisfied
-from estimagic.optimization.check_constraints import check_fixes_and_bounds
-from estimagic.optimization.check_constraints import check_for_incompatible_overlaps
-from estimagic.optimization.check_constraints import check_types
-from estimagic.optimization.consolidate_constraints import consolidate_constraints
-from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
+from estimagic.parameters.check_constraints import check_constraints_are_satisfied
+from estimagic.parameters.check_constraints import check_fixes_and_bounds
+from estimagic.parameters.check_constraints import check_for_incompatible_overlaps
+from estimagic.parameters.check_constraints import check_types
+from estimagic.parameters.consolidate_constraints import consolidate_constraints
+from estimagic.parameters.kernel_transformations import scale_to_internal
+from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
+from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
-def process_constraints(constraints, params):
+def process_constraints(constraints, params, scaling_factor=None, scaling_offset=None):
     """Process, consolidate and check constraints.
 
     Args:
         constraints (list): List of dictionaries where each dictionary is a constraint.
         params (pd.DataFrame): see :ref:`params`.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
 
     Returns:
 
@@ -75,16 +79,15 @@ def process_constraints(constraints, params):
               parameter
 
     """
-    params = process_bounds(params)
+    params = add_default_bounds_to_params(params)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
         params = params.copy()
-        pc = _apply_constraint_killers(constraints)
-        check_types(pc)
+        check_types(constraints)
         # selectors have to be processed before anything else happens to the params
-        pc = _process_selectors(pc, params)
+        pc = _process_selectors(constraints, params)
 
         pc = _replace_pairwise_equality_by_equality(pc)
         pc = _process_linear_weights(pc, params)
@@ -95,7 +98,7 @@ def process_constraints(constraints, params):
         check_for_incompatible_overlaps(pp, pc)
         check_fixes_and_bounds(pp, pc)
 
-        int_lower, int_upper = _create_internal_bounds(
+        int_lower, int_upper = _create_unscaled_internal_bounds(
             pp.lower_bound, pp.upper_bound, pc
         )
         pp["_internal_lower"] = int_lower
@@ -103,42 +106,18 @@ def process_constraints(constraints, params):
         pp["_internal_free"] = _create_internal_free(
             pp._is_fixed_to_value, pp._is_fixed_to_other, pc
         )
+
+        for col in ["_internal_lower", "_internal_upper"]:
+            pp[col] = _scale_bound_to_internal(
+                pp[col],
+                pp._internal_free,
+                scaling_factor=scaling_factor,
+                scaling_offset=scaling_offset,
+            )
         pp["_pre_replacements"] = _create_pre_replacements(pp._internal_free)
         pp["_internal_fixed_value"] = _create_internal_fixed_value(pp._fixed_value, pc)
 
         return pc, pp
-
-
-def _apply_constraint_killers(constraints):
-    """Filter out constraints that have a killer."""
-    killers, real_constraints = set(), []
-    for constr in constraints:
-        if "kill" in constr and len(constr) == 1:
-            killers.add(constr["kill"])
-        else:
-            real_constraints.append(constr)
-
-    survivors = []
-    for constr in real_constraints:
-        if constr.get("id", None) not in killers:
-            survivors.append(constr)
-        killers.discard(constr.get("id", None))
-
-    if killers:
-        raise KeyError(f"You try to kill non-existing constraints with ids: {killers}")
-
-    return survivors
-
-
-def process_bounds(params):
-    """Fill missing bounds with -np.inf and np.inf."""
-    defaults = pd.DataFrame(
-        {"lower_bound": -np.inf, "upper_bound": np.inf},
-        index=params.index,
-    )
-    params = params.combine_first(defaults)
-
-    return params
 
 
 def _process_selectors(constraints, params):
@@ -298,7 +277,7 @@ def _replace_increasing_and_decreasing_by_linear(pc):
     return processed
 
 
-def _create_internal_bounds(lower, upper, pc):
+def _create_unscaled_internal_bounds(lower, upper, pc):
     """Create columns with bounds for the internal parameter vector.
 
     The columns have the length of the external params and will be reduced later.
@@ -409,3 +388,13 @@ def _create_internal_fixed_value(fixed_value, pc):
             int_fix.update(constr["right_hand_side"]["value"])
 
     return int_fix
+
+
+def _scale_bound_to_internal(bound_sr, internal_free, scaling_factor, scaling_offset):
+    sr = bound_sr.copy(deep=True)
+    free_bounds = bound_sr[internal_free].to_numpy()
+
+    scaled = scale_to_internal(free_bounds, scaling_factor, scaling_offset)
+
+    sr[internal_free] = scaled
+    return sr

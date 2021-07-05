@@ -37,7 +37,7 @@ def g(data):
     return data.mean(axis=0)
 
 
-def test_get_results_table(setup, expected):
+def test_bootstrap_from_outcomes(setup, expected):
 
     results = bootstrap_from_outcomes(
         data=setup["df"],

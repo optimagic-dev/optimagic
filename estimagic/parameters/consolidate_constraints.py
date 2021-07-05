@@ -9,7 +9,7 @@ Check the module docstring of process_constraints for naming conventions.
 import numpy as np
 import pandas as pd
 
-from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
+from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
 def consolidate_constraints(pc, params):

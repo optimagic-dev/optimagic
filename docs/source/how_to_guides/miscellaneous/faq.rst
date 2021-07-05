@@ -14,15 +14,14 @@ might even fail to ensure semi-definiteness, due to numerical error.
 There are several ways to deal with this:
 
 If you only need positive definiteness to do a cholesky decomposition, you
-can use :func:`~estimagic.optimization.utilities.robust_cholesky`, which can also
+can use :func:`~estimagic.utilities.robust_cholesky`, which can also
 decompose semi-definite and slightly indefinite matrices.
 
 If you really need positive definiteness for some other reason, you can
-construct a penalty. :func:`~estimagic.optimization.utilities.robust_cholesky`
+construct a penalty. :func:`~estimagic.utilities.robust_cholesky`
 can optionally return all information you need to construct such a penalty term.
 
-Finally, if the real pQuattro Vegani)
-roblem is just that your covariance matrix is ill
+Finally, if the real problem is just that your covariance matrix is ill
 conditioned, you can rescale some variables to make all variances approximately
 the same order of magnitude.
 

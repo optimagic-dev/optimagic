@@ -30,12 +30,12 @@ specific cases we refer to posts on math.stackexchange.com.
 """
 import numpy as np
 
-from estimagic.optimization.utilities import chol_params_to_lower_triangular_matrix
-from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
-from estimagic.optimization.utilities import cov_params_to_matrix
-from estimagic.optimization.utilities import dimension_to_number_of_triangular_elements
-from estimagic.optimization.utilities import robust_cholesky
-from estimagic.optimization.utilities import sdcorr_params_to_matrix
+from estimagic.utilities import chol_params_to_lower_triangular_matrix
+from estimagic.utilities import cov_matrix_to_sdcorr_params
+from estimagic.utilities import cov_params_to_matrix
+from estimagic.utilities import dimension_to_number_of_triangular_elements
+from estimagic.utilities import robust_cholesky
+from estimagic.utilities import sdcorr_params_to_matrix
 
 
 def covariance_to_internal(external_values, constr):
@@ -471,8 +471,8 @@ def _transformation_matrix(dim):
     Example:
     >>> import numpy as np
     >>> from numpy.testing import assert_array_almost_equal
-    >>> from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
-    >>> from estimagic.optimization.utilities import cov_to_sds_and_corr
+    >>> from estimagic.utilities import cov_matrix_to_sdcorr_params
+    >>> from estimagic.utilities import cov_to_sds_and_corr
     >>> cov = np.cov(np.random.randn(10, 4))
     >>> sds, corr = cov_to_sds_and_corr(cov)
     >>> corr[np.diag_indices(len(cov))] = sds
@@ -555,3 +555,45 @@ def _unit_vector_or_zeros(index, size):
     if index != -1:
         u[index] = 1
     return u
+
+
+def scale_to_internal(vec, scaling_factor, scaling_offset):
+    """Scale a parameter vector from external scale to internal one.
+
+    Args:
+        vec (np.ndarray): Internal parameter vector with external scale.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+
+    Returns:
+        np.ndarray: vec with internal scale
+
+    """
+    if scaling_offset is not None:
+        vec = vec - scaling_offset
+
+    if scaling_factor is not None:
+        vec = vec / scaling_factor
+
+    return vec
+
+
+def scale_from_internal(vec, scaling_factor, scaling_offset):
+    """Scale a parameter vector from internal scale to external one.
+
+    Args:
+        vec (np.ndarray): Internal parameter vector with external scale.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+
+    Returns:
+        np.ndarray: vec with external scale
+
+    """
+    if scaling_factor is not None:
+        vec = vec * scaling_factor
+
+    if scaling_offset is not None:
+        vec = vec + scaling_offset
+
+    return vec

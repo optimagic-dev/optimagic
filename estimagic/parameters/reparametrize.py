@@ -9,7 +9,6 @@ This external parameter vector might be subject to constraints, such as the cond
 that the first two parameters are equal.
 
 
-
 An internal parameter vector is an internal representation of the parameters in a
 different space. The internal parameters are meaningless and have no direct
 interpretation. However, the internal parameter vector has two important properties:
@@ -37,10 +36,16 @@ n_internal the length of the internal parameter vector.
 """
 import numpy as np
 
-import estimagic.optimization.kernel_transformations as kt
+import estimagic.parameters.kernel_transformations as kt
 
 
-def reparametrize_to_internal(external, internal_free, processed_constraints):
+def reparametrize_to_internal(
+    external,
+    internal_free,
+    processed_constraints,
+    scaling_factor=None,
+    scaling_offset=None,
+):
     """Convert a params DataFrame into a numpy array of internal parameters.
 
     Args:
@@ -50,19 +55,27 @@ def reparametrize_to_internal(external, internal_free, processed_constraints):
         processed_constraints (list): Processed and consolidated constraints. The
             processed constraints contain information on the transformations that have
             to be done.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
 
     Returns:
         internal_params (numpy.ndarray): 1d numpy array of free reparametrized
             parameters.
 
     """
-    internal_values = external.copy()
+    with_internal_values = external.copy()
     for constr in processed_constraints:
         func = getattr(kt, f"{constr['type']}_to_internal")
 
-        internal_values[constr["index"]] = func(external[constr["index"]], constr)
+        with_internal_values[constr["index"]] = func(external[constr["index"]], constr)
 
-    return internal_values[internal_free]
+    internal = with_internal_values[internal_free]
+
+    scaled = kt.scale_to_internal(
+        internal, scaling_factor=scaling_factor, scaling_offset=scaling_offset
+    )
+
+    return scaled
 
 
 def reparametrize_from_internal(
@@ -71,6 +84,8 @@ def reparametrize_from_internal(
     pre_replacements,
     processed_constraints,
     post_replacements,
+    scaling_factor=None,
+    scaling_offset=None,
 ):
     """Convert a numpy array of internal parameters to a params DataFrame.
 
@@ -90,11 +105,18 @@ def reparametrize_from_internal(
             element contains the position a parameter in the transformed parameter
             vector that has to be copied to duplicated and copied to the i_th position
             of the external parameter vector.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
 
     Returns:
         numpy.ndarray: Array with external parameters
 
     """
+    # undo scaling
+    internal = kt.scale_from_internal(
+        internal, scaling_factor=scaling_factor, scaling_offset=scaling_offset
+    )
+
     # do pre-replacements
     external_values = pre_replace(internal, fixed_values, pre_replacements)
 
@@ -120,6 +142,8 @@ def convert_external_derivative_to_internal(
     post_replacements=None,
     pre_replace_jac=None,
     post_replace_jac=None,
+    scaling_factor=None,
+    scaling_offset=None,
 ):
     r"""Compute the derivative of the criterion utilizing an external derivative.
 
@@ -160,14 +184,22 @@ def convert_external_derivative_to_internal(
             of the external parameter vector.
         pre_replace_jac (np.ndarray): 2d Array with the jacobian of pre_replace
         post_replacment_jacobian (np.ndarray): 2d Array with the jacobian post_replace
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no_scaling_factor is used.
+
 
     Returns:
         deriv (numpy.ndarray): The gradient or Jacobian.
 
     """
     dim_in = len(internal_values)
+    internal_unscaled_values = kt.scale_from_internal(
+        internal_values,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
 
-    pre_replaced = pre_replace(internal_values, fixed_values, pre_replacements)
+    pre_replaced = pre_replace(internal_unscaled_values, fixed_values, pre_replacements)
 
     if post_replacements is None and post_replace_jac is None:
         raise ValueError(
@@ -191,6 +223,8 @@ def convert_external_derivative_to_internal(
         transform_jac,
         pre_replace_jac,
     ]
+    if scaling_factor is not None:
+        mat_list.append(np.diag(scaling_factor))
 
     if tall_external:
         deriv = _multiply_from_right(mat_list)

@@ -7,20 +7,20 @@ from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
-from estimagic.optimization.utilities import calculate_trustregion_initial_radius
-from estimagic.optimization.utilities import chol_params_to_lower_triangular_matrix
-from estimagic.optimization.utilities import cov_matrix_to_params
-from estimagic.optimization.utilities import cov_matrix_to_sdcorr_params
-from estimagic.optimization.utilities import cov_params_to_matrix
-from estimagic.optimization.utilities import cov_to_sds_and_corr
-from estimagic.optimization.utilities import dimension_to_number_of_triangular_elements
-from estimagic.optimization.utilities import hash_array
-from estimagic.optimization.utilities import number_of_triangular_elements_to_dimension
-from estimagic.optimization.utilities import robust_cholesky
-from estimagic.optimization.utilities import robust_inverse
-from estimagic.optimization.utilities import sdcorr_params_to_matrix
-from estimagic.optimization.utilities import sdcorr_params_to_sds_and_corr
-from estimagic.optimization.utilities import sds_and_corr_to_cov
+from estimagic.utilities import calculate_trustregion_initial_radius
+from estimagic.utilities import chol_params_to_lower_triangular_matrix
+from estimagic.utilities import cov_matrix_to_params
+from estimagic.utilities import cov_matrix_to_sdcorr_params
+from estimagic.utilities import cov_params_to_matrix
+from estimagic.utilities import cov_to_sds_and_corr
+from estimagic.utilities import dimension_to_number_of_triangular_elements
+from estimagic.utilities import hash_array
+from estimagic.utilities import number_of_triangular_elements_to_dimension
+from estimagic.utilities import robust_cholesky
+from estimagic.utilities import robust_inverse
+from estimagic.utilities import sdcorr_params_to_matrix
+from estimagic.utilities import sdcorr_params_to_sds_and_corr
+from estimagic.utilities import sds_and_corr_to_cov
 
 
 def test_chol_params_to_lower_triangular_matrix():

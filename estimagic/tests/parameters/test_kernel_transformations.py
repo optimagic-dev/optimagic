@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-import estimagic.optimization.kernel_transformations as kt
+import estimagic.parameters.kernel_transformations as kt
 from estimagic.differentiation.derivatives import first_derivative
-from estimagic.optimization.kernel_transformations import cov_matrix_to_sdcorr_params
+from estimagic.parameters.kernel_transformations import cov_matrix_to_sdcorr_params
 
 to_test = list(product(range(10, 30), range(5)))
 

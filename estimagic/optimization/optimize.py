@@ -18,15 +18,14 @@ from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
-from estimagic.optimization.process_constraints import process_bounds
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
-from estimagic.optimization.reparametrize import post_replace_jacobian
-from estimagic.optimization.reparametrize import pre_replace_jacobian
-from estimagic.optimization.reparametrize import reparametrize_from_internal
-from estimagic.optimization.reparametrize import reparametrize_to_internal
-from estimagic.optimization.utilities import hash_array
-from estimagic.optimization.utilities import propose_algorithms
+from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
+from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
+from estimagic.parameters.parameter_conversion import get_internal_bounds
+from estimagic.parameters.parameter_conversion import get_reparametrize_functions
+from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
+from estimagic.parameters.parameter_preprocessing import check_params_are_valid
+from estimagic.utilities import hash_array
+from estimagic.utilities import propose_algorithms
 
 
 def maximize(
@@ -49,6 +48,7 @@ def maximize(
     batch_evaluator="joblib",
     batch_evaluator_options=None,
     cache_size=100,
+    scaling_options=None,
 ):
     """Maximize criterion using algorithm subject to constraints.
 
@@ -138,6 +138,9 @@ def maximize(
             batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling_options (dict or None): Options to configure the internal scaling ot
+            the parameter vector. By default no rescaling is done. See :ref:`scaling`
+            for details and recommendations.
 
     """
     return _optimize(
@@ -160,6 +163,7 @@ def maximize(
         batch_evaluator=batch_evaluator,
         batch_evaluator_options=batch_evaluator_options,
         cache_size=cache_size,
+        scaling_options=scaling_options,
     )
 
 
@@ -183,6 +187,7 @@ def minimize(
     batch_evaluator="joblib",
     batch_evaluator_options=None,
     cache_size=100,
+    scaling_options=None,
 ):
     """Minimize criterion using algorithm subject to constraints.
 
@@ -270,6 +275,9 @@ def minimize(
             batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling_options (dict or None): Options to configure the internal scaling ot
+            the parameter vector. By default no rescaling is done. See :ref:`scaling`
+            for details and recommendations.
 
     """
     return _optimize(
@@ -292,6 +300,7 @@ def minimize(
         batch_evaluator=batch_evaluator,
         batch_evaluator_options=batch_evaluator_options,
         cache_size=cache_size,
+        scaling_options=scaling_options,
     )
 
 
@@ -316,6 +325,7 @@ def _optimize(
     batch_evaluator,
     batch_evaluator_options,
     cache_size,
+    scaling_options,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
@@ -404,6 +414,9 @@ def _optimize(
             batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling_options (dict or None): Options to configure the internal scaling ot
+            the parameter vector. By default no rescaling is done. See :ref:`scaling`
+            for details and recommendations.
 
     """
     arguments = broadcast_arguments(
@@ -424,6 +437,7 @@ def _optimize(
         error_handling=error_handling,
         error_penalty=error_penalty,
         cache_size=cache_size,
+        scaling_options=scaling_options,
     )
 
     # do rough sanity checks before actual optimization for quicker feedback
@@ -469,10 +483,11 @@ def _single_optimize(
     error_handling,
     error_penalty,
     cache_size,
+    scaling_options,
 ):
     """Minimize or maximize *criterion* using *algorithm* subject to *constraints*.
 
-    See the docstring of ``optimize`` for an explanation of all arguments.
+    See the docstring of ``_optimize`` for an explanation of all arguments.
 
     Returns:
         dict: The optimization result.
@@ -508,28 +523,42 @@ def _single_optimize(
         )
 
     # process params and constraints
-    params = process_bounds(params)
+    params = add_default_bounds_to_params(params)
     for col in ["value", "lower_bound", "upper_bound"]:
         params[col] = params[col].astype(float)
-    _check_params(params)
+    check_params_are_valid(params)
 
-    processed_constraints, processed_params = process_constraints(constraints, params)
+    # calculate scaling factor and offset
+    if scaling_options not in (None, {}):
+        scaling_factor, scaling_offset = calculate_scaling_factor_and_offset(
+            params=params,
+            constraints=constraints,
+            criterion=criterion,
+            **scaling_options,
+        )
+    else:
+        scaling_factor, scaling_offset = None, None
 
     # name and group column are needed in the dashboard but could lead to problems
     # if present anywhere else
     params_with_name_and_group = _add_name_and_group_columns_to_params(params)
     problem_data["params"] = params_with_name_and_group
 
-    # get internal parameters and bounds
-    x = reparametrize_to_internal(
-        params["value"].to_numpy(),
-        processed_params["_internal_free"].to_numpy(),
-        processed_constraints,
+    params_to_internal, params_from_internal = get_reparametrize_functions(
+        params=params,
+        constraints=constraints,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
     )
 
-    free = processed_params.query("_internal_free")
-    lower_bounds = free["_internal_lower"].to_numpy()
-    upper_bounds = free["_internal_upper"].to_numpy()
+    # get internal parameters and bounds
+    x = params_to_internal(params["value"].to_numpy())
+    lower_bounds, upper_bounds = get_internal_bounds(
+        params=params,
+        constraints=constraints,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
 
     # process algorithm and algo_options
     if isinstance(algorithm, str):
@@ -550,32 +579,12 @@ def _single_optimize(
         algo_options, lower_bounds, upper_bounds, algorithm, algo_name
     )
 
-    # get partialed reparametrize from internal
-    pre_replacements = processed_params["_pre_replacements"].to_numpy()
-    post_replacements = processed_params["_post_replacements"].to_numpy()
-    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
-
-    partialed_reparametrize_from_internal = functools.partial(
-        reparametrize_from_internal,
-        fixed_values=fixed_values,
-        pre_replacements=pre_replacements,
-        processed_constraints=processed_constraints,
-        post_replacements=post_replacements,
-    )
-
     # get convert derivative
-    pre_replace_jac = pre_replace_jacobian(
-        pre_replacements=pre_replacements, dim_in=len(x)
-    )
-    post_replace_jac = post_replace_jacobian(post_replacements=post_replacements)
-
-    convert_derivative = functools.partial(
-        convert_external_derivative_to_internal,
-        fixed_values=fixed_values,
-        pre_replacements=pre_replacements,
-        processed_constraints=processed_constraints,
-        pre_replace_jac=pre_replace_jac,
-        post_replace_jac=post_replace_jac,
+    convert_derivative = get_derivative_conversion_function(
+        params=params,
+        constraints=constraints,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
     )
 
     # do first function evaluation
@@ -613,7 +622,7 @@ def _single_optimize(
         direction=direction,
         criterion=criterion,
         params=params,
-        reparametrize_from_internal=partialed_reparametrize_from_internal,
+        reparametrize_from_internal=params_from_internal,
         convert_derivative=convert_derivative,
         derivative=derivative,
         criterion_and_derivative=criterion_and_derivative,
@@ -631,7 +640,7 @@ def _single_optimize(
     res = algorithm(internal_criterion_and_derivative, x, **algo_options)
 
     p = params.copy()
-    p["value"] = partialed_reparametrize_from_internal(res["solution_x"])
+    p["value"] = params_from_internal(res["solution_x"])
     res["solution_params"] = p
 
     if "solution_criterion" not in res:
@@ -774,25 +783,6 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 
     numdiff_options = {**default_numdiff_options, **numdiff_options}
     return numdiff_options
-
-
-def _check_params(params):
-    """Check params has a unique index.
-
-    Args:
-        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
-
-    Raises:
-        AssertionError: The index contains duplicates.
-
-    """
-    if params.index.duplicated().any():
-        raise ValueError("No duplicates allowed in the index of params.")
-
-    invalid_bounds = params.query("lower_bound > value | upper_bound < value")
-
-    if len(invalid_bounds) > 0:
-        raise ValueError(f"value out of bounds for:\n{invalid_bounds.index}")
 
 
 def _add_name_and_group_columns_to_params(params):
