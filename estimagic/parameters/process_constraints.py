@@ -10,7 +10,7 @@ modules.
 
 Calls to functions doing checking are scattered across the module.
 This is in order to perform each check as soon as it becomes possible, which allows
-errors to be raised at a point where constraints still look similar to 
+errors to be raised at a point where constraints still look similar to
 what users wrote. However, some checks can only be done
 after consolidation.
 
