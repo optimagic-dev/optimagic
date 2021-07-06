@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.parameters.process_constraints import _process_selectors
 from estimagic.parameters.process_constraints import (
@@ -112,3 +113,23 @@ def test_one_bound_is_allowed_for_increasing():
     constraints = [{"loc": params.index, "type": "increasing"}]
 
     process_constraints(constraints, params)
+
+
+EMPTY_CONSTRAINTS = [
+    [{"loc": [], "type": "covariance"}],
+    [{"query": "value != value", "type": "sdcorr"}],
+    [{"locs": [[], []], "type": "pairwise_equality"}],
+    [{"queries": ["value != value"] * 3, "type": "pairwise_equality"}],
+]
+
+
+@pytest.mark.parametrize("constraints", EMPTY_CONSTRAINTS)
+def test_empty_constraint_is_dropped(constraints):
+    params = pd.DataFrame(np.ones((5, 1)), columns=["value"])
+    pc, pp = process_constraints(constraints, params)
+    # no transforming constraints
+    assert pc == []
+    # pre-replacements are just copying the parameter vector
+    aaae(pp["_pre_replacements"], np.arange(5))
+    # no post replacements
+    aaae(pp["_post_replacements"], np.full(5, -1))
