@@ -8,11 +8,11 @@ and other constraints are collected in meaningful bundles.
 To improve readability, the actual code for checking and consolidation are in separate
 modules.
 
-The calls to the check functions are not in one place but scattered over the module.
-This is because we want to do each check as soon as it becomes possible, which allows
-to write error messages as long as the constraints still look similar to the ones
-written by users. However, some checks can only be done
-after the consolidation.
+Calls to functions doing checking are scattered across the module.
+This is in order to perform each check as soon as it becomes possible, which allows
+errors to be raised at a point where constraints still look similar to 
+what users wrote. However, some checks can only be done
+after consolidation.
 
 The challenge in making this module readable is that after each function is applied
 the list of constraints and the params dataframe will be slightly different, but it
