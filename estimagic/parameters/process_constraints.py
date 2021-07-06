@@ -1,29 +1,28 @@
 """Process the user provided pc for use during the optimization.
 
-The main purpose of this module is to convert the user provided pc into
-inputs for fast reparametrization functions. In the process, the pc are
-checked and consolidated. Consolidation means that redundant pc are dropped
-and other pc are collected in meaningful bundles.
+The main purpose of this module is to convert the user provided constraints into
+inputs for fast reparametrization functions. In the process, the constraints are
+checked and consolidated. Consolidation means that redundant constraints are dropped
+and other constraints are collected in meaningful bundles.
 
 To improve readability, the actual code for checking and consolidation are in separate
 modules.
 
-The calls to the check functions are not in one place but scattered over the module.
-This is because we want to do each check as soon as it becomes possible, which allows
-to write error messages that are closely tied to the pc as written by the
-users and not some transformed version thereof. However, some checks can only be done
-after the consolidation.
-
+Calls to functions doing checking are scattered across the module.
+This is in order to perform each check as soon as it becomes possible, which allows
+errors to be raised at a point where constraints still look similar to
+what users wrote. However, some checks can only be done
+after consolidation.
 
 The challenge in making this module readable is that after each function is applied
-the list of pc and the params dataframe will be slightly different, but it
+the list of constraints and the params dataframe will be slightly different, but it
 is not possible to reflect all of the changes in meaningful names because thy would
 get way too long. We chose the following conventions:
 
-As soon as a list of pc or a params DataFrame is different from what the
-user provided they are called pc (for pc) and pp (for processed
-params) respectively. If all pc of a certain type, say linear, are collected
-in a this collection is called pc_linear.
+As soon as a list of constraints or a params DataFrame is different from what the
+user provided they are called pc (for processed constraints) and pp (for processed
+params) respectively. If all constraints of a certain type, say linear, are collected
+this collection is called pc_linear.
 
 If only few columns of processed params are used in a function, it is better to
 pass them as Series, to make the flow of information more explicit.
@@ -170,13 +169,18 @@ def _process_selectors(constraints, params):
                     "All sets of parameters in pairwise_equality pc must have "
                     "the same length."
                 )
-            new_constr["indices"] = indices
         else:
             assert (
                 len(indices) == 1
             ), "Either loc or query can be in constraint but not both."
-            new_constr["index"] = indices[0]
-        pc.append(new_constr)
+
+        n_selected = len(indices[0])
+        if n_selected >= 1:
+            if constr["type"] == "pairwise_equality":
+                new_constr["indices"] = indices
+            else:
+                new_constr["index"] = indices[0]
+            pc.append(new_constr)
 
     return pc
 

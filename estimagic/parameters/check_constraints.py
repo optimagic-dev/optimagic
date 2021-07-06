@@ -160,7 +160,8 @@ def check_fixes_and_bounds(pp, pc):
 
     warn_msg = (
         "The following parameters were fixed to a different value than their start "
-        "value:\n {}. You can ignore this message if you did so on purpose."
+        "value. The start values are overwritten with the fixed values. "
+        "You can ignore this message if you did this on purpose. :\n\n {}."
     )
 
     if len(problematic_fixes) > 0:
