@@ -121,7 +121,7 @@ def _process_path_or_database(path_or_database):
     elif isinstance(path_or_database, (Path, str)):
         res["path"] = Path(path_or_database).resolve()
         if not res["path"].exists():
-            raise FileNotFoundError(f"No such file: {res['path']}")
+            raise FileNotFoundError(f"No such database file: {res['path']}")
     else:
         raise ValueError(
             "path_or_database must be a path or sqlalchemy.MetaData object"
