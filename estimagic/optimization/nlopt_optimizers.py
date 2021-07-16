@@ -42,39 +42,41 @@ def nlopt_bobyqa(
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
-    """ Minimize a scalar function using nlopt algorithm derived from the
-     BOBYQA subroutine of M. J. D. Powell.
 
-     Do not call this function directly but pass its name "nlopt_bobyqa" to
-     estimagic's maximize or minimize function as `algorithm` argument. Specify
-     your desired arguments as a dictionary and pass them as `algo_options` to
-     minimize or maximize.
-     Below, only details of the optional algorithm options are listed. For the mandatory
-     arguments see :ref:`internal_optimizer_interface`. For more background on those
-     options, see :ref:`naming_conventions`.
+    """ Minimize a scalar function using the BOBYQA algorithm.
 
-     Args:
-         convergence_relative_params_tolerance (float): Stop when the relative movement
-             between parameter vectors is smaller than this.
-         convergence_relative_criterion_tolerance (float): Stop when the relative
-             improvement between two iterations is smaller than this.
-             More formally, this is expressed as
+    The implementation is derived from the BOBYQA subroutine of M. J. D. Powell.
 
-             .. math::
+    Do not call this function directly but pass its name "nlopt_bobyqa" to
+    estimagic's maximize or minimize function as `algorithm` argument. Specify
+    your desired arguments as a dictionary and pass them as `algo_options` to
+    minimize or maximize.
+    Below, only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options, see :ref:`naming_conventions`.
 
-                 \\frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \\leq
-                 \\text{relative_criterion_tolerance}
+    Args:
+     convergence_relative_params_tolerance (float): Stop when the relative movement
+         between parameter vectors is smaller than this.
+     convergence_relative_criterion_tolerance (float): Stop when the relative
+         improvement between two iterations is smaller than this.
+         More formally, this is expressed as
 
-         stopping_max_criterion_evaluations (int): If the maximum number of function
-             evaluation is reached, the optimization stops but we do not count this
-             as convergence.
-         stopping_max_iterations (int): If the maximum number of iterations is reached,
-             the optimization stops, but we do not count this as convergence.
+         .. math::
 
-     Returns:
-         dict: See :ref:`internal_optimizer_output` for details.
+             \\frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \\leq
+             \\text{relative_criterion_tolerance}
 
-     """
+     stopping_max_criterion_evaluations (int): If the maximum number of function
+         evaluation is reached, the optimization stops but we do not count this
+         as convergence.
+     stopping_max_iterations (int): If the maximum number of iterations is reached,
+         the optimization stops, but we do not count this as convergence.
+
+    Returns:
+     dict: See :ref:`internal_optimizer_output` for details.
+
+    """
     out = _minimize_nlopt(
     criterion_and_derivative,
     x,
@@ -104,21 +106,21 @@ def nlopt_neldermead (
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
-""" Minimize a scalar function using nlopt algorithm based on the
-  original Nelder-Mead simplex algorithm, as described in:
+    """Minimize a scalar function using nlopt algorithm based on the
+    original Nelder-Mead simplex algorithm, as described in:
 
- J. A. Nelder and R. Mead, "A simplex method for function minimization,"
- The Computer Journal 7, p. 308-313 (1965)..
+    J. A. Nelder and R. Mead, "A simplex method for function minimization,"
+    The Computer Journal 7, p. 308-313 (1965).
 
- Do not call this function directly but pass its name "nlopt_bobyqa" to
- estimagic's maximize or minimize function as `algorithm` argument. Specify
- your desired arguments as a dictionary and pass them as `algo_options` to
- minimize or maximize.
- Below, only details of the optional algorithm options are listed. For the mandatory
- arguments see :ref:`internal_optimizer_interface`. For more background on those
- options, see :ref:`naming_conventions`.
+    Do not call this function directly but pass its name "nlopt_bobyqa" to
+    estimagic's maximize or minimize function as `algorithm` argument. Specify
+    your desired arguments as a dictionary and pass them as `algo_options` to
+    minimize or maximize.
+    Below, only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options, see :ref:`naming_conventions`.
 
- Args:
+    Args:
      convergence_relative_params_tolerance (float): Stop when the relative movement
          between parameter vectors is smaller than this.
      convergence_relative_criterion_tolerance (float): Stop when the relative
@@ -136,10 +138,10 @@ def nlopt_neldermead (
      stopping_max_iterations (int): If the maximum number of iterations is reached,
          the optimization stops, but we do not count this as convergence.
 
- Returns:
+    Returns:
      dict: See :ref:`internal_optimizer_output` for details.
 
- """
+    """
     if np.isfinite(lower_bounds).any():
         warnings.warn(f"With finite lower bounds are specified nlopt_neldermead"+
         " may fail if finite uper bounds are not specified")
@@ -179,9 +181,7 @@ def _minimize_nlopt(
     limited_memory_storage_length=None,
     max_line_search_steps=None,
 ):
-    """ Run actual nlopt optimization argument, set relevant
-    attributes. 
-    """
+    """Run actual nlopt optimization argument, set relevant attributes."""
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = algorithm_name
     def func(x, grad):

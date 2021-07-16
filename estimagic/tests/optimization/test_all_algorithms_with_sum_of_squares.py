@@ -19,7 +19,7 @@ from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
-
+AVAILABLE_ALGORITHMS = [alg for alg in AVAILABLE_ALGORITHMS if alg.startswith('nlopt')]
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
     "scipy_conjugate_gradient",
