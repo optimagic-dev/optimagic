@@ -78,143 +78,133 @@ Trid: Solutions for three-dimension case
 ********************************************************************
   :math:`f({x}) = (x_1-1)^2 + (x_2-1)^2 + (x_3-1)^2 - x_2 x_1 - x_3 x_2`
 
-.. panels::
-    .. dropdown::  No constraints
+.. dropdown::  No constraints
 
-        .. code-block:: python
+    .. code-block:: python
 
-            constraints = []
+        constraints = []
 
-        :math:`x* = (3, 4, 3)`
+    :math:`x* = (3, 4, 3)`
 
-.. panels::
-    .. dropdown:: Fixed constraints
+.. dropdown:: Fixed constraints
 
-        .. code-block:: python
+    .. code-block:: python
 
-            constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
+        constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
 
-        :math:`x_{1} = 1 \rightarrow f(x) = (x_2 - 1)^2 + (x_3 - 1)^2 - x_2 - x_3 x_2 \\
-        \Rightarrow \frac{\delta f({x})}{\delta x_2} = 2x_2 - 3 - x_3 = 0
-        \Rightarrow x_3 = 2x_2 - 3\\
-        \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - 2 - x_2 = 0
-        \Rightarrow x_2 = 2x_3 - 2\\
-        \Rightarrow x_2 = \frac{8}{3} , \quad x_3 = \frac{7}{3}\\
-        \rightarrow x* = (1,\frac{8}{3}, \frac{7}{3})`
+    :math:`x_{1} = 1 \rightarrow f(x) = (x_2 - 1)^2 + (x_3 - 1)^2 - x_2 - x_3 x_2 \\
+    \Rightarrow \frac{\delta f({x})}{\delta x_2} = 2x_2 - 3 - x_3 = 0
+    \Rightarrow x_3 = 2x_2 - 3\\
+    \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - 2 - x_2 = 0
+    \Rightarrow x_2 = 2x_3 - 2\\
+    \Rightarrow x_2 = \frac{8}{3} , \quad x_3 = \frac{7}{3}\\
+    \rightarrow x* = (1,\frac{8}{3}, \frac{7}{3})`
 
-.. panels::
-    .. dropdown::  Probability constraint
+.. dropdown::  Probability constraint
 
-        .. code-block:: python
+    .. code-block:: python
 
-            constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
+        constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
 
-        :math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
-        \rightarrow f({x}) = 3x_1^2 - 3x_1 - 3x_3 + x_3^2 + x_1 x_3 + 2 \\
-        \Rightarrow \frac{\delta f({x})}{\delta x_1} = 6x_1 - 3 + x_3 = 0
-        \Rightarrow x_3 = 3 - 6x_1\\
-        \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - 3 + x_1 = 0
-        \Rightarrow x_1 = 3 - 2x_3\\
-        \Rightarrow x_1 = \frac{3}{11}, \quad x_3 = \frac{15}{11}\\
-        \rightarrow x* = (\frac{3}{11}, \frac{8}{11}, \frac{15}{11})`
+    :math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
+    \rightarrow f({x}) = 3x_1^2 - 3x_1 - 3x_3 + x_3^2 + x_1 x_3 + 2 \\
+    \Rightarrow \frac{\delta f({x})}{\delta x_1} = 6x_1 - 3 + x_3 = 0
+    \Rightarrow x_3 = 3 - 6x_1\\
+    \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - 3 + x_1 = 0
+    \Rightarrow x_1 = 3 - 2x_3\\
+    \Rightarrow x_1 = \frac{3}{11}, \quad x_3 = \frac{15}{11}\\
+    \rightarrow x* = (\frac{3}{11}, \frac{8}{11}, \frac{15}{11})`
 
-.. panels::
-    .. dropdown:: Increasing constraint
+.. dropdown:: Increasing constraint
 
-        .. code-block:: python
+    .. code-block:: python
 
-            constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
+        constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
 
-        :math:`\mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 -
-        x_3 x_2 - \lambda(x_3 - x_2)\\
-        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1} = 2(x_1 - 1) - x_2 = 0\\
-        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2} = 2(x_2 - 1) - x_1 - x_3 +
-        \lambda = 0\\
-        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3} = 2(x_3 - 1) - x_2 - \lambda
-        = 0\\
-        \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} = - x_3 + x_2 = 0\\
-        \Rightarrow x_2 = 2(x_1 - 1) = x_3 = \frac{10}{3}\\
-        \Rightarrow 2(x_2 - 1) - x_1 - 2 = 0\\
-        \Rightarrow 4(x_1 - 1) - 2 - x_1 - 2 = 0\\
-        \Rightarrow 3x_1 - 8 = 0 \Rightarrow x_1 = \frac{8}{3}\\
-        \rightarrow x* = (\frac{8}{3}, \frac{10}{3}, \frac{10}{3})`
+    :math:`\mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 -
+    x_3 x_2 - \lambda(x_3 - x_2)\\
+    \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1} = 2(x_1 - 1) - x_2 = 0\\
+    \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2} = 2(x_2 - 1) - x_1 - x_3 +
+    \lambda = 0\\
+    \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3} = 2(x_3 - 1) - x_2 - \lambda
+    = 0\\
+    \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} = - x_3 + x_2 = 0\\
+    \Rightarrow x_2 = 2(x_1 - 1) = x_3 = \frac{10}{3}\\
+    \Rightarrow 2(x_2 - 1) - x_1 - 2 = 0\\
+    \Rightarrow 4(x_1 - 1) - 2 - x_1 - 2 = 0\\
+    \Rightarrow 3x_1 - 8 = 0 \Rightarrow x_1 = \frac{8}{3}\\
+    \rightarrow x* = (\frac{8}{3}, \frac{10}{3}, \frac{10}{3})`
 
-.. panels::
-    .. dropdown::  Decreasing constraint
+.. dropdown::  Decreasing constraint
 
-        .. code-block:: python
+    .. code-block:: python
 
-            constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
+        constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
 
-        Solution unavailable.
+    Solution unavailable.
 
-.. panels::
-    .. dropdown::  Equality constraint
+.. dropdown::  Equality constraint
 
-        .. code-block:: python
+    .. code-block:: python
 
-            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
+        constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
 
-        :math:`x_{1} = x_{2} = x_{3} = x \\
-        \rightarrow f({x}) = x^2 - 6x + 3\\
-        \Rightarrow \frac{\delta f({x})}{\delta x} = 2x - 6 = 0\\
-        \Rightarrow x = 3\\
-        \rightarrow x* = (3,3,3)`
+    :math:`x_{1} = x_{2} = x_{3} = x \\
+    \rightarrow f({x}) = x^2 - 6x + 3\\
+    \Rightarrow \frac{\delta f({x})}{\delta x} = 2x - 6 = 0\\
+    \Rightarrow x = 3\\
+    \rightarrow x* = (3,3,3)`
 
-.. panels::
-    .. dropdown::   Pairwise equality constraint
+.. dropdown::   Pairwise equality constraint
 
-        .. code-block:: python
-        
-            constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
+    .. code-block:: python
 
-        :math:`x_{1} = x_{2} \\
-        \rightarrow f({x}) = 2(x_1 - 1)^2 + (x_3 - 1)^2 - x_1^2 - x_3 x_1\\
-        \Rightarrow \frac{\delta f({x})}{\delta x_1} = 2x_1 - x_3 - 4 = 0 \Rightarrow x_3
-        = 2x_1 - 4\\
-        \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - x_1 - 2 = 0 \Rightarrow x_1
-        = 2x_3 - 2\\
-        \Rightarrow x_1 = \frac{10}{3}, x_3 = \frac{8}{3}\\
-        \rightarrow x* = (\frac{10}{3},\frac{10}{3},\frac{8}{3})`
+        constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
 
-.. panels::
-    .. dropdown::   Covariance constraint
+    :math:`x_{1} = x_{2} \\
+    \rightarrow f({x}) = 2(x_1 - 1)^2 + (x_3 - 1)^2 - x_1^2 - x_3 x_1\\
+    \Rightarrow \frac{\delta f({x})}{\delta x_1} = 2x_1 - x_3 - 4 = 0 \Rightarrow x_3
+    = 2x_1 - 4\\
+    \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - x_1 - 2 = 0 \Rightarrow x_1
+    = 2x_3 - 2\\
+    \Rightarrow x_1 = \frac{10}{3}, x_3 = \frac{8}{3}\\
+    \rightarrow x* = (\frac{10}{3},\frac{10}{3},\frac{8}{3})`
 
-        .. code-block:: python
+.. dropdown::   Covariance constraint
 
-            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
+    .. code-block:: python
 
-        Solution unavailable.
+        constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
+
+    Solution unavailable.
 
 
-.. panels::
-    .. dropdown::  sdcorr constraint
+.. dropdown::  sdcorr constraint
 
-        .. code-block:: python
-        
-            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
+    .. code-block:: python
 
-        Solution unavailable.
+        constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
 
-.. panels::
-    .. dropdown::  Linear constraint
+    Solution unavailable.
 
-        .. code-block:: python
+.. dropdown::  Linear constraint
 
-            constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
+    .. code-block:: python
 
-        :math:`x_1 + 2x_2 = 4\\
-        \mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 - x_3 x_2
-        - \lambda(x_1 +2x_2-4)\\
-        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1} = 2(x_1 - 1) - x_2 - \lambda = 0\\
-        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2} = 2(x_2 - 1) - x_1 - x_3 -
-        2\lambda = 0\\
-        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3} = 2(x_3 - 1) - x_2 = 0 \\
-        \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} = - x_1 - 2x_2 + 4 = 0\\
-        \Rightarrow x_2 = 2(x_3 - 1), \quad x_1 = 4 - 2x_2\\
-        \Rightarrow 2(4 - 2x_2 - 1) - x_2 = x_2 - 1 - 2 + x_2 - \frac{x_2}{4} -
-        \frac{1}{2}\\
-        \rightarrow x* = (\frac{32}{27}, \frac{38}{27}, \frac{46}{27})`
+        constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
+
+    :math:`x_1 + 2x_2 = 4\\
+    \mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 - x_3 x_2
+    - \lambda(x_1 +2x_2-4)\\
+    \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1} = 2(x_1 - 1) - x_2 - \lambda = 0\\
+    \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2} = 2(x_2 - 1) - x_1 - x_3 -
+    2\lambda = 0\\
+    \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3} = 2(x_3 - 1) - x_2 = 0 \\
+    \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} = - x_1 - 2x_2 + 4 = 0\\
+    \Rightarrow x_2 = 2(x_3 - 1), \quad x_1 = 4 - 2x_2\\
+    \Rightarrow 2(4 - 2x_2 - 1) - x_2 = x_2 - 1 - 2 + x_2 - \frac{x_2}{4} -
+    \frac{1}{2}\\
+    \rightarrow x* = (\frac{32}{27}, \frac{38}{27}, \frac{46}{27})`
 
 
 
@@ -231,7 +221,7 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
     .. dropdown::   No constraints
 
         .. code-block:: python
-            
+
             constraints = []
 
         :math:`x* = (0, 0, 0)`
@@ -269,7 +259,7 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
             constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
 
         Not binding :math:`\rightarrow x* = (0, 0, 0)`
- 
+
 
 .. panels::
     .. dropdown::   Decreasing  constraints
@@ -358,7 +348,7 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  No constraints
-    
+
         .. code-block:: python
 
             constraints = []
@@ -368,7 +358,7 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  Fixed constraints
-    
+
         .. code-block:: python
 
            constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
@@ -378,7 +368,7 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  Fixed constraints
-    
+
         .. code-block:: python
 
             constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
@@ -387,7 +377,7 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  Increasing constraints
-    
+
         .. code-block:: python
 
             constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
@@ -397,7 +387,7 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  Decreasing constraints
-    
+
         .. code-block:: python
 
             constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
@@ -406,7 +396,7 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  Equality constraints
-    
+
         .. code-block:: python
 
             constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
@@ -415,7 +405,7 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  Pairwise equality constraints
-    
+
         .. code-block:: python
 
             constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
@@ -424,7 +414,7 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  Covariance constraints
-    
+
         .. code-block:: python
 
             constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
@@ -433,20 +423,18 @@ Global minima: :math:`x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  sdcorr constraints
-    
+
         .. code-block:: python
 
             constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
 
-        Not binding :math:`\rightarrow x* = (1, 1, 1)`  
+        Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
 .. panels::
     .. dropdown::  Linear constraints
-    
+
         .. code-block:: python
 
             constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
 
         No solution available.
-
-
