@@ -39,6 +39,7 @@ dependencies:
   - dill
   - pytask>=0.0.11
   - nlopt
+  - sphinx-panels
 
   - pip:
     - black
@@ -49,3 +50,4 @@ dependencies:
     - DFO-LS
     - gif
     - gif[matplotlib]
+

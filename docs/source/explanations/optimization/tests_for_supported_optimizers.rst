@@ -78,361 +78,145 @@ Trid: Solutions for three-dimension case
 ********************************************************************
   :math:`f({x}) = (x_1-1)^2 + (x_2-1)^2 + (x_3-1)^2 - x_2 x_1 - x_3 x_2`
 
+.. panels::
+    .. dropdown::  No constraints
 
-.. raw:: html
-
-    <div class="container">
-    <div id="accordion" class="shadow tutorial-accordion">
+        .. code-block:: python
 
-        <div class="card tutorial-card">
-            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseOne">
-                <div class="d-flex flex-row tutorial-card-header-1">
-                    <div class="d-flex flex-row tutorial-card-header-2">
-                        <button class="btn btn-dark btn-sm"></button>
-                        No constraints
-                    </div>
-                    <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                    </span>
-                </div>
-            </div>
-            <div id="collapseOne" class="collapse" data-parent="#accordion">
-                <div class="card-body">
-
-.. code-block:: python
-
-    constraints = []
-
-:math:`x* = (3, 4, 3)`
-
-
-.. raw:: html
+            constraints = []
 
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Fixed constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
-
-:math:`x_{1} = 1 \rightarrow f(x) = (x_2 - 1)^2 + (x_3 - 1)^2 - x_2 - x_3 x_2 \\
-\Rightarrow \frac{\delta f({x})}{\delta x_2} = 2x_2 - 3 - x_3 = 0
-\Rightarrow x_3 = 2x_2 - 3\\
-\Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - 2 - x_2 = 0
-\Rightarrow x_2 = 2x_3 - 2\\
-\Rightarrow x_2 = \frac{8}{3} , \quad x_3 = \frac{7}{3}\\
-\rightarrow x* = (1,\frac{8}{3}, \frac{7}{3})`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Probability constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
-
-:math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
-\rightarrow f({x}) = 3x_1^2 - 3x_1 - 3x_3 + x_3^2 + x_1 x_3 + 2 \\
-\Rightarrow \frac{\delta f({x})}{\delta x_1} = 6x_1 - 3 + x_3 = 0
-\Rightarrow x_3 = 3 - 6x_1\\
-\Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - 3 + x_1 = 0
-\Rightarrow x_1 = 3 - 2x_3\\
-\Rightarrow x_1 = \frac{3}{11}, \quad x_3 = \frac{15}{11}\\
-\rightarrow x* = (\frac{3}{11}, \frac{8}{11}, \frac{15}{11})`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Increasing constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
-
-:math:`\mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 -
-x_3 x_2 - \lambda(x_3 - x_2)\\
-\Rightarrow \frac{\delta \mathcal{L}}{\delta x_1} = 2(x_1 - 1) - x_2 = 0\\
-\Rightarrow \frac{\delta \mathcal{L}}{\delta x_2} = 2(x_2 - 1) - x_1 - x_3 +
-\lambda = 0\\
-\Rightarrow \frac{\delta \mathcal{L}}{\delta x_3} = 2(x_3 - 1) - x_2 - \lambda
-= 0\\
-\Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} = - x_3 + x_2 = 0\\
-\Rightarrow x_2 = 2(x_1 - 1) = x_3 = \frac{10}{3}\\
-\Rightarrow 2(x_2 - 1) - x_1 - 2 = 0\\
-\Rightarrow 4(x_1 - 1) - 2 - x_1 - 2 = 0\\
-\Rightarrow 3x_1 - 8 = 0 \Rightarrow x_1 = \frac{8}{3}\\
-\rightarrow x* = (\frac{8}{3}, \frac{10}{3}, \frac{10}{3})`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Decreasing constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
-
-Solution unavailable.
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Equality constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
-
-:math:`x_{1} = x_{2} = x_{3} = x \\
-\rightarrow f({x}) = x^2 - 6x + 3\\
-\Rightarrow \frac{\delta f({x})}{\delta x} = 2x - 6 = 0\\
-\Rightarrow x = 3\\
-\rightarrow x* = (3,3,3)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Pairwise equality constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
-
-:math:`x_{1} = x_{2} \\
-\rightarrow f({x}) = 2(x_1 - 1)^2 + (x_3 - 1)^2 - x_1^2 - x_3 x_1\\
-\Rightarrow \frac{\delta f({x})}{\delta x_1} = 2x_1 - x_3 - 4 = 0 \Rightarrow x_3
-= 2x_1 - 4\\
-\Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - x_1 - 2 = 0 \Rightarrow x_1
-= 2x_3 - 2\\
-\Rightarrow x_1 = \frac{10}{3}, x_3 = \frac{8}{3}\\
-\rightarrow x* = (\frac{10}{3},\frac{10}{3},\frac{8}{3})`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Covariance constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
-
-Solution unavailable.
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            sdcorr constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
-
-Solution unavailable.
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Linear constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
-
-:math:`x_1 + 2x_2 = 4\\
-\mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 - x_3 x_2
-- \lambda(x_1 +2x_2-4)\\
-\Rightarrow \frac{\delta \mathcal{L}}{\delta x_1} = 2(x_1 - 1) - x_2 - \lambda = 0\\
-\Rightarrow \frac{\delta \mathcal{L}}{\delta x_2} = 2(x_2 - 1) - x_1 - x_3 -
-2\lambda = 0\\
-\Rightarrow \frac{\delta \mathcal{L}}{\delta x_3} = 2(x_3 - 1) - x_2 = 0 \\
-\Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} = - x_1 - 2x_2 + 4 = 0\\
-\Rightarrow x_2 = 2(x_3 - 1), \quad x_1 = 4 - 2x_2\\
-\Rightarrow 2(4 - 2x_2 - 1) - x_2 = x_2 - 1 - 2 + x_2 - \frac{x_2}{4} -
-\frac{1}{2}\\
-\rightarrow x* = (\frac{32}{27}, \frac{38}{27}, \frac{46}{27})`
-
-
-.. raw:: html
-
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
+        :math:`x* = (3, 4, 3)`
+
+.. panels::
+    .. dropdown:: Fixed constraints
+
+        .. code-block:: python
+
+            constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
+
+        :math:`x_{1} = 1 \rightarrow f(x) = (x_2 - 1)^2 + (x_3 - 1)^2 - x_2 - x_3 x_2 \\
+        \Rightarrow \frac{\delta f({x})}{\delta x_2} = 2x_2 - 3 - x_3 = 0
+        \Rightarrow x_3 = 2x_2 - 3\\
+        \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - 2 - x_2 = 0
+        \Rightarrow x_2 = 2x_3 - 2\\
+        \Rightarrow x_2 = \frac{8}{3} , \quad x_3 = \frac{7}{3}\\
+        \rightarrow x* = (1,\frac{8}{3}, \frac{7}{3})`
+
+.. panels::
+    .. dropdown::  Probability constraint
+
+        .. code-block:: python
+
+            constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
+
+        :math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
+        \rightarrow f({x}) = 3x_1^2 - 3x_1 - 3x_3 + x_3^2 + x_1 x_3 + 2 \\
+        \Rightarrow \frac{\delta f({x})}{\delta x_1} = 6x_1 - 3 + x_3 = 0
+        \Rightarrow x_3 = 3 - 6x_1\\
+        \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - 3 + x_1 = 0
+        \Rightarrow x_1 = 3 - 2x_3\\
+        \Rightarrow x_1 = \frac{3}{11}, \quad x_3 = \frac{15}{11}\\
+        \rightarrow x* = (\frac{3}{11}, \frac{8}{11}, \frac{15}{11})`
+
+.. panels::
+    .. dropdown:: Increasing constraint
+
+        .. code-block:: python
+
+            constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
+
+        :math:`\mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 -
+        x_3 x_2 - \lambda(x_3 - x_2)\\
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1} = 2(x_1 - 1) - x_2 = 0\\
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2} = 2(x_2 - 1) - x_1 - x_3 +
+        \lambda = 0\\
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3} = 2(x_3 - 1) - x_2 - \lambda
+        = 0\\
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} = - x_3 + x_2 = 0\\
+        \Rightarrow x_2 = 2(x_1 - 1) = x_3 = \frac{10}{3}\\
+        \Rightarrow 2(x_2 - 1) - x_1 - 2 = 0\\
+        \Rightarrow 4(x_1 - 1) - 2 - x_1 - 2 = 0\\
+        \Rightarrow 3x_1 - 8 = 0 \Rightarrow x_1 = \frac{8}{3}\\
+        \rightarrow x* = (\frac{8}{3}, \frac{10}{3}, \frac{10}{3})`
+
+.. panels::
+    .. dropdown::  Decreasing constraint
+
+        .. code-block:: python
+
+            constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
+
+        Solution unavailable.
+
+.. panels::
+    .. dropdown::  Equality constraint
+
+        .. code-block:: python
+
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
+
+        :math:`x_{1} = x_{2} = x_{3} = x \\
+        \rightarrow f({x}) = x^2 - 6x + 3\\
+        \Rightarrow \frac{\delta f({x})}{\delta x} = 2x - 6 = 0\\
+        \Rightarrow x = 3\\
+        \rightarrow x* = (3,3,3)`
+
+.. panels::
+    .. dropdown::   Pairwise equality constraint
+
+        .. code-block:: python
+        
+            constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
+
+        :math:`x_{1} = x_{2} \\
+        \rightarrow f({x}) = 2(x_1 - 1)^2 + (x_3 - 1)^2 - x_1^2 - x_3 x_1\\
+        \Rightarrow \frac{\delta f({x})}{\delta x_1} = 2x_1 - x_3 - 4 = 0 \Rightarrow x_3
+        = 2x_1 - 4\\
+        \Rightarrow \frac{\delta f({x})}{\delta x_3} = 2x_3 - x_1 - 2 = 0 \Rightarrow x_1
+        = 2x_3 - 2\\
+        \Rightarrow x_1 = \frac{10}{3}, x_3 = \frac{8}{3}\\
+        \rightarrow x* = (\frac{10}{3},\frac{10}{3},\frac{8}{3})`
+
+.. panels::
+    .. dropdown::   Covariance constraint
+
+        .. code-block:: python
+
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
+
+        Solution unavailable.
+
+
+.. panels::
+    .. dropdown::  sdcorr constraint
+
+        .. code-block:: python
+        
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
+
+        Solution unavailable.
+
+.. panels::
+    .. dropdown::  Linear constraint
+
+        .. code-block:: python
+
+            constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
+
+        :math:`x_1 + 2x_2 = 4\\
+        \mathcal{L}({x_i}) = (x_1 - 1)^2 + (x_2 - 1)^2 + (x_3 - 1)^2 - x_1 x_2 - x_3 x_2
+        - \lambda(x_1 +2x_2-4)\\
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1} = 2(x_1 - 1) - x_2 - \lambda = 0\\
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2} = 2(x_2 - 1) - x_1 - x_3 -
+        2\lambda = 0\\
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3} = 2(x_3 - 1) - x_2 = 0 \\
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} = - x_1 - 2x_2 + 4 = 0\\
+        \Rightarrow x_2 = 2(x_3 - 1), \quad x_1 = 4 - 2x_2\\
+        \Rightarrow 2(4 - 2x_2 - 1) - x_2 = x_2 - 1 - 2 + x_2 - \frac{x_2}{4} -
+        \frac{1}{2}\\
+        \rightarrow x* = (\frac{32}{27}, \frac{38}{27}, \frac{46}{27})`
+
+
 
 
 
@@ -443,328 +227,123 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
 
   :math:`f({x}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)`
 
+.. panels::
+    .. dropdown::   No constraints
 
-.. raw:: html
+        .. code-block:: python
+            
+            constraints = []
 
-    <div class="container">
-    <div id="accordion" class="shadow tutorial-accordion">
+        :math:`x* = (0, 0, 0)`
 
-        <div class="card tutorial-card">
-            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseOne">
-                <div class="d-flex flex-row tutorial-card-header-1">
-                    <div class="d-flex flex-row tutorial-card-header-2">
-                        <button class="btn btn-dark btn-sm"></button>
-                        No constraints
-                    </div>
-                    <span class="badge gs-badge-link">
+.. panels::
+    .. dropdown::   Fixed constraints
 
-.. raw:: html
+        .. code-block:: python
 
-                    </span>
-                </div>
-            </div>
-            <div id="collapseOne" class="collapse" data-parent="#accordion">
-                <div class="card-body">
+            constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
 
-.. code-block:: python
+        :math:`x_{1} = 1 \rightarrow x* = (1, 0, 0)`
 
-    constraints = []
+.. panels::
+    .. dropdown::   Probability constraints
 
-:math:`x* = (0, 0, 0)`
+        .. code-block:: python
 
+            constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
 
-.. raw:: html
+        :math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
+        \mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)\\
+        -\lambda(x_1 +x_2-1)\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1}\\
+        = 6x_1 - \lambda = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2}\\
+        = 4x_2 - \lambda = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3}\\
+        = 2 x_3 = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} \\
+        = -x_1 - x_2 + 1 = 0\\ \rightarrow x* = (\frac{2}{5}, \frac{3}{5}, 0),\\
+        \quad f({x*}) = \frac{6}{5}`
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+.. panels::
+    .. dropdown::  Increasing  constraints
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Fixed constraint
-                        </div>
-                        <span class="badge gs-badge-link">
+        .. code-block:: python
 
-.. raw:: html
+            constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+        Not binding :math:`\rightarrow x* = (0, 0, 0)`
+ 
 
-.. code-block:: python
+.. panels::
+    .. dropdown::   Decreasing  constraints
 
-    constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
+        .. code-block:: python
 
-:math:`x_{1} = 1 \rightarrow x* = (1, 0, 0)`
+            constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
 
-.. raw:: html
+        Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
-                        </span>
-                    </div>
-                </div>
-            </div>
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Probability constraint
-                        </div>
-                        <span class="badge gs-badge-link">
+.. panels::
+    .. dropdown::   Equality  constraints
 
-.. raw:: html
+        .. code-block:: python
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
 
-.. code-block:: python
+        Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
-    constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
 
-:math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
-\mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)\\
--\lambda(x_1 +x_2-1)\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1}\\
-= 6x_1 - \lambda = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2}\\
-= 4x_2 - \lambda = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3}\\
-= 2 x_3 = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} \\
-= -x_1 - x_2 + 1 = 0\\ \rightarrow x* = (\frac{2}{5}, \frac{3}{5}, 0),\\
-\quad f({x*}) = \frac{6}{5}`
 
-.. raw:: html
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+.. panels::
+    .. dropdown::  Pairwise equality  constraints
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Increasing constraint
-                        </div>
-                        <span class="badge gs-badge-link">
+        .. code-block:: python
 
-.. raw:: html
+            constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+        Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
-.. code-block:: python
 
-    constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
 
-Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
-.. raw:: html
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+.. panels::
+    .. dropdown::   Covariance constraints
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Decreasing constraint
-                        </div>
-                        <span class="badge gs-badge-link">
+        .. code-block:: python
 
-.. raw:: html
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+        Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
-.. code-block:: python
 
-    constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
 
-Not binding :math:`\rightarrow x* = (0, 0, 0)`
+.. panels::
+    .. dropdown::   sdcorr constraints
 
-.. raw:: html
+        .. code-block:: python
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Equality constraint
-                        </div>
-                        <span class="badge gs-badge-link">
+        Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
-.. raw:: html
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+.. panels::
+    .. dropdown::  Linear constraints
 
-.. code-block:: python
+        .. code-block:: python
 
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
+            constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
 
-Not binding :math:`\rightarrow x* = (0, 0, 0)`
+        :math:`x_1 + 2x_2 = 4\\\mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) +
+        (x^2_1 + x^2_2 + x^2_3) -\lambda(x_1 +2x_2-4)\\ \Rightarrow \frac{\delta \\
+        \mathcal{L}}{\delta x_1} = 6x_1 - \lambda = 0\\ \Rightarrow \frac{\delta \\
+        \mathcal{L}}{\delta x_2} = 4x_2 - 2\lambda = 0\\ \Rightarrow \frac{\delta \\
+        \mathcal{L}}{\delta x_3} = 2 x_3 = 0\\ \Rightarrow \frac{\delta \\
+        \mathcal{L}}{\delta \lambda} = -x_1 - 2x_2 + 4 = 0\\ \rightarrow x* = \\
+        (\frac{4}{7}, \frac{12}{7}, 0)`
 
-.. raw:: html
 
-                        </span>
-                    </div>
-                </div>
-            </div>
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Pairwise equality constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
-
-Not binding :math:`\rightarrow x* = (0, 0, 0)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Covariance constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
-
-Not binding :math:`\rightarrow x* = (0, 0, 0)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            sdcorr constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
-
-Not binding :math:`\rightarrow x* = (0, 0, 0)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Linear constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
-
-:math:`x_1 + 2x_2 = 4\\\mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) +
-(x^2_1 + x^2_2 + x^2_3) -\lambda(x_1 +2x_2-4)\\ \Rightarrow \frac{\delta \\
-\mathcal{L}}{\delta x_1} = 6x_1 - \lambda = 0\\ \Rightarrow \frac{\delta \\
-\mathcal{L}}{\delta x_2} = 4x_2 - 2\lambda = 0\\ \Rightarrow \frac{\delta \\
-\mathcal{L}}{\delta x_3} = 2 x_3 = 0\\ \Rightarrow \frac{\delta \\
-\mathcal{L}}{\delta \lambda} = -x_1 - 2x_2 + 4 = 0\\ \rightarrow x* = \\
-(\frac{4}{7}, \frac{12}{7}, 0)`
-
-
-
-.. raw:: html
-
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
 
 
 
@@ -777,311 +356,97 @@ Rosenbrock: Solutions for three-dimension case
 
 Global minima: :math:`x* = (1, 1, 1)`
 
+.. panels::
+    .. dropdown::  No constraints
+    
+        .. code-block:: python
 
-.. raw:: html
+            constraints = []
 
-    <div class="container">
-    <div id="accordion" class="shadow tutorial-accordion">
+        :math:`x* = (1, 1, 1)`
 
-        <div class="card tutorial-card">
-            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseOne">
-                <div class="d-flex flex-row tutorial-card-header-1">
-                    <div class="d-flex flex-row tutorial-card-header-2">
-                        <button class="btn btn-dark btn-sm"></button>
-                        No constraints
-                    </div>
-                    <span class="badge gs-badge-link">
 
-.. raw:: html
+.. panels::
+    .. dropdown::  Fixed constraints
+    
+        .. code-block:: python
 
-                    </span>
-                </div>
-            </div>
-            <div id="collapseOne" class="collapse" data-parent="#accordion">
-                <div class="card-body">
+           constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
 
-.. code-block:: python
+        :math:`x_{1} = 1 \rightarrow x* = (1, 1, 1)`
 
-    constraints = []
 
-:math:`x* = (1, 1, 1)`
+.. panels::
+    .. dropdown::  Fixed constraints
+    
+        .. code-block:: python
 
+            constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
 
-.. raw:: html
+        No solution available.
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+.. panels::
+    .. dropdown::  Increasing constraints
+    
+        .. code-block:: python
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Fixed constraint
-                        </div>
-                        <span class="badge gs-badge-link">
+            constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
 
-.. raw:: html
+        Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
 
-.. code-block:: python
+.. panels::
+    .. dropdown::  Decreasing constraints
+    
+        .. code-block:: python
 
-    constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
+            constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
 
-:math:`x_{1} = 1 \rightarrow x* = (1, 1, 1)`
+        Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-.. raw:: html
+.. panels::
+    .. dropdown::  Equality constraints
+    
+        .. code-block:: python
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Probability constraint
-                        </div>
-                        <span class="badge gs-badge-link">
+        Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-.. raw:: html
+.. panels::
+    .. dropdown::  Pairwise equality constraints
+    
+        .. code-block:: python
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+            constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
 
-.. code-block:: python
+        Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-    constraints = [{"loc": ["x_1", "x_2"], "type": "probability"}]
+.. panels::
+    .. dropdown::  Covariance constraints
+    
+        .. code-block:: python
 
-No solution available.
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
 
-.. raw:: html
+        Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+.. panels::
+    .. dropdown::  sdcorr constraints
+    
+        .. code-block:: python
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Increasing constraint
-                        </div>
-                        <span class="badge gs-badge-link">
+            constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
 
-.. raw:: html
+        Not binding :math:`\rightarrow x* = (1, 1, 1)`  
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+.. panels::
+    .. dropdown::  Linear constraints
+    
+        .. code-block:: python
 
-.. code-block:: python
+            constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
 
-    constraints = [{"loc": ["x_2", "x_3"], "type": "increasing"}]
+        No solution available.
 
-Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Decreasing constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2"], "type": "decreasing"}]
-
-Not binding :math:`\rightarrow x* = (1, 1, 1)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Equality constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "equality"}]
-
-Not binding :math:`\rightarrow x* = (1, 1, 1)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Pairwise equality constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"locs": ["x_1", "x_2"], "type": "pairwise_equality"}]
-
-Not binding :math:`\rightarrow x* = (1, 1, 1)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Covariance constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "covariance"}]
-
-Not binding :math:`\rightarrow x* = (1, 1, 1)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            sdcorr constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2", "x_3"], "type": "sdcorr"}]
-
-Not binding :math:`\rightarrow x* = (1, 1, 1)`
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            Linear constraint
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. code-block:: python
-
-    constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
-
-No solution available.
-
-
-.. raw:: html
-
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
