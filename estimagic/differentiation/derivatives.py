@@ -11,7 +11,7 @@ from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
-from estimagic.optimization.utilities import namedtuple_from_kwargs
+from estimagic.utilities import namedtuple_from_kwargs
 
 
 def first_derivative(

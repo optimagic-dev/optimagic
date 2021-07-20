@@ -2,14 +2,14 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.optimization.process_constraints import _apply_constraint_killers
-from estimagic.optimization.process_constraints import _process_selectors
-from estimagic.optimization.process_constraints import (
+from estimagic.parameters.process_constraints import _process_selectors
+from estimagic.parameters.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.tests.optimization.test_reparametrize import reduce_params
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.tests.parameters.test_reparametrize import reduce_params
 
 constr1 = {"loc": 0, "type": "equality"}
 expected1 = {"index": [0, 1, 2]}
@@ -70,29 +70,6 @@ def test_replace_pairwise_equality_by_equality():
     assert calculated == expected
 
 
-def test_apply_killer_constraints():
-    constraints = [
-        {"loc": "a", "type": "sdcorr"},
-        {"loc": "b", "type": "sum", "id": "bla"},
-        {"loc": "c", "type": "sum", "id": 3},
-        {"kill": 3},
-    ]
-
-    calculated = _apply_constraint_killers(constraints)
-    expected = [
-        {"loc": "a", "type": "sdcorr"},
-        {"loc": "b", "type": "sum", "id": "bla"},
-    ]
-
-    assert calculated == expected
-
-
-def test_apply_killer_constraint_invalid():
-    constraints = [{"loc": "a"}, {"loc": "b", "id": 5}, {"kill": 6}]
-    with pytest.raises(KeyError):
-        _apply_constraint_killers(constraints)
-
-
 invalid_cases = [
     "basic_probability",
     "uncorrelated_covariance",
@@ -136,3 +113,23 @@ def test_one_bound_is_allowed_for_increasing():
     constraints = [{"loc": params.index, "type": "increasing"}]
 
     process_constraints(constraints, params)
+
+
+EMPTY_CONSTRAINTS = [
+    [{"loc": [], "type": "covariance"}],
+    [{"query": "value != value", "type": "sdcorr"}],
+    [{"locs": [[], []], "type": "pairwise_equality"}],
+    [{"queries": ["value != value"] * 3, "type": "pairwise_equality"}],
+]
+
+
+@pytest.mark.parametrize("constraints", EMPTY_CONSTRAINTS)
+def test_empty_constraint_is_dropped(constraints):
+    params = pd.DataFrame(np.ones((5, 1)), columns=["value"])
+    pc, pp = process_constraints(constraints, params)
+    # no transforming constraints
+    assert pc == []
+    # pre-replacements are just copying the parameter vector
+    aaae(pp["_pre_replacements"], np.arange(5))
+    # no post replacements
+    aaae(pp["_post_replacements"], np.full(5, -1))
