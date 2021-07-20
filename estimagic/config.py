@@ -24,7 +24,7 @@ else:
     IS_PETSC4PY_INSTALLED = True
 
 try:
-    import  nlopt  # noqa: F401
+    import nlopt  # noqa: F401
 except ImportError:
     IS_NLOPT_INSTALLED = False
 else:
