@@ -47,7 +47,7 @@ from estimagic.optimization.algo_options import (
 )
 from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_SUCCESSFUL
 from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
-from estimagic.optimization.utilities import calculate_trustregion_initial_radius
+from estimagic.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:
     import pybobyqa

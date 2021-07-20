@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import scipy
 
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import reparametrize_from_internal
-from estimagic.optimization.reparametrize import reparametrize_to_internal
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.reparametrize import reparametrize_from_internal
+from estimagic.parameters.reparametrize import reparametrize_to_internal
 
 
 def transform_covariance(

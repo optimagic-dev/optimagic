@@ -22,7 +22,7 @@ repos:
         additional_dependencies: [black]
         types: [rst]
 -   repo: https://github.com/psf/black
-    rev: 21.6b0
+    rev: 21.7b0
     hooks:
     -   id: black
         types: [python]
@@ -31,14 +31,14 @@ repos:
     hooks:
     -   id: flake8
         types: [python]
-        exclude: estimagic/optimization/kernel_transformations.py
+        exclude: estimagic/parameters/kernel_transformations.py
         additional_dependencies: [
             flake8-alfred, flake8-bugbear, flake8-builtins, flake8-comprehensions,
             flake8-docstrings, flake8-eradicate, flake8-print, flake8-rst-docstrings,
             flake8-todo, pep8-naming, pydocstyle,
         ]
 -   repo: https://github.com/PyCQA/doc8
-    rev: 0.9.0a1
+    rev: 0.9.0
     hooks:
         -   id: doc8
 -   repo: meta
@@ -57,6 +57,6 @@ repos:
     -   id: nbqa-isort
         additional_dependencies: [isort==5.6.4]
 -   repo: https://github.com/PyCQA/doc8
-    rev: 0.9.0a1
+    rev: 0.9.0
     hooks:
     -   id: doc8

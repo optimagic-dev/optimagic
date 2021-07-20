@@ -8,7 +8,7 @@ from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TO
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
-from estimagic.optimization.utilities import calculate_trustregion_initial_radius
+from estimagic.utilities import calculate_trustregion_initial_radius
 
 try:
     from petsc4py import PETSc
@@ -89,14 +89,14 @@ def tao_pounders(
         ||g(X)|| / ||g(X0)|| < \epsilon
 
     Args:
-        absolute_gradient_tolerance (float): Stop if relative norm of gradient is less
+        absolute_gradient_tolerance (float): Stop if norm of gradient is less than this.
+            If set to False the algorithm will not consider absolute_gradient_tolerance.
+        relative_gradient_tolerance (float): Stop if relative norm of gradient is less
             than this. If set to False the algorithm will not consider
-            absolute_gradient_tolerance.
-        relative_gradient_tolerance (float): Stop if norm of gradient is less than this.
-            If set to False the algorithm will not consider relative_gradient_tolerance.
-        scaled_gradient_tolerance (float): Stop if norm of gradient is reduced by this
-            factor. If set to False the algorithm will not consider
             relative_gradient_tolerance.
+        scaled_gradient_tolerance (float): Stop if scaled norm of gradient is smaller
+            than this. If set to False the algorithm will not consider
+            scaled_gradient_tolerance.
         trustregion_initial_radius (float): Initial value of the trust region radius.
             It must be :math:`> 0`.
         stopping_max_iterations (int): Alternative Stopping criterion.

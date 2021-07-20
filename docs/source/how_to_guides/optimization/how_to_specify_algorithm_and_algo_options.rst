@@ -75,11 +75,11 @@ The other arguments can be set as ``algo_options`` when calling ``maximize`` or
 
 .. _list_of_algorithms:
 
-Supported Algorithms
+Available Optimizers
 ====================
 
 
-Algorithms from scipy
+Optimizers from scipy
 ---------------------
 
 
@@ -370,7 +370,7 @@ dependencies to use them:
 
 .. _tao_algorithms:
 
-Algorithms from the Toolkit for Advanced Optimization (TAO)
+Optimizers from the Toolkit for Advanced Optimization (TAO)
 -----------------------------------------------------------
 
 At the moment, estimagic only supports
@@ -424,7 +424,7 @@ To use POUNDERs you need to have
 .. _nag_algorithms:
 
 
-Algorithms from the Numerical Algorithms Group (NAG)
+Optimizers from the Numerical Algorithms Group (NAG)
 ----------------------------------------------------
 
 Currently, estimagic supports the

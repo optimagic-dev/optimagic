@@ -2,7 +2,7 @@
 import numpy as np
 
 from estimagic.exceptions import INVALID_INFERENCE_MSG
-from estimagic.optimization.utilities import robust_inverse
+from estimagic.utilities import robust_inverse
 
 
 def cov_hessian(hessian):

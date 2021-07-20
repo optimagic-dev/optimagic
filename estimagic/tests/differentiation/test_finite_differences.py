@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.differentiation.finite_differences import jacobian
-from estimagic.optimization.utilities import namedtuple_from_kwargs
+from estimagic.utilities import namedtuple_from_kwargs
 
 
 @pytest.fixture(scope="function")
