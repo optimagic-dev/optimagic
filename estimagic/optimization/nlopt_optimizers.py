@@ -1,13 +1,17 @@
 import warnings
 
-import nlopt
 import numpy as np
 
+from estimagic.config import IS_NLOPT_INSTALLED
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
+
+if IS_NLOPT_INSTALLED:
+    import nlopt
+
 
 DEFAULT_ALGO_INFO = {
     "primary_criterion_entry": "value",
