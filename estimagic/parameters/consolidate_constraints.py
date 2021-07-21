@@ -442,9 +442,9 @@ def _plug_fixes_into_linear_weights_and_rhs(
 
     if len(fixed_ilocs) > 0:
         fixed_values = fixed_value.iloc[fixed_ilocs].to_numpy()
-        to_add = weights[fixed_ilocs] @ fixed_values
+        fixed_contribution = weights[fixed_ilocs] @ fixed_values
         for column in ["lower_bound", "upper_bound", "value"]:
-            new_rhs[column] = new_rhs[column] + to_add
+            new_rhs[column] = new_rhs[column] - fixed_contribution
         for i in fixed_ilocs:
             new_weights[i] = 0
 
