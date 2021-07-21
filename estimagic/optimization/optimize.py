@@ -102,7 +102,7 @@ def maximize(
             provide a different path for each optimization you are running. You can
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
-        log_options (dict): Additional keyword arguments to configure the logging.
+        log_options (dict): Additional keyword arguments to configure the logging:
             - "suffix": A string that is appended to the default table names, separated
             by an underscore. You can use this if you want to write the log into an
             existing database where the default names "optimization_iterations",
@@ -116,8 +116,8 @@ def maximize(
             100 ms, the logging overhead is negligible.
             - "if_exists": (str) One of "extend", "replace", "raise"
             - "save_all_arguments": (bool). If True, all arguments to maximize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
+            that can be pickled are saved in the log file. Otherwise, only the
+            information needed by the dashboard is saved. Default False.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -239,7 +239,7 @@ def minimize(
             provide a different path for each optimization you are running. You can
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
-        log_options (dict): Additional keyword arguments to configure the logging.
+        log_options (dict): Additional keyword arguments to configure the logging:
             - "suffix": A string that is appended to the default table names, separated
             by an underscore. You can use this if you want to write the log into an
             existing database where the default names "optimization_iterations",
@@ -252,9 +252,9 @@ def minimize(
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
             - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to minimize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
+            - "save_all_arguments": (bool). If True, all arguments to maximize
+            that can be pickled are saved in the log file. Otherwise, only the
+            information needed by the dashboard is saved. Default False.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
