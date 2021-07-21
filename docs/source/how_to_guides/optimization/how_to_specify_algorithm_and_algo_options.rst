@@ -497,6 +497,17 @@ BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
     </div>
 
 
+The Interior Point Optimizer (ipopt)
+------------------------------------
+
+estimagic's support for the Interior Point Optimizer (:cite:`Waechter2005`,
+:cite:`Waechter2005a`, :cite:`Waechter2005b`, :cite:`Nocedal2009`) is built on
+`cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python wrapper
+for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>`_.
+
+.. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
+
+
 
 **References**
 
