@@ -1,12 +1,13 @@
 import inspect
 
+from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
+from estimagic.optimization import cyipopt_optimizers
 from estimagic.optimization import nag_optimizers
 from estimagic.optimization import scipy_optimizers
 from estimagic.optimization import tao_optimizers
-
 
 COLLECTED_FUNCTIONS = {
     **dict(inspect.getmembers(scipy_optimizers, inspect.isfunction)),
@@ -28,3 +29,6 @@ if IS_PYBOBYQA_INSTALLED:
 
 if IS_DFOLS_INSTALLED:
     AVAILABLE_ALGORITHMS["nag_dfols"] = nag_optimizers.nag_dfols
+
+if IS_CYIPOPT_INSTALLED:
+    AVAILABLE_ALGORITHMS["ipopt"] = cyipopt_optimizers.ipopt

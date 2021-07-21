@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_allclose
 
+from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
@@ -98,12 +99,14 @@ def _get_skipping_info(test_case):
         "tao_": IS_PETSC4PY_INSTALLED,
         "nag_pybobyqa": IS_PYBOBYQA_INSTALLED,
         "nag_dfols": IS_DFOLS_INSTALLED,
+        "ipopt": IS_CYIPOPT_INSTALLED,
     }
 
     reasons = {
         "tao_": "petsc4py is not installed",
         "nag_pybobyqa": "pybobyqa is not installed",
         "nag_dfols": "dfols is not installed",
+        "ipopt": "cyipopt is not installed",
     }
 
     algo_name = test_case[0]

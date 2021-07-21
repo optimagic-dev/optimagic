@@ -160,11 +160,11 @@ def scipy_lbfgsb(
         x0=x,
         method="L-BFGS-B",
         jac=True,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_slsqp(
@@ -233,11 +233,11 @@ def scipy_slsqp(
         x0=x,
         method="SLSQP",
         jac=gradient,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_neldermead(
@@ -321,7 +321,7 @@ def scipy_neldermead(
         options=options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_powell(
@@ -402,11 +402,11 @@ def scipy_powell(
         fun=func,
         x0=x,
         method="Powell",
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_bfgs(
@@ -476,7 +476,7 @@ def scipy_bfgs(
         options=options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_conjugate_gradient(
@@ -553,7 +553,7 @@ def scipy_conjugate_gradient(
         options=options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_newton_cg(
@@ -638,7 +638,7 @@ def scipy_newton_cg(
         options=options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_cobyla(
@@ -712,7 +712,7 @@ def scipy_cobyla(
         tol=convergence_relative_params_tolerance,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_truncated_newton(
@@ -840,10 +840,10 @@ def scipy_truncated_newton(
         method="TNC",
         jac=gradient,
         options=options,
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_trust_constr(
@@ -949,11 +949,11 @@ def scipy_trust_constr(
         jac=gradient,
         x0=x,
         method="trust-constr",
-        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)
 
 
 def scipy_ls_trf(
@@ -1123,7 +1123,7 @@ def scipy_ls_dogbox(
     )
 
 
-def _process_scipy_result(scipy_results_obj):
+def process_scipy_result(scipy_results_obj):
     # using get with defaults to access dict elements is just a safety measure
     raw_res = {**scipy_results_obj}
     processed = {
@@ -1141,7 +1141,7 @@ def _process_scipy_result(scipy_results_obj):
     return processed
 
 
-def _get_scipy_bounds(lower_bounds, upper_bounds):
+def get_scipy_bounds(lower_bounds, upper_bounds):
     # Scipy works with `None` instead of infinite values for unconstrained parameters
     # and requires a list of tuples for each parameter with lower and upper bound.
     bounds = np.column_stack([lower_bounds, upper_bounds])
@@ -1196,7 +1196,7 @@ def _scipy_least_squares(
         fun=func,
         x0=x,
         jac=gradient,
-        # Don't use _get_scipy_bounds, b.c. least_squares uses np.inf
+        # Don't use get_scipy_bounds, b.c. least_squares uses np.inf
         bounds=(lower_bounds, upper_bounds),
         max_nfev=stopping_max_criterion_evaluations,
         ftol=convergence_relative_criterion_tol,
@@ -1207,4 +1207,4 @@ def _scipy_least_squares(
         tr_options=tr_solver_options,
     )
 
-    return _process_scipy_result(res)
+    return process_scipy_result(res)

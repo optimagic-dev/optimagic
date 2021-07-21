@@ -39,6 +39,8 @@ dependencies:
   - dill
   - pytask>=0.0.11
 
+  - cyipopt
+
   - pip:
     - black
     - blackcellmagic

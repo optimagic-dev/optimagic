@@ -53,8 +53,10 @@ autodoc_member_order = "bysource"
 autodoc_mock_imports = [
     "bokeh",
     "cloudpickle",
+    "cyipopt",
     "fuzzywuzzy",
     "joblib",
+    "nlopt",
     "numpy",
     "pandas",
     "pytest",
