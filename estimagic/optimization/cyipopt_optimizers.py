@@ -27,7 +27,8 @@ def ipopt(
     *,
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
-    barrier_strategy="monotone",
+    mu_strategy="monotone",
+    s_max=100,
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -44,9 +45,13 @@ def ipopt(
       difference to ``max_criterion_evaluations`` is that one iteration might need
       several criterion evaluations, for example in a line search or to determine if the
       trust region radius has to be shrunk.
-    - barrier_strategy (str): which barrier parameter update strategy is to be used. Can
+    - mu_strategy (str): which barrier parameter update strategy is to be used. Can
       be "monotone" or "adaptive". Default is "monotone", i.e. use the monotone
       (Fiacco-McCormick) strategy.
+    - s_max (int): Scaling threshold for the NLP error.
+
+    The following options are not supported through cyipopt:
+        - mu_oracle
 
     """
     if not IS_CYIPOPT_INSTALLED:
@@ -55,9 +60,9 @@ def ipopt(
             "install the package with: `conda install -c conda-forge cyipopt`"
         )
 
-    if barrier_strategy not in ["monotone", "adaptive"]:
+    if mu_strategy not in ["monotone", "adaptive"]:
         raise ValueError(
-            f"Unknown barrier strategy: {barrier_strategy}. It must be 'monotone' or "
+            f"Unknown barrier strategy: {mu_strategy}. It must be 'monotone' or "
             "'adaptive'."
         )
 
@@ -77,7 +82,8 @@ def ipopt(
     options = {
         "acceptable_iter": 0,  # disable the "acceptable" heuristic
         "max_iter": stopping_max_iterations,
-        "mu_strategy": barrier_strategy,
+        "mu_strategy": mu_strategy,
+        "s_max": int(s_max),
     }
 
     raw_res = cyipopt.minimize_ipopt(
