@@ -3,7 +3,9 @@ import inspect
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
+from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.optimization import nag_optimizers
+from estimagic.optimization import pygmo_optimizers
 from estimagic.optimization import scipy_optimizers
 from estimagic.optimization import tao_optimizers
 
@@ -16,6 +18,12 @@ if IS_PETSC4PY_INSTALLED:
     COLLECTED_FUNCTIONS.update(
         **dict(inspect.getmembers(tao_optimizers, inspect.isfunction))
     )
+
+if IS_PYGMO_INSTALLED:
+    COLLECTED_FUNCTIONS.update(
+        **dict(inspect.getmembers(pygmo_optimizers, inspect.isfunction))
+    )
+
 
 # drop private and helper functions
 AVAILABLE_ALGORITHMS = {}

@@ -15,6 +15,7 @@ from numpy.testing import assert_allclose
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
+from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
@@ -61,12 +62,14 @@ def _get_skipping_info(test_case):
         "tao_": IS_PETSC4PY_INSTALLED,
         "nag_pybobyqa": IS_PYBOBYQA_INSTALLED,
         "nag_dfols": IS_DFOLS_INSTALLED,
+        "pygmo": IS_PYGMO_INSTALLED,
     }
 
     reasons = {
         "tao_": "petsc4py is not installed",
         "nag_pybobyqa": "pybobyqa is not installed",
         "nag_dfols": "dfols is not installed",
+        "pygmo": "pygmo is not installed",
     }
 
     algo_name = test_case[0]
