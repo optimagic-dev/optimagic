@@ -217,7 +217,6 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
 
   :math:`f({x}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)`
 
-.. panels::
     .. dropdown::   No constraints
 
         .. code-block:: python
@@ -226,16 +225,15 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
 
         :math:`x* = (0, 0, 0)`
 
-.. panels::
     .. dropdown::   Fixed constraints
 
         .. code-block:: python
 
             constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
 
-        :math:`x_{1} = 1 \rightarrow x* = (1, 0, 0)`
+        :math:`x_{1} = 1 
+        \rightarrow x* = (1, 0, 0)`
 
-.. panels::
     .. dropdown::   Probability constraints
 
         .. code-block:: python
@@ -244,14 +242,18 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
 
         :math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
         \mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)\\
-        -\lambda(x_1 +x_2-1)\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1}\\
-        = 6x_1 - \lambda = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2}\\
-        = 4x_2 - \lambda = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3}\\
-        = 2 x_3 = 0\\ \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} \\
-        = -x_1 - x_2 + 1 = 0\\ \rightarrow x* = (\frac{2}{5}, \frac{3}{5}, 0),\\
+        -\lambda(x_1 +x_2-1)\\ 
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1}\\
+        = 6x_1 - \lambda = 0\\ 
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2}\\
+        = 4x_2 - \lambda = 0\\ 
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3}\\
+        = 2 x_3 = 0\\ 
+        \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} \\
+        = -x_1 - x_2 + 1 = 0\\ 
+        \rightarrow x* = (\frac{2}{5}, \frac{3}{5}, 0),\\
         \quad f({x*}) = \frac{6}{5}`
 
-.. panels::
     .. dropdown::  Increasing  constraints
 
         .. code-block:: python
@@ -261,7 +263,6 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
         Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
 
-.. panels::
     .. dropdown::   Decreasing  constraints
 
         .. code-block:: python
@@ -271,7 +272,6 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
         Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
 
-.. panels::
     .. dropdown::   Equality  constraints
 
         .. code-block:: python
@@ -281,9 +281,6 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
         Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
 
-
-
-.. panels::
     .. dropdown::  Pairwise equality  constraints
 
         .. code-block:: python
@@ -293,10 +290,6 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
         Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
 
-
-
-
-.. panels::
     .. dropdown::   Covariance constraints
 
         .. code-block:: python
@@ -307,7 +300,6 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
 
 
 
-.. panels::
     .. dropdown::   sdcorr constraints
 
         .. code-block:: python
@@ -317,7 +309,6 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
         Not binding :math:`\rightarrow x* = (0, 0, 0)`
 
 
-.. panels::
     .. dropdown::  Linear constraints
 
         .. code-block:: python
@@ -325,12 +316,15 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
             constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
 
         :math:`x_1 + 2x_2 = 4\\\mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) +
-        (x^2_1 + x^2_2 + x^2_3) -\lambda(x_1 +2x_2-4)\\ \Rightarrow \frac{\delta \\
-        \mathcal{L}}{\delta x_1} = 6x_1 - \lambda = 0\\ \Rightarrow \frac{\delta \\
-        \mathcal{L}}{\delta x_2} = 4x_2 - 2\lambda = 0\\ \Rightarrow \frac{\delta \\
-        \mathcal{L}}{\delta x_3} = 2 x_3 = 0\\ \Rightarrow \frac{\delta \\
-        \mathcal{L}}{\delta \lambda} = -x_1 - 2x_2 + 4 = 0\\ \rightarrow x* = \\
-        (\frac{4}{7}, \frac{12}{7}, 0)`
+        (x^2_1 + x^2_2 + x^2_3) -\lambda(x_1 +2x_2-4)\\ 
+        \Rightarrow \frac{\delta\mathcal{L}}{\delta x_1} = 6x_1 - \lambda = 0\\ 
+        \Rightarrow \frac{\delta \\
+        \mathcal{L}}{\delta x_2} = 4x_2 - 2\lambda = 0\\ 
+        \Rightarrow \frac{\delta \\
+        \mathcal{L}}{\delta x_3} = 2 x_3 = 0\\ 
+        \Rightarrow \frac{\delta \\
+        \mathcal{L}}{\delta \lambda} = -x_1 - 2x_2 + 4 = 0\\ 
+        \rightarrow x* = (\frac{4}{7}, \frac{12}{7}, 0)`
 
 
 
@@ -346,7 +340,6 @@ Rosenbrock: Solutions for three-dimension case
 
 Global minima: :math:`x* = (1, 1, 1)`
 
-.. panels::
     .. dropdown::  No constraints
 
         .. code-block:: python
@@ -356,7 +349,6 @@ Global minima: :math:`x* = (1, 1, 1)`
         :math:`x* = (1, 1, 1)`
 
 
-.. panels::
     .. dropdown::  Fixed constraints
 
         .. code-block:: python
@@ -365,8 +357,6 @@ Global minima: :math:`x* = (1, 1, 1)`
 
         :math:`x_{1} = 1 \rightarrow x* = (1, 1, 1)`
 
-
-.. panels::
     .. dropdown::  Fixed constraints
 
         .. code-block:: python
@@ -375,7 +365,6 @@ Global minima: :math:`x* = (1, 1, 1)`
 
         No solution available.
 
-.. panels::
     .. dropdown::  Increasing constraints
 
         .. code-block:: python
@@ -385,7 +374,6 @@ Global minima: :math:`x* = (1, 1, 1)`
         Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
 
-.. panels::
     .. dropdown::  Decreasing constraints
 
         .. code-block:: python
@@ -394,7 +382,6 @@ Global minima: :math:`x* = (1, 1, 1)`
 
         Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-.. panels::
     .. dropdown::  Equality constraints
 
         .. code-block:: python
@@ -403,7 +390,6 @@ Global minima: :math:`x* = (1, 1, 1)`
 
         Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-.. panels::
     .. dropdown::  Pairwise equality constraints
 
         .. code-block:: python
@@ -412,7 +398,6 @@ Global minima: :math:`x* = (1, 1, 1)`
 
         Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-.. panels::
     .. dropdown::  Covariance constraints
 
         .. code-block:: python
@@ -421,7 +406,6 @@ Global minima: :math:`x* = (1, 1, 1)`
 
         Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-.. panels::
     .. dropdown::  sdcorr constraints
 
         .. code-block:: python
@@ -430,7 +414,6 @@ Global minima: :math:`x* = (1, 1, 1)`
 
         Not binding :math:`\rightarrow x* = (1, 1, 1)`
 
-.. panels::
     .. dropdown::  Linear constraints
 
         .. code-block:: python
