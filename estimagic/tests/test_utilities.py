@@ -181,3 +181,4 @@ def test_available_algorithms():
     assert ("tao_pounders" in present_algo_names) is IS_PETSC4PY_INSTALLED
     assert ("nag_pybobyqa" in present_algo_names) is IS_PYBOBYQA_INSTALLED
     assert ("ipopt" in present_algo_names) is IS_CYIPOPT_INSTALLED
+    assert "get_scipy_bounds" not in present_algo_names
