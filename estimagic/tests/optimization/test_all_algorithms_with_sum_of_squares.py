@@ -32,6 +32,8 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
+BOUNDS_NEEDING_ALGORITHMS = ["pygmo_extended_ant_colony"]
+
 IMPRECISE_ALGOS = [
     "scipy_powell",
     "scipy_truncated_newton",
@@ -81,6 +83,19 @@ def _get_skipping_info(test_case):
             reason = reasons[substring]
 
     return needs_skipping, reason
+
+
+def _skip_algorithms_that_need_bounds(test_cases):
+    """Skip tests involving optimizers that need bounds."""
+    new_test_cases = []
+    for test_case in test_cases:
+        if test_case[0] in BOUNDS_NEEDING_ALGORITHMS:
+            test_case = pytest.param(
+                *test_case,
+                marks=pytest.mark.skip(reason=f"{test_case[0]} requires bounds"),
+            )
+        new_test_cases.append(test_case)
+    return new_test_cases
 
 
 # ======================================================================================
@@ -223,6 +238,7 @@ test_cases = []
 for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
 test_cases = _skip_tests_with_missing_dependencies(test_cases)
+test_cases = _skip_algorithms_that_need_bounds(test_cases)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)

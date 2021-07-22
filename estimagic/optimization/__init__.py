@@ -19,11 +19,6 @@ if IS_PETSC4PY_INSTALLED:
         **dict(inspect.getmembers(tao_optimizers, inspect.isfunction))
     )
 
-if IS_PYGMO_INSTALLED:
-    COLLECTED_FUNCTIONS.update(
-        **dict(inspect.getmembers(pygmo_optimizers, inspect.isfunction))
-    )
-
 
 # drop private and helper functions
 AVAILABLE_ALGORITHMS = {}
@@ -36,3 +31,10 @@ if IS_PYBOBYQA_INSTALLED:
 
 if IS_DFOLS_INSTALLED:
     AVAILABLE_ALGORITHMS["nag_dfols"] = nag_optimizers.nag_dfols
+
+if IS_PYGMO_INSTALLED:
+    _PYGMO_FUNCTIONS = dict(inspect.getmembers(pygmo_optimizers, inspect.isfunction))
+    PYGMO_ALGORITHMS = {
+        k: v for k, v in _PYGMO_FUNCTIONS.items() if k.startswith("pygmo_")
+    }
+    AVAILABLE_ALGORITHMS.update(**PYGMO_ALGORITHMS)
