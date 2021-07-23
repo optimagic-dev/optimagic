@@ -20,6 +20,7 @@ from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
+
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
     "scipy_conjugate_gradient",
@@ -32,7 +33,11 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
-BOUNDS_NEEDING_ALGORITHMS = ["pygmo_extended_ant_colony"]
+AVAILABLE_PYGMO_ALGORITHMS = [x for x in AVAILABLE_ALGORITHMS if x.startswith("pygmo_")]
+
+BOUNDS_NEEDING_ALGORITHMS = AVAILABLE_PYGMO_ALGORITHMS
+
+VERY_IMPRECISE_ALGORITHMS = ["pygmo_gaco"]
 
 IMPRECISE_ALGOS = [
     "scipy_powell",
@@ -85,16 +90,12 @@ def _get_skipping_info(test_case):
     return needs_skipping, reason
 
 
-def _skip_algorithms_that_need_bounds(test_cases):
+def _drop_algorithms_that_need_bounds(test_cases):
     """Skip tests involving optimizers that need bounds."""
     new_test_cases = []
     for test_case in test_cases:
-        if test_case[0] in BOUNDS_NEEDING_ALGORITHMS:
-            test_case = pytest.param(
-                *test_case,
-                marks=pytest.mark.skip(reason=f"{test_case[0]} requires bounds"),
-            )
-        new_test_cases.append(test_case)
+        if test_case[0] not in BOUNDS_NEEDING_ALGORITHMS:
+            new_test_cases.append(test_case)
     return new_test_cases
 
 
@@ -166,6 +167,7 @@ def get_test_cases_for_algorithm(algorithm):
     ]
     is_sum = algorithm in ["bhhh"]
     is_scalar = not (is_least_squares or is_sum)
+    is_genetic = algorithm.startswith("pygmo_")
 
     directions = ["minimize"] if is_least_squares else ["maximize", "minimize"]
 
@@ -173,14 +175,14 @@ def get_test_cases_for_algorithm(algorithm):
     if is_scalar:
         crit_funcs.append(sos_scalar_criterion)
 
-    if is_scalar:
+    if is_scalar and not is_genetic:
         derivatives = [sos_gradient, sos_pandas_gradient, None]
     elif is_sum:
         derivatives = [sos_jacobian, sos_pandas_jacobian, None]
     else:
         derivatives = [None]
 
-    if is_scalar:
+    if is_scalar and not is_genetic:
         crit_and_derivs = [sos_criterion_and_gradient, None]
     elif is_sum:
         crit_and_derivs = [sos_criterion_and_jacobian, None]
@@ -238,7 +240,7 @@ test_cases = []
 for alg in AVAILABLE_ALGORITHMS:
     test_cases += get_test_cases_for_algorithm(alg)
 test_cases = _skip_tests_with_missing_dependencies(test_cases)
-test_cases = _skip_algorithms_that_need_bounds(test_cases)
+test_cases = _drop_algorithms_that_need_bounds(test_cases)
 
 
 @pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", test_cases)
@@ -259,7 +261,12 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
     )
 
     assert res["success"], f"{algo} did not converge."
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(),
         np.zeros(2),
@@ -273,6 +280,7 @@ bound_cases = []
 for alg in BOUNDS_SUPPORTING_ALGORITHMS:
     bound_cases += get_test_cases_for_algorithm(alg)
 bound_cases = _skip_tests_with_missing_dependencies(bound_cases)
+bounds_optional_cases = _drop_algorithms_that_need_bounds(bound_cases)
 
 
 @pytest.mark.slow
@@ -297,7 +305,12 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
 
     assert res["success"], f"{algo} did not converge."
 
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -326,7 +339,12 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 7.5, 0, -2, 0.0])
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -355,7 +373,12 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -390,14 +413,21 @@ def test_with_pairwise_equality_constraint(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
+)
 def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
 
@@ -417,14 +447,21 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
+)
 def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [3], [2], [1]], columns=["value"])
 
@@ -444,14 +481,21 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
+)
 def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[1], [2], [0.1], [0.3], [0.6]], columns=["value"])
 
@@ -476,14 +520,21 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 0, 1 / 3, 1 / 3, 1 / 3])
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
+)
 def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deriv):
     params = pd.DataFrame(data=[[0.3], [0.0], [0.6], [0.1], [5]], columns=["value"])
 
@@ -503,14 +554,21 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.25, 0.25, 0.25, 0.25, 0])
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
+)
 def test_with_covariance_constraint_no_bounds_distance(
     algo,
     direction,
@@ -536,14 +594,21 @@ def test_with_covariance_constraint_no_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
+)
 def test_with_covariance_constraint_bounds_distance(
     algo,
     direction,
@@ -577,14 +642,21 @@ def test_with_covariance_constraint_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0, 0.1, 0, 0, 0.1])
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
+)
 def test_with_sdcorr_constraint_no_bounds_distance(
     algo,
     direction,
@@ -609,14 +681,21 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.zeros(5)
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("algo, direction, crit, deriv, crit_and_deriv", bound_cases)
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
+)
 def test_with_sdcorr_constraint_bounds_distance(
     algo,
     direction,
@@ -659,7 +738,12 @@ def test_with_sdcorr_constraint_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -667,7 +751,7 @@ def test_with_sdcorr_constraint_bounds_distance(
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv", bound_cases
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
 )  # ================================
 def test_with_decreasing_constraint_and_fixes(
     algo, direction, crit, deriv, crit_and_deriv
@@ -693,7 +777,12 @@ def test_with_decreasing_constraint_and_fixes(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 4, 4, 0, 0])
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
@@ -701,7 +790,7 @@ def test_with_decreasing_constraint_and_fixes(
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "algo, direction, crit, deriv, crit_and_deriv", bound_cases
+    "algo, direction, crit, deriv, crit_and_deriv", bounds_optional_cases
 )  # ================================
 def test_with_increasing_constraint_and_fixes(
     algo, direction, crit, deriv, crit_and_deriv
@@ -727,7 +816,12 @@ def test_with_increasing_constraint_and_fixes(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0, 0, 3, 3, 0])
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    if algo in VERY_IMPRECISE_ALGORITHMS:
+        atol = 0.2
+    elif algo in IMPRECISE_ALGOS:
+        atol = 1e-02
+    else:
+        atol = 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
