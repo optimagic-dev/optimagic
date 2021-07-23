@@ -6,40 +6,33 @@ import pygmo as pg
 from estimagic import batch_evaluators
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 
-POPULATION_SIZE = 1000
-N_GENERATIONS = 10
-
-# copied from ant colony
-KERNEL_SIZE = 63
-CONVERGENCE_SPEED = 1.0
-ORACLE_PARAMETER = 0.0
-ACCURACY = 0.01
-THRESHOLD = 1
-STD_CONVERGENCE_SPEED = 7
-STOPPING_MAX_N_WITHOUT_IMPROVEMENTS = 100000
-FOCUS = 0.0
-DEFAULT_SEED = 210722
+POPULATION_SIZE = 10000
+N_GENERATIONS = 500
 
 
-def pygmo_extended_ant_colony(
+def pygmo_gaco(
     criterion_and_derivative,
     x,
     lower_bounds,
     upper_bounds,
     *,
     population_size=POPULATION_SIZE,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    #
     n_generations=N_GENERATIONS,
-    kernel_size=KERNEL_SIZE,
-    convergence_speed=CONVERGENCE_SPEED,
-    oracle_parameter=ORACLE_PARAMETER,
-    accuracy=ACCURACY,
-    threshold=THRESHOLD,
-    std_convergence_speed=STD_CONVERGENCE_SPEED,
-    stopping_max_n_without_improvements=STOPPING_MAX_N_WITHOUT_IMPROVEMENTS,
+    kernel_size=63,
+    convergence_speed=1.0,
+    oracle=0.0,
+    accuracy=0.01,
+    threshold=1,
+    std_convergence_speed=7,
+    stopping_max_n_without_improvements=100000,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
-    focus=FOCUS,
+    focus=0.0,
     activate_memory_for_multiple_calls=False,
-    seed=DEFAULT_SEED,
 ):
     """Minimize a scalar function using the extended ant colony algorithm.
 
@@ -61,17 +54,27 @@ def pygmo_extended_ant_colony(
     values) which are computed depending on the quality of each previous solution. The
     solutions are ranked through an oracle penalty method.
 
-    - n_generations (int): number of generations to evolve.
-    - kernel_size (int): number of solutions stored in the solution archive.
-    - convergence_speed (float): this parameter is useful for managing the convergence
+    - population_size (int): Size of the population.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+
+    - n_generations (int): Number of generations to evolve.
+    - kernel_size (int): Number of solutions stored in the solution archive.
+    - convergence_speed (float): This parameter is useful for managing the convergence
       speed towards the found minima (the smaller the faster).
-    - oracle_parameter (float): oracle parameter used in the penalty method.
+    - oracle (float): oracle parameter used in the penalty method.
     - accuracy (float): accuracy parameter for maintaining a minimum penalty function's
       values distances.
     - threshold (int): when the generations reach the threshold then the convergence
       speed is set to 0.01 automatically.
     - std_convergence_speed (int): parameter that determines the convergence speed of
-       the standard deviations values.
+       the standard deviations.
     - stopping.max_n_without_improvements (int): if a positive integer is assigned here,
       the algorithm will count the runs without improvements, if this number exceeds the
       given value, the algorithm will be stopped.
@@ -83,24 +86,33 @@ def pygmo_extended_ant_colony(
       high, the search is more focused around the current best solutions.
     - activate_memory_for_multiple_calls (bool): if true, memory is activated in the
       algorithm for multiple calls.
-    - seed (int): seed used by the internal random number generator.
 
     """
     algo_options = {
-        "popsize": population_size,
-        "gen": n_generations,
-        "ker": kernel_size,
-        "q": convergence_speed,
-        "oracle": oracle_parameter,
-        "acc": accuracy,
-        "threshold": threshold,
-        "n_gen_mark": std_convergence_speed,
-        "impstop": stopping_max_n_without_improvements,
-        "evalstop": stopping_max_criterion_evaluations,
-        "focus": focus,
-        "memory": activate_memory_for_multiple_calls,
+        "population_size": population_size,
+        "n_cores": n_cores,
         "seed": seed,
+        "discard_start_params": discard_start_params,
     }
+    if batch_evaluator is not None:
+        algo_options["batch_evaluator"] = batch_evaluator
+
+    algo_options.update(
+        **{
+            "gen": n_generations,
+            "ker": kernel_size,
+            "q": convergence_speed,
+            "oracle": oracle,
+            "acc": accuracy,
+            "threshold": threshold,
+            "n_gen_mark": std_convergence_speed,
+            "impstop": stopping_max_n_without_improvements,
+            "evalstop": stopping_max_criterion_evaluations,
+            "focus": focus,
+            "memory": activate_memory_for_multiple_calls,
+        }
+    )
+
     res = _minimize_pygmo(
         criterion_and_derivative=criterion_and_derivative,
         x=x,
@@ -126,7 +138,7 @@ def _minimize_pygmo(
         algo_options (dict): Options for the optimizer. In addition to
             the algo options that will be passed directly to the pygmo
             algorithms we have the following entries:
-            - popsize (int): Population size for genetic algorithms.
+            - population_size (int): Population size for genetic algorithms.
             - batch_evaluator (str or callable): An estimagic batch evaluator,
                 default joblib batch evaluator.
             - n_cores (int): Number of cores used for parallel evaluation of
@@ -144,7 +156,7 @@ def _minimize_pygmo(
     """
 
     algo_options = {} if algo_options is None else algo_options.copy()
-    popsize = algo_options.pop("popsize", POPULATION_SIZE)
+    population_size = algo_options.pop("population_size", POPULATION_SIZE)
     batch_evaluator = algo_options.pop("batch_evaluator", "joblib_batch_evaluator")
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(batch_evaluators, batch_evaluator)
@@ -176,7 +188,7 @@ def _minimize_pygmo(
     )
     algo = _create_algorithm(method, algo_options)
     pop = _create_population(
-        prob, popsize, x, seed=seed, discard_start_params=discard_start_params
+        prob, population_size, x, seed=seed, discard_start_params=discard_start_params
     )
     evolved = algo.evolve(pop)
     result = _process_pygmo_results(evolved)
@@ -220,7 +232,7 @@ def _create_algorithm(method, algo_options):
     return out
 
 
-def _create_population(problem, popsize, x, seed, discard_start_params):
+def _create_population(problem, population_size, x, seed, discard_start_params):
     """Create a pygmo population object.
     Args:
         problem (pygmo.Problem)
@@ -230,11 +242,11 @@ def _create_population(problem, popsize, x, seed, discard_start_params):
         - constrain random initial values to be in some bounds
     """
     if not discard_start_params:
-        popsize = popsize - 1
+        population_size = population_size - 1
 
     pop = pg.population(
         problem,
-        size=popsize,
+        size=population_size,
         seed=seed,
         b=pg.bfe(),
     )
