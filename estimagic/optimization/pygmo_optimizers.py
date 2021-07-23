@@ -92,7 +92,9 @@ def pygmo_gaco(
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
 
-    population_size = _determine_population_size(population_size=population_size, x=x)
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=64
+    )
 
     algo_specific_options = {
         "gen": stopping_max_iterations,
@@ -133,12 +135,13 @@ def pygmo_bee_colony(
     lower_bounds,
     upper_bounds,
     *,
-    population_size=None,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
     batch_evaluator=None,
     n_cores=1,
     seed=None,
     discard_start_params=False,
     max_n_trials=1,
+    population_size=None,
 ):
     """Minimize a scalar function using the artifical bee colony algorithm.
 
@@ -146,8 +149,7 @@ def pygmo_bee_colony(
 
     The implemented version of the algorithm is proposed in :cite:`Mernik2015`.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
-      parameters but at least 64.
+    - stopping_max_iterations (int): Number of generations to evolve.
     - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
@@ -157,17 +159,20 @@ def pygmo_bee_colony(
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - max_n_trials (int): Maximum number of trials for abandoning a source.
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 20.
 
     """
-    population_size = _determine_population_size(population_size=population_size, x=x)
-
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=20
+    )
     algo_options = _create_algo_options(
         population_size=population_size,
         n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
         batch_evaluator=batch_evaluator,
-        algo_specific_options={"limit": max_n_trials},
+        algo_specific_options={"limit": max_n_trials, "gen": stopping_max_iterations},
     )
 
     res = _minimize_pygmo(
@@ -239,7 +244,9 @@ def pygmo_de(
       pygmo the default is 1e-6 but we use our default value of 1e-5.
 
     """
-    population_size = _determine_population_size(population_size=population_size, x=x)
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=10
+    )
 
     algo_specific_options = {
         "gen": stopping_max_iterations,
@@ -280,7 +287,7 @@ def pygmo_sea(
     n_cores=1,
     seed=None,
     discard_start_params=False,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    stopping_max_iterations=10_000,  # Each generation will compute the objective once
 ):
     """Minimize a scalar function using the (N+1)-ES simple evolutionary algorithm.
 
@@ -294,7 +301,7 @@ def pygmo_sea(
     The algorithm is only suited for bounded parameter spaces.
 
     - population_size (int): Size of the population. If None, it's twice the number of
-      parameters but at least 64.
+      parameters but at least 10.
     - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
@@ -308,7 +315,9 @@ def pygmo_sea(
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-    population_size = _determine_population_size(population_size=population_size, x=x)
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=10
+    )
 
     algo_options = _create_algo_options(
         population_size=population_size,
@@ -498,7 +507,7 @@ def _create_algo_options(
     algo_specific_options,
 ):
     algo_options = {
-        "population_size": population_size,
+        "population_size": population_size if population_size is not None else 1,
         "n_cores": n_cores,
         "seed": seed,
         "discard_start_params": discard_start_params,
@@ -515,7 +524,7 @@ def _check_that_every_param_is_bounded(lower_bounds, upper_bounds):
     assert np.isfinite(upper_bounds).all(), "The upper bounds must all be finite."
 
 
-def _determine_population_size(population_size, x):
+def _determine_population_size(population_size, x, lower_bound):
     if population_size is None:
-        population_size = int(np.clip(2 * len(x), 64, np.inf))
+        population_size = int(np.clip(2 * len(x), lower_bound, np.inf))
     return population_size
