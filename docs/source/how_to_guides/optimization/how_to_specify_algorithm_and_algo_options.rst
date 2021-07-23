@@ -497,6 +497,16 @@ BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
     </div>
 
 
+PYGMO2 Optimizers
+------------------
+
+estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_ optimizers:
+
+.. automodule:: estimagic.optimization.pygmo_optimizers
+    :members:
+
+
+
 
 **References**
 
