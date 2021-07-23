@@ -1,4 +1,5 @@
 import functools
+import warnings
 
 import numpy as np
 import pygmo as pg
@@ -7,8 +8,7 @@ from estimagic import batch_evaluators
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 
-POPULATION_SIZE = 100
-N_GENERATIONS = 10000
+STOPPING_MAX_ITERATIONS_GENETIC = 1000
 
 
 def pygmo_gaco(
@@ -17,13 +17,13 @@ def pygmo_gaco(
     lower_bounds,
     upper_bounds,
     *,
-    population_size=POPULATION_SIZE,
+    population_size=None,
     batch_evaluator=None,
     n_cores=1,
     seed=None,
     discard_start_params=False,
     #
-    n_generations=N_GENERATIONS,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
     kernel_size=63,
     convergence_speed=1.0,
     oracle=0.0,
@@ -55,7 +55,8 @@ def pygmo_gaco(
     values) which are computed depending on the quality of each previous solution. The
     solutions are ranked through an oracle penalty method.
 
-    - population_size (int): Size of the population.
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
     - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
@@ -65,7 +66,7 @@ def pygmo_gaco(
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
 
-    - n_generations (int): Number of generations to evolve.
+    - stopping_max_iterations (int): Number of generations to evolve.
     - kernel_size (int): Number of solutions stored in the solution archive.
     - convergence_speed (float): This parameter is useful for managing the convergence
       speed towards the found minima (the smaller the faster).
@@ -89,8 +90,12 @@ def pygmo_gaco(
       algorithm for multiple calls.
 
     """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    population_size = _determine_population_size(population_size=population_size, x=x)
+
     algo_specific_options = {
-        "gen": n_generations,
+        "gen": stopping_max_iterations,
         "ker": kernel_size,
         "q": convergence_speed,
         "oracle": oracle,
@@ -128,7 +133,7 @@ def pygmo_bee_colony(
     lower_bounds,
     upper_bounds,
     *,
-    population_size=POPULATION_SIZE,
+    population_size=None,
     batch_evaluator=None,
     n_cores=1,
     seed=None,
@@ -141,7 +146,8 @@ def pygmo_bee_colony(
 
     The implemented version of the algorithm is proposed in :cite:`Mernik2015`.
 
-    - population_size (int): Size of the population.
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
     - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
@@ -153,6 +159,8 @@ def pygmo_bee_colony(
     - max_n_trials (int): Maximum number of trials for abandoning a source.
 
     """
+    population_size = _determine_population_size(population_size=population_size, x=x)
+
     algo_options = _create_algo_options(
         population_size=population_size,
         n_cores=n_cores,
@@ -179,13 +187,12 @@ def pygmo_de(
     lower_bounds,
     upper_bounds,
     *,
-    population_size=POPULATION_SIZE,
+    population_size=None,
     batch_evaluator=None,
     n_cores=1,
     seed=None,
     discard_start_params=False,
-    #
-    n_generations=N_GENERATIONS,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
     weight_coefficient=0.8,
     crossover_probability=0.9,
     mutation_variant=2,
@@ -197,7 +204,8 @@ def pygmo_de(
     Differential Evolution is an heuristic optimizer originally presented in
     :cite:`Storn1997`.
 
-    - population_size (int): Size of the population.
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
     - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
@@ -206,7 +214,7 @@ def pygmo_de(
     - discard_start_params (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
-    - n_generations (int): Number of generations to evolve.
+    - stopping_max_iterations (int): Number of generations to evolve.
     - weight_coefficient (float): Weight coefficient. It is denoted by $F$ in the main
       paper and must lie in [0, 2]. It controls the amplification of the differential
       variation $(x_{r_2, G} - x_{r_3, G})$.
@@ -231,8 +239,10 @@ def pygmo_de(
       pygmo the default is 1e-6 but we use our default value of 1e-5.
 
     """
+    population_size = _determine_population_size(population_size=population_size, x=x)
+
     algo_specific_options = {
-        "gen": n_generations,
+        "gen": stopping_max_iterations,
         "F": weight_coefficient,
         "CR": crossover_probability,
         "variant": mutation_variant,
@@ -265,12 +275,12 @@ def pygmo_sea(
     lower_bounds,
     upper_bounds,
     *,
-    population_size=POPULATION_SIZE,
+    population_size=None,
     batch_evaluator=None,
     n_cores=1,
     seed=None,
     discard_start_params=False,
-    n_generations=N_GENERATIONS,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
 ):
     """Minimize a scalar function using the (N+1)-ES simple evolutionary algorithm.
 
@@ -283,7 +293,8 @@ def pygmo_sea(
 
     The algorithm is only suited for bounded parameter spaces.
 
-    - population_size (int): Size of the population.
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
     - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
@@ -292,18 +303,20 @@ def pygmo_sea(
     - discard_start_params (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
-    - n_generations (int): number of generations to consider. Each generation will
-      compute the objective function once.
+    - stopping_max_iterations (int): number of generations to consider. Each generation
+      will compute the objective function once.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+    population_size = _determine_population_size(population_size=population_size, x=x)
+
     algo_options = _create_algo_options(
         population_size=population_size,
         n_cores=n_cores,
         seed=seed,
         discard_start_params=discard_start_params,
         batch_evaluator=batch_evaluator,
-        algo_specific_options={"gen": n_generations},
+        algo_specific_options={"gen": stopping_max_iterations},
     )
 
     res = _minimize_pygmo(
@@ -350,9 +363,9 @@ def _minimize_pygmo(
         results (dict): Dictionary with optimization results.
 
     """
-
     algo_options = {} if algo_options is None else algo_options.copy()
-    population_size = algo_options.pop("population_size", POPULATION_SIZE)
+    population_size = algo_options.pop("population_size", 1)
+
     batch_evaluator = algo_options.pop("batch_evaluator", "joblib_batch_evaluator")
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(batch_evaluators, batch_evaluator)
@@ -375,14 +388,14 @@ def _minimize_pygmo(
 
     bounds = (lower_bounds, upper_bounds)
     prob = _create_problem(
-        func,
-        bounds,
-        gradient,
+        func=func,
+        bounds=bounds,
+        gradient_=gradient,
         dim=len(x),
         batch_evaluator=batch_evaluator,
         n_cores=n_cores,
     )
-    algo = _create_algorithm(method, algo_options)
+    algo = _create_algorithm(method, algo_options, n_cores)
     pop = _create_population(
         prob, population_size, x, seed=seed, discard_start_params=discard_start_params
     )
@@ -419,11 +432,18 @@ def _create_problem(func, bounds, gradient_, dim, batch_evaluator, n_cores):
     return problem
 
 
-def _create_algorithm(method, algo_options):
+def _create_algorithm(method, algo_options, n_cores):
     """Create a pygmo algorithm."""
     pygmo_uda = getattr(pg, method)
     algo = pygmo_uda(**algo_options)
-    algo.set_bfe(pg.bfe())
+    try:
+        algo.set_bfe(pg.bfe())
+    except AttributeError:
+        if n_cores >= 2:
+            warnings.warn(
+                f"Your specified algorithm {method} does not support parallelization. "
+                "Choose another algorithm such as pygmo_gaco to parallelize."
+            )
     out = pg.algorithm(algo)
     return out
 
@@ -493,3 +513,9 @@ def _create_algo_options(
 def _check_that_every_param_is_bounded(lower_bounds, upper_bounds):
     assert np.isfinite(lower_bounds).all(), "The lower bounds must all be finite."
     assert np.isfinite(upper_bounds).all(), "The upper bounds must all be finite."
+
+
+def _determine_population_size(population_size, x):
+    if population_size is None:
+        population_size = int(np.clip(2 * len(x), 64, np.inf))
+    return population_size
