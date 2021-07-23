@@ -20,6 +20,7 @@ from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
+SEED = 33950
 
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
@@ -27,6 +28,7 @@ BOUNDS_FREE_ALGORITHMS = [
     "scipy_bfgs",
     "scipy_newton_cg",
     "scipy_cobyla",
+    "pygmo_de",
 ]
 
 BOUNDS_SUPPORTING_ALGORITHMS = [
@@ -37,7 +39,7 @@ AVAILABLE_PYGMO_ALGORITHMS = [x for x in AVAILABLE_ALGORITHMS if x.startswith("p
 
 BOUNDS_NEEDING_ALGORITHMS = AVAILABLE_PYGMO_ALGORITHMS
 
-VERY_IMPRECISE_ALGORITHMS = ["pygmo_gaco"]
+VERY_IMPRECISE_ALGORITHMS = ["pygmo_gaco", "pygmo_bee_colony", "pygmo_sea"]
 
 IMPRECISE_ALGOS = [
     "scipy_powell",
@@ -251,10 +253,12 @@ def test_without_constraints(algo, direction, crit, deriv, crit_and_deriv):
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         log_options={"save_all_arguments": False},
@@ -295,10 +299,12 @@ def test_with_binding_bounds(algo, direction, crit, deriv, crit_and_deriv):
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
     )
@@ -327,10 +333,12 @@ def test_with_fixed_constraint(algo, direction, crit, deriv, crit_and_deriv):
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -361,10 +369,12 @@ def test_with_equality_constraint(algo, direction, crit, deriv, crit_and_deriv):
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -401,10 +411,12 @@ def test_with_pairwise_equality_constraint(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -435,10 +447,12 @@ def test_with_increasing_constraint(algo, direction, crit, deriv, crit_and_deriv
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -469,10 +483,12 @@ def test_with_decreasing_constraint(algo, direction, crit, deriv, crit_and_deriv
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -508,10 +524,12 @@ def test_with_linear_constraint(algo, direction, crit, deriv, crit_and_deriv):
         # that the approximated function appears linear for the tests.
         warnings.simplefilter(action="ignore", category=UserWarning)
 
+        algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
         res = optimize_func(
             criterion=crit,
             params=params,
             algorithm=algo,
+            algo_options=algo_options,
             derivative=deriv,
             criterion_and_derivative=crit_and_deriv,
             constraints=constraints,
@@ -542,10 +560,12 @@ def test_with_probability_constraint(algo, direction, crit, deriv, crit_and_deri
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -582,10 +602,12 @@ def test_with_covariance_constraint_no_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -630,10 +652,12 @@ def test_with_covariance_constraint_bounds_distance(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -669,10 +693,12 @@ def test_with_sdcorr_constraint_no_bounds_distance(
     constraints = [{"loc": [0, 1, 2], "type": "sdcorr"}]
 
     optimize_func = minimize if direction == "minimize" else maximize
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -726,10 +752,12 @@ def test_with_sdcorr_constraint_bounds_distance(
         )
         warnings.filterwarnings("ignore", message=hess_warn_msg)
 
+        algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
         res = optimize_func(
             criterion=crit,
             params=params,
             algorithm=algo,
+            algo_options=algo_options,
             derivative=deriv,
             criterion_and_derivative=crit_and_deriv,
             constraints=constraints,
@@ -765,10 +793,12 @@ def test_with_decreasing_constraint_and_fixes(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
@@ -804,10 +834,12 @@ def test_with_increasing_constraint_and_fixes(
 
     optimize_func = minimize if direction == "minimize" else maximize
 
+    algo_options = {"seed": SEED} if algo.startswith("pygmo_") else None
     res = optimize_func(
         criterion=crit,
         params=params,
         algorithm=algo,
+        algo_options=algo_options,
         derivative=deriv,
         criterion_and_derivative=crit_and_deriv,
         constraints=constraints,
