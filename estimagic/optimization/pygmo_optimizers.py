@@ -84,9 +84,7 @@ def pygmo_gaco(
     - stopping.max_n_without_improvements (int): if a positive integer is assigned here,
       the algorithm will count the runs without improvements, if this number exceeds the
       given value, the algorithm will be stopped.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this as
-      successful convergence.
+    - stopping.max_criterion_evaluations (int): maximum number of function evaluations.
     - focus (float): this parameter makes the search for the optimum greedier and more
       focused on local improvements (the higher the greedier). If the value is very
       high, the search is more focused around the current best solutions. Values larger
@@ -1077,7 +1075,8 @@ def pygmo_mbh(
     seed=None,
     discard_start_params=False,
     inner_algorithm=None,
-    stopping_max_inner_runs_without_improvement=20,
+    # this is 30 instead of 5 in pygmo for our sum of squares test to pass
+    stopping_max_inner_runs_without_improvement=30,
     perturbation=0.01,
 ):
     """Minimize a scalar function using generalized Monotonic Basin Hopping.
@@ -1349,11 +1348,9 @@ def pygmo_compass_search(
     - n_cores (int): Number of cores to use.
     - seed (int): seed used by the internal random number generator.
     - discard_start_params (bool): If True, the start params are not guaranteed to be
-      part of the initial population. This saves one criterion function evaluation
-      that cannot be done in parallel with other evaluations. Default False.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this as
-      successful convergence.
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - stopping.max_criterion_evaluations (int): maximum number of function evaluations.
     - start_range (float): the start range. Must be in (0, 1].
     - stop_range (float): the stop range. Must be in (0, start_range].
     - reduction_coeff (float): the range reduction coefficient. Must be in (0, 1).
