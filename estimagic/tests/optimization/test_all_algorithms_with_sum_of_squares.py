@@ -22,6 +22,8 @@ from estimagic.optimization.optimize import minimize
 
 SEED = 33950
 
+AVAILABLE_PYGMO_ALGORITHMS = [x for x in AVAILABLE_ALGORITHMS if x.startswith("pygmo_")]
+
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
     "scipy_conjugate_gradient",
@@ -34,7 +36,6 @@ BOUNDS_SUPPORTING_ALGORITHMS = [
     alg for alg in AVAILABLE_ALGORITHMS if alg not in BOUNDS_FREE_ALGORITHMS
 ]
 
-AVAILABLE_PYGMO_ALGORITHMS = [x for x in AVAILABLE_ALGORITHMS if x.startswith("pygmo_")]
 
 BOUNDS_NEEDING_ALGORITHMS = AVAILABLE_PYGMO_ALGORITHMS
 
@@ -56,6 +57,7 @@ IMPRECISE_ALGOS = [
     "pygmo_sade",
     "pygmo_cmaes",
     "pygmo_xnes",
+    "pygmo_de",
 ]
 
 

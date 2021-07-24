@@ -511,7 +511,7 @@ estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_ optimi
 **References**
 
 .. bibliography:: ../../refs.bib
-    :labelprefix: nag
+    :labelprefix: algo_
     :filter: docname in docnames
     :style: unsrt
 
