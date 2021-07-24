@@ -339,6 +339,148 @@ def pygmo_sea(
     return res
 
 
+def pygmo_sga(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    crossover_probability=0.9,
+    crossover_strategy="exponential",
+    eta_c=None,
+    mutation_probability=0.02,
+    mutation_strategy="polynomial",
+    mutation_polynomial_distribution_index=None,
+    mutation_gaussian_width=None,
+    selection_strategy="tournament",
+    selection_truncated_n_best=None,
+    selection_tournament_size=None,
+):
+    """Minimize a scalar function using a simple genetic algorithm.
+
+    A detailed description of the algorithm can be found `here
+    <https://esa.github.io/pagmo2/docs/cpp/algorithms/sga.html>`_.
+
+    See also: :cite:`Oliveto2007`.
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - stopping.max_iterations (int): Number of generations to evolve.
+    - crossover.probability (float): Crossover probability.
+    - crossover.strategy (str): the crossover strategy. One of “exponential”,“binomial”,
+      “single” or “sbx”. Default is "exponential".
+    - eta_c (float): distribution index for “sbx” crossover. This is an inactive
+      parameter if other types of crossovers are selected.
+    - mutation.probability (float): Mutation probability.
+    - mutation.strategy (str): Mutation strategy. Must be "gaussian", "polynomial" or
+      "uniform". Default is "polynomial".
+    - selection.strategy (str): Selection strategy. Must be "tournament" or "truncated".
+    - selection.truncated_n_best (int): number of best individuals to use in the
+      "truncated" selection mechanism.
+    - selection.tournament_size (int): size of the tournament in the "tournament"
+      selection mechanism.
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=2
+    )
+
+    if eta_c is not None and crossover_strategy != "sbx":
+        warnings.warn(
+            f"You specified crossover strategy {crossover_strategy} and eta_c. "
+            "However, eta_c is ignored because it is only used when the "
+            "crossover_strategy is set to sbx."
+        )
+    eta_c = 1.0 if eta_c is None else eta_c
+
+    if (
+        mutation_polynomial_distribution_index is not None
+    ) and mutation_strategy != "polynomial":
+        warnings.warn(
+            "You specified a mutation_polynomial_distribution_index but did not choose "
+            "polynomial as your mutation_strategy. Thus, "
+            "mutation_polynomial_distribution_index will be ignored."
+        )
+    if mutation_gaussian_width is not None and mutation_strategy != "gaussian":
+        warnings.warn(
+            "You specified a mutation_gaussian_width but did not choose gaussion as "
+            "your mutation_strategy. Thus, mutation_gaussian_width will be ignored."
+        )
+
+    if selection_strategy != "truncated" and selection_truncated_n_best is not None:
+        warnings.warn(
+            "You specified selection_truncated_n_best but did not specify truncated as "
+            "your selection strategy. Therefore, selection_truncated_n_best is ignored."
+        )
+    if selection_strategy != "tournament" and selection_tournament_size is not None:
+        warnings.warn(
+            "You specified selection_tournament_size but did not specify tournament as "
+            "your selection strategy. Therefore selection_tournament_size is ignored."
+        )
+
+    if mutation_strategy == "gaussian" and mutation_gaussian_width is not None:
+        param_m = mutation_gaussian_width
+    elif (
+        mutation_strategy == "polynomial"
+        and mutation_polynomial_distribution_index is not None
+    ):
+        param_m = mutation_polynomial_distribution_index
+    else:
+        param_m = 1.0
+
+    if selection_strategy == "truncated" and selection_truncated_n_best is not None:
+        param_s = selection_truncated_n_best
+    elif selection_strategy == "tournament" and selection_tournament_size is not None:
+        param_s = selection_tournament_size
+    else:
+        param_s = 2
+
+    algo_specific_options = {
+        "gen": stopping_max_iterations,
+        "cr": crossover_probability,
+        "eta_c": eta_c,
+        "m": mutation_probability,
+        "param_m": param_m,
+        "crossover": crossover_strategy,
+        "mutation": mutation_strategy,
+        "selection": selection_strategy,
+        "param_s": param_s,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="sga",
+        algo_options=algo_options,
+    )
+    return res
+
+
 # ====================================================================================
 
 
@@ -527,4 +669,6 @@ def _check_that_every_param_is_bounded(lower_bounds, upper_bounds):
 def _determine_population_size(population_size, x, lower_bound):
     if population_size is None:
         population_size = int(np.clip(2 * len(x), lower_bound, np.inf))
+    else:
+        population_size = int(population_size)
     return population_size

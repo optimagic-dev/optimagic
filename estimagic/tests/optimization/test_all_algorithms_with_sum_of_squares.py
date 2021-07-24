@@ -39,7 +39,7 @@ AVAILABLE_PYGMO_ALGORITHMS = [x for x in AVAILABLE_ALGORITHMS if x.startswith("p
 
 BOUNDS_NEEDING_ALGORITHMS = AVAILABLE_PYGMO_ALGORITHMS
 
-VERY_IMPRECISE_ALGORITHMS = ["pygmo_gaco", "pygmo_bee_colony", "pygmo_sea"]
+VERY_IMPRECISE_ALGORITHMS = ["pygmo_gaco", "pygmo_bee_colony", "pygmo_sea", "pygmo_sga"]
 
 IMPRECISE_ALGOS = [
     "scipy_powell",
