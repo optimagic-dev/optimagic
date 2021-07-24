@@ -593,6 +593,107 @@ def pygmo_sade(
     return res
 
 
+def pygmo_cmaes(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    #
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    backward_horizon=None,
+    variance_loss_compensation=None,
+    learning_rate_rank_one_update=None,
+    learning_rate_rank_mu_update=None,
+    initial_step_size=0.5,
+    ftol=1e-6,
+    xtol=1e-6,
+    keep_adapted_params=False,
+):
+    """Minimize a scalar function using the Covariance Matrix Evolutionary Strategy.
+
+    CMA-ES is one of the most successful algorithm, classified as an Evolutionary
+    Strategy, for derivative-free global optimization. The version supported by
+    estimagic is the version described in :cite:`Hansen2006`.
+
+    In contrast to the pygmo version, estimagic always sets force_bounds to True. This
+    avoids that ill defined parameter values are evaluated.
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+
+    - stopping_max_iterations (int): Number of generations to evolve.
+    - backward_horizon (float): backward time horizon for the evolution path.
+    - variance_loss_compensation (float): makes partly up for the small variance loss in
+      case the indicator is zero. `cs` in the MATLAB Code of :cite:`Hansen2006`.
+    - learning_rate_rank_one_update (float): learning rate for the rank-one update of
+      the covariance matrix. `c1` in the pygmo and pagmo documentation.
+    - learning_rate_rank_mu_update (float): learning rate for the rank-mu update of the
+      covariance matrix. `cmu` in the pygmo and pagmo documentation.
+    - initial_step_size (float): initial step size, $\sigma^0$ in the original paper.
+    - ftol (float): stopping criteria on the x tolerance.
+    - xtol (float): stopping criteria on the f tolerance.
+    - keep_adapted_params (bool):  when true the adapted parameters are not reset
+      between successive calls to the evolve method. Default is False.
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=64
+    )
+
+    algo_specific_options = {
+        "gen": stopping_max_iterations,
+        "cc": backward_horizon if backward_horizon is not None else -1.0,
+        "cs": variance_loss_compensation
+        if variance_loss_compensation is not None
+        else -1.0,
+        "c1": learning_rate_rank_one_update
+        if learning_rate_rank_one_update is not None
+        else -1.0,
+        "cmu": learning_rate_rank_mu_update
+        if learning_rate_rank_mu_update is not None
+        else -1.0,
+        "sigma0": initial_step_size,
+        "ftol": ftol,
+        "xtol": xtol,
+        "memory": keep_adapted_params,
+        "force_bounds": True,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="cmaes",
+        algo_options=algo_options,
+    )
+    return res
+
+
 # ====================================================================================
 
 

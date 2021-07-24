@@ -28,7 +28,6 @@ BOUNDS_FREE_ALGORITHMS = [
     "scipy_bfgs",
     "scipy_newton_cg",
     "scipy_cobyla",
-    "pygmo_de",
 ]
 
 BOUNDS_SUPPORTING_ALGORITHMS = [
@@ -47,6 +46,8 @@ IMPRECISE_ALGOS = [
     "scipy_trust_constr",
     "scipy_ls_trf",
     "scipy_ls_dogbox",
+    "pygmo_sade",
+    "pygmo_cmaes",
 ]
 
 
