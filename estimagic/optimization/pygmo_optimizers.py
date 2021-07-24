@@ -643,7 +643,8 @@ def pygmo_cmaes(
       the covariance matrix. `c1` in the pygmo and pagmo documentation.
     - learning_rate_rank_mu_update (float): learning rate for the rank-mu update of the
       covariance matrix. `cmu` in the pygmo and pagmo documentation.
-    - initial_step_size (float): initial step size, $\sigma^0$ in the original paper.
+    - initial_step_size (float): initial step size, :math:`\sigma^0` in the original
+      paper.
     - ftol (float): stopping criteria on the x tolerance.
     - xtol (float): stopping criteria on the f tolerance.
     - keep_adapted_params (bool):  when true the adapted parameters are not reset
@@ -775,6 +776,266 @@ def pygmo_simulated_annealing(
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         method="simulated_annealing",
+        algo_options=algo_options,
+    )
+    return res
+
+
+def pygmo_pso(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    omega=0.7298,
+    force_of_previous_best=2.05,
+    force_of_best_in_neighborhood=2.05,
+    max_velocity=0.5,
+    algo_variant=5,
+    neighbor_definition=2,
+    neighbor_param=None,
+    keep_velocities=False,
+):
+    """Minimize a scalar function using Particle Swarm Optimization.
+
+    Particle swarm optimization (PSO) is a population based algorithm inspired by the
+    foraging behaviour of swarms. In PSO each point has memory of the position where it
+    achieved the best performance xli (local memory) and of the best decision vector xg
+    in a certain neighbourhood, and uses this information to update its position.
+
+    For a survey on particle swarm optimization algorithms, see :cite:`Poli2007`.
+
+    Each particle determines its future position :math:`x_{i+1} = x_i + v_i` where
+
+    .. math:: v_{i+1} = \omega (v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x_i - x^l_i) +
+        \eta_2 \cdot \mathbf{r}_2 \cdot (x_i - x^g))
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 10.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - stopping_max_iterations (int): Number of generations to evolve.
+
+    - omega (float): depending on the variant chosen, :math:`\omega` is the particles'
+      inertia weight or the constructuion coefficient.
+    - force_of_previous_best (float): :math:`\eta_1` in the equation above. It's the
+      magnitude of the force, applied to the particle’s velocity, in the direction of
+      its previous best position.
+    - force_of_best_in_neighborhood (float): :math:`\eta_2` in the equation above. It's
+      the magnitude of the force, applied to the particle’s velocity, in the direction
+      of the best position in its neighborhood.
+    - max_velocity (float): maximum allowed particle velocity as fraction of the box
+      bounds.
+    - algo_variant (int): code of the algorithm's variant to be used:
+
+        - 1: Canonical (with inertia weight)
+        - 2: Same social and cognitive rand.
+        - 3: Same rand. for all components
+        - 4: Only one rand.
+        - 5: Canonical (with constriction fact.)
+        - 6: Fully Informed (FIPS)
+
+    - neighbor_definition (int): code for the swarm topology that defines each
+      particle's neighbors that is to be used:
+
+        - 1: gbest
+        - 2: lbest
+        - 3: Von Neumann
+        - 4: Adaptive random
+
+    - neighbor_param (int): the neighbourhood parameter. If the lbest topology is
+      selected (neighbor_definition=2), it represents each particle's indegree (also
+      outdegree) in the swarm topology. Particles have neighbours up to a radius of k =
+      neighbor_param / 2 in the ring. If the Randomly-varying neighbourhood topology is
+      selected (neighbor_definition=4), it represents each particle’s maximum outdegree
+      in the swarm topology. The minimum outdegree is 1 (the particle always connects
+      back to itself). If neighbor_definition is 1 or 3 this parameter is ignored.
+    - keep_velocities (bool): when true the particle velocities are not reset between
+      successive calls to evolve.
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    if neighbor_definition in [1, 3] and neighbor_param is not None:
+        warnings.warn(
+            "You gave a neighbor parameter but selected a neighbor_definition "
+            "that ignores this parameter."
+        )
+    neighbor_param = 4 if neighbor_param is None else neighbor_param
+
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=10
+    )
+
+    algo_specific_options = {
+        "gen": stopping_max_iterations,
+        "omega": omega,
+        "eta1": force_of_previous_best,
+        "eta2": force_of_best_in_neighborhood,
+        "max_vel": max_velocity,
+        "variant": algo_variant,
+        "neighb_type": neighbor_definition,
+        "neighb_param": neighbor_param,
+        "memory": keep_velocities,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="pso",
+        algo_options=algo_options,
+    )
+    return res
+
+
+def pygmo_pso_gen(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    omega=0.7298,
+    force_of_previous_best=2.05,
+    force_of_best_in_neighborhood=2.05,
+    max_velocity=0.5,
+    algo_variant=5,
+    neighbor_definition=2,
+    neighbor_param=None,
+    keep_velocities=False,
+):
+    """Minimize a scalar function with generational Particle Swarm Optimization.
+
+    Particle Swarm Optimization (generational) is identical to pso, but does update the
+    velocities of each particle before new particle positions are computed (taking into
+    consideration all updated particle velocities). Each particle is thus evaluated on
+    the same seed within a generation as opposed to the standard PSO which evaluates
+    single particle at a time. Consequently, the generational PSO algorithm is suited
+    for stochastic optimization problems.
+
+    For a survey on particle swarm optimization algorithms, see :cite:`Poli2007`.
+
+    Each particle determines its future position :math:`x_{i+1} = x_i + v_i` where
+
+    .. math:: v_{i+1} = \omega (v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x_i - x^l_i) +
+        \eta_2 \cdot \mathbf{r}_2 \cdot (x_i - x^g))
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 10.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - stopping_max_iterations (int): Number of generations to evolve.
+
+    - omega (float): depending on the variant chosen, :math:`\omega` is the particles'
+      inertia weight or the constructuion coefficient.
+    - force_of_previous_best (float): :math:`\eta_1` in the equation above. It's the
+      magnitude of the force, applied to the particle’s velocity, in the direction of
+      its previous best position.
+    - force_of_best_in_neighborhood (float): :math:`\eta_2` in the equation above. It's
+      the magnitude of the force, applied to the particle’s velocity, in the direction
+      of the best position in its neighborhood.
+    - max_velocity (float): maximum allowed particle velocity as fraction of the box
+      bounds.
+    - algo_variant (int): code of the algorithm's variant to be used:
+
+        - 1: Canonical (with inertia weight)
+        - 2: Same social and cognitive rand.
+        - 3: Same rand. for all components
+        - 4: Only one rand.
+        - 5: Canonical (with constriction fact.)
+        - 6: Fully Informed (FIPS)
+
+    - neighbor_definition (int): code for the swarm topology that defines each
+      particle's neighbors that is to be used:
+
+        - 1: gbest
+        - 2: lbest
+        - 3: Von Neumann
+        - 4: Adaptive random
+
+    - neighbor_param (int): the neighbourhood parameter. If the lbest topology is
+      selected (neighbor_definition=2), it represents each particle's indegree (also
+      outdegree) in the swarm topology. Particles have neighbours up to a radius of k =
+      neighbor_param / 2 in the ring. If the Randomly-varying neighbourhood topology is
+      selected (neighbor_definition=4), it represents each particle’s maximum outdegree
+      in the swarm topology. The minimum outdegree is 1 (the particle always connects
+      back to itself). If neighbor_definition is 1 or 3 this parameter is ignored.
+    - keep_velocities (bool): when true the particle velocities are not reset between
+      successive calls to evolve.
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    if neighbor_definition in [1, 3] and neighbor_param is not None:
+        warnings.warn(
+            "You gave a neighbor parameter but selected a neighbor_definition "
+            "that ignores this parameter."
+        )
+    neighbor_param = 4 if neighbor_param is None else neighbor_param
+
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=10
+    )
+
+    algo_specific_options = {
+        "gen": stopping_max_iterations,
+        "omega": omega,
+        "eta1": force_of_previous_best,
+        "eta2": force_of_best_in_neighborhood,
+        "max_vel": max_velocity,
+        "variant": algo_variant,
+        "neighb_type": neighbor_definition,
+        "neighb_param": neighbor_param,
+        "memory": keep_velocities,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="pso",
         algo_options=algo_options,
     )
     return res
