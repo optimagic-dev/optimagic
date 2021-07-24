@@ -1041,6 +1041,85 @@ def pygmo_pso_gen(
     return res
 
 
+def pygmo_mbh(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    inner_algorithm=None,
+    stopping_max_inner_runs_without_improvement=20,
+    perturbation=0.01,
+):
+    """Minimize a scalar function using generalized Monotonic Basin Hopping.
+
+    Monotonic basin hopping, or simply, basin hopping, is an algorithm rooted in the
+    idea of mapping the objective function $f(x_0)$ into the local minima found starting
+    from $x_0$. This simple idea allows a substantial increase of efficiency in solving
+    problems, such as the Lennard-Jones cluster or the MGA-1DSM interplanetary
+    trajectory problem that are conjectured to have a so-called funnel structure.
+
+    See :cite:`Wales1997` for the paper introducing the basin hopping idea for a
+    Lennard-Jones cluster optimization.
+
+    pygmo provides an original generalization of this concept resulting in a
+    meta-algorithm that operates on a population. When a population containing a single
+    individual is used the original method is recovered.
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 250.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - inner_algorithm (pygmo.algorithm): an pygmo algorithm or a user-defined algorithm,
+      either C++ or Python. If None the `pygmo.compass_search` algorithm will be used.
+    - stopping_max_inner_runs_without_improvement (int): consecutive runs of the inner
+      algorithm that need to result in no improvement for mbh to stop.
+    - perturbation (float): the perturbation to be applied to each component.
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    # the min default population size is this large to pass our sum of squares tests.
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=250
+    )
+
+    algo_specific_options = {
+        "algo": inner_algorithm,
+        "stop": stopping_max_inner_runs_without_improvement,
+        "perturb": perturbation,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="mbh",
+        algo_options=algo_options,
+    )
+    return res
+
+
 # ====================================================================================
 
 

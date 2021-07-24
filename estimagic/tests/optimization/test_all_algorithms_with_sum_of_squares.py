@@ -44,6 +44,7 @@ VERY_IMPRECISE_ALGORITHMS = [
     "pygmo_sea",
     "pygmo_sga",
     "pygmo_simulated_annealing",
+    "pygmo_mbh",
 ]
 
 IMPRECISE_ALGOS = [
