@@ -1226,6 +1226,73 @@ def pygmo_xnes(
     return res
 
 
+def pygmo_gwo(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+):
+    """Minimize a scalar function usinng the Grey Wolf Optimizer.
+
+    The grey wolf optimizer was proposed by :cite:`Mirjalili2014`. The pygmo
+    implementation that is wrapped by estimagic is pased on the pseudo code provided in
+    that paper.
+
+    This algorithm is a classic example of a highly criticizable line of search that led
+    in the first decades of our millenia to the development of an entire zoo of
+    metaphors inspiring optimzation heuristics. In our opinion they, as is the case for
+    the grey wolf optimizer, are often but small variations of already existing
+    heuristics rebranded with unnecessray and convoluted biological metaphors. In the
+    case of GWO this is particularly evident as the position update rule is shokingly
+    trivial and can also be easily seen as a product of an evolutionary metaphor or a
+    particle swarm one. Such an update rule is also not particulary effective and
+    results in a rather poor performance most of times.
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - stopping_max_iterations (int): Number of generations to evolve.
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=64
+    )
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options={"gen": stopping_max_iterations},
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="gwo",
+        algo_options=algo_options,
+    )
+    return res
+
+
 # ====================================================================================
 
 
