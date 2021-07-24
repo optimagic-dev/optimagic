@@ -1319,13 +1319,13 @@ def pygmo_compass_search(
     - population_size (int): Size of the population. Even though the algorithm is not
       population based the population size does affect the results of the algorithm.
     - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-        (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-        estimagic batch_evaluators. See :ref:`batch_evaluators`.
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
     - n_cores (int): Number of cores to use.
     - seed (int): seed used by the internal random number generator.
     - discard_start_params (bool): If True, the start params are not guaranteed to be
-        part of the initial population. This saves one criterion function evaluation
-        that cannot be done in parallel with other evaluations. Default False.
+      part of the initial population. This saves one criterion function evaluation
+      that cannot be done in parallel with other evaluations. Default False.
     - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this as
       successful convergence.
@@ -1357,6 +1357,89 @@ def pygmo_compass_search(
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         method="compass_search",
+        algo_options=algo_options,
+    )
+    return res
+
+
+def pygmo_ihs(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    #
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    choose_from_memory_probability=0.1,  # 0.85,
+    min_pitch_adjustment_rate=0.35,
+    max_pitch_adjustment_rate=0.99,
+    min_distance_bandwidth=1e-5,
+    max_distance_bandwidth=1.0,
+):
+    """Minimize a scalar function using the improved harmony search algorithm.
+
+    Improved harmony search (IHS) was introduced by :cite:`Mahdavi2007`.
+
+    Estimagic wraps pygmo's IHS algorithm which supports stochastic problems.
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - stopping_max_iterations (int): Number of generations to evolve.
+    - choose_from_memory_probability (float): probability of choosing from memory
+      (similar to a crossover probability).
+    - min_pitch_adjustment_rate (float): minimum pitch adjustment rate. (similar to a
+      mutation rate).
+    - max_pitch_adjustment_rate (float): maximum pitch adjustment rate. (similar to a
+      mutation rate).
+    - min_distance_bandwidth (float): minimum distance bandwidth. (similar to a mutation
+      width).
+    - max_distance_bandwidth (float): maximum distance bandwidth. (similar to a mutation
+      width).
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    if population_size is not None:
+        warnings.warn("The population size has no effect on IHS' performance.")
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=1
+    )
+
+    algo_specific_options = {
+        "phmcr": choose_from_memory_probability,
+        "ppar_min": min_pitch_adjustment_rate,
+        "ppar_max": max_pitch_adjustment_rate,
+        "bw_min": min_distance_bandwidth,
+        "bw_max": max_distance_bandwidth,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="ihs",
         algo_options=algo_options,
     )
     return res
