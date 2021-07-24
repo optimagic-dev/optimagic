@@ -1400,7 +1400,7 @@ def pygmo_ihs(
     discard_start_params=False,
     #
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
-    choose_from_memory_probability=0.1,  # 0.85,
+    choose_from_memory_probability=0.85,
     min_pitch_adjustment_rate=0.35,
     max_pitch_adjustment_rate=0.99,
     min_distance_bandwidth=1e-5,
@@ -1439,11 +1439,13 @@ def pygmo_ihs(
 
     if population_size is not None:
         warnings.warn("The population size has no effect on IHS' performance.")
+
     population_size = _determine_population_size(
         population_size=population_size, x=x, lower_bound=1
     )
 
     algo_specific_options = {
+        "gen": int(stopping_max_iterations),
         "phmcr": choose_from_memory_probability,
         "ppar_min": min_pitch_adjustment_rate,
         "ppar_max": max_pitch_adjustment_rate,

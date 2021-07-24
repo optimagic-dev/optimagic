@@ -46,6 +46,7 @@ VERY_IMPRECISE_ALGORITHMS = [
     "pygmo_sga",
     "pygmo_simulated_annealing",
     "pygmo_mbh",
+    "pygmo_ihs",
 ]
 
 IMPRECISE_ALGOS = [
@@ -58,6 +59,7 @@ IMPRECISE_ALGOS = [
     "pygmo_cmaes",
     "pygmo_xnes",
     "pygmo_de",
+    "pygmo_de1220",
 ]
 
 
