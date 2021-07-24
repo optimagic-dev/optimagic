@@ -289,7 +289,7 @@ def pygmo_sea(
     discard_start_params=False,
     stopping_max_iterations=10_000,  # Each generation will compute the objective once
 ):
-    """Minimize a scalar function using the (N+1)-ES simple evolutionary algorithm.
+    r"""Minimize a scalar function using the (N+1)-ES simple evolutionary algorithm.
 
     This algorithm represents the simplest evolutionary strategy, where a population of
     $\lambda$ individuals at each generation produces one offspring by mutating its best
@@ -615,7 +615,7 @@ def pygmo_cmaes(
     xtol=1e-6,
     keep_adapted_params=False,
 ):
-    """Minimize a scalar function using the Covariance Matrix Evolutionary Strategy.
+    r"""Minimize a scalar function using the Covariance Matrix Evolutionary Strategy.
 
     CMA-ES is one of the most successful algorithm, classified as an Evolutionary
     Strategy, for derivative-free global optimization. The version supported by
@@ -802,7 +802,7 @@ def pygmo_pso(
     neighbor_param=None,
     keep_velocities=False,
 ):
-    """Minimize a scalar function using Particle Swarm Optimization.
+    r"""Minimize a scalar function using Particle Swarm Optimization.
 
     Particle swarm optimization (PSO) is a population based algorithm inspired by the
     foraging behaviour of swarms. In PSO each point has memory of the position where it
@@ -931,7 +931,7 @@ def pygmo_pso_gen(
     neighbor_param=None,
     keep_velocities=False,
 ):
-    """Minimize a scalar function with generational Particle Swarm Optimization.
+    r"""Minimize a scalar function with generational Particle Swarm Optimization.
 
     Particle Swarm Optimization (generational) is identical to pso, but does update the
     velocities of each particle before new particle positions are computed (taking into
@@ -1141,7 +1141,7 @@ def pygmo_xnes(
     xtol=1e-6,
     keep_adapted_params=False,
 ):
-    """Minimize a scalar function using Exponential Evolution Strategies.
+    r"""Minimize a scalar function using Exponential Evolution Strategies.
 
     Exponential Natural Evolution Strategies is an algorithm closely related to CMAES
     and based on the adaptation of a gaussian sampling distribution via the so-called
@@ -1288,6 +1288,75 @@ def pygmo_gwo(
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         method="gwo",
+        algo_options=algo_options,
+    )
+    return res
+
+
+def pygmo_compass_search(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    #
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    start_range=0.1,
+    stop_range=0.01,
+    reduction_coeff=0.5,
+):
+    """Minimize a scalar function using compass search.
+
+    The algorithm is described in :cite:`Kolda2003`.
+
+    It is considered slow but reliable. It should not be used for stochastic problems.
+
+    - population_size (int): Size of the population. Even though the algorithm is not
+      population based the population size does affect the results of the algorithm.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+        (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+        estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+        part of the initial population. This saves one criterion function evaluation
+        that cannot be done in parallel with other evaluations. Default False.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this as
+      successful convergence.
+    - start_range (float): the start range. Must be in (0, 1].
+    - stop_range (float): the stop range. Must be in (0, start_range].
+    - reduction_coeff (float): the range reduction coefficient. Must be in (0, 1).
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    algo_specific_options = {
+        "max_fevals": stopping_max_criterion_evaluations,
+        "start_range": start_range,
+        "stop_range": stop_range,
+        "reduction_coeff": reduction_coeff,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="compass_search",
         algo_options=algo_options,
     )
     return res
