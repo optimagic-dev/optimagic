@@ -694,6 +694,92 @@ def pygmo_cmaes(
     return res
 
 
+def pygmo_simulated_annealing(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    #
+    start_temperature=10.0,
+    end_temperature=0.01,
+    n_temp_adjustments=10,
+    n_range_adjustments=10,
+    bin_size=10,
+    start_range=1.0,
+):
+    """Minimize a function with the simulated annealing algorithm.
+
+    This version of the simulated annealing algorithm is, essentially, an iterative
+    random search procedure with adaptive moves along the coordinate directions. It
+    permits uphill moves under the control of metropolis criterion, in the hope to avoid
+    the first local minima encountered. This version is the one proposed in
+    :cite:`Corana1987`.
+
+    .. note: When selecting the starting and final temperature values it helps to think
+        about the tempertaure as the deterioration in the objective function value that
+        still has a 37% chance of being accepted.
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - start_temperature (float): starting temperature
+    - end_temperature (float): final temperature. Our default 0.01 is lower than in
+      pygmo and pagmo.
+    - n_temp_adjustments (int): number of temperature adjustments in the ennealing
+      schedule.
+    - n_range_adjustments (int): number of adjustments of the search range performed at
+      a constant temperature.
+    - bin_size (int): number of mutations that are used to compute the acceptance rate.
+    - start_range (float): starting range for mutating the decision vector.
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=64
+    )
+
+    algo_specific_options = {
+        "Ts": start_temperature,
+        "Tf": end_temperature,
+        "n_T_adj": int(n_temp_adjustments),
+        "n_range_adj": int(n_range_adjustments),
+        "bin_size": bin_size,
+        "start_range": start_range,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="simulated_annealing",
+        algo_options=algo_options,
+    )
+    return res
+
+
 # ====================================================================================
 
 
