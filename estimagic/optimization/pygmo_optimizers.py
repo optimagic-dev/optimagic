@@ -1120,6 +1120,112 @@ def pygmo_mbh(
     return res
 
 
+def pygmo_xnes(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    population_size=None,
+    batch_evaluator=None,
+    n_cores=1,
+    seed=None,
+    discard_start_params=False,
+    #
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
+    learning_rate_mean_update=1.0,
+    learning_rate_step_size_update=None,
+    learning_rate_cov_matrix_update=None,
+    initial_search_share=1.0,
+    ftol=1e-6,
+    xtol=1e-6,
+    keep_adapted_params=False,
+):
+    """Minimize a scalar function using Exponential Evolution Strategies.
+
+    Exponential Natural Evolution Strategies is an algorithm closely related to CMAES
+    and based on the adaptation of a gaussian sampling distribution via the so-called
+    natural gradient. Like CMAES it is based on the idea of sampling new trial vectors
+    from a multivariate distribution and using the new sampled points to update the
+    distribution parameters. Naively this could be done following the gradient of the
+    expected fitness as approximated by a finite number of sampled points. While this
+    idea offers a powerful lead on algorithmic construction it has some major drawbacks
+    that are solved in the so-called Natural Evolution Strategies class of algorithms by
+    adopting, instead, the natural gradient. xNES is one of the most performing variants
+    in this class.
+
+    See :cite:`Glasmachers2010` and the `pagmo documentation on xNES
+    <https://esa.github.io/pagmo2/docs/cpp/algorithms/xnes.html#_CPPv4N5pagmo4xnesE>`_
+    for details.
+
+    - population_size (int): Size of the population. If None, it's twice the number of
+      parameters but at least 64.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
+      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - n_cores (int): Number of cores to use.
+    - seed (int): seed used by the internal random number generator.
+    - discard_start_params (bool): If True, the start params are not guaranteed to be
+      part of the initial population. This saves one criterion function evaluation that
+      cannot be done in parallel with other evaluations. Default False.
+    - stopping_max_iterations (int): Number of generations to evolve.
+
+    - learning_rate_mean_update (float): learning rate for the mean update
+      (:math:`\eta_\mu`).
+    - learning_rate_step_size_update (float): learning rate for the step-size update.
+    - learning_rate_cov_matrix_update (float): learning rate for the covariance matrix
+      update.
+    - initial_search_share (float): share of the given box that will be initally
+      searched. Default is 1.
+    - ftol (float): stopping criteria on the x tolerance.
+    - xtol (float): stopping criteria on the f tolerance.
+    - keep_adapted_params (bool):  when true the adapted parameters are not reset
+      between successive calls to the evolve method. Default is False.
+
+    """
+    _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+
+    population_size = _determine_population_size(
+        population_size=population_size, x=x, lower_bound=64
+    )
+
+    algo_specific_options = {
+        "gen": stopping_max_iterations,
+        "eta_mu": learning_rate_mean_update
+        if learning_rate_mean_update is not None
+        else -1,
+        "eta_sigma": learning_rate_step_size_update
+        if learning_rate_step_size_update is not None
+        else -1,
+        "eta_b": learning_rate_cov_matrix_update
+        if learning_rate_cov_matrix_update is not None
+        else -1,
+        "sigma0": initial_search_share,
+        "ftol": ftol,
+        "xtol": xtol,
+        "memory": keep_adapted_params,
+        "force_bounds": True,
+    }
+    algo_options = _create_algo_options(
+        population_size=population_size,
+        n_cores=n_cores,
+        seed=seed,
+        discard_start_params=discard_start_params,
+        batch_evaluator=batch_evaluator,
+        algo_specific_options=algo_specific_options,
+    )
+
+    res = _minimize_pygmo(
+        criterion_and_derivative=criterion_and_derivative,
+        x=x,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        method="xnes",
+        algo_options=algo_options,
+    )
+    return res
+
+
 # ====================================================================================
 
 

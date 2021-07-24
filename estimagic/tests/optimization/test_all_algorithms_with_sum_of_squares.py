@@ -55,6 +55,7 @@ IMPRECISE_ALGOS = [
     "scipy_ls_dogbox",
     "pygmo_sade",
     "pygmo_cmaes",
+    "pygmo_xnes",
 ]
 
 
