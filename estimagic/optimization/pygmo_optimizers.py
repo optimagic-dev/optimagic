@@ -364,7 +364,7 @@ def pygmo_sga(
 ):
     """Minimize a scalar function using a simple genetic algorithm.
 
-    A detailed description of the algorithm can be found `here
+    A detailed description of the algorithm can be found `in the pagmo2 documentation
     <https://esa.github.io/pagmo2/docs/cpp/algorithms/sga.html>`_.
 
     See also: :cite:`Oliveto2007`.
