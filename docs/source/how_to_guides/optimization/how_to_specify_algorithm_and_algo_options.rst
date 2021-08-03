@@ -93,7 +93,7 @@ dependencies to use them:
 
     .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_lbfgsb
 
-        
+
 .. dropdown::  scipy_slsqp
 
     .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_slsqp
@@ -125,17 +125,17 @@ dependencies to use them:
 
 
 .. dropdown::  scipy_cobyla
-    
+
     .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_cobyla
 
 
 .. dropdown::  scipy_truncated_newton
-    
+
     .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_truncated_newton
 
 
 .. dropdown::  scipy_trust_constr
-    
+
     .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_trust_constr
 
 
@@ -158,7 +158,7 @@ To use POUNDERs you need to have
 `petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
 
 .. dropdown::  tao_pounders
-    
+
     .. autofunction:: estimagic.optimization.tao_optimizers.tao_pounders
 
 
@@ -180,18 +180,17 @@ To use DF-OLS you need to have
 BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
 
 .. dropdown::  nag_dfols
-    
+
     .. autofunction:: estimagic.optimization.nag_optimizers.nag_dfols
 
 .. dropdown::  nag_pybobyqa
-    
+
     .. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
 
 
 **References**
 
 .. bibliography:: ../../refs.bib
-    :labelprefix: nag
     :filter: docname in docnames
     :style: unsrt
 
