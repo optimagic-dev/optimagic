@@ -44,7 +44,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "nbsphinx",
     "sphinxcontrib.bibtex",
-    'sphinx_panels',
+    "sphinx_panels",
 ]
 
 bibtex_bibfiles = ["refs.bib"]

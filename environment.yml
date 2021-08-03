@@ -50,4 +50,3 @@ dependencies:
     - DFO-LS
     - gif
     - gif[matplotlib]
-
