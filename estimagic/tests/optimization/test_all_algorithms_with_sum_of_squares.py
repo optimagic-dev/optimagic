@@ -19,10 +19,6 @@ from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
-AVAILABLE_ALGORITHMS = [
-    alg for alg in AVAILABLE_ALGORITHMS if alg.startswith("nlopt")
-]  # =================================================
-
 BOUNDS_FREE_ALGORITHMS = [
     "scipy_neldermead",
     "scipy_conjugate_gradient",
@@ -644,7 +640,75 @@ def test_with_sdcorr_constraint_bounds_distance(
     assert res["success"], f"{algo} did not converge."
 
     expected = np.array([0.1, 0.1, 0.1, 0, 0, 0.0])
-    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-03
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bound_cases
+)  # ================================
+def test_with_decreasing_constraint_and_fixes(
+    algo, direction, crit, deriv, crit_and_deriv
+):
+    params = pd.DataFrame(data=[[1], [4], [4], [2], [1]], columns=["value"])
+
+    constraints = [
+        {"loc": [1, 2, 3, 4], "type": "decreasing"},
+        {"loc": 2, "type": "fixed", "value": 4},
+    ]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    assert res["success"], f"{algo} did not converge."
+
+    expected = np.array([0, 4, 4, 0, 0])
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
+    assert_allclose(
+        res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
+    )
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "algo, direction, crit, deriv, crit_and_deriv", bound_cases
+)  # ================================
+def test_with_increasing_constraint_and_fixes(
+    algo, direction, crit, deriv, crit_and_deriv
+):
+    params = pd.DataFrame(data=[[1], [2], [3], [4], [1]], columns=["value"])
+
+    constraints = [
+        {"loc": [0, 1, 2, 3], "type": "increasing"},
+        {"loc": 2, "type": "fixed", "value": 3},
+    ]
+
+    optimize_func = minimize if direction == "minimize" else maximize
+
+    res = optimize_func(
+        criterion=crit,
+        params=params,
+        algorithm=algo,
+        derivative=deriv,
+        criterion_and_derivative=crit_and_deriv,
+        constraints=constraints,
+    )
+
+    assert res["success"], f"{algo} did not converge."
+
+    expected = np.array([0, 0, 3, 3, 0])
+    atol = 1e-02 if algo in IMPRECISE_ALGOS else 1e-04
     assert_allclose(
         res["solution_params"]["value"].to_numpy(), expected, atol=atol, rtol=0
     )
