@@ -159,7 +159,7 @@ can be obtained by projecting :math:`g` onto :math:`H`.
 Remark
 ######
 
-To get a better intuition for (:math:`\ast`) consider :math:`H` in more detail.  For the
+To get a better intuition for (:math:`\ast`) consider :math:`H` in more detail. For the
 sake of clarity let :math:`\theta = \phi = 2`.
 
 .. math::
