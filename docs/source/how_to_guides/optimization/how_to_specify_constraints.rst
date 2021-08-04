@@ -62,26 +62,26 @@ that your read that explanation first!
     vector, but it's very handy if the parameter vector that arrives in your
     objective function always looks exactly the same.
     estimagic can fix the parameters for you.
-    
+
     A good example of a parameter that is fixed is a discount factor in a structural model.
     Assume this parameter has ``"delta"`` in the first index level and we want to fix
     it at 0.95. Then, the constraint is:
 
     .. code-block:: python
-    
+
         constraints = [{"loc": "delta", "type": "fixed", "value": 0.95}]
-    
+
     Note that ``"value"`` is optional. If it is not specified, the parameter is fixed
     at the value specified in the DataFrame.
 
 
 .. dropdown::  Probability  constraints
-    
+
     Probability constraints are similar to sum constraints, but they always sum to 1
     and are all bound between 0 and 1. Let's assume we have a params DataFrame with
     ``"shares"`` in the fist index level, and we want to make sure that all the
     parameters grouped in that category will sum up to 1.
-    
+
     The constraint will look as follows:
 
     .. code-block:: python
@@ -90,13 +90,13 @@ that your read that explanation first!
 
 
 .. dropdown::  Increasing and decreasing constraints
-    
+
     As the name suggests, increasing constraints ensure that the selected parameters
     are increasing. The prime example are cutoffs in ordered choice models as for
     example the `ordered logit model`_.
 
     .. _ordered logit model: ../../getting_started/ordered_logit_example.ipynb
-    
+
     If the parameters to be selected have, say, ``cutoffs`` in the first index level,
     the constraint looks as follows:
 
@@ -108,7 +108,7 @@ that your read that explanation first!
 
 
 .. dropdown::  Equality constraints
-    
+
     Equality constraints ensure that all selected parameters are equal. This may sound
     useless, since one could simply leave all parameters except one out, but it often
     makes the parsing of the parameter vector much easier.
@@ -131,8 +131,8 @@ that your read that explanation first!
 
 
 .. dropdown::  Pairwise equality constraints
-    
-    
+
+
     Pairwise equality constraints are different from all other constraints because
     they correspond to several sets of parameters. Let's assume we want to keep the
     parameters under group ``"a"`` and ``"b"`` pairwise equal. Then, the constraint
@@ -148,7 +148,7 @@ that your read that explanation first!
 
 
 .. dropdown::  Covariance constraints
-    
+
     In maximum likelihood estimation, you often have to estimate the covariance matrix
     of a contribution. The covariance constraints makes sure that this covariance matrix
     is valid, i.e. positive semi-definite.
@@ -207,8 +207,8 @@ that your read that explanation first!
 
 
 .. dropdown::  sdcorr constraints
-    
-    
+
+
     Most of the time, it is more intuitive to look at standard deviations and correlations
     than at covariance matrices. If this is the case, you want to use an "sdcorr"
     constraint instead of the "covariance" constraint.
@@ -236,7 +236,7 @@ that your read that explanation first!
 
 
 .. dropdown::  Linear constraints
-    
+
     Linear constraints can be used to express constraints of the form
     :code:`lower <=  weights.dot(x) <= upper` or :code:`weights.dot(x) = value`,
     where x are the selected parameters. They have many of the above constraints as

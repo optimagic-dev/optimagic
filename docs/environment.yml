@@ -9,4 +9,4 @@ dependencies:
     - nbsphinx
     - sphinxcontrib-bibtex
     - sphinx-panels
-    
+
