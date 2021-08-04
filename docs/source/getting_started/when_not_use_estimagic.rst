@@ -75,7 +75,7 @@ A well-behaved or specialized problem
 ======================================
 If you have a very well behaved problem (for instance, you know your criterion is
 convex or you have a linear programming problem), you should consider using a specialized
-library, such as ``cvxopt`` or ``PuLP``.  While estimagic would work, using libraries 
+library, such as ``cvxopt`` or ``PuLP``.  While estimagic would work, using libraries
 that exploit the additional knowledge will be faster.
 
 

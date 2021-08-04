@@ -573,7 +573,7 @@ def _single_optimize(
             proposed = propose_algorithms(algorithm, list(AVAILABLE_ALGORITHMS))
             raise ValueError(
                 f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
-            )
+            ) from None
 
     algo_options = _adjust_options_to_algorithms(
         algo_options, lower_bounds, upper_bounds, algorithm, algo_name

@@ -1,5 +1,5 @@
 
-.. _constraints: 
+.. _constraints:
 
 ===========================
 How to specify constraints
@@ -8,9 +8,9 @@ How to specify constraints
 General structure of constraints
 ================================
 
-The argument ``constraints`` of the estimagic functions `minimize` and `maximize`
-can take a list with any number of constraints. Each constraint is specified with
-a dictionary:
+The argument ``constraints`` of the estimagic functions :func:`~estimagic.minimize` and
+:func:`~estimagic.maximize` can take a list with any number of constraints. Each
+constraint is specified with a dictionary:
 
  .. code-block:: python
 
