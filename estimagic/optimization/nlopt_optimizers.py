@@ -228,6 +228,89 @@ def nlopt_praxis(
     return out
 
 
+def nlopt_cobyla(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_relative_criterion_tolerance=0,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+):
+    """Minimize a scalar function using the cobyla method.
+
+    The alggorithm is derived from Powell's Constrained Optimization BY Linear
+    Approximations (COBYLA) algorithm. It is a derivative-free optimizer with
+    nonlinear inequality and equality constrains, described in:
+
+    M. J. D. Powell, "A direct search optimization method that models the
+    objective and constraint functions by linear interpolation," in Advances in
+    Optimization and Numerical Analysis, eds. S. Gomez and J.-P. Hennart (Kluwer
+    Academic: Dordrecht, 1994), p. 51-67
+
+    It constructs successive linear approximations of the objective function and
+    constraints via a simplex of n+1 points (in n dimensions), and optimizes these
+    approximations in a trust region at each step.
+
+    The the nlopt implementation differs from the original implementation in a
+    a few ways:
+    - Incorporates all of the NLopt termination criteria.
+    - Adds explicit support for bound constraints.
+    - Allows the algorithm to increase the trust-reion radius if the predicted
+    imptoovement was approximately right and the simplex is satisfactory.
+    - Pseudo-randomizes simplex steps in the algorithm, aimproving robustness by
+    avoiding accidentally taking steps that don't improve conditioning, preserving
+    the deterministic nature of the algorithm.
+    - Supports unequal initial-step sizes in the different parameters.
+
+    Do not call this function directly but pass its name "nlopt_bobyqa" to
+    estimagic's maximize or minimize function as `algorithm` argument. Specify
+    your desired arguments as a dictionary and pass them as `algo_options` to
+    minimize or maximize.
+
+    Below, only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options, see :ref:`naming_conventions`.
+
+    Args:
+        convergence_relative_params_tolerance (float): Stop when the relative movement
+            between parameter vectors is smaller than this.
+        convergence_relative_criterion_tolerance (float): Stop when the relative
+            improvement between two iterations is smaller than this.
+            In contrast to other algorithms the relative criterion tolerance is set
+            to zero by default because setting it to any non-zero value made the
+            algorithm stop too early even on the most simple test functions.
+        stopping_max_criterion_evaluations (int): If the maximum number of function
+            evaluation is reached, the optimization stops but we do not count this
+            as convergence.
+        stopping_max_iterations (int): If the maximum number of iterations is reached,
+            the optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+
+    out = _minimize_nlopt(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        algorithm=nlopt.LN_PRAXIS,
+        algorithm_name="nlopt_praxis",
+        convergence_xtol_rel=convergence_relative_params_tolerance,
+        convergence_xtol_abs=convergence_absolute_params_tolerance,
+        convergence_ftol_rel=convergence_relative_criterion_tolerance,
+        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
+        stopping_max_eval=stopping_max_criterion_evaluations,
+    )
+
+    return out
+
+
 def _minimize_nlopt(
     criterion_and_derivative,
     x,
