@@ -1,3 +1,8 @@
+"""Implement `nlopt` algorithms.
+
+The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io].
+
+"""
 import warnings
 
 import numpy as np
@@ -104,6 +109,9 @@ def nlopt_neldermead(
     that the nlopt version supports bounds. This is done by moving all new points that
     would lie outside the bounds exactly on the bounds.
 
+    To avoind `RoundoffLimited` error in `neldermead`, we need to set
+    `convergence_relative_criterion_tolerance=0`.
+
     Below, only details of the optional algorithm options are listed. For the mandatory
     arguments see :ref:`internal_optimizer_interface`. For more background on those
     options, see :ref:`naming_conventions`.
@@ -157,7 +165,7 @@ def nlopt_praxis(
     *,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=0,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
@@ -236,7 +244,7 @@ def nlopt_cobyla(
     *,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=0,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
@@ -319,7 +327,7 @@ def nlopt_sbplx(
     *,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=0,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
@@ -392,7 +400,7 @@ def nlopt_newuoa(
     *,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
-    convergence_relative_criterion_tolerance=0,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
 ):
