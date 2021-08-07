@@ -37,7 +37,15 @@ def nlopt_bobyqa(
 
     The implementation is derived from the BOBYQA subroutine of M. J. D. Powell.
 
-    ADD REMAINING EXPLANATIONS FROM NLOPT DOCUMENTATION HERE.
+    The algorithm performs derivative free bound-constrained optimization using
+    an iteratively constructed quadratic approximation for the objective function.
+    Due to its use of quadratic appoximation, the algorithm may perform poorly
+    for objective functions that are not twice-differentiable.
+
+    For details see:
+    M. J. D. Powell, "The BOBYQA algorithm for bound constrained optimization
+    without derivatives," Department of Applied Mathematics and Theoretical
+    Physics, Cambridge England, technical report NA2009/06 (2009). 
 
     ``nlopt_bobyqa`` supports the following ``algo_options``:
 
@@ -131,6 +139,85 @@ def nlopt_neldermead(
         upper_bounds,
         algorithm=nlopt.LN_NELDERMEAD,
         algorithm_name="nlopt_neldermead",
+        convergence_xtol_rel=convergence_relative_params_tolerance,
+        convergence_xtol_abs=convergence_absolute_params_tolerance,
+        convergence_ftol_rel=convergence_relative_criterion_tolerance,
+        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
+        stopping_max_eval=stopping_max_criterion_evaluations,
+    )
+
+    return out
+
+
+def nlopt_praxis(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_relative_criterion_tolerance=0,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+):
+    """Minimize a scalar function using principal-axis method.
+
+    This is a gradient-free local optimizer originally described in:
+    Richard Brent, Algorithms for Minimization without Derivatives
+    (Prentice-Hall, 1972). (Reprinted by Dover, 2002.). It assumes quadratic
+    form of the optimized function and repeatedly updates a set of conjugate
+    search directions.
+
+    The algorithm, is not invariant to scaling of the objective function and may
+    fail under its certain rank-preserving transformations (e.g., will lead to
+    a non-quadratic shape of the objective function).
+
+    The algorithm is not determenistic and it is not possible to achieve
+    detereminancy via seed setting.
+
+    The difference between the nlopt implementation an the original implementation is
+    that the nlopt version supports bounds. This is done by returning infinity (Inf)
+    when the constraints are violated. The implementation of bound constraints
+    is achieved at the const of significantly reduced speed of convergence.
+    In case of bounded constraints, this method is dominated by `nlopt_bobyqa`
+    and `nlopt_cobyla`.
+
+    Do not call this function directly but pass its name "nlopt_bobyqa" to
+    estimagic's maximize or minimize function as `algorithm` argument. Specify
+    your desired arguments as a dictionary and pass them as `algo_options` to
+    minimize or maximize.
+
+    Below, only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options, see :ref:`naming_conventions`.
+
+    Args:
+        convergence_relative_params_tolerance (float): Stop when the relative movement
+            between parameter vectors is smaller than this.
+        convergence_relative_criterion_tolerance (float): Stop when the relative
+            improvement between two iterations is smaller than this.
+            In contrast to other algorithms the relative criterion tolerance is set
+            to zero by default because setting it to any non-zero value made the
+            algorithm stop too early even on the most simple test functions.
+        stopping_max_criterion_evaluations (int): If the maximum number of function
+            evaluation is reached, the optimization stops but we do not count this
+            as convergence.
+        stopping_max_iterations (int): If the maximum number of iterations is reached,
+            the optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+
+    out = _minimize_nlopt(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        algorithm=nlopt.LN_PRAXIS,
+        algorithm_name="nlopt_praxis",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
