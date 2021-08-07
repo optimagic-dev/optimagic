@@ -45,7 +45,7 @@ def nlopt_bobyqa(
     For details see:
     M. J. D. Powell, "The BOBYQA algorithm for bound constrained optimization
     without derivatives," Department of Applied Mathematics and Theoretical
-    Physics, Cambridge England, technical report NA2009/06 (2009). 
+    Physics, Cambridge England, technical report NA2009/06 (2009).
 
     ``nlopt_bobyqa`` supports the following ``algo_options``:
 
