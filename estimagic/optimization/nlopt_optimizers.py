@@ -384,6 +384,91 @@ def nlopt_sbplx(
     return out
 
 
+def nlopt_newuoa(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_relative_criterion_tolerance=0,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+):
+    """Minimize a scalar function using the NEWUOA algorithm.
+
+    The algorithm is derived from the NEWUOA subroutine of M.J.D Powell which
+    uses iteratively constructed quadratic approximation of the objctive fucntion
+    to perform derivative-free unconstrained optimization. Fore more details see:
+    M. J. D. Powell, "The NEWUOA software for unconstrained optimization without
+    derivatives," Proc. 40th Workshop on Large Scale Nonlinear Optimization
+    (Erice, Italy, 2004).
+
+    The algorithm in `nlopt` has been modified to support bound constraints. If all
+    of the bound constraints are infinite, this function calls the `nlopt.LN_NEWUOA`
+    optimizers for uncsonstrained optimization. Otherwise, the `nlopt.LN_NEWUOA_BOUND`
+    optimizer for constrained problems.
+
+    The original algorithm that solves the quadratic subproblems in a spherical
+    trust region via a truncated conjugate-gradient algorithm. Thee `nlopt`
+    bound-constrained variant uses te `MMA` algorithm for these subproblems to solve
+    them with both bound constraints and a sperical trust region.
+
+    `NEWUOA` requires the dimension n of the parameter space to be `≥ 2`, i.e. the
+    implementation does not handle one-dimensional optimization problems.
+
+    Do not call this function directly but pass its name "nlopt_bobyqa" to
+    estimagic's maximize or minimize function as `algorithm` argument. Specify
+    your desired arguments as a dictionary and pass them as `algo_options` to
+    minimize or maximize.
+
+    Below, only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options, see :ref:`naming_conventions`.
+
+    Args:
+        convergence_relative_params_tolerance (float): Stop when the relative movement
+            between parameter vectors is smaller than this.
+        convergence_relative_criterion_tolerance (float): Stop when the relative
+            improvement between two iterations is smaller than this.
+            In contrast to other algorithms the relative criterion tolerance is set
+            to zero by default because setting it to any non-zero value made the
+            algorithm stop too early even on the most simple test functions.
+        stopping_max_criterion_evaluations (int): If the maximum number of function
+            evaluation is reached, the optimization stops but we do not count this
+            as convergence.
+        stopping_max_iterations (int): If the maximum number of iterations is reached,
+            the optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+    if np.any(np.isfinite(lower_bounds)) or np.any(np.isfinite(upper_bounds)):
+        alg_name = "nlopt_newuoa_bound"
+        alg = nlopt.LN_NEWUOA_BOUND
+    else:
+        alg_name = "nlopt_newuoa"
+        alg = nlopt.LN_NEWUOA
+
+    out = _minimize_nlopt(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        algorithm=alg,
+        algorithm_name=alg_name,
+        convergence_xtol_rel=convergence_relative_params_tolerance,
+        convergence_xtol_abs=convergence_absolute_params_tolerance,
+        convergence_ftol_rel=convergence_relative_criterion_tolerance,
+        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
+        stopping_max_eval=stopping_max_criterion_evaluations,
+    )
+
+    return out
+
+
 def _minimize_nlopt(
     criterion_and_derivative,
     x,
