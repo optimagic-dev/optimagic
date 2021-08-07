@@ -299,8 +299,81 @@ def nlopt_cobyla(
         x,
         lower_bounds,
         upper_bounds,
-        algorithm=nlopt.LN_PRAXIS,
-        algorithm_name="nlopt_praxis",
+        algorithm=nlopt.LN_COBYLA,
+        algorithm_name="nlopt_cobyla",
+        convergence_xtol_rel=convergence_relative_params_tolerance,
+        convergence_xtol_abs=convergence_absolute_params_tolerance,
+        convergence_ftol_rel=convergence_relative_criterion_tolerance,
+        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
+        stopping_max_eval=stopping_max_criterion_evaluations,
+    )
+
+    return out
+
+
+def nlopt_sbplx(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_relative_criterion_tolerance=0,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+):
+    """Minimize a scalar function using the "Subplex" algorithm.
+
+    The alggorithm is a reimplementation of  Tom Rowan's "Subplex" algorithm.
+    See: T. Rowan, "Functional Stability Analysis of Numerical Algorithms",
+    Ph.D. thesis, Department of Computer Sciences, University of Texas at
+    Austin, 1990.
+
+    Subplex is a variant of Nedler-Mead that uses Nedler-Mead on a sequence of
+    subspaces. It is climed to be more efficient and robust than the original
+    Nedler-Mead algorithm.
+
+    The difference between this re-implementation and the original algorithm
+    of Rowan, is that it explicitly supports bound constraints providing big
+    improvement in the case where the optimum lies against one of the constraints.
+
+
+    Do not call this function directly but pass its name "nlopt_bobyqa" to
+    estimagic's maximize or minimize function as `algorithm` argument. Specify
+    your desired arguments as a dictionary and pass them as `algo_options` to
+    minimize or maximize.
+
+    Below, only details of the optional algorithm options are listed. For the mandatory
+    arguments see :ref:`internal_optimizer_interface`. For more background on those
+    options, see :ref:`naming_conventions`.
+
+    Args:
+        convergence_relative_params_tolerance (float): Stop when the relative movement
+            between parameter vectors is smaller than this.
+        convergence_relative_criterion_tolerance (float): Stop when the relative
+            improvement between two iterations is smaller than this.
+            In contrast to other algorithms the relative criterion tolerance is set
+            to zero by default because setting it to any non-zero value made the
+            algorithm stop too early even on the most simple test functions.
+        stopping_max_criterion_evaluations (int): If the maximum number of function
+            evaluation is reached, the optimization stops but we do not count this
+            as convergence.
+        stopping_max_iterations (int): If the maximum number of iterations is reached,
+            the optimization stops, but we do not count this as convergence.
+
+    Returns:
+        dict: See :ref:`internal_optimizer_output` for details.
+
+    """
+
+    out = _minimize_nlopt(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        algorithm=nlopt.LN_SBPLX,
+        algorithm_name="nlopt_sbplx",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
