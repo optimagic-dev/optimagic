@@ -9,7 +9,7 @@ class TableExistsError(Exception):
     pass
 
 
-class StopOptimization(Exception):
+class StopOptimizationError(Exception):
     def __init__(self, message, current_status):
         super().__init__(message)
         self.message = message
@@ -17,7 +17,7 @@ class StopOptimization(Exception):
 
     def __reduce__(self):
         """Taken from here: https://tinyurl.com/y6eeys2f"""
-        return (StopOptimization, (self.message, self.current_status))
+        return (StopOptimizationError, (self.message, self.current_status))
 
 
 def get_traceback():

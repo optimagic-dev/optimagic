@@ -8,5 +8,4 @@ Optimization Tools
     optimization/process_constraints
     optimization/reparametrize
     optimization/algo_options
-    optimization/optimization_utilities
     optimization/read_log

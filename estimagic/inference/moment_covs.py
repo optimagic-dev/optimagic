@@ -6,7 +6,7 @@ Bruce E. Hansen - Econometrics (https://www.ssc.wisc.edu/~bhansen/econometrics).
 import numpy as np
 
 from estimagic.exceptions import INVALID_INFERENCE_MSG
-from estimagic.optimization.utilities import robust_inverse
+from estimagic.utilities import robust_inverse
 
 
 def gmm_cov(mom_cond, mom_cond_jacob, weighting_matrix):

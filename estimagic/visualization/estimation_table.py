@@ -338,7 +338,9 @@ def _process_model(model):
     else:
         NamedTup = namedtuple("NamedTup", "params info")
         if isinstance(model, dict):
-            processed_model = NamedTup(params=model["params"], info=model.get('info', {}))
+            processed_model = NamedTup(
+                params=model["params"], info=model.get("info", {})
+            )
         elif isinstance(model, pd.DataFrame):
             processed_model = NamedTup(params=model, info={})
         else:
@@ -376,8 +378,8 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
-    if 'p_value' in df.columns:
-        df = df.rename(columns={'p_value':'pvalue'})
+    if "p_value" in df.columns:
+        df = df.rename(columns={"p_value": "pvalue"})
     if show_stars:
         sig_bins = [-1] + sorted(sig_levels) + [2]
         value_sr = round(df["value"], sig_digits).replace(np.nan, "").astype("str")
@@ -391,7 +393,8 @@ def _convert_model_to_series(
                 ],
             )
             .astype("str")
-            .replace("nan", "").replace(np.nan,"")
+            .replace("nan", "")
+            .replace(np.nan, "")
         )
         value_sr += " }$"
     else:

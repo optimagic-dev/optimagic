@@ -1,6 +1,5 @@
 from pathlib import Path
 
-DEFAULT_DATABASE_NAME = "logging.db"
 DEFAULT_SEED = 5471
 
 TEST_DIR = Path(__file__).parent / "tests"
@@ -24,7 +23,7 @@ else:
     IS_PETSC4PY_INSTALLED = True
 
 try:
-    import  nlopt  # noqa: F401
+    import nlopt  # noqa: F401
 except ImportError:
     IS_NLOPT_INSTALLED = False
 else:
