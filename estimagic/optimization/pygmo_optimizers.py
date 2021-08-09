@@ -3,13 +3,18 @@ import functools
 import warnings
 
 import numpy as np
-import pygmo as pg
 
 from estimagic import batch_evaluators
+from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 
 STOPPING_MAX_ITERATIONS_GENETIC = 1000
+
+try:
+    import pygmo as pg
+except ImportError:
+    pass
 
 
 def pygmo_gaco(
@@ -1609,6 +1614,11 @@ def _minimize_pygmo(
         results (dict): Dictionary with optimization results.
 
     """
+    if not IS_PYGMO_INSTALLED:
+        raise NotImplementedError(
+            f"The pygmo package is not installed and required for '{method}'."
+        )
+
     algo_options = {} if algo_options is None else algo_options.copy()
     population_size = algo_options.pop("population_size", 1)
 
