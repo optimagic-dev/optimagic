@@ -261,31 +261,31 @@ that your read that explanation first!
     following params DataFrame:
 
     .. table::
-    :class: rows
+        :class: rows
 
-    +-------------------+-------+
-    |                   | value |
-    +----------+--------+-------+
-    | category | period |       |
-    +==========+========+=======+
-    |          |   0    |   2   |
-    |    a     +--------+-------+
-    |          |   1    |   1   |
-    +----------+--------+-------+
-    |          |   0    |   1   |
-    |    b     +--------+-------+
-    |          |   1    |   3   |
-    +----------+--------+-------+
-    |          |   0    |   1   |
-    |    c     +--------+-------+
-    |          |   1    |   1   |
-    +----------+--------+-------+
+        +-------------------+-------+
+        |                   | value |
+        +----------+--------+-------+
+        | category | period |       |
+        +==========+========+=======+
+        |          |   0    |   2   |
+        |    a     +--------+-------+
+        |          |   1    |   1   |
+        +----------+--------+-------+
+        |          |   0    |   1   |
+        |    b     +--------+-------+
+        |          |   1    |   3   |
+        +----------+--------+-------+
+        |          |   0    |   1   |
+        |    c     +--------+-------+
+        |          |   1    |   1   |
+        +----------+--------+-------+
 
 
     Suppose you want to express the following constraints:
 
     - The first parameter in the category ``"a"`` is two times the second parameter
-    in that category.
+      in that category.
     - The mean of the ``"b"`` parameters is larger than 3
     - The sum of the ``"c"`` parameters is between 0 and 5
 
