@@ -23,6 +23,13 @@ else:
     IS_PETSC4PY_INSTALLED = True
 
 try:
+    import nlopt  # noqa: F401
+except ImportError:
+    IS_NLOPT_INSTALLED = False
+else:
+    IS_NLOPT_INSTALLED = True
+
+try:
     import matplotlib  # noqa: F401
 except ImportError:
     IS_MATPLOTLIB_INSTALLED = False
