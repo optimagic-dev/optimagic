@@ -394,6 +394,7 @@ def _convert_model_to_series(
             )
             .astype("str")
             .replace("nan", "")
+            .replace(np.nan, "")
         )
         value_sr += " }$"
     else:
@@ -698,8 +699,7 @@ def _extract_params_from_sm(model):
     params_list = ["params", "pvalues", "bse"]
     for col in params_list:
         to_concat.append(getattr(model, col))
-    to_concat.append(model.conf_int()[0])
-    to_concat.append(model.conf_int()[1])
+    to_concat.append(model.conf_int())
     params_df = pd.concat(to_concat, axis=1)
     params_df.columns = ["value", "pvalue", "standard_error", "ci_lower", "ci_upper"]
     return params_df
