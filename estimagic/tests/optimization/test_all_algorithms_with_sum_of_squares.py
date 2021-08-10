@@ -60,6 +60,8 @@ IMPRECISE_ALGOS = [
     "pygmo_xnes",
     "pygmo_de",
     "pygmo_de1220",
+    "nlopt_neldermead",
+    "nlopt_bobyqa",
 ]
 
 
