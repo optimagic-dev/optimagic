@@ -381,7 +381,7 @@ def _convert_model_to_series(
         value_sr += "$^{"
         value_sr += (
             pd.cut(
-                df["pvalue"],
+                df["p_value"],
                 bins=sig_bins,
                 labels=[
                     "*" * (len(sig_levels) - i) for i in range(len(sig_levels) + 1)
@@ -696,7 +696,7 @@ def _extract_params_from_sm(model):
     to_concat.append(model.conf_int()[0])
     to_concat.append(model.conf_int()[1])
     params_df = pd.concat(to_concat, axis=1)
-    params_df.columns = ["value", "pvalue", "standard_error", "ci_lower", "ci_upper"]
+    params_df.columns = ["value", "p_value", "standard_error", "ci_lower", "ci_upper"]
     return params_df
 
 
