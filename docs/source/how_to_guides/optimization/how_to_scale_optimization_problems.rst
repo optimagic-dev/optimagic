@@ -125,7 +125,7 @@ means that around the start values the problem is scaled optimally. However, for
 nonlinear functions, it does not guarantee optimal scaling anywhere else.
 
 In practice, we do not take the exact gradient, but a numerical gradient calculated with
-a very large step size (100 times larger than the rule of thumb for optimal step sizes 
+a very large step size (100 times larger than the rule of thumb for optimal step sizes
 by default). This is more robust for noisy or wiggly functions.
 
 **Advantages:**
@@ -166,8 +166,9 @@ by default). This is more robust for noisy or wiggly functions.
         },
     )
 
-The `numdiff_options` argument of the scaling options allow to configure the calculation
-of the numerical gradient. See :ref:`first_derivative` for available options.
+The ``numdiff_options`` argument of the scaling options allow to configure the
+calculation of the numerical gradient. See :ref:`first_derivative` for available
+options.
 
 
 Influencing the magnitude of parameters
@@ -175,15 +176,15 @@ Influencing the magnitude of parameters
 
 The above approaches align the scale of parameters relative to each other. However, the
 overall magnitude is set rather arbitrarily. For example when dividing by start values,
-the magnitude of the scaled parameters is around one. When dividing by bounds, it is 
-somewhere between zero and one. 
+the magnitude of the scaled parameters is around one. When dividing by bounds, it is
+somewhere between zero and one.
 
-For the performance of numerical optimizers only the relative scales are important. 
+For the performance of numerical optimizers only the relative scales are important.
 
 However, influencing the overall magnitude can be helpful to trick some optimizers
 into doing things they do not want to do. For example, when there is a minimal allowed
-initial trust region radius, increasing the magnitude of parameters allows to 
-effectively make the trust region radius smaller. 
+initial trust region radius, increasing the magnitude of parameters allows to
+effectively make the trust region radius smaller.
 
 Setting the magnitude means simply adding one more entry to the scaling options. For
 example, if you want to scale by bounds and increase the magnitude by a factor of five:
