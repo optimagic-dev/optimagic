@@ -39,6 +39,7 @@ dependencies:
   - pytask>=0.0.11
   - nlopt
   - sphinx-panels
+  - pytask
 
   - pip:
     - black
