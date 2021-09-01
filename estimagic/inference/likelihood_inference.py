@@ -5,8 +5,8 @@ from estimagic.differentiation.derivatives import first_derivative
 from estimagic.inference.likelihood_covs import cov_jacobian
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import transform_covariance
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import reparametrize_to_internal
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.reparametrize import reparametrize_to_internal
 
 
 def do_likelihood_inference(

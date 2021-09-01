@@ -6,7 +6,7 @@ repos:
     -   id: debug-statements
     -   id: end-of-file-fixer
 -   repo: https://github.com/asottile/reorder_python_imports
-    rev: v2.5.0
+    rev: v2.6.0
     hooks:
     -   id: reorder-python-imports
         types: [python]
@@ -22,7 +22,7 @@ repos:
         additional_dependencies: [black]
         types: [rst]
 -   repo: https://github.com/psf/black
-    rev: 21.6b0
+    rev: 21.7b0
     hooks:
     -   id: black
         types: [python]
@@ -31,14 +31,14 @@ repos:
     hooks:
     -   id: flake8
         types: [python]
-        exclude: estimagic/optimization/kernel_transformations.py
+        exclude: estimagic/parameters/kernel_transformations.py
         additional_dependencies: [
             flake8-alfred, flake8-bugbear, flake8-builtins, flake8-comprehensions,
             flake8-docstrings, flake8-eradicate, flake8-print, flake8-rst-docstrings,
             flake8-todo, pep8-naming, pydocstyle,
         ]
 -   repo: https://github.com/PyCQA/doc8
-    rev: 0.9.0a1
+    rev: 0.9.0
     hooks:
         -   id: doc8
 -   repo: meta
@@ -47,7 +47,7 @@ repos:
     -   id: check-useless-excludes
     # -   id: identity  # Prints all files passed to pre-commits. Debugging.
 -   repo: https://github.com/nbQA-dev/nbQA
-    rev: 0.13.1
+    rev: 1.1.0
     hooks:
     -   id: nbqa-black
         additional_dependencies: [black==20.8b1]
@@ -57,6 +57,6 @@ repos:
     -   id: nbqa-isort
         additional_dependencies: [isort==5.6.4]
 -   repo: https://github.com/PyCQA/doc8
-    rev: 0.9.0a1
+    rev: 0.9.0
     hooks:
     -   id: doc8

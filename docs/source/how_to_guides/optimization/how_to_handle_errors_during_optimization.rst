@@ -16,7 +16,7 @@ list of things you can do to avoid this behavior:
 - Set bounds for your parameters, that prevent extreme parameter constellations.
 - Use the ``bounds_distance`` option with a not too small value for ``covariance`` and
   ``sdcorr`` constraints.
-- Use :func:`~estimagic.optimization.utilities.robust_cholesky` instead of normal
+- Use :func:`~estimagic.utilities.robust_cholesky` instead of normal
   cholesky decompositions or try to avoid cholesky decompositions by restructuring
   your algorithm.
 - Avoid to take ``np.exp`` without further safeguards. With 64 bit floating point

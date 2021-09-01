@@ -38,6 +38,8 @@ dependencies:
   - statsmodels
   - dill
   - pytask>=0.0.11
+  - nlopt
+  - sphinx-panels
 
   - pip:
     - black
