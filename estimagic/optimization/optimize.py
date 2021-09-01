@@ -506,7 +506,6 @@ def _single_optimize(
         # "criterion_and_derivative"-criterion_and_derivative,
         "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
         "numdiff_options": numdiff_options,
-        "logging": logging,
         "log_options": log_options,
         "error_handling": error_handling,
         "error_penalty": error_penalty,
