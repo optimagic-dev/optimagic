@@ -331,28 +331,30 @@ def tabular_html(
 
 def _process_model(model):
     """Check model validity, convert to namedtuple."""
+    NamedTup = namedtuple("NamedTup", "params info")
     if hasattr(model, "params") and hasattr(model, "info"):
         assert isinstance(model.info, dict)
         assert isinstance(model.params, pd.DataFrame)
-        processed_model = model
+        info_dict = model.info
+        params_df = model.params.copy(deep=True)
     else:
-        NamedTup = namedtuple("NamedTup", "params info")
         if isinstance(model, dict):
-            processed_model = NamedTup(
-                params=model["params"], info=model.get("info", {})
-            )
+            params_df = model["params"].copy(deep=True)
+            info_dict = model.get("info", {})
         elif isinstance(model, pd.DataFrame):
-            processed_model = NamedTup(params=model, info={})
+            params_df = model.copy(deep=True)
+            info_dict = {}
         else:
             try:
-                processed_model = NamedTup(
-                    params=_extract_params_from_sm(model),
-                    info={**_extract_info_from_sm(model)},
-                )
+                params_df = _extract_params_from_sm(model)
+                info_dict = {**_extract_info_from_sm(model)}
             except (KeyboardInterrupt, SystemExit):
                 raise
             except BaseException:
                 raise TypeError("Model {} does not have valid format".format(model))
+    if "pvalue" in params_df.columns:
+        params_df = params_df.rename(columns={"pvalue": "p_value"})
+    processed_model = NamedTup(params=params_df, info=info_dict)
     return processed_model
 
 
@@ -378,8 +380,7 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
-    if "p_value" in df.columns:
-        df = df.rename(columns={"p_value": "pvalue"})
+
     if show_stars:
         sig_bins = [-1] + sorted(sig_levels) + [2]
         value_sr = round(df["value"], sig_digits).replace(np.nan, "").astype("str")
