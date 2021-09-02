@@ -231,7 +231,7 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
 
             constraints = [{"loc": "x_1", "type": "fixed", "value": 1}]
 
-        :math:`x_{1} = 1 
+        :math:`x_{1} = 1
         \rightarrow x* = (1, 0, 0)`
 
     .. dropdown::   Probability constraints
@@ -242,15 +242,15 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
 
         :math:`x_{1} + x_{2} = 1, \quad 0 \leq x_1 \leq 1, \quad 0 \leq x_2 \leq 1 \\
         \mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) + (x^2_1 + x^2_2 + x^2_3)\\
-        -\lambda(x_1 +x_2-1)\\ 
+        -\lambda(x_1 +x_2-1)\\
         \Rightarrow \frac{\delta \mathcal{L}}{\delta x_1}\\
-        = 6x_1 - \lambda = 0\\ 
+        = 6x_1 - \lambda = 0\\
         \Rightarrow \frac{\delta \mathcal{L}}{\delta x_2}\\
-        = 4x_2 - \lambda = 0\\ 
+        = 4x_2 - \lambda = 0\\
         \Rightarrow \frac{\delta \mathcal{L}}{\delta x_3}\\
-        = 2 x_3 = 0\\ 
+        = 2 x_3 = 0\\
         \Rightarrow \frac{\delta \mathcal{L}}{\delta \lambda} \\
-        = -x_1 - x_2 + 1 = 0\\ 
+        = -x_1 - x_2 + 1 = 0\\
         \rightarrow x* = (\frac{2}{5}, \frac{3}{5}, 0),\\
         \quad f({x*}) = \frac{6}{5}`
 
@@ -316,14 +316,14 @@ Rotated Hyper Ellipsoid: Solutions for three-dimension case
             constraints = [{"loc": ["x_1", "x_2"], "type": "linear", "weights": [1, 2], "value": 4}]
 
         :math:`x_1 + 2x_2 = 4\\\mathcal{L}({x_i}) = x^2_1 + (x^2_1 + x^2_2) +
-        (x^2_1 + x^2_2 + x^2_3) -\lambda(x_1 +2x_2-4)\\ 
-        \Rightarrow \frac{\delta\mathcal{L}}{\delta x_1} = 6x_1 - \lambda = 0\\ 
+        (x^2_1 + x^2_2 + x^2_3) -\lambda(x_1 +2x_2-4)\\
+        \Rightarrow \frac{\delta\mathcal{L}}{\delta x_1} = 6x_1 - \lambda = 0\\
         \Rightarrow \frac{\delta \\
-        \mathcal{L}}{\delta x_2} = 4x_2 - 2\lambda = 0\\ 
+        \mathcal{L}}{\delta x_2} = 4x_2 - 2\lambda = 0\\
         \Rightarrow \frac{\delta \\
-        \mathcal{L}}{\delta x_3} = 2 x_3 = 0\\ 
+        \mathcal{L}}{\delta x_3} = 2 x_3 = 0\\
         \Rightarrow \frac{\delta \\
-        \mathcal{L}}{\delta \lambda} = -x_1 - 2x_2 + 4 = 0\\ 
+        \mathcal{L}}{\delta \lambda} = -x_1 - 2x_2 + 4 = 0\\
         \rightarrow x* = (\frac{4}{7}, \frac{12}{7}, 0)`
 
 

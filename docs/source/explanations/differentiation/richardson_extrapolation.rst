@@ -86,9 +86,9 @@ approximation error :math:`\mathcal{O}(h^2)` than forward or backward difference
 
 
 Let us evaluate :math:`g` at multiple values :math:`h_0, h_1, h_2, \dots`, where it will
-turn out to be useful to choose values `h, h/2,  h/4, h/8, \dots` given some prechosen
-:math:`h > 0`. More generally :math:`\{ h_n \}_n, h_n = h/2^n` for :math:`n \in
-\mathbb{N}`. This allows us to write
+turn out to be useful to choose values :math:`h, h/2,  h/4, h/8, \dots` given some
+prechosen :math:`h > 0`. More generally :math:`\{ h_n \}_n, h_n = h/2^n` for :math:`n
+\in \mathbb{N}`. This allows us to write
 
 
 .. math::
@@ -118,9 +118,9 @@ Notice that we are now able to summarize the equations as
 .. math::
 
      \begin{bmatrix}
-     g(h) \\ 
-     g(h/2) \\ 
-     g(h/4) 
+     g(h) \\
+     g(h/2) \\
+     g(h/4)
      \end{bmatrix}
      =
       \begin{bmatrix}
@@ -139,7 +139,7 @@ Notice that we are now able to summarize the equations as
        \end{bmatrix}
 
 
-which we write in shorthand notation as 
+which we write in shorthand notation as
 
 .. math::
 
@@ -152,15 +152,15 @@ which we write in shorthand notation as
 
 
 
-From looking at equation (:math:`\ast`) we see that an improved
-estimate of `L` can be obtained by projecting :math:`g` onto :math:`H`.
+From looking at equation (:math:`\ast`) we see that an improved estimate of :math:`L`
+can be obtained by projecting :math:`g` onto :math:`H`.
 
 
 Remark
 ######
 
-To get a better intuition for (:math:`\ast`) consider :math:`H` in more
-detail.  For the sake of clarity let :math:`\theta = \phi = 2`.
+To get a better intuition for (:math:`\ast`) consider :math:`H` in more detail. For the
+sake of clarity let :math:`\theta = \phi = 2`.
 
 .. math::
 
@@ -169,7 +169,7 @@ detail.  For the sake of clarity let :math:`\theta = \phi = 2`.
        1 & h^2 & h^4 \\
        1 & h^2/2^2 & h^4/2^4 \\
        1 & h^2/4^2 & h^4/4^4 \\
-     \end{bmatrix} = 
+     \end{bmatrix} =
      \begin{bmatrix}
        1 & h^2 & h^4 \\
        1 & (h/2)^2 & (h/2)^4 \\
@@ -238,7 +238,7 @@ With
      \end{bmatrix}
 
 
-we get 
+we get
 
 
 .. math::

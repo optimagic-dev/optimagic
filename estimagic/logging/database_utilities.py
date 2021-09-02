@@ -156,7 +156,6 @@ def make_optimization_problem_table(
         Column("algorithm", PickleType(pickler=RobustPickler)),
         Column("algo_options", PickleType(pickler=RobustPickler)),
         Column("numdiff_options", PickleType(pickler=RobustPickler)),
-        Column("logging", PickleType(pickler=RobustPickler)),
         Column("log_options", PickleType(pickler=RobustPickler)),
         Column("error_handling", String),
         Column("error_penalty", PickleType(pickler=RobustPickler)),
