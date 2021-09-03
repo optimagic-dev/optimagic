@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-from estimagic.optimization.utilities import namedtuple_from_kwargs
+from estimagic.utilities import namedtuple_from_kwargs
 
 
 def generate_steps(

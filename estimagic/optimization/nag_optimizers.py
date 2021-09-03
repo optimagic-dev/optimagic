@@ -47,7 +47,7 @@ from estimagic.optimization.algo_options import (
 )
 from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_SUCCESSFUL
 from estimagic.optimization.algo_options import TRUSTREGION_THRESHOLD_VERY_SUCCESSFUL
-from estimagic.optimization.utilities import calculate_trustregion_initial_radius
+from estimagic.utilities import calculate_trustregion_initial_radius
 
 if IS_PYBOBYQA_INSTALLED:
     import pybobyqa
@@ -274,7 +274,7 @@ def nag_dfols(
         trustregion_threshold_very_successful=trustregion_threshold_very_successful,
         trustregion_shrinking_factor_not_successful=trustregion_shrinking_factor_not_successful,  # noqa: E501
         trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
-        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa:E501
+        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa: E501
         trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
         trustregion_shrinking_factor_upper_radius=trustregion_shrinking_factor_upper_radius,  # noqa: E501
     )
@@ -582,7 +582,7 @@ def nag_pybobyqa(
         trustregion_threshold_very_successful=trustregion_threshold_very_successful,
         trustregion_shrinking_factor_not_successful=trustregion_shrinking_factor_not_successful,  # noqa: E501
         trustregion_expansion_factor_successful=trustregion_expansion_factor_successful,
-        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa:E501
+        trustregion_expansion_factor_very_successful=trustregion_expansion_factor_very_successful,  # noqa: E501
         trustregion_shrinking_factor_lower_radius=trustregion_shrinking_factor_lower_radius,  # noqa: E501
         trustregion_shrinking_factor_upper_radius=trustregion_shrinking_factor_upper_radius,  # noqa: E501
     )
@@ -595,13 +595,13 @@ def nag_pybobyqa(
         ],
         "restarts.rhobeg_scale_after_unsuccessful_restart": trustregion_reset_options[
             "trust_region_scaling_at_unsuccessful_reset"
-        ],  # noqa E501
+        ],
         "restarts.hard.use_old_fk": trustregion_reset_options[
             "reuse_criterion_value_at_hard_reset"
         ],
         "restarts.auto_detect.min_chg_model_slope": trustregion_reset_options[
             "auto_detect_min_jacobian_increase"
-        ],  # noqa: E501
+        ],
     }
 
     advanced_options.update(pybobyqa_options)

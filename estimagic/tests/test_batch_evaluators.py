@@ -1,5 +1,4 @@
 import itertools
-import sys
 import warnings
 
 import pytest
@@ -28,7 +27,7 @@ def add_x_and_y(x, y):
     return x + y
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Too slow on Mac OS CI server.")
+@pytest.mark.slow
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_without_exceptions(batch_evaluator, n_cores):
 
@@ -43,7 +42,7 @@ def test_batch_evaluator_without_exceptions(batch_evaluator, n_cores):
     assert calculated == expected
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Too slow on Mac OS CI server.")
+@pytest.mark.slow
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_unhandled_exceptions(batch_evaluator, n_cores):
     with pytest.raises(AssertionError):
@@ -72,7 +71,7 @@ def test_batch_evaluator_with_handled_exceptions(batch_evaluator, n_cores):
             assert isinstance(calc, str)
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Too slow on Mac OS CI server.")
+@pytest.mark.slow
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_list_unpacking(batch_evaluator, n_cores):
     calculated = batch_evaluator(
@@ -85,7 +84,7 @@ def test_batch_evaluator_with_list_unpacking(batch_evaluator, n_cores):
     assert calculated == expected
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Too slow on Mac OS CI server.")
+@pytest.mark.slow
 @pytest.mark.parametrize("batch_evaluator, n_cores", test_cases)
 def test_batch_evaluator_with_dict_unpacking(batch_evaluator, n_cores):
     calculated = batch_evaluator(

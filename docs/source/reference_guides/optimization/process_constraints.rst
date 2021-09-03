@@ -3,5 +3,5 @@
 Processing constraints
 ----------------------
 
-.. automodule:: estimagic.optimization.process_constraints
+.. automodule:: estimagic.parameters.process_constraints
     :members:

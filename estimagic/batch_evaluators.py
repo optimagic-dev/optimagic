@@ -43,7 +43,7 @@ def pathos_mp_batch_evaluator(
             process.
         error_handling (str): Can take the values "raise" (raise the error and stop all
             tasks as soon as one task fails) and "continue" (catch exceptions and set
-            the output of failed tasks to the exception object without raising it.
+            the traceback of the raised exception.
             KeyboardInterrupt and SystemExit are always raised.
         unpack_symbol (str or None). Can be "**", "*" or None. If None, func just takes
             one argument. If "*", the elements of arguments are positional arguments for
@@ -103,7 +103,7 @@ def joblib_batch_evaluator(
             process.
         error_handling (str): Can take the values "raise" (raise the error and stop all
             tasks as soon as one task fails) and "continue" (catch exceptions and set
-            the output of failed tasks to the exception object without raising it.
+            the output of failed tasks to the traceback of the raised exception.
             KeyboardInterrupt and SystemExit are always raised.
         unpack_symbol (str or None). Can be "**", "*" or None. If None, func just takes
             one argument. If "*", the elements of arguments are positional arguments for

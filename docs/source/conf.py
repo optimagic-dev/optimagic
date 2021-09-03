@@ -44,6 +44,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "nbsphinx",
     "sphinxcontrib.bibtex",
+    "sphinx_panels",
 ]
 
 bibtex_bibfiles = ["refs.bib"]
@@ -95,7 +96,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "estimagic"
-copyright = "2020, Janos Gabler"  # noqa
+copyright = "2019 - 2021, Janos Gabler"  # noqa: A001
 author = "Janos Gabler"
 
 # The version info for the project you're documenting, acts as replacement for

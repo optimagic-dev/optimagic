@@ -15,11 +15,14 @@ include *.sh
 include *.yaml
 include *.yml
 
+exclude pytask.ini
+
 graft docs
 graft estimagic
 
 prune docs/_build
 prune docs/getting_started/__tutorial__
+prune .conda
 
 global-exclude __pycache__
 global-exclude *.py[co]
