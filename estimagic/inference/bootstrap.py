@@ -9,6 +9,7 @@ from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 def bootstrap(
     data,
     outcome,
+    outcome_kwargs=None,
     n_draws=1_000,
     cluster_by=None,
     ci_method="percentile",
@@ -25,6 +26,7 @@ def bootstrap(
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
             Needs to return a pandas Series.
+        outcome_kwargs (dict): Additional keyword arguments for outcome.
         n_draws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
@@ -49,8 +51,10 @@ def bootstrap(
     estimates = get_bootstrap_outcomes(
         data=data,
         outcome=outcome,
+        outcome_kwargs=outcome_kwargs,
         cluster_by=cluster_by,
         seed=seed,
+        n_draws=n_draws,
         n_cores=n_cores,
         error_handling=error_handling,
         batch_evaluator=batch_evaluator,
