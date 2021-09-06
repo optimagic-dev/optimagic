@@ -56,9 +56,9 @@ def bootstrap(
         batch_evaluator=batch_evaluator,
     )
 
-    table = bootstrap_from_outcomes(data, outcome, estimates, ci_method, alpha, n_cores)
+    out = bootstrap_from_outcomes(data, outcome, estimates, ci_method, alpha, n_cores)
 
-    return table
+    return out
 
 
 def bootstrap_from_outcomes(
@@ -84,12 +84,16 @@ def bootstrap_from_outcomes(
 
     check_inputs(data=data, ci_method=ci_method, alpha=alpha)
 
-    results = pd.DataFrame(bootstrap_outcomes.mean(axis=0), columns=["mean"])
+    summary = pd.DataFrame(bootstrap_outcomes.mean(axis=0), columns=["mean"])
 
-    results["std"] = bootstrap_outcomes.std(axis=0)
+    summary["std"] = bootstrap_outcomes.std(axis=0)
 
     cis = compute_ci(data, outcome, bootstrap_outcomes, ci_method, alpha, n_cores)
-    results["lower_ci"] = cis["lower_ci"]
-    results["upper_ci"] = cis["upper_ci"]
+    summary["lower_ci"] = cis["lower_ci"]
+    summary["upper_ci"] = cis["upper_ci"]
 
-    return results
+    cov = bootstrap_outcomes.cov()
+
+    out = {"summary": summary, "cov": cov, "outcomes": bootstrap_outcomes}
+
+    return out

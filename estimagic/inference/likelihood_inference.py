@@ -135,4 +135,6 @@ def do_likelihood_inference(
         params=params, free_cov=free_cov
     )
 
-    return inference_quantities, free_cov
+    out = {"summary": inference_quantities, "cov": free_cov}
+
+    return out
