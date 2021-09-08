@@ -82,7 +82,7 @@ def func_kwargs():
 
 
 @pytest.fixture
-def jacobian(params, func_kwargs):
+def jac(params, func_kwargs):
     derivative_dict = first_derivative(
         func=simulate_aggregated_moments,
         params=params,
@@ -99,12 +99,12 @@ def weights(moments_cov):
 
 
 @pytest.fixture
-def params_cov_opt(jacobian, weights):
-    return cov_efficient(jacobian, weights)
+def params_cov_opt(jac, weights):
+    return cov_efficient(jac, weights)
 
 
-def test_sensitivity_to_bias(jacobian, weights, params):
-    calculated = calculate_sensitivity_to_bias(jacobian, weights)
+def test_sensitivity_to_bias(jac, weights, params):
+    calculated = calculate_sensitivity_to_bias(jac, weights)
     expected = pd.DataFrame(
         data=[
             [4.010481, 2.068143, 2.753155, 0.495683, 1.854492, 0.641020],
@@ -118,10 +118,10 @@ def test_sensitivity_to_bias(jacobian, weights, params):
 
 
 def test_fundamental_sensitivity_to_noise(
-    jacobian, weights, moments_cov, params_cov_opt, params
+    jac, weights, moments_cov, params_cov_opt, params
 ):
     calculated = calculate_fundamental_sensitivity_to_noise(
-        jacobian,
+        jac,
         weights,
         moments_cov,
         params_cov_opt,
@@ -138,10 +138,8 @@ def test_fundamental_sensitivity_to_noise(
     aaae(calculated, expected)
 
 
-def test_actual_sensitivity_to_noise(
-    jacobian, weights, moments_cov, params_cov_opt, params
-):
-    sensitivity_to_bias = calculate_sensitivity_to_bias(jacobian, weights)
+def test_actual_sensitivity_to_noise(jac, weights, moments_cov, params_cov_opt, params):
+    sensitivity_to_bias = calculate_sensitivity_to_bias(jac, weights)
     calculated = calculate_actual_sensitivity_to_noise(
         sensitivity_to_bias,
         weights,
@@ -161,11 +159,11 @@ def test_actual_sensitivity_to_noise(
 
 
 def test_actual_sensitivity_to_removal(
-    jacobian, weights, moments_cov, params_cov_opt, params
+    jac, weights, moments_cov, params_cov_opt, params
 ):
 
     calculated = calculate_actual_sensitivity_to_removal(
-        jacobian, weights, moments_cov, params_cov_opt
+        jac, weights, moments_cov, params_cov_opt
     )
 
     expected = pd.DataFrame(
@@ -180,12 +178,10 @@ def test_actual_sensitivity_to_removal(
     aaae(calculated, expected)
 
 
-def test_fundamental_sensitivity_to_removal(
-    jacobian, moments_cov, params_cov_opt, params
-):
+def test_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_opt, params):
 
     calculated = calculate_fundamental_sensitivity_to_removal(
-        jacobian, moments_cov, params_cov_opt
+        jac, moments_cov, params_cov_opt
     )
 
     expected = pd.DataFrame(
@@ -200,11 +196,9 @@ def test_fundamental_sensitivity_to_removal(
     aaae(calculated, expected)
 
 
-def test_sensitivity_to_weighting(
-    jacobian, weights, moments_cov, params_cov_opt, params
-):
+def test_sensitivity_to_weighting(jac, weights, moments_cov, params_cov_opt, params):
     calculated = calculate_sensitivity_to_weighting(
-        jacobian, weights, moments_cov, params_cov_opt
+        jac, weights, moments_cov, params_cov_opt
     )
 
     expected = pd.DataFrame(

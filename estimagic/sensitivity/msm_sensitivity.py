@@ -14,7 +14,7 @@ from estimagic.inference.msm_covs import cov_sandwich
 from estimagic.utilities import robust_inverse
 
 
-def calculate_sensitivity_to_bias(jacobian, weights):
+def calculate_sensitivity_to_bias(jac, weights):
     """calculate the sensitivity to bias.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
@@ -23,7 +23,7 @@ def calculate_sensitivity_to_bias(jacobian, weights):
         biased if the kth moment was misspecified, i.e not zero in expectation?
 
     Args:
-        jacobian (np.ndarray): Numpy array with the jacobian of the function that
+        jac (np.ndarray): Numpy array with the jacobian of the function that
             calculates the deviation between simulated and empirical moments
             with respect to params, evaluated at the point estimates.
         weights (np.ndarray): The weighting matrix for msm estimation.
@@ -32,15 +32,15 @@ def calculate_sensitivity_to_bias(jacobian, weights):
         np.ndarray
 
     """
-    gwg = _sandwich(jacobian, weights)
+    gwg = _sandwich(jac, weights)
     gwg_inverse = robust_inverse(gwg)
-    m1 = -gwg_inverse @ jacobian.T @ weights
+    m1 = -gwg_inverse @ jac.T @ weights
 
     return m1
 
 
 def calculate_fundamental_sensitivity_to_noise(
-    jacobian, weights_opt, moments_cov, params_cov_opt
+    jac, weights_opt, moments_cov, params_cov_opt
 ):
     """calculate the fundamental sensitivity to noise.
 
@@ -51,7 +51,7 @@ def calculate_fundamental_sensitivity_to_noise(
         is used?
 
     Args:
-        jacobian (np.ndarray): Numpy array with the jacobian of the function that
+        jac (np.ndarray): Numpy array with the jacobian of the function that
             calculates the deviation between simulated and empirical moments
             with respect to params, evaluated at the point estimates.
         weights_opt (np.ndarray): The asymptotically efficient weighting matrix for
@@ -71,7 +71,7 @@ def calculate_fundamental_sensitivity_to_noise(
         mask_matrix_o = np.zeros(shape=weights_opt.shape)
         mask_matrix_o[k, k] = 1
 
-        meat = _sandwich_plus(jacobian, weights_opt, mask_matrix_o)
+        meat = _sandwich_plus(jac, weights_opt, mask_matrix_o)
 
         m2k = params_cov_opt @ meat @ params_cov_opt
         m2k = np.diagonal(m2k)
@@ -133,7 +133,7 @@ def calculate_actual_sensitivity_to_noise(
     return m3_scaled
 
 
-def calculate_actual_sensitivity_to_removal(jacobian, weights, moments_cov, params_cov):
+def calculate_actual_sensitivity_to_removal(jac, weights, moments_cov, params_cov):
     """calculate the actual sensitivity to removal.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
@@ -143,7 +143,7 @@ def calculate_actual_sensitivity_to_removal(jacobian, weights, moments_cov, para
         matrix?
 
     Args:
-        jacobian (np.ndarray): Numpy array with the jacobian of the function that
+        jac (np.ndarray): Numpy array with the jacobian of the function that
             calculates the deviation between simulated and empirical moments
             with respect to params, evaluated at the point estimates.
         weights_opt (np.ndarray): Square weighting matrix.
@@ -161,7 +161,7 @@ def calculate_actual_sensitivity_to_removal(jacobian, weights, moments_cov, para
         weight_tilde_k[k, :] = 0
         weight_tilde_k[:, k] = 0
 
-        sigma_tilde_k = cov_sandwich(jacobian, weight_tilde_k, moments_cov)
+        sigma_tilde_k = cov_sandwich(jac, weight_tilde_k, moments_cov)
 
         m4k = sigma_tilde_k - params_cov
         m4k = m4k.diagonal()
@@ -176,7 +176,7 @@ def calculate_actual_sensitivity_to_removal(jacobian, weights, moments_cov, para
     return m4_scaled
 
 
-def calculate_fundamental_sensitivity_to_removal(jacobian, moments_cov, params_cov_opt):
+def calculate_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_opt):
     """calculate the fundamental sensitivity to removal.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
@@ -186,7 +186,7 @@ def calculate_fundamental_sensitivity_to_removal(jacobian, moments_cov, params_c
         used?
 
     Args:
-        jacobian (np.ndarray): Numpy array with the jacobian of the function that
+        jac (np.ndarray): Numpy array with the jacobian of the function that
             calculates the deviation between simulated and empirical moments
             with respect to params, evaluated at the point estimates.
         moments_cov (np.ndarray): Covariance matrix of the empirical moments.
@@ -201,7 +201,7 @@ def calculate_fundamental_sensitivity_to_removal(jacobian, moments_cov, params_c
     m5 = []
 
     for k in range(len(moments_cov)):
-        g_k = np.copy(jacobian)
+        g_k = np.copy(jac)
         g_k = np.delete(g_k, k, axis=0)
 
         s_k = np.copy(moments_cov)
@@ -224,7 +224,7 @@ def calculate_fundamental_sensitivity_to_removal(jacobian, moments_cov, params_c
     return m5_scaled
 
 
-def calculate_sensitivity_to_weighting(jacobian, weights, moments_cov, params_cov):
+def calculate_sensitivity_to_weighting(jac, weights, moments_cov, params_cov):
     """calculate the sensitivity to weighting.
 
     The sensitivity measure is calculated for each parameter wrt each moment.
@@ -233,7 +233,7 @@ def calculate_sensitivity_to_weighting(jacobian, weights, moments_cov, params_co
         the kth moment is increased a little?
 
     Args:
-        jacobian (np.ndarray): Numpy array with the jacobian of the function that
+        jac (np.ndarray): Numpy array with the jacobian of the function that
             calculates the deviation between simulated and empirical moments
             with respect to params, evaluated at the point estimates.
         weights_opt (np.ndarray): Square weighting matrix.
@@ -244,7 +244,7 @@ def calculate_sensitivity_to_weighting(jacobian, weights, moments_cov, params_co
         np.ndarray
 
     """
-    gwg_inverse = _sandwich(jacobian, weights)
+    gwg_inverse = _sandwich(jac, weights)
     gwg_inverse = np.linalg.pinv(gwg_inverse)
 
     m6 = []
@@ -253,26 +253,26 @@ def calculate_sensitivity_to_weighting(jacobian, weights, moments_cov, params_co
         mask_matrix_o = np.zeros(shape=weights.shape)
         mask_matrix_o[k, k] = 1
 
-        m6k_1 = gwg_inverse @ _sandwich(jacobian, mask_matrix_o) @ params_cov
+        m6k_1 = gwg_inverse @ _sandwich(jac, mask_matrix_o) @ params_cov
         m6k_2 = (
             gwg_inverse
-            @ jacobian.T
+            @ jac.T
             @ mask_matrix_o
             @ moments_cov
             @ weights
-            @ jacobian
+            @ jac
             @ gwg_inverse
         )
         m6k_3 = (
             gwg_inverse
-            @ jacobian.T
+            @ jac.T
             @ weights
             @ moments_cov
             @ mask_matrix_o
-            @ jacobian
+            @ jac
             @ gwg_inverse
         )
-        m6k_4 = params_cov @ _sandwich(jacobian, mask_matrix_o) @ gwg_inverse
+        m6k_4 = params_cov @ _sandwich(jac, mask_matrix_o) @ gwg_inverse
 
         m6k = -m6k_1 + m6k_2 + m6k_3 - m6k_4
         m6k = m6k.diagonal()
