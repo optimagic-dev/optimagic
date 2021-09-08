@@ -21,41 +21,25 @@ from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 
 
-def calc_moments_expectation(params, x, y, estimate_y=True):
-    """Calculate aggregated moments for example from Honore, DePaula, Jorgensen.
+def simulate_aggregated_moments(params, x, y):
+    """Calculate aggregated moments for example from Honore, DePaula, Jorgensen."""
 
-    Args:
-        params (pd.DataFrame): see :ref:`params`
-        x (pd.DataFrame)
-        y (pd.DataFrame)
-        estimate_y (boolean): use estimated y_star
-
-    Return:
-        moments (np.array): expectation of moments
-    """
-
-    mom_value = calc_moments_value(params, x, y, estimate_y)
-
+    mom_value = simulate_moment_contributions(params, x, y)
     moments = mom_value.mean(axis=1)
 
     return moments
 
 
-def calc_moments_value(params, x, y, estimate_y=True):
+def simulate_moment_contributions(params, x, y):
     """Calculate moment contributions for example from Honore, DePaula, Jorgensen."""
 
-    if estimate_y is True:
-        y_estimated = x.to_numpy() @ (params["value"].to_numpy())
-    else:
-        y_estimated = y.copy(deep=True)
+    y_estimated = x.to_numpy() @ (params["value"].to_numpy())
 
     x_np = x.T.to_numpy()
 
     residual = y.T.to_numpy() - stats.norm.cdf(y_estimated)
 
     mom_value = []
-
-    # loop through all x
 
     length = len(x_np)
 
@@ -72,7 +56,7 @@ def calc_moments_value(params, x, y, estimate_y=True):
 
 @pytest.fixture
 def moments_cov(params, func_kwargs):
-    mom_value = calc_moments_value(params, **func_kwargs)
+    mom_value = simulate_moment_contributions(params, **func_kwargs)
     mom_value = mom_value.to_numpy()
     s = np.cov(mom_value, ddof=0)
     return s
@@ -100,7 +84,7 @@ def func_kwargs():
 @pytest.fixture
 def jacobian(params, func_kwargs):
     derivative_dict = first_derivative(
-        func=calc_moments_expectation,
+        func=simulate_aggregated_moments,
         params=params,
         func_kwargs=func_kwargs,
     )
