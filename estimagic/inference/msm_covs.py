@@ -1,4 +1,7 @@
+import pandas as pd
+
 from estimagic.exceptions import INVALID_INFERENCE_MSG
+from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse
 
 
@@ -9,9 +12,9 @@ def cov_sandwich(jac, weights, moments_cov):
     they lead to less finite sample bias.
 
     Args:
-        jac (np.ndarray): Numpy array with the jacobian of the function that
-            calculates the deviation between simulated and empirical moments
-            with respect to params, evaluated at the point estimates.
+        jac (np.ndarray or pandas.DataFrame): Numpy array or DataFrame with the jacobian
+            of simulate_moments with respect to params. The derivative needs to be taken
+            at the estimated parameters. Has shape n_moments, n_params.
         weights (np.ndarray): The weighting matrix for msm estimation.
         moments_cov (np.ndarray): The covariance matrix of the empirical moments.
 
@@ -19,14 +22,22 @@ def cov_sandwich(jac, weights, moments_cov):
         numpy.ndarray: numpy array with covariance matrix.
 
     """
+    _jac, _weights, _moments_cov, names = process_pandas_arguments(
+        jac=jac, weights=weights, moments_cov=moments_cov
+    )
+
     bread = robust_inverse(
-        jac.T @ weights @ jac,
+        _jac.T @ _weights @ _jac,
         msg=INVALID_INFERENCE_MSG,
     )
 
-    butter = jac.T @ weights @ moments_cov @ weights @ jac
+    butter = _jac.T @ _weights @ _moments_cov @ _weights @ _jac
 
     cov = bread @ butter @ bread
+
+    if names:
+        cov = pd.DataFrame(cov, columns=names.get("params"), index=names.get("params"))
+
     return cov
 
 
@@ -37,9 +48,9 @@ def cov_efficient(jac, weights):
     bias and are typically not a good choice.
 
     Args:
-        jac (np.ndarray): Numpy array with the jacobian of the function that
-            calculates the deviation between simulated and empirical moments
-            with respect to params, evaluated at the point estimates.
+        jac (np.ndarray or pandas.DataFrame): Numpy array or DataFrame with the jacobian
+            of simulate_moments with respect to params. The derivative needs to be taken
+            at the estimated parameters. Has shape n_moments, n_params.
         weights (np.ndarray): The weighting matrix for msm estimation.
         moments_cov (np.ndarray): The covariance matrix of the empirical moments.
 
@@ -47,5 +58,11 @@ def cov_efficient(jac, weights):
         numpy.ndarray: numpy array with covariance matrix.
 
     """
-    cov = robust_inverse(jac.T @ weights @ jac, msg=INVALID_INFERENCE_MSG)
+    _jac, _weights, names = process_pandas_arguments(jac=jac, weights=weights)
+
+    cov = robust_inverse(_jac.T @ _weights @ _jac, msg=INVALID_INFERENCE_MSG)
+
+    if names:
+        cov = pd.DataFrame(cov, columns=names.get("params"), index=names.get("params"))
+
     return cov

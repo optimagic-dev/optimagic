@@ -52,7 +52,7 @@ def get_weighting_matrix(moments_cov, method, clip_value=1e-6):
     Args:
         moments_cov (pandas.DataFrame or numpy.ndarray): Square DataFrame or Array
             with the covariance matrix of the moment conditions for msm estimation.
-        method (str): One of "efficient", "diagonal".
+        method (str): One of "optimal", "diagonal".
         clip_value (float): Bound at which diagonal elements of the moments_cov are
             clipped to avoid dividing by zero.
 
@@ -61,7 +61,7 @@ def get_weighting_matrix(moments_cov, method, clip_value=1e-6):
             moments_cov.
 
     """
-    if method == "efficient":
+    if method == "optimal":
         values = robust_inverse(moments_cov)
     elif method == "diagonal":
         diagonal_values = 1 / np.clip(np.diagonal(moments_cov), clip_value, np.inf)

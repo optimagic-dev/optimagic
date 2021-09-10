@@ -99,9 +99,9 @@ def calculate_inference_quantities(params, free_cov):
     Args
         params (pd.DataFrame): See :ref:`params`.
         free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
-        of the free parameters. If parameters were fixed (explicitly or by other
-        constraints) the index is a subset of params.index. The columns are the same as
-        the index.
+            of the free parameters. If parameters were fixed (explicitly or by other
+            constraints) the index is a subset of params.index. The columns are the same
+            as the index.
 
     Returns:
         pd.DataFrame: DataFrame with same index as params, containing the columns
@@ -125,3 +125,62 @@ def calculate_inference_quantities(params, free_cov):
     res = free.reindex(params.index)
     res["value"] = params["value"]
     return res
+
+
+def process_pandas_arguments(**kwargs):
+    param_name_candidates = {}
+    moment_name_candidates = {}
+
+    if "jac" in kwargs:
+        jac = kwargs["jac"]
+        if isinstance(jac, pd.DataFrame):
+            param_name_candidates["jac"] = jac.columns
+            moment_name_candidates["jac"] = jac.index
+
+    if "hess" in kwargs:
+        hess = kwargs["hess"]
+        if isinstance(hess, pd.DataFrame):
+            param_name_candidates["hess"] = hess.index
+
+    if "weights" in kwargs:
+        weights = kwargs["weights"]
+        if isinstance(weights, pd.DataFrame):
+            moment_name_candidates["weights"] = weights.index
+
+    if "moments_cov" in kwargs:
+        moments_cov = kwargs["moments_cov"]
+        if isinstance(moments_cov, pd.DataFrame):
+            moment_name_candidates["moments_cov"] = moments_cov.index
+
+    names = {}
+    if param_name_candidates:
+        _check_names_coincide(param_name_candidates)
+        names["params"] = list(param_name_candidates.values())[0]
+    if moment_name_candidates:
+        _check_names_coincide(moment_name_candidates)
+        names["moments"] = list(moment_name_candidates.values())[0]
+
+    # order of outputs is same as order of inputs; names are last.
+    out_list = [_to_numpy(val, name=key) for key, val in kwargs.items()] + [names]
+    return tuple(out_list)
+
+
+def _to_numpy(df_or_array, name):
+    if isinstance(df_or_array, pd.DataFrame):
+        arr = df_or_array.to_numpy()
+    elif isinstance(df_or_array, np.ndarray):
+        arr = df_or_array
+    else:
+        raise ValueError(f"{name} must be a DataFrame or numpy array.")
+    return arr
+
+
+def _check_names_coincide(name_dict):
+    if len(name_dict) >= 2:
+        first_key = list(name_dict)[0]
+        first_names = name_dict[first_key]
+
+        for key, names in name_dict.items():
+            if not first_names.equals(names):
+                msg = f"Ambiguous parameter or moment names from {first_key} and {key}."
+                raise ValueError(msg)

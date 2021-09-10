@@ -5,8 +5,12 @@ from collections.abc import Callable
 import numpy as np
 import pandas as pd
 
-from estimagic import minimize
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
+from estimagic.inference.msm_covs import cov_efficient
+from estimagic.inference.msm_covs import cov_sandwich
+from estimagic.inference.shared import calculate_inference_quantities
+from estimagic.optimization.optimize import minimize
 
 
 def estimate_msm(
@@ -18,7 +22,7 @@ def estimate_msm(
     *,
     simulate_moments_kwargs=None,
     weights="diagonal",
-    numdiff_options=None,  # noqa: U100
+    numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
     simulate_moments_and_jacobian=None,
@@ -94,6 +98,7 @@ def estimate_msm(
     """
     is_minimized = minimize_options is False
     is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
+    is_optimal_weights = weights == "optimal"
 
     if not isinstance(weights, (np.ndarray, pd.DataFrame)):
         weights = get_weighting_matrix(moments_cov, weights)
@@ -108,6 +113,8 @@ def estimate_msm(
         raise ValueError(
             "minimize_options must be a dict containing at least the entry 'algorithm'"
         )
+
+    numdiff_options = numdiff_options if numdiff_options is not None else {}
 
     if is_minimized:
         min_res = {"solution_params": params}
@@ -130,7 +137,32 @@ def estimate_msm(
 
         min_res = minimize(**min_kwargs)
 
-    out = {"minimize_res": min_res}
+    estimates = min_res["solution_params"]
+
+    if is_differentiated:
+        jac = jacobian
+    elif isinstance(jacobian, Callable):
+        jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
+        jac = jacobian(estimates, **jacobian_kwargs)
+    else:
+        jac = first_derivative(
+            simulate_moments,
+            estimates,
+            simulate_moments_kwargs,
+            **numdiff_options,
+        )["derivative"]
+
+    if is_optimal_weights:
+        cov = cov_efficient(jac, weights)
+    else:
+        cov = cov_sandwich(jac, weights, moments_cov)
+
+    summary = calculate_inference_quantities(
+        params=min_res["solution_params"],
+        free_cov=cov,
+    )
+
+    out = {"minimize_res": min_res, "summary": summary}
 
     return out
 
