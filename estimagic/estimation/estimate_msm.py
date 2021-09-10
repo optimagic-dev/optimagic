@@ -1,4 +1,12 @@
 """Do a method of simlated moments estimation."""
+import functools
+from collections.abc import Callable
+
+import numpy as np
+import pandas as pd
+
+from estimagic import minimize
+from estimagic.estimation.msm_weighting import get_weighting_matrix
 
 
 def estimate_msm(
@@ -6,17 +14,17 @@ def estimate_msm(
     empirical_moments,
     moments_cov,
     params,
+    minimize_options,
     *,
-    minimize_options=None,
     simulate_moments_kwargs=None,
     weights="diagonal",
-    numdiff_options=None,
+    numdiff_options=None,  # noqa: U100
     jacobian=None,
     jacobian_kwargs=None,
     simulate_moments_and_jacobian=None,
     simulate_moments_and_jacobian_kwargs=None,
-    ci_level=0.95,
-    n_samples=10_000,
+    ci_level=0.95,  # noqa: U100
+    n_samples=10_000,  # noqa: U100
 ):
     """Do a method of simulated moments or indirect inference estimation.
 
@@ -58,12 +66,7 @@ def estimate_msm(
             :func:`~estimagic.optimization.optimize.minimize` except for criterion,
             derivative, criterion_and_derivative and params. If you pass False as
             minimize_options you signal that ``params`` are already the optimal
-            parameters and no numerical optimization is needed. In contrast to
-            ``minimize`` we have a default algorithm that depends on which libraries
-            you have installed. The algorithms we try are ``tao_pounders``,
-            ``nag_dfols``, ``nag_pybobyqa``, ``nlopt_bobyqa``, ``scipy_neldermead``.
-            We strongly recommend that you either install ``petsc4py`` or
-            ``nag_dfols``.
+            parameters and no numerical optimization is needed.
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives for the calculation of standard errors. See
             :ref:`first_derivative` for details.
@@ -89,11 +92,52 @@ def estimate_msm(
             dict: The estimated parameters, standard errors and sensitivity measures.
 
     """
-    pass
+    is_minimized = minimize_options is False
+    is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
+
+    if not isinstance(weights, (np.ndarray, pd.DataFrame)):
+        weights = get_weighting_matrix(moments_cov, weights)
+
+    if (not is_minimized) and is_differentiated:
+        raise ValueError(
+            "Providing a pre-calculated jacobian is only possible if the minimization "
+            "was done outside of estimate_msm, i.e. if minimize_options=False."
+        )
+
+    if not isinstance(minimize_options, dict) or "algorithm" not in minimize_options:
+        raise ValueError(
+            "minimize_options must be a dict containing at least the entry 'algorithm'"
+        )
+
+    if is_minimized:
+        min_res = {"solution_params": params}
+    else:
+        funcs = get_msm_optimization_functions(
+            simulate_moments=simulate_moments,
+            empirical_moments=empirical_moments,
+            weights=weights,
+            simulate_moments_kwargs=simulate_moments_kwargs,
+            jacobian=jacobian,
+            jacobian_kwargs=jacobian_kwargs,
+            simulate_moments_and_jacobian=simulate_moments_and_jacobian,
+            simulate_moments_and_jacobian_kwargs=simulate_moments_and_jacobian_kwargs,
+        )
+        # order ensures that invalid entries of minimize options are overwritten
+        if minimize_options is not None:
+            min_kwargs = {**minimize_options, **funcs, "params": params}
+        else:
+            min_kwargs = {**funcs, "params": params}
+
+        min_res = minimize(**min_kwargs)
+
+    out = {"minimize_res": min_res}
+
+    return out
 
 
 def get_msm_optimization_functions(
     simulate_moments,
+    empirical_moments,
     weights,
     simulate_moments_kwargs=None,
     jacobian=None,
@@ -107,10 +151,54 @@ def get_msm_optimization_functions(
 
 
     Returns:
-        tuple: A tuple of length three containing criterion, derivative and
-            criterion_and_derivative. The first entry is always a function, the other
-            values are None if not enough inputs were provided. All resulting functions
-            take params as only argument.
+        dict: Dictionary containing at least the entry "criterion". If enough inputs
+            are provided it also contains the entries "derivative" and
+            "criterion_and_derivative". All values are functions that take params
+            as only argument.
 
     """
-    pass
+    _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
+    _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
+    _simulate_moments_and_jacobian = _partial_kwargs(
+        simulate_moments_and_jacobian, simulate_moments_and_jacobian_kwargs
+    )
+
+    criterion = functools.partial(
+        _msm_criterion,
+        simulate_moments=_simulate_moments,
+        empirical_moments=empirical_moments,
+        weights=weights,
+    )
+
+    out = {"criterion": criterion}
+
+    if _jacobian is not None:
+        raise NotImplementedError(
+            "Closed form jacobians are not yet supported in estimate_msm"
+        )
+
+    if _simulate_moments_and_jacobian is not None:
+        raise NotImplementedError(
+            "Closed form jacobians are not yet supported in estimate_msm"
+        )
+
+    return out
+
+
+def _msm_criterion(params, simulate_moments, empirical_moments, weights):
+    simulated = simulate_moments(params)
+    deviations = simulated - empirical_moments
+    out = deviations @ weights @ deviations
+    return out
+
+
+def _partial_kwargs(func, kwargs):
+    if isinstance(func, Callable):
+        if kwargs not in (None, {}):
+            out = functools.partial(func, **kwargs)
+        else:
+            out = func
+    else:
+        out = None
+
+    return out
