@@ -13,6 +13,7 @@ from estimagic.inference.shared import get_internal_first_derivative
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.process_constraints import process_constraints
+from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_measures
 
 
 def estimate_msm(
@@ -231,10 +232,21 @@ def estimate_msm(
 
     if processed_constraints:
         out["jacobian"] = "No external jacobian defined due to constraints."
+        out[
+            "sensitivity"
+        ] = "No sensitivity measures can be calculated due to constraints."
     else:
-        out["jacobian"] = pd.DataFrame(
-            jac, columns=cov.index, index=moments_cov.columns
+
+        jac = pd.DataFrame(jac, columns=cov.index, index=moments_cov.columns)
+        out["jacobian"] = jac
+
+        measures = calculate_sensitivity_measures(
+            jac=jac,
+            weights=weights,
+            moments_cov=moments_cov,
+            params_cov=cov,
         )
+        out["sensitivity"] = measures
 
     return out
 

@@ -9,9 +9,79 @@ epsilon 2-6: Honore, Jorgensen & de Paula
 
 """
 import numpy as np
+import pandas as pd
 
+from estimagic.estimation.msm_weighting import get_weighting_matrix
+from estimagic.inference.msm_covs import cov_efficient
 from estimagic.inference.msm_covs import cov_sandwich
+from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse
+
+
+def calculate_sensitivity_measures(jac, weights, moments_cov, params_cov):
+    """Calculate sensitivity measures for MSM estimates.
+
+    Args:
+        jac (np.ndarray or pandas.DataFrame): The jacobian of simulate_moments with
+            respect to params, evaluated at the  point estimates.
+        weights (np.ndarray or pandas.DataFrame): The weighting matrix used for
+            msm estimation.
+        moments_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            empirical moments.
+        params_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            parameter estimates.
+
+    Returns:
+        dict: Dictionary with six sensitivity measures.
+
+
+    """
+    weights_opt = get_weighting_matrix(moments_cov, "optimal")
+    params_cov_opt = cov_efficient(jac, weights_opt)
+
+    m1 = calculate_sensitivity_to_bias(jac=jac, weights=weights)
+    e2 = calculate_fundamental_sensitivity_to_noise(
+        jac=jac,
+        weights=weights_opt,
+        moments_cov=moments_cov,
+        params_cov_opt=params_cov_opt,
+    )
+    e3 = calculate_actual_sensitivity_to_noise(
+        sensitivity_to_bias=m1,
+        weights=weights,
+        moments_cov=moments_cov,
+        params_cov=params_cov,
+    )
+    e4 = calculate_actual_sensitivity_to_removal(
+        jac=jac,
+        weights=weights,
+        moments_cov=moments_cov,
+        params_cov=params_cov,
+    )
+
+    e5 = calculate_fundamental_sensitivity_to_removal(
+        jac=jac,
+        moments_cov=moments_cov,
+        params_cov_opt=params_cov_opt,
+    )
+
+    e6 = calculate_sensitivity_to_weighting(
+        jac=jac,
+        weights=weights,
+        moments_cov=moments_cov,
+        params_cov=params_cov,
+    )
+
+    measures = {
+        "sensitivity_to_bias": m1,
+        "fundamental_sensitivity_to_noise": e2,
+        "actual_sensitivity_to_noise": e3,
+        "actual_sensitivity_to_removal": e4,
+        "fundamental_sensitivity_to_removal": e5,
+        "sensitivity_to_weighting": e6,
+    }
+
+    return measures
 
 
 def calculate_sensitivity_to_bias(jac, weights):
@@ -23,24 +93,28 @@ def calculate_sensitivity_to_bias(jac, weights):
         biased if the kth moment was misspecified, i.e not zero in expectation?
 
     Args:
-        jac (np.ndarray): Numpy array with the jacobian of the function that
-            calculates the deviation between simulated and empirical moments
-            with respect to params, evaluated at the point estimates.
-        weights (np.ndarray): The weighting matrix for msm estimation.
+        jac (np.ndarray or pandas.DataFrame): The jacobian of simulate_moments with
+            respect to params, evaluated at the  point estimates.
+        weights (np.ndarray or pandas.DataFrame): The weighting matrix used for
+            msm estimation.
 
     Returns:
-        np.ndarray
+        np.ndarray or pd.DataFrame: Sensitivity measure with shape (n_params, n_moments)
 
     """
-    gwg = _sandwich(jac, weights)
+    _jac, _weights, names = process_pandas_arguments(jac=jac, weights=weights)
+    gwg = _sandwich(_jac, _weights)
     gwg_inverse = robust_inverse(gwg)
-    m1 = -gwg_inverse @ jac.T @ weights
+    m1 = -gwg_inverse @ _jac.T @ _weights
+
+    if names:
+        m1 = pd.DataFrame(m1, index=names.get("params"), columns=names.get("moments"))
 
     return m1
 
 
 def calculate_fundamental_sensitivity_to_noise(
-    jac, weights_opt, moments_cov, params_cov_opt
+    jac, weights, moments_cov, params_cov_opt
 ):
     """calculate the fundamental sensitivity to noise.
 
@@ -51,42 +125,49 @@ def calculate_fundamental_sensitivity_to_noise(
         is used?
 
     Args:
-        jac (np.ndarray): Numpy array with the jacobian of the function that
-            calculates the deviation between simulated and empirical moments
-            with respect to params, evaluated at the point estimates.
-        weights_opt (np.ndarray): The asymptotically efficient weighting matrix for
+        jac (np.ndarray or pandas.DataFrame): The jacobian of simulate_moments with
+            respect to params, evaluated at the  point estimates.
+        weights (np.ndarray or pandas.DataFrame): The weighting matrix used for
             msm estimation.
-        moments_cov (np.ndarray): The covariance matrix of the empirical moments.
-        params_cov_opt (np.ndarray): The covariance matrix of the parameter estimates
-            that would result if the asymptotically efficient weighting matrix was
-            used for msm estimation.
+        moments_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            empirical moments.
+        params_cov_opt (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            parameter estimates. Note that this needs to be the parameter covariance
+            matrix using the formula for asymptotically optimal MSM.
 
     Returns:
-        np.ndarray
+        np.ndarray or pd.DataFrame: Sensitivity measure with shape (n_params, n_moments)
 
     """
+    _jac, _weights, _moments_cov, _params_cov_opt, names = process_pandas_arguments(
+        jac=jac, weights=weights, moments_cov=moments_cov, params_cov_opt=params_cov_opt
+    )
+
     m2 = []
 
-    for k in range(len(weights_opt)):
-        mask_matrix_o = np.zeros(shape=weights_opt.shape)
+    for k in range(len(_weights)):
+        mask_matrix_o = np.zeros(shape=_weights.shape)
         mask_matrix_o[k, k] = 1
 
-        meat = _sandwich_plus(jac, weights_opt, mask_matrix_o)
+        meat = _sandwich_plus(_jac, _weights, mask_matrix_o)
 
-        m2k = params_cov_opt @ meat @ params_cov_opt
+        m2k = _params_cov_opt @ meat @ _params_cov_opt
         m2k = np.diagonal(m2k)
 
         m2.append(m2k)
 
     m2 = np.array(m2).T
 
-    moments_variances = np.diagonal(moments_cov)
-    params_variances = np.diagonal(params_cov_opt)
+    moments_variances = np.diagonal(_moments_cov)
+    params_variances = np.diagonal(_params_cov_opt)
 
-    m2_scaled = m2 / params_variances.reshape(-1, 1)
-    m2_scaled = m2_scaled * moments_variances
+    e2 = m2 / params_variances.reshape(-1, 1)
+    e2 = e2 * moments_variances
 
-    return m2_scaled
+    if names:
+        e2 = pd.DataFrame(e2, index=names.get("params"), columns=names.get("moments"))
+
+    return e2
 
 
 def calculate_actual_sensitivity_to_noise(
@@ -101,20 +182,30 @@ def calculate_actual_sensitivity_to_noise(
         weighting matrix?
 
     Args:
-        sensitivity_to_bias (np.ndarray)
-        weights (np.ndarray): A square weighting matrix.
-        moments_cov (np.ndarray): Covariance matrix of the empirical moments.
-        params_cov (np.ndarray): Covariance matrix of the estimated parameters
+        sensitivity_to_bias (np.ndarray or pandas.DataFrame): See
+            ``calculate_sensitivity_to_bias`` for details.
+        weights (np.ndarray or pandas.DataFrame): The weighting matrix used for
+            msm estimation.
+        moments_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            empirical moments.
+        params_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            parameter estimates.
 
     Returns:
-        np.ndarray
+        np.ndarray or pd.DataFrame: Sensitivity measure with shape (n_params, n_moments)
 
     """
+    if isinstance(sensitivity_to_bias, pd.DataFrame):
+        sensitivity_to_bias = sensitivity_to_bias.to_numpy()
+
+    _weights, _moments_cov, _params_cov, names = process_pandas_arguments(
+        weights=weights, moments_cov=moments_cov, params_cov=params_cov
+    )
 
     m3 = []
 
-    for k in range(len(weights)):
-        mask_matrix_o = np.zeros(shape=weights.shape)
+    for k in range(len(_weights)):
+        mask_matrix_o = np.zeros(shape=_weights.shape)
         mask_matrix_o[k, k] = 1
 
         m3k = _sandwich(sensitivity_to_bias.T, mask_matrix_o)
@@ -124,13 +215,16 @@ def calculate_actual_sensitivity_to_noise(
 
     m3 = np.array(m3).T
 
-    moments_variances = np.diagonal(moments_cov)
-    params_variances = np.diagonal(params_cov)
+    moments_variances = np.diagonal(_moments_cov)
+    params_variances = np.diagonal(_params_cov)
 
-    m3_scaled = m3 / params_variances.reshape(-1, 1)
-    m3_scaled = m3_scaled * moments_variances
+    e3 = m3 / params_variances.reshape(-1, 1)
+    e3 = e3 * moments_variances
 
-    return m3_scaled
+    if names:
+        e3 = pd.DataFrame(e3, index=names.get("params"), columns=names.get("moments"))
+
+    return e3
 
 
 def calculate_actual_sensitivity_to_removal(jac, weights, moments_cov, params_cov):
@@ -143,37 +237,46 @@ def calculate_actual_sensitivity_to_removal(jac, weights, moments_cov, params_co
         matrix?
 
     Args:
-        jac (np.ndarray): Numpy array with the jacobian of the function that
-            calculates the deviation between simulated and empirical moments
-            with respect to params, evaluated at the point estimates.
-        weights_opt (np.ndarray): Square weighting matrix.
-        moments_cov (np.ndarray): Covariance matrix of the empirical moments.
-        params_cov (np.ndarray): Covariance matrix of the estimated parameters
+        sensitivity_to_bias (np.ndarray or pandas.DataFrame): See
+            ``calculate_sensitivity_to_bias`` for details.
+        weights (np.ndarray or pandas.DataFrame): The weighting matrix used for
+            msm estimation.
+        moments_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            empirical moments.
+        params_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            parameter estimates.
 
     Returns:
-        np.ndarray
+        np.ndarray or pd.DataFrame: Sensitivity measure with shape (n_params, n_moments)
 
     """
     m4 = []
 
-    for k in range(len(weights)):
-        weight_tilde_k = np.copy(weights)
+    _jac, _weights, _moments_cov, _params_cov, names = process_pandas_arguments(
+        jac=jac, weights=weights, moments_cov=moments_cov, params_cov=params_cov
+    )
+
+    for k in range(len(_weights)):
+        weight_tilde_k = np.copy(_weights)
         weight_tilde_k[k, :] = 0
         weight_tilde_k[:, k] = 0
 
-        sigma_tilde_k = cov_sandwich(jac, weight_tilde_k, moments_cov)
+        sigma_tilde_k = cov_sandwich(_jac, weight_tilde_k, _moments_cov)
 
-        m4k = sigma_tilde_k - params_cov
+        m4k = sigma_tilde_k - _params_cov
         m4k = m4k.diagonal()
 
         m4.append(m4k)
 
     m4 = np.array(m4).T
 
-    params_variances = np.diagonal(params_cov)
-    m4_scaled = m4 / params_variances.reshape(-1, 1)
+    params_variances = np.diagonal(_params_cov)
+    e4 = m4 / params_variances.reshape(-1, 1)
 
-    return m4_scaled
+    if names:
+        e4 = pd.DataFrame(e4, index=names.get("params"), columns=names.get("moments"))
+
+    return e4
 
 
 def calculate_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_opt):
@@ -186,42 +289,52 @@ def calculate_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_op
         used?
 
     Args:
-        jac (np.ndarray): Numpy array with the jacobian of the function that
-            calculates the deviation between simulated and empirical moments
-            with respect to params, evaluated at the point estimates.
-        moments_cov (np.ndarray): Covariance matrix of the empirical moments.
-        params_cov_opt (np.ndarray): The covariance matrix of the parameter estimates
-            that would result if the asymptotically efficient weighting matrix was
-            used for msm estimation.
+        jac (np.ndarray or pandas.DataFrame): The jacobian of simulate_moments with
+            respect to params, evaluated at the  point estimates.
+        weights (np.ndarray or pandas.DataFrame): The weighting matrix used for
+            msm estimation.
+        moments_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            empirical moments.
+        params_cov_opt (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            parameter estimates. Note that this needs to be the parameter covariance
+            matrix using the formula for asymptotically optimal MSM.
 
     Returns:
-        np.ndarray
+        np.ndarray or pd.DataFrame: Sensitivity measure with shape (n_params, n_moments)
 
     """
+    _jac, _moments_cov, _params_cov_opt, names = process_pandas_arguments(
+        jac=jac,
+        moments_cov=moments_cov,
+        params_cov_opt=params_cov_opt,
+    )
     m5 = []
 
-    for k in range(len(moments_cov)):
-        g_k = np.copy(jac)
+    for k in range(len(_moments_cov)):
+        g_k = np.copy(_jac)
         g_k = np.delete(g_k, k, axis=0)
 
-        s_k = np.copy(moments_cov)
+        s_k = np.copy(_moments_cov)
         s_k = np.delete(s_k, k, axis=0)
         s_k = np.delete(s_k, k, axis=1)
 
         sigma_k = _sandwich(g_k, np.linalg.inv(s_k))
         sigma_k = np.linalg.inv(sigma_k)
 
-        m5k = sigma_k - params_cov_opt
+        m5k = sigma_k - _params_cov_opt
         m5k = m5k.diagonal()
 
         m5.append(m5k)
 
     m5 = np.array(m5).T
 
-    params_variances = np.diagonal(params_cov_opt)
-    m5_scaled = m5 / params_variances.reshape(-1, 1)
+    params_variances = np.diagonal(_params_cov_opt)
+    e5 = m5 / params_variances.reshape(-1, 1)
 
-    return m5_scaled
+    if names:
+        e5 = pd.DataFrame(e5, index=names.get("params"), columns=names.get("moments"))
+
+    return e5
 
 
 def calculate_sensitivity_to_weighting(jac, weights, moments_cov, params_cov):
@@ -233,46 +346,51 @@ def calculate_sensitivity_to_weighting(jac, weights, moments_cov, params_cov):
         the kth moment is increased a little?
 
     Args:
-        jac (np.ndarray): Numpy array with the jacobian of the function that
-            calculates the deviation between simulated and empirical moments
-            with respect to params, evaluated at the point estimates.
-        weights_opt (np.ndarray): Square weighting matrix.
-        moments_cov (np.ndarray): Covariance matrix of the empirical moments.
-        params_cov (np.ndarray): Covariance matrix of the estimated parameters
+        sensitivity_to_bias (np.ndarray or pandas.DataFrame): See
+            ``calculate_sensitivity_to_bias`` for details.
+        weights (np.ndarray or pandas.DataFrame): The weighting matrix used for
+            msm estimation.
+        moments_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            empirical moments.
+        params_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
+            parameter estimates.
 
     Returns:
-        np.ndarray
+        np.ndarray or pd.DataFrame: Sensitivity measure with shape (n_params, n_moments)
 
     """
-    gwg_inverse = _sandwich(jac, weights)
+    _jac, _weights, _moments_cov, _params_cov, names = process_pandas_arguments(
+        jac=jac, weights=weights, moments_cov=moments_cov, params_cov=params_cov
+    )
+    gwg_inverse = _sandwich(_jac, _weights)
     gwg_inverse = np.linalg.pinv(gwg_inverse)
 
     m6 = []
 
-    for k in range(len(weights)):
-        mask_matrix_o = np.zeros(shape=weights.shape)
+    for k in range(len(_weights)):
+        mask_matrix_o = np.zeros(shape=_weights.shape)
         mask_matrix_o[k, k] = 1
 
-        m6k_1 = gwg_inverse @ _sandwich(jac, mask_matrix_o) @ params_cov
+        m6k_1 = gwg_inverse @ _sandwich(_jac, mask_matrix_o) @ _params_cov
         m6k_2 = (
             gwg_inverse
-            @ jac.T
+            @ _jac.T
             @ mask_matrix_o
-            @ moments_cov
-            @ weights
-            @ jac
+            @ _moments_cov
+            @ _weights
+            @ _jac
             @ gwg_inverse
         )
         m6k_3 = (
             gwg_inverse
-            @ jac.T
-            @ weights
-            @ moments_cov
+            @ _jac.T
+            @ _weights
+            @ _moments_cov
             @ mask_matrix_o
-            @ jac
+            @ _jac
             @ gwg_inverse
         )
-        m6k_4 = params_cov @ _sandwich(jac, mask_matrix_o) @ gwg_inverse
+        m6k_4 = _params_cov @ _sandwich(_jac, mask_matrix_o) @ gwg_inverse
 
         m6k = -m6k_1 + m6k_2 + m6k_3 - m6k_4
         m6k = m6k.diagonal()
@@ -281,13 +399,16 @@ def calculate_sensitivity_to_weighting(jac, weights, moments_cov, params_cov):
 
     m6 = np.array(m6).T
 
-    weights_diagonal = np.diagonal(weights)
-    params_variances = np.diagonal(params_cov)
+    weights_diagonal = np.diagonal(_weights)
+    params_variances = np.diagonal(_params_cov)
 
-    m6_scaled = m6 / params_variances.reshape(-1, 1)
-    m6_scaled = m6_scaled * weights_diagonal
+    e6 = m6 / params_variances.reshape(-1, 1)
+    e6 = e6 * weights_diagonal
 
-    return m6_scaled
+    if names:
+        e6 = pd.DataFrame(e6, index=names.get("params"), columns=names.get("moments"))
+
+    return e6
 
 
 def _sandwich(a, b):
