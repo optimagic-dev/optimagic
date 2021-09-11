@@ -5,12 +5,14 @@ from collections.abc import Callable
 import numpy as np
 import pandas as pd
 
-from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.inference.msm_covs import cov_efficient
 from estimagic.inference.msm_covs import cov_sandwich
 from estimagic.inference.shared import calculate_inference_quantities
+from estimagic.inference.shared import get_internal_first_derivative
+from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.process_constraints import process_constraints
 
 
 def estimate_msm(
@@ -20,6 +22,9 @@ def estimate_msm(
     params,
     minimize_options,
     *,
+    constraints=None,
+    logging=False,
+    log_options=None,
     simulate_moments_kwargs=None,
     weights="diagonal",
     numdiff_options=None,
@@ -28,7 +33,8 @@ def estimate_msm(
     simulate_moments_and_jacobian=None,
     simulate_moments_and_jacobian_kwargs=None,
     ci_level=0.95,  # noqa: U100
-    n_samples=10_000,  # noqa: U100
+    n_samples=10_000,
+    bounds_handling="raise",
 ):
     """Do a method of simulated moments or indirect inference estimation.
 
@@ -65,6 +71,30 @@ def estimate_msm(
             "optimal". Note that "optimal" refers to the asymptotically optimal
             weighting matrix and is often not a good choice due to large finite sample
             bias.
+        constraints (list): List with constraint dictionaries.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
+            the file extension ``.db``. If the file does not exist, it will be created.
+            When doing parallel optimizations and logging is provided, you have to
+            provide a different path for each optimization you are running. You can
+            disable logging completely by setting it to False, but we highly recommend
+            not to do so. The dashboard can only be used when logging is used.
+        log_options (dict): Additional keyword arguments to configure the logging.
+            - "suffix": A string that is appended to the default table names, separated
+            by an underscore. You can use this if you want to write the log into an
+            existing database where the default names "optimization_iterations",
+            "optimization_status" and "optimization_problem" are already in use.
+            - "fast_logging": A boolean that determines if "unsafe" settings are used
+            to speed up write processes to the database. This should only be used for
+            very short running criterion functions where the main purpose of the log
+            is a real-time dashboard and it would not be catastrophic to get a
+            corrupted database in case of a sudden system shutdown. If one evaluation
+            of the criterion function (and gradient if applicable) takes more than
+            100 ms, the logging overhead is negligible.
+            - "if_exists": (str) One of "extend", "replace", "raise"
+            - "save_all_arguments": (bool). If True, all arguments to maximize
+              that can be pickled are saved in the log file. Otherwise, only the
+              information needed by the dashboard is saved. Default False.
         minimize_options (dict or False): Keyword arguments that govern the numerical
             optimization. Valid entries are all arguments of
             :func:`~estimagic.optimization.optimize.minimize` except for criterion,
@@ -91,6 +121,11 @@ def estimate_msm(
             parameters. For background information about internal and external params
             see :ref:`implementation_of_constraints`. This is only used if you have
             constraints in the ``minimize_options``
+        bounds_handling (str): One of "clip", "raise", "ignore". Determines how bounds
+            are handled. If "clip", confidence intervals are clipped at the bounds.
+            Standard errors are only adjusted if a sampling step is necessary due to
+            additional constraints. If "raise" and any lower or upper bound is binding,
+            we raise an error. If "ignore", boundary problems are simply ignored.
 
         Returns:
             dict: The estimated parameters, standard errors and sensitivity measures.
@@ -98,6 +133,7 @@ def estimate_msm(
     """
     is_minimized = minimize_options is False
     is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
+    needs_numdiff = jacobian is None
     is_optimal_weights = weights == "optimal"
 
     if not isinstance(weights, (np.ndarray, pd.DataFrame)):
@@ -115,6 +151,7 @@ def estimate_msm(
         )
 
     numdiff_options = numdiff_options if numdiff_options is not None else {}
+    constraints = [] if constraints is None else constraints
 
     if is_minimized:
         min_res = {"solution_params": params}
@@ -130,10 +167,15 @@ def estimate_msm(
             simulate_moments_and_jacobian_kwargs=simulate_moments_and_jacobian_kwargs,
         )
         # order ensures that invalid entries of minimize options are overwritten
+        min_kwargs = {
+            "constraints": constraints,
+            "logging": logging,
+            "log_options": log_options,
+            "params": params,
+            **funcs,
+        }
         if minimize_options is not None:
-            min_kwargs = {**minimize_options, **funcs, "params": params}
-        else:
-            min_kwargs = {**funcs, "params": params}
+            min_kwargs = {**minimize_options, **min_kwargs}
 
         min_res = minimize(**min_kwargs)
 
@@ -144,25 +186,55 @@ def estimate_msm(
     elif isinstance(jacobian, Callable):
         jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
         jac = jacobian(estimates, **jacobian_kwargs)
+        if constraints is not None:
+            raise NotImplementedError(
+                "Closed form jacobian is not yet compatible with constraints."
+            )
     else:
-        jac = first_derivative(
-            simulate_moments,
-            estimates,
-            simulate_moments_kwargs,
-            **numdiff_options,
-        )["derivative"]
+        deriv_res = get_internal_first_derivative(
+            func=simulate_moments,
+            params=estimates,
+            constraints=constraints,
+            func_kwargs=simulate_moments_kwargs,
+            numdiff_options={**numdiff_options, "key": "simulated_moments"},
+        )
+        jac = deriv_res["derivative"]
+        numdiff_info = {k: v for k, v in deriv_res.items() if k != "derivative"}
 
     if is_optimal_weights:
         cov = cov_efficient(jac, weights)
     else:
         cov = cov_sandwich(jac, weights, moments_cov)
 
+    cov = transform_covariance(
+        params=params,
+        internal_cov=cov,
+        constraints=constraints,
+        n_samples=n_samples,
+        bounds_handling=bounds_handling,
+    )
+
     summary = calculate_inference_quantities(
         params=min_res["solution_params"],
         free_cov=cov,
     )
 
-    out = {"minimize_res": min_res, "summary": summary}
+    out = {"summary": summary, "cov": cov}
+
+    if not is_minimized:
+        out["minimize_res"] = min_res
+
+    if needs_numdiff:
+        out["numdiff_info"] = numdiff_info
+
+    processed_constraints, _ = process_constraints(constraints, params)
+
+    if processed_constraints:
+        out["jacobian"] = "No external jacobian defined due to constraints."
+    else:
+        out["jacobian"] = pd.DataFrame(
+            jac, columns=cov.index, index=moments_cov.columns
+        )
 
     return out
 
