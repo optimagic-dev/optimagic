@@ -144,8 +144,6 @@ def get_internal_first_derivative(
     Returns:
         dict: See ``first_derivative`` for details. The only difference is that the
             the "derivative" entry is always a numpy array instead of a DataFrame
-            and that there is an additional boolean entry called
-            "has_transforming_constraints".
 
     """
     numdiff_options = {} if numdiff_options is None else numdiff_options
@@ -173,9 +171,6 @@ def get_internal_first_derivative(
             _x,
             **numdiff_options,
         )
-
-        processed_constraints, _ = process_constraints(constraints, params)
-        out["has_transforming_constraints"] = bool(processed_constraints)
 
         if isinstance(out["derivative"], (pd.DataFrame, pd.Series)):
             out["derivative"] = out["derivative"].to_numpy()
