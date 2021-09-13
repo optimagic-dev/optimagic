@@ -41,7 +41,7 @@ def cov_sandwich(jac, weights, moments_cov):
     return cov
 
 
-def cov_efficient(jac, weights):
+def cov_optimal(jac, weights):
     """Calculate the cov of msm estimates with asymptotically efficient weights.
 
     Note that asymptotically efficient weights have substantial finite sample

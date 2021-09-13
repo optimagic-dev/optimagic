@@ -6,7 +6,7 @@ from scipy import stats
 
 from estimagic.config import TEST_DIR
 from estimagic.differentiation.derivatives import first_derivative
-from estimagic.inference.msm_covs import cov_efficient
+from estimagic.inference.msm_covs import cov_optimal
 from estimagic.sensitivity.msm_sensitivity import calculate_actual_sensitivity_to_noise
 from estimagic.sensitivity.msm_sensitivity import (
     calculate_actual_sensitivity_to_removal,
@@ -100,7 +100,7 @@ def weights(moments_cov):
 
 @pytest.fixture
 def params_cov_opt(jac, weights):
-    return cov_efficient(jac, weights)
+    return cov_optimal(jac, weights)
 
 
 def test_sensitivity_to_bias(jac, weights, params):

@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 
 from estimagic.estimation.msm_weighting import get_weighting_matrix
-from estimagic.inference.msm_covs import cov_efficient
+from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_sandwich
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse
@@ -37,7 +37,7 @@ def calculate_sensitivity_measures(jac, weights, moments_cov, params_cov):
 
     """
     weights_opt = get_weighting_matrix(moments_cov, "optimal")
-    params_cov_opt = cov_efficient(jac, weights_opt)
+    params_cov_opt = cov_optimal(jac, weights_opt)
 
     m1 = calculate_sensitivity_to_bias(jac=jac, weights=weights)
     e2 = calculate_fundamental_sensitivity_to_noise(

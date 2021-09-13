@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from estimagic.estimation.msm_weighting import get_weighting_matrix
-from estimagic.inference.msm_covs import cov_efficient
+from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_sandwich
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import get_internal_first_derivative
@@ -135,7 +135,7 @@ def estimate_msm(
     is_minimized = minimize_options is False
     is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
     needs_numdiff = jacobian is None
-    is_optimal_weights = weights == "optimal"
+    is_optimal = weights == "optimal"
 
     if not isinstance(weights, (np.ndarray, pd.DataFrame)):
         weights = get_weighting_matrix(moments_cov, weights)
@@ -202,8 +202,8 @@ def estimate_msm(
         jac = deriv_res["derivative"]
         numdiff_info = {k: v for k, v in deriv_res.items() if k != "derivative"}
 
-    if is_optimal_weights:
-        cov = cov_efficient(jac, weights)
+    if is_optimal:
+        cov = cov_optimal(jac, weights)
     else:
         cov = cov_sandwich(jac, weights, moments_cov)
 
