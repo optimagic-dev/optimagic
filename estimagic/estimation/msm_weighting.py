@@ -91,9 +91,11 @@ def assemble_block_diagonal_matrix(matrices):
 
     """
     values = block_diag(*matrices)
-    to_concat = [pd.Series(index=mat.index) for mat in matrices]
-    combined_index = pd.concat(to_concat).index
 
-    out = pd.DataFrame(values, index=combined_index, columns=combined_index)
-
+    if all(isinstance(mat, pd.DataFrame) for mat in matrices):
+        to_concat = [pd.Series(index=mat.index, dtype=float) for mat in matrices]
+        combined_index = pd.concat(to_concat).index
+        out = pd.DataFrame(values, index=combined_index, columns=combined_index)
+    else:
+        out = values
     return out
