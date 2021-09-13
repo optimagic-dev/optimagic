@@ -132,7 +132,10 @@ def estimate_msm(
             dict: The estimated parameters, standard errors and sensitivity measures.
 
     """
-    is_minimized = minimize_options is False
+    is_minimized, minimize_options = _check_and_process_minimize_options(
+        minimize_options
+    )
+
     is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
     needs_numdiff = jacobian is None
     is_optimal = weights == "optimal"
@@ -144,11 +147,6 @@ def estimate_msm(
         raise ValueError(
             "Providing a pre-calculated jacobian is only possible if the minimization "
             "was done outside of estimate_msm, i.e. if minimize_options=False."
-        )
-
-    if not isinstance(minimize_options, dict) or "algorithm" not in minimize_options:
-        raise ValueError(
-            "minimize_options must be a dict containing at least the entry 'algorithm'"
         )
 
     numdiff_options = numdiff_options if numdiff_options is not None else {}
@@ -167,7 +165,6 @@ def estimate_msm(
             simulate_moments_and_jacobian=simulate_moments_and_jacobian,
             simulate_moments_and_jacobian_kwargs=simulate_moments_and_jacobian_kwargs,
         )
-        # order ensures that invalid entries of minimize options are overwritten
         min_kwargs = {
             "constraints": constraints,
             "logging": logging,
@@ -319,3 +316,46 @@ def _partial_kwargs(func, kwargs):
         out = None
 
     return out
+
+
+def _check_and_process_minimize_options(minimize_options):
+
+    is_minimized = minimize_options is False
+
+    if not isinstance(minimize_options, dict) or "algorithm" not in minimize_options:
+        raise ValueError(
+            "minimize_options must be a dict containing at least the entry 'algorithm'"
+        )
+
+    criterion_options = {
+        "criterion",
+        "criterion_kwargs",
+        "derivative",
+        "derivative_kwargs",
+        "criterion_and_derivative",
+        "criterion_and_derivative_kwargs",
+    }
+
+    invalid_criterion = criterion_options.intersection(minimize_options)
+    if invalid_criterion:
+        msg = (
+            "Entries related to the criterion function, its derivatives or "
+            "keyword arguments of those functions are not valid entries of "
+            "minimize_options. The building blocks for those arguments must be passed "
+            f"separately to estimate_msm. Remove: {invalid_criterion}"
+        )
+        raise ValueError(msg)
+
+    general_options = {"logging", "log_options", "constraints"}
+
+    invalid_general = general_options.intersection(minimize_options)
+
+    if invalid_general:
+        msg = (
+            "The following are not valid entries of minimize_options because they are "
+            "not only relevant for minimization but also for inference: "
+            "{invalid_general}"
+        )
+        raise ValueError(msg)
+
+    return is_minimized, minimize_options
