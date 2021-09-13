@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from estimagic.estimation.msm_weighting import get_weighting_matrix
+from estimagic.exceptions import INVALID_SENSITIVITY_MSG
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_sandwich
 from estimagic.inference.shared import process_pandas_arguments
@@ -104,7 +105,7 @@ def calculate_sensitivity_to_bias(jac, weights):
     """
     _jac, _weights, names = process_pandas_arguments(jac=jac, weights=weights)
     gwg = _sandwich(_jac, _weights)
-    gwg_inverse = robust_inverse(gwg)
+    gwg_inverse = robust_inverse(gwg, INVALID_SENSITIVITY_MSG)
     m1 = -gwg_inverse @ _jac.T @ _weights
 
     if names:
@@ -318,8 +319,8 @@ def calculate_fundamental_sensitivity_to_removal(jac, moments_cov, params_cov_op
         s_k = np.delete(s_k, k, axis=0)
         s_k = np.delete(s_k, k, axis=1)
 
-        sigma_k = _sandwich(g_k, np.linalg.inv(s_k))
-        sigma_k = np.linalg.inv(sigma_k)
+        sigma_k = _sandwich(g_k, robust_inverse(s_k, INVALID_SENSITIVITY_MSG))
+        sigma_k = robust_inverse(sigma_k, INVALID_SENSITIVITY_MSG)
 
         m5k = sigma_k - _params_cov_opt
         m5k = m5k.diagonal()
@@ -363,7 +364,7 @@ def calculate_sensitivity_to_weighting(jac, weights, moments_cov, params_cov):
         jac=jac, weights=weights, moments_cov=moments_cov, params_cov=params_cov
     )
     gwg_inverse = _sandwich(_jac, _weights)
-    gwg_inverse = np.linalg.pinv(gwg_inverse)
+    gwg_inverse = robust_inverse(gwg_inverse, INVALID_SENSITIVITY_MSG)
 
     m6 = []
 

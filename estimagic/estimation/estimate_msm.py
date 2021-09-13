@@ -236,8 +236,11 @@ def estimate_msm(
             "sensitivity"
         ] = "No sensitivity measures can be calculated due to constraints."
     else:
-
-        jac = pd.DataFrame(jac, columns=cov.index, index=moments_cov.columns)
+        if isinstance(moments_cov, pd.DataFrame):
+            moments_names = moments_cov.index
+        else:
+            moments_names = None
+        jac = pd.DataFrame(jac, columns=cov.index, index=moments_names)
         out["jacobian"] = jac
 
         measures = calculate_sensitivity_measures(
@@ -303,6 +306,8 @@ def get_msm_optimization_functions(
 
 def _msm_criterion(params, simulate_moments, empirical_moments, weights):
     simulated = simulate_moments(params)
+    if isinstance(simulated, dict):
+        simulated = simulated["simulated_moments"]
     deviations = simulated - empirical_moments
     out = deviations @ weights @ deviations
     return out
@@ -394,7 +399,7 @@ def _check_and_process_numdiff_options(numdiff_options, jacobian, is_minimized):
         raise ValueError(msg)
 
     numdiff_options = {
-        "key": "simulate_moments",
+        "key": "simulated_moments",
         "scaling_factor": 2,
         **numdiff_options,
     }
