@@ -132,7 +132,9 @@ def do_likelihood_inference(
 
     # calculate quantities
     inference_quantities = calculate_inference_quantities(
-        params=params, free_cov=free_cov
+        params=params,
+        free_cov=free_cov,
+        ci_level=1 - significance_level,
     )
 
     out = {"summary": inference_quantities, "cov": free_cov}

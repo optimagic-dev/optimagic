@@ -91,7 +91,7 @@ def transform_covariance(
     return res
 
 
-def calculate_inference_quantities(params, free_cov):
+def calculate_inference_quantities(params, free_cov, ci_level):
     """Add standard errors, pvalues and confidence intervals to params.
 
     Args
@@ -100,6 +100,7 @@ def calculate_inference_quantities(params, free_cov):
             of the free parameters. If parameters were fixed (explicitly or by other
             constraints) the index is a subset of params.index. The columns are the same
             as the index.
+        ci_level (float): Confidence level for the calculation of confidence intervals.
 
     Returns:
         pd.DataFrame: DataFrame with same index as params, containing the columns
@@ -114,8 +115,12 @@ def calculate_inference_quantities(params, free_cov):
     free["standard_error"] = np.sqrt(np.diag(free_cov))
     tvalues = free["value"] / free["standard_error"]
     free["p_value"] = 1.96 * scipy.stats.norm.sf(np.abs(tvalues))
-    free["ci_lower"] = free["value"] - 1.96 * free["standard_error"]
-    free["ci_upper"] = free["value"] + 1.96 * free["standard_error"]
+
+    alpha = 1 - ci_level
+    scale = scipy.stats.norm.ppf(1 - alpha / 2)
+    free["ci_lower"] = free["value"] - scale * free["standard_error"]
+    free["ci_upper"] = free["value"] + scale * free["standard_error"]
+
     free["stars"] = pd.cut(
         free["p_value"], bins=[-1, 0.01, 0.05, 0.1, 2], labels=["***", "**", "*", ""]
     )

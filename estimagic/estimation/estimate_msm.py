@@ -33,7 +33,7 @@ def estimate_msm(
     jacobian_kwargs=None,
     simulate_moments_and_jacobian=None,
     simulate_moments_and_jacobian_kwargs=None,
-    ci_level=0.95,  # noqa: U100
+    ci_level=0.95,
     n_samples=10_000,
     bounds_handling="raise",
 ):
@@ -218,6 +218,7 @@ def estimate_msm(
     summary = calculate_inference_quantities(
         params=min_res["solution_params"],
         free_cov=cov,
+        ci_level=ci_level,
     )
 
     out = {"summary": summary, "cov": cov}
