@@ -104,7 +104,10 @@ def estimate_msm(
             parameters and no numerical optimization is needed.
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives for the calculation of standard errors. See
-            :ref:`first_derivative` for details.
+            :ref:`first_derivative` for details. Note that by default we increase the
+            step_size by a factor of 2 compared to the rule of thumb for optimal
+            step sizes. This is because many msm criterion functions are slightly
+            noisy.
         jacobian (callable or pandas.DataFrame): A function that take ``params`` and
             potentially other keyword arguments and returns the jacobian of
             simulate_moments with respect to the params. Alternatively you can pass
@@ -136,20 +139,21 @@ def estimate_msm(
         minimize_options
     )
 
-    is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
-    needs_numdiff = jacobian is None
+    (
+        is_differentiated,
+        needs_numdiff,
+        numdiff_options,
+    ) = _check_and_process_numdiff_options(
+        numdiff_options,
+        jacobian,
+        is_minimized,
+    )
+
     is_optimal = weights == "optimal"
 
     if not isinstance(weights, (np.ndarray, pd.DataFrame)):
         weights = get_weighting_matrix(moments_cov, weights)
 
-    if (not is_minimized) and is_differentiated:
-        raise ValueError(
-            "Providing a pre-calculated jacobian is only possible if the minimization "
-            "was done outside of estimate_msm, i.e. if minimize_options=False."
-        )
-
-    numdiff_options = numdiff_options if numdiff_options is not None else {}
     constraints = [] if constraints is None else constraints
 
     if is_minimized:
@@ -165,17 +169,15 @@ def estimate_msm(
             simulate_moments_and_jacobian=simulate_moments_and_jacobian,
             simulate_moments_and_jacobian_kwargs=simulate_moments_and_jacobian_kwargs,
         )
-        min_kwargs = {
-            "constraints": constraints,
-            "logging": logging,
-            "log_options": log_options,
-            "params": params,
-            **funcs,
-        }
-        if minimize_options is not None:
-            min_kwargs = {**minimize_options, **min_kwargs}
 
-        min_res = minimize(**min_kwargs)
+        min_res = minimize(
+            constraints=constraints,
+            logging=logging,
+            log_options=log_options,
+            params=params,
+            **funcs,
+            **minimize_options,
+        )
 
     estimates = min_res["solution_params"]
 
@@ -194,7 +196,7 @@ def estimate_msm(
             params=estimates,
             constraints=constraints,
             func_kwargs=simulate_moments_kwargs,
-            numdiff_options={**numdiff_options, "key": "simulated_moments"},
+            numdiff_options=numdiff_options,
         )
         jac = deriv_res["derivative"]
         numdiff_info = {k: v for k, v in deriv_res.items() if k != "derivative"}
@@ -359,3 +361,42 @@ def _check_and_process_minimize_options(minimize_options):
         raise ValueError(msg)
 
     return is_minimized, minimize_options
+
+
+def _check_and_process_numdiff_options(numdiff_options, jacobian, is_minimized):
+    is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
+    needs_numdiff = jacobian is None
+
+    if (not is_minimized) and is_differentiated:
+        raise ValueError(
+            "Providing a pre-calculated jacobian is only possible if the minimization "
+            "was done outside of estimate_msm, i.e. if minimize_options=False."
+        )
+
+    numdiff_options = {} if numdiff_options is None else numdiff_options
+
+    internal_options = {
+        "func",
+        "func_kwargs",
+        "lower_bounds",
+        "upper_bounds",
+        "f0",
+        "key",
+    }
+
+    invalid = internal_options.intersection(numdiff_options)
+
+    if invalid:
+        msg = (
+            "The following options are used internally and are not allowed in "
+            f"numdiff_options: {invalid}"
+        )
+        raise ValueError(msg)
+
+    numdiff_options = {
+        "key": "simulate_moments",
+        "scaling_factor": 2,
+        **numdiff_options,
+    }
+
+    return is_differentiated, needs_numdiff, numdiff_options

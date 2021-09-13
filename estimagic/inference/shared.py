@@ -6,6 +6,7 @@ import scipy
 
 from estimagic.decorators import numpy_interface
 from estimagic.differentiation.derivatives import first_derivative
+from estimagic.parameters.parameter_conversion import get_internal_bounds
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 from estimagic.parameters.process_constraints import process_constraints
 
@@ -163,6 +164,9 @@ def get_internal_first_derivative(
         )
         out["has_transforming_constraints"] = False
     else:
+
+        lower_bounds, upper_bounds = get_internal_bounds(params, constraints)
+
         _internal_func = numpy_interface(
             func=_func, params=params, constraints=constraints
         )
@@ -174,6 +178,8 @@ def get_internal_first_derivative(
         out = first_derivative(
             _internal_func,
             _x,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
             **numdiff_options,
         )
 
