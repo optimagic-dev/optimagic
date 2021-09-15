@@ -17,8 +17,10 @@ moments. The breaking changes are:
 - logging is disabled by default during optimization.
 - The comparison plot function is removed.
 - first_derivative now returns a dictionary instead, independent of arguments.
+- structure of the logging database has changed
 
 
+- :gh:`149` Adds ``estimate_msm`` functionality (:ghuser:`janosg` and :ghuser:`loikein`)
 - :gh:`219` Several enhancements by (:ghuser:`tobiasraabe`)
 - :gh:`218` Improve documentation by (:ghuser:`sofyaakimova`) and (:ghuser:`effieHan`)
 - :gh:`214` Fix bug with overlapping "fixed" and "linear" constraints (:ghuser:`janosg`)

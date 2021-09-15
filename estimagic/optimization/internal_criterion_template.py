@@ -417,11 +417,8 @@ def _log_new_evaluations(
 
     """
     data = {
-        "external_params": external_x,
-        "internal_params": x,
+        "params": external_x,
         "timestamp": datetime.datetime.now(),
-        "distance_origin": float(np.linalg.norm(x)),
-        "distance_ones": float(np.linalg.norm(x - 1)),
         "valid": True,
     }
 
