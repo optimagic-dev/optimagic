@@ -115,9 +115,6 @@ def maximize(
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
             - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to maximize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -252,9 +249,6 @@ def minimize(
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
             - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to minimize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -644,6 +638,9 @@ def _single_optimize(
 
     if "solution_criterion" not in res:
         res["solution_criterion"] = criterion(p)
+
+    if direction == "maximize":
+        res["solution_criterion"] = -res["solution_criterion"]
 
     # in the long run we can get some of those from the database if logging was used.
     optional_entries = [
