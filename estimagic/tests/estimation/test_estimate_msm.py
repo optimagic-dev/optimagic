@@ -7,8 +7,8 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from estimagic.estimation.estimate_msm import _check_and_process_derivative_options
 from estimagic.estimation.estimate_msm import _check_and_process_minimize_options
-from estimagic.estimation.estimate_msm import _check_and_process_numdiff_options
 from estimagic.estimation.estimate_msm import estimate_msm
 
 
@@ -83,12 +83,12 @@ def test_estimate_msm(simulate_moments, moments_cov):
 
 def test_check_and_process_numdiff_options_differentiated_but_not_minimized():
     with pytest.raises(ValueError):
-        _check_and_process_numdiff_options({}, pd.DataFrame(), False)
+        _check_and_process_derivative_options({}, pd.DataFrame(), False)
 
 
 def test_check_and_process_numdiff_options_with_invalid_entries():
     with pytest.raises(ValueError):
-        _check_and_process_numdiff_options({"func": lambda x: x}, None, False)
+        _check_and_process_derivative_options({"func": lambda x: x}, None, False)
 
 
 def test_check_and_process_minimize_options_with_invalid_entries():

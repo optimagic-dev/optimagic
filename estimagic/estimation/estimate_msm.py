@@ -143,7 +143,7 @@ def estimate_msm(
         is_differentiated,
         needs_numdiff,
         numdiff_options,
-    ) = _check_and_process_numdiff_options(
+    ) = _check_and_process_derivative_options(
         numdiff_options,
         jacobian,
         is_minimized,
@@ -267,7 +267,27 @@ def get_msm_optimization_functions(
     """Construct criterion functions and their derivatives for msm estimation.
 
     Args:
-
+        simulate_moments (callable): Function that takes params and potentially other
+            keyworrd arguments and returns simulated moments as a pandas Series.
+            Alternatively, the function can return a dict with any number of entries
+            as long as one of those entries is "simulated_moments".
+        empirical_moments (pandas.Series): A pandas series with the empirical
+            equivalents of the simulated moments.
+        weights (pandas.DataFrame): DataFrame with a positive
+            semi-definite weighting matrix.
+        simulate_moments_kwargs (dict): Additional keyword arguments for
+            ``simulate_moments``.
+        jacobian (callable or pandas.DataFrame): A function that take ``params`` and
+            potentially other keyword arguments and returns the jacobian of
+            simulate_moments with respect to the params. Alternatively you can pass
+            a pandas.DataFrame with the jacobian at the optimal parameters. This is
+            only possible if you pass ``minimize_options=False``.
+        jacobian_kwargs (dict): Additional keyword arguments for jacobian.
+        simulate_moments_and_jacobian (callable): A function that takes params and
+            potentially other keyword arguments and returns a tuple with simulated
+            moments and the jacobian of simulated moments with respect to params.
+        simulate_moments_and_jacobian_kwargs (dict): Additional keyword arguments for
+            simulate_moments_and_jacobian.
 
     Returns:
         dict: Dictionary containing at least the entry "criterion". If enough inputs
@@ -305,6 +325,7 @@ def get_msm_optimization_functions(
 
 
 def _msm_criterion(params, simulate_moments, empirical_moments, weights):
+    """Calculate msm criterion given parameters and building blocks."""
     simulated = simulate_moments(params)
     if isinstance(simulated, dict):
         simulated = simulated["simulated_moments"]
@@ -314,6 +335,12 @@ def _msm_criterion(params, simulate_moments, empirical_moments, weights):
 
 
 def _partial_kwargs(func, kwargs):
+    """Partial keyword arguments into a function.
+
+    In contrast to normal partial this works if kwargs in None. If func is not a
+    callable it simply returns None.
+
+    """
     if isinstance(func, Callable):
         if kwargs not in (None, {}):
             out = functools.partial(func, **kwargs)
@@ -326,6 +353,7 @@ def _partial_kwargs(func, kwargs):
 
 
 def _check_and_process_minimize_options(minimize_options):
+    """Check and process the minimize_options."""
 
     is_minimized = minimize_options is False
 
@@ -368,7 +396,8 @@ def _check_and_process_minimize_options(minimize_options):
     return is_minimized, minimize_options
 
 
-def _check_and_process_numdiff_options(numdiff_options, jacobian, is_minimized):
+def _check_and_process_derivative_options(numdiff_options, jacobian, is_minimized):
+    """Check and process everything related to derivatives."""
     is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
     needs_numdiff = jacobian is None
 
