@@ -50,14 +50,9 @@ def trid_criterion_and_gradient(params):
         int: trid function output.
         np.ndarray: gradient of trid function.
     """
-    x = params["value"].to_numpy()
-    l1 = np.insert(x, 0, 0)
-    l1 = np.delete(l1, [-1])
-    l2 = np.append(x, 0)
-    l2 = np.delete(l2, [0])
-    return ((params["value"] - 1) ** 2).sum() - (
-        params["value"][1:] * x[:-1]
-    ).sum(), 2 * (x - 1) - l1 - l2
+    val = trid_scalar_criterion(params)
+    grad = trid_gradient(params)
+    return val, grad
 
 
 def trid_dict_criterion(params):
@@ -88,10 +83,7 @@ def rotated_hyper_ellipsoid_scalar_criterion(params):
     Returns:
         int: Rotated Hyper Ellipsoid function output.
     """
-    val = 0
-    for i in range(len(params["value"])):
-        val += (params["value"][: i + 1] ** 2).sum()
-    return val
+    return rotated_hyper_ellipsoid_contributions(params).sum()
 
 
 def rotated_hyper_ellipsoid_gradient(params):
@@ -119,11 +111,9 @@ def rotated_hyper_ellipsoid_criterion_and_gradient(params):
         int: Rotated Hyper Ellipsoid function output.
         np.ndarray: gradient of rotated hyper ellipsoid function.
     """
-    val = 0
-    for i in range(len(params["value"])):
-        val += (params["value"][: i + 1] ** 2).sum()
-    x = params["value"].to_numpy()
-    return val, np.arange(2 * len(x), 0, -2) * x
+    val = rotated_hyper_ellipsoid_scalar_criterion(params)
+    grad = rotated_hyper_ellipsoid_gradient(params)
+    return val, grad
 
 
 def rotated_hyper_ellipsoid_contributions(params):
@@ -160,11 +150,8 @@ def rotated_hyper_ellipsoid_dict_criterion(params):
         "root_contributions" (np.ndarray): array with root of contributions of
         function output as elements.
     """
-    out = {
-        "value": rotated_hyper_ellipsoid_scalar_criterion(params),
-        "contributions": rotated_hyper_ellipsoid_contributions(params),
-        "root_contributions": np.sqrt(rotated_hyper_ellipsoid_contributions(params)),
-    }
+    contribs = rotated_hyper_ellipsoid_contributions(params)
+    out = _out_dict_from_contribs(contribs)
     return out
 
 
@@ -179,10 +166,7 @@ def rosenbrock_scalar_criterion(params):
     Returns:
         int: Rosenbrock function output.
     """
-    x = params["value"].to_numpy()
-    r1 = ((x[1:] - x[:-1] ** 2) ** 2).sum() * 100
-    r2 = ((x[:-1] - 1) ** 2).sum()
-    return r1 + r2
+    return rosenbrock_contributions(params).sum()
 
 
 def rosenbrock_gradient(params):
@@ -257,29 +241,22 @@ def rosenbrock_dict_criterion(params):
         "root_contributions" (np.ndarray): array with root of contributions of
         function output as elements.
     """
-    out = {
-        "value": rosenbrock_scalar_criterion(params),
-        "contributions": rosenbrock_contributions(params),
-        "root_contributions": np.sqrt(rosenbrock_contributions(params)),
-    }
+    contribs = rosenbrock_contributions(params)
+    out = _out_dict_from_contribs(contribs)
     return out
 
 
 def sos_dict_criterion(params):
-    out = {
-        "value": (params["value"].to_numpy() ** 2).sum(),
-        "contributions": params["value"].to_numpy() ** 2,
-        "root_contributions": params["value"].to_numpy(),
-    }
+    root_contribs = params["value"].to_numpy()
+    out = _out_dict_from_root_contribs(root_contribs)
     return out
 
 
 def sos_dict_criterion_with_pd_objects(params):
-    out = {
-        "value": (params["value"] ** 2).sum(),
-        "contributions": params["value"] ** 2,
-        "root_contributions": params["value"],
-    }
+    out = sos_dict_criterion(params)
+    out["contributions"] = pd.Series(out["contributions"])
+    out["root_contributions"] = pd.Series(out["root_contributions"])
+
     return out
 
 
@@ -315,3 +292,22 @@ def sos_criterion_and_gradient(params):
 def sos_criterion_and_jacobian(params):
     x = params["value"].to_numpy()
     return {"contributions": x ** 2, "value": (x ** 2).sum()}, np.diag(2 * x)
+
+
+def _out_dict_from_root_contribs(root_contribs):
+    contribs = root_contribs ** 2
+    out = {
+        "value": contribs.sum(),
+        "contributions": contribs,
+        "root_contributions": root_contribs,
+    }
+    return out
+
+
+def _out_dict_from_contribs(contribs):
+    out = {
+        "value": contribs.sum(),
+        "contributions": contribs,
+        "root_contributions": np.sqrt(contribs),
+    }
+    return out
