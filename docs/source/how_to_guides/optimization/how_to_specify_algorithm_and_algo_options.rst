@@ -27,10 +27,10 @@ Since some optimizers support many tuning parameters we group some of them using
 first part of their name (e.g. all convergence criteria names start with
 ``convergence_``).
 
-All option names only contain `_`. However, to make the group membership more visible,
-you can also specify them separating the group with a `.` from the rest of the
-option's name. For example, if you wanted to set some tuning parameters of
-`nag_dfols` you could specify your ``algo_options`` like this:
+All option names only contain ``_``. However, to make the group membership more visible,
+you can also specify them separating the group with a ``.`` from the rest of the
+option's name. For example, if you wanted to set some tuning parameters of ``nag_dfols``
+you could specify your ``algo_options`` like this:
 
 .. code-block:: python
 

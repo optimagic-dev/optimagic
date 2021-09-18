@@ -1,5 +1,9 @@
+from estimagic import utilities
+from estimagic.optimization.optimize import maximize
+from estimagic.optimization.optimize import minimize
+
+
 __version__ = "0.1.4"
 
 
-from estimagic.optimization.optimize import minimize  # noqa: F401
-from estimagic.optimization.optimize import maximize  # noqa: F401
+__all__ = ["maximize", "minimize", "utilities"]
