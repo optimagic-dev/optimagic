@@ -260,8 +260,7 @@ that your read that explanation first!
     You can specify either value or lower and upper bounds. Suppose you have the
     following params DataFrame:
 
-    .. table::
-    :class: rows
+
 
     +-------------------+-------+
     |                   | value |
@@ -285,7 +284,7 @@ that your read that explanation first!
     Suppose you want to express the following constraints:
 
     - The first parameter in the category ``"a"`` is two times the second parameter
-    in that category.
+      in that category.
     - The mean of the ``"b"`` parameters is larger than 3
     - The sum of the ``"c"`` parameters is between 0 and 5
 

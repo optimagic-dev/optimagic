@@ -73,12 +73,14 @@ def test_reparametrize_to_internal(example_params, all_constraints, case, number
 
     _, pp = process_constraints(constraints, params)
 
-    calculated_internal_values = to_internal(pp["value"].to_numpy())
+    calculated_internal_values_np = to_internal(pp["value"].to_numpy())
+    calculated_internal_values_pd = to_internal(pp)
 
     calculated_internal_lower = pp["_internal_lower"]
     calculated_internal_upper = pp["_internal_upper"]
 
-    aaae(calculated_internal_values, expected_internal_values)
+    aaae(calculated_internal_values_np, calculated_internal_values_pd)
+    aaae(calculated_internal_values_np, expected_internal_values)
     aaae(calculated_internal_lower, expected_internal_lower)
     aaae(calculated_internal_upper, expected_internal_upper)
 
