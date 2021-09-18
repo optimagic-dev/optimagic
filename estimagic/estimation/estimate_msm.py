@@ -7,7 +7,7 @@ import pandas as pd
 
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.inference.msm_covs import cov_optimal
-from estimagic.inference.msm_covs import cov_sandwich
+from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import get_internal_first_derivative
 from estimagic.inference.shared import transform_covariance
@@ -204,7 +204,7 @@ def estimate_msm(
     if is_optimal:
         cov = cov_optimal(jac, weights)
     else:
-        cov = cov_sandwich(jac, weights, moments_cov)
+        cov = cov_robust(jac, weights, moments_cov)
 
     cov = transform_covariance(
         params=params,

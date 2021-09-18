@@ -1,5 +1,5 @@
 Changes
-=======
+^^^^^^^
 
 This is a record of all past estimagic releases and what went into them in reverse
 chronological order. We follow `semantic versioning <https://semver.org/>`_ and all
@@ -18,7 +18,6 @@ moments. The breaking changes are:
 - The comparison plot function is removed.
 - first_derivative now returns a dictionary instead, independent of arguments.
 - structure of the logging database has changed
-
 
 - :gh:`149` Adds ``estimate_msm`` functionality (:ghuser:`janosg` and :ghuser:`loikein`)
 - :gh:`219` Several enhancements by (:ghuser:`tobiasraabe`)

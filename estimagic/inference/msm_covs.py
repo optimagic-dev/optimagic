@@ -5,7 +5,7 @@ from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse
 
 
-def cov_sandwich(jac, weights, moments_cov):
+def cov_robust(jac, weights, moments_cov):
     """Calculate the cov of msm estimates with asymptotically non-efficient weights.
 
     Note that asymptotically non-efficient weights are typically preferrable because
