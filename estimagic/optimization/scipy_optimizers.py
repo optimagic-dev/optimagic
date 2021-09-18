@@ -412,8 +412,6 @@ def scipy_powell(
 def scipy_bfgs(
     criterion_and_derivative,
     x,
-    lower_bounds,
-    upper_bounds,
     *,
     convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
@@ -1182,6 +1180,7 @@ def _scipy_least_squares(
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = f"scipy_ls_{method}"
+    algo_info["primary_criterion_entry"] = "root_contributions"
     func = functools.partial(
         criterion_and_derivative,
         task="criterion",

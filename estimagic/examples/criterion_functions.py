@@ -39,24 +39,6 @@ def trid_gradient(params):
     return 2 * (x - 1) - l1 - l2
 
 
-def trid_pandas_gradient(params):
-    """Calculate gradient of trid function.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        pd.Series: gradient of trid function.
-    """
-    x = params["value"].to_numpy()
-    l1 = np.insert(x, 0, 0)
-    l1 = np.delete(l1, [-1])
-    l2 = np.append(x, 0)
-    l2 = np.delete(l2, [0])
-    return pd.Series(2 * (x - 1) - l1 - l2)
-
-
 def trid_criterion_and_gradient(params):
     """Implement Trid function and calculate gradient.
 
@@ -124,20 +106,6 @@ def rotated_hyper_ellipsoid_gradient(params):
     """
     x = params["value"].to_numpy()
     return np.arange(2 * len(x), 0, -2) * x
-
-
-def rotated_hyper_ellipsoid_pandas_gradient(params):
-    """Calculate gradient of rotated_hyper_ellipsoid function.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        pd.Series: gradient of rotated hyper ellipsoid function.
-    """
-    x = params["value"].to_numpy()
-    return pd.Series(np.arange(2 * len(x), 0, -2) * x)
 
 
 def rotated_hyper_ellipsoid_criterion_and_gradient(params):
@@ -241,19 +209,6 @@ def rosenbrock_gradient(params):
     return 100 * (4 * (l1 ** 3) + 2 * l2 - 2 * (l3 ** 2) - 4 * (l4 * x)) + 2 * l1 - l5
 
 
-def rosenbrock_pandas_gradient(params):
-    """Calculate gradient of rosenbrock function.
-
-    Args:
-        params(pandas.DataFrame): Must have the column "value" containing
-        input values for parameters. Accepts arbitrary numbers of input values.
-
-    Returns:
-        pd.Series: gradient of rosenbrock function.
-    """
-    return pd.Series(rosenbrock_gradient(params))
-
-
 def rosenbrock_criterion_and_gradient(params):
     """Implement rosenbrock function and calculate gradient.
 
@@ -308,3 +263,55 @@ def rosenbrock_dict_criterion(params):
         "root_contributions": np.sqrt(rosenbrock_contributions(params)),
     }
     return out
+
+
+def sos_dict_criterion(params):
+    out = {
+        "value": (params["value"].to_numpy() ** 2).sum(),
+        "contributions": params["value"].to_numpy() ** 2,
+        "root_contributions": params["value"].to_numpy(),
+    }
+    return out
+
+
+def sos_dict_criterion_with_pd_objects(params):
+    out = {
+        "value": (params["value"] ** 2).sum(),
+        "contributions": params["value"] ** 2,
+        "root_contributions": params["value"],
+    }
+    return out
+
+
+def sos_scalar_criterion(params):
+    return (params["value"].to_numpy() ** 2).sum()
+
+
+def sos_gradient(params):
+    return 2 * params["value"].to_numpy()
+
+
+def sos_jacobian(params):
+    return np.diag(2 * params["value"])
+
+
+def sos_ls_jacobian(params):
+    return np.eye(len(params))
+
+
+def sos_pandas_gradient(params):
+    return 2 * params["value"]
+
+
+def sos_pandas_jacobian(params):
+    return pd.DataFrame(np.diag(2 * params["value"]))
+
+
+def sos_criterion_and_gradient(params):
+    x = params["value"].to_numpy()
+    return (x ** 2).sum(), 2 * x
+
+
+def sos_criterion_and_jacobian(params):
+    x = params["value"].to_numpy()
+    return {"contributions": x ** 2, "value": (x ** 2).sum()}, np.diag(2 * x)
