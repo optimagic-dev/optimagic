@@ -119,5 +119,5 @@ Warning
 =======
 
 Estimagic is still in alpha status and the API might still change. We will try to keep
-the API more stable When we switch versions `0.0.x` to `0.x.x`. Until then we want to
-achieve the following things:
+the API more stable When we switch versions ``0.0.x`` to ``0.x.x``. Until then we want
+to achieve the following things:
