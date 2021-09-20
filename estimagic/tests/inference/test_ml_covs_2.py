@@ -4,11 +4,11 @@ import pytest
 
 from estimagic.inference.ml_covs import cov_hessian
 from estimagic.inference.ml_covs import cov_jacobian
+from estimagic.inference.ml_covs import cov_robust
 from estimagic.inference.se_estimation import _clustering
 from estimagic.inference.se_estimation import _sandwich_step
 from estimagic.inference.se_estimation import _stratification
 from estimagic.inference.se_estimation import cov_cluster_robust
-from estimagic.inference.se_estimation import cov_robust
 from estimagic.inference.se_estimation import cov_strata_robust
 
 

@@ -51,7 +51,7 @@ def cov_jacobian(jac):
     return cov_jac
 
 
-def cov_sandwich(jac, hess):
+def cov_robust(jac, hess):
     """Covariance of parameters based on HJJH dot product.
 
     H stands for Hessian of the log likelihood function and J for Jacobian,

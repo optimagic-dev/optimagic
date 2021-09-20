@@ -2,26 +2,6 @@
 import numpy as np
 
 
-def cov_robust(jac, hess):
-    """Robust standard errors.
-
-    Args:
-        jac (np.array): "jacobian" - an n x k + 1-dimensional array of first
-            derivatives of the pseudo-log-likelihood function w.r.t. the parameters
-        hess (np.array): "hessian" - a k + 1 x k + 1-dimensional array of second
-            derivatives of the pseudo-log-likelihood function w.r.t. the parameters
-
-    Returns:
-        se (np.array): a 1d array of k + 1 standard errors
-        var (np.array): 2d variance-covariance matrix
-
-    """
-    sum_scores = np.dot((jac).T, jac)
-    meat = (len(jac) / (len(jac) - 1)) * sum_scores
-    var = _sandwich_step(hess, meat)
-    return var
-
-
 def cov_cluster_robust(jac, hess, design_options):
     """Cluster robust standard errors.
 

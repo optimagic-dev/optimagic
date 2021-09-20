@@ -15,13 +15,14 @@ def get_expected_covariance(model, cov_method):
 
     Args:
         model (str): one of ['logit', 'probit']
-        cov_method (str): one of ['jacobian', 'hessian', 'sandwich']
+        cov_method (str): one of ['jacobian', 'hessian', 'robust']
 
     Returns:
         expected_covariance
 
     """
-    fix_name = "{}_{}.pickle".format(model, cov_method)
+    _name = cov_method if cov_method != "robust" else "sandwich"
+    fix_name = f"{model}_{_name}.pickle"
     expected_cov = pd.read_pickle(FIX_PATH / fix_name)
     return expected_cov
 
@@ -49,7 +50,7 @@ def get_input(model, input_types):
 
 
 models = ["probit", "logit"]
-methods = ["jacobian", "hessian", "sandwich"]
+methods = ["jacobian", "hessian", "robust"]
 test_cases = list(product(models, methods))
 
 
@@ -59,7 +60,7 @@ def test_cov_function(model, method):
 
     if method in ["jacobian", "hessian"]:
         input_types = [method]
-    elif method == "sandwich":
+    elif method == "robust":
         input_types = ["jacobian", "hessian"]
 
     inputs = get_input(model, input_types)
