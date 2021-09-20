@@ -26,10 +26,15 @@ def ipopt(
     upper_bounds,
     *,
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
-    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
+    #
     mu_strategy="monotone",
     s_max=100.0,
+    #
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     stopping_max_wall_time_seconds=1e20,
+    stopping_max_cpu_time=1e20,
+    #
+    dual_inf_tol=1.0,
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -50,6 +55,17 @@ def ipopt(
       search or to determine if the trust region radius has to be shrunk.
     - stopping.max_wall_time_seconds (float): Maximum number of walltime clock
       seconds.
+    - stopping.max_cpu_time (float): Maximum number of CPU seconds. A limit on
+      CPU seconds that Ipopt can use to solve one problem. If during the
+      convergence check this limit is exceeded, Ipopt will terminate with a
+      corresponding message. The valid range for this real option is 0 <
+      max_cpu_time and its default value is 1e20.
+    - dual_inf_tol (float): Desired threshold for the dual infeasibility.
+      Absolute tolerance on the dual infeasibility. Successful termination
+      requires that the max-norm of the (unscaled) dual infeasibility is less
+      than this threshold. The valid range for this real option is 0 <
+      dual_inf_tol and its default value is 1.
+
 
     - mu_strategy (str): which barrier parameter update strategy is to be used.
       Can be "monotone" or "adaptive". Default is "monotone", i.e. use the
@@ -90,7 +106,9 @@ def ipopt(
         "mu_strategy": mu_strategy,
         "s_max": float(s_max),
         "max_wall_time": float(stopping_max_wall_time_seconds),
+        "max_cpu_time": float(stopping_max_cpu_time),
         "print_level": 0,  # disable verbosity
+        "dual_inf_tol": float(dual_inf_tol),
     }
 
     raw_res = cyipopt.minimize_ipopt(
