@@ -1,4 +1,6 @@
 """Test the different options of ipopt."""
+from itertools import product
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -7,13 +9,14 @@ from numpy.testing import assert_array_almost_equal as aaae
 from estimagic.examples.criterion_functions import sos_dict_criterion
 from estimagic.optimization.optimize import minimize
 
-test_cases = [
+options_and_expected = [
     ({}, None),
     ({"convergence.relative_criterion_tolerance": 1e-7}, None),
     ({"stopping.max_iterations": 1_100_000}, None),
     ({"mu_strategy": "adaptive"}, None),
+    ({"mu_target": 1e-8}, None),
     ({"s_max": 200}, None),
-    ({"stopping.max_wall_time_seconds": 20}, None),
+    ({"stopping.max_wall_time_seconds": 200}, None),
     ({"stopping.max_cpu_time": 1e10}, None),
     ({"dual_inf_tol": 2.5}, None),
     ({"dual_inf_tol": -2.5}, TypeError),
@@ -27,17 +30,21 @@ test_cases = [
     ({"acceptable_constr_viol_tol": 1e-5}, None),
     ({"acceptable_compl_inf_tol": 1e-5}, None),
     ({"acceptable_obj_change_tol": 1e5}, None),
+    ({"diverging_iterates_tol": 1e5}, None),
 ]
 
+test_cases = product([sos_dict_criterion], options_and_expected)
 
-@pytest.mark.parametrize("algo_options, expected", test_cases)
-def test_ipopt_algo_options(algo_options, expected):
+
+@pytest.mark.parametrize("criterion, options_and_expected", test_cases)
+def test_ipopt_algo_options(criterion, options_and_expected):
+    algo_options, expected = options_and_expected
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]
 
     if expected is None:
         res = minimize(
-            criterion=sos_dict_criterion,
+            criterion=criterion,
             params=start_params,
             algorithm="ipopt",
             algo_options=algo_options,

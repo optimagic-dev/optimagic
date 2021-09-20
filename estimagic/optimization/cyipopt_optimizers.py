@@ -27,8 +27,9 @@ def ipopt(
     *,
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     #
-    mu_strategy="monotone",
     s_max=100.0,
+    mu_strategy="monotone",
+    mu_target=0.0,
     #
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     stopping_max_wall_time_seconds=1e20,
@@ -44,6 +45,8 @@ def ipopt(
     acceptable_constr_viol_tol=0.01,
     acceptable_compl_inf_tol=0.01,
     acceptable_obj_change_tol=1e20,
+    #
+    diverging_iterates_tol=1e20,
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -64,6 +67,21 @@ def ipopt(
     - convergence.relative_criterion_tolerance (float): The algorithm terminates
       successfully, if the (scaled) non linear programming error becomes smaller
       than this value.
+
+    - mu_strategy (str): which barrier parameter update strategy is to be used.
+      Can be "monotone" or "adaptive". Default is "monotone", i.e. use the
+      monotone (Fiacco-McCormick) strategy.
+    - mu_target: Desired value of complementarity. Usually, the barrier
+      parameter is driven to zero and the termination test for complementarity
+      is measured with respect to zero complementarity. However, in some cases
+      it might be desired to have Ipopt solve barrier problem for strictly
+      positive value of the barrier parameter. In this case, the value of
+      "mu_target" specifies the final value of the barrier parameter, and the
+      termination tests are then defined with respect to the barrier problem for
+      this value of the barrier parameter. The valid range for this real option
+      is 0 ≤ mu_target and its default value is 0.
+
+    - s_max (float): Scaling threshold for the NLP error.
 
     - stopping.max_iterations (int):  If the maximum number of iterations is
       reached, the optimization stops, but we do not count this as successful
@@ -124,19 +142,20 @@ def ipopt(
       complementarity is less than this threshold; see also acceptable_tol. The
       valid range for this real option is 0 < acceptable_compl_inf_tol and its
       default value is 0.01.
-    - acceptable_obj_change_tol (float): "Acceptance" stopping criterion based on
-      objective function change. If the relative change of the objective
+    - acceptable_obj_change_tol (float): "Acceptance" stopping criterion based
+      on objective function change. If the relative change of the objective
       function (scaled by Max(1,|f(x)|)) is less than this value, this part of
       the acceptable tolerance termination is satisfied; see also
       acceptable_tol. This is useful for the quasi-Newton option, which has
       trouble to bring down the dual infeasibility. The valid range for this
       real option is 0 ≤ acceptable_obj_change_tol and its default value is
       10+20.
+    - diverging_iterates_tol: Threshold for maximal value of primal iterates. If
+      any component of the primal iterates exceeded this value (in absolute
+      terms), the optimization is aborted with the exit message that the
+      iterates seem to be diverging. The valid range for this real option is 0 <
+      diverging_iterates_tol and its default value is 10+20.
 
-    - mu_strategy (str): which barrier parameter update strategy is to be used.
-      Can be "monotone" or "adaptive". Default is "monotone", i.e. use the
-      monotone (Fiacco-McCormick) strategy.
-    - s_max (float): Scaling threshold for the NLP error.
 
     The following options are not supported through cyipopt: - mu_oracle
 
@@ -185,7 +204,10 @@ def ipopt(
         "acceptable_compl_inf_tol": float(acceptable_compl_inf_tol),
         "acceptable_obj_change_tol": float(acceptable_obj_change_tol),
         #
+        "diverging_iterates_tol": diverging_iterates_tol,
+        #
         "mu_strategy": mu_strategy,
+        "mu_target": float(mu_target),
         "print_level": 0,  # disable verbosity
     }
 
