@@ -28,30 +28,35 @@ def ipopt(
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     mu_strategy="monotone",
-    s_max=100,
+    s_max=100.0,
+    stopping_max_wall_time_seconds=1e20,
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
     This implementation of the Interior Point Optimizer (:cite:`Waechter2005`,
     :cite:`Waechter2005a`, :cite:`Waechter2005b`, :cite:`Nocedal2009`) relies on
-    `cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python wrapper
-    for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>`_.
+    `cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python
+    wrapper for the `Ipopt optimization package
+    <https://coin-or.github.io/Ipopt/index.html>`_.
 
     - convergence.relative_criterion_tolerance (float): The algorithm terminates
-      successfully, if the (scaled) non linear programming error becomes smaller than
-      this value.
-    - stopping.max_iterations (int):  If the maximum number of iterations is reached,
-      the optimization stops, but we do not count this as successful convergence. The
-      difference to ``max_criterion_evaluations`` is that one iteration might need
-      several criterion evaluations, for example in a line search or to determine if the
-      trust region radius has to be shrunk.
-    - mu_strategy (str): which barrier parameter update strategy is to be used. Can
-      be "monotone" or "adaptive". Default is "monotone", i.e. use the monotone
-      (Fiacco-McCormick) strategy.
-    - s_max (int): Scaling threshold for the NLP error.
+      successfully, if the (scaled) non linear programming error becomes smaller
+      than this value.
 
-    The following options are not supported through cyipopt:
-        - mu_oracle
+    - stopping.max_iterations (int):  If the maximum number of iterations is
+      reached, the optimization stops, but we do not count this as successful
+      convergence. The difference to ``max_criterion_evaluations`` is that one
+      iteration might need several criterion evaluations, for example in a line
+      search or to determine if the trust region radius has to be shrunk.
+    - stopping.max_wall_time_seconds (float): Maximum number of walltime clock
+      seconds.
+
+    - mu_strategy (str): which barrier parameter update strategy is to be used.
+      Can be "monotone" or "adaptive". Default is "monotone", i.e. use the
+      monotone (Fiacco-McCormick) strategy.
+    - s_max (float): Scaling threshold for the NLP error.
+
+    The following options are not supported through cyipopt: - mu_oracle
 
     """
     if not IS_CYIPOPT_INSTALLED:
@@ -83,7 +88,9 @@ def ipopt(
         "acceptable_iter": 0,  # disable the "acceptable" heuristic
         "max_iter": stopping_max_iterations,
         "mu_strategy": mu_strategy,
-        "s_max": int(s_max),
+        "s_max": float(s_max),
+        "max_wall_time": float(stopping_max_wall_time_seconds),
+        "print_level": 0,  # disable verbosity
     }
 
     raw_res = cyipopt.minimize_ipopt(
