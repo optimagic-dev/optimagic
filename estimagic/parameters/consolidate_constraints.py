@@ -442,9 +442,9 @@ def _plug_fixes_into_linear_weights_and_rhs(
 
     if len(fixed_ilocs) > 0:
         fixed_values = fixed_value.iloc[fixed_ilocs].to_numpy()
-        to_add = weights[fixed_ilocs] @ fixed_values
+        fixed_contribution = weights[fixed_ilocs] @ fixed_values
         for column in ["lower_bound", "upper_bound", "value"]:
-            new_rhs[column] = new_rhs[column] + to_add
+            new_rhs[column] = new_rhs[column] - fixed_contribution
         for i in fixed_ilocs:
             new_weights[i] = 0
 
@@ -509,7 +509,7 @@ def _rescale_linear_constraints(weights, rhs):
         new_rhs (pd.DataFrame)
 
     """
-    first_nonzero = weights.replace(0, np.nan).bfill(1).iloc[:, 0]
+    first_nonzero = weights.replace(0, np.nan).bfill(axis=1).iloc[:, 0]
     scaling_factor = 1 / first_nonzero.to_numpy().reshape(-1, 1)
     new_weights = scaling_factor * weights
     scaled_rhs = scaling_factor * rhs

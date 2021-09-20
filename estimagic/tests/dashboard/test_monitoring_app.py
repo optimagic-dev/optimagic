@@ -9,6 +9,7 @@ from bokeh.document import Document
 from bokeh.models import ColumnDataSource
 
 import estimagic.dashboard.monitoring_app as monitoring
+from estimagic.optimization.optimize import minimize
 
 
 def test_monitoring_app():
@@ -16,9 +17,22 @@ def test_monitoring_app():
     doc = Document()
     database_name = "test_db"
     current_dir_path = Path(__file__).resolve().parent
+    db_path = current_dir_path / "db2.db"
+
+    needs_update = False
+    if needs_update:
+        params = pd.DataFrame()
+        params["value"] = [1, 2, 3]
+        minimize(
+            criterion=lambda params: params["value"] @ params["value"],
+            params=params,
+            algorithm="scipy_neldermead",
+            logging=db_path,
+        )
+
     session_data = {
         "last_retrieved": 0,
-        "database_path": current_dir_path / "db1.db",
+        "database_path": db_path,
     }
     updating_options = {
         "rollover": 10_000,

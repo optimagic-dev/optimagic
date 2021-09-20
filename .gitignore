@@ -68,6 +68,10 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build/
+docs/source/_build/
+docs/source/getting_started/*.db
+docs/source/refs.bib.bak
 
 # PyBuilder
 target/

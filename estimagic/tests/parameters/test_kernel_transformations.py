@@ -9,7 +9,7 @@ import estimagic.parameters.kernel_transformations as kt
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.parameters.kernel_transformations import cov_matrix_to_sdcorr_params
 
-to_test = list(product(range(10, 30), range(5)))
+to_test = list(product(range(10, 30, 5), [1234, 5471]))
 
 
 def get_internal_cholesky(dim, seed=0):

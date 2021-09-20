@@ -64,7 +64,7 @@ def read_optimization_iteration(path_or_database, iteration, include_internals=F
         data = data[0]
 
     params = start_params.copy()
-    params["value"] = data.pop("external_params")
+    params["value"] = data.pop("params")
     data["params"] = params
 
     to_remove = ["distance_origin", "distance_ones"]

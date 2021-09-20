@@ -42,6 +42,9 @@ def get_input(model, input_types):
         fix_name = "{}_{}_matrix.pickle".format(model, typ)
         input_matrix = pd.read_pickle(FIX_PATH / fix_name)
         inputs[typ] = input_matrix
+
+    short_names = {"jacobian": "jac", "hessian": "hess"}
+    inputs = {short_names[key]: val for key, val in inputs.items()}
     return inputs
 
 

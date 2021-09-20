@@ -32,3 +32,9 @@ INVALID_INFERENCE_MSG = (
     "covariance matrix or standard errors based on it for diagnostic purposes, not for "
     "drawing conclusions."
 )
+
+
+INVALID_SENSITIVITY_MSG = (
+    "Taking inverse failed during the calculation of sensitvity measures. Interpret "
+    "them with caution."
+)

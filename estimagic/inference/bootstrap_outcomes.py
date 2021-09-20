@@ -1,3 +1,5 @@
+from functools import partial
+
 import pandas as pd
 
 from estimagic.batch_evaluators import joblib_batch_evaluator
@@ -8,6 +10,7 @@ from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 def get_bootstrap_outcomes(
     data,
     outcome,
+    outcome_kwargs=None,
     cluster_by=None,
     seed=None,
     n_draws=1000,
@@ -39,6 +42,9 @@ def get_bootstrap_outcomes(
     """
 
     check_inputs(data=data, cluster_by=cluster_by)
+
+    if outcome_kwargs is not None:
+        outcome = partial(outcome, *outcome_kwargs)
 
     indices = get_bootstrap_indices(
         data=data,

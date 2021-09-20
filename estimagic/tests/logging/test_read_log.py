@@ -29,9 +29,9 @@ def test_read_optimization_iteration(tmp_path):
     # add the optimization_iterations table
     make_optimization_iteration_table(database, first_eval={"output": 0.5})
     iteration_data = [
-        {"external_params": np.array([0])},
-        {"external_params": np.array([1])},
-        {"external_params": np.array([2])},
+        {"params": np.array([0])},
+        {"params": np.array([1])},
+        {"params": np.array([2])},
     ]
 
     for data in iteration_data:

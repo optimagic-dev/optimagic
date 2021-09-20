@@ -1,10 +1,11 @@
 channels:
   - defaults
 dependencies:
-  - python=3.7
+  - python=3.8
   - ipython
   - pip:
     - sphinx
     - pydata-sphinx-theme>=0.3.0
     - nbsphinx
     - sphinxcontrib-bibtex
+    - sphinx-panels

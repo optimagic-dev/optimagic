@@ -4,7 +4,6 @@ channels:
   - conda-forge
   - defaults
   - opensourceeconomics
-  - pytask
 
 dependencies:
 
@@ -40,6 +39,7 @@ dependencies:
   - pytask>=0.0.11
   - nlopt
   - regex
+  - sphinx-panels
 
   - pip:
     - black
