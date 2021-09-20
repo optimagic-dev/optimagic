@@ -60,9 +60,6 @@ Numerical differentiation
 - Function evaluations needed for numerical derivatives can be done in parallel
   with pre-implemented or user provided batch evaluators.
 
-Statistical inference
----------------------
-
 
 Structure of the documentation
 ==============================
