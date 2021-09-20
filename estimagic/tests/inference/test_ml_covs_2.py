@@ -2,12 +2,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from estimagic.inference.ml_covs import cov_hessian
+from estimagic.inference.ml_covs import cov_jacobian
+from estimagic.inference.se_estimation import _sandwich_step
 from estimagic.inference.se_estimation import cluster_robust_se
 from estimagic.inference.se_estimation import clustering
-from estimagic.inference.se_estimation import observed_information_matrix
-from estimagic.inference.se_estimation import outer_product_of_gradients
 from estimagic.inference.se_estimation import robust_se
-from estimagic.inference.se_estimation import sandwich_step
 from estimagic.inference.se_estimation import strata_robust_se
 from estimagic.inference.se_estimation import stratification
 
@@ -150,7 +150,7 @@ def expected_robust():
         ]
     )
 
-    out["oim_var"] = np.array(
+    out["cov_hessian"] = np.array(
         [
             [44.7392, -14.563, 41.659, 0.2407],
             [-14.56307, 9.01046, -14.14055, -6.3383],
@@ -161,7 +161,7 @@ def expected_robust():
 
     out["oim_se"] = np.array([6.688734, 3.001743, 22.07019, 3.44373])
 
-    out["opg_var"] = np.array(
+    out["cov_jacobian"] = np.array(
         [
             [937.03508, -780.893, 781.1802, 741.8099],
             [-780.893, 749.9739, -749.918, -742.28097],
@@ -218,48 +218,38 @@ def test_stratification(setup_robust, expected_robust):
 
 
 def test_sandwich_estimator(setup_robust, expected_robust):
-    calc_sandwich_se, calc_sandwich_var = sandwich_step(
-        setup_robust["hess"], setup_robust["meat"]
-    )
+    calc_sandwich_var = _sandwich_step(setup_robust["hess"], setup_robust["meat"])
     np.allclose(calc_sandwich_var, expected_robust["sandwich_var"])
-    np.allclose(calc_sandwich_se, expected_robust["sandwich_se"])
 
 
 def test_robust_se(setup_robust, expected_robust):
-    calc_robust_se, calc_robust_var = robust_se(
-        setup_robust["jac"], setup_robust["hess"]
-    )
-    np.allclose(calc_robust_se, expected_robust["robust_stderror"])
+    calc_robust_var = robust_se(setup_robust["jac"], setup_robust["hess"])
     np.allclose(calc_robust_var, expected_robust["robust_variance"])
 
 
 def test_cluster_robust_se(setup_robust, expected_robust):
-    calc_robust_cstd, calc_robust_cvar = cluster_robust_se(
+    calc_robust_cvar = cluster_robust_se(
         setup_robust["jac"],
         setup_robust["hess"],
         setup_robust["design_options"],
     )
     np.allclose(calc_robust_cvar, expected_robust["cluster_robust_var"])
-    np.allclose(calc_robust_cstd, expected_robust["cluster_robust_se"])
 
 
 def test_stratified_robust_se(setup_robust, expected_robust):
-    calc_strata_se, calc_strata_var = strata_robust_se(
+    calc_strata_var = strata_robust_se(
         setup_robust["jac"],
         setup_robust["hess"],
         setup_robust["design_options"],
     )
     np.allclose(calc_strata_var, expected_robust["strata_robust_var"])
-    np.allclose(calc_strata_se, expected_robust["strata_robust_se"])
 
 
-def test_observed_information_matrix(setup_robust, expected_robust):
-    calc_oim_se, calc_oim_var = observed_information_matrix(setup_robust["hess"])
-    np.allclose(calc_oim_var, expected_robust["oim_var"])
-    np.allclose(calc_oim_se, expected_robust["oim_se"])
+def test_cov_hessian(setup_robust, expected_robust):
+    calculated = cov_hessian(setup_robust["hess"])
+    np.allclose(calculated, expected_robust["cov_hessian"])
 
 
-def test_outer_product_of_gradients(setup_robust, expected_robust):
-    calc_opg_se, calc_opg_var = outer_product_of_gradients(setup_robust["jac"])
-    np.allclose(calc_opg_var, expected_robust["opg_var"])
-    np.allclose(calc_opg_se, expected_robust["opg_se"])
+def test_cov_jacobian(setup_robust, expected_robust):
+    calc_opg_var = cov_jacobian(setup_robust["jac"])
+    np.allclose(calc_opg_var, expected_robust["cov_jacobian"])

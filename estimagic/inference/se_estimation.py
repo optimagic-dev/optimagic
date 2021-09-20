@@ -2,61 +2,6 @@
 import numpy as np
 
 
-def observed_information_matrix(hess):
-    """Observed information matrix or BHHH estimator.
-
-    Args:
-        hess (np.array): "hessian" - a k + 1 x k + 1-dimensional array of
-            second derivatives of the pseudo-log-likelihood function w.r.t.
-            the parameters
-    Returns:
-        oim_se (np.array): a 1d array of k + 1 standard errors
-        oim_var (np.array): 2d variance-covariance matrix
-
-    """
-    hess = -hess.copy()
-    oim_var = np.linalg.inv(hess)
-    oim_se = np.sqrt(np.diag(oim_var))
-    return oim_se, oim_var
-
-
-def outer_product_of_gradients(jac):
-    """Outer product of gradients estimator.
-
-    Args:
-        jac (np.array): "jacobian" - an n x k + 1-dimensional array of first
-            derivatives of the pseudo-log-likelihood function w.r.t. the parameters
-
-    Returns:
-        opg_se (np.array): a 1d array of k + 1 standard errors
-        opg_var (np.array): 2d variance-covariance matrix
-
-    """
-    opg_var = np.linalg.inv(np.dot(jac.T, jac))
-    opg_se = np.sqrt(np.diag(opg_var))
-    return opg_se, opg_var
-
-
-def sandwich_step(hess, meat):
-    """The sandwich estimator for variance estimation.
-
-    Args:
-        hess (np.array): "hessian" - a k + 1 x k + 1-dimensional array of
-            second derivatives of the pseudo-log-likelihood function w.r.t.
-            the parameters
-        meat (np.array): the variance of the total scores
-
-    Returns:
-        se (np.array): a 1d array of k + 1 standard errors
-        var (np.array): 2d variance-covariance matrix
-
-    """
-    invhessian = np.linalg.inv(hess)
-    var = np.dot(np.dot(invhessian, meat), invhessian)
-    se = np.sqrt(np.diag(var))
-    return se, var
-
-
 def clustering(design_options, jac):
     """Variance estimation for each cluster.
 
@@ -153,8 +98,8 @@ def robust_se(jac, hess):
     """
     sum_scores = np.dot((jac).T, jac)
     meat = (len(jac) / (len(jac) - 1)) * sum_scores
-    se, var = sandwich_step(hess, meat)
-    return se, var
+    var = _sandwich_step(hess, meat)
+    return var
 
 
 def cluster_robust_se(jac, hess, design_options):
@@ -176,8 +121,8 @@ def cluster_robust_se(jac, hess, design_options):
 
     """
     cluster_meat = clustering(design_options, jac)
-    cluster_robust_se, cluster_robust_var = sandwich_step(hess, cluster_meat)
-    return cluster_robust_se, cluster_robust_var
+    cluster_robust_var = _sandwich_step(hess, cluster_meat)
+    return cluster_robust_var
 
 
 def strata_robust_se(jac, hess, design_options):
@@ -205,5 +150,26 @@ def strata_robust_se(jac, hess, design_options):
 
     """
     strata_meat = stratification(design_options, jac)
-    strata_robust_se, strata_robust_var = sandwich_step(hess, strata_meat)
-    return strata_robust_se, strata_robust_var
+    strata_robust_var = _sandwich_step(hess, strata_meat)
+    return strata_robust_var
+
+
+def _sandwich_step(hess, meat):
+    """The sandwich estimator for variance estimation.
+
+    This is used in several robust covariance formulae.
+
+    Args:
+        hess (np.array): "hessian" - a k + 1 x k + 1-dimensional array of
+            second derivatives of the pseudo-log-likelihood function w.r.t.
+            the parameters
+        meat (np.array): the variance of the total scores
+
+    Returns:
+        se (np.array): a 1d array of k + 1 standard errors
+        var (np.array): 2d variance-covariance matrix
+
+    """
+    invhessian = np.linalg.inv(hess)
+    var = np.dot(np.dot(invhessian, meat), invhessian)
+    return var
