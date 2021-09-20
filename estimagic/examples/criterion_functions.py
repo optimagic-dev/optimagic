@@ -235,7 +235,7 @@ def rosenbrock_dict_criterion(params):
 
     Returns:
         Dictionary with the following entries:
-        "value" (a scalar float): Rosenbrock function output.
+        "value" (a scalar float): Rosenbrock function value.
         "contributions" (np.ndarray): array with contributions of function output
         as elements.
         "root_contributions" (np.ndarray): array with root of contributions of
@@ -247,12 +247,44 @@ def rosenbrock_dict_criterion(params):
 
 
 def sos_dict_criterion(params):
+    """Calculate the sum of squares function and compute
+        contributions and root_contributions.
+
+    Args:
+        params(pandas.DataFrame): Must have the column "value" containing
+        input values for parameters. Accepts arbitrary numbers of input values.
+
+    Returns:
+        Dictionary with the following entries:
+        "value" (a scalar float): sum of squares function value.
+        "contributions" (np.ndarray): array with contributions of function output
+        as elements.
+        "root_contributions" (np.ndarray): array with root of contributions of
+        function output as elements.
+
+    """
     root_contribs = params["value"].to_numpy()
     out = _out_dict_from_root_contribs(root_contribs)
     return out
 
 
 def sos_dict_criterion_with_pd_objects(params):
+    """Calculate the sum of squares function and compute
+        contributions and root_contributions as pandas objects.
+
+    Args:
+        params(pandas.DataFrame): Must have the column "value" containing
+        input values for parameters. Accepts arbitrary numbers of input values.
+
+    Returns:
+        Dictionary with the following pandas object entries:
+        "value" (a scalar float): sum of squares function value.
+        "contributions" (np.ndarray): array with contributions of function output
+        as elements.
+        "root_contributions" (np.ndarray): array with root of contributions of
+        function output as elements.
+
+    """
     out = sos_dict_criterion(params)
     out["contributions"] = pd.Series(out["contributions"])
     out["root_contributions"] = pd.Series(out["root_contributions"])
@@ -261,14 +293,17 @@ def sos_dict_criterion_with_pd_objects(params):
 
 
 def sos_scalar_criterion(params):
+    """Calculate the sum of squares."""
     return (params["value"].to_numpy() ** 2).sum()
 
 
 def sos_gradient(params):
+    """Calculate the gradient of the sum of squares function."""
     return 2 * params["value"].to_numpy()
 
 
 def sos_jacobian(params):
+    """Calculate the Jacobian of the sum of squares function."""
     return np.diag(2 * params["value"])
 
 
@@ -277,19 +312,23 @@ def sos_ls_jacobian(params):
 
 
 def sos_pandas_gradient(params):
+    """Calculate the gradient of the sum of squares function."""
     return 2 * params["value"]
 
 
 def sos_pandas_jacobian(params):
+    """Calculate the Jacobian of the sum of squares function."""
     return pd.DataFrame(np.diag(2 * params["value"]))
 
 
 def sos_criterion_and_gradient(params):
+    """Calculate sum of squares criterion value and gradient."""
     x = params["value"].to_numpy()
     return (x ** 2).sum(), 2 * x
 
 
 def sos_criterion_and_jacobian(params):
+    """Calculate sum of squares criterion value and Jacobian."""
     x = params["value"].to_numpy()
     return {"contributions": x ** 2, "value": (x ** 2).sum()}, np.diag(2 * x)
 
