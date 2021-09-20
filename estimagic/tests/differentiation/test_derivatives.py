@@ -16,10 +16,10 @@ from estimagic.differentiation.derivatives import (
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
 from estimagic.differentiation.derivatives import _select_minimizer_along_axis
 from estimagic.differentiation.derivatives import first_derivative
-from estimagic.examples.numdiff_example_functions_np import logit_loglike
-from estimagic.examples.numdiff_example_functions_np import logit_loglike_gradient
-from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs
-from estimagic.examples.numdiff_example_functions_np import logit_loglikeobs_jacobian
+from estimagic.examples.numdiff_functions import logit_loglike
+from estimagic.examples.numdiff_functions import logit_loglike_gradient
+from estimagic.examples.numdiff_functions import logit_loglikeobs
+from estimagic.examples.numdiff_functions import logit_loglikeobs_jacobian
 from estimagic.utilities import namedtuple_from_kwargs
 
 

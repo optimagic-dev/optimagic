@@ -509,7 +509,7 @@ def _rescale_linear_constraints(weights, rhs):
         new_rhs (pd.DataFrame)
 
     """
-    first_nonzero = weights.replace(0, np.nan).bfill(1).iloc[:, 0]
+    first_nonzero = weights.replace(0, np.nan).bfill(axis=1).iloc[:, 0]
     scaling_factor = 1 / first_nonzero.to_numpy().reshape(-1, 1)
     new_weights = scaling_factor * weights
     scaled_rhs = scaling_factor * rhs

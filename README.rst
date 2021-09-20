@@ -61,6 +61,17 @@ Optimization
   :scale: 21 %
 
 
+Estimation and Inference
+------------------------
+
+- You can estimate a model using method of simulated moments (MSM), calculate standard
+  errors and do sensitivity analysis with just one function call.
+- Asymptotic standard errors for maximum likelihood estimation.
+- estimagic also provides bootstrap confidence intervals and standard errors.
+  Of course the bootstrap procedures are parallelized.
+
+
+
 Numerical differentiation
 -------------------------
 
@@ -70,13 +81,6 @@ Numerical differentiation
   with pre-implemented or user provided batch evaluators.
 
 
-Statistical Inference
----------------------
-
-- estimagic provides asymptotic standard errors for maximum likelihood and method
-  of simulated moments.
-- estimagic also provides bootstrap confidence intervals and standard errors.
-  Of course the bootstrap procedures are parallelized.
 
 
 Installation
