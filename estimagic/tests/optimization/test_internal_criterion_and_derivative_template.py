@@ -7,6 +7,12 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.differentiation.derivatives import first_derivative
+from estimagic.examples.criterion_functions import sos_criterion_and_gradient
+from estimagic.examples.criterion_functions import sos_dict_criterion
+from estimagic.examples.criterion_functions import sos_dict_criterion_with_pd_objects
+from estimagic.examples.criterion_functions import sos_gradient
+from estimagic.examples.criterion_functions import sos_pandas_gradient
+from estimagic.examples.criterion_functions import sos_scalar_criterion
 from estimagic.optimization.internal_criterion_template import _penalty_contributions
 from estimagic.optimization.internal_criterion_template import (
     _penalty_contributions_derivative,
@@ -23,24 +29,6 @@ from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.optimize import _fill_error_penalty_with_defaults
-from estimagic.tests.optimization.test_all_algorithms_with_sum_of_squares import (
-    sos_criterion_and_gradient,
-)
-from estimagic.tests.optimization.test_all_algorithms_with_sum_of_squares import (
-    sos_dict_criterion,
-)
-from estimagic.tests.optimization.test_all_algorithms_with_sum_of_squares import (
-    sos_dict_criterion_with_pd_objects,
-)
-from estimagic.tests.optimization.test_all_algorithms_with_sum_of_squares import (
-    sos_gradient,
-)
-from estimagic.tests.optimization.test_all_algorithms_with_sum_of_squares import (
-    sos_pandas_gradient,
-)
-from estimagic.tests.optimization.test_all_algorithms_with_sum_of_squares import (
-    sos_scalar_criterion,
-)
 
 
 def no_second_call(func):

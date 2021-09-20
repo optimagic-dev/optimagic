@@ -104,12 +104,9 @@ def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
 
     columns = [
         Column("rowid", Integer, primary_key=True),
-        Column("external_params", PickleType(pickler=RobustPickler)),
-        Column("internal_params", PickleType(pickler=RobustPickler)),
+        Column("params", PickleType(pickler=RobustPickler)),
         Column("internal_derivative", PickleType(pickler=RobustPickler)),
         Column("timestamp", DATETIME),
-        Column("distance_origin", Float),
-        Column("distance_ones", Float),
         Column("exceptions", String),
         Column("valid", Boolean),
         Column("hash", String),
@@ -143,9 +140,7 @@ def make_optimization_status_table(database, if_exists="extend"):
     database.create_all(database.bind)
 
 
-def make_optimization_problem_table(
-    database, if_exists="extend", save_all_arguments=True
-):
+def make_optimization_problem_table(database, if_exists="extend"):
     table_name = "optimization_problem"
     _handle_existing_table(database, table_name, if_exists)
 
@@ -160,20 +155,8 @@ def make_optimization_problem_table(
         Column("error_handling", String),
         Column("error_penalty", PickleType(pickler=RobustPickler)),
         Column("cache_size", Integer),
+        Column("constraints", PickleType(pickler=RobustPickler)),
     ]
-
-    if save_all_arguments:
-        columns += [
-            Column("criterion", PickleType(pickler=RobustPickler)),
-            Column("criterion_kwargs", PickleType(pickler=RobustPickler)),
-            Column("constraints", PickleType(pickler=RobustPickler)),
-            Column("derivative", PickleType(pickler=RobustPickler)),
-            Column("derivative_kwargs", PickleType(pickler=RobustPickler)),
-            Column("criterion_and_derivative", PickleType(pickler=RobustPickler)),
-            Column(
-                "criterion_and_derivative_kwargs", PickleType(pickler=RobustPickler)
-            ),
-        ]
 
     Table(
         table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True

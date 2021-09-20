@@ -22,7 +22,7 @@ test_cases = itertools.product([jac_np, jac_pd], [moments_cov_np, moments_cov_pd
 
 
 @pytest.mark.parametrize("jac, moments_cov", test_cases)
-def test_cov_sandwich_and_cov_optimal_are_equivalent_in_special_case(jac, moments_cov):
+def test_cov_robust_and_cov_optimal_are_equivalent_in_special_case(jac, moments_cov):
     weights = np.linalg.inv(moments_cov)
     if isinstance(moments_cov, pd.DataFrame):
         weights = pd.DataFrame(

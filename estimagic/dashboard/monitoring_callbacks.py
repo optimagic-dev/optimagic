@@ -192,7 +192,7 @@ def _create_params_data_for_update(data, param_ids, clip_bound):
 
     Args:
         data
-        param_ids (list): list of the length of the arrays in data["external_params"]
+        param_ids (list): list of the length of the arrays in data["params"]
         clip_bound (float)
 
     Returns:
@@ -201,8 +201,7 @@ def _create_params_data_for_update(data, param_ids, clip_bound):
 
     """
     params_data = [
-        np.clip(arr, -clip_bound, clip_bound).tolist()
-        for arr in data["external_params"]
+        np.clip(arr, -clip_bound, clip_bound).tolist() for arr in data["params"]
     ]
     params_data = transpose_nested_list(params_data)
     params_data = dict(zip(param_ids, params_data))

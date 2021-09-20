@@ -1,6 +1,7 @@
 import functools
 import inspect
 import warnings
+from pathlib import Path
 
 import numpy as np
 
@@ -103,10 +104,6 @@ def maximize(
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "suffix": A string that is appended to the default table names, separated
-            by an underscore. You can use this if you want to write the log into an
-            existing database where the default names "optimization_iterations",
-            "optimization_status" and "optimization_problem" are already in use.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
@@ -114,10 +111,10 @@ def maximize(
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
-            - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to maximize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
+            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
+            do if the tables we want to write to already exist. Default "extend".
+            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
+            do if the database we want to write to already exists. Default "extend".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -240,10 +237,6 @@ def minimize(
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "suffix": A string that is appended to the default table names, separated
-            by an underscore. You can use this if you want to write the log into an
-            existing database where the default names "optimization_iterations",
-            "optimization_status" and "optimization_problem" are already in use.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
@@ -251,10 +244,10 @@ def minimize(
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
-            - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to minimize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
+            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
+            do if the tables we want to write to already exist. Default "extend".
+            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
+            do if the database we want to write to already exists. Default "extend".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -379,10 +372,6 @@ def _optimize(
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "suffix": A string that is appended to the default table names, separated
-            by an underscore. You can use this if you want to write the log into an
-            existing database where the default names "optimization_iterations",
-            "optimization_status" and "optimization_problem" are already in use.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
@@ -390,10 +379,10 @@ def _optimize(
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
-            - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to
-              optimize that can be pickled are saved in the log file. Otherwise, only
-              the information needed by the dashboard is saved. Default False.
+            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
+            do if the tables we want to write to already exist. Default "extend".
+            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
+            do if the database we want to write to already exists. Default "extend".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -645,6 +634,9 @@ def _single_optimize(
     if "solution_criterion" not in res:
         res["solution_criterion"] = criterion(p)
 
+    if direction == "maximize":
+        res["solution_criterion"] = -res["solution_criterion"]
+
     # in the long run we can get some of those from the database if logging was used.
     optional_entries = [
         "solution_derivative",
@@ -701,42 +693,55 @@ def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
 
 
 def _create_and_initialize_database(logging, log_options, first_eval, problem_data):
-
     # extract information
-    path = logging
+    path = Path(logging)
     fast_logging = log_options.get("fast_logging", False)
-    if_exists = log_options.get("if_exists", "extend")
-    save_all_arguments = log_options.get("save_all_arguments", False)
+    if_table_exists = log_options.get("if_table_exists", "extend")
+    if_database_exists = log_options.get("if_database_exists", "extend")
+
+    if "if_exists" in log_options and "if_table_exists" not in log_options:
+        warnings.warn("The log_option 'if_exists' was renamed to 'if_table_exists'.")
+
+    if logging.exists():
+        if if_database_exists == "raise":
+            raise FileExistsError(
+                f"The database {logging} already exists and the log_option "
+                "'if_database_exists' is set to 'raise'"
+            )
+        elif if_database_exists == "replace":
+            logging.unlink()
+
     database = load_database(path=path, fast_logging=fast_logging)
 
     # create the optimization_iterations table
     make_optimization_iteration_table(
         database=database,
         first_eval=first_eval,
-        if_exists=if_exists,
+        if_exists=if_table_exists,
     )
 
     # create and initialize the optimization_status table
-    make_optimization_status_table(database, if_exists)
+    make_optimization_status_table(database, if_exists=if_table_exists)
     append_row(
         {"status": "running"}, "optimization_status", database, path, fast_logging
     )
 
     # create_and_initialize the optimization_problem table
-    make_optimization_problem_table(database, if_exists, save_all_arguments)
-    if not save_all_arguments:
-        not_saved = [
-            "criterion",
-            "criterion_kwargs",
-            "constraints",
-            "derivative",
-            "derivative_kwargs",
-            "criterion_and_derivative",
-            "criterion_and_derivative_kwargs",
-        ]
-        problem_data = {
-            key: val for key, val in problem_data.items() if key not in not_saved
-        }
+    make_optimization_problem_table(database, if_exists=if_table_exists)
+
+    not_saved = [
+        "criterion",
+        "criterion_kwargs",
+        "constraints",
+        "derivative",
+        "derivative_kwargs",
+        "criterion_and_derivative",
+        "criterion_and_derivative_kwargs",
+    ]
+    problem_data = {
+        key: val for key, val in problem_data.items() if key not in not_saved
+    }
+
     append_row(problem_data, "optimization_problem", database, path, fast_logging)
 
     return database
