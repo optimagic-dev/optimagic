@@ -17,6 +17,16 @@ test_cases = [
     ({"stopping.max_cpu_time": 1e10}, None),
     ({"dual_inf_tol": 2.5}, None),
     ({"dual_inf_tol": -2.5}, TypeError),
+    ({"constr_viol_tol": 1e-7}, None),
+    ({"compl_inf_tol": 1e-7}, None),
+    #
+    ({"acceptable_iter": 15}, None),
+    ({"acceptable_tol": 1e-10}, ValueError),
+    ({"acceptable_tol": 1e-5}, None),
+    ({"acceptable_dual_inf_tol": 1e-5}, None),
+    ({"acceptable_constr_viol_tol": 1e-5}, None),
+    ({"acceptable_compl_inf_tol": 1e-5}, None),
+    ({"acceptable_obj_change_tol": 1e5}, None),
 ]
 
 
