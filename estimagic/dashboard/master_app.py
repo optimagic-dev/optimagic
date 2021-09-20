@@ -11,8 +11,6 @@ from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models.widgets import Div
 
-from estimagic.dashboard.utilities import create_dashboard_link
-
 
 def master_app(doc, database_name_to_path, session_data):
     """Create the page with the master dashboard.
@@ -78,8 +76,24 @@ def _map_dabase_name_to_bokeh_row_elements(doc, database_name_to_path):
     """
     name_to_row = {}
     for database_name in database_name_to_path:
-        name_to_row[database_name] = [create_dashboard_link(database_name)]
+        name_to_row[database_name] = [_create_dashboard_link(database_name)]
     return ColumnDataSource(name_to_row)
+
+
+def _create_dashboard_link(name):
+    """Create a link refering to *name*'s monitoring app.
+
+    Args:
+        name (str): Uniqe name of the database.
+
+    Returns:
+        div (bokeh.models.widgets.Div): Link to the database's monitoring page.
+    """
+    div_name = f"link_{name}"
+    open_in_new_tab = r'target="_blank"'
+    text = f"<a href=./{name} {open_in_new_tab}> {name}!</a>"
+    div = Div(text=text, name=div_name, width=400)
+    return div
 
 
 def _setup_tabs(sec_to_elements):

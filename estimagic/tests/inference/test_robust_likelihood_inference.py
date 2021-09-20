@@ -4,14 +4,12 @@ import pytest
 
 from estimagic.inference.se_estimation import cluster_robust_se
 from estimagic.inference.se_estimation import clustering
-from estimagic.inference.se_estimation import inference_table
 from estimagic.inference.se_estimation import observed_information_matrix
 from estimagic.inference.se_estimation import outer_product_of_gradients
 from estimagic.inference.se_estimation import robust_se
 from estimagic.inference.se_estimation import sandwich_step
 from estimagic.inference.se_estimation import strata_robust_se
 from estimagic.inference.se_estimation import stratification
-from estimagic.inference.se_estimation import variance_estimator
 
 
 @pytest.fixture
@@ -237,7 +235,9 @@ def test_robust_se(setup_robust, expected_robust):
 
 def test_cluster_robust_se(setup_robust, expected_robust):
     calc_robust_cstd, calc_robust_cvar = cluster_robust_se(
-        setup_robust["jac"], setup_robust["hess"], setup_robust["design_options"],
+        setup_robust["jac"],
+        setup_robust["hess"],
+        setup_robust["design_options"],
     )
     np.allclose(calc_robust_cvar, expected_robust["cluster_robust_var"])
     np.allclose(calc_robust_cstd, expected_robust["cluster_robust_se"])
@@ -245,7 +245,9 @@ def test_cluster_robust_se(setup_robust, expected_robust):
 
 def test_stratified_robust_se(setup_robust, expected_robust):
     calc_strata_se, calc_strata_var = strata_robust_se(
-        setup_robust["jac"], setup_robust["hess"], setup_robust["design_options"],
+        setup_robust["jac"],
+        setup_robust["hess"],
+        setup_robust["design_options"],
     )
     np.allclose(calc_strata_var, expected_robust["strata_robust_var"])
     np.allclose(calc_strata_se, expected_robust["strata_robust_se"])
@@ -261,25 +263,3 @@ def test_outer_product_of_gradients(setup_robust, expected_robust):
     calc_opg_se, calc_opg_var = outer_product_of_gradients(setup_robust["jac"])
     np.allclose(calc_opg_var, expected_robust["opg_var"])
     np.allclose(calc_opg_se, expected_robust["opg_se"])
-
-
-def test_variance_estimator(setup_robust, expected_robust):
-    calc_cov_type_se, calc_cov_type_var = variance_estimator(
-        setup_robust["jac"],
-        setup_robust["hess"],
-        setup_robust["design_options"],
-        setup_robust["cov_type"],
-    )
-    np.allclose(calc_cov_type_var, expected_robust["cov_type_var"])
-    np.allclose(calc_cov_type_se, expected_robust["cov_type_se"])
-
-
-def test_inference_table(setup_robust, expected_robust):
-    calc_params_df, calc_cov_df = inference_table(
-        setup_robust["params"],
-        setup_robust["se"],
-        setup_robust["var"],
-        setup_robust["cov_type"],
-    )
-    np.allclose(calc_params_df, expected_robust["params_df"])
-    np.allclose(calc_cov_df, expected_robust["cov_df"])

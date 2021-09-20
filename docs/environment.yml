@@ -5,6 +5,7 @@ dependencies:
   - ipython
   - pip:
     - sphinx
-    - sphinx_rtd_theme
+    - pydata-sphinx-theme>=0.3.0
     - nbsphinx
     - sphinxcontrib-bibtex
+    - sphinx-panels
