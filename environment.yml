@@ -39,6 +39,7 @@ dependencies:
   - dill
   - pytask>=0.0.11
   - nlopt
+  - regex
 
   - pip:
     - black
