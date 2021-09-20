@@ -189,14 +189,15 @@ def switch_sign(func):
         unswitched = func(*args, **kwargs)
         if isinstance(unswitched, dict):
             switched = {key: -val for key, val in unswitched.items()}
-        elif isinstance(unswitched, tuple):
+        elif isinstance(unswitched, (tuple, list)):
             switched = []
             for entry in unswitched:
                 if isinstance(entry, dict):
                     switched.append({key: -val for key, val in entry.items()})
                 else:
                     switched.append(-entry)
-            switched = tuple(switched)
+            if isinstance(unswitched, tuple):
+                switched = tuple(switched)
         else:
             switched = -unswitched
         return switched
