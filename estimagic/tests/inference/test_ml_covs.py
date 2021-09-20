@@ -55,7 +55,7 @@ test_cases = list(product(models, methods))
 
 
 @pytest.mark.parametrize("model, method", test_cases)
-def test_cov_function(model, method):
+def test_cov_function_against_statsmodels(model, method):
     expected = get_expected_covariance(model, method)
 
     if method in ["jacobian", "hessian"]:

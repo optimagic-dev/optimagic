@@ -81,7 +81,7 @@ def test_stratification(jac, design_options):
     np.allclose(calculated, expected)
 
 
-def test_sandwich_estimator(hess):
+def test_sandwich_step(hess):
     calculated = _sandwich_step(hess, meat=np.ones((4, 4)))
 
     expected = np.array(
@@ -95,7 +95,7 @@ def test_sandwich_estimator(hess):
     np.allclose(calculated, expected)
 
 
-def test_robust_se(jac, hess):
+def test_cov_robust(jac, hess):
     calculated = cov_robust(jac, hess)
 
     expected = np.array(
@@ -109,7 +109,7 @@ def test_robust_se(jac, hess):
     np.allclose(calculated, expected)
 
 
-def test_cluster_robust_se(jac, hess, design_options):
+def test_cov_cluster_robust(jac, hess, design_options):
     calculated = cov_cluster_robust(
         jac,
         hess,
@@ -128,7 +128,7 @@ def test_cluster_robust_se(jac, hess, design_options):
     np.allclose(calculated, expected)
 
 
-def test_stratified_robust_se(jac, hess, design_options):
+def test_cov_strata_robust(jac, hess, design_options):
     calculated = cov_strata_robust(
         jac,
         hess,
