@@ -6,6 +6,9 @@ TEST_DIR = Path(__file__).parent / "tests"
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 
+EXAMPLE_DIR = Path(__file__).parent / "examples"
+
+
 DEFAULT_N_CORES = 1
 
 CRITERION_PENALTY_SLOPE = 0.1

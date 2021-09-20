@@ -33,14 +33,25 @@ Optimization
   interactive dashboard. See :ref:`dashboard`.
 
 
-
 .. _How to use logging: how_to_guides/optimization/how_to_use_logging.ipynb
-
 
 
   .. image:: _static/images/dashboard.gif
     :scale: 80 %
     :align: center
+
+Estimation and Inference
+------------------------
+
+- You can estimate a model using method of simulated moments (MSM), calculate standard
+  errors and do sensitivity analysis with just one function call.
+  See `MSM Tutorial`_
+- Asymptotic standard errors for maximum likelihood estimation.
+- estimagic also provides bootstrap confidence intervals and standard errors.
+  Of course the bootstrap procedures are parallelized.
+
+.. _MSM Tutorial: getting_started/first_msm_estimation_with_estimagic.ipynb
+
 
 Numerical differentiation
 -------------------------
@@ -48,13 +59,6 @@ Numerical differentiation
   <https://en.wikipedia.org/wiki/Richardson_extrapolation>`_.
 - Function evaluations needed for numerical derivatives can be done in parallel
   with pre-implemented or user provided batch evaluators.
-
-Statistical inference
----------------------
-- estimagic provides asymptotic standard errors for maximum likelihood and method
-  of simulated moments.
-- estimagic also provides bootstrap confidence intervals and standard errors.
-  Of course the bootstrap procedures are parallelized.
 
 
 Structure of the documentation
