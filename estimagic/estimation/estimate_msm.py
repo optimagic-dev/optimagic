@@ -7,7 +7,7 @@ import pandas as pd
 
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.inference.msm_covs import cov_optimal
-from estimagic.inference.msm_covs import cov_sandwich
+from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import get_internal_first_derivative
 from estimagic.inference.shared import transform_covariance
@@ -81,10 +81,6 @@ def estimate_msm(
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "suffix": A string that is appended to the default table names, separated
-            by an underscore. You can use this if you want to write the log into an
-            existing database where the default names "optimization_iterations",
-            "optimization_status" and "optimization_problem" are already in use.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
@@ -92,10 +88,10 @@ def estimate_msm(
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
-            - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to maximize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
+            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
+            do if the tables we want to write to already exist. Default "extend".
+            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
+            do if the database we want to write to already exists. Default "extend".
         minimize_options (dict or False): Keyword arguments that govern the numerical
             optimization. Valid entries are all arguments of
             :func:`~estimagic.optimization.optimize.minimize` except for criterion,
@@ -204,7 +200,7 @@ def estimate_msm(
     if is_optimal:
         cov = cov_optimal(jac, weights)
     else:
-        cov = cov_sandwich(jac, weights, moments_cov)
+        cov = cov_robust(jac, weights, moments_cov)
 
     cov = transform_covariance(
         params=params,

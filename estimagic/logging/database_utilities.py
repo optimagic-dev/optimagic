@@ -140,9 +140,7 @@ def make_optimization_status_table(database, if_exists="extend"):
     database.create_all(database.bind)
 
 
-def make_optimization_problem_table(
-    database, if_exists="extend", save_all_arguments=True
-):
+def make_optimization_problem_table(database, if_exists="extend"):
     table_name = "optimization_problem"
     _handle_existing_table(database, table_name, if_exists)
 

@@ -14,7 +14,7 @@ import pandas as pd
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import INVALID_SENSITIVITY_MSG
 from estimagic.inference.msm_covs import cov_optimal
-from estimagic.inference.msm_covs import cov_sandwich
+from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse
 
@@ -262,7 +262,7 @@ def calculate_actual_sensitivity_to_removal(jac, weights, moments_cov, params_co
         weight_tilde_k[k, :] = 0
         weight_tilde_k[:, k] = 0
 
-        sigma_tilde_k = cov_sandwich(_jac, weight_tilde_k, _moments_cov)
+        sigma_tilde_k = cov_robust(_jac, weight_tilde_k, _moments_cov)
 
         m4k = sigma_tilde_k - _params_cov
         m4k = m4k.diagonal()
