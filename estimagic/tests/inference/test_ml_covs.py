@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.inference import likelihood_covs
+from estimagic.inference import ml_covs
 
 FIX_PATH = Path(__file__).resolve().parent / "fixtures"
 
@@ -64,6 +64,6 @@ def test_cov_function(model, method):
 
     inputs = get_input(model, input_types)
 
-    calculated = getattr(likelihood_covs, "cov_{}".format(method))(**inputs)
+    calculated = getattr(ml_covs, "cov_{}".format(method))(**inputs)
 
     aaae(calculated, expected)

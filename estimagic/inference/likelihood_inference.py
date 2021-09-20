@@ -2,7 +2,7 @@ import functools
 
 from estimagic.decorators import numpy_interface
 from estimagic.differentiation.derivatives import first_derivative
-from estimagic.inference.likelihood_covs import cov_jacobian
+from estimagic.inference.ml_covs import cov_jacobian
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import transform_covariance
 from estimagic.parameters.process_constraints import process_constraints
