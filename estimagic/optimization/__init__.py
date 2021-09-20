@@ -27,7 +27,11 @@ if IS_NLOPT_INSTALLED:
     )
 # drop private and helper functions
 AVAILABLE_ALGORITHMS = {}
-PUBLIC_HELPERS = ["calculate_trustregion_initial_radius", "get_scipy_bounds"]
+PUBLIC_HELPERS = [
+    "calculate_trustregion_initial_radius",
+    "get_scipy_bounds",
+    "process_scipy_result",
+]
 for k, v in COLLECTED_FUNCTIONS.items():
     if not k.startswith("_") and k not in PUBLIC_HELPERS:
         AVAILABLE_ALGORITHMS[k] = v
