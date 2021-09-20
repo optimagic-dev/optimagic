@@ -9,6 +9,7 @@ from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 def bootstrap(
     data,
     outcome,
+    outcome_kwargs=None,
     n_draws=1_000,
     cluster_by=None,
     ci_method="percentile",
@@ -25,6 +26,7 @@ def bootstrap(
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
             Needs to return a pandas Series.
+        outcome_kwargs (dict): Additional keyword arguments for outcome.
         n_draws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
         ci_method (str): method of choice for confidence interval computation.
@@ -49,16 +51,18 @@ def bootstrap(
     estimates = get_bootstrap_outcomes(
         data=data,
         outcome=outcome,
+        outcome_kwargs=outcome_kwargs,
         cluster_by=cluster_by,
         seed=seed,
+        n_draws=n_draws,
         n_cores=n_cores,
         error_handling=error_handling,
         batch_evaluator=batch_evaluator,
     )
 
-    table = bootstrap_from_outcomes(data, outcome, estimates, ci_method, alpha, n_cores)
+    out = bootstrap_from_outcomes(data, outcome, estimates, ci_method, alpha, n_cores)
 
-    return table
+    return out
 
 
 def bootstrap_from_outcomes(
@@ -84,12 +88,16 @@ def bootstrap_from_outcomes(
 
     check_inputs(data=data, ci_method=ci_method, alpha=alpha)
 
-    results = pd.DataFrame(bootstrap_outcomes.mean(axis=0), columns=["mean"])
+    summary = pd.DataFrame(bootstrap_outcomes.mean(axis=0), columns=["mean"])
 
-    results["std"] = bootstrap_outcomes.std(axis=0)
+    summary["std"] = bootstrap_outcomes.std(axis=0)
 
     cis = compute_ci(data, outcome, bootstrap_outcomes, ci_method, alpha, n_cores)
-    results["lower_ci"] = cis["lower_ci"]
-    results["upper_ci"] = cis["upper_ci"]
+    summary["lower_ci"] = cis["lower_ci"]
+    summary["upper_ci"] = cis["upper_ci"]
 
-    return results
+    cov = bootstrap_outcomes.cov()
+
+    out = {"summary": summary, "cov": cov, "outcomes": bootstrap_outcomes}
+
+    return out

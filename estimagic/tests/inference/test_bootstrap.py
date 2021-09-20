@@ -44,7 +44,7 @@ def test_bootstrap_from_outcomes(setup, expected):
         outcome=g,
         bootstrap_outcomes=setup["estimates"],
         ci_method="percentile",
-    )
+    )["summary"]
 
     # use rounding to adjust precision because there is no other way of handling this
     # such that it is compatible across all supported pandas versions.
