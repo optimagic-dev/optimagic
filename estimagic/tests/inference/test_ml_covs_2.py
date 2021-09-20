@@ -4,12 +4,12 @@ import pytest
 
 from estimagic.inference.ml_covs import cov_hessian
 from estimagic.inference.ml_covs import cov_jacobian
+from estimagic.inference.se_estimation import _clustering
 from estimagic.inference.se_estimation import _sandwich_step
-from estimagic.inference.se_estimation import cluster_robust_se
-from estimagic.inference.se_estimation import clustering
-from estimagic.inference.se_estimation import robust_se
-from estimagic.inference.se_estimation import strata_robust_se
-from estimagic.inference.se_estimation import stratification
+from estimagic.inference.se_estimation import _stratification
+from estimagic.inference.se_estimation import cov_cluster_robust
+from estimagic.inference.se_estimation import cov_robust
+from estimagic.inference.se_estimation import cov_strata_robust
 
 
 @pytest.fixture
@@ -86,9 +86,6 @@ def setup_robust():
 @pytest.fixture
 def expected_robust():
     out = {}
-    out["robust_stderror"] = np.array(
-        [[30.193984], [5.729162], [75.147385], [17.755383]]
-    )
 
     out["robust_variance"] = np.array(
         [
@@ -99,8 +96,6 @@ def expected_robust():
         ]
     )
 
-    out["cluster_robust_se"] = np.array([[30.1901], [5.7280], [75.1199], [17.7546]])
-
     out["cluster_robust_var"] = np.array(
         [
             [911.411, -172.753, 2264.03, -534.648],
@@ -110,8 +105,6 @@ def expected_robust():
         ]
     )
 
-    out["strata_robust_se"] = np.array([[27.0028], [5.1233], [67.1893], [15.8802]])
-
     out["strata_robust_var"] = np.array(
         [
             [729.153, -138.203, 1810.42, -427.719],
@@ -120,8 +113,6 @@ def expected_robust():
             [-427.719, 80.9828, -1066.59, 252.18],
         ]
     )
-
-    out["sandwich_se"] = np.array([[72.0984], [26.0388], [505.115], [3.88746]])
 
     out["sandwich_var"] = np.array(
         [
@@ -159,8 +150,6 @@ def expected_robust():
         ]
     )
 
-    out["oim_se"] = np.array([6.688734, 3.001743, 22.07019, 3.44373])
-
     out["cov_jacobian"] = np.array(
         [
             [937.03508, -780.893, 781.1802, 741.8099],
@@ -170,50 +159,16 @@ def expected_robust():
         ]
     )
 
-    out["opg_se"] = np.array([30.611028, 27.3856, 405.3598, 27.2492])
-
-    out["cov_type_se"] = np.array([27.0028, 5.1233, 67.1893, 15.8801])
-
-    out["cov_type_var"] = np.array(
-        [
-            [729.1525, -138.2026, 1810.4228, -427.7185],
-            [-138.2026, 26.2483, -343.1207, 80.9827],
-            [1810.4228, -343.1207, 4514.4020, -1066.5944],
-            [-427.7185, 80.9827, -1066.5944, 252.1797],
-        ]
-    )
-
-    out["params_df"] = pd.DataFrame(
-        data=[
-            [0.5, 30.1901, -58.672596, 59.672596],
-            [0.5, 5.7280, -10.726880, 11.726880],
-            [0.5, 75.1199, -146.735004, 147.735004],
-            [0.5, 17.7546, -34.299016, 35.299016],
-        ],
-        columns=["value", "sandwich_standard_errors", "ci_lower", "ci_upper"],
-    )
-
-    out["cov_df"] = pd.DataFrame(
-        data=np.array(
-            [
-                [911.411, -172.753, 2264.03, -534.648],
-                [-172.753, 32.8104, -429.901, 101.228],
-                [2263.03, -428.901, 5643, -1333.24],
-                [-534.648, 101.228, -1333.24, 315.225],
-            ]
-        )
-    )
-
     return out
 
 
 def test_clustering(setup_robust, expected_robust):
-    cluster_meat = clustering(setup_robust["design_options"], setup_robust["jac"])
+    cluster_meat = _clustering(setup_robust["design_options"], setup_robust["jac"])
     np.allclose(cluster_meat, expected_robust["cluster_meat"])
 
 
 def test_stratification(setup_robust, expected_robust):
-    strata_meat = stratification(setup_robust["design_options"], setup_robust["jac"])
+    strata_meat = _stratification(setup_robust["design_options"], setup_robust["jac"])
     np.allclose(strata_meat, expected_robust["strata_meat"])
 
 
@@ -223,12 +178,12 @@ def test_sandwich_estimator(setup_robust, expected_robust):
 
 
 def test_robust_se(setup_robust, expected_robust):
-    calc_robust_var = robust_se(setup_robust["jac"], setup_robust["hess"])
+    calc_robust_var = cov_robust(setup_robust["jac"], setup_robust["hess"])
     np.allclose(calc_robust_var, expected_robust["robust_variance"])
 
 
 def test_cluster_robust_se(setup_robust, expected_robust):
-    calc_robust_cvar = cluster_robust_se(
+    calc_robust_cvar = cov_cluster_robust(
         setup_robust["jac"],
         setup_robust["hess"],
         setup_robust["design_options"],
@@ -237,7 +192,7 @@ def test_cluster_robust_se(setup_robust, expected_robust):
 
 
 def test_stratified_robust_se(setup_robust, expected_robust):
-    calc_strata_var = strata_robust_se(
+    calc_strata_var = cov_strata_robust(
         setup_robust["jac"],
         setup_robust["hess"],
         setup_robust["design_options"],
