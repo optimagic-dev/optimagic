@@ -173,6 +173,32 @@ def ipopt(
     jacobian_regularization_value=1e-8,
     jacobian_regularization_exponent=0.25,
     perturb_always_cd="no",
+    # restoration phase
+    expect_infeasible_problem="no",
+    expect_infeasible_problem_ctol=0.001,
+    expect_infeasible_problem_ytol=1e8,
+    start_with_resto="no",
+    soft_resto_pderror_reduction_factor=0.9999,
+    max_soft_resto_iters=10,
+    required_infeasibility_reduction=0.9,
+    max_resto_iter=3_000_000,
+    evaluate_orig_obj_at_resto_trial="yes",
+    resto_penalty_parameter=1000,
+    resto_proximity_weight=1,
+    bound_mult_reset_threshold=1000,
+    constr_mult_reset_threshold=0,
+    resto_failure_feasibility_threshold=None,
+    # hessian approximation
+    limited_memory_aug_solver="sherman-morrison",
+    limited_memory_max_history=6,
+    limited_memory_update_type="bfgs",
+    limited_memory_initialization="scalar1",
+    limited_memory_init_val=1,
+    limited_memory_init_val_max=1e8,
+    limited_memory_init_val_min=1e-8,
+    limited_memory_max_skipping=2,
+    limited_memory_special_for_resto="no",
+    hessian_approximation_space="nonlinear-variables",
 ):  ###
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -1031,6 +1057,170 @@ def ipopt(
       The default value for this string option is "no". Possible values: "yes",
       "no", True, False.
 
+    - expect_infeasible_problem (str or bool): Enable heuristics to quickly
+      detect an infeasible problem. This options is meant to activate heuristics
+      that may speed up the infeasibility determination if you expect that there
+      is a good chance for the problem to be infeasible. In the filter line
+      search procedure, the restoration phase is called more quickly than
+      usually, and more reduction in the constraint violation is enforced before
+      the restoration phase is left. If the problem is square, this option is
+      enabled automatically. The default value for this string option is "no".
+      Possible values: "yes", "no", True, False.
+    - expect_infeasible_problem_ctol (float): Threshold for disabling
+      "expect_infeasible_problem" option. If the constraint violation becomes
+      smaller than this threshold, the "expect_infeasible_problem" heuristics in
+      the filter line search are disabled. If the problem is square, this
+      options is set to 0. The valid range for this real option is 0 ≤
+      expect_infeasible_problem_ctol and its default value is 0.001.
+    - expect_infeasible_problem_ytol (float): Multiplier threshold for
+      activating "xpect_infeasible_problem" option. If the max norm of the
+      constraint multipliers becomes larger than this value and
+      "expect_infeasible_problem" is chosen, then the restoration phase is
+      entered. The valid range for this real option is 0 <
+      expect_infeasible_problem_ytol and its default value is 10+08.
+    - start_with_resto (str or bool): Whether to switch to restoration phase in
+      first iteration.Setting this option to "yes" forces the algorithm to
+      switch to the feasibility restoration phase in the first iteration. If the
+      initial point is feasible, the algorithm will abort with a failure. The
+      default value for this string option is "no". Possible values: "yes",
+      "no", True, False
+    - soft_resto_pderror_reduction_factor (float): Required reduction in
+      primal-dual error in the soft restoration phase. The soft restoration
+      phase attempts to reduce the primal-dual error with regular steps. If the
+      damped primal-dual step (damped only to satisfy the
+      fraction-to-the-boundary rule) is not decreasing the primal-dual error by
+      at least this factor, then the regular restoration phase is called.
+      Choosing "0" here disables the soft restoration phase. The valid range for
+      this real option is 0 ≤ soft_resto_pderror_reduction_factor and its
+      default value is 0.9999.
+    - max_soft_resto_iters (int): advanced! Maximum number of iterations
+      performed successively in soft rstoration phase. If the soft restoration
+      phase is performed for more than so many iterations in a row, the regular
+      restoration phase is called. The valid range for this integer option is 0
+      ≤ max_soft_resto_iters and its default value is 10.
+    - required_infeasibility_reduction (float): Required reduction of
+      infeasibility before leaving restoration phase. The restoration phase
+      algorithm is performed, until a point is found that is acceptable to the
+      filter and the infeasibility has been reduced by at least the fraction
+      given by this option. The valid range for this real option is 0 ≤
+      required_infeasibility_reduction < 1 and its default value is 0.9.
+    - max_resto_iter (int): advanced! Maximum number of successive iterations in
+      restoration phase.The algorithm terminates with an error message if the
+      number of iterations successively taken in the restoration phase exceeds
+      this number. The valid range for this integer option is 0 ≤ max_resto_iter
+      and its default value is 3000000.
+    - evaluate_orig_obj_at_resto_trial (str or bool): Determines if the original
+      objective function should be evaluated at restoration phase trial points.
+      Enabling this option makes the restoration phase algorithm evaluate the
+      objective function of the original problem at every trial point
+      encountered during the restoration phase, even if this value is not
+      required. In this way, it is guaranteed that the original objective
+      function can be evaluated without error at all accepted iterates;
+      otherwise the algorithm might fail at a point where the restoration phase
+      accepts an iterate that is good for the restoration phase problem, but not
+      the original problem. On the other hand, if the evaluation of the original
+      objective is expensive, this might be costly. The default value for this
+      string option is "yes". Possible values: "yes", "no", True, False
+    - resto_penalty_parameter (float): advanced! Penalty parameter in the
+      restoration phase objective fnction. This is the parameter rho in equation
+      (31a) in the Ipopt implementation paper. The valid range for this real
+      option is 0 < resto_penalty_parameter and its default value is 1000.
+    - resto_proximity_weight (float): advanced! Weighting factor for the
+      proximity term in restoration pase objective. This determines how the
+      parameter zeta in equation (29a) in the implementation paper is computed.
+      zeta here is resto_proximity_weight*sqrt(mu), where mu is the current
+      barrier parameter. The valid range for this real option is 0 ≤
+      resto_proximity_weight and its default value is 1.
+    - bound_mult_reset_threshold (float): Threshold for resetting bound
+      multipliers after the restoration pase. After returning from the
+      restoration phase, the bound multipliers are updated with a Newton step
+      for complementarity. Here, the change in the primal variables during the
+      entire restoration phase is taken to be the corresponding primal Newton
+      step. However, if after the update the largest bound multiplier exceeds
+      the threshold specified by this option, the multipliers are all reset to
+      1. The valid range for this real option is 0 ≤ bound_mult_reset_threshold
+         and its default value is 1000.
+    - constr_mult_reset_threshold (float): Threshold for resetting equality and
+      inequality multipliers ater restoration phase. After returning from the
+      restoration phase, the constraint multipliers are recomputed by a least
+      square estimate. This option triggers when those least-square estimates
+      should be ignored. The valid range for this real option is 0 ≤
+      constr_mult_reset_threshold and its default value is 0.
+    - resto_failure_feasibility_threshold (float): advanced! Threshold for
+      primal infeasibility to declare filure of restoration phase. If the
+      restoration phase is terminated because of the "acceptable" termination
+      criteria and the primal infeasibility is smaller than this value, the
+      restoration phase is declared to have failed. The default value is
+      actually 1e2*tol, where tol is the general termination tolerance. The
+      valid range for this real option is 0 ≤
+      resto_failure_feasibility_threshold and its default value is
+      0.
+
+    - limited_memory_aug_solver (str): advanced! Strategy for solving the
+      augmented system for low-rank Hessian. The default value for this string
+      option is "sherman-morrison". Possible values:
+        - "sherman-morrison": use Sherman-Morrison formula
+        - "extended": use an extended augmented system
+    - limited_memory_max_history (int): Maximum size of the history for the
+      limited quasi-Newton Hessian approximation. This option determines the
+      number of most recent iterations that are taken into account for the
+      limited-memory quasi-Newton approximation. The valid range for this
+      integer option is 0 ≤ limited_memory_max_history and its default value is
+      6.
+    - limited_memory_update_type (str): Quasi-Newton update formula for the
+      limited memory quasi-Newton approximation. The default value for this
+      string option is "bfgs". Possible values:
+        - "bfgs": BFGS update (with skipping)
+        - "sr1": SR1 (not working well)
+    - limited_memory_initialization (str): Initialization strategy for the
+      limited memory quasi-Newton aproximation. Determines how the diagonal
+      Matrix B_0 as the first term in the limited memory approximation should be
+      computed. The default value for this string option is "scalar1". Possible
+      values:
+        - "scalar1": sigma = s^Ty/s^Ts
+        - "scalar2": sigma = y^Ty/s^Ty
+        - "scalar3": arithmetic average of scalar1 and scalar2
+        - "scalar4": geometric average of scalar1 and scalar2
+        - "constant": sigma = limited_memory_init_val
+    - limited_memory_init_val (float): Value for B0 in low-rank update. The
+      starting matrix in the low rank update, B0, is chosen to be this multiple
+      of the identity in the first iteration (when no updates have been
+      performed yet), and is constantly chosen as this value, if
+      "limited_memory_initialization" is "constant". The valid range for this
+      real option is 0 < limited_memory_init_val and its default value is 1.
+    - limited_memory_init_val_max (float): Upper bound on value for B0 in
+      low-rank update. The starting matrix in the low rank update, B0, is chosen
+      to be this multiple of the identity in the first iteration (when no
+      updates have been performed yet), and is constantly chosen as this value,
+      if "limited_memory_initialization" is "constant". The valid range for this
+      real option is 0 < limited_memory_init_val_max and its default value is
+      10+08.
+    - limited_memory_init_val_min (float): Lower bound on value for B0 in
+      low-rank update. The starting matrix in the low rank update, B0, is chosen
+      to be this multiple of the identity in the first iteration (when no
+      updates have been performed yet), and is constantly chosen as this value,
+      if "limited_memory_initialization" is "constant". The valid range for this
+      real option is 0 < limited_memory_init_val_min and its default value is
+      10-08.
+    - limited_memory_max_skipping (int): Threshold for successive iterations
+      where update is skipped. If the update is skipped more than this number of
+      successive iterations, the quasi-Newton approximation is reset. The valid
+      range for this integer option is 1 ≤ limited_memory_max_skipping and its
+      default value is 2.
+    - limited_memory_special_for_resto (str or bool): Determines if the
+      quasi-Newton updates should be special dring the restoration phase. Until
+      Nov 2010, Ipopt used a special update during the restoration phase, but it
+      turned out that this does not work well. The new default uses the regular
+      update procedure and it improves results. If for some reason you want to
+      get back to the original update, set this option to "yes". The default
+      value for this string option is "no". Possible values: "yes", "no", True,
+      False.
+    - hessian_approximation_space (str): advanced! Indicates in which subspace
+      the Hessian information is to be approximated. The default value for this
+      string option is "nonlinear-variables". Possible values:
+        - "nonlinear-variables": only in space of nonlinear variables.
+        - "all-variables": in space of all variables (without slacks)
+
     ###
 
     The following options are not supported:
@@ -1040,6 +1230,7 @@ def ipopt(
       - scaling options (nlp_scaling_method, obj_scaling_factor,
         nlp_scaling_max_gradient, nlp_scaling_obj_target_gradient,
         nlp_scaling_constr_target_gradient, nlp_scaling_min_value)
+      - hessian_approximation: only allowed if a Hessian callback is provided.
 
     """
     if not IS_CYIPOPT_INSTALLED:
@@ -1123,6 +1314,23 @@ def ipopt(
     )
     neg_curv_test_reg = convert_bool_to_str(neg_curv_test_reg, "neg_curv_test_reg")
     perturb_always_cd = convert_bool_to_str(perturb_always_cd, "perturb_always_cd")
+    expect_infeasible_problem = convert_bool_to_str(
+        expect_infeasible_problem, "expect_infeasible_problem"
+    )
+    start_with_resto = convert_bool_to_str(start_with_resto, "start_with_resto")
+    evaluate_orig_obj_at_resto_trial = convert_bool_to_str(
+        evaluate_orig_obj_at_resto_trial, "evaluate_orig_obj_at_resto_trial"
+    )
+    limited_memory_special_for_resto = convert_bool_to_str(
+        limited_memory_special_for_resto, "limited_memory_special_for_resto"
+    )
+
+    # The default value is actually 1e2*tol, where tol is the general
+    # termination tolerance.
+    if resto_failure_feasibility_threshold is None:
+        resto_failure_feasibility_threshold = (
+            1e2 * convergence_relative_criterion_tolerance
+        )
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
@@ -1283,6 +1491,34 @@ def ipopt(
         "jacobian_regularization_value": float(jacobian_regularization_value),
         "jacobian_regularization_exponent": float(jacobian_regularization_exponent),
         "perturb_always_cd": perturb_always_cd,
+        # restoration phase
+        "expect_infeasible_problem": expect_infeasible_problem,
+        "expect_infeasible_problem_ctol": expect_infeasible_problem_ctol,
+        "expect_infeasible_problem_ytol": expect_infeasible_problem_ytol,
+        "start_with_resto": start_with_resto,
+        "soft_resto_pderror_reduction_factor": soft_resto_pderror_reduction_factor,
+        "max_soft_resto_iters": max_soft_resto_iters,
+        "required_infeasibility_reduction": float(required_infeasibility_reduction),
+        "max_resto_iter": max_resto_iter,
+        "evaluate_orig_obj_at_resto_trial": evaluate_orig_obj_at_resto_trial,
+        "resto_penalty_parameter": float(resto_penalty_parameter),
+        "resto_proximity_weight": float(resto_proximity_weight),
+        "bound_mult_reset_threshold": float(bound_mult_reset_threshold),
+        "constr_mult_reset_threshold": float(constr_mult_reset_threshold),
+        "resto_failure_feasibility_threshold": float(
+            resto_failure_feasibility_threshold
+        ),
+        # hessian approximation
+        "limited_memory_aug_solver": limited_memory_aug_solver,
+        "limited_memory_max_history": limited_memory_max_history,
+        "limited_memory_update_type": limited_memory_update_type,
+        "limited_memory_initialization": limited_memory_initialization,
+        "limited_memory_init_val": float(limited_memory_init_val),
+        "limited_memory_init_val_max": limited_memory_init_val_max,
+        "limited_memory_init_val_min": limited_memory_init_val_min,
+        "limited_memory_max_skipping": limited_memory_max_skipping,
+        "limited_memory_special_for_resto": limited_memory_special_for_resto,
+        "hessian_approximation_space": hessian_approximation_space,
     }
     ###
 
