@@ -129,6 +129,31 @@ def ipopt(
     watchdog_trial_iter_max=3,
     theta_max_fact=10_000,
     theta_min_fact=0.0001,
+    eta_phi=1e-8,
+    delta=1,
+    s_phi=2.3,
+    s_theta=1.1,
+    gamma_phi=1e-8,
+    gamma_theta=1e-5,
+    alpha_min_frac=0.05,
+    max_soc=4,
+    kappa_soc=0.99,
+    obj_max_inc=5,
+    max_filter_resets=5,
+    filter_reset_trigger=5,
+    corrector_type="none",
+    skip_corr_if_neg_curv="yes",
+    skip_corr_in_monotone_mode="yes",
+    corrector_compl_avrg_red_fact=1,
+    soc_method=0,
+    nu_init=1e-6,
+    nu_inc=0.0001,
+    rho=0.1,
+    kappa_sigma=1e10,
+    recalc_y="no",
+    recalc_y_feas_tol=1e-6,
+    slack_move=1.81899 * 1e-12,
+    constraint_violation_norm_type="1-norm",
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -735,6 +760,139 @@ def ipopt(
       theta_min (see paragraph before Eqn. (19) in the implementation paper).
       The valid range for this real option is 0 < theta_min_fact and its default
       value is 0.0001.
+    - eta_phi (float): advanced! Relaxation factor in the Armijo condition. See
+      Eqn. (20) in the implementation paper. The valid range for this real
+      option is 0 < eta_phi < 0.5 and its default value is 10-08.
+    - delta (float): advanced! Multiplier for constraint violation in the
+      switching rule. See Eqn. (19) in the implementation paper. The valid range
+      for this real option is 0 < delta and its default value is 1.
+    - s_phi (float): advanced! Exponent for linear barrier function model in the
+      switching rule. See Eqn. (19) in the implementation paper. The valid range
+      for this real option is 1 < s_phi and its default value is 2.3.
+    - s_theta (float): advanced! Exponent for current constraint violation in
+      the switching rule. See Eqn. (19) in the implementation paper. The valid
+      range for this real option is 1 < s_theta and its default value is 1.1.
+    - gamma_phi (float): advanced! Relaxation factor in the filter margin for
+      the barrier function. See Eqn. (18a) in the implementation paper. The
+      valid range for this real option is 0 < gamma_phi < 1 and its default
+      value is 10-08.
+    - gamma_theta (float): advanced! Relaxation factor in the filter margin for
+      the constraint violation. See Eqn. (18b) in the implementation paper. The
+      valid range for this real option is 0 < gamma_theta < 1 and its default
+      value is 10-05.
+    - alpha_min_frac (float): advanced! Safety factor for the minimal step size
+      (before switching to restoration phase). This is gamma_alpha in Eqn. (20)
+      in the implementation paper. The valid range for this real option is 0 <
+      alpha_min_frac < 1 and its default value is 0.05.
+    - max_soc (int): Maximum number of second order correction trial steps at
+      each iteration. Choosing 0 disables the second order corrections. This is
+      p^{max} of Step A-5.9 of Algorithm A in the implementation paper. The
+      valid range for this integer option is 0 ≤ max_soc and its default value
+      is 4.
+    - kappa_soc (float): advanced! Factor in the sufficient reduction rule for
+      second order correction. This option determines how much a second order
+      correction step must reduce the constraint violation so that further
+      correction steps are attempted. See Step A-5.9 of Algorithm A in the
+      implementation paper. The valid range for this real option is 0 <
+      kappa_soc and its default value is 0.99.
+    - obj_max_inc (float): advanced! Determines the upper bound on the
+      acceptable increase of barrier objective function. Trial points are
+      rejected if they lead to an increase in the barrier objective function by
+      more than obj_max_inc orders of magnitude. The valid range for this real
+      option is 1 < obj_max_inc and its default value is 5.
+    - max_filter_resets (int): advanced! Maximal allowed number of filter
+      resets. A positive number enables a heuristic that resets the filter,
+      whenever in more than "filter_reset_trigger" successive iterations the
+      last rejected trial steps size was rejected because of the filter. This
+      option determine the maximal number of resets that are allowed to take
+      place. The valid range for this integer option is 0 ≤ max_filter_resets
+      and its default value is 5.
+    - filter_reset_trigger (int): Advanced! Number of iterations that trigger
+      the filter reset. If the filter reset heuristic is active and the number
+      of successive iterations in which the last rejected trial step size was
+      rejected because of the filter, the filter is reset. The valid range for
+      this integer option is 1 ≤ filter_reset_trigger and its default value is
+      5.
+    - corrector_type (str): advanced! The type of corrector steps that should be
+      taken. If "mu_strategy" is "adaptive", this option determines what kind of
+      corrector steps should be tried. Changing this option is experimental. The
+      default value for this string option is "none". Possible values:
+        - "none": no corrector
+        - "affine": corrector step towards mu=0
+        - "primal-dual": corrector step towards current mu
+    - skip_corr_if_neg_curv (str or bool): advanced! Whether to skip the
+      corrector step in negative curvature ieration. The corrector step is not
+      tried if negative curvature has been encountered during the computation of
+      the search direction in the current iteration. This option is only used if
+      "mu_strategy" is "adaptive". Changing this option is experimental. The
+      default value for this string option is "yes". Possible values: "yes",
+      "no", True, False
+    - skip_corr_in_monotone_mode (str or bool): Advanced! Whether to skip the
+      corrector step during monotone brrier parameter mode. The corrector step
+      is not tried if the algorithm is currently in the monotone mode (see also
+      option "barrier_strategy"). This option is only used if "mu_strategy" is
+      "adaptive". Changing this option is experimental. The default value for
+      this string option is "yes". Possible values: "yes", "no", True, False
+    - corrector_compl_avrg_red_fact (int): advanced! Complementarity tolerance
+      factor for accepting corrector step. This option determines the factor by
+      which complementarity is allowed to increase for a corrector step to be
+      accepted. Changing this option is experimental. The valid range for this
+      real option is 0 < corrector_compl_avrg_red_fact and its default value is
+      1.
+    - soc_method (int): Ways to apply second order correction. This option
+      determines the way to apply second order correction, 0 is the method
+      described in the implementation paper. 1 is the modified way which adds
+      alpha on the rhs of x and s rows. Officially, the valid range for this
+      integer option is 0 ≤ soc_method ≤ 1 and its default value is 0 but only 0
+      and 1 are allowed.
+
+    - nu_init (float): advanced! Initial value of the penalty parameter. The
+      valid range for this real option is 0 < nu_init and its default value is
+      10-06.
+    - nu_inc (float): advanced! Increment of the penalty parameter. The valid
+      range for this real option is 0 < nu_inc and its default value is 0.0001.
+    - rho (float): advanced! Value in penalty parameter update formula. The
+      valid range for this real option is 0 < rho < 1 and its default value is
+      0.1.
+    - kappa_sigma (float): advanced! Factor limiting the deviation of dual
+      variables from primal estimates. If the dual variables deviate from their
+      primal estimates, a correction is performed. See Eqn. (16) in the
+      implementation paper. Setting the value to less than 1 disables the
+      correction. The valid range for this real option is 0 < kappa_sigma and
+      its default value is 10+10.
+    - recalc_y (str or bool): Tells the algorithm to recalculate the equality
+      and inequality multipliers as least square estimates. This asks the
+      algorithm to recompute the multipliers, whenever the current infeasibility
+      is less than recalc_y_feas_tol. Choosing yes might be helpful in the
+      quasi-Newton option. However, each recalculation requires an extra
+      factorization of the linear system. If a limited memory quasi-Newton
+      option is chosen, this is used by default. The default value for this
+      string option is "no". Possible values:
+        - "no" or False: use the Newton step to update the multipliers
+        - "yes" or True: use least-square multiplier estimates
+    - recalc_y_feas_tol (float): Feasibility threshold for recomputation of
+      multipliers. If recalc_y is chosen and the current infeasibility is less
+      than this value, then the multipliers are recomputed. The valid range for
+      this real option is 0 < recalc_y_feas_tol and its default value is 10-06.
+    - slack_move (float): advanced! Correction size for very small slacks. Due
+      to numerical issues or the lack of an interior, the slack variables might
+      become very small. If a slack becomes very small compared to machine
+      precision, the corresponding bound is moved slightly. This parameter
+      determines how large the move should be. Its default value is
+      mach_eps^{3/4}. See also end of Section 3.5 in implementation paper - but
+      actual implementation might be somewhat different. The valid range for
+      this real option is 0 ≤ slack_move and its default value is 1.81899 ·
+      10-12.
+    - constraint_violation_norm_type (str): advanced! Norm to be used for the
+      constraint violation in te line search. Determines which norm should be
+      used when the algorithm computes the constraint violation in the line
+      search. The default value for this string option is "1-norm". Possible
+      values:
+        - "1-norm": use the 1-norm
+        - "2-norm": use the 2-norm
+        - "max-norm": use the infinity norm
+
+
 
     The following options are not supported:
       - num_linear_variables: since estimagic may reparametrize your problem and
@@ -813,6 +971,13 @@ def ipopt(
     accept_every_trial_step = convert_bool_to_str(
         accept_every_trial_step, "accept_every_trial_step"
     )
+    skip_corr_if_neg_curv = convert_bool_to_str(
+        skip_corr_if_neg_curv, "skip_corr_if_neg_curv"
+    )
+    skip_corr_in_monotone_mode = convert_bool_to_str(
+        skip_corr_in_monotone_mode, "skip_corr_in_monotone_mode"
+    )
+    recalc_y = convert_bool_to_str(recalc_y, "recalc_y")
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
@@ -929,6 +1094,31 @@ def ipopt(
         "watchdog_trial_iter_max": watchdog_trial_iter_max,
         "theta_max_fact": float(theta_max_fact),
         "theta_min_fact": theta_min_fact,
+        "eta_phi": eta_phi,
+        "delta": float(delta),
+        "s_phi": s_phi,
+        "s_theta": s_theta,
+        "gamma_phi": gamma_phi,
+        "gamma_theta": gamma_theta,
+        "alpha_min_frac": alpha_min_frac,
+        "max_soc": max_soc,
+        "kappa_soc": kappa_soc,
+        "obj_max_inc": float(obj_max_inc),
+        "max_filter_resets": max_filter_resets,
+        "filter_reset_trigger": filter_reset_trigger,
+        "corrector_type": corrector_type,
+        "skip_corr_if_neg_curv": skip_corr_if_neg_curv,
+        "skip_corr_in_monotone_mode": skip_corr_in_monotone_mode,
+        "corrector_compl_avrg_red_fact": float(corrector_compl_avrg_red_fact),
+        "soc_method": soc_method,
+        "nu_init": nu_init,
+        "nu_inc": nu_inc,
+        "rho": rho,
+        "kappa_sigma": kappa_sigma,
+        "recalc_y": recalc_y,
+        "recalc_y_feas_tol": recalc_y_feas_tol,
+        "slack_move": slack_move,
+        "constraint_violation_norm_type": constraint_violation_norm_type,
     }
 
     raw_res = cyipopt.minimize_ipopt(
