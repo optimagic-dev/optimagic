@@ -429,48 +429,48 @@ def ipopt(
       "no". Possible values: "yes", "no", True, False
 
     - mu_max_fact (float): Factor for initialization of maximum value for
-        barrier parameter. This option determines the upper bound on the barrier
-        parameter. This upper bound is computed as the average complementarity
-        at the initial point times the value of this option. (Only used if
-        option "mu_strategy" is chosen as "adaptive".) The valid range for this
-        real option is 0 < mu_max_fact and its default value is 1000.
+      barrier parameter. This option determines the upper bound on the barrier
+      parameter. This upper bound is computed as the average complementarity at
+      the initial point times the value of this option. (Only used if option
+      "mu_strategy" is chosen as "adaptive".) The valid range for this real
+      option is 0 < mu_max_fact and its default value is 1000.
     - mu_max (float): Maximum value for barrier parameter. This option specifies
-        an upper bound on the barrier parameter in the adaptive mu selection
-        mode. If this option is set, it overwrites the effect of mu_max_fact.
-        (Only used if option "mu_strategy" is chosen as "adaptive".) The valid
-        range for this real option is 0 < mu_max and its default value is
-        100000.
+      an upper bound on the barrier parameter in the adaptive mu selection mode.
+      If this option is set, it overwrites the effect of mu_max_fact. (Only used
+      if option "mu_strategy" is chosen as "adaptive".) The valid range for this
+      real option is 0 < mu_max and its default value is 100000.
     - mu_min (float): Minimum value for barrier parameter. This option specifies
-        the lower bound on the barrier parameter in the adaptive mu selection
-        mode. By default, it is set to the minimum of 1e-11 and
-        min("tol","compl_inf_tol")/("barrier_tol_factor"+1), which should be a
-        reasonable value. (Only used if option "mu_strategy" is chosen as
-        "adaptive".) The valid range for this real option is 0 < mu_min and its
-        default value is 10-11.
+      the lower bound on the barrier parameter in the adaptive mu selection
+      mode. By default, it is set to the minimum of 1e-11 and
+      min("tol","compl_inf_tol")/("barrier_tol_factor"+1), which should be a
+      reasonable value. (Only used if option "mu_strategy" is chosen as
+      "adaptive".) The valid range for this real option is 0 < mu_min and its
+      default value is 10-11.
     - adaptive_mu_globalization (str): Globalization strategy for the adaptive
-        mu selection mode. To achieve global convergence of the adaptive
-        version, the algorithm has to switch to the monotone mode
-        (Fiacco-McCormick approach) when convergence does not seem to appear.
-        This option sets the criterion used to decide when to do this switch.
-        (Only used if option "mu_strategy" is chosen as "adaptive".) The default
-        value for this string option is "obj-constr-filter". Possible values: -
-        "kkt-error": nonmonotone decrease of kkt-error - "obj-constr-filter":
-        2-dim filter for objective and constraint violation -
-        "never-monotone-mode": disables globalization.
+      mu selection mode. To achieve global convergence of the adaptive version,
+      the algorithm has to switch to the monotone mode (Fiacco-McCormick
+      approach) when convergence does not seem to appear. This option sets the
+      criterion used to decide when to do this switch. (Only used if option
+      "mu_strategy" is chosen as "adaptive".) The default value for this string
+      option is "obj-constr-filter". Possible values:
+        - "kkt-error": nonmonotone decrease of kkt-error
+        - "obj-constr-filter": 2-dim filter for objective and constraint
+          violation
+        - "never-monotone-mode": disables globalization.
     - adaptive_mu_kkterror_red_iters (float): advanced feature! Maximum number
-      of iterations requiring sufficient pogress. For the "kkt-error" based
+      of iterations requiring sufficient progress. For the "kkt-error" based
       globalization strategy, sufficient progress must be made for
       "adaptive_mu_kkterror_red_iters" iterations. If this number of iterations
       is exceeded, the globalization strategy switches to the monotone mode. The
       valid range for this integer option is 0 ≤ adaptive_mu_kkterror_red_iters
       and its default value is 4.
     - adaptive_mu_kkterror_red_fact (float): advanced feature! Sufficient
-      decrease factor for "kkt-error" gobalization strategy. For the "kkt-error"
+      decrease factor for "kkt-error" globalization strategy. For the "kkt-error"
       based globalization strategy, the error must decrease by this factor to be
       deemed sufficient decrease. The valid range for this real option is 0 <
       adaptive_mu_kkterror_red_fact < 1 and its default value is 0.9999.
     - filter_margin_fact (float): advanced feature! Factor determining width of
-      margin for obj-constr-filter aaptive globalization strategy. When using
+      margin for obj-constr-filter adaptive globalization strategy. When using
       the adaptive globalization strategy, "obj-constr-filter", sufficient
       progress for a filter entry is defined as follows: (new obj) < (filter
       obj) - filter_margin_fact*(new constr-viol) OR (new constr-viol) < (filter
