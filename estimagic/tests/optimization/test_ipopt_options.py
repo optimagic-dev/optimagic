@@ -145,6 +145,27 @@ options_and_expected = [
     ({"recalc_y_feas_tol": 1e-4}, None),
     ({"slack_move": 1e-11}, None),
     ({"constraint_violation_norm_type": "2-norm"}, None),
+    # step calculation
+    ({"mehrotra_algorithm": False}, None),
+    ({"fast_step_computation": True}, None),
+    ({"min_refinement_steps": 3}, None),
+    ({"max_refinement_steps": 12}, None),
+    ({"max_refinement_steps": 12.5}, TypeError),
+    ({"residual_ratio_max": 1e-9}, None),
+    ({"residual_ratio_singular": 1e-4}, None),
+    ({"residual_improvement_factor": 1.3}, None),
+    ({"neg_curv_test_tol": 1e-11}, None),
+    ({"neg_curv_test_reg": False}, None),
+    ({"max_hessian_perturbation": 1e19}, None),
+    ({"min_hessian_perturbation": 1e-19}, None),
+    ({"perturb_inc_fact_first": 50.3}, None),
+    ({"perturb_inc_fact": 4.4}, None),
+    ({"perturb_dec_fact": 0.25}, None),
+    ({"first_hessian_perturbation": 0.002}, None),
+    ({"jacobian_regularization_value": 1e-7}, None),
+    ({"jacobian_regularization_value": -1e-7}, TypeError),
+    ({"jacobian_regularization_exponent": 0.2}, None),
+    ({"perturb_always_cd": False}, None),
 ]
 
 test_cases = product([sos_dict_criterion], options_and_expected)

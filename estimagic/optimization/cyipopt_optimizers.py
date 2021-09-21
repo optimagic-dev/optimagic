@@ -154,7 +154,26 @@ def ipopt(
     recalc_y_feas_tol=1e-6,
     slack_move=1.81899 * 1e-12,
     constraint_violation_norm_type="1-norm",
-):
+    # step calculation
+    mehrotra_algorithm="no",
+    fast_step_computation="no",
+    min_refinement_steps=1,
+    max_refinement_steps=10,
+    residual_ratio_max=1e-10,
+    residual_ratio_singular=1e-5,
+    residual_improvement_factor=1,
+    neg_curv_test_tol=0,
+    neg_curv_test_reg="yes",
+    max_hessian_perturbation=1e20,
+    min_hessian_perturbation=1e-20,
+    perturb_inc_fact_first=100,
+    perturb_inc_fact=8,
+    perturb_dec_fact=0.333333,
+    first_hessian_perturbation=0.0001,
+    jacobian_regularization_value=1e-8,
+    jacobian_regularization_exponent=0.25,
+    perturb_always_cd="no",
+):  ###
     """Minimize a scalar function using the Interior Point Optimizer.
 
     This implementation of the Interior Point Optimizer (:cite:`Waechter2005`,
@@ -892,7 +911,127 @@ def ipopt(
         - "2-norm": use the 2-norm
         - "max-norm": use the infinity norm
 
+    - mehrotra_algorithm (str or bool): Indicates whether to do Mehrotra's
+      predictor-corrector algorithm. If enabled, line search is disabled and the
+      (unglobalized) adaptive mu strategy is chosen with the "probing" oracle,
+      and "corrector_type=affine" is used without any safeguards; you should not
+      set any of those options explicitly in addition. Also, unless otherwise
+      specified, the values of "bound_push", "bound_frac", and
+      "bound_mult_init_val" are set more aggressive, and sets
+      "alpha_for_y=bound_mult". The Mehrotra's predictor-corrector algorithm
+      works usually very well for LPs and convex QPs. The default value for this
+      string option is "no". Possible values: "yes", "no", True, False.
+    - fast_step_computation (str or bool): Indicates if the linear system should
+      be solved quickly. If enabled, the algorithm assumes that the linear
+      system that is solved to obtain the search direction is solved
+      sufficiently well. In that case, no residuals are computed to verify the
+      solution and the computation of the search direction is a little faster.
+      The default value for this string option is "no". Possible values: "yes",
+      "no", True, False.
+    - min_refinement_steps (int): Minimum number of iterative refinement steps
+      per linear system solve. Iterative refinement (on the full unsymmetric
+      system) is performed for each right hand side. This option determines the
+      minimum number of iterative refinements (i.e. at least
+      "min_refinement_steps" iterative refinement steps are enforced per right
+      hand side.) The valid range for this integer option is 0 ≤
+      min_refinement_steps and its default value is 1.
+    - max_refinement_steps (int): Maximum number of iterative refinement steps
+      per linear system solve. Iterative refinement (on the full unsymmetric
+      system) is performed for each right hand side. This option determines the
+      maximum number of iterative refinement steps. The valid range for this
+      integer option is 0 ≤ max_refinement_steps and its default value is 10.
+    - residual_ratio_max (float): advanced! Iterative refinement tolerance.
+      Iterative refinement is performed until the residual test ratio is less
+      than this tolerance (or until "max_refinement_steps" refinement steps are
+      performed). The valid range for this real option is 0 < residual_ratio_max
+      and its default value is 10-10.
+    - residual_ratio_singular (float): advanced! Threshold for declaring linear
+      system singular after filed iterative refinement. If the residual test
+      ratio is larger than this value after failed iterative refinement, the
+      algorithm pretends that the linear system is singular. The valid range for
+      this real option is 0 < residual_ratio_singular and its default value is
+      10-05.
+    - residual_improvement_factor (float): advanced! Minimal required reduction
+      of residual test ratio in iterative refinement. If the improvement of the
+      residual test ratio made by one iterative refinement step is not better
+      than this factor, iterative refinement is aborted. The valid range for
+      this real option is 0 < residual_improvement_factor and its default value
+      is 1.
 
+    - neg_curv_test_tol (float): Tolerance for heuristic to ignore wrong
+      inertia. If nonzero, incorrect inertia in the augmented system is ignored,
+      and Ipopt tests if the direction is a direction of positive curvature.
+      This tolerance is alpha_n in the paper by Zavala and Chiang (2014) and it
+      determines when the direction is considered to be sufficiently positive. A
+      value in the range of [1e-12, 1e-11] is recommended. The valid range for
+      this real option is 0 ≤ neg_curv_test_tol and its default value is 0.
+    - neg_curv_test_reg (str or bool): Whether to do the curvature test with the
+      primal regularization (see Zvala and Chiang, 2014). The default value for
+      this string option is "yes". Possible values:
+        - "yes" or True: use primal regularization with the inertia-free
+          curvature test
+        - "no" or False: use original IPOPT approach, in which the primal
+          regularization is ignored
+    - max_hessian_perturbation (float): Maximum value of regularization
+      parameter for handling negative curvature. In order to guarantee that the
+      search directions are indeed proper descent directions, Ipopt requires
+      that the inertia of the (augmented) linear system for the step computation
+      has the correct number of negative and positive eigenvalues. The idea is
+      that this guides the algorithm away from maximizers and makes Ipopt more
+      likely converge to first order optimal points that are minimizers. If the
+      inertia is not correct, a multiple of the identity matrix is added to the
+      Hessian of the Lagrangian in the augmented system. This parameter gives
+      the maximum value of the regularization parameter. If a regularization of
+      that size is not enough, the algorithm skips this iteration and goes to
+      the restoration phase. This is delta_w^max in the implementation paper.
+      The valid range for this real option is 0 < max_hessian_perturbation and
+      its default value is 10+20.
+    - min_hessian_perturbation (float): Smallest perturbation of the Hessian
+      block. The size of the perturbation of the Hessian block is never selected
+      smaller than this value, unless no perturbation is necessary. This is
+      delta_w^min in implementation paper. The valid range for this real option
+      is 0 ≤ min_hessian_perturbation and its default value is 10-20.
+    - perturb_inc_fact_first (float): Increase factor for x-s perturbation for
+      very first perturbation. The factor by which the perturbation is increased
+      when a trial value was not sufficient - this value is used for the
+      computation of the very first perturbation and allows a different value
+      for the first perturbation than that used for the remaining perturbations.
+      This is bar_kappa_w^+ in the implementation paper. The valid range for
+      this real option is 1 < perturb_inc_fact_first and its default value is
+      100.
+    - perturb_inc_fact (float): Increase factor for x-s perturbation. The factor
+      by which the perturbation is increased when a trial value was not
+      sufficient
+      - this value is used for the computation of all perturbations except for
+        the first. This is kappa_w^+ in the implementation paper. The valid
+        range for this real option is 1 < perturb_inc_fact and its default value
+        is 8.
+    - perturb_dec_fact (float): Decrease factor for x-s perturbation. The factor
+      by which the perturbation is decreased when a trial value is deduced from
+      the size of the most recent successful perturbation. This is kappa_w^- in
+      the implementation paper. The valid range for this real option is 0 <
+      perturb_dec_fact < 1 and its default value is 0.333333.
+    - first_hessian_perturbation (float): Size of first x-s perturbation tried.
+      The first value tried for the x-s perturbation in the inertia correction
+      scheme. This is delta_0 in the implementation paper. The valid range for
+      this real option is 0 < first_hessian_perturbation and its default value
+      is 0.0001.
+    - jacobian_regularization_value (float): Size of the regularization for
+      rank-deficient constraint Jacobians. This is bar delta_c in the
+      implementation paper. The valid range for this real option is 0 ≤
+      jacobian_regularization_value and its default value is 10-08.
+    - jacobian_regularization_exponent (float): advanced! Exponent for mu in the
+      regularization for rnk-deficient constraint Jacobians. This is kappa_c in
+      the implementation paper. The valid range for this real option is 0 ≤
+      jacobian_regularization_exponent and its default value is 0.25.
+    - perturb_always_cd (str or bool): advanced! Active permanent perturbation
+      of constraint linearization. Enabling this option leads to using the
+      delta_c and delta_d perturbation for the computation of every search
+      direction. Usually, it is only used when the iteration matrix is singular.
+      The default value for this string option is "no". Possible values: "yes",
+      "no", True, False.
+
+    ###
 
     The following options are not supported:
       - num_linear_variables: since estimagic may reparametrize your problem and
@@ -978,6 +1117,12 @@ def ipopt(
         skip_corr_in_monotone_mode, "skip_corr_in_monotone_mode"
     )
     recalc_y = convert_bool_to_str(recalc_y, "recalc_y")
+    mehrotra_algorithm = convert_bool_to_str(mehrotra_algorithm, "mehrotra_algorithm")
+    fast_step_computation = convert_bool_to_str(
+        fast_step_computation, "fast_step_computation"
+    )
+    neg_curv_test_reg = convert_bool_to_str(neg_curv_test_reg, "neg_curv_test_reg")
+    perturb_always_cd = convert_bool_to_str(perturb_always_cd, "perturb_always_cd")
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
@@ -1119,7 +1264,27 @@ def ipopt(
         "recalc_y_feas_tol": recalc_y_feas_tol,
         "slack_move": slack_move,
         "constraint_violation_norm_type": constraint_violation_norm_type,
+        # step calculation
+        "mehrotra_algorithm": mehrotra_algorithm,
+        "fast_step_computation": fast_step_computation,
+        "min_refinement_steps": min_refinement_steps,
+        "max_refinement_steps": max_refinement_steps,
+        "residual_ratio_max": residual_ratio_max,
+        "residual_ratio_singular": residual_ratio_singular,
+        "residual_improvement_factor": float(residual_improvement_factor),
+        "neg_curv_test_tol": float(neg_curv_test_tol),
+        "neg_curv_test_reg": neg_curv_test_reg,
+        "max_hessian_perturbation": max_hessian_perturbation,
+        "min_hessian_perturbation": min_hessian_perturbation,
+        "perturb_inc_fact_first": float(perturb_inc_fact_first),
+        "perturb_inc_fact": float(perturb_inc_fact),
+        "perturb_dec_fact": float(perturb_dec_fact),
+        "first_hessian_perturbation": float(first_hessian_perturbation),
+        "jacobian_regularization_value": float(jacobian_regularization_value),
+        "jacobian_regularization_exponent": float(jacobian_regularization_exponent),
+        "perturb_always_cd": perturb_always_cd,
     }
+    ###
 
     raw_res = cyipopt.minimize_ipopt(
         fun=func,
