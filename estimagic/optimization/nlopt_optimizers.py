@@ -397,19 +397,17 @@ def nlopt_newuoa(
 
     """
     if np.any(np.isfinite(lower_bounds)) or np.any(np.isfinite(upper_bounds)):
-        alg_name = "nlopt_newuoa_bound"
-        alg = nlopt.LN_NEWUOA_BOUND
+        algo = nlopt.LN_NEWUOA_BOUND
     else:
-        alg_name = "nlopt_newuoa"
-        alg = nlopt.LN_NEWUOA
+        algo = nlopt.LN_NEWUOA
 
     out = _minimize_nlopt(
         criterion_and_derivative,
         x,
         lower_bounds,
         upper_bounds,
-        algorithm=alg,
-        algorithm_name=alg_name,
+        algorithm=algo,
+        algorithm_name="nlopt_newuoa",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -701,11 +699,9 @@ def nlopt_var(
 
     """
     if rank_variant == 1:
-        alg_name = "nlopt_varone"
-        alg = nlopt.LD_VAR1
+        algo = nlopt.LD_VAR1
     elif rank_variant == 2:
-        alg_name = "nlopt_vartwo"
-        alg = nlopt.LD_VAR2
+        algo = nlopt.LD_VAR2
     else:
         raise ValueError(
             "nlopt supports only rank-1 and rank-2 methods of shifting variable-"
@@ -716,8 +712,8 @@ def nlopt_var(
         x,
         lower_bounds,
         upper_bounds,
-        algorithm=alg,
-        algorithm_name=alg_name,
+        algorithm=algo,
+        algorithm_name="nlopt_var",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -828,37 +824,87 @@ def nlopt_direct(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
+    - stopping_max_criterion_evaluations_global (int): If the maximum number of function
+      evaluation is reached.
 
 
     """
     if nlopt_direct_version == 0:
-        alg_name = "nlopt_direct"
-        alg = nlopt.GN_DIRECT
+        algo = nlopt.GN_DIRECT
     elif nlopt_direct_version == 1:
-        alg_name = "nlopt_direct_l"
-        alg = nlopt.GN_DIRECT_L
+        algo = nlopt.GN_DIRECT_L
     elif nlopt_direct_version == 2:
-        alg_name = "nlopt_direct_l_noscal"
-        alg = nlopt.GN_DIRECT_L_NOSCAL
+        algo = nlopt.GN_DIRECT_L_NOSCAL
     elif nlopt_direct_version == 3:
-        alg_name = "nlopt_direct_l_rand"
-        alg = nlopt.GN_DIRECT_L_RAND
+        algo = nlopt.GN_DIRECT_L_RAND
     elif nlopt_direct_version == 4:
-        alg_name = "nlopt_direct_l_rand_noscal"
-        alg = nlopt.GN_DIRECT_L_RAND_NOSCAL
+        algo = nlopt.GN_DIRECT_L_RAND_NOSCAL
     elif nlopt_direct_version == 5:
-        alg_name = "nlopt_direct_noscal"
-        alg = nlopt.GN_DIRECT_NOSCAL
+        algo = nlopt.GN_DIRECT_NOSCAL
     out = _minimize_nlopt(
         criterion_and_derivative,
         x,
         lower_bounds,
         upper_bounds,
-        algorithm=alg,
-        algorithm_name=alg_name,
+        algorithm=algo,
+        algorithm_name="nlopt_direct",
+        convergence_xtol_rel=convergence_relative_params_tolerance,
+        convergence_xtol_abs=convergence_absolute_params_tolerance,
+        convergence_ftol_rel=convergence_relative_criterion_tolerance,
+        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
+        stopping_max_eval=stopping_max_criterion_evaluations,
+    )
+    return out
+
+
+def nlopt_esch(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+):
+    """Optimize a scalar function using the ESCH algorithm.
+
+    ESCH is an evolutionary algorithm that supports bound constraints only. Specifi
+    cally, it does not support nonlinear constraints.
+
+    More information on this method can be found in:
+    C. H. da Silva Santos, M. S. Goncalves, and H. E. Hernandez-Figueroa, "Designing
+    Novel Photonic Devices by Bio-Inspired Computing," IEEE Photonics Technology
+    Letters 22 (15), pp. 1177–1179 (2010).
+    C. H. da Silva Santos, "Parallel and Bio-Inspired Computing Applied to Analyze
+    Microwave and Photonic Metamaterial Strucutures," Ph.D. thesis, University of
+    Campinas, (2010).
+    H.-G. Beyer and H.-P. Schwefel, "Evolution Strategies: A Comprehensive Introduction,
+    "Journal Natural Computing, 1 (1), pp. 3–52 (2002).
+    Ingo Rechenberg, "Evolutionsstrategie – Optimierung technischer Systeme nach
+    Prinzipien der biologischen Evolution," Ph.D. thesis (1971), Reprinted by
+    Fromman-Holzboog (1973).
+
+    ``nlopt_direct`` supports the following ``algo_options``:
+
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - stopping_max_criterion_evaluations_global (int): If the maximum number of function
+      evaluation is reached.
+
+
+    """
+    out = _minimize_nlopt(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        algorithm=nlopt.GN_ESCH,
+        algorithm_name="nlopt_esch",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
