@@ -131,19 +131,25 @@ def estimate_msm(
             dict: The estimated parameters, standard errors and sensitivity measures.
 
     """
-    is_minimized, minimize_options = _check_and_process_minimize_options(
-        minimize_options
+    is_minimized = minimize_options is False
+
+    check_optimization_options(
+        minimize_options,
+        usage="estimate_msm",
+        algorithm_mandatory=True,
     )
 
-    (
-        is_differentiated,
-        needs_numdiff,
-        numdiff_options,
-    ) = _check_and_process_derivative_options(
-        numdiff_options,
-        jacobian,
-        is_minimized,
-    )
+    is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
+    needs_numdiff = jacobian is None
+
+    _check_is_minimized_and_is_differentiated(is_minimized, is_differentiated)
+
+    check_numdiff_options(numdiff_options, "estimate_msm")
+
+    numdiff_options = {} if numdiff_options in (None, False) else numdiff_options.copy()
+    numdiff_options["key"] = "simulated_moments"
+    if "scaling_factor" not in numdiff_options:
+        numdiff_options["scaling_factor"] = 2
 
     is_optimal = weights == "optimal"
 
@@ -348,15 +354,22 @@ def _partial_kwargs(func, kwargs):
     return out
 
 
-def _check_and_process_minimize_options(minimize_options):
-    """Check and process the minimize_options."""
+def check_optimization_options(options, usage, algorithm_mandatory=True):
+    """Check minimize_options or maximize_options for usage in estimation functions."""
 
-    is_minimized = minimize_options is False
+    options = {} if options is None else options
 
-    if not isinstance(minimize_options, dict) or "algorithm" not in minimize_options:
-        raise ValueError(
-            "minimize_options must be a dict containing at least the entry 'algorithm'"
-        )
+    if algorithm_mandatory:
+        if not isinstance(options, dict) or "algorithm" not in options:
+            raise ValueError(
+                "minimize_options or maximize_options must be a dict containing at "
+                "least the entry 'algorithm'"
+            )
+    else:
+        if not isinstance(options, dict):
+            raise ValueError(
+                "minimize_options or maximize_options must be a dict or None."
+            )
 
     criterion_options = {
         "criterion",
@@ -367,19 +380,18 @@ def _check_and_process_minimize_options(minimize_options):
         "criterion_and_derivative_kwargs",
     }
 
-    invalid_criterion = criterion_options.intersection(minimize_options)
+    invalid_criterion = criterion_options.intersection(options)
     if invalid_criterion:
         msg = (
-            "Entries related to the criterion function, its derivatives or "
-            "keyword arguments of those functions are not valid entries of "
-            "minimize_options. The building blocks for those arguments must be passed "
-            f"separately to estimate_msm. Remove: {invalid_criterion}"
+            "Entries related to the criterion function, its derivatives or keyword "
+            "arguments of those functions are not valid entries of minimize_options "
+            f"or maximize_options for {usage}. Remove: {invalid_criterion}"
         )
         raise ValueError(msg)
 
     general_options = {"logging", "log_options", "constraints"}
 
-    invalid_general = general_options.intersection(minimize_options)
+    invalid_general = general_options.intersection(options)
 
     if invalid_general:
         msg = (
@@ -389,19 +401,11 @@ def _check_and_process_minimize_options(minimize_options):
         )
         raise ValueError(msg)
 
-    return is_minimized, minimize_options
 
+def check_numdiff_options(numdiff_options, usage):
+    """Check numdiff_options for usage in estimation and optimization functions."""
 
-def _check_and_process_derivative_options(numdiff_options, jacobian, is_minimized):
     """Check and process everything related to derivatives."""
-    is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
-    needs_numdiff = jacobian is None
-
-    if (not is_minimized) and is_differentiated:
-        raise ValueError(
-            "Providing a pre-calculated jacobian is only possible if the minimization "
-            "was done outside of estimate_msm, i.e. if minimize_options=False."
-        )
 
     numdiff_options = {} if numdiff_options is None else numdiff_options
 
@@ -418,15 +422,15 @@ def _check_and_process_derivative_options(numdiff_options, jacobian, is_minimize
 
     if invalid:
         msg = (
-            "The following options are used internally and are not allowed in "
-            f"numdiff_options: {invalid}"
+            "The following options are set internally and are not allowed in "
+            f"numdiff_options for {usage}: {invalid}"
         )
         raise ValueError(msg)
 
-    numdiff_options = {
-        "key": "simulated_moments",
-        "scaling_factor": 2,
-        **numdiff_options,
-    }
 
-    return is_differentiated, needs_numdiff, numdiff_options
+def _check_is_minimized_and_is_differentiated(is_minimized, is_differentiated):
+    if (not is_minimized) and is_differentiated:
+        raise ValueError(
+            "Providing a pre-calculated jacobian is only possible if the minimization "
+            "was done outside of estimate_msm, i.e. if minimize_options=False."
+        )
