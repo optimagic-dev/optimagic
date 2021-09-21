@@ -3,8 +3,6 @@
 The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io].
 
 """
-import warnings
-
 import numpy as np
 
 from estimagic.config import IS_NLOPT_INSTALLED
@@ -13,6 +11,10 @@ from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
+from estimagic.optimization.algo_options import (
+    STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+)
+
 
 if IS_NLOPT_INSTALLED:
     import nlopt
@@ -120,11 +122,6 @@ def nlopt_neldermead(
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
-    if np.isfinite(lower_bounds).any():
-        warnings.warn(
-            "nlopt_neldermead failed on simple benchmark functions if some but not all "
-            "bounds were finite. Add finite bounds for all parameters for more safety."
-        )
 
     out = _minimize_nlopt(
         criterion_and_derivative,
@@ -146,8 +143,6 @@ def nlopt_neldermead(
 def nlopt_praxis(
     criterion_and_derivative,
     x,
-    lower_bounds,
-    upper_bounds,
     *,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
@@ -169,6 +164,10 @@ def nlopt_praxis(
 
     The algorithm is not determenistic and it is not possible to achieve
     detereminancy via seed setting.
+
+    The algorithm failed on a simple benchmark function with finite parameter bounds.
+    Passing arguments `lower_bounds` and `upper_bounds` has been disabled for this
+    algorithm.
 
     The difference between the nlopt implementation an the original implementation is
     that the nlopt version supports bounds. This is done by returning infinity (Inf)
@@ -195,12 +194,11 @@ def nlopt_praxis(
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
-
     out = _minimize_nlopt(
         criterion_and_derivative,
         x,
-        lower_bounds,
-        upper_bounds,
+        lower_bounds=None,
+        upper_bounds=None,
         algorithm=nlopt.LN_PRAXIS,
         algorithm_name="nlopt_praxis",
         convergence_xtol_rel=convergence_relative_params_tolerance,
@@ -665,7 +663,7 @@ def nlopt_mma(
     return out
 
 
-def nlopt_svmm(
+def nlopt_var(
     criterion_and_derivative,
     x,
     lower_bounds,
@@ -703,8 +701,10 @@ def nlopt_svmm(
 
     """
     if rank_variant == 1:
+        alg_name = "nlopt_varone"
         alg = nlopt.LD_VAR1
     elif rank_variant == 2:
+        alg_name = "nlopt_vartwo"
         alg = nlopt.LD_VAR2
     else:
         raise ValueError(
@@ -717,7 +717,7 @@ def nlopt_svmm(
         lower_bounds,
         upper_bounds,
         algorithm=alg,
-        algorithm_name="nlopt_svmm",
+        algorithm_name=alg_name,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -725,6 +725,115 @@ def nlopt_svmm(
         stopping_max_eval=stopping_max_criterion_evaluations,
     )
 
+    return out
+
+
+def nlopt_slsqp(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+):
+    """Optimize a scalar function based on SLSQP method.
+
+    SLSQP solves gradient based nonlinearly constrained optimization problems.
+    The algorithm treats the optimization problem as a sequence of constrained
+    least-squares problems.
+
+    The implementation is based on the procedure described in:
+    Dieter Kraft, "A software package for sequential quadratic programming",
+    Technical Report DFVLR-FB 88-28, Institut für Dynamik der Flugsysteme,
+    Oberpfaffenhofen, July 1988.
+    Dieter Kraft, "Algorithm 733: TOMP–Fortran modules for optimal control
+    calculations," ACM Transactions on Mathematical Software, vol. 20, no. 3,
+    pp. 262-281 (1994).
+
+    ``nlopt_slsqp`` supports the following ``algo_options``:
+
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - stopping_max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
+
+    """
+    out = _minimize_nlopt(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        algorithm=nlopt.LD_SLSQP,
+        algorithm_name="nlopt_slsqp",
+        convergence_xtol_rel=convergence_relative_params_tolerance,
+        convergence_xtol_abs=convergence_absolute_params_tolerance,
+        convergence_ftol_rel=convergence_relative_criterion_tolerance,
+        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
+        stopping_max_eval=stopping_max_criterion_evaluations,
+    )
+    return out
+
+
+def nlopt_direct(
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    *,
+    convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+    nlopt_direct_version=0,
+):
+    """Optimize a scalar function based on DIRECT method.
+
+    DIRECT is the DIviding RECTangles algorithm for global optimization, described in:
+    D. R. Jones, C. D. Perttunen, and B. E. Stuckmann, "Lipschitzian optimization
+    without the lipschitz constant," J. Optimization Theory and Applications, vol.
+    79, p. 157 (1993)
+
+
+    """
+    if nlopt_direct_version == 0:
+        alg_name = "nlopt_direct"
+        alg = nlopt.GN_DIRECT
+    elif nlopt_direct_version == 1:
+        alg_name = "nlopt_direct_l"
+        alg = nlopt.GN_DIRECT_L
+    elif nlopt_direct_version == 2:
+        alg_name = "nlopt_direct_l_noscal"
+        alg = nlopt.GN_DIRECT_L_NOSCAL
+    elif nlopt_direct_version == 3:
+        alg_name = "nlopt_direct_l_rand"
+        alg = nlopt.GN_DIRECT_L_RAND
+    elif nlopt_direct_version == 4:
+        alg_name = "nlopt_direct_l_rand_noscal"
+        alg = nlopt.GN_DIRECT_L_RAND_NOSCAL
+    elif nlopt_direct_version == 5:
+        alg_name = "nlopt_direct_noscal"
+        alg = nlopt.GN_DIRECT_NOSCAL
+    out = _minimize_nlopt(
+        criterion_and_derivative,
+        x,
+        lower_bounds,
+        upper_bounds,
+        algorithm=alg,
+        algorithm_name=alg_name,
+        convergence_xtol_rel=convergence_relative_params_tolerance,
+        convergence_xtol_abs=convergence_absolute_params_tolerance,
+        convergence_ftol_rel=convergence_relative_criterion_tolerance,
+        convergence_ftol_abs=convergence_absolute_criterion_tolerance,
+        stopping_max_eval=stopping_max_criterion_evaluations,
+    )
     return out
 
 
