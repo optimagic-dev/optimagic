@@ -32,7 +32,6 @@ def ipopt(
     compl_inf_tol=0.0001,
     #
     s_max=100.0,
-    mu_strategy="monotone",
     mu_target=0.0,
     # stopping criteria
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
@@ -83,11 +82,40 @@ def ipopt(
     warm_start_mult_init_max=1e6,
     warm_start_entire_iterate="no",
     warm_start_target_mu=0.0,
-    #
+    # miscellaneous
     option_file_name="",
     replace_bounds="no",
     skip_finalize_solution_call="no",
     timing_statistics="no",
+    # barrier parameter update
+    mu_max_fact=1000,
+    mu_max=100_000,
+    mu_min=1e-11,
+    adaptive_mu_globalization="obj-constr-filter",
+    adaptive_mu_kkterror_red_iters=4,
+    adaptive_mu_kkterror_red_fact=0.9999,
+    filter_margin_fact=1e-5,
+    filter_max_margin=1,
+    adaptive_mu_restore_previous_iterate="no",
+    adaptive_mu_monotone_init_factor=0.8,
+    adaptive_mu_kkt_norm_type="2-norm-squared",
+    mu_strategy="monotone",
+    mu_oracle="quality-function",
+    fixed_mu_oracle="average_compl",
+    mu_init=0.1,
+    barrier_tol_factor=10,
+    mu_linear_decrease_factor=0.2,
+    mu_superlinear_decrease_power=1.5,
+    mu_allow_fast_monotone_decrease="yes",
+    tau_min=0.99,
+    sigma_max=100,
+    sigma_min=1e-6,
+    quality_function_norm_type="2-norm-squared",
+    quality_function_centrality="none",
+    quality_function_balancing_term="none",
+    quality_function_max_section_steps=8,
+    quality_function_section_sigma_tol=0.01,
+    quality_function_section_qf_tol=0.0,
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -109,9 +137,6 @@ def ipopt(
       successfully, if the (scaled) non linear programming error becomes smaller
       than this value.
 
-    - mu_strategy (str): which barrier parameter update strategy is to be used.
-      Can be "monotone" or "adaptive". Default is "monotone", i.e. use the
-      monotone (Fiacco-McCormick) strategy.
     - mu_target: Desired value of complementarity. Usually, the barrier
       parameter is driven to zero and the termination test for complementarity
       is measured with respect to zero complementarity. However, in some cases
@@ -121,7 +146,6 @@ def ipopt(
       termination tests are then defined with respect to the barrier problem for
       this value of the barrier parameter. The valid range for this real option
       is 0 ≤ mu_target and its default value is 0.
-
     - s_max (float): Scaling threshold for the NLP error.
 
     - stopping.max_iterations (int):  If the maximum number of iterations is
@@ -404,6 +428,203 @@ def ipopt(
       unaffected by this option. The default value for this string option is
       "no". Possible values: "yes", "no", True, False
 
+    - mu_max_fact (float): Factor for initialization of maximum value for
+        barrier parameter. This option determines the upper bound on the barrier
+        parameter. This upper bound is computed as the average complementarity
+        at the initial point times the value of this option. (Only used if
+        option "mu_strategy" is chosen as "adaptive".) The valid range for this
+        real option is 0 < mu_max_fact and its default value is 1000.
+    - mu_max (float): Maximum value for barrier parameter. This option specifies
+        an upper bound on the barrier parameter in the adaptive mu selection
+        mode. If this option is set, it overwrites the effect of mu_max_fact.
+        (Only used if option "mu_strategy" is chosen as "adaptive".) The valid
+        range for this real option is 0 < mu_max and its default value is
+        100000.
+    - mu_min (float): Minimum value for barrier parameter. This option specifies
+        the lower bound on the barrier parameter in the adaptive mu selection
+        mode. By default, it is set to the minimum of 1e-11 and
+        min("tol","compl_inf_tol")/("barrier_tol_factor"+1), which should be a
+        reasonable value. (Only used if option "mu_strategy" is chosen as
+        "adaptive".) The valid range for this real option is 0 < mu_min and its
+        default value is 10-11.
+    - adaptive_mu_globalization (str): Globalization strategy for the adaptive
+        mu selection mode. To achieve global convergence of the adaptive
+        version, the algorithm has to switch to the monotone mode
+        (Fiacco-McCormick approach) when convergence does not seem to appear.
+        This option sets the criterion used to decide when to do this switch.
+        (Only used if option "mu_strategy" is chosen as "adaptive".) The default
+        value for this string option is "obj-constr-filter". Possible values: -
+        "kkt-error": nonmonotone decrease of kkt-error - "obj-constr-filter":
+        2-dim filter for objective and constraint violation -
+        "never-monotone-mode": disables globalization.
+    - adaptive_mu_kkterror_red_iters (float): advanced feature! Maximum number
+      of iterations requiring sufficient pogress. For the "kkt-error" based
+      globalization strategy, sufficient progress must be made for
+      "adaptive_mu_kkterror_red_iters" iterations. If this number of iterations
+      is exceeded, the globalization strategy switches to the monotone mode. The
+      valid range for this integer option is 0 ≤ adaptive_mu_kkterror_red_iters
+      and its default value is 4.
+    - adaptive_mu_kkterror_red_fact (float): advanced feature! Sufficient
+      decrease factor for "kkt-error" gobalization strategy. For the "kkt-error"
+      based globalization strategy, the error must decrease by this factor to be
+      deemed sufficient decrease. The valid range for this real option is 0 <
+      adaptive_mu_kkterror_red_fact < 1 and its default value is 0.9999.
+    - filter_margin_fact (float): advanced feature! Factor determining width of
+      margin for obj-constr-filter aaptive globalization strategy. When using
+      the adaptive globalization strategy, "obj-constr-filter", sufficient
+      progress for a filter entry is defined as follows: (new obj) < (filter
+      obj) - filter_margin_fact*(new constr-viol) OR (new constr-viol) < (filter
+      constr-viol) - filter_margin_fact*(new constr-viol). For the description
+      of the "kkt-error-filter" option see "filter_max_margin". The valid range
+      for this real option is 0 < filter_margin_fact < 1 and its default value
+      is 10-05.
+    - filter_max_margin (float): advanced feature! Maximum width of margin in
+      obj-constr-filter adaptive globalization strategy. The valid range for
+      this real option is 0 < filter_max_margin and its default value is 1.
+    - adaptive_mu_restore_previous_iterate (str or bool): advanced feature!
+      Indicates if the previous accepted iterate should be restored if the
+      monotone mode is entered. When the globalization strategy for the adaptive
+      barrier algorithm switches to the monotone mode, it can either start from
+      the most recent iterate (no), or from the last iterate that was accepted
+      (yes). The default value for this string option is "no". Possible values:
+      "yes", "no", True, False
+    - adaptive_mu_monotone_init_factor (float): advanced feature! Determines the
+      initial value of the barrier parameter when switching to the monotone
+      mode. When the globalization strategy for the adaptive barrier algorithm
+      switches to the monotone mode and fixed_mu_oracle is chosen as
+      "average_compl", the barrier parameter is set to the current average
+      complementarity times the value of "adaptive_mu_monotone_init_factor". The
+      valid range for this real option is 0 < adaptive_mu_monotone_init_factor
+      and its default value is 0.8.
+    - adaptive_mu_kkt_norm_type (advanced): Norm used for the KKT error in the
+      adaptive mu globalization strategies. When computing the KKT error for the
+      globalization strategies, the norm to be used is specified with this
+      option. Note, this option is also used in the QualityFunctionMuOracle. The
+      default value for this string option is "2-norm-squared". Possible values:
+        - "1-norm": use the 1-norm (abs sum)
+        - "2-norm-squared": use the 2-norm squared (sum of squares)
+        - "max-norm": use the infinity norm (max)
+        - "2-norm": use 2-norm
+    - mu_strategy: Update strategy for barrier parameter. Determines which
+      barrier parameter update strategy is to be used. The default value for
+      this string option is "monotone". Possible values:
+        - "monotone": use the monotone (Fiacco-McCormick) strategy
+        - "adaptive": use the adaptive update strategy
+    - mu_oracle: Oracle for a new barrier parameter in the adaptive strategy.
+      Determines how a new barrier parameter is computed in each "free-mode"
+      iteration of the adaptive barrier parameter strategy. (Only considered if
+      "adaptive" is selected for option "mu_strategy"). The default value for
+      this string option is "quality-function". Possible values:
+        - "probing": Mehrotra's probing heuristic
+        - "loqo": LOQO's centrality rule
+        - "quality-function": minimize a quality function
+    - fixed_mu_oracle (str): Oracle for the barrier parameter when switching to
+      fixed mode. Determines how the first value of the barrier parameter should
+      be computed when switching to the "monotone mode" in the adaptive
+      strategy. (Only considered if "adaptive" is selected for option
+      "mu_strategy".) The default value for this string option is
+      "average_compl". Possible values:
+        - "probing": Mehrotra's probing heuristic
+        - "loqo": LOQO's centrality rule
+        - "quality-function": minimize a quality function
+        - "average_compl": base on current average complementarity
+    - mu_init (float): Initial value for the barrier parameter. This option
+      determines the initial value for the barrier parameter (mu). It is only
+      relevant in the monotone, Fiacco-McCormick version of the algorithm.
+      (i.e., if "mu_strategy" is chosen as "monotone") The valid range for this
+      real option is 0 < mu_init and its default value is 0.1.
+    - barrier_tol_factor (float): Factor for mu in barrier stop test. The
+      convergence tolerance for each barrier problem in the monotone mode is the
+      value of the barrier parameter times "barrier_tol_factor". This option is
+      also used in the adaptive mu strategy during the monotone mode. This is
+      kappa_epsilon in implementation paper. The valid range for this real
+      option is 0 < barrier_tol_factor and its default value is 10.
+    - mu_linear_decrease_factor (float): Determines linear decrease rate of
+      barrier parameter. For the Fiacco-McCormick update procedure the new
+      barrier parameter mu is obtained by taking the minimum of
+      mu*"mu_linear_decrease_factor" and mu^"superlinear_decrease_power". This
+      is kappa_mu in implementation paper. This option is also used in the
+      adaptive mu strategy during the monotone mode. The valid range for this
+      real option is 0 < mu_linear_decrease_factor < 1 and its default value is
+      0.2.
+    - mu_superlinear_decrease_power (float): Determines superlinear decrease
+      rate of barrier parameter. For the Fiacco-McCormick update procedure the
+      new barrier parameter mu is obtained by taking the minimum of
+      mu*"mu_linear_decrease_factor" and mu^"superlinear_decrease_power". This
+      is theta_mu in implementation paper. This option is also used in the
+      adaptive mu strategy during the monotone mode. The valid range for this
+      real option is 1 < mu_superlinear_decrease_power < 2 and its default value
+      is 1.5.
+    - mu_allow_fast_monotone_decrease (str or bool): Advanced feature! Allow
+      skipping of barrier problem if barrier test i already met. The default
+      value for this string option is "yes". Possible values:
+        - "no": Take at least one iteration per barrier problem even if the
+          barrier test is already met for the updated barrier parameter
+        - "yes": Allow fast decrease of mu if barrier test it met
+    - tau_min (float): Advanced feature! Lower bound on fraction-to-the-boundary
+        parameter tau. This is tau_min in the implementation paper. This option
+        is also used in the adaptive mu strategy during the monotone mode. The
+        valid range for this real option is 0 < tau_min < 1 and its default
+        value is 0.99.
+    - sigma_max (float): Advanced feature! Maximum value of the centering
+        parameter. This is the upper bound for the centering parameter chosen by
+        the quality function based barrier parameter update. Only used if option
+        "mu_oracle" is set to "quality-function". The valid range for this real
+        option is 0 < sigma_max and its default value is 100.
+    - sigma_min (float): Advanced feature! Minimum value of the centering
+        parameter. This is the lower bound for the centering parameter chosen by
+        the quality function based barrier parameter update. Only used if option
+        "mu_oracle" is set to "quality-function". The valid range for this real
+        option is 0 ≤ sigma_min and its default value is 10-06.
+    - quality_function_norm_type (str): Advanced feature. Norm used for
+      components of the quality function. Only used if option "mu_oracle" is set
+      to "quality-function". The default value for this string option is
+      "2-norm-squared". Possible values:
+        - "1-norm": use the 1-norm (abs sum)
+        - "2-norm-squared": use the 2-norm squared (sum of squares)
+        - "max-norm": use the infinity norm (max)
+        - "2-norm": use 2-norm
+    - quality_function_centrality (str): Advanced feature. The penalty term for
+      centrality that is included in qality function. This determines whether a
+      term is added to the quality function to penalize deviation from
+      centrality with respect to complementarity. The complementarity measure
+      here is the xi in the Loqo update rule. Only used if option "mu_oracle" is
+      set to "quality-function". The default value for this string option is
+      "none". Possible values:
+        - "none": no penalty term is added
+        - "log": complementarity * the log of the centrality measure
+        - "reciprocal": complementarity * the reciprocal of the centrality
+          measure
+        - "cubed-reciprocal": complementarity * the reciprocal of the centrality
+          measure cubed
+    - quality_function_balancing_term (str): Advanced feature. The balancing
+      term included in the quality function for centrality. This determines
+      whether a term is added to the quality function that penalizes situations
+      where the complementarity is much smaller than dual and primal
+      infeasibilities. Only used if option "mu_oracle" is set to
+      "quality-function". The default value for this string option is "none".
+      Possible values:
+        - "none": no balancing term is added
+        - "cubic": Max(0,Max(dual_inf,primal_inf)-compl)^3
+    - quality_function_max_section_steps (int): Maximum number of search steps
+      during direct search procedure determining the optimal centering
+      parameter. The golden section search is performed for the quality function
+      based mu oracle. Only used if option "mu_oracle" is set to
+      "quality-function". The valid range for this integer option is 0 ≤
+      quality_function_max_section_steps and its default value is 8.
+    - quality_function_section_sigma_tol (float): advanced feature! Tolerance
+      for the section search procedure determining the optimal centering
+      parameter (in sigma space). The golden section search is performed for the
+      quality function based mu oracle. Only used if option "mu_oracle" is set
+      to "quality-function". The valid range for this real option is 0 ≤
+      quality_function_section_sigma_tol < 1 and its default value is 0.01.
+    - quality_function_section_qf_tol (float): advanced feature! Tolerance for
+      the golden section search procedure determining the optimal centering
+      parameter (in the function value space). The golden section search is
+      performed for the quality function based mu oracle. Only used if option
+      "mu_oracle" is set to "quality-function". The valid range for this real
+      option is 0 ≤ quality_function_section_qf_tol < 1 and its default value is
+      0.
 
     The following options are not supported:
 
@@ -414,8 +635,6 @@ def ipopt(
         - scaling options (nlp_scaling_method, obj_scaling_factor,
           nlp_scaling_max_gradient, nlp_scaling_obj_target_gradient,
           nlp_scaling_constr_target_gradient, nlp_scaling_min_value)
-
-        - mu_oracle
 
     """
     if not IS_CYIPOPT_INSTALLED:
@@ -477,6 +696,12 @@ def ipopt(
         skip_finalize_solution_call, "skip_finalize_solution_call"
     )
     timing_statistics = convert_bool_to_str(timing_statistics, "timing_statistics")
+    adaptive_mu_restore_previous_iterate = convert_bool_to_str(
+        adaptive_mu_restore_previous_iterate, "adaptive_mu_restore_previous_iterate"
+    )
+    mu_allow_fast_monotone_decrease = convert_bool_to_str(
+        mu_allow_fast_monotone_decrease, "mu_allow_fast_monotone_decrease"
+    )
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
@@ -492,6 +717,9 @@ def ipopt(
     )
 
     options = {
+        "print_level": 0,  # disable verbosity
+        "nlp_scaling_method": "none",  # disable scaling
+        #
         "s_max": float(s_max),
         "max_iter": stopping_max_iterations,
         "max_wall_time": float(stopping_max_wall_time_seconds),
@@ -499,14 +727,14 @@ def ipopt(
         "dual_inf_tol": dual_inf_tol,
         "constr_viol_tol": constr_viol_tol,
         "compl_inf_tol": compl_inf_tol,
-        #
+        # acceptable heuristic
         "acceptable_iter": int(acceptable_iter),
         "acceptable_tol": acceptable_tol,
         "acceptable_dual_inf_tol": acceptable_dual_inf_tol,
         "acceptable_constr_viol_tol": acceptable_constr_viol_tol,
         "acceptable_compl_inf_tol": acceptable_compl_inf_tol,
         "acceptable_obj_change_tol": acceptable_obj_change_tol,
-        #
+        # bounds and more
         "diverging_iterates_tol": diverging_iterates_tol,
         "nlp_lower_bound_inf": nlp_lower_bound_inf,
         "nlp_upper_bound_inf": nlp_upper_bound_inf,
@@ -516,13 +744,11 @@ def ipopt(
         "kappa_d": kappa_d,
         "bound_relax_factor": bound_relax_factor,
         "honor_original_bounds": honor_original_bounds,
-        #
+        # derivatives
         "check_derivatives_for_naninf": check_derivatives_for_naninf,
         "jac_c_constant": jac_c_constant,
         "jac_d_constant": jac_d_constant,
         "hessian_constant": hessian_constant,
-        # disable scaling
-        "nlp_scaling_method": "none",
         # initialization
         "bound_push": bound_push,
         "bound_frac": bound_frac,
@@ -544,15 +770,41 @@ def ipopt(
         "warm_start_mult_init_max": warm_start_mult_init_max,
         "warm_start_entire_iterate": warm_start_entire_iterate,
         "warm_start_target_mu": warm_start_target_mu,
-        #
+        # more miscellaneous
         "option_file_name": option_file_name,
         "replace_bounds": replace_bounds,
         "skip_finalize_solution_call": skip_finalize_solution_call,
         "timing_statistics": timing_statistics,
-        #
-        "mu_strategy": mu_strategy,
+        # barrier parameter update
         "mu_target": float(mu_target),
-        "print_level": 0,  # disable verbosity
+        "mu_max_fact": float(mu_max_fact),
+        "mu_max": float(mu_max),
+        "mu_min": float(mu_min),
+        "adaptive_mu_globalization": adaptive_mu_globalization,
+        "adaptive_mu_kkterror_red_iters": adaptive_mu_kkterror_red_iters,
+        "adaptive_mu_kkterror_red_fact": adaptive_mu_kkterror_red_fact,
+        "filter_margin_fact": float(filter_margin_fact),
+        "filter_max_margin": float(filter_max_margin),
+        "adaptive_mu_restore_previous_iterate": adaptive_mu_restore_previous_iterate,
+        "adaptive_mu_monotone_init_factor": adaptive_mu_monotone_init_factor,
+        "adaptive_mu_kkt_norm_type": adaptive_mu_kkt_norm_type,
+        "mu_strategy": mu_strategy,
+        "mu_oracle": mu_oracle,
+        "fixed_mu_oracle": fixed_mu_oracle,
+        "mu_init": mu_init,
+        "barrier_tol_factor": float(barrier_tol_factor),
+        "mu_linear_decrease_factor": mu_linear_decrease_factor,
+        "mu_superlinear_decrease_power": mu_superlinear_decrease_power,
+        "mu_allow_fast_monotone_decrease": mu_allow_fast_monotone_decrease,
+        "tau_min": tau_min,
+        "sigma_max": float(sigma_max),
+        "sigma_min": sigma_min,
+        "quality_function_norm_type": quality_function_norm_type,
+        "quality_function_centrality": quality_function_centrality,
+        "quality_function_balancing_term": quality_function_balancing_term,
+        "quality_function_max_section_steps": int(quality_function_max_section_steps),
+        "quality_function_section_sigma_tol": quality_function_section_sigma_tol,
+        "quality_function_section_qf_tol": quality_function_section_qf_tol,
     }
 
     raw_res = cyipopt.minimize_ipopt(
