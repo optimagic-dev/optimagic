@@ -60,7 +60,7 @@ def design_options():
 
 
 def test_clustering(jac, design_options):
-    calculated = _clustering(design_options, jac)
+    calculated = _clustering(jac, design_options)
     expected = np.array(
         [
             [1.251498, 6.204213, 0.000008, 4.951907],
@@ -73,7 +73,7 @@ def test_clustering(jac, design_options):
 
 
 def test_stratification(jac, design_options):
-    calculated = _stratification(design_options, jac)
+    calculated = _stratification(jac, design_options)
 
     expected = np.array(
         [

@@ -91,7 +91,7 @@ def se_from_cov(cov):
     return standard_errors
 
 
-def cov_cluster_robust(jac, hess, design_options):
+def cov_cluster_robust(jac, hess, design_info):
     """Cluster robust standard errors.
 
     A cluster is a group of observations that correlate amongst each other,
@@ -104,17 +104,20 @@ def cov_cluster_robust(jac, hess, design_options):
         hess (np.array): "hessian" - a k + 1 x k + 1-dimensional array of
             second derivatives of the pseudo-log-likelihood function w.r.t.
             the parameters
+        design_info (pd.DataFrame): dataframe containing psu, stratum,
+            population/design weight and/or a finite population corrector (fpc)
+
     Returns:
         cluster_robust_se (np.array): a 1d array of k + 1 standard errors
         cluster_robust_var (np.array): 2d variance-covariance matrix
 
     """
-    cluster_meat = _clustering(design_options, jac)
+    cluster_meat = _clustering(jac, design_info)
     cluster_robust_var = _sandwich_step(hess, cluster_meat)
     return cluster_robust_var
 
 
-def cov_strata_robust(jac, hess, design_options):
+def cov_strata_robust(jac, hess, design_info):
     """Cluster robust standard errors.
 
     A stratum is a group of observations that share common information. Each
@@ -130,7 +133,7 @@ def cov_strata_robust(jac, hess, design_options):
         hess (np.array): "hessian" - a k + 1 x k + 1-dimensional array of
             second derivatives of the pseudo-log-likelihood function w.r.t.
             the parameters
-        design_options (pd.DataFrame): dataframe containing psu, stratum,
+        design_info (pd.DataFrame): dataframe containing psu, stratum,
             population/design weight and/or a finite population corrector (fpc)
 
     Returns:
@@ -138,7 +141,7 @@ def cov_strata_robust(jac, hess, design_options):
         strata_robust_var (np.array): 2d variance-covariance matrix
 
     """
-    strata_meat = _stratification(design_options, jac)
+    strata_meat = _stratification(jac, design_info)
     strata_robust_var = _sandwich_step(hess, strata_meat)
     return strata_robust_var
 
@@ -159,22 +162,22 @@ def _sandwich_step(hess, meat):
         var (np.array): 2d variance-covariance matrix
 
     """
-    invhessian = np.linalg.inv(hess)
+    invhessian = robust_inverse(hess, INVALID_INFERENCE_MSG)
     var = np.dot(np.dot(invhessian, meat), invhessian)
     return var
 
 
-def _clustering(design_options, jac):
+def _clustering(jac, design_info):
     """Variance estimation for each cluster.
 
     The function takes the sum of the jacobian observations for each cluster.
     The result is the meat of the sandwich estimator.
 
     Args:
-        design_options (pd.DataFrame): dataframe containing psu, stratum,
-            population/design weight and/or a finite population corrector (fpc)
         jac (np.array): "jacobian" - an n x k + 1-dimensional array of first
             derivatives of the pseudo-log-likelihood function w.r.t. the parameters
+        design_info (pd.DataFrame): dataframe containing psu, stratum,
+            population/design weight and/or a finite population corrector (fpc)
 
     Returns:
         cluster_meat (np.array): 2d square array of length k + 1. Variance of
@@ -182,17 +185,17 @@ def _clustering(design_options, jac):
 
     """
 
-    list_of_clusters = design_options["psu"].unique()
+    list_of_clusters = design_info["psu"].unique()
     meat = np.zeros([len(jac[0, :]), len(jac[0, :])])
     for psu in list_of_clusters:
-        psu_scores = jac[design_options["psu"] == psu]
+        psu_scores = jac[design_info["psu"] == psu]
         psu_scores_sum = psu_scores.sum(axis=0)
         meat += np.dot(psu_scores_sum[:, None], psu_scores_sum[:, None].T)
     cluster_meat = len(list_of_clusters) / (len(list_of_clusters) - 1) * meat
     return cluster_meat
 
 
-def _stratification(design_options, jac):
+def _stratification(jac, design_info):
     """Variance estimatio for each strata stratum.
 
     The function takes the sum of the jacobian observations for each cluster
@@ -210,20 +213,20 @@ def _stratification(design_options, jac):
 
     """
     n_params = len(jac[0, :])
-    stratum_col = design_options["strata"]
+    stratum_col = design_info["strata"]
     # Stratification does not require clusters
-    if "psu" not in design_options:
-        design_options["psu"] = design_options.index
+    if "psu" not in design_info:
+        design_info["psu"] = design_info.index
     else:
         pass
-    psu_col = design_options["psu"]
+    psu_col = design_info["psu"]
     strata_meat = np.zeros([n_params, n_params])
     # Variance estimation per stratum
     for stratum in stratum_col.unique():
         psu_in_strata = psu_col[stratum_col == stratum].unique()
         psu_jac = np.zeros([n_params])
-        if "fpc" in design_options:
-            fpc = design_options["fpc"][stratum_col == stratum].unique()
+        if "fpc" in design_info:
+            fpc = design_info["fpc"][stratum_col == stratum].unique()
         else:
             fpc = 1
         # psu_jac stacks the sum of the observations for each cluster.
