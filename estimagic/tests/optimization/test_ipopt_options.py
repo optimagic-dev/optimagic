@@ -31,6 +31,21 @@ options_and_expected = [
     ({"acceptable_compl_inf_tol": 1e-5}, None),
     ({"acceptable_obj_change_tol": 1e5}, None),
     ({"diverging_iterates_tol": 1e5}, None),
+    ({"nlp_lower_bound_inf": 1e5}, ValueError),
+    ({"nlp_lower_bound_inf": -1e5}, None),
+    ({"nlp_upper_bound_inf": -1e5}, ValueError),
+    ({"nlp_upper_bound_inf": 1e10}, None),
+    ({"fixed_variable_treatment": "relax_bounds"}, None),
+    ({"fixed_variable_treatment": "non_existant"}, TypeError),
+    ({"dependency_detector": "mumps"}, None),
+    ({"dependency_detector": "non_existent"}, ValueError),
+    ({"dependency_detection_with_rhs": "no"}, None),
+    ({"dependency_detection_with_rhs": False}, None),
+    ({"dependency_detection_with_rhs": "non_existent"}, ValueError),
+    ({"kappa_d": 1e-7}, None),
+    ({"bound_relax_factor": 1e-12}, None),
+    ({"honor_original_bounds": "yes"}, None),
+    ({"check_derivatives_for_naninf": True}, None),
 ]
 
 test_cases = product([sos_dict_criterion], options_and_expected)
