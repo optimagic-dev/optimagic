@@ -46,6 +46,18 @@ options_and_expected = [
     ({"bound_relax_factor": 1e-12}, None),
     ({"honor_original_bounds": "yes"}, None),
     ({"check_derivatives_for_naninf": True}, None),
+    ({"jac_c_constant": True}, None),
+    ({"jac_d_constant": True}, None),
+    ({"hessian_constant": True}, None),
+    ({"bound_push": 0.02}, None),
+    ({"bound_frac": 0.02}, None),
+    ({"slack_bound_push": 0.001}, None),
+    ({"slack_bound_frac": 0.001}, None),
+    ({"constr_mult_init_max": 5000}, None),
+    ({"bound_mult_init_val": 1.2}, None),
+    ({"bound_mult_init_method": "mu-based"}, None),
+    ({"least_square_init_primal": "yes"}, None),
+    ({"least_square_init_duals": "yes"}, None),
 ]
 
 test_cases = product([sos_dict_criterion], options_and_expected)

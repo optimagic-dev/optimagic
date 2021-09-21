@@ -56,8 +56,23 @@ def ipopt(
     kappa_d=1e-5,
     bound_relax_factor=1e-8,
     honor_original_bounds="no",
-    #
+    # derivatives
     check_derivatives_for_naninf="no",
+    # not sure if we should support the following:
+    jac_c_constant="no",
+    jac_d_constant="no",
+    hessian_constant="no",
+    # initialization
+    bound_push=0.01,
+    bound_frac=0.01,
+    slack_bound_push=0.01,
+    slack_bound_frac=0.01,
+    constr_mult_init_max=1000,
+    bound_mult_init_val=1,
+    bound_mult_init_method="constant",
+    least_square_init_primal="no",
+    least_square_init_duals="no",
+    # warm start
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -182,11 +197,11 @@ def ipopt(
       bound_relax_factor"). For all but "make_parameter_nodual", bound
       multipliers are computed for the fixed variables. The default value for
       this string option is "make_parameter". Possible values:
-      - make_parameter:Remove fixed variable from optimization variables
-      - make_parameter_nodual: Remove fixed variable from optimization variables
-        and do not compute bound multipliers for fixed variables
-      - make_constraint: Add equality constraints fixing variables
-      - relax_bounds: Relax fixing bound constraints
+        - make_parameter: Remove fixed variable from optimization variables
+        - make_parameter_nodual: Remove fixed variable from optimization
+            variables and do not compute bound multipliers for fixed variables
+        - make_constraint: Add equality constraints fixing variables
+        - relax_bounds: Relax fixing bound constraints
     - dependency_detector (str): Indicates which linear solver should be used to
         detect lnearly dependent equality constraints. This is experimental and
         does not work well. The default value for this string option is "none".
@@ -230,11 +245,100 @@ def ipopt(
       invalid number is detected, the matrix is written to output with
       print_level corresponding to J_MORE_DETAILED; so beware of large output!
       The default value for this string option is "no".
+    - jac_c_constant (str or bool): Indicates whether to assume that all
+      equality constraints are linear Activating this option will cause Ipopt to
+      ask for the Jacobian of the equality constraints only once from the NLP
+      and reuse this information later. The default value for this string option
+      is "no". Possible values: yes, no, True, False.
+    - jac_d_constant (str or bool): Indicates whether to assume that all
+      inequality constraints are linear Activating this option will cause Ipopt
+      to ask for the Jacobian of the inequality constraints only once from the
+      NLP and reuse this information later. The default value for this string
+      option is "no". Possible values: yes, no, True, False
+    - hessian_constant: Indicates whether to assume the problem is a QP
+      (quadratic objective, linear constraints). Activating this option will
+      cause Ipopt to ask for the Hessian of the Lagrangian function only once
+      from the NLP and reuse this information later. The default value for this
+      string option is "no". Possible values: yes, no, True, False
 
+    - bound_push (float): Desired minimum absolute distance from the initial
+      point to bound. Determines how much the initial point might have to be
+      modified in order to be sufficiently inside the bounds (together with
+      "bound_frac"). (This is kappa_1 in Section 3.6 of implementation paper.)
+      The valid range for this real option is 0 < bound_push and its default
+      value is 0.01.
+    - bound_frac (float): Desired minimum relative distance from the initial
+      point to bound. Determines how much the initial point might have to be
+      modified in order to be sufficiently inside the bounds (together with
+      "bound_push"). (This is kappa_2 in Section 3.6 of implementation paper.)
+      The valid range for this real option is 0 < bound_frac ≤ 0.5 and its
+      default value is 0.01.
+    - slack_bound_push (float): Desired minimum absolute distance from the
+      initial slack to bound. Determines how much the initial slack variables
+      might have to be modified in order to be sufficiently inside the
+      inequality bounds (together with "slack_bound_frac"). (This is kappa_1 in
+      Section 3.6 of implementation paper.) The valid range for this real option
+      is 0 < slack_bound_push and its default value is 0.01.
+    - slack_bound_frac (float): Desired minimum relative distance from the
+      initial slack to bound. Determines how much the initial slack variables
+      might have to be modified in order to be sufficiently inside the
+      inequality bounds (together with "slack_bound_push"). (This is kappa_2 in
+      Section 3.6 of implementation paper.) The valid range for this real option
+      is 0 < slack_bound_frac ≤ 0.5 and its default value is 0.01.
+    - constr_mult_init_max (float): Maximum allowed least-square guess of
+      constraint multipliers. Determines how large the initial least-square
+      guesses of the constraint multipliers are allowed to be (in max-norm). If
+      the guess is larger than this value, it is discarded and all constraint
+      multipliers are set to zero. This options is also used when initializing
+      the restoration phase. By default, "resto.constr_mult_init_max" (the one
+      used in RestoIterateInitializer) is set to zero. The valid range for this
+      real option is 0 ≤ constr_mult_init_max and its default value is 1000.
+    - bound_mult_init_val (float): Initial value for the bound multipliers. All
+      dual variables corresponding to bound constraints are initialized to this
+      value. The valid range for this real option is 0 < bound_mult_init_val and
+      its default value is 1.
+    - bound_mult_init_method (str): Initialization method for bound multipliers
+      This option defines how the iterates for the bound multipliers are
+      initialized. If "constant" is chosen, then all bound multipliers are
+      initialized to the value of "bound_mult_init_val". If "mu-based" is
+      chosen, the each value is initialized to the the value of "mu_init"
+      divided by the corresponding slack variable. This latter option might be
+      useful if the starting point is close to the optimal solution. The default
+      value for this string option is "constant". Possible values:
+        - "constant": set all bound multipliers to the value of
+          bound_mult_init_val
+        - "mu-based": initialize to mu_init/x_slack
+    - least_square_init_primal (str or bool): Least square initialization of the
+      primal variables. If set to yes, Ipopt ignores the user provided point and
+      solves a least square problem for the primal variables (x and s) to fit
+      the linearized equality and inequality constraints.This might be useful if
+      the user doesn't know anything about the starting point, or for solving an
+      LP or QP. The default value for this string option is "no".  Possible
+      values:
+        - "no": take user-provided point
+        - "yes": overwrite user-provided point with least-square estimates
+    - least_square_init_duals: Least square initialization of all dual variables
+      If set to yes, Ipopt tries to compute least-square multipliers
+      (considering ALL dual variables). If successful, the bound multipliers are
+      possibly corrected to be at least bound_mult_init_val. This might be
+      useful if the user doesn't know anything about the starting point, or for
+      solving an LP or QP. This overwrites option "bound_mult_init_method". The
+      default value for this string option is "no". Possible values:
+        - "no": use bound_mult_init_val and least-square equality constraint
+          multipliers
+        - "yes": overwrite user-provided point with least-square estimates
 
-    The following options are not supported: - num_linear_variables: since
-        estimagic may reparametrize your problem and this changes the parameter
-        problem, we do not support num_linear_variables. - mu_oracle
+    The following options are not supported:
+
+        - num_linear_variables: since estimagic may reparametrize your problem
+          and this changes the parameter problem, we do not support
+          num_linear_variables.
+
+        - scaling options (nlp_scaling_method, obj_scaling_factor,
+          nlp_scaling_max_gradient, nlp_scaling_obj_target_gradient,
+          nlp_scaling_constr_target_gradient, nlp_scaling_min_value)
+
+        - mu_oracle
 
     """
     if not IS_CYIPOPT_INSTALLED:
@@ -267,6 +371,20 @@ def ipopt(
         )
     check_derivatives_for_naninf = convert_bool_to_str(
         check_derivatives_for_naninf, "check_derivatives_for_naninf"
+    )
+    jac_c_constant = convert_bool_to_str(jac_c_constant, "jac_c_constant")
+    jac_d_constant = convert_bool_to_str(jac_d_constant, "jac_d_constant")
+    hessian_constant = convert_bool_to_str(hessian_constant, "hessian_constant")
+    if bound_mult_init_method not in {"constant", "mu-based"}:
+        raise ValueError(
+            f"You specified {bound_mult_init_method} as bound_mult_init_method. "
+            "It must be 'constant' or 'mu-based'."
+        )
+    least_square_init_primal = convert_bool_to_str(
+        least_square_init_primal, "least_square_init_primal"
+    )
+    least_square_init_duals = convert_bool_to_str(
+        least_square_init_duals, "least_square_init_duals"
     )
 
     algo_info = DEFAULT_ALGO_INFO.copy()
@@ -309,6 +427,21 @@ def ipopt(
         "honor_original_bounds": honor_original_bounds,
         #
         "check_derivatives_for_naninf": check_derivatives_for_naninf,
+        "jac_c_constant": jac_c_constant,
+        "jac_d_constant": jac_d_constant,
+        "hessian_constant": hessian_constant,
+        # disable scaling
+        "nlp_scaling_method": "none",
+        # initialization
+        "bound_push": bound_push,
+        "bound_frac": bound_frac,
+        "slack_bound_push": slack_bound_push,
+        "slack_bound_frac": slack_bound_frac,
+        "constr_mult_init_max": float(constr_mult_init_max),
+        "bound_mult_init_val": float(bound_mult_init_val),
+        "bound_mult_init_method": bound_mult_init_method,
+        "least_square_init_primal": least_square_init_primal,
+        "least_square_init_duals": least_square_init_duals,
         #
         "mu_strategy": mu_strategy,
         "mu_target": float(mu_target),
