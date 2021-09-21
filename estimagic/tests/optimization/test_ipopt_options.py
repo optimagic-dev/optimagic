@@ -58,6 +58,15 @@ options_and_expected = [
     ({"bound_mult_init_method": "mu-based"}, None),
     ({"least_square_init_primal": "yes"}, None),
     ({"least_square_init_duals": "yes"}, None),
+    ({"warm_start_init_point": "yes"}, None),
+    ({"warm_start_same_structure": False}, None),
+    ({"warm_start_bound_push": 0.002}, None),
+    ({"warm_start_bound_frac": 0.002}, None),
+    ({"warm_start_slack_bound_push": 0.0001}, None),
+    ({"warm_start_slack_bound_frac": 0.002}, None),
+    ({"warm_start_mult_bound_push": 0.002}, None),
+    ({"warm_start_mult_init_max": 1e8}, None),
+    ({"warm_start_entire_iterate": "yes"}, None),
 ]
 
 test_cases = product([sos_dict_criterion], options_and_expected)

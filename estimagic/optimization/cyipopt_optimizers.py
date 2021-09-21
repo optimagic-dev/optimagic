@@ -73,6 +73,16 @@ def ipopt(
     least_square_init_primal="no",
     least_square_init_duals="no",
     # warm start
+    warm_start_init_point="no",
+    warm_start_same_structure="no",
+    warm_start_bound_push=0.001,
+    warm_start_bound_frac=0.001,
+    warm_start_slack_bound_push=0.001,
+    warm_start_slack_bound_frac=0.001,
+    warm_start_mult_bound_push=0.001,
+    warm_start_mult_init_max=1e6,
+    warm_start_entire_iterate="no",
+    warm_start_target_mu=0.0,
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -327,6 +337,44 @@ def ipopt(
         - "no": use bound_mult_init_val and least-square equality constraint
           multipliers
         - "yes": overwrite user-provided point with least-square estimates
+    - warm_start_init_point (str or bool): Warm-start for initial point
+      Indicates whether this optimization should use a warm start
+      initialization, where values of primal and dual variables are given (e.g.,
+      from a previous optimization of a related problem.) The default value for
+      this string option is "no". Possible values:
+        - "no" or False: do not use the warm start initialization
+        - "yes" or True: use the warm start initialization
+    - warm_start_same_structure (str or bool): Advanced feature! Indicates
+      whether a problem with a structure identical t the previous one is to be
+      solved. If enabled, then the algorithm assumes that an NLP is now to be
+      solved whose structure is identical to one that already was considered
+      (with the same NLP object). The default value for this string option is
+      "no". Possible values: yes, no, True, False.
+    - warm_start_bound_push (float): same as bound_push for the regular
+      initializer. The valid range for this real option is 0 <
+      warm_start_bound_push and its default value is 0.001.
+    - warm_start_bound_frac (float): same as bound_frac for the regular
+      initializer The valid range for this real option is 0 <
+      warm_start_bound_frac ≤ 0.5 and its default value is 0.001.
+    - warm_start_slack_bound_push (float): same as slack_bound_push for the
+      regular initializer The valid range for this real option is 0 <
+      warm_start_slack_bound_push and its default value is 0.001.
+    - warm_start_slack_bound_frac (float): same as slack_bound_frac for the
+      regular initializer The valid range for this real option is 0 <
+      warm_start_slack_bound_frac ≤ 0.5 and its default value is 0.001.
+    - warm_start_mult_bound_push (float): same as mult_bound_push for the
+      regular initializer The valid range for this real option is 0 <
+      warm_start_mult_bound_push and its default value is 0.001.
+    - warm_start_mult_init_max (float): Maximum initial value for the equality
+      multipliers. The valid range for this real option is unrestricted and its
+      default value is 10+06.
+    - warm_start_entire_iterate (str or bool): Tells algorithm whether to use
+      the GetWarmStartIterate method in the NLP. The default value for this
+      string option is "no".  Possible values:
+        - "no": call GetStartingPoint in the NLP
+        - "yes": call GetWarmStartIterate in the NLP
+    - warm_start_target_mu (float): Advanced and experimental! The valid range
+        for this real option is unrestricted and its default value is 0.
 
     The following options are not supported:
 
@@ -386,6 +434,15 @@ def ipopt(
     least_square_init_duals = convert_bool_to_str(
         least_square_init_duals, "least_square_init_duals"
     )
+    warm_start_init_point = convert_bool_to_str(
+        warm_start_init_point, "warm_start_init_point"
+    )
+    warm_start_same_structure = convert_bool_to_str(
+        warm_start_same_structure, "warm_start_same_structure"
+    )
+    warm_start_entire_iterate = convert_bool_to_str(
+        warm_start_entire_iterate, "warm_start_entire_iterate"
+    )
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
@@ -442,6 +499,17 @@ def ipopt(
         "bound_mult_init_method": bound_mult_init_method,
         "least_square_init_primal": least_square_init_primal,
         "least_square_init_duals": least_square_init_duals,
+        # warm start
+        "warm_start_init_point": warm_start_init_point,
+        "warm_start_same_structure": warm_start_same_structure,
+        "warm_start_bound_push": warm_start_bound_push,
+        "warm_start_bound_frac": warm_start_bound_frac,
+        "warm_start_slack_bound_push": warm_start_slack_bound_push,
+        "warm_start_slack_bound_frac": warm_start_slack_bound_frac,
+        "warm_start_mult_bound_push": warm_start_mult_bound_push,
+        "warm_start_mult_init_max": warm_start_mult_init_max,
+        "warm_start_entire_iterate": warm_start_entire_iterate,
+        "warm_start_target_mu": warm_start_target_mu,
         #
         "mu_strategy": mu_strategy,
         "mu_target": float(mu_target),
