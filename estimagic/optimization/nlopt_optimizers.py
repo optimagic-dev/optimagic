@@ -799,7 +799,38 @@ def nlopt_direct(
     DIRECT is the DIviding RECTangles algorithm for global optimization, described in:
     D. R. Jones, C. D. Perttunen, and B. E. Stuckmann, "Lipschitzian optimization
     without the lipschitz constant," J. Optimization Theory and Applications, vol.
-    79, p. 157 (1993)
+    79, p. 157 (1993).
+
+    Variations of the algorithm include locally biased routines (distinguished by _L
+    suffix) that prove to be more efficients for functions that have few local minima.
+    See the following for the DIRECT_L variant:
+
+    J. M. Gablonsky and C. T. Kelley, "A locally-biased form of the DIRECT algorithm,"
+    J. Global Optimization, vol. 21 (1), p. 27-37 (2001).
+
+    Locally biased algorithms can be implmented both with deterministic and random
+    (distinguished by _RAND suffix) search algorithm.
+
+    Finally, both original and locally biased variants can be implemented with and
+    without the rescaling of the bound constraints.
+
+    Argument nlopt_direct_vresion (int) determines which variant is implmented:
+    - DIRECT: 0
+    - DIRECT_L: 1
+    - DIRECT_L_NOSCAL: 2
+    - DIRECT_L_RAND: 3
+    - DIRECT_L_RAND_NOSCAL: 4
+    - DIRECT_RAND: 5
+
+    ``nlopt_direct`` supports the following ``algo_options``:
+
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - stopping_max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
 
     """
