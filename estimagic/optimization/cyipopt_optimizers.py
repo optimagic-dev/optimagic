@@ -83,6 +83,11 @@ def ipopt(
     warm_start_mult_init_max=1e6,
     warm_start_entire_iterate="no",
     warm_start_target_mu=0.0,
+    #
+    option_file_name="",
+    replace_bounds="no",
+    skip_finalize_solution_call="no",
+    timing_statistics="no",
 ):
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -376,6 +381,30 @@ def ipopt(
     - warm_start_target_mu (float): Advanced and experimental! The valid range
         for this real option is unrestricted and its default value is 0.
 
+    - option_file_name (str): File name of options file. By default, the name of
+      the Ipopt options file is "ipopt.opt" - or something else if specified in
+      the IpoptApplication::Initialize call. If this option is set by
+      SetStringValue BEFORE the options file is read, it specifies the name of
+      the options file. It does not make any sense to specify this option within
+      the options file. Setting this option to an empty string disables reading
+      of an options file.
+    - replace_bounds (bool or str): Whether all variable bounds should be
+      replaced by inequality constraints. This option must be set for the
+      inexact algorithm. The default value for this string option is "no".
+      Possible values: "yes", "no", True, False.
+    - skip_finalize_solution_call (str or bool): Whether a call to
+      NLP::FinalizeSolution after optimization should be suppressed.    In some
+      Ipopt applications, the user might want to call the FinalizeSolution
+      method separately. Setting this option to "yes" will cause the
+      IpoptApplication object to suppress the default call to that method. The
+      default value for this string option is "no". Possible values: "yes",
+      "no", True, False
+    - timing_statistics (str or bool): Indicates whether to measure time spend
+      in components of Ipopt and NLP evaluation.  The overall algorithm time is
+      unaffected by this option. The default value for this string option is
+      "no". Possible values: "yes", "no", True, False
+
+
     The following options are not supported:
 
         - num_linear_variables: since estimagic may reparametrize your problem
@@ -443,6 +472,11 @@ def ipopt(
     warm_start_entire_iterate = convert_bool_to_str(
         warm_start_entire_iterate, "warm_start_entire_iterate"
     )
+    replace_bounds = convert_bool_to_str(replace_bounds, "replace_bounds")
+    skip_finalize_solution_call = convert_bool_to_str(
+        skip_finalize_solution_call, "skip_finalize_solution_call"
+    )
+    timing_statistics = convert_bool_to_str(timing_statistics, "timing_statistics")
 
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
@@ -510,6 +544,11 @@ def ipopt(
         "warm_start_mult_init_max": warm_start_mult_init_max,
         "warm_start_entire_iterate": warm_start_entire_iterate,
         "warm_start_target_mu": warm_start_target_mu,
+        #
+        "option_file_name": option_file_name,
+        "replace_bounds": replace_bounds,
+        "skip_finalize_solution_call": skip_finalize_solution_call,
+        "timing_statistics": timing_statistics,
         #
         "mu_strategy": mu_strategy,
         "mu_target": float(mu_target),

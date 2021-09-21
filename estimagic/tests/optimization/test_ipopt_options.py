@@ -67,6 +67,9 @@ options_and_expected = [
     ({"warm_start_mult_bound_push": 0.002}, None),
     ({"warm_start_mult_init_max": 1e8}, None),
     ({"warm_start_entire_iterate": "yes"}, None),
+    ({"replace_bounds": "yes"}, None),
+    ({"skip_finalize_solution_call": "no"}, None),
+    ({"timing_statistics": "yes"}, None),
 ]
 
 test_cases = product([sos_dict_criterion], options_and_expected)
