@@ -1015,7 +1015,7 @@ def nlopt_crs2_lm(
 
     """
     if not random_search_population_size:
-        random_search_population_size = len(x) + 1
+        random_search_population_size = 10 * (len(x) + 1)
     out = _minimize_nlopt(
         criterion_and_derivative,
         x,

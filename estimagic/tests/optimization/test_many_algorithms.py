@@ -81,5 +81,5 @@ def test_global_algorithms_on_sum_of_squares(algorithm):
         algorithm=algorithm,
     )
     aaae(
-        res["solution_params"]["value"].to_numpy(), np.array([0.5, 0, -0.5]), decimal=2
+        res["solution_params"]["value"].to_numpy(), np.array([0.5, 0, -0.5]), decimal=1
     )
