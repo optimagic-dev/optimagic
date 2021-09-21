@@ -1,7 +1,9 @@
 """Functions for inferences in maximum likelihood models."""
 import numpy as np
+import pandas as pd
 
 from estimagic.exceptions import INVALID_INFERENCE_MSG
+from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse
 
 
@@ -26,10 +28,14 @@ def cov_hessian(hess):
     Resources: Marno Verbeek - A guide to modern econometrics :cite:`Verbeek2008`
 
     """
-    info_matrix = -1 * hess
-    cov_hes = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
+    _hess, names = process_pandas_arguments(hess=hess)
+    info_matrix = -1 * _hess
+    cov = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
 
-    return cov_hes
+    if "params" in names:
+        cov = pd.DataFrame(cov, columns=names["params"], index=names["params"])
+
+    return cov
 
 
 def cov_jacobian(jac):
@@ -45,10 +51,15 @@ def cov_jacobian(jac):
     Resources: Marno Verbeek - A guide to modern econometrics.
 
     """
-    info_matrix = np.dot((jac.T), jac)
-    cov_jac = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
+    _jac, names = process_pandas_arguments(jac=jac)
 
-    return cov_jac
+    info_matrix = np.dot((_jac.T), _jac)
+    cov = robust_inverse(info_matrix, msg=INVALID_INFERENCE_MSG)
+
+    if "params" in names:
+        cov = pd.DataFrame(cov, columns=names["params"], index=names["params"])
+
+    return cov
 
 
 def cov_robust(jac, hess):
@@ -69,11 +80,16 @@ def cov_robust(jac, hess):
         https://tinyurl.com/yym5d4cw
 
     """
-    info_matrix = np.dot((jac.T), jac)
-    cov_hes = cov_hessian(hess)
-    sandwich_cov = np.dot(cov_hes, np.dot(info_matrix, cov_hes))
+    _jac, _hess, names = process_pandas_arguments(jac=jac, hess=hess)
 
-    return sandwich_cov
+    info_matrix = np.dot((_jac.T), _jac)
+    cov_hes = cov_hessian(_hess)
+    cov = np.dot(cov_hes, np.dot(info_matrix, cov_hes))
+
+    if "params" in names:
+        cov = pd.DataFrame(cov, columns=names["params"], index=names["params"])
+
+    return cov
 
 
 def se_from_cov(cov):
@@ -87,6 +103,9 @@ def se_from_cov(cov):
 
     """
     standard_errors = np.sqrt(np.diag(cov))
+
+    if isinstance(cov, pd.DataFrame):
+        standard_errors = pd.Series(standard_errors, index=cov.index)
 
     return standard_errors
 
@@ -112,9 +131,15 @@ def cov_cluster_robust(jac, hess, design_info):
         cluster_robust_var (np.array): 2d variance-covariance matrix
 
     """
-    cluster_meat = _clustering(jac, design_info)
-    cluster_robust_var = _sandwich_step(hess, cluster_meat)
-    return cluster_robust_var
+    _jac, _hess, names = process_pandas_arguments(jac=jac, hess=hess)
+
+    cluster_meat = _clustering(_jac, design_info)
+    cov = _sandwich_step(_hess, cluster_meat)
+
+    if "params" in names:
+        cov = pd.DataFrame(cov, columns=names["params"], index=names["params"])
+
+    return cov
 
 
 def cov_strata_robust(jac, hess, design_info):
@@ -141,9 +166,14 @@ def cov_strata_robust(jac, hess, design_info):
         strata_robust_var (np.array): 2d variance-covariance matrix
 
     """
-    strata_meat = _stratification(jac, design_info)
-    strata_robust_var = _sandwich_step(hess, strata_meat)
-    return strata_robust_var
+    _jac, _hess, names = process_pandas_arguments(jac=jac, hess=hess)
+    strata_meat = _stratification(_jac, design_info)
+    cov = _sandwich_step(_hess, strata_meat)
+
+    if "params" in names:
+        cov = pd.DataFrame(cov, columns=names["params"], index=names["params"])
+
+    return cov
 
 
 def _sandwich_step(hess, meat):
