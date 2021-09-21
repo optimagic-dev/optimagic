@@ -102,6 +102,20 @@ options_and_expected = [
     ({"quality_function_section_sigma_tol": 0.02}, None),
     ({"quality_function_section_qf_tol": 0.5}, None),
     ({"quality_function_section_qf_tol": 1.1}, TypeError),
+    ({"line_search_method": "penalty"}, None),
+    ({"alpha_red_factor": 0.8}, None),
+    ({"accept_every_trial_step": True}, None),
+    ({"accept_after_max_steps": 3}, None),
+    ({"alpha_for_y": "max"}, None),
+    ({"alpha_for_y_tol": 5}, None),
+    ({"tiny_step_tol": 1e-15}, None),
+    ({"tiny_step_y_tol": 0.02}, None),
+    ({"watchdog_shortened_iter_trigger": 20}, None),
+    ({"watchdog_shortened_iter_trigger": 20.5}, TypeError),
+    ({"watchdog_trial_iter_max": 5}, None),
+    ({"watchdog_trial_iter_max": 5.5}, TypeError),
+    ({"theta_max_fact": 2e5}, None),
+    ({"theta_min_fact": 0.002}, None),
 ]
 
 test_cases = product([sos_dict_criterion], options_and_expected)
