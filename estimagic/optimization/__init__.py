@@ -35,4 +35,4 @@ if IS_PYBOBYQA_INSTALLED:
 if IS_DFOLS_INSTALLED:
     AVAILABLE_ALGORITHMS["nag_dfols"] = nag_optimizers.nag_dfols
 
-GLOBAL_ALGORITHMS = ["nlopt_direct", "nlopt_esch", "nlopt_isres"]
+GLOBAL_ALGORITHMS = ["nlopt_direct", "nlopt_esch", "nlopt_isres", "nlopt_crs2_lm"]
