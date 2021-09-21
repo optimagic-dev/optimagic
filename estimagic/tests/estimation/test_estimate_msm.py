@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.estimation.estimate_msm import check_numdiff_options
-from estimagic.estimation.estimate_msm import check_optimization_options
 from estimagic.estimation.estimate_msm import estimate_msm
+from estimagic.shared.check_option_dicts import check_numdiff_options
+from estimagic.shared.check_option_dicts import check_optimization_options
 
 
 def _sim_pd(params):
