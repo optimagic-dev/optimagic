@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.examples.criterion_functions import sos_dict_criterion
 from estimagic.optimization.optimize import minimize
 
@@ -217,6 +218,7 @@ options_and_expected = [
 test_cases = product([sos_dict_criterion], options_and_expected)
 
 
+@pytest.skipif(not IS_CYIPOPT_INSTALLED, "cyipopt not installed.")
 @pytest.mark.parametrize("criterion, options_and_expected", test_cases)
 def test_ipopt_algo_options(criterion, options_and_expected):
     algo_options, expected = options_and_expected
