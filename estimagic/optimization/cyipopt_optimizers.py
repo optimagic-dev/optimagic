@@ -12,135 +12,6 @@ try:
 except ImportError:
     pass
 
-DEFAULT_ALGO_INFO = {
-    "primary_criterion_entry": "value",
-    "parallelizes": False,
-    "needs_scaling": False,
-}
-
-DEFAULT_LINEAR_SOLVER_OPTIONS = {
-    "linear_scaling_on_demand": "yes",
-    # ma27
-    "ma27_pivtol": 1e-8,
-    "ma27_pivtolmax": 0.001,
-    "ma27_liw_init_factor": 5.0,
-    "ma27_la_init_factor": 5.0,
-    "ma27_meminc_factor": 2.0,
-    "ma27_skip_inertia_check": "no",
-    "ma27_ignore_singularity": "no",
-    # ma57
-    "ma57_pivtol": 1e-8,
-    "ma57_pivtolmax": 0.0001,
-    "ma57_pre_alloc": 1.05,
-    "ma57_pivot_order": 5,
-    "ma57_automatic_scaling": "no",
-    "ma57_block_size": 16,
-    "ma57_node_amalgamation": 16.0,
-    "ma57_small_pivot_flag": 0.0,
-    # ma77
-    "ma77_buffer_lpage": 4096,
-    "ma77_buffer_npage": 1600,
-    "ma77_file_size": 2097152,
-    "ma77_maxstore": 0,
-    "ma77_nemin": 8,
-    "ma77_small": 1e-20,
-    "ma77_static": 0.0,
-    "ma77_u": 1e-8,
-    "ma77_umax": 0.0001,
-    "ma77_order": "metis",
-    # ma86
-    "ma86_nemin": 32,
-    "ma86_small": 1e-20,
-    "ma86_static": 0.0,
-    "ma86_u": 1e-8,
-    "ma86_umax": 0.0001,
-    "ma86_scaling": "mc64",
-    "ma86_order": "auto",
-    # ma97
-    "ma97_nemin": 8,
-    "ma97_small": 1e-20,
-    "ma97_u": 1e-8,
-    "ma97_umax": 0.0001,
-    "ma97_scaling": "dynamic",
-    "ma97_scaling1": "mc64",
-    "ma97_switch1": "od_hd_reuse",
-    "ma97_scaling2": "mc64",
-    "ma97_switch2": "never",
-    "ma97_scaling3": "mc64",
-    "ma97_switch3": "never",
-    "ma97_order": "auto",
-    "ma97_solve_blas3": "no",
-    # paradiso
-    "pardiso_matching_strategy": "complete+2x2",
-    "pardiso_redo_symbolic_fact_only_if_inertia_wrong": "no",
-    "pardiso_repeated_perturbation_means_singular": "no",
-    "pardiso_skip_inertia_check": "no",
-    "pardiso_max_iterative_refinement_steps": 0,
-    "pardiso_order": "metis",
-    "pardiso_max_iter": 500,
-    "pardiso_iter_relative_tol": 1e-6,
-    "pardiso_iter_coarse_size": 5000,
-    "pardiso_iter_max_levels": 10,
-    "pardiso_iter_dropping_factor": 0.5,
-    "pardiso_iter_dropping_schur": 0.1,
-    "pardiso_iter_max_row_fill": 10_000_000,
-    "pardiso_iter_inverse_norm_factor": 1e6,
-    "pardiso_iterative": "no",
-    "pardiso_max_droptol_corrections": 4,
-    # paradiso MKL
-    "pardisomkl_matching_strategy": "complete+2x2",
-    "pardisomkl_redo_symbolic_fact_only_if_inertia_wrong": "no",
-    "pardisomkl_repeated_perturbation_means_singular": "no",
-    "pardisomkl_skip_inertia_check": "no",
-    "pardisomkl_max_iterative_refinement_steps": 1,
-    "pardisomkl_order": "metis",
-    # SPRAL
-    "spral_cpu_block_size": 256,
-    "spral_gpu_perf_coeff": 1.0,
-    "spral_ignore_numa": "yes",
-    "spral_max_load_inbalance": 1.2,
-    "spral_min_gpu_work": 5e9,
-    "spral_nemin": 32,
-    "spral_order": "matching",
-    "spral_pivot_method": "block",
-    "spral_scaling": "matching",
-    "spral_scaling_1": "matching",
-    "spral_scaling_2": "mc64",
-    "spral_scaling_3": "none",
-    "spral_switch_1": "at_start",
-    "spral_switch_2": "on_demand",
-    "spral_switch_3": "never",
-    "spral_small": 1e-20,
-    "spral_small_subtree_threshold": 4e6,
-    "spral_u": 1e-8,
-    "spral_umax": 0.0001,
-    "spral_use_gpu": "yes",
-    # WSMP
-    "wsmp_num_threads": 1,
-    "wsmp_ordering_option": 1,
-    "wsmp_ordering_option2": 1,
-    "wsmp_pivtol": 0.0001,
-    "wsmp_pivtolmax": 0.1,
-    "wsmp_scaling": 0,
-    "wsmp_singularity_threshold": 1e-18,
-    "wsmp_write_matrix_iteration": -1,
-    "wsmp_skip_inertia_check": "no",
-    "wsmp_no_pivoting": "no",
-    "wsmp_max_iter": 1000,
-    "wsmp_inexact_droptol": 0.0,
-    "wsmp_inexact_fillin_limit": 0.0,
-    # mumps
-    "mumps_pivtol": 1e-6,
-    "mumps_pivtolmax": 0.1,
-    "mumps_mem_percent": 1000,
-    "mumps_permuting_scaling": 7,
-    "mumps_pivot_order": 7,
-    "mumps_scaling": 77,
-    "mumps_dep_tol": 0.0,
-    # ma28
-    "ma28_pivtol": 0.01,
-}
-
 
 def ipopt(
     criterion_and_derivative,
@@ -1429,83 +1300,69 @@ def ipopt(
     for key, val in linear_solver_options.items():
         if key in linear_solver_options_with_none:
             linear_solver_options[key] = _convert_none_to_str(val)
+    boolean_linear_solver_options = [
+        "linear_scaling_on_demand"
+        "ma27_skip_inertia_check"
+        "ma27_ignore_singularity"
+        "ma57_automatic_scaling"
+        "ma97_solve_blas3"
+        "pardiso_redo_symbolic_fact_only_if_inertia_wrong"
+        "pardiso_repeated_perturbation_means_singular"
+        "pardiso_skip_inertia_check"
+        "pardiso_iterative"
+        "pardisomkl_redo_symbolic_fact_only_if_inertia_wrong"
+        "pardisomkl_repeated_perturbation_means_singular"
+        "pardisomkl_skip_inertia_check"
+        "spral_ignore_numa"
+        "spral_use_gpu"
+        "wsmp_skip_inertia_check"
+        "wsmp_no_pivoting"
+    ]
+    for key, val in linear_solver_options.items():
+        if key in boolean_linear_solver_options:
+            linear_solver_options[key] = _convert_bool_to_str(val, key)
 
-    converted_bool_to_str_options = {
-        "dependency_detection_with_rhs": _convert_bool_to_str(
-            dependency_detection_with_rhs, "dependency_detection_with_rhs"
-        ),
-        "check_derivatives_for_naninf": _convert_bool_to_str(
-            check_derivatives_for_naninf, "check_derivatives_for_naninf"
-        ),
-        "jac_c_constant": _convert_bool_to_str(jac_c_constant, "jac_c_constant"),
-        "jac_d_constant": _convert_bool_to_str(jac_d_constant, "jac_d_constant"),
-        "hessian_constant": _convert_bool_to_str(hessian_constant, "hessian_constant"),
-        "least_square_init_primal": _convert_bool_to_str(
-            least_square_init_primal, "least_square_init_primal"
-        ),
-        "least_square_init_duals": _convert_bool_to_str(
-            least_square_init_duals, "least_square_init_duals"
-        ),
-        "warm_start_init_point": _convert_bool_to_str(
-            warm_start_init_point, "warm_start_init_point"
-        ),
-        "warm_start_same_structure": _convert_bool_to_str(
-            warm_start_same_structure, "warm_start_same_structure"
-        ),
-        "warm_start_entire_iterate": _convert_bool_to_str(
-            warm_start_entire_iterate, "warm_start_entire_iterate"
-        ),
-        "replace_bounds": _convert_bool_to_str(replace_bounds, "replace_bounds"),
-        "skip_finalize_solution_call": _convert_bool_to_str(
-            skip_finalize_solution_call, "skip_finalize_solution_call"
-        ),
-        "timing_statistics": _convert_bool_to_str(
-            timing_statistics, "timing_statistics"
-        ),
-        "adaptive_mu_restore_previous_iterate": _convert_bool_to_str(
-            adaptive_mu_restore_previous_iterate, "adaptive_mu_restore_previous_iterate"
-        ),
-        "mu_allow_fast_monotone_decrease": _convert_bool_to_str(
-            mu_allow_fast_monotone_decrease, "mu_allow_fast_monotone_decrease"
-        ),
-        "accept_every_trial_step": _convert_bool_to_str(
-            accept_every_trial_step, "accept_every_trial_step"
-        ),
-        "skip_corr_if_neg_curv": _convert_bool_to_str(
-            skip_corr_if_neg_curv, "skip_corr_if_neg_curv"
-        ),
-        "skip_corr_in_monotone_mode": _convert_bool_to_str(
-            skip_corr_in_monotone_mode, "skip_corr_in_monotone_mode"
-        ),
-        "recalc_y": _convert_bool_to_str(recalc_y, "recalc_y"),
-        "mehrotra_algorithm": _convert_bool_to_str(
-            mehrotra_algorithm, "mehrotra_algorithm"
-        ),
-        "fast_step_computation": _convert_bool_to_str(
-            fast_step_computation, "fast_step_computation"
-        ),
-        "neg_curv_test_reg": _convert_bool_to_str(
-            neg_curv_test_reg, "neg_curv_test_reg"
-        ),
-        "perturb_always_cd": _convert_bool_to_str(
-            perturb_always_cd, "perturb_always_cd"
-        ),
-        "expect_infeasible_problem": _convert_bool_to_str(
-            expect_infeasible_problem, "expect_infeasible_problem"
-        ),
-        "start_with_resto": _convert_bool_to_str(start_with_resto, "start_with_resto"),
-        "evaluate_orig_obj_at_resto_trial": _convert_bool_to_str(
-            evaluate_orig_obj_at_resto_trial, "evaluate_orig_obj_at_resto_trial"
-        ),
-        "limited_memory_special_for_resto": _convert_bool_to_str(
-            limited_memory_special_for_resto, "limited_memory_special_for_resto"
-        ),
-        "honor_original_bounds": _convert_bool_to_str(
-            honor_original_bounds, "honor_original_bounds"
-        ),
+    convert_bool_to_str_options = {
+        "dependency_detection_with_rhs": dependency_detection_with_rhs,
+        "check_derivatives_for_naninf": check_derivatives_for_naninf,
+        "jac_c_constant": jac_c_constant,
+        "jac_d_constant": jac_d_constant,
+        "hessian_constant": hessian_constant,
+        "least_square_init_primal": least_square_init_primal,
+        "least_square_init_duals": least_square_init_duals,
+        "warm_start_init_point": warm_start_init_point,
+        "warm_start_same_structure": warm_start_same_structure,
+        "warm_start_entire_iterate": warm_start_entire_iterate,
+        "replace_bounds": replace_bounds,
+        "skip_finalize_solution_call": skip_finalize_solution_call,
+        "timing_statistics": timing_statistics,
+        "adaptive_mu_restore_previous_iterate": adaptive_mu_restore_previous_iterate,
+        "mu_allow_fast_monotone_decrease": mu_allow_fast_monotone_decrease,
+        "accept_every_trial_step": accept_every_trial_step,
+        "skip_corr_if_neg_curv": skip_corr_if_neg_curv,
+        "skip_corr_in_monotone_mode": skip_corr_in_monotone_mode,
+        "recalc_y": recalc_y,
+        "mehrotra_algorithm": mehrotra_algorithm,
+        "fast_step_computation": fast_step_computation,
+        "neg_curv_test_reg": neg_curv_test_reg,
+        "perturb_always_cd": perturb_always_cd,
+        "expect_infeasible_problem": expect_infeasible_problem,
+        "start_with_resto": start_with_resto,
+        "evaluate_orig_obj_at_resto_trial": evaluate_orig_obj_at_resto_trial,
+        "limited_memory_special_for_resto": limited_memory_special_for_resto,
+        "honor_original_bounds": honor_original_bounds,
     }
-    algo_info = DEFAULT_ALGO_INFO.copy()
-    algo_info["name"] = "ipopt"
+    converted_bool_to_str_options = {
+        key: _convert_bool_to_str(val, key)
+        for key, val in convert_bool_to_str_options.items()
+    }
+
+    algo_info = {
+        "primary_criterion_entry": "value",
+        "parallelizes": False,
+        "needs_scaling": False,
+        "name": "ipopt",
+    }
 
     gradient = functools.partial(
         criterion_and_derivative, task="derivative", algorithm_info=algo_info
