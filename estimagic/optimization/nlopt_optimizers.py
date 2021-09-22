@@ -60,7 +60,7 @@ def nlopt_bobyqa(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations (int): If the maximum number of function
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -158,7 +158,7 @@ def nlopt_praxis(
     form of the optimized function and repeatedly updates a set of conjugate
     search directions.
 
-    The algorithm, is not invariant to scaling of the objective function and may
+    The algorithm is not invariant to scaling of the objective function and may
     fail under its certain rank-preserving transformations (e.g., will lead to
     a non-quadratic shape of the objective function).
 
@@ -581,7 +581,7 @@ def nlopt_ccsaq(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations (int): If the maximum number of function
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -639,7 +639,7 @@ def nlopt_mma(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations (int): If the maximum number of function
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -672,7 +672,7 @@ def nlopt_var(
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
-    rank_variant=1,
+    rank_1_update=True,
 ):
 
     """Minimize a scalar function limited memory switching variable-metric method.
@@ -686,6 +686,8 @@ def nlopt_var(
     J. Vlcek and L. Luksan, "Shifted limited-memory variable metric methods for
     large-scale unconstrained minimization," J. Computational Appl. Math. 186,
     p. 365-390 (2006).
+    To choose update method, set the boolean argument `rank_1_update` to `True` for
+    rank-1 update (the defaulte), and `False` for rank-2 update.
 
     ``nlopt_svmm`` supports the following ``algo_options``:
 
@@ -693,20 +695,15 @@ def nlopt_var(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations (int): If the maximum number of function
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
     """
-    if rank_variant == 1:
+    if rank_1_update:
         algo = nlopt.LD_VAR1
-    elif rank_variant == 2:
-        algo = nlopt.LD_VAR2
     else:
-        raise ValueError(
-            "nlopt supports only rank-1 and rank-2 methods of shifting variable-"
-            "metric method"
-        )
+        algo = nlopt.LD_VAR2
     out = _minimize_nlopt(
         criterion_and_derivative,
         x,
@@ -756,7 +753,7 @@ def nlopt_slsqp(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations (int): If the maximum number of function
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -788,7 +785,9 @@ def nlopt_direct(
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
-    nlopt_direct_version=0,
+    locally_biased=False,
+    random_search=False,
+    unscaled_bounds=False,
 ):
     """Optimize a scalar function based on DIRECT method.
 
@@ -810,13 +809,15 @@ def nlopt_direct(
     Finally, both original and locally biased variants can be implemented with and
     without the rescaling of the bound constraints.
 
-    Argument nlopt_direct_vresion (int) determines which variant is implmented:
-    - DIRECT: 0
-    - DIRECT_L: 1
-    - DIRECT_L_NOSCAL: 2
-    - DIRECT_L_RAND: 3
-    - DIRECT_L_RAND_NOSCAL: 4
-    - DIRECT_RAND: 5
+    Boolean arguments `locally_biased`, 'random_search', and 'unscaled_bouds' can be
+    set to `True` or `False` to determine which method is run. The comprehensive list
+    of available methods are:
+    - DIRECT
+    - DIRECT_L
+    - DIRECT_L_NOSCAL
+    - DIRECT_L_RAND
+    - DIRECT_L_RAND_NOSCAL
+    - DIRECT_RAND
 
     ``nlopt_direct`` supports the following ``algo_options``:
 
@@ -824,22 +825,22 @@ def nlopt_direct(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations_global (int): If the maximum number of function
+    - stopping.max_criterion_evaluations_global (int): If the maximum number of function
       evaluation is reached.
 
 
     """
-    if nlopt_direct_version == 0:
+    if not locally_biased and not random_search and not unscaled_bounds:
         algo = nlopt.GN_DIRECT
-    elif nlopt_direct_version == 1:
+    elif locally_biased and not random_search and not unscaled_bounds:
         algo = nlopt.GN_DIRECT_L
-    elif nlopt_direct_version == 2:
+    elif locally_biased and not random_search and unscaled_bounds:
         algo = nlopt.GN_DIRECT_L_NOSCAL
-    elif nlopt_direct_version == 3:
+    elif locally_biased and random_search and not unscaled_bounds:
         algo = nlopt.GN_DIRECT_L_RAND
-    elif nlopt_direct_version == 4:
+    elif locally_biased and random_search and unscaled_bounds:
         algo = nlopt.GN_DIRECT_L_RAND_NOSCAL
-    elif nlopt_direct_version == 5:
+    elif not locally_biased and not random_search and unscaled_bounds:
         algo = nlopt.GN_DIRECT_NOSCAL
     out = _minimize_nlopt(
         criterion_and_derivative,
@@ -887,13 +888,13 @@ def nlopt_esch(
     Prinzipien der biologischen Evolution," Ph.D. thesis (1971), Reprinted by
     Fromman-Holzboog (1973).
 
-    ``nlopt_escht`` supports the following ``algo_options``:
+    ``nlopt_esch`` supports the following ``algo_options``:
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations_global (int): If the maximum number of function
+    - stopping.max_criterion_evaluations_global (int): If the maximum number of function
       evaluation is reached.
 
 
@@ -948,7 +949,7 @@ def nlopt_isres(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations_global (int): If the maximum number of function
+    - stopping.max_criterion_evaluations_global (int): If the maximum number of function
       evaluation is reached.
 
 
@@ -980,7 +981,7 @@ def nlopt_crs2_lm(
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
-    random_search_population_size=None,
+    genetic_popsize=None,
 ):
     """Optimize a scalar function using the CRS2_LM algorithm.
 
@@ -998,7 +999,7 @@ def nlopt_crs2_lm(
 
     CRS class of algorithms starts with random population of points and evolves the
     points "randomly". The size of the initial population can be set via the param-
-    meter random_search_population_size. If the user doesn't specify a value, it is
+    meter genetic_popsize. If the user doesn't specify a value, it is
     set to the nlopt default of 10*(n+1).
 
     ``nlopt_isres`` supports the following ``algo_options``:
@@ -1007,15 +1008,15 @@ def nlopt_crs2_lm(
       between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping_max_criterion_evaluations_global (int): If the maximum number of function
+    - stopping.max_criterion_evaluations_global (int): If the maximum number of function
       evaluation is reached.
-    - random_search_population_size(int): The size of the population of the starting
+    - genetic_popsize(int): The size of the population of the starting
       points.
 
 
     """
-    if not random_search_population_size:
-        random_search_population_size = 10 * (len(x) + 1)
+    if not genetic_popsize:
+        genetic_popsize = 10 * (len(x) + 1)
     out = _minimize_nlopt(
         criterion_and_derivative,
         x,
@@ -1028,7 +1029,7 @@ def nlopt_crs2_lm(
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
-        population_size=random_search_population_size,
+        population_size=genetic_popsize,
     )
     return out
 

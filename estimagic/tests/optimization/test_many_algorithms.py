@@ -18,9 +18,9 @@ from estimagic.optimization.optimize import minimize
 
 
 LOCAL_ALGORITHMS = {
-    name: AVAILABLE_ALGORITHMS[name]
-    for name in AVAILABLE_ALGORITHMS
-    if name not in GLOBAL_ALGORITHMS
+    key: value
+    for key, value in AVAILABLE_ALGORITHMS.items()
+    if key not in GLOBAL_ALGORITHMS
 }
 
 GLOBAL_ALGORITHMS_AVAILABLE = [
