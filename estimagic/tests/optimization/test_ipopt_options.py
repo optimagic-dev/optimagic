@@ -37,7 +37,7 @@ options_and_expected = [
     ({"fixed_variable_treatment": "relax_bounds"}, None),
     ({"fixed_variable_treatment": "non_existant"}, TypeError),
     ({"dependency_detector": "mumps"}, None),
-    ({"dependency_detector": "non_existent"}, ValueError),
+    ({"dependency_detector": "non_existent"}, TypeError),
     ({"dependency_detection_with_rhs": "no"}, None),
     ({"dependency_detection_with_rhs": False}, None),
     ({"dependency_detection_with_rhs": "non_existent"}, ValueError),
@@ -197,6 +197,10 @@ options_and_expected = [
     ({"limited_memory_max_skipping": 4}, None),
     ({"limited_memory_special_for_resto": False}, None),
     ({"hessian_approximation_space": "all-variables"}, None),
+    # linear solver
+    # using ma27, ma57, ma77, ma86 leads to remaining at the start values
+    # using ma97 leads to segmentation fault
+    ({"linear_solver_options": {"mumps_pivtol": 1e-5}}, None),
 ]
 
 test_cases = product([sos_dict_criterion], options_and_expected)

@@ -34,7 +34,7 @@ DEFAULT_LINEAR_SOLVER_OPTIONS = {
     "ma57_pivtol": 1e-8,
     "ma57_pivtolmax": 0.0001,
     "ma57_pre_alloc": 1.05,
-    "ma57_pivot_order": 5,  ###float or int?
+    "ma57_pivot_order": 5,
     "ma57_automatic_scaling": "no",
     "ma57_block_size": 16,
     "ma57_node_amalgamation": 16.0,
@@ -44,7 +44,7 @@ DEFAULT_LINEAR_SOLVER_OPTIONS = {
     "ma77_buffer_npage": 1600,
     "ma77_file_size": 2097152,
     "ma77_maxstore": 0,
-    "ma77_nemin": 8.0,  ###float or int?
+    "ma77_nemin": 8,
     "ma77_small": 1e-20,
     "ma77_static": 0.0,
     "ma77_u": 1e-8,
@@ -324,6 +324,9 @@ def ipopt(
     limited_memory_max_skipping=2,
     limited_memory_special_for_resto="no",
     hessian_approximation_space="nonlinear-variables",
+    # linear solver
+    linear_solver="mumps",
+    linear_solver_options=None,
 ):  ###
     """Minimize a scalar function using the Interior Point Optimizer.
 
@@ -340,6 +343,13 @@ def ipopt(
     are considered "acceptable", it will terminate before the desired
     convergence tolerance is met. This is useful in cases where the algorithm
     might not be able to achieve the "desired" level of accuracy.
+
+    The options are analogous to the ones in the `ipopt documentation
+    <https://coin-or.github.io/Ipopt/OPTIONS.html#>`_ with the exception of the
+    linear solver options which are here bundled into a dictionary. Any argument
+    that takes "yes" and "no" in the ipopt documentation can also be passed as a
+    Python bool and any option that accepts "none" in ipopt accepts a Python
+    None.
 
     - convergence.relative_criterion_tolerance (float): The algorithm terminates
         successfully, if the (scaled) non linear programming error becomes
@@ -1345,12 +1355,28 @@ def ipopt(
       string option is "nonlinear-variables". Possible values:
         - "nonlinear-variables": only in space of nonlinear variables.
         - "all-variables": in space of all variables (without slacks)
+    - linear_solver (str): Linear solver used for step computations. Determines
+      which linear algebra package is to be used for the solution of the
+      augmented linear system (for obtaining the search directions). The default
+      value for this string option is "ma27". Possible values:
+        - mumps (use the Mumps package, default)
+        - ma27 (load the Harwell routine MA27 from library at runtime)
+        - ma57 (load the Harwell routine MA57 from library at runtime)
+        - ma77 (load the Harwell routine HSL_MA77 from library at runtime)
+        - ma86 (load the Harwell routine MA86 from library at runtime)
+        - ma97 (load the Harwell routine MA97 from library at runtime)
+        - pardiso (load the Pardiso package from pardiso-project.org from
+          user-provided library at runtime)
+        - custom (use custom linear solver (expert use))
+    - linear_solver_options (dict or None): dictionary with the linear solver
+      options. See the `ipopt documentation for details
+      <https://coin-or.github.io/Ipopt/OPTIONS.html>`_.
 
-    ###
+      ###
 
     The following options are not supported:
-      - `num_linear_variables`: since estimagic may reparametrize your problem and
-        this changes the parameter problem, we do not support this option.
+      - `num_linear_variables`: since estimagic may reparametrize your problem
+        and this changes the parameter problem, we do not support this option.
       - scaling options (`nlp_scaling_method`, `obj_scaling_factor`,
         `nlp_scaling_max_gradient`, `nlp_scaling_obj_target_gradient`,
         `nlp_scaling_constr_target_gradient`, `nlp_scaling_min_value`)
@@ -1378,26 +1404,30 @@ def ipopt(
     if nlp_lower_bound_inf > 0:
         raise ValueError("nlp_lower_bound_inf should be < 0.")
 
+    linear_solver_options = (
+        {} if linear_solver_options is None else linear_solver_options
+    )
+
+    # The default value is actually 1e2*tol, where tol is the general
+    # termination tolerance.
+    if resto_failure_feasibility_threshold is None:
+        resto_failure_feasibility_threshold = (
+            1e2 * convergence_relative_criterion_tolerance
+        )
+
+    # convert None to str none section
+    dependency_detector = "none" if dependency_detector is None else dependency_detector
+
+    # convert_bool_to_str section
     dependency_detection_with_rhs = convert_bool_to_str(
         dependency_detection_with_rhs, "dependency_detection_with_rhs"
     )
-    dependency_detector = "none" if dependency_detector is None else dependency_detector
-    if dependency_detector not in {"none", "mumps", "wsmp", "ma28"}:
-        raise ValueError(
-            "dependency_detector must be one of 'none', 'mumps', 'wsmp', 'ma28' or "
-            f"None. You specified {dependency_detector}."
-        )
     check_derivatives_for_naninf = convert_bool_to_str(
         check_derivatives_for_naninf, "check_derivatives_for_naninf"
     )
     jac_c_constant = convert_bool_to_str(jac_c_constant, "jac_c_constant")
     jac_d_constant = convert_bool_to_str(jac_d_constant, "jac_d_constant")
     hessian_constant = convert_bool_to_str(hessian_constant, "hessian_constant")
-    if bound_mult_init_method not in {"constant", "mu-based"}:
-        raise ValueError(
-            f"You specified {bound_mult_init_method} as bound_mult_init_method. "
-            "It must be 'constant' or 'mu-based'."
-        )
     least_square_init_primal = convert_bool_to_str(
         least_square_init_primal, "least_square_init_primal"
     )
@@ -1451,13 +1481,6 @@ def ipopt(
         limited_memory_special_for_resto, "limited_memory_special_for_resto"
     )
 
-    # The default value is actually 1e2*tol, where tol is the general
-    # termination tolerance.
-    if resto_failure_feasibility_threshold is None:
-        resto_failure_feasibility_threshold = (
-            1e2 * convergence_relative_criterion_tolerance
-        )
-
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
 
@@ -1477,9 +1500,7 @@ def ipopt(
         "ma77_print_level": -1,
         "ma86_print_level": -1,
         "ma97_print_level": -1,
-        "spral_print_level": -1,
         "pardiso_msglvl": 0,
-        "pardisomkl_msglvl": 0,
         # disable scaling
         "nlp_scaling_method": "none",
         # disable derivative checker
@@ -1655,6 +1676,9 @@ def ipopt(
         "limited_memory_max_skipping": limited_memory_max_skipping,
         "limited_memory_special_for_resto": limited_memory_special_for_resto,
         "hessian_approximation_space": hessian_approximation_space,
+        # linear solver
+        "linear_solver": linear_solver,
+        **linear_solver_options,
     }
     ###
 
