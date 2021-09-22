@@ -172,18 +172,18 @@ def ipopt(
     nlp_lower_bound_inf=-1e19,
     nlp_upper_bound_inf=1e19,
     fixed_variable_treatment="make_parameter",
-    dependency_detector="none",
-    dependency_detection_with_rhs="no",
+    dependency_detector=None,
+    dependency_detection_with_rhs=False,
     # bounds
     kappa_d=1e-5,
     bound_relax_factor=1e-8,
-    honor_original_bounds="no",
+    honor_original_bounds=False,
     # derivatives
-    check_derivatives_for_naninf="no",
+    check_derivatives_for_naninf=False,
     # not sure if we should support the following:
-    jac_c_constant="no",
-    jac_d_constant="no",
-    hessian_constant="no",
+    jac_c_constant=False,
+    jac_d_constant=False,
+    hessian_constant=False,
     # initialization
     bound_push=0.01,
     bound_frac=0.01,
@@ -192,24 +192,24 @@ def ipopt(
     constr_mult_init_max=1000,
     bound_mult_init_val=1,
     bound_mult_init_method="constant",
-    least_square_init_primal="no",
-    least_square_init_duals="no",
+    least_square_init_primal=False,
+    least_square_init_duals=False,
     # warm start
-    warm_start_init_point="no",
-    warm_start_same_structure="no",
+    warm_start_init_point=False,
+    warm_start_same_structure=False,
     warm_start_bound_push=0.001,
     warm_start_bound_frac=0.001,
     warm_start_slack_bound_push=0.001,
     warm_start_slack_bound_frac=0.001,
     warm_start_mult_bound_push=0.001,
     warm_start_mult_init_max=1e6,
-    warm_start_entire_iterate="no",
+    warm_start_entire_iterate=False,
     warm_start_target_mu=0.0,
     # miscellaneous
     option_file_name="",
-    replace_bounds="no",
-    skip_finalize_solution_call="no",
-    timing_statistics="no",
+    replace_bounds=False,
+    skip_finalize_solution_call=False,
+    timing_statistics=False,
     # barrier parameter update
     mu_max_fact=1000,
     mu_max=100_000,
@@ -219,7 +219,7 @@ def ipopt(
     adaptive_mu_kkterror_red_fact=0.9999,
     filter_margin_fact=1e-5,
     filter_max_margin=1,
-    adaptive_mu_restore_previous_iterate="no",
+    adaptive_mu_restore_previous_iterate=False,
     adaptive_mu_monotone_init_factor=0.8,
     adaptive_mu_kkt_norm_type="2-norm-squared",
     mu_strategy="monotone",
@@ -229,20 +229,20 @@ def ipopt(
     barrier_tol_factor=10,
     mu_linear_decrease_factor=0.2,
     mu_superlinear_decrease_power=1.5,
-    mu_allow_fast_monotone_decrease="yes",
+    mu_allow_fast_monotone_decrease=True,
     tau_min=0.99,
     sigma_max=100,
     sigma_min=1e-6,
     quality_function_norm_type="2-norm-squared",
-    quality_function_centrality="none",
-    quality_function_balancing_term="none",
+    quality_function_centrality=None,
+    quality_function_balancing_term=None,
     quality_function_max_section_steps=8,
     quality_function_section_sigma_tol=0.01,
     quality_function_section_qf_tol=0.0,
     # line search
     line_search_method="filter",
     alpha_red_factor=0.5,
-    accept_every_trial_step="no",
+    accept_every_trial_step=False,
     accept_after_max_steps=-1,
     alpha_for_y="primal",
     alpha_for_y_tol=10,
@@ -264,29 +264,29 @@ def ipopt(
     obj_max_inc=5,
     max_filter_resets=5,
     filter_reset_trigger=5,
-    corrector_type="none",
-    skip_corr_if_neg_curv="yes",
-    skip_corr_in_monotone_mode="yes",
+    corrector_type=None,
+    skip_corr_if_neg_curv=True,
+    skip_corr_in_monotone_mode=True,
     corrector_compl_avrg_red_fact=1,
     soc_method=0,
     nu_init=1e-6,
     nu_inc=0.0001,
     rho=0.1,
     kappa_sigma=1e10,
-    recalc_y="no",
+    recalc_y=False,
     recalc_y_feas_tol=1e-6,
     slack_move=1.81899 * 1e-12,
     constraint_violation_norm_type="1-norm",
     # step calculation
-    mehrotra_algorithm="no",
-    fast_step_computation="no",
+    mehrotra_algorithm=False,
+    fast_step_computation=False,
     min_refinement_steps=1,
     max_refinement_steps=10,
     residual_ratio_max=1e-10,
     residual_ratio_singular=1e-5,
     residual_improvement_factor=1,
     neg_curv_test_tol=0,
-    neg_curv_test_reg="yes",
+    neg_curv_test_reg=True,
     max_hessian_perturbation=1e20,
     min_hessian_perturbation=1e-20,
     perturb_inc_fact_first=100,
@@ -295,17 +295,17 @@ def ipopt(
     first_hessian_perturbation=0.0001,
     jacobian_regularization_value=1e-8,
     jacobian_regularization_exponent=0.25,
-    perturb_always_cd="no",
+    perturb_always_cd=False,
     # restoration phase
-    expect_infeasible_problem="no",
+    expect_infeasible_problem=False,
     expect_infeasible_problem_ctol=0.001,
     expect_infeasible_problem_ytol=1e8,
-    start_with_resto="no",
+    start_with_resto=False,
     soft_resto_pderror_reduction_factor=0.9999,
     max_soft_resto_iters=10,
     required_infeasibility_reduction=0.9,
     max_resto_iter=3_000_000,
-    evaluate_orig_obj_at_resto_trial="yes",
+    evaluate_orig_obj_at_resto_trial=True,
     resto_penalty_parameter=1000,
     resto_proximity_weight=1,
     bound_mult_reset_threshold=1000,
@@ -320,7 +320,7 @@ def ipopt(
     limited_memory_init_val_max=1e8,
     limited_memory_init_val_min=1e-8,
     limited_memory_max_skipping=2,
-    limited_memory_special_for_resto="no",
+    limited_memory_special_for_resto=False,
     hessian_approximation_space="nonlinear-variables",
     # linear solver
     linear_solver="mumps",
@@ -346,8 +346,8 @@ def ipopt(
     <https://coin-or.github.io/Ipopt/OPTIONS.html#>`_ with the exception of the
     linear solver options which are here bundled into a dictionary. Any argument
     that takes "yes" and "no" in the ipopt documentation can also be passed as a
-    Python bool and any option that accepts "none" in ipopt accepts a Python
-    None.
+    `True` and `False`, respectively. and any option that accepts "none" in ipopt
+    accepts a Python `None`.
 
     - convergence.relative_criterion_tolerance (float): The algorithm terminates
         successfully, if the (scaled) non linear programming error becomes
@@ -1500,6 +1500,9 @@ def ipopt(
         "limited_memory_special_for_resto": _convert_bool_to_str(
             limited_memory_special_for_resto, "limited_memory_special_for_resto"
         ),
+        "honor_original_bounds": _convert_bool_to_str(
+            honor_original_bounds, "honor_original_bounds"
+        ),
     }
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
@@ -1675,7 +1678,7 @@ def ipopt(
         # linear solver
         "linear_solver": linear_solver,
         **linear_solver_options,
-        # converted_bool_to_str_options
+        #
         **converted_bool_to_str_options,
     }
 

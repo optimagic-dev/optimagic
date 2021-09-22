@@ -1,6 +1,4 @@
 """Test the different options of ipopt."""
-from itertools import product
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,7 +8,7 @@ from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.examples.criterion_functions import sos_dict_criterion
 from estimagic.optimization.optimize import minimize
 
-options_and_expected = [
+test_cases = [
     ({}, None),
     ({"convergence.relative_criterion_tolerance": 1e-7}, None),
     ({"stopping.max_iterations": 1_100_000}, None),
@@ -215,19 +213,16 @@ options_and_expected = [
     ({"linear_solver_options": {"mumps_dep_tol": 0.1}}, None),
 ]
 
-test_cases = product([sos_dict_criterion], options_and_expected)
 
-
-@pytest.skipif(not IS_CYIPOPT_INSTALLED, "cyipopt not installed.")
-@pytest.mark.parametrize("criterion, options_and_expected", test_cases)
-def test_ipopt_algo_options(criterion, options_and_expected):
-    algo_options, expected = options_and_expected
+@pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="cyipopt not installed.")
+@pytest.mark.parametrize("algo_options, expected", test_cases)
+def test_ipopt_algo_options(algo_options, expected):
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]
 
     if expected is None:
         res = minimize(
-            criterion=criterion,
+            criterion=sos_dict_criterion,
             params=start_params,
             algorithm="ipopt",
             algo_options=algo_options,
