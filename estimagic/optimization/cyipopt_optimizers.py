@@ -18,6 +18,131 @@ DEFAULT_ALGO_INFO = {
     "needs_scaling": False,
 }
 
+DEFAULT_LINEAR_SOLVER_OPTIONS = {
+    "hsllib": None,
+    "pardisolib": None,
+    "linear_scaling_on_demand": "yes",
+    # ma27
+    "ma27_pivtol": 1e-8,
+    "ma27_pivtolmax": 0.001,
+    "ma27_liw_init_factor": 5.0,
+    "ma27_la_init_factor": 5.0,
+    "ma27_meminc_factor": 2.0,
+    "ma27_skip_inertia_check": "no",
+    "ma27_ignore_singularity": "no",
+    # ma57
+    "ma57_pivtol": 1e-8,
+    "ma57_pivtolmax": 0.0001,
+    "ma57_pre_alloc": 1.05,
+    "ma57_pivot_order": 5,  ###float or int?
+    "ma57_automatic_scaling": "no",
+    "ma57_block_size": 16,
+    "ma57_node_amalgamation": 16.0,
+    "ma57_small_pivot_flag": 0.0,
+    # ma77
+    "ma77_buffer_lpage": 4096,
+    "ma77_buffer_npage": 1600,
+    "ma77_file_size": 2097152,
+    "ma77_maxstore": 0,
+    "ma77_nemin": 8.0,  ###float or int?
+    "ma77_small": 1e-20,
+    "ma77_static": 0.0,
+    "ma77_u": 1e-8,
+    "ma77_umax": 0.0001,
+    "ma77_order": "metis",  # no "none" allowed
+    # ma86
+    "ma86_nemin": 32,
+    "ma86_small": 1e-20,
+    "ma86_static": 0.0,
+    "ma86_u": 1e-8,
+    "ma86_umax": 0.0001,
+    "ma86_scaling": "mc64",  # "none" allowed
+    "ma86_order": "auto",  # no "none" allowed
+    # ma97
+    "ma97_nemin": 8,
+    "ma97_small": 1e-20,
+    "ma97_u": 1e-8,
+    "ma97_umax": 0.0001,
+    "ma97_scaling": "dynamic",  # "none" allowed
+    "ma97_scaling1": "mc64",  # "none" allowed
+    "ma97_switch1": "od_hd_reuse",  # no "none" allowed
+    "ma97_scaling2": "mc64",  # "none allowed"
+    "ma97_switch2": "never",  # no "none"
+    "ma97_scaling3": "mc64",  # "none"
+    "ma97_switch3": "never",  # no none
+    "ma97_order": "auto",  # no "none"
+    "ma97_solve_blas3": "no",
+    # paradiso
+    "pardiso_matching_strategy": "complete+2x2",  # no none
+    "pardiso_redo_symbolic_fact_only_if_inertia_wrong": "no",
+    "pardiso_repeated_perturbation_means_singular": "no",
+    "pardiso_skip_inertia_check": "no",
+    "pardiso_max_iterative_refinement_steps": 0,
+    "pardiso_order": "metis",  # no none
+    "pardiso_max_iter": 500,
+    "pardiso_iter_relative_tol": 1e-6,
+    "pardiso_iter_coarse_size": 5000,
+    "pardiso_iter_max_levels": 10,
+    "pardiso_iter_dropping_factor": 0.5,
+    "pardiso_iter_dropping_schur": 0.1,
+    "pardiso_iter_max_row_fill": 10_000_000,
+    "pardiso_iter_inverse_norm_factor": 1e6,
+    "pardiso_iterative": "no",
+    "pardiso_max_droptol_corrections": 4,
+    # paradiso MKL
+    "pardisomkl_matching_strategy": "complete+2x2",  # no none
+    "pardisomkl_redo_symbolic_fact_only_if_inertia_wrong": "no",
+    "pardisomkl_repeated_perturbation_means_singular": "no",
+    "pardisomkl_skip_inertia_check": "no",
+    "pardisomkl_max_iterative_refinement_steps": 1,
+    "pardisomkl_order": "metis",  # no none
+    # SPRAL
+    "spral_cpu_block_size": 256,
+    "spral_gpu_perf_coeff": 1.0,
+    "spral_ignore_numa": "yes",
+    "spral_max_load_inbalance": 1.2,
+    "spral_min_gpu_work": 5e9,
+    "spral_nemin": 32,
+    "spral_order": "matching",  # no none
+    "spral_pivot_method": "block",  # no none
+    "spral_scaling": "matching",  # none allowed
+    "spral_scaling_1": "matching",  # none allowed
+    "spral_scaling_2": "mc64",  # none allowed
+    "spral_scaling_3": "none",  # none allowed
+    "spral_switch_1": "at_start",  # no none
+    "spral_switch_2": "on_demand",  # no none
+    "spral_switch_3": "never",
+    "spral_small": 1e-20,
+    "spral_small_subtree_threshold": 4e6,
+    "spral_u": 1e-8,
+    "spral_umax": 0.0001,
+    "spral_use_gpu": "yes",
+    # WSMP
+    "wsmp_num_threads": 1,
+    "wsmp_ordering_option": 1,
+    "wsmp_ordering_option2": 1,
+    "wsmp_pivtol": 0.0001,
+    "wsmp_pivtolmax": 0.1,
+    "wsmp_scaling": 0,
+    "wsmp_singularity_threshold": 1e-18,
+    "wsmp_write_matrix_iteration": -1,
+    "wsmp_skip_inertia_check": "no",
+    "wsmp_no_pivoting": "no",
+    "wsmp_max_iter": 1000,
+    "wsmp_inexact_droptol": 0.0,
+    "wsmp_inexact_fillin_limit": 0.0,
+    # mumps
+    "mumps_pivtol": 1e-6,
+    "mumps_pivtolmax": 0.1,
+    "mumps_mem_percent": 1000,
+    "mumps_permuting_scaling": 7,
+    "mumps_pivot_order": 7,
+    "mumps_scaling": 77,
+    "mumps_dep_tol": 0.0,
+    # ma28
+    "ma28_pivtol": 0.01,
+}
+
 
 def ipopt(
     criterion_and_derivative,
@@ -1224,13 +1349,14 @@ def ipopt(
     ###
 
     The following options are not supported:
-      - num_linear_variables: since estimagic may reparametrize your problem and
-        this changes the parameter problem, we do not support
-        num_linear_variables.
-      - scaling options (nlp_scaling_method, obj_scaling_factor,
-        nlp_scaling_max_gradient, nlp_scaling_obj_target_gradient,
-        nlp_scaling_constr_target_gradient, nlp_scaling_min_value)
-      - hessian_approximation: only allowed if a Hessian callback is provided.
+      - `num_linear_variables`: since estimagic may reparametrize your problem and
+        this changes the parameter problem, we do not support this option.
+      - scaling options (`nlp_scaling_method`, `obj_scaling_factor`,
+        `nlp_scaling_max_gradient`, `nlp_scaling_obj_target_gradient`,
+        `nlp_scaling_constr_target_gradient`, `nlp_scaling_min_value`)
+      - `hessian_approximation`
+      - derivative checks
+      - print options. Use estimagic's dashboard to monitor your optimization.
 
     """
     if not IS_CYIPOPT_INSTALLED:
@@ -1346,8 +1472,18 @@ def ipopt(
     )
 
     options = {
-        "print_level": 0,  # disable verbosity
-        "nlp_scaling_method": "none",  # disable scaling
+        # disable verbosity
+        "print_level": 0,
+        "ma77_print_level": -1,
+        "ma86_print_level": -1,
+        "ma97_print_level": -1,
+        "spral_print_level": -1,
+        "pardiso_msglvl": 0,
+        "pardisomkl_msglvl": 0,
+        # disable scaling
+        "nlp_scaling_method": "none",
+        # disable derivative checker
+        "derivative_test": "none",
         #
         "s_max": float(s_max),
         "max_iter": stopping_max_iterations,
