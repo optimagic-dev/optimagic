@@ -16,11 +16,6 @@ from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization import GLOBAL_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 
-AVAILABLE_ALGORITHMS = {
-    alg: AVAILABLE_ALGORITHMS[alg]
-    for alg in AVAILABLE_ALGORITHMS
-    if alg.startswith("nlopt")
-}
 
 LOCAL_ALGORITHMS = {
     name: AVAILABLE_ALGORITHMS[name]
