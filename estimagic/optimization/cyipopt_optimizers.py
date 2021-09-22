@@ -7,10 +7,8 @@ from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.optimization.scipy_optimizers import get_scipy_bounds
 from estimagic.optimization.scipy_optimizers import process_scipy_result
 
-try:
+if IS_CYIPOPT_INSTALLED:
     import cyipopt
-except ImportError:
-    pass
 
 
 def ipopt(

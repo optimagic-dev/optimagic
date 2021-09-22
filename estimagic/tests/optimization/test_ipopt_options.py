@@ -1,21 +1,19 @@
 """Test the different options of ipopt."""
 import numpy as np
-import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
 from estimagic.config import IS_CYIPOPT_INSTALLED
-from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.optimization.optimize import minimize
+from estimagic.optimization.cyipopt_optimizers import ipopt
 
 test_cases = [
     {},
-    {"convergence.relative_criterion_tolerance": 1e-7},
-    {"stopping.max_iterations": 1_100_000},
+    {"convergence_relative_criterion_tolerance": 1e-7},
+    {"stopping_max_iterations": 1_100_000},
     {"mu_target": 1e-8},
     {"s_max": 200},
-    {"stopping.max_wall_time_seconds": 200},
-    {"stopping.max_cpu_time": 1e10},
+    {"stopping_max_wall_time_seconds": 200},
+    {"stopping_max_cpu_time": 1e10},
     {"dual_inf_tol": 2.5},
     {"constr_viol_tol": 1e-7},
     {"compl_inf_tol": 1e-7},
@@ -190,17 +188,23 @@ test_cases = [
 ]
 
 
+def criterion_and_derivative(x, task, algorithm_info):
+    if task == "criterion":
+        return (x ** 2).sum()
+    elif task == "derivative":
+        return 2 * x
+    else:
+        raise ValueError(f"Unknown task: {task}")
+
+
 @pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="cyipopt not installed.")
 @pytest.mark.parametrize("algo_options", test_cases)
 def test_ipopt_algo_options(algo_options):
-    start_params = pd.DataFrame()
-    start_params["value"] = [1, 2, 3]
-
-    res = minimize(
-        criterion=sos_dict_criterion,
-        params=start_params,
-        algorithm="ipopt",
-        algo_options=algo_options,
+    res = ipopt(
+        criterion_and_derivative=criterion_and_derivative,
+        x=np.array([1, 2, 3]),
+        lower_bounds=np.array([-np.inf, -np.inf, -np.inf]),
+        upper_bounds=np.array([np.inf, np.inf, np.inf]),
+        **algo_options,
     )
-    res_values = res["solution_params"]["value"].to_numpy()
-    aaae(res_values, np.zeros(3), decimal=7)
+    aaae(res["solution_x"], np.zeros(3), decimal=7)
