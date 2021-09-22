@@ -38,6 +38,15 @@ test_cases = [
     {"jac_c_constant": True},
     {"jac_d_constant": True},
     {"hessian_constant": True},
+    # scaling
+    {"nlp_scaling_method": None},
+    {"obj_scaling_factor": 1.1},
+    {"nlp_scaling_max_gradient": 200},
+    {"nlp_scaling_obj_target_gradient": 0.2},
+    {"nlp_scaling_constr_target_gradient": 0},
+    {"nlp_scaling_constr_target_gradient": 2e-9},
+    {"nlp_scaling_min_value": 1e-9},
+    #
     {"bound_push": 0.02},
     {"bound_frac": 0.02},
     {"slack_bound_push": 0.001},

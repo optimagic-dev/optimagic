@@ -53,6 +53,13 @@ def ipopt(
     jac_c_constant=False,
     jac_d_constant=False,
     hessian_constant=False,
+    # scaling
+    nlp_scaling_method="gradient-based",
+    obj_scaling_factor=1,
+    nlp_scaling_max_gradient=100,
+    nlp_scaling_obj_target_gradient=0.0,
+    nlp_scaling_constr_target_gradient=0.0,
+    nlp_scaling_min_value=1e-8,
     # initialization
     bound_push=0.01,
     bound_frac=0.01,
@@ -190,6 +197,7 @@ def ipopt(
     limited_memory_init_val_min=1e-8,
     limited_memory_max_skipping=2,
     limited_memory_special_for_resto=False,
+    hessian_approximation="limited-memory",
     hessian_approximation_space="nonlinear-variables",
     # linear solver
     linear_solver="mumps",
@@ -215,8 +223,8 @@ def ipopt(
     <https://coin-or.github.io/Ipopt/OPTIONS.html#>`_ with the exception of the
     linear solver options which are here bundled into a dictionary. Any argument
     that takes "yes" and "no" in the ipopt documentation can also be passed as a
-    `True` and `False`, respectively. and any option that accepts "none" in ipopt
-    accepts a Python `None`.
+    `True` and `False`, respectively. and any option that accepts "none" in
+    ipopt accepts a Python `None`.
 
     - convergence.relative_criterion_tolerance (float): The algorithm terminates
         successfully, if the (scaled) non linear programming error becomes
@@ -388,7 +396,59 @@ def ipopt(
         (quadratic objective, linear constraints). Activating this option will
         cause Ipopt to ask for the Hessian of the Lagrangian function only once
         from the NLP and reuse this information later. The default value for
-        this string option is "no". Possible values: yes, no, True, False
+        this string option is "no". Possible values: yes, no, True, False.
+
+    - nlp_scaling_method (str): Select the technique used for scaling the NLP.
+      Selects the technique used for scaling the problem internally before it is
+      solved. For user-scaling, the parameters come from the NLP. If you are
+      using AMPL, they can be specified through suffixes ("scaling_factor") The
+      default value for this string option is "gradient-based". Possible values:
+        - "none": no problem scaling will be performed
+        - "user-scaling": scaling parameters will come from the user
+        - "gradient-based": scale the problem so the maximum gradient at the
+          starting point is nlp_scaling_max_gradient
+        - "equilibration-based": scale the problem so that first derivatives are
+          of order 1 at random points (uses Harwell routine MC19)
+    - obj_scaling_factor (float): Scaling factor for the objective function.
+      This option sets a scaling factor for the objective function. The scaling
+      is seen internally by Ipopt but the unscaled objective is reported in the
+      console output. If additional scaling parameters are computed (e.g.
+      user-scaling or gradient-based), both factors are multiplied. If this
+      value is chosen to be negative, Ipopt will maximize the objective function
+      instead of minimizing it. The valid range for this real option is
+      unrestricted and its default value is 1.
+    - nlp_scaling_max_gradient (float): Maximum gradient after NLP scaling. This
+      is the gradient scaling cut-off. If the maximum gradient is above this
+      value, then gradient based scaling will be performed. Scaling parameters
+      are calculated to scale the maximum gradient back to this value. (This is
+      g_max in Section 3.8 of the implementation paper.) Note: This option is
+      only used if "nlp_scaling_method" is chosen as "gradient-based". The valid
+      range for this real option is 0 < nlp_scaling_max_gradient and its default
+      value is 100.
+    - nlp_scaling_obj_target_gradient (float): advanced! Target value for
+      objective function gradient size. If a positive number is chosen, the
+      scaling factor for the objective function is computed so that the gradient
+      has the max norm of the given size at the starting point. This overrides
+      nlp_scaling_max_gradient for the objective function. The valid range for
+      this real option is 0 ≤ nlp_scaling_obj_target_gradient and its default
+      value is 0.
+    - nlp_scaling_constr_target_gradient (float): Minimum value of
+      gradient-based scaling values. This is the lower bound for the scaling
+      factors computed by gradient-based scaling method. If some derivatives of
+      some functions are huge, the scaling factors will otherwise become very
+      small, and the (unscaled) final constraint violation, for example, might
+      then be significant. Note: This option is only used if
+      "nlp_scaling_method" is chosen as "gradient-based". The valid range for
+      this real option is 0 ≤ nlp_scaling_min_value and its default value is
+      10-08.
+    - nlp_scaling_min_value (float): Minimum value of gradient-based scaling
+      values. This is the lower bound for the scaling factors computed by
+      gradient-based scaling method. If some derivatives of some functions are
+      huge, the scaling factors will otherwise become very small, and the
+      (unscaled) final constraint violation, for example, might then be
+      significant. Note: This option is only used if "nlp_scaling_method" is
+      chosen as "gradient-based". The valid range for this real option is 0 ≤
+      nlp_scaling_min_value and its default value is 10-08.
 
     - bound_push (float): Desired minimum absolute distance from the initial
         point to bound. Determines how much the initial point might have to be
@@ -1217,6 +1277,12 @@ def ipopt(
       get back to the original update, set this option to "yes". The default
       value for this string option is "no". Possible values: "yes", "no", True,
       False.
+    - hessian_approximation (str): Indicates what Hessian information is to be
+      used. This determines which kind of information for the Hessian of the
+      Lagrangian function is used by the algorithm. The default value for this
+      string option is "limited-memory". Possible values:
+        - "exact": Use second derivatives provided by the NLP.
+        - "limited-memory": Perform a limited-memory quasi-Newton approximation
     - hessian_approximation_space (str): advanced! Indicates in which subspace
       the Hessian information is to be approximated. The default value for this
       string option is "nonlinear-variables". Possible values:
@@ -1244,10 +1310,6 @@ def ipopt(
     The following options are not supported:
       - `num_linear_variables`: since estimagic may reparametrize your problem
         and this changes the parameter problem, we do not support this option.
-      - scaling options (`nlp_scaling_method`, `obj_scaling_factor`,
-        `nlp_scaling_max_gradient`, `nlp_scaling_obj_target_gradient`,
-        `nlp_scaling_constr_target_gradient`, `nlp_scaling_min_value`)
-      - `hessian_approximation`
       - derivative checks
       - print options. Use estimagic's dashboard to monitor your optimization.
 
@@ -1379,8 +1441,6 @@ def ipopt(
         "ma86_print_level": -1,
         "ma97_print_level": -1,
         "pardiso_msglvl": 0,
-        # disable scaling
-        "nlp_scaling_method": "none",
         # disable derivative checker
         "derivative_test": "none",
         #
@@ -1407,6 +1467,13 @@ def ipopt(
         "kappa_d": kappa_d,
         "bound_relax_factor": bound_relax_factor,
         "honor_original_bounds": honor_original_bounds,
+        # scaling
+        "nlp_scaling_method": _convert_none_to_str(nlp_scaling_method),
+        "obj_scaling_factor": float(obj_scaling_factor),
+        "nlp_scaling_max_gradient": float(nlp_scaling_max_gradient),
+        "nlp_scaling_obj_target_gradient": float(nlp_scaling_obj_target_gradient),
+        "nlp_scaling_constr_target_gradient": float(nlp_scaling_constr_target_gradient),
+        "nlp_scaling_min_value": float(nlp_scaling_min_value),
         # initialization
         "bound_push": bound_push,
         "bound_frac": bound_frac,
@@ -1529,6 +1596,7 @@ def ipopt(
         "limited_memory_init_val_max": limited_memory_init_val_max,
         "limited_memory_init_val_min": limited_memory_init_val_min,
         "limited_memory_max_skipping": limited_memory_max_skipping,
+        "hessian_approximation": hessian_approximation,
         "hessian_approximation_space": hessian_approximation_space,
         # linear solver
         "linear_solver": linear_solver,
