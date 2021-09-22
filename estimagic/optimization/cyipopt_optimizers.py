@@ -19,8 +19,6 @@ DEFAULT_ALGO_INFO = {
 }
 
 DEFAULT_LINEAR_SOLVER_OPTIONS = {
-    "hsllib": None,
-    "pardisolib": None,
     "linear_scaling_on_demand": "yes",
     # ma27
     "ma27_pivtol": 1e-8,
@@ -49,36 +47,36 @@ DEFAULT_LINEAR_SOLVER_OPTIONS = {
     "ma77_static": 0.0,
     "ma77_u": 1e-8,
     "ma77_umax": 0.0001,
-    "ma77_order": "metis",  # no "none" allowed
+    "ma77_order": "metis",
     # ma86
     "ma86_nemin": 32,
     "ma86_small": 1e-20,
     "ma86_static": 0.0,
     "ma86_u": 1e-8,
     "ma86_umax": 0.0001,
-    "ma86_scaling": "mc64",  # "none" allowed
-    "ma86_order": "auto",  # no "none" allowed
+    "ma86_scaling": "mc64",
+    "ma86_order": "auto",
     # ma97
     "ma97_nemin": 8,
     "ma97_small": 1e-20,
     "ma97_u": 1e-8,
     "ma97_umax": 0.0001,
-    "ma97_scaling": "dynamic",  # "none" allowed
-    "ma97_scaling1": "mc64",  # "none" allowed
-    "ma97_switch1": "od_hd_reuse",  # no "none" allowed
-    "ma97_scaling2": "mc64",  # "none allowed"
-    "ma97_switch2": "never",  # no "none"
-    "ma97_scaling3": "mc64",  # "none"
-    "ma97_switch3": "never",  # no none
-    "ma97_order": "auto",  # no "none"
+    "ma97_scaling": "dynamic",
+    "ma97_scaling1": "mc64",
+    "ma97_switch1": "od_hd_reuse",
+    "ma97_scaling2": "mc64",
+    "ma97_switch2": "never",
+    "ma97_scaling3": "mc64",
+    "ma97_switch3": "never",
+    "ma97_order": "auto",
     "ma97_solve_blas3": "no",
     # paradiso
-    "pardiso_matching_strategy": "complete+2x2",  # no none
+    "pardiso_matching_strategy": "complete+2x2",
     "pardiso_redo_symbolic_fact_only_if_inertia_wrong": "no",
     "pardiso_repeated_perturbation_means_singular": "no",
     "pardiso_skip_inertia_check": "no",
     "pardiso_max_iterative_refinement_steps": 0,
-    "pardiso_order": "metis",  # no none
+    "pardiso_order": "metis",
     "pardiso_max_iter": 500,
     "pardiso_iter_relative_tol": 1e-6,
     "pardiso_iter_coarse_size": 5000,
@@ -90,12 +88,12 @@ DEFAULT_LINEAR_SOLVER_OPTIONS = {
     "pardiso_iterative": "no",
     "pardiso_max_droptol_corrections": 4,
     # paradiso MKL
-    "pardisomkl_matching_strategy": "complete+2x2",  # no none
+    "pardisomkl_matching_strategy": "complete+2x2",
     "pardisomkl_redo_symbolic_fact_only_if_inertia_wrong": "no",
     "pardisomkl_repeated_perturbation_means_singular": "no",
     "pardisomkl_skip_inertia_check": "no",
     "pardisomkl_max_iterative_refinement_steps": 1,
-    "pardisomkl_order": "metis",  # no none
+    "pardisomkl_order": "metis",
     # SPRAL
     "spral_cpu_block_size": 256,
     "spral_gpu_perf_coeff": 1.0,
@@ -103,14 +101,14 @@ DEFAULT_LINEAR_SOLVER_OPTIONS = {
     "spral_max_load_inbalance": 1.2,
     "spral_min_gpu_work": 5e9,
     "spral_nemin": 32,
-    "spral_order": "matching",  # no none
-    "spral_pivot_method": "block",  # no none
-    "spral_scaling": "matching",  # none allowed
-    "spral_scaling_1": "matching",  # none allowed
-    "spral_scaling_2": "mc64",  # none allowed
-    "spral_scaling_3": "none",  # none allowed
-    "spral_switch_1": "at_start",  # no none
-    "spral_switch_2": "on_demand",  # no none
+    "spral_order": "matching",
+    "spral_pivot_method": "block",
+    "spral_scaling": "matching",
+    "spral_scaling_1": "matching",
+    "spral_scaling_2": "mc64",
+    "spral_scaling_3": "none",
+    "spral_switch_1": "at_start",
+    "spral_switch_2": "on_demand",
     "spral_switch_3": "never",
     "spral_small": 1e-20,
     "spral_small_subtree_threshold": 4e6,
@@ -327,7 +325,7 @@ def ipopt(
     # linear solver
     linear_solver="mumps",
     linear_solver_options=None,
-):  ###
+):
     """Minimize a scalar function using the Interior Point Optimizer.
 
     This implementation of the Interior Point Optimizer (:cite:`Waechter2005`,
@@ -1369,10 +1367,10 @@ def ipopt(
           user-provided library at runtime)
         - custom (use custom linear solver (expert use))
     - linear_solver_options (dict or None): dictionary with the linear solver
-      options. See the `ipopt documentation for details
-      <https://coin-or.github.io/Ipopt/OPTIONS.html>`_.
-
-      ###
+      options, possibly including `linear_system_scaling`, `hsllib` and
+      `pardisolib`. See the `ipopt documentation for details
+      <https://coin-or.github.io/Ipopt/OPTIONS.html>`_. The linear solver
+      options are not automatically converted to float at the moment.
 
     The following options are not supported:
       - `num_linear_variables`: since estimagic may reparametrize your problem
@@ -1416,71 +1414,93 @@ def ipopt(
         )
 
     # convert None to str none section
-    dependency_detector = "none" if dependency_detector is None else dependency_detector
+    linear_solver_options_with_none = [
+        "ma86_scaling",
+        "ma97_scaling",
+        "ma97_scaling1",
+        "ma97_scaling2",
+        "ma97_scaling3",
+        "spral_scaling",
+        "spral_scaling_1",
+        "spral_scaling_2",
+        "spral_scaling_3",
+        "linear_system_scaling",
+    ]
+    for key, val in linear_solver_options.items():
+        if key in linear_solver_options_with_none:
+            linear_solver_options[key] = _convert_none_to_str(val)
 
-    # convert_bool_to_str section
-    dependency_detection_with_rhs = convert_bool_to_str(
-        dependency_detection_with_rhs, "dependency_detection_with_rhs"
-    )
-    check_derivatives_for_naninf = convert_bool_to_str(
-        check_derivatives_for_naninf, "check_derivatives_for_naninf"
-    )
-    jac_c_constant = convert_bool_to_str(jac_c_constant, "jac_c_constant")
-    jac_d_constant = convert_bool_to_str(jac_d_constant, "jac_d_constant")
-    hessian_constant = convert_bool_to_str(hessian_constant, "hessian_constant")
-    least_square_init_primal = convert_bool_to_str(
-        least_square_init_primal, "least_square_init_primal"
-    )
-    least_square_init_duals = convert_bool_to_str(
-        least_square_init_duals, "least_square_init_duals"
-    )
-    warm_start_init_point = convert_bool_to_str(
-        warm_start_init_point, "warm_start_init_point"
-    )
-    warm_start_same_structure = convert_bool_to_str(
-        warm_start_same_structure, "warm_start_same_structure"
-    )
-    warm_start_entire_iterate = convert_bool_to_str(
-        warm_start_entire_iterate, "warm_start_entire_iterate"
-    )
-    replace_bounds = convert_bool_to_str(replace_bounds, "replace_bounds")
-    skip_finalize_solution_call = convert_bool_to_str(
-        skip_finalize_solution_call, "skip_finalize_solution_call"
-    )
-    timing_statistics = convert_bool_to_str(timing_statistics, "timing_statistics")
-    adaptive_mu_restore_previous_iterate = convert_bool_to_str(
-        adaptive_mu_restore_previous_iterate, "adaptive_mu_restore_previous_iterate"
-    )
-    mu_allow_fast_monotone_decrease = convert_bool_to_str(
-        mu_allow_fast_monotone_decrease, "mu_allow_fast_monotone_decrease"
-    )
-    accept_every_trial_step = convert_bool_to_str(
-        accept_every_trial_step, "accept_every_trial_step"
-    )
-    skip_corr_if_neg_curv = convert_bool_to_str(
-        skip_corr_if_neg_curv, "skip_corr_if_neg_curv"
-    )
-    skip_corr_in_monotone_mode = convert_bool_to_str(
-        skip_corr_in_monotone_mode, "skip_corr_in_monotone_mode"
-    )
-    recalc_y = convert_bool_to_str(recalc_y, "recalc_y")
-    mehrotra_algorithm = convert_bool_to_str(mehrotra_algorithm, "mehrotra_algorithm")
-    fast_step_computation = convert_bool_to_str(
-        fast_step_computation, "fast_step_computation"
-    )
-    neg_curv_test_reg = convert_bool_to_str(neg_curv_test_reg, "neg_curv_test_reg")
-    perturb_always_cd = convert_bool_to_str(perturb_always_cd, "perturb_always_cd")
-    expect_infeasible_problem = convert_bool_to_str(
-        expect_infeasible_problem, "expect_infeasible_problem"
-    )
-    start_with_resto = convert_bool_to_str(start_with_resto, "start_with_resto")
-    evaluate_orig_obj_at_resto_trial = convert_bool_to_str(
-        evaluate_orig_obj_at_resto_trial, "evaluate_orig_obj_at_resto_trial"
-    )
-    limited_memory_special_for_resto = convert_bool_to_str(
-        limited_memory_special_for_resto, "limited_memory_special_for_resto"
-    )
-
+    converted_bool_to_str_options = {
+        "dependency_detection_with_rhs": _convert_bool_to_str(
+            dependency_detection_with_rhs, "dependency_detection_with_rhs"
+        ),
+        "check_derivatives_for_naninf": _convert_bool_to_str(
+            check_derivatives_for_naninf, "check_derivatives_for_naninf"
+        ),
+        "jac_c_constant": _convert_bool_to_str(jac_c_constant, "jac_c_constant"),
+        "jac_d_constant": _convert_bool_to_str(jac_d_constant, "jac_d_constant"),
+        "hessian_constant": _convert_bool_to_str(hessian_constant, "hessian_constant"),
+        "least_square_init_primal": _convert_bool_to_str(
+            least_square_init_primal, "least_square_init_primal"
+        ),
+        "least_square_init_duals": _convert_bool_to_str(
+            least_square_init_duals, "least_square_init_duals"
+        ),
+        "warm_start_init_point": _convert_bool_to_str(
+            warm_start_init_point, "warm_start_init_point"
+        ),
+        "warm_start_same_structure": _convert_bool_to_str(
+            warm_start_same_structure, "warm_start_same_structure"
+        ),
+        "warm_start_entire_iterate": _convert_bool_to_str(
+            warm_start_entire_iterate, "warm_start_entire_iterate"
+        ),
+        "replace_bounds": _convert_bool_to_str(replace_bounds, "replace_bounds"),
+        "skip_finalize_solution_call": _convert_bool_to_str(
+            skip_finalize_solution_call, "skip_finalize_solution_call"
+        ),
+        "timing_statistics": _convert_bool_to_str(
+            timing_statistics, "timing_statistics"
+        ),
+        "adaptive_mu_restore_previous_iterate": _convert_bool_to_str(
+            adaptive_mu_restore_previous_iterate, "adaptive_mu_restore_previous_iterate"
+        ),
+        "mu_allow_fast_monotone_decrease": _convert_bool_to_str(
+            mu_allow_fast_monotone_decrease, "mu_allow_fast_monotone_decrease"
+        ),
+        "accept_every_trial_step": _convert_bool_to_str(
+            accept_every_trial_step, "accept_every_trial_step"
+        ),
+        "skip_corr_if_neg_curv": _convert_bool_to_str(
+            skip_corr_if_neg_curv, "skip_corr_if_neg_curv"
+        ),
+        "skip_corr_in_monotone_mode": _convert_bool_to_str(
+            skip_corr_in_monotone_mode, "skip_corr_in_monotone_mode"
+        ),
+        "recalc_y": _convert_bool_to_str(recalc_y, "recalc_y"),
+        "mehrotra_algorithm": _convert_bool_to_str(
+            mehrotra_algorithm, "mehrotra_algorithm"
+        ),
+        "fast_step_computation": _convert_bool_to_str(
+            fast_step_computation, "fast_step_computation"
+        ),
+        "neg_curv_test_reg": _convert_bool_to_str(
+            neg_curv_test_reg, "neg_curv_test_reg"
+        ),
+        "perturb_always_cd": _convert_bool_to_str(
+            perturb_always_cd, "perturb_always_cd"
+        ),
+        "expect_infeasible_problem": _convert_bool_to_str(
+            expect_infeasible_problem, "expect_infeasible_problem"
+        ),
+        "start_with_resto": _convert_bool_to_str(start_with_resto, "start_with_resto"),
+        "evaluate_orig_obj_at_resto_trial": _convert_bool_to_str(
+            evaluate_orig_obj_at_resto_trial, "evaluate_orig_obj_at_resto_trial"
+        ),
+        "limited_memory_special_for_resto": _convert_bool_to_str(
+            limited_memory_special_for_resto, "limited_memory_special_for_resto"
+        ),
+    }
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "ipopt"
 
@@ -1525,16 +1545,10 @@ def ipopt(
         "nlp_lower_bound_inf": nlp_lower_bound_inf,
         "nlp_upper_bound_inf": nlp_upper_bound_inf,
         "fixed_variable_treatment": fixed_variable_treatment,
-        "dependency_detector": dependency_detector,
-        "dependency_detection_with_rhs": dependency_detection_with_rhs,
+        "dependency_detector": _convert_none_to_str(dependency_detector),
         "kappa_d": kappa_d,
         "bound_relax_factor": bound_relax_factor,
         "honor_original_bounds": honor_original_bounds,
-        # derivatives
-        "check_derivatives_for_naninf": check_derivatives_for_naninf,
-        "jac_c_constant": jac_c_constant,
-        "jac_d_constant": jac_d_constant,
-        "hessian_constant": hessian_constant,
         # initialization
         "bound_push": bound_push,
         "bound_frac": bound_frac,
@@ -1543,24 +1557,16 @@ def ipopt(
         "constr_mult_init_max": float(constr_mult_init_max),
         "bound_mult_init_val": float(bound_mult_init_val),
         "bound_mult_init_method": bound_mult_init_method,
-        "least_square_init_primal": least_square_init_primal,
-        "least_square_init_duals": least_square_init_duals,
         # warm start
-        "warm_start_init_point": warm_start_init_point,
-        "warm_start_same_structure": warm_start_same_structure,
         "warm_start_bound_push": warm_start_bound_push,
         "warm_start_bound_frac": warm_start_bound_frac,
         "warm_start_slack_bound_push": warm_start_slack_bound_push,
         "warm_start_slack_bound_frac": warm_start_slack_bound_frac,
         "warm_start_mult_bound_push": warm_start_mult_bound_push,
         "warm_start_mult_init_max": warm_start_mult_init_max,
-        "warm_start_entire_iterate": warm_start_entire_iterate,
         "warm_start_target_mu": warm_start_target_mu,
         # more miscellaneous
         "option_file_name": option_file_name,
-        "replace_bounds": replace_bounds,
-        "skip_finalize_solution_call": skip_finalize_solution_call,
-        "timing_statistics": timing_statistics,
         # barrier parameter update
         "mu_target": float(mu_target),
         "mu_max_fact": float(mu_max_fact),
@@ -1571,7 +1577,6 @@ def ipopt(
         "adaptive_mu_kkterror_red_fact": adaptive_mu_kkterror_red_fact,
         "filter_margin_fact": float(filter_margin_fact),
         "filter_max_margin": float(filter_max_margin),
-        "adaptive_mu_restore_previous_iterate": adaptive_mu_restore_previous_iterate,
         "adaptive_mu_monotone_init_factor": adaptive_mu_monotone_init_factor,
         "adaptive_mu_kkt_norm_type": adaptive_mu_kkt_norm_type,
         "mu_strategy": mu_strategy,
@@ -1581,20 +1586,22 @@ def ipopt(
         "barrier_tol_factor": float(barrier_tol_factor),
         "mu_linear_decrease_factor": mu_linear_decrease_factor,
         "mu_superlinear_decrease_power": mu_superlinear_decrease_power,
-        "mu_allow_fast_monotone_decrease": mu_allow_fast_monotone_decrease,
         "tau_min": tau_min,
         "sigma_max": float(sigma_max),
         "sigma_min": sigma_min,
         "quality_function_norm_type": quality_function_norm_type,
-        "quality_function_centrality": quality_function_centrality,
-        "quality_function_balancing_term": quality_function_balancing_term,
+        "quality_function_centrality": _convert_none_to_str(
+            quality_function_centrality
+        ),
+        "quality_function_balancing_term": _convert_none_to_str(
+            quality_function_balancing_term
+        ),
         "quality_function_max_section_steps": int(quality_function_max_section_steps),
         "quality_function_section_sigma_tol": quality_function_section_sigma_tol,
         "quality_function_section_qf_tol": quality_function_section_qf_tol,
         # linear search
         "line_search_method": line_search_method,
         "alpha_red_factor": alpha_red_factor,
-        "accept_every_trial_step": accept_every_trial_step,
         "accept_after_max_steps": accept_after_max_steps,
         "alpha_for_y": alpha_for_y,
         "alpha_for_y_tol": float(alpha_for_y_tol),
@@ -1616,29 +1623,23 @@ def ipopt(
         "obj_max_inc": float(obj_max_inc),
         "max_filter_resets": max_filter_resets,
         "filter_reset_trigger": filter_reset_trigger,
-        "corrector_type": corrector_type,
-        "skip_corr_if_neg_curv": skip_corr_if_neg_curv,
-        "skip_corr_in_monotone_mode": skip_corr_in_monotone_mode,
+        "corrector_type": _convert_none_to_str(corrector_type),
         "corrector_compl_avrg_red_fact": float(corrector_compl_avrg_red_fact),
         "soc_method": soc_method,
         "nu_init": nu_init,
         "nu_inc": nu_inc,
         "rho": rho,
         "kappa_sigma": kappa_sigma,
-        "recalc_y": recalc_y,
         "recalc_y_feas_tol": recalc_y_feas_tol,
         "slack_move": slack_move,
         "constraint_violation_norm_type": constraint_violation_norm_type,
         # step calculation
-        "mehrotra_algorithm": mehrotra_algorithm,
-        "fast_step_computation": fast_step_computation,
         "min_refinement_steps": min_refinement_steps,
         "max_refinement_steps": max_refinement_steps,
         "residual_ratio_max": residual_ratio_max,
         "residual_ratio_singular": residual_ratio_singular,
         "residual_improvement_factor": float(residual_improvement_factor),
         "neg_curv_test_tol": float(neg_curv_test_tol),
-        "neg_curv_test_reg": neg_curv_test_reg,
         "max_hessian_perturbation": max_hessian_perturbation,
         "min_hessian_perturbation": min_hessian_perturbation,
         "perturb_inc_fact_first": float(perturb_inc_fact_first),
@@ -1647,17 +1648,13 @@ def ipopt(
         "first_hessian_perturbation": float(first_hessian_perturbation),
         "jacobian_regularization_value": float(jacobian_regularization_value),
         "jacobian_regularization_exponent": float(jacobian_regularization_exponent),
-        "perturb_always_cd": perturb_always_cd,
         # restoration phase
-        "expect_infeasible_problem": expect_infeasible_problem,
         "expect_infeasible_problem_ctol": expect_infeasible_problem_ctol,
         "expect_infeasible_problem_ytol": expect_infeasible_problem_ytol,
-        "start_with_resto": start_with_resto,
         "soft_resto_pderror_reduction_factor": soft_resto_pderror_reduction_factor,
         "max_soft_resto_iters": max_soft_resto_iters,
         "required_infeasibility_reduction": float(required_infeasibility_reduction),
         "max_resto_iter": max_resto_iter,
-        "evaluate_orig_obj_at_resto_trial": evaluate_orig_obj_at_resto_trial,
         "resto_penalty_parameter": float(resto_penalty_parameter),
         "resto_proximity_weight": float(resto_proximity_weight),
         "bound_mult_reset_threshold": float(bound_mult_reset_threshold),
@@ -1674,13 +1671,13 @@ def ipopt(
         "limited_memory_init_val_max": limited_memory_init_val_max,
         "limited_memory_init_val_min": limited_memory_init_val_min,
         "limited_memory_max_skipping": limited_memory_max_skipping,
-        "limited_memory_special_for_resto": limited_memory_special_for_resto,
         "hessian_approximation_space": hessian_approximation_space,
         # linear solver
         "linear_solver": linear_solver,
         **linear_solver_options,
+        # converted_bool_to_str_options
+        **converted_bool_to_str_options,
     }
-    ###
 
     raw_res = cyipopt.minimize_ipopt(
         fun=func,
@@ -1696,7 +1693,7 @@ def ipopt(
     return res
 
 
-def convert_bool_to_str(var, name):
+def _convert_bool_to_str(var, name):
     """Convert input to either 'yes' or 'no' and check the output is yes or no.
 
     Args:
@@ -1717,4 +1714,9 @@ def convert_bool_to_str(var, name):
         raise ValueError(
             f"{name} must be 'yes', 'no', True or False. You specified {var}."
         )
+    return out
+
+
+def _convert_none_to_str(var):
+    out = "none" if var is None else var
     return out

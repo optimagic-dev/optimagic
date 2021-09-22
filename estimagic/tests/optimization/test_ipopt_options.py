@@ -201,6 +201,17 @@ options_and_expected = [
     # using ma27, ma57, ma77, ma86 leads to remaining at the start values
     # using ma97 leads to segmentation fault
     ({"linear_solver_options": {"mumps_pivtol": 1e-5}}, None),
+    ({"linear_solver_options": {"linear_system_scaling": None}}, None),
+    ({"linear_solver_options": {"ma86_scaling": None}}, None),
+    ({"linear_solver_options": {"mumps_pivtol": 1e-7}}, None),
+    ({"linear_solver_options": {"mumps_pivtolmax": 0.2}}, None),
+    ({"linear_solver_options": {"mumps_mem_percent": 2000}}, None),
+    ({"linear_solver_options": {"mumps_permuting_scaling": 5}}, None),
+    ({"linear_solver_options": {"mumps_permuting_scaling": 9.1}}, TypeError),
+    ({"linear_solver_options": {"mumps_pivot_order": 5}}, None),
+    ({"linear_solver_options": {"mumps_pivot_order": 5.5}}, TypeError),
+    ({"linear_solver_options": {"mumps_scaling": 74}}, None),
+    ({"linear_solver_options": {"mumps_dep_tol": 0.1}}, None),
 ]
 
 test_cases = product([sos_dict_criterion], options_and_expected)
