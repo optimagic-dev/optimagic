@@ -194,6 +194,8 @@ def nlopt_praxis(
         dict: See :ref:`internal_optimizer_output` for details.
 
     """
+    algo_info = DEFAULT_ALGO_INFO.copy()
+    algo_info.update({"needs_scaling": True})
     out = _minimize_nlopt(
         criterion_and_derivative,
         x,
@@ -206,6 +208,7 @@ def nlopt_praxis(
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
+        algo_info=algo_info,
     )
 
     return out
@@ -1048,9 +1051,13 @@ def _minimize_nlopt(
     convergence_ftol_abs=None,
     stopping_max_eval=None,
     population_size=None,
+    algo_info=None,
 ):
     """Run actual nlopt optimization argument, set relevant attributes."""
-    algo_info = DEFAULT_ALGO_INFO.copy()
+    if algo_info is None:
+        algo_info = DEFAULT_ALGO_INFO.copy()
+    else:
+        algo_info = algo_info.copy()
     algo_info["name"] = algorithm_name
 
     def func(x, grad):
