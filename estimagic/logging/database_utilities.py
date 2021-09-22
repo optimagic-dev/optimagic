@@ -9,7 +9,6 @@ Therefore, users who simply want to read the database should use the functions i
 ``read_log.py`` instead.
 
 """
-import datetime
 import io
 import traceback
 import warnings
@@ -114,10 +113,11 @@ def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
     ]
 
     if isinstance(first_eval["output"], dict):
+        extra_columns = {x for x in first_eval["output"] if x != "value"}
+        if "root_contributions" in extra_columns:
+            extra_columns |= {"contributions"}
         columns += [
-            Column(key, PickleType(pickler=RobustPickler))
-            for key in first_eval["output"]
-            if key != "value"
+            Column(key, PickleType(pickler=RobustPickler)) for key in extra_columns
         ]
 
     Table(
@@ -206,14 +206,8 @@ def _execute_write_statement(statement, database, path, table_name, data):
         raise
     except Exception:
         exception_info = traceback.format_exc()
-        directory = Path(path).resolve().parent
-        timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-        filename = f"{table_name}_{timestamp}.pickle"
-        pd.to_pickle(data, directory / filename)
-
         warnings.warn(
-            f"Unable to write to database. The data was saved in {directory} instead. "
-            f"The traceback was:\n\n{exception_info}"
+            f"Unable to write to database. The traceback was:\n\n{exception_info}"
         )
 
 
