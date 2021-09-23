@@ -1431,6 +1431,14 @@ def pygmo_compass_search(
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+    if population_size is not None:
+        warnings.warn(
+            f"You specified population size {population_size}. "
+            "compass_search does not have a population so this argument is ignored."
+        )
+    else:
+        # if discard_start_params is False population_size - 1 must still be positive
+        population_size = 100
 
     algo_specific_options = {
         "max_fevals": stopping_max_criterion_evaluations,
