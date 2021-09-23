@@ -55,4 +55,11 @@ if IS_PYGMO_INSTALLED:
 if IS_CYIPOPT_INSTALLED:
     AVAILABLE_ALGORITHMS["ipopt"] = cyipopt_optimizers.ipopt
 
-GLOBAL_ALGORITHMS = ["nlopt_direct", "nlopt_esch", "nlopt_isres", "nlopt_crs2_lm"]
+GLOBAL_ALGORITHMS = [
+    "nlopt_direct",
+    "nlopt_esch",
+    "nlopt_isres",
+    "nlopt_crs2_lm",
+]
+if IS_PYGMO_INSTALLED:
+    GLOBAL_ALGORITHMS += PYGMO_ALGORITHMS.keys()
