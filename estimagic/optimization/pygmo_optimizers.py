@@ -35,7 +35,7 @@ def pygmo_gaco(
     oracle=0.0,
     accuracy=0.01,
     threshold=1,
-    speed_of_std_values=7,
+    speed_of_std_values_convergence=7,
     stopping_max_n_without_improvements=100000,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     focus=0.0,
@@ -57,8 +57,8 @@ def pygmo_gaco(
     simulation iterations more ants locate better solutions.
 
     The generalized ant colony algorithm generates future generations of ants by
-    using the a multi-kernel gaussian distribution based on three parameters
-    (i.e., pheromone values) which are computed depending on the quality of each
+    using a multi-kernel gaussian distribution based on three parameters (i.e.,
+    pheromone values) which are computed depending on the quality of each
     previous solution. The solutions are ranked through an oracle penalty
     method.
 
@@ -88,9 +88,9 @@ def pygmo_gaco(
       convergence speed is set to 0.01 automatically. To deactivate this effect
       set the threshold to stopping.max_iterations which is the largest allowed
       value.
-    - speed_of_std_values (int): parameter that determines the convergence speed
-      of the standard deviations. This must be an integer (`n_gen_mark` in pygmo
-      and pagmo).
+    - speed_of_std_values_convergence (int): parameter that determines the
+      convergence speed of the standard deviations. This must be an integer
+      (`n_gen_mark` in pygmo and pagmo).
     - stopping.max_n_without_improvements (int): if a positive integer is
       assigned here, the algorithm will count the runs without improvements, if
       this number exceeds the given value, the algorithm will be stopped.
@@ -110,11 +110,11 @@ def pygmo_gaco(
         population_size=population_size, x=x, lower_bound=64
     )
 
-    if isinstance(speed_of_std_values, float):
-        if not speed_of_std_values.is_integer():
+    if isinstance(speed_of_std_values_convergence, float):
+        if not speed_of_std_values_convergence.is_integer():
             raise ValueError(
-                "The speed_of_std_values parameter must be an integer. "
-                f"You specified {speed_of_std_values}."
+                "The speed_of_std_values_convergence parameter must be an integer. "
+                f"You specified {speed_of_std_values_convergence}."
             )
 
     algo_specific_options = {
@@ -124,7 +124,7 @@ def pygmo_gaco(
         "oracle": oracle,
         "acc": accuracy,
         "threshold": threshold,
-        "n_gen_mark": int(speed_of_std_values),
+        "n_gen_mark": int(speed_of_std_values_convergence),
         "impstop": stopping_max_n_without_improvements,
         "evalstop": stopping_max_criterion_evaluations,
         "focus": focus,
@@ -166,23 +166,25 @@ def pygmo_bee_colony(
 ):
     """Minimize a scalar function using the artifical bee colony algorithm.
 
-    The Artificial Bee Colony Algorithm was originally proposed by :cite:`Karaboga2007`.
-    The implemented version of the algorithm is proposed in :cite:`Mernik2015`.
-    The algorithm is only suited for bounded parameter spaces.
+    The Artificial Bee Colony Algorithm was originally proposed by
+    :cite:`Karaboga2007`. The implemented version of the algorithm is proposed
+    in :cite:`Mernik2015`. The algorithm is only suited for bounded parameter
+    spaces.
 
     - stopping.max_iterations (int): Number of generations to evolve.
-    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch
+      evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
+      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
     - n_cores (int): Number of cores to use.
     - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
-      part of the initial population. This saves one criterion function evaluation that
-      cannot be done in parallel with other evaluations. Default False.
-    - max_n_trials (int): Maximum number of trials for abandoning a source. Default is
-      1.
-    - population_size (int): Size of the population. If None, it's twice the number of
-      parameters but at least 20.
+    - discard_start_params (bool): If True, the start params are not guaranteed
+      to be part of the initial population. This saves one criterion function
+      evaluation that cannot be done in parallel with other evaluations. Default
+      False.
+    - max_n_trials (int): Maximum number of trials for abandoning a source.
+      Default is 1.
+    - population_size (int): Size of the population. If None, it's twice the
+      number of parameters but at least 20.
 
     """
     population_size = _determine_population_size(
@@ -225,7 +227,7 @@ def pygmo_de(
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
     weight_coefficient=0.8,
     crossover_probability=0.9,
-    mutation_variant=2,
+    mutation_variant="rand/1/exp",
     convergence_criterion_tolerance=1e-6,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
 ):
@@ -251,20 +253,18 @@ def pygmo_de(
       the main paper and must lie in [0, 2]. It controls the amplification of
       the differential variation $(x_{r_2, G} - x_{r_3, G})$.
     - crossover_probability (float): Crossover probability.
-    - mutation_variant (int): code for the mutation variant to create a new
-      candidate individual. The default is 2. The following are available:
-
-        - 1:   best/1/exp
-        - 2:   rand/1/exp
-        - 3:   rand-to-best/1/exp
-        - 4:   best/2/exp
-        - 5:   rand/2/exp
-        - 6:   best/1/bin
-        - 7:   rand/1/bin
-        - 8:   rand-to-best/1/bin
-        - 9:   best/2/bin
-        - 10:  rand/2/bin
-
+    - mutation_variant (str or int): code for the mutation variant to create a
+      new candidate individual. The default is . The following are available:
+        - "best/1/exp" (1, when specified as int)
+        - "rand/1/exp" (2, when specified as int)
+        - "rand-to-best/1/exp" (3, when specified as int)
+        - "best/2/exp" (4, when specified as int)
+        - "rand/2/exp" (5, when specified as int)
+        - "best/1/bin" (6, when specified as int)
+        - "rand/1/bin" (7, when specified as int)
+        - "rand-to-best/1/bin" (8, when specified as int)
+        - "best/2/bin" (9, when specified as int)
+        - "rand/2/bin" (10, when specified as int)
     - convergence.criterion_tolerance: stopping criteria on the criterion
       tolerance. Default is 1e-6. It is not clear whether this is the absolute
       or relative criterion tolerance.
@@ -276,6 +276,27 @@ def pygmo_de(
     population_size = _determine_population_size(
         population_size=population_size, x=x, lower_bound=10
     )
+
+    # support both integer and string specification of the mutation variant
+    mutation_variant_to_code = {
+        "best/1/exp": 1,
+        "rand/1/exp": 2,
+        "rand-to-best/1/exp": 3,
+        "best/2/exp": 4,
+        "rand/2/exp": 5,
+        "best/1/bin": 6,
+        "rand/1/bin": 7,
+        "rand-to-best/1/bin": 8,
+        "best/2/bin": 9,
+        "rand/2/bin": 10,
+    }
+    if mutation_variant in mutation_variant_to_code.keys():
+        mutation_variant = mutation_variant_to_code[mutation_variant]
+    elif mutation_variant not in mutation_variant_to_code.values():
+        raise ValueError(
+            f"You specified {mutation_variant} as mutation_variant. "
+            f"It must be one of {', '.join(mutation_variant.keys())}"
+        )
 
     algo_specific_options = {
         "gen": int(stopping_max_iterations),

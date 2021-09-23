@@ -962,33 +962,33 @@ def nlopt_isres(
 ):
     """Optimize a scalar function using the ISRES algorithm.
 
-    ISRES is an implementation of "Improved Stochastic Evolution Strategy" written
-    for solving optimization problems with non-linear constraints. The algorithm
-    is supposed to be a global method, in that it has heuristics to avoid local
-    minima. However, no convergence proof is available.
+    ISRES is an implementation of "Improved Stochastic Evolution Strategy"
+    written for solving optimization problems with non-linear constraints. The
+    algorithm is supposed to be a global method, in that it has heuristics to
+    avoid local minima. However, no convergence proof is available.
 
     The original method and a refined version can be found, respecively, in:
-    Thomas Philip Runarsson and Xin Yao, "Search biases in constrained evolutionary
-    optimization," IEEE Trans. on Systems, Man, and Cybernetics Part C: Applications
-    and Reviews, vol. 35 (no. 2), pp. 233-243 (2005).
-    Thomas P. Runarsson and Xin Yao, "Stochastic ranking for constrained evolutionary
-    optimization," IEEE Trans. Evolutionary Computation, vol. 4 (no. 3), pp. 284-294
-    (2000).
+    Thomas Philip Runarsson and Xin Yao, "Search biases in constrained
+    evolutionary optimization," IEEE Trans. on Systems, Man, and Cybernetics
+    Part C: Applications and Reviews, vol. 35 (no. 2), pp. 233-243 (2005).
+    Thomas P. Runarsson and Xin Yao, "Stochastic ranking for constrained
+    evolutionary optimization," IEEE Trans. Evolutionary Computation, vol. 4
+    (no. 3), pp. 284-294 (2000).
 
 
     ``nlopt_isres`` supports the following ``algo_options``:
 
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
+    - convergence.relative_params_tolerance (float):  Stop when the relative
+      movement between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute
+      movement between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of
+      the criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of
+      function evaluation is reached, the optimization stops but we do not count
+      this as convergence.
 
     """
     out = _minimize_nlopt(
