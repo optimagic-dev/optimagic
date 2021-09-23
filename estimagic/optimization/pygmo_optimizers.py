@@ -39,7 +39,7 @@ def pygmo_gaco(
     stopping_max_n_without_improvements=100000,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     focus=0.0,
-    activate_memory_for_multiple_calls=False,
+    cache=False,
 ):
     """Minimize a scalar function using the generalized ant colony algorithm.
 
@@ -100,8 +100,7 @@ def pygmo_gaco(
       and more focused on local improvements (the higher the greedier). If the
       value is very high, the search is more focused around the current best
       solutions. Values larger than 1 are allowed.
-    - activate_memory_for_multiple_calls (bool): if True, memory is activated in
-      the algorithm for multiple calls.
+    - cache (bool): if True, memory is activated in the algorithm for multiple calls.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -128,7 +127,7 @@ def pygmo_gaco(
         "impstop": stopping_max_n_without_improvements,
         "evalstop": stopping_max_criterion_evaluations,
         "focus": focus,
-        "memory": activate_memory_for_multiple_calls,
+        "memory": cache,
     }
     algo_options = _create_algo_options(
         population_size=population_size,
@@ -1862,7 +1861,7 @@ def _convert_str_to_int(str_to_int, value):
     elif value not in str_to_int.values():
         raise ValueError(
             f"You specified {value} as value. "
-            f"It must be one of {', '.join(value.keys())}"
+            f"It must be one of {', '.join(str_to_int.keys())}"
         )
     else:
         out = value

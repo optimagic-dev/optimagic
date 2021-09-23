@@ -1018,26 +1018,24 @@ def nlopt_crs2_lm(
     convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
     convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
-    genetic_popsize=None,
+    population_size=None,
 ):
     """Optimize a scalar function using the CRS2_LM algorithm.
 
-    This implementation of controlled random search method with local mutation is
-    based on:
-    P. Kaelo and M. M. Ali, "Some variants of the controlled random search algorithm
+    This implementation of controlled random search method with local mutation is based
+    on: P. Kaelo and M. M. Ali, "Some variants of the controlled random search algorithm
     for global optimization," J. Optim. Theory Appl. 130 (2), 253-264 (2006).
 
-    The original CRS method is described in:
-    W. L. Price, "A controlled random search procedure for global optimization,"
-    in Towards Global Optimization 2, p. 71-84 edited by L. C. W. Dixon and G. P.
-    Szego (North-Holland Press, Amsterdam, 1978).
-    W. L. Price, "Global optimization by controlled random search," J. Optim. Theory
-    Appl. 40 (3), p. 333-348 (1983).
+    The original CRS method is described in: W. L. Price, "A controlled random search
+    procedure for global optimization," in Towards Global Optimization 2, p. 71-84
+    edited by L. C. W. Dixon and G. P. Szego (North-Holland Press, Amsterdam, 1978). W.
+    L. Price, "Global optimization by controlled random search," J. Optim. Theory Appl.
+    40 (3), p. 333-348 (1983).
 
     CRS class of algorithms starts with random population of points and evolves the
     points "randomly". The size of the initial population can be set via the param-
-    meter genetic_popsize. If the user doesn't specify a value, it is
-    set to the nlopt default of 10*(n+1).
+    meter population_size. If the user doesn't specify a value, it is set to the nlopt
+    default of 10*(n+1).
 
     ``nlopt_isres`` supports the following ``algo_options``:
 
@@ -1050,14 +1048,14 @@ def nlopt_crs2_lm(
     - convergence.absolute_criterion_tolerance (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
     - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-    - genetic_popsize(int): The size of the population of the starting
-      points.
+      evaluation is reached, the optimization stops but we do not count this as
+      convergence.
+    - population_size (int): Size of the population. If None, it's set to be
+      10 * (number of parameters + 1).
 
     """
-    if not genetic_popsize:
-        genetic_popsize = 10 * (len(x) + 1)
+    if population_size is None:
+        population_size = 10 * (len(x) + 1)
     out = _minimize_nlopt(
         criterion_and_derivative,
         x,
@@ -1070,7 +1068,7 @@ def nlopt_crs2_lm(
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
-        population_size=genetic_popsize,
+        population_size=population_size,
     )
     return out
 
