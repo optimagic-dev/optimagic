@@ -6,7 +6,7 @@ Roadmap
 
 Features that are not yet implemented, but planned:
 
-- Add several solvers that support nonlinear constraints (``ipopt``, some ``nlopt``
+- Add several solvers that support nonlinear constraints (some ``nlopt``
   solvers, some ``scipy`` solvers) and harmonize the way how nonlinear constraints are
   specified.
 - Add global optimizers that use large scale parallelization.

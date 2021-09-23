@@ -175,9 +175,10 @@ Currently, estimagic supports the
 `BOBYQA <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_
 by the `Numerical Algorithms Group <https://www.nag.com/>`_.
 
-To use DF-OLS you need to have
-`the dfols package <https://tinyurl.com/y5ztv4yc>`_ installed.
-BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
+To use DF-OLS you need to have `the dfols package
+<https://tinyurl.com/y5ztv4yc>`_ installed (``pip install DFO-LS``). BOBYQA
+requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ (``pip install
+Py-BOBYQA``).
 
 .. dropdown::  nag_dfols
 
@@ -195,7 +196,14 @@ estimagic's support for the Interior Point Optimizer (:cite:`Waechter2005`,
 `cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python wrapper
 for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>`_.
 
-.. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
+To use ipopt, you need to have `cyipopt installed
+<https://cyipopt.readthedocs.io/en/latest/index.html>`_ (``conda install
+cyipopt``).
+
+
+.. dropdown:: ipopt
+
+    .. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
 
 
 
@@ -208,5 +216,4 @@ for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>
 
 
 .. With ``nlopt`` installed
-.. With ``cyipopt`` installed
 .. With ``pygmo`` installed
