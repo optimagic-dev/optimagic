@@ -206,6 +206,78 @@ cyipopt``).
     .. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
 
 
+The NLOPT Optimizers (nlopt)
+-----------------------------
+
+estimagic supports the following `NLOPT
+<https://nlopt.readthedocs.io/en/latest/>`_ algorithms. Please add the
+`appropriate citations <https://nlopt.readthedocs.io/en/latest/Citing_NLopt/>`_
+in addition to estimagic when using an NLOPT algorithm.
+
+.. dropdown:: nlopt_bobyqa
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_bobyqa
+
+.. dropdown:: nlopt_neldermead
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_neldermead
+
+.. dropdown:: nlopt_praxis
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_praxis
+
+.. dropdown:: nlopt_cobyla
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_cobyla
+
+.. dropdown:: nlopt_sbplx
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_sbplx
+
+.. dropdown:: nlopt_newuoa
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_newuoa
+
+.. dropdown:: nlopt_tnewton
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_tnewton
+
+.. dropdown:: nlopt_lbfgs
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_lbfgs
+
+.. dropdown:: nlopt_ccsaq
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_ccsaq
+
+.. dropdown:: nlopt_mma
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_mma
+
+.. dropdown:: nlopt_var
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_var
+
+.. dropdown:: nlopt_slsqp
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_slsqp
+
+.. dropdown:: nlopt_direct
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_direct
+
+.. dropdown:: nlopt_esch
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_esch
+
+.. dropdown:: nlopt_isres
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_isres
+
+.. dropdown:: nlopt_crs2_lm
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_crs2_lm
+
 
 **References**
 
