@@ -31,11 +31,11 @@ def pygmo_gaco(
     #
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
     kernel_size=63,
-    convergence_speed=1.0,
+    speed_parameter_q=1.0,
     oracle=0.0,
     accuracy=0.01,
     threshold=1,
-    convergence_std_speed=7,
+    speed_of_std_values=7,
     stopping_max_n_without_improvements=100000,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     focus=0.0,
@@ -43,59 +43,65 @@ def pygmo_gaco(
 ):
     """Minimize a scalar function using the generalized ant colony algorithm.
 
-    The version available through pygmo is an generalized version of the original ant
-    colony algorithm proposed by :cite:`Schlueter2009`.
+    The version available through pygmo is an generalized version of the
+    original ant colony algorithm proposed by :cite:`Schlueter2009`.
 
     This algorithm can be applied to box-bounded problems.
 
-    Ant colony optimization is a class of optimization algorithms modeled on the actions
-    of an ant colony. Artificial "ants" (e.g. simulation agents) locate optimal
-    solutions by moving through a parameter space representing all possible solutions.
-    Real ants lay down pheromones directing each other to resources while exploring
-    their environment. The simulated "ants" similarly record their positions and the
-    quality of their solutions, so that in later simulation iterations more ants locate
-    better solutions.
+    Ant colony optimization is a class of optimization algorithms modeled on the
+    actions of an ant colony. Artificial "ants" (e.g. simulation agents) locate
+    optimal solutions by moving through a parameter space representing all
+    possible solutions. Real ants lay down pheromones directing each other to
+    resources while exploring their environment. The simulated "ants" similarly
+    record their positions and the quality of their solutions, so that in later
+    simulation iterations more ants locate better solutions.
 
-    The generalized ant colony algorithm generates future generations of ants by using
-    the a multi-kernel gaussian distribution based on three parameters (i.e., pheromone
-    values) which are computed depending on the quality of each previous solution. The
-    solutions are ranked through an oracle penalty method.
+    The generalized ant colony algorithm generates future generations of ants by
+    using the a multi-kernel gaussian distribution based on three parameters
+    (i.e., pheromone values) which are computed depending on the quality of each
+    previous solution. The solutions are ranked through an oracle penalty
+    method.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
-      parameters but at least 64.
-    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - population_size (int): Size of the population. If None, it's twice the
+      number of parameters but at least 64.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch
+      evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
+      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
     - n_cores (int): Number of cores to use.
     - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
-      part of the initial population. This saves one criterion function evaluation that
-      cannot be done in parallel with other evaluations. Default False.
+    - discard_start_params (bool): If True, the start params are not guaranteed
+      to be part of the initial population. This saves one criterion function
+      evaluation that cannot be done in parallel with other evaluations. Default
+      False.
 
     - stopping.max_iterations (int): Number of generations to evolve.
     - kernel_size (int): Number of solutions stored in the solution archive.
-    - convergence.speed (float): This parameter is useful for managing the convergence
-      speed towards the found minima (the smaller the faster). In the pygmo
-      documentation it is refered to as $q$. It must be positive and can be larger than
-      1. The default is 1.0 until the threshold is reached. Then it is set to 0.01.
+    - speed_parameter_q (float): This parameter manages the convergence speed
+      towards the found minima (the smaller the faster). In the pygmo
+      documentation it is referred to as $q$. It must be positive and can be
+      larger than 1. The default is 1.0 until **threshold** is reached. Then it
+      is set to 0.01.
     - oracle (float): oracle parameter used in the penalty method.
-    - accuracy (float): accuracy parameter for maintaining a minimum penalty function's
-      values distances.
-    - threshold (int): when the generation iteration reaches the threshold the
-      convergence speed is set to 0.01 automatically. To deactivate this effect set the
-      threshold to stopping.max_iterations which is the largest allowed value.
-    - convergence.std_speed (int): parameter that determines the convergence speed of
-      the standard deviations. This must be an integer.
-    - stopping.max_n_without_improvements (int): if a positive integer is assigned here,
-      the algorithm will count the runs without improvements, if this number exceeds the
-      given value, the algorithm will be stopped.
-    - stopping.max_criterion_evaluations (int): maximum number of function evaluations.
-    - focus (float): this parameter makes the search for the optimum greedier and more
-      focused on local improvements (the higher the greedier). If the value is very
-      high, the search is more focused around the current best solutions. Values larger
-      than 1 are allowed.
-    - activate_memory_for_multiple_calls (bool): if true, memory is activated in the
-      algorithm for multiple calls.
+    - accuracy (float): accuracy parameter for maintaining a minimum penalty
+      function's values distances.
+    - threshold (int): when the iteration counter reaches the threshold the
+      convergence speed is set to 0.01 automatically. To deactivate this effect
+      set the threshold to stopping.max_iterations which is the largest allowed
+      value.
+    - speed_of_std_values (int): parameter that determines the convergence speed
+      of the standard deviations. This must be an integer (`n_gen_mark` in pygmo
+      and pagmo).
+    - stopping.max_n_without_improvements (int): if a positive integer is
+      assigned here, the algorithm will count the runs without improvements, if
+      this number exceeds the given value, the algorithm will be stopped.
+    - stopping.max_criterion_evaluations (int): maximum number of function
+      evaluations.
+    - focus (float): this parameter makes the search for the optimum greedier
+      and more focused on local improvements (the higher the greedier). If the
+      value is very high, the search is more focused around the current best
+      solutions. Values larger than 1 are allowed.
+    - activate_memory_for_multiple_calls (bool): if True, memory is activated in
+      the algorithm for multiple calls.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -104,21 +110,21 @@ def pygmo_gaco(
         population_size=population_size, x=x, lower_bound=64
     )
 
-    if isinstance(convergence_std_speed, float):
-        if not convergence_std_speed.is_integer():
+    if isinstance(speed_of_std_values, float):
+        if not speed_of_std_values.is_integer():
             raise ValueError(
-                "The convergence std speed must be an integer. "
-                f"You specified {convergence_std_speed}."
+                "The speed_of_std_values parameter must be an integer. "
+                f"You specified {speed_of_std_values}."
             )
 
     algo_specific_options = {
         "gen": int(stopping_max_iterations),
         "ker": kernel_size,
-        "q": convergence_speed,
+        "q": speed_parameter_q,
         "oracle": oracle,
         "acc": accuracy,
         "threshold": threshold,
-        "n_gen_mark": int(convergence_std_speed),
+        "n_gen_mark": int(speed_of_std_values),
         "impstop": stopping_max_n_without_improvements,
         "evalstop": stopping_max_criterion_evaluations,
         "focus": focus,
@@ -220,31 +226,33 @@ def pygmo_de(
     weight_coefficient=0.8,
     crossover_probability=0.9,
     mutation_variant=2,
-    criterion_tolerance=1e-6,
+    convergence_criterion_tolerance=1e-6,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
 ):
     """Minimize a scalar function using the differential evolution algorithm.
 
     Differential Evolution is a heuristic optimizer originally presented in
-    :cite:`Storn1997`. The algorithm is only suited for bounded parameter spaces.
+    :cite:`Storn1997`. The algorithm is only suited for bounded parameter
+    spaces.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
-      parameters but at least 10.
-    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - population_size (int): Size of the population. If None, it's twice the
+      number of parameters but at least 10.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch
+      evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
+      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
     - n_cores (int): Number of cores to use.
     - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
-      part of the initial population. This saves one criterion function evaluation that
-      cannot be done in parallel with other evaluations. Default False.
+    - discard_start_params (bool): If True, the start params are not guaranteed
+      to be part of the initial population. This saves one criterion function
+      evaluation that cannot be done in parallel with other evaluations. Default
+      False.
     - stopping.max_iterations (int): Number of generations to evolve.
-    - weight_coefficient (float): Weight coefficient. It is denoted by $F$ in the main
-      paper and must lie in [0, 2]. It controls the amplification of the differential
-      variation $(x_{r_2, G} - x_{r_3, G})$.
+    - weight_coefficient (float): Weight coefficient. It is denoted by $F$ in
+      the main paper and must lie in [0, 2]. It controls the amplification of
+      the differential variation $(x_{r_2, G} - x_{r_3, G})$.
     - crossover_probability (float): Crossover probability.
-    - mutation_variant (int): code for the mutation variant to create a new candidate
-      individual. The default is 2. The following are available:
+    - mutation_variant (int): code for the mutation variant to create a new
+      candidate individual. The default is 2. The following are available:
 
         - 1:   best/1/exp
         - 2:   rand/1/exp
@@ -257,11 +265,12 @@ def pygmo_de(
         - 9:   best/2/bin
         - 10:  rand/2/bin
 
-    - criterion_tolerance: stopping criteria on the criterion tolerance. Default is
-      1e-6. It is not clear whether this is the absolute or relative criterion
-      tolerance.
-    - convergence_relative_params_tolerance: stopping criteria on the x tolerance. In
-      pygmo the default is 1e-6 but we use our default value of 1e-5.
+    - convergence.criterion_tolerance: stopping criteria on the criterion
+      tolerance. Default is 1e-6. It is not clear whether this is the absolute
+      or relative criterion tolerance.
+    - convergence.relative_params_tolerance: stopping criteria on the x
+      tolerance. In pygmo the default is 1e-6 but we use our default value of
+      1e-5.
 
     """
     population_size = _determine_population_size(
@@ -273,7 +282,7 @@ def pygmo_de(
         "F": weight_coefficient,
         "CR": crossover_probability,
         "variant": mutation_variant,
-        "ftol": criterion_tolerance,
+        "ftol": convergence_criterion_tolerance,
         "xtol": convergence_relative_params_tolerance,
     }
     algo_options = _create_algo_options(
