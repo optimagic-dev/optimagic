@@ -947,14 +947,31 @@ def pygmo_pso(
         population_size=population_size, x=x, lower_bound=10
     )
 
+    neighbor_definition_str_to_int = {
+        "gbest": 1,
+        "lbest": 2,
+        "Von Neumann": 3,
+        "Adaptive random": 4,
+    }
+    algo_variant_str_to_int = {
+        "canonical_inertia": 1,
+        "social_and_cog_rand": 2,
+        "all_components_rand": 3,
+        "one_rand": 4,
+        "canonical_constriction": 5,
+        "fips": 6,
+    }
+
     algo_specific_options = {
         "gen": int(stopping_max_iterations),
         "omega": omega,
         "eta1": force_of_previous_best,
         "eta2": force_of_best_in_neighborhood,
         "max_vel": max_velocity,
-        "variant": algo_variant,
-        "neighb_type": neighbor_definition,
+        "variant": _convert_str_to_int(algo_variant_str_to_int, algo_variant),
+        "neighb_type": _convert_str_to_int(
+            neighbor_definition_str_to_int, neighbor_definition
+        ),
         "neighb_param": neighbor_param,
         "memory": keep_velocities,
     }
@@ -1039,20 +1056,20 @@ def pygmo_pso_gen(
       bounds. It must lie between 0 and 1.
     - algo_variant (int): code of the algorithm's variant to be used:
 
-        - 1: Canonical (with inertia weight)
-        - 2: Same social and cognitive rand.
-        - 3: Same rand. for all components
-        - 4: Only one rand.
-        - 5: Canonical (with constriction fact.)
-        - 6: Fully Informed (FIPS)
+        - 1 or "canonical_inertia": Canonical (with inertia weight)
+        - 2 or "social_and_cog_rand": Same social and cognitive rand.
+        - 3 or "all_components_rand": Same rand. for all components
+        - 4 or "one_rand": Only one rand.
+        - 5 or "canonical_constriction": Canonical (with constriction fact.)
+        - 6 or "fips": Fully Informed (FIPS)
 
     - neighbor_definition (int): code for the swarm topology that defines each
       particle's neighbors that is to be used:
 
-        - 1: gbest
-        - 2: lbest
-        - 3: Von Neumann
-        - 4: Adaptive random
+        - 1 or "gbest"
+        - 2 or "lbest"
+        - 3 or "Von Neumann"
+        - 4 or "Adaptive random"
 
     - neighbor_param (int): the neighbourhood parameter. If the lbest topology is
       selected (neighbor_definition=2), it represents each particle's indegree (also
