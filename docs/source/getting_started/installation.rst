@@ -41,6 +41,6 @@ To enable all algorithms at once, do the following:
 
 ``conda install petsc4py`` (Not available on Windows)
 
-.. ``conda install cyipopt`` (Not available on Windows)
+``conda install cyipopt``
 
 ``conda install pygmo``
