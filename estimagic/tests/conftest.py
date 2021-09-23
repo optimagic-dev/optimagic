@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+import statsmodels.api as sm
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -27,6 +28,28 @@ def example_params():
     for col in ["upper_bound", "internal_upper"]:
         params[col].fillna(np.inf, inplace=True)
     return params
+
+
+@pytest.fixture
+def logit_inputs():
+    spector_data = sm.datasets.spector.load_pandas()
+    spector_data.exog = sm.add_constant(spector_data.exog)
+    y = spector_data.endog
+    x_df = sm.add_constant(spector_data.exog)
+    out = {
+        "y": spector_data.endog,
+        "x": x_df.to_numpy(),
+        "params": pd.DataFrame([-10, 2, 0.2, 2], index=x_df.columns, columns=["value"]),
+    }
+    return out
+
+
+@pytest.fixture
+def logit_object():
+    spector_data = sm.datasets.spector.load_pandas()
+    spector_data.exog = sm.add_constant(spector_data.exog)
+    logit_mod = sm.Logit(spector_data.endog, spector_data.exog)
+    return logit_mod
 
 
 @pytest.fixture

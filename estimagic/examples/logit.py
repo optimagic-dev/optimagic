@@ -2,6 +2,10 @@
 import numpy as np
 
 
+def logit_loglike_and_derivative(params, y, x):
+    return logit_loglike(params, y, x), logit_derivative(params, y, x)
+
+
 def logit_loglike(params, y, x):
     """Log-likelihood function of a logit model.
 
@@ -15,45 +19,16 @@ def logit_loglike(params, y, x):
         loglike (np.array): 1d numpy array with likelihood contribution  per individual
 
     """
-    return logit_loglikeobs(params, y, x).sum()
-
-
-def logit_loglikeobs(params, y, x):
-    """Log-likelihood contribution per individual of a logit model.
-
-    Args:
-        params (pd.DataFrame): The index consists of the parmater names,
-            the "value" column are the parameter values.
-        y (np.array): 1d numpy array with the dependent variable
-        x (np.array): 2d numpy array with the independent variables
-
-    Returns:
-        loglike (np.array): 1d numpy array with likelihood contribution per individual
-
-    """
     q = 2 * y - 1
-    return np.log(1 / (1 + np.exp(-(q * np.dot(x, params["value"])))))
+    contribs = np.log(1 / (1 + np.exp(-(q * np.dot(x, params["value"])))))
+
+    out = {"value": contribs.sum(), "contributions": contribs}
+
+    return out
 
 
-def logit_gradient(params, y, x):
-    """Gradient of the log-likelihood for each observation of a logit model.
-
-    Args:
-        parmas (pd.DataFrame): The index consists of the parmater names,
-            the "value" column are the parameter values.
-        y (np.array): 1d numpy array with the dependent variable
-        x (np.array): 2d numpy array with the independent variables
-
-    Returns:
-        gradient (np.array)
-
-    """
-    c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
-    return np.dot(y - c, x)
-
-
-def logit_jacobian(params, y, x):
-    """Jacobian of the log-likelihood for each observation of a logit model.
+def logit_derivative(params, y, x):
+    """Derivative of the log-likelihood for each observation of a logit model.
 
     Args:
         params (pd.DataFrame): The index consists of the parmater names,
@@ -67,7 +42,10 @@ def logit_jacobian(params, y, x):
             at `params`.
     """
     c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
-    return (y - c)[:, None] * x
+    jac = (y - c)[:, None] * x
+    grad = jac.sum(axis=0)
+    out = {"value": grad, "contributions": jac}
+    return out
 
 
 def logit_hessian(params, y, x):

@@ -1,32 +1,37 @@
 """Tests for the logit example."""
-from pathlib import Path
+import numpy as np
+from numpy.testing import assert_array_almost_equal as aaae
 
-import pandas as pd
-import pytest
-from numpy.testing import assert_array_almost_equal
-
+from estimagic.examples.logit import logit_derivative
+from estimagic.examples.logit import logit_hessian
 from estimagic.examples.logit import logit_loglike
-from estimagic.examples.logit import logit_loglikeobs
 
 
-@pytest.fixture()
-def statsmodels_fixtures():
-    fix_path = Path(__file__).resolve().parent / "logit_fixtures.pickle"
-    fix = pd.read_pickle(fix_path)
-    fix["params"].name = "value"
-    fix["params"] = fix["params"].to_frame()
-    return fix
+def test_logit_loglike(logit_inputs, logit_object):
+    x = logit_inputs["params"]["value"].to_numpy()
+    expected_value = logit_object.loglike(x)
+    expected_contribs = logit_object.loglikeobs(x)
+    calculated = logit_loglike(**logit_inputs)
+
+    assert np.allclose(calculated["value"], expected_value)
+    aaae(calculated["contributions"], expected_contribs)
 
 
-def test_loglike(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        logit_loglike(fix["params"], fix["y"], fix["x"]), fix["loglike"]
-    )
+def test_logit_derivative(logit_inputs, logit_object):
+    x = logit_inputs["params"]["value"].to_numpy()
+    expected = {
+        "value": logit_object.score(x),
+        "contributions": logit_object.score_obs(x),
+    }
+
+    calculated = logit_derivative(**logit_inputs)
+
+    for key, val in expected.items():
+        aaae(calculated[key], val)
 
 
-def test_loglikeobs(statsmodels_fixtures):
-    fix = statsmodels_fixtures
-    assert_array_almost_equal(
-        logit_loglikeobs(fix["params"], fix["y"], fix["x"]), fix["loglikeobs"]
-    )
+def test_logit_hessian(logit_inputs, logit_object):
+    x = logit_inputs["params"]["value"].to_numpy()
+    expected = logit_object.hessian(x)
+    calculated = logit_hessian(**logit_inputs)
+    aaae(calculated, expected)

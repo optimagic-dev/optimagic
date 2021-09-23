@@ -78,10 +78,7 @@ def estimate_msm(
             See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
         logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
             the file extension ``.db``. If the file does not exist, it will be created.
-            When doing parallel optimizations and logging is provided, you have to
-            provide a different path for each optimization you are running. You can
-            disable logging completely by setting it to False, but we highly recommend
-            not to do so. The dashboard can only be used when logging is used.
+            The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
@@ -130,7 +127,8 @@ def estimate_msm(
             we raise an error. If "ignore", boundary problems are simply ignored.
 
         Returns:
-            dict: The estimated parameters, standard errors and sensitivity measures.
+            dict: The estimated parameters, standard errors and sensitivity measures
+                and covariance matrix of the parameters.
 
     """
     is_minimized = minimize_options is False
