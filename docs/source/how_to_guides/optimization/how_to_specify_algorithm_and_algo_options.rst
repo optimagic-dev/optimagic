@@ -209,10 +209,10 @@ cyipopt``).
 The NLOPT Optimizers (nlopt)
 -----------------------------
 
-estimagic supports the following `NLOPT
-<https://nlopt.readthedocs.io/en/latest/>`_ algorithms. Please add the
-`appropriate citations <https://nlopt.readthedocs.io/en/latest/Citing_NLopt/>`_
-in addition to estimagic when using an NLOPT algorithm.
+estimagic supports the following `NLOPT <https://nlopt.readthedocs.io/en/latest/>`_
+algorithms. Please add the `appropriate citations
+<https://nlopt.readthedocs.io/en/latest/Citing_NLopt/>`_ in addition to estimagic when
+using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
 .. dropdown:: nlopt_bobyqa
 
