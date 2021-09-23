@@ -44,3 +44,5 @@ if IS_DFOLS_INSTALLED:
 
 if IS_CYIPOPT_INSTALLED:
     AVAILABLE_ALGORITHMS["ipopt"] = cyipopt_optimizers.ipopt
+
+GLOBAL_ALGORITHMS = ["nlopt_direct", "nlopt_esch", "nlopt_isres", "nlopt_crs2_lm"]
