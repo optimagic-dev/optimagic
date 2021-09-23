@@ -40,6 +40,8 @@ dependencies:
   - nlopt
   - sphinx-panels
 
+  - cyipopt
+
   - pip:
     - black
     - blackcellmagic

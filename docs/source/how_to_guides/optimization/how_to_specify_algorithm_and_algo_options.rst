@@ -187,6 +187,10 @@ BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
 
     .. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
 
+
+
+.. _pygmo_algorithms:
+
 PYGMO2 Optimizers
 ------------------
 
@@ -258,6 +262,19 @@ estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_ optimi
     .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_de1220
 
 
+.. _ipopt_algorithm:
+
+The Interior Point Optimizer (ipopt)
+------------------------------------
+
+estimagic's support for the Interior Point Optimizer (:cite:`Waechter2005`,
+:cite:`Waechter2005a`, :cite:`Waechter2005b`, :cite:`Nocedal2009`) is built on
+`cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python wrapper
+for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>`_.
+
+.. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
+
+
 **References**
 
 .. bibliography:: ../../refs.bib
@@ -269,4 +286,3 @@ estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_ optimi
 
 .. With ``nlopt`` installed
 .. With ``cyipopt`` installed
-.. With ``pygmo`` installed

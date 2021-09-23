@@ -61,6 +61,14 @@ else:
     IS_PYGMO_INSTALLED = True
 
 
+try:
+    import cyipopt  # noqa: F401
+except ImportError:
+    IS_CYIPOPT_INSTALLED = False
+else:
+    IS_CYIPOPT_INSTALLED = True
+
+
 # =================================================================================
 # Dashboard Defaults
 # =================================================================================
