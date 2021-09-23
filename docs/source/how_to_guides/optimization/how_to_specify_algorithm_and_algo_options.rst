@@ -194,7 +194,9 @@ BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
 PYGMO2 Optimizers
 ------------------
 
-estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_ optimizers:
+Please cite :cite:`Biscani2020` in addition to estimagic when using pygmo.
+estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_
+optimizers.
 
 .. dropdown::  pygmo_gaco
 
