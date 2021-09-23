@@ -175,9 +175,10 @@ Currently, estimagic supports the
 `BOBYQA <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_
 by the `Numerical Algorithms Group <https://www.nag.com/>`_.
 
-To use DF-OLS you need to have
-`the dfols package <https://tinyurl.com/y5ztv4yc>`_ installed.
-BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
+To use DF-OLS you need to have `the dfols package
+<https://tinyurl.com/y5ztv4yc>`_ installed (``pip install DFO-LS``). BOBYQA
+requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ (``pip install
+Py-BOBYQA``).
 
 .. dropdown::  nag_dfols
 
@@ -195,8 +196,87 @@ estimagic's support for the Interior Point Optimizer (:cite:`Waechter2005`,
 `cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python wrapper
 for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>`_.
 
-.. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
+To use ipopt, you need to have `cyipopt installed
+<https://cyipopt.readthedocs.io/en/latest/index.html>`_ (``conda install
+cyipopt``).
 
+
+.. dropdown:: ipopt
+
+    .. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
+
+
+The NLOPT Optimizers (nlopt)
+-----------------------------
+
+estimagic supports the following `NLOPT <https://nlopt.readthedocs.io/en/latest/>`_
+algorithms. Please add the `appropriate citations
+<https://nlopt.readthedocs.io/en/latest/Citing_NLopt/>`_ in addition to estimagic when
+using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
+
+.. dropdown:: nlopt_bobyqa
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_bobyqa
+
+.. dropdown:: nlopt_neldermead
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_neldermead
+
+.. dropdown:: nlopt_praxis
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_praxis
+
+.. dropdown:: nlopt_cobyla
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_cobyla
+
+.. dropdown:: nlopt_sbplx
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_sbplx
+
+.. dropdown:: nlopt_newuoa
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_newuoa
+
+.. dropdown:: nlopt_tnewton
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_tnewton
+
+.. dropdown:: nlopt_lbfgs
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_lbfgs
+
+.. dropdown:: nlopt_ccsaq
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_ccsaq
+
+.. dropdown:: nlopt_mma
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_mma
+
+.. dropdown:: nlopt_var
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_var
+
+.. dropdown:: nlopt_slsqp
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_slsqp
+
+.. dropdown:: nlopt_direct
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_direct
+
+.. dropdown:: nlopt_esch
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_esch
+
+.. dropdown:: nlopt_isres
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_isres
+
+.. dropdown:: nlopt_crs2_lm
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_crs2_lm
 
 
 **References**
@@ -208,5 +288,4 @@ for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>
 
 
 .. With ``nlopt`` installed
-.. With ``cyipopt`` installed
 .. With ``pygmo`` installed
