@@ -58,8 +58,12 @@ def nlopt_bobyqa(
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
     - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
@@ -104,19 +108,19 @@ def nlopt_neldermead(
     that the nlopt version supports bounds. This is done by moving all new points that
     would lie outside the bounds exactly on the bounds.
 
+    ``nlopt_neldermead`` takes the following ``algo_options``
 
-    Args:
-        convergence_relative_params_tolerance (float): Stop when the relative movement
-            between parameter vectors is smaller than this.
-        convergence_relative_criterion_tolerance (float): Stop when the relative
-            improvement between two iterations is smaller than this.
-            In contrast to other algorithms the relative criterion tolerance is set
-            to zero by default because setting it to any non-zero value made the
-            algorithm stop too early even on the most simple test functions.
-        stopping_max_criterion_evaluations (int): If the maximum number of function
-            evaluation is reached, the optimization stops but we do not count this
-            as convergence.
-
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -176,18 +180,19 @@ def nlopt_praxis(
     In case of bounded constraints, this method is dominated by `nlopt_bobyqa`
     and `nlopt_cobyla`.
 
+    ``nlopt_praxis`` takes the following ``algo_options``
 
-    Args:
-        convergence_relative_params_tolerance (float): Stop when the relative movement
-            between parameter vectors is smaller than this.
-        convergence_relative_criterion_tolerance (float): Stop when the relative
-            improvement between two iterations is smaller than this.
-            In contrast to other algorithms the relative criterion tolerance is set
-            to zero by default because setting it to any non-zero value made the
-            algorithm stop too early even on the most simple test functions.
-        stopping_max_criterion_evaluations (int): If the maximum number of function
-            evaluation is reached, the optimization stops but we do not count this
-            as convergence.
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
 
     Returns:
@@ -253,18 +258,19 @@ def nlopt_cobyla(
     - Supports unequal initial-step sizes in the different parameters.
 
 
-    Args:
-        convergence_relative_params_tolerance (float): Stop when the relative movement
-            between parameter vectors is smaller than this.
-        convergence_relative_criterion_tolerance (float): Stop when the relative
-            improvement between two iterations is smaller than this.
-            In contrast to other algorithms the relative criterion tolerance is set
-            to zero by default because setting it to any non-zero value made the
-            algorithm stop too early even on the most simple test functions.
-        stopping_max_criterion_evaluations (int): If the maximum number of function
-            evaluation is reached, the optimization stops but we do not count this
-            as convergence.
+    ``nlopt_cobyla`` takes the following ``algo_options``
 
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -315,20 +321,19 @@ def nlopt_sbplx(
     of Rowan, is that it explicitly supports bound constraints providing big
     improvement in the case where the optimum lies against one of the constraints.
 
+    ``nlopt_sbplx`` takes the following ``algo_options``
 
-
-    Args:
-        convergence_relative_params_tolerance (float): Stop when the relative movement
-            between parameter vectors is smaller than this.
-        convergence_relative_criterion_tolerance (float): Stop when the relative
-            improvement between two iterations is smaller than this.
-            In contrast to other algorithms the relative criterion tolerance is set
-            to zero by default because setting it to any non-zero value made the
-            algorithm stop too early even on the most simple test functions.
-        stopping_max_criterion_evaluations (int): If the maximum number of function
-            evaluation is reached, the optimization stops but we do not count this
-            as convergence.
-
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -381,19 +386,19 @@ def nlopt_newuoa(
     `NEWUOA` requires the dimension n of the parameter space to be `≥ 2`, i.e. the
     implementation does not handle one-dimensional optimization problems.
 
+    ``nlopt_newuoa`` takes the following algo_options
 
-    Args:
-        convergence_relative_params_tolerance (float): Stop when the relative movement
-            between parameter vectors is smaller than this.
-        convergence_relative_criterion_tolerance (float): Stop when the relative
-            improvement between two iterations is smaller than this.
-            In contrast to other algorithms the relative criterion tolerance is set
-            to zero by default because setting it to any non-zero value made the
-            algorithm stop too early even on the most simple test functions.
-        stopping_max_criterion_evaluations (int): If the maximum number of function
-            evaluation is reached, the optimization stops but we do not count this
-            as convergence.
-
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -447,20 +452,19 @@ def nlopt_tnewton(
     "Truncated Newton algorithms for large-scale optimization," Math. Programming
     26, p. 190-212 (1983), http://doi.org/10.1007/BF02592055.
 
+    ``nlopt_tnewton`` takes the following ``algo_options``
 
-
-    Args:
-        convergence_relative_params_tolerance (float): Stop when the relative movement
-            between parameter vectors is smaller than this.
-        convergence_relative_criterion_tolerance (float): Stop when the relative
-            improvement between two iterations is smaller than this.
-            In contrast to other algorithms the relative criterion tolerance is set
-            to zero by default because setting it to any non-zero value made the
-            algorithm stop too early even on the most simple test functions.
-        stopping_max_criterion_evaluations (int): If the maximum number of function
-            evaluation is reached, the optimization stops but we do not count this
-            as convergence.
-
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -512,18 +516,19 @@ def nlopt_lbfgs(
     D. C. Liu and J. Nocedal, "On the limited memory BFGS method for large scale
     optimization," ''Math. Programming' 45, p. 503-528 (1989).
 
+    ``nlopt_lbfgs`` takes the following ``algo_options``
 
-    Args:
-        convergence_relative_params_tolerance (float): Stop when the relative movement
-            between parameter vectors is smaller than this.
-        convergence_relative_criterion_tolerance (float): Stop when the relative
-            improvement between two iterations is smaller than this.
-            In contrast to other algorithms the relative criterion tolerance is set
-            to zero by default because setting it to any non-zero value made the
-            algorithm stop too early even on the most simple test functions.
-        stopping_max_criterion_evaluations (int): If the maximum number of function
-            evaluation is reached, the optimization stops but we do not count this
-            as convergence.
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
 
     Returns:
@@ -582,12 +587,15 @@ def nlopt_ccsaq(
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
     - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
-
 
     """
     out = _minimize_nlopt(
@@ -640,8 +648,12 @@ def nlopt_mma(
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
     - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
@@ -689,18 +701,21 @@ def nlopt_var(
     J. Vlcek and L. Luksan, "Shifted limited-memory variable metric methods for
     large-scale unconstrained minimization," J. Computational Appl. Math. 186,
     p. 365-390 (2006).
-    To choose update method, set the boolean argument `rank_1_update` to `True` for
-    rank-1 update (the defaulte), and `False` for rank-2 update.
 
     ``nlopt_svmm`` supports the following ``algo_options``:
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
     - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
+    - rank_1_update (bool): Whether I rank-1 or rank-2 update is used.
 
     """
     if rank_1_update:
@@ -754,8 +769,12 @@ def nlopt_slsqp(
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
     - stopping.max_criterion_evaluations (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
@@ -826,11 +845,18 @@ def nlopt_direct(
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations_global (int): If the maximum number of function
-      evaluation is reached.
-
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
+    - locally_biased (bool): Whether the "L" version of the algorithm is selected.
+    - random_search (bool): Whether the randomized version of the algorithm is selected.
+    - unscaled_bounds (bool): Whether the "NOSCAL" version of the algorithm is selected.
 
     """
     if not locally_biased and not random_search and not unscaled_bounds:
@@ -895,11 +921,15 @@ def nlopt_esch(
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations_global (int): If the maximum number of function
-      evaluation is reached.
-
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
     """
     out = _minimize_nlopt(
@@ -950,11 +980,15 @@ def nlopt_isres(
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations_global (int): If the maximum number of function
-      evaluation is reached.
-
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
 
     """
     out = _minimize_nlopt(
@@ -1009,13 +1043,17 @@ def nlopt_crs2_lm(
 
     - convergence.relative_params_tolerance (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
     - convergence.relative_criterion_tolerance (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations_global (int): If the maximum number of function
-      evaluation is reached.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
     - genetic_popsize(int): The size of the population of the starting
       points.
-
 
     """
     if not genetic_popsize:
