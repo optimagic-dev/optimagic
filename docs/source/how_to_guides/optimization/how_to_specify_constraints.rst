@@ -260,8 +260,6 @@ that your read that explanation first!
     You can specify either value or lower and upper bounds. Suppose you have the
     following params DataFrame:
 
-
-
     +-------------------+-------+
     |                   | value |
     +----------+--------+-------+

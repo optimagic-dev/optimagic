@@ -43,4 +43,4 @@ To enable all algorithms at once, do the following:
 
 ``conda install cyipopt``
 
-.. ``conda install pygmo``
+``conda install pygmo``

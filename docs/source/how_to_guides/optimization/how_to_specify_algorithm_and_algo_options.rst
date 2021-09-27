@@ -188,6 +188,85 @@ Py-BOBYQA``).
 
     .. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
 
+
+
+.. _pygmo_algorithms:
+
+PYGMO2 Optimizers
+------------------
+
+Please cite :cite:`Biscani2020` in addition to estimagic when using pygmo.
+estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_
+optimizers.
+
+.. dropdown::  pygmo_gaco
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_gaco
+
+.. dropdown::  pygmo_bee_colony
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_bee_colony
+
+.. dropdown::  pygmo_de
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_de
+
+.. dropdown::  pygmo_sea
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_sea
+
+.. dropdown::  pygmo_sga
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_sga
+
+.. dropdown::  pygmo_sade
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_sade
+
+
+.. dropdown::  pygmo_cmaes
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_cmaes
+
+.. dropdown::  pygmo_simulated_annealing
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_simulated_annealing
+
+.. dropdown::  pygmo_pso
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_pso
+
+.. dropdown::  pygmo_pso_gen
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_pso_gen
+
+.. dropdown::  pygmo_mbh
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_mbh
+
+.. dropdown::  pygmo_xnes
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_xnes
+
+.. dropdown::  pygmo_gwo
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_gwo
+
+.. dropdown::  pygmo_compass_search
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_compass_search
+
+.. dropdown::  pygmo_ihs
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_ihs
+
+.. dropdown::  pygmo_de1220
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_de1220
+
+
+.. _ipopt_algorithm:
+
 The Interior Point Optimizer (ipopt)
 ------------------------------------
 
@@ -282,10 +361,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 **References**
 
 .. bibliography:: ../../refs.bib
+    :labelprefix: algo_
     :filter: docname in docnames
     :style: unsrt
-
-
-
-.. With ``nlopt`` installed
-.. With ``pygmo`` installed

@@ -7,6 +7,7 @@ from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
+from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.utilities import calculate_trustregion_initial_radius
 from estimagic.utilities import chol_params_to_lower_triangular_matrix
@@ -180,5 +181,6 @@ def test_available_algorithms():
     assert ("nag_dfols" in present_algo_names) is IS_DFOLS_INSTALLED
     assert ("tao_pounders" in present_algo_names) is IS_PETSC4PY_INSTALLED
     assert ("nag_pybobyqa" in present_algo_names) is IS_PYBOBYQA_INSTALLED
+    assert ("pygmo_gaco" in present_algo_names) is IS_PYGMO_INSTALLED
     assert ("ipopt" in present_algo_names) is IS_CYIPOPT_INSTALLED
     assert "get_scipy_bounds" not in present_algo_names

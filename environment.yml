@@ -6,7 +6,6 @@ channels:
   - opensourceeconomics
 
 dependencies:
-
   - python=3.8
   - pip
   - anaconda-client
@@ -15,6 +14,7 @@ dependencies:
   - click
   - conda-build
   - conda-verify
+  - cyipopt
   - fuzzywuzzy
   - joblib
   - cloudpickle
@@ -24,6 +24,7 @@ dependencies:
   - pandas
   - pdbpp
   - petsc4py>=3.11
+  - pygmo
   - pytest
   - pytest-cov
   - pytest-xdist
@@ -39,15 +40,14 @@ dependencies:
   - pytask>=0.0.11
   - nlopt
   - sphinx-panels
-
-  - cyipopt
+  - pygmo
 
   - pip:
-    - black
-    - blackcellmagic
-    - bump2version
-    - pre-commit
-    - Py-BOBYQA
-    - DFO-LS
-    - gif
-    - gif[matplotlib]
+      - black
+      - blackcellmagic
+      - bump2version
+      - pre-commit
+      - Py-BOBYQA
+      - DFO-LS
+      - gif
+      - gif[matplotlib]
