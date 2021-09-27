@@ -34,7 +34,6 @@ def example_params():
 def logit_inputs():
     spector_data = sm.datasets.spector.load_pandas()
     spector_data.exog = sm.add_constant(spector_data.exog)
-    y = spector_data.endog
     x_df = sm.add_constant(spector_data.exog)
     out = {
         "y": spector_data.endog,

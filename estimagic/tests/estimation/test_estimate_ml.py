@@ -21,12 +21,28 @@ def test_estimate_ml_with_logit_no_constraints(
 ):
 
     sm_res = logit_object.fit()
-
+    kwargs = {"y": logit_inputs["y"], "x": logit_inputs["x"]}
     calculated = estimate_ml(
         logit_loglike,
         logit_inputs["params"],
-        loglike_kwargs={"y": logit_inputs["y"], "x": logit_inputs["x"]},
-        minimize_options={"algorithm": "scipy_lbfgsb"},
+        loglike_kwargs=kwargs,
+        optimize_options={"algorithm": "scipy_lbfgsb"},
+        hessian=logit_hessian,
+        hessian_kwargs=kwargs,
     )
 
-    aaae(calculated["summary"]["value"].to_numpy(), sm_res["params"].to_numpy())
+    calc_summary = calculated["summary_hessian"]
+
+    aaae(calc_summary["value"].to_numpy(), sm_res.params.to_numpy(), decimal=4)
+
+    aaae(
+        calculated["cov_hessian"].to_numpy(), sm_res.cov_params().to_numpy(), decimal=3
+    )
+
+    aaae(calc_summary["standard_error"].to_numpy(), sm_res.bse.to_numpy(), decimal=4)
+
+    aaae(
+        calc_summary[["ci_lower", "ci_upper"]].to_numpy(),
+        sm_res.conf_int().to_numpy(),
+        decimal=3,
+    )

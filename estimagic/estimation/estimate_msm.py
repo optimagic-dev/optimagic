@@ -9,9 +9,12 @@ from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import calculate_inference_quantities
+from estimagic.inference.shared import check_is_optimized_and_derivative_case
+from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import get_internal_first_derivative
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
 from estimagic.parameters.process_constraints import process_constraints
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_measures
 from estimagic.shared.check_option_dicts import check_numdiff_options
@@ -23,7 +26,7 @@ def estimate_msm(
     empirical_moments,
     moments_cov,
     params,
-    minimize_options,
+    optimize_options,
     *,
     constraints=None,
     logging=False,
@@ -91,11 +94,11 @@ def estimate_msm(
             do if the tables we want to write to already exist. Default "extend".
             - "if_database_exists": (str): One of "extend", "replace", "raise". What to
             do if the database we want to write to already exists. Default "extend".
-        minimize_options (dict or False): Keyword arguments that govern the numerical
+        optimize_options (dict or False): Keyword arguments that govern the numerical
             optimization. Valid entries are all arguments of
             :func:`~estimagic.optimization.optimize.minimize` except for criterion,
             derivative, criterion_and_derivative and params. If you pass False as
-            minimize_options you signal that ``params`` are already the optimal
+            optimize_options you signal that ``params`` are already the optimal
             parameters and no numerical optimization is needed.
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives for the calculation of standard errors. See
@@ -107,7 +110,7 @@ def estimate_msm(
             potentially other keyword arguments and returns the jacobian of
             simulate_moments with respect to the params. Alternatively you can pass
             a pandas.DataFrame with the jacobian at the optimal parameters. This is
-            only possible if you pass ``minimize_options=False``.
+            only possible if you pass ``optimize_options=False``.
         jacobian_kwargs (dict): Additional keyword arguments for jacobian.
         simulate_moments_and_jacobian (callable): A function that takes params and
             potentially other keyword arguments and returns a tuple with simulated
@@ -119,7 +122,7 @@ def estimate_msm(
             the internal parameter vector into the covariance matrix of the external
             parameters. For background information about internal and external params
             see :ref:`implementation_of_constraints`. This is only used if you have
-            constraints in the ``minimize_options``
+            constraints in the ``optimize_options``
         bounds_handling (str): One of "clip", "raise", "ignore". Determines how bounds
             are handled. If "clip", confidence intervals are clipped at the bounds.
             Standard errors are only adjusted if a sampling step is necessary due to
@@ -131,18 +134,22 @@ def estimate_msm(
                 and covariance matrix of the parameters.
 
     """
-    is_minimized = minimize_options is False
+    # ==================================================================================
+    # Check and process inputs
+    # ==================================================================================
+    is_optimized = optimize_options is False
 
     check_optimization_options(
-        minimize_options,
+        optimize_options,
         usage="estimate_msm",
         algorithm_mandatory=True,
     )
 
-    is_differentiated = isinstance(jacobian, (pd.DataFrame, np.ndarray))
-    needs_numdiff = jacobian is None
+    jac_case = get_derivative_case(jacobian)
 
-    _check_is_minimized_and_is_differentiated(is_minimized, is_differentiated)
+    cov_case = _get_cov_case(weights)
+
+    check_is_optimized_and_derivative_case(is_optimized, jac_case)
 
     check_numdiff_options(numdiff_options, "estimate_msm")
 
@@ -151,15 +158,19 @@ def estimate_msm(
     if "scaling_factor" not in numdiff_options:
         numdiff_options["scaling_factor"] = 2
 
-    is_optimal = weights == "optimal"
-
     if not isinstance(weights, (np.ndarray, pd.DataFrame)):
         weights = get_weighting_matrix(moments_cov, weights)
 
     constraints = [] if constraints is None else constraints
 
-    if is_minimized:
-        min_res = {"solution_params": params}
+    processed_constraints, _ = process_constraints(constraints, params)
+
+    # ==================================================================================
+    # Calculate estimates via minimization (if necessary)
+    # ==================================================================================
+
+    if is_optimized:
+        opt_res = {"solution_params": params}
     else:
         funcs = get_msm_optimization_functions(
             simulate_moments=simulate_moments,
@@ -172,26 +183,31 @@ def estimate_msm(
             simulate_moments_and_jacobian_kwargs=simulate_moments_and_jacobian_kwargs,
         )
 
-        min_res = minimize(
+        opt_res = minimize(
             constraints=constraints,
             logging=logging,
             log_options=log_options,
             params=params,
             **funcs,
-            **minimize_options,
+            **optimize_options,
         )
 
-    estimates = min_res["solution_params"]
+    estimates = opt_res["solution_params"]
 
-    if is_differentiated:
-        jac = jacobian
-    elif isinstance(jacobian, Callable):
+    # ==================================================================================
+    # Calculate internal jacobian
+    # ==================================================================================
+    deriv_to_internal = get_derivative_conversion_function(
+        params=params, constraints=constraints
+    )
+
+    if jac_case == "pre-calculated":
+        int_jac = deriv_to_internal(jacobian)
+    elif jac_case == "closed-form":
         jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
-        jac = jacobian(estimates, **jacobian_kwargs)
-        if constraints is not None:
-            raise NotImplementedError(
-                "Closed form jacobian is not yet compatible with constraints."
-            )
+        _jac = jacobian(estimates, **jacobian_kwargs)
+        int_jac = deriv_to_internal(_jac)
+    # switch to "numerical" even if jac_case == "skip" because jac is required for msm.
     else:
         deriv_res = get_internal_first_derivative(
             func=simulate_moments,
@@ -200,16 +216,24 @@ def estimate_msm(
             func_kwargs=simulate_moments_kwargs,
             numdiff_options=numdiff_options,
         )
-        jac = deriv_res["derivative"]
+        int_jac = deriv_res["derivative"]
         numdiff_info = {k: v for k, v in deriv_res.items() if k != "derivative"}
 
-    if is_optimal:
-        cov = cov_optimal(jac, weights)
+    # ==================================================================================
+    # Calculate internal cov
+    # ==================================================================================
+
+    if cov_case == "optimal":
+        cov = cov_optimal(int_jac, weights)
     else:
-        cov = cov_robust(jac, weights, moments_cov)
+        cov = cov_robust(int_jac, weights, moments_cov)
+
+    # ==================================================================================
+    # Calculate external cov and summary
+    # ==================================================================================
 
     cov = transform_covariance(
-        params=params,
+        params=estimates,
         internal_cov=cov,
         constraints=constraints,
         n_samples=n_samples,
@@ -217,41 +241,52 @@ def estimate_msm(
     )
 
     summary = calculate_inference_quantities(
-        params=min_res["solution_params"],
+        params=estimates,
         free_cov=cov,
         ci_level=ci_level,
     )
+    # ==================================================================================
+    # Calculate external jac (if no transforming constraints)
+    # ==================================================================================
 
-    out = {"summary": summary, "cov": cov}
-
-    if not is_minimized:
-        out["minimize_res"] = min_res
-
-    if needs_numdiff:
-        out["numdiff_info"] = numdiff_info
-
-    processed_constraints, _ = process_constraints(constraints, params)
-
-    if processed_constraints:
-        out["jacobian"] = "No external jacobian defined due to constraints."
-        out[
-            "sensitivity"
-        ] = "No sensitivity measures can be calculated due to constraints."
-    else:
+    if not processed_constraints:
         if isinstance(moments_cov, pd.DataFrame):
             moments_names = moments_cov.index
         else:
             moments_names = None
-        jac = pd.DataFrame(jac, columns=cov.index, index=moments_names)
-        out["jacobian"] = jac
+        ext_jac = pd.DataFrame(int_jac, columns=cov.index, index=moments_names)
+    else:
+        ext_jac = "No external jacobian defined due to constraints."
 
-        measures = calculate_sensitivity_measures(
-            jac=jac,
+    # ==================================================================================
+    # Calculate sensitivity measures (if no transforming constraints)
+    # ==================================================================================
+
+    if not processed_constraints:
+        sensitivities = calculate_sensitivity_measures(
+            jac=int_jac,
             weights=weights,
             moments_cov=moments_cov,
             params_cov=cov,
         )
-        out["sensitivity"] = measures
+    else:
+        sensitivities = "No sensitivity measures can be calculated due to constraints."
+
+    # ==================================================================================
+    # Construct output
+    # ==================================================================================
+    out = {
+        "summary": summary,
+        "cov": cov,
+        "sensitivity": sensitivities,
+        "jacobian": ext_jac,
+    }
+
+    if not is_optimized:
+        out["optimize_res"] = opt_res
+
+    if jac_case == "numerical":
+        out["jacobian_numdiff_info"] = numdiff_info
 
     return out
 
@@ -283,7 +318,7 @@ def get_msm_optimization_functions(
             potentially other keyword arguments and returns the jacobian of
             simulate_moments with respect to the params. Alternatively you can pass
             a pandas.DataFrame with the jacobian at the optimal parameters. This is
-            only possible if you pass ``minimize_options=False``.
+            only possible if you pass ``optimize_options=False``.
         jacobian_kwargs (dict): Additional keyword arguments for jacobian.
         simulate_moments_and_jacobian (callable): A function that takes params and
             potentially other keyword arguments and returns a tuple with simulated
@@ -354,9 +389,5 @@ def _partial_kwargs(func, kwargs):
     return out
 
 
-def _check_is_minimized_and_is_differentiated(is_minimized, is_differentiated):
-    if (not is_minimized) and is_differentiated:
-        raise ValueError(
-            "Providing a pre-calculated jacobian is only possible if the minimization "
-            "was done outside of estimate_msm, i.e. if minimize_options=False."
-        )
+def _get_cov_case(weights):
+    return weights == "optimal"

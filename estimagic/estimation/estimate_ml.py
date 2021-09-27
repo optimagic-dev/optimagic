@@ -1,7 +1,24 @@
+from estimagic.inference.ml_covs import cov_cluster_robust
+from estimagic.inference.ml_covs import cov_hessian
+from estimagic.inference.ml_covs import cov_jacobian
+from estimagic.inference.ml_covs import cov_robust
+from estimagic.inference.ml_covs import cov_strata_robust
+from estimagic.inference.shared import calculate_inference_quantities
+from estimagic.inference.shared import check_is_optimized_and_derivative_case
+from estimagic.inference.shared import get_derivative_case
+from estimagic.inference.shared import get_internal_first_derivative
+from estimagic.inference.shared import transform_covariance
+from estimagic.optimization.optimize import maximize
+from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.shared.check_option_dicts import check_numdiff_options
+from estimagic.shared.check_option_dicts import check_optimization_options
+
+
 def estimate_ml(
     loglike,
     params,
-    maximize_options,
+    optimize_options,
     *,
     constraints=None,
     logging=False,
@@ -42,11 +59,11 @@ def estimate_ml(
             array or pandas Series) with the log likelihood contribution per individual.
         params (pd.DataFrame): DataFrame where the "value" column contains estimated
             parameters of a likelihood model. See :ref:`params` for details.
-        maximize_options (dict or False): Keyword arguments that govern the numerical
+        optimize_options (dict or False): Keyword arguments that govern the numerical
             optimization. Valid entries are all arguments of
             :func:`~estimagic.optimization.optimize.minimize` except for criterion,
             derivative, criterion_and_derivative and params. If you pass False as
-            maximize_options you signal that ``params`` are already the optimal
+            optimize_options you signal that ``params`` are already the optimal
             parameters and no numerical optimization is needed.
         constraints (list): List with constraint dictionaries.
             See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
@@ -65,6 +82,7 @@ def estimate_ml(
             do if the tables we want to write to already exist. Default "extend".
             - "if_database_exists": (str): One of "extend", "replace", "raise". What to
             do if the database we want to write to already exists. Default "extend".
+        loglike_kwargs (dict): Additional keyword arguments for loglike.
         derivative (callable): Function takes params and potentially other keyword
             arguments and calculates the first derivative of loglike. It can either
             return a numpy array or pandas Series/DataFrame with the derivative or
@@ -85,7 +103,7 @@ def estimate_ml(
             ``params`` and potentially other keyword arguments and returns the jacobian
             of loglike["contributions"] with respect to the params. Alternatively you
             can pass a pandas.DataFrame with the jacobian at the optimal parameters.
-            This is only possible if you pass ``maximize_options=False``. Note that you
+            This is only possible if you pass ``optimize_options=False``. Note that you
             only need to pass a jacobian function if you have a closed form jacobian but
             decided not to return it as part of ``derivative`` (e.g. because you use
             a scalar optimizer and can calculate a gradient in a way that is faster
@@ -98,7 +116,7 @@ def estimate_ml(
             ``params`` and potentially other keyword arguments and returns the hessian
             of loglike["value"] with respect to the params. Alternatively you
             can pass a pandas.DataFrame with the hessian at the optimal parameters.
-            This is only possible if you pass ``maximize_options=False``. If you pass
+            This is only possible if you pass ``optimize_options=False``. If you pass
             None, a numerical hessian will be calculated. If you pass ``False``, you
             signal that no jacobian should be calculated. Thus no result that requires
             the jacobian will be calculated.
@@ -124,3 +142,193 @@ def estimate_ml(
             parameters.
 
     """
+    # ==================================================================================
+    # Check and process inputs
+    # ==================================================================================
+    is_optimized = optimize_options is False
+
+    check_optimization_options(
+        optimize_options,
+        usage="estimate_msm",
+        algorithm_mandatory=True,
+    )
+
+    jac_case = get_derivative_case(jacobian)
+    hess_case = get_derivative_case(hessian)
+
+    check_is_optimized_and_derivative_case(is_optimized, jac_case)
+    check_is_optimized_and_derivative_case(is_optimized, hess_case)
+
+    cov_cases = _get_cov_cases(jac_case, hess_case, design_info)
+
+    check_numdiff_options(numdiff_options, "estimate_msm")
+    numdiff_options = {} if numdiff_options in (None, False) else numdiff_options
+
+    constraints = [] if constraints is None else constraints
+
+    processed_constraints, _ = process_constraints(constraints, params)
+
+    # ==================================================================================
+    # Calculate estimates via maximization (if necessary)
+    # ==================================================================================
+
+    if is_optimized:
+        opt_res = {"solution_params": params}
+    else:
+
+        opt_res = maximize(
+            criterion=loglike,
+            criterion_kwargs=loglike_kwargs,
+            params=params,
+            constraints=constraints,
+            derivative=derivative,
+            derivative_kwargs=derivative_kwargs,
+            criterion_and_derivative=loglike_and_derivative,
+            criterion_and_derivative_kwargs=loglike_and_derivative_kwargs,
+            logging=logging,
+            log_options=log_options,
+            **optimize_options,
+        )
+
+    estimates = opt_res["solution_params"]
+
+    # ==================================================================================
+    # Calculate internal jacobian
+    # ==================================================================================
+
+    deriv_to_internal = get_derivative_conversion_function(
+        params=params, constraints=constraints
+    )
+
+    if jac_case == "pre-calculated":
+        int_jac = deriv_to_internal(jacobian)
+    elif jac_case == "closed-form":
+        jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
+        _jac = jacobian(estimates, **jacobian_kwargs)
+        int_jac = deriv_to_internal(_jac)
+    # switch to "numerical" even if jac_case == "skip" because jac is required for msm.
+    elif jac_case == "numerical":
+        options = numdiff_options.copy()
+        options["key"] = "contributions"
+        deriv_res = get_internal_first_derivative(
+            func=loglike,
+            params=estimates,
+            constraints=constraints,
+            func_kwargs=loglike_kwargs,
+            numdiff_options=options,
+        )
+        int_jac = deriv_res["derivative"]
+        jac_numdiff_info = {k: v for k, v in deriv_res.items() if k != "derivative"}
+    else:
+        int_jac = None
+
+    # ==================================================================================
+    # Calculate internal hessian (most of this is not yet implemented)
+    # ==================================================================================
+
+    if hess_case == "skip":
+        int_hess = None
+    elif hess_case == "numerical":
+        raise NotImplementedError("Numerical hessian calculation is not yet supported.")
+        hess_numdiff_info = {}
+    elif hess_case in ("closed-form", "pre-calculated") and constraints:
+        raise NotImplementedError(
+            "Closed-form or pre-calculated hessians are not yet compatible with "
+            "constraints."
+        )
+    else:
+        int_hess = hessian(estimates, **hessian_kwargs)
+
+    # ==================================================================================
+    # Calculate all available internal cov types
+    # ==================================================================================
+
+    int_covs = {}
+    if "jacobian" in cov_cases:
+        int_covs["cov_jacobian"] = cov_jacobian(int_jac)
+    if "hessian" in cov_cases:
+        int_covs["cov_hessian"] = cov_hessian(int_hess)
+    if "robust" in cov_cases:
+        int_covs["cov_robust"] = cov_robust(jac=int_jac, hess=int_hess)
+    if "cluster_robust" in cov_cases:
+        int_covs["cov_cluster_robust"] = cov_cluster_robust(
+            jac=int_jac, hess=int_hess, design_info=design_info
+        )
+    if "strata_robust" in cov_cases:
+        int_covs["cov_strata_robust"] = cov_strata_robust(
+            jac=int_jac, hess=int_hess, design_info=design_info
+        )
+
+    # ==================================================================================
+    # Calculate all available external covs and summaries
+    # ==================================================================================
+
+    covs = {}
+    summaries = {}
+    for case in cov_cases:
+        cov = transform_covariance(
+            params=estimates,
+            internal_cov=int_covs[f"cov_{case}"],
+            constraints=constraints,
+            n_samples=n_samples,
+            bounds_handling=bounds_handling,
+        )
+        summary = calculate_inference_quantities(
+            params=estimates,
+            free_cov=cov,
+            ci_level=ci_level,
+        )
+
+        covs[f"cov_{case}"] = cov
+        summaries[f"summary_{case}"] = summary
+
+    # ==================================================================================
+    # Calculate external jac and hess (if no transforming constraints)
+    # ==================================================================================
+
+    if not processed_constraints:
+        ext_jac = int_jac
+        ext_hess = int_hess
+    else:
+        ext_jac = "No external jacobian defined due to constraints."
+        ext_hess = "No external hessian defined due to constraints."
+
+    # ==================================================================================
+    # Construct output
+    # ==================================================================================
+
+    out = {
+        **summaries,
+        **covs,
+        "jacobian": ext_jac,
+        "hessian": ext_hess,
+    }
+
+    if not is_optimized:
+        out["optimize_res"] = opt_res
+
+    if jac_case == "numerical":
+        out["jacobian_numdiff_info"] = jac_numdiff_info
+
+    if hess_case == "numerical":
+        out["hessian_numdiff_info"] = hess_numdiff_info
+
+    return out
+
+
+def _get_cov_cases(jac_case, hess_case, design_info):
+    if jac_case == "skip" and hess_case == "skip":
+        raise ValueError("jacobian and hessian cannot both be False.")
+    elif jac_case == "skip" and hess_case != "skip":
+        cases = ["hessian"]
+    elif hess_case == "skip" and jac_case != "skip":
+        cases = ["jacobian"]
+    else:
+        cases = ["jacobian", "hessian", "robust"]
+        if design_info is not None:
+            if "psu" in design_info:
+                cases.append("cluster_robust")
+            if {"strata", "psu", "fpc"}.issubset(design_info):
+                cases.append("strata_robust")
+
+    return cases

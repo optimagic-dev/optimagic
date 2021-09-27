@@ -51,7 +51,7 @@ def test_estimate_msm(simulate_moments, moments_cov):
     if isinstance(empirical_moments, dict):
         empirical_moments = empirical_moments["simulated_moments"]
 
-    minimize_options = {"algorithm": "scipy_lbfgsb"}
+    optimize_options = {"algorithm": "scipy_lbfgsb"}
 
     # catching warnings is necessary because the very special case with diagonal
     # weighting and diagonal jacobian leads to singular matrices while calculating
@@ -63,10 +63,10 @@ def test_estimate_msm(simulate_moments, moments_cov):
             empirical_moments=empirical_moments,
             moments_cov=moments_cov,
             params=start_params,
-            minimize_options=minimize_options,
+            optimize_options=optimize_options,
         )
 
-    calculated_params = calculated["minimize_res"]["solution_params"][["value"]]
+    calculated_params = calculated["optimize_res"]["solution_params"][["value"]]
     # check that minimization works
     aaae(calculated_params["value"].to_numpy(), expected_params["value"].to_numpy())
 
@@ -86,6 +86,6 @@ def test_check_and_process_numdiff_options_with_invalid_entries():
         check_numdiff_options({"func": lambda x: x}, "estimate_msm")
 
 
-def test_check_and_process_minimize_options_with_invalid_entries():
+def test_check_and_process_optimize_options_with_invalid_entries():
     with pytest.raises(ValueError):
         check_optimization_options({"criterion": lambda x: x}, "estimate_msm")
