@@ -11,7 +11,7 @@ from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
 
-STOPPING_MAX_ITERATIONS_GENETIC = 250
+STOPPING_MAX_ITERATIONS_GENETIC = 500
 
 try:
     import pygmo as pg
