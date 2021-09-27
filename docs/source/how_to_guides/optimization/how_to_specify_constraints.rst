@@ -95,7 +95,7 @@ that your read that explanation first!
     are increasing. The prime example are cutoffs in ordered choice models as for
     example the `ordered logit model`_.
 
-    .. _ordered logit model: ../../getting_started/ordered_logit_example.ipynb
+    .. _ordered logit model: ../../getting_started/first_likelihood_estimation_with_estimagic.ipynb
 
     If the parameters to be selected have, say, ``cutoffs`` in the first index level,
     the constraint looks as follows:
