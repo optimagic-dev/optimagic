@@ -33,7 +33,7 @@ see :ref:`list_of_algorithms`.
 
 To enable all algorithms at once, do the following:
 
-.. ``conda install nlopt``
+``conda install nlopt``
 
 ``pip install Py-BOBYQA``
 
@@ -41,6 +41,6 @@ To enable all algorithms at once, do the following:
 
 ``conda install petsc4py`` (Not available on Windows)
 
-.. ``conda install cyipopt`` (Not available on Windows)
+``conda install cyipopt``
 
-.. ``conda install pygmo``
+``conda install pygmo``
