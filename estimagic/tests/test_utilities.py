@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
+from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
@@ -181,3 +182,5 @@ def test_available_algorithms():
     assert ("tao_pounders" in present_algo_names) is IS_PETSC4PY_INSTALLED
     assert ("nag_pybobyqa" in present_algo_names) is IS_PYBOBYQA_INSTALLED
     assert ("pygmo_gaco" in present_algo_names) is IS_PYGMO_INSTALLED
+    assert ("ipopt" in present_algo_names) is IS_CYIPOPT_INSTALLED
+    assert "get_scipy_bounds" not in present_algo_names

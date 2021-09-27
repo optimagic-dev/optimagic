@@ -100,6 +100,17 @@ STOPPING_MAX_CRITERION_EVALUATIONS = 1_000_000
 
 """
 
+
+STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL = 5_000
+"""int:
+    If the maximum number of function evaluation is reached, the optimization stops
+    but we do not count this as successful convergence. The function evaluations used
+    to evaluate a numerical gradient do not count for this. Set to a lower number than
+    STOPPING_MAX_CRITERION_EVALUATIONS for global optimizers.
+
+"""
+
+
 STOPPING_MAX_ITERATIONS = 1_000_000
 """int:
     If the maximum number of iterations is reached, the

@@ -4,47 +4,38 @@ import pytest
 from numpy.testing import assert_allclose
 from numpy.testing import assert_array_equal
 
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     rosenbrock_criterion_and_gradient,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     rosenbrock_dict_criterion,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     rosenbrock_gradient,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
-    rosenbrock_pandas_gradient,
-)
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     rosenbrock_scalar_criterion,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     rotated_hyper_ellipsoid_criterion_and_gradient,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     rotated_hyper_ellipsoid_dict_criterion,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     rotated_hyper_ellipsoid_gradient,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
-    rotated_hyper_ellipsoid_pandas_gradient,
-)
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     rotated_hyper_ellipsoid_scalar_criterion,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     trid_criterion_and_gradient,
 )
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import (
     trid_dict_criterion,
 )
-from estimagic.examples.criterion_functions_optimization_tests import trid_gradient
-from estimagic.examples.criterion_functions_optimization_tests import (
-    trid_pandas_gradient,
-)
-from estimagic.examples.criterion_functions_optimization_tests import (
+from estimagic.examples.criterion_functions import trid_gradient
+from estimagic.examples.criterion_functions import (
     trid_scalar_criterion,
 )
 
@@ -67,12 +58,6 @@ criterion_gradient = {
     "trid": trid_gradient,
     "rhe": rotated_hyper_ellipsoid_gradient,
     "rosenbrock": rosenbrock_gradient,
-}
-
-criterion_pandas_gradient = {
-    "trid": trid_pandas_gradient,
-    "rhe": rotated_hyper_ellipsoid_pandas_gradient,
-    "rosenbrock": rosenbrock_pandas_gradient,
 }
 
 criterion_and_gradient = {
@@ -127,13 +112,6 @@ def test_scalar_criterion(input_params, crit):
 def test_criterion_gradient(input_params, crit):
     out = criterion_gradient[crit](input_params)
     assert isinstance(out, np.ndarray)
-    assert_array_equal(out, gradient_output[crit])
-
-
-@pytest.mark.parametrize("crit", crit_list)
-def test_criterion_pandas_gradient(input_params, crit):
-    out = criterion_pandas_gradient[crit](input_params)
-    assert isinstance(out, pd.Series)
     assert_array_equal(out, gradient_output[crit])
 
 

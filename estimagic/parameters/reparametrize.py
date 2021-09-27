@@ -35,6 +35,7 @@ n_internal the length of the internal parameter vector.
 
 """
 import numpy as np
+import pandas as pd
 
 import estimagic.parameters.kernel_transformations as kt
 
@@ -49,7 +50,8 @@ def reparametrize_to_internal(
     """Convert a params DataFrame into a numpy array of internal parameters.
 
     Args:
-        external (np.ndarray): 1d array with external parameters.
+        external (np.ndarray or pandas.DataFrmae): 1d array with of external parameter
+            values or params DataFrame.
         internal_free (np.ndarray): 1d array of lenth n_external that determines
             which parameters are free.
         processed_constraints (list): Processed and consolidated constraints. The
@@ -63,7 +65,11 @@ def reparametrize_to_internal(
             parameters.
 
     """
+    if isinstance(external, pd.DataFrame):
+        external = external["value"].to_numpy()
+
     with_internal_values = external.copy()
+
     for constr in processed_constraints:
         func = getattr(kt, f"{constr['type']}_to_internal")
 

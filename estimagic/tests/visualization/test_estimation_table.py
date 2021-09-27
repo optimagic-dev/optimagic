@@ -70,9 +70,9 @@ def test_estimation_table():
 
 def test_process_model_namedtuple():
     # checks that process_model doesn't alter values
-    df = pd.DataFrame(columns=["value", "pvalue", "ci_lower", "ci_upper"])
+    df = pd.DataFrame(columns=["value", "p_value", "ci_lower", "ci_upper"])
     df["value"] = np.arange(10)
-    df["pvalue"] = np.arange(10)
+    df["p_value"] = np.arange(10)
     df["ci_lower"] = np.arange(10)
     df["ci_upper"] = np.arange(10)
     info = {"stat1": 0, "stat2": 0}
@@ -84,11 +84,11 @@ def test_process_model_namedtuple():
 
 def test_process_model_stats_model():
     par_df = pd.DataFrame(
-        columns=["value", "pvalue", "standard_error", "ci_lower", "ci_upper"],
+        columns=["value", "p_value", "standard_error", "ci_lower", "ci_upper"],
         index=["const", "Age", "Sex", "BMI", "ABP"],
     )
     par_df["value"] = [152.133484, 37.241211, -106.577520, 787.179313, 416.673772]
-    par_df["pvalue"] = [
+    par_df["p_value"] = [
         2.048808e-193,
         5.616557e-01,
         8.695658e-02,
@@ -114,9 +114,9 @@ def test_process_model_stats_model():
 
 
 def test_process_model_dict():
-    df = pd.DataFrame(columns=["value", "pvalue", "standard_error"])
+    df = pd.DataFrame(columns=["value", "p_value", "standard_error"])
     df["value"] = np.arange(10)
-    df["pvalue"] = np.arange(10)
+    df["p_value"] = np.arange(10)
     df["standard_error"] = np.arange(10)
     info = {"stat1": 0, "stat2": 0}
     mod = {}
@@ -133,7 +133,7 @@ def test_convert_model_to_series_conf_int():
         np.array(
             [[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3], [1.2, 3.3, 4.3]]
         ).T,
-        columns=["value", "pvalue", "ci_lower", "ci_upper"],
+        columns=["value", "p_value", "ci_lower", "ci_upper"],
         index=["a", "b", "c"],
     )
     si_lev = [0.1, 0.05, 0.01]
@@ -161,7 +161,7 @@ def test_convert_model_to_series_conf_int():
 def test_convert_model_to_series_std_err():
     df = pd.DataFrame(
         np.array([[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3]]).T,
-        columns=["value", "pvalue", "standard_error"],
+        columns=["value", "p_value", "standard_error"],
         index=["a", "b", "c"],
     )
     si_lev = [0.1, 0.05, 0.01]
@@ -182,7 +182,7 @@ def test_convert_model_to_series_std_err():
 def test_convert_model_to_series_no_inference():
     df = pd.DataFrame(
         np.array([[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3]]).T,
-        columns=["value", "pvalue", "standard_error"],
+        columns=["value", "p_value", "standard_error"],
         index=["a", "b", "c"],
     )
     si_lev = [0.1, 0.05, 0.01]

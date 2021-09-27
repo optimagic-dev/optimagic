@@ -21,11 +21,8 @@ from estimagic.logging.database_utilities import read_new_rows
 @pytest.fixture
 def iteration_data():
     data = {
-        "external_params": np.ones(1),
-        "internal_params": np.ones(1),
+        "params": np.ones(1),
         "timestamp": datetime(year=2020, month=4, day=9, hour=12, minute=41, second=1),
-        "distance_origin": 1.0,
-        "distance_ones": 0.0,
         "value": 5.0,
     }
     return data
@@ -35,15 +32,10 @@ def iteration_data():
 def problem_data():
     data = {
         "direction": "maximize",
-        "criterion": np.sum,
         "params": np.arange(3),
         "algorithm": "bla",
         "constraints": [{"type": "bla"}],
         "algo_options": None,
-        "derivative": None,
-        "derivative_kwargs": None,
-        "criterion_and_derivative": None,
-        "criterion_and_derivative_kwargs": None,
         "numdiff_options": {},
         "log_options": {"fast_logging": False},
     }
@@ -84,11 +76,9 @@ def test_optimization_iteration_table_scalar(tmp_path, iteration_data):
     assert isinstance(res, list) and isinstance(res[0], dict)
     res = res[0]
     assert res["rowid"] == 1
-    assert res["internal_derivative"] is None
-    for key in ["internal_params", "external_params"]:
-        assert_array_equal(res[key], iteration_data[key])
+    assert_array_equal(res["params"], iteration_data["params"])
 
-    for key in ["distance_ones", "distance_origin", "value", "timestamp"]:
+    for key in ["value", "timestamp"]:
         assert res[key] == iteration_data[key]
 
 

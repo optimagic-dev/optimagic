@@ -1,4 +1,5 @@
 import typing
+import warnings
 from pathlib import Path
 
 import pandas as pd
@@ -35,8 +36,17 @@ def check_argument(argument):
     if argument["direction"] not in ["minimize", "maximize"]:
         raise ValueError("diretion must be 'minimize' or 'maximize'")
 
-    if "value" not in argument["params"].columns:
+    parcols = argument["params"].columns
+    if "value" not in parcols:
         raise ValueError("The params DataFrame must contain a 'value' column.")
+
+    if "lower" in parcols and "lower_bounds" not in parcols:
+        msg = "There is a column 'lower' in params. Did you mean 'lower_bounds'?"
+        warnings.warn(msg)
+
+    if "upper" in parcols and "upper_bounds" not in parcols:
+        msg = "There is a column 'upper' in in params. Did you mean 'upper_bounds'?"
+        warnings.warn(msg)
 
     if argument["error_handling"] not in ["raise", "continue"]:
         raise ValueError("error_handling must be 'raise' or 'continue'")

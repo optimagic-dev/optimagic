@@ -54,8 +54,10 @@ autodoc_member_order = "bysource"
 autodoc_mock_imports = [
     "bokeh",
     "cloudpickle",
+    "cyipopt",
     "fuzzywuzzy",
     "joblib",
+    "nlopt",
     "numpy",
     "pandas",
     "pytest",
@@ -96,7 +98,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "estimagic"
-copyright = "2020, Janos Gabler"  # noqa
+copyright = "2019 - 2021, Janos Gabler"  # noqa: A001
 author = "Janos Gabler"
 
 # The version info for the project you're documenting, acts as replacement for

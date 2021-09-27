@@ -31,71 +31,76 @@ def pygmo_gaco(
     #
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
     kernel_size=63,
-    convergence_speed=1.0,
+    speed_parameter_q=1.0,
     oracle=0.0,
     accuracy=0.01,
     threshold=1,
-    convergence_std_speed=7,
+    speed_of_std_values_convergence=7,
     stopping_max_n_without_improvements=100000,
     stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
     focus=0.0,
-    activate_memory_for_multiple_calls=False,
+    cache=False,
 ):
     """Minimize a scalar function using the generalized ant colony algorithm.
 
-    The version available through pygmo is an generalized version of the original ant
-    colony algorithm proposed by :cite:`Schlueter2009`.
+    The version available through pygmo is an generalized version of the
+    original ant colony algorithm proposed by :cite:`Schlueter2009`.
 
     This algorithm can be applied to box-bounded problems.
 
-    Ant colony optimization is a class of optimization algorithms modeled on the actions
-    of an ant colony. Artificial "ants" (e.g. simulation agents) locate optimal
-    solutions by moving through a parameter space representing all possible solutions.
-    Real ants lay down pheromones directing each other to resources while exploring
-    their environment. The simulated "ants" similarly record their positions and the
-    quality of their solutions, so that in later simulation iterations more ants locate
-    better solutions.
+    Ant colony optimization is a class of optimization algorithms modeled on the
+    actions of an ant colony. Artificial "ants" (e.g. simulation agents) locate
+    optimal solutions by moving through a parameter space representing all
+    possible solutions. Real ants lay down pheromones directing each other to
+    resources while exploring their environment. The simulated "ants" similarly
+    record their positions and the quality of their solutions, so that in later
+    simulation iterations more ants locate better solutions.
 
-    The generalized ant colony algorithm generates future generations of ants by using
-    the a multi-kernel gaussian distribution based on three parameters (i.e., pheromone
-    values) which are computed depending on the quality of each previous solution. The
-    solutions are ranked through an oracle penalty method.
+    The generalized ant colony algorithm generates future generations of ants by
+    using a multi-kernel gaussian distribution based on three parameters (i.e.,
+    pheromone values) which are computed depending on the quality of each
+    previous solution. The solutions are ranked through an oracle penalty
+    method.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
-      parameters but at least 64.
-    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - population_size (int): Size of the population. If None, it's twice the
+      number of parameters but at least 64.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch
+      evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
+      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
     - n_cores (int): Number of cores to use.
     - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
-      part of the initial population. This saves one criterion function evaluation that
-      cannot be done in parallel with other evaluations. Default False.
+    - discard_start_params (bool): If True, the start params are not guaranteed
+      to be part of the initial population. This saves one criterion function
+      evaluation that cannot be done in parallel with other evaluations. Default
+      False.
 
     - stopping.max_iterations (int): Number of generations to evolve.
     - kernel_size (int): Number of solutions stored in the solution archive.
-    - convergence.speed (float): This parameter is useful for managing the convergence
-      speed towards the found minima (the smaller the faster). In the pygmo
-      documentation it is refered to as $q$. It must be positive and can be larger than
-      1. The default is 1.0 until the threshold is reached. Then it is set to 0.01.
+    - speed_parameter_q (float): This parameter manages the convergence speed
+      towards the found minima (the smaller the faster). In the pygmo
+      documentation it is referred to as $q$. It must be positive and can be
+      larger than 1. The default is 1.0 until **threshold** is reached. Then it
+      is set to 0.01.
     - oracle (float): oracle parameter used in the penalty method.
-    - accuracy (float): accuracy parameter for maintaining a minimum penalty function's
-      values distances.
-    - threshold (int): when the generation iteration reaches the threshold the
-      convergence speed is set to 0.01 automatically. To deactivate this effect set the
-      threshold to stopping.max_iterations which is the largest allowed value.
-    - convergence.std_speed (int): parameter that determines the convergence speed of
-      the standard deviations. This must be an integer.
-    - stopping.max_n_without_improvements (int): if a positive integer is assigned here,
-      the algorithm will count the runs without improvements, if this number exceeds the
-      given value, the algorithm will be stopped.
-    - stopping.max_criterion_evaluations (int): maximum number of function evaluations.
-    - focus (float): this parameter makes the search for the optimum greedier and more
-      focused on local improvements (the higher the greedier). If the value is very
-      high, the search is more focused around the current best solutions. Values larger
-      than 1 are allowed.
-    - activate_memory_for_multiple_calls (bool): if true, memory is activated in the
-      algorithm for multiple calls.
+    - accuracy (float): accuracy parameter for maintaining a minimum penalty
+      function's values distances.
+    - threshold (int): when the iteration counter reaches the threshold the
+      convergence speed is set to 0.01 automatically. To deactivate this effect
+      set the threshold to stopping.max_iterations which is the largest allowed
+      value.
+    - speed_of_std_values_convergence (int): parameter that determines the
+      convergence speed of the standard deviations. This must be an integer
+      (`n_gen_mark` in pygmo and pagmo).
+    - stopping.max_n_without_improvements (int): if a positive integer is
+      assigned here, the algorithm will count the runs without improvements, if
+      this number exceeds the given value, the algorithm will be stopped.
+    - stopping.max_criterion_evaluations (int): maximum number of function
+      evaluations.
+    - focus (float): this parameter makes the search for the optimum greedier
+      and more focused on local improvements (the higher the greedier). If the
+      value is very high, the search is more focused around the current best
+      solutions. Values larger than 1 are allowed.
+    - cache (bool): if True, memory is activated in the algorithm for multiple calls.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -104,25 +109,25 @@ def pygmo_gaco(
         population_size=population_size, x=x, lower_bound=64
     )
 
-    if isinstance(convergence_std_speed, float):
-        if not convergence_std_speed.is_integer():
+    if isinstance(speed_of_std_values_convergence, float):
+        if not speed_of_std_values_convergence.is_integer():
             raise ValueError(
-                "The convergence std speed must be an integer. "
-                f"You specified {convergence_std_speed}."
+                "The speed_of_std_values_convergence parameter must be an integer. "
+                f"You specified {speed_of_std_values_convergence}."
             )
 
     algo_specific_options = {
         "gen": int(stopping_max_iterations),
         "ker": kernel_size,
-        "q": convergence_speed,
+        "q": speed_parameter_q,
         "oracle": oracle,
         "acc": accuracy,
         "threshold": threshold,
-        "n_gen_mark": int(convergence_std_speed),
+        "n_gen_mark": int(speed_of_std_values_convergence),
         "impstop": stopping_max_n_without_improvements,
         "evalstop": stopping_max_criterion_evaluations,
         "focus": focus,
-        "memory": activate_memory_for_multiple_calls,
+        "memory": cache,
     }
     algo_options = _create_algo_options(
         population_size=population_size,
@@ -160,23 +165,25 @@ def pygmo_bee_colony(
 ):
     """Minimize a scalar function using the artifical bee colony algorithm.
 
-    The Artificial Bee Colony Algorithm was originally proposed by :cite:`Karaboga2007`.
-    The implemented version of the algorithm is proposed in :cite:`Mernik2015`.
-    The algorithm is only suited for bounded parameter spaces.
+    The Artificial Bee Colony Algorithm was originally proposed by
+    :cite:`Karaboga2007`. The implemented version of the algorithm is proposed
+    in :cite:`Mernik2015`. The algorithm is only suited for bounded parameter
+    spaces.
 
     - stopping.max_iterations (int): Number of generations to evolve.
-    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch
+      evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
+      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
     - n_cores (int): Number of cores to use.
     - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
-      part of the initial population. This saves one criterion function evaluation that
-      cannot be done in parallel with other evaluations. Default False.
-    - max_n_trials (int): Maximum number of trials for abandoning a source. Default is
-      1.
-    - population_size (int): Size of the population. If None, it's twice the number of
-      parameters but at least 20.
+    - discard_start_params (bool): If True, the start params are not guaranteed
+      to be part of the initial population. This saves one criterion function
+      evaluation that cannot be done in parallel with other evaluations. Default
+      False.
+    - max_n_trials (int): Maximum number of trials for abandoning a source.
+      Default is 1.
+    - population_size (int): Size of the population. If None, it's twice the
+      number of parameters but at least 20.
 
     """
     population_size = _determine_population_size(
@@ -219,53 +226,71 @@ def pygmo_de(
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
     weight_coefficient=0.8,
     crossover_probability=0.9,
-    mutation_variant=2,
-    criterion_tolerance=1e-6,
+    mutation_variant="rand/1/exp",
+    convergence_criterion_tolerance=1e-6,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
 ):
     """Minimize a scalar function using the differential evolution algorithm.
 
     Differential Evolution is a heuristic optimizer originally presented in
-    :cite:`Storn1997`. The algorithm is only suited for bounded parameter spaces.
+    :cite:`Storn1997`. The algorithm is only suited for bounded parameter
+    spaces.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
-      parameters but at least 10.
-    - batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
+    - population_size (int): Size of the population. If None, it's twice the
+      number of parameters but at least 10.
+    - batch_evaluator (str or Callable): Name of a pre-implemented batch
+      evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
+      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
     - n_cores (int): Number of cores to use.
     - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
-      part of the initial population. This saves one criterion function evaluation that
-      cannot be done in parallel with other evaluations. Default False.
+    - discard_start_params (bool): If True, the start params are not guaranteed
+      to be part of the initial population. This saves one criterion function
+      evaluation that cannot be done in parallel with other evaluations. Default
+      False.
     - stopping.max_iterations (int): Number of generations to evolve.
-    - weight_coefficient (float): Weight coefficient. It is denoted by $F$ in the main
-      paper and must lie in [0, 2]. It controls the amplification of the differential
-      variation $(x_{r_2, G} - x_{r_3, G})$.
+    - weight_coefficient (float): Weight coefficient. It is denoted by $F$ in
+      the main paper and must lie in [0, 2]. It controls the amplification of
+      the differential variation $(x_{r_2, G} - x_{r_3, G})$.
     - crossover_probability (float): Crossover probability.
-    - mutation_variant (int): code for the mutation variant to create a new candidate
-      individual. The default is 2. The following are available:
-
-        - 1:   best/1/exp
-        - 2:   rand/1/exp
-        - 3:   rand-to-best/1/exp
-        - 4:   best/2/exp
-        - 5:   rand/2/exp
-        - 6:   best/1/bin
-        - 7:   rand/1/bin
-        - 8:   rand-to-best/1/bin
-        - 9:   best/2/bin
-        - 10:  rand/2/bin
-
-    - criterion_tolerance: stopping criteria on the criterion tolerance. Default is
-      1e-6. It is not clear whether this is the absolute or relative criterion
-      tolerance.
-    - convergence_relative_params_tolerance: stopping criteria on the x tolerance. In
-      pygmo the default is 1e-6 but we use our default value of 1e-5.
+    - mutation_variant (str or int): code for the mutation variant to create a
+      new candidate individual. The default is . The following are available:
+        - "best/1/exp" (1, when specified as int)
+        - "rand/1/exp" (2, when specified as int)
+        - "rand-to-best/1/exp" (3, when specified as int)
+        - "best/2/exp" (4, when specified as int)
+        - "rand/2/exp" (5, when specified as int)
+        - "best/1/bin" (6, when specified as int)
+        - "rand/1/bin" (7, when specified as int)
+        - "rand-to-best/1/bin" (8, when specified as int)
+        - "best/2/bin" (9, when specified as int)
+        - "rand/2/bin" (10, when specified as int)
+    - convergence.criterion_tolerance: stopping criteria on the criterion
+      tolerance. Default is 1e-6. It is not clear whether this is the absolute
+      or relative criterion tolerance.
+    - convergence.relative_params_tolerance: stopping criteria on the x
+      tolerance. In pygmo the default is 1e-6 but we use our default value of
+      1e-5.
 
     """
     population_size = _determine_population_size(
         population_size=population_size, x=x, lower_bound=10
+    )
+
+    # support both integer and string specification of the mutation variant
+    mutation_variant_str_to_int = {
+        "best/1/exp": 1,
+        "rand/1/exp": 2,
+        "rand-to-best/1/exp": 3,
+        "best/2/exp": 4,
+        "rand/2/exp": 5,
+        "best/1/bin": 6,
+        "rand/1/bin": 7,
+        "rand-to-best/1/bin": 8,
+        "best/2/bin": 9,
+        "rand/2/bin": 10,
+    }
+    mutation_variant = _convert_str_to_int(
+        str_to_int=mutation_variant_str_to_int, value=mutation_variant
     )
 
     algo_specific_options = {
@@ -273,7 +298,7 @@ def pygmo_de(
         "F": weight_coefficient,
         "CR": crossover_probability,
         "variant": mutation_variant,
-        "ftol": criterion_tolerance,
+        "ftol": convergence_criterion_tolerance,
         "xtol": convergence_relative_params_tolerance,
     }
     algo_options = _create_algo_options(
@@ -400,20 +425,20 @@ def pygmo_sga(
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - stopping.max_iterations (int): Number of generations to evolve.
-    - crossover.probability (float): Crossover probability.
-    - crossover.strategy (str): the crossover strategy. One of “exponential”,“binomial”,
+    - crossover_probability (float): Crossover probability.
+    - crossover_strategy (str): the crossover strategy. One of “exponential”,“binomial”,
       “single” or “sbx”. Default is "exponential".
     - eta_c (float): distribution index for “sbx” crossover. This is an inactive
       parameter if other types of crossovers are selected. Can be in [1, 100].
-    - mutation.probability (float): Mutation probability.
-    - mutation.strategy (str): Mutation strategy. Must be "gaussian", "polynomial" or
+    - mutation_probability (float): Mutation probability.
+    - mutation_strategy (str): Mutation strategy. Must be "gaussian", "polynomial" or
       "uniform". Default is "polynomial".
-    - mutation.polynomial_distribution_index (float): Must be in [0, 1]. Default is 1.
-    - mutation.gausion_width (float): Must be in [0, 1]. Default is 1.
-    - selection.strategy (str): Selection strategy. Must be "tournament" or "truncated".
-    - selection.truncated_n_best (int): number of best individuals to use in the
+    - mutation_polynomial_distribution_index (float): Must be in [0, 1]. Default is 1.
+    - mutation_gaussian_width (float): Must be in [0, 1]. Default is 1.
+    - selection_strategy (str): Selection strategy. Must be "tournament" or "truncated".
+    - selection_truncated_n_best (int): number of best individuals to use in the
       "truncated" selection mechanism.
-    - selection.tournament_size (int): size of the tournament in the "tournament"
+    - selection_tournament_size (int): size of the tournament in the "tournament"
       selection mechanism. Default is 1.
 
     """
@@ -443,7 +468,6 @@ def pygmo_sga(
             "You specified a mutation_gaussian_width but did not choose gaussion as "
             "your mutation_strategy. Thus, mutation_gaussian_width will be ignored."
         )
-
     if selection_strategy != "truncated" and selection_truncated_n_best is not None:
         warnings.warn(
             "You specified selection_truncated_n_best but did not specify truncated as "
@@ -452,7 +476,7 @@ def pygmo_sga(
     if selection_strategy != "tournament" and selection_tournament_size is not None:
         warnings.warn(
             "You specified selection_tournament_size but did not specify tournament as "
-            "your selection strategy. Therefore selection_tournament_size is ignored."
+            "your selection strategy. Therefore, selection_tournament_size is ignored."
         )
 
     if mutation_strategy == "gaussian" and mutation_gaussian_width is not None:
@@ -516,7 +540,7 @@ def pygmo_sade(
     discard_start_params=False,
     jde=True,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
-    mutation_variant=2,
+    mutation_variant="rand/1/exp",
     keep_adapted_params=False,
     ftol=1e-6,
     xtol=1e-6,
@@ -526,16 +550,16 @@ def pygmo_sade(
     The original Differential Evolution algorithm (pygmo_de) can be significantly
     improved introducing the idea of parameter self-adaptation.
 
-    Many different proposals have been made to self-adapt both the crossover and the F
-    parameters of the original differential evolution algorithm. pygmo's implementation
-    supports two different mechanisms. The first one, proposed by :cite:`Brest2006`,
-    does not make use of the differential evolution operators to produce new values for
-    the weight coefficient $F$ and the crossover probability $CR$ and, strictly
-    speaking, is thus not self-adaptation, rather parameter control. The resulting
-    differential evolution variant is often referred to as jDE. The second variant is
-    inspired by the ideas introduced by :cite:`Elsayed2011` and uses a variaton of the
-    selected DE operator to produce new $CR$ anf $F$ parameters for each individual.
-    This variant is referred to iDE.
+    Many different proposals have been made to self-adapt both the crossover and the
+    F parameters of the original differential evolution algorithm. pygmo's
+    implementation supports two different mechanisms. The first one, proposed by
+    :cite:`Brest2006`, does not make use of the differential evolution operators to
+    produce new values for the weight coefficient $F$ and the crossover probability
+    $CR$ and, strictly speaking, is thus not self-adaptation, rather parameter control.
+    The resulting differential evolution variant is often referred to as jDE.
+    The second variant is inspired by the ideas introduced by :cite:`Elsayed2011` and
+    uses a variaton of the selected DE operator to produce new $CR$ anf $F$ parameters
+    for each individual. This variant is referred to iDE.
 
     - population_size (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
@@ -550,32 +574,33 @@ def pygmo_sade(
     - jde (bool): Whether to use the jDE self-adaptation variant to control the $F$ and
       $CR$ parameter. If True jDE is used, else iDE.
     - stopping.max_iterations (int): Number of generations to evolve.
-    - mutation_variant (int): code for the mutation variant to create a new candidate
-      individual. The default is 2. The first ten are the classical mutation variants
-      introduced in the orginal DE algorithm, the remaining ones are, instead,
-      considered in the work by :cite:`Elsayed2011`. The following are available:
+    - mutation_variant (int or str): code for the mutation variant to create a new
+      candidate individual. The default is "rand/1/exp". The first ten are the
+      classical mutation variants introduced in the orginal DE algorithm, the remaining
+      ones are, instead, considered in the work by :cite:`Elsayed2011`.
+      The following are available:
 
-        - 1: best/1/exp
-        - 2: rand/1/exp
-        - 3: rand-to-best/1/exp
-        - 4: best/2/exp
-        - 5: rand/2/exp
-        - 6: best/1/bin
-        - 7: rand/1/bin
-        - 8: rand-to-best/1/bin
-        - 9: best/2/bin
-        - 10: rand/2/bin
-        - 11: rand/3/exp
-        - 12: rand/3/bin
-        - 13: best/3/exp
-        - 14: best/3/bin
-        - 15: rand-to-current/2/exp
-        - 16: rand-to-current/2/bin
-        - 17: rand-to-best-and-current/2/exp
-        - 18: rand-to-best-and-current/2/bin
+        - "best/1/exp" or 1
+        - "rand/1/exp" or 2
+        - "rand-to-best/1/exp" or 3
+        - "best/2/exp" or 4
+        - "rand/2/exp" or 5
+        - "best/1/bin" or 6
+        - "rand/1/bin" or 7
+        - "rand-to-best/1/bin" or 8
+        - "best/2/bin" or 9
+        - "rand/2/bin" or 10
+        - "rand/3/exp" or 11
+        - "rand/3/bin" or 12
+        - "best/3/exp" or 13
+        - "best/3/bin" or 14
+        - "rand-to-current/2/exp" or 15
+        - "rand-to-current/2/bin" or 16
+        - "rand-to-best-and-current/2/exp" or 17
+        - "rand-to-best-and-current/2/bin" or 18
 
-    - keep_adapted_params (bool):  when true the adapted parameters $CR$ anf $F$ are not
-      reset between successive calls to the evolve method. Default is False.
+    - keep_adapted_params (bool):  when true the adapted parameters $CR$ anf $F$ are
+      not reset between successive calls to the evolve method. Default is False.
     - ftol (float): stopping criteria on the x tolerance.
     - xtol (float): stopping criteria on the f tolerance.
 
@@ -584,6 +609,29 @@ def pygmo_sade(
 
     population_size = _determine_population_size(
         population_size=population_size, x=x, lower_bound=64
+    )
+    mutation_variant_str_to_int = {
+        "best/1/exp": 1,
+        "rand/1/exp": 2,
+        "rand-to-best/1/exp": 3,
+        "best/2/exp": 4,
+        "rand/2/exp": 5,
+        "best/1/bin": 6,
+        "rand/1/bin": 7,
+        "rand-to-best/1/bin": 8,
+        "best/2/bin": 9,
+        "rand/2/bin": 10,
+        "rand/3/exp": 11,
+        "rand/3/bin": 12,
+        "best/3/exp": 13,
+        "best/3/bin": 14,
+        "rand-to-current/2/exp": 15,
+        "rand-to-current/2/bin": 16,
+        "rand-to-best-and-current/2/exp": 17,
+        "rand-to-best-and-current/2/bin": 18,
+    }
+    mutation_variant = _convert_str_to_int(
+        str_to_int=mutation_variant_str_to_int, value=mutation_variant
     )
 
     algo_specific_options = {
@@ -684,16 +732,10 @@ def pygmo_cmaes(
 
     algo_specific_options = {
         "gen": int(stopping_max_iterations),
-        "cc": backward_horizon if backward_horizon is not None else -1.0,
-        "cs": variance_loss_compensation
-        if variance_loss_compensation is not None
-        else -1.0,
-        "c1": learning_rate_rank_one_update
-        if learning_rate_rank_one_update is not None
-        else -1.0,
-        "cmu": learning_rate_rank_mu_update
-        if learning_rate_rank_mu_update is not None
-        else -1.0,
+        "cc": _replace_none(var=backward_horizon, none_value=-1.0),
+        "cs": _replace_none(var=variance_loss_compensation, none_value=-1.0),
+        "c1": _replace_none(var=learning_rate_rank_one_update, none_value=-1.0),
+        "cmu": _replace_none(var=learning_rate_rank_mu_update, none_value=-1.0),
         "sigma0": initial_step_size,
         "ftol": ftol,
         "xtol": xtol,
@@ -764,7 +806,7 @@ def pygmo_simulated_annealing(
     - start_temperature (float): starting temperature. Must be > 0.
     - end_temperature (float): final temperature. Our default (0.01) is lower than in
       pygmo and pagmo. The final temperature must be positive.
-    - n_temp_adjustments (int): number of temperature adjustments in the ennealing
+    - n_temp_adjustments (int): number of temperature adjustments in the annealing
       schedule.
     - n_range_adjustments (int): number of adjustments of the search range performed at
       a constant temperature.
@@ -824,7 +866,7 @@ def pygmo_pso(
     force_of_best_in_neighborhood=2.05,
     max_velocity=0.5,
     algo_variant=5,
-    neighbor_definition=2,
+    neighbor_definition="lbest",
     neighbor_param=None,
     keep_velocities=False,
 ):
@@ -856,7 +898,7 @@ def pygmo_pso(
     - stopping.max_iterations (int): Number of generations to evolve.
 
     - omega (float): depending on the variant chosen, :math:`\omega` is the particles'
-      inertia weight or the constructuion coefficient. It must lie between 0 and 1.
+      inertia weight or the construction coefficient. It must lie between 0 and 1.
     - force_of_previous_best (float): :math:`\eta_1` in the equation above. It's the
       magnitude of the force, applied to the particle’s velocity, in the direction of
       its previous best position. It must lie between 0 and 4.
@@ -865,22 +907,20 @@ def pygmo_pso(
       of the best position in its neighborhood. It must lie between 0 and 4.
     - max_velocity (float): maximum allowed particle velocity as fraction of the box
       bounds. It must lie between 0 and 1.
-    - algo_variant (int): code of the algorithm's variant to be used:
+    - algo_variant (int or str): algorithm variant to be used:
+        - 1 or "canonical_inertia": Canonical (with inertia weight)
+        - 2 or "social_and_cog_rand": Same social and cognitive rand.
+        - 3 or "all_components_rand": Same rand. for all components
+        - 4 or "one_rand": Only one rand.
+        - 5 or "canonical_constriction": Canonical (with constriction fact.)
+        - 6 or "fips": Fully Informed (FIPS)
 
-        - 1: Canonical (with inertia weight)
-        - 2: Same social and cognitive rand.
-        - 3: Same rand. for all components
-        - 4: Only one rand.
-        - 5: Canonical (with constriction fact.)
-        - 6: Fully Informed (FIPS)
-
-    - neighbor_definition (int): code for the swarm topology that defines each
-      particle's neighbors that is to be used:
-
-        - 1: gbest
-        - 2: lbest
-        - 3: Von Neumann
-        - 4: Adaptive random
+    - neighbor_definition (int or str): swarm topology that defines each particle's
+      neighbors that is to be used:
+        - 1 or "gbest"
+        - 2 or "lbest"
+        - 3 or "Von Neumann"
+        - 4 or "Adaptive random"
 
     - neighbor_param (int): the neighbourhood parameter. If the lbest topology is
       selected (neighbor_definition=2), it represents each particle's indegree (also
@@ -900,11 +940,27 @@ def pygmo_pso(
             "You gave a neighbor parameter but selected a neighbor_definition "
             "that ignores this parameter."
         )
-    neighbor_param = 4 if neighbor_param is None else neighbor_param
+
+    neighbor_param = _replace_none(neighbor_param, 4)
 
     population_size = _determine_population_size(
         population_size=population_size, x=x, lower_bound=10
     )
+
+    neighbor_definition_str_to_int = {
+        "gbest": 1,
+        "lbest": 2,
+        "Von Neumann": 3,
+        "Adaptive random": 4,
+    }
+    algo_variant_str_to_int = {
+        "canonical_inertia": 1,
+        "social_and_cog_rand": 2,
+        "all_components_rand": 3,
+        "one_rand": 4,
+        "canonical_constriction": 5,
+        "fips": 6,
+    }
 
     algo_specific_options = {
         "gen": int(stopping_max_iterations),
@@ -912,8 +968,10 @@ def pygmo_pso(
         "eta1": force_of_previous_best,
         "eta2": force_of_best_in_neighborhood,
         "max_vel": max_velocity,
-        "variant": algo_variant,
-        "neighb_type": neighbor_definition,
+        "variant": _convert_str_to_int(algo_variant_str_to_int, algo_variant),
+        "neighb_type": _convert_str_to_int(
+            neighbor_definition_str_to_int, neighbor_definition
+        ),
         "neighb_param": neighbor_param,
         "memory": keep_velocities,
     }
@@ -953,7 +1011,7 @@ def pygmo_pso_gen(
     force_of_previous_best=2.05,
     force_of_best_in_neighborhood=2.05,
     max_velocity=0.5,
-    algo_variant=5,
+    algo_variant="canonical_constriction",
     neighbor_definition=2,
     neighbor_param=None,
     keep_velocities=False,
@@ -998,20 +1056,20 @@ def pygmo_pso_gen(
       bounds. It must lie between 0 and 1.
     - algo_variant (int): code of the algorithm's variant to be used:
 
-        - 1: Canonical (with inertia weight)
-        - 2: Same social and cognitive rand.
-        - 3: Same rand. for all components
-        - 4: Only one rand.
-        - 5: Canonical (with constriction fact.)
-        - 6: Fully Informed (FIPS)
+        - 1 or "canonical_inertia": Canonical (with inertia weight)
+        - 2 or "social_and_cog_rand": Same social and cognitive rand.
+        - 3 or "all_components_rand": Same rand. for all components
+        - 4 or "one_rand": Only one rand.
+        - 5 or "canonical_constriction": Canonical (with constriction fact.)
+        - 6 or "fips": Fully Informed (FIPS)
 
     - neighbor_definition (int): code for the swarm topology that defines each
       particle's neighbors that is to be used:
 
-        - 1: gbest
-        - 2: lbest
-        - 3: Von Neumann
-        - 4: Adaptive random
+        - 1 or "gbest"
+        - 2 or "lbest"
+        - 3 or "Von Neumann"
+        - 4 or "Adaptive random"
 
     - neighbor_param (int): the neighbourhood parameter. If the lbest topology is
       selected (neighbor_definition=2), it represents each particle's indegree (also
@@ -1031,7 +1089,24 @@ def pygmo_pso_gen(
             "You gave a neighbor parameter but selected a neighbor_definition "
             "that ignores this parameter."
         )
-    neighbor_param = 4 if neighbor_param is None else neighbor_param
+    neighbor_param = _replace_none(neighbor_param, 4)
+    neighbor_str_to_int = {
+        "gbest": 1,
+        "lbest": 2,
+        "Von Neumann": 3,
+        "Adaptive random": 4,
+    }
+    neighbor_param = _convert_str_to_int(neighbor_str_to_int, neighbor_param)
+
+    algo_variant_str_to_int = {
+        "canonical_inertia": 1,
+        "social_and_cog_rand": 2,
+        "all_components_rand": 3,
+        "one_rand": 4,
+        "canonical_constriction": 5,
+        "fips": 6,
+    }
+    algo_variant = _convert_str_to_int(algo_variant_str_to_int, algo_variant)
 
     population_size = _determine_population_size(
         population_size=population_size, x=x, lower_bound=10
@@ -1111,7 +1186,7 @@ def pygmo_mbh(
       cannot be done in parallel with other evaluations. Default False.
     - inner_algorithm (pygmo.algorithm): an pygmo algorithm or a user-defined algorithm,
       either C++ or Python. If None the `pygmo.compass_search` algorithm will be used.
-    - stopping_max_inner_runs_without_improvement (int): consecutive runs of the inner
+    - stopping.max_inner_runs_without_improvement (int): consecutive runs of the inner
       algorithm that need to result in no improvement for mbh to stop.
     - perturbation (float): the perturbation to be applied to each component.
 
@@ -1199,17 +1274,17 @@ def pygmo_xnes(
     - stopping.max_iterations (int): Number of generations to evolve.
 
     - learning_rate_mean_update (float): learning rate for the mean update
-      (:math:`\eta_\mu`). It must be between 0 and 1.
+      (:math:`\eta_\mu`). It must be between 0 and 1 or None.
     - learning_rate_step_size_update (float): learning rate for the step-size update. It
-      must be between 0 and 1.
+      must be between 0 and 1 or None.
     - learning_rate_cov_matrix_update (float): learning rate for the covariance matrix
-      update. It must be between 0 and 1.
+      update. It must be between 0 and 1 or None.
     - initial_search_share (float): share of the given search space that will be
       initally searched. It must be between 0 and 1. Default is 1.
     - ftol (float): stopping criteria on the x tolerance.
     - xtol (float): stopping criteria on the f tolerance.
-    - keep_adapted_params (bool):  when true the adapted parameters are not reset
-      between successive calls to the evolve method. Default is False.
+    - keep_adapted_params (bool): when true the adapted parameters are not reset between
+      successive calls to the evolve method. Default is False.
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
@@ -1220,15 +1295,9 @@ def pygmo_xnes(
 
     algo_specific_options = {
         "gen": int(stopping_max_iterations),
-        "eta_mu": learning_rate_mean_update
-        if learning_rate_mean_update is not None
-        else -1,
-        "eta_sigma": learning_rate_step_size_update
-        if learning_rate_step_size_update is not None
-        else -1,
-        "eta_b": learning_rate_cov_matrix_update
-        if learning_rate_cov_matrix_update is not None
-        else -1,
+        "eta_mu": _replace_none(learning_rate_mean_update, -1),
+        "eta_sigma": _replace_none(learning_rate_step_size_update, -1),
+        "eta_b": _replace_none(learning_rate_cov_matrix_update, -1),
         "sigma0": initial_search_share,
         "ftol": ftol,
         "xtol": xtol,
@@ -1362,6 +1431,14 @@ def pygmo_compass_search(
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
+    if population_size is not None:
+        warnings.warn(
+            f"You specified population size {population_size}. "
+            "compass_search does not have a population so this argument is ignored."
+        )
+    else:
+        # if discard_start_params is False population_size - 1 must still be positive
+        population_size = 100
 
     algo_specific_options = {
         "max_fevals": stopping_max_criterion_evaluations,
@@ -1411,8 +1488,7 @@ def pygmo_ihs(
     """Minimize a scalar function using the improved harmony search algorithm.
 
     Improved harmony search (IHS) was introduced by :cite:`Mahdavi2007`.
-
-    Estimagic wraps pygmo's IHS algorithm which supports stochastic problems.
+    IHS supports stochastic problems.
 
     - population_size (int): Size of the population. If None, it's twice the number of
       parameters.
@@ -1488,13 +1564,12 @@ def pygmo_de1220(
     #
     jde=True,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
-    allowed_variant_codes=None,
+    allowed_variants=None,
     keep_adapted_params=False,
     ftol=1e-6,
     xtol=1e-6,
 ):
-    """Minimize a scalar function using Self-adaptive Differential Evolution, pygmo
-    flavor.
+    """Minimize a scalar function using Self-adaptive Differential Evolution, pygmo flavor.
 
     See `the PAGMO documentation for details
     <https://esa.github.io/pagmo2/docs/cpp/algorithms/de1220.html>`_.
@@ -1512,31 +1587,31 @@ def pygmo_de1220(
     - jde (bool): Whether to use the jDE self-adaptation variant to control the $F$ and
       $CR$ parameter. If True jDE is used, else iDE.
     - stopping.max_iterations (int): Number of generations to evolve.
-    - allowed_variant_codes (array-like object): allowed mutation varinat codes. Each
-      code refers to one mutation variant to create a new candidate individual. The
-      default is [2, 3, 7, 10, 13, 14, 15, 16]. The first ten numbers refer to the
-      classical mutation variants introduced in the orginal DE algorithm, the remaining
-      ones are, instead, considered in the work by :cite:`Elsayed2011`. The following
-      are available:
-
-        - 1: best/1/exp
-        - 2: rand/1/exp
-        - 3: rand-to-best/1/exp
-        - 4: best/2/exp
-        - 5: rand/2/exp
-        - 6: best/1/bin
-        - 7: rand/1/bin
-        - 8: rand-to-best/1/bin
-        - 9: best/2/bin
-        - 10: rand/2/bin
-        - 11: rand/3/exp
-        - 12: rand/3/bin
-        - 13: best/3/exp
-        - 14: best/3/bin
-        - 15: rand-to-current/2/exp
-        - 16: rand-to-current/2/bin
-        - 17: rand-to-best-and-current/2/exp
-        - 18: rand-to-best-and-current/2/bin
+    - allowed_variants (array-like object): allowed mutation variants (can be codes
+      or strings). Each code refers to one mutation variant to create a new candidate
+      individual. The first ten refer to the classical mutation variants introduced in
+      the original DE algorithm, the remaining ones are, instead, considered in the work
+      by :cite:`Elsayed2011`. The default is ["rand/1/exp", "rand-to-best/1/exp",
+      "rand/1/bin", "rand/2/bin", "best/3/exp", "best/3/bin", "rand-to-current/2/exp",
+      "rand-to-current/2/bin"]. The following are available:
+        - 1 or "best/1/exp"
+        - 2 or "rand/1/exp"
+        - 3 or "rand-to-best/1/exp"
+        - 4 or "best/2/exp"
+        - 5 or "rand/2/exp"
+        - 6 or "best/1/bin"
+        - 7 or "rand/1/bin"
+        - 8 or "rand-to-best/1/bin"
+        - 9 or "best/2/bin"
+        - 10 or "rand/2/bin"
+        - 11 or "rand/3/exp"
+        - 12 or "rand/3/bin"
+        - 13 or "best/3/exp"
+        - 14 or "best/3/bin"
+        - 15 or "rand-to-current/2/exp"
+        - 16 or "rand-to-current/2/bin"
+        - 17 or "rand-to-best-and-current/2/exp"
+        - 18 or "rand-to-best-and-current/2/bin"
 
     - keep_adapted_params (bool):  when true the adapted parameters $CR$ anf $F$ are not
       reset between successive calls to the evolve method. Default is False.
@@ -1545,8 +1620,34 @@ def pygmo_de1220(
 
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
-    if allowed_variant_codes is None:
+    variant_str_to_int = {
+        "best/1/exp": 1,
+        "rand/1/exp": 2,
+        "rand-to-best/1/exp": 3,
+        "best/2/exp": 4,
+        "rand/2/exp": 5,
+        "best/1/bin": 6,
+        "rand/1/bin": 7,
+        "rand-to-best/1/bin": 8,
+        "best/2/bin": 9,
+        "rand/2/bin": 10,
+        "rand/3/exp": 11,
+        "rand/3/bin": 12,
+        "best/3/exp": 13,
+        "best/3/bin": 14,
+        "rand-to-current/2/exp": 15,
+        "rand-to-current/2/bin": 16,
+        "rand-to-best-and-current/2/exp": 17,
+        "rand-to-best-and-current/2/bin": 18,
+    }
+    if allowed_variants is None:
         allowed_variant_codes = [2, 3, 7, 10, 13, 14, 15, 16]
+    else:
+        allowed_variant_codes = []
+        for variant in allowed_variants:
+            allowed_variant_codes.append(
+                _convert_str_to_int(variant_str_to_int, variant)
+            )
 
     population_size = _determine_population_size(
         population_size=population_size, x=x, lower_bound=64
@@ -1754,7 +1855,7 @@ def _create_algo_options(
     algo_specific_options,
 ):
     algo_options = {
-        "population_size": population_size if population_size is not None else 1,
+        "population_size": _replace_none(population_size, -1),
         "n_cores": n_cores,
         "seed": seed,
         "discard_start_params": discard_start_params,
@@ -1777,3 +1878,21 @@ def _determine_population_size(population_size, x, lower_bound):
     else:
         population_size = int(population_size)
     return population_size
+
+
+def _convert_str_to_int(str_to_int, value):
+    if value in str_to_int.keys():
+        out = str_to_int[value]
+    elif value not in str_to_int.values():
+        raise ValueError(
+            f"You specified {value} as value. "
+            f"It must be one of {', '.join(str_to_int.keys())}"
+        )
+    else:
+        out = value
+    return out
+
+
+def _replace_none(var, none_value):
+    out = var if var is not None else none_value
+    return out

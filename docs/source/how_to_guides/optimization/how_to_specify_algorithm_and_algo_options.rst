@@ -27,10 +27,10 @@ Since some optimizers support many tuning parameters we group some of them using
 first part of their name (e.g. all convergence criteria names start with
 ``convergence_``).
 
-All option names only contain `_`. However, to make the group membership more visible,
-you can also specify them separating the group with a `.` from the rest of the
-option's name. For example, if you wanted to set some tuning parameters of
-`nag_dfols` you could specify your ``algo_options`` like this:
+All option names only contain ``_``. However, to make the group membership more visible,
+you can also specify them separating the group with a ``.`` from the rest of the
+option's name. For example, if you wanted to set some tuning parameters of ``nag_dfols``
+you could specify your ``algo_options`` like this:
 
 .. code-block:: python
 
@@ -175,9 +175,10 @@ Currently, estimagic supports the
 `BOBYQA <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_
 by the `Numerical Algorithms Group <https://www.nag.com/>`_.
 
-To use DF-OLS you need to have
-`the dfols package <https://tinyurl.com/y5ztv4yc>`_ installed.
-BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
+To use DF-OLS you need to have `the dfols package
+<https://tinyurl.com/y5ztv4yc>`_ installed (``pip install DFO-LS``). BOBYQA
+requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ (``pip install
+Py-BOBYQA``).
 
 .. dropdown::  nag_dfols
 
@@ -187,10 +188,16 @@ BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
 
     .. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
 
+
+
+.. _pygmo_algorithms:
+
 PYGMO2 Optimizers
 ------------------
 
-estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_ optimizers:
+Please cite :cite:`Biscani2020` in addition to estimagic when using pygmo.
+estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_
+optimizers.
 
 .. dropdown::  pygmo_gaco
 
@@ -258,15 +265,102 @@ estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_ optimi
     .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_de1220
 
 
+.. _ipopt_algorithm:
+
+The Interior Point Optimizer (ipopt)
+------------------------------------
+
+estimagic's support for the Interior Point Optimizer (:cite:`Waechter2005`,
+:cite:`Waechter2005a`, :cite:`Waechter2005b`, :cite:`Nocedal2009`) is built on
+`cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python wrapper
+for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>`_.
+
+To use ipopt, you need to have `cyipopt installed
+<https://cyipopt.readthedocs.io/en/latest/index.html>`_ (``conda install
+cyipopt``).
+
+
+.. dropdown:: ipopt
+
+    .. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
+
+
+The NLOPT Optimizers (nlopt)
+-----------------------------
+
+estimagic supports the following `NLOPT <https://nlopt.readthedocs.io/en/latest/>`_
+algorithms. Please add the `appropriate citations
+<https://nlopt.readthedocs.io/en/latest/Citing_NLopt/>`_ in addition to estimagic when
+using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
+
+.. dropdown:: nlopt_bobyqa
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_bobyqa
+
+.. dropdown:: nlopt_neldermead
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_neldermead
+
+.. dropdown:: nlopt_praxis
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_praxis
+
+.. dropdown:: nlopt_cobyla
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_cobyla
+
+.. dropdown:: nlopt_sbplx
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_sbplx
+
+.. dropdown:: nlopt_newuoa
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_newuoa
+
+.. dropdown:: nlopt_tnewton
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_tnewton
+
+.. dropdown:: nlopt_lbfgs
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_lbfgs
+
+.. dropdown:: nlopt_ccsaq
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_ccsaq
+
+.. dropdown:: nlopt_mma
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_mma
+
+.. dropdown:: nlopt_var
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_var
+
+.. dropdown:: nlopt_slsqp
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_slsqp
+
+.. dropdown:: nlopt_direct
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_direct
+
+.. dropdown:: nlopt_esch
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_esch
+
+.. dropdown:: nlopt_isres
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_isres
+
+.. dropdown:: nlopt_crs2_lm
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_crs2_lm
+
+
 **References**
 
 .. bibliography:: ../../refs.bib
     :labelprefix: algo_
     :filter: docname in docnames
     :style: unsrt
-
-
-
-.. With ``nlopt`` installed
-.. With ``cyipopt`` installed
-.. With ``pygmo`` installed
