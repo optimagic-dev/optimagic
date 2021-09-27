@@ -5,6 +5,7 @@
 
 """
 import inspect
+import sys
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ from estimagic.optimization.optimize import minimize
 LOCAL_ALGORITHMS = {
     key: value
     for key, value in AVAILABLE_ALGORITHMS.items()
-    if key not in GLOBAL_ALGORITHMS and key != "nlopt_slsqp"
+    if key not in GLOBAL_ALGORITHMS
 }
 
 GLOBAL_ALGORITHMS_AVAILABLE = [
@@ -64,6 +65,13 @@ def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
     aaae(res["solution_params"]["value"].to_numpy(), np.array([1, 0, -1]), decimal=3)
 
 
+skip_msg = (
+    "The very slow tests of global algorithms are only run on linux which always "
+    "runs much faster in continuous integration."
+)
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason=skip_msg)
 @pytest.mark.parametrize("algorithm", GLOBAL_ALGORITHMS_AVAILABLE)
 def test_global_algorithms_on_sum_of_squares(algorithm):
     params = pd.DataFrame()

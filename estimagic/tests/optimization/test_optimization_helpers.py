@@ -22,7 +22,7 @@ test_cases = [
     # popsize, x, lower_bound, expected
     (55.3, None, None, 55),
     (None, np.ones(5), 500, 500),
-    (None, np.ones(5), 4, 10),
+    (None, np.ones(5), 4, 60),
 ]
 
 

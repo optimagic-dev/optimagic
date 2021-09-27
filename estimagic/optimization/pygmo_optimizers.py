@@ -7,9 +7,11 @@ import numpy as np
 from estimagic import batch_evaluators
 from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
-from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
+from estimagic.optimization.algo_options import (
+    STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
+)
 
-STOPPING_MAX_ITERATIONS_GENETIC = 1000
+STOPPING_MAX_ITERATIONS_GENETIC = 250
 
 try:
     import pygmo as pg
@@ -37,7 +39,7 @@ def pygmo_gaco(
     threshold=1,
     speed_of_std_values_convergence=7,
     stopping_max_n_without_improvements=100000,
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     focus=0.0,
     cache=False,
 ):
@@ -1403,7 +1405,7 @@ def pygmo_compass_search(
     seed=None,
     discard_start_params=False,
     #
-    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS,
+    stopping_max_criterion_evaluations=STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
     start_range=0.1,
     stop_range=0.01,
     reduction_coeff=0.5,
@@ -1874,7 +1876,7 @@ def _check_that_every_param_is_bounded(lower_bounds, upper_bounds):
 
 def _determine_population_size(population_size, x, lower_bound):
     if population_size is None:
-        population_size = int(np.clip(2 * len(x), lower_bound, np.inf))
+        population_size = int(np.clip(10 * (len(x) + 1), lower_bound, np.inf))
     else:
         population_size = int(population_size)
     return population_size
