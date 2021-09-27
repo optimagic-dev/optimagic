@@ -75,14 +75,12 @@ skip_msg = (
 @pytest.mark.parametrize("algorithm", GLOBAL_ALGORITHMS_AVAILABLE)
 def test_global_algorithms_on_sum_of_squares(algorithm):
     params = pd.DataFrame()
-    params["value"] = [2.5, 2, -1]
-    params["lower_bound"] = [0.5, -1, -1.5]
-    params["upper_bound"] = [3, 3, -0.5]
+    params["value"] = [0.35, 0.35]
+    params["lower_bound"] = [0.2, -0.5]
+    params["upper_bound"] = [1, 0.5]
     res = minimize(
         criterion=sos_dict_criterion,
         params=params,
         algorithm=algorithm,
     )
-    aaae(
-        res["solution_params"]["value"].to_numpy(), np.array([0.5, 0, -0.5]), decimal=1
-    )
+    aaae(res["solution_params"]["value"].to_numpy(), np.array([0.2, 0]), decimal=1)

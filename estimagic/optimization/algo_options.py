@@ -101,7 +101,7 @@ STOPPING_MAX_CRITERION_EVALUATIONS = 1_000_000
 """
 
 
-STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL = 3_000
+STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL = 1_000
 """int:
     If the maximum number of function evaluation is reached, the optimization stops
     but we do not count this as successful convergence. The function evaluations used
