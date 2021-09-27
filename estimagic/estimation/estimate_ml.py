@@ -31,7 +31,7 @@ def estimate_ml(
     numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
-    hessian=None,
+    hessian=False,
     hessian_kwargs=None,
     ci_level=0.95,
     n_samples=10_000,
