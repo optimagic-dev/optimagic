@@ -106,12 +106,11 @@ The documentation is hosted (`on rtd <https://estimagic.readthedocs.io/en/latest
 Citation
 ========
 
-If you use Estimagic for your research, please do not forget to cite it. Many people
-worked on this software and you should recognize their effort.
+If you use Estimagic for your research, please do not forget to cite it.
 
 .. code-block::
 
-    @Unpublished{Gabler2020,
+    @Unpublished{Gabler2021,
       Title  = {A Python Tool for the Estimation of (Structural) Econometric Models.},
       Author = {Janos Gabler},
       Year   = {2020},
@@ -122,6 +121,4 @@ worked on this software and you should recognize their effort.
 Warning
 =======
 
-Estimagic is still in alpha status and the API might still change. We will try to keep
-the API more stable When we switch versions ``0.0.x`` to ``0.x.x``. Until then we want
-to achieve the following things:
+Estimagic is still in beta status and the API might still change.
