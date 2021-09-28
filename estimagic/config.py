@@ -2,8 +2,6 @@ from pathlib import Path
 
 DEFAULT_SEED = 5471
 
-TEST_DIR = Path(__file__).parent / "tests"
-
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 
 EXAMPLE_DIR = Path(__file__).parent / "examples"
