@@ -1,10 +1,10 @@
 """
 Test the TikTak optimization algorithm.
 
-This file performs two tests. 
+This file performs two tests.
 First, it allows TikTak to automatically sample a set of Sobol points.
 Second, it provides TikTak with a custom set of starting points to test
-the custom_sample feature. 
+the custom_sample feature.
 """
 import chaospy
 import numpy as np
