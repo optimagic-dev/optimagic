@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
-
 from estimagic.cli import cli
 from estimagic.dashboard.run_dashboard import _create_session_data
 from estimagic.dashboard.run_dashboard import _process_database_paths

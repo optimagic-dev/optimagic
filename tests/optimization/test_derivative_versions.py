@@ -10,8 +10,6 @@ Here we want to take:
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-
 from estimagic.decorators import switch_sign
 from estimagic.examples.criterion_functions import sos_criterion_and_gradient
 from estimagic.examples.criterion_functions import sos_criterion_and_jacobian
@@ -27,6 +25,7 @@ from estimagic.examples.criterion_functions import sos_pandas_gradient
 from estimagic.examples.criterion_functions import sos_pandas_jacobian
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
+from numpy.testing import assert_array_almost_equal as aaae
 
 algorithms = ["scipy_lbfgsb", "scipy_ls_dogbox", "scipy_neldermead"]
 

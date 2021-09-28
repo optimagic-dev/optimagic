@@ -3,9 +3,6 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_equal
-from pandas.testing import assert_series_equal
-
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.visualization.derivative_plot import (
     _select_derivative_with_minimal_error,
@@ -14,6 +11,8 @@ from estimagic.visualization.derivative_plot import (
     _select_eval_with_lowest_and_highest_step,
 )
 from estimagic.visualization.derivative_plot import derivative_plot
+from numpy.testing import assert_array_equal
+from pandas.testing import assert_series_equal
 
 
 def test__select_derivative_with_minimal_error():

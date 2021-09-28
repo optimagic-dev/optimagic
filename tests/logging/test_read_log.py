@@ -3,14 +3,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal
-
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.read_log import read_optimization_iteration
 from estimagic.logging.read_log import read_start_params
+from pandas.testing import assert_frame_equal
 
 
 def test_read_start_params():

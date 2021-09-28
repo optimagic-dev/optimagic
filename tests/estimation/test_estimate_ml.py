@@ -1,13 +1,12 @@
 import itertools
 
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-
 from estimagic.estimation.estimate_ml import estimate_ml
 from estimagic.examples.logit import logit_derivative
 from estimagic.examples.logit import logit_hessian
 from estimagic.examples.logit import logit_loglike
 from estimagic.examples.logit import logit_loglike_and_derivative
+from numpy.testing import assert_array_almost_equal as aaae
 
 
 test_cases = itertools.product(

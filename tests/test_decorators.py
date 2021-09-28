@@ -1,12 +1,11 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-from pandas.testing import assert_frame_equal
-
 from estimagic.decorators import catch
 from estimagic.decorators import numpy_interface
 from estimagic.decorators import unpack
+from numpy.testing import assert_array_almost_equal as aaae
+from pandas.testing import assert_frame_equal
 
 
 def test_numpy_interface():

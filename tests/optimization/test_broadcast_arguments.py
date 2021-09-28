@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-
 from estimagic.optimization.broadcast_arguments import broadcast_arguments
 
 

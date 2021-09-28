@@ -3,13 +3,12 @@ import functools
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.testing import assert_frame_equal as afe
-
 from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_outcomes import (
     _get_bootstrap_outcomes_from_indices,
 )
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
+from pandas.testing import assert_frame_equal as afe
 
 
 @pytest.fixture
