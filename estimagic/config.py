@@ -1,11 +1,13 @@
 from pathlib import Path
 
-DEFAULT_DATABASE_NAME = "logging.db"
 DEFAULT_SEED = 5471
 
 TEST_DIR = Path(__file__).parent / "tests"
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
+
+EXAMPLE_DIR = Path(__file__).parent / "examples"
+
 
 DEFAULT_N_CORES = 1
 
@@ -22,6 +24,13 @@ except ImportError:
     IS_PETSC4PY_INSTALLED = False
 else:
     IS_PETSC4PY_INSTALLED = True
+
+try:
+    import nlopt  # noqa: F401
+except ImportError:
+    IS_NLOPT_INSTALLED = False
+else:
+    IS_NLOPT_INSTALLED = True
 
 try:
     import matplotlib  # noqa: F401
@@ -43,6 +52,21 @@ except ImportError:
     IS_DFOLS_INSTALLED = False
 else:
     IS_DFOLS_INSTALLED = True
+
+try:
+    import pygmo  # noqa: F401
+except ImportError:
+    IS_PYGMO_INSTALLED = False
+else:
+    IS_PYGMO_INSTALLED = True
+
+
+try:
+    import cyipopt  # noqa: F401
+except ImportError:
+    IS_CYIPOPT_INSTALLED = False
+else:
+    IS_CYIPOPT_INSTALLED = True
 
 
 # =================================================================================

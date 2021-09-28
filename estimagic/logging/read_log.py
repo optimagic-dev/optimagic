@@ -64,7 +64,7 @@ def read_optimization_iteration(path_or_database, iteration, include_internals=F
         data = data[0]
 
     params = start_params.copy()
-    params["value"] = data.pop("external_params")
+    params["value"] = data.pop("params")
     data["params"] = params
 
     to_remove = ["distance_origin", "distance_ones"]
@@ -112,14 +112,16 @@ def _process_path_or_database(path_or_database):
     >>> from sqlalchemy import MetaData
     >>> database = MetaData()
     >>> _process_path_or_database(database)
-    {'path': None, 'metadata': MetaData(bind=None), 'fast_logging': False}
+    {'path': None, 'metadata': MetaData(), 'fast_logging': False}
 
     """
     res = {"path": None, "metadata": None, "fast_logging": False}
     if isinstance(path_or_database, MetaData):
         res["metadata"] = path_or_database
     elif isinstance(path_or_database, (Path, str)):
-        res["path"] = Path(path_or_database)
+        res["path"] = Path(path_or_database).resolve()
+        if not res["path"].exists():
+            raise FileNotFoundError(f"No such database file: {res['path']}")
     else:
         raise ValueError(
             "path_or_database must be a path or sqlalchemy.MetaData object"

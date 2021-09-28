@@ -27,10 +27,10 @@ Since some optimizers support many tuning parameters we group some of them using
 first part of their name (e.g. all convergence criteria names start with
 ``convergence_``).
 
-All option names only contain `_`. However, to make the group membership more visible,
-you can also specify them separating the group with a `.` from the rest of the
-option's name. For example, if you wanted to set some tuning parameters of
-`nag_dfols` you could specify your ``algo_options`` like this:
+All option names only contain ``_``. However, to make the group membership more visible,
+you can also specify them separating the group with a ``.`` from the rest of the
+option's name. For example, if you wanted to set some tuning parameters of ``nag_dfols``
+you could specify your ``algo_options`` like this:
 
 .. code-block:: python
 
@@ -75,11 +75,11 @@ The other arguments can be set as ``algo_options`` when calling ``maximize`` or
 
 .. _list_of_algorithms:
 
-Supported Algorithms
+Available Optimizers
 ====================
 
 
-Algorithms from scipy
+Optimizers from scipy
 ---------------------
 
 
@@ -89,288 +89,60 @@ Algorithms from scipy
 estimagic supports most ``scipy`` algorithms. You do not need to install additional
 dependencies to use them:
 
+.. dropdown::  scipy_lbfgsb
 
-.. raw:: html
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_lbfgsb
 
-    <div class="container">
-    <div id="accordion" class="shadow tutorial-accordion">
 
-        <div class="card tutorial-card">
-            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseOne">
-                <div class="d-flex flex-row tutorial-card-header-1">
-                    <div class="d-flex flex-row tutorial-card-header-2">
-                        <button class="btn btn-dark btn-sm"></button>
-                        scipy_lbfgsb
-                    </div>
-                    <span class="badge gs-badge-link">
+.. dropdown::  scipy_slsqp
 
-.. raw:: html
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_slsqp
 
-                    </span>
-                </div>
-            </div>
-            <div id="collapseOne" class="collapse" data-parent="#accordion">
-                <div class="card-body">
 
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_lbfgsb
+.. dropdown::  scipy_neldermead
 
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_neldermead
 
-.. raw:: html
 
-                        </div>
-                    </span>
-                </div>
-            </div>
+.. dropdown::  scipy_powell
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTwo">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_slsqp
-                        </div>
-                        <span class="badge gs-badge-link">
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_powell
 
-.. raw:: html
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTwo" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+.. dropdown::  scipy_bfgs
 
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_slsqp
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_bfgs
 
 
-.. raw:: html
+.. dropdown::  scipy_conjugate_gradient
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_conjugate_gradient
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseThree">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_neldermead
-                        </div>
-                        <span class="badge gs-badge-link">
 
-.. raw:: html
+.. dropdown::  scipy_newton_cg
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseThree" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_newton_cg
 
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_neldermead
 
+.. dropdown::  scipy_cobyla
 
-.. raw:: html
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_cobyla
 
-                        </span>
-                    </div>
-                </div>
-            </div>
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseFour">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_powell
-                        </div>
-                        <span class="badge gs-badge-link">
+.. dropdown::  scipy_truncated_newton
 
-.. raw:: html
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_truncated_newton
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseFour" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
 
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_powell
+.. dropdown::  scipy_trust_constr
 
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseFive">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_bfgs
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseFive" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_bfgs
-
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseSix">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_conjugate_gradient
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseSix" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_conjugate_gradient
-
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseSeven">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_newton_cg
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseSeven" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_newton_cg
-
-
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseEight">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_cobyla
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseEight" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_cobyla
-
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseNine">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_truncated_newton
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseNine" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_truncated_newton
-
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseTen">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            scipy_trust_constr
-                        </div>
-                        <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseTen" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
-
-.. autofunction:: estimagic.optimization.scipy_optimizers.scipy_trust_constr
-
-.. raw:: html
-
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
+    .. autofunction:: estimagic.optimization.scipy_optimizers.scipy_trust_constr
 
 
 
 .. _tao_algorithms:
 
-Algorithms from the Toolkit for Advanced Optimization (TAO)
+Optimizers from the Toolkit for Advanced Optimization (TAO)
 -----------------------------------------------------------
 
 At the moment, estimagic only supports
@@ -385,46 +157,16 @@ addition to estimagic.
 To use POUNDERs you need to have
 `petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
 
-.. raw:: html
+.. dropdown::  tao_pounders
 
-    <div class="container">
-    <div id="accordion" class="shadow tutorial-accordion">
-
-        <div class="card tutorial-card">
-            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapsePounders">
-                <div class="d-flex flex-row tutorial-card-header-1">
-                    <div class="d-flex flex-row tutorial-card-header-2">
-                        <button class="btn btn-dark btn-sm"></button>
-                        tao_pounders
-                    </div>
-                    <span class="badge gs-badge-link">
-
-.. raw:: html
-
-                    </span>
-                </div>
-            </div>
-            <div id="collapsePounders" class="collapse" data-parent="#accordion">
-                <div class="card-body">
-
-.. autofunction:: estimagic.optimization.tao_optimizers.tao_pounders
-
-
-.. raw:: html
-
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    .. autofunction:: estimagic.optimization.tao_optimizers.tao_pounders
 
 
 
 .. _nag_algorithms:
 
 
-Algorithms from the Numerical Algorithms Group (NAG)
+Optimizers from the Numerical Algorithms Group (NAG)
 ----------------------------------------------------
 
 Currently, estimagic supports the
@@ -433,80 +175,192 @@ Currently, estimagic supports the
 `BOBYQA <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_
 by the `Numerical Algorithms Group <https://www.nag.com/>`_.
 
-To use DF-OLS you need to have
-`the dfols package <https://tinyurl.com/y5ztv4yc>`_ installed.
-BOBYQA requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ .
+To use DF-OLS you need to have `the dfols package
+<https://tinyurl.com/y5ztv4yc>`_ installed (``pip install DFO-LS``). BOBYQA
+requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ (``pip install
+Py-BOBYQA``).
 
-.. raw:: html
+.. dropdown::  nag_dfols
 
-    <div class="container">
-    <div id="accordion" class="shadow tutorial-accordion">
+    .. autofunction:: estimagic.optimization.nag_optimizers.nag_dfols
 
-        <div class="card tutorial-card">
-            <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseDFOLS">
-                <div class="d-flex flex-row tutorial-card-header-1">
-                    <div class="d-flex flex-row tutorial-card-header-2">
-                        <button class="btn btn-dark btn-sm"></button>
-                    nag_dfols
-                    </div>
-                    <span class="badge gs-badge-link">
+.. dropdown::  nag_pybobyqa
 
-.. raw:: html
+    .. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
 
-                    </span>
-                </div>
-            </div>
-            <div id="collapseDFOLS" class="collapse" data-parent="#accordion">
-                <div class="card-body">
 
-.. autofunction:: estimagic.optimization.nag_optimizers.nag_dfols
 
-.. raw:: html
+.. _pygmo_algorithms:
 
-                        </span>
-                    </div>
-                </div>
-            </div>
+PYGMO2 Optimizers
+------------------
 
-            <div class="card tutorial-card">
-                <div class="card-header collapsed card-link" data-toggle="collapse" data-target="#collapseBOBYQA">
-                    <div class="d-flex flex-row tutorial-card-header-1">
-                        <div class="d-flex flex-row tutorial-card-header-2">
-                            <button class="btn btn-dark btn-sm"></button>
-                            nag_pybobyqa
-                        </div>
-                        <span class="badge gs-badge-link">
+Please cite :cite:`Biscani2020` in addition to estimagic when using pygmo.
+estimagic supports the following `pygmo2 <https://esa.github.io/pygmo2>`_
+optimizers.
 
-.. raw:: html
+.. dropdown::  pygmo_gaco
 
-                        </span>
-                    </div>
-                </div>
-                <div id="collapseBOBYQA" class="collapse" data-parent="#accordion">
-                    <div class="card-body">
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_gaco
 
-.. autofunction:: estimagic.optimization.nag_optimizers.nag_pybobyqa
-.. raw:: html
+.. dropdown::  pygmo_bee_colony
 
-                    </span>
-                </div>
-                </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_bee_colony
 
+.. dropdown::  pygmo_de
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_de
+
+.. dropdown::  pygmo_sea
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_sea
+
+.. dropdown::  pygmo_sga
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_sga
+
+.. dropdown::  pygmo_sade
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_sade
+
+
+.. dropdown::  pygmo_cmaes
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_cmaes
+
+.. dropdown::  pygmo_simulated_annealing
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_simulated_annealing
+
+.. dropdown::  pygmo_pso
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_pso
+
+.. dropdown::  pygmo_pso_gen
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_pso_gen
+
+.. dropdown::  pygmo_mbh
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_mbh
+
+.. dropdown::  pygmo_xnes
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_xnes
+
+.. dropdown::  pygmo_gwo
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_gwo
+
+.. dropdown::  pygmo_compass_search
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_compass_search
+
+.. dropdown::  pygmo_ihs
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_ihs
+
+.. dropdown::  pygmo_de1220
+
+    .. autofunction:: estimagic.optimization.pygmo_optimizers.pygmo_de1220
+
+
+.. _ipopt_algorithm:
+
+The Interior Point Optimizer (ipopt)
+------------------------------------
+
+estimagic's support for the Interior Point Optimizer (:cite:`Waechter2005`,
+:cite:`Waechter2005a`, :cite:`Waechter2005b`, :cite:`Nocedal2009`) is built on
+`cyipopt <https://cyipopt.readthedocs.io/en/latest/index.html>`_, a Python wrapper
+for the `Ipopt optimization package <https://coin-or.github.io/Ipopt/index.html>`_.
+
+To use ipopt, you need to have `cyipopt installed
+<https://cyipopt.readthedocs.io/en/latest/index.html>`_ (``conda install
+cyipopt``).
+
+
+.. dropdown:: ipopt
+
+    .. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
+
+
+The NLOPT Optimizers (nlopt)
+-----------------------------
+
+estimagic supports the following `NLOPT <https://nlopt.readthedocs.io/en/latest/>`_
+algorithms. Please add the `appropriate citations
+<https://nlopt.readthedocs.io/en/latest/Citing_NLopt/>`_ in addition to estimagic when
+using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
+
+.. dropdown:: nlopt_bobyqa
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_bobyqa
+
+.. dropdown:: nlopt_neldermead
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_neldermead
+
+.. dropdown:: nlopt_praxis
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_praxis
+
+.. dropdown:: nlopt_cobyla
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_cobyla
+
+.. dropdown:: nlopt_sbplx
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_sbplx
+
+.. dropdown:: nlopt_newuoa
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_newuoa
+
+.. dropdown:: nlopt_tnewton
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_tnewton
+
+.. dropdown:: nlopt_lbfgs
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_lbfgs
+
+.. dropdown:: nlopt_ccsaq
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_ccsaq
+
+.. dropdown:: nlopt_mma
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_mma
+
+.. dropdown:: nlopt_var
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_var
+
+.. dropdown:: nlopt_slsqp
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_slsqp
+
+.. dropdown:: nlopt_direct
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_direct
+
+.. dropdown:: nlopt_esch
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_esch
+
+.. dropdown:: nlopt_isres
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_isres
+
+.. dropdown:: nlopt_crs2_lm
+
+    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_crs2_lm
 
 
 **References**
 
 .. bibliography:: ../../refs.bib
-    :labelprefix: nag
+    :labelprefix: algo_
     :filter: docname in docnames
     :style: unsrt
-
-
-
-.. With ``nlopt`` installed
-.. With ``cyipopt`` installed
-.. With ``pygmo`` installed

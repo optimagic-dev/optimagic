@@ -1,13 +1,13 @@
 import functools
 import inspect
 import warnings
+from pathlib import Path
 
 import numpy as np
 
 import estimagic.batch_evaluators as be
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
-from estimagic.config import DEFAULT_DATABASE_NAME
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
@@ -19,15 +19,14 @@ from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
-from estimagic.optimization.process_constraints import process_bounds
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import convert_external_derivative_to_internal
-from estimagic.optimization.reparametrize import post_replace_jacobian
-from estimagic.optimization.reparametrize import pre_replace_jacobian
-from estimagic.optimization.reparametrize import reparametrize_from_internal
-from estimagic.optimization.reparametrize import reparametrize_to_internal
-from estimagic.optimization.utilities import hash_array
-from estimagic.optimization.utilities import propose_algorithms
+from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
+from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
+from estimagic.parameters.parameter_conversion import get_internal_bounds
+from estimagic.parameters.parameter_conversion import get_reparametrize_functions
+from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
+from estimagic.parameters.parameter_preprocessing import check_params_are_valid
+from estimagic.utilities import hash_array
+from estimagic.utilities import propose_algorithms
 
 
 def maximize(
@@ -43,13 +42,14 @@ def maximize(
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
     numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
+    logging=False,
     log_options=None,
     error_handling="raise",
     error_penalty=None,
     batch_evaluator="joblib",
     batch_evaluator_options=None,
     cache_size=100,
+    scaling_options=None,
 ):
     """Maximize criterion using algorithm subject to constraints.
 
@@ -104,10 +104,6 @@ def maximize(
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "suffix": A string that is appended to the default table names, separated
-            by an underscore. You can use this if you want to write the log into an
-            existing database where the default names "optimization_iterations",
-            "optimization_status" and "optimization_problem" are already in use.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
@@ -115,10 +111,10 @@ def maximize(
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
-            - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to maximize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
+            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
+            do if the tables we want to write to already exist. Default "extend".
+            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
+            do if the database we want to write to already exists. Default "extend".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -139,9 +135,12 @@ def maximize(
             batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling_options (dict or None): Options to configure the internal scaling ot
+            the parameter vector. By default no rescaling is done. See :ref:`scaling`
+            for details and recommendations.
 
     """
-    return optimize(
+    return _optimize(
         direction="maximize",
         criterion=criterion,
         params=params,
@@ -161,6 +160,7 @@ def maximize(
         batch_evaluator=batch_evaluator,
         batch_evaluator_options=batch_evaluator_options,
         cache_size=cache_size,
+        scaling_options=scaling_options,
     )
 
 
@@ -177,13 +177,14 @@ def minimize(
     criterion_and_derivative=None,
     criterion_and_derivative_kwargs=None,
     numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
+    logging=False,
     log_options=None,
     error_handling="raise",
     error_penalty=None,
     batch_evaluator="joblib",
     batch_evaluator_options=None,
     cache_size=100,
+    scaling_options=None,
 ):
     """Minimize criterion using algorithm subject to constraints.
 
@@ -236,10 +237,6 @@ def minimize(
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "suffix": A string that is appended to the default table names, separated
-            by an underscore. You can use this if you want to write the log into an
-            existing database where the default names "optimization_iterations",
-            "optimization_status" and "optimization_problem" are already in use.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
@@ -247,10 +244,10 @@ def minimize(
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
-            - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to minimize
-              that can be pickled are saved in the log file. Otherwise, only the
-              information needed by the dashboard is saved. Default False.
+            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
+            do if the tables we want to write to already exist. Default "extend".
+            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
+            do if the database we want to write to already exists. Default "extend".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -271,9 +268,12 @@ def minimize(
             batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling_options (dict or None): Options to configure the internal scaling ot
+            the parameter vector. By default no rescaling is done. See :ref:`scaling`
+            for details and recommendations.
 
     """
-    return optimize(
+    return _optimize(
         direction="minimize",
         criterion=criterion,
         params=params,
@@ -293,30 +293,32 @@ def minimize(
         batch_evaluator=batch_evaluator,
         batch_evaluator_options=batch_evaluator_options,
         cache_size=cache_size,
+        scaling_options=scaling_options,
     )
 
 
-def optimize(
+def _optimize(
     direction,
     criterion,
     params,
     algorithm,
     *,
-    criterion_kwargs=None,
-    constraints=None,
-    algo_options=None,
-    derivative=None,
-    derivative_kwargs=None,
-    criterion_and_derivative=None,
-    criterion_and_derivative_kwargs=None,
-    numdiff_options=None,
-    logging=DEFAULT_DATABASE_NAME,
-    log_options=None,
-    error_handling="raise",
-    error_penalty=None,
-    batch_evaluator="joblib",
-    batch_evaluator_options=None,
-    cache_size=100,
+    criterion_kwargs,
+    constraints,
+    algo_options,
+    derivative,
+    derivative_kwargs,
+    criterion_and_derivative,
+    criterion_and_derivative_kwargs,
+    numdiff_options,
+    logging,
+    log_options,
+    error_handling,
+    error_penalty,
+    batch_evaluator,
+    batch_evaluator_options,
+    cache_size,
+    scaling_options,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
@@ -370,10 +372,6 @@ def optimize(
             disable logging completely by setting it to False, but we highly recommend
             not to do so. The dashboard can only be used when logging is used.
         log_options (dict): Additional keyword arguments to configure the logging.
-            - "suffix": A string that is appended to the default table names, separated
-            by an underscore. You can use this if you want to write the log into an
-            existing database where the default names "optimization_iterations",
-            "optimization_status" and "optimization_problem" are already in use.
             - "fast_logging": A boolean that determines if "unsafe" settings are used
             to speed up write processes to the database. This should only be used for
             very short running criterion functions where the main purpose of the log
@@ -381,10 +379,10 @@ def optimize(
             corrupted database in case of a sudden system shutdown. If one evaluation
             of the criterion function (and gradient if applicable) takes more than
             100 ms, the logging overhead is negligible.
-            - "if_exists": (str) One of "extend", "replace", "raise"
-            - "save_all_arguments": (bool). If True, all arguments to
-              optimize that can be pickled are saved in the log file. Otherwise, only
-              the information needed by the dashboard is saved. Default False.
+            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
+            do if the tables we want to write to already exist. Default "extend".
+            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
+            do if the database we want to write to already exists. Default "extend".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -405,6 +403,9 @@ def optimize(
             batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling_options (dict or None): Options to configure the internal scaling ot
+            the parameter vector. By default no rescaling is done. See :ref:`scaling`
+            for details and recommendations.
 
     """
     arguments = broadcast_arguments(
@@ -425,6 +426,7 @@ def optimize(
         error_handling=error_handling,
         error_penalty=error_penalty,
         cache_size=cache_size,
+        scaling_options=scaling_options,
     )
 
     # do rough sanity checks before actual optimization for quicker feedback
@@ -470,10 +472,11 @@ def _single_optimize(
     error_handling,
     error_penalty,
     cache_size,
+    scaling_options,
 ):
     """Minimize or maximize *criterion* using *algorithm* subject to *constraints*.
 
-    See the docstring of ``optimize`` for an explanation of all arguments.
+    See the docstring of ``_optimize`` for an explanation of all arguments.
 
     Returns:
         dict: The optimization result.
@@ -492,7 +495,6 @@ def _single_optimize(
         # "criterion_and_derivative"-criterion_and_derivative,
         "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
         "numdiff_options": numdiff_options,
-        "logging": logging,
         "log_options": log_options,
         "error_handling": error_handling,
         "error_penalty": error_penalty,
@@ -509,28 +511,42 @@ def _single_optimize(
         )
 
     # process params and constraints
-    params = process_bounds(params)
+    params = add_default_bounds_to_params(params)
     for col in ["value", "lower_bound", "upper_bound"]:
         params[col] = params[col].astype(float)
-    _check_params(params)
+    check_params_are_valid(params)
 
-    processed_constraints, processed_params = process_constraints(constraints, params)
+    # calculate scaling factor and offset
+    if scaling_options not in (None, {}):
+        scaling_factor, scaling_offset = calculate_scaling_factor_and_offset(
+            params=params,
+            constraints=constraints,
+            criterion=criterion,
+            **scaling_options,
+        )
+    else:
+        scaling_factor, scaling_offset = None, None
 
     # name and group column are needed in the dashboard but could lead to problems
     # if present anywhere else
     params_with_name_and_group = _add_name_and_group_columns_to_params(params)
     problem_data["params"] = params_with_name_and_group
 
-    # get internal parameters and bounds
-    x = reparametrize_to_internal(
-        params["value"].to_numpy(),
-        processed_params["_internal_free"].to_numpy(),
-        processed_constraints,
+    params_to_internal, params_from_internal = get_reparametrize_functions(
+        params=params,
+        constraints=constraints,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
     )
 
-    free = processed_params.query("_internal_free")
-    lower_bounds = free["_internal_lower"].to_numpy()
-    upper_bounds = free["_internal_upper"].to_numpy()
+    # get internal parameters and bounds
+    x = params_to_internal(params["value"].to_numpy())
+    lower_bounds, upper_bounds = get_internal_bounds(
+        params=params,
+        constraints=constraints,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
+    )
 
     # process algorithm and algo_options
     if isinstance(algorithm, str):
@@ -545,38 +561,18 @@ def _single_optimize(
             proposed = propose_algorithms(algorithm, list(AVAILABLE_ALGORITHMS))
             raise ValueError(
                 f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
-            )
+            ) from None
 
     algo_options = _adjust_options_to_algorithms(
         algo_options, lower_bounds, upper_bounds, algorithm, algo_name
     )
 
-    # get partialed reparametrize from internal
-    pre_replacements = processed_params["_pre_replacements"].to_numpy()
-    post_replacements = processed_params["_post_replacements"].to_numpy()
-    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
-
-    partialed_reparametrize_from_internal = functools.partial(
-        reparametrize_from_internal,
-        fixed_values=fixed_values,
-        pre_replacements=pre_replacements,
-        processed_constraints=processed_constraints,
-        post_replacements=post_replacements,
-    )
-
     # get convert derivative
-    pre_replace_jac = pre_replace_jacobian(
-        pre_replacements=pre_replacements, dim_in=len(x)
-    )
-    post_replace_jac = post_replace_jacobian(post_replacements=post_replacements)
-
-    convert_derivative = functools.partial(
-        convert_external_derivative_to_internal,
-        fixed_values=fixed_values,
-        pre_replacements=pre_replacements,
-        processed_constraints=processed_constraints,
-        pre_replace_jac=pre_replace_jac,
-        post_replace_jac=post_replace_jac,
+    convert_derivative = get_derivative_conversion_function(
+        params=params,
+        constraints=constraints,
+        scaling_factor=scaling_factor,
+        scaling_offset=scaling_offset,
     )
 
     # do first function evaluation
@@ -614,7 +610,7 @@ def _single_optimize(
         direction=direction,
         criterion=criterion,
         params=params,
-        reparametrize_from_internal=partialed_reparametrize_from_internal,
+        reparametrize_from_internal=params_from_internal,
         convert_derivative=convert_derivative,
         derivative=derivative,
         criterion_and_derivative=criterion_and_derivative,
@@ -632,11 +628,14 @@ def _single_optimize(
     res = algorithm(internal_criterion_and_derivative, x, **algo_options)
 
     p = params.copy()
-    p["value"] = partialed_reparametrize_from_internal(res["solution_x"])
+    p["value"] = params_from_internal(res["solution_x"])
     res["solution_params"] = p
 
     if "solution_criterion" not in res:
         res["solution_criterion"] = criterion(p)
+
+    if direction == "maximize":
+        res["solution_criterion"] = -res["solution_criterion"]
 
     # in the long run we can get some of those from the database if logging was used.
     optional_entries = [
@@ -694,42 +693,55 @@ def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
 
 
 def _create_and_initialize_database(logging, log_options, first_eval, problem_data):
-
     # extract information
-    path = logging
+    path = Path(logging)
     fast_logging = log_options.get("fast_logging", False)
-    if_exists = log_options.get("if_exists", "extend")
-    save_all_arguments = log_options.get("save_all_arguments", False)
+    if_table_exists = log_options.get("if_table_exists", "extend")
+    if_database_exists = log_options.get("if_database_exists", "extend")
+
+    if "if_exists" in log_options and "if_table_exists" not in log_options:
+        warnings.warn("The log_option 'if_exists' was renamed to 'if_table_exists'.")
+
+    if logging.exists():
+        if if_database_exists == "raise":
+            raise FileExistsError(
+                f"The database {logging} already exists and the log_option "
+                "'if_database_exists' is set to 'raise'"
+            )
+        elif if_database_exists == "replace":
+            logging.unlink()
+
     database = load_database(path=path, fast_logging=fast_logging)
 
     # create the optimization_iterations table
     make_optimization_iteration_table(
         database=database,
         first_eval=first_eval,
-        if_exists=if_exists,
+        if_exists=if_table_exists,
     )
 
     # create and initialize the optimization_status table
-    make_optimization_status_table(database, if_exists)
+    make_optimization_status_table(database, if_exists=if_table_exists)
     append_row(
         {"status": "running"}, "optimization_status", database, path, fast_logging
     )
 
     # create_and_initialize the optimization_problem table
-    make_optimization_problem_table(database, if_exists, save_all_arguments)
-    if not save_all_arguments:
-        not_saved = [
-            "criterion",
-            "criterion_kwargs",
-            "constraints",
-            "derivative",
-            "derivative_kwargs",
-            "criterion_and_derivative",
-            "criterion_and_derivative_kwargs",
-        ]
-        problem_data = {
-            key: val for key, val in problem_data.items() if key not in not_saved
-        }
+    make_optimization_problem_table(database, if_exists=if_table_exists)
+
+    not_saved = [
+        "criterion",
+        "criterion_kwargs",
+        "constraints",
+        "derivative",
+        "derivative_kwargs",
+        "criterion_and_derivative",
+        "criterion_and_derivative_kwargs",
+    ]
+    problem_data = {
+        key: val for key, val in problem_data.items() if key not in not_saved
+    }
+
     append_row(problem_data, "optimization_problem", database, path, fast_logging)
 
     return database
@@ -775,25 +787,6 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 
     numdiff_options = {**default_numdiff_options, **numdiff_options}
     return numdiff_options
-
-
-def _check_params(params):
-    """Check params has a unique index.
-
-    Args:
-        params (pd.DataFrame or list of pd.DataFrames): See :ref:`params`.
-
-    Raises:
-        AssertionError: The index contains duplicates.
-
-    """
-    if params.index.duplicated().any():
-        raise ValueError("No duplicates allowed in the index of params.")
-
-    invalid_bounds = params.query("lower_bound > value | upper_bound < value")
-
-    if len(invalid_bounds) > 0:
-        raise ValueError(f"value out of bounds for:\n{invalid_bounds.index}")
 
 
 def _add_name_and_group_columns_to_params(params):

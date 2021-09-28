@@ -6,7 +6,7 @@ import numpy as np
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
 from estimagic.logging.database_utilities import append_row
-from estimagic.optimization.utilities import hash_array
+from estimagic.utilities import hash_array
 
 
 DERIVATIVE_ERROR_MESSAGE = (
@@ -134,7 +134,7 @@ def internal_criterion_and_derivative_template(
     to_dos = _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative)
 
     caught_exceptions = []
-    new_criterion, new_derivative = None, None
+    new_criterion, new_derivative, new_external_derivative = None, None, None
     current_params = params.copy()
     external_x = reparametrize_from_internal(x)
     current_params["value"] = external_x
@@ -155,7 +155,11 @@ def internal_criterion_and_derivative_template(
         options["return_func_value"] = True
 
         try:
-            new_derivative, new_criterion = first_derivative(func, x, **options)
+            derivative_dict = first_derivative(func, x, **options)
+            new_derivative = {
+                algorithm_info["primary_criterion_entry"]: derivative_dict["derivative"]
+            }
+            new_criterion = derivative_dict["func_value"]
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -167,9 +171,6 @@ def internal_criterion_and_derivative_template(
         try:
             new_criterion, new_external_derivative = criterion_and_derivative(
                 current_params
-            )
-            new_derivative = convert_derivative(
-                external_derivative=new_external_derivative, internal_values=x
             )
         except (KeyboardInterrupt, SystemExit):
             raise
@@ -192,15 +193,23 @@ def internal_criterion_and_derivative_template(
         if "derivative" in to_dos:
             try:
                 new_external_derivative = derivative(current_params)
-                new_derivative = convert_derivative(
-                    external_derivative=new_external_derivative, internal_values=x
-                )
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
                 caught_exceptions.append(get_traceback())
                 if "criterion" in cache_entry:
                     raise Exception(DERIVATIVE_ERROR_MESSAGE) from e
+
+    if new_derivative is None and new_external_derivative is not None:
+        if not isinstance(new_external_derivative, dict):
+            new_external_derivative = {
+                algorithm_info["primary_criterion_entry"]: new_external_derivative
+            }
+
+        new_derivative = {
+            k: convert_derivative(v, internal_values=x)
+            for k, v in new_external_derivative.items()
+        }
 
     if caught_exceptions:
         if error_handling == "continue":
@@ -224,15 +233,13 @@ def internal_criterion_and_derivative_template(
 
     if (new_criterion is not None or new_derivative is not None) and database:
         _log_new_evaluations(
-            new_criterion,
-            new_derivative,
-            x,
-            external_x,
-            caught_exceptions,
-            x_hash,
-            database,
-            database_path,
-            log_options,
+            new_criterion=new_criterion,
+            new_derivative=new_derivative,
+            external_x=external_x,
+            caught_exceptions=caught_exceptions,
+            database=database,
+            database_path=database_path,
+            log_options=log_options,
         )
 
     res = _get_output_for_optimizer(
@@ -365,44 +372,59 @@ def _check_and_harmonize_criterion_output(output, algorithm_info):
         if not isinstance(output, dict):
             raise ValueError("The output of criterion must be a scalar or dict.")
 
-        if primary not in output:
-            raise ValueError(
-                NO_PRIMARY_MESSAGE.format(algo_name, primary, list(output))
-            )
+        if "contributions" not in output and "root_contributions" in output:
+            output["contributions"] = output["root_contributions"] ** 2
 
         if "value" not in output and "contributions" in output:
             output["value"] = output["contributions"].sum()
 
-        elif "value" not in output and "root_contributions" in output:
-            output["value"] = (output["root_contributions"] ** 2).sum()
-
+        if primary not in output:
+            raise ValueError(
+                NO_PRIMARY_MESSAGE.format(algo_name, primary, list(output))
+            )
     return output
 
 
 def _check_and_harmonize_derivative(derivative, algorithm_info):
     primary = algorithm_info["primary_criterion_entry"]
 
+    if not isinstance(derivative, dict) and derivative is not None:
+        derivative = {primary: derivative}
+
     if derivative is None:
         pass
-    elif primary == "value" and np.atleast_2d(derivative).shape[0] != 1:
-        raise ValueError("The derivative of a scalar optimizer must be a 1d array.")
+    else:
 
-    elif primary in ("contributions", "root_contributions"):
-        if len(derivative.shape) != 2:
+        if primary not in derivative:
             raise ValueError(
-                "The derivative of a n optimizer that exploits a sum or sum of squares "
-                "structure must be a 2d array."
+                "If derivative returns a dict and you use an optimizer that works with "
+                f"{primary}, the derivative dictionary also must contain {primary} "
+                "as a key."
             )
+
+        if "value" in derivative and np.atleast_2d(derivative["value"]).shape[0] != 1:
+            raise ValueError("The derivative of a scalar optimizer must be a 1d array.")
+        if "contributions" in derivative:
+            if len(derivative["contributions"].shape) != 2:
+                raise ValueError(
+                    "The derivative of an optimizer that exploits a sum "
+                    "structure must be a 2d array."
+                )
+        if "root_contributions" in derivative:
+            if len(derivative["root_contributions"].shape) != 2:
+                raise ValueError(
+                    "The derivative of an optimizer that exploits a least squares "
+                    "structure must be a 2d array."
+                )
+
     return derivative
 
 
 def _log_new_evaluations(
     new_criterion,
     new_derivative,
-    x,
     external_x,
     caught_exceptions,
-    x_hash,
     database,
     database_path,
     log_options,
@@ -415,11 +437,8 @@ def _log_new_evaluations(
 
     """
     data = {
-        "external_params": external_x,
-        "internal_params": x,
+        "params": external_x,
         "timestamp": datetime.datetime.now(),
-        "distance_origin": float(np.linalg.norm(x)),
-        "distance_ones": float(np.linalg.norm(x - 1)),
         "valid": True,
     }
 
@@ -456,7 +475,7 @@ def _get_output_for_optimizer(
         crit = crit if direction == "minimize" else -crit
 
     if "derivative" in task:
-        deriv = np.array(new_derivative)
+        deriv = np.array(new_derivative[primary])
         deriv = deriv if direction == "minimize" else -deriv
 
     if task == "criterion_and_derivative":

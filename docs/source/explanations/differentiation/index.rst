@@ -6,3 +6,4 @@ Differentiation
 
 
    background_numerical_differentiation
+   richardson_extrapolation

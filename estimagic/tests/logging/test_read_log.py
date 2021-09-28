@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 from pandas.testing import assert_frame_equal
 
 from estimagic.logging.database_utilities import append_row
@@ -28,9 +29,9 @@ def test_read_optimization_iteration(tmp_path):
     # add the optimization_iterations table
     make_optimization_iteration_table(database, first_eval={"output": 0.5})
     iteration_data = [
-        {"external_params": np.array([0])},
-        {"external_params": np.array([1])},
-        {"external_params": np.array([2])},
+        {"params": np.array([0])},
+        {"params": np.array([1])},
+        {"params": np.array([2])},
     ]
 
     for data in iteration_data:
@@ -52,3 +53,8 @@ def test_read_optimization_iteration(tmp_path):
     calculated_params = last_row_calc["params"]
     expected_params = pd.DataFrame(data=[2], columns=["value"])
     assert_frame_equal(calculated_params, expected_params, check_dtype=False)
+
+
+def test_non_existing_database_raises_error():
+    with pytest.raises(FileNotFoundError):
+        read_optimization_iteration("i_do_not_exist.db", -1)

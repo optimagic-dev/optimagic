@@ -32,8 +32,8 @@ Possible approaches
 Reparametrizations
 ~~~~~~~~~~~~~~~~~~
 
-In the reparametrization approach need to find an invertible mapping `g` such as well
-as two `k'` dimensional vectors `l` and `u` such that:
+In the reparametrization approach need to find an invertible mapping :math:`g` such as
+well as two :math:`k'` dimensional vectors :math:`l` and :math:`u` such that:
 
 
 .. math::
@@ -76,11 +76,11 @@ does this for you, for a large number of constraints that are typically used in
 econometric applications.
 
 For this approach to be efficient, it is crucial that the reparametrizations preserve
-desirable properties of the original problem. In particular the mapping `g` should be
-differentiable and if possible linear. Moreover, the dimensionality of :math:`\tilde{x}`
-should be chosen as small as possible. Estimagic only implements constraints that can be
-enforced with differentiable transformations and always achieves full dimensionality
-reduction.
+desirable properties of the original problem. In particular the mapping :math:`g` should
+be differentiable and if possible linear. Moreover, the dimensionality of
+:math:`\tilde{x}` should be chosen as small as possible. Estimagic only implements
+constraints that can be enforced with differentiable transformations and always achieves
+full dimensionality reduction.
 
 
 Penalties
@@ -134,10 +134,9 @@ Covariance and sdcorr constraints
 The main difficulty with covariance and sdcorr constraints is to keep the (implied)
 covariance matrix valid, i.e. positive semi-definite. In both cases, :math:`\tilde{x}`
 contains the non-zero elements of the lower triangular cholesky factor of the (implied)
-covariance matrix. For covariance constraints, `g` is then simply the
-product of the cholesky factor with its transpose. For sdcorr covariance matrix the
-product is further converted to standard deviations and the unique elements
-of a covariance matrix.
+covariance matrix. For covariance constraints, :math:`g` is then simply the product of
+the cholesky factor with its transpose. For sdcorr covariance matrix the product is
+further converted to standard deviations and the unique elements of a covariance matrix.
 
 Several papers show that the cholesky reparametrization is a very efficient way to
 optimize over covariance matrices. Examples are :cite:`Pinheiro1996` and

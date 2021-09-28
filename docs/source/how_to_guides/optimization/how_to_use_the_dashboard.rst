@@ -129,5 +129,5 @@ For the following we assume that you have already started an optimization on the
 
 6. That's it. For more information on ``ssh`` and how to configure your remote machine,
    check out `Working remotely in shell environments
-   <https://github.com/OpenSourceEconomics/hackathon/blob/master/
-   material/2019_08_20/17_shell_remote.pdf>`_.
+   <https://github.com/OpenSourceEconomics/
+   ose-meetup/blob/master/material/2019_08_20/17_shell_remote.pdf>`_.

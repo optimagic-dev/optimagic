@@ -103,8 +103,8 @@ def estimation_table(
     # of this key.
     if not custom_col_names:
         name_list = []
-        for i in range(len(models)):
-            name_list.append(models[i].info.get("estimation_name", ""))
+        for model in models:
+            name_list.append(model.info.get("estimation_name", ""))
         if "" not in name_list:
             custom_col_names = name_list
     # Set some defaults:
@@ -331,25 +331,30 @@ def tabular_html(
 
 def _process_model(model):
     """Check model validity, convert to namedtuple."""
+    NamedTup = namedtuple("NamedTup", "params info")
     if hasattr(model, "params") and hasattr(model, "info"):
         assert isinstance(model.info, dict)
         assert isinstance(model.params, pd.DataFrame)
-        processed_model = model
+        info_dict = model.info
+        params_df = model.params.copy(deep=True)
     else:
-        NamedTup = namedtuple("NamedTup", "params info")
         if isinstance(model, dict):
-            processed_model = NamedTup(params=model["params"], info=model["info"])
+            params_df = model["params"].copy(deep=True)
+            info_dict = model.get("info", {})
+        elif isinstance(model, pd.DataFrame):
+            params_df = model.copy(deep=True)
+            info_dict = {}
         else:
             try:
-                processed_model = NamedTup(
-                    params=_extract_params_from_sm(model),
-                    info={**_extract_info_from_sm(model)},
-                )
+                params_df = _extract_params_from_sm(model)
+                info_dict = {**_extract_info_from_sm(model)}
             except (KeyboardInterrupt, SystemExit):
                 raise
             except BaseException:
                 raise TypeError("Model {} does not have valid format".format(model))
-
+    if "pvalue" in params_df.columns:
+        params_df = params_df.rename(columns={"pvalue": "p_value"})
+    processed_model = NamedTup(params=params_df, info=info_dict)
     return processed_model
 
 
@@ -375,13 +380,14 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
+
     if show_stars:
         sig_bins = [-1] + sorted(sig_levels) + [2]
         value_sr = round(df["value"], sig_digits).replace(np.nan, "").astype("str")
         value_sr += "$^{"
         value_sr += (
             pd.cut(
-                df["pvalue"],
+                df["p_value"],
                 bins=sig_bins,
                 labels=[
                     "*" * (len(sig_levels) - i) for i in range(len(sig_levels) + 1)
@@ -389,6 +395,7 @@ def _convert_model_to_series(
             )
             .astype("str")
             .replace("nan", "")
+            .replace(np.nan, "")
         )
         value_sr += " }$"
     else:
@@ -693,10 +700,9 @@ def _extract_params_from_sm(model):
     params_list = ["params", "pvalues", "bse"]
     for col in params_list:
         to_concat.append(getattr(model, col))
-    to_concat.append(model.conf_int()[0])
-    to_concat.append(model.conf_int()[1])
+    to_concat.append(model.conf_int())
     params_df = pd.concat(to_concat, axis=1)
-    params_df.columns = ["value", "pvalue", "standard_error", "ci_lower", "ci_upper"]
+    params_df.columns = ["value", "p_value", "standard_error", "ci_lower", "ci_upper"]
     return params_df
 
 

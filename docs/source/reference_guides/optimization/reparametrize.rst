@@ -3,5 +3,5 @@
 Enforcing constraints by reparametrizations and bounds
 ------------------------------------------------------
 
-.. automodule:: estimagic.optimization.reparametrize
+.. automodule:: estimagic.parameters.reparametrize
     :members:

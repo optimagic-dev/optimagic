@@ -8,7 +8,7 @@ from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TO
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
-from estimagic.optimization.utilities import calculate_trustregion_initial_radius
+from estimagic.utilities import calculate_trustregion_initial_radius
 
 try:
     from petsc4py import PETSc
@@ -42,8 +42,9 @@ def tao_pounders(
     arguments as a dictionary and pass them as `algo_options` to minimize or
     maximize.
 
-    POUNDERs (:cite:`Benson2017`, :cite:`Wild2015`, `GitLab repository
-    <https://gitlab.com/petsc/petsc/-/tree/master/src/binding/petsc4py/>`_)
+    POUNDERs (:cite:`Benson2017`, :cite:`Wild2015`, `GitHub repository
+    <https://github.com/erdc/petsc4py>`_)
+
     can be a useful tool for economists who estimate structural models using
     indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
     POUNDERs is tailored for minimizing a non-linear sum of squares objective function,
@@ -88,14 +89,14 @@ def tao_pounders(
         ||g(X)|| / ||g(X0)|| < \epsilon
 
     Args:
-        absolute_gradient_tolerance (float): Stop if relative norm of gradient is less
+        absolute_gradient_tolerance (float): Stop if norm of gradient is less than this.
+            If set to False the algorithm will not consider absolute_gradient_tolerance.
+        relative_gradient_tolerance (float): Stop if relative norm of gradient is less
             than this. If set to False the algorithm will not consider
-            absolute_gradient_tolerance.
-        relative_gradient_tolerance (float): Stop if norm of gradient is less than this.
-            If set to False the algorithm will not consider relative_gradient_tolerance.
-        scaled_gradient_tolerance (float): Stop if norm of gradient is reduced by this
-            factor. If set to False the algorithm will not consider
             relative_gradient_tolerance.
+        scaled_gradient_tolerance (float): Stop if scaled norm of gradient is smaller
+            than this. If set to False the algorithm will not consider
+            scaled_gradient_tolerance.
         trustregion_initial_radius (float): Initial value of the trust region radius.
             It must be :math:`> 0`.
         stopping_max_iterations (int): Alternative Stopping criterion.

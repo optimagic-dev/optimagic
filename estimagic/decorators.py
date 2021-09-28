@@ -17,8 +17,8 @@ import numpy as np
 import pandas as pd
 
 from estimagic.exceptions import get_traceback
-from estimagic.optimization.process_constraints import process_constraints
-from estimagic.optimization.reparametrize import reparametrize_from_internal
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.reparametrize import reparametrize_from_internal
 
 
 def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=False):
@@ -179,3 +179,27 @@ def unpack(func=None, symbol=None):
         return decorator_unpack(func)
     else:
         return decorator_unpack
+
+
+def switch_sign(func):
+    """Switch sign of all outputs of a function."""
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        unswitched = func(*args, **kwargs)
+        if isinstance(unswitched, dict):
+            switched = {key: -val for key, val in unswitched.items()}
+        elif isinstance(unswitched, (tuple, list)):
+            switched = []
+            for entry in unswitched:
+                if isinstance(entry, dict):
+                    switched.append({key: -val for key, val in entry.items()})
+                else:
+                    switched.append(-entry)
+            if isinstance(unswitched, tuple):
+                switched = tuple(switched)
+        else:
+            switched = -unswitched
+        return switched
+
+    return wrapper

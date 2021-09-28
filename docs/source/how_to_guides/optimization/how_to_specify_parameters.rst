@@ -14,7 +14,7 @@ optimized with estimagic.
 If you haven't done so yet, you should check out our `Ordered Logit Example`_,
 so you see one small params DataFrame in action.
 
-.. _Ordered Logit Example: ../../getting_started/ordered_logit_example.ipynb
+.. _Ordered Logit Example: ../../getting_started/first_likelihood_estimation_with_estimagic.ipynb
 
 
 The Index
