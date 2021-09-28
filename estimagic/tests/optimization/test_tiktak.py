@@ -10,17 +10,17 @@ import chaospy
 import numpy as np
 import pandas as pd
 
-from estimagic.optimization.tiktak import TikTakOptimize
+from estimagic.optimization.tiktak import minimize_tik_tak
 
 
 # define a criterion function for testing TikTak
-def Griewank(params):
+def griewank(params):
     column = params["value"]
     array = column.to_numpy()
-    X = np.transpose(array)
-    d = X.shape[0]
+    x = np.transpose(array)
+    d = x.shape[0]
     i = np.arange(1, d + 1)
-    res = 2 + np.sum(X ** 2 / 200) - np.prod(np.cos(X / np.sqrt(i)))
+    res = 2 + np.sum(x ** 2 / 200) - np.prod(np.cos(x / np.sqrt(i)))
     return res
 
 
@@ -36,8 +36,8 @@ lower_bounds = [domain[0] for i in range(n)]  # lower bounds on each dimension
 upper_bounds = [domain[1] for i in range(n)]  # upper bounds on each dimension
 bounds_dict = {"lower_bounds": lower_bounds, "upper_bounds": upper_bounds}
 
-## define all the basic arguments for our optimization
-criterion = Griewank
+# define all the basic arguments for our optimization
+criterion = griewank
 bounds = pd.DataFrame(bounds_dict)
 local_search_algorithm = "scipy_neldermead"
 num_points = 100
@@ -50,7 +50,7 @@ logging = False
 
 
 # run the algorithm
-solution = TikTakOptimize(
+solution = minimize_tik_tak(
     criterion=criterion,
     bounds=bounds,
     local_search_algorithm=local_search_algorithm,
@@ -91,7 +91,7 @@ custom_sample = pd.DataFrame(data=xstarts, index=[f"x_{i}" for i in range(10)])
 
 
 # run the algorithm again with custom starting points
-solution = TikTakOptimize(
+solution = minimize_tik_tak(
     criterion=criterion,
     local_search_algorithm=local_search_algorithm,
     num_restarts=num_restarts,

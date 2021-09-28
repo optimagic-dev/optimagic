@@ -5,7 +5,7 @@ import pandas as pd
 from estimagic.optimization.optimize import minimize
 
 
-def TikTakOptimize(
+def minimize_tik_tak(
     criterion,
     local_search_algorithm,
     num_restarts,
@@ -21,11 +21,12 @@ def TikTakOptimize(
     Minimize a function using the TikTak algorithm.
 
     TikTak (`Arnoud, Guvenen, and Kleineberg
-    <https://fguvenendotcom.files.wordpress.com/2019/09/agk2019-september-nber-submit.pdf>`_)
-    is an algorithm for solving global optimization problems.
-    It performs local searches from a set of carefully-selected points in the parameter space.
+    <https://www.nber.org/system/files/working_papers/w26340/w26340.pdf>`_)
+    is an algorithm for solving global optimization problems. It performs local
+    searches from a set of carefully-selected points in the parameter space.
 
-    First implemented in Python by Alisdair McKay (`GitHub Repository <https://github.com/amckay/TikTak>`_)
+    First implemented in Python by Alisdair McKay
+    (`GitHub Repository <https://github.com/amckay/TikTak>`_)
 
     Args:
         criterion (Callable): A function that takes a pandas DataFrame (see
@@ -35,37 +36,43 @@ def TikTakOptimize(
             Otherwise it can be a callable with the estimagic algorithm interface. See
             :ref:`algorithms`.
         num_restarts (int): the number of initial sample points from which to perform
-            local optimization. If automatically generating sample points, this value must
-            be smaller than num_points. If providing a custom set of sample points, this value
-            must be smaller than the number of columns in your custom_sample dataframe (see below)/
+            local optimization. If automatically generating sample points, this value
+            must be smaller than num_points. If providing a custom set of sample points,
+            this value must be smaller than the number of columns in your custom_sample
+            dataframe (see below)
         sampling (str): specifies the procedure for random or quasi-random sampling.
             See chaospy documentation of  an overview of possible rules:
-            https://chaospy.readthedocs.io/en/master/reference/sampling.html#low-discrepancy-sequences
-            In addition to chaospy's sampling rules, we also allow users to input a custom set of
-            starting points as a datfarame. In that case, set this argument to "custom".
+            https://chaospy.readthedocs.io/
+            In addition to chaospy's sampling rules, we also allow users to input a
+            custom set of starting points as a datfarame. In that case, set this
+            argument to "custom".
         bounds (pandas.DataFrame): A DataFrame with one column called "lower_bounds" and
-            another called "upper_bounds," with an entry in each column for every dimension
-            of the optimization problem. Not required if the user provides a custom sample.
+            another called "upper_bounds," with an entry in each column for every
+            dimension of the optimization problem. Not required if the user provides a
+            custom sample.
         num_points (int): the number of initial points to sample in the parameter space.
             Not required if the user provides a custom sample.
-        custom_sample (pandas.DataFrame): A dataframe of custom starting points. Set sampling to "custom"
-            if you plan to use this argument. Each column of the dataframe should be a distinct point in
-            the sample. Each row of the dataframe should be a parameter of the point. So if you want to pass a
-            sample of 100 10-dimensional starting points, your dataframe should have 10 rows and 100 columns.
-            If you do not specify this argument, you must specify bounds and num_points so that TikTak
-            can automatically generate a sample.
+        custom_sample (pandas.DataFrame): A dataframe of custom starting points. Set
+            sampling to "custom" if you plan to use this argument. Each column of the
+            dataframe should be a distinct point in the sample. Each row of the
+            dataframe should be a parameter of the point. So if you want to pass a
+            sample of 100 10-dimensional starting points, your dataframe should have 10
+            rows and 100 columns. If you do not specify this argument, you must specify
+             bounds and num_points so that TikTak can automatically generate a sample.
         mixing_weight (callable): As TikTak performs local optimizations on a set
-            of sample points, the algorithm computes a convex combination of each successive
-            point and the "best" point sampled yet. Users may supply their own functions
-            for computing this convex combination. This user-supplied function must take only
-            one argument ``i`` (integer), where ``i`` is the number of points sampled so far out
-            of the total ``num_restarts`` supplied above. The function must return a float between 0 and 1.
-            This output `theta` will serve as the "weight" assigned to the best point so far,
-            compared to the current point in the sampling process. By default, we implement
-            the mixing weight formula described by Arnoud, Guvenen and Kleinenberg in the paper linked above.
+            of sample points, the algorithm computes a convex combination of each
+            successive point and the "best" point sampled yet. Users may supply their
+            own functions for computing this convex combination. This user-supplied
+            function must take only one argument ``i`` (integer), where ``i`` is the
+            number of points sampled so far out of the total ``num_restarts`` supplied
+             above. The function must return a float between 0 and 1. This output
+             `theta` will serve as the "weight" assigned to the best point so far,
+            compared to the current point in the sampling process. By default, we
+            implement the mixing weight formula described by Arnoud, Guvenen and
+            Kleinenberg in the paper linked above.
         algo_options (dict): Algorithm specific configuration of the local optimization.
             See :ref:`list_of_algorithms` for supported options of each algorithm.
-        logging #TODO
+
     """
 
     def df_wrapper(array):
@@ -95,7 +102,7 @@ def TikTakOptimize(
         nparam = len(lower_bounds)
 
         # the default sampling method depends on nparam
-        if sampling == None:
+        if sampling is None:
             if nparam <= 15:
                 sampling = "sobol"
             else:
@@ -118,16 +125,15 @@ def TikTakOptimize(
         print(
             "ERROR: User did not provide enough information to sample starting points"
         )
-        # TODO: error handling
 
     # --- evaluate the criterion function on each starting point ----
     dfxstarts = [df_wrapper(point) for point in xstarts]
 
     y = np.array([criterion(point) for point in dfxstarts])
     # sort the results
-    I = np.argsort(y)
-    xstarts = xstarts[I]
-    y = y[I]
+    sorting_indices = np.argsort(y)
+    xstarts = xstarts[sorting_indices]
+    y = y[sorting_indices]
 
     # take the best Imax
     xstarts = list(xstarts[:num_restarts])
@@ -138,13 +144,13 @@ def TikTakOptimize(
     num_func_evals = 0
 
     for i in range(num_restarts):
-        # ishrink = shrink_after #local_search_options["shrink_after"]
         new_task = xstarts.pop()
 
         # compute the convex combination of this sample point and the "best" so far
         if (
-            mixing_weight == None
-        ):  # by default, we implement the formula supplied by Arnoud, Guvenen, and Kleinenberg
+            mixing_weight is None
+        ):  # by default, we implement the formula supplied by Arnoud, Guvenen, and
+            # Kleinenberg
             term = (i / num_restarts) ** (1 / 2)
             max_term = max([0.1, term])
             theta = min([max_term, 0.995])
