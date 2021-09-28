@@ -107,17 +107,18 @@ def estimate_msm(
             step sizes. This is because many msm criterion functions are slightly
             noisy.
         jacobian (callable or pandas.DataFrame): A function that take ``params`` and
-            potentially other keyword arguments and returns the jacobian of
-            simulate_moments with respect to the params. Alternatively you can pass
-            a pandas.DataFrame with the jacobian at the optimal parameters. This is
+            potentially other keyword arguments and returns the Jacobian of
+            simulate_moments with respect to the params. Alternatively, you can pass
+            a pandas.DataFrame with the Jacobian at the optimal parameters. This is
             only possible if you pass ``optimize_options=False``.
-        jacobian_kwargs (dict): Additional keyword arguments for jacobian.
+        jacobian_kwargs (dict): Additional keyword arguments for the Jacobian function.
         simulate_moments_and_jacobian (callable): A function that takes params and
             potentially other keyword arguments and returns a tuple with simulated
             moments and the jacobian of simulated moments with respect to params.
         simulate_moments_and_jacobian_kwargs (dict): Additional keyword arguments for
             simulate_moments_and_jacobian.
         ci_level (float): Confidence level for the calculation of confidence intervals.
+            The default is 0.95
         n_samples (int): Number of samples used to transform the covariance matrix of
             the internal parameter vector into the covariance matrix of the external
             parameters. For background information about internal and external params

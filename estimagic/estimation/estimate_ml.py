@@ -40,12 +40,12 @@ def estimate_ml(
 ):
     """Do a maximum likelihood (ml) estimation.
 
-    This is a high level interface for our lower level functions for maximization,
+    This is a high level interface of our lower level functions for maximization,
     numerical differentiation and inference. It does the full workflow for maximum
     likelihood estimation with just one function call.
 
-    While we have good defaults, you can still configure each aspect of each steps
-    vial the optional arguments of this functions. If you find it easier to do the
+    While we have good defaults, you can still configure each aspect of each step
+    via the optional arguments of this function. If you find it easier to do the
     "difficult" steps (mainly maximization and calculating numerical derivatives
     of a potentially noisy function) separately, you can do so and just provide those
     results as ``params``, ``jacobian`` and ``hessian``.
@@ -94,44 +94,45 @@ def estimate_ml(
         loglike_and_derivative (callable): Return a tuple consisting of the result
             of loglike and the result of derivative. Only use this if you can exploit
             synergies in the calculation of loglike and derivative.
-        loglike_and_derivative_kwargs (dict): Additional keyword argumenst for
+        loglike_and_derivative_kwargs (dict): Additional keyword arguments for
             loglike_and_derivative.
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives for the calculation of standard errors. See
             :ref:`first_derivative` for details.
-        jacobian (callable or pandas.DataFrame or False): A function that take
+        jacobian (callable or pandas.DataFrame or False): A function that takes
             ``params`` and potentially other keyword arguments and returns the jacobian
-            of loglike["contributions"] with respect to the params. Alternatively you
-            can pass a pandas.DataFrame with the jacobian at the optimal parameters.
+            of loglike["contributions"] with respect to the params. Alternatively, you
+            can pass a pandas.DataFrame with the Jacobian at the optimal parameters.
             This is only possible if you pass ``optimize_options=False``. Note that you
-            only need to pass a jacobian function if you have a closed form jacobian but
+            only need to pass a Jacobian function if you have a closed form Jacobian but
             decided not to return it as part of ``derivative`` (e.g. because you use
             a scalar optimizer and can calculate a gradient in a way that is faster
-            than calculating and summing te jacobian). If you pass None, a numerical
-            jacobian will be calculated. If you pass ``False``, you signal that no
-            jacobian should be calculated. Thus no result that requires the jacobian
+            than calculating and summing the Jacobian). If you pass None, a numerical
+            Jacobian will be calculated. If you pass ``False``, you signal that no
+            Jacobian should be calculated. Thus, no result that requires the Jacobian
             will be calculated.
-        jacobian_kwargs (dict): Additional keyword arguments for jacobian.
+        jacobian_kwargs (dict): Additional keyword arguments for the Jacobian function.
         hessian (callable or pd.DataFrame): A function that takes
-            ``params`` and potentially other keyword arguments and returns the hessian
-            of loglike["value"] with respect to the params. Alternatively you
-            can pass a pandas.DataFrame with the hessian at the optimal parameters.
+            ``params`` and potentially other keyword arguments and returns the Hessian
+            of loglike["value"] with respect to the params. Alternatively, you
+            can pass a pandas.DataFrame with the Hessian at the optimal parameters.
             This is only possible if you pass ``optimize_options=False``. If you pass
-            None, a numerical hessian will be calculated. If you pass ``False``, you
-            signal that no jacobian should be calculated. Thus no result that requires
-            the jacobian will be calculated.
-        hessian_kwargs (dict): Additional keyword arguments for hessian.
+            None, a numerical Hessian will be calculated. If you pass ``False``, you
+            signal that no Hessian should be calculated. Thus, no result that requires
+            the Hessian will be calculated.
+        hessian_kwargs (dict): Additional keyword arguments for the Hessian function.
         ci_level (float): Confidence level for the calculation of confidence intervals.
+            The default is 0.95.
         n_samples (int): Number of samples used to transform the covariance matrix of
             the internal parameter vector into the covariance matrix of the external
             parameters. For background information about internal and external params
             see :ref:`implementation_of_constraints`. This is only used if you have
-            constraints in the ``minimize_options``
+            specified constraints.
         bounds_handling (str): One of "clip", "raise", "ignore". Determines how bounds
             are handled. If "clip", confidence intervals are clipped at the bounds.
             Standard errors are only adjusted if a sampling step is necessary due to
             additional constraints. If "raise" and any lower or upper bound is binding,
-            we raise an error. If "ignore", boundary problems are simply ignored.
+            we raise an Error. If "ignore", boundary problems are simply ignored.
         design_info (pandas.DataFrame): DataFrame with one row per observation that
             contains some or all of the variables "psu" (primary sampling unit),
             "stratum" and "fpc" (finite population corrector). See
@@ -206,7 +207,7 @@ def estimate_ml(
         jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
         _jac = jacobian(estimates, **jacobian_kwargs)
         int_jac = deriv_to_internal(_jac)
-    # switch to "numerical" even if jac_case == "skip" because jac is required for msm.
+    # switch to "numerical" even if jac_case == "skip" because jac is required for ml.
     elif jac_case == "numerical":
         options = numdiff_options.copy()
         options["key"] = "contributions"
@@ -223,17 +224,17 @@ def estimate_ml(
         int_jac = None
 
     # ==================================================================================
-    # Calculate internal hessian (most of this is not yet implemented)
+    # Calculate internal Hessian (most of this is not yet implemented)
     # ==================================================================================
 
     if hess_case == "skip":
         int_hess = None
     elif hess_case == "numerical":
-        raise NotImplementedError("Numerical hessian calculation is not yet supported.")
+        raise NotImplementedError("Numerical Hessian calculation is not yet supported.")
         hess_numdiff_info = {}
     elif hess_case in ("closed-form", "pre-calculated") and constraints:
         raise NotImplementedError(
-            "Closed-form or pre-calculated hessians are not yet compatible with "
+            "Closed-form or pre-calculated Hessians are not yet compatible with "
             "constraints."
         )
     else:
@@ -290,8 +291,8 @@ def estimate_ml(
         ext_jac = int_jac
         ext_hess = int_hess
     else:
-        ext_jac = "No external jacobian defined due to constraints."
-        ext_hess = "No external hessian defined due to constraints."
+        ext_jac = "No external Jacobian defined due to constraints."
+        ext_hess = "No external Hessian defined due to constraints."
 
     # ==================================================================================
     # Construct output
@@ -318,7 +319,7 @@ def estimate_ml(
 
 def _get_cov_cases(jac_case, hess_case, design_info):
     if jac_case == "skip" and hess_case == "skip":
-        raise ValueError("jacobian and hessian cannot both be False.")
+        raise ValueError("Jacobian and Hessian cannot both be False.")
     elif jac_case == "skip" and hess_case != "skip":
         cases = ["hessian"]
     elif hess_case == "skip" and jac_case != "skip":
