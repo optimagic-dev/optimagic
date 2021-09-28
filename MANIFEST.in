@@ -18,7 +18,7 @@ include *.yml
 exclude pytask.ini
 exclude *.pickle
 
-graft estimagic
+graft src/estimagic
 
 prune docs
 prune tests

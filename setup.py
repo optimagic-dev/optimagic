@@ -24,9 +24,10 @@ setup(
     url="https://github.com/OpenSourceEconomics/estimagic",
     author="Janos Gabler",
     author_email="janos.gabler@gmail.com",
-    packages=find_packages(exclude=["tests/*"]),
+    packages=find_packages(where="src"),
     entry_points={"console_scripts": ["estimagic=estimagic.cli:cli"]},
     zip_safe=False,
     package_data={"estimagic": ["optimization/algo_dict.json"]},
     include_package_data=True,
+    package_dir={"": "src"},
 )
