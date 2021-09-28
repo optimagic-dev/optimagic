@@ -1,3 +1,17 @@
+"""Functions for multi start optimization a la TikTak.
+
+To-Do:
+
+- Make sampling compatible with constraints
+    - Write a get_approximate_internal_bounds function
+    - Sample on internal parameters space
+    - Do not do any bounds checking for fixed parameters
+
+- Improve Error handling
+    - Go over all error messages and provide information on the exact problem
+      (e.g. section of params where bounds are missing, ...)
+
+"""
 import chaospy
 import numpy as np
 import pandas as pd
@@ -186,3 +200,61 @@ def minimize_tik_tak(
     }
 
     return res
+
+
+def check_or_create_sample(n_points, sampling, params, seed):
+    if isinstance(sampling, pd.DataFrame):
+        if not sampling.columns.equals(params.index):
+            raise ValueError(
+                "If you provide a custom sample as DataFrame the columns of that "
+                "DataFrame and the index of params must be equal."
+            )
+        sample = sampling[params.index].to_numpy()
+    elif isinstance(sampling, np.ndarray):
+        _, n_params = sampling.shape
+        if n_params != len(params):
+            raise ValueError(
+                "If you provide a custom sample as a numpy array it must have as many "
+                "columns as parameters."
+            )
+        sample = sampling
+    else:
+        lower_bounds = _get_bounds(params, "lower")
+        upper_bounds = _get_bounds(params, "upper")
+
+        if (lower_bounds >= upper_bounds).any():
+            raise ValueError(
+                "Lower bound must be smaller than upper bound for all parameters."
+            )
+
+        sample = _do_actual_sampling(
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
+            n_points=n_points,
+            method=sampling,
+        )
+    return sample
+
+
+def _do_actual_sampling(lower_bounds, upper_bounds, n_points, method):
+    pass
+
+
+def _get_bounds(params, bounds_type):
+    soft_name = f"soft_{bounds_type}_bound"
+    hard_name = f"{bounds_type}_bound"
+    if soft_name in params:
+        bounds = params[soft_name].to_numpy()
+    elif hard_name in params:
+        bounds = params[hard_name].to_numpy()
+    else:
+        raise ValueError(
+            f"{soft_name} or {hard_name} must be in params to sample start values."
+        )
+
+    if not np.isfinite(bounds).all():
+        raise ValueError(
+            f"{bounds_type} bounds must be finite for all parameters to sample start "
+            "values."
+        )
+    return bounds
