@@ -57,8 +57,10 @@ def estimate_ml(
             potentially other keyword arguments) and returns a dictionary that has at
             least the entries "value" (a scalar float) and "contributions" (a 1d numpy
             array or pandas Series) with the log likelihood contribution per individual.
-        params (pd.DataFrame): DataFrame where the "value" column contains estimated
-            parameters of a likelihood model. See :ref:`params` for details.
+        params (pd.DataFrame): DataFrame where the "value" column contains the 
+            estimated or start parameters of a likelihood model. See :ref:`params` for
+            details. If the supplied parameters are estimated parameters, set
+            optimize_options to False.
         optimize_options (dict or False): Keyword arguments that govern the numerical
             optimization. Valid entries are all arguments of
             :func:`~estimagic.optimization.optimize.minimize` except for criterion,
@@ -150,7 +152,7 @@ def estimate_ml(
 
     check_optimization_options(
         optimize_options,
-        usage="estimate_msm",
+        usage="estimate_ml",
         algorithm_mandatory=True,
     )
 
@@ -162,7 +164,7 @@ def estimate_ml(
 
     cov_cases = _get_cov_cases(jac_case, hess_case, design_info)
 
-    check_numdiff_options(numdiff_options, "estimate_msm")
+    check_numdiff_options(numdiff_options, "estimate_ml")
     numdiff_options = {} if numdiff_options in (None, False) else numdiff_options
 
     constraints = [] if constraints is None else constraints
@@ -174,9 +176,8 @@ def estimate_ml(
     # ==================================================================================
 
     if is_optimized:
-        opt_res = {"solution_params": params}
+        estimates = params
     else:
-
         opt_res = maximize(
             criterion=loglike,
             criterion_kwargs=loglike_kwargs,
@@ -190,8 +191,7 @@ def estimate_ml(
             log_options=log_options,
             **optimize_options,
         )
-
-    estimates = opt_res["solution_params"]
+        estimates = opt_res["solution_params"]
 
     # ==================================================================================
     # Calculate internal jacobian

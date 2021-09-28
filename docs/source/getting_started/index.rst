@@ -13,8 +13,8 @@ numerical optimization and differentiation.
 
    installation
    first_optimization_with_estimagic.ipynb
-   first_msm_estimation_with_estimagic.ipynb
    first_likelihood_estimation_with_estimagic.ipynb
+   first_msm_estimation_with_estimagic.ipynb
    why_optimization_is_hard.ipynb
    which_optimizer_to_use.ipynb
    visualizing_an_optimization_problem.ipynb
