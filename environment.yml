@@ -41,6 +41,7 @@ dependencies:
   - nlopt
   - sphinx-panels
   - pygmo
+  - chaospy
 
   - pip:
       - black
