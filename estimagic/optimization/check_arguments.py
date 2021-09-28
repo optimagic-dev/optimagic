@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from estimagic.shared.check_option_dicts import check_numdiff_options
+
 
 def check_argument(argument):
     valid_types = {
@@ -50,3 +52,5 @@ def check_argument(argument):
 
     if argument["error_handling"] not in ["raise", "continue"]:
         raise ValueError("error_handling must be 'raise' or 'continue'")
+
+    check_numdiff_options(argument["numdiff_options"], "optimization")

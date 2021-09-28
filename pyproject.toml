@@ -7,6 +7,7 @@ isort = 1
 black = 1
 pyupgrade = 1
 
+
 [tool.nbqa.addopts]
-isort = ["--sl"]
+isort = ["--treat-comment-as-code", "# %%", "--profile=black"]
 pyupgrade = ["--py36-plus"]

@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 
-from estimagic.estimation.estimate_msm import _check_and_process_derivative_options
-from estimagic.estimation.estimate_msm import _check_and_process_minimize_options
 from estimagic.estimation.estimate_msm import estimate_msm
+from estimagic.shared.check_option_dicts import check_numdiff_options
+from estimagic.shared.check_option_dicts import check_optimization_options
 
 
 def _sim_pd(params):
@@ -51,7 +51,7 @@ def test_estimate_msm(simulate_moments, moments_cov):
     if isinstance(empirical_moments, dict):
         empirical_moments = empirical_moments["simulated_moments"]
 
-    minimize_options = {"algorithm": "scipy_lbfgsb"}
+    optimize_options = {"algorithm": "scipy_lbfgsb"}
 
     # catching warnings is necessary because the very special case with diagonal
     # weighting and diagonal jacobian leads to singular matrices while calculating
@@ -63,10 +63,10 @@ def test_estimate_msm(simulate_moments, moments_cov):
             empirical_moments=empirical_moments,
             moments_cov=moments_cov,
             params=start_params,
-            minimize_options=minimize_options,
+            optimize_options=optimize_options,
         )
 
-    calculated_params = calculated["minimize_res"]["solution_params"][["value"]]
+    calculated_params = calculated["optimize_res"]["solution_params"][["value"]]
     # check that minimization works
     aaae(calculated_params["value"].to_numpy(), expected_params["value"].to_numpy())
 
@@ -81,16 +81,11 @@ def test_estimate_msm(simulate_moments, moments_cov):
     aaae(calculated_cov, expected_cov)
 
 
-def test_check_and_process_numdiff_options_differentiated_but_not_minimized():
-    with pytest.raises(ValueError):
-        _check_and_process_derivative_options({}, pd.DataFrame(), False)
-
-
 def test_check_and_process_numdiff_options_with_invalid_entries():
     with pytest.raises(ValueError):
-        _check_and_process_derivative_options({"func": lambda x: x}, None, False)
+        check_numdiff_options({"func": lambda x: x}, "estimate_msm")
 
 
-def test_check_and_process_minimize_options_with_invalid_entries():
+def test_check_and_process_optimize_options_with_invalid_entries():
     with pytest.raises(ValueError):
-        _check_and_process_minimize_options({"criterion": lambda x: x})
+        check_optimization_options({"criterion": lambda x: x}, "estimate_msm")

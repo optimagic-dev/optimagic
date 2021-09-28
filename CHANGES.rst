@@ -20,6 +20,13 @@ moments. The breaking changes are:
 - first_derivative now returns a dictionary, independent of arguments.
 - structure of the logging database has changed
 
+- :gh:`146` Adds ``estimate_ml`` functionality (:ghuser:`janosg`, :ghuser:`LuisCald`
+  and :ghuser:`s6soverd`).
+- :gh:`235` Improves the documentation (:ghuser:`roecla`)
+- :gh:`216` Adds the ipopt optimizer (:ghuser:`roecla`)
+- :gh:`215` Adds optimizers from the pygmo library (:ghuser:`roecla` and
+  :ghuser:`janosg`)
+- :gh:`212` Adds optimizers from the nlopt library (:ghuser:`mpetrosian`)
 - :gh:`228` Restructures testing and makes changes to log_options.
 - :gh:`149` Adds ``estimate_msm`` functionality (:ghuser:`janosg` and :ghuser:`loikein`)
 - :gh:`219` Several enhancements by (:ghuser:`tobiasraabe`)

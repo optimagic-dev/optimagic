@@ -4,15 +4,15 @@ x.y) from this installation
 
 Text:
 
-[estimagic]  estimagic x.y, 2019
+[estimagic]  estimagic x.y, 2021
 Janos Gabler, http://estimagic.readthedocs.io
 
 BibTeX:
 
-@Unpublished{Gabler2019,
+@Unpublished{Gabler2021,
       Title  = {A Python Tool for the Estimation of (Structural) Econometric Models.},
       Author = {Janos Gabler},
-      Year   = {2019},
+      Year   = {2021},
       Url    = {https://github.com/OpenSourceEconomics/estimagic}
     }
 
