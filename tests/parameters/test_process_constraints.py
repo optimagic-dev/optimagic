@@ -9,7 +9,22 @@ from estimagic.parameters.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
 from estimagic.parameters.process_constraints import process_constraints
-from estimagic.tests.parameters.test_reparametrize import reduce_params
+
+
+def reduce_params(params, constraints):
+    all_locs = []
+    for constr in constraints:
+        if "query" in constr:
+            all_locs = ["i", "j1", "j2"]
+        elif isinstance(constr["loc"], tuple):
+            all_locs.append(constr["loc"][0])
+        elif isinstance(constr["loc"], list):
+            all_locs.append(constr["loc"][0][0])
+        else:
+            all_locs.append(constr["loc"])
+    all_locs = sorted(set(all_locs))
+    return params.loc[all_locs].copy()
+
 
 constr1 = {"loc": 0, "type": "equality"}
 expected1 = {"index": [0, 1, 2]}
