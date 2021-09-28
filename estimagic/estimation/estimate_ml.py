@@ -57,7 +57,7 @@ def estimate_ml(
             potentially other keyword arguments) and returns a dictionary that has at
             least the entries "value" (a scalar float) and "contributions" (a 1d numpy
             array or pandas Series) with the log likelihood contribution per individual.
-        params (pd.DataFrame): DataFrame where the "value" column contains the 
+        params (pd.DataFrame): DataFrame where the "value" column contains the
             estimated or start parameters of a likelihood model. See :ref:`params` for
             details. If the supplied parameters are estimated parameters, set
             optimize_options to False.
