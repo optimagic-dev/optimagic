@@ -113,7 +113,7 @@ If you use Estimagic for your research, please do not forget to cite it.
     @Unpublished{Gabler2021,
       Title  = {A Python Tool for the Estimation of (Structural) Econometric Models.},
       Author = {Janos Gabler},
-      Year   = {2020},
+      Year   = {2021},
       Url    = {https://github.com/OpenSourceEconomics/estimagic}
     }
 
