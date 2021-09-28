@@ -1,17 +1,15 @@
 """Test the functions to run the dashboard."""
-from pathlib import Path
-
 import pytest
 from click.testing import CliRunner
 from estimagic.cli import cli
+from estimagic.config import EXAMPLE_DIR
 from estimagic.dashboard.run_dashboard import _create_session_data
 from estimagic.dashboard.run_dashboard import _process_database_paths
 
 
 @pytest.fixture()
 def database_paths():
-    current_dir_path = Path(__file__).resolve().parent
-    database_paths = [current_dir_path / "db1.db", current_dir_path / "db2.db"]
+    database_paths = [EXAMPLE_DIR / "db1.db", EXAMPLE_DIR / "db2.db"]
     return database_paths
 
 
@@ -22,7 +20,7 @@ def database_name_to_path(database_paths):
 
 
 def test_process_dashboard_args_single_path():
-    single_path = Path(__file__).resolve().parent / "db1.db"
+    single_path = EXAMPLE_DIR / "db1.db"
     database_name_to_path = _process_database_paths(database_paths=single_path)
     assert database_name_to_path == {"db1": single_path}
 
@@ -75,7 +73,7 @@ def test_dashboard_cli(monkeypatch):
         cli,
         [
             "dashboard",
-            str(Path(__file__).parent / "*.db"),
+            str(EXAMPLE_DIR / "*.db"),
             "--no-browser",
             "--port",
             "9999",
@@ -105,9 +103,9 @@ def test_dashboard_cli_duplicate_paths(monkeypatch):
         cli,
         [
             "dashboard",
-            str(Path(__file__).parent / "*.db"),
-            str(Path(__file__).parent / "db1.db"),
-            str(Path(__file__).parent / "db2.db"),
+            str(EXAMPLE_DIR / "*.db"),
+            str(EXAMPLE_DIR / "db1.db"),
+            str(EXAMPLE_DIR / "db2.db"),
             "--stride",
             "10",
         ],
@@ -128,6 +126,6 @@ def test_dashboard_cli_recursively_search_directories(monkeypatch):
     monkeypatch.setattr("estimagic.cli.run_dashboard", fake_run_dashboard)
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["dashboard", str(Path(__file__).parent)])
+    result = runner.invoke(cli, ["dashboard", str(EXAMPLE_DIR)])
 
     assert result.exit_code == 0

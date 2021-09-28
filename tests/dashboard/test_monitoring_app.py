@@ -1,6 +1,4 @@
 """Test the functions of the monitoring app."""
-from pathlib import Path
-
 import estimagic.dashboard.monitoring_app as monitoring
 import numpy as np
 import pandas as pd
@@ -8,6 +6,7 @@ import pandas.testing as pdt
 import pytest
 from bokeh.document import Document
 from bokeh.models import ColumnDataSource
+from estimagic.config import EXAMPLE_DIR
 from estimagic.optimization.optimize import minimize
 
 
@@ -15,8 +14,7 @@ def test_monitoring_app():
     """Integration test that no Error is raised when calling the monitoring app."""
     doc = Document()
     database_name = "test_db"
-    current_dir_path = Path(__file__).resolve().parent
-    db_path = current_dir_path / "db2.db"
+    db_path = EXAMPLE_DIR / "db2.db"
 
     needs_update = False
     if needs_update:
