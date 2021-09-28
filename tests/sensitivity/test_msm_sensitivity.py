@@ -4,7 +4,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal as aaae
 from scipy import stats
 
-from estimagic.config import TEST_DIR
+from estimagic.config import EXAMPLE_DIR
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.sensitivity.msm_sensitivity import calculate_actual_sensitivity_to_noise
@@ -74,7 +74,7 @@ def params():
 
 @pytest.fixture
 def func_kwargs():
-    data = pd.read_csv(TEST_DIR / "sensitivity" / "sensitivity_probit_example_data.csv")
+    data = pd.read_csv(EXAMPLE_DIR / "sensitivity_probit_example_data.csv")
     y_data = data[["y"]]
     x_data = data[["intercept", "x1", "x2"]]
     func_kwargs = {"x": x_data, "y": y_data}
