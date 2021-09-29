@@ -14,11 +14,19 @@ setup(
         criterion function (Extremum Estimator). Examples are maximum likelihood
         estimation, generalized method of moments, method of simulated moments and
         indirect inference.""",
-    license="BSD",
+    license="MIT",
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: BSD License",
+        "License :: OSI Approved :: MIT License",
         "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX",
+        "Topic :: Scientific/Engineering",
+        "Intended Audience :: Science/Research",
     ],
     keywords=[
         "econometrics",

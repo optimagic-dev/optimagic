@@ -52,6 +52,6 @@ test:
 
 about:
   home: https://github.com/OpenSourceEconomics/estimagic
-  license: BSD
+  license: MIT
   license_file: LICENSE
   summary: Tools for the estimation of (structural) econometric models.
