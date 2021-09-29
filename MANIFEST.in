@@ -8,17 +8,20 @@
 
 include CITATION
 include LICENSE
-include README.rst
 include CHANGES.rst
-include tox.ini
-include *.sh
-include *.yaml
-include *.yml
 
-exclude pytask.ini
+recursive-include src *.css
+recursive-include src *.csv
+recursive-include src *.db
+recursive-include src *.html
+recursive-include src *.py
+
+exclude *.sh
+exclude *.yaml
+exclude *.yml
 exclude *.pickle
-
-graft src/estimagic
+exclude pytask.ini
+exclude tox.ini
 
 prune docs
 prune tests
