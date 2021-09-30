@@ -7,8 +7,12 @@ from estimagic.inference.bootstrap import bootstrap
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 
-
-__version__ = "0.1.4"
+try:
+    from ._version import version as __version__
+except ImportError:
+    # broken installation, we don't even try unknown only works because we do poor mans
+    # version compare
+    __version__ = "unknown"
 
 
 __all__ = [
@@ -20,4 +24,5 @@ __all__ = [
     "estimate_msm",
     "estimate_ml",
     "get_moments_cov",
+    "__version__",
 ]
