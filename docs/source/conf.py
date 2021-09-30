@@ -114,7 +114,7 @@ try:
 except (KeyboardInterrupt, SystemExit):
     raise
 except Exception:
-    realease = "x.x.x"
+    release = "x.x.x"
 
 version = release
 
