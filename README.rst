@@ -16,10 +16,10 @@ estimagic
     :target: https://estimagic.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://github.com/OpenSourceEconomics/estimagic/workflows/Continuous%20Integration%20Workflow/badge.svg?branch=master
-    :target: https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amaster
+.. image:: https://github.com/OpenSourceEconomics/estimagic/workflows/Continuous%20Integration%20Workflow/badge.svg?branch=main
+    :target: https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain
 
-.. image:: https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/main/graph/badge.svg
   :target: https://codecov.io/gh/OpenSourceEconomics/estimagic
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
@@ -121,4 +121,4 @@ If you use Estimagic for your research, please do not forget to cite it.
 Warning
 =======
 
-Estimagic is still in beta status and the API might still change.
+Estimagic is in beta status and the API might change.
