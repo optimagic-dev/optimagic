@@ -57,21 +57,6 @@ To find more information on ``algo_options`` that more than one algorithm allows
 see :ref:`algo_options`.
 
 
-How to read the algorithms documentation
-========================================
-
-
-Below we document the supported algorithms. The documentation refers to the internal
-optimizer interface (see :ref:`internal_optimizer_interface`). However, those functions
-are not intended to be called by the user. Instead users should call them by calling
-``maximize`` or ``minimize`` with the corresponding algorithm argument.
-
-The arguments ``criterion_and_derivative``, ``x``, ``lower_bound`` and ``upper_bound``
-of the signatures below should simply be ignored.
-
-The other arguments can be set as ``algo_options`` when calling ``maximize`` or
-``minimize``.
-
 
 .. _list_of_algorithms:
 
@@ -295,7 +280,34 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
 .. dropdown:: nlopt_bobyqa
 
-    .. autofunction:: estimagic.optimization.nlopt_optimizers.nlopt_bobyqa
+    Minimize a scalar function using the BOBYQA algorithm.
+
+    The implementation is derived from the BOBYQA subroutine of M. J. D. Powell.
+
+    The algorithm performs derivative free bound-constrained optimization using
+    an iteratively constructed quadratic approximation for the objective function.
+    Due to its use of quadratic appoximation, the algorithm may perform poorly
+    for objective functions that are not twice-differentiable.
+
+    For details see:
+    M. J. D. Powell, "The BOBYQA algorithm for bound constrained optimization
+    without derivatives," Department of Applied Mathematics and Theoretical
+    Physics, Cambridge England, technical report NA2009/06 (2009).
+
+    ``nlopt_bobyqa`` supports the following ``algo_options``:
+
+    - convergence.relative_params_tolerance (float):  Stop when the relative movement
+      between parameter vectors is smaller than this.
+    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+      between parameter vectors is smaller than this.
+    - convergence.relative_criterion_tolerance (float): Stop when the relative
+      improvement between two iterations is smaller than this.
+    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+      criterion function between two iterations is smaller than this.
+    - stopping.max_criterion_evaluations (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this
+      as convergence.
+
 
 .. dropdown:: nlopt_neldermead
 
