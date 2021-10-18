@@ -6,23 +6,25 @@
 # Test what is included in the package by running ``python setup.py sdist`` and inspect
 # the tarball.
 
-include CHANGES.rst
 include CITATION
 include LICENSE
-include README.rst
-include tox.ini
-include *.sh
-include *.yaml
-include *.yml
+include CHANGES.rst
 
+recursive-include src *.css
+recursive-include src *.csv
+recursive-include src *.db
+recursive-include src *.html
+recursive-include src *.py
+
+exclude *.sh
+exclude *.yaml
+exclude *.yml
+exclude *.pickle
 exclude pytask.ini
+exclude tox.ini
 
-graft docs
-graft estimagic
-
-prune docs/_build
-prune docs/build
-prune docs/getting_started/__tutorial__
+prune docs
+prune tests
 prune .conda
 
 global-exclude __pycache__
