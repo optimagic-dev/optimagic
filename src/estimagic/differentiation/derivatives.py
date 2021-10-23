@@ -249,6 +249,118 @@ def first_derivative(
     return result
 
 
+def second_derivative(
+    func,
+    params,
+    func_kwargs=None,
+    method="central",
+    n_steps=1,
+    base_steps=None,
+    scaling_factor=1,
+    lower_bounds=None,
+    upper_bounds=None,
+    step_ratio=2,
+    min_steps=None,
+    f0=None,
+    n_cores=DEFAULT_N_CORES,
+    error_handling="continue",
+    batch_evaluator="joblib",
+    return_func_value=False,
+    return_info=True,
+    key=None,
+):
+    """Evaluate second derivative of func at params according to method and step options
+
+    Internally, the function is converted such that it maps from a 1d array to a 1d
+    array. Then the Hessian of that function is calculated. The resulting derivative
+    estimate is always a :class:`numpy.ndarray`.
+
+    The parameters and the function output can be pandas objects (Series or DataFrames
+    with value column). In that case the output of second_derivative is also a pandas
+    object and with appropriate index and columns.
+
+    Detailed description of all options that influence the step size as well as an
+    explanation of how steps are adjusted to bounds in case of a conflict,
+    see :func:`~estimagic.differentiation.generate_steps.generate_steps`.
+
+    Args:
+        func (callable): Function of which the derivative is calculated.
+        params (numpy.ndarray, pandas.Series or pandas.DataFrame): 1d numpy array or
+            :class:`pandas.DataFrame` with parameters at which the derivative is
+            calculated. If it is a DataFrame, it can contain the columns "lower_bound"
+            and "upper_bound" for bounds. See :ref:`params`.
+        func_kwargs (dict): Additional keyword arguments for func, optional.
+        method (str): One of ["central", "forward", "backward"], default "central".
+        n_steps (int): Number of steps needed. For central methods, this is
+            the number of steps per direction. It is 1 if no Richardson extrapolation
+            is used.
+        base_steps (numpy.ndarray, optional): 1d array of the same length as pasams.
+            base_steps * scaling_factor is the absolute value of the first (and possibly
+            only) step used in the finite differences approximation of the derivative.
+            If base_steps * scaling_factor conflicts with bounds, the actual steps will
+            be adjusted. If base_steps is not provided, it will be determined according
+            to a rule of thumb as long as this does not conflict with min_steps.
+        scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
+            base_steps. If it is an numpy.ndarray, it needs to be as long as params.
+            scaling_factor is useful if you want to increase or decrease the base_step
+            relative to the rule-of-thumb or user provided base_step, for example to
+            benchmark the effect of the step size. Default 1.
+        lower_bounds (numpy.ndarray): 1d array with lower bounds for each parameter. If
+            params is a DataFrame and has the columns "lower_bound", this will be taken
+            as lower_bounds if now lower_bounds have been provided explicitly.
+        upper_bounds (numpy.ndarray): 1d array with upper bounds for each parameter. If
+            params is a DataFrame and has the columns "upper_bound", this will be taken
+            as upper_bounds if no upper_bounds have been provided explicitly.
+        step_ratio (float, numpy.array): Ratio between two consecutive Richardson
+            extrapolation steps in the same direction. default 2.0. Has to be larger
+            than one. The step ratio is only used if n_steps > 1.
+        min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen to
+            accommodate bounds. Must have same length as params. By default min_steps is
+            equal to base_steps, i.e step size is not decreased beyond what is optimal
+            according to the rule of thumb.
+        f0 (numpy.ndarray): 1d numpy array with func(x), optional.
+        n_cores (int): Number of processes used to parallelize the function
+            evaluations. Default 1.
+        error_handling (str): One of "continue" (catch errors and continue to calculate
+            derivative estimates. In this case, some derivative estimates can be
+            missing but no errors are raised), "raise" (catch errors and continue
+            to calculate derivative estimates at fist but raise an error if all
+            evaluations for one parameter failed) and "raise_strict" (raise an error
+            as soon as a function evaluation fails).
+        batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators.
+        return_func_value (bool): If True, return function value at params, stored in
+            output dict under "func_value". Default False. This is useful when using
+            first_derivative during optimization.
+        return_info (bool): If True, return additional information on function
+            evaluations and internal derivative candidates, stored in output dict under
+            "func_evals" and "derivative_candidates". Derivative candidates are only
+            returned if n_steps > 1. Default True.
+        key (str): If func returns a dictionary, take the derivative of
+            func(params)[key].
+
+    Returns:
+        result (dict): Result dictionary with keys:
+            - "derivative" (numpy.ndarray, pandas.Series or pandas.DataFrame): The
+                estimated second derivative of func at params. The shape of the output
+                depends on the dimension of params and func(params):
+
+                - f: R -> R leads to shape (1,), usually called second derivative
+                - f: R^m -> R leads to shape (m, m), usually called Hessian
+                - f: R -> R^n leads to shape (n,), usually called Hessian
+                - f: R^m -> R^n leads to shape (n, m, m), usually called Hessian tensor
+
+            - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
+                value at params, returned if return_func_value is True.
+
+            - "func_evals" (pandas.DataFrame): Function evaluations produced by internal
+                derivative method, returned if return_info is True.
+
+    """
+    pass
+
+
 def _process_bounds(lower_bounds, upper_bounds, params):
     lower_bounds = np.atleast_1d(lower_bounds) if lower_bounds is not None else None
     upper_bounds = np.atleast_1d(upper_bounds) if upper_bounds is not None else None
