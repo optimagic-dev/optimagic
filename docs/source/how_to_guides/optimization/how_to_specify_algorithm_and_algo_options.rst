@@ -284,6 +284,27 @@ cyipopt``).
 
     .. autofunction:: estimagic.optimization.cyipopt_optimizers.ipopt
 
+.. _fides_algorithm:
+
+The Fides Optimizer (fides)
+---------------------------
+
+estimagic supports the `Fides Optimizer
+<https://fides-optimizer.readthedocs.io/en/latest>`_.
+
+This is an Interior Trust Region Reflective for boundary constrained optimization
+problems based on the papers :cite:`Coleman1994` and :cite:`Coleman1996`. Accordingly,
+Fides is named after the Roman goddess of trust and reliability. In contrast to other
+optimizers, Fides solves the full trust-region subproblem exactly, which can yield
+higher quality proposal steps, but is computationally more expensive. This makes Fides
+particularly attractive for optimization problems with criterion functions that are
+computationally expensive to evaluate and the computational cost of solving the
+trust-region subproblem is negligible.
+
+.. dropdown:: fides
+
+    .. autofunction:: estimagic.optimization.fides_optimizers.fides
+
 
 The NLOPT Optimizers (nlopt)
 -----------------------------

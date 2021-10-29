@@ -44,3 +44,5 @@ To enable all algorithms at once, do the following:
 ``conda install cyipopt``
 
 ``conda install pygmo``
+
+``pip install fides``
