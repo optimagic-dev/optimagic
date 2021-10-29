@@ -65,6 +65,7 @@ GLOBAL_ALGORITHMS = [
     "nlopt_esch",
     "nlopt_isres",
     "nlopt_crs2_lm",
+    "fides",
 ]
 if IS_PYGMO_INSTALLED:
     GLOBAL_ALGORITHMS += PYGMO_ALGORITHMS.keys()
