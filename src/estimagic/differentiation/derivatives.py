@@ -1,4 +1,5 @@
 import functools
+import itertools
 import re
 from collections import OrderedDict
 from itertools import product
@@ -358,7 +359,133 @@ def second_derivative(
                 derivative method, returned if return_info is True.
 
     """
-    pass
+    lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
+
+    # handle keyword arguments
+    func_kwargs = {} if func_kwargs is None else func_kwargs
+    partialed_func = functools.partial(func, **func_kwargs)
+
+    # convert params to numpy, but keep label information
+    params_index = (  # noqa: F841
+        params.index if isinstance(params, (pd.DataFrame, pd.Series)) else None
+    )
+
+    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
+    x = np.atleast_1d(x).astype(float)
+
+    if np.isnan(x).any():
+        raise ValueError("The parameter vector must not contain NaNs.")
+
+    # generate the step array
+    steps = generate_steps(
+        x=x,
+        method=method,
+        n_steps=n_steps,
+        target="second_derivative",
+        base_steps=base_steps,
+        scaling_factor=scaling_factor,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        step_ratio=step_ratio,
+        min_steps=min_steps,
+    )
+
+    # generate parameter vectors at which func has to be evaluated as numpy arrays
+    evaluation_points = {"one_step": [], "two_step": []}
+    for step_arr in steps:
+        # single direction steps
+        for i, j in product(range(n_steps), range(len(x))):
+            if np.isnan(step_arr[i, j]):
+                evaluation_points["one_step"].append(np.nan)
+            else:
+                point = x.copy()
+                point[j] += step_arr[i, j]
+                evaluation_points["one_step"].append(point)
+        # cross direction steps
+        for i, j, k in product(range(n_steps), range(len(x)), range(len(x))):
+            if j > k or np.isnan(step_arr[i, j]) or np.isnan(step_arr[i, k]):
+                evaluation_points["two_step"].append(np.nan)
+            else:
+                point = x.copy()
+                point[j] += step_arr[i, j]
+                point[k] += step_arr[i, k]
+                evaluation_points["two_step"].append(point)
+
+    # convert the numpy arrays to whatever is needed by func
+    evaluation_points = {
+        one_or_two: _convert_evaluation_points_to_original(points, params)
+        for one_or_two, points in evaluation_points.items()
+    }
+
+    # we always evaluate f0, so we can fall back to one-sided derivatives if
+    # two-sided derivatives fail. The extra cost is negligible in most cases.
+    if f0 is None:
+        evaluation_points["one_step"].append(params)
+
+    # do the function evaluations for one and two step, including error handling
+    batch_error_handling = "raise" if error_handling == "raise_strict" else "continue"
+    raw_evals = _nan_skipping_batch_evaluator(
+        func=partialed_func,
+        arguments=list(itertools.chain.from_iterable(evaluation_points.values())),
+        n_cores=n_cores,
+        error_handling=batch_error_handling,
+        batch_evaluator=batch_evaluator,
+    )
+
+    # extract information on exceptions that occurred during function evaluations
+    exc_info = "\n\n".join(  # noqa: F841
+        [val for val in raw_evals if isinstance(val, str)]
+    )  # noqa: F841
+    raw_evals = [val if not isinstance(val, str) else np.nan for val in raw_evals]
+
+    raw_evals = {
+        "one_step": raw_evals[: len(evaluation_points["one_step"])],
+        "two_step": raw_evals[len(evaluation_points["one_step"]) :],
+    }
+
+    # store full function value at params as func_value and a processed version of it
+    # that we need to calculate derivatives as f0
+    if f0 is None:
+        f0 = raw_evals["one_step"][-1]
+        raw_evals["one_step"] = raw_evals["one_step"][:-1]
+    func_value = f0  # noqa: F841
+    f0 = f0[key] if isinstance(f0, dict) else f0
+    f_was_scalar = np.isscalar(f0)  # noqa: F841
+    out_index = f0.index if isinstance(f0, pd.Series) else None  # noqa: F841
+    f0 = np.atleast_1d(f0)
+
+    # convert the raw evaluations to numpy arrays
+    raw_evals = {
+        one_or_two: _convert_evals_to_numpy(evals, key)
+        for one_or_two, evals in raw_evals.items()
+    }
+
+    # reshape arrays for finite differences
+    evals = {}
+    evals["one_step"] = np.array(raw_evals["one_step"]).reshape(2, n_steps, len(x), -1)
+    evals["one_step"] = np.transpose(evals["one_step"], axes=(0, 1, 3, 2))
+    evals["one_step"] = namedtuple_from_kwargs(
+        pos=evals["one_step"][0], neg=evals["one_step"][1]
+    )
+
+    idx = np.tril_indices(len(x), -1)
+    evals["two_step"] = np.array(raw_evals["two_step"]).reshape(
+        2, n_steps, len(x), len(x), -1
+    )
+    evals["two_step"] = np.transpose(evals["two_step"], axes=(0, 1, 4, 2, 3))
+    evals["two_step"][:, :, :, idx[0], idx[1]] = evals["two_step"].transpose(
+        (0, 1, 2, 4, 3)
+    )[:, :, :, idx[0], idx[1]]
+    evals["two_step"] = namedtuple_from_kwargs(
+        pos=evals["two_step"][0], neg=evals["two_step"][1]
+    )
+
+    # apply finite difference formulae
+    hess_candidates = {}
+    for m in ["one", "two", "three"]:
+        hess_candidates[m] = finite_differences.hessian(evals, steps, f0, m)
+
+    return evals, steps, f0, evaluation_points
 
 
 def _process_bounds(lower_bounds, upper_bounds, params):

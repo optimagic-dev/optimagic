@@ -47,3 +47,41 @@ def jacobian(evals, steps, f0, method):
     else:
         raise ValueError("Method has to be 'forward', 'backward' or 'central'.")
     return jac
+
+
+def hessian(evals, steps, f0, method):
+    """Calculate a Hessian estimate with finite differences according to method.
+
+    Notation: f:R^dim_x -> R^dim_f. We compute the derivative at x0, with f0 = f(x0).
+
+    Args:
+        evals (dict[namedtuple]): Dictionary with keys "one_step" for function evals in
+            a single step direction, and "two_step" for evals in cross directions. Each
+            dict item has the fields called pos and neg for evaluations with positive
+            and negative steps, respectively. Each field is a numpy array of shape
+            (n_steps, dim_f, dim_x). It contains np.nan for evaluations that failed or
+            were not attempted because a one-sided derivative rule was chosen.
+        steps (namedtuple): Namedtuple with the fields pos and neg. Each field
+            contains a numpy array of shape (n_steps, dim_x) with the steps in
+            the corresponding direction. The steps are always symmetric, in the sense
+            that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
+        f0 (numpy.ndarray): Numpy array of length dim_f with the output of the function
+            at the user supplied parameters.
+        method (str): One of ["one", "two", "three"]. These correspond to the
+            approximations defined in Rideout [2009].
+
+    Returns:
+        hess (numpy.ndarray): Numpy array of shape (n_steps, dim_f, dim_x) with
+            estimated Hessians. I.e. there are n_step hessian estimates.
+
+    """
+    n_steps, dim_f, dim_x = evals["one_step"].pos.shape
+    if method == "one":
+        hess = None
+    elif method == "two":
+        hess = None
+    elif method == "three":
+        hess = None
+    else:
+        raise ValueError("Method has to be 'one', 'two' or 'three'.")
+    return hess
