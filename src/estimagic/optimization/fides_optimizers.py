@@ -1,5 +1,6 @@
 """Implement the fides optimizer."""
 import logging
+from functools import partial
 
 from estimagic.config import IS_FIDES_INSTALLED
 
@@ -18,10 +19,33 @@ def fides(
 ):
     """Minimize a scalar function using the Fides Optimizer.
 
-    Args:
-        hessian_update_strategy (str): Hessian Update Strategy to employ. See the
-            [Fides' Documentation](https://fides-optimizer.readthedocs.io/en/latest/generated/fides.hessian_approximation.html) # noqa: E501
-            for available strategies.
+    - hessian_update_strategy (str): Hessian Update Strategy to employ. The available
+      update strategies are available:
+
+        - **BB**: Broydens "bad" method as introduced :cite:`Broyden1965`.
+        - **BFGS**: Broyden-Fletcher-Goldfarb-Shanno update strategy.
+        - **BG**: Broydens "good" method as introduced in :cite:`Broyden1965`.
+        - **Broyden**: BroydenClass Update scheme as described in :cite:`Nocedal1999`,
+          Chapter 6.3.
+        - **DFP**: Davidon-Fletcher-Powell update strategy.
+        - **FX**: Hybrid method HY2 as introduced by :cite:`Fletcher1987`.
+        - **GNSBFGS**: Hybrid Gauss-Newton Structured BFGS method as introduced
+          by :cite:`Zhou2010`.
+        - **IterativeHessianApproximation**: Iterative update schemes that only
+          use the search direction steps and differences in the gradient for
+          update.
+        - **SR1**: Symmetric Rank 1 update strategy as described in :cite:`Nocedal1999`,
+          Chapter 6.2.
+        - **SSM**: Structured Secant Method as introduced by :cite:`Dennis1989`,
+          which is compatible with BFGS, DFP update schemes.
+        - **TSSM**: Totally Structured Secant Method as introduced by
+          :cite:`Huschens1994`, which uses a self-adjusting update method for
+          the second order term.
+
+      See the
+      `Fides' Documentation
+      <https://fides-optimizer.readthedocs.io/en/latest/generated/fides.hessian_approximation.html>`_ (# noqa: E501)
+      for more details.
 
     Returns:
         dict: See :ref:`internal_optimizer_output` for details.
@@ -40,14 +64,11 @@ def fides(
         "name": "fides",
     }
 
-    def fun(x):
-        criterion = criterion_and_derivative(
-            x=x, task="criterion", algorithm_info=algo_info
-        )
-        derivative = criterion_and_derivative(
-            x=x, task="derivative", algorithm_info=algo_info
-        )
-        return criterion, derivative
+    fun = partial(
+        criterion_and_derivative,
+        task="criterion_and_derivative",
+        algorithm_info=algo_info,
+    )
 
     hessian_class = getattr(hessian_approximation, hessian_update_strategy)
     hessian_instance = hessian_class()
