@@ -64,44 +64,7 @@ def fides(
         algorithm_info=algo_info,
     )
 
-    hessians_needing_residuals = (
-        hessian_approximation.FX,
-        hessian_approximation.SSM,
-        hessian_approximation.TSSM,
-        hessian_approximation.GNSBFGS,
-    )
-    hess_msg = (
-        f"{hessian_update_strategy} not supported because it requires "
-        + "residuals. Choose one of 'BB', 'BFGS', 'BG', 'DFP' or 'SR1' or pass "
-        + "an instance of the fides.hessian_approximation.HessianApproximation "
-        + "class."
-    )
-
-    if isinstance(hessian_update_strategy, str):
-        if hessian_update_strategy in ("broyden", "Broyden", "BROYDEN"):
-            raise ValueError(
-                "You cannot use the Broyden update strategy without specifying the "
-                "interpolation parameter phi. Import the Broyden class from "
-                "`fides.hessian_approximation`, create an instance of it with your "
-                "desired value of phi and pass this instance instead."
-            )
-        elif hessian_update_strategy.lower() in ["fx", "ssm", "tssm", "gnsbfgs"]:
-            raise NotImplementedError(hess_msg)
-        else:
-            hessian_name = hessian_update_strategy.upper()
-        hessian_class = getattr(hessian_approximation, hessian_name)
-        hessian_instance = hessian_class()
-    elif isinstance(
-        hessian_update_strategy, hessian_approximation.HessianApproximation
-    ):
-        hessian_instance = hessian_update_strategy
-        if isinstance(hessian_instance, hessians_needing_residuals):
-            raise NotImplementedError()
-    else:
-        raise ValueError(
-            "You must provide a hessian_update_strategy that is either a string or an "
-            "instance of the fides.hessian_approximation.HessianApproximation class."
-        )
+    hessian_instance = _create_hessian_updater_from_user_input(hessian_update_strategy)
 
     opt = Optimizer(
         fun=fun,
@@ -110,6 +73,7 @@ def fides(
         hessian_update=hessian_instance,
         verbose=logging.ERROR,
         resfun=False,
+        options={},
     )
     raw_res = opt.minimize(x)
     res = _process_fides_res(raw_res, opt)
@@ -117,6 +81,13 @@ def fides(
 
 
 def _process_fides_res(raw_res, opt):
+    """Create an estimagic results dictionary from the Fides output.
+
+    Args:
+        raw_res (tuple): Tuple containing the Fides result
+        opt (fides.Optimizer): Fides Optimizer after minimize has been called on it.
+
+    """
     fval, x, grad, hess = raw_res
     res = {
         "solution_criterion": fval,
@@ -127,3 +98,45 @@ def _process_fides_res(raw_res, opt):
         "n_iterations": opt.iteration,
     }
     return res
+
+
+def _create_hessian_updater_from_user_input(hessian_update_strategy):
+    hessians_needing_residuals = (
+        hessian_approximation.FX,
+        hessian_approximation.SSM,
+        hessian_approximation.TSSM,
+        hessian_approximation.GNSBFGS,
+    )
+    unsupported_hess_msg = (
+        f"{hessian_update_strategy} not supported because it requires "
+        + "residuals. Choose one of 'BB', 'BFGS', 'BG', 'DFP' or 'SR1' or pass "
+        + "an instance of the fides.hessian_approximation.HessianApproximation "
+        + "class."
+    )
+
+    if hessian_update_strategy in ("broyden", "Broyden", "BROYDEN"):
+        raise ValueError(
+            "You cannot use the Broyden update strategy without specifying the "
+            "interpolation parameter phi. Import the Broyden class from "
+            "`fides.hessian_approximation`, create an instance of it with your "
+            "desired value of phi and pass this instance instead."
+        )
+    elif isinstance(hessian_update_strategy, str):
+        if hessian_update_strategy.lower() in ["fx", "ssm", "tssm", "gnsbfgs"]:
+            raise NotImplementedError(unsupported_hess_msg)
+        else:
+            hessian_name = hessian_update_strategy.upper()
+            hessian_class = getattr(hessian_approximation, hessian_name)
+            hessian_instance = hessian_class()
+    elif isinstance(
+        hessian_update_strategy, hessian_approximation.HessianApproximation
+    ):
+        hessian_instance = hessian_update_strategy
+        if isinstance(hessian_instance, hessians_needing_residuals):
+            raise NotImplementedError(unsupported_hess_msg)
+    else:
+        raise ValueError(
+            "You must provide a hessian_update_strategy that is either a string or an "
+            "instance of the fides.hessian_approximation.HessianApproximation class."
+        )
+    return hessian_instance
