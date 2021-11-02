@@ -45,4 +45,4 @@ To enable all algorithms at once, do the following:
 
 ``conda install pygmo``
 
-``pip install fides``
+``pip install fides>=0.6.3`` (Make sure you have at least 0.6.3)
