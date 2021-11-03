@@ -3,6 +3,11 @@ import logging
 from functools import partial
 
 from estimagic.config import IS_FIDES_INSTALLED
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
+from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 
 if IS_FIDES_INSTALLED:
     from fides import hessian_approximation
@@ -16,6 +21,11 @@ def fides(
     upper_bounds,
     *,
     hessian_update_strategy="bfgs",
+    convergence_absolute_criterion_tolerance=CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE,
+    convergence_relative_criterion_tolerance=CONVERGENCE_RELATIVE_CRITERION_TOLERANCE,
+    convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
+    convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
+    convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
 ):
     """Minimize a scalar function using the Fides Optimizer.
 
@@ -41,6 +51,26 @@ def fides(
       <https://fides-optimizer.readthedocs.io/en/latest/generated/fides.hessian_approximation.html>`_
       for more details.
 
+    - convergence_absolute_criterion_tolerance (float): absolute convergence criterion
+      tolerance. This is only the interpretation of this parameter if the relative
+      criterion tolerance is set to 0. Denoting the absolute criterion tolerance by
+      :math:`\alpha` and the relative criterion tolerance by :math:`\beta`, the
+      convergence condition on the criterion improvement is :math:`|f(x_k) - f(x_{k-1})|
+      < \\alpha + \\beta \\cdot |f(x_{k-1})|`
+    - convergence_relative_criterion_tolerance (float): relative convergence criterion
+      tolerance. This is only the interpretation of this parameter if the absolute
+      criterion tolerance is set to 0 (as is the default). Denoting the absolute
+      criterion tolerance by :math:`\alpha` and the relative criterion tolerance by
+      :math:`\beta`, the convergence condition on the criterion improvement is
+      :math:`|f(x_k) - f(x_{k-1})| < \\alpha + \\beta \\cdot |f(x_{k-1})|`
+    - convergence_absolute_params_tolerance (float): The optimization terminates
+      successfully when the step size falls below this number, i.e. when
+      :math:`||x_{k+1} - x_k||` is smaller than this tolerance.
+    - convergence_absolute_gradient_tolerance (float): The optimization terminates
+      successfully when the gradient norm is less or equal than this tolerance.
+    - convergence_relative_gradient_tolerance (float): The optimization terminates
+      successfully when the norm of the gradient divided by the absolute function value
+      is less or equal to this tolerance.
 
     Returns: dict: See :ref:`internal_optimizer_output` for details.
 
@@ -73,7 +103,13 @@ def fides(
         hessian_update=hessian_instance,
         verbose=logging.ERROR,
         resfun=False,
-        options={},
+        options={
+            "fatol": convergence_absolute_criterion_tolerance,
+            "frtol": convergence_relative_criterion_tolerance,
+            "xtol": convergence_absolute_params_tolerance,
+            "gatol": convergence_absolute_gradient_tolerance,
+            "grtol": convergence_relative_gradient_tolerance,
+        },
     )
     raw_res = opt.minimize(x)
     res = _process_fides_res(raw_res, opt)
