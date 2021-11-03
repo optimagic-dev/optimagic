@@ -2,6 +2,7 @@
 import functools
 
 import numpy as np
+
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
@@ -36,76 +37,7 @@ def tao_pounders(
 ):
     r"""Minimize a function using the POUNDERs algorithm.
 
-    Do not call this function directly but pass its name "tao_pounders" to estimagic's
-    maximize or minimize function as `algorithm` argument. Specify your desired
-    arguments as a dictionary and pass them as `algo_options` to minimize or
-    maximize.
-
-    POUNDERs (:cite:`Benson2017`, :cite:`Wild2015`, `GitHub repository
-    <https://github.com/erdc/petsc4py>`_)
-
-    can be a useful tool for economists who estimate structural models using
-    indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
-    POUNDERs is tailored for minimizing a non-linear sum of squares objective function,
-    and therefore may require fewer iterations to arrive at a local optimum than
-    Nelder-Mead.
-
-    The criterion function :func:`func` should return a dictionary with the following
-    fields:
-
-    1. ``"value"``: The sum of squared (potentially weighted) errors.
-    2. ``"root_contributions"``: An array containing the root (weighted) contributions.
-
-    Scaling the problem is necessary such that bounds correspond to the unit hypercube
-    :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
-    changes in parameters result in similar order-of-magnitude changes in the criterion
-    value(s).
-
-    POUNDERs has several convergence criteria. Let :math:`X` be the current parameter
-    vector, :math:`X_0` the initial parameter vector, :math:`g` the gradient, and
-    :math:`f` the criterion function.
-
-    ``absolute_gradient_tolerance`` stops the optimization if the norm of the gradient
-    falls below :math:`\epsilon`.
-
-    .. math::
-
-        ||g(X)|| < \epsilon
-
-    ``relative_gradient_tolerance`` stops the optimization if the norm of the gradient
-    relative to the criterion value falls below :math:`epsilon`.
-
-    .. math::
-
-        ||g(X)|| / |f(X)| < \epsilon
-
-    ``scaled_gradient_tolerance`` stops the optimization if the norm of the gradient is
-    lower than some fraction :math:`epsilon` of the norm of the gradient at the initial
-    parameters.
-
-    .. math::
-
-        ||g(X)|| / ||g(X0)|| < \epsilon
-
-    Args:
-        absolute_gradient_tolerance (float): Stop if norm of gradient is less than this.
-            If set to False the algorithm will not consider absolute_gradient_tolerance.
-        relative_gradient_tolerance (float): Stop if relative norm of gradient is less
-            than this. If set to False the algorithm will not consider
-            relative_gradient_tolerance.
-        scaled_gradient_tolerance (float): Stop if scaled norm of gradient is smaller
-            than this. If set to False the algorithm will not consider
-            scaled_gradient_tolerance.
-        trustregion_initial_radius (float): Initial value of the trust region radius.
-            It must be :math:`> 0`.
-        stopping_max_iterations (int): Alternative Stopping criterion.
-            If set the routine will stop after the number of specified iterations or
-            after the step size is sufficiently small. If the variable is set the
-            default criteria will all be ignored.
-
-    Returns:
-        results (dict): Dictionary with processed optimization results.
-
+    For details see :ref:`tao_algorithm`.
     """
     if not IS_PETSC4PY_INSTALLED:
         raise NotImplementedError(
