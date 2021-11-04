@@ -869,15 +869,15 @@ optimizers.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch
       evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
       interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed
       to be part of the initial population. This saves one criterion function
       evaluation that cannot be done in parallel with other evaluations. Default
       False.
-    - max_n_trials (int): Maximum number of trials for abandoning a source.
+    - **max_n_trials** (int): Maximum number of trials for abandoning a source.
       Default is 1.
-    - population_size (int): Size of the population. If None, it's twice the
+    - **population_size** (int): Size of the population. If None, it's twice the
       number of parameters but at least 20.
 
 .. dropdown::  pygmo_de
@@ -888,22 +888,22 @@ optimizers.
     :cite:`Storn1997`. The algorithm is only suited for bounded parameter
     spaces.
 
-    - population_size (int): Size of the population. If None, it's twice the
+    - **population_size** (int): Size of the population. If None, it's twice the
       number of parameters but at least 10.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch
       evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
       interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed
       to be part of the initial population. This saves one criterion function
       evaluation that cannot be done in parallel with other evaluations. Default
       False.
     - **stopping.max_iterations** (int): Number of generations to evolve.
-    - weight_coefficient (float): Weight coefficient. It is denoted by $F$ in
+    - **weight_coefficient** (float): Weight coefficient. It is denoted by $F$ in
       the main paper and must lie in [0, 2]. It controls the amplification of
       the differential variation $(x_{r_2, G} - x_{r_3, G})$.
-    - crossover_probability (float): Crossover probability.
+    - **crossover_probability** (float): Crossover probability.
     - **mutation_variant (str or int)**: code for the mutation variant to create a
       new candidate individual. The default is . The following are available:
 
@@ -917,10 +917,10 @@ optimizers.
         - "rand-to-best/1/bin" (8, when specified as int)
         - "best/2/bin" (9, when specified as int)
         - "rand/2/bin" (10, when specified as int)
-    - convergence.criterion_tolerance: stopping criteria on the criterion
+    - **convergence.criterion_tolerance**: stopping criteria on the criterion
       tolerance. Default is 1e-6. It is not clear whether this is the absolute
       or relative criterion tolerance.
-    - convergence.relative_params_tolerance: stopping criteria on the x
+    - **convergence.relative_params_tolerance**: stopping criteria on the x
       tolerance. In pygmo the default is 1e-6 but we use our default value of
       1e-5.
 
@@ -937,14 +937,14 @@ optimizers.
 
     The algorithm is only suited for bounded parameter spaces.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 10.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - **stopping.max_iterations** (int): number of generations to consider. Each generation
@@ -960,31 +960,31 @@ optimizers.
 
     See also: :cite:`Oliveto2007`.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - **stopping.max_iterations** (int): Number of generations to evolve.
-    - crossover_probability (float): Crossover probability.
-    - **crossover_strategy (str)**: the crossover strategy. One of “exponential”,“binomial”,
+    - **crossover_probability** (float): Crossover probability.
+    - **crossover_strategy** (str): the crossover strategy. One of “exponential”,“binomial”,
       “single” or “sbx”. Default is "exponential".
-    - eta_c (float): distribution index for “sbx” crossover. This is an inactive
+    - **eta_c** (float): distribution index for “sbx” crossover. This is an inactive
       parameter if other types of crossovers are selected. Can be in [1, 100].
-    - mutation_probability (float): Mutation probability.
-    - **mutation_strategy (str)**: Mutation strategy. Must be "gaussian", "polynomial" or
+    - **mutation_probability** (float): Mutation probability.
+    - **mutation_strategy** (str): Mutation strategy. Must be "gaussian", "polynomial" or
       "uniform". Default is "polynomial".
-    - mutation_polynomial_distribution_index (float): Must be in [0, 1]. Default is 1.
-    - mutation_gaussian_width (float): Must be in [0, 1]. Default is 1.
+    - **mutation_polynomial_distribution_index** (float): Must be in [0, 1]. Default is 1.
+    - **mutation_gaussian_width** (float): Must be in [0, 1]. Default is 1.
     - **selection_strategy (str)**: Selection strategy. Must be "tournament" or "truncated".
-    - selection_truncated_n_best (int): number of best individuals to use in the
+    - **selection_truncated_n_best** (int): number of best individuals to use in the
       "truncated" selection mechanism.
-    - selection_tournament_size (int): size of the tournament in the "tournament"
+    - **selection_tournament_size** (int): size of the tournament in the "tournament"
       selection mechanism. Default is 1.
 
 .. dropdown::  pygmo_sade
@@ -1005,20 +1005,20 @@ optimizers.
     uses a variaton of the selected DE operator to produce new $CR$ anf $F$ parameters
     for each individual. This variant is referred to iDE.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - jde (bool): Whether to use the jDE self-adaptation variant to control the $F$ and
       $CR$ parameter. If True jDE is used, else iDE.
     - **stopping.max_iterations** (int): Number of generations to evolve.
-    - **mutation_variant (int or str)**: code for the mutation variant to create a new
+    - **mutation_variant** (int or str): code for the mutation variant to create a new
       candidate individual. The default is "rand/1/exp". The first ten are the
       classical mutation variants introduced in the orginal DE algorithm, the remaining
       ones are, instead, considered in the work by :cite:`Elsayed2011`.
@@ -1043,7 +1043,7 @@ optimizers.
         - "rand-to-best-and-current/2/exp" or 17
         - "rand-to-best-and-current/2/bin" or 18
 
-    - keep_adapted_params (bool):  when true the adapted parameters $CR$ anf $F$ are
+    - **keep_adapted_params** (bool):  when true the adapted parameters $CR$ anf $F$ are
       not reset between successive calls to the evolve method. Default is False.
     - ftol (float): stopping criteria on the x tolerance.
     - xtol (float): stopping criteria on the f tolerance.
@@ -1061,34 +1061,34 @@ optimizers.
     In contrast to the pygmo version, estimagic always sets force_bounds to True. This
     avoids that ill defined parameter values are evaluated.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
 
     - **stopping.max_iterations** (int): Number of generations to evolve.
-    - backward_horizon (float): backward time horizon for the evolution path. It must
+    - **backward_horizon** (float): backward time horizon for the evolution path. It must
       lie betwen 0 and 1.
-    - variance_loss_compensation (float): makes partly up for the small variance loss in
+    - **variance_loss_compensation** (float): makes partly up for the small variance loss in
       case the indicator is zero. `cs` in the MATLAB Code of :cite:`Hansen2006`. It must
       lie between 0 and 1.
-    - learning_rate_rank_one_update (float): learning rate for the rank-one update of
+    - **learning_rate_rank_one_update** (float): learning rate for the rank-one update of
       the covariance matrix. `c1` in the pygmo and pagmo documentation. It must lie
       between 0 and 1.
-    - learning_rate_rank_mu_update (float): learning rate for the rank-mu update of the
+    - **learning_rate_rank_mu_update** (float): learning rate for the rank-mu update of the
       covariance matrix. `cmu` in the pygmo and pagmo documentation. It must lie between
       0 and 1.
-    - initial_step_size (float): initial step size, :math:`\sigma^0` in the original
+    - **initial_step_size** (float): initial step size, :math:`\sigma^0` in the original
       paper.
-    - ftol (float): stopping criteria on the x tolerance.
-    - xtol (float): stopping criteria on the f tolerance.
-    - keep_adapted_params (bool):  when true the adapted parameters are not reset
+    - **ftol** (float): stopping criteria on the x tolerance.
+    - **xtol** (float): stopping criteria on the f tolerance.
+    - **keep_adapted_params** (bool):  when true the adapted parameters are not reset
       between successive calls to the evolve method. Default is False.
 
 
@@ -1106,25 +1106,25 @@ optimizers.
         about the tempertaure as the deterioration in the objective function value that
         still has a 37% chance of being accepted.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
-    - start_temperature (float): starting temperature. Must be > 0.
-    - end_temperature (float): final temperature. Our default (0.01) is lower than in
+    - **start_temperature** (float): starting temperature. Must be > 0.
+    - **end_temperature** (float): final temperature. Our default (0.01) is lower than in
       pygmo and pagmo. The final temperature must be positive.
-    - n_temp_adjustments (int): number of temperature adjustments in the annealing
+    - **n_temp_adjustments** (int): number of temperature adjustments in the annealing
       schedule.
-    - n_range_adjustments (int): number of adjustments of the search range performed at
+    - **n_range_adjustments** (int): number of adjustments of the search range performed at
       a constant temperature.
-    - bin_size (int): number of mutations that are used to compute the acceptance rate.
-    - start_range (float): starting range for mutating the decision vector. It must lie
+    - **bin_size** (int): number of mutations that are used to compute the acceptance rate.
+    - **start_range** (float): starting range for mutating the decision vector. It must lie
       between 0 and 1.
 
 .. dropdown::  pygmo_pso
@@ -1144,27 +1144,27 @@ optimizers.
     .. math:: v_{i+1} = \omega (v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x_i - x^{l}_i) +
         \eta_2 \cdot \mathbf{r}_2 \cdot (x_i - x^g))
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 10.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - **stopping.max_iterations** (int): Number of generations to evolve.
 
-    - omega (float): depending on the variant chosen, :math:`\omega` is the particles'
+    - **omega** (float): depending on the variant chosen, :math:`\omega` is the particles'
       inertia weight or the construction coefficient. It must lie between 0 and 1.
-    - force_of_previous_best (float): :math:`\eta_1` in the equation above. It's the
+    - **force_of_previous_best** (float): :math:`\eta_1` in the equation above. It's the
       magnitude of the force, applied to the particle’s velocity, in the direction of
       its previous best position. It must lie between 0 and 4.
-    - force_of_best_in_neighborhood (float): :math:`\eta_2` in the equation above. It's
+    - **force_of_best_in_neighborhood** (float): :math:`\eta_2` in the equation above. It's
       the magnitude of the force, applied to the particle’s velocity, in the direction
       of the best position in its neighborhood. It must lie between 0 and 4.
-    - max_velocity (float): maximum allowed particle velocity as fraction of the box
+    - **max_velocity** (float): maximum allowed particle velocity as fraction of the box
       bounds. It must lie between 0 and 1.
     - **algo_variant (int or str)**: algorithm variant to be used:
         - 1 or "canonical_inertia": Canonical (with inertia weight)
@@ -1182,14 +1182,14 @@ optimizers.
         - 3 or "Von Neumann"
         - 4 or "Adaptive random"
 
-    - neighbor_param (int): the neighbourhood parameter. If the lbest topology is
+    - **neighbor_param** (int): the neighbourhood parameter. If the lbest topology is
       selected (neighbor_definition=2), it represents each particle's indegree (also
       outdegree) in the swarm topology. Particles have neighbours up to a radius of k =
       neighbor_param / 2 in the ring. If the Randomly-varying neighbourhood topology is
       selected (neighbor_definition=4), it represents each particle’s maximum outdegree
       in the swarm topology. The minimum outdegree is 1 (the particle always connects
       back to itself). If neighbor_definition is 1 or 3 this parameter is ignored.
-    - keep_velocities (bool): when true the particle velocities are not reset between
+    - **keep_velocities** (bool): when true the particle velocities are not reset between
       successive calls to `evolve`.
 
 .. dropdown::  pygmo_pso_gen
@@ -1210,29 +1210,29 @@ optimizers.
     .. math:: v_{i+1} = \omega (v_i + \eta_1 \cdot \mathbf{r}_1 \cdot (x_i - x^{l}_i) +
         \eta_2 \cdot \mathbf{r}_2 \cdot (x_i - x^g))
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 10.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - **stopping.max_iterations** (int): Number of generations to evolve.
 
-    - omega (float): depending on the variant chosen, :math:`\omega` is the particles'
+    - **omega** (float): depending on the variant chosen, :math:`\omega` is the particles'
       inertia weight or the constructuion coefficient. It must lie between 0 and 1.
-    - force_of_previous_best (float): :math:`\eta_1` in the equation above. It's the
+    - **force_of_previous_best** (float): :math:`\eta_1` in the equation above. It's the
       magnitude of the force, applied to the particle’s velocity, in the direction of
       its previous best position. It must lie between 0 and 4.
-    - force_of_best_in_neighborhood (float): :math:`\eta_2` in the equation above. It's
+    - **force_of_best_in_neighborhood** (float): :math:`\eta_2` in the equation above. It's
       the magnitude of the force, applied to the particle’s velocity, in the direction
       of the best position in its neighborhood. It must lie between 0 and 4.
-    - max_velocity (float): maximum allowed particle velocity as fraction of the box
+    - **max_velocity** (float): maximum allowed particle velocity as fraction of the box
       bounds. It must lie between 0 and 1.
-    - algo_variant (int): code of the algorithm's variant to be used:
+    - **algo_variant** (int): code of the algorithm's variant to be used:
 
         - 1 or "canonical_inertia": Canonical (with inertia weight)
         - 2 or "social_and_cog_rand": Same social and cognitive rand.
@@ -1241,7 +1241,7 @@ optimizers.
         - 5 or "canonical_constriction": Canonical (with constriction fact.)
         - 6 or "fips": Fully Informed (FIPS)
 
-    - neighbor_definition (int): code for the swarm topology that defines each
+    - **neighbor_definition** (int): code for the swarm topology that defines each
       particle's neighbors that is to be used:
 
         - 1 or "gbest"
@@ -1249,14 +1249,14 @@ optimizers.
         - 3 or "Von Neumann"
         - 4 or "Adaptive random"
 
-    - neighbor_param (int): the neighbourhood parameter. If the lbest topology is
+    - **neighbor_param** (int): the neighbourhood parameter. If the lbest topology is
       selected (neighbor_definition=2), it represents each particle's indegree (also
       outdegree) in the swarm topology. Particles have neighbours up to a radius of k =
       neighbor_param / 2 in the ring. If the Randomly-varying neighbourhood topology is
       selected (neighbor_definition=4), it represents each particle’s maximum outdegree
       in the swarm topology. The minimum outdegree is 1 (the particle always connects
       back to itself). If neighbor_definition is 1 or 3 this parameter is ignored.
-    - keep_velocities (bool): when true the particle velocities are not reset between
+    - **keep_velocities** (bool): when true the particle velocities are not reset between
       successive calls to `evolve`.
 
 .. dropdown::  pygmo_mbh
@@ -1276,21 +1276,21 @@ optimizers.
     meta-algorithm that operates on a population. When a population containing a single
     individual is used the original method is recovered.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 250.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
-    - inner_algorithm (pygmo.algorithm): an pygmo algorithm or a user-defined algorithm,
+    - **inner_algorithm** (pygmo.algorithm): an pygmo algorithm or a user-defined algorithm,
       either C++ or Python. If None the `pygmo.compass_search` algorithm will be used.
-    - stopping.max_inner_runs_without_improvement (int): consecutive runs of the inner
+    - **stopping.max_inner_runs_without_improvement** (int): consecutive runs of the inner
       algorithm that need to result in no improvement for mbh to stop.
-    - perturbation (float): the perturbation to be applied to each component.
+    - **perturbation** (float): the perturbation to be applied to each component.
 
 .. dropdown::  pygmo_xnes
 
@@ -1311,29 +1311,29 @@ optimizers.
     <https://esa.github.io/pagmo2/docs/cpp/algorithms/xnes.html#_CPPv4N5pagmo4xnesE>`_
     for details.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - **stopping.max_iterations** (int): Number of generations to evolve.
 
-    - learning_rate_mean_update (float): learning rate for the mean update
+    - **learning_rate_mean_update** (float): learning rate for the mean update
       (:math:`\eta_\mu`). It must be between 0 and 1 or None.
-    - learning_rate_step_size_update (float): learning rate for the step-size update. It
+    - **learning_rate_step_size_update** (float): learning rate for the step-size update. It
       must be between 0 and 1 or None.
-    - learning_rate_cov_matrix_update (float): learning rate for the covariance matrix
+    - **learning_rate_cov_matrix_update** (float): learning rate for the covariance matrix
       update. It must be between 0 and 1 or None.
-    - initial_search_share (float): share of the given search space that will be
+    - **initial_search_share** (float): share of the given search space that will be
       initally searched. It must be between 0 and 1. Default is 1.
-    - ftol (float): stopping criteria on the x tolerance.
-    - xtol (float): stopping criteria on the f tolerance.
-    - keep_adapted_params (bool): when true the adapted parameters are not reset between
+    - **ftol** (float): stopping criteria on the x tolerance.
+    - **xtol** (float): stopping criteria on the f tolerance.
+    - **keep_adapted_params** (bool): when true the adapted parameters are not reset between
       successive calls to the evolve method. Default is False.
 
 .. dropdown::  pygmo_gwo
@@ -1354,14 +1354,14 @@ optimizers.
     particle swarm one. Such an update rule is also not particulary effective and
     results in a rather poor performance most of times.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - **stopping.max_iterations** (int): Number of generations to evolve.
@@ -1375,20 +1375,20 @@ optimizers.
 
     It is considered slow but reliable. It should not be used for stochastic problems.
 
-    - population_size (int): Size of the population. Even though the algorithm is not
+    - **population_size** (int): Size of the population. Even though the algorithm is not
       population based the population size does affect the results of the algorithm.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
-    - stopping.max_criterion_evaluations (int): maximum number of function evaluations.
-    - start_range (float): the start range. Must be in (0, 1].
-    - stop_range (float): the stop range. Must be in (0, start_range].
-    - reduction_coeff (float): the range reduction coefficient. Must be in (0, 1).
+    - **stopping.max_criterion_evaluations** (int): maximum number of function evaluations.
+    - **start_range** (float): the start range. Must be in (0, 1].
+    - **stop_range** (float): the stop range. Must be in (0, start_range].
+    - **reduction_coeff** (float): the range reduction coefficient. Must be in (0, 1).
 
 .. dropdown::  pygmo_ihs
 
@@ -1397,26 +1397,26 @@ optimizers.
     Improved harmony search (IHS) was introduced by :cite:`Mahdavi2007`.
     IHS supports stochastic problems.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
     - **stopping.max_iterations** (int): Number of generations to evolve.
-    - choose_from_memory_probability (float): probability of choosing from memory
+    - **choose_from_memory_probability** (float): probability of choosing from memory
       (similar to a crossover probability).
-    - min_pitch_adjustment_rate (float): minimum pitch adjustment rate. (similar to a
+    - **min_pitch_adjustment_rate** (float): minimum pitch adjustment rate. (similar to a
       mutation rate). It must be between 0 and 1.
-    - max_pitch_adjustment_rate (float): maximum pitch adjustment rate. (similar to a
+    - **max_pitch_adjustment_rate** (float): maximum pitch adjustment rate. (similar to a
       mutation rate). It must be between 0 and 1.
-    - min_distance_bandwidth (float): minimum distance bandwidth. (similar to a mutation
+    - **min_distance_bandwidth** (float): minimum distance bandwidth. (similar to a mutation
       width). It must be positive.
-    - max_distance_bandwidth (float): maximum distance bandwidth. (similar to a mutation
+    - **max_distance_bandwidth** (float): maximum distance bandwidth. (similar to a mutation
       width).
 
 .. dropdown::  pygmo_de1220
@@ -1426,20 +1426,20 @@ optimizers.
     See `the PAGMO documentation for details
     <https://esa.github.io/pagmo2/docs/cpp/algorithms/de1220.html>`_.
 
-    - population_size (int): Size of the population. If None, it's twice the number of
+    - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
     - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
       (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
       estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - n_cores (int): Number of cores to use.
-    - seed (int): seed used by the internal random number generator.
-    - discard_start_params (bool): If True, the start params are not guaranteed to be
+    - **n_cores** (int): Number of cores to use.
+    - **seed** (int): seed used by the internal random number generator.
+    - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
       cannot be done in parallel with other evaluations. Default False.
-    - jde (bool): Whether to use the jDE self-adaptation variant to control the $F$ and
+    - **jde** (bool): Whether to use the jDE self-adaptation variant to control the $F$ and
       $CR$ parameter. If True jDE is used, else iDE.
     - **stopping.max_iterations** (int): Number of generations to evolve.
-    - allowed_variants (array-like object): allowed mutation variants (can be codes
+    - **allowed_variants** (array-like object): allowed mutation variants (can be codes
       or strings). Each code refers to one mutation variant to create a new candidate
       individual. The first ten refer to the classical mutation variants introduced in
       the original DE algorithm, the remaining ones are, instead, considered in the work
@@ -1466,10 +1466,10 @@ optimizers.
         - 17 or "rand-to-best-and-current/2/exp"
         - 18 or "rand-to-best-and-current/2/bin"
 
-    - keep_adapted_params (bool):  when true the adapted parameters $CR$ anf $F$ are not
+    - **keep_adapted_params** (bool):  when true the adapted parameters $CR$ anf $F$ are not
       reset between successive calls to the evolve method. Default is False.
-    - ftol (float): stopping criteria on the x tolerance.
-    - xtol (float): stopping criteria on the f tolerance.
+    - **ftol** (float): stopping criteria on the x tolerance.
+    - **xtol** (float): stopping criteria on the f tolerance.
 
 
 .. _ipopt_algorithm:
@@ -1519,7 +1519,7 @@ cyipopt``).
       - print options. Use estimagic's dashboard to monitor your optimization.
 
 
-    - convergence.relative_criterion_tolerance (float): The algorithm
+    - **convergence.relative_criterion_tolerance** (float): The algorithm
       terminates successfully, if the (scaled) non linear programming error
       becomes smaller than this value.
 
@@ -1540,19 +1540,19 @@ cyipopt``).
       convergence. The difference to ``max_criterion_evaluations`` is that one
       iteration might need several criterion evaluations, for example in a line
       search or to determine if the trust region radius has to be shrunk.
-    - stopping.max_wall_time_seconds (float): Maximum number of walltime clock seconds.
-    - stopping.max_cpu_time (float): Maximum number of CPU seconds.
+    - **stopping.max_wall_time_seconds** (float): Maximum number of walltime clock seconds.
+    - **stopping.max_cpu_time** (float): Maximum number of CPU seconds.
       A limit on CPU seconds that Ipopt can use to solve one problem.
       If during the convergence check this limit is exceeded, Ipopt will
       terminate with a corresponding message. The valid range for this
       real option is 0 < max_cpu_time and its default value is :math:`1e+20` .
 
-    - dual_inf_tol (float): Desired threshold for the dual infeasibility.
+    - **dual_inf_tol** (float): Desired threshold for the dual infeasibility.
       Absolute tolerance on the dual infeasibility. Successful termination
       requires that the max-norm of the (unscaled) dual infeasibility is less
       than this threshold. The valid range for this real option is 0 <
       dual_inf_tol and its default value is 1.
-    - constr_viol_tol (float): Desired threshold for the constraint and bound
+    - **constr_viol_tol** (float): Desired threshold for the constraint and bound
       violation. Absolute tolerance on the constraint and variable bound
       violation. Successful termination requires that the max-norm of the
       (unscaled) constraint violation is less than this threshold.
@@ -1560,39 +1560,39 @@ cyipopt``).
       The value of constr_viol_tol is used to restrict the absolute amount of this bound
       relaxation. The valid range for this real option is 0 < constr_viol_tol
       and its default value is 0.0001.
-    - compl_inf_tol (float): Desired threshold for the complementarity conditions.
+    - **compl_inf_tol** (float): Desired threshold for the complementarity conditions.
       Absolute tolerance on the complementarity. Successful termination
       requires that the max-norm of the (unscaled) complementarity is
       less than this threshold. The valid range for this real option is
       0 < text{compl_inf_tol and its default is 0.0001.
-    - acceptable_iter (int): Number of "acceptable" iterates before termination.
+    - **acceptable_iter** (int): Number of "acceptable" iterates before termination.
       If the algorithm encounters this many successive "acceptable"
       iterates (see above on the acceptable heuristic), it terminates, assuming
       that the problem has been solved to best possible accuracy given
       round-off. If it is set to zero, this heuristic is disabled. The valid
       range for this integer option is 0 ≤ acceptable_iter.
-    - acceptable_tol (float):"Acceptable" convergence tolerance (relative).
+    - **acceptable_tol** (float):"Acceptable" convergence tolerance (relative).
       Determines which (scaled) overall optimality error is considered to be "acceptable".
       The valid range for this real option is 0 < acceptable_tol.
-    - acceptable_dual_inf_tol (float):  "Acceptance" threshold for the dual
+    - **acceptable_dual_inf_tol** (float):  "Acceptance" threshold for the dual
       infeasibility. Absolute tolerance on the dual infeasibility. "Acceptable"
       termination requires that the (max-norm of the unscaled) dual
       infeasibility is less than this threshold; see also  ``acceptable_tol`` . The
       valid range for this real option is 0 < acceptable_dual_inf_tol and its
       default value is :math:`1e+10.`
-    - acceptable_constr_viol_tol (float): "Acceptance" threshold for the constraint violation.
+    - **acceptable_constr_viol_tol** (float): "Acceptance" threshold for the constraint violation.
       Absolute tolerance on the constraint violation.
       "Acceptable" termination requires that the max-norm
       of the (unscaled) constraint violation is less than this threshold; see
       also  ``acceptable_tol`` . The valid range for this real option is 0 <
       acceptable_constr_viol_tol and its default value is 0.01.
-    - acceptable_compl_inf_tol (float): "Acceptance" threshold for the
+    - **acceptable_compl_inf_tol** (float): "Acceptance" threshold for the
       complementarity conditions. Absolute tolerance on the complementarity.
       "Acceptable" termination requires that the max-norm of the (unscaled)
       complementarity is less than this threshold; see also  ``acceptable_tol`` . The
       valid range for this real option is 0 < text{acceptable_compl_inf_tol and its
       default value is 0.01.
-    - acceptable_obj_change_tol (float): "Acceptance" stopping criterion based on
+    - **acceptable_obj_change_tol** (float): "Acceptance" stopping criterion based on
       objective function change. If the relative
       change of the objective function (scaled by :math:`max(1,|f(x)|)` ) is less than
       this value, this part of the acceptable tolerance termination is
@@ -1601,15 +1601,15 @@ cyipopt``).
       range for this real option is 0 ≤ acceptable_obj_change_tol and its
       default value is :math:`1e+20` .
 
-    - diverging_iterates_tol (float): Threshold for maximal value of primal iterates.
+    - **diverging_iterates_tol** (float): Threshold for maximal value of primal iterates.
       If any component of the primal iterates exceeded this value (in
       absolute terms), the optimization is aborted with the exit message that
       the iterates seem to be diverging. The valid range for this real option is
       0 < diverging_iterates_tol and its default value is :math:`1e+20` .
-    - nlp_lower_bound_inf (float): any bound less or equal this value will be
+    - **nlp_lower_bound_inf** (float): any bound less or equal this value will be
       considered -inf (i.e. not lwer bounded). The valid range for this real
       option is unrestricted and its default value is :math:`-1e+19` .
-    - nlp_upper_bound_inf (float): any bound greater or this value will be
+    - **nlp_upper_bound_inf** (float): any bound greater or this value will be
       considered :math:`+\inf` (i.e. not upper bunded). The valid range for this real
       option is unrestricted and its default value is :math:`1e+19` .
     - **fixed_variable_treatment (str)**: Determines how fixed variables should be
@@ -1641,10 +1641,10 @@ cyipopt``).
       during dependency detection. The default value for this string option is
       "no". Possible values: 'yes', 'no', True, False.
 
-    - kappa_d (float): Weight for linear damping term (to handle one-sided bounds).
+    - **kappa_d** (float): Weight for linear damping term (to handle one-sided bounds).
       See Section 3.7 in implementation paper. The valid range for this
       real option is 0 ≤ kappa_d and its default value is :math:`1e-05` .
-    - bound_relax_factor (float): Factor for initial relaxation of the bounds.
+    - **bound_relax_factor** (float): Factor for initial relaxation of the bounds.
       Before start of the optimization, the bounds given by the user are
       relaxed. This option sets the factor for this relaxation. Additional, the
       constraint violation tolerance  ``constr_viol_tol``  is used to bound the
@@ -1700,7 +1700,7 @@ cyipopt``).
               ``nlp_scaling_max_gradient`` .
             - "equilibration-based": scale the problem so that first derivatives are
               of order 1 at random points (uses Harwell routine MC19)
-    - obj_scaling_factor (float): Scaling factor for the objective function.
+    - **obj_scaling_factor** (float): Scaling factor for the objective function.
       This option sets a scaling factor for the objective function. The
       scaling is seen internally by Ipopt but the unscaled objective is
       reported in the console output. If additional scaling parameters are
@@ -1708,7 +1708,7 @@ cyipopt``).
       multiplied. If this value is chosen to be negative, Ipopt will maximize
       the objective function instead of minimizing it. The valid range for
       this real option is unrestricted and its default value is 1.
-    - nlp_scaling_max_gradient (float): Maximum gradient after NLP scaling.
+    - **nlp_scaling_max_gradient** (float): Maximum gradient after NLP scaling.
       This is the gradient scaling cut-off. If the maximum gradient is above
       this value, then gradient based scaling will be performed. Scaling
       parameters are calculated to scale the maximum gradient back to this
@@ -1716,14 +1716,14 @@ cyipopt``).
       This option is only used if  ``nlp_scaling_method``  is chosen as
       "gradient-based". The valid range for this real option is :math:`0 <
       \text{nlp_scaling_max_gradient}` and its default value is 100.
-    - nlp_scaling_obj_target_gradient (float): advanced! Target value for
+    - **nlp_scaling_obj_target_gradient** (float): advanced! Target value for
       objective function gradient size. If a positive number is chosen, the
       scaling factor for the objective function is computed so that the
       gradient has the max norm of the given size at the starting point. This
       overrides  ``nlp_scaling_max_gradient``  for the objective function. The valid
       range for this real option is 0 ≤ nlp_scaling_obj_target_gradient and
       its default value is 0.
-    - nlp_scaling_constr_target_gradient (float): Min value of gradient-based
+    - **nlp_scaling_constr_target_gradient** (float): Min value of gradient-based
       scaling values.
       This is the lower bound for the scaling factors computed by
       gradient-based scaling method. If
@@ -1733,7 +1733,7 @@ cyipopt``).
       only used if  ``nlp_scaling_method`` is chosen as "gradient-based". The
       valid range for this real option is 0 ≤ nlp_scaling_min_value and its
       default value is :math:`1e-08`.
-    - nlp_scaling_min_value (float): Minimum value of
+    - **nlp_scaling_min_value** (float): Minimum value of
       gradient-based scaling values. This is the lower bound for the scaling
       factors computed by gradient-based scaling method. If some derivatives
       of some functions are huge, the scaling factors will otherwise become
@@ -1743,31 +1743,31 @@ cyipopt``).
       this real option is 0 ≤ nlp_scaling_min_value and its default value is
       :math:`1e-08`.
 
-    - bound_push (float): Desired minimum absolute distance from the initial
+    - **bound_push** (float): Desired minimum absolute distance from the initial
       point to bound. Determines how much the initial point might have to be
       modified in order to be sufficiently inside the bounds (together with
       ``bound_frac`` ). (This is kappa_1 in Section 3.6 of implementation paper.)
       The valid range for this real option is 0 < bound_push and its default
       value is 0.01.
-    - bound_frac (float): Desired minimum relative distance
+    - **bound_frac** (float): Desired minimum relative distance
       from the initial point to bound. Determines how much the initial point
       might have to be modified in order to be sufficiently inside the bounds
       (together with "bound_push"). (This is kappa_2 in Section 3.6 of
       implementation paper.) The valid range for this real option is 0 <
       bound_frac ≤ 0.5 and its default value is 0.01.
-    - slack_bound_push (float): Desired minimum absolute distance from the
+    - **slack_bound_push** (float): Desired minimum absolute distance from the
       initial slack to bound. Determines how much the initial slack
       variables might have to be modified in order to be sufficiently inside the inequality bounds
       (together with  ``slack_bound_frac`` ). (This is kappa_1 in Section 3.6 of
       implementation paper.) The valid range for this real option is 0 <
       slack_bound_push and its default value is 0.01.
-    - slack_bound_frac (float): Desired minimum relative distance from the
+    - **slack_bound_frac** (float): Desired minimum relative distance from the
       initial slack to bound. Determines how much the initial slack
       variables might have to be modified in order to be sufficiently inside the inequality bounds
       (together with  ``slack_bound_push`` ). (This is kappa_2 in Section 3.6 of
       implementation paper.) The valid range for this real option is 0 <
       slack_bound_frac ≤ 0.5 and its default value is 0.01.
-    - constr_mult_init_max (float): Maximum allowed least-square guess of
+    - **constr_mult_init_max** (float): Maximum allowed least-square guess of
       constraint multipliers. Determines how large the initial least-square
       guesses of the constraint multipliers are allowed to be (in max-norm).
       If the guess is larger than this value, it is discarded and all
@@ -1776,7 +1776,7 @@ cyipopt``).
       "resto.constr_mult_init_max" (the one used in RestoIterateInitializer)
       is set to zero. The valid range for this real option is 0 ≤
       constr_mult_init_max and its default value is 1000.
-    - bound_mult_init_val (float): Initial value for the bound multipliers.
+    - **bound_mult_init_val** (float): Initial value for the bound multipliers.
       All dual variables corresponding to bound constraints are initialized
       to this value. The valid range for this real option is
       0 < bound_mult_init_val and its default value is 1.
@@ -1828,22 +1828,22 @@ cyipopt``).
       identical to one that already was considered (with the same NLP
       object). The default value for this string option is "no". Possible
       values: yes, no, True, False.
-    - warm_start_bound_push (float): same as
+    - **warm_start_bound_push** (float): same as
       ``bound_push`` for the regular initializer. The valid range for this real
       option is 0 < warm_start_bound_push and its default value is 0.001.
-    - warm_start_bound_frac (float): same as  ``bound_frac``  for the regular
+    - **warm_start_bound_frac** (float): same as  ``bound_frac``  for the regular
       initializer The valid range for this real option is 0 <
       warm_start_bound_frac ≤ 0.5 and its default value is 0.001.
-    - warm_start_slack_bound_push (float): same as  ``slack_bound_push``  for the
+    - **warm_start_slack_bound_push** (float): same as  ``slack_bound_push``  for the
       regular initializer The valid range for this real option is 0 <
       warm_start_slack_bound_push and its default value is 0.001.
-    - warm_start_slack_bound_frac (float): same as  ``slack_bound_frac``  for the
+    - **warm_start_slack_bound_frac** (float): same as  ``slack_bound_frac``  for the
       regular initializer The valid range for this real option is 0 <
       warm_start_slack_bound_frac ≤ 0.5 and its default value is 0.001.
-    - warm_start_mult_bound_push (float): same as  ``mult_bound_push``  for the
+    - **warm_start_mult_bound_push** (float): same as  ``mult_bound_push``  for the
       regular initializer The valid range for this real option is 0 <
       warm_start_mult_bound_push and its default value is 0.001.
-    - warm_start_mult_init_max (float): Maximum initial value for the
+    - **warm_start_mult_init_max** (float): Maximum initial value for the
       equality multipliers. The valid range for this real option is
       unrestricted and its default value is :math:`1e+06` .
     - **warm_start_entire_iterate (str or bool)**: Tells algorithm whether to use the GetWarmStartIterate
@@ -1852,7 +1852,7 @@ cyipopt``).
 
             - "no": call GetStartingPoint in the NLP
             - "yes": call GetWarmStartIterate in the NLP
-    - warm_start_target_mu (float): Advanced and experimental! The valid range
+    - **warm_start_target_mu** (float): Advanced and experimental! The valid range
       for this real option is unrestricted and its default value is 0.
 
     - **option_file_name (str)**: File name of options file. By default, the name
@@ -1880,19 +1880,19 @@ cyipopt``).
       The default value for this string option is "no". Possible values:
       "yes", "no", True, False
 
-    - mu_max_fact (float): Factor for initialization of maximum value for
+    - **mu_max_fact** (float): Factor for initialization of maximum value for
       barrier parameter. This option determines the upper bound on the barrier
       parameter. This upper bound is computed as the average complementarity
       at the initial point times the value of this option. (Only used if
       option "mu_strategy" is chosen as "adaptive".) The valid range for this
       real option is 0 < mu_max_fact and its default value is 1000.
-    - mu_max (float): Maximum value for barrier parameter. This option specifies an
+    - **mu_max** (float): Maximum value for barrier parameter. This option specifies an
       upper bound on the barrier parameter in the adaptive mu selection mode.
       If this option is set, it overwrites the effect of mu_max_fact. (Only
       used if option "mu_strategy" is chosen as "adaptive".) The valid range
       for this real option is 0 < mu_max and its default value is
       100000.
-    - mu_min (float): Minimum value for barrier parameter. This option
+    - **mu_min** (float): Minimum value for barrier parameter. This option
       specifies the lower bound on the barrier parameter in the adaptive mu
       selection mode. By default, it is set to the minimum of :math:`1e-11`  and
       min( ``tol`` , ``compl_inf_tol`` )/( ``barrier_tol_factor`` +1), which should be a
@@ -1911,20 +1911,20 @@ cyipopt``).
             - "kkt-error": nonmonotone decrease of kkt-error
             - "obj-constr-filter": 2-dim filter for objective and constraint violation
             - "never-monotone-mode": disables globalization.
-    - adaptive_mu_kkterror_red_iters (float): advanced feature! Maximum
+    - **adaptive_mu_kkterror_red_iters** (float): advanced feature! Maximum
       number of iterations requiring sufficient progress. For the
       "kkt-error" based globalization strategy, sufficient progress must be
       made for "adaptive_mu_kkterror_red_iters" iterations. If this number
       of iterations is exceeded, the globalization strategy switches to the
       monotone mode. The valid range for this integer option is 0 ≤
       adaptive_mu_kkterror_red_iters and its default value is 4.
-    - adaptive_mu_kkterror_red_fact (float): advanced feature! Sufficient
+    - **adaptive_mu_kkterror_red_fact** (float): advanced feature! Sufficient
       decrease factor for "kkt-error" globalization strategy. For the
       "kkt-error" based globalization strategy, the error must decrease by
       this factor to be deemed sufficient decrease. The valid range for this
       real option is 0 < adaptive_mu_kkterror_red_fact < 1 and its default
       value is 0.9999.
-    - filter_margin_fact (float): advanced feature! Factor
+    - **filter_margin_fact** (float): advanced feature! Factor
       determining width of margin for obj-constr-filter adaptive
       globalization strategy. When using the adaptive globalization
       strategy, "obj-constr-filter", sufficient progress for a filter entry
@@ -1934,7 +1934,7 @@ cyipopt``).
       description of the "kkt-error-filter" option see  ``filter_max_margin`` .
       The valid range for this real option is 0 < filter_margin_fact < 1 and
       its default value is :math:`10-05` .
-    - filter_max_margin (float): advanced
+    - **filter_max_margin** (float): advanced
       feature! Maximum width of margin in obj-constr-filter adaptive
       globalization strategy. The valid range for this real option is 0 <
       filter_max_margin and its default value is 1.
@@ -1945,7 +1945,7 @@ cyipopt``).
       either start from the most recent iterate (no), or from the last
       iterate that was accepted (yes). The default value for this string
       option is "no". Possible values: "yes", "no", True, False
-    - adaptive_mu_monotone_init_factor (float): advanced feature! Determines
+    - **adaptive_mu_monotone_init_factor** (float): advanced feature! Determines
       the initial value of the barrier parameter when switching to the
       monotone mode. When the globalization strategy for the adaptive
       barrier algorithm switches to the monotone mode and fixed_mu_oracle is
@@ -1992,19 +1992,19 @@ cyipopt``).
             - "loqo": LOQO's centrality rule
             - "quality-function": minimize a quality function
             - "average_compl": base on current average complementarity
-    - mu_init (float): Initial value for the barrier parameter. This option
+    - **mu_init** (float): Initial value for the barrier parameter. This option
       determines the initial value for the barrier parameter (mu). It is
       only relevant in the monotone, Fiacco-McCormick version of the
       algorithm. (i.e., if "mu_strategy" is chosen as "monotone") The valid
       range for this real option is 0 < mu_init and its default value is 0.1.
-    - barrier_tol_factor (float): Factor for mu in barrier stop test.
+    - **barrier_tol_factor** (float): Factor for mu in barrier stop test.
       The convergence tolerance for each barrier problem in the monotone
       mode is the value of the barrier parameter times "barrier_tol_factor".
       This option is also used in the adaptive mu strategy during the
       monotone mode. This is kappa_epsilon in implementation paper. The
       valid range for this real option is 0 < barrier_tol_factor and its
       default value is 10.
-    - mu_linear_decrease_factor (float): Determines
+    - **mu_linear_decrease_factor** (float): Determines
       linear decrease rate of barrier parameter. For the Fiacco-McCormick
       update procedure the new barrier parameter mu is obtained by taking
       the minimum of mu*"mu_linear_decrease_factor" and
@@ -2012,7 +2012,7 @@ cyipopt``).
       paper. This option is also used in the adaptive mu strategy during the
       monotone mode. The valid range for this real option is 0 <
       mu_linear_decrease_factor < 1 and its default value is 0.2.
-    - mu_superlinear_decrease_power (float): Determines superlinear decrease
+    - **mu_superlinear_decrease_power** (float): Determines superlinear decrease
       rate of barrier parameter. For the Fiacco-McCormick update procedure
       the new barrier parameter mu is obtained by taking the minimum of
       mu*"mu_linear_decrease_factor" and mu^"superlinear_decrease_power".
@@ -2028,19 +2028,19 @@ cyipopt``).
             - "no": Take at least one iteration per barrier problem even if the
               barrier test is already met for the updated barrier parameter
             - "yes": Allow fast decrease of mu if barrier test it met
-    - tau_min (float): Advanced feature! Lower bound on fraction-to-the-boundary
+    - **tau_min** (float): Advanced feature! Lower bound on fraction-to-the-boundary
       parameter tau. This is tau_min in the implementation paper. This
       option is also used in the adaptive mu strategy during the monotone
       mode. The valid range for this real option is 0 < tau_min < 1 and its
       default value is 0.99.
-    - sigma_max (float): Advanced feature! Maximum
+    - **sigma_max** (float): Advanced feature! Maximum
       value of the centering parameter. This is the upper bound for the
       centering parameter chosen by the quality function based barrier
       parameter update. Only used if option "mu_oracle" is set to
       "quality-function". The valid range for this real option is 0 <
       sigma_max and its default value is 100.
 
-    - sigma_min (float): Advanced
+    - **sigma_min** (float): Advanced
       feature! Minimum value of the centering parameter. This is the lower
       bound for the centering parameter chosen by the quality function based
       barrier parameter update. Only used if option "mu_oracle" is set to
@@ -2081,20 +2081,20 @@ cyipopt``).
 
             - "none": no balancing term is adde
             - "cubic":  :math:`max(0,\max(\text{dual_inf},\text{primal_inf})-\text{compl})^3`
-    - quality_function_max_section_steps (int): Maximum number of search
+    - **quality_function_max_section_steps** (int): Maximum number of search
       steps during direct search procedure determining the optimal centering
       parameter. The golden section search is performed for the quality
       function based mu oracle. Only used if option "mu_oracle" is set to
       "quality-function". The valid range for this integer option is 0 ≤
       quality_function_max_section_steps and its default value is 8.
-    - quality_function_section_sigma_tol (float): advanced feature!
+    - **quality_function_section_sigma_tol** (float): advanced feature!
       Tolerance for the section search procedure determining the optimal
       centering parameter (in sigma space). The golden section search is
       performed for the quality function based mu oracle. Only used if
       option "mu_oracle" is set to "quality-function". The valid range for
       this real option is 0 ≤ quality_function_section_sigma_tol < 1 and its
       default value is 0.01.
-    - quality_function_section_qf_tol (float):
+    - **quality_function_section_qf_tol** (float):
       advanced feature! Tolerance for the golden section search procedure
       determining the optimal centering parameter (in the function value
       space). The golden section search is performed for the quality
@@ -2110,7 +2110,7 @@ cyipopt``).
              - "filter": Filter method
              - "cg-penalty": Chen-Goldfarb penalty function
              - "penalty": Standard penalty function
-    - alpha_red_factor (float): Advanced feature.
+    - **alpha_red_factor** (float): Advanced feature.
       Fractional reduction of the trial step size
       in the backtracking lne search. At every step of the backtracking line
       search, the trial step size is reduced by this factor. The valid range
@@ -2121,7 +2121,7 @@ cyipopt``).
       search and makes the algorithm take aggressive steps, without global
       convergence guarantees. The default value for this string option is
       "no". Possible values: "yes", "no", True, False.
-    - accept_after_max_steps (float): advanced feature.
+    - **accept_after_max_steps** (float): advanced feature.
       Accept a trial point after maximal this
       number of steps een if it does not satisfy line search conditions.
       Setting this to -1 disables this option. The valid range for this
@@ -2143,13 +2143,13 @@ cyipopt``).
             - "dual-and-full": use the dual step size, and full step if
               delta_x <= alpha_for_y_tol
             - "acceptor": Call LSAcceptor to get step size for y
-    - alpha_for_y_tol (float): Tolerance for
+    - **alpha_for_y_tol** (float): Tolerance for
       switching to full equality multiplier steps. This is only relevant if
       "alpha_for_y" is chosen "primal-and-full" or "dual-and-full". The step
       size for the equality constraint multipliers is taken to be one if the
       max-norm of the primal step is less than this tolerance. The valid range
       for this real option is 0 ≤ alpha_for_y_tol and its default value is 10.
-    - tiny_step_tol (float): Advanced feature. Tolerance for detecting
+    - **tiny_step_tol** (float): Advanced feature. Tolerance for detecting
       numerically insignificant steps. If the search direction in the primal
       variables (x and s) is, in relative terms for each component, less than
       this value, the algorithm accepts the full step without line search. If
@@ -2157,7 +2157,7 @@ cyipopt``).
       corresponding exit message. The default value is 10 times machine
       precision. The valid range for this real option is 0 ≤ tiny_step_tol and
       its default value is 2.22045 · :math:`1e-15`.
-    - tiny_step_y_tol (float): Advanced
+    - **tiny_step_y_tol** (float): Advanced
       feature. Tolerance for quitting because of numerically insignificant
       steps. If the search direction in the primal variables (x and s) is, in
       relative terms for each component, repeatedly less than tiny_step_tol,
@@ -2165,14 +2165,14 @@ cyipopt``).
       algorithm will terminate. The valid range for this real option is 0 ≤
       tiny_step_y_tol and its default value is 0.01.
 
-    - watchdog_shortened_iter_trigger (int): Number of shortened iterations
+    - **watchdog_shortened_iter_trigger** (int): Number of shortened iterations
       that trigger the watchdog. If the number of successive iterations in
       which the backtracking line search did not accept the first trial point
       exceeds this number, the watchdog procedure is activated. Choosing "0"
       here disables the watchdog procedure. The valid range for this integer
       option is 0 ≤ watchdog_shortened_iter_trigger and its default value is
       10.
-    - watchdog_trial_iter_max (int): Maximum number of watchdog
+    - **watchdog_trial_iter_max** (int): Maximum number of watchdog
       iterations. This option determines the number of trial iterations
       allowed before the watchdog procedure is aborted and the algorithm
       returns to the stored point. The valid range for this integer option
@@ -2185,7 +2185,7 @@ cyipopt``).
       filter (see Eqn. (21) in the implementation paper). The valid range
       for this real option is 0 < theta_max_fact and its default value is
       10000.
-    - theta_min_fact (float): advanced feature. Determines
+    - **theta_min_fact** (float): advanced feature. Determines
       constraint violation threshold in the switching rule. The
       algorithmic parameter theta_min is determined as
       theta_min_fact times the maximum of 1 and the constraint
@@ -2195,56 +2195,56 @@ cyipopt``).
       before Eqn. (19) in the implementation paper). The valid
       range for this real option is 0 < theta_min_fact and its
       default value is 0.0001.
-    - eta_phi (float): advanced!
+    - **eta_phi** (float): advanced!
       Relaxation factor in the Armijo condition. See Eqn. (20) in
       the implementation paper. The valid range for this real
       option is 0 < eta_phi < 0.5 and its default value is :math:`1e-08`.
-    - delta (float): advanced! Multiplier for constraint violation
+    - **delta** (float): advanced! Multiplier for constraint violation
       in the switching rule. See Eqn. (19) in the implementation
       paper. The valid range for this real option is 0 < delta and
       its default value is 1.
-    - s_phi (float): advanced! Exponent for
+    - **s_phi** (float): advanced! Exponent for
       linear barrier function model in the switching rule. See Eqn.
       (19) in the implementation paper. The valid range for this
       real option is 1 < s_phi and its default value is 2.3.
-    - s_theta (float): advanced! Exponent for current constraint
+    - **s_theta** (float): advanced! Exponent for current constraint
       violation in the switching rule. See Eqn. (19) in the
       implementation paper. The valid range for this real option is
       1 < s_theta and its default value is 1.1.
-    - gamma_phi (float):
+    - **gamma_phi** (float):
       advanced! Relaxation factor in the filter margin for the
       barrier function. See Eqn. (18a) in the implementation paper.
       The valid range for this real option is 0 < gamma_phi < 1 and
       its default value is :math:`1e-08`.
-    - gamma_theta (float): advanced!
+    - **gamma_theta** (float): advanced!
       Relaxation factor in the filter margin for the constraint
       violation. See Eqn. (18b) in the implementation paper. The
       valid range for this real option is 0 < gamma_theta < 1 and
       its default value is :math:`1e-05`.
-    - alpha_min_frac (float): advanced!
+    - **alpha_min_frac** (float): advanced!
       Safety factor for the minimal step size (before switching to
       restoration phase). This is gamma_alpha in Eqn. (20) in the
       implementation paper. The valid range for this real option is
       0 < alpha_min_frac < 1 and its default value is 0.05.
-    - max_soc (int): Maximum number of second order correction trial steps
+    - **max_soc** (int): Maximum number of second order correction trial steps
       at each iteration. Choosing 0 disables the second order
       corrections. This is p^{max} of Step A-5.9 of Algorithm A in
       the implementation paper. The valid range for this integer
       option is 0 ≤ max_soc and its default value is 4.
-    - kappa_soc (float): advanced! Factor in the sufficient reduction rule
+    - **kappa_soc** (float): advanced! Factor in the sufficient reduction rule
       for second order correction. This option determines how much
       a second order correction step must reduce the constraint
       violation so that further correction steps are attempted. See
       Step A-5.9 of Algorithm A in the implementation paper. The
       valid range for this real option is 0 < kappa_soc and its
       default value is 0.99.
-    - obj_max_inc (float): advanced!
+    - **obj_max_inc** (float): advanced!
       Determines the upper bound on the acceptable increase of
       barrier objective function. Trial points are rejected if they
       lead to an increase in the barrier objective function by more
       than obj_max_inc orders of magnitude. The valid range for
       this real option is 1 < obj_max_inc and its default value is 5.
-    - max_filter_resets (int): advanced! Maximal allowed number
+    - **max_filter_resets** (int): advanced! Maximal allowed number
       of filter resets. A positive number enables a heuristic
       that resets the filter, whenever in more than
       "filter_reset_trigger" successive iterations the last
@@ -2253,7 +2253,7 @@ cyipopt``).
       that are allowed to take place. The valid range for this
       integer option is 0 ≤ max_filter_resets and its default
       value is 5.
-    - filter_reset_trigger (int): Advanced! Number
+    - **filter_reset_trigger** (int): Advanced! Number
       of iterations that trigger the filter reset. If the filter
       reset heuristic is active and the number of successive
       iterations in which the last rejected trial step size was
@@ -2282,29 +2282,29 @@ cyipopt``).
       option "barrier_strategy"). This option is only used if "mu_strategy" is
       "adaptive". Changing this option is experimental. The default value for
       this string option is "yes". Possible values: "yes", "no", True, False
-    - corrector_compl_avrg_red_fact (int): advanced! Complementarity tolerance
+    - **corrector_compl_avrg_red_fact** (int): advanced! Complementarity tolerance
       factor for accepting corrector step. This option determines the factor by
       which complementarity is allowed to increase for a corrector step to be
       accepted. Changing this option is experimental. The valid range for this
       real option is 0 < corrector_compl_avrg_red_fact and its default value is
       1.
-    - soc_method (int): Ways to apply second order correction. This option
+    - **soc_method** (int): Ways to apply second order correction. This option
       determines the way to apply second order correction, 0 is the method
       described in the implementation paper. 1 is the modified way which adds
       alpha on the rhs of x and s rows. Officially, the valid range for this
       integer option is 0 ≤ soc_method ≤ 1 and its default value is 0 but only 0
       and 1 are allowed.
 
-    - nu_init (float): advanced! Initial value of the penalty parameter. The
+    - **nu_init** (float): advanced! Initial value of the penalty parameter. The
       valid range for this real option is 0 < nu_init and its default value is
       :math:`1e-06`.
-    - nu_inc (float): advanced! Increment of the penalty parameter. The
+    - **nu_inc** (float): advanced! Increment of the penalty parameter. The
       valid range for this real option is 0 < nu_inc and its default value is
       0.0001.
-    - rho (float): advanced! Value in penalty parameter update formula.
+    - **rho** (float): advanced! Value in penalty parameter update formula.
       The valid range for this real option is 0 < rho < 1 and its default value
       is 0.1.
-    - kappa_sigma (float): advanced! Factor limiting the deviation of
+    - **kappa_sigma** (float): advanced! Factor limiting the deviation of
       dual variables from primal estimates. If the dual variables deviate from
       their primal estimates, a correction is performed. See Eqn. (16) in the
       implementation paper. Setting the value to less than 1 disables the
@@ -2321,12 +2321,12 @@ cyipopt``).
 
           - "no" or False: use the Newton step to update the multipliers
           - "yes" or True: use least-square multiplier
-    - estimates recalc_y_feas_tol (float): Feasibility threshold for
+    - **estimates recalc_y_feas_tol** (float): Feasibility threshold for
       recomputation of multipliers. If recalc_y is chosen and the current
       infeasibility is less than this value, then the multipliers are
       recomputed. The valid range for this real option is 0 < recalc_y_feas_tol
       and its default value is :math:`1e-06`.
-    - slack_move (float): advanced! Correction
+    - **slack_move** (float): advanced! Correction
       size for very small slacks. Due to numerical issues or the lack of an
       interior, the slack variables might become very small. If a slack becomes
       very small compared to machine precision, the corresponding bound is moved
@@ -2362,39 +2362,39 @@ cyipopt``).
       solution and the computation of the search direction is a little faster.
       The default value for this string option is "no". Possible values: "yes",
       "no", True, False.
-    - min_refinement_steps (int): Minimum number of iterative
+    - **min_refinement_steps** (int): Minimum number of iterative
       refinement steps per linear system solve. Iterative refinement (on the
       full asymmetric system) is performed for each right hand side. This
       option determines the minimum number of iterative refinements (i.e. at
       least "min_refinement_steps" iterative refinement steps are enforced per
       right hand side.) The valid range for this integer option is 0 ≤
       min_refinement_steps and its default value is 1.
-    - max_refinement_steps (int): Maximum number of iterative refinement
+    - **max_refinement_steps** (int): Maximum number of iterative refinement
       steps per linear system
       solve. Iterative refinement (on the full unsymmetric system) is performed
       for each right hand side. This option determines the maximum number of
       iterative refinement steps. The valid range for this integer option is 0 ≤
       max_refinement_steps and its default value is 10.
-    - residual_ratio_max (float): advanced! Iterative refinement tolerance.
+    - **residual_ratio_max** (float): advanced! Iterative refinement tolerance.
       Iterative refinement is
       performed until the residual test ratio is less than this tolerance (or
       until "max_refinement_steps" refinement steps are performed). The valid
       range for this real option is 0 < residual_ratio_max and its default value
       is :math:`1e-10`.
-    - residual_ratio_singular (float): advanced! Threshold for
+    - **residual_ratio_singular** (float): advanced! Threshold for
       declaring linear system singular after filed iterative refinement. If the
       residual test ratio is larger than this value after failed iterative
       refinement, the algorithm pretends that the linear system is singular. The
       valid range for this real option is 0 < residual_ratio_singular and its
       default value is :math:`1e-05`.
-    - residual_improvement_factor (float): advanced!
+    - **residual_improvement_factor** (float): advanced!
       Minimal required reduction of residual test ratio in iterative refinement.
       If the improvement of the residual test ratio made by one iterative
       refinement step is not better than this factor, iterative refinement is
       aborted. The valid range for this real option is 0 <
       residual_improvement_factor and its default value is 1.
 
-    - neg_curv_test_tol (float): Tolerance for heuristic to ignore wrong
+    - **neg_curv_test_tol** (float): Tolerance for heuristic to ignore wrong
       inertia. If nonzero, incorrect inertia in the augmented system is ignored,
       and Ipopt tests if the direction is a direction of positive curvature.
       This tolerance is alpha_n in the paper by :cite:`Chiang2014` and it
@@ -2409,7 +2409,7 @@ cyipopt``).
             inertia-free curvature test
           - "no" or False: use original IPOPT approach, in which the
             primal regularization is ignored
-    - max_hessian_perturbation (float): Maximum value of regularization
+    - **max_hessian_perturbation** (float): Maximum value of regularization
       parameter for handling negative curvature. In order to guarantee that the
       search directions are indeed proper descent directions, Ipopt requires
       that the inertia of the (augmented) linear system for the step computation
@@ -2423,13 +2423,13 @@ cyipopt``).
       the restoration phase. This is delta_w^max in the implementation paper.
       The valid range for this real option is 0 < max_hessian_perturbation and
       its default value is :math:`1e+20`.
-    - min_hessian_perturbation (float): Smallest
+    - **min_hessian_perturbation** (float): Smallest
       perturbation of the Hessian block. The size of the perturbation of the
       Hessian block is never selected smaller than this value, unless no
       perturbation is necessary. This is delta_w^min in implementation paper.
       The valid range for this real option is 0 ≤ min_hessian_perturbation and
       its default value is :math:`1e-20`.
-    - perturb_inc_fact_first (float): Increase
+    - **perturb_inc_fact_first** (float): Increase
       factor for x-s perturbation for very first perturbation. The factor by
       which the perturbation is increased when a trial value was not sufficient
       - this value is used for the computation of the very first perturbation
@@ -2437,29 +2437,29 @@ cyipopt``).
       for the remaining perturbations. This is bar_kappa_w^+ in the
       implementation paper. The valid range for this real option is 1 <
       perturb_inc_fact_first and its default value is 100.
-    - perturb_inc_fact (float): Increase factor for x-s perturbation. The factor
+    - **perturb_inc_fact** (float): Increase factor for x-s perturbation. The factor
       by which the perturbation is increased when a trial value was not
       sufficient - this value is used for the computation of all
       perturbations except for
       the first. This is kappa_w^+ in the implementation paper. The valid
       range for this real option is 1 < perturb_inc_fact and its default value
       is 8.
-    - perturb_dec_fact (float): Decrease factor for x-s perturbation.
+    - **perturb_dec_fact** (float): Decrease factor for x-s perturbation.
       The factor by which the perturbation is decreased when a trial value is
       deduced from the size of the most recent successful perturbation. This
       is kappa_w^- in the implementation paper. The valid range for this real
       option is 0 < perturb_dec_fact < 1 and its default value is 0.333333.
-    - first_hessian_perturbation (float): Size of first x-s perturbation
+    - **first_hessian_perturbation** (float): Size of first x-s perturbation
       tried. The first value tried for the x-s perturbation in the inertia
       correction scheme. This is delta_0 in the implementation paper. The
       valid range for this real option is 0 < first_hessian_perturbation and
       its default value is 0.0001.
-    - jacobian_regularization_value (float): Size
+    - **jacobian_regularization_value** (float): Size
       of the regularization for rank-deficient constraint Jacobians. This is
       bar delta_c in the implementation paper. The valid range for this real
       option is 0 ≤ jacobian_regularization_value and its default value is
       :math:`1e-08`.
-    - jacobian_regularization_exponent (float): advanced! Exponent for
+    - **jacobian_regularization_exponent** (float): advanced! Exponent for
       mu in the regularization for rnk-deficient constraint Jacobians. This is
       kappa_c in the implementation paper. The valid range for this real
       option is 0 ≤ jacobian_regularization_exponent and its default value is
@@ -2480,13 +2480,13 @@ cyipopt``).
       enforced before the restoration phase is left. If the problem is square,
       this option is enabled automatically. The default value for this string
       option is "no". Possible values: "yes", "no", True, False.
-    - expect_infeasible_problem_ctol (float): Threshold for disabling
+    - **expect_infeasible_problem_ctol** (float): Threshold for disabling
       "expect_infeasible_problem" option. If the constraint violation becomes
       smaller than this threshold, the "expect_infeasible_problem" heuristics
       in the filter line search are disabled. If the problem is square, this
       options is set to 0. The valid range for this real option is 0 ≤
       expect_infeasible_problem_ctol and its default value is 0.001.
-    - expect_infeasible_problem_ytol (float): Multiplier threshold for
+    - **expect_infeasible_problem_ytol** (float): Multiplier threshold for
       activating "xpect_infeasible_problem" option. If the max norm of the
       constraint multipliers becomes larger than this value and
       "expect_infeasible_problem" is chosen, then the restoration phase is
@@ -2498,7 +2498,7 @@ cyipopt``).
       the initial point is feasible, the algorithm will abort with a failure.
       The default value for this string option is "no". Possible values:
       "yes", "no", True, False
-    - soft_resto_pderror_reduction_factor (float):
+    - **soft_resto_pderror_reduction_factor** (float):
       Required reduction in primal-dual error in the soft restoration phase.
       The soft restoration phase attempts to reduce the primal-dual error with
       regular steps. If the damped primal-dual step (damped only to satisfy
@@ -2507,20 +2507,20 @@ cyipopt``).
       called. Choosing "0" here disables the soft restoration phase. The valid
       range for this real option is 0 ≤ soft_resto_pderror_reduction_factor
       and its default value is 0.9999.
-    - max_soft_resto_iters (int): advanced!
+    - **max_soft_resto_iters** (int): advanced!
       Maximum number of iterations performed successively in soft rstoration
       phase. If the soft restoration phase is performed for more than so many
       iterations in a row, the regular restoration phase is called. The valid
       range for this integer option is 0 ≤ max_soft_resto_iters and its
       default value is 10.
-    - required_infeasibility_reduction (float): Required
+    - **required_infeasibility_reduction** (float): Required
       reduction of infeasibility before leaving restoration phase. The
       restoration phase algorithm is performed, until a point is found that is
       acceptable to the filter and the infeasibility has been reduced by at
       least the fraction given by this option. The valid range for this real
       option is 0 ≤ required_infeasibility_reduction < 1 and its default value
       is 0.9.
-    - max_resto_iter (int): advanced! Maximum number of successive
+    - **max_resto_iter** (int): advanced! Maximum number of successive
       iterations in restoration phase.The algorithm terminates with an error
       message if the number of iterations successively taken in the
       restoration phase exceeds this number. The valid range for this integer
@@ -2538,18 +2538,18 @@ cyipopt``).
       the original objective is expensive, this might be costly. The default
       value for this string option is "yes". Possible values: "yes", "no",
       True, False
-    - resto_penalty_parameter (float): advanced! Penalty parameter
+    - **resto_penalty_parameter** (float): advanced! Penalty parameter
       in the restoration phase objective function. This is the parameter rho in
       equation (31a) in the Ipopt implementation paper. The valid range for
       this real option is 0 < resto_penalty_parameter and its default value is
       1000.
-    - resto_proximity_weight (float): advanced! Weighting factor for the
+    - **resto_proximity_weight** (float): advanced! Weighting factor for the
       proximity term in restoration pase objective. This determines how
       the parameter zeta in equation (29a) in the implementation paper
       is computed. zeta here is resto_proximity_weight*sqrt(mu), where
       mu is the current barrier parameter. The valid range for this real
       option is 0 ≤ resto_proximity_weight and its default value is 1.
-    - bound_mult_reset_threshold (float): Threshold for resetting bound
+    - **bound_mult_reset_threshold** (float): Threshold for resetting bound
       multipliers after the restoration pase. After returning from the
       restoration phase, the bound multipliers are updated with a Newton
       step for complementarity. Here, the change in the primal variables
@@ -2559,14 +2559,14 @@ cyipopt``).
       option, the multipliers are all reset to 1.
       The valid range for this real option is 0 ≤ bound_mult_reset_threshold
       and its default value is 1000.
-    - constr_mult_reset_threshold (float):
+    - **constr_mult_reset_threshold** (float):
       Threshold for resetting equality and inequality multipliers ater
       restoration phase. After returning from the restoration phase, the
       constraint multipliers are recomputed by a least square estimate. This
       option triggers when those least-square estimates should be ignored.
       The valid range for this real option is 0 ≤ constr_mult_reset_threshold
       and its default value is 0.
-    - resto_failure_feasibility_threshold (float): advanced!
+    - **resto_failure_feasibility_threshold** (float): advanced!
       Threshold for primal infeasibility to declare failure
       of restoration phase. If the restoration phase is terminated because of
       the "acceptable" termination criteria and the primal infeasibility is
@@ -2582,7 +2582,7 @@ cyipopt``).
 
           - "sherman-morrison": use Sherman-Morrison formula
           - "extended": use an extended augmented system
-    - limited_memory_max_history (int): Maximum size of the history for the
+    - **limited_memory_max_history** (int): Maximum size of the history for the
       limited quasi-Newton Hessian approximation. This option determines the
       number of most recent iterations that are taken into account for the
       limited-memory quasi-Newton approximation. The valid range for this
@@ -2605,27 +2605,27 @@ cyipopt``).
           - "scalar3": arithmetic average of scalar1 and scalar2
           - "scalar4": geometric average of scalar1 and scalar2
           - "constant": sigma = limited_memory_init_val
-    - limited_memory_init_val (float): Value for B0 in low-rank update. The
+    - **limited_memory_init_val** (float): Value for B0 in low-rank update. The
       starting matrix in the low rank update, B0, is chosen to be this multiple
       of the identity in the first iteration (when no updates have been
       performed yet), and is constantly chosen as this value, if
       "limited_memory_initialization" is "constant". The valid range for this
       real option is 0 < limited_memory_init_val and its default value is 1.
-    - limited_memory_init_val_max (float): Upper bound on value for B0 in
+    - **limited_memory_init_val_max** (float): Upper bound on value for B0 in
       low-rank update. The starting matrix in the low rank update, B0, is chosen
       to be this multiple of the identity in the first iteration (when no
       updates have been performed yet), and is constantly chosen as this value,
       if "limited_memory_initialization" is "constant". The valid range for this
       real option is 0 < limited_memory_init_val_max and its default value is
       :math:`1e+08`.
-    - limited_memory_init_val_min (float): Lower bound on value for B0 in
+    - **limited_memory_init_val_min** (float): Lower bound on value for B0 in
       low-rank update. The starting matrix in the low rank update, B0, is chosen
       to be this multiple of the identity in the first iteration (when no
       updates have been performed yet), and is constantly chosen as this value,
       if "limited_memory_initialization" is "constant". The valid range for this
       real option is 0 < limited_memory_init_val_min and its default value is
       :math:`1e-08`.
-    - limited_memory_max_skipping (int): Threshold for successive
+    - **limited_memory_max_skipping** (int): Threshold for successive
       iterations where update is skipped. If the update is skipped more than
       this number of successive iterations, the quasi-Newton approximation is
       reset. The valid range for this integer option is 1 ≤
@@ -2665,7 +2665,7 @@ cyipopt``).
           - pardiso (load the Pardiso package from pardiso-project.org
             from user-provided library at runtime)
           - custom (use custom linear solver (expert use))
-    - linear_solver_options (dict or None): dictionary with the
+    - **linear_solver_options** (dict or None): dictionary with the
       linear solver options, possibly including `linear_system_scaling`,
       `hsllib` and `pardisolib`. See the `ipopt documentation for details
       <https://coin-or.github.io/Ipopt/OPTIONS.html>`_. The linear solver
@@ -2698,13 +2698,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2722,13 +2722,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2762,13 +2762,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2801,13 +2801,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2829,13 +2829,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2860,13 +2860,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2888,13 +2888,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2916,13 +2916,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2944,13 +2944,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2972,13 +2972,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -2997,13 +2997,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
     - rank_1_update (bool): Whether I rank-1 or rank-2 update is used.
@@ -3023,13 +3023,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -3064,18 +3064,18 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
-    - locally_biased (bool): Whether the "L" version of the algorithm is selected.
-    - random_search (bool): Whether the randomized version of the algorithm is selected.
-    - unscaled_bounds (bool): Whether the "NOSCAL" version of the algorithm is selected.
+    - **locally_biased** (bool): Whether the "L" version of the algorithm is selected.
+    - **random_search** (bool): Whether the randomized version of the algorithm is selected.
+    - **unscaled_bounds** (bool): Whether the "NOSCAL" version of the algorithm is selected.
 
 .. dropdown:: nlopt_esch
 
@@ -3091,13 +3091,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
 
@@ -3118,13 +3118,13 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative
       movement between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute
       movement between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of
       the criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of
       function evaluation is reached, the optimization stops but we do not count
       this as convergence.
 
@@ -3146,16 +3146,16 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
+    - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
       between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
       improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
+    - **convergence.absolute_criterion_tolerance** (float): Stop when the change of the
       criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this as
       convergence.
-    - population_size (int): Size of the population. If None, it's set to be
+    - **population_size** (int): Size of the population. If None, it's set to be
       10 * (number of parameters + 1).
 
 **References**
