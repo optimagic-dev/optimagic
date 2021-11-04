@@ -377,6 +377,7 @@ def scipy_cobyla(
     """Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
     For details see :ref:`list_of_scipy_algorithms`.
+
     """
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_cobyla"
@@ -481,6 +482,7 @@ def scipy_trust_constr(
     """Minimize a scalar function of one or more variables subject to constraints.
 
     For details see :ref:`list_of_scipy_algorithms`.
+
     """
     algo_info = DEFAULT_ALGO_INFO.copy()
     algo_info["name"] = "scipy_trust_constr"
@@ -534,6 +536,7 @@ def scipy_ls_trf(
     Minimize a scalar function using a trust region reflective method.
 
     For details see :ref:`list_of_scipy_algorithms`.
+
     """
     return _scipy_least_squares(
         criterion_and_derivative,
@@ -567,6 +570,7 @@ def scipy_ls_dogbox(
     Minimize a scalar function using a rectangular trust region method.
 
     For details see :ref:`list_of_scipy_algorithms`.
+
     """
     return _scipy_least_squares(
         criterion_and_derivative,
@@ -625,12 +629,7 @@ def _scipy_least_squares(
     tr_solver_options=None,
     method="trf",
 ):
-    """
-    Internal function used by the scipy_ls_trf and scipy_ls_dogbox functions.
-    Returns:
-        dict: See :ref:`internal_optimizer_output` for details.
-
-    """
+    """Internal function used by the scipy_ls_trf and scipy_ls_dogbox functions."""
 
     if method not in ["trf", "dogbox", "lm"]:
         raise ValueError(

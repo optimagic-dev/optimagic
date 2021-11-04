@@ -279,6 +279,7 @@ def pygmo_sga(
     """Minimize a scalar function using a simple genetic algorithm.
 
     For details see :ref:`list_of_pygmo_algorithms`.
+
     """
     _check_that_every_param_is_bounded(lower_bounds, upper_bounds)
     population_size = _determine_population_size(

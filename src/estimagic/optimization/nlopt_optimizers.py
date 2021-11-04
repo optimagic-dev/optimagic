@@ -361,6 +361,7 @@ def nlopt_mma(
     """Minimize a scalar function using the method of moving asymptotes (MMA).
 
     For details see :ref:`list_of_nlopt_algorithms`.
+
     """
     out = _minimize_nlopt(
         criterion_and_derivative,
@@ -515,6 +516,7 @@ def nlopt_esch(
     """Optimize a scalar function using the ESCH algorithm.
 
     For details see :ref:`list_of_nlopt_algorithms`.
+
     """
     out = _minimize_nlopt(
         criterion_and_derivative,
@@ -547,6 +549,7 @@ def nlopt_isres(
     """Optimize a scalar function using the ISRES algorithm.
 
     For details see :ref:`list_of_nlopt_algorithms`.
+
     """
     out = _minimize_nlopt(
         criterion_and_derivative,
@@ -580,6 +583,7 @@ def nlopt_crs2_lm(
     """Optimize a scalar function using the CRS2_LM algorithm.
 
     For details see :ref:`list_of_nlopt_algorithms`.
+
     """
     if population_size is None:
         population_size = 10 * (len(x) + 1)
