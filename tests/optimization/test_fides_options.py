@@ -113,13 +113,13 @@ def test_fides_stop_after_one_iteration():
 
 
 @pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
-def test_fides_stop_after_millisecond():
+def test_fides_stop_after_tiny_time():
     res = fides(
         criterion_and_derivative=criterion_and_derivative,
         x=np.array([1, -5, 3]),
         lower_bounds=np.array([-10, -10, -10]),
         upper_bounds=np.array([10, 10, 10]),
-        stopping_max_seconds=1e-8,
+        stopping_max_seconds=1e-10,
     )
     assert not res["success"]
     assert res["n_iterations"] == 0
