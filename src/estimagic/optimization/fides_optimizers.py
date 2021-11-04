@@ -2,12 +2,14 @@
 import logging
 from functools import partial
 
+import numpy as np
 from estimagic.config import IS_FIDES_INSTALLED
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
+from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 
 if IS_FIDES_INSTALLED:
     from fides import hessian_approximation
@@ -26,6 +28,18 @@ def fides(
     convergence_absolute_params_tolerance=CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE,
     convergence_absolute_gradient_tolerance=CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE,
     convergence_relative_gradient_tolerance=CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
+    stopping_max_seconds=np.inf,
+    trustregion_initial_radius=1.0,
+    trustregion_stepback_strategy="reflect",
+    trustregion_subspace_dimension="2D",
+    trustregion_max_stepback_fraction=0.95,
+    trustregion_decrease_threshold=0.25,
+    trustregion_increase_threshold=0.75,
+    trustregion_decrease_factor=0.25,
+    trustregion_increase_factor=2.0,
+    trustregion_refine_stepback=False,
+    trustregion_scaled_gradient_as_possible_stepback=False,
 ):
     """Minimize a scalar function using the Fides Optimizer.
 
@@ -51,26 +65,67 @@ def fides(
       <https://fides-optimizer.readthedocs.io/en/latest/generated/fides.hessian_approximation.html>`_
       for more details.
 
-    - convergence_absolute_criterion_tolerance (float): absolute convergence criterion
+    - convergence.absolute_criterion_tolerance (float): absolute convergence criterion
       tolerance. This is only the interpretation of this parameter if the relative
       criterion tolerance is set to 0. Denoting the absolute criterion tolerance by
       :math:`\alpha` and the relative criterion tolerance by :math:`\beta`, the
       convergence condition on the criterion improvement is :math:`|f(x_k) - f(x_{k-1})|
       < \\alpha + \\beta \\cdot |f(x_{k-1})|`
-    - convergence_relative_criterion_tolerance (float): relative convergence criterion
+    - convergence.relative_criterion_tolerance (float): relative convergence criterion
       tolerance. This is only the interpretation of this parameter if the absolute
       criterion tolerance is set to 0 (as is the default). Denoting the absolute
       criterion tolerance by :math:`\alpha` and the relative criterion tolerance by
       :math:`\beta`, the convergence condition on the criterion improvement is
       :math:`|f(x_k) - f(x_{k-1})| < \\alpha + \\beta \\cdot |f(x_{k-1})|`
-    - convergence_absolute_params_tolerance (float): The optimization terminates
+    - convergence.absolute_params_tolerance (float): The optimization terminates
       successfully when the step size falls below this number, i.e. when
       :math:`||x_{k+1} - x_k||` is smaller than this tolerance.
-    - convergence_absolute_gradient_tolerance (float): The optimization terminates
+    - convergence.absolute_gradient_tolerance (float): The optimization terminates
       successfully when the gradient norm is less or equal than this tolerance.
-    - convergence_relative_gradient_tolerance (float): The optimization terminates
+    - convergence.relative_gradient_tolerance (float): The optimization terminates
       successfully when the norm of the gradient divided by the absolute function value
       is less or equal to this tolerance.
+
+    - stopping.max_iterations (int): maximum number of allowed iterations.
+    - stopping.max_seconds (int): maximum number of walltime seconds, deactivated by
+      default.
+
+    - trustregion.initial_radius (float): Initial trust region radius. Default is 1.
+    - trustregion.stepback_strategy (str): search refinement strategy if proposed step
+      reaches a parameter bound. The default is "reflect". The available options are:
+        - "reflect": recursive reflections at boundary.
+        - "reflect_single": single reflection at boundary.
+        - "truncate": truncate step at boundary and re-solve the restricted subproblem
+        - "mixed": mix reflections and truncations
+    - trustregion.subspace_dimension (str): Subspace dimension in which the subproblem
+      will be solved. The default is "2D". The following values are available:
+        - "2D": Two dimensional Newton/Gradient subspace
+        - "full": full dimensionality
+        - "scg": Conjugated Gradient subspace via Steihaug's method
+    - trustregion.max_stepback_fraction (float): Stepback parameter that controls how
+      close steps are allowed to get to the boundary. It is the maximal fraction of a
+      step to take if full step would reach breakpoint.
+
+    - trustregion.decrease_threshold (float): Acceptance threshold for trust region
+      ratio. The default is 0.25 (:cite:`Nocedal2006`). The radius is decreased if the
+      trust region ratio is below this value. This is denoted by :math:`\\mu` in
+      algorithm 4.1 in :cite:`Nocedal2006`.
+    - trustregion.increase_threshold (float): Threshold for the trust region radius
+      ratio above which the trust region radius can be increased. This is denoted by
+      :math:`\\eta` in algorithm 4.1 in :cite:`Nocedal2006`. The default is 0.75
+      (:cite:`Nocedal2006`).
+    - trustregion.decrease_factor (float): factor by which trust region radius will be
+      decreased in case it is decreased. This is denoted by :math:`\\gamma_1` in
+      algorithm 4.1 in :cite:`Nocedal2006` and its default is 0.25.
+    - trustregion.increase_factor (float): factor by which trust region radius will be
+      increase in case it is increase. This is denoted by :math:`\\gamma_2` in algorithm
+      4.1 in :cite:`Nocedal2006` and its default is 2.0.
+
+    - trustregion.refine_stepback (bool): whether to refine stepbacks via optimization.
+      Default is False.
+    - trustregion.scaled_gradient_as_possible_stepback (bool): whether the scaled
+      gradient should be added to the set of possible stepback proposals. Default is
+      False.
 
     Returns: dict: See :ref:`internal_optimizer_output` for details.
 
@@ -80,6 +135,26 @@ def fides(
             "The fides package is not installed. You can install it with "
             "`pip install fides>=0.6.3`."
         )
+
+    fides_options = {
+        "fatol": convergence_absolute_criterion_tolerance,
+        "frtol": convergence_relative_criterion_tolerance,
+        "xtol": convergence_absolute_params_tolerance,
+        "gatol": convergence_absolute_gradient_tolerance,
+        "grtol": convergence_relative_gradient_tolerance,
+        "maxiter": stopping_max_iterations,
+        "delta_init": trustregion_initial_radius,
+        "maxtime": stopping_max_seconds,
+        "stepback_strategy": trustregion_stepback_strategy,
+        "subspace_solver": trustregion_subspace_dimension,
+        "theta_max": trustregion_max_stepback_fraction,
+        "mu": trustregion_decrease_threshold,
+        "eta": trustregion_increase_threshold,
+        "gamma1": trustregion_decrease_factor,
+        "gamma2": trustregion_increase_factor,
+        "refine_stepback": trustregion_refine_stepback,
+        "scaled_gradient": trustregion_scaled_gradient_as_possible_stepback,
+    }
 
     algo_info = {
         "primary_criterion_entry": "value",
@@ -103,13 +178,7 @@ def fides(
         hessian_update=hessian_instance,
         verbose=logging.ERROR,
         resfun=False,
-        options={
-            "fatol": convergence_absolute_criterion_tolerance,
-            "frtol": convergence_relative_criterion_tolerance,
-            "xtol": convergence_absolute_params_tolerance,
-            "gatol": convergence_absolute_gradient_tolerance,
-            "grtol": convergence_relative_gradient_tolerance,
-        },
+        options=fides_options,
     )
     raw_res = opt.minimize(x)
     res = _process_fides_res(raw_res, opt)

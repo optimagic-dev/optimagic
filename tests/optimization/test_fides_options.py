@@ -23,6 +23,17 @@ test_cases_no_contribs_needed = [
     {"convergence_absolute_params_tolerance": 1e-6},
     {"convergence_absolute_gradient_tolerance": 1e-6},
     {"convergence_relative_gradient_tolerance": 1e-6},
+    {"stopping_max_iterations": 100},
+    {"stopping_max_seconds": 200},
+    {"trustregion_initial_radius": 20, "trustregion_stepback_strategy": "truncate"},
+    {"trustregion_subspace_dimension": "full"},
+    {"trustregion_max_stepback_fraction": 0.8},
+    {"trustregion_decrease_threshold": 0.4, "trustregion_decrease_factor": 0.2},
+    {"trustregion_increase_threshold": 0.9, "trustregion_increase_factor": 4},
+    {
+        "trustregion_refine_stepback": True,
+        "trustregion_scaled_gradient_as_possible_stepback": True,
+    },
 ]
 
 
@@ -86,3 +97,29 @@ def test_fides_with_super_high_convergence_criteria():
             convergence_relative_gradient_tolerance=10,
         )
         assert_allclose(res["solution_x"], np.zeros(3), atol=5e-4)
+
+
+@pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
+def test_fides_stop_after_one_iteration():
+    res = fides(
+        criterion_and_derivative=criterion_and_derivative,
+        x=np.array([1, -5, 3]),
+        lower_bounds=np.array([-10, -10, -10]),
+        upper_bounds=np.array([10, 10, 10]),
+        stopping_max_iterations=1,
+    )
+    assert not res["success"]
+    assert res["n_iterations"] == 1
+
+
+@pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")
+def test_fides_stop_after_millisecond():
+    res = fides(
+        criterion_and_derivative=criterion_and_derivative,
+        x=np.array([1, -5, 3]),
+        lower_bounds=np.array([-10, -10, -10]),
+        upper_bounds=np.array([10, 10, 10]),
+        stopping_max_seconds=1e-4,
+    )
+    assert not res["success"]
+    assert res["n_iterations"] == 0
