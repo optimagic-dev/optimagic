@@ -286,8 +286,8 @@ cyipopt``).
 
 .. _fides_algorithm:
 
-The Fides Optimizer (fides)
----------------------------
+The Fides Optimizer
+-------------------
 
 estimagic supports the `Fides Optimizer
 <https://fides-optimizer.readthedocs.io/en/latest>`_.

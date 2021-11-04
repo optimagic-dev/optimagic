@@ -93,15 +93,19 @@ def fides(
     - trustregion.initial_radius (float): Initial trust region radius. Default is 1.
     - trustregion.stepback_strategy (str): search refinement strategy if proposed step
       reaches a parameter bound. The default is "reflect". The available options are:
+
         - "reflect": recursive reflections at boundary.
         - "reflect_single": single reflection at boundary.
         - "truncate": truncate step at boundary and re-solve the restricted subproblem
         - "mixed": mix reflections and truncations
+
     - trustregion.subspace_dimension (str): Subspace dimension in which the subproblem
       will be solved. The default is "2D". The following values are available:
+
         - "2D": Two dimensional Newton/Gradient subspace
         - "full": full dimensionality
         - "scg": Conjugated Gradient subspace via Steihaug's method
+
     - trustregion.max_stepback_fraction (float): Stepback parameter that controls how
       close steps are allowed to get to the boundary. It is the maximal fraction of a
       step to take if full step would reach breakpoint.
