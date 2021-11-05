@@ -8,6 +8,7 @@ Since steps and evals contain NaNs, we have to make sure that the functions do n
 warnings or errors for that case.
 
 """
+import numpy as np
 
 
 def jacobian(evals, steps, f0, method):
@@ -54,6 +55,9 @@ def hessian(evals, steps, f0, method):
 
     Notation: f:R^dim_x -> R^dim_f. We compute the derivative at x0, with f0 = f(x0).
 
+    Note that the brackets in finite difference formulae are not arbitrary but improve
+    the numerical accuracy, as states in Rideout [2009].
+
     Args:
         evals (dict[namedtuple]): Dictionary with keys "one_step" for function evals in
             a single step direction, and "two_step" for evals in cross directions. Each
@@ -76,11 +80,40 @@ def hessian(evals, steps, f0, method):
 
     """
     n_steps, dim_f, dim_x = evals["one_step"].pos.shape
+    cross_steps = np.array(
+        [np.outer(steps.pos[j], steps.pos[j]) for j in range(n_steps)]
+    ).reshape(n_steps, 1, dim_x, dim_x)
     if method == "one":
-        hess = None
+        diffs = (
+            evals["two_step"].pos
+            - evals["one_step"].pos.reshape((n_steps, -1, 1, dim_x))
+        ) - (
+            evals["one_step"].pos.reshape((n_steps, -1, dim_x, 1))
+            - f0.reshape(1, dim_f, 1, 1)
+        )
+        hess = diffs / cross_steps
     elif method == "two":
-        hess = None
+        diffs = (
+            (
+                evals["two_step"].pos
+                - evals["one_step"].pos.reshape((n_steps, -1, 1, dim_x))
+            )
+            - (
+                evals["one_step"].pos.reshape((n_steps, -1, dim_x, 1))
+                - f0.reshape(1, dim_f, 1, 1)
+            )
+            + (
+                evals["two_step"].neg
+                - evals["one_step"].neg.reshape((n_steps, -1, 1, dim_x))
+            )
+            - (
+                evals["one_step"].neg.reshape((n_steps, -1, dim_x, 1))
+                - f0.reshape(1, dim_f, 1, 1)
+            )
+        )
+        hess = diffs / (2 * cross_steps)
     elif method == "three":
+        # hess = diffs / (4 * cross_steps)  # noqa: E800
         hess = None
     else:
         raise ValueError("Method has to be 'one', 'two' or 'three'.")

@@ -254,7 +254,7 @@ def second_derivative(
     func,
     params,
     func_kwargs=None,
-    method="central",
+    method="two",
     n_steps=1,
     base_steps=None,
     scaling_factor=1,
@@ -291,7 +291,7 @@ def second_derivative(
             calculated. If it is a DataFrame, it can contain the columns "lower_bound"
             and "upper_bound" for bounds. See :ref:`params`.
         func_kwargs (dict): Additional keyword arguments for func, optional.
-        method (str): One of ["central", "forward", "backward"], default "central".
+        method (str): One of ["one", "two", "three"], default "two".
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
@@ -379,7 +379,7 @@ def second_derivative(
     # generate the step array
     steps = generate_steps(
         x=x,
-        method=method,
+        method="central",
         n_steps=n_steps,
         target="second_derivative",
         base_steps=base_steps,
@@ -433,9 +433,7 @@ def second_derivative(
     )
 
     # extract information on exceptions that occurred during function evaluations
-    exc_info = "\n\n".join(  # noqa: F841
-        [val for val in raw_evals if isinstance(val, str)]
-    )  # noqa: F841
+    exc_info = "\n\n".join([val for val in raw_evals if isinstance(val, str)])
     raw_evals = [val if not isinstance(val, str) else np.nan for val in raw_evals]
 
     raw_evals = {
@@ -448,10 +446,8 @@ def second_derivative(
     if f0 is None:
         f0 = raw_evals["one_step"][-1]
         raw_evals["one_step"] = raw_evals["one_step"][:-1]
-    func_value = f0  # noqa: F841
     f0 = f0[key] if isinstance(f0, dict) else f0
-    f_was_scalar = np.isscalar(f0)  # noqa: F841
-    out_index = f0.index if isinstance(f0, pd.Series) else None  # noqa: F841
+    out_index = f0.index if isinstance(f0, pd.Series) else None
     f0 = np.atleast_1d(f0)
 
     # convert the raw evaluations to numpy arrays
@@ -485,7 +481,44 @@ def second_derivative(
     for m in ["one", "two", "three"]:
         hess_candidates[m] = finite_differences.hessian(evals, steps, f0, m)
 
-    return evals, steps, f0, evaluation_points
+    # get the best derivative estimate out of all derivative estimates that could be
+    # calculated, given the function evaluations.
+    orders = {
+        "three": ["three", "two", "one"],
+        "one": ["one", "three", "two"],
+        "two": ["two", "one"],
+    }
+
+    if n_steps == 1:
+        hess = _consolidate_one_step_derivatives(hess_candidates, orders[method])
+        updated_candidates = None
+    else:
+        # Richardson extrapolation case
+        raise ValueError("Richardson extrapolation is not implemented yet.")
+
+    # raise error if necessary
+    if error_handling in ("raise", "raise_strict") and np.isnan(hess).any():
+        raise Exception(exc_info)
+
+    # results processing
+    derivative = np.squeeze(hess)
+    derivative = _add_index_to_second_derivative(derivative, params_index, out_index)
+
+    result = {"derivative": derivative}
+    if return_func_value:
+        result["func_value"] = f0
+
+    if return_info:
+        info = {
+            "steps": steps,
+            "evals": evals,
+            "updated_candidates": updated_candidates,
+        }
+    else:
+        info = None
+
+    result = {**result, **info}
+    return result
 
 
 def _process_bounds(lower_bounds, upper_bounds, params):
@@ -822,6 +855,10 @@ def _add_index_to_derivative(derivative, params_index, out_index):
         params_index is not None or out_index is not None
     ):
         derivative = pd.DataFrame(derivative, columns=params_index, index=out_index)
+    return derivative
+
+
+def _add_index_to_second_derivative(derivative, params_index, out_index):
     return derivative
 
 
