@@ -45,6 +45,7 @@ def test_algorithm_on_sum_of_squares(algorithm):
         algorithm=algorithm,
     )
 
+    assert res["success"] in [True, None]
     aaae(res["solution_params"]["value"].to_numpy(), np.zeros(3), decimal=4)
 
 
@@ -61,6 +62,7 @@ def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
         algorithm=algorithm,
     )
 
+    assert res["success"] in [True, None]
     aaae(res["solution_params"]["value"].to_numpy(), np.array([1, 0, -1]), decimal=3)
 
 
@@ -82,4 +84,5 @@ def test_global_algorithms_on_sum_of_squares(algorithm):
         params=params,
         algorithm=algorithm,
     )
+    assert res["success"] in [True, None]
     aaae(res["solution_params"]["value"].to_numpy(), np.array([0.2, 0]), decimal=1)
