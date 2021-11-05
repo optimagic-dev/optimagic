@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from estimagic.examples.more_wild import MORE_WILD_PROBLEMS
 
@@ -9,4 +10,4 @@ def test_function_at_start_x(name, specification):
     _contributions = _criterion(_x)
     calculated = _contributions @ _contributions
     expected = specification["start_criterion"]
-    assert calculated == expected
+    assert np.allclose(calculated, expected)
