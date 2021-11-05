@@ -189,7 +189,7 @@ dependencies to use them:
 
         .. math::
 
-            \frac{(f^k - f^{k+1})}{\\max{{|f^k|, |f^{k+1}|, 1}}} \leq
+            \frac{(f^k - f^{k+1})}{\\max{{\{|f^k|, |f^{k+1}|, 1\}}}} \leq
             \text{relative_criterion_tolerance}
 
     - **stopping.max_criterion_evaluations** (int): If the maximum number of function evaluation is reached,
@@ -292,30 +292,30 @@ dependencies to use them:
 
   Minimize a scalar function of one or more variables using the COBYLA algorithm.
 
-    COBYLA stands for Constrained Optimization By Linear Approximation.
-    It is deriviative-free and supports nonlinear inequality and equality constraints.
+  COBYLA stands for Constrained Optimization By Linear Approximation.
+  It is deriviative-free and supports nonlinear inequality and equality constraints.
 
-    .. note::
-        Cobyla's general nonlinear constraints is not supported yet by estimagic.
+  .. note::
+      Cobyla's general nonlinear constraints is not supported yet by estimagic.
 
-    Scipy's implementation wraps the FORTRAN implementation of the algorithm.
+  Scipy's implementation wraps the FORTRAN implementation of the algorithm.
 
-    For more information on COBYLA see :cite:`Powell1994`, :cite:`Powell1998` and
-    :cite:`Powell2007`.
+  For more information on COBYLA see :cite:`Powell1994`, :cite:`Powell1998` and
+  :cite:`Powell2007`.
 
-    - **stopping.max_iterations** (int): If the maximum number of iterations is reached,
-      the optimization stops, but we do not count this as convergence.
-    - **convergence.relative_params_tolerance** (float): Stop when the relative movement
-      between parameter vectors is smaller than this. In case of COBYLA this is
-      a lower bound on the size of the trust region and can be seen as the
-      required accuracy in the variables but this accuracy is not guaranteed.
-    - **trustregion.initial_radius** (float): Initial value of the trust region radius.
-      Since a linear approximation is likely only good near the current simplex,
-      the linear program is given the further requirement that the solution,
-      which will become the next evaluation point must be within a radius
-      RHO_j from x_j. RHO_j only decreases, never increases. The initial RHO_j is
-      the `trustregion.initial_radius`. In this way COBYLA's iterations behave
-      like a trust region algorithm.
+  - **stopping.max_iterations** (int): If the maximum number of iterations is reached,
+    the optimization stops, but we do not count this as convergence.
+  - **convergence.relative_params_tolerance** (float): Stop when the relative movement
+    between parameter vectors is smaller than this. In case of COBYLA this is
+    a lower bound on the size of the trust region and can be seen as the
+    required accuracy in the variables but this accuracy is not guaranteed.
+  - **trustregion.initial_radius** (float): Initial value of the trust region radius.
+    Since a linear approximation is likely only good near the current simplex,
+    the linear program is given the further requirement that the solution,
+    which will become the next evaluation point must be within a radius
+    RHO_j from x_j. RHO_j only decreases, never increases. The initial RHO_j is
+    the `trustregion.initial_radius`. In this way COBYLA's iterations behave
+    like a trust region algorithm.
 
 
 .. dropdown::  scipy_truncated_newton
@@ -416,7 +416,7 @@ dependencies to use them:
       gradient and the constraint violation are smaller than the
       convergence.absolute_gradient_tolerance.
       For this algorithm we use scipy's gradient tolerance for trust_constr.
-      This smaller tolerance is needed for the sum of sqares tests to pass.
+      This smaller tolerance is needed for the sum of squares tests to pass.
     - **stopping.max_iterations** (int): If the maximum number of iterations is reached,
       the optimization stops, but we do not count this as convergence.
     - **convergence.relative_params_tolerance** (float): Tolerance for termination by
@@ -491,7 +491,7 @@ To use POUNDERs you need to have
 
     .. math::
 
-        ||g(X)|| / |f(X)| < \epsilon
+        \frac{||g(X)||}{|f(X)|} < \epsilon
 
     ``scaled_gradient_tolerance`` stops the optimization if the norm of the gradient is
     lower than some fraction :math:`epsilon` of the norm of the gradient at the initial
@@ -499,7 +499,7 @@ To use POUNDERs you need to have
 
     .. math::
 
-        ||g(X)|| / ||g(X0)|| < \epsilon
+        \frac{||g(X)||}{||g(X0)||} < \epsilon
 
     - **convergence.absolute_gradient_tolerance** (float): Stop if norm of gradient is less than this.
       If set to False the algorithm will not consider convergence.absolute_gradient_tolerance.
@@ -958,7 +958,7 @@ optimizers.
     A detailed description of the algorithm can be found `in the pagmo2 documentation
     <https://esa.github.io/pagmo2/docs/cpp/algorithms/sga.html>`_.
 
-    See also: :cite:`Oliveto2007`.
+    See also :cite:`Oliveto2007`.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
@@ -1523,7 +1523,7 @@ cyipopt``).
       terminates successfully, if the (scaled) non linear programming error
       becomes smaller than this value.
 
-    - mu_target (float): Desired value of complementarity. Usually, the barrier
+    - **mu_target** (float): Desired value of complementarity. Usually, the barrier
       parameter is driven to zero and the termination test for complementarity
       is measured with respect to zero complementarity. However, in some cases
       it might be desired to have Ipopt solve barrier problem for strictly
@@ -1533,7 +1533,7 @@ cyipopt``).
       this value of the barrier parameter. The valid range for this real option
       is 0 ≤ mu_target  and its default value is 0.
 
-    - s_max (float): Scaling threshold for the NLP error.
+    - **s_max** (float): Scaling threshold for the NLP error.
 
     - **stopping.max_iterations** (int):  If the maximum number of iterations is
       reached, the optimization stops, but we do not count this as successful
@@ -2656,15 +2656,15 @@ cyipopt``).
       directions). The default value for this string option is "ma27". Possible
       values:
 
-          - mumps (use the Mumps package, default)
-          - ma27 (load the Harwell routine MA27 from library at runtime)
-          - ma57 (load the Harwell routine MA57 from library at runtime)
-          - ma77 (load the Harwell routine HSL_MA77 from library at runtime)
-          - ma86 (load the Harwell routine MA86 from library at runtime)
-          - ma97 (load the Harwell routine MA97 from library at runtime)
-          - pardiso (load the Pardiso package from pardiso-project.org
+          - "mumps" (use the Mumps package, default)
+          - "ma27" (load the Harwell routine MA27 from library at runtime)
+          - "ma57" (load the Harwell routine MA57 from library at runtime)
+          - "ma77" (load the Harwell routine HSL_MA77 from library at runtime)
+          - "ma86" (load the Harwell routine MA86 from library at runtime)
+          - "ma97" (load the Harwell routine MA97 from library at runtime)
+          - "pardiso" (load the Pardiso package from pardiso-project.org
             from user-provided library at runtime)
-          - custom (use custom linear solver (expert use))
+          - "custom" (use custom linear solver (expert use))
     - **linear_solver_options** (dict or None): dictionary with the
       linear solver options, possibly including `linear_system_scaling`,
       `hsllib` and `pardisolib`. See the `ipopt documentation for details
@@ -2692,9 +2692,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     Due to its use of quadratic appoximation, the algorithm may perform poorly
     for objective functions that are not twice-differentiable.
 
-    For details see: :cite:`Powell2009`
-
-    ``nlopt_bobyqa`` supports the following ``algo_options``:
+    For details see :cite:`Powell2009`
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -2712,13 +2710,11 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     Minimize a scalar function using the Nelder-Mead simplex algorithm.
 
-    The basic algorithm is described in: :cite:`Nelder1965`.
+    The basic algorithm is described in :cite:`Nelder1965`.
 
     The difference between the nlopt implementation an the original implementation is
     that the nlopt version supports bounds. This is done by moving all new points that
     would lie outside the bounds exactly on the bounds.
-
-    ``nlopt_neldermead`` takes the following ``algo_options``
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -2736,7 +2732,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     Minimize a scalar function using principal-axis method.
 
-    This is a gradient-free local optimizer originally described in: :cite:`Brent1972`.
+    This is a gradient-free local optimizer originally described in :cite:`Brent1972`.
     It assumes quadratic form of the optimized function and repeatedly updates a set of conjugate
     search directions.
 
@@ -2758,8 +2754,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     In case of bounded constraints, this method is dominated by `nlopt_bobyqa`
     and `nlopt_cobyla`.
 
-    ``nlopt_praxis`` takes the following ``algo_options``
-
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
     - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
@@ -2779,7 +2773,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     The alggorithm is derived from Powell's Constrained Optimization BY Linear
     Approximations (COBYLA) algorithm. It is a derivative-free optimizer with
-    nonlinear inequality and equality constrains, described in: :cite`Powell1994`.
+    nonlinear inequality and equality constrains, described in :cite`Powell1994`.
 
     It constructs successive linear approximations of the objective function and
     constraints via a simplex of n+1 points (in n dimensions), and optimizes these
@@ -2796,8 +2790,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     the deterministic nature of the algorithm.
     - Supports unequal initial-step sizes in the different parameters.
 
-
-    ``nlopt_cobyla`` takes the following ``algo_options``
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -2816,7 +2808,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     Minimize a scalar function using the "Subplex" algorithm.
 
     The alggorithm is a reimplementation of  Tom Rowan's "Subplex" algorithm.
-    See: :cite:`Rowan1990`.
+    See :cite:`Rowan1990`.
     Subplex is a variant of Nedler-Mead that uses Nedler-Mead on a sequence of
     subspaces. It is climed to be more efficient and robust than the original
     Nedler-Mead algorithm.
@@ -2824,8 +2816,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     The difference between this re-implementation and the original algorithm
     of Rowan, is that it explicitly supports bound constraints providing big
     improvement in the case where the optimum lies against one of the constraints.
-
-    ``nlopt_sbplx`` takes the following ``algo_options``
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -2856,8 +2846,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     `NEWUOA` requires the dimension n of the parameter space to be `≥ 2`, i.e. the
     implementation does not handle one-dimensional optimization problems.
 
-    ``nlopt_newuoa`` takes the following algo_options
-
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
     - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
@@ -2882,9 +2870,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     solutions to Newton equations, using conjugate gradient methodds, to handle the
     expensive calculations of derivatives during each iteration.
 
-    Detailed description of algorithms is given in: :cite:`Dembo1983`.
-
-    ``nlopt_tnewton`` takes the following ``algo_options``
+    Detailed description of algorithms is given in :cite:`Dembo1983`.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -2910,9 +2896,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     ted number (<10) of past updates of candidate points and gradient values and using
     them to approximate the hessian matrix.
 
-    Detailed description of algorithms is given in: :cite:`Nocedal1989`, :cite:`Nocedal1980`.
-
-    ``nlopt_lbfgs`` takes the following ``algo_options``
+    Detailed description of algorithms is given in :cite:`Nocedal1989`, :cite:`Nocedal1980`.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -2938,9 +2922,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     algorithm is "globally convergent" in the sense that it is guaranteed to con-
     verge to a local optimum from any feasible starting point.
 
-    The implementation is based on CCSA algorithm described in: :cite:`Svanberg2002`.
-
-    ``nlopt_ccsaq`` supports the following ``algo_options``:
+    The implementation is based on CCSA algorithm described in :cite:`Svanberg2002`.
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -2958,7 +2940,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     Minimize a scalar function using the method of moving asymptotes (MMA).
 
-    The implementation is based on an algorithm described in: :cite:`Svanberg2002`.
+    The implementation is based on an algorithm described in :cite:`Svanberg2002`.
 
     The algorithm performs gradient based local optimization with equality (but
     not inequality) constraints. At each candidate point x, an approximation to the
@@ -2967,8 +2949,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     algorithm is "globally convergent" in the sense that it is guaranteed to con-
     verge to a local optimum from any feasible starting point.
 
-
-    ``nlopt_mma`` supports the following ``algo_options``:
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -2993,8 +2973,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     Detailed explanation of the algorithm, including its two variations of  rank-2 and
     rank-1 methods can be found in the following paper :cite:`Vlcek2006` .
 
-    ``nlopt_svmm`` supports the following ``algo_options``:
-
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
     - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
@@ -3006,7 +2984,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     - **stopping.max_criterion_evaluations** (int): If the maximum number of function
       evaluation is reached, the optimization stops but we do not count this
       as convergence.
-    - rank_1_update (bool): Whether I rank-1 or rank-2 update is used.
+    - **rank_1_update** (bool): Whether I rank-1 or rank-2 update is used.
 
 .. dropdown:: nlopt_slsqp
 
@@ -3018,8 +2996,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
 
     The implementation is based on the procedure described in :cite:`Kraft1988`
     and :cite:`Kraft1994` .
-
-    ``nlopt_slsqp`` supports the following ``algo_options``:
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -3053,14 +3029,12 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     Boolean arguments `locally_biased`, 'random_search', and 'unscaled_bouds' can be
     set to `True` or `False` to determine which method is run. The comprehensive list
     of available methods are:
-    - DIRECT
-    - DIRECT_L
-    - DIRECT_L_NOSCAL
-    - DIRECT_L_RAND
-    - DIRECT_L_RAND_NOSCAL
-    - DIRECT_RAND
-
-    ``nlopt_direct`` supports the following ``algo_options``:
+    - "DIRECT"
+    - "DIRECT_L"
+    - "DIRECT_L_NOSCAL"
+    - "DIRECT_L_RAND"
+    - "DIRECT_L_RAND_NOSCAL"
+    - "DIRECT_RAND"
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
@@ -3087,8 +3061,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     More information on this method can be found in
     :cite:`DaSilva2010` , :cite:`DaSilva2010a` , :cite:`Beyer2002`  and :cite:`Vent1975` .
 
-    ``nlopt_esch`` supports the following ``algo_options``:
-
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
     - **convergence.absolute_params_tolerance** (float): Stop when the absolute movement
@@ -3114,8 +3086,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     :cite:`PhilipRunarsson2005` and :cite:`Thomas2000` .
 
 
-    ``nlopt_isres`` supports the following ``algo_options``:
-
     - **convergence.relative_params_tolerance** (float):  Stop when the relative
       movement between parameter vectors is smaller than this.
     - **convergence.absolute_params_tolerance** (float): Stop when the absolute
@@ -3133,7 +3103,7 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     Optimize a scalar function using the CRS2_LM algorithm.
 
     This implementation of controlled random search method with local mutation is based
-    on: :cite:`Kaelo2006` .
+    on :cite:`Kaelo2006` .
 
     The original CRS method is described in :cite:`Price1978`  and :cite:`Price1983` .
 
@@ -3141,8 +3111,6 @@ using an NLOPT algorithm. To install nlopt run ``conda install nlopt``.
     points "randomly". The size of the initial population can be set via the param-
     meter population_size. If the user doesn't specify a value, it is set to the nlopt
     default of 10*(n+1).
-
-    ``nlopt_isres`` supports the following ``algo_options``:
 
     - **convergence.relative_params_tolerance** (float):  Stop when the relative movement
       between parameter vectors is smaller than this.
