@@ -391,7 +391,7 @@ def second_derivative(
     )
 
     # generate parameter vectors at which func has to be evaluated as numpy arrays
-    evaluation_points = {"one_step": [], "two_step": []}
+    evaluation_points = {"one_step": [], "two_step": [], "cross_step": []}
     for step_arr in steps:
         # single direction steps
         for i, j in product(range(n_steps), range(len(x))):
@@ -401,20 +401,26 @@ def second_derivative(
                 point = x.copy()
                 point[j] += step_arr[i, j]
                 evaluation_points["one_step"].append(point)
-        # cross direction steps
+        # two and cross direction steps
         for i, j, k in product(range(n_steps), range(len(x)), range(len(x))):
             if j > k or np.isnan(step_arr[i, j]) or np.isnan(step_arr[i, k]):
                 evaluation_points["two_step"].append(np.nan)
+                evaluation_points["cross_step"].append(np.nan)
             else:
                 point = x.copy()
                 point[j] += step_arr[i, j]
                 point[k] += step_arr[i, k]
                 evaluation_points["two_step"].append(point)
+                if j == k:
+                    evaluation_points["cross_step"].append(np.nan)
+                else:
+                    point[k] -= 2 * step_arr[i, k]
+                    evaluation_points["cross_step"].append(point)
 
     # convert the numpy arrays to whatever is needed by func
     evaluation_points = {
-        one_or_two: _convert_evaluation_points_to_original(points, params)
-        for one_or_two, points in evaluation_points.items()
+        step_type: _convert_evaluation_points_to_original(points, params)
+        for step_type, points in evaluation_points.items()
     }
 
     # we always evaluate f0, so we can fall back to one-sided derivatives if
@@ -436,9 +442,11 @@ def second_derivative(
     exc_info = "\n\n".join([val for val in raw_evals if isinstance(val, str)])
     raw_evals = [val if not isinstance(val, str) else np.nan for val in raw_evals]
 
+    n_one_step, n_two_step, n_cross_step = map(len, evaluation_points.values())
     raw_evals = {
-        "one_step": raw_evals[: len(evaluation_points["one_step"])],
-        "two_step": raw_evals[len(evaluation_points["one_step"]) :],
+        "one_step": raw_evals[:n_one_step],
+        "two_step": raw_evals[n_one_step : n_two_step + n_one_step],
+        "cross_step": raw_evals[n_two_step + n_one_step :],
     }
 
     # store full function value at params as func_value and a processed version of it
@@ -452,8 +460,8 @@ def second_derivative(
 
     # convert the raw evaluations to numpy arrays
     raw_evals = {
-        one_or_two: _convert_evals_to_numpy(evals, key)
-        for one_or_two, evals in raw_evals.items()
+        step_type: _convert_evals_to_numpy(evals, key)
+        for step_type, evals in raw_evals.items()
     }
 
     # reshape arrays for finite differences
@@ -464,17 +472,28 @@ def second_derivative(
         pos=evals["one_step"][0], neg=evals["one_step"][1]
     )
 
-    idx = np.tril_indices(len(x), -1)
+    tril_idx = np.tril_indices(len(x), -1)
     evals["two_step"] = np.array(raw_evals["two_step"]).reshape(
         2, n_steps, len(x), len(x), -1
     )
     evals["two_step"] = np.transpose(evals["two_step"], axes=(0, 1, 4, 2, 3))
-    evals["two_step"][:, :, :, idx[0], idx[1]] = evals["two_step"].transpose(
+    evals["two_step"][:, :, :, tril_idx[0], tril_idx[1]] = evals["two_step"].transpose(
         (0, 1, 2, 4, 3)
-    )[:, :, :, idx[0], idx[1]]
+    )[:, :, :, tril_idx[0], tril_idx[1]]
     evals["two_step"] = namedtuple_from_kwargs(
         pos=evals["two_step"][0], neg=evals["two_step"][1]
     )
+
+    diag_idx = np.diag_indices(len(x))
+    evals["cross_step"] = np.array(raw_evals["cross_step"]).reshape(
+        2, n_steps, len(x), len(x), -1
+    )
+    evals["cross_step"] = np.transpose(evals["cross_step"], axes=(0, 1, 4, 2, 3))
+    evals["cross_step"][0][:, :, tril_idx[0], tril_idx[1]] = evals["cross_step"][
+        1
+    ].transpose((0, 1, 3, 2))[:, :, tril_idx[0], tril_idx[1]]
+    evals["cross_step"] = evals["cross_step"][0]
+    evals["cross_step"][:, :, diag_idx[0], diag_idx[1]] = f0.T[np.newaxis, :, :]
 
     # apply finite difference formulae
     hess_candidates = {}
@@ -486,14 +505,13 @@ def second_derivative(
     orders = {
         "three": ["three", "two", "one"],
         "one": ["one", "three", "two"],
-        "two": ["two", "one"],
+        "two": ["two", "three", "one"],
     }
 
     if n_steps == 1:
         hess = _consolidate_one_step_derivatives(hess_candidates, orders[method])
         updated_candidates = None
     else:
-        # Richardson extrapolation case
         raise ValueError("Richardson extrapolation is not implemented yet.")
 
     # raise error if necessary
