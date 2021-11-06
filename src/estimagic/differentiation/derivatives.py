@@ -245,7 +245,9 @@ def first_derivative(
     if return_func_value:
         result["func_value"] = func_value
 
-    info = _collect_additional_info(return_info, steps, evals, updated_candidates)
+    info = _collect_additional_info(
+        return_info, steps, evals, updated_candidates, target="first_derivative"
+    )
     result = {**result, **info}
     return result
 
@@ -491,7 +493,7 @@ def second_derivative(
     evals["cross_step"] = np.transpose(evals["cross_step"], axes=(0, 1, 4, 2, 3))
     evals["cross_step"][0][:, :, tril_idx[0], tril_idx[1]] = evals["cross_step"][
         1
-    ].transpose((0, 1, 3, 2))[:, :, tril_idx[0], tril_idx[1]]
+    ].transpose(0, 1, 3, 2)[:, :, tril_idx[0], tril_idx[1]]
     evals["cross_step"] = evals["cross_step"][0]
     evals["cross_step"][:, :, diag_idx[0], diag_idx[1]] = f0.T[np.newaxis, :, :]
 
@@ -525,16 +527,9 @@ def second_derivative(
     result = {"derivative": derivative}
     if return_func_value:
         result["func_value"] = f0
-
-    if return_info:
-        info = {
-            "steps": steps,
-            "evals": evals,
-            "updated_candidates": updated_candidates,
-        }
-    else:
-        info = None
-
+    info = _collect_additional_info(
+        return_info, steps, evals, updated_candidates, target="second_derivative"
+    )
     result = {**result, **info}
     return result
 
@@ -900,12 +895,16 @@ def _split_into_str_and_int(s):
     return str_part, int(int_part)
 
 
-def _collect_additional_info(return_info, steps, evals, updated_candidates):
+def _collect_additional_info(return_info, steps, evals, updated_candidates, target):
     """Combine additional information in dict if return_info is True."""
     info = {}
     if return_info:
         # save function evaluations to accessible data frame
-        func_evals = _convert_evaluation_data_to_frame(steps, evals)
+        if target == "first_derivative":
+            func_evals = _convert_evaluation_data_to_frame(steps, evals)
+        else:
+            func_evals = _convert_evaluation_data_to_frame(steps, evals["one_step"])
+
         info["func_evals"] = func_evals
 
         if updated_candidates is not None:

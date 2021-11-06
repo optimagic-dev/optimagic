@@ -55,8 +55,8 @@ def hessian(evals, steps, f0, method):
 
     Notation: f:R^dim_x -> R^dim_f. We compute the derivative at x0, with f0 = f(x0).
 
-    Note that the brackets in finite difference formulae are not arbitrary but improve
-    the numerical accuracy, as states in Rideout [2009].
+    Note that the brackets in the finite difference formulae are not arbitrary but
+    improve the numerical accuracy, see Rideout [2009].
 
     Args:
         evals (dict[namedtuple]): Dictionary with keys "one_step" for function evals in
@@ -72,7 +72,7 @@ def hessian(evals, steps, f0, method):
         f0 (numpy.ndarray): Numpy array of length dim_f with the output of the function
             at the user supplied parameters.
         method (str): One of ["one", "two", "three"]. These correspond to the
-            approximations defined in Rideout [2009].
+            approximations defined in Rideout [2009] equations [7, 8, 9].
 
     Returns:
         hess (numpy.ndarray): Numpy array of shape (n_steps, dim_f, dim_x) with
