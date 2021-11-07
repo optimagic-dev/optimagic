@@ -1,108 +1,90 @@
-"""
-Test the TikTak optimization algorithm.
+from itertools import product
 
-This file performs two tests.
-First, it allows TikTak to automatically sample a set of Sobol points.
-Second, it provides TikTak with a custom set of starting points to test
-the custom_sample feature.
-"""
-import chaospy
 import numpy as np
 import pandas as pd
-from estimagic.optimization.tiktak import minimize_tik_tak
+import pytest
+from estimagic.optimization.tiktak import _do_actual_sampling
+from estimagic.optimization.tiktak import _get_internal_sampling_bounds
+from estimagic.optimization.tiktak import _has_transforming_constraints
+from estimagic.optimization.tiktak import _process_sample
+from estimagic.optimization.tiktak import get_exploration_sample
+from numpy.testing import assert_array_almost_equal as aaae
 
 
-# define a criterion function for testing TikTak
-def griewank(params):
-    column = params["value"]
-    array = column.to_numpy()
-    x = np.transpose(array)
-    d = x.shape[0]
-    i = np.arange(1, d + 1)
-    res = 2 + np.sum(x ** 2 / 200) - np.prod(np.cos(x / np.sqrt(i)))
-    return res
+@pytest.fixture
+def params():
+    df = pd.DataFrame(index=["a", "b", "c"])
+    df["value"] = [0, 1, 2.0]
+    df["soft_lower_bound"] = [-1, 0, np.nan]
+    df["upper_bound"] = [2, 2, np.nan]
+    return df
 
 
-domain = (-100, 100)  # domain of the Griewank function
-true_min = 1  # the real min. value of the Griewank function
-n = 10  # the dimension of our problem
-
-######################################
-# First, Test of Automatic Sampling
-#####################################
-
-lower_bounds = [domain[0] for i in range(n)]  # lower bounds on each dimension
-upper_bounds = [domain[1] for i in range(n)]  # upper bounds on each dimension
-bounds_dict = {"lower_bounds": lower_bounds, "upper_bounds": upper_bounds}
-
-# define all the basic arguments for our optimization
-criterion = griewank
-bounds = pd.DataFrame(bounds_dict)
-local_search_algorithm = "scipy_neldermead"
-num_points = 100
-num_restarts = 10
-algo_options = {
-    "convergence.absolute_criterion_tolerance": 1e-3,
-    "convergence.absolute_params_tolerance": 1e-3,
-}
-logging = False
+@pytest.fixture
+def constraints():
+    return [{"type": "fixed", "loc": "c", "value": 2}]
 
 
-# run the algorithm
-solution = minimize_tik_tak(
-    criterion=criterion,
-    bounds=bounds,
-    local_search_algorithm=local_search_algorithm,
-    num_points=num_points,
-    num_restarts=num_restarts,
-    algo_options=algo_options,
-)
-
-x = solution["solution_x"]
-value = solution["solution_criterion"]
-n_criterion_evals = solution["n_criterion_evaluations"]
-
-print(f"The solution is {x}")
-print(f"The criterion value at the min is {value}")
-print(f"Number of function evaluations was {n_criterion_evals}")
+def test_get_exploration_sample_runs(params, constraints):
+    calculated = get_exploration_sample(params, constraints=constraints)
+    assert calculated.shape == (30, 3)
 
 
-#############################################
-# Second, Test of User-Provided Custom Sample
-#############################################
-
-# define a dataframe of custom starting points
-# first, generate a set of random points points
-distribution = chaospy.Iid(chaospy.Uniform(0, 1), n)
-xstarts = distribution.sample(num_points, rule="random")
-
-# generate array versions of the bounds
-lower_array = bounds["lower_bounds"].to_numpy()
-upper_array = bounds["upper_bounds"].to_numpy()
-
-# spread out the sample within the bounds
-xstarts = (
-    lower_array[:, np.newaxis] + (upper_array - lower_array)[:, np.newaxis] * xstarts
-)
-
-# define the custom starting points as a dataframe
-custom_sample = pd.DataFrame(data=xstarts, index=[f"x_{i}" for i in range(10)])
+samples = [pd.DataFrame(np.ones((2, 3)), columns=["a", "b", "c"]), np.ones((2, 3))]
 
 
-# run the algorithm again with custom starting points
-solution = minimize_tik_tak(
-    criterion=criterion,
-    local_search_algorithm=local_search_algorithm,
-    num_restarts=num_restarts,
-    sampling="custom",
-    custom_sample=custom_sample,
-    algo_options=algo_options,
-)
+@pytest.mark.parametrize("sample", samples)
+def test_process_sample(sample, params):
+    calculated = _process_sample(sample, params)
+    expeceted = np.ones((2, 3))
+    aaae(calculated, expeceted)
 
-x = solution["solution_x"]
-value = solution["solution_criterion"]
-n_criterion_evals = solution["n_criterion_evaluations"]
 
-print(f"The solution is {x}")
-print(f"The criterion value at the min is {value}")
-print(f"Number of function evaluations was {n_criterion_evals}")
+distributions = ["triangle", "uniform"]
+rules = [
+    "random",
+    "sobol",
+    "halton",
+    "hammersley",
+    "korobov",
+    "latin_hypercube",
+    # chebyshev generated samples of the wrong size!
+]
+test_cases = list(product(distributions, rules))
+
+
+@pytest.mark.parametrize("dist, rule", test_cases)
+def test_do_actual_sampling(dist, rule):
+
+    results = []
+    for _ in range(2):
+        results.append(
+            _do_actual_sampling(
+                midpoint=np.array([0.5, 0.5]),
+                lower=np.zeros(2),
+                upper=np.ones(2),
+                size=3,
+                distribution=dist,
+                rule=rule,
+                seed=1234,
+            )
+        )
+
+    aaae(results[0], results[1])
+    calculated = results[0]
+    assert calculated.shape == (3, 2)
+
+
+def test_get_internal_sampling_bounds(params, constraints):
+    calculated = _get_internal_sampling_bounds(params, constraints)
+    expeceted = [np.array([-1, 0]), np.array([2, 2])]
+    for calc, exp in zip(calculated, expeceted):
+        aaae(calc, exp)
+
+
+def test_has_transforming_constraints():
+    constraints = [{"type": "sdcorr"}]
+    assert _has_transforming_constraints(constraints)
+
+    constraints = [{"type": "fixed"}]
+    assert not _has_transforming_constraints(constraints)

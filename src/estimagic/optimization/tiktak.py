@@ -15,7 +15,11 @@ To-Do:
 import chaospy
 import numpy as np
 import pandas as pd
+from chaospy.distributions import Triangle
+from chaospy.distributions import Uniform
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.parameter_conversion import get_internal_bounds
+from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 
 
 def minimize_tik_tak(
@@ -201,59 +205,215 @@ def minimize_tik_tak(
     return res
 
 
-def check_or_create_sample(n_points, sampling, params, seed):
-    if isinstance(sampling, pd.DataFrame):
-        if not sampling.columns.equals(params.index):
+def get_exploration_sample(
+    params,
+    n_samples=None,
+    sampling_distribution="uniform",
+    sampling_method=None,
+    seed=None,
+    constraints=None,
+):
+    """Get a sample of parameter values for the first stage of the tiktak algorithm.
+
+    The sample is created randomly or using low a low discrepancy sequence. Different
+    distributions are available.
+
+    Args:
+        params (pandas.DataFrame): see :ref:`params`.
+        n_samples (int, pandas.DataFrame or numpy.ndarray): Number of sampled points on
+            which to do one function evaluation. Default is 10 * n_params.
+            Alternatively, a DataFrame or numpy array with an existing sample.
+        sampling_distribution (str): One of "uniform", "triangle". Default is
+            "uniform"  as in the original tiktak algorithm.
+        sampling_method (str): One of "random", "sobol", "halton",
+            "hammersley", "korobov", "latin_hypercube" and "chebyshev" or a numpy array
+            or DataFrame with custom points. Default is sobol for problems with up to 30
+            parameters and random for problems with more than 30 parameters.
+        seed (int): Random seed.
+        constraints (list): See :ref:`constraints`.
+
+    Returns:
+        np.ndarray: Numpy array of shape n_samples, len(params). Each row is a vector
+            of parameter values.
+
+    """
+    if n_samples is None:
+        n_samples = 10 * len(params)
+
+    if sampling_method is None:
+        sampling_method = "sobol" if len(params) <= 30 else "random"
+
+    if isinstance(n_samples, (np.ndarray, pd.DataFrame)):
+        sample = _process_sample(n_samples, params)
+    elif isinstance(n_samples, (int, float)):
+        sample = _create_sample(
+            params=params,
+            n_samples=n_samples,
+            sampling_distribution=sampling_distribution,
+            sampling_method=sampling_method,
+            seed=seed,
+            constraints=constraints,
+        )
+    else:
+        raise TypeError(f"Invalid type for n_samples: {type(n_samples)}")
+    return sample
+
+
+def _process_sample(raw_sample, params):
+    if isinstance(raw_sample, pd.DataFrame):
+        if not raw_sample.columns.equals(params.index):
             raise ValueError(
                 "If you provide a custom sample as DataFrame the columns of that "
                 "DataFrame and the index of params must be equal."
             )
-        sample = sampling[params.index].to_numpy()
-    elif isinstance(sampling, np.ndarray):
-        _, n_params = sampling.shape
+        sample = raw_sample[params.index].to_numpy()
+    elif isinstance(raw_sample, np.ndarray):
+        _, n_params = raw_sample.shape
         if n_params != len(params):
             raise ValueError(
                 "If you provide a custom sample as a numpy array it must have as many "
                 "columns as parameters."
             )
-        sample = sampling
-    else:
-        lower_bounds = _get_bounds(params, "lower")
-        upper_bounds = _get_bounds(params, "upper")
+        sample = raw_sample
 
-        if (lower_bounds >= upper_bounds).any():
-            raise ValueError(
-                "Lower bound must be smaller than upper bound for all parameters."
-            )
-
-        sample = _do_actual_sampling(
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
-            n_points=n_points,
-            method=sampling,
-        )
     return sample
 
 
-def _do_actual_sampling(lower_bounds, upper_bounds, n_points, method):
-    pass
+def _create_sample(
+    params,
+    n_samples,
+    sampling_distribution,
+    sampling_method,
+    seed,
+    constraints,
+):
+    if _has_transforming_constraints(constraints):
+        raise NotImplementedError(
+            "Multistart optimization is not yet compatible with transforming "
+            "Constraints that require a transformation of parameters such as "
+            "linear, probability, covariance and sdcorr constranits."
+        )
+
+    lower, upper = _get_internal_sampling_bounds(params, constraints)
+
+    internal_sample = _do_actual_sampling(
+        midpoint=params["value"].to_numpy(),
+        lower=lower,
+        upper=upper,
+        size=n_samples,
+        distribution=sampling_distribution,
+        rule=sampling_method,
+        seed=seed,
+    )
+
+    _, from_internal = get_reparametrize_functions(params, constraints)
+
+    sample = np.array([from_internal(x) for x in internal_sample])
+    return sample
 
 
-def _get_bounds(params, bounds_type):
+def _do_actual_sampling(midpoint, lower, upper, size, distribution, rule, seed):
+
+    valid_rules = [
+        "random",
+        "sobol",
+        "halton",
+        "hammersley",
+        "korobov",
+        "latin_hypercube",
+    ]
+
+    if rule not in valid_rules:
+        raise ValueError(f"Invalid rule: {rule}. Must be one of\n\n{valid_rules}\n\n")
+
+    if distribution == "uniform":
+        dist_list = [Uniform(lb, ub) for lb, ub in zip(lower, upper)]
+    elif distribution == "triangle":
+        dist_list = [Triangle(lb, mp, ub) for lb, mp, ub in zip(lower, midpoint, upper)]
+    else:
+        raise ValueError(f"Unsupported distribution: {distribution}")
+
+    joint_distribution = chaospy.J(*dist_list)
+
+    np.random.seed(seed)
+
+    sample = joint_distribution.sample(
+        size=size,
+        rule=rule,
+    ).T
+    return sample
+
+
+def _get_internal_sampling_bounds(params, constraints):
+    params = params.copy(deep=True)
+    params["lower_bound"] = _extract_external_sampling_bound(params, "lower")
+    params["upper_bound"] = _extract_external_sampling_bound(params, "upper")
+
+    problematic = params.query("lower_bound >= upper_bound")
+
+    if len(problematic):
+        raise ValueError(
+            "Lower bound must be smaller than upper bound for all parameters. "
+            f"This is violated for:\n\n{problematic.to_string()}\n\n"
+        )
+
+    lower, upper = get_internal_bounds(params=params, constraints=constraints)
+
+    for b in lower, upper:
+        if not np.isfinite(b).all():
+            raise ValueError(
+                "Sampling bounds of all free parameters must be finite to create a "
+                "parameter sample for multistart optimization."
+            )
+
+    return lower, upper
+
+
+def _extract_external_sampling_bound(params, bounds_type):
     soft_name = f"soft_{bounds_type}_bound"
     hard_name = f"{bounds_type}_bound"
     if soft_name in params:
-        bounds = params[soft_name].to_numpy()
+        bounds = params[soft_name]
     elif hard_name in params:
-        bounds = params[hard_name].to_numpy()
+        bounds = params[hard_name]
     else:
         raise ValueError(
             f"{soft_name} or {hard_name} must be in params to sample start values."
         )
 
-    if not np.isfinite(bounds).all():
-        raise ValueError(
-            f"{bounds_type} bounds must be finite for all parameters to sample start "
-            "values."
-        )
     return bounds
+
+
+def _has_transforming_constraints(constraints):
+    constraints = [] if constraints is None else constraints
+    transforming_types = {
+        "linear",
+        "probability",
+        "covariance",
+        "sdcorr",
+        "increasing",
+        "decreasing",
+        "sum",
+    }
+    present_types = {constr["type"] for constr in constraints}
+    return bool(transforming_types.intersection(present_types))
+
+
+def run_explorations(params, sample, func, batch_evaluator, n_cores):
+    pass
+
+
+def get_batched_optimization_sample(explorations, share_optimizations, batch_size):
+    pass
+
+
+def run_local_optimizations(
+    sample,
+    n_cores,
+    batch_evaluator,
+    optimize_options,
+    mixing_weight_method,
+    mixing_weight_bounds,
+    convergence_relative_params_tolerance,
+):
+    pass
