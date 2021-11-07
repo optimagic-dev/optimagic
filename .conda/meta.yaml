@@ -12,6 +12,7 @@ source:
 build:
   noarch: python
   number: 0
+  script: {{ PYTHON }} setup.py install --single-version-externally-managed --record record.txt
   entry_points:
     - estimagic = estimagic.cli:cli
 
@@ -44,7 +45,7 @@ test:
     - statsmodels
   source_files:
     - tox.ini
-    - estimagic/tests
+    - tests
   commands:
     - pytest -m "not slow"
     - estimagic --version
@@ -53,6 +54,6 @@ test:
 
 about:
   home: https://github.com/OpenSourceEconomics/estimagic
-  license: BSD
+  license: MIT
   license_file: LICENSE
   summary: Tools for the estimation of (structural) econometric models.

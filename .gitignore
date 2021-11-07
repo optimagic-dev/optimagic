@@ -124,3 +124,6 @@ venv.bak/
 
 
 .pytask.sqlite3
+
+
+src/estimagic/_version.py

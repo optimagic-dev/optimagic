@@ -11,3 +11,11 @@ pyupgrade = 1
 [tool.nbqa.addopts]
 isort = ["--treat-comment-as-code", "# %%", "--profile=black"]
 pyupgrade = ["--py36-plus"]
+
+
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.0"]
+
+
+[tool.setuptools_scm]
+write_to = "src/estimagic/_version.py"
