@@ -9,7 +9,6 @@ the custom_sample feature.
 import chaospy
 import numpy as np
 import pandas as pd
-
 from estimagic.optimization.tiktak import minimize_tik_tak
 
 

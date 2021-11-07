@@ -15,7 +15,6 @@ To-Do:
 import chaospy
 import numpy as np
 import pandas as pd
-
 from estimagic.optimization.optimize import minimize
 
 
