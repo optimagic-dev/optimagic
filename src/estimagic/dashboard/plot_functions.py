@@ -2,7 +2,6 @@
 from bokeh.models import HoverTool
 from bokeh.models import Legend
 from bokeh.plotting import figure
-
 from estimagic.config import GRID_VISIBLE
 from estimagic.config import LEGEND_LABEL_TEXT_FONT_SIZE
 from estimagic.config import LEGEND_SPACING

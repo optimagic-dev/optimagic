@@ -1,7 +1,6 @@
 """Test the functions to run the dashboard."""
 import pytest
 from click.testing import CliRunner
-
 from estimagic.cli import cli
 from estimagic.config import EXAMPLE_DIR
 from estimagic.dashboard.run_dashboard import _create_session_data

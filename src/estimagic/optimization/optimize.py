@@ -3,9 +3,8 @@ import inspect
 import warnings
 from pathlib import Path
 
-import numpy as np
-
 import estimagic.batch_evaluators as be
+import numpy as np
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
 from estimagic.logging.database_utilities import append_row

@@ -5,7 +5,6 @@ See the module docstring of process_constraints for naming conventions.
 import warnings
 
 import numpy as np
-
 from estimagic.utilities import cov_params_to_matrix
 from estimagic.utilities import sdcorr_params_to_matrix
 

@@ -32,7 +32,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-
 from estimagic.parameters.check_constraints import check_constraints_are_satisfied
 from estimagic.parameters.check_constraints import check_fixes_and_bounds
 from estimagic.parameters.check_constraints import check_for_incompatible_overlaps

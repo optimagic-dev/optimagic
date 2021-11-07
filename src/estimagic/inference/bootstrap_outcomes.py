@@ -1,7 +1,6 @@
 from functools import partial
 
 import pandas as pd
-
 from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices

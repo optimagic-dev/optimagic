@@ -1,6 +1,5 @@
 import pandas as pd
 import seaborn as sns
-
 from estimagic.visualization.colors import get_colors
 
 

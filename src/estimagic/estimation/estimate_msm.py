@@ -4,7 +4,6 @@ from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
-
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust

@@ -2,7 +2,6 @@ import itertools
 import warnings
 
 import pytest
-
 from estimagic.batch_evaluators import joblib_batch_evaluator
 
 

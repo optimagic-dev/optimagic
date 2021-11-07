@@ -2,9 +2,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal
-
 from estimagic.optimization.optimize import minimize
+from numpy.testing import assert_array_almost_equal
 
 
 def rosen(x):

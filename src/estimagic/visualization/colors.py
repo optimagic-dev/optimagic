@@ -1,5 +1,4 @@
 import numpy as np
-
 from estimagic.config import IS_MATPLOTLIB_INSTALLED
 
 if IS_MATPLOTLIB_INSTALLED:

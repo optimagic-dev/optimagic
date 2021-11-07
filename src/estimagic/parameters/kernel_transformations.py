@@ -29,7 +29,6 @@ specific cases we refer to posts on math.stackexchange.com.
 
 """
 import numpy as np
-
 from estimagic.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.utilities import cov_matrix_to_sdcorr_params
 from estimagic.utilities import cov_params_to_matrix

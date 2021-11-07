@@ -4,8 +4,6 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
@@ -18,6 +16,7 @@ from estimagic.parameters.reparametrize import pre_replace
 from estimagic.parameters.reparametrize import pre_replace_jacobian
 from estimagic.parameters.reparametrize import reparametrize_from_internal
 from estimagic.parameters.reparametrize import reparametrize_to_internal
+from numpy.testing import assert_array_almost_equal as aaae
 
 
 to_test = list(

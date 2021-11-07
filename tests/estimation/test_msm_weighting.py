@@ -3,10 +3,9 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-
 from estimagic.estimation.msm_weighting import assemble_block_diagonal_matrix
 from estimagic.estimation.msm_weighting import get_weighting_matrix
+from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.fixture

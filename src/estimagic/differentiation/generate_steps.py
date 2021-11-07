@@ -1,7 +1,6 @@
 import warnings
 
 import numpy as np
-
 from estimagic.utilities import namedtuple_from_kwargs
 
 

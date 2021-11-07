@@ -1,10 +1,9 @@
 """Test the different options of ipopt."""
 import numpy as np
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-
 from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.optimization.cyipopt_optimizers import ipopt
+from numpy.testing import assert_array_almost_equal as aaae
 
 test_cases = [
     {},

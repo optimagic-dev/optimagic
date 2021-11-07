@@ -34,10 +34,9 @@ In the following, let n_external be the length of th external parameter vector a
 n_internal the length of the internal parameter vector.
 
 """
+import estimagic.parameters.kernel_transformations as kt
 import numpy as np
 import pandas as pd
-
-import estimagic.parameters.kernel_transformations as kt
 
 
 def reparametrize_to_internal(

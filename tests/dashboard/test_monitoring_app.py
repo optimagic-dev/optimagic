@@ -1,12 +1,11 @@
 """Test the functions of the monitoring app."""
+import estimagic.dashboard.monitoring_app as monitoring
 import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
 from bokeh.document import Document
 from bokeh.models import ColumnDataSource
-
-import estimagic.dashboard.monitoring_app as monitoring
 from estimagic.config import EXAMPLE_DIR
 from estimagic.optimization.optimize import minimize
 

@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_allclose
-from numpy.testing import assert_array_equal
-
 from estimagic.examples.criterion_functions import (
     rosenbrock_criterion_and_gradient,
 )
@@ -38,6 +35,8 @@ from estimagic.examples.criterion_functions import trid_gradient
 from estimagic.examples.criterion_functions import (
     trid_scalar_criterion,
 )
+from numpy.testing import assert_allclose
+from numpy.testing import assert_array_equal
 
 
 # Fix input params to test every criterion function

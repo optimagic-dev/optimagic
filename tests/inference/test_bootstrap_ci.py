@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-
 from estimagic.inference.bootstrap_ci import _jackknife
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
+from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.fixture

@@ -1,9 +1,8 @@
 import numpy as np
 import pandas as pd
-from scipy.linalg import block_diag
-
 from estimagic.inference.bootstrap import bootstrap
 from estimagic.utilities import robust_inverse
+from scipy.linalg import block_diag
 
 
 def get_moments_cov(data, calculate_moments, moment_kwargs=None, bootstrap_kwargs=None):

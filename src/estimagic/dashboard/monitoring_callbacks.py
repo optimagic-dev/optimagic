@@ -2,7 +2,6 @@
 from functools import partial
 
 import numpy as np
-
 from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import transpose_nested_list
 

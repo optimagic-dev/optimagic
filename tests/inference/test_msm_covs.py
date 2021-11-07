@@ -3,11 +3,10 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-from pandas.testing import assert_frame_equal
-
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust
+from numpy.testing import assert_array_almost_equal as aaae
+from pandas.testing import assert_frame_equal
 
 
 np.random.seed(1234)

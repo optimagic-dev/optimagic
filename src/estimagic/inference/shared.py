@@ -4,7 +4,6 @@ from collections.abc import Callable
 import numpy as np
 import pandas as pd
 import scipy
-
 from estimagic.decorators import numpy_interface
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.parameters.parameter_conversion import get_internal_bounds

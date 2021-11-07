@@ -2,7 +2,6 @@ import datetime
 import warnings
 
 import numpy as np
-
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
 from estimagic.logging.database_utilities import append_row

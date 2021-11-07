@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-
 from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PETSC4PY_INSTALLED
@@ -23,6 +21,7 @@ from estimagic.utilities import robust_inverse
 from estimagic.utilities import sdcorr_params_to_matrix
 from estimagic.utilities import sdcorr_params_to_sds_and_corr
 from estimagic.utilities import sds_and_corr_to_cov
+from numpy.testing import assert_array_almost_equal as aaae
 
 
 def test_chol_params_to_lower_triangular_matrix():

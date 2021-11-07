@@ -1,10 +1,9 @@
 import numpy as np
 import pandas as pd
+from estimagic.inference.bootstrap_helpers import check_inputs
 from joblib import delayed
 from joblib import Parallel
 from scipy.stats import norm
-
-from estimagic.inference.bootstrap_helpers import check_inputs
 
 
 def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_cores=1):

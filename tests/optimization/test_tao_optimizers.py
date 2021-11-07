@@ -4,7 +4,6 @@ import functools
 import numpy as np
 import pandas as pd
 import pytest
-
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.optimization.optimize import minimize
 

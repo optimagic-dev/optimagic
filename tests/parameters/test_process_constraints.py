@@ -2,13 +2,12 @@
 import numpy as np
 import pandas as pd
 import pytest
-from numpy.testing import assert_array_almost_equal as aaae
-
 from estimagic.parameters.process_constraints import _process_selectors
 from estimagic.parameters.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
 from estimagic.parameters.process_constraints import process_constraints
+from numpy.testing import assert_array_almost_equal as aaae
 
 
 def reduce_params(params, constraints):
