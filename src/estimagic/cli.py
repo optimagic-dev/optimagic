@@ -3,6 +3,7 @@ import glob
 from pathlib import Path
 
 import click
+
 from estimagic.dashboard.run_dashboard import run_dashboard
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}

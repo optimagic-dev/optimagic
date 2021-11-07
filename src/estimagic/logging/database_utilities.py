@@ -16,8 +16,6 @@ from pathlib import Path
 
 import cloudpickle
 import pandas as pd
-from estimagic.exceptions import get_traceback
-from estimagic.exceptions import TableExistsError
 from sqlalchemy import and_
 from sqlalchemy import BLOB
 from sqlalchemy import Boolean
@@ -31,6 +29,9 @@ from sqlalchemy import PickleType
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy.dialects.sqlite import DATETIME
+
+from estimagic.exceptions import get_traceback
+from estimagic.exceptions import TableExistsError
 
 
 def load_database(metadata=None, path=None, fast_logging=False):

@@ -1,9 +1,10 @@
 """Tests for the logit example."""
 import numpy as np
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic.examples.logit import logit_derivative
 from estimagic.examples.logit import logit_hessian
 from estimagic.examples.logit import logit_loglike
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 def test_logit_loglike(logit_inputs, logit_object):

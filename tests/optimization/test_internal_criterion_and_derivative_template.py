@@ -4,6 +4,8 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.examples.criterion_functions import sos_criterion_and_gradient
 from estimagic.examples.criterion_functions import sos_dict_criterion
@@ -27,7 +29,6 @@ from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.optimize import _fill_error_penalty_with_defaults
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 def no_second_call(func):

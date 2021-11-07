@@ -9,10 +9,11 @@ path_or_database. Otherwise, the functions may be very slow.
 """
 from pathlib import Path
 
+from sqlalchemy import MetaData
+
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.database_utilities import read_specific_row
-from sqlalchemy import MetaData
 
 
 def read_optimization_iteration(path_or_database, iteration, include_internals=False):

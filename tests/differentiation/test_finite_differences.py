@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic.differentiation.finite_differences import jacobian
 from estimagic.utilities import namedtuple_from_kwargs
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.fixture(scope="function")

@@ -9,6 +9,8 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic.examples.criterion_functions import rosenbrock_dict_criterion
 from estimagic.examples.criterion_functions import rosenbrock_gradient
 from estimagic.examples.criterion_functions import (
@@ -22,7 +24,6 @@ from estimagic.examples.criterion_functions import sos_ls_jacobian
 from estimagic.examples.criterion_functions import trid_gradient
 from estimagic.examples.criterion_functions import trid_scalar_criterion
 from estimagic.optimization.optimize import minimize
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 FUNC_INFO = {

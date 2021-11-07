@@ -10,14 +10,15 @@ from bokeh.models import ColumnDataSource
 from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models import Toggle
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
+
 from estimagic.dashboard.monitoring_callbacks import activation_callback
 from estimagic.dashboard.monitoring_callbacks import logscale_callback
 from estimagic.dashboard.plot_functions import plot_time_series
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.read_log import read_start_params
-from jinja2 import Environment
-from jinja2 import FileSystemLoader
 
 
 def monitoring_app(

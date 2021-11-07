@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 
 import pandas as pd
+
 from estimagic.shared.check_option_dicts import check_numdiff_options
 
 

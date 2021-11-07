@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from estimagic.inference.shared import process_pandas_arguments
 
 

@@ -1,8 +1,9 @@
 """Test the functions of the dashboards master_app.py."""
 from pathlib import Path
 
-import estimagic.dashboard.master_app as master_app
 from bokeh.document import Document
+
+import estimagic.dashboard.master_app as master_app
 
 
 def test_master_app():

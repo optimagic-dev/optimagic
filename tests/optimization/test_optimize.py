@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+
 from estimagic.examples.criterion_functions import sos_scalar_criterion
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize

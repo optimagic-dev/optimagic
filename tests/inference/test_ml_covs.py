@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic.inference import ml_covs
 from estimagic.inference.ml_covs import _clustering
 from estimagic.inference.ml_covs import _sandwich_step
@@ -13,7 +15,6 @@ from estimagic.inference.ml_covs import cov_hessian
 from estimagic.inference.ml_covs import cov_jacobian
 from estimagic.inference.ml_covs import cov_robust
 from estimagic.inference.ml_covs import cov_strata_robust
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.fixture

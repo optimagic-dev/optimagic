@@ -4,6 +4,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+from pandas.testing import assert_frame_equal
+from scipy.optimize._numdiff import approx_derivative
+
 from estimagic.differentiation.derivatives import _consolidate_one_step_derivatives
 from estimagic.differentiation.derivatives import _convert_evaluation_data_to_frame
 from estimagic.differentiation.derivatives import (
@@ -17,9 +21,6 @@ from estimagic.examples.numdiff_functions import logit_loglike_gradient
 from estimagic.examples.numdiff_functions import logit_loglikeobs
 from estimagic.examples.numdiff_functions import logit_loglikeobs_jacobian
 from estimagic.utilities import namedtuple_from_kwargs
-from numpy.testing import assert_array_almost_equal as aaae
-from pandas.testing import assert_frame_equal
-from scipy.optimize._numdiff import approx_derivative
 
 
 @pytest.fixture

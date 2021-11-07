@@ -11,11 +11,12 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic.examples.criterion_functions import sos_dict_criterion
 from estimagic.examples.criterion_functions import sos_dict_derivative
 from estimagic.exceptions import TableExistsError
 from estimagic.optimization.optimize import minimize
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 algorithms = ["scipy_lbfgsb", "scipy_ls_dogbox"]

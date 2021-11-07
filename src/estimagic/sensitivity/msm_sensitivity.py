@@ -10,6 +10,7 @@ epsilon 2-6: Honore, Jorgensen & de Paula
 """
 import numpy as np
 import pandas as pd
+
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import INVALID_SENSITIVITY_MSG
 from estimagic.inference.msm_covs import cov_optimal

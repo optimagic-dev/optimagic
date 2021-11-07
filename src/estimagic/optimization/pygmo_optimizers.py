@@ -3,6 +3,7 @@ import functools
 import warnings
 
 import numpy as np
+
 from estimagic import batch_evaluators
 from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE

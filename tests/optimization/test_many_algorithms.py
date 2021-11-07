@@ -10,11 +10,12 @@ import sys
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+
 from estimagic.examples.criterion_functions import sos_dict_criterion
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization import GLOBAL_ALGORITHMS
 from estimagic.optimization.optimize import minimize
-from numpy.testing import assert_array_almost_equal as aaae
 
 
 LOCAL_ALGORITHMS = {

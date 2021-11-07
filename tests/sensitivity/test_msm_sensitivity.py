@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
+from numpy.testing import assert_array_almost_equal as aaae
+from scipy import stats
+
 from estimagic.config import EXAMPLE_DIR
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.inference.msm_covs import cov_optimal
@@ -16,8 +19,6 @@ from estimagic.sensitivity.msm_sensitivity import (
 )
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
-from numpy.testing import assert_array_almost_equal as aaae
-from scipy import stats
 
 
 def simulate_aggregated_moments(params, x, y):

@@ -5,6 +5,7 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+
 from estimagic import batch_evaluators
 from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences

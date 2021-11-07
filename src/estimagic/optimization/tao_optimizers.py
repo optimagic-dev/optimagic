@@ -2,6 +2,7 @@
 import functools
 
 import numpy as np
+
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE

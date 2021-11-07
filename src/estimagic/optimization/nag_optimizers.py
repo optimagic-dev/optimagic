@@ -13,6 +13,7 @@ import warnings
 from functools import partial
 
 import numpy as np
+
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.optimization.algo_options import CLIP_CRITERION_IF_OVERFLOWING

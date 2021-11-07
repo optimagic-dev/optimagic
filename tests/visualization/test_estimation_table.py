@@ -5,14 +5,15 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from pandas.testing import assert_frame_equal as afe
+from pandas.testing import assert_series_equal as ase
+
 from estimagic.config import EXAMPLE_DIR
 from estimagic.visualization.estimation_table import _convert_model_to_series
 from estimagic.visualization.estimation_table import _create_statistics_sr
 from estimagic.visualization.estimation_table import _process_body_df
 from estimagic.visualization.estimation_table import _process_model
 from estimagic.visualization.estimation_table import estimation_table
-from pandas.testing import assert_frame_equal as afe
-from pandas.testing import assert_series_equal as ase
 
 # test process_model for different model types
 NamedTup = namedtuple("NamedTup", "params info")

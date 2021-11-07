@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
 from numpy.testing import assert_array_almost_equal as aaae
+
+from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
 
 
 @pytest.fixture

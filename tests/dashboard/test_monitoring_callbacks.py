@@ -2,6 +2,7 @@ import numpy as np
 from bokeh.models import ColumnDataSource
 from bokeh.models import Toggle
 from bokeh.plotting import figure
+
 from estimagic.dashboard.monitoring_callbacks import _create_params_data_for_update
 from estimagic.dashboard.monitoring_callbacks import _reset_column_data_sources
 from estimagic.dashboard.monitoring_callbacks import _switch_to_linear_scale
