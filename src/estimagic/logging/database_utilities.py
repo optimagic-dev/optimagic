@@ -109,6 +109,8 @@ def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
         Column("valid", Boolean),
         Column("hash", String),
         Column("value", Float),
+        Column("stage", String),
+        Column("substage", Integer),
     ]
 
     if isinstance(first_eval["output"], dict):
@@ -132,6 +134,8 @@ def make_optimization_status_table(database, if_exists="extend"):
     columns = [
         Column("rowid", Integer, primary_key=True),
         Column("status", String),
+        Column("stage", String),
+        Column("n_substages", Integer),
     ]
     Table(
         table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True

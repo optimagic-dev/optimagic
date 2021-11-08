@@ -243,6 +243,9 @@ def get_exploration_sample(
     if sampling_method is None:
         sampling_method = "sobol" if len(params) <= 30 else "random"
 
+    if constraints is None:
+        constraints = []
+
     if isinstance(n_samples, (np.ndarray, pd.DataFrame)):
         sample = _process_sample(n_samples, params, constraints)
     elif isinstance(n_samples, (int, float)):

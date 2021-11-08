@@ -114,11 +114,22 @@ def test_optimization_status_table(tmp_path):
     database = load_database(path=path)
     make_optimization_status_table(database)
     for status in ["scheduled", "running", "success"]:
-        append_row({"status": status}, "optimization_status", database, path, False)
+        append_row(
+            {"status": status, "stage": "bla", "n_substages": 0},
+            "optimization_status",
+            database,
+            path,
+            False,
+        )
 
     res, _ = read_new_rows(database, "optimization_status", 1, "dict_of_lists")
 
-    expected = {"rowid": [2, 3], "status": ["running", "success"]}
+    expected = {
+        "rowid": [2, 3],
+        "status": ["running", "success"],
+        "stage": ["bla", "bla"],
+        "n_substages": [0, 0],
+    }
     assert res == expected
 
 

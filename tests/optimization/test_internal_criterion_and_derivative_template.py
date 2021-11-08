@@ -81,6 +81,7 @@ def base_inputs():
         "first_criterion_evaluation": {"internal_params": x, "external_params": params},
         "cache": {},
         "cache_size": 10,
+        "fixed_log_data": {"stage": "optimization", "substage": 0},
     }
     return inputs
 

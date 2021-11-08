@@ -49,6 +49,7 @@ def internal_criterion_and_derivative_template(
     first_criterion_evaluation,
     cache,
     cache_size,
+    fixed_log_data,
 ):
     """Template for the internal criterion and derivative function.
 
@@ -111,6 +112,8 @@ def internal_criterion_and_derivative_template(
             "external_params", "output".
         cache (dict): Dictionary used as cache for criterion and derivative evaluations.
         cache_size (int): Number of evaluations that are kept in cache. Default 10.
+        fixed_log_data (dict): Dictionary with fixed data to be saved in the database.
+            Has the entries "stage" (str) and "substage" (int).
 
     Returns:
         float, np.ndarray or tuple: If task=="criterion" it returns the output of
@@ -239,6 +242,7 @@ def internal_criterion_and_derivative_template(
             database=database,
             database_path=database_path,
             log_options=log_options,
+            fixed_log_data=fixed_log_data,
         )
 
     res = _get_output_for_optimizer(
@@ -427,6 +431,7 @@ def _log_new_evaluations(
     database,
     database_path,
     log_options,
+    fixed_log_data,
 ):
     """Write the new evaluations and additional information into the database.
 
@@ -439,6 +444,7 @@ def _log_new_evaluations(
         "params": external_x,
         "timestamp": datetime.datetime.now(),
         "valid": True,
+        **fixed_log_data,
     }
 
     if new_derivative is not None:

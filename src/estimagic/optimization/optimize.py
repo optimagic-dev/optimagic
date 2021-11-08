@@ -432,6 +432,9 @@ def _optimize(
     for arg in arguments:
         check_argument(arg)
 
+    for arg in arguments:
+        arg["fixed_log_data"] = {}
+
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
 
@@ -472,6 +475,7 @@ def _single_optimize(
     error_penalty,
     cache_size,
     scaling_options,
+    fixed_log_data,
 ):
     """Minimize or maximize *criterion* using *algorithm* subject to *constraints*.
 
@@ -622,6 +626,7 @@ def _single_optimize(
         first_criterion_evaluation=first_eval,
         cache=cache,
         cache_size=cache_size,
+        fixed_log_data=fixed_log_data,
     )
 
     res = algorithm(internal_criterion_and_derivative, x, **algo_options)
@@ -651,22 +656,7 @@ def _single_optimize(
     for entry in optional_entries:
         res[entry] = res.get(entry, f"Not reported by {algo_name}")
 
-    if logging:
-        _log_final_status(res, database, logging, log_options)
-
     return res
-
-
-def _log_final_status(res, database, path, log_options):
-    if isinstance(res["success"], str) and res["success"].startswith("Not reported"):
-        status = "unknown"
-    elif res["success"]:
-        status = "finished successfully"
-    else:
-        status = "failed"
-
-    fast_logging = log_options.get("fast_logging", False)
-    append_row({"status": status}, "optimization_status", database, path, fast_logging)
 
 
 def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
