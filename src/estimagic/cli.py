@@ -1,7 +1,4 @@
 """This module comprises all CLI capabilities of estimagic."""
-import glob
-from pathlib import Path
-
 import click
 from estimagic.dashboard.run_dashboard import run_dashboard
 
@@ -16,7 +13,7 @@ def cli():
 
 
 @cli.command()
-@click.argument("database", nargs=-1, required=True, type=click.Path())
+@click.argument("database_path", required=True, type=click.Path())
 @click.option(
     "--port",
     "-p",
@@ -68,7 +65,14 @@ def cli():
     show_default=True,
 )
 def dashboard(
-    database, port, no_browser, rollover, jump, update_frequency, update_chunk, stride
+    database_path,
+    port,
+    no_browser,
+    rollover,
+    jump,
+    update_frequency,
+    update_chunk,
+    stride,
 ):
     """Start the dashboard to visualize optimizations."""
     updating_options = {
@@ -79,17 +83,8 @@ def dashboard(
         "jump": jump,
     }
 
-    database_paths = []
-    for path in database:
-        # Search directories recursively for databases. "*" in is_dir() raises error.
-        if "*" not in path and Path(path).is_dir():
-            path = str(Path(path) / "**" / "*.db")
-
-        database_paths.extend([Path(path) for path in glob.glob(path, recursive=True)])
-    database_paths = list(set(database_paths))
-
     run_dashboard(
-        database_paths=database_paths,
+        database_path=database_path,
         no_browser=no_browser,
         port=port,
         updating_options=updating_options,
