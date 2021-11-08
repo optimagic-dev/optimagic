@@ -244,7 +244,7 @@ def get_exploration_sample(
         sampling_method = "sobol" if len(params) <= 30 else "random"
 
     if isinstance(n_samples, (np.ndarray, pd.DataFrame)):
-        sample = _process_sample(n_samples, params)
+        sample = _process_sample(n_samples, params, constraints)
     elif isinstance(n_samples, (int, float)):
         sample = _create_sample(
             params=params,
@@ -259,7 +259,7 @@ def get_exploration_sample(
     return sample
 
 
-def _process_sample(raw_sample, params):
+def _process_sample(raw_sample, params, constraints):
     if isinstance(raw_sample, pd.DataFrame):
         if not raw_sample.columns.equals(params.index):
             raise ValueError(
@@ -275,6 +275,10 @@ def _process_sample(raw_sample, params):
                 "columns as parameters."
             )
         sample = raw_sample
+
+    to_internal, _ = get_reparametrize_functions(params, constraints)
+
+    sample = np.array([to_internal(x) for x in sample])
 
     return sample
 
@@ -296,7 +300,7 @@ def _create_sample(
 
     lower, upper = _get_internal_sampling_bounds(params, constraints)
 
-    internal_sample = _do_actual_sampling(
+    sample = _do_actual_sampling(
         midpoint=params["value"].to_numpy(),
         lower=lower,
         upper=upper,
@@ -306,9 +310,6 @@ def _create_sample(
         seed=seed,
     )
 
-    _, from_internal = get_reparametrize_functions(params, constraints)
-
-    sample = np.array([from_internal(x) for x in internal_sample])
     return sample
 
 
@@ -399,11 +400,57 @@ def _has_transforming_constraints(constraints):
     return bool(transforming_types.intersection(present_types))
 
 
-def run_explorations(params, sample, func, batch_evaluator, n_cores):
+def run_explorations(func, params, sample, batch_evaluator, n_cores):
+    """Do the function evaluations for the exploration phase.
+
+    Args:
+        func (callable): An already partialled version of
+            `internal_criterion_and_derivative_template` where the following arguments
+            are still free: ``x``, ``task``, ``algorithm_info``, ``error_handling``,
+            ``error_penalty``.
+        params (pandas.DataFrame): See :ref:`params`.
+        sample (numpy.ndarray): 2d numpy array where each row is a sampled internal
+            parameter vector.
+        batch_evaluator (str or callable): See :ref:`batch_evaluators`.
+        n_cores (int): Number of cores.
+
+    Returns:
+        dict: A dictionary with the the following entries:
+            "sorted_values": 1d numpy array with sorted function values. Invalid
+                function values are excluded.
+            "sorted_sample": 2d numpy array with corresponding internal parameter
+                vectors.
+            "contributions": None or 2d numpy array with the contributions entries of
+                the function evaluations.
+            "root_contributions": None or 2d numpy array with the root_contributions
+                entries of the function evaluations.
+
+    """
+    # partial in remaining arguments of internal criterion
+    # do function evaluations
+    # process outputs
     pass
 
 
-def get_batched_optimization_sample(explorations, share_optimizations, batch_size):
+def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
+    """Create a batched sample of internal parameters for the optimization phase.
+
+    Note that in the end the optimizations will not be started from those parameter
+    vectors but from a convex combination of that parameter vector and the
+    best parameter vector at the time when the optimization is started.
+
+    Args:
+        sorted_sample (np.ndarray): 2d numpy array with containing sorted internal
+            parameter vectors.
+        n_optimizations (int): Number of optimizations to run. If sample is shorter
+            than that, optimizations are run on all entries of the sample.
+        batch_size (int): Batch size.
+
+    Returns:
+        list: Nested list of parameter vectors from which an optimization is run.
+            The inner lists have length ``batch_size`` or shorter.
+
+    """
     pass
 
 
@@ -416,4 +463,36 @@ def run_local_optimizations(
     mixing_weight_bounds,
     convergence_relative_params_tolerance,
 ):
-    pass
+    """Run the actual local optimizations until convergence.
+
+    Args:
+        sample (list): Nested list of parameter vectors from which an optimization is
+            run. The inner lists have length ``batch_size`` or shorter.
+        n_cores (int): Number of cores.
+        batch_evaluator (str or callable): See :ref:`batch_evaluators`.
+        optimize_options (dict): Keyword arguments for the optimizations that are fixed
+            across all optimizations.
+        mixing_weight_method (str or callable): Specifies how much weight is put on the
+            currently best point when calculating a new starting point for a local
+            optimization out of the currently best point and the next random starting
+            point. Either "tiktak" or a callable that takes the arguments ``iteration``,
+            ``n_iterations``, ``min_weight``, ``max_weight``. Default "tiktak".
+        mixing_weight_bounds (tuple): A tuple consisting of a lower and upper bound on
+            mixing weights. Default (0.1, 0.995).
+        convergence.relative_params_tolerance (float): If the maximum relative
+            difference between the results of two consecutive local optimizations is
+            smaller than the multistart optimization converges. Default 0.01. Note that
+            this is independent of a convergence criterion with the same name for each
+            local optimization.
+
+    Returns:
+        dict: A Dictionary containing the best parameters and criterion values,
+            convergence information and the history of optimization solutions.
+
+    """
+    # process batch evaluator
+    # process mixing weight function and options
+    # partial optimize options into optimize
+    # implement loop with convergence check and parallel optimizations on the inside.
+    # process results to something compatible with output of optimize but with
+    # additional history entries.

@@ -27,7 +27,7 @@ def constraints():
 
 def test_get_exploration_sample_runs(params, constraints):
     calculated = get_exploration_sample(params, constraints=constraints)
-    assert calculated.shape == (30, 3)
+    assert calculated.shape == (30, 2)
 
 
 samples = [pd.DataFrame(np.ones((2, 3)), columns=["a", "b", "c"]), np.ones((2, 3))]
@@ -35,7 +35,7 @@ samples = [pd.DataFrame(np.ones((2, 3)), columns=["a", "b", "c"]), np.ones((2, 3
 
 @pytest.mark.parametrize("sample", samples)
 def test_process_sample(sample, params):
-    calculated = _process_sample(sample, params)
+    calculated = _process_sample(sample, params, [])
     expeceted = np.ones((2, 3))
     aaae(calculated, expeceted)
 
