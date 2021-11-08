@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+
+from estimagic.examples.more_wild import get_start_values_mancino
 from estimagic.examples.more_wild import MORE_WILD_PROBLEMS
 
 
@@ -11,3 +13,9 @@ def test_function_at_start_x(name, specification):
     calculated = _contributions @ _contributions
     expected = specification["start_criterion"]
     assert np.allclose(calculated, expected)
+
+
+def test_get_start_values_mancino():
+    expected = (np.array([102.4824, 96.3335, 90.4363, 84.7852, 79.3747]),)
+    result = get_start_values_mancino(5)
+    assert np.allclose(expected, result)
