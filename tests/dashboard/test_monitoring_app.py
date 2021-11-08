@@ -7,29 +7,17 @@ import pytest
 from bokeh.document import Document
 from bokeh.models import ColumnDataSource
 from estimagic.config import EXAMPLE_DIR
-from estimagic.optimization.optimize import minimize
 
 
 def test_monitoring_app():
     """Integration test that no Error is raised when calling the monitoring app."""
     doc = Document()
-    database_name = "test_db"
     db_path = EXAMPLE_DIR / "db2.db"
-
-    needs_update = False
-    if needs_update:
-        params = pd.DataFrame()
-        params["value"] = [1, 2, 3]
-        minimize(
-            criterion=lambda params: params["value"] @ params["value"],
-            params=params,
-            algorithm="scipy_neldermead",
-            logging=db_path,
-        )
 
     session_data = {
         "last_retrieved": 0,
         "database_path": db_path,
+        "callbacks": {},
     }
     updating_options = {
         "rollover": 10_000,
@@ -41,7 +29,6 @@ def test_monitoring_app():
 
     monitoring.monitoring_app(
         doc=doc,
-        database_name=database_name,
         session_data=session_data,
         updating_options=updating_options,
     )

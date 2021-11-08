@@ -1,42 +1,10 @@
 import numpy as np
 from bokeh.models import ColumnDataSource
-from bokeh.models import Toggle
-from bokeh.plotting import figure
 from estimagic.dashboard.monitoring_callbacks import _create_params_data_for_update
 from estimagic.dashboard.monitoring_callbacks import _reset_column_data_sources
-from estimagic.dashboard.monitoring_callbacks import _switch_to_linear_scale
-from estimagic.dashboard.monitoring_callbacks import _switch_to_log_scale
 
 
 PARAM_IDS = ["a", "b", "c", "d", "e"]
-
-
-def test_switch_to_log_scale():
-    button = Toggle(active=False)
-    linear_plot = figure(name="linear_plot")
-    log_plot = figure(name="log_plot")
-
-    _switch_to_log_scale(
-        button=button, linear_criterion_plot=linear_plot, log_criterion_plot=log_plot
-    )
-
-    assert linear_plot.visible is False
-    assert log_plot.visible is True
-    assert button.button_type == "primary"
-
-
-def test_switch_to_linear_scale():
-    button = Toggle(active=False)
-    linear_plot = figure(name="linear_plot")
-    log_plot = figure(name="log_plot")
-
-    _switch_to_linear_scale(
-        button=button, linear_criterion_plot=linear_plot, log_criterion_plot=log_plot
-    )
-
-    assert linear_plot.visible is True
-    assert log_plot.visible is False
-    assert button.button_type == "default"
 
 
 def test_create_params_data_for_update():
