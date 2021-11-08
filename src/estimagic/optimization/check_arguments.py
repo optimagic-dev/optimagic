@@ -26,6 +26,7 @@ def check_argument(argument):
         "error_penalty": dict,
         "cache_size": (int, float),
         "scaling_options": dict,
+        "fixed_log_data": dict,
     }
 
     for arg in argument:

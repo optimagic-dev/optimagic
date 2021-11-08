@@ -3,7 +3,6 @@ import inspect
 import warnings
 from pathlib import Path
 
-import estimagic.batch_evaluators as be
 import numpy as np
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
@@ -13,7 +12,6 @@ from estimagic.logging.database_utilities import make_optimization_iteration_tab
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_optimization_status_table
 from estimagic.optimization import AVAILABLE_ALGORITHMS
-from estimagic.optimization.broadcast_arguments import broadcast_arguments
 from estimagic.optimization.check_arguments import check_argument
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
@@ -45,18 +43,10 @@ def maximize(
     log_options=None,
     error_handling="raise",
     error_penalty=None,
-    batch_evaluator="joblib",
-    batch_evaluator_options=None,
     cache_size=100,
     scaling_options=None,
 ):
     """Maximize criterion using algorithm subject to constraints.
-
-    Each argument except for batch_evaluator and batch_evaluator_options can also be
-    replaced by a list of arguments in which case several optimizations are run in
-    parallel. For this, either all arguments must be lists of the same length, or some
-    arguments can be provided as single arguments in which case they are automatically
-    broadcasted.
 
     Args:
         criterion (callable): A function that takes a pandas DataFrame (see
@@ -127,11 +117,6 @@ def maximize(
             actually a bad function value. The default constant is f0 + abs(f0) + 100
             for minimizations and f0 - abs(f0) - 100 for maximizations, where
             f0 is the criterion value at start parameters. The default slope is 0.1.
-        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
-            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
-        batch_evaluator_options (dict): Additional configurations for the batch
-            batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
         scaling_options (dict or None): Options to configure the internal scaling ot
@@ -156,8 +141,6 @@ def maximize(
         log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
-        batch_evaluator=batch_evaluator,
-        batch_evaluator_options=batch_evaluator_options,
         cache_size=cache_size,
         scaling_options=scaling_options,
     )
@@ -180,18 +163,10 @@ def minimize(
     log_options=None,
     error_handling="raise",
     error_penalty=None,
-    batch_evaluator="joblib",
-    batch_evaluator_options=None,
     cache_size=100,
     scaling_options=None,
 ):
     """Minimize criterion using algorithm subject to constraints.
-
-    Each argument except for batch_evaluator and batch_evaluator_options can also be
-    replaced by a list of arguments in which case several optimizations are run in
-    parallel. For this, either all arguments must be lists of the same length, or some
-    arguments can be provided as single arguments in which case they are automatically
-    broadcasted.
 
     Args:
         criterion (Callable): A function that takes a pandas DataFrame (see
@@ -260,11 +235,6 @@ def minimize(
             actually a bad function value. The default constant is f0 + abs(f0) + 100
             for minimizations and f0 - abs(f0) - 100 for maximizations, where
             f0 is the criterion value at start parameters. The default slope is 0.1.
-        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
-            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
-        batch_evaluator_options (dict): Additional configurations for the batch
-            batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
         scaling_options (dict or None): Options to configure the internal scaling ot
@@ -289,8 +259,6 @@ def minimize(
         log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
-        batch_evaluator=batch_evaluator,
-        batch_evaluator_options=batch_evaluator_options,
         cache_size=cache_size,
         scaling_options=scaling_options,
     )
@@ -314,18 +282,10 @@ def _optimize(
     log_options,
     error_handling,
     error_penalty,
-    batch_evaluator,
-    batch_evaluator_options,
     cache_size,
     scaling_options,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
-
-    Each argument except for batch_evaluator and batch_evaluator_options can also be
-    replaced by a list of arguments in which case several optimizations are run in
-    parallel. For this, either all arguments must be lists of the same length, or some
-    arguments can be provided as single arguments in which case they are automatically
-    broadcasted.
 
     Args:
         direction (str): One of "maximize" or "minimize".
@@ -395,11 +355,6 @@ def _optimize(
             actually a bad function value. The default constant is f0 + abs(f0) + 100
             for minimizations and f0 - abs(f0) - 100 for maximizations, where
             f0 is the criterion value at start parameters. The default slope is 0.1.
-        batch_evaluator (str or Callable): Name of a pre-implemented batch evaluator
-            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
-            as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
-        batch_evaluator_options (dict): Additional configurations for the batch
-            batch evaluator. See :ref:`batch_evaluators`.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
         scaling_options (dict or None): Options to configure the internal scaling ot
@@ -407,51 +362,46 @@ def _optimize(
             for details and recommendations.
 
     """
-    arguments = broadcast_arguments(
-        direction=direction,
-        criterion=criterion,
-        params=params,
-        algorithm=algorithm,
-        criterion_kwargs=criterion_kwargs,
-        constraints=constraints,
-        algo_options=algo_options,
-        derivative=derivative,
-        derivative_kwargs=derivative_kwargs,
-        criterion_and_derivative=criterion_and_derivative,
-        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
-        numdiff_options=numdiff_options,
-        logging=logging,
-        log_options=log_options,
-        error_handling=error_handling,
-        error_penalty=error_penalty,
-        cache_size=cache_size,
-        scaling_options=scaling_options,
-    )
+    criterion_kwargs = _setdefault(criterion_kwargs, {})
+    constraints = _setdefault(constraints, [])
+    algo_options = _setdefault(algo_options, {})
+    derivative_kwargs = _setdefault(derivative_kwargs, {})
+    criterion_and_derivative_kwargs = _setdefault(criterion_and_derivative_kwargs, {})
+    numdiff_options = _setdefault(numdiff_options, {})
+    log_options = _setdefault(log_options, {})
+    scaling_options = _setdefault(scaling_options, {})
+    error_penalty = _setdefault(error_penalty, {})
+    if logging:
+        logging = Path(logging)
+
+    arguments = {
+        "direction": direction,
+        "criterion": criterion,
+        "criterion_kwargs": criterion_kwargs,
+        "params": params,
+        "algorithm": algorithm,
+        "constraints": constraints,
+        "algo_options": algo_options,
+        "derivative": derivative,
+        "derivative_kwargs": derivative_kwargs,
+        "criterion_and_derivative": criterion_and_derivative,
+        "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
+        "numdiff_options": numdiff_options,
+        "logging": logging,
+        "log_options": log_options,
+        "error_handling": error_handling,
+        "error_penalty": error_penalty,
+        "cache_size": cache_size,
+        "scaling_options": scaling_options,
+        "fixed_log_data": {},
+    }
 
     # do rough sanity checks before actual optimization for quicker feedback
-    for arg in arguments:
-        check_argument(arg)
+    check_argument(arguments)
 
-    for arg in arguments:
-        arg["fixed_log_data"] = {}
+    res = _single_optimize(**arguments)
 
-    if isinstance(batch_evaluator, str):
-        batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
-
-    if batch_evaluator_options is None:
-        batch_evaluator_options = {}
-
-    batch_evaluator_options["unpack_symbol"] = "**"
-    default_batch_error_handling = "raise" if len(arguments) == 1 else "continue"
-    batch_evaluator_options["error_handling"] = batch_evaluator_options.get(
-        "error_handling", default_batch_error_handling
-    )
-
-    res = batch_evaluator(_single_optimize, arguments, **batch_evaluator_options)
-
-    res = [_dummy_result_from_traceback(r) for (r) in res]
-
-    res = res[0] if len(res) == 1 else res
+    res = _dummy_result_from_traceback(res)
 
     return res
 
@@ -874,4 +824,9 @@ def _dummy_result_from_traceback(candidate):
         }
     else:
         out = candidate
+    return out
+
+
+def _setdefault(candidate, default):
+    out = default if candidate is None else candidate
     return out
