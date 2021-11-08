@@ -3,11 +3,17 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.optimization.tiktak import _calculate_pairwise_distance_triangle
 from estimagic.optimization.tiktak import _do_actual_sampling
 from estimagic.optimization.tiktak import _get_internal_sampling_bounds
 from estimagic.optimization.tiktak import _has_transforming_constraints
+from estimagic.optimization.tiktak import _linear_weights
 from estimagic.optimization.tiktak import _process_sample
+from estimagic.optimization.tiktak import _tiktak_weights
+from estimagic.optimization.tiktak import get_batched_optimization_sample
 from estimagic.optimization.tiktak import get_exploration_sample
+from estimagic.optimization.tiktak import is_converged
+from estimagic.optimization.tiktak import run_explorations
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -88,3 +94,98 @@ def test_has_transforming_constraints():
 
     constraints = [{"type": "fixed"}]
     assert not _has_transforming_constraints(constraints)
+
+
+def test_run_explorations():
+    def _dummy(x, **kwargs):
+        assert set(kwargs) == {
+            "task",
+            "algorithm_info",
+            "error_handling",
+            "error_penalty",
+            "fixed_log_data",
+        }
+        if x.sum() == 5:
+            out = np.nan
+        else:
+            out = -x.sum()
+        return out
+
+    calculated = run_explorations(
+        func=_dummy,
+        sample=np.arange(6).reshape(3, 2),
+        batch_evaluator="joblib",
+        n_cores=1,
+    )
+
+    exp_values = np.array([-9, -1])
+    exp_sample = np.array([[4, 5], [0, 1]])
+
+    aaae(calculated["sorted_values"], exp_values)
+    aaae(calculated["sorted_sample"], exp_sample)
+
+
+def test_get_batched_optimization_sample():
+    calculated = get_batched_optimization_sample(
+        sorted_sample=np.arange(12).reshape(6, 2),
+        n_optimizations=5,
+        batch_size=4,
+    )
+    expected = [[[0, 1], [2, 3], [4, 5], [6, 7]], [[8, 9]]]
+
+    assert len(calculated[0]) == 4
+    assert len(calculated[1]) == 1
+    assert len(calculated) == 2
+
+    for calc_batch, exp_batch in zip(calculated, expected):
+        assert isinstance(calc_batch, list)
+        for calc_entry, exp_entry in zip(calc_batch, exp_batch):
+            assert isinstance(calc_entry, np.ndarray)
+            assert calc_entry.tolist() == exp_entry
+
+
+def test_linear_weights():
+    calculated = _linear_weights(5, 10, 0.4, 0.8)
+    expected = 0.6
+    assert np.allclose(calculated, expected)
+
+
+def test_tiktak_weights():
+    assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
+    assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
+
+
+def test_calculate_pairwise_distance_triangle():
+    a = np.array([[1, 0, 1, 0], [1, 1, 0, 0], [1, 0, 1, 0]])
+
+    expected = np.zeros((3, 3))
+    for i in range(3):
+        for j in range(3):
+            if i > j:
+                expected[i, j] = np.linalg.norm(a[i] - a[j])
+            else:
+                expected[i, j] = np.inf
+
+    calculated = _calculate_pairwise_distance_triangle(a)
+    aaae(calculated, expected)
+
+
+def test_is_converged_true():
+    batch_x = np.array([[1, 2], [2, 3], [1, 2 + 1e-10]])
+    batch_y = np.array([-1, 0, -0.99])
+
+    assert is_converged(batch_x, batch_y, 1e-6)
+
+
+def test_is_converged_no_close_vectors():
+    batch_x = np.arange(6).reshape(3, 2)
+    batch_y = np.zeros(3)
+
+    assert not is_converged(batch_x, batch_y, 1e-6)
+
+
+def test_is_converged_close_not_best():
+    batch_x = np.array([[1, 2], [2, 3], [1, 2 + 1e-10]])
+    batch_y = np.array([-1, -5, -0.99])
+
+    assert not is_converged(batch_x, batch_y, 1e-6)

@@ -12,11 +12,15 @@ To-Do:
       (e.g. section of params where bounds are missing, ...)
 
 """
+import warnings
+from functools import partial
+
 import chaospy
 import numpy as np
 import pandas as pd
 from chaospy.distributions import Triangle
 from chaospy.distributions import Uniform
+from estimagic import batch_evaluators as be
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.parameter_conversion import get_internal_bounds
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
@@ -403,15 +407,14 @@ def _has_transforming_constraints(constraints):
     return bool(transforming_types.intersection(present_types))
 
 
-def run_explorations(func, params, sample, batch_evaluator, n_cores):
+def run_explorations(func, sample, batch_evaluator, n_cores):
     """Do the function evaluations for the exploration phase.
 
     Args:
         func (callable): An already partialled version of
-            `internal_criterion_and_derivative_template` where the following arguments
+            ``internal_criterion_and_derivative_template`` where the following arguments
             are still free: ``x``, ``task``, ``algorithm_info``, ``error_handling``,
-            ``error_penalty``.
-        params (pandas.DataFrame): See :ref:`params`.
+            ``error_penalty``, ``fixed_log_data``.
         sample (numpy.ndarray): 2d numpy array where each row is a sampled internal
             parameter vector.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
@@ -429,10 +432,50 @@ def run_explorations(func, params, sample, batch_evaluator, n_cores):
                 entries of the function evaluations.
 
     """
-    # partial in remaining arguments of internal criterion
-    # do function evaluations
-    # process outputs
-    pass
+    algo_info = {
+        "primary_criterion_entry": "value",
+        "parallelizes": True,
+        "needs_scaling": False,
+        "name": "tiktak_explorer",
+    }
+
+    _func = partial(
+        func,
+        task="criterion",
+        algorithm_info=algo_info,
+        error_handling="continue",
+        error_penalty={"constant": np.nan, "slope": np.nan},
+        fixed_log_data={"stage": "exploration", "substage": 0},
+    )
+
+    if isinstance(batch_evaluator, str):
+        batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
+
+    raw_values = batch_evaluator(_func, arguments=list(sample), n_cores=n_cores)
+
+    raw_values = np.array(raw_values)
+
+    is_valid = np.isfinite(raw_values)
+
+    if not is_valid.any():
+        raise RuntimeError(
+            "All function evaluations of the exploration phase in a multistart "
+            "optimization are invalid. Check your code or the sampling bounds."
+        )
+
+    valid_values = raw_values[is_valid]
+    valid_sample = sample[is_valid]
+
+    # this sorts from low to high values; internal criterion and derivative took care
+    # of the sign switch.
+    sorting_indices = np.argsort(valid_values)
+
+    out = {
+        "sorted_values": valid_values[sorting_indices],
+        "sorted_sample": valid_sample[sorting_indices],
+    }
+
+    return out
 
 
 def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
@@ -454,10 +497,27 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
             The inner lists have length ``batch_size`` or shorter.
 
     """
-    pass
+    if n_optimizations > len(sorted_sample):
+        n_optimizations = len(sorted_sample)
+        warnings.warn(
+            "There are less valid starting points than requested optimizations. "
+            "The number of optimizations has been reduced from {n_optimizations} "
+            "to {len(sorted_sample)}."
+        )
+
+    n_batches = int(np.ceil(n_optimizations / batch_size))
+
+    start = 0
+    batched = []
+    for _ in range(n_batches):
+        stop = min(start + batch_size, len(sorted_sample), n_optimizations)
+        batched.append(list(sorted_sample[start:stop]))
+        start = stop
+    return batched
 
 
 def run_local_optimizations(
+    func,
     sample,
     n_cores,
     batch_evaluator,
@@ -469,6 +529,10 @@ def run_local_optimizations(
     """Run the actual local optimizations until convergence.
 
     Args:
+        func (callable): An already partialled version of
+            ``internal_criterion_and_derivative_template`` where the following arguments
+            are still free: ``x``, ``task``, ``algorithm_info``, ``error_handling``,
+            ``error_penalty``, ``fixed_log_data``.
         sample (list): Nested list of parameter vectors from which an optimization is
             run. The inner lists have length ``batch_size`` or shorter.
         n_cores (int): Number of cores.
@@ -499,3 +563,49 @@ def run_local_optimizations(
     # implement loop with convergence check and parallel optimizations on the inside.
     # process results to something compatible with output of optimize but with
     # additional history entries.
+
+
+def is_converged(batch_x, batch_y, xtol):
+    """Determine convergence, given a batch of parameters and function evaluations."""
+    batch_x = np.array(batch_x)
+    batch_y = np.array(batch_y)
+
+    distances = _calculate_pairwise_distance_triangle(batch_x)
+    closest_indices = argmin_2d(distances)
+    closest_distance = distances[closest_indices]
+    best_index = np.argmin(batch_y)
+
+    converged = (closest_distance <= xtol) and (best_index in closest_indices)
+    return converged
+
+
+def _calculate_pairwise_distance_triangle(a):
+    """Calculate pairwise distance of rows in arr."""
+    dim = len(a)
+    helper = a.reshape(a.shape[0], 1, a.shape[1])
+    distances = np.sqrt(np.einsum("ijk, ijk->ij", a - helper, a - helper))
+    distances[np.triu_indices(dim)] = np.inf
+
+    return distances
+
+
+def argmin_2d(a):
+    k = a.argmin()
+    ncol = a.shape[1]
+    return int(k / ncol), int(k % ncol)
+
+
+def _tiktak_weights(iteration, n_iterations, min_weight, max_weight):
+    return np.clip(np.sqrt(iteration / n_iterations), min_weight, max_weight)
+
+
+def _linear_weights(iteration, n_iterations, min_weight, max_weight):
+    unscaled = iteration / n_iterations
+    span = max_weight - min_weight
+    return min_weight + unscaled * span
+
+
+WEIGHT_FUNCTIONS = {
+    "tiktak": _tiktak_weights,
+    "linear": _linear_weights,
+}
