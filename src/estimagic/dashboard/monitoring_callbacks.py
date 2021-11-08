@@ -6,55 +6,6 @@ from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import transpose_nested_list
 
 
-def logscale_callback(attr, old, new, button, doc):
-    """Switch between log and linear scale.
-
-    Args:
-        attr: Required by bokeh.
-        old: Old state of the Button.
-        new: New state of the Button.
-        button (bokeh.models.Toggle)
-        doc (bokeh.Document)
-
-    """
-    linear_criterion_plot = doc.get_model_by_name("linear_criterion_plot")
-    log_criterion_plot = doc.get_model_by_name("log_criterion_plot")
-    if new is True:
-        _switch_to_log_scale(button, linear_criterion_plot, log_criterion_plot)
-    else:
-        _switch_to_linear_scale(button, linear_criterion_plot, log_criterion_plot)
-
-
-def _switch_to_log_scale(button, linear_criterion_plot, log_criterion_plot):
-    """Make the linear criterion plot invisible, the log plot visible and adjust button.
-
-    Args:
-        button (bokeh.Toggle)
-        linear_criterion_plot (bokeh.Figure)
-        log_criterion_plot (bokeh.Figure)
-
-    """
-    button.button_type = "primary"
-    button.label = "Show criterion plot on a linear scale"
-    linear_criterion_plot.visible = False
-    log_criterion_plot.visible = True
-
-
-def _switch_to_linear_scale(button, linear_criterion_plot, log_criterion_plot):
-    """Make the log criterion plot invisible, the linear plot visible and adjust button.
-
-    Args:
-        button (bokeh.Toggle)
-        linear_criterion_plot (bokeh.Figure)
-        log_criterion_plot (bokeh.Figure)
-
-    """
-    button.button_type = "default"
-    button.label = "Show criterion plot on a logarithmic scale"
-    log_criterion_plot.visible = False
-    linear_criterion_plot.visible = True
-
-
 def activation_callback(
     attr,
     old,

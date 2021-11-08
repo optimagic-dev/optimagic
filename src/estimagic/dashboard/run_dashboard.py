@@ -47,7 +47,6 @@ def run_dashboard(
     for database_name in database_name_to_path:
         partialed = partial(
             monitoring_app,
-            database_name=database_name,
             session_data=session_data[database_name],
             updating_options=updating_options,
             start_immediately=len(database_name_to_path) == 1,

@@ -11,7 +11,6 @@ from bokeh.models import Panel
 from bokeh.models import Tabs
 from bokeh.models import Toggle
 from estimagic.dashboard.monitoring_callbacks import activation_callback
-from estimagic.dashboard.monitoring_callbacks import logscale_callback
 from estimagic.dashboard.plot_functions import plot_time_series
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
@@ -22,7 +21,6 @@ from jinja2 import FileSystemLoader
 
 def monitoring_app(
     doc,
-    database_name,
     session_data,
     updating_options,
     start_immediately,
@@ -31,7 +29,6 @@ def monitoring_app(
 
     Args:
         doc (bokeh.Document): Argument required by bokeh.
-        database_name (str): Short and unique name of the database.
         session_data (dict): Infos to be passed between and within apps.
             Keys of this app's entry are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource.
@@ -220,22 +217,10 @@ def _create_initial_convergence_plots(
         y_names=["criterion"],
         title="Criterion",
         name="linear_criterion_plot",
-        logscale=False,
     )
-    log_criterion_plot = plot_time_series(
-        data=criterion_history,
-        x_name="iteration",
-        y_keys=["criterion"],
-        y_names=["criterion"],
-        title="Criterion",
-        name="log_criterion_plot",
-        logscale=True,
-    )
-    log_criterion_plot.visible = False
 
     plot_list = [
         Row(linear_criterion_plot),
-        Row(log_criterion_plot),
     ] + arranged_param_plots
     return plot_list
 
@@ -282,21 +267,5 @@ def _create_button_row(
     )
     activation_button.on_change("active", partialed_activation_callback)
 
-    # switch between linear and logscale button
-    logscale_button = Toggle(
-        active=False,
-        label="Show criterion plot on a logarithmic scale",
-        button_type="default",
-        width=200,
-        height=30,
-        name="logscale_button",
-    )
-    partialed_logscale_callback = partial(
-        logscale_callback,
-        button=logscale_button,
-        doc=doc,
-    )
-    logscale_button.on_change("active", partialed_logscale_callback)
-
-    button_row = Row(children=[activation_button, logscale_button], name="button_row")
+    button_row = Row(children=[activation_button], name="button_row")
     return button_row
