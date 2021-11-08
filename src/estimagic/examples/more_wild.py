@@ -848,4 +848,11 @@ MORE_WILD_PROBLEMS = {
         "start_criterion": 3.365815e10,
         "solution_criterion": 0,
     },
+    "brown_almost_linear_medium": {
+        "criterion": brown_almost_linear,
+        "start_x": 0.5 * np.ones(100),
+        "solution_x": None,
+        "start_criterion": 2.524757e5,
+        "solution_criterion": 0,
+    },
 }
