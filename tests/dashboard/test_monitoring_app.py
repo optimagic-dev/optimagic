@@ -44,7 +44,6 @@ def test_monitoring_app():
         database_name=database_name,
         session_data=session_data,
         updating_options=updating_options,
-        start_immediately=False,
     )
 
 

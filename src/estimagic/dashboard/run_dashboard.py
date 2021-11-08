@@ -49,7 +49,6 @@ def run_dashboard(
             monitoring_app,
             session_data=session_data[database_name],
             updating_options=updating_options,
-            start_immediately=len(database_name_to_path) == 1,
         )
         apps[f"/{database_name}"] = Application(FunctionHandler(partialed))
 

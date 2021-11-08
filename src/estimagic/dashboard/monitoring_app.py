@@ -23,7 +23,6 @@ def monitoring_app(
     doc,
     session_data,
     updating_options,
-    start_immediately,
 ):
     """Create plots showing the development of the criterion and parameters.
 
@@ -78,9 +77,9 @@ def monitoring_app(
 
     doc.add_root(tabs)
 
-    if start_immediately:
-        activation_button = doc.get_model_by_name("activation_button")
-        activation_button.active = True
+    # start the convergence plot immediately
+    activation_button = doc.get_model_by_name("activation_button")
+    activation_button.active = True
 
 
 def _create_id_column(df):
@@ -257,10 +256,10 @@ def _create_button_row(
     )
     partialed_activation_callback = partial(
         activation_callback,
-        button=activation_button,
+        session_data=session_data,
         doc=doc,
         database=database,
-        session_data=session_data,
+        button=activation_button,
         tables=["criterion_history", "params_history"],
         start_params=start_params,
         updating_options=updating_options,
