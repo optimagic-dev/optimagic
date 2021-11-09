@@ -14,7 +14,6 @@ def reset_and_start_convergence(
     doc,
     database,
     button,
-    tables,
     start_params,
     updating_options,
 ):
@@ -32,7 +31,6 @@ def reset_and_start_convergence(
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
         button (bokeh.models.Toggle)
-        tables (list): List of table names to load and convert to ColumnDataSources.
         start_params (pd.DataFrame)
         updating_options (dict): Specification how to update the plotting data.
             It contains rollover, update_frequency, update_chunk, jump and stride.
@@ -49,7 +47,6 @@ def reset_and_start_convergence(
             param_cds=param_cds,
             database=database,
             session_data=session_data,
-            tables=tables,
             start_params=start_params,
             rollover=updating_options["rollover"],
             update_chunk=updating_options["update_chunk"],
@@ -78,13 +75,12 @@ def _update_monitoring_tab(
     criterion_cds,
     param_cds,
     session_data,
-    tables,
     start_params,
     rollover,
     update_chunk,
     stride,
 ):
-    """Callback to look up new entries in the database tables and plot them.
+    """Callback to look up new entries in the database and plot them.
 
     Args:
         database (sqlalchemy.MetaData)
@@ -93,7 +89,6 @@ def _update_monitoring_tab(
             Keys of this app's entry are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
-        tables (list): list of table names to load and convert to ColumnDataSources
         start_params (pd.DataFrame)
         rollover (int): maximal number of points to show in the plot
         update_chunk (int): Number of values to add at each update.

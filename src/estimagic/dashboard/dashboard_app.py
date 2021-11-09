@@ -269,7 +269,6 @@ def _create_restart_button(
         doc=doc,
         database=database,
         button=restart_button,
-        tables=["criterion_history", "params_history"],
         start_params=start_params,
         updating_options=updating_options,
     )
