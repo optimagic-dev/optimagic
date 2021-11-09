@@ -34,7 +34,7 @@ def test_dashboard_app():
     )
 
 
-def test_create_cds_for_dashboard_app():
+def test_create_cds_for_dashboard():
     start_params = pd.DataFrame()
     start_params["group"] = ["g1", "g1", None, "g2", "g2", None, "g3"]
     start_params["id"] = ["hello", "world", "test", "p1", "p2", "p3", "1"]
@@ -55,7 +55,7 @@ def test_create_cds_for_dashboard_app():
     expected_param_cds = ColumnDataSource(
         data=expected_param_data, name="params_history_cds"
     )
-    _, params_history = dashboard_app._create_cds_for_dashboard_app(group_to_param_ids)
+    _, params_history = dashboard_app._create_cds_for_dashboard(group_to_param_ids)
     assert expected_param_cds.data == params_history.data
 
 

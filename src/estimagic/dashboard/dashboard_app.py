@@ -50,9 +50,7 @@ def dashboard_app(
     start_params["id"] = _create_id_column(start_params)
     group_to_param_ids = _map_group_to_other_column(start_params, "id")
     group_to_param_names = _map_group_to_other_column(start_params, "name")
-    criterion_history, params_history = _create_cds_for_monitoring_app(
-        group_to_param_ids
-    )
+    criterion_history, params_history = _create_cds_for_dashboard(group_to_param_ids)
 
     # create elements
     title_text = """<h1 style="font-size:30px;">estimagic Dashboard</h1>"""
@@ -131,7 +129,7 @@ def _map_group_to_other_column(params, column_name):
     return group_to_values
 
 
-def _create_cds_for_monitoring_app(group_to_param_ids):
+def _create_cds_for_dashboard(group_to_param_ids):
     """Create the ColumnDataSources for saving the criterion and parameter values.
 
     They will be periodically updated from the database.

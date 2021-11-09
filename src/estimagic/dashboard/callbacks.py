@@ -1,4 +1,3 @@
-"""Callbacks for the monitoring app."""
 from functools import partial
 
 import numpy as np
@@ -42,7 +41,7 @@ def reset_and_start_convergence(
 
     if new is True:
         plot_new_data = partial(
-            _update_monitoring_tab,
+            _update_convergence_plots,
             criterion_cds=criterion_cds,
             param_cds=param_cds,
             database=database,
@@ -70,7 +69,7 @@ def reset_and_start_convergence(
         button.label = "Restart Plot"
 
 
-def _update_monitoring_tab(
+def _update_convergence_plots(
     database,
     criterion_cds,
     param_cds,
