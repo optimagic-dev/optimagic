@@ -8,7 +8,7 @@ from bokeh.application import Application
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.util import report_server_init_errors
 from bokeh.server.server import Server
-from estimagic.dashboard.monitoring_app import monitoring_app
+from estimagic.dashboard.dashboard_app import dashboard_app
 
 
 def run_dashboard(
@@ -25,7 +25,8 @@ def run_dashboard(
         no_browser (bool): If True the dashboard does not open in the browser.
         port (int): Port where to display the dashboard.
         updating_options (dict): Specification how to update the plotting data.
-            It contains rollover, update_frequency, update_chunk, jump and stride.
+            It contains "rollover", "update_frequency", "update_chunk", "jump" and
+            "stride".
 
     """
     port = _find_free_port() if port is None else port
@@ -49,14 +50,14 @@ def run_dashboard(
         "callbacks": {},
     }
 
-    monitoring_app_func = partial(
-        monitoring_app,
+    app_func = partial(
+        dashboard_app,
         session_data=session_data,
         updating_options=updating_options,
     )
-    apps = {"/": Application(FunctionHandler(monitoring_app_func))}
+    apps = {"/": Application(FunctionHandler(app_func))}
 
-    _start_server(apps=apps, port=port, no_browser=no_browser, path_to_open="/")
+    _start_server(apps=apps, port=port, no_browser=no_browser)
 
 
 def _find_free_port():
@@ -71,7 +72,7 @@ def _find_free_port():
         return s.getsockname()[1]
 
 
-def _start_server(apps, port, no_browser, path_to_open):
+def _start_server(apps, port, no_browser):
     """Create and start a bokeh server with the supplied apps.
 
     Args:
@@ -91,7 +92,7 @@ def _start_server(apps, port, no_browser, path_to_open):
         if not no_browser:
 
             def show_callback():
-                server.show(path_to_open)
+                server.show("/")
 
             server.io_loop.add_callback(show_callback)
 

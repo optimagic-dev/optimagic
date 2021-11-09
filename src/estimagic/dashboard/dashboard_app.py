@@ -1,4 +1,4 @@
-"""Show the development of one optimization's criterion and parameters over time."""
+"""Show the development of one database's criterion and parameters over time."""
 from functools import partial
 from pathlib import Path
 
@@ -9,7 +9,7 @@ from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
 from bokeh.models import Div
 from bokeh.models import Toggle
-from estimagic.dashboard.monitoring_callbacks import activation_callback
+from estimagic.dashboard.callbacks import reset_and_start_convergence
 from estimagic.dashboard.plot_functions import plot_time_series
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
@@ -18,7 +18,7 @@ from jinja2 import Environment
 from jinja2 import FileSystemLoader
 
 
-def monitoring_app(
+def dashboard_app(
     doc,
     session_data,
     updating_options,
@@ -55,7 +55,7 @@ def monitoring_app(
     )
 
     # create elements
-    title_text = """<h1 style="font-size:30px;">Convergence Plot</h1>"""
+    title_text = """<h1 style="font-size:30px;">estimagic Dashboard</h1>"""
     title = Row(
         children=[
             Div(
@@ -66,36 +66,40 @@ def monitoring_app(
         name="title",
         margin=(5, 5, -20, 5),
     )
-    button_row = _create_button_row(
-        doc=doc,
-        database=database,
-        session_data=session_data,
-        start_params=start_params,
-        updating_options=updating_options,
-    )
-    monitoring_plots = _create_initial_convergence_plots(
+    plots = _create_initial_plots(
         criterion_history=criterion_history,
         params_history=params_history,
         group_to_param_ids=group_to_param_ids,
         group_to_param_names=group_to_param_names,
     )
 
-    # add elements to bokeh Document
-    grid = Column(
-        children=[title, button_row, *monitoring_plots], sizing_mode="stretch_width"
+    restart_button = _create_restart_button(
+        doc=doc,
+        database=database,
+        session_data=session_data,
+        start_params=start_params,
+        updating_options=updating_options,
     )
+    button_col = Column(
+        children=[restart_button],
+        name="button_col",
+    )
+
+    # add elements to bokeh Document
+    plot_col = Column(children=[title, *plots], sizing_mode="stretch_width")
+    grid = Row(children=[plot_col, button_col], sizing_mode="stretch_width")
     doc.add_root(grid)
 
     # start the convergence plot immediately
-    activation_button = doc.get_model_by_name("activation_button")
-    activation_button.active = True
+    # this must happen here befo
+    restart_button.active = True
 
 
 def _create_id_column(df):
     """Create a column that gives the position for plotted parameters and is None else.
 
     Args:
-        df (pd.DataFrame)
+        df (pd.DataFrame): DataFrame with "group" column.
 
     Returns:
         ids (pd.Series): integer position in the DataFrame unless the group was
@@ -183,7 +187,7 @@ def _calculate_start_point(database, updating_options):
     return start_point
 
 
-def _create_initial_convergence_plots(
+def _create_initial_plots(
     criterion_history,
     params_history,
     group_to_param_ids,
@@ -200,8 +204,7 @@ def _create_initial_convergence_plots(
             names of the parameters belonging to the respective group.
 
     Returns:
-        convergence_plots (list): List of bokeh Row elements, each containing one
-            convergence plot.
+        plots (list): List of bokeh Row elements, each containing one convergence plot.
 
     """
     param_plots = []
@@ -218,34 +221,32 @@ def _create_initial_convergence_plots(
 
     arranged_param_plots = [Row(plot) for plot in param_plots]
 
-    linear_criterion_plot = plot_time_series(
+    criterion_plot = plot_time_series(
         data=criterion_history,
         x_name="iteration",
         y_keys=["criterion"],
         y_names=["criterion"],
         title="Criterion",
-        name="linear_criterion_plot",
+        name="criterion_plot",
     )
 
-    plot_list = [
-        Row(linear_criterion_plot),
-    ] + arranged_param_plots
-    return plot_list
+    plots = [Row(criterion_plot)] + arranged_param_plots
+    return plots
 
 
-def _create_button_row(
+def _create_restart_button(
     doc,
     database,
     session_data,
     start_params,
     updating_options,
 ):
-    """Create a row with two buttons, one for (re)starting and one for scale switching.
+    """Create the button that restarts the convergence plots.
 
     Args:
         doc (bokeh.Document)
         database (sqlalchemy.MetaData): Bound metadata object.
-        session_data (dict): dictionary with the last retrieved rowid
+        session_data (dict): dictionary with the last retrieved row id
         start_params (pd.DataFrame): See :ref:`params`
         updating_options (dict): Specification how to update the plotting data.
             It contains rollover, update_frequency, update_chunk, jump and stride.
@@ -255,29 +256,23 @@ def _create_button_row(
 
     """
     # (Re)start convergence plot button
-    activation_button = Toggle(
+    restart_button = Toggle(
         active=False,
         label="Start Updating",
         button_type="danger",
         width=200,
         height=30,
-        name="activation_button",
+        name="restart_button",
     )
-    partialed_activation_callback = partial(
-        activation_callback,
+    restart_callback = partial(
+        reset_and_start_convergence,
         session_data=session_data,
         doc=doc,
         database=database,
-        button=activation_button,
+        button=restart_button,
         tables=["criterion_history", "params_history"],
         start_params=start_params,
         updating_options=updating_options,
     )
-    activation_button.on_change("active", partialed_activation_callback)
-
-    button_row = Row(
-        children=[activation_button],
-        name="button_row",
-        margin=(5, 5, 20, 5),
-    )
-    return button_row
+    restart_button.on_change("active", restart_callback)
+    return restart_button

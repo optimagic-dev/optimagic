@@ -6,7 +6,7 @@ from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import transpose_nested_list
 
 
-def activation_callback(
+def reset_and_start_convergence(
     attr,
     old,
     new,
@@ -125,14 +125,14 @@ def _update_monitoring_tab(
             if i not in missing
         ],
     }
-    stream_data(cds=criterion_cds, data=crit_data, rollover=rollover)
+    _stream_data(cds=criterion_cds, data=crit_data, rollover=rollover)
 
     # update the parameter plots
     # Note: we need **all** parameter ids to correctly map them to the parameter entries
     # in the database. Only after can we restrict them to the entries we need.
     param_ids = start_params["id"].tolist()
     params_data = _create_params_data_for_update(data, param_ids, clip_bound)
-    stream_data(cds=param_cds, data=params_data, rollover=rollover)
+    _stream_data(cds=param_cds, data=params_data, rollover=rollover)
     # update last retrieved
     session_data["last_retrieved"] = new_last
 
@@ -161,7 +161,7 @@ def _create_params_data_for_update(data, param_ids, clip_bound):
     return params_data
 
 
-def stream_data(cds, data, rollover):
+def _stream_data(cds, data, rollover):
     """Stream only to the available columns of a ColumnDataSource.
 
     Args:
