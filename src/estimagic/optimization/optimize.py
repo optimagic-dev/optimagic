@@ -12,7 +12,7 @@ from estimagic.logging.database_utilities import make_optimization_iteration_tab
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_optimization_status_table
 from estimagic.optimization import AVAILABLE_ALGORITHMS
-from estimagic.optimization.check_arguments import check_argument
+from estimagic.optimization.check_arguments import check_optimize_kwargs
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
@@ -511,68 +511,30 @@ def _optimize(
     if logging:
         logging = Path(logging)
 
-    arguments = {
-        "direction": direction,
-        "criterion": criterion,
-        "criterion_kwargs": criterion_kwargs,
-        "params": params,
-        "algorithm": algorithm,
-        "constraints": constraints,
-        "algo_options": algo_options,
-        "derivative": derivative,
-        "derivative_kwargs": derivative_kwargs,
-        "criterion_and_derivative": criterion_and_derivative,
-        "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
-        "numdiff_options": numdiff_options,
-        "logging": logging,
-        "log_options": log_options,
-        "error_handling": error_handling,
-        "error_penalty": error_penalty,
-        "cache_size": cache_size,
-        "scaling_options": scaling_options,
-        "fixed_log_data": {},
-    }
+    fixed_log_data = {}
 
-    # do rough sanity checks before actual optimization for quicker feedback
-    check_argument(arguments)
+    check_optimize_kwargs(
+        direction=direction,
+        criterion=criterion,
+        criterion_kwargs=criterion_kwargs,
+        params=params,
+        algorithm=algorithm,
+        constraints=constraints,
+        algo_options=algo_options,
+        derivative=derivative,
+        derivative_kwargs=derivative_kwargs,
+        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+        numdiff_options=numdiff_options,
+        logging=logging,
+        log_options=log_options,
+        error_handling=error_handling,
+        error_penalty=error_penalty,
+        cache_size=cache_size,
+        scaling_options=scaling_options,
+    )
 
-    res = _single_optimize(**arguments)
-
-    res = _dummy_result_from_traceback(res)
-
-    return res
-
-
-def _single_optimize(
-    direction,
-    criterion,
-    criterion_kwargs,
-    params,
-    algorithm,
-    constraints,
-    algo_options,
-    derivative,
-    derivative_kwargs,
-    criterion_and_derivative,
-    criterion_and_derivative_kwargs,
-    numdiff_options,
-    logging,
-    log_options,
-    error_handling,
-    error_penalty,
-    cache_size,
-    scaling_options,
-    fixed_log_data,
-):
-    """Minimize or maximize *criterion* using *algorithm* subject to *constraints*.
-
-    See the docstring of ``_optimize`` for an explanation of all arguments.
-
-    Returns:
-        dict: The optimization result.
-
-    """
-    # store all arguments in a dictionary to save them in the database later
+    # store some arguments in a dictionary to save them in the database later
     problem_data = {
         "direction": direction,
         # "criterion"-criterion,
@@ -742,6 +704,8 @@ def _single_optimize(
 
     for entry in optional_entries:
         res[entry] = res.get(entry, f"Not reported by {algo_name}")
+
+    res = _dummy_result_from_traceback(res)
 
     return res
 

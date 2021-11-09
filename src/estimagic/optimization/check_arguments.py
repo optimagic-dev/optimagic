@@ -6,7 +6,7 @@ import pandas as pd
 from estimagic.shared.check_option_dicts import check_numdiff_options
 
 
-def check_argument(argument):
+def check_optimize_kwargs(**kwargs):
     valid_types = {
         "direction": str,
         "criterion": typing.Callable,
@@ -26,19 +26,18 @@ def check_argument(argument):
         "error_penalty": dict,
         "cache_size": (int, float),
         "scaling_options": dict,
-        "fixed_log_data": dict,
     }
 
-    for arg in argument:
-        if not isinstance(argument[arg], valid_types[arg]):
+    for arg in kwargs:
+        if not isinstance(kwargs[arg], valid_types[arg]):
             raise TypeError(
-                f"Argument '{arg}' is {argument[arg]} which is not {valid_types[arg]}."
+                f"Argument '{arg}' is {kwargs[arg]} which is not {valid_types[arg]}."
             )
 
-    if argument["direction"] not in ["minimize", "maximize"]:
+    if kwargs["direction"] not in ["minimize", "maximize"]:
         raise ValueError("diretion must be 'minimize' or 'maximize'")
 
-    parcols = argument["params"].columns
+    parcols = kwargs["params"].columns
     if "value" not in parcols:
         raise ValueError("The params DataFrame must contain a 'value' column.")
 
@@ -50,7 +49,7 @@ def check_argument(argument):
         msg = "There is a column 'upper' in in params. Did you mean 'upper_bounds'?"
         warnings.warn(msg)
 
-    if argument["error_handling"] not in ["raise", "continue"]:
+    if kwargs["error_handling"] not in ["raise", "continue"]:
         raise ValueError("error_handling must be 'raise' or 'continue'")
 
-    check_numdiff_options(argument["numdiff_options"], "optimization")
+    check_numdiff_options(kwargs["numdiff_options"], "optimization")
