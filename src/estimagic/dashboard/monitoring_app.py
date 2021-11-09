@@ -7,8 +7,6 @@ import pandas as pd
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
-from bokeh.models import Panel
-from bokeh.models import Tabs
 from bokeh.models import Toggle
 from estimagic.dashboard.monitoring_callbacks import activation_callback
 from estimagic.dashboard.plot_functions import plot_time_series
@@ -72,10 +70,7 @@ def monitoring_app(
 
     # add elements to bokeh Document
     grid = Column(children=[button_row, *monitoring_plots], sizing_mode="stretch_width")
-    convergence_tab = Panel(child=grid, title="Convergence Tab")
-    tabs = Tabs(tabs=[convergence_tab])
-
-    doc.add_root(tabs)
+    doc.add_root(grid)
 
     # start the convergence plot immediately
     activation_button = doc.get_model_by_name("activation_button")

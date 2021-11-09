@@ -13,7 +13,7 @@ def cli():
 
 
 @cli.command()
-@click.argument("database_path", required=True, type=click.Path())
+@click.argument("database", required=True, type=click.Path())
 @click.option(
     "--port",
     "-p",
@@ -65,7 +65,7 @@ def cli():
     show_default=True,
 )
 def dashboard(
-    database_path,
+    database,
     port,
     no_browser,
     rollover,
@@ -84,7 +84,7 @@ def dashboard(
     }
 
     run_dashboard(
-        database_path=database_path,
+        database_path=database,
         no_browser=no_browser,
         port=port,
         updating_options=updating_options,
