@@ -122,6 +122,49 @@ def maximize(
         scaling_options (dict or None): Options to configure the internal scaling ot
             the parameter vector. By default no rescaling is done. See :ref:`scaling`
             for details and recommendations.
+        multistart (bool): Whether to do the optimization from multiple starting points.
+            Requires the params to have the columns ``"soft_lower_bound"`` and
+            ``"soft_upper_bounds"`` with finite values for all parameters, unless
+            the standard bounds are already finite for all parameters.
+        multistart_options (dict): Options to configure the optimization from multiple
+            starting values. For details see :ref:`multistart`. The dictionary has the
+            following entries (all of which are optional):
+            - n_samples (int, pandas.DataFrame or numpy.ndarray): Number of sampled
+            points on which to do one function evaluation. Default is 10 * n_params.
+            Alternatively, a DataFrame or numpy array with an existing sample.
+            - share_optimizations (float): Share of sampled points that is used to
+            construct a starting point for a local optimization. Default 0.1.
+            - sampling_distribution (str): One of "uniform", "triangle". Default is
+            "uniform" as in the original tiktak algorithm.
+            - sampling_method (str): One of "random", "sobol", "halton", "hammersley",
+            "korobov", "latin_hypercube" or a numpy array or DataFrame with custom
+            points. Default is sobol for problems with up to 30 parameters and random
+            for problems with more than 30 parameters.
+            - mixing_weight_method (str or callable): Specifies how much weight is put
+            on the currently best point when calculating a new starting point for a
+            local optimization out of the currently best point and the next random
+            starting point. Either "tiktak" or "linear" or a callable that takes the
+            arguments ``iteration``, ``n_iterations``, ``min_weight``, ``max_weight``.
+            Default "tiktak".
+            - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
+            bound on mixing weights. Default (0.1, 0.995).
+            - convergence.relative_params_tolerance (float): If the maximum relative
+            difference between the results of two consecutive local optimizations is
+            smaller than the multistart optimization converges. Default 0.01. Note
+            that this is independent of a convergence criterion with the same name for
+            each local optimization.
+            - n_cores (int): Number cores used to evaluate the criterion function in
+            parallel during exploration stages and number of parallel local
+            optimization in optimization stages. Default 1.
+            - batch_evaluator (str or callaber): See :ref:`batch_evaluators` for
+            details. Default "joblib".
+            - batch_size (int): If n_cores is larger than one, several starting points
+            for local optimizations are created with the same weight and from the same
+            currently best point. The ``batch_size`` argument is a way to reproduce
+            this behavior on a small machine where less cores are available. By
+            default the batch_size is equal to ``n_cores``. It can never be smaller
+            than ``n_cores``.
+            - seed (int): Random seed for the creation of starting values. Default None.
 
     """
     return _optimize(
@@ -143,6 +186,8 @@ def maximize(
         error_penalty=error_penalty,
         cache_size=cache_size,
         scaling_options=scaling_options,
+        multistart=False,
+        multistart_options=None,
     )
 
 
@@ -165,6 +210,8 @@ def minimize(
     error_penalty=None,
     cache_size=100,
     scaling_options=None,
+    multistart=False,
+    multistart_options=None,
 ):
     """Minimize criterion using algorithm subject to constraints.
 
@@ -240,6 +287,49 @@ def minimize(
         scaling_options (dict or None): Options to configure the internal scaling ot
             the parameter vector. By default no rescaling is done. See :ref:`scaling`
             for details and recommendations.
+        multistart (bool): Whether to do the optimization from multiple starting points.
+            Requires the params to have the columns ``"soft_lower_bound"`` and
+            ``"soft_upper_bounds"`` with finite values for all parameters, unless
+            the standard bounds are already finite for all parameters.
+        multistart_options (dict): Options to configure the optimization from multiple
+            starting values. For details see :ref:`multistart`. The dictionary has the
+            following entries (all of which are optional):
+            - n_samples (int, pandas.DataFrame or numpy.ndarray): Number of sampled
+            points on which to do one function evaluation. Default is 10 * n_params.
+            Alternatively, a DataFrame or numpy array with an existing sample.
+            - share_optimizations (float): Share of sampled points that is used to
+            construct a starting point for a local optimization. Default 0.1.
+            - sampling_distribution (str): One of "uniform", "triangle". Default is
+            "uniform" as in the original tiktak algorithm.
+            - sampling_method (str): One of "random", "sobol", "halton", "hammersley",
+            "korobov", "latin_hypercube" or a numpy array or DataFrame with custom
+            points. Default is sobol for problems with up to 30 parameters and random
+            for problems with more than 30 parameters.
+            - mixing_weight_method (str or callable): Specifies how much weight is put
+            on the currently best point when calculating a new starting point for a
+            local optimization out of the currently best point and the next random
+            starting point. Either "tiktak" or "linear" or a callable that takes the
+            arguments ``iteration``, ``n_iterations``, ``min_weight``, ``max_weight``.
+            Default "tiktak".
+            - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
+            bound on mixing weights. Default (0.1, 0.995).
+            - convergence.relative_params_tolerance (float): If the maximum relative
+            difference between the results of two consecutive local optimizations is
+            smaller than the multistart optimization converges. Default 0.01. Note
+            that this is independent of a convergence criterion with the same name for
+            each local optimization.
+            - n_cores (int): Number cores used to evaluate the criterion function in
+            parallel during exploration stages and number of parallel local
+            optimization in optimization stages. Default 1.
+            - batch_evaluator (str or callaber): See :ref:`batch_evaluators` for
+            details. Default "joblib".
+            - batch_size (int): If n_cores is larger than one, several starting points
+            for local optimizations are created with the same weight and from the same
+            currently best point. The ``batch_size`` argument is a way to reproduce
+            this behavior on a small machine where less cores are available. By
+            default the batch_size is equal to ``n_cores``. It can never be smaller
+            than ``n_cores``.
+            - seed (int): Random seed for the creation of starting values. Default None.
 
     """
     return _optimize(
@@ -261,6 +351,8 @@ def minimize(
         error_penalty=error_penalty,
         cache_size=cache_size,
         scaling_options=scaling_options,
+        multistart=multistart,
+        multistart_options=multistart_options,
     )
 
 
@@ -284,6 +376,8 @@ def _optimize(
     error_penalty,
     cache_size,
     scaling_options,
+    multistart,
+    multistart_options,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
@@ -360,6 +454,49 @@ def _optimize(
         scaling_options (dict or None): Options to configure the internal scaling ot
             the parameter vector. By default no rescaling is done. See :ref:`scaling`
             for details and recommendations.
+        multistart (bool): Whether to do the optimization from multiple starting points.
+            Requires the params to have the columns ``"soft_lower_bound"`` and
+            ``"soft_upper_bounds"`` with finite values for all parameters, unless
+            the standard bounds are already finite for all parameters.
+        multistart_options (dict): Options to configure the optimization from multiple
+            starting values. For details see :ref:`multistart`. The dictionary has the
+            following entries (all of which are optional):
+            - n_samples (int, pandas.DataFrame or numpy.ndarray): Number of sampled
+            points on which to do one function evaluation. Default is 10 * n_params.
+            Alternatively, a DataFrame or numpy array with an existing sample.
+            - share_optimizations (float): Share of sampled points that is used to
+            construct a starting point for a local optimization. Default 0.1.
+            - sampling_distribution (str): One of "uniform", "triangle". Default is
+            "uniform" as in the original tiktak algorithm.
+            - sampling_method (str): One of "random", "sobol", "halton", "hammersley",
+            "korobov", "latin_hypercube" or a numpy array or DataFrame with custom
+            points. Default is sobol for problems with up to 30 parameters and random
+            for problems with more than 30 parameters.
+            - mixing_weight_method (str or callable): Specifies how much weight is put
+            on the currently best point when calculating a new starting point for a
+            local optimization out of the currently best point and the next random
+            starting point. Either "tiktak" or "linear" or a callable that takes the
+            arguments ``iteration``, ``n_iterations``, ``min_weight``, ``max_weight``.
+            Default "tiktak".
+            - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
+            bound on mixing weights. Default (0.1, 0.995).
+            - convergence.relative_params_tolerance (float): If the maximum relative
+            difference between the results of two consecutive local optimizations is
+            smaller than the multistart optimization converges. Default 0.01. Note
+            that this is independent of a convergence criterion with the same name for
+            each local optimization.
+            - n_cores (int): Number cores used to evaluate the criterion function in
+            parallel during exploration stages and number of parallel local
+            optimization in optimization stages. Default 1.
+            - batch_evaluator (str or callaber): See :ref:`batch_evaluators` for
+            details. Default "joblib".
+            - batch_size (int): If n_cores is larger than one, several starting points
+            for local optimizations are created with the same weight and from the same
+            currently best point. The ``batch_size`` argument is a way to reproduce
+            this behavior on a small machine where less cores are available. By
+            default the batch_size is equal to ``n_cores``. It can never be smaller
+            than ``n_cores``.
+            - seed (int): Random seed for the creation of starting values. Default None.
 
     """
     criterion_kwargs = _setdefault(criterion_kwargs, {})
