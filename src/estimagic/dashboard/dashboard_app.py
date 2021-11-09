@@ -80,14 +80,13 @@ def dashboard_app(
         start_params=start_params,
         updating_options=updating_options,
     )
-    button_col = Column(
+    button_row = Row(
         children=[restart_button],
-        name="button_col",
+        name="button_row",
     )
 
     # add elements to bokeh Document
-    plot_col = Column(children=[title, *plots], sizing_mode="stretch_width")
-    grid = Row(children=[plot_col, button_col], sizing_mode="stretch_width")
+    grid = Column(children=[title, button_row, *plots], sizing_mode="stretch_width")
     doc.add_root(grid)
 
     # start the convergence plot immediately
