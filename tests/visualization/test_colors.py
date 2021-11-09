@@ -9,13 +9,8 @@ def test_correct_number_categorical():
 
 
 def test_correct_number_ordered():
-    for number in range(7):
+    for number in range(10):
         assert len(get_colors("ordered", number)) == number
-
-
-def test_too_many_ordered_raises_error():
-    with pytest.raises(ValueError):
-        get_colors("ordered", 15)
 
 
 def test_negative_number_raises_error():
