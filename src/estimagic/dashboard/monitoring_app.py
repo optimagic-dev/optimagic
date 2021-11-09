@@ -7,6 +7,7 @@ import pandas as pd
 from bokeh.layouts import Column
 from bokeh.layouts import Row
 from bokeh.models import ColumnDataSource
+from bokeh.models import Div
 from bokeh.models import Toggle
 from estimagic.dashboard.monitoring_callbacks import activation_callback
 from estimagic.dashboard.plot_functions import plot_time_series
@@ -54,6 +55,17 @@ def monitoring_app(
     )
 
     # create elements
+    title_text = """<h1 style="font-size:30px;">Convergence Plot</h1>"""
+    title = Row(
+        children=[
+            Div(
+                text=title_text,
+                sizing_mode="scale_width",
+            )
+        ],
+        name="title",
+        margin=(5, 5, -20, 5),
+    )
     button_row = _create_button_row(
         doc=doc,
         database=database,
@@ -69,7 +81,9 @@ def monitoring_app(
     )
 
     # add elements to bokeh Document
-    grid = Column(children=[button_row, *monitoring_plots], sizing_mode="stretch_width")
+    grid = Column(
+        children=[title, button_row, *monitoring_plots], sizing_mode="stretch_width"
+    )
     doc.add_root(grid)
 
     # start the convergence plot immediately
@@ -261,5 +275,9 @@ def _create_button_row(
     )
     activation_button.on_change("active", partialed_activation_callback)
 
-    button_row = Row(children=[activation_button], name="button_row")
+    button_row = Row(
+        children=[activation_button],
+        name="button_row",
+        margin=(5, 5, 20, 5),
+    )
     return button_row

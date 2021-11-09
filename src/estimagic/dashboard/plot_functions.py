@@ -118,6 +118,7 @@ def create_styled_figure(
         tooltips=tooltips,
         name=name,
         y_axis_type="linear",
+        sizing_mode="scale_width",
     )
     fig.title.text_font_size = "15pt"
 
