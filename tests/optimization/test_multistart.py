@@ -8,8 +8,8 @@ from numpy.testing import assert_array_almost_equal as aaae
 def test_multistart_minimize_with_sum_of_squares_at_defaults():
     params = pd.DataFrame()
     params["value"] = np.arange(4)
-    params["soft_lower_bound"] = [-10] * 4
-    params["soft_upper_bounds"] = [10] * 4
+    params["soft_lower_bound"] = [-5] * 4
+    params["soft_upper_bound"] = [10] * 4
 
     res = minimize(
         criterion=sos_dict_criterion,

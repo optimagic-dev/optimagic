@@ -4,6 +4,8 @@ import warnings
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
+from estimagic import batch_evaluators as be
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
 from estimagic.logging.database_utilities import append_row
@@ -17,6 +19,10 @@ from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
+from estimagic.optimization.tiktak import get_batched_optimization_sample
+from estimagic.optimization.tiktak import get_exploration_sample
+from estimagic.optimization.tiktak import run_explorations
+from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
 from estimagic.parameters.parameter_conversion import get_internal_bounds
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
@@ -508,10 +514,14 @@ def _optimize(
     log_options = _setdefault(log_options, {})
     scaling_options = _setdefault(scaling_options, {})
     error_penalty = _setdefault(error_penalty, {})
+    multistart_options = _setdefault(multistart_options, {})
     if logging:
         logging = Path(logging)
 
-    fixed_log_data = {}
+    if multistart:
+        multistart_options = _fill_multistart_options_with_defaults(
+            multistart_options, params
+        )
 
     check_optimize_kwargs(
         direction=direction,
@@ -532,6 +542,8 @@ def _optimize(
         error_penalty=error_penalty,
         cache_size=cache_size,
         scaling_options=scaling_options,
+        multistart=multistart,
+        multistart_options=multistart_options,
     )
 
     # store some arguments in a dictionary to save them in the database later
@@ -579,6 +591,11 @@ def _optimize(
     else:
         scaling_factor, scaling_offset = None, None
 
+    if multistart:
+        multistart_options = _fill_multistart_options_with_defaults(
+            multistart_options, params
+        )
+
     # name and group column are needed in the dashboard but could lead to problems
     # if present anywhere else
     params_with_name_and_group = _add_name_and_group_columns_to_params(params)
@@ -619,6 +636,8 @@ def _optimize(
         algo_options, lower_bounds, upper_bounds, algorithm, algo_name
     )
 
+    partialled_algorithm = functools.partial(algorithm, **algo_options)
+
     # get convert derivative
     convert_derivative = get_derivative_conversion_function(
         params=params,
@@ -657,55 +676,136 @@ def _optimize(
     cache = {x_hash: {"criterion": first_eval["output"]}}
 
     # partial the internal_criterion_and_derivative_template
-    internal_criterion_and_derivative = functools.partial(
-        internal_criterion_and_derivative_template,
-        direction=direction,
-        criterion=criterion,
+    always_partialled = {
+        "direction": direction,
+        "criterion": criterion,
+        "params": params,
+        "reparametrize_from_internal": params_from_internal,
+        "convert_derivative": convert_derivative,
+        "derivative": derivative,
+        "criterion_and_derivative": criterion_and_derivative,
+        "numdiff_options": numdiff_options,
+        "database": database,
+        "database_path": logging,
+        "log_options": log_options,
+        "first_criterion_evaluation": first_eval,
+        "cache": cache,
+        "cache_size": cache_size,
+    }
+
+    # set up a results processing function for later use
+    _process_res = functools.partial(
+        _process_internal_result,
         params=params,
-        reparametrize_from_internal=params_from_internal,
-        convert_derivative=convert_derivative,
-        derivative=derivative,
-        criterion_and_derivative=criterion_and_derivative,
-        numdiff_options=numdiff_options,
-        database=database,
-        database_path=logging,
-        log_options=log_options,
-        error_handling=error_handling,
-        error_penalty=error_penalty,
-        first_criterion_evaluation=first_eval,
-        cache=cache,
-        cache_size=cache_size,
-        fixed_log_data=fixed_log_data,
+        criterion=criterion,
+        direction=direction,
+        params_from_internal=params_from_internal,
+        algo_name=algo_name,
     )
 
-    res = algorithm(internal_criterion_and_derivative, x, **algo_options)
+    # do actual optimizations
 
-    p = params.copy()
-    p["value"] = params_from_internal(res["solution_x"])
-    res["solution_params"] = p
+    if not multistart:
+        internal_criterion_and_derivative = functools.partial(
+            internal_criterion_and_derivative_template,
+            **always_partialled,
+            error_handling=error_handling,
+            error_penalty=error_penalty,
+            fixed_log_data={"stage": "optimization", "substage": 0},
+        )
+        raw_res = partialled_algorithm(internal_criterion_and_derivative, x)
+    else:
+        sample = get_exploration_sample(
+            params=params,
+            n_samples=multistart_options["n_samples"],
+            sampling_distribution=multistart_options["sampling_distribution"],
+            sampling_method=multistart_options["sampling_method"],
+            seed=multistart_options["seed"],
+            constraints=constraints,
+        )
 
-    if "solution_criterion" not in res:
-        res["solution_criterion"] = criterion(p)
+        exploration_func = functools.partial(
+            internal_criterion_and_derivative_template,
+            **always_partialled,
+        )
+        exploration_res = run_explorations(
+            exploration_func,
+            sample=sample,
+            batch_evaluator=multistart_options["batch_evaluator"],
+            n_cores=multistart_options["n_cores"],
+        )
 
-    if direction == "maximize":
-        res["solution_criterion"] = -res["solution_criterion"]
+        sorted_sample = exploration_res["sorted_sample"]
+        sorted_values = exploration_res["sorted_values"]
 
-    # in the long run we can get some of those from the database if logging was used.
-    optional_entries = [
-        "solution_derivative",
-        "solution_hessian",
-        "n_criterion_evaluations",
-        "n_derivative_evaluations",
-        "n_iterations",
-        "success",
-        "reached_convergence_criterion",
-        "message",
-    ]
+        n_optimizations = int(len(sample) * multistart_options["share_optimizations"])
 
-    for entry in optional_entries:
-        res[entry] = res.get(entry, f"Not reported by {algo_name}")
+        batched_sample = get_batched_optimization_sample(
+            sorted_sample=sorted_sample,
+            n_optimizations=n_optimizations,
+            batch_size=multistart_options["batch_size"],
+        )
 
-    res = _dummy_result_from_traceback(res)
+        current_best_x = sorted_sample[0]
+        current_best_y = sorted_values[0]
+        current_best_res = None
+
+        internal_criterion_and_derivative = functools.partial(
+            internal_criterion_and_derivative_template,
+            **always_partialled,
+            error_handling=error_handling,
+            error_penalty=error_penalty,
+            fixed_log_data={},
+        )
+
+        batch_evaluator = multistart_options["batch_evaluator"]
+
+        weight_func = functools.partial(
+            multistart_options["mixing_weight_method"],
+            min_weight=multistart_options["mixing_weight_bounds"][0],
+            max_weight=multistart_options["mixing_weight_bounds"][1],
+        )
+
+        results = []
+        starting_points = []
+
+        opt_counter = 0
+        for batch in batched_sample:
+
+            weight = weight_func(opt_counter, n_optimizations)
+
+            arguments = []
+
+            for x in batch:
+                mixed = weight * current_best_x + (1 - weight) * x
+                arguments.append((internal_criterion_and_derivative, mixed))
+                starting_points.append(mixed)
+
+            batch_results = batch_evaluator(
+                func=partialled_algorithm,
+                arguments=arguments,
+                unpack_symbol="*",
+                n_cores=multistart_options["n_cores"],
+            )
+
+            values = np.array([res["solution_criterion"] for res in batch_results])
+            best_index = np.argmin(values)
+
+            if values[best_index] < current_best_y:
+                current_best_y = values[best_index]
+                current_best_res = batch_results[best_index]
+                current_best_x = current_best_res["solution_x"]
+
+            results += batch_results
+            opt_counter += len(batch)
+
+        raw_res = current_best_res
+        raw_res["multistart_solution_history"] = [_process_res(r) for r in results]
+        raw_res["multistart_starting_history"] = pd.DataFrame(
+            starting_points, columns=params.index
+        )
+
+    res = _process_res(raw_res)
 
     return res
 
@@ -829,6 +929,40 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     return numdiff_options
 
 
+def _fill_multistart_options_with_defaults(options, params):
+    defaults = {
+        "n_samples": 10 * len(params),
+        "share_optimizations": 0.1,
+        "sampling_distribution": "uniform",
+        "sampling_method": "sobol" if len(params) <= 30 else "random",
+        "mixing_weight_method": "tiktak",
+        "mixing_weight_bounds": (0.1, 0.995),
+        "convergence_relative_params_tolerance": 0.01,
+        "n_cores": 1,
+        "batch_evaluator": "joblib",
+        "seed": None,
+    }
+
+    options = {k.replace(".", "_"): v for k, v in options.items()}
+    out = {**defaults, **options}
+
+    if "batch_size" not in out:
+        out["batch_size"] = out["n_cores"]
+    else:
+        if out["batch_size"] < out["n_cores"]:
+            raise ValueError("batch_size must be at least as large as n_cores.")
+
+    if isinstance(out["batch_evaluator"], str):
+        out["batch_evaluator"] = getattr(
+            be, f"{out['batch_evaluator']}_batch_evaluator"
+        )
+
+    if isinstance(out["mixing_weight_method"], str):
+        out["mixing_weight_method"] = WEIGHT_FUNCTIONS[out["mixing_weight_method"]]
+
+    return out
+
+
 def _add_name_and_group_columns_to_params(params):
     """Add a group and name column to the params.
 
@@ -931,3 +1065,35 @@ def _dummy_result_from_traceback(candidate):
 def _setdefault(candidate, default):
     out = default if candidate is None else candidate
     return out
+
+
+def _process_internal_result(
+    res, params, criterion, direction, params_from_internal, algo_name
+):
+    p = params.copy()
+    p["value"] = params_from_internal(res["solution_x"])
+    res["solution_params"] = p
+
+    if "solution_criterion" not in res:
+        res["solution_criterion"] = criterion(p)
+
+    if direction == "maximize":
+        res["solution_criterion"] = -res["solution_criterion"]
+
+    # in the long run we can get some of those from the database if logging was used.
+    optional_entries = [
+        "solution_derivative",
+        "solution_hessian",
+        "n_criterion_evaluations",
+        "n_derivative_evaluations",
+        "n_iterations",
+        "success",
+        "reached_convergence_criterion",
+        "message",
+    ]
+
+    for entry in optional_entries:
+        res[entry] = res.get(entry, f"Not reported by {algo_name}")
+
+    res = _dummy_result_from_traceback(res)
+    return res
