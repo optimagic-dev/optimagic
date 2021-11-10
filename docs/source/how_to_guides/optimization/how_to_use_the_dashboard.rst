@@ -7,23 +7,21 @@ How to use the dashboard
 Overview
 ---------
 
-Estimagic provides a dashboard that allows to inspect one or several optimizations. The
-dashboard visualizes the databases created and updated by the optimizations.
-You can start a dashboard by typing the following in your command-line interface:
+Estimagic provides a dashboard that allows to inspect an optimization. The dashboard
+visualizes the database created and updated by an optimization. You can start a
+dashboard by typing the following in your command-line interface:
 
 .. code-block:: bash
 
-    $ estimagic dashboard db1.db logs/db2.db logs/ **/*.db
+    $ estimagic dashboard db1.db
 
-As you can see, wildcards and recursive pattern matching are supported to find
-databases. Directories are automatically searched for nested databases. You can
-configure the behavior of the dashboard with additional command line arguments.
+You can configure the behavior of the dashboard with additional command line arguments.
 
 To get a list of all supported arguments type ``estimagic dashboard --help`` :
 
 .. code-block::
 
-    Usage: estimagic dashboard [OPTIONS] DATABASE...
+    Usage: estimagic dashboard [OPTIONS] DATABASE_PATH
 
     Start the dashboard to visualize optimizations.
 
@@ -51,14 +49,8 @@ To get a list of all supported arguments type ``estimagic dashboard --help`` :
                                 function can be empty.  [default: 1]
 
 
-
-When started, the dashboard will open an overview page of the optimizations' databases
-that were passed to it. If it is just one, it directly opens the page monitoring the
-evolution of the criterion value and parameters. Otherwise, you can select which
-optimization you want to inspect.
-
-To save resources, the actual monitoring only starts when you click on the
-``Start Updating`` button.
+When started, the dashboard will open a page monitoring the evolution of the criterion
+value and parameters.
 
 .. image:: ../../_static/images/dashboard.gif
 
