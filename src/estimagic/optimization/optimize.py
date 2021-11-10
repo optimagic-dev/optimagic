@@ -22,6 +22,7 @@ from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
 from estimagic.optimization.tiktak import get_batched_optimization_sample
 from estimagic.optimization.tiktak import get_exploration_sample
 from estimagic.optimization.tiktak import run_explorations
+from estimagic.optimization.tiktak import update_convergence_state
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
 from estimagic.parameters.parameter_conversion import get_internal_bounds
@@ -154,11 +155,12 @@ def maximize(
             Default "tiktak".
             - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
             bound on mixing weights. Default (0.1, 0.995).
-            - convergence.relative_params_tolerance (float): If the maximum relative
-            difference between the results of two consecutive local optimizations is
-            smaller than the multistart optimization converges. Default 0.01. Note
-            that this is independent of a convergence criterion with the same name for
-            each local optimization.
+            - convergence_max_discoveries (int): The multistart optimization converges
+            if the currently best local optimum has been discovered independently in
+            ``convergence_max_discoveries`` many local optimizations. Default 2.
+            - convergence.relative_params_tolerance (float): Determines the maximum
+            relative distance two parameter vectors can have to be considered equal
+            for convergence purposes.
             - n_cores (int): Number cores used to evaluate the criterion function in
             parallel during exploration stages and number of parallel local
             optimization in optimization stages. Default 1.
@@ -319,11 +321,12 @@ def minimize(
             Default "tiktak".
             - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
             bound on mixing weights. Default (0.1, 0.995).
-            - convergence.relative_params_tolerance (float): If the maximum relative
-            difference between the results of two consecutive local optimizations is
-            smaller than the multistart optimization converges. Default 0.01. Note
-            that this is independent of a convergence criterion with the same name for
-            each local optimization.
+            - convergence_max_discoveries (int): The multistart optimization converges
+            if the currently best local optimum has been discovered independently in
+            ``convergence_max_discoveries`` many local optimizations. Default 2.
+            - convergence.relative_params_tolerance (float): Determines the maximum
+            relative distance two parameter vectors can have to be considered equal
+            for convergence purposes.
             - n_cores (int): Number cores used to evaluate the criterion function in
             parallel during exploration stages and number of parallel local
             optimization in optimization stages. Default 1.
@@ -486,11 +489,12 @@ def _optimize(
             Default "tiktak".
             - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
             bound on mixing weights. Default (0.1, 0.995).
-            - convergence.relative_params_tolerance (float): If the maximum relative
-            difference between the results of two consecutive local optimizations is
-            smaller than the multistart optimization converges. Default 0.01. Note
-            that this is independent of a convergence criterion with the same name for
-            each local optimization.
+            - convergence_max_discoveries (int): The multistart optimization converges
+            if the currently best local optimum has been discovered independently in
+            ``convergence_max_discoveries`` many local optimizations. Default 2.
+            - convergence.relative_params_tolerance (float): Determines the maximum
+            relative distance two parameter vectors can have to be considered equal
+            for convergence purposes.
             - n_cores (int): Number cores used to evaluate the criterion function in
             parallel during exploration stages and number of parallel local
             optimization in optimization stages. Default 1.
@@ -746,9 +750,20 @@ def _optimize(
             batch_size=multistart_options["batch_size"],
         )
 
-        current_best_x = sorted_sample[0]
-        current_best_y = sorted_values[0]
-        current_best_res = None
+        state = {
+            "best_x": sorted_sample[0],
+            "best_y": sorted_values[0],
+            "best_res": None,
+            "x_history": [],
+            "y_history": [],
+            "result_history": [],
+            "start_history": [],
+        }
+
+        convergence_criteria = {
+            "xtol": multistart_options["convergence_relative_params_tolerance"],
+            "max_discoveries": multistart_options["convergence_max_discoveries"],
+        }
 
         internal_criterion_and_derivative = functools.partial(
             internal_criterion_and_derivative_template,
@@ -766,20 +781,13 @@ def _optimize(
             max_weight=multistart_options["mixing_weight_bounds"][1],
         )
 
-        results = []
-        starting_points = []
-
         opt_counter = 0
         for batch in batched_sample:
 
             weight = weight_func(opt_counter, n_optimizations)
+            starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
-            arguments = []
-
-            for x in batch:
-                mixed = weight * current_best_x + (1 - weight) * x
-                arguments.append((internal_criterion_and_derivative, mixed))
-                starting_points.append(mixed)
+            arguments = [(internal_criterion_and_derivative, x) for x in starts]
 
             batch_results = batch_evaluator(
                 func=partialled_algorithm,
@@ -788,22 +796,21 @@ def _optimize(
                 n_cores=multistart_options["n_cores"],
             )
 
-            values = np.array([res["solution_criterion"] for res in batch_results])
-            best_index = np.argmin(values)
+            state, is_converged = update_convergence_state(
+                current_state=state,
+                starts=starts,
+                results=batch_results,
+                convergence_criteria=convergence_criteria,
+            )
+            if is_converged:
+                break
 
-            if values[best_index] < current_best_y:
-                current_best_y = values[best_index]
-                current_best_res = batch_results[best_index]
-                current_best_x = current_best_res["solution_x"]
-
-            results += batch_results
-            opt_counter += len(batch)
-
-        raw_res = current_best_res
-        raw_res["multistart_solution_history"] = [_process_res(r) for r in results]
-        raw_res["multistart_starting_history"] = pd.DataFrame(
-            starting_points, columns=params.index
+        raw_res = state["best_res"]
+        raw_res["solution_history"] = [_process_res(r) for r in state["result_history"]]
+        raw_res["starting_history"] = pd.DataFrame(
+            state["start_history"], columns=params.index
         )
+        raw_res["multistart_convergence"] = is_converged
 
     res = _process_res(raw_res)
 
@@ -938,6 +945,7 @@ def _fill_multistart_options_with_defaults(options, params):
         "mixing_weight_method": "tiktak",
         "mixing_weight_bounds": (0.1, 0.995),
         "convergence_relative_params_tolerance": 0.01,
+        "convergence_max_discoveries": 2,
         "n_cores": 1,
         "batch_evaluator": "joblib",
         "seed": None,

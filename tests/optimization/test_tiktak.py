@@ -12,6 +12,7 @@ from estimagic.optimization.tiktak import _tiktak_weights
 from estimagic.optimization.tiktak import get_batched_optimization_sample
 from estimagic.optimization.tiktak import get_exploration_sample
 from estimagic.optimization.tiktak import run_explorations
+from estimagic.optimization.tiktak import update_convergence_state
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -158,3 +159,67 @@ def test_linear_weights():
 def test_tiktak_weights():
     assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
     assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
+
+
+@pytest.fixture
+def current_state():
+    state = {
+        "best_x": np.ones(3),
+        "best_y": 5,
+        "best_res": None,
+        "x_history": [np.arange(3) - 1e-20, np.ones(3)],
+        "y_history": [6, 5],
+        "result_history": [],
+        "start_history": [],
+    }
+
+    return state
+
+
+@pytest.fixture
+def starts():
+    return [np.zeros(3)]
+
+
+@pytest.fixture
+def results():
+    return [{"solution_x": np.arange(3) + 1e-10, "solution_criterion": 4}]
+
+
+def test_update_state_converged(current_state, starts, results):
+    criteria = {
+        "xtol": 1e-3,
+        "max_discoveries": 2,
+    }
+
+    new_state, is_converged = update_convergence_state(
+        current_state=current_state,
+        starts=starts,
+        results=results,
+        convergence_criteria=criteria,
+    )
+
+    aaae(new_state["best_x"], np.arange(3))
+    assert new_state["best_y"] == 4
+    assert new_state["y_history"] == [6, 5, 4]
+    assert new_state["result_history"][0]["solution_criterion"] == 4
+    aaae(new_state["start_history"][0], np.zeros(3))
+    assert new_state["best_res"].keys() == results[0].keys()
+
+    assert is_converged
+
+
+def test_update_state_not_converged(current_state, starts, results):
+    criteria = {
+        "xtol": 1e-3,
+        "max_discoveries": 5,
+    }
+
+    _, is_converged = update_convergence_state(
+        current_state=current_state,
+        starts=starts,
+        results=results,
+        convergence_criteria=criteria,
+    )
+
+    assert not is_converged

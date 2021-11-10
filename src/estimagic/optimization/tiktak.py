@@ -397,14 +397,14 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
         current_state (dict): Dictionary with the entries:
             - "best_x": The currently best parameter vector
             - "best_y": The currently best function value
+            - "best_res": The currently best optimization result
             - "x_history": The history of locally optimal parameters
             - "y_history": The history of locally optimal function values.
             - "result_history": The history of local optimization results
             - "start_history": The history of start parameters
         starts (list): List of starting points for local optimizations.
         results (list): List of results from local optimizations.
-        convergence_criteria (dict): Dict with the entries
-            "convergence_relative_params_tolerance" and "convergence_max_discoveries"
+        convergence_criteria (dict): Dict with the entries "xtol" and "max_discoveries"
 
 
     Returns:
@@ -412,11 +412,12 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
         bool: A bool that indicates if the optimizer has converged.
 
     """
-    xtol = convergence_criteria["convergence_relative_params_tolerance"]
-    max_discoveries = convergence_criteria["convergence_max_discoveries"]
+    xtol = convergence_criteria["xtol"]
+    max_discoveries = convergence_criteria["max_discoveries"]
 
     best_x = current_state["best_x"]
     best_y = current_state["best_y"]
+    best_res = current_state["best_res"]
 
     new_x = [res["solution_x"] for res in results]
     new_y = [res["solution_criterion"] for res in results]
@@ -425,9 +426,11 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     if new_y[best_index] < best_y:
         best_x = new_x[best_index]
         best_y = new_y[best_index]
+        best_res = results[best_index]
 
-    all_x = np.array(current_state["x_history"])
-    relative_diffs = (all_x - best_x) / best_x
+    new_x_history = current_state["x_history"] + new_x
+    all_x = np.array(new_x_history)
+    relative_diffs = (all_x - best_x) / np.clip(best_x, 0.1, np.inf)
     distances = np.linalg.norm(relative_diffs, axis=1)
     n_close = (distances <= xtol).sum()
 
@@ -436,7 +439,8 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     new_state = {
         "best_x": best_x,
         "best_y": best_y,
-        "x_history": current_state["x_history"] + new_x,
+        "best_res": best_res,
+        "x_history": new_x_history,
         "y_history": current_state["y_history"] + new_y,
         "result_history": current_state["result_history"] + results,
         "start_history": current_state["start_history"] + starts,
