@@ -2677,7 +2677,23 @@ cyipopt``).
 The Fides Optimizer
 -------------------
 
-TEMPORARILY REMOVED TO ANALYSE CI PROBLEM.
+estimagic supports the `Fides Optimizer
+<https://fides-optimizer.readthedocs.io/en/latest>`_. To use Fides, you need to have
+`the fides package <https://github.com/fides-dev/fides>`_ installed (``pip install
+fides>=0.6.3``, make sure you have at least version 0.6.3).
+
+.. dropdown:: fides
+
+  `Fides <fides-optimizer.readthedocs.io/>`_ implements an Interior Trust Region
+  Reflective for boundary costrained optimization problems based on the papers
+  :cite:`Coleman1994` and :cite:`Coleman1996`. Accordingly, Fides is named after
+  the Roman goddess of trust and reliability. In contrast to other optimizers, Fides
+  solves the full trust-region subproblem exactly, which can yields higher quality
+  proposal steps, but is computationally more expensive. This makes Fides particularly
+  attractive for optimization problems with objective functions that are
+  computationally expensive to evaluate and the computational cost of solving the
+  trust-region subproblem is negligible.
+
 
 
 The NLOPT Optimizers (nlopt)
