@@ -119,7 +119,7 @@ def test_fides_stop_after_tiny_time():
         x=np.array([1, -5, 3]),
         lower_bounds=np.array([-10, -10, -10]),
         upper_bounds=np.array([10, 10, 10]),
-        stopping_max_seconds=1e-10,
+        stopping_max_seconds=1e-14,
     )
     assert not res["success"]
     assert res["n_iterations"] == 0
