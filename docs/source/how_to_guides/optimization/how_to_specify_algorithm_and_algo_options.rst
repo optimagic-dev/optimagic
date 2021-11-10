@@ -2682,9 +2682,16 @@ estimagic supports the `Fides Optimizer
 `the fides package <https://github.com/fides-dev/fides>`_ installed (``pip install
 fides>=0.6.3``, make sure you have at least version 0.6.3).
 
+
+.. warning::
+
+  While the algorithm does work with boundaries, it requires that the optimum is away
+  from the boundary for theoretically guaranteed convergence. In practice parameters
+  at the boundary have also caused trouble.
+
 .. dropdown:: fides
 
-  `Fides <fides-optimizer.readthedocs.io/>`_ implements an Interior Trust Region
+  `Fides <fides-optimizer.readthedocs.io/en/latest>`_ implements an Interior Trust Region
   Reflective for boundary costrained optimization problems based on the papers
   :cite:`Coleman1994` and :cite:`Coleman1996`. Accordingly, Fides is named after
   the Roman goddess of trust and reliability. In contrast to other optimizers, Fides
