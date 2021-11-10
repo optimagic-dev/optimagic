@@ -357,8 +357,13 @@ def second_derivative(
             - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
                 value at params, returned if return_func_value is True.
 
-            - "func_evals" (pandas.DataFrame): Function evaluations produced by internal
-                derivative method, returned if return_info is True.
+            - "func_evals_one_step" (pandas.DataFrame): Function evaluations produced by
+                internal derivative method when altering the params vector at one
+                dimension, returned if return_info is True.
+
+            - "func_evals_two_step" (pandas.DataFrame): Function evaluations produced by
+                internal derivative method when altering the params vector at two
+                dimensions, returned if return_info is True.
 
     """
     lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
@@ -368,7 +373,7 @@ def second_derivative(
     partialed_func = functools.partial(func, **func_kwargs)
 
     # convert params to numpy, but keep label information
-    params_index = (  # noqa: F841
+    params_index = (
         params.index if isinstance(params, (pd.DataFrame, pd.Series)) else None
     )
 
@@ -494,8 +499,10 @@ def second_derivative(
     evals["cross_step"][0][:, :, tril_idx[0], tril_idx[1]] = evals["cross_step"][
         1
     ].transpose(0, 1, 3, 2)[:, :, tril_idx[0], tril_idx[1]]
+    evals["cross_step"][0][:, :, diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[
+        np.newaxis, :, :
+    ]
     evals["cross_step"] = evals["cross_step"][0]
-    evals["cross_step"][:, :, diag_idx[0], diag_idx[1]] = f0.T[np.newaxis, :, :]
 
     # apply finite difference formulae
     hess_candidates = {}
@@ -872,6 +879,28 @@ def _add_index_to_derivative(derivative, params_index, out_index):
 
 
 def _add_index_to_second_derivative(derivative, params_index, out_index):
+    if len(derivative.shape) == 1:
+        if derivative.shape[0] == 1 and params_index is not None:
+            derivative = pd.Series(derivative, index=params_index)
+        if derivative.shape[0] > 1 and out_index is not None:
+            derivative = pd.Series(derivative, index=out_index)
+    if len(derivative.shape) == 2 and params_index is not None:
+        derivative = pd.DataFrame(derivative, columns=params_index, index=params_index)
+    if (
+        len(derivative.shape) == 3
+        and params_index is not None
+        and out_index is not None
+    ):
+        derivative = pd.concat(
+            (
+                pd.DataFrame(
+                    derivative[dim_f], columns=params_index, index=params_index
+                )
+                for dim_f in range(derivative.shape[0])
+            ),
+            axis=0,
+            keys=out_index,
+        )
     return derivative
 
 
@@ -902,10 +931,12 @@ def _collect_additional_info(return_info, steps, evals, updated_candidates, targ
         # save function evaluations to accessible data frame
         if target == "first_derivative":
             func_evals = _convert_evaluation_data_to_frame(steps, evals)
+            info["func_evals"] = func_evals
         else:
-            func_evals = _convert_evaluation_data_to_frame(steps, evals["one_step"])
-
-        info["func_evals"] = func_evals
+            one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
+            two_step = None
+            info["func_evals_one_step"] = one_step
+            info["func_evals_two_step"] = two_step
 
         if updated_candidates is not None:
             # combine derivative candidates in accessible data frame

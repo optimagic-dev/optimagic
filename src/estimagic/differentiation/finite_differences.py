@@ -86,22 +86,21 @@ def hessian(evals, steps, f0, method):
     f0 = f0.reshape(1, dim_f, 1, 1)
     if method == "one":
         diffs = (
-            evals["two_step"].pos
-            - evals["one_step"].pos.reshape((n_steps, -1, 1, dim_x))
-        ) - (evals["one_step"].pos.reshape((n_steps, -1, dim_x, 1)) - f0)
+            evals["two_step"].pos - evals["one_step"].pos.reshape(n_steps, -1, 1, dim_x)
+        ) - (evals["one_step"].pos.reshape(n_steps, -1, dim_x, 1) - f0)
         hess = diffs / cross_steps
     elif method == "two":
         diffs = (
             (
                 evals["two_step"].pos
-                - evals["one_step"].pos.reshape((n_steps, -1, 1, dim_x))
+                - evals["one_step"].pos.reshape(n_steps, -1, 1, dim_x)
             )
-            - (evals["one_step"].pos.reshape((n_steps, -1, dim_x, 1)) - f0)
+            - (evals["one_step"].pos.reshape(n_steps, -1, dim_x, 1) - f0)
             + (
                 evals["two_step"].neg
-                - evals["one_step"].neg.reshape((n_steps, -1, 1, dim_x))
+                - evals["one_step"].neg.reshape(n_steps, -1, 1, dim_x)
             )
-            - (evals["one_step"].neg.reshape((n_steps, -1, dim_x, 1)) - f0)
+            - (evals["one_step"].neg.reshape(n_steps, -1, dim_x, 1) - f0)
         )
         hess = diffs / (2 * cross_steps)
     elif method == "three":
