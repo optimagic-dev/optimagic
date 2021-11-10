@@ -3,34 +3,21 @@ import pytest
 from estimagic.visualization.colors import get_colors
 
 
-palettes = [
-    "categorical",
-    "ordered",
-    "blue",
-    "red",
-    "yellow",
-    "green",
-    "orange",
-    "purple",
-    "yellow-green",
-    "red-blue",
-]
+def test_correct_number_categorical():
+    for number in range(20):
+        assert len(get_colors("categorical", number)) == number
 
 
-@pytest.mark.parametrize("palette", palettes)
-def test_correct_number_up_to_twelve(palette):
-    for number in range(13):
-        assert len(get_colors(palette, number)) == number
+def test_correct_number_ordered():
+    for number in range(10):
+        assert len(get_colors("ordered", number)) == number
 
 
-palettes = [
-    "categorical",
-    "yellow-green",
-    "blue-red",
-]
+def test_negative_number_raises_error():
+    with pytest.raises(ValueError):
+        get_colors("ordered", -15)
 
 
-@pytest.mark.parametrize("palette", palettes)
-def test_correct_number_up_to_24(palette):
-    for number in range(12, 25):
-        assert len(get_colors(palette, number)) == number
+def test_wrong_palette_raises_error():
+    with pytest.raises(ValueError):
+        get_colors("red-green", 3)

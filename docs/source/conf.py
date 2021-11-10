@@ -59,6 +59,7 @@ autodoc_mock_imports = [
     "bokeh",
     "cloudpickle",
     "cyipopt",
+    "fides",
     "fuzzywuzzy",
     "joblib",
     "nlopt",

@@ -1,4 +1,3 @@
-"""Callbacks for the monitoring app."""
 from functools import partial
 
 import numpy as np
@@ -6,56 +5,7 @@ from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import transpose_nested_list
 
 
-def logscale_callback(attr, old, new, button, doc):
-    """Switch between log and linear scale.
-
-    Args:
-        attr: Required by bokeh.
-        old: Old state of the Button.
-        new: New state of the Button.
-        button (bokeh.models.Toggle)
-        doc (bokeh.Document)
-
-    """
-    linear_criterion_plot = doc.get_model_by_name("linear_criterion_plot")
-    log_criterion_plot = doc.get_model_by_name("log_criterion_plot")
-    if new is True:
-        _switch_to_log_scale(button, linear_criterion_plot, log_criterion_plot)
-    else:
-        _switch_to_linear_scale(button, linear_criterion_plot, log_criterion_plot)
-
-
-def _switch_to_log_scale(button, linear_criterion_plot, log_criterion_plot):
-    """Make the linear criterion plot invisible, the log plot visible and adjust button.
-
-    Args:
-        button (bokeh.Toggle)
-        linear_criterion_plot (bokeh.Figure)
-        log_criterion_plot (bokeh.Figure)
-
-    """
-    button.button_type = "primary"
-    button.label = "Show criterion plot on a linear scale"
-    linear_criterion_plot.visible = False
-    log_criterion_plot.visible = True
-
-
-def _switch_to_linear_scale(button, linear_criterion_plot, log_criterion_plot):
-    """Make the log criterion plot invisible, the linear plot visible and adjust button.
-
-    Args:
-        button (bokeh.Toggle)
-        linear_criterion_plot (bokeh.Figure)
-        log_criterion_plot (bokeh.Figure)
-
-    """
-    button.button_type = "default"
-    button.label = "Show criterion plot on a logarithmic scale"
-    log_criterion_plot.visible = False
-    linear_criterion_plot.visible = True
-
-
-def activation_callback(
+def reset_and_start_convergence(
     attr,
     old,
     new,
@@ -63,7 +13,6 @@ def activation_callback(
     doc,
     database,
     button,
-    tables,
     start_params,
     updating_options,
 ):
@@ -81,7 +30,6 @@ def activation_callback(
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
         button (bokeh.models.Toggle)
-        tables (list): List of table names to load and convert to ColumnDataSources.
         start_params (pd.DataFrame)
         updating_options (dict): Specification how to update the plotting data.
             It contains rollover, update_frequency, update_chunk, jump and stride.
@@ -93,12 +41,11 @@ def activation_callback(
 
     if new is True:
         plot_new_data = partial(
-            _update_monitoring_tab,
+            _update_convergence_plots,
             criterion_cds=criterion_cds,
             param_cds=param_cds,
             database=database,
             session_data=session_data,
-            tables=tables,
             start_params=start_params,
             rollover=updating_options["rollover"],
             update_chunk=updating_options["update_chunk"],
@@ -122,18 +69,17 @@ def activation_callback(
         button.label = "Restart Plot"
 
 
-def _update_monitoring_tab(
+def _update_convergence_plots(
     database,
     criterion_cds,
     param_cds,
     session_data,
-    tables,
     start_params,
     rollover,
     update_chunk,
     stride,
 ):
-    """Callback to look up new entries in the database tables and plot them.
+    """Callback to look up new entries in the database and plot them.
 
     Args:
         database (sqlalchemy.MetaData)
@@ -142,7 +88,6 @@ def _update_monitoring_tab(
             Keys of this app's entry are:
             - last_retrieved (int): last iteration currently in the ColumnDataSource
             - database_path
-        tables (list): list of table names to load and convert to ColumnDataSources
         start_params (pd.DataFrame)
         rollover (int): maximal number of points to show in the plot
         update_chunk (int): Number of values to add at each update.
@@ -174,14 +119,14 @@ def _update_monitoring_tab(
             if i not in missing
         ],
     }
-    stream_data(cds=criterion_cds, data=crit_data, rollover=rollover)
+    _stream_data(cds=criterion_cds, data=crit_data, rollover=rollover)
 
     # update the parameter plots
     # Note: we need **all** parameter ids to correctly map them to the parameter entries
     # in the database. Only after can we restrict them to the entries we need.
     param_ids = start_params["id"].tolist()
     params_data = _create_params_data_for_update(data, param_ids, clip_bound)
-    stream_data(cds=param_cds, data=params_data, rollover=rollover)
+    _stream_data(cds=param_cds, data=params_data, rollover=rollover)
     # update last retrieved
     session_data["last_retrieved"] = new_last
 
@@ -210,7 +155,7 @@ def _create_params_data_for_update(data, param_ids, clip_bound):
     return params_data
 
 
-def stream_data(cds, data, rollover):
+def _stream_data(cds, data, rollover):
     """Stream only to the available columns of a ColumnDataSource.
 
     Args:

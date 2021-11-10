@@ -43,7 +43,7 @@ the finite difference w.r.t. each variable of params_sr yields a vector, which i
 corresponding column of the Jacobian matrix. The optimal stepsize remains the same.
 
 
-For the Hessian matrix, we repeatetly call the finite differences functions. As we
+For the Hessian matrix, we repeatedly call the finite differences functions. As we
 allow for central finite differences in the second order derivative only, the
 deductions for forward and backward, are left to the interested reader:
 
