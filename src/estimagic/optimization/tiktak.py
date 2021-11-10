@@ -390,34 +390,59 @@ def run_local_optimizations(
     # additional history entries.
 
 
-def is_converged(batch_x, batch_y, xtol):
-    """Determine convergence, given a batch of parameters and function evaluations."""
-    batch_x = np.array(batch_x)
-    batch_y = np.array(batch_y)
+def update_convergence_state(current_state, starts, results, convergence_criteria):
+    """Update the state of all quantities related to convergence.
 
-    distances = _calculate_pairwise_distance_triangle(batch_x)
-    closest_indices = argmin_2d(distances)
-    closest_distance = distances[closest_indices]
-    best_index = np.argmin(batch_y)
-
-    converged = (closest_distance <= xtol) and (best_index in closest_indices)
-    return converged
-
-
-def _calculate_pairwise_distance_triangle(a):
-    """Calculate pairwise distance of rows in arr."""
-    dim = len(a)
-    helper = a.reshape(a.shape[0], 1, a.shape[1])
-    distances = np.sqrt(np.einsum("ijk, ijk->ij", a - helper, a - helper))
-    distances[np.triu_indices(dim)] = np.inf
-
-    return distances
+    Args:
+        current_state (dict): Dictionary with the entries:
+            - "best_x": The currently best parameter vector
+            - "best_y": The currently best function value
+            - "x_history": The history of locally optimal parameters
+            - "y_history": The history of locally optimal function values.
+            - "result_history": The history of local optimization results
+            - "start_history": The history of start parameters
+        starts (list): List of starting points for local optimizations.
+        results (list): List of results from local optimizations.
+        convergence_criteria (dict): Dict with the entries
+            "convergence_relative_params_tolerance" and "convergence_max_discoveries"
 
 
-def argmin_2d(a):
-    k = a.argmin()
-    ncol = a.shape[1]
-    return int(k / ncol), int(k % ncol)
+    Returns:
+        dict: The updated state, same entries as current_state.
+        bool: A bool that indicates if the optimizer has converged.
+
+    """
+    xtol = convergence_criteria["convergence_relative_params_tolerance"]
+    max_discoveries = convergence_criteria["convergence_max_discoveries"]
+
+    best_x = current_state["best_x"]
+    best_y = current_state["best_y"]
+
+    new_x = [res["solution_x"] for res in results]
+    new_y = [res["solution_criterion"] for res in results]
+
+    best_index = np.argmin(new_y)
+    if new_y[best_index] < best_y:
+        best_x = new_x[best_index]
+        best_y = new_y[best_index]
+
+    all_x = np.array(current_state["x_history"])
+    relative_diffs = (all_x - best_x) / best_x
+    distances = np.linalg.norm(relative_diffs, axis=1)
+    n_close = (distances <= xtol).sum()
+
+    is_converged = n_close >= max_discoveries
+
+    new_state = {
+        "best_x": best_x,
+        "best_y": best_y,
+        "x_history": current_state["x_history"] + new_x,
+        "y_history": current_state["y_history"] + new_y,
+        "result_history": current_state["result_history"] + results,
+        "start_history": current_state["start_history"] + starts,
+    }
+
+    return new_state, is_converged
 
 
 def _tiktak_weights(iteration, n_iterations, min_weight, max_weight):

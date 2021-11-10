@@ -3,7 +3,6 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.tiktak import _calculate_pairwise_distance_triangle
 from estimagic.optimization.tiktak import _do_actual_sampling
 from estimagic.optimization.tiktak import _get_internal_sampling_bounds
 from estimagic.optimization.tiktak import _has_transforming_constraints
@@ -12,7 +11,6 @@ from estimagic.optimization.tiktak import _process_sample
 from estimagic.optimization.tiktak import _tiktak_weights
 from estimagic.optimization.tiktak import get_batched_optimization_sample
 from estimagic.optimization.tiktak import get_exploration_sample
-from estimagic.optimization.tiktak import is_converged
 from estimagic.optimization.tiktak import run_explorations
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -32,7 +30,14 @@ def constraints():
 
 
 def test_get_exploration_sample_runs(params, constraints):
-    calculated = get_exploration_sample(params, constraints=constraints)
+    calculated = get_exploration_sample(
+        params,
+        n_samples=30,
+        sampling_distribution="uniform",
+        sampling_method="sobol",
+        constraints=constraints,
+        seed=1234,
+    )
     assert calculated.shape == (30, 2)
 
 
@@ -153,39 +158,3 @@ def test_linear_weights():
 def test_tiktak_weights():
     assert np.allclose(0.3, _tiktak_weights(0, 10, 0.3, 0.8))
     assert np.allclose(0.8, _tiktak_weights(10, 10, 0.3, 0.8))
-
-
-def test_calculate_pairwise_distance_triangle():
-    a = np.array([[1, 0, 1, 0], [1, 1, 0, 0], [1, 0, 1, 0]])
-
-    expected = np.zeros((3, 3))
-    for i in range(3):
-        for j in range(3):
-            if i > j:
-                expected[i, j] = np.linalg.norm(a[i] - a[j])
-            else:
-                expected[i, j] = np.inf
-
-    calculated = _calculate_pairwise_distance_triangle(a)
-    aaae(calculated, expected)
-
-
-def test_is_converged_true():
-    batch_x = np.array([[1, 2], [2, 3], [1, 2 + 1e-10]])
-    batch_y = np.array([-1, 0, -0.99])
-
-    assert is_converged(batch_x, batch_y, 1e-6)
-
-
-def test_is_converged_no_close_vectors():
-    batch_x = np.arange(6).reshape(3, 2)
-    batch_y = np.zeros(3)
-
-    assert not is_converged(batch_x, batch_y, 1e-6)
-
-
-def test_is_converged_close_not_best():
-    batch_x = np.array([[1, 2], [2, 3], [1, 2 + 1e-10]])
-    batch_y = np.array([-1, -5, -0.99])
-
-    assert not is_converged(batch_x, batch_y, 1e-6)
