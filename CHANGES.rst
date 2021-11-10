@@ -20,6 +20,7 @@ moments. The breaking changes are:
 - first_derivative now returns a dictionary, independent of arguments.
 - structure of the logging database has changed
 
+- :gh:`248` Adds the fides optimizer (:ghuser:`roecla`)
 - :gh:`146` Adds ``estimate_ml`` functionality (:ghuser:`janosg`, :ghuser:`LuisCald`
   and :ghuser:`s6soverd`).
 - :gh:`235` Improves the documentation (:ghuser:`roecla`)

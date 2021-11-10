@@ -498,6 +498,9 @@ def nlopt_direct(
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
     )
+
+    # this is a global optimizer
+    out["success"] = None
     return out
 
 
@@ -531,6 +534,9 @@ def nlopt_esch(
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
     )
+
+    # this is a global optimizer
+    out["success"] = None
     return out
 
 
@@ -564,6 +570,9 @@ def nlopt_isres(
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
     )
+
+    # this is a global optimizer
+    out["success"] = None
     return out
 
 
@@ -601,6 +610,9 @@ def nlopt_crs2_lm(
         stopping_max_eval=stopping_max_criterion_evaluations,
         population_size=population_size,
     )
+
+    # this is a global optimizer
+    out["success"] = None
     return out
 
 
