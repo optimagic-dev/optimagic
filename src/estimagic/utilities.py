@@ -299,7 +299,7 @@ def hash_array(arr):
 def calculate_trustregion_initial_radius(x):
     """Calculate the initial trust region radius.
 
-    It is calculated as :math:`0.1 \\max( \\|x\\|_{\\infty}, 1)`.
+    It is calculated as :math:`0.1\\max(|x|_{\\infty}, 1)`.
 
     Args:
         x (np.ndarray): the start parameter values.

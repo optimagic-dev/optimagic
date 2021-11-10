@@ -28,7 +28,6 @@ def plot_time_series(
     title,
     name=None,
     y_names=None,
-    logscale=False,
     plot_width=PLOT_WIDTH,
 ):
     """Plot time series linking the *y_keys* to a common *x_name* variable.
@@ -40,7 +39,6 @@ def plot_time_series(
         title (str): title of the plot.
         name (str, optional): name of the plot for later retrieval with bokeh.
         y_names (list, optional): if given these replace the y keys as line names.
-        logscale (bool, optional): Whether to have a logarithmic scale or a linear one.
 
     Returns:
         plot (bokeh Figure)
@@ -49,9 +47,7 @@ def plot_time_series(
     if y_names is None:
         y_names = [str(key) for key in y_keys]
 
-    plot = create_styled_figure(
-        title=title, name=name, logscale=logscale, plot_width=plot_width
-    )
+    plot = create_styled_figure(title=title, name=name, plot_width=plot_width)
     # this ensures that the y range spans at least 0.1
     plot.y_range.range_padding = Y_RANGE_PADDING
     plot.y_range.range_padding_units = Y_RANGE_PADDING_UNITS
@@ -98,7 +94,6 @@ def create_styled_figure(
     title,
     name=None,
     tooltips=None,
-    logscale=False,
     plot_width=PLOT_WIDTH,
 ):
     """Return a styled, empty figure of predetermined height and width.
@@ -108,7 +103,6 @@ def create_styled_figure(
         name (str): Name of the plot for later retrieval by bokeh. If not given the
             title is set as name
         tooltips (list, optional): List of bokeh tooltips to add to the figure.
-        logscale (bool, optional): Whether to have a logarithmic scale or a linear one.
 
     Returns:
         fig (bokeh Figure)
@@ -117,14 +111,14 @@ def create_styled_figure(
     assert plot_width is not None
 
     name = name if name is not None else title
-    y_axis_type = "log" if logscale else "linear"
     fig = figure(
         plot_height=PLOT_HEIGHT,
         plot_width=plot_width,
         title=title.title(),
         tooltips=tooltips,
         name=name,
-        y_axis_type=y_axis_type,
+        y_axis_type="linear",
+        sizing_mode="scale_width",
     )
     fig.title.text_font_size = "15pt"
 
