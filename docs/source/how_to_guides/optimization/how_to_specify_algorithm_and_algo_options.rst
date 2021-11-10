@@ -2694,6 +2694,24 @@ fides>=0.6.3``, make sure you have at least version 0.6.3).
   computationally expensive to evaluate and the computational cost of solving the
   trust-region subproblem is negligible.
 
+  - **hessian_update_strategy** (str): Hessian Update Strategy to employ. You can provide
+    a lowercase or uppercase string or a
+    fides.hession_approximation.HessianApproximation class instance. FX, SSM, TSSM and
+    GNSBFGS are not supported by estimagic. The available update strategies are:
+
+      - **bb**: Broydens "bad" method as introduced :cite:`Broyden1965`.
+      - **bfgs**: Broyden-Fletcher-Goldfarb-Shanno update strategy.
+      - **bg**: Broydens "good" method as introduced in :cite:`Broyden1965`.
+      - You can use a general BroydenClass Update scheme using the Broyden class from
+        `fides.hessian_approximation`. This is a generalization of BFGS/DFP methods
+        where the parameter :math:`phi` controls the convex combination between the
+        two. This is a rank 2 update strategy that preserves positive-semidefiniteness
+        and symmetry (if :math:`\phi \in [0,1]`). It is described in
+        :cite:`Nocedal1999`, Chapter 6.3.
+      - **dfp**: Davidon-Fletcher-Powell update strategy.
+      - **sr1**: Symmetric Rank 1 update strategy as described in :cite:`Nocedal1999`,
+        Chapter 6.2.
+
 
 
 The NLOPT Optimizers (nlopt)
