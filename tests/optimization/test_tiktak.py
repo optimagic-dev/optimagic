@@ -112,9 +112,9 @@ def test_run_explorations():
             "fixed_log_data",
         }
         if x.sum() == 5:
-            out = np.nan
+            out = {"value": np.nan}
         else:
-            out = -x.sum()
+            out = {"value": -x.sum()}
         return out
 
     calculated = run_explorations(

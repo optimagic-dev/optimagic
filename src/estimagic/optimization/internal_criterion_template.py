@@ -5,6 +5,7 @@ import numpy as np
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
 from estimagic.logging.database_utilities import append_row
+from estimagic.optimization.process_results import switch_sign
 from estimagic.utilities import hash_array
 
 
@@ -24,7 +25,7 @@ CRITERION_ERROR_MESSAGE = (
 
 NO_PRIMARY_MESSAGE = (
     "The primary criterion entry of the {} algorithm is {} but the output of your "
-    "criterion function only contains the enties:\n{}"
+    "criterion function only contains the entries:\n{}"
 )
 
 
@@ -74,7 +75,7 @@ def internal_criterion_and_derivative_template(
             of the internal criterion.
         algorithm_info (dict): Dict with the following entries:
             "primary_criterion_entry": One of "value", "contributions" and
-                "root_contributions"
+                "root_contributions" or "dict".
             "parallelizes": Bool that indicates if the algorithm calls the internal
                 criterion function in parallel. If so, caching is disabled.
             "needs_scaling": bool
@@ -381,7 +382,7 @@ def _check_and_harmonize_criterion_output(output, algorithm_info):
         if "value" not in output and "contributions" in output:
             output["value"] = output["contributions"].sum()
 
-        if primary not in output:
+        if primary not in output and primary != "dict":
             raise ValueError(
                 NO_PRIMARY_MESSAGE.format(algo_name, primary, list(output))
             )
@@ -475,9 +476,14 @@ def _get_output_for_optimizer(
     primary = algorithm_info["primary_criterion_entry"]
 
     if "criterion" in task:
-        crit = new_criterion[primary]
-        crit = crit if np.isscalar(crit) else np.array(crit)
-        crit = crit if direction == "minimize" else -crit
+        if primary != "dict":
+            crit = new_criterion[primary]
+            crit = crit if np.isscalar(crit) else np.array(crit)
+            crit = crit if direction == "minimize" else -crit
+        else:
+            crit = new_criterion
+            if direction == "maximize":
+                crit = switch_sign(crit)
 
     if "derivative" in task:
         deriv = np.array(new_derivative[primary])

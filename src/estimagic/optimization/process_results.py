@@ -33,7 +33,7 @@ def _process_one_result(res, direction, params_from_internal):
     res["solution_params"] = p
 
     if direction == "maximize" and "solution_criterion" in res:
-        res["solution_criterion"] = _switch_sign(res["solution_criterion"])
+        res["solution_criterion"] = switch_sign(res["solution_criterion"])
 
     # in the long run we can get some of those from the database if logging was used.
     optional_entries = [
@@ -77,7 +77,7 @@ def _process_multistart_info(info, direction, params_from_internal):
     else:
         exploration_res = []
         for res in info["exploration_results"]:
-            exploration_res.append(_switch_sign(res))
+            exploration_res.append(switch_sign(res))
 
     out = {
         "start_parameters": starts,
@@ -107,7 +107,7 @@ def _dummy_result_from_traceback(candidate):
     return out
 
 
-def _switch_sign(critval):
+def switch_sign(critval):
     if isinstance(critval, dict):
         out = critval.copy()
         if "value" in critval:

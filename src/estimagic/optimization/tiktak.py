@@ -251,7 +251,7 @@ def run_explorations(func, sample, batch_evaluator, n_cores):
 
     """
     algo_info = {
-        "primary_criterion_entry": "value",
+        "primary_criterion_entry": "dict",
         "parallelizes": True,
         "needs_scaling": False,
         "name": "tiktak_explorer",
@@ -274,11 +274,11 @@ def run_explorations(func, sample, batch_evaluator, n_cores):
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
 
-    raw_values = batch_evaluator(
+    criterion_outputs = batch_evaluator(
         _func, arguments=arguments, n_cores=n_cores, unpack_symbol="**"
     )
 
-    raw_values = np.array(raw_values)
+    raw_values = np.array([critval["value"] for critval in criterion_outputs])
 
     is_valid = np.isfinite(raw_values)
 
@@ -294,10 +294,12 @@ def run_explorations(func, sample, batch_evaluator, n_cores):
     # this sorts from low to high values; internal criterion and derivative took care
     # of the sign switch.
     sorting_indices = np.argsort(valid_values)
+    sorted_criterion_outputs = [criterion_outputs[i] for i in sorting_indices]
 
     out = {
         "sorted_values": valid_values[sorting_indices],
         "sorted_sample": valid_sample[sorting_indices],
+        "sorted_criterion_outputs": sorted_criterion_outputs,
     }
 
     return out

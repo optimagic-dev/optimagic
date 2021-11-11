@@ -800,7 +800,7 @@ def _optimize(
             "start_parameters": state["start_history"],
             "local_optima": state["result_history"],
             "exploration_sample": sorted_sample,
-            "exploration_results": sorted_values,
+            "exploration_results": exploration_res["sorted_criterion_outputs"],
         }
 
     res = process_internal_optimizer_result(
