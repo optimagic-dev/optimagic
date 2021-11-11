@@ -11,7 +11,8 @@ from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
 from estimagic.logging.database_utilities import make_optimization_problem_table
-from estimagic.logging.database_utilities import make_optimization_status_table
+from estimagic.logging.database_utilities import make_steps_table
+from estimagic.logging.database_utilities import read_last_rows
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.check_arguments import check_optimize_kwargs
 from estimagic.optimization.internal_criterion_template import (
@@ -19,6 +20,7 @@ from estimagic.optimization.internal_criterion_template import (
 )
 from estimagic.optimization.process_results import process_internal_optimizer_result
 from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
+from estimagic.optimization.tiktak import determine_steps
 from estimagic.optimization.tiktak import get_batched_optimization_sample
 from estimagic.optimization.tiktak import get_exploration_sample
 from estimagic.optimization.tiktak import run_explorations
@@ -662,12 +664,20 @@ def _optimize(
         numdiff_options, lower_bounds, upper_bounds
     )
 
+    # determine steps
+    if multistart:
+        steps = determine_steps(
+            multistart_options["n_samples"], multistart_options["share_optimizations"]
+        )
+    else:
+        steps = [{"type": "optimization", "status": "running", "name": "optimization"}]
+
     # create and initialize the database
     if not logging:
-        database = False
+        database, step_ids = False, [None] * len(steps)
     else:
-        database = _create_and_initialize_database(
-            logging, log_options, first_eval, problem_data
+        database, step_ids = _create_and_initialize_database(
+            logging, log_options, first_eval, problem_data, steps
         )
 
     # set default error penalty
@@ -705,7 +715,7 @@ def _optimize(
             **always_partialled,
             error_handling=error_handling,
             error_penalty=error_penalty,
-            fixed_log_data={"stage": "optimization", "substage": 0},
+            fixed_log_data={"step": step_ids[0]},
         )
         raw_res = partialled_algorithm(internal_criterion_and_derivative, x)
     else:
@@ -727,6 +737,7 @@ def _optimize(
             sample=sample,
             batch_evaluator=multistart_options["batch_evaluator"],
             n_cores=multistart_options["n_cores"],
+            step_id=step_ids[0],
         )
 
         sorted_sample = exploration_res["sorted_sample"]
@@ -834,7 +845,9 @@ def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
     return error_penalty
 
 
-def _create_and_initialize_database(logging, log_options, first_eval, problem_data):
+def _create_and_initialize_database(
+    logging, log_options, first_eval, problem_data, steps
+):
     # extract information
     path = Path(logging)
     fast_logging = log_options.get("fast_logging", False)
@@ -863,10 +876,23 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
     )
 
     # create and initialize the optimization_status table
-    make_optimization_status_table(database, if_exists=if_table_exists)
-    append_row(
-        {"status": "running"}, "optimization_status", database, path, fast_logging
-    )
+    make_steps_table(database, if_exists=if_table_exists)
+
+    for row in steps:
+        append_row(
+            data=row,
+            table_name="steps",
+            database=database,
+            path=path,
+            fast_logging=fast_logging,
+        )
+
+        step_ids = read_last_rows(
+            database=database,
+            table_name="steps",
+            n_rows=len(steps),
+            return_type="dict_of_lists",
+        )["rowid"]
 
     # create_and_initialize the optimization_problem table
     make_optimization_problem_table(database, if_exists=if_table_exists)
@@ -886,7 +912,7 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
 
     append_row(problem_data, "optimization_problem", database, path, fast_logging)
 
-    return database
+    return database, step_ids
 
 
 def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bounds):

@@ -22,6 +22,7 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(criterion):
         params=params,
         algorithm="scipy_lbfgsb",
         multistart=True,
+        logging="db.db",
     )
 
     assert "multistart_info" in res

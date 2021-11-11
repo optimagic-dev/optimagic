@@ -33,6 +33,30 @@ from estimagic.parameters.parameter_conversion import get_internal_bounds
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 
 
+def determine_steps(n_samples, share_optimizations):
+    if hasattr(n_samples, "__len__"):
+        n_samples = len(n_samples)
+
+    n_optimizations = int(n_samples * share_optimizations)
+
+    exploration_step = {
+        "type": "exploration",
+        "status": "running",
+        "name": "exploration",
+        "n_iterations": n_samples,
+    }
+
+    steps = [exploration_step]
+    for i in range(n_optimizations):
+        optimization_step = {
+            "type": "optimization",
+            "status": "scheduled",
+            "name": f"optimization_{i}",
+        }
+        steps.append(optimization_step)
+    return steps
+
+
 def get_exploration_sample(
     params,
     n_samples,
@@ -225,7 +249,7 @@ def _has_transforming_constraints(constraints):
     return bool(transforming_types.intersection(present_types))
 
 
-def run_explorations(func, sample, batch_evaluator, n_cores):
+def run_explorations(func, sample, batch_evaluator, n_cores, step_id):
     """Do the function evaluations for the exploration phase.
 
     Args:
@@ -237,6 +261,7 @@ def run_explorations(func, sample, batch_evaluator, n_cores):
             parameter vector.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
         n_cores (int): Number of cores.
+        step_id (int): The identifier of the exploration step.
 
     Returns:
         dict: A dictionary with the the following entries:
@@ -266,10 +291,8 @@ def run_explorations(func, sample, batch_evaluator, n_cores):
     )
 
     arguments = []
-    for i, x in enumerate(sample):
-        arguments.append(
-            {"x": x, "fixed_log_data": {"stage": "exploration", "substage": i}}
-        )
+    for x in sample:
+        arguments.append({"x": x, "fixed_log_data": {"step": int(step_id)}})
 
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")

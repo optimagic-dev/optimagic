@@ -30,6 +30,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import PickleType
 from sqlalchemy import String
 from sqlalchemy import Table
+from sqlalchemy import update
 from sqlalchemy.dialects.sqlite import DATETIME
 
 
@@ -109,8 +110,7 @@ def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
         Column("valid", Boolean),
         Column("hash", String),
         Column("value", Float),
-        Column("stage", String),
-        Column("substage", Integer),
+        Column("step", Integer),
     ]
 
     if isinstance(first_eval["output"], dict):
@@ -128,14 +128,15 @@ def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
     database.create_all(database.bind)
 
 
-def make_optimization_status_table(database, if_exists="extend"):
-    table_name = "optimization_status"
+def make_steps_table(database, if_exists="extend"):
+    table_name = "steps"
     _handle_existing_table(database, table_name, if_exists)
     columns = [
         Column("rowid", Integer, primary_key=True),
-        Column("status", String),
-        Column("stage", String),
-        Column("n_substages", Integer),
+        Column("type", String),  # e.g. optimization
+        Column("status", String),  # e.g. running
+        Column("n_iterations", Integer),  # optional
+        Column("name", String),  # e.g. "optimization-1", "exploration", not unique
     ]
     Table(
         table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True
@@ -176,6 +177,15 @@ def _handle_existing_table(database, table_name, if_exists):
             database.tables[table_name].drop(database.bind)
         elif if_exists == "raise":
             raise TableExistsError(f"The table {table_name} already exists.")
+
+
+def update_row(data, rowid, table_name, database, path, fast_logging):
+    database = load_database(database, path, fast_logging)
+
+    table = database.tables[table_name]
+    stmt = update(table).where(table.c.rowid == rowid).values(**data)
+
+    _execute_write_statement(stmt, database, path, table_name, data)
 
 
 def append_row(data, table_name, database, path, fast_logging):

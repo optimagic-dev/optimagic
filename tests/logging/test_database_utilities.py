@@ -9,9 +9,10 @@ from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
 from estimagic.logging.database_utilities import make_optimization_problem_table
-from estimagic.logging.database_utilities import make_optimization_status_table
+from estimagic.logging.database_utilities import make_steps_table
 from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.database_utilities import read_new_rows
+from estimagic.logging.database_utilities import update_row
 from numpy.testing import assert_array_equal
 from sqlalchemy import Float
 from sqlalchemy import PickleType
@@ -109,26 +110,32 @@ def test_optimization_iteration_table_dict_valued(tmp_path):
     )
 
 
-def test_optimization_status_table(tmp_path):
+def test_steps_table(tmp_path):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_status_table(database)
-    for status in ["scheduled", "running", "success"]:
+    make_steps_table(database)
+    for status in ["scheduled", "running", "completed"]:
         append_row(
-            {"status": status, "stage": "bla", "n_substages": 0},
-            "optimization_status",
+            {
+                "status": status,
+                "n_iterations": 0,
+                "type": "optimization",
+                "name": "bla",
+            },
+            "steps",
             database,
             path,
             False,
         )
 
-    res, _ = read_new_rows(database, "optimization_status", 1, "dict_of_lists")
+    res, _ = read_new_rows(database, "steps", 1, "dict_of_lists")
 
     expected = {
         "rowid": [2, 3],
-        "status": ["running", "success"],
-        "stage": ["bla", "bla"],
-        "n_substages": [0, 0],
+        "status": ["running", "completed"],
+        "type": ["optimization", "optimization"],
+        "name": ["bla", "bla"],
+        "n_iterations": [0, 0],
     }
     assert res == expected
 
@@ -166,6 +173,27 @@ def test_read_new_rows_stride(tmp_path, iteration_data):
     )[0]["value"]
 
     expected = [2.0, 4.0, 6.0, 8.0, 10.0]
+    assert res == expected
+
+
+def test_update_row(tmp_path, iteration_data):
+    path = tmp_path / "test.db"
+    database = load_database(path=path)
+    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    for i in range(1, 11):  # sqlalchemy starts counting at 1
+        iteration_data["value"] = i
+        append_row(iteration_data, "optimization_iterations", database, path, False)
+
+    update_row({"value": 20}, 8, "optimization_iterations", database, path, False)
+
+    res = read_new_rows(
+        database=database,
+        table_name="optimization_iterations",
+        last_retrieved=3,
+        return_type="dict_of_lists",
+    )[0]["value"]
+
+    expected = [4, 5, 6, 7, 20, 9, 10]
     assert res == expected
 
 
