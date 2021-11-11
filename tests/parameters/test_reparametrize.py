@@ -269,6 +269,8 @@ def back_and_forth_transformation_and_assert(params, constraints):
         internal=internal,
         fixed_values=pp["_internal_fixed_value"].to_numpy(),
         pre_replacements=pp["_pre_replacements"].to_numpy(),
+        params=params,
+        return_numpy=True,
         processed_constraints=pc,
         post_replacements=pp["_post_replacements"].to_numpy(),
     )

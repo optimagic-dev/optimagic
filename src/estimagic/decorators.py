@@ -54,13 +54,14 @@ def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=Fa
             if isinstance(x, pd.DataFrame):
                 p = x
             elif isinstance(x, np.ndarray):
-                p = params.copy()
-                p["value"] = reparametrize_from_internal(
+                p = reparametrize_from_internal(
                     internal=x,
                     fixed_values=fixed_values,
                     pre_replacements=pre_replacements,
                     processed_constraints=pc,
                     post_replacements=post_replacements,
+                    params=params,
+                    return_numpy=False,
                 )
             else:
                 raise ValueError(

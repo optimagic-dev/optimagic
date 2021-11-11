@@ -4,7 +4,6 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 from estimagic import batch_evaluators as be
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
@@ -18,6 +17,7 @@ from estimagic.optimization.check_arguments import check_optimize_kwargs
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
+from estimagic.optimization.process_results import process_internal_optimizer_result
 from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
 from estimagic.optimization.tiktak import get_batched_optimization_sample
 from estimagic.optimization.tiktak import get_exploration_sample
@@ -697,16 +697,6 @@ def _optimize(
         "cache_size": cache_size,
     }
 
-    # set up a results processing function for later use
-    _process_res = functools.partial(
-        _process_internal_result,
-        params=params,
-        criterion=criterion,
-        direction=direction,
-        params_from_internal=params_from_internal,
-        algo_name=algo_name,
-    )
-
     # do actual optimizations
 
     if not multistart:
@@ -806,13 +796,18 @@ def _optimize(
                 break
 
         raw_res = state["best_res"]
-        raw_res["solution_history"] = [_process_res(r) for r in state["result_history"]]
-        raw_res["starting_history"] = pd.DataFrame(
-            state["start_history"], columns=params.index
-        )
-        raw_res["multistart_convergence"] = is_converged
+        raw_res["multistart_info"] = {
+            "start_parameters": state["start_history"],
+            "local_optima": state["result_history"],
+            "exploration_sample": sorted_sample,
+            "exploration_results": sorted_values,
+        }
 
-    res = _process_res(raw_res)
+    res = process_internal_optimizer_result(
+        raw_res,
+        direction=direction,
+        params_from_internal=params_from_internal,
+    )
 
     return res
 
@@ -1051,57 +1046,6 @@ def _adjust_options_to_algorithms(
     return reduced
 
 
-def _dummy_result_from_traceback(candidate):
-    if isinstance(candidate, str):
-        out = {
-            "solution_params": None,
-            "solution_criterion": None,
-            "solution_derivative": None,
-            "solution_hessian": None,
-            "n_criterion_evaluations": None,
-            "n_derivative_evaluations": None,
-            "n_iterations": None,
-            "success": False,
-            "reached_convergence_criterion": None,
-            "message": candidate,
-        }
-    else:
-        out = candidate
-    return out
-
-
 def _setdefault(candidate, default):
     out = default if candidate is None else candidate
     return out
-
-
-def _process_internal_result(
-    res, params, criterion, direction, params_from_internal, algo_name
-):
-    p = params.copy()
-    p["value"] = params_from_internal(res["solution_x"])
-    res["solution_params"] = p
-
-    if "solution_criterion" not in res:
-        res["solution_criterion"] = criterion(p)
-
-    if direction == "maximize":
-        res["solution_criterion"] = -res["solution_criterion"]
-
-    # in the long run we can get some of those from the database if logging was used.
-    optional_entries = [
-        "solution_derivative",
-        "solution_hessian",
-        "n_criterion_evaluations",
-        "n_derivative_evaluations",
-        "n_iterations",
-        "success",
-        "reached_convergence_criterion",
-        "message",
-    ]
-
-    for entry in optional_entries:
-        res[entry] = res.get(entry, f"Not reported by {algo_name}")
-
-    res = _dummy_result_from_traceback(res)
-    return res

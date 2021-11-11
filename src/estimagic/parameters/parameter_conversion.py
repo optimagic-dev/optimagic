@@ -20,7 +20,12 @@ from estimagic.parameters.reparametrize import reparametrize_to_internal
 
 
 def get_reparametrize_functions(
-    params, constraints, scaling_factor=None, scaling_offset=None
+    params,
+    constraints,
+    scaling_factor=None,
+    scaling_offset=None,
+    processed_params=None,
+    processed_constraints=None,
 ):
     """Construct functions to map between internal and external parameters.
 
@@ -30,22 +35,25 @@ def get_reparametrize_functions(
         params (pandas.DataFrame): See :ref:`params`.
         constraints (list): List of constraint dictionaries.
         scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+        processed_params (pandas.DataFrame): Processed parameters.
+        processed_constraints (list): Processed constraints.
 
     Returns:
         func: Function that maps an external parameter vector to an internal one
         func: Function that maps an internal parameter vector to an external one
 
     """
-    params = add_default_bounds_to_params(params)
-    check_params_are_valid(params)
+    if processed_params is None or processed_constraints is None:
+        params = add_default_bounds_to_params(params)
+        check_params_are_valid(params)
 
-    processed_constraints, processed_params = process_constraints(
-        constraints=constraints,
-        params=params,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-    )
+        processed_constraints, processed_params = process_constraints(
+            constraints=constraints,
+            params=params,
+            scaling_factor=scaling_factor,
+            scaling_offset=scaling_offset,
+        )
 
     # get partialed reparametrize from internal
     pre_replacements = processed_params["_pre_replacements"].to_numpy()
@@ -69,6 +77,7 @@ def get_reparametrize_functions(
         pre_replacements=pre_replacements,
         processed_constraints=processed_constraints,
         post_replacements=post_replacements,
+        params=params,
         scaling_factor=scaling_factor,
         scaling_offset=scaling_offset,
     )
@@ -77,7 +86,12 @@ def get_reparametrize_functions(
 
 
 def get_derivative_conversion_function(
-    params, constraints, scaling_factor=None, scaling_offset=None
+    params,
+    constraints,
+    scaling_factor=None,
+    scaling_offset=None,
+    processed_params=None,
+    processed_constraints=None,
 ):
     """Construct functions to map between internal and external derivatives.
 
@@ -87,21 +101,24 @@ def get_derivative_conversion_function(
         params (pandas.DataFrame): See :ref:`params`.
         constraints (list): List of constraint dictionaries.
         scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+        processed_params (pandas.DataFrame): Processed parameters.
+        processed_constraints (list): Processed constraints.
 
 
     Returns:
         func: Function that converts an external derivative to an internal one
 
     """
-    params = add_default_bounds_to_params(params)
-    check_params_are_valid(params)
-    processed_constraints, processed_params = process_constraints(
-        constraints=constraints,
-        params=params,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-    )
+    if processed_params is None or processed_constraints is None:
+        params = add_default_bounds_to_params(params)
+        check_params_are_valid(params)
+        processed_constraints, processed_params = process_constraints(
+            constraints=constraints,
+            params=params,
+            scaling_factor=scaling_factor,
+            scaling_offset=scaling_offset,
+        )
 
     pre_replacements = processed_params["_pre_replacements"].to_numpy()
     post_replacements = processed_params["_post_replacements"].to_numpy()
