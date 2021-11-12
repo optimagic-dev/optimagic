@@ -273,7 +273,7 @@ def heart_eight(x, y):
     return fvec
 
 
-def get_start_values_mancino(n):
+def get_start_points_mancino(n):
     x = np.zeros(n)
     for i in range(1, n + 1):
         sm = 0
@@ -788,42 +788,42 @@ MORE_WILD_PROBLEMS = {
     },
     "mancino_5_good_start": {
         "criterion": mancino,
-        "start_x": get_start_values_mancino(5),
+        "start_x": get_start_points_mancino(5),
         "solution_x": None,
         "start_criterion": 2.539084e9,
         "solution_criterion": 0,
     },
     "mancino_5_bad_start": {
         "criterion": mancino,
-        "start_x": 10 * get_start_values_mancino(5),
+        "start_x": 10 * get_start_points_mancino(5),
         "solution_x": None,
         "start_criterion": 6.873795e12,
         "solution_criterion": 0,
     },
     "mancino_8": {
         "criterion": mancino,
-        "start_x": get_start_values_mancino(8),
+        "start_x": get_start_points_mancino(8),
         "solution_x": None,
         "start_criterion": 3.367961e9,
         "solution_criterion": 0,
     },
     "mancino_10": {
         "criterion": mancino,
-        "start_x": get_start_values_mancino(10),
+        "start_x": get_start_points_mancino(10),
         "solution_x": None,
         "start_criterion": 3.735127e9,
         "solution_criterion": 0,
     },
     "mancino_12_good_start": {
         "criterion": mancino,
-        "start_x": get_start_values_mancino(12),
+        "start_x": get_start_points_mancino(12),
         "solution_x": None,
         "start_criterion": 3.991072e9,
         "solution_criterion": 0,
     },
     "mancino_12_bad_start": {
         "criterion": mancino,
-        "start_x": 10 * get_start_values_mancino(12),
+        "start_x": 10 * get_start_points_mancino(12),
         "solution_x": None,
         "start_criterion": 1.130015e13,
         "solution_criterion": 0,
