@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from estimagic import batch_evaluators as be
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
@@ -11,19 +12,16 @@ from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_steps_table
-from estimagic.logging.database_utilities import read_last_rows
 from estimagic.optimization.check_arguments import check_optimize_kwargs
 from estimagic.optimization.get_algorithm import get_algorithm
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
+from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.process_results import process_internal_optimizer_result
 from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
-from estimagic.optimization.tiktak import determine_steps
-from estimagic.optimization.tiktak import get_batched_optimization_sample
-from estimagic.optimization.tiktak import get_exploration_sample
-from estimagic.optimization.tiktak import run_explorations
-from estimagic.optimization.tiktak import update_convergence_state
+from estimagic.optimization.tiktak import get_internal_sampling_bounds
+from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
 from estimagic.parameters.parameter_conversion import get_internal_bounds
@@ -136,9 +134,11 @@ def maximize(
         multistart_options (dict): Options to configure the optimization from multiple
             starting values. For details see :ref:`multistart`. The dictionary has the
             following entries (all of which are optional):
-            - n_samples (int, pandas.DataFrame or numpy.ndarray): Number of sampled
-            points on which to do one function evaluation. Default is 10 * n_params.
-            Alternatively, a DataFrame or numpy array with an existing sample.
+            - n_samples (int): Number of sampled points on which to do one function
+            evaluation. Default is 10 * n_params.
+            - sample (pandas.DataFrame or numpy.ndarray) A user definde sample.
+            If this is provided, n_samples, sampling_method and sampling_distribution
+            are not used.
             - share_optimizations (float): Share of sampled points that is used to
             construct a starting point for a local optimization. Default 0.1.
             - sampling_distribution (str): One of "uniform", "triangle". Default is
@@ -302,9 +302,11 @@ def minimize(
         multistart_options (dict): Options to configure the optimization from multiple
             starting values. For details see :ref:`multistart`. The dictionary has the
             following entries (all of which are optional):
-            - n_samples (int, pandas.DataFrame or numpy.ndarray): Number of sampled
-            points on which to do one function evaluation. Default is 10 * n_params.
-            Alternatively, a DataFrame or numpy array with an existing sample.
+            - n_samples (int): Number of sampled points on which to do one function
+            evaluation. Default is 10 * n_params.
+            - sample (pandas.DataFrame or numpy.ndarray) A user definde sample.
+            If this is provided, n_samples, sampling_method and sampling_distribution
+            are not used.
             - share_optimizations (float): Share of sampled points that is used to
             construct a starting point for a local optimization. Default 0.1.
             - sampling_distribution (str): One of "uniform", "triangle". Default is
@@ -470,9 +472,11 @@ def _optimize(
         multistart_options (dict): Options to configure the optimization from multiple
             starting values. For details see :ref:`multistart`. The dictionary has the
             following entries (all of which are optional):
-            - n_samples (int, pandas.DataFrame or numpy.ndarray): Number of sampled
-            points on which to do one function evaluation. Default is 10 * n_params.
-            Alternatively, a DataFrame or numpy array with an existing sample.
+            - n_samples (int): Number of sampled points on which to do one function
+            evaluation. Default is 10 * n_params.
+            - sample (pandas.DataFrame or numpy.ndarray) A user definde sample.
+            If this is provided, n_samples, sampling_method and sampling_distribution
+            are not used.
             - share_optimizations (float): Share of sampled points that is used to
             construct a starting point for a local optimization. Default 0.1.
             - sampling_distribution (str): One of "uniform", "triangle". Default is
@@ -521,11 +525,6 @@ def _optimize(
     multistart_options = _setdefault(multistart_options, {})
     if logging:
         logging = Path(logging)
-
-    if multistart:
-        multistart_options = _fill_multistart_options_with_defaults(
-            multistart_options, params
-        )
 
     check_optimize_kwargs(
         direction=direction,
@@ -595,11 +594,6 @@ def _optimize(
     else:
         scaling_factor, scaling_offset = None, None
 
-    if multistart:
-        multistart_options = _fill_multistart_options_with_defaults(
-            multistart_options, params
-        )
-
     # name and group column are needed in the dashboard but could lead to problems
     # if present anywhere else
     params_with_name_and_group = _add_name_and_group_columns_to_params(params)
@@ -641,21 +635,18 @@ def _optimize(
         numdiff_options, lower_bounds, upper_bounds
     )
 
-    # determine steps
-    if multistart:
-        steps = determine_steps(
-            multistart_options["n_samples"], multistart_options["share_optimizations"]
-        )
-    else:
-        steps = [{"type": "optimization", "status": "running", "name": "optimization"}]
-
     # create and initialize the database
-    if not logging:
-        database, step_ids = False, [None] * len(steps)
-    else:
-        database, step_ids = _create_and_initialize_database(
-            logging, log_options, first_eval, problem_data, steps
+    if logging:
+        database = _create_and_initialize_database(
+            logging, log_options, first_eval, problem_data
         )
+        db_kwargs = {
+            "database": database,
+            "path": logging,
+            "fast_logging": log_options.get("fast_logging", False),
+        }
+    else:
+        db_kwargs = {"database": None, "path": None, "fast_logging": False}
 
     # get the algorithm
     internal_algorithm = get_algorithm(
@@ -664,9 +655,7 @@ def _optimize(
         upper_bounds=upper_bounds,
         algo_options=algo_options,
         logging=logging,
-        database=database,
-        database_path=logging,
-        fast_logging=log_options.get("fast_logging", False),
+        db_kwargs=db_kwargs,
     )
 
     # set default error penalty
@@ -688,121 +677,56 @@ def _optimize(
         "derivative": derivative,
         "criterion_and_derivative": criterion_and_derivative,
         "numdiff_options": numdiff_options,
-        "database": database,
-        "database_path": logging,
-        "log_options": log_options,
+        "logging": logging,
+        "db_kwargs": db_kwargs,
         "first_criterion_evaluation": first_eval,
         "cache": cache,
         "cache_size": cache_size,
     }
 
-    # do actual optimizations
+    internal_criterion_and_derivative = functools.partial(
+        internal_criterion_and_derivative_template,
+        **always_partialled,
+    )
 
+    # do actual optimizations
     if not multistart:
+
+        steps = [{"type": "optimization", "name": "optimization"}]
+
+        step_ids = log_scheduled_steps_and_get_ids(
+            steps=steps,
+            logging=logging,
+            db_kwargs=db_kwargs,
+        )
         internal_criterion_and_derivative = functools.partial(
-            internal_criterion_and_derivative_template,
-            **always_partialled,
+            internal_criterion_and_derivative,
             error_handling=error_handling,
             error_penalty=error_penalty,
         )
         raw_res = internal_algorithm(internal_criterion_and_derivative, x, step_ids[0])
     else:
-        sample = get_exploration_sample(
-            params=params,
-            n_samples=multistart_options["n_samples"],
-            sampling_distribution=multistart_options["sampling_distribution"],
-            sampling_method=multistart_options["sampling_method"],
-            seed=multistart_options["seed"],
-            constraints=constraints,
+
+        lower, upper = get_internal_sampling_bounds(params, constraints)
+
+        multistart_options = _fill_multistart_options_with_defaults(
+            multistart_options,
+            params,
+            constraints,
         )
 
-        exploration_func = functools.partial(
-            internal_criterion_and_derivative_template,
-            **always_partialled,
-        )
-        exploration_res = run_explorations(
-            exploration_func,
-            sample=sample,
-            batch_evaluator=multistart_options["batch_evaluator"],
-            n_cores=multistart_options["n_cores"],
-            step_id=step_ids[0],
-        )
-
-        sorted_sample = exploration_res["sorted_sample"]
-        sorted_values = exploration_res["sorted_values"]
-
-        n_optimizations = int(len(sample) * multistart_options["share_optimizations"])
-
-        batched_sample = get_batched_optimization_sample(
-            sorted_sample=sorted_sample,
-            n_optimizations=n_optimizations,
-            batch_size=multistart_options["batch_size"],
-        )
-
-        state = {
-            "best_x": sorted_sample[0],
-            "best_y": sorted_values[0],
-            "best_res": None,
-            "x_history": [],
-            "y_history": [],
-            "result_history": [],
-            "start_history": [],
-        }
-
-        convergence_criteria = {
-            "xtol": multistart_options["convergence_relative_params_tolerance"],
-            "max_discoveries": multistart_options["convergence_max_discoveries"],
-        }
-
-        internal_criterion_and_derivative = functools.partial(
-            internal_criterion_and_derivative_template,
-            **always_partialled,
+        raw_res = run_multistart_optimization(
+            local_algorithm=internal_algorithm,
+            criterion_and_derivative=internal_criterion_and_derivative,
+            x=x,
+            lower_bounds=lower,
+            upper_bounds=upper,
+            options=multistart_options,
+            logging=logging,
+            db_kwargs=db_kwargs,
             error_handling=error_handling,
             error_penalty=error_penalty,
         )
-
-        batch_evaluator = multistart_options["batch_evaluator"]
-
-        weight_func = functools.partial(
-            multistart_options["mixing_weight_method"],
-            min_weight=multistart_options["mixing_weight_bounds"][0],
-            max_weight=multistart_options["mixing_weight_bounds"][1],
-        )
-
-        opt_counter = 0
-        for batch in batched_sample:
-
-            weight = weight_func(opt_counter, n_optimizations)
-            starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
-
-            arguments = [
-                (internal_criterion_and_derivative, x, step)
-                for x, step in zip(starts, step_ids[1:])
-            ]
-
-            batch_results = batch_evaluator(
-                func=internal_algorithm,
-                arguments=arguments,
-                unpack_symbol="*",
-                n_cores=multistart_options["n_cores"],
-            )
-
-            state, is_converged = update_convergence_state(
-                current_state=state,
-                starts=starts,
-                results=batch_results,
-                convergence_criteria=convergence_criteria,
-            )
-            if is_converged:
-                break
-
-        raw_res = state["best_res"]
-        raw_res["multistart_info"] = {
-            "start_parameters": state["start_history"],
-            "local_optima": state["result_history"],
-            "exploration_sample": sorted_sample,
-            "exploration_results": exploration_res["sorted_criterion_outputs"],
-        }
 
     res = process_internal_optimizer_result(
         raw_res,
@@ -835,9 +759,7 @@ def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
     return error_penalty
 
 
-def _create_and_initialize_database(
-    logging, log_options, first_eval, problem_data, steps
-):
+def _create_and_initialize_database(logging, log_options, first_eval, problem_data):
     # extract information
     path = Path(logging)
     fast_logging = log_options.get("fast_logging", False)
@@ -868,22 +790,6 @@ def _create_and_initialize_database(
     # create and initialize the optimization_status table
     make_steps_table(database, if_exists=if_table_exists)
 
-    for row in steps:
-        append_row(
-            data=row,
-            table_name="steps",
-            database=database,
-            path=path,
-            fast_logging=fast_logging,
-        )
-
-        step_ids = read_last_rows(
-            database=database,
-            table_name="steps",
-            n_rows=len(steps),
-            return_type="dict_of_lists",
-        )["rowid"]
-
     # create_and_initialize the optimization_problem table
     make_optimization_problem_table(database, if_exists=if_table_exists)
 
@@ -902,7 +808,7 @@ def _create_and_initialize_database(
 
     append_row(problem_data, "optimization_problem", database, path, fast_logging)
 
-    return database, step_ids
+    return database
 
 
 def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bounds):
@@ -947,41 +853,6 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     return numdiff_options
 
 
-def _fill_multistart_options_with_defaults(options, params):
-    defaults = {
-        "n_samples": 10 * len(params),
-        "share_optimizations": 0.1,
-        "sampling_distribution": "uniform",
-        "sampling_method": "sobol" if len(params) <= 30 else "random",
-        "mixing_weight_method": "tiktak",
-        "mixing_weight_bounds": (0.1, 0.995),
-        "convergence_relative_params_tolerance": 0.01,
-        "convergence_max_discoveries": 2,
-        "n_cores": 1,
-        "batch_evaluator": "joblib",
-        "seed": None,
-    }
-
-    options = {k.replace(".", "_"): v for k, v in options.items()}
-    out = {**defaults, **options}
-
-    if "batch_size" not in out:
-        out["batch_size"] = out["n_cores"]
-    else:
-        if out["batch_size"] < out["n_cores"]:
-            raise ValueError("batch_size must be at least as large as n_cores.")
-
-    if isinstance(out["batch_evaluator"], str):
-        out["batch_evaluator"] = getattr(
-            be, f"{out['batch_evaluator']}_batch_evaluator"
-        )
-
-    if isinstance(out["mixing_weight_method"], str):
-        out["mixing_weight_method"] = WEIGHT_FUNCTIONS[out["mixing_weight_method"]]
-
-    return out
-
-
 def _add_name_and_group_columns_to_params(params):
     """Add a group and name column to the params.
 
@@ -1018,3 +889,67 @@ def _index_element_to_string(element, separator="_"):
 def _setdefault(candidate, default):
     out = default if candidate is None else candidate
     return out
+
+
+def _fill_multistart_options_with_defaults(options, params, constraints):
+    defaults = {
+        "sample": None,
+        "n_samples": 10 * len(params),
+        "share_optimizations": 0.1,
+        "sampling_distribution": "uniform",
+        "sampling_method": "sobol" if len(params) <= 30 else "random",
+        "mixing_weight_method": "tiktak",
+        "mixing_weight_bounds": (0.1, 0.995),
+        "convergence_relative_params_tolerance": 0.01,
+        "convergence_max_discoveries": 2,
+        "n_cores": 1,
+        "batch_evaluator": "joblib",
+        "seed": None,
+    }
+
+    options = {k.replace(".", "_"): v for k, v in options.items()}
+    out = {**defaults, **options}
+
+    if "batch_size" not in out:
+        out["batch_size"] = out["n_cores"]
+    else:
+        if out["batch_size"] < out["n_cores"]:
+            raise ValueError("batch_size must be at least as large as n_cores.")
+
+    if isinstance(out["batch_evaluator"], str):
+        out["batch_evaluator"] = getattr(
+            be, f"{out['batch_evaluator']}_batch_evaluator"
+        )
+
+    if isinstance(out["mixing_weight_method"], str):
+        out["mixing_weight_method"] = WEIGHT_FUNCTIONS[out["mixing_weight_method"]]
+
+    if out["sample"] is not None:
+        out["sample"] = process_multistart_sample(out["sample"], params, constraints)
+        out["n_samples"] = len(out["sample"])
+
+    return out
+
+
+def process_multistart_sample(raw_sample, params, constraints):
+    if isinstance(raw_sample, pd.DataFrame):
+        if not raw_sample.columns.equals(params.index):
+            raise ValueError(
+                "If you provide a custom sample as DataFrame the columns of that "
+                "DataFrame and the index of params must be equal."
+            )
+        sample = raw_sample[params.index].to_numpy()
+    elif isinstance(raw_sample, np.ndarray):
+        _, n_params = raw_sample.shape
+        if n_params != len(params):
+            raise ValueError(
+                "If you provide a custom sample as a numpy array it must have as many "
+                "columns as parameters."
+            )
+        sample = raw_sample
+
+    to_internal, _ = get_reparametrize_functions(params, constraints)
+
+    sample = np.array([to_internal(x) for x in sample])
+
+    return sample

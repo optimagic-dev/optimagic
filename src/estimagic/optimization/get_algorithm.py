@@ -14,9 +14,7 @@ def get_algorithm(
     upper_bounds,
     algo_options,
     logging,
-    database,
-    database_path,
-    fast_logging,
+    db_kwargs,
 ):
     """Get algorithm-function with partialled optionts
 
@@ -32,9 +30,7 @@ def get_algorithm(
             algorithm. Entries that are not used by the algorithm are ignored with a
             warning.
         logging (bool): Whether the algorithm should do logging.
-        database (sqlalchemy.MetaData): The database to which the log is written.
-        database_path (pathlib.Path): Path to the database.
-        fast_logging (bool): Whether fast_logging is used.
+        db_kwargs (dict): Dict with the entries "database", "path" and "fast_logging"
 
     Returns:
         callable: The algorithm.
@@ -56,9 +52,7 @@ def get_algorithm(
         _algorithm_with_logging_template,
         algorithm=partialled_algorithm,
         logging=logging,
-        database=database,
-        database_path=database_path,
-        fast_logging=fast_logging,
+        db_kwargs=db_kwargs,
     )
 
     return algorithm
@@ -98,9 +92,7 @@ def _algorithm_with_logging_template(
     step_id,
     algorithm,
     logging,
-    database,
-    database_path,
-    fast_logging,
+    db_kwargs,
 ):
     """Wrapped algorithm that logs its status.
 
@@ -113,9 +105,8 @@ def _algorithm_with_logging_template(
         logging (bool): Whether logging is used.
         algorithm (callable): The internal algorithm where all argument except for
             ``x`` and ``criterion_and_derivative`` are already partialled in.
-        database (sqlalchemy.MetaData): The database to which the log is written.
-        database_path (pathlib.Path): Path to the database.
-        fast_logging (bool): Whether fast_logging is used.
+        db_kwargs (dict): Dict with the entries "database", "path" and "fast_logging"
+
 
     Returns:
         dict: Same result as internal algorithm.
@@ -124,12 +115,6 @@ def _algorithm_with_logging_template(
 
     if logging:
         step_id = int(step_id)
-        db_kwargs = {
-            "database": database,
-            "path": database_path,
-            "fast_logging": fast_logging,
-        }
-
         update_row(
             data={"status": "running"},
             rowid=step_id,

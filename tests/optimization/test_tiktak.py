@@ -3,14 +3,12 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.tiktak import _do_actual_sampling
-from estimagic.optimization.tiktak import _get_internal_sampling_bounds
-from estimagic.optimization.tiktak import _has_transforming_constraints
+from estimagic.optimization.optimize import process_multistart_sample
 from estimagic.optimization.tiktak import _linear_weights
-from estimagic.optimization.tiktak import _process_sample
 from estimagic.optimization.tiktak import _tiktak_weights
+from estimagic.optimization.tiktak import draw_exploration_sample
 from estimagic.optimization.tiktak import get_batched_optimization_sample
-from estimagic.optimization.tiktak import get_exploration_sample
+from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_explorations
 from estimagic.optimization.tiktak import update_convergence_state
 from numpy.testing import assert_array_almost_equal as aaae
@@ -30,24 +28,12 @@ def constraints():
     return [{"type": "fixed", "loc": "c", "value": 2}]
 
 
-def test_get_exploration_sample_runs(params, constraints):
-    calculated = get_exploration_sample(
-        params,
-        n_samples=30,
-        sampling_distribution="uniform",
-        sampling_method="sobol",
-        constraints=constraints,
-        seed=1234,
-    )
-    assert calculated.shape == (30, 2)
-
-
 samples = [pd.DataFrame(np.ones((2, 3)), columns=["a", "b", "c"]), np.ones((2, 3))]
 
 
 @pytest.mark.parametrize("sample", samples)
-def test_process_sample(sample, params):
-    calculated = _process_sample(sample, params, [])
+def test_process_multistart_sample(sample, params):
+    calculated = process_multistart_sample(sample, params, [])
     expeceted = np.ones((2, 3))
     aaae(calculated, expeceted)
 
@@ -66,18 +52,18 @@ test_cases = list(product(distributions, rules))
 
 
 @pytest.mark.parametrize("dist, rule", test_cases)
-def test_do_actual_sampling(dist, rule):
+def test_draw_exploration_sample(dist, rule):
 
     results = []
     for _ in range(2):
         results.append(
-            _do_actual_sampling(
-                midpoint=np.array([0.5, 0.5]),
+            draw_exploration_sample(
+                x=np.array([0.5, 0.5]),
                 lower=np.zeros(2),
                 upper=np.ones(2),
-                size=3,
-                distribution=dist,
-                rule=rule,
+                n_samples=3,
+                sampling_distribution=dist,
+                sampling_method=rule,
                 seed=1234,
             )
         )
@@ -88,18 +74,10 @@ def test_do_actual_sampling(dist, rule):
 
 
 def test_get_internal_sampling_bounds(params, constraints):
-    calculated = _get_internal_sampling_bounds(params, constraints)
+    calculated = get_internal_sampling_bounds(params, constraints)
     expeceted = [np.array([-1, 0]), np.array([2, 2])]
     for calc, exp in zip(calculated, expeceted):
         aaae(calc, exp)
-
-
-def test_has_transforming_constraints():
-    constraints = [{"type": "sdcorr"}]
-    assert _has_transforming_constraints(constraints)
-
-    constraints = [{"type": "fixed"}]
-    assert not _has_transforming_constraints(constraints)
 
 
 def test_run_explorations():

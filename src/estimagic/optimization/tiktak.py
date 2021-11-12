@@ -25,12 +25,135 @@ from functools import partial
 
 import chaospy
 import numpy as np
-import pandas as pd
 from chaospy.distributions import Triangle
 from chaospy.distributions import Uniform
 from estimagic import batch_evaluators as be
+from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.parameters.parameter_conversion import get_internal_bounds
-from estimagic.parameters.parameter_conversion import get_reparametrize_functions
+
+
+def run_multistart_optimization(
+    local_algorithm,
+    criterion_and_derivative,
+    x,
+    lower_bounds,
+    upper_bounds,
+    options,
+    logging,
+    db_kwargs,
+    error_handling,
+    error_penalty,
+):
+    steps = determine_steps(options["n_samples"], options["share_optimizations"])
+
+    step_ids = log_scheduled_steps_and_get_ids(
+        steps=steps,
+        logging=logging,
+        db_kwargs=db_kwargs,
+    )
+
+    if options["sample"] is not None:
+        sample = options["sample"]
+    else:
+        sample = draw_exploration_sample(
+            x=x,
+            lower=lower_bounds,
+            upper=upper_bounds,
+            n_samples=options["n_samples"],
+            sampling_distribution=options["sampling_distribution"],
+            sampling_method=options["sampling_method"],
+            seed=options["seed"],
+        )
+
+    exploration_func = partial(
+        criterion_and_derivative,
+        error_handling="continue",
+        error_penalty={"slope": np.nan, "constant": np.nan},
+    )
+
+    exploration_res = run_explorations(
+        exploration_func,
+        sample=sample,
+        batch_evaluator=options["batch_evaluator"],
+        n_cores=options["n_cores"],
+        step_id=step_ids[0],
+    )
+
+    sorted_sample = exploration_res["sorted_sample"]
+    sorted_values = exploration_res["sorted_values"]
+
+    n_optimizations = int(len(sample) * options["share_optimizations"])
+
+    batched_sample = get_batched_optimization_sample(
+        sorted_sample=sorted_sample,
+        n_optimizations=n_optimizations,
+        batch_size=options["batch_size"],
+    )
+
+    state = {
+        "best_x": sorted_sample[0],
+        "best_y": sorted_values[0],
+        "best_res": None,
+        "x_history": [],
+        "y_history": [],
+        "result_history": [],
+        "start_history": [],
+    }
+
+    convergence_criteria = {
+        "xtol": options["convergence_relative_params_tolerance"],
+        "max_discoveries": options["convergence_max_discoveries"],
+    }
+
+    criterion_and_derivative = partial(
+        criterion_and_derivative,
+        error_handling=error_handling,
+        error_penalty=error_penalty,
+    )
+
+    batch_evaluator = options["batch_evaluator"]
+
+    weight_func = partial(
+        options["mixing_weight_method"],
+        min_weight=options["mixing_weight_bounds"][0],
+        max_weight=options["mixing_weight_bounds"][1],
+    )
+
+    opt_counter = 0
+    for batch in batched_sample:
+
+        weight = weight_func(opt_counter, n_optimizations)
+        starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
+
+        arguments = [
+            (criterion_and_derivative, x, step) for x, step in zip(starts, step_ids[1:])
+        ]
+
+        batch_results = batch_evaluator(
+            func=local_algorithm,
+            arguments=arguments,
+            unpack_symbol="*",
+            n_cores=options["n_cores"],
+        )
+
+        state, is_converged = update_convergence_state(
+            current_state=state,
+            starts=starts,
+            results=batch_results,
+            convergence_criteria=convergence_criteria,
+        )
+        if is_converged:
+            break
+
+    raw_res = state["best_res"]
+    raw_res["multistart_info"] = {
+        "start_parameters": state["start_history"],
+        "local_optima": state["result_history"],
+        "exploration_sample": sorted_sample,
+        "exploration_results": exploration_res["sorted_criterion_outputs"],
+    }
+
+    return raw_res
 
 
 def determine_steps(n_samples, share_optimizations):
@@ -57,13 +180,14 @@ def determine_steps(n_samples, share_optimizations):
     return steps
 
 
-def get_exploration_sample(
-    params,
+def draw_exploration_sample(
+    x,
+    lower,
+    upper,
     n_samples,
     sampling_distribution,
     sampling_method,
     seed,
-    constraints,
 ):
     """Get a sample of parameter values for the first stage of the tiktak algorithm.
 
@@ -71,10 +195,11 @@ def get_exploration_sample(
     distributions are available.
 
     Args:
-        params (pandas.DataFrame): see :ref:`params`.
-        n_samples (int, pandas.DataFrame or numpy.ndarray): Number of sampled points on
+        x (np.ndarray): Internal parameter vector,
+        lower (np.ndarray): Vector of internal lower bounds.
+        upper (np.ndarray): Vector of internal upper bounts.
+        n_samples (int): Number of sampled points on
             which to do one function evaluation. Default is 10 * n_params.
-            Alternatively, a DataFrame or numpy array with an existing sample.
         sampling_distribution (str): One of "uniform", "triangle". Default is
             "uniform"  as in the original tiktak algorithm.
         sampling_method (str): One of "random", "sobol", "halton",
@@ -82,88 +207,12 @@ def get_exploration_sample(
             or DataFrame with custom points. Default is sobol for problems with up to 30
             parameters and random for problems with more than 30 parameters.
         seed (int): Random seed.
-        constraints (list): See :ref:`constraints`.
 
     Returns:
         np.ndarray: Numpy array of shape n_samples, len(params). Each row is a vector
             of parameter values.
 
     """
-    if constraints is None:
-        constraints = []
-
-    if isinstance(n_samples, (np.ndarray, pd.DataFrame)):
-        sample = _process_sample(n_samples, params, constraints)
-    elif isinstance(n_samples, (int, float)):
-        sample = _create_sample(
-            params=params,
-            n_samples=n_samples,
-            sampling_distribution=sampling_distribution,
-            sampling_method=sampling_method,
-            seed=seed,
-            constraints=constraints,
-        )
-    else:
-        raise TypeError(f"Invalid type for n_samples: {type(n_samples)}")
-    return sample
-
-
-def _process_sample(raw_sample, params, constraints):
-    if isinstance(raw_sample, pd.DataFrame):
-        if not raw_sample.columns.equals(params.index):
-            raise ValueError(
-                "If you provide a custom sample as DataFrame the columns of that "
-                "DataFrame and the index of params must be equal."
-            )
-        sample = raw_sample[params.index].to_numpy()
-    elif isinstance(raw_sample, np.ndarray):
-        _, n_params = raw_sample.shape
-        if n_params != len(params):
-            raise ValueError(
-                "If you provide a custom sample as a numpy array it must have as many "
-                "columns as parameters."
-            )
-        sample = raw_sample
-
-    to_internal, _ = get_reparametrize_functions(params, constraints)
-
-    sample = np.array([to_internal(x) for x in sample])
-
-    return sample
-
-
-def _create_sample(
-    params,
-    n_samples,
-    sampling_distribution,
-    sampling_method,
-    seed,
-    constraints,
-):
-    if _has_transforming_constraints(constraints):
-        raise NotImplementedError(
-            "Multistart optimization is not yet compatible with transforming "
-            "Constraints that require a transformation of parameters such as "
-            "linear, probability, covariance and sdcorr constranits."
-        )
-
-    lower, upper = _get_internal_sampling_bounds(params, constraints)
-
-    sample = _do_actual_sampling(
-        midpoint=params["value"].to_numpy(),
-        lower=lower,
-        upper=upper,
-        size=n_samples,
-        distribution=sampling_distribution,
-        rule=sampling_method,
-        seed=seed,
-    )
-
-    return sample
-
-
-def _do_actual_sampling(midpoint, lower, upper, size, distribution, rule, seed):
-
     valid_rules = [
         "random",
         "sobol",
@@ -173,28 +222,30 @@ def _do_actual_sampling(midpoint, lower, upper, size, distribution, rule, seed):
         "latin_hypercube",
     ]
 
-    if rule not in valid_rules:
-        raise ValueError(f"Invalid rule: {rule}. Must be one of\n\n{valid_rules}\n\n")
+    if sampling_method not in valid_rules:
+        raise ValueError(
+            f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
+        )
 
-    if distribution == "uniform":
+    if sampling_distribution == "uniform":
         dist_list = [Uniform(lb, ub) for lb, ub in zip(lower, upper)]
-    elif distribution == "triangle":
-        dist_list = [Triangle(lb, mp, ub) for lb, mp, ub in zip(lower, midpoint, upper)]
+    elif sampling_distribution == "triangle":
+        dist_list = [Triangle(lb, mp, ub) for lb, mp, ub in zip(lower, x, upper)]
     else:
-        raise ValueError(f"Unsupported distribution: {distribution}")
+        raise ValueError(f"Unsupported distribution: {sampling_distribution}")
 
     joint_distribution = chaospy.J(*dist_list)
 
     np.random.seed(seed)
 
     sample = joint_distribution.sample(
-        size=size,
-        rule=rule,
+        size=n_samples,
+        rule=sampling_method,
     ).T
     return sample
 
 
-def _get_internal_sampling_bounds(params, constraints):
+def get_internal_sampling_bounds(params, constraints):
     params = params.copy(deep=True)
     params["lower_bound"] = _extract_external_sampling_bound(params, "lower")
     params["upper_bound"] = _extract_external_sampling_bound(params, "upper")
@@ -232,21 +283,6 @@ def _extract_external_sampling_bound(params, bounds_type):
         )
 
     return bounds
-
-
-def _has_transforming_constraints(constraints):
-    constraints = [] if constraints is None else constraints
-    transforming_types = {
-        "linear",
-        "probability",
-        "covariance",
-        "sdcorr",
-        "increasing",
-        "decreasing",
-        "sum",
-    }
-    present_types = {constr["type"] for constr in constraints}
-    return bool(transforming_types.intersection(present_types))
 
 
 def run_explorations(func, sample, batch_evaluator, n_cores, step_id):

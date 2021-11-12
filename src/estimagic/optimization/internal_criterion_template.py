@@ -42,9 +42,8 @@ def internal_criterion_and_derivative_template(
     derivative,
     criterion_and_derivative,
     numdiff_options,
-    database,
-    database_path,
-    log_options,
+    logging,
+    db_kwargs,
     error_handling,
     error_penalty,
     first_criterion_evaluation,
@@ -94,9 +93,8 @@ def internal_criterion_and_derivative_template(
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives. See :ref:`first_derivative` for details. Note that the default
             method is changed to "forward" for speed reasons.
-        database (sqlalchemy.MetaData): Bound MetaData object.
-        database_path (pathlib.Path): Path to the database.
-        log_options (dict): Additional keyword arguments to configure the logging.
+        logging (bool): Wether logging is used.
+        db_kwargs (dict): Dictionary with entries "database", "path" and "fast_logging".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -234,15 +232,13 @@ def internal_criterion_and_derivative_template(
         cache_entry.get("derivative", new_derivative), algorithm_info
     )
 
-    if (new_criterion is not None or new_derivative is not None) and database:
+    if (new_criterion is not None or new_derivative is not None) and logging:
         _log_new_evaluations(
             new_criterion=new_criterion,
             new_derivative=new_derivative,
             external_x=external_x,
             caught_exceptions=caught_exceptions,
-            database=database,
-            database_path=database_path,
-            log_options=log_options,
+            db_kwargs=db_kwargs,
             fixed_log_data=fixed_log_data,
         )
 
@@ -429,9 +425,7 @@ def _log_new_evaluations(
     new_derivative,
     external_x,
     caught_exceptions,
-    database,
-    database_path,
-    log_options,
+    db_kwargs,
     fixed_log_data,
 ):
     """Write the new evaluations and additional information into the database.
@@ -460,14 +454,9 @@ def _log_new_evaluations(
         data = {**data, **new_criterion}
         data["value"] = float(data["value"])
 
-    if "suffix" in log_options:
-        name = "optimization_iterations" + "_" + log_options["suffix"]
-    else:
-        name = "optimization_iterations"
+    name = "optimization_iterations"
 
-    fast_logging = log_options.get("fast_logging", False)
-
-    append_row(data, name, database, database_path, fast_logging)
+    append_row(data, name, **db_kwargs)
 
 
 def _get_output_for_optimizer(
