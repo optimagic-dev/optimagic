@@ -28,6 +28,7 @@ from estimagic.parameters.parameter_conversion import get_internal_bounds
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
+from estimagic.parameters.process_constraints import process_constraints
 from estimagic.utilities import hash_array
 
 
@@ -50,6 +51,8 @@ def maximize(
     error_penalty=None,
     cache_size=100,
     scaling_options=None,
+    multistart=False,
+    multistart_options=None,
 ):
     """Maximize criterion using algorithm subject to constraints.
 
@@ -194,8 +197,8 @@ def maximize(
         error_penalty=error_penalty,
         cache_size=cache_size,
         scaling_options=scaling_options,
-        multistart=False,
-        multistart_options=None,
+        multistart=multistart,
+        multistart_options=multistart_options,
     )
 
 
@@ -583,6 +586,19 @@ def _optimize(
         params[col] = params[col].astype(float)
     check_params_are_valid(params)
 
+    # get processed params and constraints
+    if constraints:
+        pc, _ = process_constraints(constraints, params)
+    else:
+        pc, _ = None, None
+
+    if pc and multistart:
+        types = {constr["type"] for constr in pc}
+        raise NotImplementedError(
+            "multistart optimizations are not yet compatible with transforming "
+            f"constraints. Your transforming constraints are of type {types}."
+        )
+
     # calculate scaling factor and offset
     if scaling_options not in (None, {}):
         scaling_factor, scaling_offset = calculate_scaling_factor_and_offset(
@@ -787,8 +803,8 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
         if_exists=if_table_exists,
     )
 
-    # create and initialize the optimization_status table
-    make_steps_table(database, if_exists=if_table_exists)
+    # create and initialize the steps table; This is alway extended if it exists.
+    make_steps_table(database, if_exists="extend")
 
     # create_and_initialize the optimization_problem table
     make_optimization_problem_table(database, if_exists=if_table_exists)
@@ -927,6 +943,9 @@ def _fill_multistart_options_with_defaults(options, params, constraints):
     if out["sample"] is not None:
         out["sample"] = process_multistart_sample(out["sample"], params, constraints)
         out["n_samples"] = len(out["sample"])
+
+    out["n_optimizations"] = max(1, int(out["n_samples"] * out["share_optimizations"]))
+    del out["share_optimizations"]
 
     return out
 

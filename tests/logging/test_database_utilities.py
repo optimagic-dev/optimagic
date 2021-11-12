@@ -213,5 +213,5 @@ def test_read_last_rows_stride(tmp_path, iteration_data):
         stride=2,
     )["value"]
 
-    expected = [10.0, 8.0, 6.0]
+    expected = [6.0, 8.0, 10.0]
     assert res == expected

@@ -323,7 +323,13 @@ def read_last_rows(
             .limit(n_rows)
         )
 
-    return _execute_read_statement(database, table_name, stmt, return_type)
+    reversed_ = _execute_read_statement(database, table_name, stmt, return_type)
+    if return_type == "list_of_dicts":
+        out = reversed_[::-1]
+    else:
+        out = {key: val[::-1] for key, val in reversed_.items()}
+
+    return out
 
 
 def read_specific_row(

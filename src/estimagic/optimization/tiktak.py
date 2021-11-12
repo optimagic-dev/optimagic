@@ -29,6 +29,7 @@ from chaospy.distributions import Triangle
 from chaospy.distributions import Uniform
 from estimagic import batch_evaluators as be
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
+from estimagic.optimization.optimization_logging import update_step_status
 from estimagic.parameters.parameter_conversion import get_internal_bounds
 
 
@@ -44,9 +45,9 @@ def run_multistart_optimization(
     error_handling,
     error_penalty,
 ):
-    steps = determine_steps(options["n_samples"], options["share_optimizations"])
+    steps = determine_steps(options["n_samples"], options["n_optimizations"])
 
-    step_ids = log_scheduled_steps_and_get_ids(
+    scheduled_steps = log_scheduled_steps_and_get_ids(
         steps=steps,
         logging=logging,
         db_kwargs=db_kwargs,
@@ -71,18 +72,52 @@ def run_multistart_optimization(
         error_penalty={"slope": np.nan, "constant": np.nan},
     )
 
+    if logging:
+        update_step_status(
+            step=scheduled_steps[0],
+            new_status="running",
+            db_kwargs=db_kwargs,
+        )
+
     exploration_res = run_explorations(
         exploration_func,
         sample=sample,
         batch_evaluator=options["batch_evaluator"],
         n_cores=options["n_cores"],
-        step_id=step_ids[0],
+        step_id=scheduled_steps[0],
     )
+
+    if logging:
+        update_step_status(
+            step=scheduled_steps[0],
+            new_status="complete",
+            db_kwargs=db_kwargs,
+        )
+
+    scheduled_steps = scheduled_steps[1:]
 
     sorted_sample = exploration_res["sorted_sample"]
     sorted_values = exploration_res["sorted_values"]
 
-    n_optimizations = int(len(sample) * options["share_optimizations"])
+    n_optimizations = options["n_optimizations"]
+    if n_optimizations > len(sorted_sample):
+        n_skipped_steps = n_optimizations - len(sorted_sample)
+        n_optimizations = len(sorted_sample)
+        warnings.warn(
+            "There are less valid starting points than requested optimizations. "
+            "The number of optimizations has been reduced from {n_optimizations} "
+            "to {len(sorted_sample)}."
+        )
+        skipped_steps = scheduled_steps[-n_skipped_steps:]
+        scheduled_steps = scheduled_steps[:-n_skipped_steps]
+
+        if logging:
+            for step in skipped_steps:
+                update_step_status(
+                    step=step,
+                    new_status="skipped",
+                    db_kwargs=db_kwargs,
+                )
 
     batched_sample = get_batched_optimization_sample(
         sorted_sample=sorted_sample,
@@ -126,7 +161,8 @@ def run_multistart_optimization(
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
         arguments = [
-            (criterion_and_derivative, x, step) for x, step in zip(starts, step_ids[1:])
+            (criterion_and_derivative, x, step)
+            for x, step in zip(starts, scheduled_steps)
         ]
 
         batch_results = batch_evaluator(
@@ -142,7 +178,16 @@ def run_multistart_optimization(
             results=batch_results,
             convergence_criteria=convergence_criteria,
         )
+        opt_counter += len(batch)
+        scheduled_steps = scheduled_steps[len(batch) :]
         if is_converged:
+            if logging:
+                for step in scheduled_steps:
+                    update_step_status(
+                        step=step,
+                        new_status="skipped",
+                        db_kwargs=db_kwargs,
+                    )
             break
 
     raw_res = state["best_res"]
@@ -156,12 +201,7 @@ def run_multistart_optimization(
     return raw_res
 
 
-def determine_steps(n_samples, share_optimizations):
-    if hasattr(n_samples, "__len__"):
-        n_samples = len(n_samples)
-
-    n_optimizations = int(n_samples * share_optimizations)
-
+def determine_steps(n_samples, n_optimizations):
     exploration_step = {
         "type": "exploration",
         "status": "running",
@@ -383,14 +423,6 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
             The inner lists have length ``batch_size`` or shorter.
 
     """
-    if n_optimizations > len(sorted_sample):
-        n_optimizations = len(sorted_sample)
-        warnings.warn(
-            "There are less valid starting points than requested optimizations. "
-            "The number of optimizations has been reduced from {n_optimizations} "
-            "to {len(sorted_sample)}."
-        )
-
     n_batches = int(np.ceil(n_optimizations / batch_size))
 
     start = 0
