@@ -1,5 +1,4 @@
 import functools
-import inspect
 import warnings
 from pathlib import Path
 
@@ -13,8 +12,8 @@ from estimagic.logging.database_utilities import make_optimization_iteration_tab
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_steps_table
 from estimagic.logging.database_utilities import read_last_rows
-from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.optimization.check_arguments import check_optimize_kwargs
+from estimagic.optimization.get_algorithm import get_algorithm
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
@@ -32,7 +31,6 @@ from estimagic.parameters.parameter_conversion import get_reparametrize_function
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.utilities import hash_array
-from estimagic.utilities import propose_algorithms
 
 
 def maximize(
@@ -166,7 +164,7 @@ def maximize(
             - n_cores (int): Number cores used to evaluate the criterion function in
             parallel during exploration stages and number of parallel local
             optimization in optimization stages. Default 1.
-            - batch_evaluator (str or callaber): See :ref:`batch_evaluators` for
+            - batch_evaluator (str or callable): See :ref:`batch_evaluators` for
             details. Default "joblib".
             - batch_size (int): If n_cores is larger than one, several starting points
             for local optimizations are created with the same weight and from the same
@@ -500,7 +498,7 @@ def _optimize(
             - n_cores (int): Number cores used to evaluate the criterion function in
             parallel during exploration stages and number of parallel local
             optimization in optimization stages. Default 1.
-            - batch_evaluator (str or callaber): See :ref:`batch_evaluators` for
+            - batch_evaluator (str or callable): See :ref:`batch_evaluators` for
             details. Default "joblib".
             - batch_size (int): If n_cores is larger than one, several starting points
             for local optimizations are created with the same weight and from the same
@@ -623,27 +621,6 @@ def _optimize(
         scaling_offset=scaling_offset,
     )
 
-    # process algorithm and algo_options
-    if isinstance(algorithm, str):
-        algo_name = algorithm
-    else:
-        algo_name = getattr(algorithm, "name", "your algorithm")
-
-    if isinstance(algorithm, str):
-        try:
-            algorithm = AVAILABLE_ALGORITHMS[algorithm]
-        except KeyError:
-            proposed = propose_algorithms(algorithm, list(AVAILABLE_ALGORITHMS))
-            raise ValueError(
-                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
-            ) from None
-
-    algo_options = _adjust_options_to_algorithms(
-        algo_options, lower_bounds, upper_bounds, algorithm, algo_name
-    )
-
-    partialled_algorithm = functools.partial(algorithm, **algo_options)
-
     # get convert derivative
     convert_derivative = get_derivative_conversion_function(
         params=params,
@@ -680,6 +657,18 @@ def _optimize(
             logging, log_options, first_eval, problem_data, steps
         )
 
+    # get the algorithm
+    internal_algorithm = get_algorithm(
+        algorithm=algorithm,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        algo_options=algo_options,
+        logging=logging,
+        database=database,
+        database_path=logging,
+        fast_logging=log_options.get("fast_logging", False),
+    )
+
     # set default error penalty
     error_penalty = _fill_error_penalty_with_defaults(
         error_penalty, first_eval, direction
@@ -715,9 +704,8 @@ def _optimize(
             **always_partialled,
             error_handling=error_handling,
             error_penalty=error_penalty,
-            fixed_log_data={"step": step_ids[0]},
         )
-        raw_res = partialled_algorithm(internal_criterion_and_derivative, x)
+        raw_res = internal_algorithm(internal_criterion_and_derivative, x, step_ids[0])
     else:
         sample = get_exploration_sample(
             params=params,
@@ -771,7 +759,6 @@ def _optimize(
             **always_partialled,
             error_handling=error_handling,
             error_penalty=error_penalty,
-            fixed_log_data={},
         )
 
         batch_evaluator = multistart_options["batch_evaluator"]
@@ -788,10 +775,13 @@ def _optimize(
             weight = weight_func(opt_counter, n_optimizations)
             starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
-            arguments = [(internal_criterion_and_derivative, x) for x in starts]
+            arguments = [
+                (internal_criterion_and_derivative, x, step)
+                for x, step in zip(starts, step_ids[1:])
+            ]
 
             batch_results = batch_evaluator(
-                func=partialled_algorithm,
+                func=internal_algorithm,
                 arguments=arguments,
                 unpack_symbol="*",
                 n_cores=multistart_options["n_cores"],
@@ -1023,53 +1013,6 @@ def _index_element_to_string(element, separator="_"):
     else:
         res_string = str(element)
     return res_string
-
-
-def _adjust_options_to_algorithms(
-    algo_options, lower_bounds, upper_bounds, algorithm, algo_name
-):
-    """Reduce the algo_options and check if bounds are compatible with algorithm."""
-
-    # convert algo option keys to valid Python arguments
-    algo_options = {key.replace(".", "_"): val for key, val in algo_options.items()}
-
-    valid = set(inspect.signature(algorithm).parameters)
-
-    if isinstance(algorithm, functools.partial):
-        partialed_in = set(algorithm.args).union(set(algorithm.keywords))
-        valid = valid.difference(partialed_in)
-
-    reduced = {key: val for key, val in algo_options.items() if key in valid}
-
-    ignored = {key: val for key, val in algo_options.items() if key not in valid}
-
-    if ignored:
-        warnings.warn(
-            "The following algo_options were ignored because they are not compatible "
-            f"with {algo_name}:\n\n {ignored}"
-        )
-
-    if "lower_bounds" not in valid and not (lower_bounds == -np.inf).all():
-        raise ValueError(
-            f"{algo_name} does not support lower bounds but your optimization "
-            "problem has lower bounds (either because you specified them explicitly "
-            "or because they were implied by other constraints)."
-        )
-
-    if "upper_bounds" not in valid and not (upper_bounds == np.inf).all():
-        raise ValueError(
-            f"{algo_name} does not support upper bounds but your optimization "
-            "problem has upper bounds (either because you specified them explicitly "
-            "or because they were implied by other constraints)."
-        )
-
-    if "lower_bounds" in valid:
-        reduced["lower_bounds"] = lower_bounds
-
-    if "upper_bounds" in valid:
-        reduced["upper_bounds"] = upper_bounds
-
-    return reduced
 
 
 def _setdefault(candidate, default):
