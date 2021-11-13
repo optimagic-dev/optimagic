@@ -12,6 +12,7 @@ from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_steps_table
 from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.database_utilities import read_new_rows
+from estimagic.logging.database_utilities import read_table
 from estimagic.logging.database_utilities import update_row
 from numpy.testing import assert_array_equal
 from sqlalchemy import Float
@@ -215,3 +216,64 @@ def test_read_last_rows_stride(tmp_path, iteration_data):
 
     expected = [6.0, 8.0, 10.0]
     assert res == expected
+
+
+def test_read_new_rows_with_step(tmp_path, iteration_data):
+    path = tmp_path / "test.db"
+    database = load_database(path=path)
+    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    for i in range(1, 11):  # sqlalchemy starts counting at 1
+        iteration_data["value"] = i
+        iteration_data["step"] = i % 2
+        append_row(iteration_data, "optimization_iterations", database, path, False)
+
+    res, _ = read_new_rows(
+        database=database,
+        table_name="optimization_iterations",
+        last_retrieved=0,
+        return_type="dict_of_lists",
+        step=0,
+    )
+
+    expected = [2, 4, 6, 8, 10]
+    assert res["rowid"] == expected
+
+
+def test_read_last_rows_with_step(tmp_path, iteration_data):
+    path = tmp_path / "test.db"
+    database = load_database(path=path)
+    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    for i in range(1, 11):  # sqlalchemy starts counting at 1
+        iteration_data["value"] = i
+        iteration_data["step"] = i % 2
+        append_row(iteration_data, "optimization_iterations", database, path, False)
+
+    res = read_last_rows(
+        database=database,
+        table_name="optimization_iterations",
+        n_rows=20,
+        return_type="dict_of_lists",
+        step=0,
+    )
+
+    expected = [2, 4, 6, 8, 10]
+    assert res["rowid"] == expected
+
+
+def test_read_table(tmp_path, iteration_data):
+    path = tmp_path / "test.db"
+    database = load_database(path=path)
+    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    for i in range(1, 11):  # sqlalchemy starts counting at 1
+        iteration_data["value"] = i
+        iteration_data["step"] = i % 2
+        append_row(iteration_data, "optimization_iterations", database, path, False)
+
+    table = read_table(
+        database=database,
+        table_name="optimization_iterations",
+        return_type="dict_of_lists",
+    )
+
+    assert table["rowid"] == list(range(1, 11))
+    assert table["step"] == [1, 0] * 5
