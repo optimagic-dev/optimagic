@@ -10,6 +10,8 @@ High level means:
 import functools
 
 import numpy as np
+from estimagic.parameters.kernel_transformations import scale_from_internal
+from estimagic.parameters.kernel_transformations import scale_to_internal
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.parameters.process_constraints import process_constraints
@@ -46,10 +48,16 @@ def get_reparametrize_functions(
 
     """
     if constraints in [None, []] and scaling_factor is None and scaling_offset is None:
-        partialed_to_internal = _identity_to_internal
+        partialed_to_internal = functools.partial(
+            no_constraint_to_internal,
+            scaling_factor=scaling_factor,
+            scaling_offset=scaling_offset,
+        )
         partialed_from_internal = functools.partial(
-            _identity_from_internal,
+            no_constraint_from_internal,
             params=params,
+            scaling_factor=scaling_factor,
+            scaling_offset=scaling_offset,
         )
     else:
         if processed_params is None or processed_constraints is None:
@@ -178,19 +186,25 @@ def get_internal_bounds(
     return lower_bounds, upper_bounds
 
 
-def _identity_to_internal(external):
+def no_constraint_to_internal(external, scaling_factor, scaling_offset):
     if isinstance(external, np.ndarray):
-        out = external
+        unscaled = external
     else:
-        out = external["value"].to_numpy()
+        unscaled = external["value"].to_numpy()
+
+    out = scale_to_internal(unscaled, scaling_factor, scaling_offset)
 
     return out
 
 
-def _identity_from_internal(internal, return_numpy=True, params=None):
+def no_constraint_from_internal(
+    internal, params, scaling_factor, scaling_offset, return_numpy=True
+):
+
+    scaled = scale_from_internal(internal, scaling_factor, scaling_offset)
+
     if return_numpy:
-        if isinstance(internal, np.ndarray):
-            out = internal
+        out = scaled
     else:
         out = params.copy()
         out["value"] = internal
