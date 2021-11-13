@@ -491,9 +491,9 @@ def _optimize(
 
     # get processed params and constraints
     if constraints:
-        pc, _ = process_constraints(constraints, params)
+        pc, pp = process_constraints(constraints, params)
     else:
-        pc, _ = None, None
+        pc, pp = None, None
 
     if pc and multistart:
         types = {constr["type"] for constr in pc}
@@ -502,13 +502,21 @@ def _optimize(
             f"constraints. Your transforming constraints are of type {types}."
         )
 
-    # calculate scaling factor and offset
+    # calculate scaling factor and offset and redo params and constraint processing
     if scaling:
         scaling_factor, scaling_offset = calculate_scaling_factor_and_offset(
             params=params,
             constraints=constraints,
             criterion=criterion,
             **scaling_options,
+            processed_params=pp,
+            processed_constraints=pc,
+        )
+        pc, pp = process_constraints(
+            constraints=constraints,
+            params=params,
+            scaling_factor=scaling_factor,
+            scaling_offset=scaling_offset,
         )
     else:
         scaling_factor, scaling_offset = None, None
@@ -523,16 +531,24 @@ def _optimize(
         constraints=constraints,
         scaling_factor=scaling_factor,
         scaling_offset=scaling_offset,
+        processed_params=pp,
+        processed_constraints=pc,
     )
-
     # get internal parameters and bounds
     x = params_to_internal(params["value"].to_numpy())
-    lower_bounds, upper_bounds = get_internal_bounds(
-        params=params,
-        constraints=constraints,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-    )
+
+    # this if condition reduces overhead in the no-constraints case
+    if constraints in [None, []]:
+        lower_bounds = params["lower_bound"].to_numpy()
+        upper_bounds = params["upper_bound"].to_numpy()
+    else:
+        lower_bounds, upper_bounds = get_internal_bounds(
+            params=params,
+            constraints=constraints,
+            scaling_factor=scaling_factor,
+            scaling_offset=scaling_offset,
+            processed_params=pp,
+        )
 
     # get convert derivative
     convert_derivative = get_derivative_conversion_function(
@@ -540,6 +556,8 @@ def _optimize(
         constraints=constraints,
         scaling_factor=scaling_factor,
         scaling_offset=scaling_offset,
+        processed_params=pp,
+        processed_constraints=pc,
     )
 
     # do first function evaluation

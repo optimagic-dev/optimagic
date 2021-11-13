@@ -9,6 +9,7 @@ High level means:
 """
 import functools
 
+import numpy as np
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.parameters.process_constraints import process_constraints
@@ -44,43 +45,50 @@ def get_reparametrize_functions(
         func: Function that maps an internal parameter vector to an external one
 
     """
-    if processed_params is None or processed_constraints is None:
-        params = add_default_bounds_to_params(params)
-        check_params_are_valid(params)
-
-        processed_constraints, processed_params = process_constraints(
-            constraints=constraints,
+    if constraints in [None, []] and scaling_factor is None and scaling_offset is None:
+        partialed_to_internal = _identity_to_internal
+        partialed_from_internal = functools.partial(
+            _identity_from_internal,
             params=params,
+        )
+    else:
+        if processed_params is None or processed_constraints is None:
+            params = add_default_bounds_to_params(params)
+            check_params_are_valid(params)
+
+            processed_constraints, processed_params = process_constraints(
+                constraints=constraints,
+                params=params,
+                scaling_factor=scaling_factor,
+                scaling_offset=scaling_offset,
+            )
+
+        # get partialed reparametrize from internal
+        pre_replacements = processed_params["_pre_replacements"].to_numpy()
+        post_replacements = processed_params["_post_replacements"].to_numpy()
+        fixed_values = processed_params["_internal_fixed_value"].to_numpy()
+
+        # get partialed reparametrize to internal
+        internal_free = processed_params["_internal_free"].to_numpy()
+
+        partialed_to_internal = functools.partial(
+            reparametrize_to_internal,
+            internal_free=internal_free,
+            processed_constraints=processed_constraints,
             scaling_factor=scaling_factor,
             scaling_offset=scaling_offset,
         )
 
-    # get partialed reparametrize from internal
-    pre_replacements = processed_params["_pre_replacements"].to_numpy()
-    post_replacements = processed_params["_post_replacements"].to_numpy()
-    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
-
-    # get partialed reparametrize to internal
-    internal_free = processed_params["_internal_free"].to_numpy()
-
-    partialed_to_internal = functools.partial(
-        reparametrize_to_internal,
-        internal_free=internal_free,
-        processed_constraints=processed_constraints,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-    )
-
-    partialed_from_internal = functools.partial(
-        reparametrize_from_internal,
-        fixed_values=fixed_values,
-        pre_replacements=pre_replacements,
-        processed_constraints=processed_constraints,
-        post_replacements=post_replacements,
-        params=params,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-    )
+        partialed_from_internal = functools.partial(
+            reparametrize_from_internal,
+            fixed_values=fixed_values,
+            pre_replacements=pre_replacements,
+            processed_constraints=processed_constraints,
+            post_replacements=post_replacements,
+            params=params,
+            scaling_factor=scaling_factor,
+            scaling_offset=scaling_offset,
+        )
 
     return partialed_to_internal, partialed_from_internal
 
@@ -145,18 +153,45 @@ def get_derivative_conversion_function(
     return convert_derivative
 
 
-def get_internal_bounds(params, constraints, scaling_factor=None, scaling_offset=None):
-    params = add_default_bounds_to_params(params)
-    check_params_are_valid(params)
+def get_internal_bounds(
+    params, constraints, scaling_factor=None, scaling_offset=None, processed_params=None
+):
+    if constraints in [None, []]:
+        params = add_default_bounds_to_params(params)
+        lower_bounds = params["lower_bound"]
+        upper_bounds = params["upper_bound"]
+    else:
+        if processed_params is None:
+            params = add_default_bounds_to_params(params)
+            check_params_are_valid(params)
 
-    _, processed_params = process_constraints(
-        constraints=constraints,
-        params=params,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-    )
+            _, processed_params = process_constraints(
+                constraints=constraints,
+                params=params,
+                scaling_factor=scaling_factor,
+                scaling_offset=scaling_offset,
+            )
 
-    free = processed_params.query("_internal_free")
-    lower_bounds = free["_internal_lower"].to_numpy()
-    upper_bounds = free["_internal_upper"].to_numpy()
+        free = processed_params[processed_params["_internal_free"]]
+        lower_bounds = free["_internal_lower"].to_numpy()
+        upper_bounds = free["_internal_upper"].to_numpy()
     return lower_bounds, upper_bounds
+
+
+def _identity_to_internal(external):
+    if isinstance(external, np.ndarray):
+        out = external
+    else:
+        out = external["value"].to_numpy()
+
+    return out
+
+
+def _identity_from_internal(internal, return_numpy=True, params=None):
+    if return_numpy:
+        if isinstance(internal, np.ndarray):
+            out = internal
+    else:
+        out = params.copy()
+        out["value"] = internal
+    return out
