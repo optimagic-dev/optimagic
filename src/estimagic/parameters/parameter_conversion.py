@@ -47,7 +47,7 @@ def get_reparametrize_functions(
         func: Function that maps an internal parameter vector to an external one
 
     """
-    if constraints in [None, []] and scaling_factor is None and scaling_offset is None:
+    if constraints in [None, []]:
         partialed_to_internal = functools.partial(
             no_constraint_to_internal,
             scaling_factor=scaling_factor,
@@ -126,37 +126,44 @@ def get_derivative_conversion_function(
         func: Function that converts an external derivative to an internal one
 
     """
-    if processed_params is None or processed_constraints is None:
-        params = add_default_bounds_to_params(params)
-        check_params_are_valid(params)
-        processed_constraints, processed_params = process_constraints(
-            constraints=constraints,
-            params=params,
+    if constraints in [None, []]:
+        convert_derivative = functools.partial(
+            no_constraint_derivative_to_internal,
+            scaling_factor=scaling_factor,
+        )
+
+    else:
+        if processed_params is None or processed_constraints is None:
+            params = add_default_bounds_to_params(params)
+            check_params_are_valid(params)
+            processed_constraints, processed_params = process_constraints(
+                constraints=constraints,
+                params=params,
+                scaling_factor=scaling_factor,
+                scaling_offset=scaling_offset,
+            )
+
+        pre_replacements = processed_params["_pre_replacements"].to_numpy()
+        post_replacements = processed_params["_post_replacements"].to_numpy()
+        fixed_values = processed_params["_internal_fixed_value"].to_numpy()
+
+        dim_internal = int(processed_params["_internal_free"].sum())
+
+        pre_replace_jac = pre_replace_jacobian(
+            pre_replacements=pre_replacements, dim_in=dim_internal
+        )
+        post_replace_jac = post_replace_jacobian(post_replacements=post_replacements)
+
+        convert_derivative = functools.partial(
+            convert_external_derivative_to_internal,
+            fixed_values=fixed_values,
+            pre_replacements=pre_replacements,
+            processed_constraints=processed_constraints,
+            pre_replace_jac=pre_replace_jac,
+            post_replace_jac=post_replace_jac,
             scaling_factor=scaling_factor,
             scaling_offset=scaling_offset,
         )
-
-    pre_replacements = processed_params["_pre_replacements"].to_numpy()
-    post_replacements = processed_params["_post_replacements"].to_numpy()
-    fixed_values = processed_params["_internal_fixed_value"].to_numpy()
-
-    dim_internal = int(processed_params["_internal_free"].sum())
-
-    pre_replace_jac = pre_replace_jacobian(
-        pre_replacements=pre_replacements, dim_in=dim_internal
-    )
-    post_replace_jac = post_replace_jacobian(post_replacements=post_replacements)
-
-    convert_derivative = functools.partial(
-        convert_external_derivative_to_internal,
-        fixed_values=fixed_values,
-        pre_replacements=pre_replacements,
-        processed_constraints=processed_constraints,
-        pre_replace_jac=pre_replace_jac,
-        post_replace_jac=post_replace_jac,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-    )
 
     return convert_derivative
 
@@ -208,4 +215,14 @@ def no_constraint_from_internal(
     else:
         out = params.copy()
         out["value"] = internal
+    return out
+
+
+def no_constraint_derivative_to_internal(
+    external_derivative, internal_values, scaling_factor
+):  # noqa: U100
+    if scaling_factor is not None:
+        out = external_derivative @ np.diag(scaling_factor)
+    else:
+        out = external_derivative
     return out
