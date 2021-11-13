@@ -456,23 +456,24 @@ def _optimize(
     )
 
     # store some arguments in a dictionary to save them in the database later
-    problem_data = {
-        "direction": direction,
-        # "criterion"-criterion,
-        "criterion_kwargs": criterion_kwargs,
-        "algorithm": algorithm,
-        "constraints": constraints,
-        "algo_options": algo_options,
-        # "derivative"-derivative,
-        "derivative_kwargs": derivative_kwargs,
-        # "criterion_and_derivative"-criterion_and_derivative,
-        "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
-        "numdiff_options": numdiff_options,
-        "log_options": log_options,
-        "error_handling": error_handling,
-        "error_penalty": error_penalty,
-        "cache_size": int(cache_size),
-    }
+    if logging:
+        problem_data = {
+            "direction": direction,
+            # "criterion"-criterion,
+            "criterion_kwargs": criterion_kwargs,
+            "algorithm": algorithm,
+            "constraints": constraints,
+            "algo_options": algo_options,
+            # "derivative"-derivative,
+            "derivative_kwargs": derivative_kwargs,
+            # "criterion_and_derivative"-criterion_and_derivative,
+            "criterion_and_derivative_kwargs": criterion_and_derivative_kwargs,
+            "numdiff_options": numdiff_options,
+            "log_options": log_options,
+            "error_handling": error_handling,
+            "error_penalty": error_penalty,
+            "cache_size": int(cache_size),
+        }
 
     # partial the kwargs into corresponding functions
     criterion = functools.partial(criterion, **criterion_kwargs)
@@ -521,10 +522,11 @@ def _optimize(
     else:
         scaling_factor, scaling_offset = None, None
 
-    # name and group column are needed in the dashboard but could lead to problems
-    # if present anywhere else
-    params_with_name_and_group = _add_name_and_group_columns_to_params(params)
-    problem_data["params"] = params_with_name_and_group
+    if logging:
+        # name and group column are needed in the dashboard but could lead to problems
+        # if present anywhere else
+        params_with_name_and_group = _add_name_and_group_columns_to_params(params)
+        problem_data["params"] = params_with_name_and_group
 
     params_to_internal, params_from_internal = get_reparametrize_functions(
         params=params,
