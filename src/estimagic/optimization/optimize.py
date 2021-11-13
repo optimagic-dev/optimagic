@@ -50,6 +50,7 @@ def maximize(
     error_handling="raise",
     error_penalty=None,
     cache_size=100,
+    scaling=False,
     scaling_options=None,
     multistart=False,
     multistart_options=None,
@@ -127,9 +128,10 @@ def maximize(
             f0 is the criterion value at start parameters. The default slope is 0.1.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling (bool): If True, the parameter vector is rescaled internally for
+            better performance with scale sensitive optimizers.
         scaling_options (dict or None): Options to configure the internal scaling ot
-            the parameter vector. By default no rescaling is done. See :ref:`scaling`
-            for details and recommendations.
+            the parameter vector. See :ref:`scaling` for details and recommendations.
         multistart (bool): Whether to do the optimization from multiple starting points.
             Requires the params to have the columns ``"soft_lower_bound"`` and
             ``"soft_upper_bounds"`` with finite values for all parameters, unless
@@ -201,6 +203,7 @@ def maximize(
         error_handling=error_handling,
         error_penalty=error_penalty,
         cache_size=cache_size,
+        scaling=scaling,
         scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
@@ -225,6 +228,7 @@ def minimize(
     error_handling="raise",
     error_penalty=None,
     cache_size=100,
+    scaling=False,
     scaling_options=None,
     multistart=False,
     multistart_options=None,
@@ -300,9 +304,10 @@ def minimize(
             f0 is the criterion value at start parameters. The default slope is 0.1.
         cache_size (int): Number of criterion and derivative evaluations that are cached
             in memory in case they are needed.
+        scaling (bool): If True, the parameter vector is rescaled internally for
+            better performance with scale sensitive optimizers.
         scaling_options (dict or None): Options to configure the internal scaling ot
-            the parameter vector. By default no rescaling is done. See :ref:`scaling`
-            for details and recommendations.
+            the parameter vector. See :ref:`scaling` for details and recommendations.
         multistart (bool): Whether to do the optimization from multiple starting points.
             Requires the params to have the columns ``"soft_lower_bound"`` and
             ``"soft_upper_bounds"`` with finite values for all parameters, unless
@@ -374,6 +379,7 @@ def minimize(
         error_handling=error_handling,
         error_penalty=error_penalty,
         cache_size=cache_size,
+        scaling=scaling,
         scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
@@ -399,6 +405,7 @@ def _optimize(
     error_handling,
     error_penalty,
     cache_size,
+    scaling,
     scaling_options,
     multistart,
     multistart_options,
@@ -442,6 +449,7 @@ def _optimize(
         error_handling=error_handling,
         error_penalty=error_penalty,
         cache_size=cache_size,
+        scaling=scaling,
         scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
@@ -495,7 +503,7 @@ def _optimize(
         )
 
     # calculate scaling factor and offset
-    if scaling_options not in (None, {}):
+    if scaling:
         scaling_factor, scaling_offset = calculate_scaling_factor_and_offset(
             params=params,
             constraints=constraints,

@@ -25,6 +25,7 @@ def check_optimize_kwargs(**kwargs):
         "error_handling": str,
         "error_penalty": dict,
         "cache_size": (int, float),
+        "scaling": bool,
         "scaling_options": dict,
         "multistart": bool,
         "multistart_options": dict,
