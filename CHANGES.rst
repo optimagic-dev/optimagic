@@ -22,7 +22,7 @@ moments. The breaking changes are:
 - there is an additional boolean flag named ``scaling`` in minimize and maximize
 
 
-- :gh:`196` Adds support for multistart optimizations (:ghuser:`asouther4 and
+- :gh:`196` Adds support for multistart optimizations (:ghuser:`asouther4` and
   :ghuser:`janosg`)
 - :gh:`248` Adds the fides optimizer (:ghuser:`roecla`)
 - :gh:`146` Adds ``estimate_ml`` functionality (:ghuser:`janosg`, :ghuser:`LuisCald`
