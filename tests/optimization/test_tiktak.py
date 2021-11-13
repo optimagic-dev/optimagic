@@ -101,6 +101,7 @@ def test_run_explorations():
         batch_evaluator="joblib",
         n_cores=1,
         step_id=0,
+        error_handling="raise",
     )
 
     exp_values = np.array([-9, -1])

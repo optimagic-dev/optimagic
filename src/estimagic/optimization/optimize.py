@@ -176,6 +176,11 @@ def maximize(
             default the batch_size is equal to ``n_cores``. It can never be smaller
             than ``n_cores``.
             - seed (int): Random seed for the creation of starting values. Default None.
+            - exploration_error_handling (str): One of "raise" or "continue". Default
+            is continue, which means that failed function evaluations are simply
+            discarded from the sample.
+            - optimization_error_handling (str): One of "raise" or "continue". Default
+            is continue, which means that failed optimizations are simply discarded.
 
     """
     return _optimize(
@@ -344,6 +349,11 @@ def minimize(
             default the batch_size is equal to ``n_cores``. It can never be smaller
             than ``n_cores``.
             - seed (int): Random seed for the creation of starting values. Default None.
+            - exploration_error_handling (str): One of "raise" or "continue". Default
+            is continue, which means that failed function evaluations are simply
+            discarded from the sample.
+            - optimization_error_handling (str): One of "raise" or "continue". Default
+            is continue, which means that failed optimizations are simply discarded.
 
     """
     return _optimize(
@@ -395,125 +405,10 @@ def _optimize(
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
-    Args:
-        direction (str): One of "maximize" or "minimize".
-        criterion (Callable): A function that takes a pandas DataFrame (see
-            :ref:`params`) as first argument and returns one of the following:
-            - scalar floating point or a numpy array (depending on the algorithm)
-            - a dictionary that contains at the entries "value" (a scalar float),
-            "contributions" or "root_contributions" (depending on the algortihm) and
-            any number of additional entries. The additional dict entries will be
-            logged and (if supported) displayed in the dashboard. Check the
-            documentation of your algorithm to see which entries or output type
-            are required.
-        params (pd.DataFrame): A DataFrame with a column called "value" and optional
-            additional columns. See :ref:`params` for detail.
-        algorithm (str or callable): Specifies the optimization algorithm. For supported
-            algorithms this is a string with the name of the algorithm. Otherwise it can
-            be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
-        criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constranits.ipynb
-        algo_options (dict): Algorithm specific configuration of the optimization. See
-            :ref:`list_of_algorithms` for supported options of each algorithm.
-        derivative (callable, optional): Function that calculates the first derivative
-            of criterion. For most algorithm, this is the gradient of the scalar
-            output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
-            require the jacobian of the "contributions" entry of the dict. You will get
-            an error if you provide the wrong type of derivative.
-        derivative_kwargs (dict): Additional keyword arguments for derivative.
-        criterion_and_derivative (callable): Function that returns criterion
-            and derivative as a tuple. This can be used to exploit synergies in the
-            evaluation of both functions. The fist element of the tuple has to be
-            exactly the same as the output of criterion. The second has to be exactly
-            the same as the output of derivative.
-        criterion_and_derivative_kwargs (dict): Additional keyword arguments for
-            criterion and derivative.
-        numdiff_options (dict): Keyword arguments for the calculation of numerical
-            derivatives. See :ref:`first_derivative` for details. Note that the default
-            method is changed to "forward" for speed reasons.
-        logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
-            the file extension ``.db``. If the file does not exist, it will be created.
-            When doing parallel optimizations and logging is provided, you have to
-            provide a different path for each optimization you are running. You can
-            disable logging completely by setting it to False, but we highly recommend
-            not to do so. The dashboard can only be used when logging is used.
-        log_options (dict): Additional keyword arguments to configure the logging.
-            - "fast_logging": A boolean that determines if "unsafe" settings are used
-            to speed up write processes to the database. This should only be used for
-            very short running criterion functions where the main purpose of the log
-            is a real-time dashboard and it would not be catastrophic to get a
-            corrupted database in case of a sudden system shutdown. If one evaluation
-            of the criterion function (and gradient if applicable) takes more than
-            100 ms, the logging overhead is negligible.
-            - "if_table_exists": (str) One of "extend", "replace", "raise". What to
-            do if the tables we want to write to already exist. Default "extend".
-            - "if_database_exists": (str): One of "extend", "replace", "raise". What to
-            do if the database we want to write to already exists. Default "extend".
-        error_handling (str): Either "raise" or "continue". Note that "continue" does
-            not absolutely guarantee that no error is raised but we try to handle as
-            many errors as possible in that case without aborting the optimization.
-        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
-            (float). If the criterion or gradient raise an error and error_handling is
-            "continue", return ``constant + slope * norm(params - start_params)`` where
-            ``norm`` is the euclidean distance as criterion value and adjust the
-            derivative accordingly. This is meant to guide the optimizer back into a
-            valid region of parameter space (in direction of the start parameters).
-            Note that the constant has to be high enough to ensure that the penalty is
-            actually a bad function value. The default constant is f0 + abs(f0) + 100
-            for minimizations and f0 - abs(f0) - 100 for maximizations, where
-            f0 is the criterion value at start parameters. The default slope is 0.1.
-        cache_size (int): Number of criterion and derivative evaluations that are cached
-            in memory in case they are needed.
-        scaling_options (dict or None): Options to configure the internal scaling ot
-            the parameter vector. By default no rescaling is done. See :ref:`scaling`
-            for details and recommendations.
-        multistart (bool): Whether to do the optimization from multiple starting points.
-            Requires the params to have the columns ``"soft_lower_bound"`` and
-            ``"soft_upper_bounds"`` with finite values for all parameters, unless
-            the standard bounds are already finite for all parameters.
-        multistart_options (dict): Options to configure the optimization from multiple
-            starting values. For details see :ref:`multistart`. The dictionary has the
-            following entries (all of which are optional):
-            - n_samples (int): Number of sampled points on which to do one function
-            evaluation. Default is 10 * n_params.
-            - sample (pandas.DataFrame or numpy.ndarray) A user definde sample.
-            If this is provided, n_samples, sampling_method and sampling_distribution
-            are not used.
-            - share_optimizations (float): Share of sampled points that is used to
-            construct a starting point for a local optimization. Default 0.1.
-            - sampling_distribution (str): One of "uniform", "triangle". Default is
-            "uniform" as in the original tiktak algorithm.
-            - sampling_method (str): One of "random", "sobol", "halton", "hammersley",
-            "korobov", "latin_hypercube" or a numpy array or DataFrame with custom
-            points. Default is sobol for problems with up to 30 parameters and random
-            for problems with more than 30 parameters.
-            - mixing_weight_method (str or callable): Specifies how much weight is put
-            on the currently best point when calculating a new starting point for a
-            local optimization out of the currently best point and the next random
-            starting point. Either "tiktak" or "linear" or a callable that takes the
-            arguments ``iteration``, ``n_iterations``, ``min_weight``, ``max_weight``.
-            Default "tiktak".
-            - mixing_weight_bounds (tuple): A tuple consisting of a lower and upper
-            bound on mixing weights. Default (0.1, 0.995).
-            - convergence_max_discoveries (int): The multistart optimization converges
-            if the currently best local optimum has been discovered independently in
-            ``convergence_max_discoveries`` many local optimizations. Default 2.
-            - convergence.relative_params_tolerance (float): Determines the maximum
-            relative distance two parameter vectors can have to be considered equal
-            for convergence purposes.
-            - n_cores (int): Number cores used to evaluate the criterion function in
-            parallel during exploration stages and number of parallel local
-            optimization in optimization stages. Default 1.
-            - batch_evaluator (str or callable): See :ref:`batch_evaluators` for
-            details. Default "joblib".
-            - batch_size (int): If n_cores is larger than one, several starting points
-            for local optimizations are created with the same weight and from the same
-            currently best point. The ``batch_size`` argument is a way to reproduce
-            this behavior on a small machine where less cores are available. By
-            default the batch_size is equal to ``n_cores``. It can never be smaller
-            than ``n_cores``.
-            - seed (int): Random seed for the creation of starting values. Default None.
+    Arguments are the same as in maximize and minimize, with an additional direction
+    argument. Direction is a string that can take the values "maximize" and "minimize".
+
+    Returns are the same as in maximize and minimize.
 
     """
     criterion_kwargs = _setdefault(criterion_kwargs, {})
@@ -804,7 +699,7 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
     )
 
     # create and initialize the steps table; This is alway extended if it exists.
-    make_steps_table(database, if_exists="extend")
+    make_steps_table(database, if_exists=if_table_exists)
 
     # create_and_initialize the optimization_problem table
     make_optimization_problem_table(database, if_exists=if_table_exists)
@@ -921,6 +816,8 @@ def _fill_multistart_options_with_defaults(options, params, constraints):
         "n_cores": 1,
         "batch_evaluator": "joblib",
         "seed": None,
+        "exploration_error_handling": "continue",
+        "optimization_error_handling": "continue",
     }
 
     options = {k.replace(".", "_"): v for k, v in options.items()}

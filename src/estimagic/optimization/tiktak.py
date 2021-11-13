@@ -85,6 +85,7 @@ def run_multistart_optimization(
         batch_evaluator=options["batch_evaluator"],
         n_cores=options["n_cores"],
         step_id=scheduled_steps[0],
+        error_handling=options["exploration_error_handling"],
     )
 
     if logging:
@@ -170,6 +171,7 @@ def run_multistart_optimization(
             arguments=arguments,
             unpack_symbol="*",
             n_cores=options["n_cores"],
+            error_handling=options["optimization_error_handling"],
         )
 
         state, is_converged = update_convergence_state(
@@ -325,7 +327,7 @@ def _extract_external_sampling_bound(params, bounds_type):
     return bounds
 
 
-def run_explorations(func, sample, batch_evaluator, n_cores, step_id):
+def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_handling):
     """Do the function evaluations for the exploration phase.
 
     Args:
@@ -338,6 +340,7 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id):
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
         n_cores (int): Number of cores.
         step_id (int): The identifier of the exploration step.
+        error_handling (str): One of "raise" or "continue".
 
     Returns:
         dict: A dictionary with the the following entries:
@@ -362,7 +365,7 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id):
         func,
         task="criterion",
         algorithm_info=algo_info,
-        error_handling="continue",
+        error_handling=error_handling,
         error_penalty={"constant": np.nan, "slope": np.nan},
     )
 
@@ -374,7 +377,12 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
 
     criterion_outputs = batch_evaluator(
-        _func, arguments=arguments, n_cores=n_cores, unpack_symbol="**"
+        _func,
+        arguments=arguments,
+        n_cores=n_cores,
+        unpack_symbol="**",
+        # If desired, errors are caught inside criterion function.
+        error_handling="raise",
     )
 
     raw_values = np.array([critval["value"] for critval in criterion_outputs])
@@ -512,14 +520,17 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     best_y = current_state["best_y"]
     best_res = current_state["best_res"]
 
-    new_x = [res["solution_x"] for res in results]
-    new_y = [res["solution_criterion"] for res in results]
+    valid_results = [res for res in results if not isinstance(res, str)]
+    valid_starts = [x for i, x in enumerate(starts) if not isinstance(results[i], str)]
+
+    new_x = [res["solution_x"] for res in valid_results]
+    new_y = [res["solution_criterion"] for res in valid_results]
 
     best_index = np.argmin(new_y)
     if new_y[best_index] < best_y:
         best_x = new_x[best_index]
         best_y = new_y[best_index]
-        best_res = results[best_index]
+        best_res = valid_results[best_index]
 
     new_x_history = current_state["x_history"] + new_x
     all_x = np.array(new_x_history)
@@ -535,8 +546,8 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
         "best_res": best_res,
         "x_history": new_x_history,
         "y_history": current_state["y_history"] + new_y,
-        "result_history": current_state["result_history"] + results,
-        "start_history": current_state["start_history"] + starts,
+        "result_history": current_state["result_history"] + valid_results,
+        "start_history": current_state["start_history"] + valid_starts,
     }
 
     return new_state, is_converged
