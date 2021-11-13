@@ -135,8 +135,8 @@ def maximize(
             ``"soft_upper_bounds"`` with finite values for all parameters, unless
             the standard bounds are already finite for all parameters.
         multistart_options (dict): Options to configure the optimization from multiple
-            starting values. For details see :ref:`multistart`. The dictionary has the
-            following entries (all of which are optional):
+            starting values. The dictionary has the following entries
+            (all of which are optional):
             - n_samples (int): Number of sampled points on which to do one function
             evaluation. Default is 10 * n_params.
             - sample (pandas.DataFrame or numpy.ndarray) A user definde sample.
@@ -308,8 +308,8 @@ def minimize(
             ``"soft_upper_bounds"`` with finite values for all parameters, unless
             the standard bounds are already finite for all parameters.
         multistart_options (dict): Options to configure the optimization from multiple
-            starting values. For details see :ref:`multistart`. The dictionary has the
-            following entries (all of which are optional):
+            starting values. The dictionary has the following entries
+            (all of which are optional):
             - n_samples (int): Number of sampled points on which to do one function
             evaluation. Default is 10 * n_params.
             - sample (pandas.DataFrame or numpy.ndarray) A user definde sample.
