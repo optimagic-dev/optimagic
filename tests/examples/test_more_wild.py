@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from estimagic.examples.more_wild import get_start_points_mancino
 from estimagic.examples.more_wild import MORE_WILD_PROBLEMS
 
