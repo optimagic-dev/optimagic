@@ -8,17 +8,6 @@ searches from a set of carefully-selected points in the parameter space.
 First implemented in Python by Alisdair McKay
 (`GitHub Repository <https://github.com/amckay/TikTak>`_)
 
-To-Do:
-
-- Make sampling compatible with constraints
-    - Write a get_approximate_internal_bounds function
-    - Sample on internal parameters space
-    - Do not do any bounds checking for fixed parameters
-
-- Improve Error handling
-    - Go over all error messages and provide information on the exact problem
-      (e.g. section of params where bounds are missing, ...)
-
 """
 import warnings
 from functools import partial
@@ -66,12 +55,6 @@ def run_multistart_optimization(
             seed=options["seed"],
         )
 
-    exploration_func = partial(
-        criterion_and_derivative,
-        error_handling="continue",
-        error_penalty={"slope": np.nan, "constant": np.nan},
-    )
-
     if logging:
         update_step_status(
             step=scheduled_steps[0],
@@ -80,7 +63,7 @@ def run_multistart_optimization(
         )
 
     exploration_res = run_explorations(
-        exploration_func,
+        criterion_and_derivative,
         sample=sample,
         batch_evaluator=options["batch_evaluator"],
         n_cores=options["n_cores"],
@@ -106,8 +89,8 @@ def run_multistart_optimization(
         n_optimizations = len(sorted_sample)
         warnings.warn(
             "There are less valid starting points than requested optimizations. "
-            "The number of optimizations has been reduced from {n_optimizations} "
-            "to {len(sorted_sample)}."
+            f"The number of optimizations has been reduced from {n_optimizations} "
+            f"to {len(sorted_sample)}."
         )
         skipped_steps = scheduled_steps[-n_skipped_steps:]
         scheduled_steps = scheduled_steps[:-n_skipped_steps]
@@ -204,6 +187,20 @@ def run_multistart_optimization(
 
 
 def determine_steps(n_samples, n_optimizations):
+    """Determine the number and type of steps for the multistart optimization.
+
+    This is mainly used to write them to the log. The number of steps is also
+    used if logging is False.
+
+    Args:
+        n_samples (int): Number of exploration points for the multistart optimization.
+        n_optimizations (int): Number of local optimizations.
+
+
+    Returns:
+        list: List of dictionaries with information on each step.
+
+    """
     exploration_step = {
         "type": "exploration",
         "status": "running",
@@ -442,55 +439,6 @@ def get_batched_optimization_sample(sorted_sample, n_optimizations, batch_size):
     return batched
 
 
-def run_local_optimizations(
-    func,
-    sample,
-    n_cores,
-    batch_evaluator,
-    optimize_options,
-    mixing_weight_method,
-    mixing_weight_bounds,
-    convergence_relative_params_tolerance,
-):
-    """Run the actual local optimizations until convergence.
-
-    Args:
-        func (callable): An already partialled version of
-            ``internal_criterion_and_derivative_template`` where the following arguments
-            are still free: ``x``, ``task``, ``algorithm_info``, ``error_handling``,
-            ``error_penalty``, ``fixed_log_data``.
-        sample (list): Nested list of parameter vectors from which an optimization is
-            run. The inner lists have length ``batch_size`` or shorter.
-        n_cores (int): Number of cores.
-        batch_evaluator (str or callable): See :ref:`batch_evaluators`.
-        optimize_options (dict): Keyword arguments for the optimizations that are fixed
-            across all optimizations.
-        mixing_weight_method (str or callable): Specifies how much weight is put on the
-            currently best point when calculating a new starting point for a local
-            optimization out of the currently best point and the next random starting
-            point. Either "tiktak" or a callable that takes the arguments ``iteration``,
-            ``n_iterations``, ``min_weight``, ``max_weight``. Default "tiktak".
-        mixing_weight_bounds (tuple): A tuple consisting of a lower and upper bound on
-            mixing weights. Default (0.1, 0.995).
-        convergence.relative_params_tolerance (float): If the maximum relative
-            difference between the results of two consecutive local optimizations is
-            smaller than the multistart optimization converges. Default 0.01. Note that
-            this is independent of a convergence criterion with the same name for each
-            local optimization.
-
-    Returns:
-        dict: A Dictionary containing the best parameters and criterion values,
-            convergence information and the history of optimization solutions.
-
-    """
-    # process batch evaluator
-    # process mixing weight function and options
-    # partial optimize options into optimize
-    # implement loop with convergence check and parallel optimizations on the inside.
-    # process results to something compatible with output of optimize but with
-    # additional history entries.
-
-
 def update_convergence_state(current_state, starts, results, convergence_criteria):
     """Update the state of all quantities related to convergence.
 
@@ -520,19 +468,21 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     best_y = current_state["best_y"]
     best_res = current_state["best_res"]
 
-    valid_results = [res for res in results if not isinstance(res, str)]
-    valid_starts = [x for i, x in enumerate(starts) if not isinstance(results[i], str)]
+    valid_indices = [i for i, res in enumerate(results) if not isinstance(res, str)]
 
-    new_x = [res["solution_x"] for res in valid_results]
-    new_y = [res["solution_criterion"] for res in valid_results]
+    valid_results = [results[i] for i in valid_indices]
+    valid_starts = [starts[i] for i in valid_indices]
 
-    best_index = np.argmin(new_y)
-    if new_y[best_index] < best_y:
-        best_x = new_x[best_index]
-        best_y = new_y[best_index]
+    valid_new_x = [res["solution_x"] for res in valid_results]
+    valid_new_y = [res["solution_criterion"] for res in valid_results]
+
+    best_index = np.argmin(valid_new_y)
+    if valid_new_y[best_index] < best_y:
+        best_x = valid_new_x[best_index]
+        best_y = valid_new_y[best_index]
         best_res = valid_results[best_index]
 
-    new_x_history = current_state["x_history"] + new_x
+    new_x_history = current_state["x_history"] + valid_new_x
     all_x = np.array(new_x_history)
     relative_diffs = (all_x - best_x) / np.clip(best_x, 0.1, np.inf)
     distances = np.linalg.norm(relative_diffs, axis=1)
@@ -545,7 +495,7 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
         "best_y": best_y,
         "best_res": best_res,
         "x_history": new_x_history,
-        "y_history": current_state["y_history"] + new_y,
+        "y_history": current_state["y_history"] + valid_new_y,
         "result_history": current_state["result_history"] + valid_results,
         "start_history": current_state["start_history"] + valid_starts,
     }

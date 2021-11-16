@@ -33,7 +33,8 @@ samples = [pd.DataFrame(np.ones((2, 3)), columns=["a", "b", "c"]), np.ones((2, 3
 
 @pytest.mark.parametrize("sample", samples)
 def test_process_multistart_sample(sample, params):
-    calculated = process_multistart_sample(sample, params, [])
+
+    calculated = process_multistart_sample(sample, params, lambda x: x)
     expeceted = np.ones((2, 3))
     aaae(calculated, expeceted)
 

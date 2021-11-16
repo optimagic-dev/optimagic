@@ -649,9 +649,10 @@ def _optimize(
         lower, upper = get_internal_sampling_bounds(params, constraints)
 
         multistart_options = _fill_multistart_options_with_defaults(
-            multistart_options,
-            params,
-            constraints,
+            options=multistart_options,
+            params=params,
+            x=x,
+            params_to_internal=params_to_internal,
         )
 
         raw_res = run_multistart_optimization(
@@ -831,13 +832,13 @@ def _setdefault(candidate, default):
     return out
 
 
-def _fill_multistart_options_with_defaults(options, params, constraints):
+def _fill_multistart_options_with_defaults(options, params, x, params_to_internal):
     defaults = {
         "sample": None,
-        "n_samples": 10 * len(params),
+        "n_samples": 10 * len(x),
         "share_optimizations": 0.1,
         "sampling_distribution": "uniform",
-        "sampling_method": "sobol" if len(params) <= 30 else "random",
+        "sampling_method": "sobol" if len(x) <= 30 else "random",
         "mixing_weight_method": "tiktak",
         "mixing_weight_bounds": (0.1, 0.995),
         "convergence_relative_params_tolerance": 0.01,
@@ -867,7 +868,9 @@ def _fill_multistart_options_with_defaults(options, params, constraints):
         out["mixing_weight_method"] = WEIGHT_FUNCTIONS[out["mixing_weight_method"]]
 
     if out["sample"] is not None:
-        out["sample"] = process_multistart_sample(out["sample"], params, constraints)
+        out["sample"] = process_multistart_sample(
+            out["sample"], params, params_to_internal
+        )
         out["n_samples"] = len(out["sample"])
 
     out["n_optimizations"] = max(1, int(out["n_samples"] * out["share_optimizations"]))
@@ -876,7 +879,7 @@ def _fill_multistart_options_with_defaults(options, params, constraints):
     return out
 
 
-def process_multistart_sample(raw_sample, params, constraints):
+def process_multistart_sample(raw_sample, params, params_to_internal):
     if isinstance(raw_sample, pd.DataFrame):
         if not raw_sample.columns.equals(params.index):
             raise ValueError(
@@ -893,8 +896,6 @@ def process_multistart_sample(raw_sample, params, constraints):
             )
         sample = raw_sample
 
-    to_internal, _ = get_reparametrize_functions(params, constraints)
-
-    sample = np.array([to_internal(x) for x in sample])
+    sample = np.array([params_to_internal(x) for x in sample])
 
     return sample

@@ -36,7 +36,7 @@ def log_scheduled_steps_and_get_ids(steps, logging, db_kwargs):
             **db_kwargs,
         )["rowid"]
     else:
-        step_ids = [-1] * len(steps)
+        step_ids = list(range(len(steps)))
 
     return step_ids
 
