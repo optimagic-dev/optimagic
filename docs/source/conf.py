@@ -59,6 +59,7 @@ autodoc_mock_imports = [
     "bokeh",
     "cloudpickle",
     "cyipopt",
+    "fides",
     "fuzzywuzzy",
     "joblib",
     "nlopt",
@@ -71,6 +72,7 @@ autodoc_mock_imports = [
     "tornado",
     "petsc4py",
     "statsmodels",
+    "chaospy",
 ]
 
 extlinks = {
