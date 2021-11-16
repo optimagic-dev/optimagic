@@ -8,16 +8,21 @@ High level means:
 
 """
 import numpy as np
-import pandas as pd
 
 
 def add_default_bounds_to_params(params):
     """Fill missing bounds with -np.inf and np.inf."""
-    defaults = pd.DataFrame(
-        {"lower_bound": -np.inf, "upper_bound": np.inf},
-        index=params.index,
-    )
-    params = params.combine_first(defaults)
+    params = params.copy()
+
+    if "lower_bound" not in params:
+        params["lower_bound"] = -np.inf
+    else:
+        params["lower_bound"].fillna(-np.inf, inplace=True)
+
+    if "upper_bound" not in params:
+        params["upper_bound"] = np.inf
+    else:
+        params["upper_bound"].fillna(np.inf, inplace=True)
 
     return params
 
@@ -35,7 +40,7 @@ def check_params_are_valid(params):
     if params.index.duplicated().any():
         raise ValueError("No duplicates allowed in the index of params.")
 
-    invalid_bounds = params.query("lower_bound > value | upper_bound < value")
+    invalid_bounds = params[params["lower_bound"].values > params["upper_bound"].values]
 
     if len(invalid_bounds) > 0:
         raise ValueError(f"value out of bounds for:\n{invalid_bounds.index}")

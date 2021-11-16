@@ -9,8 +9,10 @@ path_or_database. Otherwise, the functions may be very slow.
 """
 from pathlib import Path
 
+import pandas as pd
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import read_specific_row
 from sqlalchemy import MetaData
 
@@ -126,3 +128,25 @@ def _process_path_or_database(path_or_database):
             "path_or_database must be a path or sqlalchemy.MetaData object"
         )
     return res
+
+
+def read_steps_table(path_or_database):
+    """Load the start parameters DataFrame.
+
+    Args:
+        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
+
+    Returns:
+        params (pd.DataFrame): see :ref:`params`.
+
+    """
+    database = load_database(**_process_path_or_database(path_or_database))
+    steps_table, _ = read_new_rows(
+        database=database,
+        table_name="steps",
+        last_retrieved=0,
+        return_type="list_of_dicts",
+    )
+    steps_df = pd.DataFrame(steps_table)
+
+    return steps_df

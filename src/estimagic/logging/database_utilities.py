@@ -30,6 +30,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import PickleType
 from sqlalchemy import String
 from sqlalchemy import Table
+from sqlalchemy import update
 from sqlalchemy.dialects.sqlite import DATETIME
 
 
@@ -109,6 +110,7 @@ def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
         Column("valid", Boolean),
         Column("hash", String),
         Column("value", Float),
+        Column("step", Integer),
     ]
 
     if isinstance(first_eval["output"], dict):
@@ -126,12 +128,15 @@ def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
     database.create_all(database.bind)
 
 
-def make_optimization_status_table(database, if_exists="extend"):
-    table_name = "optimization_status"
+def make_steps_table(database, if_exists="extend"):
+    table_name = "steps"
     _handle_existing_table(database, table_name, if_exists)
     columns = [
         Column("rowid", Integer, primary_key=True),
-        Column("status", String),
+        Column("type", String),  # e.g. optimization
+        Column("status", String),  # e.g. running
+        Column("n_iterations", Integer),  # optional
+        Column("name", String),  # e.g. "optimization-1", "exploration", not unique
     ]
     Table(
         table_name, database, *columns, extend_existing=True, sqlite_autoincrement=True
@@ -172,6 +177,15 @@ def _handle_existing_table(database, table_name, if_exists):
             database.tables[table_name].drop(database.bind)
         elif if_exists == "raise":
             raise TableExistsError(f"The table {table_name} already exists.")
+
+
+def update_row(data, rowid, table_name, database, path, fast_logging):
+    database = load_database(database, path, fast_logging)
+
+    table = database.tables[table_name]
+    stmt = update(table).where(table.c.rowid == rowid).values(**data)
+
+    _execute_write_statement(stmt, database, path, table_name, data)
 
 
 def append_row(data, table_name, database, path, fast_logging):
@@ -219,6 +233,7 @@ def read_new_rows(
     fast_logging=False,
     limit=None,
     stride=1,
+    step=None,
 ):
     """Read all iterations after last_retrieved up to a limit.
 
@@ -232,8 +247,8 @@ def read_new_rows(
             MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
         limit (int): maximum number of rows to extract from the table.
-        stride (int): Only return every n-th iteration.
-            Default is every iteration (stride=1).
+        stride (int): Only return every n-th row. Default is every row (stride=1).
+        step (int): Only return iterations that belong to step.
 
     Returns:
         result (return_type): up to limit rows after last_retrieved of the
@@ -247,14 +262,15 @@ def read_new_rows(
 
     table = database.tables[table_name]
     stmt = table.select().where(table.c.rowid > last_retrieved).limit(limit)
-    if stride == 1:
-        stmt = table.select().where(table.c.rowid > last_retrieved).limit(limit)
-    else:
-        stmt = (
-            table.select()
-            .where(and_(table.c.rowid > last_retrieved, table.c.rowid % stride == 0))
-            .limit(limit)
-        )
+    conditions = [table.c.rowid > last_retrieved]
+
+    if stride != 1:
+        conditions.append(table.c.rowid % stride == 0)
+
+    if step is not None:
+        conditions.append(table.c.step == int(step))
+
+    stmt = table.select().where(and_(*conditions)).limit(limit)
 
     data = _execute_read_statement(database, table_name, stmt, return_type)
 
@@ -274,6 +290,7 @@ def read_last_rows(
     path=None,
     fast_logging=False,
     stride=1,
+    step=None,
 ):
     """Read the last n_rows rows from a table.
 
@@ -288,8 +305,8 @@ def read_last_rows(
             not exist, it will be created. Using a path is much slower than a
             MetaData object and we advise to only use it as a fallback.
         fast_logging (bool)
-        stride (int): Only return every n-th iteration.
-            Default is every iteration (stride=1).
+        stride (int): Only return every n-th row. Default is every row (stride=1).
+        step (int): Only return rows that belong to step.
 
     Returns:
         result (return_type): the last rows of the `table_name` table as `return_type`.
@@ -299,17 +316,32 @@ def read_last_rows(
     n_rows = int(n_rows)
 
     table = database.tables[table_name]
-    if stride == 1:
-        stmt = table.select().order_by(table.c.rowid.desc()).limit(n_rows)
-    else:
+
+    conditions = []
+
+    if stride != 1:
+        conditions.append(table.c.rowid % stride == 0)
+
+    if step is not None:
+        conditions.append(table.c.step == int(step))
+
+    if conditions:
         stmt = (
             table.select()
             .order_by(table.c.rowid.desc())
-            .where(table.c.rowid % stride == 0)
+            .where(and_(*conditions))
             .limit(n_rows)
         )
+    else:
+        stmt = table.select().order_by(table.c.rowid.desc()).limit(n_rows)
 
-    return _execute_read_statement(database, table_name, stmt, return_type)
+    reversed_ = _execute_read_statement(database, table_name, stmt, return_type)
+    if return_type == "list_of_dicts":
+        out = reversed_[::-1]
+    else:
+        out = {key: val[::-1] for key, val in reversed_.items()}
+
+    return out
 
 
 def read_specific_row(
@@ -335,6 +367,14 @@ def read_specific_row(
     rowid = int(rowid)
     table = database.tables[table_name]
     stmt = table.select().where(table.c.rowid == rowid)
+    data = _execute_read_statement(database, table_name, stmt, return_type)
+    return data
+
+
+def read_table(database, table_name, return_type, path=None, fast_logging=False):
+    database = load_database(database, path, fast_logging)
+    table = database.tables[table_name]
+    stmt = table.select()
     data = _execute_read_statement(database, table_name, stmt, return_type)
     return data
 

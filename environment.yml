@@ -42,6 +42,8 @@ dependencies:
   - pytask>=0.0.11
   - nlopt
   - sphinx-panels
+  - pygmo
+  - chaospy
 
   - pip:
       - black
