@@ -144,10 +144,16 @@ def create_performance_df(
 
     ### distance measures on the parameter dimension are missing!
 
-    ### CLIPPING IS MISSING !!!
     if stopping_criterion is not None:
-        raise NotImplementedError("Clipping still missing at the moment.")
-
+        df = clip_histories(
+            df=df,
+            stopping_criterion=stopping_criterion,
+            x_precision=x_precision,
+            y_precision=y_precision,
+            f_opt=f_opt,
+            # no clipping because optimal x values are unknown still
+            x_opt=None,
+        )
     df.index = df.index.rename({"evaluation": "n_evaluations"})
     return df
 
@@ -222,3 +228,30 @@ def calculate_share_of_improvement_missing(sr, start_values, target_values):
         ["problem", "algorithm", "evaluation"]
     ).loc[sr.index]
     return correct_index_levels
+
+
+def clip_histories(df, stopping_criterion, x_precision, y_precision, f_opt, x_opt):
+    """Shorten the DataFrame to just the evaluations until each algorithm converged.
+
+    Args:
+        df (pandas.DataFrame): index levels are ['problem', 'algorithm', 'evaluation'].
+            Columns must include monotone_criterion.
+        stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y".
+        x_precision (float or None):
+        y_precision (float or None):
+
+    """
+    if stopping_criterion in ["y"]:
+        criterion_by_problem = df.unstack("problem")["monotone_criterion"]
+        too_far_from_optimum = (
+            criterion_by_problem > f_opt[criterion_by_problem.columns] + y_precision
+        )
+        shortened = criterion_by_problem[too_far_from_optimum]
+        shortened_stacked = shortened.stack().reorder_levels(
+            ["problem", "algorithm", "evaluation"]
+        )
+        shortened_indices = shortened_stacked.dropna().index
+        shortened = df.loc[shortened_indices]
+    else:
+        raise NotImplementedError("Only 'y' is supported as stopping_criterion so far")
+    return shortened

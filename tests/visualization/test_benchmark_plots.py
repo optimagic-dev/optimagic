@@ -2,6 +2,7 @@ import pandas as pd
 from estimagic.visualization.benchmark_plots import (
     calculate_share_of_improvement_missing,
 )
+from estimagic.visualization.benchmark_plots import clip_histories
 from estimagic.visualization.benchmark_plots import (
     get_history_as_stacked_sr_from_results,
 )
@@ -30,6 +31,10 @@ def test_lowest_so_far2():
 
 
 def test_get_history_as_stacked_sr_from_results():
+    raise NotImplementedError()
+
+
+def test_clip_histories():
     raise NotImplementedError()
 
 
