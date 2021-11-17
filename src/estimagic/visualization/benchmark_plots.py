@@ -63,10 +63,21 @@ def convergence_plot(
     df = create_performance_df(
         problems=problems,
         results=results,
-        stopping_criterion=stopping_criterion,
-        x_precision=x_precision,
-        y_precision=y_precision,
     )
+    if stopping_criterion is not None:
+        f_opt = pd.Series(
+            {name: prob["solution"]["value"] for name, prob in problems.items()}
+        )
+        df, converged_info = clip_histories(
+            df=df,
+            stopping_criterion=stopping_criterion,
+            x_precision=x_precision,
+            y_precision=y_precision,
+            f_opt=f_opt,
+            # no clipping because optimal x values are unknown still
+            x_opt=None,
+        )
+    ### Use converged_info somewhere!!!
 
     outcome = (
         f"{'monotone_' if monotone else ''}"
@@ -111,9 +122,7 @@ def convergence_plot(
     return fig, axes
 
 
-def create_performance_df(
-    problems, results, stopping_criterion, x_precision, y_precision
-):
+def create_performance_df(problems, results):
     """Create DataFrame with all information needed for the benchmarking plots.
 
     Args:
@@ -144,16 +153,6 @@ def create_performance_df(
 
     ### distance measures on the parameter dimension are missing!
 
-    if stopping_criterion is not None:
-        df = clip_histories(
-            df=df,
-            stopping_criterion=stopping_criterion,
-            x_precision=x_precision,
-            y_precision=y_precision,
-            f_opt=f_opt,
-            # no clipping because optimal x values are unknown still
-            x_opt=None,
-        )
     df.index = df.index.rename({"evaluation": "n_evaluations"})
     return df
 
@@ -237,21 +236,33 @@ def clip_histories(df, stopping_criterion, x_precision, y_precision, f_opt, x_op
         df (pandas.DataFrame): index levels are ['problem', 'algorithm', 'evaluation'].
             Columns must include monotone_criterion.
         stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y".
-        x_precision (float or None):
-        y_precision (float or None):
+        x_precision (float): when an algorithm's parameters are closer than this to the
+            true solution's parameters, the algorithm is counted as having converged.
+        y_precision (float): when an algorithm's criterion value is closer than this to
+            the solution value, the algorithm is counted as having converged.
+
+    Returns:
+        shortened (pandas.DataFrame): the entered DataFrame with all histories
+            shortened to stop once conversion according to the given criteria is
+            reached.
+        converged_info (pandas.DataFrame): columns are the algorithms, index are the
+            problems. The values are boolean and True when the algorithm arrived at
+            the solution with the desired precision.
 
     """
     if stopping_criterion in ["y"]:
         criterion_by_problem = df.unstack("problem")["monotone_criterion"]
-        too_far_from_optimum = (
-            criterion_by_problem > f_opt[criterion_by_problem.columns] + y_precision
+        converged = (
+            criterion_by_problem < f_opt[criterion_by_problem.columns] + y_precision
         )
-        shortened = criterion_by_problem[too_far_from_optimum]
+        shortened = criterion_by_problem[~converged]
         shortened_stacked = shortened.stack().reorder_levels(
             ["problem", "algorithm", "evaluation"]
         )
         shortened_indices = shortened_stacked.dropna().index
         shortened = df.loc[shortened_indices]
+
+        converged_info = converged.unstack("algorithm").any().unstack("algorithm")
     else:
         raise NotImplementedError("Only 'y' is supported as stopping_criterion so far")
-    return shortened
+    return shortened, converged_info
