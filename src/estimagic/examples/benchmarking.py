@@ -148,6 +148,7 @@ def run_benchmark(
         results[name] = {
             "params_history": histories["params"],
             "criterion_history": histories["values"],
+            "time_history": histories["metadata"]["timestamps"] - start,
             "solution": result,
             "runtime": runtime,
         }
