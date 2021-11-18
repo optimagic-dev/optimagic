@@ -14,7 +14,7 @@ plt.rcParams.update(
 )
 
 
-def create_performance_plot_over_full_problem_set(
+def profile_plot(
     problems,
     results,
     runtime_measure="n_evaluations",

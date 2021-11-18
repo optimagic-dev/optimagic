@@ -13,7 +13,7 @@ plt.rcParams.update(
 )
 
 
-def create_convergence_plots(
+def convergence_plot(
     problems,
     results,
     n_cols=2,
@@ -25,7 +25,7 @@ def create_convergence_plots(
     x_precision=1e-4,
     y_precision=1e-4,
 ):
-    """Plot convergence of algorithms for a set of problems.
+    """Plot convergence of optimizers for a set of problems.
 
     This creates a grid of plots, showing the convergence of the different
     algorithms on each problem. The faster a line falls, the faster the algorithm
