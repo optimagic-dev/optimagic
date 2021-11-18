@@ -14,7 +14,7 @@ plt.rcParams.update(
 )
 
 
-def create_data_profile_plot(
+def create_performance_plot_over_full_problem_set(
     problems,
     results,
     runtime_measure="n_evaluations",
@@ -22,7 +22,7 @@ def create_data_profile_plot(
     x_precision=1e-4,
     y_precision=1e-4,
 ):
-    """Plot data profiles as proposed by Moré and Wild (2009).
+    """Compare optimizers over full problem set as proposed by Moré and Wild (2009).
 
     Data profiles answer the question: What percentage of problems can each
     algorithm solve within a certain runtime budget?
@@ -92,7 +92,7 @@ def create_data_profile_plot(
     alphas = _determine_alpha_grid(performance_ratios)
 
     for_each_alpha = pd.concat(
-        {alpha: performance_ratios < alpha for alpha in alphas},
+        {alpha: performance_ratios <= alpha for alpha in alphas},
         names=["alpha"],
     )
     performance_profiles = for_each_alpha.groupby("alpha").mean().stack().reset_index()
@@ -174,7 +174,7 @@ def _determine_alpha_grid(performance_ratios):
     Returns:
         list: sorted switching points plus one point slightly to the right
     """
-    switch_points = np.unique(performance_ratios.values)
+    switch_points = np.unique(performance_ratios.values) + 1e-10
     finite_switch_points = switch_points[np.isfinite(switch_points)]
     point_to_right = finite_switch_points[-1] * 1.05
     alphas = np.append(finite_switch_points, point_to_right)
