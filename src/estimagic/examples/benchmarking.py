@@ -98,6 +98,7 @@ def run_benchmark(
             "runtime", "params_history", "criterion_history", "solution"
 
     """
+    np.random.seed(seed)
     logging_directory = Path(logging_directory)
     logging_directory.mkdir(parents=True, exist_ok=True)
 
