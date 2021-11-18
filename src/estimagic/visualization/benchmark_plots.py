@@ -1,10 +1,3 @@
-"""Create the benchmark plots.
-
-Future To-Dos:
-    - allow parameter distance as distance measure
-    -
-
-"""
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -66,8 +59,8 @@ def create_convergence_plots(
         runtime_measure (str): "n_evaluations" or "walltime".
         stopping_criterion (str): "x_and_y", "x_or_y", "x", "y" or None. If None, no
             clipping is done.
-        x_precision (float or None): Default is 1e-4.
-        y_precision (float or None): Default is 1e-4.
+        x_precision (float or None): Default is 1e-4. ###
+        y_precision (float or None): Default is 1e-4. ###
 
     Returns:
         fig, axes
@@ -82,15 +75,12 @@ def create_convergence_plots(
     df = create_performance_df(problems=problems, results=results)
 
     if stopping_criterion is not None:
-        solutions = get_solutions(problems)
-        df, converged_info = clip_histories(
+        df, _ = clip_histories(
             df=df,
             stopping_criterion=stopping_criterion,
             x_precision=x_precision,
             y_precision=y_precision,
-            solutions=solutions,
         )
-    ### Use converged_info: maybe to augment legend entry for not converged algos?
 
     outcome = (
         f"{'monotone_' if monotone else ''}"
@@ -114,7 +104,7 @@ def create_convergence_plots(
         ax.set_xlabel(x_labels[runtime_measure])
         ax.set_title(prob_name.replace("_", " ").title())
 
-        to_plot = df.loc[prob_name].reset_index()
+        to_plot = df[df["problem"] == prob_name]
         sns.lineplot(
             data=to_plot,
             x=runtime_measure,
@@ -138,8 +128,8 @@ def create_convergence_plots(
 def create_data_profile_plot(
     problems,
     results,
-    ### what we call runtime_measure here, i.e. runtime until desired convergence,
-    ### is called performance measure by Moré and Wild (2009).
+    # what we call runtime_measure here, i.e. runtime until desired convergence,
+    # is called performance measure by Moré and Wild (2009).
     runtime_measure="n_evaluations",
     stopping_criterion="y",
     x_precision=1e-4,
@@ -170,8 +160,8 @@ def create_data_profile_plot(
         problems (dict): estimagic benchmarking problems dictionary.
         results (dict): estimagic benchmarking results dictionary.
         runtime_measure (str): "n_evaluations" or "walltime"
-        x_precision (float): default 1e-4
-        y_precision (float): default 1e-4
+        x_precision (float): default 1e-4 ###
+        y_precision (float): default 1e-4 ###
         stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y".
 
     Returns:
@@ -180,11 +170,9 @@ def create_data_profile_plot(
     """
     df = create_performance_df(problems=problems, results=results)
 
-    solutions = get_solutions(problems)
     if stopping_criterion is None:
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
-            "Without it is not possible to determine convergence."
         )
 
     df, converged_info = clip_histories(
@@ -192,7 +180,6 @@ def create_data_profile_plot(
         stopping_criterion=stopping_criterion,
         x_precision=x_precision,
         y_precision=y_precision,
-        solutions=solutions,
     )
 
     solution_times = create_solution_times(
@@ -222,7 +209,16 @@ def create_data_profile_plot(
         alpha=1.0,
         palette=get_colors("categorical", n_algos),
     )
-    ax.set_xlabel("Multiple of Fastest Algorithm's Runtime")
+    if runtime_measure == "n_evaluations":
+        ax.set_xlabel(
+            "Multiple of Minimal Number of Function Evaluations\n"
+            "Needed to Solve the Problem"
+        )
+    elif runtime_measure == "walltime":
+        ax.set_xlabel(
+            "Multiple of Minimal Number of Wall Time\nNeeded to Solve the Problem"
+        )
+
     ax.set_ylabel("Share of Problems Solved")
     return fig, ax
 
@@ -231,7 +227,8 @@ def create_solution_times(df, runtime_measure, converged_info):
     """Find the solution time for each algorithm and problem in walltime and criterion evaluations.
 
     Args:
-        df (pandas.DataFrame): index levels are ['problem', 'algorithm', 'evaluation'].
+        df (pandas.DataFrame): contains 'problem', 'algorithm', 'evaluation' in the
+            columns.
         runtime_measure (str): 'walltime' or 'n_evaluations'.
         converged_info (pandas.DataFrame): columns are the algorithms, index are the
             problems. The values are boolean and True when the algorithm arrived at
@@ -247,7 +244,7 @@ def create_solution_times(df, runtime_measure, converged_info):
     if runtime_measure == "walltime":
         solution_times = df.groupby(["problem", "algorithm"])["walltime"].max()
         solution_times = solution_times.unstack()
-        # inf not allowed for timedeltas
+        # inf not allowed for timedeltas so put something very large
         solution_times[~converged_info] = pd.Timedelta(weeks=1000)
     elif runtime_measure == "n_evaluations":
         solution_times = df.groupby(["problem", "algorithm"]).size()
@@ -259,7 +256,6 @@ def create_solution_times(df, runtime_measure, converged_info):
             "Only 'walltime' or 'n_evaluations' are allowed as "
             f"runtime_measure. You specified {runtime_measure}"
         )
-
     return solution_times
 
 
@@ -293,7 +289,15 @@ def create_performance_df(problems, results):
         results (dict): estimagic benchmarking results dictionary.
 
     Returns:
-        pandas.DataFrame: index levels are ['problem', 'algorithm', 'evaluation'].
+        pandas.DataFrame: tidy DataFrame with the following columns:
+            - problem
+            - algorithm
+            - n_evaluations
+            - walltime
+            - criterion
+            - criterion_normalized
+            - monotone_criterion
+            - monotone_criterion_normalized
 
     """
     # build df from results
@@ -301,6 +305,9 @@ def create_performance_df(problems, results):
     time_sr.name = "walltime"
     criterion_sr = get_history_as_stacked_sr_from_results(results, "criterion_history")
     df = pd.concat([time_sr, criterion_sr], axis=1)
+
+    ### Prettification:
+    # first rename evaluation and reset index and then do the normalizations.
 
     # normalizations
     f_0 = df.query("evaluation == 1").groupby("problem")["criterion"].mean()
@@ -311,13 +318,17 @@ def create_performance_df(problems, results):
         sr=df["criterion"], start_values=f_0, target_values=f_opt
     )
 
+    df.index = df.index.rename({"evaluation": "n_evaluations"})
+    df = df.reset_index()
+
     # monotone versions
-    df["monotone_criterion"] = get_lowest_so_far(df, "criterion")
-    df["monotone_criterion_normalized"] = get_lowest_so_far(df, "criterion_normalized")
+    df["monotone_criterion"] = make_history_monotone(df, "criterion")
+    df["monotone_criterion_normalized"] = make_history_monotone(
+        df, "criterion_normalized"
+    )
 
     ### distance measures on the parameter dimension are missing!
 
-    df.index = df.index.rename({"evaluation": "n_evaluations"})
     return df
 
 
@@ -341,30 +352,44 @@ def get_history_as_stacked_sr_from_results(results, key):
     return sr
 
 
-def get_lowest_so_far(df, col):
-    """Create Series with lowest value so far.
+def make_history_monotone(df, target_col, sorting_cols=None, direction="minimize"):
+    """Create a monotone history, i.e. the best so far instead of current evaluation.
 
     Args:
-        df (pandas.DataFrame): index levels are ['problem', 'algorithm', 'evaluation'].
-            The columns include **col**.
-        col (str): name of the column for which to calculate the lowest value so far.
+        df (pandas.Dataframe): must contain the sorting_cols and the target_col as
+            columns.
+        target_col (str): column of which to create the monotone version.
+        sorting_cols (list): columns on which to make the histories monotone. The
+            default is ["problem", "algorithm", "n_evaluations"].
+        direction (str): "minimize" or "maximize". "minimize" makes the history
+            monotonically decreasing, "maximize" means the history will be monotonically
+            increasing.
 
-    Returns:
-        pandas. Series: index is the same as that of df. Values are the same as in
-            df[col] but monotone decreasing.
+    Retruns:
+        pd.Series: target column where all values that are not weak improvements are
+            replaced with the best so far value. Index is the same as that of df.
 
     """
-    values = df.unstack(["problem", "algorithm"])[col].sort_index()
-    only_lowest = values[values.diff() < 0].reindex(values.index)
-    # put first row back in. This was NaN from the first differencing
-    only_lowest.loc[0] = values.loc[0]
-    nan_filled = only_lowest.fillna(method="ffill")
-    stacked = nan_filled.stack(["problem", "algorithm"])
-    with_correct_index_order = stacked.reorder_levels(
-        ["problem", "algorithm", "evaluation"]
-    )
-    shortened = with_correct_index_order.loc[df.index]
-    return shortened
+    if sorting_cols is None:
+        sorting_cols = ["problem", "algorithm", "n_evaluations"]
+    sorted_df = df.sort_values(sorting_cols)
+
+    is_first_entry = sorted_df["n_evaluations"] == 0
+    sr = sorted_df[target_col]
+
+    if direction == "minimize":
+        # It is very important not to rewrite the second statement to
+        # sr.diff() <= 0 because the treatment of NaNs would change
+        keep = is_first_entry | ~(sr.diff() > 0)
+    else:
+        # It is very important not to rewrite the second statement to
+        # sr.diff() >= 0 because the treatment of NaNs would change
+        keep = is_first_entry | ~(sr.diff() < 0)
+    with_nans = sr.where(keep, np.nan)
+
+    out = with_nans.fillna(method="ffill")
+
+    return out
 
 
 def calculate_share_of_improvement_missing(sr, start_values, target_values):
@@ -382,6 +407,7 @@ def calculate_share_of_improvement_missing(sr, start_values, target_values):
             1 means the current value is as far from the target value as the start value.
 
     """
+    ### This is the bottleneck runtime wise (70%)
     total_improvements = start_values - target_values
     current_value = sr.unstack("problem")
     missing_improvement = current_value - target_values
@@ -394,7 +420,7 @@ def calculate_share_of_improvement_missing(sr, start_values, target_values):
     return correct_index_levels
 
 
-def clip_histories(df, stopping_criterion, x_precision, y_precision, solutions):
+def clip_histories(df, stopping_criterion, x_precision, y_precision):
     """Shorten the DataFrame to just the evaluations until each algorithm converged.
 
     Args:
@@ -405,8 +431,6 @@ def clip_histories(df, stopping_criterion, x_precision, y_precision, solutions):
             true solution's parameters, the algorithm is counted as having converged.
         y_precision (float): when an algorithm's criterion value is closer than this to
             the solution value, the algorithm is counted as having converged.
-        solutions (pandas.DataFrame): index are the problem names. There's one column for the
-            optimal criterion and one for the optimal parameters
 
     Returns:
         shortened (pandas.DataFrame): the entered DataFrame with all histories
@@ -418,43 +442,13 @@ def clip_histories(df, stopping_criterion, x_precision, y_precision, solutions):
 
     """
     if stopping_criterion in ["y"]:
-        criterion_by_problem = df.unstack("problem")["monotone_criterion"]
-        f_opt = solutions.loc[criterion_by_problem.columns, "criterion"]
-        converged = criterion_by_problem < f_opt + y_precision
-        shortened = criterion_by_problem[~converged]
-        shortened_stacked = shortened.stack().reorder_levels(
-            ["problem", "algorithm", "n_evaluations"]
-        )
-        shortened_indices = shortened_stacked.dropna().index
-        shortened = df.loc[shortened_indices]
+        converged = df["monotone_criterion_normalized"] < y_precision
+        shortened = df[~converged]
 
-        converged_info = converged.unstack("algorithm").any().unstack("algorithm")
+        ### A prettier solution exists but this works
+        converged.index = pd.MultiIndex.from_frame(df[["problem", "algorithm"]])
+        grouped = converged.groupby(["problem", "algorithm"])
+        converged_info = grouped.any().unstack("algorithm")
     else:
         raise NotImplementedError("Only 'y' is supported as stopping_criterion so far")
     return shortened, converged_info
-
-
-def get_solutions(problems):
-    """Extract problem solutions from problems.
-
-    Args:
-        problems (dict): estimagic benchmarking problems dictionary. Keys are the
-            problem names. Values contain information on the problem, including the solution
-            value.
-
-    Returns:
-        pandas.DataFrame: index are the problem names. There's one column for the
-            optimal criterion and one for the optimal parameters
-
-    """
-    f_opt = pd.Series(
-        {name: prob["solution"]["value"] for name, prob in problems.items()},
-        name="criterion",
-    )
-    opt_params = pd.Series(
-        {name: prob["solution"]["params"] for name, prob in problems.items()},
-        name="params",
-    )
-
-    solutions = pd.concat([f_opt, opt_params], axis=1)
-    return solutions
