@@ -38,27 +38,36 @@ def create_performance_df(
             - monotone_criterion_normalized
 
     """
+    # get solution values for each problem
+    f_opt = pd.Series(
+        {name: prob["solution"]["value"] for name, prob in problems.items()}
+    )
+    x_opt = {
+        name: prob["solution"]["params"]["value"] for name, prob in problems.items()
+    }
+
     # build df from results
     time_sr = _get_history_as_stacked_sr_from_results(results, "time_history")
     time_sr.name = "walltime"
     criterion_sr = _get_history_as_stacked_sr_from_results(results, "criterion_history")
-    df = pd.concat([time_sr, criterion_sr], axis=1)
-
-    # normalizations
-    f_0 = df.query("evaluation == 1").groupby("problem")["criterion"].mean()
-    f_opt = pd.Series(
-        {name: prob["solution"]["value"] for name, prob in problems.items()}
-    )
-    df["criterion_normalized"] = _calculate_share_of_improvement_missing(
-        sr=df["criterion"], start_values=f_0, target_values=f_opt
-    )
+    x_dist_sr = _get_history_of_the_distance_to_optimal_params(results, x_opt)
+    df = pd.concat([time_sr, criterion_sr, x_dist_sr], axis=1)
 
     # make tidy
     df.index = df.index.rename({"evaluation": "n_evaluations"})
-    df = df.reset_index()
+    df = df.sort_index().reset_index()
+
+    # normalizations
+    f_0 = df.query("n_evaluations == 0").groupby("problem")["criterion"].mean()
+    df["criterion_normalized"] = _normalize(
+        df=df, col="criterion", start_values=f_0, target_values=f_opt
+    )
 
     # create monotone versions of columns
     df["monotone_criterion"] = _make_history_monotone(df, "criterion")
+    df["monotone_distance_to_optimal_params"] = _make_history_monotone(
+        df, "distance_to_optimal_params"
+    )
     df["monotone_criterion_normalized"] = _make_history_monotone(
         df, "criterion_normalized"
     )
@@ -93,6 +102,35 @@ def _get_history_as_stacked_sr_from_results(results, key):
     sr = pd.concat(histories)
     sr.index.names = ["problem", "algorithm", "evaluation"]
     sr.name = key.replace("_history", "")
+    return sr
+
+
+def _get_history_of_the_distance_to_optimal_params(results, x_opt):
+    """Calculate the history of the distances to the optimal parameters.
+
+    Args:
+        results (dict): estimagic benchmarking results dictionary. Keys are
+            tuples of the form (problem, algorithm), values are dictionaries of the
+            collected information on the benchmark run, including 'criterion_history'
+            and 'time_history'.
+        x_opt (dict): the keys are the problems, the values are pandas.Series with the
+            optimal parameters for the respective problem.
+
+    Returns:
+        pandas.Series: index levels are "problem", "algorithm", "evaluation". The name
+            is "distance_to_optimal_params".
+
+    """
+    x_dist_history = {}
+    for (prob, algo), res in results.items():
+        param_history = res["params_history"]
+        x_dist_history[(prob, algo)] = pd.Series(
+            np.linalg.norm(param_history - x_opt[prob], axis=1)
+        )
+
+    sr = pd.concat(x_dist_history)
+    sr.index.names = ["problem", "algorithm", "evaluation"]
+    sr.name = "distance_to_optimal_params"
     return sr
 
 
@@ -136,30 +174,35 @@ def _make_history_monotone(df, target_col, sorting_cols=None, direction="minimiz
     return out
 
 
-def _calculate_share_of_improvement_missing(sr, start_values, target_values):
-    """Calculate the share of improvement still missing relative to the start point.
+def _normalize(df, col, start_values, target_values):
+    """Normalize the values in **col** relative to the total possible improvement.
 
-    Args:
-        sr (pandas.Series): index levels are ["problem", "algorithm", "evaluation"].
-            Values are the current values, e.g. criterion values.
-        start_values (pandas.Series): index are problems, values are start values
-        target_values (pandas.Series): index are problems, values are target values.
+    We normalize the values of **col** by calculating the share of the distance between
+    the start and target values that is still missing.
 
-    Returns:
-        pandas.Series: index is the same as that of sr. The lower the value the closer
-            the current value is to the target value. 0 means the target value has been
-            reached. 1 means the current value is as far from the target value as the
-            start value.
+    Note: This is correct whether we have a minimization or a maximization problem
+    because in the case of a maximization both the sign of the numerator and denominator
+    in the line where normalized is defined would be switched, i.e. that cancels out.
+    (In the case of a maximization the total improvement would be target - start values
+    and the currently still missing improvement would be target - current values)
+
+    Args: df (pandas.DataFrame): contains the columns **col** and "problem". col (str):
+        name of the column to normalize start_values (pandas.Series): index are
+        problems, values are start values target_values (pandas.Series): index are
+        problems, values are target values.
+
+    Returns: pandas.Series: index is the same as that of sr. The lower the value the
+        closer the current value is to the target value. 0 means the target value has
+        been reached. 1 means the current value is as far from the target value as the
+        start value.
 
     """
-    total_improvements = start_values - target_values
-    current_value = sr.unstack("problem")
-    missing_improvement = current_value - target_values
-    share_missing = missing_improvement / total_improvements
-    share_missing.columns.name = "problem"  # this got missing in between
-    stacked = share_missing.stack("problem")
-    correct_index_levels = stacked.reorder_levels(sr.index.names).loc[sr.index]
-    return correct_index_levels
+    # expand start and target values to the length of the full DataFrame
+    start_values = df["problem"].map(start_values)
+    target_values = df["problem"].map(target_values)
+
+    normalized = (df[col] - target_values) / (start_values - target_values)
+    return normalized
 
 
 def _clip_histories(df, stopping_criterion, x_precision, y_precision):
