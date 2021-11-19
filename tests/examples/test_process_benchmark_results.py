@@ -67,6 +67,10 @@ def test_find_first_converged(problem_algo_eval_df):
     pd.testing.assert_series_equal(res, expected)
 
 
+def test_normalize_minimize():
+    raise NotImplementedError
+
+
 def test_normalize_maximize():
     start_values = pd.Series([1, 2, 3], index=["prob1", "prob2", "prob3"])
     target_values = pd.Series([5, 7, 10], index=["prob1", "prob2", "prob3"])

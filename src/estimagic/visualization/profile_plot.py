@@ -161,7 +161,18 @@ def _create_solution_times(df, runtime_measure, converged_info):
 
 
 def _determine_alpha_grid(performance_ratios):
-    """Determine the alphas at which to calculate the performance profile.
+    switch_points = _find_switch_points(performance_ratios=performance_ratios)
+
+    # add point to the right
+    point_to_right = switch_points[-1] * 1.05
+    extended_switch_points = np.append(switch_points, point_to_right)
+    mid_points = (extended_switch_points[:-1] + extended_switch_points[1:]) / 2
+    alphas = sorted(np.append(extended_switch_points, mid_points))
+    return alphas
+
+
+def _find_switch_points(performance_ratios):
+    """Determine the switch points of the performance profiles.
 
     Args:
         performance_ratios (pandas.DataFrame): columns are the names of the algorithms,
@@ -172,11 +183,9 @@ def _determine_alpha_grid(performance_ratios):
             other of 1.5.
 
     Returns:
-        list: sorted switching points plus one point slightly to the right
+        list: sorted switching points
+
     """
     switch_points = np.unique(performance_ratios.values) + 1e-10
-    finite_switch_points = switch_points[np.isfinite(switch_points)]
-    point_to_right = finite_switch_points[-1] * 1.05
-    alphas = np.append(finite_switch_points, point_to_right)
-    alphas = sorted(alphas)
-    return alphas
+    switch_points = switch_points[np.isfinite(switch_points)]
+    return switch_points
