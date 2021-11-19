@@ -1,6 +1,7 @@
 import pandas as pd
 import pytest
 from estimagic.examples.process_benchmark_results import _find_first_converged
+from estimagic.examples.process_benchmark_results import _normalize
 
 
 @pytest.fixture
@@ -63,4 +64,23 @@ def test_find_first_converged(problem_algo_eval_df):
             False,
         ]
     )
+    pd.testing.assert_series_equal(res, expected)
+
+
+def test_normalize_maximize():
+    start_values = pd.Series([1, 2, 3], index=["prob1", "prob2", "prob3"])
+    target_values = pd.Series([5, 7, 10], index=["prob1", "prob2", "prob3"])
+
+    df = pd.DataFrame()
+    df["problem"] = ["prob1", "prob2", "prob3"] * 3
+    df["criterion"] = start_values.tolist() + [2, 4, 9] + target_values.tolist()
+
+    res = _normalize(
+        df=df, col="criterion", start_values=start_values, target_values=target_values
+    )
+
+    # total improvements are [4, 5, 7]
+    # missing improvements are [3, 3, 1] for the [2, 4, 9] part
+
+    expected = pd.Series([1] * 3 + [3 / 4, 3 / 5, 1 / 7] + [0] * 3)
     pd.testing.assert_series_equal(res, expected)

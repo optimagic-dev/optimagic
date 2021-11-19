@@ -202,15 +202,17 @@ def _normalize(df, col, start_values, target_values):
     (In the case of a maximization the total improvement would be target - start values
     and the currently still missing improvement would be target - current values)
 
-    Args: df (pandas.DataFrame): contains the columns **col** and "problem". col (str):
-        name of the column to normalize start_values (pandas.Series): index are
-        problems, values are start values target_values (pandas.Series): index are
-        problems, values are target values.
+    Args:
+        df (pandas.DataFrame): contains the columns **col** and "problem".
+        col (str): name of the column to normalize
+        start_values (pandas.Series): index are problems, values are start values
+        target_values (pandas.Series): index are problems, values are target values.
 
-    Returns: pandas.Series: index is the same as that of sr. The lower the value the
-        closer the current value is to the target value. 0 means the target value has
-        been reached. 1 means the current value is as far from the target value as the
-        start value.
+    Returns:
+        pandas.Series: index is the same as that of sr. The lower the value the closer
+            the current value is to the target value. 0 means the target value has been
+            reached. 1 means the current value is as far from the target value as the
+            start value.
 
     """
     # expand start and target values to the length of the full DataFrame
