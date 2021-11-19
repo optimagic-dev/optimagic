@@ -267,11 +267,42 @@ def _clip_histories(df, stopping_criterion, x_precision, y_precision):
             "following are allowed: 'x_and_y', 'x_or_y', 'x', or 'y'."
         )
 
-    shortened = df[~converged]
+    first_converged = _find_first_converged(converged, df)
 
-    # A prettier solution exists but this does the right thing
+    shortened = df[~converged | first_converged]
+
+    # create converged_info
     converged.index = pd.MultiIndex.from_frame(df[["problem", "algorithm"]])
     grouped = converged.groupby(["problem", "algorithm"])
     converged_info = grouped.any().unstack("algorithm")
 
     return shortened, converged_info
+
+
+def _find_first_converged(converged, df):
+    """Identify the first converged entry for each problem run.
+
+    Args:
+        converged (pandas.Series): same index as df, True where an algorithm has gotten
+            sufficiently close to the solution.
+        df (pandas.DataFrame): contains the "problem", "algorithm" and "n_evaluations"
+            columns.
+
+    Returns:
+        pandas.Series: same index as converged. Only True for the first converged entry
+            for each problem run, i.e. problem and algorithm combination.
+
+    """
+    converged_with_multi_index = converged.copy(deep=True)
+    multi_index = pd.MultiIndex.from_frame(
+        df[["problem", "algorithm", "n_evaluations"]]
+    )
+    converged_with_multi_index.index = multi_index
+
+    only_converged = converged_with_multi_index[converged_with_multi_index]
+    first_true_indices = only_converged.groupby(["problem", "algorithm"]).idxmin()
+    first_trues = pd.Series(
+        converged_with_multi_index.index.isin(first_true_indices.values),
+        index=converged.index,
+    )
+    return first_trues
