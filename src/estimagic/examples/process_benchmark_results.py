@@ -36,6 +36,10 @@ def create_performance_df(
             - criterion_normalized
             - monotone_criterion
             - monotone_criterion_normalized
+            - distance_to_optimal_params
+            - distance_to_optimal_params_normalized
+            - monotone_distance_to_optimal_params
+            - monotone_distance_to_optimal_params_normalized
 
     """
     # get solution values for each problem
@@ -57,12 +61,21 @@ def create_performance_df(
     df.index = df.index.rename({"evaluation": "n_evaluations"})
     df = df.sort_index().reset_index()
 
+    first_evaluations = df.query("n_evaluations == 0").groupby("problem")
+    f_0 = first_evaluations["criterion"].mean()
+    x_0_dist = first_evaluations["distance_to_optimal_params"].mean()
+    x_opt_dist = {name: 0 for name in problems}
+
     # normalizations
-    f_0 = df.query("n_evaluations == 0").groupby("problem")["criterion"].mean()
     df["criterion_normalized"] = _normalize(
         df=df, col="criterion", start_values=f_0, target_values=f_opt
     )
-
+    df["distance_to_optimal_params_normalized"] = _normalize(
+        df=df,
+        col="distance_to_optimal_params",
+        start_values=x_0_dist,
+        target_values=x_opt_dist,
+    )
     # create monotone versions of columns
     df["monotone_criterion"] = _make_history_monotone(df, "criterion")
     df["monotone_distance_to_optimal_params"] = _make_history_monotone(
@@ -70,6 +83,9 @@ def create_performance_df(
     )
     df["monotone_criterion_normalized"] = _make_history_monotone(
         df, "criterion_normalized"
+    )
+    df["monotone_distance_to_optimal_params_normalized"] = _make_history_monotone(
+        df, "distance_to_optimal_params_normalized"
     )
 
     if stopping_criterion is not None:
@@ -226,14 +242,36 @@ def _clip_histories(df, stopping_criterion, x_precision, y_precision):
             the solution with the desired precision.
 
     """
-    if stopping_criterion in ["y"]:
-        converged = df["monotone_criterion_normalized"] < y_precision
-        shortened = df[~converged]
+    if "y" in stopping_criterion:
+        y_converged = df["monotone_criterion_normalized"] < y_precision
 
-        # A prettier solution exists but this does the right thing
-        converged.index = pd.MultiIndex.from_frame(df[["problem", "algorithm"]])
-        grouped = converged.groupby(["problem", "algorithm"])
-        converged_info = grouped.any().unstack("algorithm")
+    if "x" in stopping_criterion:
+        x_converged = df["monotone_distance_to_optimal_params_normalized"] < x_precision
+        if x_converged.isnull().any():
+            raise ValueError(
+                "You specified x as part of your stopping criterion but the optimal "
+                "parameters are not known for every problem in your problem set."
+            )
+
+    if stopping_criterion == "y":
+        converged = y_converged
+    elif stopping_criterion == "x":
+        converged = x_converged
+    elif stopping_criterion == "x_and_y":
+        converged = y_converged & x_converged
+    elif stopping_criterion == "x_or_y":
+        converged = y_converged | x_converged
     else:
-        raise NotImplementedError("Only 'y' is supported as stopping_criterion so far")
+        raise NotImplementedError(
+            f"You specified {stopping_criterion} as stopping_criterion but only the "
+            "following are allowed: 'x_and_y', 'x_or_y', 'x', or 'y'."
+        )
+
+    shortened = df[~converged]
+
+    # A prettier solution exists but this does the right thing
+    converged.index = pd.MultiIndex.from_frame(df[["problem", "algorithm"]])
+    grouped = converged.groupby(["problem", "algorithm"])
+    converged_info = grouped.any().unstack("algorithm")
+
     return shortened, converged_info
