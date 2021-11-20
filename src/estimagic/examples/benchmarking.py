@@ -285,6 +285,7 @@ def _sample_from_distribution(distribution, mean, std, size, correlation=0):
     if correlation != 0 and dim > 1:
         chol = np.linalg.cholesky(np.diag(np.ones(dim) - correlation) + correlation)
         sample = (chol @ sample.T).T
+        sample = sample / sample.std()
     sample *= std
     sample += mean
     return sample
