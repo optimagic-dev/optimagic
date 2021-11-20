@@ -67,6 +67,14 @@ else:
     IS_CYIPOPT_INSTALLED = True
 
 
+try:
+    import fides  # noqa: F401
+except ImportError:
+    IS_FIDES_INSTALLED = False
+else:
+    IS_FIDES_INSTALLED = True
+
+
 # =================================================================================
 # Dashboard Defaults
 # =================================================================================

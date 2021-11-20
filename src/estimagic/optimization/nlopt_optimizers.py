@@ -41,31 +41,7 @@ def nlopt_bobyqa(
 
     """Minimize a scalar function using the BOBYQA algorithm.
 
-    The implementation is derived from the BOBYQA subroutine of M. J. D. Powell.
-
-    The algorithm performs derivative free bound-constrained optimization using
-    an iteratively constructed quadratic approximation for the objective function.
-    Due to its use of quadratic appoximation, the algorithm may perform poorly
-    for objective functions that are not twice-differentiable.
-
-    For details see:
-    M. J. D. Powell, "The BOBYQA algorithm for bound constrained optimization
-    without derivatives," Department of Applied Mathematics and Theoretical
-    Physics, Cambridge England, technical report NA2009/06 (2009).
-
-    ``nlopt_bobyqa`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -99,30 +75,7 @@ def nlopt_neldermead(
 ):
     """Minimize a scalar function using the Nelder-Mead simplex algorithm.
 
-    The basic algorithm is described in:
-    J. A. Nelder and R. Mead, "A simplex method for function minimization,"
-    The Computer Journal 7, p. 308-313 (1965).
-
-    The difference between the nlopt implementation an the original implementation is
-    that the nlopt version supports bounds. This is done by moving all new points that
-    would lie outside the bounds exactly on the bounds.
-
-    ``nlopt_neldermead`` takes the following ``algo_options``
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-
-    Returns:
-        dict: See :ref:`internal_optimizer_output` for details.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
 
@@ -155,47 +108,7 @@ def nlopt_praxis(
 ):
     """Minimize a scalar function using principal-axis method.
 
-    This is a gradient-free local optimizer originally described in:
-    Richard Brent, Algorithms for Minimization without Derivatives
-    (Prentice-Hall, 1972). (Reprinted by Dover, 2002.). It assumes quadratic
-    form of the optimized function and repeatedly updates a set of conjugate
-    search directions.
-
-    The algorithm is not invariant to scaling of the objective function and may
-    fail under its certain rank-preserving transformations (e.g., will lead to
-    a non-quadratic shape of the objective function).
-
-    The algorithm is not determenistic and it is not possible to achieve
-    detereminancy via seed setting.
-
-    The algorithm failed on a simple benchmark function with finite parameter bounds.
-    Passing arguments `lower_bounds` and `upper_bounds` has been disabled for this
-    algorithm.
-
-    The difference between the nlopt implementation an the original implementation is
-    that the nlopt version supports bounds. This is done by returning infinity (Inf)
-    when the constraints are violated. The implementation of bound constraints
-    is achieved at the const of significantly reduced speed of convergence.
-    In case of bounded constraints, this method is dominated by `nlopt_bobyqa`
-    and `nlopt_cobyla`.
-
-    ``nlopt_praxis`` takes the following ``algo_options``
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-
-
-    Returns:
-        dict: See :ref:`internal_optimizer_output` for details.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     algo_info = DEFAULT_ALGO_INFO.copy()
@@ -232,47 +145,7 @@ def nlopt_cobyla(
 ):
     """Minimize a scalar function using the cobyla method.
 
-    The alggorithm is derived from Powell's Constrained Optimization BY Linear
-    Approximations (COBYLA) algorithm. It is a derivative-free optimizer with
-    nonlinear inequality and equality constrains, described in:
-
-    M. J. D. Powell, "A direct search optimization method that models the
-    objective and constraint functions by linear interpolation," in Advances in
-    Optimization and Numerical Analysis, eds. S. Gomez and J.-P. Hennart (Kluwer
-    Academic: Dordrecht, 1994), p. 51-67
-
-    It constructs successive linear approximations of the objective function and
-    constraints via a simplex of n+1 points (in n dimensions), and optimizes these
-    approximations in a trust region at each step.
-
-    The the nlopt implementation differs from the original implementation in a
-    a few ways:
-    - Incorporates all of the NLopt termination criteria.
-    - Adds explicit support for bound constraints.
-    - Allows the algorithm to increase the trust-reion radius if the predicted
-    imptoovement was approximately right and the simplex is satisfactory.
-    - Pseudo-randomizes simplex steps in the algorithm, aimproving robustness by
-    avoiding accidentally taking steps that don't improve conditioning, preserving
-    the deterministic nature of the algorithm.
-    - Supports unequal initial-step sizes in the different parameters.
-
-
-    ``nlopt_cobyla`` takes the following ``algo_options``
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-
-    Returns:
-        dict: See :ref:`internal_optimizer_output` for details.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
 
@@ -307,35 +180,7 @@ def nlopt_sbplx(
 ):
     """Minimize a scalar function using the "Subplex" algorithm.
 
-    The alggorithm is a reimplementation of  Tom Rowan's "Subplex" algorithm.
-    See: T. Rowan, "Functional Stability Analysis of Numerical Algorithms",
-    Ph.D. thesis, Department of Computer Sciences, University of Texas at
-    Austin, 1990.
-
-    Subplex is a variant of Nedler-Mead that uses Nedler-Mead on a sequence of
-    subspaces. It is climed to be more efficient and robust than the original
-    Nedler-Mead algorithm.
-
-    The difference between this re-implementation and the original algorithm
-    of Rowan, is that it explicitly supports bound constraints providing big
-    improvement in the case where the optimum lies against one of the constraints.
-
-    ``nlopt_sbplx`` takes the following ``algo_options``
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-
-    Returns:
-        dict: See :ref:`internal_optimizer_output` for details.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
 
@@ -370,37 +215,7 @@ def nlopt_newuoa(
 ):
     """Minimize a scalar function using the NEWUOA algorithm.
 
-    The algorithm is derived from the NEWUOA subroutine of M.J.D Powell which
-    uses iteratively constructed quadratic approximation of the objctive fucntion
-    to perform derivative-free unconstrained optimization. Fore more details see:
-    M. J. D. Powell, "The NEWUOA software for unconstrained optimization without
-    derivatives," Proc. 40th Workshop on Large Scale Nonlinear Optimization
-    (Erice, Italy, 2004).
-
-    The algorithm in `nlopt` has been modified to support bound constraints. If all
-    of the bound constraints are infinite, this function calls the `nlopt.LN_NEWUOA`
-    optimizers for uncsonstrained optimization. Otherwise, the `nlopt.LN_NEWUOA_BOUND`
-    optimizer for constrained problems.
-
-    `NEWUOA` requires the dimension n of the parameter space to be `≥ 2`, i.e. the
-    implementation does not handle one-dimensional optimization problems.
-
-    ``nlopt_newuoa`` takes the following algo_options
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-
-    Returns:
-        dict: See :ref:`internal_optimizer_output` for details.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     if np.any(np.isfinite(lower_bounds)) or np.any(np.isfinite(upper_bounds)):
@@ -439,34 +254,7 @@ def nlopt_tnewton(
 ):
     """Minimize a scalar function using the "TNEWTON" algorithm.
 
-    The alggorithm is based on a Fortran implementation of a preconditioned
-    inexact truncated Newton algorithm written by Prof. Ladislav Luksan.
-
-    Truncated Newton methods are a set of algorithms designed to solve large scale
-    optimization problems. The algorithms use (inaccurate) approximations of the
-    solutions to Newton equations, using conjugate gradient methodds, to handle the
-    expensive calculations of derivatives during each iteration.
-
-    Detailed description of algorithms is given in: R. S. Dembo and T. Steihaug,
-    "Truncated Newton algorithms for large-scale optimization," Math. Programming
-    26, p. 190-212 (1983), http://doi.org/10.1007/BF02592055.
-
-    ``nlopt_tnewton`` takes the following ``algo_options``
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-
-    Returns:
-        dict: See :ref:`internal_optimizer_output` for details.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
 
@@ -501,37 +289,7 @@ def nlopt_lbfgs(
 ):
     """Minimize a scalar function using the "LBFGS" algorithm.
 
-    The alggorithm is based on a Fortran implementation of low storage BFGS algorithm
-    written by Prof. Ladislav Luksan.
-
-    LFBGS is an approximation of the original Broyden–Fletcher–Goldfarb–Shanno algorithm
-    based on limited use of memory. Memory efficiency is obtained by preserving a limi-
-    ted number (<10) of past updates of candidate points and gradient values and using
-    them to approximate the hessian matrix.
-
-    Detailed description of algorithms is given in:
-    J. Nocedal, "Updating quasi-Newton matrices with limited storage," Math. Comput.
-    35, 773-782 (1980).
-    D. C. Liu and J. Nocedal, "On the limited memory BFGS method for large scale
-    optimization," ''Math. Programming' 45, p. 503-528 (1989).
-
-    ``nlopt_lbfgs`` takes the following ``algo_options``
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-
-
-    Returns:
-        dict: See :ref:`internal_optimizer_output` for details.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
 
@@ -567,34 +325,7 @@ def nlopt_ccsaq(
 
     """Minimize a scalar function using CCSAQ algorithm.
 
-    CCSAQ uses the quadratic variant of the conservative convex separable approximation.
-    The algorithm performs gradient based local optimization with equality (but not
-    inequality) constraints. At each candidate point x, a quadratic approximation
-    to the criterion faunction is computed using the value of gradient at point x. A
-    penalty term is incorporated to render optimizaion convex and conservative. The
-    algorithm is "globally convergent" in the sense that it is guaranteed to con-
-    verge to a local optimum from any feasible starting point.
-
-    The implementation is based on CCSA algorithm described in:
-    Krister Svanberg, "A class of globally convergent optimization methods based
-    on conservative convex separable approximations," SIAM J. Optim. 12 (2), p.
-    555-573 (2002)
-
-
-
-    ``nlopt_ccsaq`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -629,33 +360,7 @@ def nlopt_mma(
 
     """Minimize a scalar function using the method of moving asymptotes (MMA).
 
-    The implementation is based on an algorithm described in:
-    Krister Svanberg, "A class of globally convergent optimization methods based
-    on conservative convex separable approximations," SIAM J. Optim. 12 (2), p.
-    555-573 (2002)
-
-    The algorithm performs gradient based local optimization with equality (but
-    not inequality) constraints. At each candidate point x, an approximation to the
-    criterion faunction is computed using the value of gradient at point x. A quadratic
-    penalty term is incorporated to render optimizaion convex and conservative. The
-    algorithm is "globally convergent" in the sense that it is guaranteed to con-
-    verge to a local optimum from any feasible starting point.
-
-
-
-    ``nlopt_mma`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -691,30 +396,7 @@ def nlopt_var(
 
     """Minimize a scalar function limited memory switching variable-metric method.
 
-    The algorithm relies on saving only limited number M of past updates of the
-    gradient to approximate the inverse hessian. The large is M, the more memory is
-    consumed
-
-    Detailed explanation of the algorithm, including its two variations of  rank-2 and
-    rank-1 methods can be found in the following paper:
-    J. Vlcek and L. Luksan, "Shifted limited-memory variable metric methods for
-    large-scale unconstrained minimization," J. Computational Appl. Math. 186,
-    p. 365-390 (2006).
-
-    ``nlopt_svmm`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-    - rank_1_update (bool): Whether I rank-1 or rank-2 update is used.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     if rank_1_update:
@@ -752,31 +434,7 @@ def nlopt_slsqp(
 ):
     """Optimize a scalar function based on SLSQP method.
 
-    SLSQP solves gradient based nonlinearly constrained optimization problems.
-    The algorithm treats the optimization problem as a sequence of constrained
-    least-squares problems.
-
-    The implementation is based on the procedure described in:
-    Dieter Kraft, "A software package for sequential quadratic programming",
-    Technical Report DFVLR-FB 88-28, Institut für Dynamik der Flugsysteme,
-    Oberpfaffenhofen, July 1988.
-    Dieter Kraft, "Algorithm 733: TOMP–Fortran modules for optimal control
-    calculations," ACM Transactions on Mathematical Software, vol. 20, no. 3,
-    pp. 262-281 (1994).
-
-    ``nlopt_slsqp`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -812,50 +470,7 @@ def nlopt_direct(
 ):
     """Optimize a scalar function based on DIRECT method.
 
-    DIRECT is the DIviding RECTangles algorithm for global optimization, described in:
-    D. R. Jones, C. D. Perttunen, and B. E. Stuckmann, "Lipschitzian optimization
-    without the lipschitz constant," J. Optimization Theory and Applications, vol.
-    79, p. 157 (1993).
-
-    Variations of the algorithm include locally biased routines (distinguished by _L
-    suffix) that prove to be more efficients for functions that have few local minima.
-    See the following for the DIRECT_L variant:
-
-    J. M. Gablonsky and C. T. Kelley, "A locally-biased form of the DIRECT algorithm,"
-    J. Global Optimization, vol. 21 (1), p. 27-37 (2001).
-
-    Locally biased algorithms can be implmented both with deterministic and random
-    (distinguished by _RAND suffix) search algorithm.
-
-    Finally, both original and locally biased variants can be implemented with and
-    without the rescaling of the bound constraints.
-
-    Boolean arguments `locally_biased`, 'random_search', and 'unscaled_bouds' can be
-    set to `True` or `False` to determine which method is run. The comprehensive list
-    of available methods are:
-    - DIRECT
-    - DIRECT_L
-    - DIRECT_L_NOSCAL
-    - DIRECT_L_RAND
-    - DIRECT_L_RAND_NOSCAL
-    - DIRECT_RAND
-
-    ``nlopt_direct`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
-    - locally_biased (bool): Whether the "L" version of the algorithm is selected.
-    - random_search (bool): Whether the randomized version of the algorithm is selected.
-    - unscaled_bounds (bool): Whether the "NOSCAL" version of the algorithm is selected.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     if not locally_biased and not random_search and not unscaled_bounds:
@@ -883,6 +498,9 @@ def nlopt_direct(
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
     )
+
+    # this is a global optimizer
+    out["success"] = None
     return out
 
 
@@ -900,35 +518,7 @@ def nlopt_esch(
 ):
     """Optimize a scalar function using the ESCH algorithm.
 
-    ESCH is an evolutionary algorithm that supports bound constraints only. Specifi
-    cally, it does not support nonlinear constraints.
-
-    More information on this method can be found in:
-    C. H. da Silva Santos, M. S. Goncalves, and H. E. Hernandez-Figueroa, "Designing
-    Novel Photonic Devices by Bio-Inspired Computing," IEEE Photonics Technology
-    Letters 22 (15), pp. 1177–1179 (2010).
-    C. H. da Silva Santos, "Parallel and Bio-Inspired Computing Applied to Analyze
-    Microwave and Photonic Metamaterial Strucutures," Ph.D. thesis, University of
-    Campinas, (2010).
-    H.-G. Beyer and H.-P. Schwefel, "Evolution Strategies: A Comprehensive Introduction,
-    "Journal Natural Computing, 1 (1), pp. 3–52 (2002).
-    Ingo Rechenberg, "Evolutionsstrategie – Optimierung technischer Systeme nach
-    Prinzipien der biologischen Evolution," Ph.D. thesis (1971), Reprinted by
-    Fromman-Holzboog (1973).
-
-    ``nlopt_esch`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this
-      as convergence.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -944,6 +534,9 @@ def nlopt_esch(
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
     )
+
+    # this is a global optimizer
+    out["success"] = None
     return out
 
 
@@ -961,33 +554,7 @@ def nlopt_isres(
 ):
     """Optimize a scalar function using the ISRES algorithm.
 
-    ISRES is an implementation of "Improved Stochastic Evolution Strategy"
-    written for solving optimization problems with non-linear constraints. The
-    algorithm is supposed to be a global method, in that it has heuristics to
-    avoid local minima. However, no convergence proof is available.
-
-    The original method and a refined version can be found, respecively, in:
-    Thomas Philip Runarsson and Xin Yao, "Search biases in constrained
-    evolutionary optimization," IEEE Trans. on Systems, Man, and Cybernetics
-    Part C: Applications and Reviews, vol. 35 (no. 2), pp. 233-243 (2005).
-    Thomas P. Runarsson and Xin Yao, "Stochastic ranking for constrained
-    evolutionary optimization," IEEE Trans. Evolutionary Computation, vol. 4
-    (no. 3), pp. 284-294 (2000).
-
-
-    ``nlopt_isres`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative
-      movement between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute
-      movement between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of
-      the criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of
-      function evaluation is reached, the optimization stops but we do not count
-      this as convergence.
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     out = _minimize_nlopt(
@@ -1003,6 +570,9 @@ def nlopt_isres(
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
     )
+
+    # this is a global optimizer
+    out["success"] = None
     return out
 
 
@@ -1021,36 +591,7 @@ def nlopt_crs2_lm(
 ):
     """Optimize a scalar function using the CRS2_LM algorithm.
 
-    This implementation of controlled random search method with local mutation is based
-    on: P. Kaelo and M. M. Ali, "Some variants of the controlled random search algorithm
-    for global optimization," J. Optim. Theory Appl. 130 (2), 253-264 (2006).
-
-    The original CRS method is described in: W. L. Price, "A controlled random search
-    procedure for global optimization," in Towards Global Optimization 2, p. 71-84
-    edited by L. C. W. Dixon and G. P. Szego (North-Holland Press, Amsterdam, 1978). W.
-    L. Price, "Global optimization by controlled random search," J. Optim. Theory Appl.
-    40 (3), p. 333-348 (1983).
-
-    CRS class of algorithms starts with random population of points and evolves the
-    points "randomly". The size of the initial population can be set via the param-
-    meter population_size. If the user doesn't specify a value, it is set to the nlopt
-    default of 10*(n+1).
-
-    ``nlopt_isres`` supports the following ``algo_options``:
-
-    - convergence.relative_params_tolerance (float):  Stop when the relative movement
-      between parameter vectors is smaller than this.
-    - convergence.absolute_params_tolerance (float): Stop when the absolute movement
-      between parameter vectors is smaller than this.
-    - convergence.relative_criterion_tolerance (float): Stop when the relative
-      improvement between two iterations is smaller than this.
-    - convergence.absolute_criterion_tolerance (float): Stop when the change of the
-      criterion function between two iterations is smaller than this.
-    - stopping.max_criterion_evaluations (int): If the maximum number of function
-      evaluation is reached, the optimization stops but we do not count this as
-      convergence.
-    - population_size (int): Size of the population. If None, it's set to be
-      10 * (number of parameters + 1).
+    For details see :ref:`list_of_nlopt_algorithms`.
 
     """
     if population_size is None:
@@ -1069,6 +610,9 @@ def nlopt_crs2_lm(
         stopping_max_eval=stopping_max_criterion_evaluations,
         population_size=population_size,
     )
+
+    # this is a global optimizer
+    out["success"] = None
     return out
 
 
