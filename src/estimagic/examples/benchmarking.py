@@ -1,20 +1,10 @@
 """Functions to create, run and visualize optimization benchmarks.
 
 TO-DO:
-- Come up with a good specification for noise_options and implement adding noise.
 - Add other benchmark sets:
-    - medium scale problems from https://arxiv.org/pdf/1710.11005.pdf, Page 34.
-    - scalar problems from https://github.com/AxelThevenot
-- Think about a good way for handling seeds. Maybe this should be part of the noise
-    options or only part of run_benchmark. Needs to be possible to have fixed noise
-    and random noise. Maybe distinguish fixed noise by differentiable and
-    non differentiable noise.
-- Need to think about logging. We probably do not want to use databases for speed
-    and disk cluttering reasons but we do want a full history. Maybe fast_logging?
-- Instead of one plot_benchmark function we probably want one plotting function for each
-    plot type. Inspiration:
-    - https://arxiv.org/pdf/1710.11005.pdf
-    - https://www.mcs.anl.gov/~more/dfo/
+    - finish medium scale problems from https://arxiv.org/pdf/1710.11005.pdf, Page 34.
+    - add scalar problems from https://github.com/AxelThevenot
+- Add option for deterministic noise or wiggle.
 
 """
 from functools import partial
@@ -23,21 +13,52 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from estimagic import batch_evaluators
+from estimagic.examples.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from estimagic.examples.more_wild import MORE_WILD_PROBLEMS
+from estimagic.examples.noise_distributions import NOISE_DISTRIBUTIONS
 from estimagic.logging.read_log import read_optimization_histories
 from estimagic.optimization.optimize import minimize
 
 
-def get_problems(name, noise_options=None):
+def get_problems(
+    name,
+    additive_noise=False,
+    additive_noise_options=None,
+    multiplicative_noise=False,
+    multiplicative_noise_options=None,
+):
     """Get a dictionary of test problems for a benchmark.
 
     Args:
         name (str): The name of the set of test problems. Currently "more_wild"
             is the only supported one.
-        noise_options (dict or None): Specficies the type of noise to add to the test
-            problems. Has the entries:
-            - type (str): "multiplicative" or "additive"
-            - ...
+        additive_noise (bool): Whether to add additive noise to the problem.
+            Default False.
+        additive_noise_options (dict or None): Specifies the amount and distribution
+            of the addititve noise added to the problem. Has the entries:
+            - distribition (str): One of "normal", "gumbel", "uniform", "logistic".
+            Default "normal".
+            - std (float): The standard deviation of the noise. This works for all
+            distributions, even if those distributions are normally not specified
+            via a standard deviation (e.g. uniform).
+            - correlation (float): Number between 0 and 1 that specifies the auto
+            correlation of the noise.
+        multiplicative_noise (bool): Whether to add multiplicative noise to the problem.
+            Default False.
+        multiplicative_noise_options (dict or None): Specifies the amount and
+            distribition of the multiplicative noise added to the problem. Has entries:
+            - distribition (str): One of "normal", "gumbel", "uniform", "logistic".
+            Default "normal".
+            - std (float): The standard deviation of the noise. This works for all
+            distributions, even if those distributions are normally not specified
+            via a standard deviation (e.g. uniform).
+            - correlation (float): Number between 0 and 1 that specifies the auto
+            correlation of the noise.
+            - clipping_value (float): A non-negative float. Multiplicative noise
+            becomes zero if the function value is zero. To avoid this, we do not
+            implement multiplicative noise as `f_noisy = f * epsilon` but by
+            `f_noisy` = f + (epsilon - 1) * f_clipped` where f_clipped is bounded
+            away from zero from both sides by the clipping value.
 
     Returns:
         dict: Nested dictionary with benchmark problems of the structure:
@@ -49,12 +70,28 @@ def get_problems(name, noise_options=None):
     """
     raw_problems = _get_raw_problems(name)
 
-    noise_func = _get_noise_func(noise_options)
+    if additive_noise:
+        additive_options = _process_noise_options(additive_noise_options, False)
+    else:
+        additive_options = None
+
+    if multiplicative_noise:
+        multiplicative_options = _process_noise_options(
+            multiplicative_noise_options, True
+        )
+    else:
+        multiplicative_options = None
 
     problems = {}
     for name, specification in raw_problems.items():
+        inputs = _create_problem_inputs(
+            specification,
+            additive_options=additive_options,
+            multiplicative_options=multiplicative_options,
+        )
+
         problems[name] = {
-            "inputs": _create_problem_inputs(specification, noise_func),
+            "inputs": inputs,
             "solution": _create_problem_solution(specification),
             "info": specification.get("info", {}),
         }
@@ -160,24 +197,19 @@ def run_benchmark(
 def _get_raw_problems(name):
     if name == "more_wild":
         raw_problems = MORE_WILD_PROBLEMS
+    elif name == "cartis_roberts":
+        raw_problems = CARTIS_ROBERTS_PROBLEMS
     else:
         raise NotImplementedError()
     return raw_problems
 
 
-def _get_noise_func(noise_options):
-    if noise_options is None:
-        noise_func = lambda x: x  # noqa: E731
-    else:
-        raise NotImplementedError()
-    return noise_func
-
-
-def _create_problem_inputs(specification, noise_func):
+def _create_problem_inputs(specification, additive_options, multiplicative_options):
     _criterion = partial(
         _internal_criterion_template,
         criterion=specification["criterion"],
-        noise_func=noise_func,
+        additive_options=additive_options,
+        multiplicative_options=multiplicative_options,
     )
     _x = specification["start_x"]
 
@@ -202,12 +234,108 @@ def _create_problem_solution(specification):
     return solution
 
 
-def _internal_criterion_template(params, criterion, noise_func):
+def _internal_criterion_template(
+    params, criterion, additive_options, multiplicative_options
+):
     x = params["value"].to_numpy()
-    clean_value = criterion(x)
-    noisy_value = noise_func(clean_value)
-    if isinstance(noisy_value, np.ndarray):
-        out = {"contributions": noisy_value, "value": noisy_value @ noisy_value}
+    critval = criterion(x)
+
+    noise = _get_combined_noise(
+        critval,
+        additive_options=additive_options,
+        multiplicative_options=multiplicative_options,
+    )
+
+    noisy_critval = critval + noise
+
+    if isinstance(noisy_critval, np.ndarray):
+        out = {
+            "root_contributions": noisy_critval,
+            "value": noisy_critval @ noisy_critval,
+        }
     else:
-        out = noisy_value
+        out = noisy_critval
     return out
+
+
+def _get_combined_noise(fval, additive_options, multiplicative_options):
+    size = len(np.atleast_1d(fval))
+    if multiplicative_options is not None:
+        options = multiplicative_options.copy()
+        std = options.pop("std")
+        clipval = options.pop("clipping_value")
+        scaled_std = std * _clip_away_from_zero(fval, clipval)
+        multiplicative_noise = _sample_from_distribution(
+            **options, std=scaled_std, size=size
+        )
+    else:
+        multiplicative_noise = 0
+
+    if additive_options is not None:
+        additive_noise = _sample_from_distribution(**additive_options, size=size)
+    else:
+        additive_noise = 0
+
+    return multiplicative_noise + additive_noise
+
+
+def _sample_from_distribution(distribution, mean, std, size, correlation=0):
+    sample = NOISE_DISTRIBUTIONS[distribution](size=size)
+    dim = size if isinstance(size, int) else size[1]
+    if correlation != 0 and dim > 1:
+        chol = np.linalg.cholesky(np.diag(np.ones(dim) - correlation) + correlation)
+        sample = (chol @ sample.T).T
+    sample *= std
+    sample += mean
+    return sample
+
+
+def _process_noise_options(options, is_multiplicative):
+    options = {} if options is None else options
+
+    defaults = {"std": 0.01, "distribution": "normal", "correlation": 0, "mean": 0}
+    if is_multiplicative:
+        defaults["clipping_value"] = 1
+
+    processed = {
+        **defaults,
+        **options,
+    }
+
+    distribution = processed["distribution"]
+    if distribution not in NOISE_DISTRIBUTIONS:
+        raise ValueError(
+            f"Invalid distribution: {distribution}. "
+            "Allowed are {list(NOISE_DISTRIBUTIONS)}"
+        )
+
+    std = processed["std"]
+    if std < 0:
+        raise ValueError(f"std must be non-negative. Not: {std}")
+
+    corr = processed["correlation"]
+    if corr < 0:
+        raise ValueError(f"corr must be non-negative. Not: {corr}")
+
+    if is_multiplicative:
+        clipping_value = processed["clipping_value"]
+        if clipping_value < 0:
+            raise ValueError(
+                f"clipping_value must be non-negative. Not: {clipping_value}"
+            )
+
+    return processed
+
+
+def _clip_away_from_zero(a, clipval):
+    is_scalar = np.isscalar(a)
+    a = np.atleast_1d(a)
+
+    is_positive = a >= 0
+
+    clipped = np.where(is_positive, np.clip(a, clipval, np.inf), a)
+    clipped = np.where(~is_positive, np.clip(clipped, -np.inf, -clipval), clipped)
+
+    if is_scalar:
+        clipped = clipped[0]
+    return clipped
