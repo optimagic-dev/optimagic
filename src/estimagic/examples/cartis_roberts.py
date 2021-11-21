@@ -380,6 +380,34 @@ def hatfldg(x):
     return fvec
 
 
+def integreq(x):
+    dim_in = len(x)
+    h = 1 / (dim_in + 1)
+    t = np.arange(1, dim_in + 1) * h
+    xvec = np.concatenate([[0], x, [0]])
+    fvec = np.zeros_like(x)
+    for i in range(1, dim_in):
+        fvec[i - 1] = (
+            xvec[i]
+            + h
+            * (
+                (1 - t[i - 1]) * (t[:i] * (xvec[1 : i + 1] + t[:i] + 1) ** 3).sum()
+                + t[i - 1] * ((1 - t[i:]) * (xvec[i + 1 : -1] + t[i:] + 1) ** 3).sum()
+            )
+            / 2
+        )
+    fvec[-1] = (
+        xvec[-2]
+        + h
+        * (
+            (1 - t[-1]) * (t * (xvec[1:-1] + t + 1) ** 3).sum()
+            + t[-1] * ((1 - t[-1]) * (xvec[-2] + t[-1] + 1) ** 3)
+        )
+        / 2
+    )
+    return fvec
+
+
 def get_start_points_bdvalues(n):
     h = 1 / (n + 1)
     x = np.zeros(n)
@@ -530,5 +558,12 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": None,
         "start_criterion": 27,
         "solution_criterion": 10,
+    },
+    "integreq": {
+        "criterion": integreq,
+        "start_x": np.arange(1, 101) / 101 * (np.arange(1, 101) / 101 - 1),
+        "solution_x": None,
+        "start_criterion": 0.5730503,
+        "solution_criterion": 0,
     },
 }
