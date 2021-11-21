@@ -109,7 +109,8 @@ def test_normalize_maximize():
     pd.testing.assert_series_equal(res, expected)
 
 
-def test_clip_histories_y(problem_algo_eval_df):
+@pytest.fixture
+def df_for_clip_histories(problem_algo_eval_df):
     df = problem_algo_eval_df
     df["monotone_criterion_normalized"] = [
         # prob1, algo1: converged on 2nd
@@ -131,15 +132,99 @@ def test_clip_histories_y(problem_algo_eval_df):
         2.2,  # keep, not converged
         1.1,  # keep, not converged
     ]
-    df["monotone_distance_to_optimal_params_normalized"] = np.nan
+    df["monotone_distance_to_optimal_params_normalized"] = [
+        # prob1, algo1: converged on 3rd -> 1 after y criterion
+        1.8,  # keep, not converged
+        0.5,  # keep, not converged
+        0.05,  # keep, 1st converged
+        0.01,  # clip
+        # prob1, algo2: converged on 3rd -> 1 before y criterion
+        2.2,  # keep, not converged
+        1.1,  # keep, not converged
+        0.04,  # keep, 1st converged
+        0.03,  # clip
+        # prob2, algo1: not converged (converged in y)
+        3.0,  # keep, not converged
+        3.0,  # keep, not converged
+        3.0,  # keep, not converged
+        # prob2, algo2: converged on 3rd (not converged in y)
+        2.2,  # keep, not converged
+        1.1,  # keep, not converged
+        0.04,  # keep, 1st converged
+    ]
+    return df
 
-    expected_shortened = df.loc[[0, 1, 4, 5, 6, 7, 8, 11, 12, 13]]
+
+def test_clip_histories_y(df_for_clip_histories):
+    expected_shortened = df_for_clip_histories.loc[[0, 1, 4, 5, 6, 7, 8, 11, 12, 13]]
     expected_info = pd.DataFrame(
         {"algo1": [True, True], "algo2": [True, False]},
         index=["prob1", "prob2"],
     )
     res_shortened, res_info = _clip_histories(
-        df=df, stopping_criterion="y", x_precision=0.1, y_precision=0.1
+        df=df_for_clip_histories,
+        stopping_criterion="y",
+        x_precision=0.1,
+        y_precision=0.1,
+    )
+    pd.testing.assert_frame_equal(res_shortened, expected_shortened)
+    pd.testing.assert_frame_equal(res_info, expected_info, check_names=False)
+
+
+def test_clip_histories_x(df_for_clip_histories):
+    expected_shortened = df_for_clip_histories.loc[
+        [0, 1, 2, 4, 5, 6, 8, 9, 10, 11, 12, 13]
+    ]
+    expected_info = pd.DataFrame(
+        {"algo1": [True, False], "algo2": [True, True]},
+        index=["prob1", "prob2"],
+    )
+    res_shortened, res_info = _clip_histories(
+        df=df_for_clip_histories,
+        stopping_criterion="x",
+        x_precision=0.1,
+        y_precision=0.1,
+    )
+    pd.testing.assert_frame_equal(res_shortened, expected_shortened)
+    pd.testing.assert_frame_equal(res_info, expected_info, check_names=False)
+
+
+def test_clip_histories_x_and_y_with_nan(df_for_clip_histories):
+    df = df_for_clip_histories
+    df.loc[
+        df["problem"] == "prob2", "monotone_distance_to_optimal_params_normalized"
+    ] = np.nan
+
+    expected_shortened = df.loc[[0, 1, 2, 4, 5, 6, 7]]
+    expected_info = pd.DataFrame(
+        {"algo1": [True], "algo2": [True]},
+        index=["prob1"],
+    )
+
+    res_shortened, res_info = _clip_histories(
+        df=df,
+        stopping_criterion="x_and_y",
+        x_precision=0.1,
+        y_precision=0.1,
+    )
+    pd.testing.assert_frame_equal(res_shortened, expected_shortened)
+    pd.testing.assert_frame_equal(res_info, expected_info, check_names=False)
+
+
+def test_clip_histories_x_or_y_no_nan(df_for_clip_histories):
+    df = df_for_clip_histories
+
+    expected_shortened = df.loc[[0, 1, 4, 5, 6, 8, 11, 12, 13]]
+    expected_info = pd.DataFrame(
+        {"algo1": [True, True], "algo2": [True, True]},
+        index=["prob1", "prob2"],
+    )
+
+    res_shortened, res_info = _clip_histories(
+        df=df,
+        stopping_criterion="x_or_y",
+        x_precision=0.1,
+        y_precision=0.1,
     )
     pd.testing.assert_frame_equal(res_shortened, expected_shortened)
     pd.testing.assert_frame_equal(res_info, expected_info, check_names=False)

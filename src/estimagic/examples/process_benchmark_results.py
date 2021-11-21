@@ -246,17 +246,19 @@ def _clip_histories(df, stopping_criterion, x_precision, y_precision):
             the solution with the desired precision.
 
     """
+    # drop problems with no known solution
+    if "x" in stopping_criterion:
+        df = df[df["monotone_distance_to_optimal_params_normalized"].notnull()]
+    if "y" in stopping_criterion:
+        df = df[df["monotone_criterion_normalized"].notnull()]
+
+    # determine convergence in the known problems
+    if "x" in stopping_criterion:
+        x_converged = df["monotone_distance_to_optimal_params_normalized"] < x_precision
     if "y" in stopping_criterion:
         y_converged = df["monotone_criterion_normalized"] < y_precision
 
-    if "x" in stopping_criterion:
-        x_converged = df["monotone_distance_to_optimal_params_normalized"] < x_precision
-        if x_converged.isnull().any():
-            raise ValueError(
-                "You specified x as part of your stopping criterion but the optimal "
-                "parameters are not known for every problem in your problem set."
-            )
-
+    # determine converged function evaluations
     if stopping_criterion == "y":
         converged = y_converged
     elif stopping_criterion == "x":
@@ -273,6 +275,7 @@ def _clip_histories(df, stopping_criterion, x_precision, y_precision):
 
     first_converged = _find_first_converged(converged, df)
 
+    # keep first converged and non-converged
     shortened = df[~converged | first_converged]
 
     # create converged_info
