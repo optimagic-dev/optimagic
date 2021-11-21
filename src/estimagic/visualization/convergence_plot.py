@@ -19,7 +19,7 @@ def convergence_plot(
     n_cols=2,
     distance_measure="criterion",
     monotone=True,
-    normalize=True,
+    normalize_distance=True,
     runtime_measure="n_evaluations",
     stopping_criterion=None,
     x_precision=1e-4,
@@ -30,7 +30,7 @@ def convergence_plot(
     This creates a grid of plots, showing the convergence of the different
     algorithms on each problem. The faster a line falls, the faster the algorithm
     improved on the problem. The algorithm converged where its line reaches 0
-    (if normalize is True) or the horizontal blue line labeled "true solution".
+    (if normalize_distance is True) or the horizontal blue line labeled "true solution".
 
     Each plot shows on the x axis the runtime_measure, which can be walltime or number
     of evaluations. Each algorithm's convergence is a line in the plot. Convergence can
@@ -51,10 +51,10 @@ def convergence_plot(
             "criterion", "parameter_distance".
         monotone (bool): If True the best found criterion value so far is plotted.
             If False the particular criterion evaluation of that time is used.
-        normalize (bool): If True the progress is scaled by the total distance between
-            the start value and the optimal value, i.e. 1 means the algorithm is as far
-            from the solution as the start value and 0 means the algorithm has reached
-            the solution value.
+        normalize_distance (bool): If True the progress is scaled by the total distance
+            between the start value and the optimal value, i.e. 1 means the algorithm
+            is as far from the solution as the start value and 0 means the algorithm
+            has reached the solution value.
         runtime_measure (str): "n_evaluations" or "walltime".
         stopping_criterion (str): "x_and_y", "x_or_y", "x", "y" or None. If None, no
             clipping is done.
@@ -88,7 +88,7 @@ def convergence_plot(
     outcome = (
         f"{'monotone_' if monotone else ''}"
         + distance_measure
-        + f"{'_normalized' if normalize else ''}"
+        + f"{'_normalized' if normalize_distance else ''}"
     )
 
     y_labels = {
@@ -122,7 +122,7 @@ def convergence_plot(
         )
 
         ax.legend(title=None)
-        if distance_measure == "criterion" and not normalize:
+        if distance_measure == "criterion" and not normalize_distance:
             f_opt = problems[prob_name]["solution"]["value"]
             ax.axhline(f_opt, label="true solution", lw=2.5)
 
