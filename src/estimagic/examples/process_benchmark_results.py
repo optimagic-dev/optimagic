@@ -228,7 +228,9 @@ def _clip_histories(df, stopping_criterion, x_precision, y_precision):
 
     Args:
         df (pandas.DataFrame): index levels are ['problem', 'algorithm', 'evaluation'].
-            Columns must include "monotone_criterion".
+            Columns must include "monotone_criterion_normalized" if stopping_criterion
+            includes y and "monotone_distance_to_optimal_params_normalized" if x is in
+            the stopping_criterion.
         stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y".
         x_precision (float): when an algorithm's parameters are closer than this to the
             true solution's parameters, the algorithm is counted as having converged.
