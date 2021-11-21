@@ -119,7 +119,7 @@ def run_benchmark(
             "value" and "info" might  contain information about the test problem.
         optimize_options: Nested dictionary that maps a name to a set of keyword
             arguments for ``minimize``.
-            batch_evaluator (str or callable): See :ref:`batch_evaluators`.
+        batch_evaluator (str or callable): See :ref:`batch_evaluators`.
         logging_directory (pathlib.Path): Directory in which the log databases are
             saved.
         n_cores (int): Number of optimizations that is run in parallel. Note that in

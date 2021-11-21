@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.examples.benchmarking import get_problems
+from estimagic.examples.benchmarking import run_benchmark
 from estimagic.visualization.profile_plot import _create_solution_times
 from estimagic.visualization.profile_plot import _determine_alpha_grid
 from estimagic.visualization.profile_plot import _find_switch_points
+from estimagic.visualization.profile_plot import profile_plot
 
 
 @pytest.fixture
@@ -27,7 +30,7 @@ def test_determine_alpha_grid(performance_ratios):
     np.testing.assert_array_almost_equal(res, expected)
 
 
-def test_create_solution_times():
+def test_create_solution_times_n_evaluations():
     df = pd.DataFrame(
         columns=["problem", "algorithm", "n_evaluations"],
         data=[
@@ -63,3 +66,74 @@ def test_create_solution_times():
         df=df, runtime_measure="n_evaluations", converged_info=info
     )
     pd.testing.assert_frame_equal(res, expected)
+
+
+def test_create_solution_times_walltime():
+    df = pd.DataFrame(
+        columns=["problem", "algorithm", "n_evaluations", "walltime"],
+        data=[
+            ["prob1", "algo1", 0, pd.Timedelta(seconds=0)],
+            ["prob1", "algo1", 1, pd.Timedelta(seconds=1)],
+            #
+            ["prob1", "algo2", 2, pd.Timedelta(seconds=2)],
+            ["prob1", "algo2", 3, pd.Timedelta(seconds=3)],
+            #
+            ["prob2", "algo1", 5, pd.Timedelta(seconds=5)],
+            #
+            ["prob2", "algo2", 0, pd.Timedelta(seconds=0)],
+            ["prob2", "algo2", 1, pd.Timedelta(seconds=1)],
+        ],
+    )
+    info = pd.DataFrame(
+        {
+            "algo1": [True, True],
+            "algo2": [True, False],
+        },
+        index=["prob1", "prob2"],
+    )
+    expected = pd.DataFrame(
+        {
+            "algo1": [pd.Timedelta(seconds=1), pd.Timedelta(seconds=5)],
+            "algo2": [pd.Timedelta(seconds=3), pd.Timedelta(weeks=1000)],
+        },
+        index=pd.Index(["prob1", "prob2"], name="problem"),
+    )
+    expected.columns.name = "algorithm"
+
+    res = _create_solution_times(df=df, runtime_measure="walltime", converged_info=info)
+    pd.testing.assert_frame_equal(res, expected)
+
+
+# integration test to make sure non default argument do not throw Errors
+profile_options = [
+    {"runtime_measure": "walltime"},
+    {"stopping_criterion": "x_or_y"},
+]
+
+
+@pytest.mark.parametrize("options", profile_options)
+def test_profile_plot_options(options):
+    full_problems = get_problems("more_wild")
+    stop_after_100 = {
+        "stopping_max_criterion_evaluations": 100,
+        "stopping_max_iterations": 100,
+    }
+    optimizers = {
+        "lbfgsb": {"algorithm": "scipy_lbfgsb", "algo_options": stop_after_100},
+        "neldermead": {
+            "algorithm": "scipy_neldermead",
+            "algo_options": stop_after_100,
+        },
+    }
+    problems = {
+        k: v for k, v in full_problems.items() if k in sorted(full_problems)[:5]
+    }
+
+    results = run_benchmark(
+        problems,
+        optimizers,
+        n_cores=1,  # must be 1 for the test to work
+        logging_directory="logging",
+    )
+
+    profile_plot(problems=problems, results=results, **options)
