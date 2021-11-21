@@ -21,7 +21,7 @@ def convergence_plot(
     monotone=True,
     normalize_distance=True,
     runtime_measure="n_evaluations",
-    stopping_criterion=None,
+    stopping_criterion="y",
     x_precision=1e-4,
     y_precision=1e-4,
 ):

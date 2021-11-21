@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 from estimagic.examples.process_benchmark_results import _clip_histories
 from estimagic.examples.process_benchmark_results import _find_first_converged
+from estimagic.examples.process_benchmark_results import _make_history_monotone
 from estimagic.examples.process_benchmark_results import _normalize
 
 PROBLEMS = ["prob1", "prob2", "prob3"]
@@ -228,3 +229,57 @@ def test_clip_histories_x_or_y_no_nan(df_for_clip_histories):
     )
     pd.testing.assert_frame_equal(res_shortened, expected_shortened)
     pd.testing.assert_frame_equal(res_info, expected_info, check_names=False)
+
+
+def test_make_history_monotone_minimize():
+    sorted_df = pd.DataFrame(
+        columns=["problem", "algorithm", "n_evaluations", "to_make_monotone"],
+        data=[
+            # already monotone
+            ["prob1", "algo1", 0, 3.3],
+            ["prob1", "algo1", 1, 2.2],
+            ["prob1", "algo1", 2, 1.1],
+            # 3rd & 4th entry must be changed
+            ["prob1", "algo2", 0, 3.3],
+            ["prob1", "algo2", 1, 1.1],
+            ["prob1", "algo2", 2, 2.2],  # 1.1
+            ["prob1", "algo2", 2, 5.0],  # 1.1
+            # up, down, up, down
+            ["prob2", "algo1", 0, 2.2],  # 2.2
+            ["prob2", "algo1", 1, 3.3],  # 2.2
+            ["prob2", "algo1", 2, 1.1],  # 1.1
+            ["prob2", "algo1", 3, 2.5],  # 1.1
+            ["prob2", "algo1", 4, 2.0],  # 1.1
+        ],
+    )
+    np.random.seed(40954)
+    shuffled = sorted_df.sample(frac=1)
+
+    res_shuffled = _make_history_monotone(
+        df=shuffled, target_col="to_make_monotone", direction="minimize"
+    )
+    res_sorted = _make_history_monotone(
+        df=sorted_df, target_col="to_make_monotone", direction="minimize"
+    )
+
+    expected = pd.Series(
+        [  # prob1, algo1
+            3.3,
+            2.2,
+            1.1,
+            # prob1, algo2
+            3.3,
+            1.1,
+            1.1,
+            1.1,
+            # prob2, algo1
+            2.2,
+            2.2,
+            1.1,
+            1.1,
+            1.1,
+        ],
+        name="to_make_monotone",
+    )
+    pd.testing.assert_series_equal(res_sorted, expected)
+    pd.testing.assert_series_equal(res_shuffled, expected)

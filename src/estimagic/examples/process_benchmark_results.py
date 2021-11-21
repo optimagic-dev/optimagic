@@ -150,15 +150,13 @@ def _get_history_of_the_distance_to_optimal_params(results, x_opt):
     return sr
 
 
-def _make_history_monotone(df, target_col, sorting_cols=None, direction="minimize"):
+def _make_history_monotone(df, target_col, direction="minimize"):
     """Create a monotone Series, i.e. the best so far instead of the current evaluation.
 
     Args:
-        df (pandas.Dataframe): must contain the sorting_cols and the target_col as
-            columns.
+        df (pandas.Dataframe): must contain ["problem", "algorithm", "n_evaluations"]
+            and the target_col as columns.
         target_col (str): column of which to create the monotone version.
-        sorting_cols (list): columns on which to make the histories monotone. The
-            default is ["problem", "algorithm", "n_evaluations"].
         direction (str): "minimize" or "maximize". "minimize" makes the history
             monotonically decreasing, "maximize" means the history will be monotonically
             increasing.
@@ -168,24 +166,15 @@ def _make_history_monotone(df, target_col, sorting_cols=None, direction="minimiz
             replaced with the best value so far. Index is the same as that of df.
 
     """
-    if sorting_cols is None:
-        sorting_cols = ["problem", "algorithm", "n_evaluations"]
-    sorted_df = df.sort_values(sorting_cols)
-
-    is_first_entry = sorted_df["n_evaluations"] == 0
-    sr = sorted_df[target_col]
+    sorted_df = df.sort_values(["problem", "algorithm", "n_evaluations"])
+    grouped = sorted_df.groupby(["problem", "algorithm"])[target_col]
 
     if direction == "minimize":
-        # It is very important not to rewrite the second statement to
-        # sr.diff() <= 0 because the treatment of NaNs would change
-        keep = is_first_entry | ~(sr.diff() > 0)
+        out = grouped.apply(np.minimum.accumulate)
+    elif direction == "maximize":
+        out = grouped.apply(np.maximum.accumulate)
     else:
-        # It is very important not to rewrite the second statement to
-        # sr.diff() >= 0 because the treatment of NaNs would change
-        keep = is_first_entry | ~(sr.diff() < 0)
-    with_nans = sr.where(keep, np.nan)
-
-    out = with_nans.fillna(method="ffill")
+        raise ValueError("Only maximize and minimize are allowed as directions.")
 
     return out
 
