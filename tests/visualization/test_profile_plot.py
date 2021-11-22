@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
@@ -133,3 +134,4 @@ def test_profile_plot_options(options):
     )
 
     profile_plot(problems=problems, results=results, **options)
+    plt.close()
