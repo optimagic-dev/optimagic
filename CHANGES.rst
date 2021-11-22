@@ -21,7 +21,8 @@ moments. The breaking changes are:
 - structure of the logging database has changed
 - there is an additional boolean flag named ``scaling`` in minimize and maximize
 
-
+- :gh:`251` Allows the loading, running and visualization of benchmarks
+  (:ghuser:`janosg`, :ghuser:`mpetrosian` and :ghuser:`roecla`)
 - :gh:`196` Adds support for multistart optimizations (:ghuser:`asouther4` and
   :ghuser:`janosg`)
 - :gh:`248` Adds the fides optimizer (:ghuser:`roecla`)
