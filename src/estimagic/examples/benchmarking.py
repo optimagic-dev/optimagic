@@ -36,8 +36,8 @@ def get_problems(
             Default False.
         additive_noise_options (dict or None): Specifies the amount and distribution
             of the addititve noise added to the problem. Has the entries:
-            - distribition (str): One of "normal", "gumbel", "uniform", "logistic".
-            Default "normal".
+            - distribition (str): One of "normal", "gumbel", "uniform", "logistic",
+            "laplace". Default "normal".
             - std (float): The standard deviation of the noise. This works for all
             distributions, even if those distributions are normally not specified
             via a standard deviation (e.g. uniform).
@@ -47,8 +47,8 @@ def get_problems(
             Default False.
         multiplicative_noise_options (dict or None): Specifies the amount and
             distribition of the multiplicative noise added to the problem. Has entries:
-            - distribition (str): One of "normal", "gumbel", "uniform", "logistic".
-            Default "normal".
+            - distribition (str): One of "normal", "gumbel", "uniform", "logistic",
+            "laplace". Default "normal".
             - std (float): The standard deviation of the noise. This works for all
             distributions, even if those distributions are normally not specified
             via a standard deviation (e.g. uniform).
