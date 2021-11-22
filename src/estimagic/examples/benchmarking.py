@@ -7,6 +7,7 @@ TO-DO:
 - Add option for deterministic noise or wiggle.
 
 """
+import warnings
 from functools import partial
 from pathlib import Path
 
@@ -198,7 +199,27 @@ def _get_raw_problems(name):
     if name == "more_wild":
         raw_problems = MORE_WILD_PROBLEMS
     elif name == "cartis_roberts":
+        warnings.warn(
+            "Only a subset of the cartis_roberts benchmark suite is currently "
+            "implemented. Do not use this for any published work."
+        )
         raw_problems = CARTIS_ROBERTS_PROBLEMS
+    elif name == "example":
+        subset = {
+            "linear_full_rank_good_start",
+            "rosenbrock_good_start",
+            "helical_valley_good_start",
+            "powell_singular_good_start",
+            "freudenstein_roth_good_start",
+            "bard_good_start",
+            "box_3d",
+            "jenrich_sampson",
+            "brown_dennis_good_start",
+            "chebyquad_6",
+            "bdqrtc_8",
+            "mancino_5_good_start",
+        }
+        raw_problems = {k: v for k, v in MORE_WILD_PROBLEMS.items() if k in subset}
     else:
         raise NotImplementedError()
     return raw_problems
