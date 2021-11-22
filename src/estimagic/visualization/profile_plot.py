@@ -138,6 +138,8 @@ def profile_plot(
 
     ax.set_xlabel(xlabels[(runtime_measure, normalize_runtime)])
     ax.set_ylabel("Share of Problems Solved")
+    ax.axhline(1.0, color="silver", xmax=0.955)
+    ax.legend(title=None)
     fig.tight_layout()
 
     return fig, ax

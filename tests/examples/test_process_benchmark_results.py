@@ -3,6 +3,9 @@ import pandas as pd
 import pytest
 from estimagic.examples.process_benchmark_results import _clip_histories
 from estimagic.examples.process_benchmark_results import _find_first_converged
+from estimagic.examples.process_benchmark_results import (
+    _get_history_of_the_distance_to_optimal_params,
+)
 from estimagic.examples.process_benchmark_results import _make_history_monotone
 from estimagic.examples.process_benchmark_results import _normalize
 
@@ -283,3 +286,59 @@ def test_make_history_monotone_minimize():
     )
     pd.testing.assert_series_equal(res_sorted, expected)
     pd.testing.assert_series_equal(res_shuffled, expected)
+
+
+@pytest.fixture
+def benchmark_results():
+    sec = pd.Timedelta(seconds=1)
+    results = {
+        ("prob1", "algo1"): {
+            "criterion_history": [1, 2, 3],
+            "time_history": [sec, 2 * sec, 3 * sec],
+            "params_history": [
+                np.array([1, 2]),
+                np.array([1, 1]),
+                np.array([0.5, 0.5]),
+            ],
+        },
+        ("prob1", "algo2"): {
+            "criterion_history": [1, 2.5],
+            "time_history": [0.5 * sec, 1.5 * sec],
+            "params_history": [np.array([2, 3]), np.array([2, 2])],
+        },
+        ("prob2", "algo1"): {
+            "criterion_history": [50, 40],
+            "time_history": [3 * sec, 3.5 * sec],
+            "params_history": [np.array([2]), np.array([4])],
+        },
+        ("prob2", "algo2"): {
+            "criterion_history": [35],
+            "time_history": [3.2 * sec],
+            "params_history": [np.array([4.2])],
+        },
+    }
+    return results
+
+
+def test_get_history_of_the_distance_to_optimal_params(benchmark_results):
+    x_opt = {"prob1": np.array([1, 1]), "prob2": np.array([3])}
+    res = _get_history_of_the_distance_to_optimal_params(
+        results=benchmark_results, x_opt=x_opt
+    )
+    expected_df = pd.DataFrame(
+        columns=["problem", "algorithm", "evaluation", "distance_to_optimal_params"],
+        data=[
+            ["prob1", "algo1", 0, 1],
+            ["prob1", "algo1", 1, 0],
+            ["prob1", "algo1", 2, np.sqrt(2 * 0.5 ** 2)],
+            ["prob1", "algo2", 0, np.sqrt(5)],
+            ["prob1", "algo2", 1, np.sqrt(2)],
+            ["prob2", "algo1", 0, 1],
+            ["prob2", "algo1", 1, 1],
+            ["prob2", "algo2", 0, 1.2],
+        ],
+    )
+    expected = expected_df.set_index(["problem", "algorithm", "evaluation"])[
+        "distance_to_optimal_params"
+    ]
+    pd.testing.assert_series_equal(res, expected)

@@ -127,8 +127,7 @@ def _get_history_of_the_distance_to_optimal_params(results, x_opt):
     Args:
         results (dict): estimagic benchmarking results dictionary. Keys are
             tuples of the form (problem, algorithm), values are dictionaries of the
-            collected information on the benchmark run, including 'criterion_history'
-            and 'time_history'.
+            collected information on the benchmark run, including 'params_history'.
         x_opt (dict): the keys are the problems, the values are pandas.Series with the
             optimal parameters for the respective problem.
 
