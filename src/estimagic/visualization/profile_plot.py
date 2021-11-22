@@ -93,6 +93,7 @@ def profile_plot(
         runtime_measure=runtime_measure,
         converged_info=converged_info,
     )
+
     if normalize_runtime:
         solution_times = solution_times.divide(solution_times.min(axis=1), axis=0)
         # set again to inf because no inf Timedeltas were allowed.
@@ -102,27 +103,21 @@ def profile_plot(
             runtime_measure == "walltime"
             and (solution_times == pd.Timedelta(weeks=1000)).any().any()
         ):
-            warnings.warn("Some ")
+            warnings.warn(
+                "Some optimizers did not converge. Their walltime has been "
+                "set to a very high value instead of infinity because Timedeltas do not"
+                "support infinite values."
+            )
 
+    # create performance profiles
     alphas = _determine_alpha_grid(solution_times)
-
     for_each_alpha = pd.concat(
         {alpha: solution_times <= alpha for alpha in alphas},
         names=["alpha"],
     )
     performance_profiles = for_each_alpha.groupby("alpha").mean().stack().reset_index()
 
-    xlabels = {
-        ("n_evaluations", True): "Multiple of Minimal Number of Function Evaluations\n"
-        "Needed to Solve the Problem",
-        (
-            "walltime",
-            True,
-        ): "Multiple of Minimal Wall Time\nNeeded to Solve the Problem",
-        ("n_evaluations", False): "Number of Function Evaluations",
-        ("walltime", False): "Wall Time Needed to Solve the Problem",
-    }
-
+    # Build plot
     fig, ax = plt.subplots(figsize=(8, 6))
     n_algos = len(solution_times.columns)
     sns.lineplot(
@@ -136,9 +131,22 @@ def profile_plot(
         palette=get_colors("categorical", n_algos),
     )
 
+    # Plot Styling
+    xlabels = {
+        ("n_evaluations", True): "Multiple of Minimal Number of Function Evaluations\n"
+        "Needed to Solve the Problem",
+        (
+            "walltime",
+            True,
+        ): "Multiple of Minimal Wall Time\nNeeded to Solve the Problem",
+        ("n_evaluations", False): "Number of Function Evaluations",
+        ("walltime", False): "Wall Time Needed to Solve the Problem",
+    }
+
     ax.set_xlabel(xlabels[(runtime_measure, normalize_runtime)])
     ax.set_ylabel("Share of Problems Solved")
-    ax.axhline(1.0, color="silver", xmax=0.955)
+    spine_lw = ax.spines["bottom"].get_linewidth()
+    ax.axhline(1.0, color="silver", xmax=0.955, lw=spine_lw)
     ax.legend(title=None)
     fig.tight_layout()
 
