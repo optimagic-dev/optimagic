@@ -47,8 +47,8 @@ def convergence_plot(
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
         n_cols (int): number of columns in the plot of grids. The number
-            of rows is determined automatically. distance_measure (str): One of
-            "criterion", "parameter_distance".
+            of rows is determined automatically.
+        distance_measure (str): One of "criterion", "parameter_distance".
         monotone (bool): If True the best found criterion value so far is plotted.
             If False the particular criterion evaluation of that time is used.
         normalize_distance (bool): If True the progress is scaled by the total distance
@@ -98,6 +98,13 @@ def convergence_plot(
         + "Missing From Current Criterion Value",
         "monotone_criterion_normalized": "Share of Function Distance to Optimum\n"
         + "Missing From Best So Far",
+        "parameter_distance": "Distance Between Current and Optimal Parameters",
+        "parameter_distance_normalized": "Share of the Parameter Distance to Optimum\n"
+        + "Missing From Current Parameters",
+        "monotone_parameter_distance_normalized": "Share of the Parameter Distance "
+        + "to Optimum\n Missing From the Best Parameters So Far",
+        "monotone_parameter_distance": "Distance Between the Best Parameters So Far\n"
+        "and the Optimal Parameters",
     }
     x_labels = {
         "n_evaluations": "Number of Function Evaluations",
