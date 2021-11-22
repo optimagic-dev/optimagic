@@ -7,7 +7,7 @@ from estimagic.examples.process_benchmark_results import (
     _get_history_as_stacked_sr_from_results,
 )
 from estimagic.examples.process_benchmark_results import (
-    _get_history_of_the_distance_to_optimal_params,
+    _get_history_of_the_parameter_distance,
 )
 from estimagic.examples.process_benchmark_results import _make_history_monotone
 from estimagic.examples.process_benchmark_results import _normalize
@@ -140,7 +140,7 @@ def df_for_clip_histories(problem_algo_eval_df):
         2.2,  # keep, not converged
         1.1,  # keep, not converged
     ]
-    df["monotone_distance_to_optimal_params_normalized"] = [
+    df["monotone_parameter_distance_normalized"] = [
         # prob1, algo1: converged on 3rd -> 1 after y criterion
         1.8,  # keep, not converged
         0.5,  # keep, not converged
@@ -199,9 +199,7 @@ def test_clip_histories_x(df_for_clip_histories):
 
 def test_clip_histories_x_and_y_with_nan(df_for_clip_histories):
     df = df_for_clip_histories
-    df.loc[
-        df["problem"] == "prob2", "monotone_distance_to_optimal_params_normalized"
-    ] = np.nan
+    df.loc[df["problem"] == "prob2", "monotone_parameter_distance_normalized"] = np.nan
 
     expected_shortened = df.loc[[0, 1, 2, 4, 5, 6, 7]]
     expected_info = pd.DataFrame(
@@ -326,13 +324,11 @@ def benchmark_results():
     return results
 
 
-def test_get_history_of_the_distance_to_optimal_params(benchmark_results):
+def test_get_history_of_the_parameter_distance(benchmark_results):
     x_opt = {"prob1": np.array([1, 1]), "prob2": np.array([3])}
-    res = _get_history_of_the_distance_to_optimal_params(
-        results=benchmark_results, x_opt=x_opt
-    )
+    res = _get_history_of_the_parameter_distance(results=benchmark_results, x_opt=x_opt)
     expected_df = pd.DataFrame(
-        columns=["problem", "algorithm", "evaluation", "distance_to_optimal_params"],
+        columns=["problem", "algorithm", "evaluation", "parameter_distance"],
         data=[
             ["prob1", "algo1", 0, 1],
             ["prob1", "algo1", 1, 0],
@@ -345,7 +341,7 @@ def test_get_history_of_the_distance_to_optimal_params(benchmark_results):
         ],
     )
     expected = expected_df.set_index(["problem", "algorithm", "evaluation"])[
-        "distance_to_optimal_params"
+        "parameter_distance"
     ]
     pd.testing.assert_series_equal(res, expected)
 
@@ -405,7 +401,7 @@ def test_create_performance_df(benchmark_results):
     )
 
     expected_x_distance = pd.DataFrame(
-        columns=["problem", "algorithm", "evaluation", "distance_to_optimal_params"],
+        columns=["problem", "algorithm", "evaluation", "parameter_distance"],
         data=[
             ["prob1", "algo1", 0, 1],
             ["prob1", "algo1", 1, 0],
@@ -429,14 +425,14 @@ def test_create_performance_df(benchmark_results):
         "algorithm",
         "n_evaluations",
         "criterion",
-        "distance_to_optimal_params",
+        "parameter_distance",
     ]
     # missing:
     # - criterion_normalized
     # - monotone_criterion
     # - monotone_criterion_normalized
-    # - distance_to_optimal_params_normalized
-    # - monotone_distance_to_optimal_params
-    # - monotone_distance_to_optimal_params_normalized
+    # - parameter_distance_normalized
+    # - monotone_parameter_distance
+    # - monotone_parameter_distance_normalized
 
     pd.testing.assert_frame_equal(res[to_compare], expected)
