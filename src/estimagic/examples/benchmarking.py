@@ -117,8 +117,13 @@ def run_benchmark(
             where "inputs" are keyword arguments for ``minimize`` such as the criterion
             function and start parameters. "solution" contains the entries "params" and
             "value" and "info" might  contain information about the test problem.
-        optimize_options: Nested dictionary that maps a name to a set of keyword
-            arguments for ``minimize``.
+        optimize_options (list or dict): Either a list of algorithms or a Nested
+            dictionary that maps a name for optimizer settings
+            (e.g. ``"lbfgsb_strict_criterion"``) to a dictionary of keyword arguments
+            for arguments for ``minimize`` (e.g. ``{"algorithm": "scipy_lbfgsb",
+            "algo_options": {"convergence.relative_criterion_tolerance": 1e-12}}``).
+            Alternatively, the values can just be an algorithm which is then benchmarked
+            at default settings.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
         logging_directory (pathlib.Path): Directory in which the log databases are
             saved.
@@ -144,19 +149,14 @@ def run_benchmark(
             batch_evaluators, f"{batch_evaluator}_batch_evaluator"
         )
 
-    for options in optimize_options:
-        if "log_options" in options:
-            raise ValueError(
-                "Log options cannot be specified as part of optimize_options. Logging "
-                "behavior is configured by the run_benchmark function."
-            )
+    opt_options = _process_optimize_options(optimize_options)
 
     log_options = {"fast_logging": fast_logging, "if_table_exists": "replace"}
 
     kwargs_list = []
     names = []
     for prob_name, problem in problems.items():
-        for option_name, options in optimize_options.items():
+        for option_name, options in opt_options.items():
             kwargs = {
                 **options,
                 **problem["inputs"],
@@ -340,3 +340,29 @@ def _clip_away_from_zero(a, clipval):
     if is_scalar:
         clipped = clipped[0]
     return clipped
+
+
+def _process_optimize_options(raw_options):
+    if not isinstance(raw_options, dict):
+        dict_options = {}
+        for option in raw_options:
+            if isinstance(option, str):
+                dict_options[option] = option
+            else:
+                dict_options[option.__name__] = option
+    else:
+        dict_options = raw_options
+
+    out_options = {}
+    for name, option in dict_options.items():
+        if not isinstance(option, dict):
+            option = {"algorithm": option}
+
+        if "log_options" in option:
+            raise ValueError(
+                "Log options cannot be specified as part of optimize_options. Logging "
+                "behavior is configured by the run_benchmark function."
+            )
+        out_options[name] = option
+
+    return out_options
