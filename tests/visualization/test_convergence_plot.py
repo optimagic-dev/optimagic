@@ -22,22 +22,15 @@ profile_options = [
 
 @pytest.mark.parametrize("options", profile_options)
 def test_convergence_plot_options(options):
-    full_problems = get_benchmark_problems("more_wild")
-    stop_after_100 = {
-        "stopping_max_criterion_evaluations": 100,
-        "stopping_max_iterations": 100,
+    problems = get_benchmark_problems("example")
+    stop_after_10 = {
+        "stopping_max_criterion_evaluations": 10,
+        "stopping_max_iterations": 10,
     }
     optimizers = {
-        "lbfgsb": {"algorithm": "scipy_lbfgsb", "algo_options": stop_after_100},
-        "neldermead": {
-            "algorithm": "scipy_neldermead",
-            "algo_options": stop_after_100,
-        },
+        "lbfgsb": {"algorithm": "scipy_lbfgsb", "algo_options": stop_after_10},
+        "nm": {"algorithm": "scipy_neldermead", "algo_options": stop_after_10},
     }
-    problems = {
-        k: v for k, v in full_problems.items() if k in sorted(full_problems)[:5]
-    }
-
     results = run_benchmark(
         problems,
         optimizers,
