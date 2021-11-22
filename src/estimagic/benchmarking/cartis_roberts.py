@@ -17,8 +17,8 @@ from functools import partial
 
 import numpy as np
 
-from estimagic.examples.more_wild import brown_almost_linear
-from estimagic.examples.more_wild import watson
+from estimagic.benchmarking.more_wild import brown_almost_linear
+from estimagic.benchmarking.more_wild import watson
 
 
 def argtrig(x):

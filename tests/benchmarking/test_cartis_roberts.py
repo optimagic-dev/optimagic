@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_almost_equal
 
-from estimagic.examples.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
-from estimagic.examples.cartis_roberts import get_start_points_bdvalues
-from estimagic.examples.cartis_roberts import get_start_points_msqrta
+from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
+from estimagic.benchmarking.cartis_roberts import get_start_points_bdvalues
+from estimagic.benchmarking.cartis_roberts import get_start_points_msqrta
 
 
 @pytest.mark.parametrize("name, specification", list(CARTIS_ROBERTS_PROBLEMS.items()))

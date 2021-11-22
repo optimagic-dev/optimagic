@@ -1,8 +1,10 @@
+import warnings
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from estimagic.examples.process_benchmark_results import create_performance_df
+from estimagic.benchmarking.process_benchmark_results import create_performance_df
 from estimagic.visualization.colors import get_colors
 
 plt.rcParams.update(
@@ -18,6 +20,7 @@ def profile_plot(
     problems,
     results,
     runtime_measure="n_evaluations",
+    normalize_runtime=True,
     stopping_criterion="y",
     x_precision=1e-4,
     y_precision=1e-4,
@@ -54,6 +57,9 @@ def profile_plot(
         runtime_measure (str): "n_evaluations" or "walltime".
             This is the runtime until the desired convergence was reached by an
             algorithm. This is called performance measure by Moré and Wild (2009).
+        normalize_runtime (bool): If True the runtime each algorithm needed for each
+            problem is scaled by the time the fastest algorithm needed. If True, the
+            resulting plot is what Moré and Wild (2009) called data profiles.
         stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y". Determines
             how convergence is determined from the two precisions.
         x_precision (float or None): how close an algorithm must have gotten to the
@@ -83,22 +89,37 @@ def profile_plot(
     )
 
     solution_times = _create_solution_times(
-        df, runtime_measure=runtime_measure, converged_info=converged_info
+        df,
+        runtime_measure=runtime_measure,
+        converged_info=converged_info,
     )
-    performance_ratios = solution_times.divide(solution_times.min(axis=1), axis=0)
-    # set again to inf because no inf Timedeltas were allowed.
-    performance_ratios[~converged_info] = np.inf
 
-    alphas = _determine_alpha_grid(performance_ratios)
+    if normalize_runtime:
+        solution_times = solution_times.divide(solution_times.min(axis=1), axis=0)
+        # set again to inf because no inf Timedeltas were allowed.
+        solution_times[~converged_info] = np.inf
+    else:
+        if (
+            runtime_measure == "walltime"
+            and (solution_times == pd.Timedelta(weeks=1000)).any().any()
+        ):
+            warnings.warn(
+                "Some optimizers did not converge. Their walltime has been "
+                "set to a very high value instead of infinity because Timedeltas do not"
+                "support infinite values."
+            )
 
+    # create performance profiles
+    alphas = _determine_alpha_grid(solution_times)
     for_each_alpha = pd.concat(
-        {alpha: performance_ratios <= alpha for alpha in alphas},
+        {alpha: solution_times <= alpha for alpha in alphas},
         names=["alpha"],
     )
     performance_profiles = for_each_alpha.groupby("alpha").mean().stack().reset_index()
 
+    # Build plot
     fig, ax = plt.subplots(figsize=(8, 6))
-    n_algos = len(performance_ratios.columns)
+    n_algos = len(solution_times.columns)
     sns.lineplot(
         data=performance_profiles,
         x="alpha",
@@ -109,17 +130,26 @@ def profile_plot(
         alpha=1.0,
         palette=get_colors("categorical", n_algos),
     )
-    if runtime_measure == "n_evaluations":
-        ax.set_xlabel(
-            "Multiple of Minimal Number of Function Evaluations\n"
-            "Needed to Solve the Problem"
-        )
-    elif runtime_measure == "walltime":
-        ax.set_xlabel(
-            "Multiple of Minimal Number of Wall Time\nNeeded to Solve the Problem"
-        )
 
+    # Plot Styling
+    xlabels = {
+        ("n_evaluations", True): "Multiple of Minimal Number of Function Evaluations\n"
+        "Needed to Solve the Problem",
+        (
+            "walltime",
+            True,
+        ): "Multiple of Minimal Wall Time\nNeeded to Solve the Problem",
+        ("n_evaluations", False): "Number of Function Evaluations",
+        ("walltime", False): "Wall Time Needed to Solve the Problem",
+    }
+
+    ax.set_xlabel(xlabels[(runtime_measure, normalize_runtime)])
     ax.set_ylabel("Share of Problems Solved")
+    spine_lw = ax.spines["bottom"].get_linewidth()
+    ax.axhline(1.0, color="silver", xmax=0.955, lw=spine_lw)
+    ax.legend(title=None)
+    fig.tight_layout()
+
     return fig, ax
 
 
@@ -127,8 +157,8 @@ def _create_solution_times(df, runtime_measure, converged_info):
     """Find the solution time for each algorithm and problem.
 
     Args:
-        df (pandas.DataFrame): contains 'problem', 'algorithm', 'n_evaluation' in the
-            columns.
+        df (pandas.DataFrame): contains 'problem', 'algorithm' and *runtime_measure*
+            as columns.
         runtime_measure (str): 'walltime' or 'n_evaluations'.
         converged_info (pandas.DataFrame): columns are the algorithms, index are the
             problems. The values are boolean and True when the algorithm arrived at
@@ -160,11 +190,22 @@ def _create_solution_times(df, runtime_measure, converged_info):
     return solution_times
 
 
-def _determine_alpha_grid(performance_ratios):
-    """Determine the alphas at which to calculate the performance profile.
+def _determine_alpha_grid(solution_times):
+    switch_points = _find_switch_points(solution_times=solution_times)
+
+    # add point to the right
+    point_to_right = switch_points[-1] * 1.05
+    extended_switch_points = np.append(switch_points, point_to_right)
+    mid_points = (extended_switch_points[:-1] + extended_switch_points[1:]) / 2
+    alphas = sorted(np.append(extended_switch_points, mid_points))
+    return alphas
+
+
+def _find_switch_points(solution_times):
+    """Determine the switch points of the performance profiles.
 
     Args:
-        performance_ratios (pandas.DataFrame): columns are the names of the algorithms,
+        solution_times (pandas.DataFrame): columns are the names of the algorithms,
             the index are the problems. Values are performance as multiple of the best
             algorithm. For example, if the criterion is runtime in walltime and there
             are two algorithms, one which needed 20 seconds and one that needed 30 for
@@ -172,11 +213,9 @@ def _determine_alpha_grid(performance_ratios):
             other of 1.5.
 
     Returns:
-        list: sorted switching points plus one point slightly to the right
+        list: sorted switching points
+
     """
-    switch_points = np.unique(performance_ratios.values) + 1e-10
-    finite_switch_points = switch_points[np.isfinite(switch_points)]
-    point_to_right = finite_switch_points[-1] * 1.05
-    alphas = np.append(finite_switch_points, point_to_right)
-    alphas = sorted(alphas)
-    return alphas
+    switch_points = np.unique(solution_times.values) + 1e-10
+    switch_points = switch_points[np.isfinite(switch_points)]
+    return switch_points

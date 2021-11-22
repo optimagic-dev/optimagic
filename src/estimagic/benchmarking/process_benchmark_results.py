@@ -36,10 +36,10 @@ def create_performance_df(
             - criterion_normalized
             - monotone_criterion
             - monotone_criterion_normalized
-            - distance_to_optimal_params
-            - distance_to_optimal_params_normalized
-            - monotone_distance_to_optimal_params
-            - monotone_distance_to_optimal_params_normalized
+            - parameter_distance
+            - parameter_distance_normalized
+            - monotone_parameter_distance
+            - monotone_parameter_distance_normalized
 
     """
     # get solution values for each problem
@@ -54,7 +54,7 @@ def create_performance_df(
     time_sr = _get_history_as_stacked_sr_from_results(results, "time_history")
     time_sr.name = "walltime"
     criterion_sr = _get_history_as_stacked_sr_from_results(results, "criterion_history")
-    x_dist_sr = _get_history_of_the_distance_to_optimal_params(results, x_opt)
+    x_dist_sr = _get_history_of_the_parameter_distance(results, x_opt)
     df = pd.concat([time_sr, criterion_sr, x_dist_sr], axis=1)
 
     # make tidy
@@ -63,29 +63,27 @@ def create_performance_df(
 
     first_evaluations = df.query("n_evaluations == 0").groupby("problem")
     f_0 = first_evaluations["criterion"].mean()
-    x_0_dist = first_evaluations["distance_to_optimal_params"].mean()
+    x_0_dist = first_evaluations["parameter_distance"].mean()
     x_opt_dist = {name: 0 for name in problems}
 
     # normalizations
     df["criterion_normalized"] = _normalize(
         df=df, col="criterion", start_values=f_0, target_values=f_opt
     )
-    df["distance_to_optimal_params_normalized"] = _normalize(
+    df["parameter_distance_normalized"] = _normalize(
         df=df,
-        col="distance_to_optimal_params",
+        col="parameter_distance",
         start_values=x_0_dist,
         target_values=x_opt_dist,
     )
     # create monotone versions of columns
     df["monotone_criterion"] = _make_history_monotone(df, "criterion")
-    df["monotone_distance_to_optimal_params"] = _make_history_monotone(
-        df, "distance_to_optimal_params"
-    )
+    df["monotone_parameter_distance"] = _make_history_monotone(df, "parameter_distance")
     df["monotone_criterion_normalized"] = _make_history_monotone(
         df, "criterion_normalized"
     )
-    df["monotone_distance_to_optimal_params_normalized"] = _make_history_monotone(
-        df, "distance_to_optimal_params_normalized"
+    df["monotone_parameter_distance_normalized"] = _make_history_monotone(
+        df, "parameter_distance_normalized"
     )
 
     if stopping_criterion is not None:
@@ -121,20 +119,19 @@ def _get_history_as_stacked_sr_from_results(results, key):
     return sr
 
 
-def _get_history_of_the_distance_to_optimal_params(results, x_opt):
+def _get_history_of_the_parameter_distance(results, x_opt):
     """Calculate the history of the distances to the optimal parameters.
 
     Args:
         results (dict): estimagic benchmarking results dictionary. Keys are
             tuples of the form (problem, algorithm), values are dictionaries of the
-            collected information on the benchmark run, including 'criterion_history'
-            and 'time_history'.
+            collected information on the benchmark run, including 'params_history'.
         x_opt (dict): the keys are the problems, the values are pandas.Series with the
             optimal parameters for the respective problem.
 
     Returns:
         pandas.Series: index levels are "problem", "algorithm", "evaluation". The name
-            is "distance_to_optimal_params".
+            is "parameter_distance".
 
     """
     x_dist_history = {}
@@ -146,19 +143,17 @@ def _get_history_of_the_distance_to_optimal_params(results, x_opt):
 
     sr = pd.concat(x_dist_history)
     sr.index.names = ["problem", "algorithm", "evaluation"]
-    sr.name = "distance_to_optimal_params"
+    sr.name = "parameter_distance"
     return sr
 
 
-def _make_history_monotone(df, target_col, sorting_cols=None, direction="minimize"):
+def _make_history_monotone(df, target_col, direction="minimize"):
     """Create a monotone Series, i.e. the best so far instead of the current evaluation.
 
     Args:
-        df (pandas.Dataframe): must contain the sorting_cols and the target_col as
-            columns.
+        df (pandas.Dataframe): must contain ["problem", "algorithm", "n_evaluations"]
+            and the target_col as columns.
         target_col (str): column of which to create the monotone version.
-        sorting_cols (list): columns on which to make the histories monotone. The
-            default is ["problem", "algorithm", "n_evaluations"].
         direction (str): "minimize" or "maximize". "minimize" makes the history
             monotonically decreasing, "maximize" means the history will be monotonically
             increasing.
@@ -168,24 +163,15 @@ def _make_history_monotone(df, target_col, sorting_cols=None, direction="minimiz
             replaced with the best value so far. Index is the same as that of df.
 
     """
-    if sorting_cols is None:
-        sorting_cols = ["problem", "algorithm", "n_evaluations"]
-    sorted_df = df.sort_values(sorting_cols)
-
-    is_first_entry = sorted_df["n_evaluations"] == 0
-    sr = sorted_df[target_col]
+    sorted_df = df.sort_values(["problem", "algorithm", "n_evaluations"])
+    grouped = sorted_df.groupby(["problem", "algorithm"])[target_col]
 
     if direction == "minimize":
-        # It is very important not to rewrite the second statement to
-        # sr.diff() <= 0 because the treatment of NaNs would change
-        keep = is_first_entry | ~(sr.diff() > 0)
+        out = grouped.apply(np.minimum.accumulate)
+    elif direction == "maximize":
+        out = grouped.apply(np.maximum.accumulate)
     else:
-        # It is very important not to rewrite the second statement to
-        # sr.diff() >= 0 because the treatment of NaNs would change
-        keep = is_first_entry | ~(sr.diff() < 0)
-    with_nans = sr.where(keep, np.nan)
-
-    out = with_nans.fillna(method="ffill")
+        raise ValueError("Only maximize and minimize are allowed as directions.")
 
     return out
 
@@ -202,15 +188,17 @@ def _normalize(df, col, start_values, target_values):
     (In the case of a maximization the total improvement would be target - start values
     and the currently still missing improvement would be target - current values)
 
-    Args: df (pandas.DataFrame): contains the columns **col** and "problem". col (str):
-        name of the column to normalize start_values (pandas.Series): index are
-        problems, values are start values target_values (pandas.Series): index are
-        problems, values are target values.
+    Args:
+        df (pandas.DataFrame): contains the columns **col** and "problem".
+        col (str): name of the column to normalize
+        start_values (pandas.Series): index are problems, values are start values
+        target_values (pandas.Series): index are problems, values are target values.
 
-    Returns: pandas.Series: index is the same as that of sr. The lower the value the
-        closer the current value is to the target value. 0 means the target value has
-        been reached. 1 means the current value is as far from the target value as the
-        start value.
+    Returns:
+        pandas.Series: index is the same as that of sr. The lower the value the closer
+            the current value is to the target value. 0 means the target value has been
+            reached. 1 means the current value is as far from the target value as the
+            start value.
 
     """
     # expand start and target values to the length of the full DataFrame
@@ -226,7 +214,9 @@ def _clip_histories(df, stopping_criterion, x_precision, y_precision):
 
     Args:
         df (pandas.DataFrame): index levels are ['problem', 'algorithm', 'evaluation'].
-            Columns must include "monotone_criterion".
+            Columns must include "monotone_criterion_normalized" if stopping_criterion
+            includes y and "monotone_parameter_distance_normalized" if x is in
+            the stopping_criterion.
         stopping_criterion (str): one of "x_and_y", "x_or_y", "x", "y".
         x_precision (float): when an algorithm's parameters are closer than this to the
             true solution's parameters, the algorithm is counted as having converged.
@@ -242,17 +232,19 @@ def _clip_histories(df, stopping_criterion, x_precision, y_precision):
             the solution with the desired precision.
 
     """
+    # drop problems with no known solution
+    if "x" in stopping_criterion:
+        df = df[df["monotone_parameter_distance_normalized"].notnull()]
+    if "y" in stopping_criterion:
+        df = df[df["monotone_criterion_normalized"].notnull()]
+
+    # determine convergence in the known problems
+    if "x" in stopping_criterion:
+        x_converged = df["monotone_parameter_distance_normalized"] < x_precision
     if "y" in stopping_criterion:
         y_converged = df["monotone_criterion_normalized"] < y_precision
 
-    if "x" in stopping_criterion:
-        x_converged = df["monotone_distance_to_optimal_params_normalized"] < x_precision
-        if x_converged.isnull().any():
-            raise ValueError(
-                "You specified x as part of your stopping criterion but the optimal "
-                "parameters are not known for every problem in your problem set."
-            )
-
+    # determine converged function evaluations
     if stopping_criterion == "y":
         converged = y_converged
     elif stopping_criterion == "x":
@@ -269,6 +261,7 @@ def _clip_histories(df, stopping_criterion, x_precision, y_precision):
 
     first_converged = _find_first_converged(converged, df)
 
+    # keep first converged and non-converged
     shortened = df[~converged | first_converged]
 
     # create converged_info

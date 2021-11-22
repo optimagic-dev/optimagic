@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
-from estimagic.examples.more_wild import get_start_points_mancino
-from estimagic.examples.more_wild import MORE_WILD_PROBLEMS
+from estimagic.benchmarking.more_wild import get_start_points_mancino
+from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 
 
 @pytest.mark.parametrize("name, specification", list(MORE_WILD_PROBLEMS.items()))
@@ -12,6 +12,13 @@ def test_more_wild_function_at_start_x(name, specification):
     calculated = _contributions @ _contributions
     expected = specification["start_criterion"]
     assert np.allclose(calculated, expected)
+
+    if specification.get("solution_x") is not None:
+        _x = specification["solution_x"]
+        _contributions = _criterion(_x)
+        calculated = _contributions @ _contributions
+        expected = specification["solution_criterion"]
+        assert np.allclose(calculated, expected, rtol=1e-8, atol=1e-8)
 
 
 def test_get_start_points_mancino():

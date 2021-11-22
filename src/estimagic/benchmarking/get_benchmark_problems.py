@@ -1,26 +1,14 @@
-"""Functions to create, run and visualize optimization benchmarks.
-
-TO-DO:
-- Add other benchmark sets:
-    - finish medium scale problems from https://arxiv.org/pdf/1710.11005.pdf, Page 34.
-    - add scalar problems from https://github.com/AxelThevenot
-- Add option for deterministic noise or wiggle.
-
-"""
+import warnings
 from functools import partial
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from estimagic import batch_evaluators
-from estimagic.examples.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
-from estimagic.examples.more_wild import MORE_WILD_PROBLEMS
-from estimagic.examples.noise_distributions import NOISE_DISTRIBUTIONS
-from estimagic.logging.read_log import read_optimization_histories
-from estimagic.optimization.optimize import minimize
+from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
+from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
+from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
 
 
-def get_problems(
+def get_benchmark_problems(
     name,
     additive_noise=False,
     additive_noise_options=None,
@@ -36,8 +24,8 @@ def get_problems(
             Default False.
         additive_noise_options (dict or None): Specifies the amount and distribution
             of the addititve noise added to the problem. Has the entries:
-            - distribition (str): One of "normal", "gumbel", "uniform", "logistic".
-            Default "normal".
+            - distribition (str): One of "normal", "gumbel", "uniform", "logistic",
+            "laplace". Default "normal".
             - std (float): The standard deviation of the noise. This works for all
             distributions, even if those distributions are normally not specified
             via a standard deviation (e.g. uniform).
@@ -47,8 +35,8 @@ def get_problems(
             Default False.
         multiplicative_noise_options (dict or None): Specifies the amount and
             distribition of the multiplicative noise added to the problem. Has entries:
-            - distribition (str): One of "normal", "gumbel", "uniform", "logistic".
-            Default "normal".
+            - distribition (str): One of "normal", "gumbel", "uniform", "logistic",
+            "laplace". Default "normal".
             - std (float): The standard deviation of the noise. This works for all
             distributions, even if those distributions are normally not specified
             via a standard deviation (e.g. uniform).
@@ -99,106 +87,31 @@ def get_problems(
     return problems
 
 
-def run_benchmark(
-    problems,
-    optimize_options,
-    logging_directory,
-    batch_evaluator="joblib",
-    n_cores=1,
-    error_handling="continue",
-    fast_logging=True,
-    seed=None,
-):
-    """Run problems with different optimize options.
-
-    Args:
-        problems (dict): Nested dictionary with benchmark problems of the structure:
-            {"name": {"inputs": {...}, "solution": {...}, "info": {...}}}
-            where "inputs" are keyword arguments for ``minimize`` such as the criterion
-            function and start parameters. "solution" contains the entries "params" and
-            "value" and "info" might  contain information about the test problem.
-        optimize_options: Nested dictionary that maps a name to a set of keyword
-            arguments for ``minimize``.
-            batch_evaluator (str or callable): See :ref:`batch_evaluators`.
-        logging_directory (pathlib.Path): Directory in which the log databases are
-            saved.
-        n_cores (int): Number of optimizations that is run in parallel. Note that in
-            addition to that an optimizer might parallelize.
-        error_handling (str): One of "raise", "continue".
-        fast_logging (bool): Whether the slightly unsafe but much faster database
-            configuration is chosen.
-
-    Returns:
-        dict: Nested Dictionary with information on the benchmark run. The outer keys
-            are tuples where the first entry is the name of the problem and the second
-            the name of the optimize options. The values are dicts with the entries:
-            "runtime", "params_history", "criterion_history", "solution"
-
-    """
-    np.random.seed(seed)
-    logging_directory = Path(logging_directory)
-    logging_directory.mkdir(parents=True, exist_ok=True)
-
-    if isinstance(batch_evaluator, str):
-        batch_evaluator = getattr(
-            batch_evaluators, f"{batch_evaluator}_batch_evaluator"
-        )
-
-    for options in optimize_options:
-        if "log_options" in options:
-            raise ValueError(
-                "Log options cannot be specified as part of optimize_options. Logging "
-                "behavior is configured by the run_benchmark function."
-            )
-
-    log_options = {"fast_logging": fast_logging, "if_table_exists": "replace"}
-
-    kwargs_list = []
-    names = []
-    for prob_name, problem in problems.items():
-        for option_name, options in optimize_options.items():
-            kwargs = {
-                **options,
-                **problem["inputs"],
-                "logging": logging_directory / f"{prob_name}_{option_name}.db",
-                "log_options": log_options,
-            }
-            kwargs_list.append(kwargs)
-            names.append((prob_name, option_name))
-
-    log_paths = [kwargs["logging"] for kwargs in kwargs_list]
-
-    raw_results = batch_evaluator(
-        func=minimize,
-        arguments=kwargs_list,
-        n_cores=n_cores,
-        error_handling=error_handling,
-        unpack_symbol="**",
-    )
-
-    results = {}
-    for name, result, log_path in zip(names, raw_results, log_paths):
-        histories = read_optimization_histories(log_path)
-        stop = histories["metadata"]["timestamps"].max()
-        start = histories["metadata"]["timestamps"].min()
-        runtime = (stop - start).total_seconds()
-
-        results[name] = {
-            "params_history": histories["params"],
-            "criterion_history": histories["values"],
-            "time_history": histories["metadata"]["timestamps"] - start,
-            "solution": result,
-            "runtime": runtime,
-        }
-
-    return results
-
-
 def _get_raw_problems(name):
     if name == "more_wild":
         raw_problems = MORE_WILD_PROBLEMS
     elif name == "cartis_roberts":
+        warnings.warn(
+            "Only a subset of the cartis_roberts benchmark suite is currently "
+            "implemented. Do not use this for any published work."
+        )
         raw_problems = CARTIS_ROBERTS_PROBLEMS
+    elif name == "example":
+        subset = {
+            "linear_full_rank_good_start",
+            "rosenbrock_good_start",
+            "helical_valley_good_start",
+            "powell_singular_good_start",
+            "freudenstein_roth_good_start",
+            "bard_good_start",
+            "box_3d",
+            "jenrich_sampson",
+            "brown_dennis_good_start",
+            "chebyquad_6",
+            "bdqrtc_8",
+            "mancino_5_good_start",
+        }
+        raw_problems = {k: v for k, v in MORE_WILD_PROBLEMS.items() if k in subset}
     else:
         raise NotImplementedError()
     return raw_problems
@@ -285,6 +198,7 @@ def _sample_from_distribution(distribution, mean, std, size, correlation=0):
     if correlation != 0 and dim > 1:
         chol = np.linalg.cholesky(np.diag(np.ones(dim) - correlation) + correlation)
         sample = (chol @ sample.T).T
+        sample = sample / sample.std()
     sample *= std
     sample += mean
     return sample

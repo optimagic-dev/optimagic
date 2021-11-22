@@ -2,7 +2,7 @@ from itertools import product
 
 import numpy as np
 import pytest
-from estimagic.examples.benchmarking import get_problems
+from estimagic import get_benchmark_problems
 
 PARMETRIZATION = []
 for name in ["more_wild", "cartis_roberts"]:
@@ -13,7 +13,7 @@ for name in ["more_wild", "cartis_roberts"]:
 @pytest.mark.parametrize("name, additive_noise, multiplicative_noise", PARMETRIZATION)
 def test_get_problems(name, additive_noise, multiplicative_noise):
     is_noisy = any((additive_noise, multiplicative_noise))
-    problems = get_problems(
+    problems = get_benchmark_problems(
         name=name,
         additive_noise=additive_noise,
         multiplicative_noise=multiplicative_noise,
