@@ -18,6 +18,7 @@ from functools import partial
 import numpy as np
 
 from estimagic.examples.more_wild import brown_almost_linear
+from estimagic.examples.more_wild import watson
 
 
 def argtrig(x):
@@ -409,6 +410,101 @@ def integreq(x):
     return fvec
 
 
+def msqrta(x):
+    dim_in = int(np.sqrt(len(x)))
+    xmat = x.reshape((dim_in, dim_in))
+    bmat = 5 * xmat
+    amat = np.zeros((dim_in, dim_in))
+    for i in range(1, dim_in + 1):
+        for j in range(1, dim_in + 1):
+            amat[i - 1, j - 1] = (bmat[i - 1, :] * bmat[:, j - 1]).sum()
+    fmat = np.zeros((dim_in, dim_in))
+    for i in range(1, dim_in + 1):
+        for j in range(1, dim_in + 1):
+            fmat[i - 1, j - 1] = (xmat[i - 1, :] * xmat[:, j - 1]).sum() - amat[
+                i - 1, j - 1
+            ]
+    return fmat.flatten()
+
+
+def penalty_1(x, a=1e-5):
+    fvec = np.sqrt(a) * (x - 2)
+    fvec = np.concatenate([fvec, [x @ x - 1 / 4]])
+    return fvec
+
+
+def penalty_2(x, a=1e-10):
+    dim_in = len(x)
+    y = np.exp(np.arange(1, 2 * dim_in + 1) / 10) + np.exp(np.arange(2 * dim_in) / 10)
+    fvec = np.zeros(2 * dim_in)
+    fvec[0] = x[0] - 0.2
+    fvec[1:dim_in] = np.sqrt(a) * (
+        np.exp(x[1:] / 10) + np.exp(x[:-1] / 10) - y[1:dim_in]
+    )
+    fvec[dim_in:-1] = np.sqrt(a) * (np.exp(x[1:] / 10) - np.exp(-1 / 10))
+    fvec[-1] = (np.arange(1, dim_in + 1)[::-1] * x ** 2).sum() - 1
+    return fvec
+
+
+def vardimne(x):
+    dim_in = len(x)
+    fvec = np.zeros(dim_in + 2)
+    fvec[:-2] = x - 1
+    fvec[-2] = (np.arange(1, dim_in + 1) * (x - 1)).sum()
+    fvec[-1] = ((np.arange(1, dim_in + 1) * (x - 1)).sum()) ** 2
+    return fvec
+
+
+def yatpsq_1(x, dim_in):
+    xvec = x[: dim_in ** 2]
+    xvec = xvec.reshape((dim_in, dim_in))
+    yvec = x[dim_in ** 2 : dim_in ** 2 + dim_in]
+    zvec = x[dim_in ** 2 + dim_in : dim_in ** 2 + 2 * dim_in]
+    fvec = np.zeros((dim_in, dim_in))
+    for i in range(dim_in):
+        for j in range(dim_in):
+            fvec[i, j] = (
+                xvec[i, j] ** 3
+                - 10 * xvec[i, j] ** 2
+                - (yvec[i] + zvec[j])
+                * (xvec[i, j] * np.cos(xvec[i, j]) - np.sin(xvec[i, j]))
+            )
+    fvec = fvec.flatten()
+    temp = (np.sin(xvec) / xvec).sum(axis=0) - 1
+    fvec = np.concatenate([fvec, temp])
+    temp = (np.sin(xvec) / xvec).sum(axis=1) - 1
+    fvec = np.concatenate([fvec, temp])
+    return fvec
+
+
+def yatpsq_2(x, dim_in):
+    xvec = x[: dim_in ** 2]
+    xvec = xvec.reshape((dim_in, dim_in))
+    yvec = x[dim_in ** 2 : dim_in ** 2 + dim_in]
+    zvec = x[dim_in ** 2 + dim_in : dim_in ** 2 + 2 * dim_in]
+    fvec = np.zeros((dim_in, dim_in))
+    for i in range(dim_in):
+        for j in range(dim_in):
+            fvec[i, j] = xvec[i, j] - (yvec[i] + zvec[j]) * (1 + np.cos(xvec[i, j])) - 1
+    fvec = fvec.flatten()
+    temp = (np.sin(xvec) + xvec).sum(axis=0) - 1
+    fvec = np.concatenate([fvec, temp])
+    temp = (np.sin(xvec) + xvec).sum(axis=1) - 1
+    fvec = np.concatenate([fvec, temp])
+    return fvec
+
+
+def get_start_points_msqrta(dim_in, flag=1):
+    bmat = np.zeros((dim_in, dim_in))
+    for i in range(1, dim_in + 1):
+        for j in range(1, dim_in + 1):
+            bmat[i - 1, j - 1] = np.sin(((i - 1) * dim_in + j) ** 2)
+    if flag == 2:
+        bmat[2, 0] = 0
+    xmat = 0.2 * bmat
+    return xmat.flatten()
+
+
 def get_start_points_bdvalues(n):
     h = 1 / (n + 1)
     x = np.zeros(n)
@@ -565,6 +661,62 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_x": np.arange(1, 101) / 101 * (np.arange(1, 101) / 101 - 1),
         "solution_x": None,
         "start_criterion": 0.5730503,
+        "solution_criterion": 0,
+    },
+    "msqrta": {
+        "criterion": msqrta,
+        "start_x": get_start_points_msqrta(10),
+        "solution_x": None,
+        "start_criterion": 212.7162,
+        "solution_criterion": 0,
+    },
+    "msqrtb": {
+        "criterion": msqrta,
+        "start_x": get_start_points_msqrta(10, flag=2),
+        "solution_x": None,
+        "start_criterion": 205.0753,
+        "solution_criterion": 0,
+    },
+    "penalty_1": {
+        "criterion": penalty_1,
+        "start_x": np.arange(1, 101),
+        "solution_x": None,
+        "start_criterion": 1.144806e11,
+        "solution_criterion": 9.025000e-9,
+    },
+    "penalty_2": {
+        "criterion": penalty_2,
+        "start_x": np.ones(100) * 0.5,
+        "solution_x": None,
+        "start_criterion": 1.591383e6,
+        "solution_criterion": 0.9809377,
+    },
+    "vardimne": {
+        "criterion": vardimne,
+        "start_x": 1 - np.arange(1, 101) / 100,
+        "solution_x": None,
+        "start_criterion": 1.310584e14,
+        "solution_criterion": 0,
+    },
+    "watsonne": {
+        "criterion": watson,
+        "start_x": np.zeros(31),
+        "solution_x": None,
+        "start_criterion": 30,
+        "solution_criterion": 0,
+    },
+    "yatpsq_1": {
+        "criterion": partial(yatpsq_1, dim_in=10),
+        "start_x": np.concatenate([np.ones(100) * 6, np.zeros(20)]),
+        "solution_x": None,
+        "start_criterion": 2.073643e6,
+        "solution_criterion": 0,
+    },
+    "yatpsq_2": {
+        "criterion": partial(yatpsq_2, dim_in=10),
+        "start_x": np.concatenate([np.ones(100) * 10, np.zeros(20)]),
+        "solution_x": None,
+        "start_criterion": 1.831687e5,
         "solution_criterion": 0,
     },
 }
