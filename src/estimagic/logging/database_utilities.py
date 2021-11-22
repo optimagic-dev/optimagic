@@ -299,7 +299,7 @@ def read_last_rows(
     Args:
         database (sqlalchemy.MetaData)
         table_name (str): name of the table to retrieve.
-        n_int (int): number of rows to retrieve.
+        n_rows (int): number of rows to retrieve.
         return_type (str): either "list_of_dicts" or "dict_of_lists".
         path (str or pathlib.Path): location of the database file. If the file does
             not exist, it will be created. Using a path is much slower than a

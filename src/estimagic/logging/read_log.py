@@ -99,6 +99,48 @@ def read_start_params(path_or_database):
     return start_params
 
 
+def read_optimization_histories(path_or_database):
+    """Read a histories out values, parameters and other information."""
+    database = load_database(**_process_path_or_database(path_or_database))
+
+    start_params = read_start_params(path_or_database)
+
+    raw_res, _ = read_new_rows(
+        database=database,
+        table_name="optimization_iterations",
+        last_retrieved=0,
+        return_type="dict_of_lists",
+    )
+
+    params_history = pd.DataFrame(raw_res["params"], columns=start_params.index)
+    value_history = pd.Series(raw_res["value"])
+
+    metadata = pd.DataFrame()
+    metadata["timestamps"] = raw_res["timestamp"]
+    metadata["valid"] = raw_res["valid"]
+    metadata["has_value"] = value_history.notnull()
+    metadata["has_derivative"] = [d is not None for d in raw_res["internal_derivative"]]
+
+    histories = {
+        "values": value_history.dropna(),
+        "params": params_history,
+        "metadata": metadata,
+    }
+
+    if "contributions" in raw_res:
+        first_contrib = raw_res["contributions"][0]
+        if isinstance(first_contrib, pd.Series):
+            columns = first_contrib.index
+        else:
+            columns = None
+        contributions_history = pd.DataFrame(
+            raw_res["contributions"], columns=columns
+        ).dropna()
+        histories["contributions"] = contributions_history
+
+    return histories
+
+
 def _process_path_or_database(path_or_database):
     """Make inputs for load_database out of path_or_database.
 
