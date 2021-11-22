@@ -8,7 +8,6 @@ from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
 from estimagic.visualization.colors import get_colors
-from estimagic.visualization.convergence_plot import check_inputs
 
 
 plt.rcParams.update(
@@ -23,8 +22,6 @@ plt.rcParams.update(
 def profile_plot(
     problems=None,
     results=None,
-    convergence_histories=None,
-    converged_info=None,
     runtime_measure="n_evaluations",
     normalize_runtime=False,
     stopping_criterion="y",
@@ -58,10 +55,6 @@ def profile_plot(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
-        convergence_histories (pandas.DataFrame): DataFrame containing the convergence
-            histories. See
-            estimagic.benchmarking.process_benchmark_results.create_convergence_histories
-            for details.
         runtime_measure (str): "n_evaluations" or "walltime".
             This is the runtime until the desired convergence was reached by an
             algorithm. This is called performance measure by Moré and Wild (2009).
@@ -87,28 +80,13 @@ def profile_plot(
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
         )
-    check_inputs(problems, results, convergence_histories)
-    if convergence_histories is not None:
-        if converged_info is None:
-            raise ValueError(
-                "You must also specify the converged_info when supplying the "
-                "convergence_histories."
-            )
-    elif converged_info is not None:
-        warnings.warn(
-            "You specified converged_info but no convergence histories. "
-            "Thus the converged_info is ignored and created from results and problems "
-            "and the stopping criterion."
-        )
-
-    if convergence_histories is None:
-        df, converged_info = create_convergence_histories(
-            problems=problems,
-            results=results,
-            stopping_criterion=stopping_criterion,
-            x_precision=x_precision,
-            y_precision=y_precision,
-        )
+    df, converged_info = create_convergence_histories(
+        problems=problems,
+        results=results,
+        stopping_criterion=stopping_criterion,
+        x_precision=x_precision,
+        y_precision=y_precision,
+    )
 
     solution_times = _create_solution_times(
         df,

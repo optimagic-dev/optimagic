@@ -38,5 +38,10 @@ def test_convergence_plot_options(options):
         logging_directory="logging",
     )
 
-    convergence_plot(problems=problems, results=results, **options)
+    convergence_plot(
+        problems=problems,
+        results=results,
+        problem_subset=["bard_good_start"],
+        **options
+    )
     plt.close()

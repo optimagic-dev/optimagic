@@ -1,5 +1,3 @@
-import warnings
-
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -20,7 +18,6 @@ plt.rcParams.update(
 def convergence_plot(
     problems=None,
     results=None,
-    convergence_histories=None,
     problem_subset=None,
     algorithm_subset=None,
     n_cols=2,
@@ -53,10 +50,6 @@ def convergence_plot(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
-        convergence_histories (pandas.DataFrame): DataFrame containing the convergence
-            histories. See
-            estimagic.benchmarking.process_benchmark_results.create_convergence_histories
-            for details.
         problem_subset (list, optional): List of problem names. These must be a subset
             of the keys of the problems dictionary. If provided the convergence plot is
             only created for the problems specified in this list.
@@ -88,25 +81,13 @@ def convergence_plot(
         fig, axes
 
     """
-    check_inputs(problems, results, convergence_histories)
-
-    # create the dataframe if necessary
-    if convergence_histories is None:
-        df, _ = create_convergence_histories(
-            problems=problems,
-            results=results,
-            stopping_criterion=stopping_criterion,
-            x_precision=x_precision,
-            y_precision=y_precision,
-        )
-    else:
-        # warn if the user provided a non default stopping criterion
-        if stopping_criterion != "y" or x_precision != 1e-4 or y_precision != 1e-4:
-            warnings.warn(
-                "You specified non default values for how to determine convergence. "
-                "Since you provided the convergence_histories these are ignored."
-            )
-        df = convergence_histories
+    df, _ = create_convergence_histories(
+        problems=problems,
+        results=results,
+        stopping_criterion=stopping_criterion,
+        x_precision=x_precision,
+        y_precision=y_precision,
+    )
 
     if problem_subset is not None:
         df = df[df["problem"].isin(problem_subset)]
@@ -177,22 +158,3 @@ def convergence_plot(
             ax.set_visible(False)
     fig.tight_layout()
     return fig, axes
-
-
-def check_inputs(problems, results, convergence_histories):
-    if results is None and problems is None and convergence_histories is None:
-        raise ValueError(
-            "You must specify either both the results and problems or "
-            "the convergence_histories."
-        )
-    if convergence_histories is not None:
-        if results is not None or problems is not None:
-            raise ValueError(
-                "If you specify the convergence_histories no results or "
-                "problems may be supplied."
-            )
-    if convergence_histories is None and (results is None or problems is None):
-        raise ValueError(
-            "You must specify both results and problems if you do not "
-            "provide the convergence_histories."
-        )
