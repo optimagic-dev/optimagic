@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def create_performance_df(
+def create_convergence_histories(
     problems, results, stopping_criterion, x_precision, y_precision
 ):
     """Create tidy DataFrame with all information needed for the benchmarking plots.

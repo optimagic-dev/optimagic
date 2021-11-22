@@ -11,7 +11,9 @@ from estimagic.benchmarking.process_benchmark_results import (
 )
 from estimagic.benchmarking.process_benchmark_results import _make_history_monotone
 from estimagic.benchmarking.process_benchmark_results import _normalize
-from estimagic.benchmarking.process_benchmark_results import create_performance_df
+from estimagic.benchmarking.process_benchmark_results import (
+    create_convergence_histories,
+)
 
 PROBLEMS = ["prob1", "prob2", "prob3"]
 
@@ -369,7 +371,7 @@ def test_get_history_as_stacked_sr_from_results(benchmark_results):
     pd.testing.assert_series_equal(res, expected)
 
 
-def test_create_performance_df(benchmark_results):
+def test_create_convergence_histories(benchmark_results):
     problems = {
         "prob1": {
             "solution": {"value": 5, "params": pd.DataFrame(data={"value": [1, 1]})}
@@ -378,7 +380,7 @@ def test_create_performance_df(benchmark_results):
             "solution": {"value": 1, "params": pd.DataFrame(data={"value": [3]})}
         },
     }
-    res, _ = create_performance_df(
+    res, _ = create_convergence_histories(
         problems=problems,
         results=benchmark_results,
         stopping_criterion=None,

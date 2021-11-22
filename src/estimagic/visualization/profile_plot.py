@@ -4,8 +4,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from estimagic.benchmarking.process_benchmark_results import create_performance_df
+from estimagic.benchmarking.process_benchmark_results import (
+    create_convergence_histories,
+)
 from estimagic.visualization.colors import get_colors
+from estimagic.visualization.convergence_plot import check_inputs
+
 
 plt.rcParams.update(
     {
@@ -17,34 +21,34 @@ plt.rcParams.update(
 
 
 def profile_plot(
-    problems,
-    results,
+    problems=None,
+    results=None,
+    convergence_histories=None,
+    converged_info=None,
     runtime_measure="n_evaluations",
-    normalize_runtime=True,
+    normalize_runtime=False,
     stopping_criterion="y",
     x_precision=1e-4,
     y_precision=1e-4,
 ):
-    """Compare optimizers over full problem set as proposed by Moré and Wild (2009).
+    """Compare optimizers over a problem set.
 
-    Data profiles answer the question: What percentage of problems can each
-    algorithm solve within a certain runtime budget?
+    This plot answers the question: What percentage of problems can each algorithm
+    solve within a certain runtime budget?
 
-    The runtime budget is plotted an the x axis and given in multiples of the best
-    performing algorithm's required runtime to solve each problem.
+    The runtime budget is plotted on the x axis and the share of problems each
+    algorithm solved on the y axis.
 
-    Looking at x=1.0 for example gives for each algorithm the share of problems that
-    the algorithm solved in the shortest time. On the other hand looking at x=5.0 gives
-    the share of problems each algorithm solved within 5 times the runtime of the
-    fastest algorithm on each problem.
-
-    Thus, algorithms that are very specialized and perform well on
-    some share of problems but are not able to solve more problems with a larger
-    computational budget will have flat lines. Algorithms that are robust but slow,
-    will start at low shares but have a large slope.
+    Thus, algorithms that are very specialized and perform well on some share of
+    problems but are not able to solve more problems with a larger computational budget
+    will have steep increases and then flat lines. Algorithms that are robust but slow,
+    will have low shares in the beginning but reach very high.
 
     Note that failing to converge according to the given stopping_criterion and
-    precisions is scored as needing in an infinite computational budget.
+    precisions is scored as needing an infinite computational budget.
+
+    For details, see the description of performance and data profiles by
+    Moré and Wild (2009).
 
     Args:
         problems (dict): estimagic benchmarking problems dictionary. Keys are the
@@ -54,6 +58,10 @@ def profile_plot(
             tuples of the form (problem, algorithm), values are dictionaries of the
             collected information on the benchmark run, including 'criterion_history'
             and 'time_history'.
+        convergence_histories (pandas.DataFrame): DataFrame containing the convergence
+            histories. See
+            estimagic.benchmarking.process_benchmark_results.create_convergence_histories
+            for details.
         runtime_measure (str): "n_evaluations" or "walltime".
             This is the runtime until the desired convergence was reached by an
             algorithm. This is called performance measure by Moré and Wild (2009).
@@ -79,14 +87,28 @@ def profile_plot(
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
         )
+    check_inputs(problems, results, convergence_histories)
+    if convergence_histories is not None:
+        if converged_info is None:
+            raise ValueError(
+                "You must also specify the converged_info when supplying the "
+                "convergence_histories."
+            )
+    elif converged_info is not None:
+        warnings.warn(
+            "You specified converged_info but no convergence histories. "
+            "Thus the converged_info is ignored and created from results and problems "
+            "and the stopping criterion."
+        )
 
-    df, converged_info = create_performance_df(
-        problems=problems,
-        results=results,
-        stopping_criterion=stopping_criterion,
-        x_precision=x_precision,
-        y_precision=y_precision,
-    )
+    if convergence_histories is None:
+        df, converged_info = create_convergence_histories(
+            problems=problems,
+            results=results,
+            stopping_criterion=stopping_criterion,
+            x_precision=x_precision,
+            y_precision=y_precision,
+        )
 
     solution_times = _create_solution_times(
         df,
