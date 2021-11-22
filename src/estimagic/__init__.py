@@ -1,6 +1,6 @@
 from estimagic import utilities
-from estimagic.benchmarking.benchmarking import get_benchmark_problems
-from estimagic.benchmarking.benchmarking import run_benchmark
+from estimagic.benchmarking.get_benchmark_problems import get_benchmark_problems
+from estimagic.benchmarking.run_benchmark import run_benchmark
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.estimate_ml import estimate_ml
 from estimagic.estimation.estimate_msm import estimate_msm
@@ -28,8 +28,8 @@ __all__ = [
     "estimate_msm",
     "estimate_ml",
     "get_moments_cov",
-    "get_benchmark_problems",
     "run_benchmark",
+    "get_benchmark_problems",
     "profile_plot",
     "convergence_plot",
     "__version__",

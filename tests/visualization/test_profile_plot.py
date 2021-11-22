@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.benchmarking.benchmarking import get_benchmark_problems
-from estimagic.benchmarking.benchmarking import run_benchmark
+from estimagic import get_benchmark_problems
+from estimagic.benchmarking.run_benchmark import run_benchmark
 from estimagic.visualization.profile_plot import _create_solution_times
 from estimagic.visualization.profile_plot import _determine_alpha_grid
 from estimagic.visualization.profile_plot import _find_switch_points

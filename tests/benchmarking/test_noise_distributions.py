@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.benchmarking.benchmarking import _sample_from_distribution
+from estimagic.benchmarking.get_benchmark_problems import _sample_from_distribution
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
 
 

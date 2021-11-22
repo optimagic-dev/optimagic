@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pytest
-from estimagic.benchmarking.benchmarking import get_benchmark_problems
-from estimagic.benchmarking.benchmarking import run_benchmark
+from estimagic import get_benchmark_problems
+from estimagic.benchmarking.run_benchmark import run_benchmark
 from estimagic.visualization.convergence_plot import convergence_plot
 
 # integration test to make sure non default argument do not throw Errors
