@@ -285,6 +285,9 @@ def _find_first_converged(converged, df):
             for each problem run, i.e. problem and algorithm combination.
 
     """
+    # this function can probably be implemented much quicker and easier by shifting
+    # the converged Series to identify the first converged entries
+
     converged_with_multi_index = converged.copy(deep=True)
     multi_index = pd.MultiIndex.from_frame(
         df[["problem", "algorithm", "n_evaluations"]]

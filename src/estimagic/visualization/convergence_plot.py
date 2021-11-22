@@ -140,6 +140,7 @@ def convergence_plot(
             ax=ax,
             palette=palette,
         )
+        ax.set_title(prob_name.replace("_", " ").title())
         if distance_measure == "criterion" and not normalize_distance:
             f_opt = problems[prob_name]["solution"]["value"]
             ax.axhline(f_opt, label="true solution", lw=2.5)
@@ -167,13 +168,13 @@ def convergence_plot(
     for ax in axes.flatten():
         ax.set_ylabel(y_labels[outcome])
         ax.set_xlabel(x_labels[runtime_measure])
-        ax.set_title(prob_name.replace("_", " ").title())
         ax.legend(title=None)
 
     # make empty plots invisible
-    n_empty_plots = len(axes.flatten()) - len(problems)
-    for ax in axes.flatten()[-n_empty_plots:]:
-        ax.set_visible(False)
+    n_empty_plots = len(axes.flatten()) - len(remaining_problems)
+    if n_empty_plots > 0:
+        for ax in axes.flatten()[-n_empty_plots:]:
+            ax.set_visible(False)
     fig.tight_layout()
     return fig, axes
 

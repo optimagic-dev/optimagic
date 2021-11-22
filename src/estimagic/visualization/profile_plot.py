@@ -228,18 +228,17 @@ def _find_switch_points(solution_times):
 
     Args:
         solution_times (pandas.DataFrame): columns are the names of the algorithms,
-            the index are the problems. Values are performance as multiple of the best
-            algorithm. For example, if the criterion is runtime in walltime and there
-            are two algorithms, one which needed 20 seconds and one that needed 30 for
-            a problem. Then the first algorithm has a performance ratio of 1.0 and the
-            other of 1.5.
+            the index are the problems. Values are performance measures.
+            They can be either float, when normalize_runtime was True or int when the
+            runtime_measure are not normalized function evaluations or datetime when
+            the not normalized walltime is used.
 
     Returns:
         list: sorted switching points
 
     """
     switch_points = np.unique(solution_times.values)
-    if pd.api.types.is_numeric_dtype(switch_points):
+    if pd.api.types.is_float_dtype(switch_points):
         switch_points += 1e-10
     switch_points = switch_points[np.isfinite(switch_points)]
     return switch_points
