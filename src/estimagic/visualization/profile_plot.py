@@ -126,7 +126,7 @@ def profile_plot(
             and (solution_times == pd.Timedelta(weeks=1000)).any().any()
         ):
             warnings.warn(
-                "Some optimizers did not converge. Their walltime has been "
+                "Some algorithms did not converge. Their walltime has been "
                 "set to a very high value instead of infinity because Timedeltas do not"
                 "support infinite values."
             )
@@ -238,6 +238,8 @@ def _find_switch_points(solution_times):
         list: sorted switching points
 
     """
-    switch_points = np.unique(solution_times.values) + 1e-10
+    switch_points = np.unique(solution_times.values)
+    if pd.api.types.is_numeric_dtype(switch_points):
+        switch_points += 1e-10
     switch_points = switch_points[np.isfinite(switch_points)]
     return switch_points

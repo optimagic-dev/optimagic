@@ -57,7 +57,6 @@ def create_convergence_histories(
     x_dist_sr = _get_history_of_the_parameter_distance(results, x_opt)
     df = pd.concat([time_sr, criterion_sr, x_dist_sr], axis=1)
 
-    # make tidy
     df.index = df.index.rename({"evaluation": "n_evaluations"})
     df = df.sort_index().reset_index()
 

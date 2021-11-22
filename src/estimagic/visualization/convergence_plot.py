@@ -21,6 +21,8 @@ def convergence_plot(
     problems=None,
     results=None,
     convergence_histories=None,
+    problem_subset=None,
+    algorithm_subset=None,
     n_cols=2,
     distance_measure="criterion",
     monotone=True,
@@ -55,6 +57,12 @@ def convergence_plot(
             histories. See
             estimagic.benchmarking.process_benchmark_results.create_convergence_histories
             for details.
+        problem_subset (list, optional): List of problem names. These must be a subset
+            of the keys of the problems dictionary. If provided the convergence plot is
+            only created for the problems specified in this list.
+        algorithm_subset (list, optional): List of algorithm names. These must be a
+            subset of the keys of the optimizer_options passed to run_benchmark. If
+            provided only the convergence of the given algorithms are shown.
         n_cols (int): number of columns in the plot of grids. The number
             of rows is determined automatically.
         distance_measure (str): One of "criterion", "parameter_distance".
@@ -100,12 +108,43 @@ def convergence_plot(
             )
         df = convergence_histories
 
+    if problem_subset is not None:
+        df = df[df["problem"].isin(problem_subset)]
+    if algorithm_subset is not None:
+        df = df[df["algorithm"].isin(algorithm_subset)]
+
+    # plot configuration
     outcome = (
         f"{'monotone_' if monotone else ''}"
         + distance_measure
         + f"{'_normalized' if normalize_distance else ''}"
     )
 
+    # create plots
+    remaining_problems = df["problem"].unique()
+    n_rows = int(np.ceil(len(remaining_problems) / n_cols))
+    figsize = (n_cols * 6, n_rows * 4)
+    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=figsize)
+    algorithms = {tup[1] for tup in results.keys()}
+    palette = get_colors("categorical", number=len(algorithms))
+
+    for ax, prob_name in zip(axes.flatten(), remaining_problems):
+        to_plot = df[df["problem"] == prob_name]
+        sns.lineplot(
+            data=to_plot,
+            x=runtime_measure,
+            y=outcome,
+            hue="algorithm",
+            lw=2.5,
+            alpha=1.0,
+            ax=ax,
+            palette=palette,
+        )
+        if distance_measure == "criterion" and not normalize_distance:
+            f_opt = problems[prob_name]["solution"]["value"]
+            ax.axhline(f_opt, label="true solution", lw=2.5)
+
+    # style plots
     y_labels = {
         "criterion": "Current Function Value",
         "monotone_criterion": "Best Function Value Found So Far",
@@ -125,40 +164,16 @@ def convergence_plot(
         "n_evaluations": "Number of Function Evaluations",
         "walltime": "Elapsed Time",
     }
-
-    n_rows = int(np.ceil(len(problems) / n_cols))
-    figsize = (n_cols * 6, n_rows * 4)
-    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=figsize)
-    algorithms = {tup[1] for tup in results.keys()}
-    palette = get_colors("categorical", number=len(algorithms))
-
-    for ax, prob_name in zip(axes.flatten(), problems.keys()):
+    for ax in axes.flatten():
         ax.set_ylabel(y_labels[outcome])
         ax.set_xlabel(x_labels[runtime_measure])
         ax.set_title(prob_name.replace("_", " ").title())
-
-        to_plot = df[df["problem"] == prob_name]
-        sns.lineplot(
-            data=to_plot,
-            x=runtime_measure,
-            y=outcome,
-            hue="algorithm",
-            lw=2.5,
-            alpha=1.0,
-            ax=ax,
-            palette=palette,
-        )
-
         ax.legend(title=None)
-        if distance_measure == "criterion" and not normalize_distance:
-            f_opt = problems[prob_name]["solution"]["value"]
-            ax.axhline(f_opt, label="true solution", lw=2.5)
 
     # make empty plots invisible
     n_empty_plots = len(axes.flatten()) - len(problems)
     for ax in axes.flatten()[-n_empty_plots:]:
         ax.set_visible(False)
-
     fig.tight_layout()
     return fig, axes
 
