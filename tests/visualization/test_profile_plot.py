@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.examples.benchmarking import get_problems
-from estimagic.examples.benchmarking import run_benchmark
+from estimagic.benchmarking.benchmarking import get_benchmark_problems
+from estimagic.benchmarking.benchmarking import run_benchmark
 from estimagic.visualization.profile_plot import _create_solution_times
 from estimagic.visualization.profile_plot import _determine_alpha_grid
 from estimagic.visualization.profile_plot import _find_switch_points
@@ -113,7 +113,7 @@ profile_options = [
 
 @pytest.mark.parametrize("options", profile_options)
 def test_profile_plot_options(options):
-    full_problems = get_problems("more_wild")
+    full_problems = get_benchmark_problems("more_wild")
     stop_after_100 = {
         "stopping_max_criterion_evaluations": 100,
         "stopping_max_iterations": 100,

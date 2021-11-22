@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pytest
-from estimagic.examples.benchmarking import get_problems
-from estimagic.examples.benchmarking import run_benchmark
+from estimagic.benchmarking.benchmarking import get_benchmark_problems
+from estimagic.benchmarking.benchmarking import run_benchmark
 from estimagic.visualization.convergence_plot import convergence_plot
 
 # integration test to make sure non default argument do not throw Errors
@@ -22,7 +22,7 @@ profile_options = [
 
 @pytest.mark.parametrize("options", profile_options)
 def test_convergence_plot_options(options):
-    full_problems = get_problems("more_wild")
+    full_problems = get_benchmark_problems("more_wild")
     stop_after_100 = {
         "stopping_max_criterion_evaluations": 100,
         "stopping_max_iterations": 100,

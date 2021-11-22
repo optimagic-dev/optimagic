@@ -14,14 +14,14 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from estimagic import batch_evaluators
-from estimagic.examples.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
-from estimagic.examples.more_wild import MORE_WILD_PROBLEMS
-from estimagic.examples.noise_distributions import NOISE_DISTRIBUTIONS
+from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
+from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
+from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
 from estimagic.logging.read_log import read_optimization_histories
 from estimagic.optimization.optimize import minimize
 
 
-def get_problems(
+def get_benchmark_problems(
     name,
     additive_noise=False,
     additive_noise_options=None,

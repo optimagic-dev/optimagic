@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from estimagic.examples.process_benchmark_results import create_performance_df
+from estimagic.benchmarking.process_benchmark_results import create_performance_df
 from estimagic.visualization.colors import get_colors
 
 plt.rcParams.update(

@@ -16,7 +16,7 @@ where available, on AMPL implementaions available here:
 from functools import partial
 
 import numpy as np
-from estimagic.examples.more_wild import brown_almost_linear
+from estimagic.benchmarking.more_wild import brown_almost_linear
 
 
 def argtrig(x):

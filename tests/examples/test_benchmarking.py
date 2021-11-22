@@ -2,8 +2,8 @@ from itertools import product
 
 import numpy as np
 import pytest
-from estimagic.examples.benchmarking import get_problems
-from estimagic.examples.benchmarking import run_benchmark
+from estimagic.benchmarking.benchmarking import get_benchmark_problems
+from estimagic.benchmarking.benchmarking import run_benchmark
 
 PARMETRIZATION = []
 for name in ["more_wild", "cartis_roberts"]:
@@ -14,7 +14,7 @@ for name in ["more_wild", "cartis_roberts"]:
 @pytest.mark.parametrize("name, additive_noise, multiplicative_noise", PARMETRIZATION)
 def test_get_problems(name, additive_noise, multiplicative_noise):
     is_noisy = any((additive_noise, multiplicative_noise))
-    problems = get_problems(
+    problems = get_benchmark_problems(
         name=name,
         additive_noise=additive_noise,
         multiplicative_noise=multiplicative_noise,
@@ -35,7 +35,7 @@ def test_get_problems(name, additive_noise, multiplicative_noise):
 
 
 def test_run_benchmark_dict_options(tmpdir):
-    all_problems = get_problems("more_wild")
+    all_problems = get_benchmark_problems("more_wild")
     first_two_names = list(all_problems)[:2]
     first_two = {name: all_problems[name] for name in first_two_names}
 
@@ -66,7 +66,7 @@ def test_run_benchmark_dict_options(tmpdir):
 
 
 def test_run_benchmark_list_options(tmpdir):
-    all_problems = get_problems("example")
+    all_problems = get_benchmark_problems("example")
     first_two_names = list(all_problems)[:2]
     first_two = {name: all_problems[name] for name in first_two_names}
 
