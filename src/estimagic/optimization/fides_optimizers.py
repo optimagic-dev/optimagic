@@ -47,7 +47,7 @@ def fides(
     if not IS_FIDES_INSTALLED:
         raise NotImplementedError(
             "The fides package is not installed. You can install it with "
-            "`pip install fides>=0.6.3`."
+            "`pip install fides>=0.7.1`."
         )
 
     fides_options = {
