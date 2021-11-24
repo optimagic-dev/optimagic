@@ -111,7 +111,7 @@ def test_latin_hypercube_property():
     index = np.arange(n_points)
 
     for j in range(n_dim):
-        aaae(index, np.sort(sample[:, j]))
+        aaae(index, np.sort(sample[0][:, j]))
 
 
 def test_get_empty_bin_info():
