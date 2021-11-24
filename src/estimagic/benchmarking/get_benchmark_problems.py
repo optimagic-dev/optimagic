@@ -105,7 +105,7 @@ def _get_raw_problems(name):
             "freudenstein_roth_good_start",
             "bard_good_start",
             "box_3d",
-            "jenrich_sampson",
+            "jennrich_sampson",
             "brown_dennis_good_start",
             "chebyquad_6",
             "bdqrtc_8",
