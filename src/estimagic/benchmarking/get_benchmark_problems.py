@@ -108,7 +108,7 @@ def _get_raw_problems(name):
             "jennrich_sampson",
             "brown_dennis_good_start",
             "chebyquad_6",
-            "bdqrtc_8",
+            "bdqrtic_8",
             "mancino_5_good_start",
         }
         raw_problems = {k: v for k, v in MORE_WILD_PROBLEMS.items() if k in subset}
