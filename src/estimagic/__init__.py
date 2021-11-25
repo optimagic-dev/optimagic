@@ -6,6 +6,7 @@ from estimagic.estimation.estimate_ml import estimate_ml
 from estimagic.estimation.estimate_msm import estimate_msm
 from estimagic.estimation.msm_weighting import get_moments_cov
 from estimagic.inference.bootstrap import bootstrap
+from estimagic.inference.bootstrap import bootstrap_from_outcomes
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from estimagic.visualization.convergence_plot import convergence_plot
@@ -28,6 +29,7 @@ __all__ = [
     "utilities",
     "first_derivative",
     "bootstrap",
+    "bootstrap_from_outcomes",
     "estimate_msm",
     "estimate_ml",
     "get_moments_cov",
