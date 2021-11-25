@@ -144,6 +144,7 @@ def check_only_allowed_subset_provided(subset, allowed, name):
         ValueError
 
     """
+    allowed = set(allowed)
     if subset is not None:
         missing = [entry for entry in subset if entry not in allowed]
         if missing:
