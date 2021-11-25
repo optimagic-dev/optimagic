@@ -9,7 +9,10 @@ from estimagic.inference.bootstrap import bootstrap
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from estimagic.visualization.convergence_plot import convergence_plot
+from estimagic.visualization.derivative_plot import derivative_plot
+from estimagic.visualization.lollipop_plot import lollipop_plot
 from estimagic.visualization.profile_plot import profile_plot
+from estimagic.visualization.univariate_effects import plot_univariate_effects
 
 try:
     from ._version import version as __version__
@@ -32,5 +35,8 @@ __all__ = [
     "get_benchmark_problems",
     "profile_plot",
     "convergence_plot",
+    "lollipop_plot",
+    "derivative_plot",
+    "plot_univariate_effects",
     "__version__",
 ]
