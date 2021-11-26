@@ -6,6 +6,10 @@ DOCS_DIR = Path(__file__).parent.parent / "docs"
 
 EXAMPLE_DIR = Path(__file__).parent / "examples"
 
+TEST_FIXTURES_POUNDERS = (
+    Path(__file__).parent.parent.parent / "tests/optimization/pounders/fixtures"
+)
+
 
 DEFAULT_N_CORES = 1
 
