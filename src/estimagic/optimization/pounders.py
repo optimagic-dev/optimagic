@@ -253,8 +253,8 @@ def internal_solve_pounders(
 
         # Evaluate at a model improving point if necessary
         # Note: valid is True in first iteration
-        qmat = np.zeros((n, n))
         if valid is False:
+            qmat = np.zeros((n, n))
             q_is_I = 1
             mpoints = 0
             qmat, model_indices, mpoints, q_is_I = find_nearby_points(
@@ -302,6 +302,7 @@ def internal_solve_pounders(
             delta = max(delta * gamma0, delta_min)
 
         # Compute the next interpolation set
+        qmat = np.zeros((n, n))
         q_is_I = 1
         mpoints = 0
         qmat, model_indices, mpoints, q_is_I = find_nearby_points(

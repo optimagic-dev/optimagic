@@ -189,7 +189,6 @@ def find_nearby_points(
 
             # Add this index to the model
             if proj >= theta1:
-                qmat = np.zeros((n, n))
                 model_indices[mpoints] = i
                 mpoints += 1
                 qmat[:, mpoints - 1] = xk
