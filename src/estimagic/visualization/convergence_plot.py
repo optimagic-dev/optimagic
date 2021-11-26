@@ -4,6 +4,7 @@ import seaborn as sns
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
+from estimagic.utilities import check_only_allowed_subset_provided
 from estimagic.visualization.colors import get_colors
 
 plt.rcParams.update(
@@ -78,7 +79,7 @@ def convergence_plot(
             convergence is fulfilled.
 
     Returns:
-        fig, axes
+        fig
 
     """
     df, _ = create_convergence_histories(
@@ -88,6 +89,15 @@ def convergence_plot(
         x_precision=x_precision,
         y_precision=y_precision,
     )
+
+    # handle string provision for single problems / algorithms
+    if isinstance(problem_subset, str):
+        problem_subset = [problem_subset]
+    if isinstance(algorithm_subset, str):
+        algorithm_subset = [algorithm_subset]
+
+    check_only_allowed_subset_provided(problem_subset, df["problem"], "problem")
+    check_only_allowed_subset_provided(algorithm_subset, df["algorithm"], "algorithm")
 
     if problem_subset is not None:
         df = df[df["problem"].isin(problem_subset)]
@@ -106,7 +116,11 @@ def convergence_plot(
     n_rows = int(np.ceil(len(remaining_problems) / n_cols))
     figsize = (n_cols * 6, n_rows * 4)
     fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=figsize)
-    algorithms = {tup[1] for tup in results.keys()}
+
+    if algorithm_subset is None:
+        algorithms = {tup[1] for tup in results.keys()}
+    else:
+        algorithms = algorithm_subset
     palette = get_colors("categorical", number=len(algorithms))
 
     for ax, prob_name in zip(axes.flatten(), remaining_problems):
@@ -157,4 +171,4 @@ def convergence_plot(
         for ax in axes.flatten()[-n_empty_plots:]:
             ax.set_visible(False)
     fig.tight_layout()
-    return fig, axes
+    return fig

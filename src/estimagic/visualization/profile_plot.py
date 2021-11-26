@@ -73,7 +73,7 @@ def profile_plot(
             convergence is fulfilled.
 
     Returns:
-        fig, ax
+        fig
 
     """
     if stopping_criterion is None:
@@ -150,7 +150,7 @@ def profile_plot(
     ax.legend(title=None)
     fig.tight_layout()
 
-    return fig, ax
+    return fig
 
 
 def _create_solution_times(df, runtime_measure, converged_info):

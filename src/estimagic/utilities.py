@@ -105,7 +105,7 @@ def dimension_to_number_of_triangular_elements(dim):
     return int(dim * (dim + 1) / 2)
 
 
-def propose_algorithms(requested_algo, possibilities, number=3):
+def propose_alternatives(requested_algo, possibilities, number=3):
     """Propose a a number of algorithms based on similarity to the requested algorithm.
 
     Args:
@@ -119,9 +119,9 @@ def propose_algorithms(requested_algo, possibilities, number=3):
 
     Example:
         >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
-        >>> propose_algorithms("scipy_L-BFGS-B", possibilities, number=1)
+        >>> propose_alternatives("scipy_L-BFGS-B", possibilities, number=1)
         ['scipy_lbfgsb']
-        >>> propose_algorithms("L-BFGS-B", possibilities, number=2)
+        >>> propose_alternatives("L-BFGS-B", possibilities, number=2)
         ['scipy_lbfgsb', 'nlopt_lbfgsb']
 
     """
@@ -129,6 +129,30 @@ def propose_algorithms(requested_algo, possibilities, number=3):
     proposals = [proposal[0] for proposal in proposals_w_probs]
 
     return proposals
+
+
+def check_only_allowed_subset_provided(subset, allowed, name):
+    """Check if all entries of a proposed subset are in a Series.
+
+    Args:
+        subset (iterable or None): If None, no checks are performed. Else a ValueError
+            is raised listing all entries that are not in the provided Series.
+        allowed (iterable): allowed entries.
+        name (str): name of the provided entries to use for the ValueError.
+
+    Raises:
+        ValueError
+
+    """
+    allowed = set(allowed)
+    if subset is not None:
+        missing = [entry for entry in subset if entry not in allowed]
+        if missing:
+            missing_msg = ""
+            for entry in missing:
+                proposed = propose_alternatives(entry, allowed)
+                missing_msg += f"Invalid {name}: {entry}. Did you mean {proposed}?\n"
+            raise ValueError(missing_msg)
 
 
 def robust_cholesky(matrix, threshold=None, return_info=False):

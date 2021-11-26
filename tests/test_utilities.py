@@ -9,6 +9,7 @@ from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.utilities import calculate_trustregion_initial_radius
+from estimagic.utilities import check_only_allowed_subset_provided
 from estimagic.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.utilities import cov_matrix_to_params
 from estimagic.utilities import cov_matrix_to_sdcorr_params
@@ -185,3 +186,19 @@ def test_available_algorithms():
     assert ("ipopt" in present_algo_names) is IS_CYIPOPT_INSTALLED
     assert ("fides" in present_algo_names) is IS_FIDES_INSTALLED
     assert "get_scipy_bounds" not in present_algo_names
+
+
+def test_check_only_allowed_subset_provided_none():
+    allowed = ["a", "b", "c"]
+    check_only_allowed_subset_provided(None, allowed, "name")
+
+
+def test_check_only_allowed_subset_provided_all_included():
+    allowed = ["a", "b", "c"]
+    check_only_allowed_subset_provided(["a", "b"], allowed, "name")
+
+
+def test_check_only_allowed_subset_provided_missing():
+    allowed = ["a", "b", "c"]
+    with pytest.raises(ValueError):
+        check_only_allowed_subset_provided(["d"], allowed, "name")
