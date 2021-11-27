@@ -114,7 +114,8 @@ def nag_dfols(
     algo_info = {
         "name": "nag_dfols",
         "primary_criterion_entry": "root_contributions",
-        "parallelizes": False,
+        # does not really parallelize but we want to disable caching for noise averaging
+        "parallelizes": True,
         "needs_scaling": False,
     }
 
@@ -306,7 +307,8 @@ def nag_pybobyqa(
     algo_info = {
         "name": "nag_pybobyqa",
         "primary_criterion_entry": "value",
-        "parallelizes": False,
+        # does not really parallelize but we want to disable caching for noise averaging
+        "parallelizes": True,
         "needs_scaling": False,
     }
     criterion = partial(
@@ -455,6 +457,8 @@ def _create_nag_advanced_options(
         default_options=CONVERGENCE_SLOW_PROGRESS,
     )
 
+    is_noisy = bool(noise_additive_level or noise_multiplicative_level)
+
     advanced_options = {
         "general.rounding_error_constant": interpolation_rounding_error,
         "general.safety_step_thresh": threshold_for_safety_step,
@@ -480,8 +484,10 @@ def _create_nag_advanced_options(
         "slow.history_for_slow": convergence_slow_progress["comparison_period"],
         "noise.multiplicative_noise_level": noise_multiplicative_level,
         "noise.additive_noise_level": noise_additive_level,
-        "noise.quit_on_noise_level": convergence_noise_corrected_criterion_tolerance > 0
-        and (noise_multiplicative_level or noise_additive_level),
+        "noise.quit_on_noise_level": (
+            convergence_noise_corrected_criterion_tolerance > 0
+        )
+        and is_noisy,
         "noise.scale_factor_for_quit": convergence_noise_corrected_criterion_tolerance,
         "interpolation.precondition": trustregion_precondition_interpolation,
         "restarts.use_restarts": trustregion_reset_options["use_resets"],

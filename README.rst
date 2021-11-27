@@ -28,10 +28,9 @@ estimagic
 Introduction
 ============
 
-estimagic is a Python package that provides high-quality and user-friendly tools
-to fit large scale empirical models to data and make inferences about the estimated
-model parameters. It is especially suited to solve difficult constrained optimization
-problems.
+estimagic is a Python package to fit large scale empirical models to data and make
+inferences about the estimated model parameters. It is especially suited to solve
+difficult constrained optimization problems.
 
 estimagic provides several advantages over similar packages, including a unified
 interface that supports a large number of local and global optimization algorithms
@@ -45,15 +44,15 @@ and statistical inference.
 Optimization
 ------------
 
-- estimagic wraps all algorithms from *scipy.optimize* and many more become
-  available when installing optional dependencies.
-- estimagic can automatically implement many types of constraints via
-  reparametrization, with any optmizer that supports simple box constraints.
+- estimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more.
+- estimagic implements constraints efficiently via reparametrization, so you can solve
+  constrained problems with any optimzer that supports bounds.
 - estimagic encourages name-based parameters handling. Parameters are specified
-  as pandas DataFrames that can have any kind of single or MultiIndex. This is
-  especially useful when specifying constraints.
-- The complete history of parameters and function evaluations are saved in a
-  database for maximum reproducibility and displayed in real time via an
+  as pandas DataFrames with any kind of single or MultiIndex.
+- The complete history of parameters and function evaluations can be saved in a
+  database for maximum reproducibility.
+- Painless and efficient multistart optimization.
+- The progress of the optimization is displayed in real time via an
   interactive dashboard.
 
 
@@ -92,11 +91,43 @@ terminal:
 .. code-block:: bash
 
     $ conda config --add channels conda-forge
-    $ conda install -c opensourceeconomics estimagic
+    $ conda install estimagic
 
 The first line adds conda-forge to your conda channels. This is necessary for conda to
 find all dependencies of estimagic. The second line installs estimagic and its
 dependencies.
+
+
+Installing optional dependencies
+================================
+
+Only ``scipy`` is a mandatory dependency of estimagic. Other algorithms
+become available if you install more packages. We make this optional because most of the
+time you will use at least one additional package, but only very rarely will you need all
+of them.
+
+
+For an overview of all optimizers and the packages you need to install to enable them
+see :ref:`list_of_algorithms`.
+
+
+To enable all algorithms at once, do the following:
+
+``conda install nlopt``
+
+``pip install Py-BOBYQA``
+
+``pip install DFO-LS``
+
+``conda install petsc4py`` (Not available on Windows)
+
+``conda install cyipopt``
+
+``conda install pygmo``
+
+``pip install fides>=0.6.3`` (Make sure you have at least 0.6.3)
+
+
 
 Documentation
 =============
@@ -116,9 +147,3 @@ If you use Estimagic for your research, please do not forget to cite it.
       Year   = {2021},
       Url    = {https://github.com/OpenSourceEconomics/estimagic}
     }
-
-
-Warning
-=======
-
-Estimagic is in beta status and the API might change.
