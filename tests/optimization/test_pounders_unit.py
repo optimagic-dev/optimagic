@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import TEST_FIXTURES_POUNDERS
+from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.pounders_auxiliary import find_nearby_points
 from estimagic.optimization.pounders_auxiliary import improve_model
 from numpy.testing import assert_array_almost_equal as aaae
@@ -11,7 +11,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 @pytest.fixture
 def criterion():
-    data = pd.read_csv(TEST_FIXTURES_POUNDERS / "example_data.csv")
+    data = pd.read_csv(TEST_FIXTURES_DIR / "example_data.csv")
     endog = np.asarray(data["y"])
     exog = np.asarray(data["t"])
 
@@ -25,13 +25,13 @@ def criterion():
 @pytest.mark.parametrize(
     "pickle_dict",
     [
-        TEST_FIXTURES_POUNDERS / "find_nearby_points_qmat_zero_i.pkl",
-        TEST_FIXTURES_POUNDERS / "find_nearby_points_qmat_zero_ii.pkl",
-        TEST_FIXTURES_POUNDERS / "find_nearby_points_qmat_zero_iii.pkl",
-        TEST_FIXTURES_POUNDERS / "find_nearby_points_qmat_zero_iv.pkl",
-        TEST_FIXTURES_POUNDERS / "find_nearby_points_qmat_nonzero_i.pkl",
-        TEST_FIXTURES_POUNDERS / "find_nearby_points_qmat_nonzero_ii.pkl",
-        TEST_FIXTURES_POUNDERS / "find_nearby_points_qmat_nonzero_iii.pkl",
+        TEST_FIXTURES_DIR / "find_nearby_points_qmat_zero_i.pkl",
+        TEST_FIXTURES_DIR / "find_nearby_points_qmat_zero_ii.pkl",
+        TEST_FIXTURES_DIR / "find_nearby_points_qmat_zero_iii.pkl",
+        TEST_FIXTURES_DIR / "find_nearby_points_qmat_zero_iv.pkl",
+        TEST_FIXTURES_DIR / "find_nearby_points_qmat_nonzero_i.pkl",
+        TEST_FIXTURES_DIR / "find_nearby_points_qmat_nonzero_ii.pkl",
+        TEST_FIXTURES_DIR / "find_nearby_points_qmat_nonzero_iii.pkl",
     ],
 )
 def test_find_nearby_points(pickle_dict):
@@ -60,8 +60,8 @@ def test_find_nearby_points(pickle_dict):
 @pytest.mark.parametrize(
     "pickle_dict",
     [
-        TEST_FIXTURES_POUNDERS / "improve_model_i.pkl",
-        TEST_FIXTURES_POUNDERS / "improve_model_ii.pkl",
+        TEST_FIXTURES_DIR / "improve_model_i.pkl",
+        TEST_FIXTURES_DIR / "improve_model_ii.pkl",
     ],
 )
 def test_improve_model(pickle_dict, criterion):

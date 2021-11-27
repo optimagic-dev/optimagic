@@ -3,7 +3,7 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.pounders_auxiliary import add_more_points
-from estimagic.optimization.pounders_auxiliary import calc_res
+from estimagic.optimization.pounders_auxiliary import calc_jac_and_hess_res
 from estimagic.optimization.pounders_auxiliary import compute_fnorm
 from estimagic.optimization.pounders_auxiliary import find_nearby_points
 from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
@@ -399,7 +399,7 @@ def internal_solve_pounders(
 
         fmin = fhist[minindex]
         fnorm_min = fnorm[minindex]
-        jac_res, hess_res = calc_res(fdiff=fdiff, fmin=fmin, hess=hess)
+        jac_res, hess_res = calc_jac_and_hess_res(fdiff=fdiff, fmin=fmin, hess=hess)
 
         gradient = jac_res
         gnorm = np.linalg.norm(gradient)

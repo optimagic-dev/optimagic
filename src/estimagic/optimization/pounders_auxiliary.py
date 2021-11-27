@@ -16,7 +16,7 @@ def compute_fnorm(criterion_value):
     return np.dot(criterion_value, criterion_value)
 
 
-def calc_res(fdiff, fmin, hess):
+def calc_jac_and_hess_res(fdiff, fmin, hess):
     """Calculate residuals of the Jacobian and Hessian.
     Args:
         fdiff (np.ndarray): Difference between the criterion function values and *fmin*.
