@@ -18,12 +18,14 @@ def compute_fnorm(criterion_value):
 
 def calc_jac_and_hess_res(fdiff, fmin, hess):
     """Calculate residuals of the Jacobian and Hessian.
+
     Args:
         fdiff (np.ndarray): Difference between the criterion function values and *fmin*.
             Shape (*n*, *nobs*)
         fmin (np.ndarray): Values of criterion function associated with
             parameter vector x that yields the lowest criterion function norm.
         hess (np.ndarray): Hessian matrix. Shape (*nobs*, *n*, *n*).
+
     Returns:
         Tuple:
         - jac_res (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
@@ -421,6 +423,26 @@ def add_more_points(
     return L, Z, N, M, mpoints
 
 
+def get_residuals(
+    xk, hess, fhist, fmin, fdiff, model_indices, mpoints, nobs, maxinterp
+):
+    """Calculate residuals."""
+    res = np.zeros((maxinterp, nobs))
+
+    for j in range(nobs):
+        xk_hess = np.dot(xk, hess[j, :, :])
+
+        for i in range(mpoints):
+            res[i, j] = (
+                -fmin[j]
+                - np.dot(fdiff[:, j], xk[i, :])
+                - 0.5 * np.dot(xk_hess[i, :], xk[i, :])
+                + fhist[model_indices[i], j]
+            )
+
+    return res
+
+
 def get_params_quadratic_model(
     L,
     Z,
@@ -486,6 +508,14 @@ def get_params_quadratic_model(
                 num += 1
 
     return jac_quadratic, hess_quadratic
+
+
+def update_fdiff_and_hess(fdiff, hess, jac_quadratic, hess_quadratic, delta, delta_old):
+    """Update fdiff and Hessian."""
+    fdiff_new = (delta / delta_old) * fdiff + jac_quadratic.T
+    hess_new = (delta / delta_old) ** 2 * hess + hess_quadratic
+
+    return fdiff_new, hess_new
 
 
 def _evaluate_obj_and_grad(

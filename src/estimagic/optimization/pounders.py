@@ -7,8 +7,10 @@ from estimagic.optimization.pounders_auxiliary import calc_jac_and_hess_res
 from estimagic.optimization.pounders_auxiliary import compute_fnorm
 from estimagic.optimization.pounders_auxiliary import find_nearby_points
 from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
+from estimagic.optimization.pounders_auxiliary import get_residuals
 from estimagic.optimization.pounders_auxiliary import improve_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
+from estimagic.optimization.pounders_auxiliary import update_fdiff_and_hess
 
 
 def pounders(
@@ -112,6 +114,7 @@ def internal_solve_pounders(
     upper_bounds,
 ):
     """Minimize criterion function using POUNDERS.
+
     Args:
         x0 (np.ndarray): Initial guess of the parameter vector. Starting points.
         nobs (int): Number of observations/evaluation points.
@@ -378,24 +381,31 @@ def internal_solve_pounders(
         )
 
         xk = (xhist[model_indices[:mpoints]] - xmin) / delta_old
-        res = np.zeros((maxinterp, nobs))
 
-        for j in range(nobs):
-            xk_hess = np.dot(xk, hess[j, :, :])
-
-            for i in range(mpoints):
-                res[i, j] = (
-                    -fmin[j]
-                    - np.dot(fdiff[:, j], xk[i, :])
-                    - 0.5 * np.dot(xk_hess[i, :], xk[i, :])
-                    + fhist[model_indices[i], j]
-                )
+        res = get_residuals(
+            xk=xk,
+            hess=hess,
+            fhist=fhist,
+            fmin=fmin,
+            fdiff=fdiff,
+            model_indices=model_indices,
+            mpoints=mpoints,
+            nobs=nobs,
+            maxinterp=maxinterp,
+        )
 
         jac_quadratic, hess_quadratic = get_params_quadratic_model(
             L=L, Z=Z, N=N, M=M, res=res, mpoints=mpoints, n=n, nobs=nobs
         )
-        fdiff = jac_quadratic.T + (delta / delta_old) * fdiff
-        hess = hess_quadratic + (delta / delta_old) ** 2 * hess
+
+        fdiff, hess = update_fdiff_and_hess(
+            fdiff=fdiff,
+            hess=hess,
+            jac_quadratic=jac_quadratic,
+            hess_quadratic=hess_quadratic,
+            delta=delta,
+            delta_old=delta_old,
+        )
 
         fmin = fhist[minindex]
         fnorm_min = fnorm[minindex]
