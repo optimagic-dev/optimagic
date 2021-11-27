@@ -66,14 +66,12 @@ Bootstrap
     .. currentmodule:: estimagic.inference.bootstrap
 
     .. autofunction:: bootstrap
-        :noindex:
 
 .. dropdown:: bootstrap_from_outcomes
 
     .. currentmodule:: estimagic.inference.bootstrap
 
     .. autofunction:: bootstrap_from_outcomes
-        :noindex:
 
 
 
