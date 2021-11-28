@@ -11,7 +11,7 @@ a terminal or shell:
 
 ``$ conda config --add channels conda-forge``
 
-``$ conda install -c opensourceeconomics estimagic``
+``$ conda install estimagic``
 
 The first line adds conda-forge to your conda channels. This is necessary for
 conda to find all dependencies of estimagic. The second line installs estimagic

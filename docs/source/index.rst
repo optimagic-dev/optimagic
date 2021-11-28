@@ -2,10 +2,9 @@
 estimagic
 =========
 
-estimagic is a Python package that provides high-quality and user-friendly tools
-to fit large scale empirical models to data and make inferences about the estimated
-model parameters. It is especially suited to solve difficult constrained optimization
-problems.
+estimagic is a Python package to fit large scale empirical models to data and make
+inferences about the estimated model parameters. It is especially suited to solve
+difficult constrained optimization problems.
 
 estimagic provides several advantages over similar packages, including a unified
 interface that supports a large number of local and global optimization algorithms
