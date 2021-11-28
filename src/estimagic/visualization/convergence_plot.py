@@ -4,7 +4,7 @@ import seaborn as sns
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
-from estimagic.utilities import check_only_allowed_subset_provided
+from estimagic.utilities import propose_alternatives
 from estimagic.visualization.colors import get_colors
 
 plt.rcParams.update(
@@ -96,8 +96,8 @@ def convergence_plot(
     if isinstance(algorithm_subset, str):
         algorithm_subset = [algorithm_subset]
 
-    check_only_allowed_subset_provided(problem_subset, df["problem"], "problem")
-    check_only_allowed_subset_provided(algorithm_subset, df["algorithm"], "algorithm")
+    _check_only_allowed_subset_provided(problem_subset, df["problem"], "problem")
+    _check_only_allowed_subset_provided(algorithm_subset, df["algorithm"], "algorithm")
 
     if problem_subset is not None:
         df = df[df["problem"].isin(problem_subset)]
@@ -172,3 +172,27 @@ def convergence_plot(
             ax.set_visible(False)
     fig.tight_layout()
     return fig
+
+
+def _check_only_allowed_subset_provided(subset, allowed, name):
+    """Check if all entries of a proposed subset are in a Series.
+
+    Args:
+        subset (iterable or None): If None, no checks are performed. Else a ValueError
+            is raised listing all entries that are not in the provided Series.
+        allowed (iterable): allowed entries.
+        name (str): name of the provided entries to use for the ValueError.
+
+    Raises:
+        ValueError
+
+    """
+    allowed = set(allowed)
+    if subset is not None:
+        missing = [entry for entry in subset if entry not in allowed]
+        if missing:
+            missing_msg = ""
+            for entry in missing:
+                proposed = propose_alternatives(entry, allowed)
+                missing_msg += f"Invalid {name}: {entry}. Did you mean {proposed}?\n"
+            raise ValueError(missing_msg)

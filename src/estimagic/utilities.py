@@ -131,30 +131,6 @@ def propose_alternatives(requested_algo, possibilities, number=3):
     return proposals
 
 
-def check_only_allowed_subset_provided(subset, allowed, name):
-    """Check if all entries of a proposed subset are in a Series.
-
-    Args:
-        subset (iterable or None): If None, no checks are performed. Else a ValueError
-            is raised listing all entries that are not in the provided Series.
-        allowed (iterable): allowed entries.
-        name (str): name of the provided entries to use for the ValueError.
-
-    Raises:
-        ValueError
-
-    """
-    allowed = set(allowed)
-    if subset is not None:
-        missing = [entry for entry in subset if entry not in allowed]
-        if missing:
-            missing_msg = ""
-            for entry in missing:
-                proposed = propose_alternatives(entry, allowed)
-                missing_msg += f"Invalid {name}: {entry}. Did you mean {proposed}?\n"
-            raise ValueError(missing_msg)
-
-
 def robust_cholesky(matrix, threshold=None, return_info=False):
     """Lower triangular cholesky factor of *matrix*.
 

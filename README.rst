@@ -125,7 +125,7 @@ To enable all algorithms at once, do the following:
 
 ``conda install pygmo``
 
-``pip install fides>=0.6.3`` (Make sure you have at least 0.6.3)
+``pip install fides>=0.7.1`` (Make sure you have at least 0.7.1)
 
 
 

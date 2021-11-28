@@ -1,7 +1,7 @@
 .. _utilities:
 
-Utilities
-----------
+Utility functions
+------------------
 
 
 .. automodule:: estimagic.utilities

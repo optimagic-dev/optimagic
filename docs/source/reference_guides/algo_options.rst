@@ -1,8 +1,8 @@
 
 .. _algo_options:
 
-Algorithm Options
------------------
+The default algorithm options
+------------------------------
 
 .. automodule:: estimagic.optimization.algo_options
     :members:
