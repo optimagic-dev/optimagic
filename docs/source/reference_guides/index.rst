@@ -2,6 +2,8 @@ API Reference
 =============
 
 
+.. _estimation:
+
 Estimation
 -----------
 
@@ -40,6 +42,9 @@ Estimation
     .. autofunction:: plot_univariate_effects
 
 
+
+.. _maximize_and_minimize:
+
 Optimization
 -------------
 
@@ -58,6 +63,8 @@ Optimization
 
 
 
+.. _bootstrap:
+
 Bootstrap
 ---------
 
@@ -75,6 +82,9 @@ Bootstrap
 
 
 
+
+.. _first_derivative:
+
 Derivatives
 -----------
 
@@ -91,6 +101,9 @@ Derivatives
     .. autofunction:: derivative_plot
 
 
+
+
+.. _benchmarking:
 
 Benchmarks
 ----------
@@ -120,13 +133,12 @@ Benchmarks
     .. autofunction:: convergence_plot
 
 
-
-Other
+Other:
 ------
 
-.. _utilities:
+.. toctree::
+    :maxdepth: 1
 
-.. dropdown:: utilities
-
-    .. automodule:: estimagic.utilities
-        :members:
+    utilities
+    algo_options
+    batch_evaluators
