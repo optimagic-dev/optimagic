@@ -10,6 +10,7 @@ from estimagic.optimization.pounders_auxiliary import find_nearby_points
 from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
 from estimagic.optimization.pounders_auxiliary import get_residuals
 from estimagic.optimization.pounders_auxiliary import improve_model
+from estimagic.optimization.pounders_auxiliary import update_center
 from estimagic.optimization.pounders_auxiliary import update_fdiff_and_hess
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -42,6 +43,11 @@ def dict_find_nearby_points(request):
     return pd.read_pickle(TEST_FIXTURES_DIR / f"find_nearby_points_{request.param}.pkl")
 
 
+@pytest.fixture
+def dict_update_center():
+    return pd.read_pickle(TEST_FIXTURES_DIR / "update_center.pkl")
+
+
 @pytest.fixture(params=["i", "ii"])
 def dict_improve_model(request):
     return pd.read_pickle(TEST_FIXTURES_DIR / f"improve_model_{request.param}.pkl")
@@ -70,6 +76,28 @@ def dict_update_fdiff_and_hess():
 @pytest.fixture
 def dict_calc_jac_and_hess_res():
     return pd.read_pickle(TEST_FIXTURES_DIR / "calc_jac_and_hess_res.pkl")
+
+
+def test_update_center(dict_update_center):
+    (xmin_out, fmin_out, fdiff_out, _, _, jac_res_out, minindex_out,) = update_center(
+        xplus=dict_update_center["xplus"],
+        xmin=dict_update_center["xmin"],
+        xhist=dict_update_center["xhist"],
+        delta=dict_update_center["delta"],
+        fmin=dict_update_center["fmin"],
+        fdiff=dict_update_center["fdiff"],
+        fnorm=dict_update_center["fnorm"],
+        fnorm_min=dict_update_center["fnorm_min"],
+        hess=dict_update_center["hess"],
+        jac_res=dict_update_center["jac_res"],
+        hess_res=dict_update_center["hess_res"],
+        nhist=dict_update_center["nhist"],
+    )
+    aaae(xmin_out, dict_update_center["xmin_expected"])
+    aaae(fmin_out, dict_update_center["fmin_expected"])
+    aaae(fdiff_out, dict_update_center["fdiff_expected"])
+    aaae(jac_res_out, dict_update_center["jac_res_expected"], decimal=5)
+    assert np.allclose(minindex_out, dict_update_center["minindex_expected"])
 
 
 def test_find_nearby_points(dict_find_nearby_points):

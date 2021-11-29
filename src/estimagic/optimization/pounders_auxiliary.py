@@ -16,6 +16,39 @@ def compute_fnorm(criterion_value):
     return np.dot(criterion_value, criterion_value)
 
 
+def update_center(
+    xplus,
+    xmin,
+    xhist,
+    delta,
+    fmin,
+    fnorm,
+    fnorm_min,
+    fdiff,
+    hess,
+    jac_res,
+    hess_res,
+    nhist,
+):
+    """Update center."""
+    # Update model to reflect new base point
+    x1 = (xplus - xmin) / delta
+
+    fmin += np.dot(x1, fdiff) + 0.5 * np.dot(np.dot(x1, hess), x1)
+    fdiff += np.dot(hess, x1).T
+
+    fnorm_min += np.dot(x1, jac_res) + 0.5 * np.dot(hess_res, x1)
+    jac_res += np.dot(hess_res, x1)
+
+    minindex = nhist - 1
+    minnorm = fnorm[minindex]
+
+    # Change current center
+    xmin = xhist[minindex, :]
+
+    return xmin, fmin, fdiff, fnorm_min, minnorm, jac_res, minindex
+
+
 def calc_jac_and_hess_res(fdiff, fmin, hess):
     """Calculate residuals of the Jacobian and Hessian.
 
@@ -262,7 +295,7 @@ def improve_model(
     """
     minindex_internal = 0
     minvalue = np.inf
-    work = np.zeros(3)
+    work = np.zeros(3, dtype=np.float64)
 
     qtmp, _ = qr_multiply(qmat, np.eye(3), mode="right")
 
@@ -297,7 +330,7 @@ def improve_model(
                 upper_bounds=upper_bounds,
             )
 
-    if addallpoints == 0:
+    if addallpoints != 1:
         xhist, fhist, fnorm, model_indices, mpoints, nhist = _add_point(
             xhist=xhist,
             fhist=fhist,
@@ -355,8 +388,8 @@ def add_more_points(
         - M (np.ndarray): M matrix. Shape(*maxinterp*, *n* (*n* + 1) / 2).
         - mpoints (int): Current number of model points.
     """
-    M = np.zeros((maxinterp, n + 1))
-    N = np.zeros((maxinterp, int(n * (n + 1) / 2)))
+    M = np.zeros((maxinterp, n + 1), dtype=np.float64)
+    N = np.zeros((maxinterp, int(n * (n + 1) / 2)), dtype=np.float64)
     M[:, 0] = 1
 
     for i in range(n + 1):
@@ -427,7 +460,7 @@ def get_residuals(
     xk, hess, fhist, fmin, fdiff, model_indices, mpoints, nobs, maxinterp
 ):
     """Calculate residuals."""
-    res = np.zeros((maxinterp, nobs))
+    res = np.zeros((maxinterp, nobs), dtype=np.float64)
 
     for j in range(nobs):
         xk_hess = np.dot(xk, hess[j, :, :])
@@ -476,8 +509,8 @@ def get_params_quadratic_model(
         - hess_quadratic (np.ndarray): Hessian of the quadratic model.
             Shape (*nobs*, *n*, *n*).
     """
-    jac_quadratic = np.zeros((nobs, n))
-    hess_quadratic = np.zeros((nobs, n, n))
+    jac_quadratic = np.zeros((nobs, n), dtype=np.float64)
+    hess_quadratic = np.zeros((nobs, n, n), dtype=np.float64)
 
     if mpoints == (n + 1):
         omega = np.zeros(n)
@@ -551,7 +584,7 @@ def _evaluate_phi(x):
         (np.ndarray): Phi vector. Shape (*n* (*n* + 1) / 2,)
     """
     n = x.shape[0]
-    phi = np.zeros(int(n * (n + 1) / 2))
+    phi = np.zeros(int(n * (n + 1) / 2), dtype=np.float64)
 
     j = 0
     for i in range(n):
@@ -623,7 +656,7 @@ def _add_point(
     """
     # Create new vector in history: X[newidx] = X[index] + delta * X[index]
     xhist[nhist] = qtmp[:, index]
-    xhist[nhist, :] = delta * xhist[nhist, :] + xhist[minindex]
+    xhist[nhist] = delta * xhist[nhist] + xhist[minindex]
 
     # Project into feasible region
     if lower_bounds is not None and upper_bounds is not None:
@@ -632,9 +665,8 @@ def _add_point(
         )
 
     # Compute value of new vector
-    res = criterion(xhist[nhist])
-    fsum = compute_fnorm(res)
-    fhist[nhist, :] = res
+    fhist[nhist] = criterion(xhist[nhist])
+    fsum = compute_fnorm(fhist[nhist])
     fnorm[nhist] = fsum
 
     # Add new vector to the model
