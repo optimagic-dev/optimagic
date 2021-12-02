@@ -16,7 +16,7 @@ where available, on AMPL implementaions available here:
 from functools import partial
 
 import numpy as np
-from estimagic.benchmarking.more_wild import brown_almost_linear
+from estimagic.benchmarking.more_wild import brown_almost_linear, linear_full_rank, linear_rank_one
 from estimagic.benchmarking.more_wild import watson
 
 
@@ -493,6 +493,13 @@ def yatpsq_2(x, dim_in):
     return fvec
 
 
+
+def arglale(x, dim_out):
+    fvec = np.zeros(dim_out)
+
+    pass
+
+
 def get_start_points_msqrta(dim_in, flag=1):
     bmat = np.zeros((dim_in, dim_in))
     for i in range(1, dim_in + 1):
@@ -718,4 +725,19 @@ CARTIS_ROBERTS_PROBLEMS = {
         "start_criterion": 1.831687e5,
         "solution_criterion": 0,
     },
+    "arglale":{
+        "criterion": partial(linear_full_rank, dim_out = 400),
+        "start_x": np.ones(100),
+        "solution_x": None, 
+        "start_criterion": 700,
+        "solution_criterion": 300
+    },
+    "arglble":{
+        "criterion": partial(linear_rank_one, dim_out = 400),
+        "start_x": np.ones(100),
+        "solution_x": None, 
+        "start_criterion": 5.460944e14,
+        "solution_criterion": 99.62547
+    }
+
 }
