@@ -24,7 +24,7 @@ def criterion():
 @pytest.mark.parametrize(
     "solver_sub, trustregion_subproblem_options",
     [
-        ("trust-constr", {"ftol": 1e-6, "xtol": 1e-6, "gtol": 1e-6}),
+        ("trust-constr", {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7}),
         ("L-BFGS-B", {"ftol": 1e-8, "xtol": None, "gtol": 1e-6}),
         ("SLSQP", {"ftol": 1e-10, "xtol": None, "gtol": None}),
     ],
