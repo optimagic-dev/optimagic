@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 
 import numpy as np
@@ -44,7 +45,7 @@ def update_center(
     minnorm = fnorm[minindex]
 
     # Change current center
-    xmin = xhist[minindex, :]
+    xmin = copy.deepcopy(xhist[minindex, :])
 
     return xmin, fmin, fdiff, fnorm_min, minnorm, jac_res, minindex
 
@@ -295,7 +296,7 @@ def improve_model(
     """
     minindex_internal = 0
     minvalue = np.inf
-    work = np.zeros(3, dtype=np.float64)
+    work = np.zeros(3)
 
     qtmp, _ = qr_multiply(qmat, np.eye(3), mode="right")
 
@@ -388,8 +389,8 @@ def add_more_points(
         - M (np.ndarray): M matrix. Shape(*maxinterp*, *n* (*n* + 1) / 2).
         - mpoints (int): Current number of model points.
     """
-    M = np.zeros((maxinterp, n + 1), dtype=np.float64)
-    N = np.zeros((maxinterp, int(n * (n + 1) / 2)), dtype=np.float64)
+    M = np.zeros((maxinterp, n + 1))
+    N = np.zeros((maxinterp, int(n * (n + 1) / 2)))
     M[:, 0] = 1
 
     for i in range(n + 1):
@@ -509,8 +510,8 @@ def get_params_quadratic_model(
         - hess_quadratic (np.ndarray): Hessian of the quadratic model.
             Shape (*nobs*, *n*, *n*).
     """
-    jac_quadratic = np.zeros((nobs, n), dtype=np.float64)
-    hess_quadratic = np.zeros((nobs, n, n), dtype=np.float64)
+    jac_quadratic = np.zeros((nobs, n))
+    hess_quadratic = np.zeros((nobs, n, n))
 
     if mpoints == (n + 1):
         omega = np.zeros(n)
@@ -520,7 +521,6 @@ def get_params_quadratic_model(
 
     for k in range(nobs):
         if mpoints != (n + 1):
-            # Solve L'*L*Omega = Z' * RES_k
             omega = np.dot(Z[:mpoints, :].T, res[:mpoints, k])
             omega = np.linalg.solve(np.atleast_2d(L_tmp), np.atleast_1d(omega))
 
@@ -584,7 +584,7 @@ def _evaluate_phi(x):
         (np.ndarray): Phi vector. Shape (*n* (*n* + 1) / 2,)
     """
     n = x.shape[0]
-    phi = np.zeros(int(n * (n + 1) / 2), dtype=np.float64)
+    phi = np.zeros(int(n * (n + 1) / 2))
 
     j = 0
     for i in range(n):
@@ -654,7 +654,7 @@ def _add_point(
         - mpoints (int): Current number of model points.
         - nhist (int): Current number candidate solutions for x.
     """
-    # Create new vector in history: X[newidx] = X[index] + delta * X[index]
+    # Create new vector in history
     xhist[nhist] = qtmp[:, index]
     xhist[nhist] = delta * xhist[nhist] + xhist[minindex]
 

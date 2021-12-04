@@ -43,9 +43,9 @@ def dict_find_nearby_points(request):
     return pd.read_pickle(TEST_FIXTURES_DIR / f"find_nearby_points_{request.param}.pkl")
 
 
-@pytest.fixture
-def dict_update_center():
-    return pd.read_pickle(TEST_FIXTURES_DIR / "update_center.pkl")
+@pytest.fixture(params=["4", "7"])
+def dict_get_residuals(request):
+    return pd.read_pickle(TEST_FIXTURES_DIR / f"get_residuals_iter_{request.param}.pkl")
 
 
 @pytest.fixture(params=["i", "ii"])
@@ -54,13 +54,13 @@ def dict_improve_model(request):
 
 
 @pytest.fixture
-def dict_add_more_points():
-    return pd.read_pickle(TEST_FIXTURES_DIR / "add_more_points.pkl")
+def dict_update_center():
+    return pd.read_pickle(TEST_FIXTURES_DIR / "update_center.pkl")
 
 
 @pytest.fixture
-def dict_get_residuals():
-    return pd.read_pickle(TEST_FIXTURES_DIR / "get_residuals.pkl")
+def dict_add_more_points():
+    return pd.read_pickle(TEST_FIXTURES_DIR / "add_more_points.pkl")
 
 
 @pytest.fixture

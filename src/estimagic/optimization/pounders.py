@@ -10,6 +10,7 @@ from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
 from estimagic.optimization.pounders_auxiliary import get_residuals
 from estimagic.optimization.pounders_auxiliary import improve_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
+from estimagic.optimization.pounders_auxiliary import update_center
 from estimagic.optimization.pounders_auxiliary import update_fdiff_and_hess
 
 
@@ -152,9 +153,9 @@ def internal_solve_pounders(
     n = x0.shape[0]  # number of model parameters
     maxinterp = 2 * n + 1  # max number of interpolation points
 
-    xhist = np.zeros((maxiter + 1, n))
-    fhist = np.zeros((maxiter + 1, nobs))
-    fnorm = np.zeros(maxiter + 1)
+    xhist = np.zeros((maxiter * 2, n))
+    fhist = np.zeros((maxiter * 2, nobs))
+    fnorm = np.zeros(maxiter * 2)
     hess = np.zeros((nobs, n, n))
     model_indices = np.zeros(maxinterp, dtype=int)
 
@@ -169,6 +170,8 @@ def internal_solve_pounders(
         if np.max(x0 + delta - upper_bounds) > 1e-10:
             raise ValueError("Starting points + delta > upper bounds.")
 
+    # This provides enough information to approximate the gradient of the objective
+    # using a forward difference scheme.
     xhist[0] = x0
     fhist[0, :] = criterion(x0)
     fnorm[0] = compute_fnorm(criterion_value=fhist[0, :])
@@ -189,8 +192,8 @@ def internal_solve_pounders(
             minnorm = fnorm[i + 1]
             minindex = i + 1
 
-    xmin = xhist[minindex, :]
-    fmin = fhist[minindex, :]
+    xmin = copy.deepcopy(xhist[minindex, :])
+    fmin = copy.deepcopy(fhist[minindex, :])
     fnorm_min = minnorm
 
     # centering around new trust-region and normalize to [-1, 1]
@@ -211,6 +214,8 @@ def internal_solve_pounders(
     nhist = n + 1
     mpoints = n + 1
 
+    last_model_indices = np.zeros(maxinterp, dtype=int)
+
     while reason is True:
         niter += 1
 
@@ -230,6 +235,7 @@ def internal_solve_pounders(
 
         qmin = -rslt.fun
         xplus = xmin + rslt.x * delta
+
         xhist[nhist, :] = xplus
         fhist[nhist, :] = criterion(xhist[nhist, :])
         fnorm[nhist] = compute_fnorm(criterion_value=fhist[nhist, :])
@@ -237,22 +243,21 @@ def internal_solve_pounders(
 
         nhist += 1
 
-        # Update the center
         if (rho >= eta1) or (rho > eta0 and valid is True):
-            # Update model to reflect new base point
-            x1 = (xplus - xmin) / delta
-
-            fdiff += np.dot(hess, x1).T
-            fmin += 0.5 * np.dot(np.dot(x1, hess), x1) + np.dot(x1, fdiff)
-
-            fnorm_min += np.dot(x1, jac_res) + 0.5 * np.dot(hess_res, x1)
-            jac_res += np.dot(hess_res, x1)
-
-            minindex = nhist - 1
-            minnorm = fnorm[minindex]
-
-            # Change current center
-            xmin = xhist[minindex, :]
+            xmin, fmin, fdiff, fnorm_min, minnorm, jac_res, minindex = update_center(
+                xplus=xplus,
+                xmin=xmin,
+                xhist=xhist,
+                delta=delta,
+                fmin=fmin,
+                fdiff=fdiff,
+                fnorm=fnorm,
+                fnorm_min=fnorm_min,
+                hess=hess,
+                jac_res=jac_res,
+                hess_res=hess_res,
+                nhist=nhist,
+            )
 
         # Evaluate at a model improving point if necessary
         # Note: valid is True in first iteration
@@ -407,7 +412,7 @@ def internal_solve_pounders(
             delta_old=delta_old,
         )
 
-        fmin = fhist[minindex]
+        fmin = copy.deepcopy(fhist[minindex])
         fnorm_min = fnorm[minindex]
         jac_res, hess_res = calc_jac_and_hess_res(fdiff=fdiff, fmin=fmin, hess=hess)
 
@@ -422,7 +427,6 @@ def internal_solve_pounders(
             reason = False
 
         # Test for repeated model
-        last_model_indices = np.zeros(maxinterp, dtype=int)
         if mpoints == last_mpoints:
             same = True
         else:
