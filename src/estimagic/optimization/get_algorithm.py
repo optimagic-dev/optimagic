@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 from estimagic.logging.database_utilities import update_row
 from estimagic.optimization import AVAILABLE_ALGORITHMS
-from estimagic.utilities import propose_algorithms
+from estimagic.utilities import propose_alternatives
 
 
 def get_algorithm(
@@ -78,7 +78,7 @@ def _process_user_algorithm(algorithm):
         try:
             algorithm = AVAILABLE_ALGORITHMS[algorithm]
         except KeyError:
-            proposed = propose_algorithms(algorithm, list(AVAILABLE_ALGORITHMS))
+            proposed = propose_alternatives(algorithm, list(AVAILABLE_ALGORITHMS))
             raise ValueError(
                 f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
             ) from None

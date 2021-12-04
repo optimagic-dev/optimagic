@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pytest
 from estimagic import get_benchmark_problems
 from estimagic.benchmarking.run_benchmark import run_benchmark
+from estimagic.visualization.convergence_plot import _check_only_allowed_subset_provided
 from estimagic.visualization.convergence_plot import convergence_plot
 
 # integration test to make sure non default argument do not throw Errors
@@ -45,3 +46,19 @@ def test_convergence_plot_options(options):
         **options
     )
     plt.close()
+
+
+def test_check_only_allowed_subset_provided_none():
+    allowed = ["a", "b", "c"]
+    _check_only_allowed_subset_provided(None, allowed, "name")
+
+
+def test_check_only_allowed_subset_provided_all_included():
+    allowed = ["a", "b", "c"]
+    _check_only_allowed_subset_provided(["a", "b"], allowed, "name")
+
+
+def test_check_only_allowed_subset_provided_missing():
+    allowed = ["a", "b", "c"]
+    with pytest.raises(ValueError):
+        _check_only_allowed_subset_provided(["d"], allowed, "name")
