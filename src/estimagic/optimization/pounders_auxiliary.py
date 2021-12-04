@@ -35,8 +35,8 @@ def update_center(
     # Update model to reflect new base point
     x1 = (xplus - xmin) / delta
 
-    fmin += np.dot(x1, fdiff) + 0.5 * np.dot(np.dot(x1, hess), x1)
-    fdiff += np.dot(hess, x1).T
+    fmin = fmin + np.dot(x1, fdiff) + 0.5 * np.dot(np.dot(x1, hess), x1)
+    fdiff = fdiff + np.dot(hess, x1).T
 
     fnorm_min += np.dot(x1, jac_res) + 0.5 * np.dot(hess_res, x1)
     jac_res += np.dot(hess_res, x1)
@@ -142,11 +142,14 @@ def solve_subproblem(
     if solver == "trust-constr":
         solver_args = {"hess": "2-point"}
         options = {"xtol": xtol, "gtol": gtol}
-    elif solver == "L-BFGS-B":  # , "SLSQP"]:
+    elif solver == "L-BFGS-B":
         solver_args = {}
         options = {"ftol": ftol, "gtol": gtol}
+    elif solver == "SLSQP":
+        solver_args = {}
+        options = {"ftol": ftol}
     else:
-        raise ValueError("Specififed subproblem solver is not supported.")
+        raise ValueError("Subproblem solver is not supported.")
 
     evaluate_subproblem = partial(
         _evaluate_obj_and_grad, jac_res=jac_res, hess_res=hess_res
