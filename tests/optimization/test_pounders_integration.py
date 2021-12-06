@@ -43,7 +43,7 @@ def criterion():
             {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
         ),
         (
-            np.array([0.5, 0.5, 0.5]),
+            np.array([0.4, 0.4, 0.4]),
             1e-12,
             "trust-constr",
             {"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12},
