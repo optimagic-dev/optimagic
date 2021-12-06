@@ -26,7 +26,7 @@ def criterion():
     [
         (
             np.array([0.15, 0.008, 0.01]),
-            1e-6,
+            1e-7,
             "trust-constr",
             {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
         ),
@@ -38,13 +38,13 @@ def criterion():
         ),
         (
             np.array([1e-6, 1e-6, 1e-6]),
-            1e-8,
+            1e-10,
             "trust-constr",
             {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
         ),
         (
             np.array([0.5, 0.5, 0.5]),
-            1e-8,
+            1e-10,
             "trust-constr",
             {"ftol": 1e-10, "xtol": 1e-10, "gtol": 1e-10},
         ),
@@ -62,15 +62,15 @@ def criterion():
         ),
         (
             np.array([1e-6, 1e-6, 1e-6]),
-            1e-6,
+            1e-8,
             "L-BFGS-B",
-            {"ftol": 1e-10, "xtol": None, "gtol": 1e-6},
+            {"ftol": 1e-10, "xtol": None, "gtol": 1e-8},
         ),
         (
             np.array([0.5, 0.5, 0.5]),
             1e-10,
             "L-BFGS-B",
-            {"ftol": 1e-10, "xtol": None, "gtol": 1e-8},
+            {"ftol": 1e-10, "xtol": None, "gtol": 1e-10},
         ),
         (
             np.array([0.15, 0.008, 0.01]),
