@@ -52,7 +52,7 @@ def criterion():
             np.array([-1e-6, -1e-6, -1e-6]),
             1e-10,
             "trust-constr",
-            {"ftol": 1e-10, "xtol": 1e-10, "gtol": 1e-10},
+            {"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12},
         ),
         (
             np.array([0.15, 0.008, 0.01]),
