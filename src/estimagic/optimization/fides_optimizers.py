@@ -38,8 +38,6 @@ def fides(
     trustregion_increase_threshold=0.75,
     trustregion_decrease_factor=0.25,
     trustregion_increase_factor=2.0,
-    trustregion_refine_stepback=False,
-    trustregion_scaled_gradient_as_possible_stepback=False,
 ):
     """Minimize a scalar function using the Fides Optimizer.
 
@@ -49,27 +47,26 @@ def fides(
     if not IS_FIDES_INSTALLED:
         raise NotImplementedError(
             "The fides package is not installed. You can install it with "
-            "`pip install fides>=0.6.3`."
+            "`pip install fides>=0.7.1`."
         )
 
     fides_options = {
+        "delta_init": trustregion_initial_radius,
+        "eta": trustregion_increase_threshold,
         "fatol": convergence_absolute_criterion_tolerance,
         "frtol": convergence_relative_criterion_tolerance,
-        "xtol": convergence_absolute_params_tolerance,
+        "gamma1": trustregion_decrease_factor,
+        "gamma2": trustregion_increase_factor,
         "gatol": convergence_absolute_gradient_tolerance,
         "grtol": convergence_relative_gradient_tolerance,
+        "history_file": None,
         "maxiter": stopping_max_iterations,
-        "delta_init": trustregion_initial_radius,
         "maxtime": stopping_max_seconds,
+        "mu": trustregion_decrease_threshold,
         "stepback_strategy": trustregion_stepback_strategy,
         "subspace_solver": trustregion_subspace_dimension,
         "theta_max": trustregion_max_stepback_fraction,
-        "mu": trustregion_decrease_threshold,
-        "eta": trustregion_increase_threshold,
-        "gamma1": trustregion_decrease_factor,
-        "gamma2": trustregion_increase_factor,
-        "refine_stepback": trustregion_refine_stepback,
-        "scaled_gradient": trustregion_scaled_gradient_as_possible_stepback,
+        "xtol": convergence_absolute_params_tolerance,
     }
 
     algo_info = {

@@ -63,7 +63,6 @@ autodoc_mock_imports = [
     "fuzzywuzzy",
     "joblib",
     "nlopt",
-    "numpy",
     "pandas",
     "pytest",
     "pygmo",
