@@ -405,24 +405,24 @@ def add_more_points(
     mpoints = n + 1
 
     while (mpoints < maxinterp) and (point >= 0):
-        # Reject any points already in the model
-        reject = 0
+        reject = False
 
+        # Reject any points already in the model
         for i in range(n + 1):
             if point == model_indices[i]:
-                reject = 1
+                reject = True
                 break
 
-        if reject == 0:
+        if reject is False:
             workxvec = xhist[point]
             workxvec = workxvec - xhist[minindex]
             normd = np.linalg.norm(workxvec)
             normd /= delta
 
             if normd > c2:
-                reject = 1
+                reject = True
 
-        else:
+        if reject is True:
             point -= 1
             continue
 

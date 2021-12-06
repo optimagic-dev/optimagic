@@ -22,15 +22,79 @@ def criterion():
 
 
 @pytest.mark.parametrize(
-    "solver_sub, trustregion_subproblem_options",
+    "start_vec, gtol, solver_sub, trustregion_subproblem_options",
     [
-        ("trust-constr", {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7}),
-        ("L-BFGS-B", {"ftol": 1e-8, "xtol": None, "gtol": 1e-6}),
-        ("SLSQP", {"ftol": 1e-10, "xtol": None, "gtol": None}),
+        (
+            np.array([0.15, 0.008, 0.01]),
+            1e-6,
+            "trust-constr",
+            {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
+        ),
+        (
+            np.array([0.1, 0.1, 0.1]),
+            1e-6,
+            "trust-constr",
+            {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
+        ),
+        (
+            np.array([0.5, 0.5, 0.5]),
+            1e-7,
+            "trust-constr",
+            {"ftol": 1e-10, "xtol": 1e-10, "gtol": 1e-10},
+        ),
+        (
+            np.array([1e-6, 1e-6, 1e-6]),
+            1e-6,
+            "trust-constr",
+            {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
+        ),
+        (
+            np.array([-1e-6, -1e-6, -1e-6]),
+            1e-8,
+            "trust-constr",
+            {"ftol": 1e-10, "xtol": 1e-10, "gtol": 1e-10},
+        ),
+        (
+            np.array([0.15, 0.008, 0.01]),
+            1e-6,
+            "L-BFGS-B",
+            {"ftol": 1e-10, "xtol": None, "gtol": 1e-6},
+        ),
+        (
+            np.array([0.5, 0.5, 0.5]),
+            1e-6,
+            "L-BFGS-B",
+            {"ftol": 1e-10, "xtol": None, "gtol": 1e-6},
+        ),
+        (
+            np.array([1e-6, 1e-6, 1e-6]),
+            1e-6,
+            "L-BFGS-B",
+            {"ftol": 1e-10, "xtol": None, "gtol": 1e-6},
+        ),
+        (
+            np.array([0.15, 0.008, 0.01]),
+            1e-6,
+            "SLSQP",
+            {"ftol": 1e-10, "xtol": None, "gtol": None},
+        ),
+        (
+            np.array([0.5, 0.5, 0.5]),
+            1e-8,
+            "SLSQP",
+            {"ftol": 1e-10, "xtol": None, "gtol": None},
+        ),
+        (
+            np.array([1e-3, 1e-3, 1e-3]),
+            1e-8,
+            "SLSQP",
+            {"ftol": 1e-12, "xtol": None, "gtol": None},
+        ),
     ],
 )
-def test_integration(solver_sub, trustregion_subproblem_options, criterion):
-    x0 = np.array([0.15, 0.008, 0.01])
+def test_integration(
+    start_vec, gtol, solver_sub, trustregion_subproblem_options, criterion
+):
     nobs = 214
     delta = 0.1
     delta_min = 1e-6
@@ -41,13 +105,12 @@ def test_integration(solver_sub, trustregion_subproblem_options, criterion):
     theta2 = 1e-4
     eta0 = 0.0
     eta1 = 0.1
-    c1 = np.sqrt(x0.shape[0])
+    c1 = np.sqrt(start_vec.shape[0])
     c2 = 10
-    gtol = 1e-6
     maxiter = 200
 
     rslt = internal_solve_pounders(
-        x0=x0,
+        x0=start_vec,
         nobs=nobs,
         criterion=criterion,
         delta=delta,
