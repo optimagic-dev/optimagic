@@ -9,6 +9,25 @@ from estimagic.optimization.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
 
 
+def load_history(start_vec, solver_sub):
+    start_vec_str = np.array2string(
+        start_vec, precision=3, separator=",", suppress_small=False
+    )
+
+    history_x = (
+        np.genfromtxt(
+            TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
+            delimiter=",",
+        ),
+    )
+    history_criterion = np.genfromtxt(
+        TEST_FIXTURES_DIR / f"history_criterion_{start_vec_str}_{solver_sub}_3_8.csv",
+        delimiter=",",
+    )
+
+    return history_x, history_criterion
+
+
 @pytest.fixture
 def criterion():
     data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
@@ -87,7 +106,7 @@ def criterion():
         ),
     ],
 )
-def test_integration(
+def test_solution_and_histories(
     start_vec, gtol, solver_sub, trustregion_subproblem_options, criterion
 ):
     nobs = 214
@@ -132,21 +151,9 @@ def test_integration(
     aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]))
 
     if sys.platform == "linux" and sys.version_info == (3, 8):
-        start_vec_str = np.array2string(
-            start_vec, precision=3, separator=",", suppress_small=False
-        )
-        aaae(
-            rslt["history_x"],
-            np.genfromtxt(
-                TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
-                delimiter=",",
-            ),
-        )
-        aaae(
-            rslt["history_criterion"],
-            np.genfromtxt(
-                TEST_FIXTURES_DIR
-                / f"history_criterion_{start_vec_str}_{solver_sub}_3_8.csv",
-                delimiter=",",
-            ),
-        )
+        # Only run on Linux, python version 3.8, since x and criterion histories
+        # differ on other systems
+        history_x, history_criterion = load_history(start_vec, solver_sub)
+
+        aaae(rslt["history_x"], history_x)
+        aaae(rslt["history_criterion"], history_criterion)
