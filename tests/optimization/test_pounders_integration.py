@@ -1,3 +1,4 @@
+import sys
 from functools import partial
 
 import numpy as np
@@ -129,3 +130,23 @@ def test_integration(
     )
 
     aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]))
+
+    if sys.platform == "linux":
+        start_vec_str = np.array2string(
+            start_vec, precision=3, separator=",", suppress_small=False
+        )
+        aaae(
+            rslt["history_x"],
+            np.genfromtxt(
+                TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}.csv",
+                delimiter=",",
+            ),
+        )
+        aaae(
+            rslt["history_criterion"],
+            np.genfromtxt(
+                TEST_FIXTURES_DIR
+                / f"history_criterion_{start_vec_str}_{solver_sub}.csv",
+                delimiter=",",
+            ),
+        )

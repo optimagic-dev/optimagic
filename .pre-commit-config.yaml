@@ -15,6 +15,7 @@ repos:
     hooks:
     -   id: check-added-large-files
         args: ['--maxkb=100']
+        exclude: tests/optimization/fixtures/
     -   id: check-case-conflict
     -   id: check-merge-conflict
     -   id: check-vcs-permalinks

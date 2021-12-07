@@ -448,6 +448,8 @@ def internal_solve_pounders(
     rslt_dict = {
         "solution_x": xhist[minindex, :],
         "solution_criterion": fhist[minindex, :],
+        "history_x": xhist[:nhist, :],
+        "history_criterion": fhist[:nhist, :],
         "n_iterations": niter,
         "message": "Under development.",
     }
