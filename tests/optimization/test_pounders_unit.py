@@ -17,7 +17,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 @pytest.fixture
 def criterion():
-    data = pd.read_csv(TEST_FIXTURES_DIR / "example_data.csv")
+    data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])
     exog = np.asarray(data["t"])
 

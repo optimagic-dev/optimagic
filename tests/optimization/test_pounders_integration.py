@@ -11,7 +11,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 @pytest.fixture
 def criterion():
-    data = pd.read_csv(TEST_FIXTURES_DIR / "example_data.csv")
+    data = pd.read_csv(TEST_FIXTURES_DIR / "pounders_example_data.csv")
     endog = np.asarray(data["y"])
     exog = np.asarray(data["t"])
 
@@ -131,14 +131,14 @@ def test_integration(
 
     aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]))
 
-    if sys.platform == "linux":
+    if sys.platform == "linux" and sys.version_info == (3, 8):
         start_vec_str = np.array2string(
             start_vec, precision=3, separator=",", suppress_small=False
         )
         aaae(
             rslt["history_x"],
             np.genfromtxt(
-                TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}.csv",
+                TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
                 delimiter=",",
             ),
         )
@@ -146,7 +146,7 @@ def test_integration(
             rslt["history_criterion"],
             np.genfromtxt(
                 TEST_FIXTURES_DIR
-                / f"history_criterion_{start_vec_str}_{solver_sub}.csv",
+                / f"history_criterion_{start_vec_str}_{solver_sub}_3_8.csv",
                 delimiter=",",
             ),
         )
