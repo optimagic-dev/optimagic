@@ -79,7 +79,14 @@ def dict_calc_jac_and_hess_res():
 
 
 def test_update_center(dict_update_center):
-    (xmin_out, fmin_out, fdiff_out, _, _, jac_res_out, minindex_out,) = update_center(
+    (
+        xmin_out,
+        fmin_out,
+        fdiff_out,
+        minnorm,
+        jac_res_out,
+        minindex_out,
+    ) = update_center(
         xplus=dict_update_center["xplus"],
         xmin=dict_update_center["xmin"],
         xhist=dict_update_center["xhist"],
@@ -87,7 +94,6 @@ def test_update_center(dict_update_center):
         fmin=dict_update_center["fmin"],
         fdiff=dict_update_center["fdiff"],
         fnorm=dict_update_center["fnorm"],
-        fnorm_min=dict_update_center["fnorm_min"],
         hess=dict_update_center["hess"],
         jac_res=dict_update_center["jac_res"],
         hess_res=dict_update_center["hess_res"],

@@ -1,4 +1,3 @@
-import copy
 from functools import partial
 
 import numpy as np
@@ -24,7 +23,6 @@ def update_center(
     delta,
     fmin,
     fnorm,
-    fnorm_min,
     fdiff,
     hess,
     jac_res,
@@ -36,18 +34,17 @@ def update_center(
     x1 = (xplus - xmin) / delta
 
     fmin = fmin + np.dot(x1, fdiff) + 0.5 * np.dot(np.dot(x1, hess), x1)
-    fdiff = fdiff + np.dot(hess, x1).T
 
-    fnorm_min += np.dot(x1, jac_res) + 0.5 * np.dot(hess_res, x1)
-    jac_res += np.dot(hess_res, x1)
+    fdiff = fdiff + np.dot(hess, x1).T
+    jac_res = jac_res + np.dot(hess_res, x1)
 
     minindex = nhist - 1
     minnorm = fnorm[minindex]
 
     # Change current center
-    xmin = copy.deepcopy(xhist[minindex, :])
+    xmin = xhist[minindex, :]
 
-    return xmin, fmin, fdiff, fnorm_min, minnorm, jac_res, minindex
+    return xmin, fmin, fdiff, minnorm, jac_res, minindex
 
 
 def calc_jac_and_hess_res(fdiff, fmin, hess):
@@ -72,7 +69,7 @@ def calc_jac_and_hess_res(fdiff, fmin, hess):
     dim_array[0] = -1
     fmin_reshaped = fmin.reshape(dim_array)
 
-    hess_res += np.sum(fmin_reshaped * hess, axis=0)
+    hess_res = hess_res + np.sum(fmin_reshaped * hess, axis=0)
 
     return jac_res, hess_res
 
@@ -152,7 +149,7 @@ def solve_subproblem(
         raise ValueError("Subproblem solver is not supported.")
 
     evaluate_subproblem = partial(
-        _evaluate_obj_and_grad, jac_res=jac_res, hess_res=hess_res
+        _criterion_and_derivative_subproblem, jac_res=jac_res, hess_res=hess_res
     )
 
     rslt = minimize(
@@ -554,7 +551,7 @@ def update_fdiff_and_hess(fdiff, hess, jac_quadratic, hess_quadratic, delta, del
     return fdiff_new, hess_new
 
 
-def _evaluate_obj_and_grad(
+def _criterion_and_derivative_subproblem(
     x,
     jac_res,
     hess_res,
@@ -569,11 +566,10 @@ def _evaluate_obj_and_grad(
         - obj (float): Value of the objective function.
         - grad (np.ndarray): Gradient vector. Shape (*n*,).
     """
-    grad = np.dot(hess_res, x)
-    obj = 0.5 * np.dot(x, grad) + np.dot(jac_res, x)
-    grad += jac_res
+    criterion = np.dot(jac_res, x) + 0.5 * np.dot(np.dot(x, hess_res), x)
+    derivative = jac_res + np.dot(hess_res, x)
 
-    return obj, grad
+    return criterion, derivative
 
 
 def _evaluate_phi(x):

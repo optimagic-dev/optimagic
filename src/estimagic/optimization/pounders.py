@@ -1,4 +1,3 @@
-import copy
 from functools import partial
 
 import numpy as np
@@ -181,8 +180,8 @@ def internal_solve_pounders(
 
     # Increment parameters separately by delta
     for i in range(n):
-        x1 = copy.deepcopy(x0)
-        x1[i] += delta
+        x1 = x0
+        x1[i] = x1[i] + delta
 
         xhist[i + 1, :] = x1
         fhist[i + 1, :] = criterion(x1)
@@ -192,9 +191,8 @@ def internal_solve_pounders(
             minnorm = fnorm[i + 1]
             minindex = i + 1
 
-    xmin = copy.deepcopy(xhist[minindex, :])
-    fmin = copy.deepcopy(fhist[minindex, :])
-    fnorm_min = minnorm
+    xmin = xhist[minindex, :]
+    fmin = fhist[minindex, :]
 
     # centering around new trust-region and normalize to [-1, 1]
     indices_not_min = [i for i in range(n + 1) if i != minindex]
@@ -244,7 +242,7 @@ def internal_solve_pounders(
         nhist += 1
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
-            xmin, fmin, fdiff, fnorm_min, minnorm, jac_res, minindex = update_center(
+            xmin, fmin, fdiff, minnorm, jac_res, minindex = update_center(
                 xplus=xplus,
                 xmin=xmin,
                 xhist=xhist,
@@ -252,7 +250,6 @@ def internal_solve_pounders(
                 fmin=fmin,
                 fdiff=fdiff,
                 fnorm=fnorm,
-                fnorm_min=fnorm_min,
                 hess=hess,
                 jac_res=jac_res,
                 hess_res=hess_res,
@@ -412,8 +409,8 @@ def internal_solve_pounders(
             delta_old=delta_old,
         )
 
-        fmin = copy.deepcopy(fhist[minindex])
-        fnorm_min = fnorm[minindex]
+        fmin = fhist[minindex]
+        minnorm = fnorm[minindex]
         jac_res, hess_res = calc_jac_and_hess_res(fdiff=fdiff, fmin=fmin, hess=hess)
 
         gradient = jac_res
