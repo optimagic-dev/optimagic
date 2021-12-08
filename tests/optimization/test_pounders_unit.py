@@ -83,7 +83,7 @@ def test_update_center(dict_update_center):
         xmin_out,
         fmin_out,
         fdiff_out,
-        minnorm,
+        minnorm_out,
         jac_res_out,
         minindex_out,
     ) = update_center(
@@ -102,6 +102,7 @@ def test_update_center(dict_update_center):
     aaae(xmin_out, dict_update_center["xmin_expected"])
     aaae(fmin_out, dict_update_center["fmin_expected"])
     aaae(fdiff_out, dict_update_center["fdiff_expected"])
+    aaae(minnorm_out, dict_update_center["minnorm_expected"])
     aaae(jac_res_out, dict_update_center["jac_res_expected"], decimal=5)
     assert np.allclose(minindex_out, dict_update_center["minindex_expected"])
 
