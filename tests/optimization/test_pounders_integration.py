@@ -55,13 +55,13 @@ def criterion():
         ),
         (
             np.array([1e-6, 1e-6, 1e-6]),
-            1e-10,
+            1e-12,
             "trust-constr",
-            {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
+            {"ftol": 1e-8, "xtol": 1e-8, "gtol": 1e-8},
         ),
         (
             np.array([-1e-6, -1e-6, -1e-6]),
-            1e-10,
+            1e-12,
             "trust-constr",
             {"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12},
         ),
@@ -79,9 +79,9 @@ def criterion():
         ),
         (
             np.array([1e-6, 1e-6, 1e-6]),
-            1e-10,
+            1e-12,
             "L-BFGS-B",
-            {"ftol": 1e-10, "xtol": None, "gtol": 1e-10},
+            {"ftol": 1e-12, "xtol": None, "gtol": 1e-12},
         ),
         (
             np.array([0.5, 0.5, 0.5]),
