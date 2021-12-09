@@ -1,3 +1,4 @@
+import sys
 from functools import partial
 
 import numpy as np
@@ -140,3 +141,15 @@ def test_solution_and_histories(
     )
 
     aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]))
+
+    if (
+        sys.platform == "linux"
+        and sys.version_info > (3, 8)
+        and sys.version_info < (3, 9)
+    ):
+        # Only run on Linux, python version 3.8, since x and criterion histories
+        # differ on other systems
+        history_x, history_criterion = load_history(start_vec, solver_sub)
+
+        aaae(rslt["history_x"], history_x)
+        aaae(rslt["history_criterion"], history_criterion)
