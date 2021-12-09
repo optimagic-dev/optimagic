@@ -6,79 +6,90 @@ from scipy.optimize import Bounds
 from scipy.optimize import minimize
 
 
-def compute_fnorm(criterion_value):
+def compute_criterion_norm(criterion_value):
     """Returns norm of the criterion function value.
     Args:
         criterion_value (np.ndarray): Value of the criterion function.
     Returns:
-        (float): Norm of the criterion function
+        (float): Norm of the criterion function.
     """
     return np.dot(criterion_value, criterion_value)
 
 
 def update_center(
     xplus,
-    xmin,
-    xhist,
+    min_x,
+    history_x,
     delta,
-    fmin,
-    fnorm,
-    fdiff,
-    hess,
-    jac_res,
-    hess_res,
-    nhist,
+    min_criterion,
+    history_criterion_norm,
+    gradient,
+    hessian,
+    first_derivative,
+    second_derivative,
+    n_history,
 ):
     """Update center."""
     # Update model to reflect new base point
-    x1 = (xplus - xmin) / delta
+    x1 = (xplus - min_x) / delta
 
-    fmin = fmin + np.dot(x1, fdiff) + 0.5 * np.dot(np.dot(x1, hess), x1)
+    min_criterion = (
+        min_criterion + np.dot(x1, gradient) + 0.5 * np.dot(np.dot(x1, hessian), x1)
+    )
 
-    fdiff = fdiff + np.dot(hess, x1).T
-    jac_res = jac_res + np.dot(hess_res, x1)
+    gradient = gradient + np.dot(hessian, x1).T
+    first_derivative = first_derivative + np.dot(second_derivative, x1)
 
-    minindex = nhist - 1
-    minnorm = fnorm[minindex]
+    index_min_x = n_history - 1
+    min_criterion_norm = history_criterion_norm[index_min_x]
 
     # Change current center
-    xmin = xhist[minindex, :]
+    min_x = history_x[index_min_x, :]
 
-    return xmin, fmin, fdiff, minnorm, jac_res, minindex
+    return (
+        min_x,
+        min_criterion,
+        gradient,
+        min_criterion_norm,
+        first_derivative,
+        index_min_x,
+    )
 
 
-def calc_jac_and_hess_res(fdiff, fmin, hess):
-    """Calculate residuals of the Jacobian and Hessian.
+def calc_first_and_second_derivative(gradient, min_criterion, hessian):
+    """Calculate first and second derivative of the criterion.
 
     Args:
-        fdiff (np.ndarray): Difference between the criterion function values and *fmin*.
-            Shape (*n*, *nobs*)
-        fmin (np.ndarray): Values of criterion function associated with
+        gradient (np.ndarray): Difference between the criterion function values
+        and *min_criterion*. Shape (*n*, *n_obs*)
+        min_criterion (np.ndarray): Values of criterion function associated with
             parameter vector x that yields the lowest criterion function norm.
-        hess (np.ndarray): Hessian matrix. Shape (*nobs*, *n*, *n*).
+        hessian (np.ndarray): Hessian matrix. Shape (*n_obs*, *n*, *n*).
 
     Returns:
         Tuple:
-        - jac_res (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
-        - hess_res (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
+        - first_derivative (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
+        - second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
     """
-    jac_res = np.dot(fdiff, fmin)
-    hess_res = np.dot(fdiff, fdiff.T)
+    first_derivative = np.dot(gradient, min_criterion)
+    second_derivative = np.dot(gradient, gradient.T)
 
-    dim_array = np.ones((1, hess.ndim), int).ravel()
+    dim_array = np.ones((1, hessian.ndim), int).ravel()
     dim_array[0] = -1
-    fmin_reshaped = fmin.reshape(dim_array)
+    min_criterion_reshaped = min_criterion.reshape(dim_array)
 
-    hess_res = hess_res + np.sum(fmin_reshaped * hess, axis=0)
+    second_derivative = second_derivative + np.sum(
+        min_criterion_reshaped * hessian, axis=0
+    )
 
-    return jac_res, hess_res
+    return first_derivative, second_derivative
 
 
 def solve_subproblem(
     solution,
     delta,
-    jac_res,
-    hess_res,
+    first_derivative,
+    second_derivative,
     ftol,
     xtol,
     gtol,
@@ -91,26 +102,26 @@ def solve_subproblem(
     Args:
         solution (np.ndarray): Current solution vector.
         delta (float): Current trust region radius.
-        jac_res (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
-        hess_res (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
+        first_derivative (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
+        second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
         gtol (float): Gradient tolerance. Stopping criterion.
-        solver (str): Minimizer used to solve the bound-constraint subproblem.
+        solver (str): candidate_xinimizer used to solve the bound-constraint subproblem.
             Currently, three solvers from the scipy library are supported.
             - "trust-constr"
-            - "L-BFGS-B"
-            - "SLSQP"
-        lower_bounds (np.ndarray): Lower bounds for the subproblem.
-            Must have same length as the initial guess of the
+            - "lower_triangular-BFGS-B"
+            - "Slower_triangularSQP"
+        lower_bounds (np.ndarray): lower_triangularower bounds for the subproblem.
+            candidate_xust have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
         upper_bounds (np.ndarray): Upper bounds for the subproblem.
-            Must have same length as the initial guess of the
+            candidate_xust have same length as the initial guess of the
             parameter vector. Equal to 1 if not provided by the user.
 
     Returns:
         Dict[str, np.ndarray]: Result dictionary.
     """
     # Initial guess
-    n = jac_res.shape[0]
+    n = first_derivative.shape[0]
     x0 = np.zeros(n)
 
     # Normalize bounds. If not specified, use unit cube [-1, 1]
@@ -149,7 +160,9 @@ def solve_subproblem(
         raise ValueError("Subproblem solver is not supported.")
 
     evaluate_subproblem = partial(
-        _criterion_and_derivative_subproblem, jac_res=jac_res, hess_res=hess_res
+        _criterion_and_derivative_subproblem,
+        first_derivative=first_derivative,
+        second_derivative=second_derivative,
     )
 
     rslt = minimize(
@@ -171,84 +184,86 @@ def solve_subproblem(
     return rslt
 
 
-def find_nearby_points(
-    xhist,
-    xmin,
-    qmat,
-    q_is_I,
+def find_affine_points(
+    history_x,
+    min_x,
+    model_improving_points,
+    project_x_onto_null,
     delta,
     theta1,
     c,
     model_indices,
     n,
-    mpoints,
-    nhist,
+    n_modelpoints,
+    n_history,
 ):
-    """Find nearby points.
+    """Find affine points.
 
     Args:
-        xhist (np.ndarray): Array storing all candidates of the parameter vector.
-        xmin (np.ndarray): Values of parameter vector x that yield the lowest
+        history_x (np.ndarray): Array storing all candidates of the parameter vector.
+        min_x (np.ndarray): Values of parameter vector x that yield the lowest
             criterion function norm.
-        qmat (np.ndarray): Q matrix.
-        q_is_I (int): Indicator whether to calculate the QR decomposition of
-            *qmat* and multiply *qmat* with vector *xk_plus*.
+        model_improving_points (np.ndarray): Q matrix.
+        project_x_onto_null (int): Indicator whether to calculate the QR
+            decomposition of *model_improving_points* and multiply
+            *model_improving_points* with vector *xk_plus*.
         delta (float): Delta, current trust-region radius.
         theta1 (float): Theta_1.
         c (float): C.
-        model_indices (np.ndarray): Indices related to *xhist*, i.e. the
+        model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
         n (int): Number of parameters.
-        mpoints (int): Current number of model points.
-        nhist (int): Current number candidate solutions for x.
+        n_modelpoints (int): Current number of model points.
+        n_history (int): Current number candidate solutions for x.
 
     Returns:
         Tuple:
-        - qmat (np.ndarray): Q matrix.
+        - model_improving_points (np.ndarray): Q matrix.
         - model_indices (np.ndarray):
-        - mpoints (int): Current number of model points.
-        - q_is_I (int): Indicator whether to calculate the QR decomposition of
-            *qmat* and multiply *qmat* with vector *xk_plus*.
+        - n_modelpoints (int): Current number of model points.
+        - project_x_onto_null (int): Indicator whether to calculate the QR
+            decomposition of *model_improving_points* and multiply
+            *model_improving_points* with vector *xk_plus*.
             Relevant for next call of *find_nearby_points*.
     """
-    for i in range(nhist - 1, -1, -1):
-        xk = (xhist[i, :] - xmin) / delta
-        normd = np.linalg.norm(xk)
+    for i in range(n_history - 1, -1, -1):
+        candidate_x = (history_x[i, :] - min_x) / delta
+        candidate_norm = np.linalg.norm(candidate_x)
 
-        xk_plus = xk
+        projected_x = candidate_x
 
-        if normd <= c:
-            if q_is_I == 0:
-                xk_plus, _ = qr_multiply(qmat, xk_plus)
+        if candidate_norm <= c:
+            if project_x_onto_null is True:
+                projected_x, _ = qr_multiply(model_improving_points, projected_x)
 
-            proj = np.linalg.norm(xk_plus[mpoints:])
+            proj = np.linalg.norm(projected_x[n_modelpoints:])
 
             # Add this index to the model
             if proj >= theta1:
-                model_indices[mpoints] = i
-                mpoints += 1
-                qmat[:, mpoints - 1] = xk
-                q_is_I = 0
+                model_indices[n_modelpoints] = i
+                model_improving_points[:, n_modelpoints] = candidate_x
+                project_x_onto_null = True
+                n_modelpoints += 1
 
-            if mpoints == n:
+            if n_modelpoints == n:
                 break
 
-    return qmat, model_indices, mpoints, q_is_I
+    return model_improving_points, model_indices, n_modelpoints, project_x_onto_null
 
 
 def improve_model(
-    xhist,
-    fhist,
-    fnorm,
-    jac_res,
-    hess_res,
-    qmat,
+    history_x,
+    history_criterion,
+    history_criterion_norm,
+    first_derivative,
+    second_derivative,
+    model_improving_points,
     model_indices,
-    minindex,
-    mpoints,
-    addallpoints,
+    index_min_x,
+    n_modelpoints,
+    add_all_points,
     n,
-    nhist,
+    n_history,
     delta,
     criterion,
     lower_bounds,
@@ -257,151 +272,182 @@ def improve_model(
     """Improve the model.
 
     Args:
-        xhist (np.ndarray): Array storing all candidates of the parameter
+        history_x (np.ndarray): Array storing all candidates of the parameter
             vector. Shape (1000, *n*).
-        fhist (np.ndarray): Array storing all evaluations of the criterion
-            function. Shape(1000, *nobs*).
-        fnorm (np.ndarray): Array storing norm of the criterion function.
-            Shape (1000,):
-        jac_res (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
-        hess_res (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
-        qmat (np.ndarray): Q matrix.
-        model_indices (np.ndarray): Indices related to *xhist*, i.e. the
+        history_criterion (np.ndarray): Array storing all evaluations of the criterion
+            function. Shape(1000, *n_obs*).
+        history_criterion_norm (np.ndarray): Array storing norm of the criterion
+            function. Shape (1000,).
+        first_derivative (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
+        second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
+        model_improving_points (np.ndarray): Q matrix.
+        model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
-        minindex (int): Index in *xhist* associated with the parameter vector
+        index_min_x (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
-        mpoints (int): Current number of model points.
-        addallpoints (int): If equal to 0, add points. Else, don't.
+        n_modelpoints (int): Current number of model points.
+        add_all_points (int): If equal to 0, add points. Else, don't.
         n (int): Number of parameters.
-        nhist (int): Current number candidate solutions for x.
+        n_history (int): Current number candidate solutions for x.
         delta (float): Delta, current trust-region radius.
         criterion (callable): Criterion function.
-        lower_bounds (np.ndarray): Lower bounds.
-            Must have same length as the initial guess of the
+        lower_bounds (np.ndarray): lower_triangularower bounds.
+            candidate_xust have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
         upper_bounds (np.ndarray): Upper bounds.
-            Must have same length as the initial guess of the
+            candidate_xust have same length as the initial guess of the
             parameter vector. Equal to 1 if not provided by the user.
 
     Returns:
         Tuple:
-        - xhist (np.ndarray): Array storing all candidates of the parameter
+        - history_x (np.ndarray): Array storing all candidates of the parameter
             vector. Shape (1000, *n*).
-        - fhist (np.ndarray): Array storing all evaluations of the criterion
-            function. Shape(1000, *nobs*).
-        - fnorm (np.ndarray): Array storing norm of the criterion function.
-            Shape (1000,)
-        - mpoints (int): Current number of model points.
-        - nhist (int): Current number candidate solutions for x.
+        - history_criterion (np.ndarray): Array storing all evaluations of the criterion
+            function. Shape(1000, *n_obs*).
+        - history_criterion_norm (np.ndarray): Array storing norm of the
+            criterion function. Shape (1000,)
+        - n_modelpoints (int): Current number of model points.
+        - n_history (int): Current number candidate solutions for x.
     """
-    minindex_internal = 0
+    index_min_internal = 0
     minvalue = np.inf
     work = np.zeros(3)
 
-    qtmp, _ = qr_multiply(qmat, np.eye(3), mode="right")
+    model_improving_points, _ = qr_multiply(
+        model_improving_points, np.eye(3), mode="right"
+    )
 
-    for i in range(mpoints, n):
-        dp = np.dot(qtmp[:, i], jac_res)
+    for i in range(n_modelpoints, n):
+        dp = np.dot(model_improving_points[:, i], first_derivative)
 
-        # Model says use the other direction!
+        # candidate_xodel says use the other model_improving_points!
         if dp > 0:
-            qtmp[:, i] *= -1
+            model_improving_points[:, i] *= -1
 
-        jac_res_new = jac_res + 0.5 * np.dot(hess_res, qtmp[:, i])
-        work[i] = np.dot(qtmp[:, i], jac_res_new)
+        first_derivative_new = first_derivative + 0.5 * np.dot(
+            second_derivative, model_improving_points[:, i]
+        )
+        work[i] = np.dot(model_improving_points[:, i], first_derivative_new)
 
-        if (i == mpoints) or (work[i] < minvalue):
-            minindex_internal = i
+        if (i == n_modelpoints) or (work[i] < minvalue):
+            index_min_internal = i
             minvalue = work[i]
 
-        if addallpoints != 0:
-            xhist, fhist, fnorm, model_indices, mpoints, nhist = _add_point(
-                xhist=xhist,
-                fhist=fhist,
-                fnorm=fnorm,
-                qtmp=qtmp,
+        if add_all_points != 0:
+            (
+                history_x,
+                history_criterion,
+                history_criterion_norm,
+                model_indices,
+                n_modelpoints,
+                n_history,
+            ) = _add_point(
+                history_x=history_x,
+                history_criterion=history_criterion,
+                history_criterion_norm=history_criterion_norm,
+                model_improving_points=model_improving_points,
                 model_indices=model_indices,
-                minindex=minindex,
+                index_min_x=index_min_x,
                 index=i,
-                mpoints=mpoints,
-                nhist=nhist,
+                n_modelpoints=n_modelpoints,
+                n_history=n_history,
                 delta=delta,
                 criterion=criterion,
                 lower_bounds=lower_bounds,
                 upper_bounds=upper_bounds,
             )
 
-    if addallpoints != 1:
-        xhist, fhist, fnorm, model_indices, mpoints, nhist = _add_point(
-            xhist=xhist,
-            fhist=fhist,
-            fnorm=fnorm,
-            qtmp=qtmp,
+    if add_all_points != 1:
+        (
+            history_x,
+            history_criterion,
+            history_criterion_norm,
+            model_indices,
+            n_modelpoints,
+            n_history,
+        ) = _add_point(
+            history_x=history_x,
+            history_criterion=history_criterion,
+            history_criterion_norm=history_criterion_norm,
+            model_improving_points=model_improving_points,
             model_indices=model_indices,
-            minindex=minindex,
-            index=minindex_internal,
-            mpoints=mpoints,
-            nhist=nhist,
+            index_min_x=index_min_x,
+            index=index_min_internal,
+            n_modelpoints=n_modelpoints,
+            n_history=n_history,
             delta=delta,
             criterion=criterion,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
         )
 
-    return xhist, fhist, fnorm, model_indices, mpoints, nhist
+    return (
+        history_x,
+        history_criterion,
+        history_criterion_norm,
+        model_indices,
+        n_modelpoints,
+        n_history,
+    )
 
 
 def add_more_points(
-    xhist,
-    xmin,
+    history_x,
+    min_x,
     model_indices,
-    minindex,
+    index_min_x,
     delta,
     c2,
     theta2,
     n,
-    maxinterp,
-    mpoints,
-    nhist,
+    n_maxinterp,
+    n_modelpoints,
+    n_history,
 ):
     """Add more points.
     Args:
-        xhist (np.ndarray): Array storing all candidates of the parameter
+        history_x (np.ndarray): Array storing all candidates of the parameter
             vector. Shape (1000, *n*).
-        xmin (np.ndarray): Values of parameter vector x that yield the lowest
+        min_x (np.ndarray): Values of parameter vector x that yield the lowest
             criterion function norm.
-        model_indices (np.ndarray): Indices related to *xhist*, i.e. the
+        model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
-        minindex (int): Index in *xhist* associated with the parameter vector
+        index_min_x (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
         delta (float): Delta, current trust-region radius.
         c2 (int): C_2. Equal to 10 by default.
         theta2 (float): Theta_2.
         n (int): Number of parameters.
-        maxinterp (int): Maximum number of interpolation points.
-        mpoints (int): Current number of model points.
-        nhist (int): Current number candidate solutions for x.
+        n_maxinterp (int): candidate_xaximum number of interpolation points.
+        n_modelpoints (int): Current number of model points.
+        n_history (int): Current number candidate solutions for x.
     Returns:
         Tuple:
-        - L (np.ndarray): L matrix. Shape(*maxinterp*, *n* (*n* + 1) / 2).
-        - Z (np.ndarray): Z matrix. Shape(*maxinterp*, len(*n* + 1 : *mpoints*)).
-        - N (np.ndarray): N matrix. Shape(*maxinterp*, *n* + 1).
-        - M (np.ndarray): M matrix. Shape(*maxinterp*, *n* (*n* + 1) / 2).
-        - mpoints (int): Current number of model points.
+        - lower_triangular (np.ndarray): lower_triangular matrix.
+            Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
+        - basis_null_space (np.ndarray): basis_null_space matrix.
+            Shape(*n_maxinterp*, len(*n* + 1 : *n_modelpoints*)).
+        - monomial_basis (np.ndarray): monomial_basis matrix.
+            Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
+        - interpolation_set (np.ndarray): interpolation set.
+            Shape(*n_maxinterp*, *n* + 1).
+        - n_modelpoints (int): Current number of model points.
     """
-    M = np.zeros((maxinterp, n + 1))
-    N = np.zeros((maxinterp, int(n * (n + 1) / 2)))
-    M[:, 0] = 1
+    interpolation_set = np.zeros((n_maxinterp, n + 1))
+    interpolation_set[:, 0] = 1
+    monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
 
     for i in range(n + 1):
-        M[i, 1:] = (xhist[model_indices[i], :] - xmin) / delta
-        N[i, :] = _evaluate_phi(x=M[i, 1:])
+        interpolation_set[i, 1:] = (history_x[model_indices[i], :] - min_x) / delta
+        monomial_basis[i, :] = _get_basis_quadratic_functions(
+            x=interpolation_set[i, 1:]
+        )
 
-    # Now we add points until we have maxinterp starting with the most recent ones
-    point = nhist - 1
-    mpoints = n + 1
+    # Now we add points until we have n_maxinterp starting with the most recent ones
+    point = n_history - 1
+    n_modelpoints = n + 1
 
-    while (mpoints < maxinterp) and (point >= 0):
+    while (n_modelpoints < n_maxinterp) and (point >= 0):
         reject = False
 
         # Reject any points already in the model
@@ -411,81 +457,98 @@ def add_more_points(
                 break
 
         if reject is False:
-            workxvec = xhist[point]
-            workxvec = workxvec - xhist[minindex]
-            normd = np.linalg.norm(workxvec)
-            normd /= delta
+            candidate_x = history_x[point] - history_x[index_min_x]
+            candidate_norm = np.linalg.norm(candidate_x)
+            candidate_norm /= delta
 
-            if normd > c2:
+            if candidate_norm > c2:
                 reject = True
 
         if reject is True:
             point -= 1
             continue
 
-        M[mpoints, 1:] = (xhist[point] - xmin) / delta
-        N[mpoints, :] = _evaluate_phi(x=M[mpoints, 1:])
-
-        Q_tmp = np.zeros((7, 7))
-        Q_tmp[:7, : n + 1] = M
-
-        L_tmp, _ = qr_multiply(
-            Q_tmp[: mpoints + 1, :],
-            N.T[: int(n * (n + 1) / 2), : mpoints + 1],
-            mode="right",
+        interpolation_set[n_modelpoints, 1:] = (history_x[point] - min_x) / delta
+        monomial_basis[n_modelpoints, :] = _get_basis_quadratic_functions(
+            x=interpolation_set[n_modelpoints, 1:]
         )
-        beta = np.linalg.svd(L_tmp.T[n + 1 :], compute_uv=False)
 
-        if beta[min(mpoints - n, int(n * (n + 1) / 2)) - 1] > theta2:
+        interpolation_set_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
+        interpolation_set_with_zeros[:n_maxinterp, : n + 1] = interpolation_set
+
+        lower_triangular_tmp, _ = qr_multiply(
+            interpolation_set_with_zeros[: n_modelpoints + 1, :],
+            monomial_basis.T[: int(n * (n + 1) / 2), : n_modelpoints + 1],
+        )
+        beta = np.linalg.svd(lower_triangular_tmp.T[n + 1 :], compute_uv=False)
+
+        if beta[min(n_modelpoints - n, int(n * (n + 1) / 2)) - 1] > theta2:
             # Accept point
-            model_indices[mpoints] = point
-            L = L_tmp
+            model_indices[n_modelpoints] = point
+            lower_triangular = lower_triangular_tmp
 
-            mpoints += 1
+            n_modelpoints += 1
 
         point -= 1
 
-    cq, _ = qr_multiply(
-        Q_tmp[:mpoints, :], np.eye(maxinterp)[:, :mpoints], mode="right"
+    # Orthogonal basis for the null space of M, where M is the
+    # interpolation set
+    basis_null_space, _ = qr_multiply(
+        interpolation_set_with_zeros[:n_modelpoints, :],
+        np.eye(n_maxinterp)[:, :n_modelpoints],
     )
-    Z = cq[:, n + 1 : mpoints]
+    basis_null_space = basis_null_space[:, n + 1 : n_modelpoints]
 
-    if mpoints == (n + 1):
-        L = np.zeros((maxinterp, int(n * (n + 1) / 2)))
-        L[:n, :n] = np.eye(n)
+    if n_modelpoints == (n + 1):
+        lower_triangular = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
+        lower_triangular[:n, :n] = np.eye(n)
 
-    return L, Z, N, M, mpoints
+    return (
+        lower_triangular,
+        basis_null_space,
+        monomial_basis,
+        interpolation_set,
+        n_modelpoints,
+    )
 
 
-def get_residuals(
-    xk, hess, fhist, fmin, fdiff, model_indices, mpoints, nobs, maxinterp
+def get_approximation_error(
+    xk,
+    hessian,
+    history_criterion,
+    min_criterion,
+    gradient,
+    model_indices,
+    n_modelpoints,
+    n_obs,
+    n_maxinterp,
 ):
-    """Calculate residuals."""
-    res = np.zeros((maxinterp, nobs), dtype=np.float64)
+    """Calculate approximation error."""
+    approximation_error = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
 
-    for j in range(nobs):
-        xk_hess = np.dot(xk, hess[j, :, :])
+    for j in range(n_obs):
+        xk_hessian = np.dot(xk, hessian[j, :, :])
 
-        for i in range(mpoints):
-            res[i, j] = (
-                -fmin[j]
-                - np.dot(fdiff[:, j], xk[i, :])
-                - 0.5 * np.dot(xk_hess[i, :], xk[i, :])
-                + fhist[model_indices[i], j]
+        for i in range(n_modelpoints):
+            approximation_error[i, j] = (
+                history_criterion[model_indices[i], j]
+                - min_criterion[j]
+                - np.dot(gradient[:, j], xk[i, :])
+                - 0.5 * np.dot(xk_hessian[i, :], xk[i, :])
             )
 
-    return res
+    return approximation_error
 
 
 def get_params_quadratic_model(
-    L,
-    Z,
-    N,
-    M,
-    res,
-    mpoints,
+    lower_triangular,
+    basis_null_space,
+    monomial_basis,
+    interpolation_set,
+    approximation_error,
+    n_modelpoints,
     n,
-    nobs,
+    n_obs,
 ):
     """Get parameters of quadratic model.
 
@@ -493,120 +556,138 @@ def get_params_quadratic_model(
     that satisfies the interpolation conditions Q(X[:,j]) = f(j)
     for j= 1,..., m and with a Hessian matrix of least Frobenius norm.
     Args:
-        L (np.ndarray): L matrix. Shape(*maxinterp*, *n* (*n* + 1) / 2).
-        Z (np.ndarray): Z matrix. Shape(:*mpoints*, *n* + 1 : *mpoints*).
-        N (np.ndarray): N matrix. Shape(*maxinterp*, *n* + 1).
-        M (np.ndarray): M matrix. Shape(*maxinterp*, *n* (*n* + 1) / 2).
-        res (np.ndarray): Array of residuals of the current iteration.
-            Shape (*maxinterp*, *nobs*).
-        mpoints (int): Current number of model points.
+        lower_triangular (np.ndarray): lower_triangular matrix.
+            Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
+        basis_null_space (np.ndarray): basis_null_space matrix.
+            Shape(:*n_modelpoints*, *n* + 1 : *n_modelpoints*).
+        monomial_basis (np.ndarray): monomial_basis matrix.
+            Shape(*n_maxinterp*, *n* + 1).
+        interpolation_set (np.ndarray): Interpolation set.
+            Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
+        approximation_error (np.ndarray): Approximation_error.
+            Shape (*n_maxinterp*, *n_obs*).
+        n_modelpoints (int): Current number of model points.
         n (int): Number of parameters.
-        nobs (int): Number of observations.
+        n_obs (int): Number of observations.
 
     Returns:
         Tuple:
-        - jac_quadratic (np.ndarray): Jacobian of the quadratic model.
-            Shape (*nobs*, *n*).
-        - hess_quadratic (np.ndarray): Hessian of the quadratic model.
-            Shape (*nobs*, *n*, *n*).
+        - params_gradient (np.ndarray): Jacobian of the quadratic model.
+            Shape (*n_obs*, *n*).
+        - params_hessian (np.ndarray): Hessian of the quadratic model.
+            Shape (*n_obs*, *n*, *n*).
     """
-    jac_quadratic = np.zeros((nobs, n))
-    hess_quadratic = np.zeros((nobs, n, n))
+    params_gradient = np.zeros((n_obs, n))
+    params_hessian = np.zeros((n_obs, n, n))
+    lower_triangular = lower_triangular[:, n + 1 : n_modelpoints]
 
-    if mpoints == (n + 1):
+    if n_modelpoints == (n + 1):
         omega = np.zeros(n)
         beta = np.zeros(int(n * (n + 1) / 2))
     else:
-        L_tmp = np.dot(L[:, n + 1 : mpoints].T, L[:, n + 1 : mpoints])
+        lower_triangular_square = np.dot(lower_triangular.T, lower_triangular)
 
-    for k in range(nobs):
-        if mpoints != (n + 1):
-            omega = np.dot(Z[:mpoints, :].T, res[:mpoints, k])
-            omega = np.linalg.solve(np.atleast_2d(L_tmp), np.atleast_1d(omega))
+    for k in range(n_obs):
+        if n_modelpoints != (n + 1):
+            omega = np.dot(
+                basis_null_space[:n_modelpoints, :].T,
+                approximation_error[:n_modelpoints, k],
+            )
+            omega = np.linalg.solve(
+                np.atleast_2d(lower_triangular_square), np.atleast_1d(omega)
+            )
 
-            beta = np.dot(np.atleast_2d(L[:, n + 1 : mpoints]), omega)
+            beta = np.dot(np.atleast_2d(lower_triangular), omega)
 
-        rhs = res[:mpoints, k] - np.dot(N[:mpoints, :], beta)
+        rhs = approximation_error[:n_modelpoints, k] - np.dot(
+            monomial_basis[:n_modelpoints, :], beta
+        )
 
-        alpha = np.linalg.solve(M[: n + 1, : n + 1], rhs[: n + 1])
-        jac_quadratic[k, :] = alpha[1 : (n + 1)]
+        alpha = np.linalg.solve(interpolation_set[: n + 1, : n + 1], rhs[: n + 1])
+        params_gradient[k, :] = alpha[1 : (n + 1)]
 
         num = 0
         for i in range(n):
-            hess_quadratic[k, i, i] = beta[num]
+            params_hessian[k, i, i] = beta[num]
             num += 1
             for j in range(i + 1, n):
-                hess_quadratic[k, j, i] = beta[num] / np.sqrt(2)
-                hess_quadratic[k, i, j] = beta[num] / np.sqrt(2)
+                params_hessian[k, j, i] = beta[num] / np.sqrt(2)
+                params_hessian[k, i, j] = beta[num] / np.sqrt(2)
                 num += 1
 
-    return jac_quadratic, hess_quadratic
+    return params_gradient, params_hessian
 
 
-def update_fdiff_and_hess(fdiff, hess, jac_quadratic, hess_quadratic, delta, delta_old):
-    """Update fdiff and Hessian."""
-    fdiff_new = (delta / delta_old) * fdiff + jac_quadratic.T
-    hess_new = (delta / delta_old) ** 2 * hess + hess_quadratic
+def update_gradient_and_hessian(
+    gradient, hessian, params_gradient, params_hessian, delta, delta_old
+):
+    """Update gradient and Hessian."""
+    gradient_new = (delta / delta_old) * gradient + params_gradient.T
+    hessian_new = (delta / delta_old) ** 2 * hessian + params_hessian
 
-    return fdiff_new, hess_new
+    return gradient_new, hessian_new
 
 
 def _criterion_and_derivative_subproblem(
     x,
-    jac_res,
-    hess_res,
+    first_derivative,
+    second_derivative,
 ):
     """Returns the objective and gradient of the subproblem.
+
     Args:
         x (np.ndarray): Parameter vector.
-        jac_res (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
-        hess_res (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
+        first_derivative (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
+        second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
     Returns:
         Tuple:
         - obj (float): Value of the objective function.
         - grad (np.ndarray): Gradient vector. Shape (*n*,).
     """
-    criterion = np.dot(jac_res, x) + 0.5 * np.dot(np.dot(x, hess_res), x)
-    derivative = jac_res + np.dot(hess_res, x)
+    criterion = np.dot(first_derivative, x) + 0.5 * np.dot(
+        np.dot(x, second_derivative), x
+    )
+    derivative = first_derivative + np.dot(second_derivative, x)
 
     return criterion, derivative
 
 
-def _evaluate_phi(x):
+def _get_basis_quadratic_functions(x):
     """Evaluate phi.
+
     Phi = .5*[x(1)^2  sqrt(2)*x(1)*x(2) ... sqrt(2)*x(1)*x(n) ...
         ... x(2)^2 sqrt(2)*x(2)*x(3) .. x(n)^2]
     Args:
         x (np.ndarray): Parameter vector of shape (*n*,).
         n (int): Number of parameters.
     Returns:
-        (np.ndarray): Phi vector. Shape (*n* (*n* + 1) / 2,)
+        (np.ndarray): Monomial basis of shape (*n* (*n* + 1) / 2,)
     """
     n = x.shape[0]
-    phi = np.zeros(int(n * (n + 1) / 2))
+    monomial_basis = np.zeros(int(n * (n + 1) / 2))
 
     j = 0
     for i in range(n):
-        phi[j] = 0.5 * x[i] * x[i]
+        monomial_basis[j] = 0.5 * x[i] ** 2
         j += 1
 
         for k in range(i + 1, n):
-            phi[j] = x[i] * x[k] / np.sqrt(2)
+            monomial_basis[j] = x[i] * x[k] / np.sqrt(2)
             j += 1
 
-    return phi
+    return monomial_basis
 
 
 def _add_point(
-    xhist,
-    fhist,
-    fnorm,
-    qtmp,
+    history_x,
+    history_criterion,
+    history_criterion_norm,
+    model_improving_points,
     model_indices,
-    minindex,
+    index_min_x,
     index,
-    mpoints,
-    nhist,
+    n_modelpoints,
+    n_history,
     delta,
     criterion,
     lower_bounds,
@@ -615,62 +696,70 @@ def _add_point(
     """Add point to the model
 
     Args:
-        xhist (np.ndarray): Array storing all candidates of the parameter
+        history_x (np.ndarray): Array storing all candidates of the parameter
             vector. Shape (1000, *n*).
-        fhist (np.ndarray): Array storing all evaluations of the criterion
-            function. Shape(1000, *nobs*).
-        fnorm (np.ndarray): Array storing norm of the criterion function.
-            Shape (1000,):
-        qtmp (np.ndarray): Q matrix containing the parameter vector to add
-            to *xhist*. Shape (*n*, *n*).
-        model_indices (np.ndarray): Indices related to *xhist*, i.e. the
+        history_criterion (np.ndarray): Array storing all evaluations of the criterion
+            function. Shape(1000, *n_obs*).
+        history_criterion_norm (np.ndarray): Array storing norm of the criterion
+            function. Shape (1000,).
+        model_improving_points (np.ndarray): Q matrix containing the parameter
+            vector to add to *history_x*. Shape (*n*, *n*).
+        model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
-        minindex (int): Index in *xhist* associated with the parameter vector
+        index_min_x (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
-        index (int): Index relating to the parameter vector in *qtmp* that
-            is added to *xhist*.
-        mpoints (int): Current number of model points.
-        nhist (int): Current number candidate solutions for x.
+        index (int): Index relating to the parameter vector in
+            *model_improving_points* that is added to *history_x*.
+        n_modelpoints (int): Current number of model points.
+        n_history (int): Current number candidate solutions for x.
         delta (float): Delta, current trust-region radius.
         criterion (callable): Criterion function.
-        lower_bounds (np.ndarray): Lower bounds.
-            Must have same length as the initial guess of the
+        lower_bounds (np.ndarray): lower_triangularower bounds.
+            candidate_xust have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
         upper_bounds (np.ndarray): Upper bounds.
-            Must have same length as the initial guess of the
+            candidate_xust have same length as the initial guess of the
             parameter vector. Equal to 1 if not provided by the user.
 
     Returns:
         Tuple:
-        - xhist (np.ndarray): Array storing all candidates of the parameter
+        - history_x (np.ndarray): Array storing all candidates of the parameter
             vector. Shape (1000, *n*).
-        - fhist (np.ndarray): Array storing all evaluations of the criterion
-            function. Shape(1000, *nobs*).
-        - fnorm (np.ndarray): Array storing norm of the criterion function.
-            Shape (1000,)
-        - model_indices (np.ndarray): Indices related to *xhist*, i.e. the
+        - history_criterion (np.ndarray): Array storing all evaluations of the criterion
+            function. Shape(1000, *n_obs*).
+        - history_criterion_norm (np.ndarray): Array storing norm of the
+            criterion function. Shape (1000,).
+        - model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
-        - mpoints (int): Current number of model points.
-        - nhist (int): Current number candidate solutions for x.
+        - n_modelpoints (int): Current number of model points.
+        - n_history (int): Current number candidate solutions for x.
     """
     # Create new vector in history
-    xhist[nhist] = qtmp[:, index]
-    xhist[nhist] = delta * xhist[nhist] + xhist[minindex]
+    history_x[n_history] = model_improving_points[:, index]
+    history_x[n_history] = delta * history_x[n_history] + history_x[index_min_x]
 
     # Project into feasible region
     if lower_bounds is not None and upper_bounds is not None:
-        xhist[nhist] = np.median(
-            np.stack([lower_bounds, xhist[nhist], upper_bounds]), axis=0
+        history_x[n_history] = np.median(
+            np.stack([lower_bounds, history_x[n_history], upper_bounds]), axis=0
         )
 
     # Compute value of new vector
-    fhist[nhist] = criterion(xhist[nhist])
-    fsum = compute_fnorm(fhist[nhist])
-    fnorm[nhist] = fsum
+    history_criterion[n_history] = criterion(history_x[n_history])
+    history_criterion_norm[n_history] = compute_criterion_norm(
+        history_criterion[n_history]
+    )
 
     # Add new vector to the model
-    model_indices[mpoints] = nhist
-    mpoints += 1
-    nhist += 1
+    model_indices[n_modelpoints] = n_history
+    n_modelpoints += 1
+    n_history += 1
 
-    return xhist, fhist, fnorm, model_indices, mpoints, nhist
+    return (
+        history_x,
+        history_criterion,
+        history_criterion_norm,
+        model_indices,
+        n_modelpoints,
+        n_history,
+    )

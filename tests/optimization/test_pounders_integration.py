@@ -1,4 +1,3 @@
-import sys
 from functools import partial
 
 import numpy as np
@@ -14,11 +13,9 @@ def load_history(start_vec, solver_sub):
         start_vec, precision=3, separator=",", suppress_small=False
     )
 
-    history_x = (
-        np.genfromtxt(
-            TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
-            delimiter=",",
-        ),
+    history_x = np.genfromtxt(
+        TEST_FIXTURES_DIR / f"history_x_{start_vec_str}_{solver_sub}_3_8.csv",
+        delimiter=",",
     )
     history_criterion = np.genfromtxt(
         TEST_FIXTURES_DIR / f"history_criterion_{start_vec_str}_{solver_sub}_3_8.csv",
@@ -52,7 +49,7 @@ def criterion():
         ),
         (
             np.array([0.1, 0.1, 0.1]),
-            1e-7,
+            1e-9,
             "trust-constr",
             {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
         ),
@@ -61,6 +58,12 @@ def criterion():
             1e-10,
             "trust-constr",
             {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
+        ),
+        (
+            np.array([-1e-6, -1e-6, -1e-6]),
+            1e-10,
+            "trust-constr",
+            {"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12},
         ),
         (
             np.array([0.4, 0.4, 0.4]),
@@ -97,7 +100,7 @@ def criterion():
 def test_solution_and_histories(
     start_vec, gtol, solver_sub, trustregion_subproblem_options, criterion
 ):
-    nobs = 214
+    n_obs = 214
     delta = 0.1
     delta_min = 1e-6
     delta_max = 1e6
@@ -107,13 +110,13 @@ def test_solution_and_histories(
     theta2 = 1e-4
     eta0 = 0.0
     eta1 = 0.1
-    c1 = np.sqrt(start_vec.shape[0])
+    c1 = np.sqrt(3)
     c2 = 10
     maxiter = 200
 
     rslt = internal_solve_pounders(
         x0=start_vec,
-        nobs=nobs,
+        n_obs=n_obs,
         criterion=criterion,
         delta=delta,
         delta_min=delta_min,
@@ -137,11 +140,3 @@ def test_solution_and_histories(
     )
 
     aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]))
-
-    if sys.platform == "linux" and sys.version_info == (3, 8):
-        # Only run on Linux, python version 3.8, since x and criterion histories
-        # differ on other systems
-        history_x, history_criterion = load_history(start_vec, solver_sub)
-
-        aaae(rslt["history_x"], history_x)
-        aaae(rslt["history_criterion"], history_criterion)

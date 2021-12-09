@@ -2,15 +2,15 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.pounders_auxiliary import add_more_points
-from estimagic.optimization.pounders_auxiliary import calc_jac_and_hess_res
-from estimagic.optimization.pounders_auxiliary import compute_fnorm
-from estimagic.optimization.pounders_auxiliary import find_nearby_points
+from estimagic.optimization.pounders_auxiliary import calc_first_and_second_derivative
+from estimagic.optimization.pounders_auxiliary import compute_criterion_norm
+from estimagic.optimization.pounders_auxiliary import find_affine_points
+from estimagic.optimization.pounders_auxiliary import get_approximation_error
 from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
-from estimagic.optimization.pounders_auxiliary import get_residuals
 from estimagic.optimization.pounders_auxiliary import improve_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import update_center
-from estimagic.optimization.pounders_auxiliary import update_fdiff_and_hess
+from estimagic.optimization.pounders_auxiliary import update_gradient_and_hessian
 
 
 def pounders(
@@ -64,7 +64,7 @@ def pounders(
     rslt = internal_solve_pounders(
         criterion=criterion,
         x0=x,
-        nobs=n_errors,
+        n_obs=n_errors,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         gtol=convergence_absolute_gradient_tolerance,
@@ -91,7 +91,7 @@ def pounders(
 
 def internal_solve_pounders(
     x0,
-    nobs,
+    n_obs,
     criterion,
     delta,
     delta_min,
@@ -117,7 +117,7 @@ def internal_solve_pounders(
 
     Args:
         x0 (np.ndarray): Initial guess of the parameter vector. Starting points.
-        nobs (int): Number of observations/evaluation points.
+        n_obs (int): Number of observations/evaluation points.
         criterion (callable): Criterion function to be minimized.
         delta (float): Delta, initial trust-region radius.
         delta_min (float): Minimum value for delta.
@@ -150,15 +150,16 @@ def internal_solve_pounders(
         - gradient (np.ndarray): Gradient associated with the solution vector.
     """
     n = x0.shape[0]  # number of model parameters
-    maxinterp = 2 * n + 1  # max number of interpolation points
+    n_maxinterp = 2 * n + 1  # max number of interpolation points
+    model_indices = np.zeros(n_maxinterp, dtype=int)
 
-    xhist = np.zeros((maxiter * 2, n))
-    fhist = np.zeros((maxiter * 2, nobs))
-    fnorm = np.zeros(maxiter * 2)
-    hess = np.zeros((nobs, n, n))
-    model_indices = np.zeros(maxinterp, dtype=int)
+    history_x = np.zeros((maxiter * 2, n))
+    history_criterion = np.zeros((maxiter * 2, n_obs))
+    history_criterion_norm = np.zeros(maxiter * 2)
 
-    last_mpoints = 0
+    hessian = np.zeros((n_obs, n, n))
+
+    last_n_modelpoints = 0
     niter = 0
 
     if lower_bounds is not None and upper_bounds is not None:
@@ -171,58 +172,62 @@ def internal_solve_pounders(
 
     # This provides enough information to approximate the gradient of the objective
     # using a forward difference scheme.
-    xhist[0] = x0
-    fhist[0, :] = criterion(x0)
-    fnorm[0] = compute_fnorm(criterion_value=fhist[0, :])
+    history_x[0] = x0
+    history_criterion[0, :] = criterion(x0)
+    history_criterion_norm[0] = compute_criterion_norm(
+        criterion_value=history_criterion[0, :]
+    )
 
-    minnorm = fnorm[0]
-    minindex = 0
+    min_criterion_norm = history_criterion_norm[0]
+    index_min_x = 0
 
     # Increment parameters separately by delta
     for i in range(n):
-        x1 = x0
+        x1 = np.copy(x0)
         x1[i] = x1[i] + delta
 
-        xhist[i + 1, :] = x1
-        fhist[i + 1, :] = criterion(x1)
-        fnorm[i + 1] = compute_fnorm(criterion_value=fhist[i + 1, :])
+        history_x[i + 1, :] = x1
+        history_criterion[i + 1, :] = criterion(x1)
+        history_criterion_norm[i + 1] = compute_criterion_norm(
+            criterion_value=history_criterion[i + 1, :]
+        )
 
-        if fnorm[i + 1] < minnorm:
-            minnorm = fnorm[i + 1]
-            minindex = i + 1
+        if history_criterion_norm[i + 1] < min_criterion_norm:
+            min_criterion_norm = history_criterion_norm[i + 1]
+            index_min_x = i + 1
 
-    xmin = xhist[minindex, :]
-    fmin = fhist[minindex, :]
+    min_x = history_x[index_min_x, :]
+    min_criterion = history_criterion[index_min_x, :]
 
-    # centering around new trust-region and normalize to [-1, 1]
-    indices_not_min = [i for i in range(n + 1) if i != minindex]
-    xk = (xhist[indices_not_min, :] - xmin) / delta
-    fdiff = fhist[indices_not_min, :] - fmin
+    # Center around new trust-region and normalize to [-1, 1]
+    indices_not_min = [i for i in range(n + 1) if i != index_min_x]
+    xk = (history_x[indices_not_min, :] - min_x) / delta
+    finite_difference = history_criterion[indices_not_min, :] - min_criterion
 
     # Determine the initial quadratic model
-    fdiff = np.linalg.solve(xk, fdiff)
+    gradient = np.linalg.solve(xk, finite_difference)
 
-    jac_res = np.dot(fdiff, fmin)
-    hess_res = np.dot(fdiff, fdiff.T)
-    gnorm = np.linalg.norm(jac_res)
-    gnorm *= delta
+    first_derivative = np.dot(gradient, min_criterion)
+    second_derivative = np.dot(gradient, gradient.T)
+    gradient_norm = np.linalg.norm(first_derivative)
+    gradient_norm *= delta
 
     valid = True
     reason = True
-    nhist = n + 1
-    mpoints = n + 1
+    n_history = n + 1
+    n_modelpoints = n + 1
 
-    last_model_indices = np.zeros(maxinterp, dtype=int)
+    last_model_indices = np.zeros(n_maxinterp, dtype=int)
 
     while reason is True:
         niter += 1
 
         # Solve the subproblem min{Q(s): ||s|| <= 1.0}
         rslt = solve_subproblem(
-            solution=xhist[minindex, :],
+            solution=history_x[index_min_x, :],
             delta=delta,
-            jac_res=jac_res,
-            hess_res=hess_res,
+            first_derivative=first_derivative,
+            second_derivative=second_derivative,
             ftol=ftol_sub,
             xtol=xtol_sub,
             gtol=gtol_sub,
@@ -232,65 +237,85 @@ def internal_solve_pounders(
         )
 
         qmin = -rslt.fun
-        xplus = xmin + rslt.x * delta
+        xplus = min_x + rslt.x * delta
 
-        xhist[nhist, :] = xplus
-        fhist[nhist, :] = criterion(xhist[nhist, :])
-        fnorm[nhist] = compute_fnorm(criterion_value=fhist[nhist, :])
-        rho = (fnorm[minindex] - fnorm[nhist]) / qmin
+        history_x[n_history, :] = xplus
+        history_criterion[n_history, :] = criterion(history_x[n_history, :])
+        history_criterion_norm[n_history] = compute_criterion_norm(
+            criterion_value=history_criterion[n_history, :]
+        )
+        rho = (
+            history_criterion_norm[index_min_x] - history_criterion_norm[n_history]
+        ) / qmin
 
-        nhist += 1
+        n_history += 1
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
-            xmin, fmin, fdiff, minnorm, jac_res, minindex = update_center(
+            (
+                min_x,
+                min_criterion,
+                gradient,
+                min_criterion_norm,
+                first_derivative,
+                index_min_x,
+            ) = update_center(
                 xplus=xplus,
-                xmin=xmin,
-                xhist=xhist,
+                min_x=min_x,
+                history_x=history_x,
                 delta=delta,
-                fmin=fmin,
-                fdiff=fdiff,
-                fnorm=fnorm,
-                hess=hess,
-                jac_res=jac_res,
-                hess_res=hess_res,
-                nhist=nhist,
+                min_criterion=min_criterion,
+                gradient=gradient,
+                history_criterion_norm=history_criterion_norm,
+                hessian=hessian,
+                first_derivative=first_derivative,
+                second_derivative=second_derivative,
+                n_history=n_history,
             )
 
         # Evaluate at a model improving point if necessary
         # Note: valid is True in first iteration
         if valid is False:
-            qmat = np.zeros((n, n))
-            q_is_I = 1
-            mpoints = 0
-            qmat, model_indices, mpoints, q_is_I = find_nearby_points(
-                xhist=xhist,
-                xmin=xmin,
-                qmat=qmat,
-                q_is_I=q_is_I,
+            (
+                model_improving_points,
+                model_indices,
+                n_modelpoints,
+                project_x_onto_null,
+            ) = find_affine_points(
+                history_x=history_x,
+                min_x=min_x,
+                model_improving_points=np.zeros((n, n)),
+                project_x_onto_null=False,
                 delta=delta,
                 theta1=theta1,
                 c=c1,
                 model_indices=model_indices,
                 n=n,
-                mpoints=mpoints,
-                nhist=nhist,
+                n_modelpoints=0,
+                n_history=n_history,
             )
 
-            if mpoints < n:
-                addallpoints = 1
-                xhist, fhist, fnorm, model_indices, mpoints, nhist = improve_model(
-                    xhist=xhist,
-                    fhist=fhist,
-                    fnorm=fnorm,
-                    jac_res=jac_res,
-                    hess_res=hess_res,
-                    qmat=qmat,
+            if n_modelpoints < n:
+                add_all_points = 1
+                (
+                    history_x,
+                    history_criterion,
+                    history_criterion_norm,
+                    model_indices,
+                    n_modelpoints,
+                    n_history,
+                ) = improve_model(
+                    history_x=history_x,
+                    history_criterion=history_criterion,
+                    history_criterion_norm=history_criterion_norm,
+                    first_derivative=first_derivative,
+                    second_derivative=second_derivative,
+                    model_improving_points=model_improving_points,
                     model_indices=model_indices,
-                    minindex=minindex,
-                    mpoints=mpoints,
-                    addallpoints=addallpoints,
+                    index_min_x=index_min_x,
+                    n_modelpoints=n_modelpoints,
+                    add_all_points=add_all_points,
                     n=n,
-                    nhist=nhist,
+                    n_history=n_history,
                     delta=delta,
                     criterion=criterion,
                     lower_bounds=lower_bounds,
@@ -299,137 +324,165 @@ def internal_solve_pounders(
 
         # Update the trust region radius
         delta_old = delta
-        xnorm_sub = np.sqrt(np.sum(rslt.x ** 2))
+        norm_x_sub = np.sqrt(np.sum(rslt.x ** 2))
 
-        if rho >= eta1 and xnorm_sub > 0.5 * delta:
+        if rho >= eta1 and norm_x_sub > 0.5 * delta:
             delta = min(delta * gamma1, delta_max)
         elif valid is True:
             delta = max(delta * gamma0, delta_min)
 
         # Compute the next interpolation set
-        qmat = np.zeros((n, n))
-        q_is_I = 1
-        mpoints = 0
-        qmat, model_indices, mpoints, q_is_I = find_nearby_points(
-            xhist=xhist,
-            xmin=xmin,
-            qmat=qmat,
-            q_is_I=q_is_I,
+        (
+            model_improving_points,
+            model_indices,
+            n_modelpoints,
+            project_x_onto_null,
+        ) = find_affine_points(
+            history_x=history_x,
+            min_x=min_x,
+            model_improving_points=np.zeros((n, n)),
+            project_x_onto_null=False,
             delta=delta,
             theta1=theta1,
             c=c1,
             model_indices=model_indices,
             n=n,
-            mpoints=mpoints,
-            nhist=nhist,
+            n_modelpoints=0,
+            n_history=n_history,
         )
 
-        if mpoints == n:
+        if n_modelpoints == n:
             valid = True
         else:
             valid = False
-            qmat, model_indices, mpoints, q_is_I = find_nearby_points(
-                xhist=xhist,
-                xmin=xmin,
-                qmat=qmat,
-                q_is_I=q_is_I,
+            (
+                model_improving_points,
+                model_indices,
+                n_modelpoints,
+                project_x_onto_null,
+            ) = find_affine_points(
+                history_x=history_x,
+                min_x=min_x,
+                model_improving_points=model_improving_points,
+                project_x_onto_null=project_x_onto_null,
                 delta=delta,
                 theta1=theta1,
                 c=c2,
                 model_indices=model_indices,
                 n=n,
-                mpoints=mpoints,
-                nhist=nhist,
+                n_modelpoints=n_modelpoints,
+                n_history=n_history,
             )
 
-            if n > mpoints:
+            if n > n_modelpoints:
                 # Model not valid. Add geometry points
-                addallpoints = n - mpoints
-                xhist, fhist, fnorm, model_indices, mpoints, nhist = improve_model(
-                    xhist=xhist,
-                    fhist=fhist,
-                    fnorm=fnorm,
-                    jac_res=jac_res,
-                    hess_res=hess_res,
-                    qmat=qmat,
+                add_all_points = n - n_modelpoints
+                (
+                    history_x,
+                    history_criterion,
+                    history_criterion_norm,
+                    model_indices,
+                    n_modelpoints,
+                    n_history,
+                ) = improve_model(
+                    history_x=history_x,
+                    history_criterion=history_criterion,
+                    history_criterion_norm=history_criterion_norm,
+                    first_derivative=first_derivative,
+                    second_derivative=second_derivative,
+                    model_improving_points=model_improving_points,
                     model_indices=model_indices,
-                    minindex=minindex,
-                    mpoints=mpoints,
-                    addallpoints=addallpoints,
+                    index_min_x=index_min_x,
+                    n_modelpoints=n_modelpoints,
+                    add_all_points=add_all_points,
                     n=n,
-                    nhist=nhist,
+                    n_history=n_history,
                     delta=delta,
                     criterion=criterion,
                     lower_bounds=lower_bounds,
                     upper_bounds=upper_bounds,
                 )
 
-        model_indices[1 : mpoints + 1] = model_indices[:mpoints]
-        mpoints += 1
-        model_indices[0] = minindex
+        model_indices[1 : n_modelpoints + 1] = model_indices[:n_modelpoints]
+        n_modelpoints += 1
+        model_indices[0] = index_min_x
 
-        L, Z, N, M, mpoints = add_more_points(
-            xhist=xhist,
-            xmin=xmin,
+        (
+            lower_triangular,
+            basis_null_space,
+            monomial_basis,
+            interpolation_set,
+            n_modelpoints,
+        ) = add_more_points(
+            history_x=history_x,
+            min_x=min_x,
             model_indices=model_indices,
-            minindex=minindex,
+            index_min_x=index_min_x,
             delta=delta,
             c2=c2,
             theta2=theta2,
             n=n,
-            maxinterp=maxinterp,
-            mpoints=mpoints,
-            nhist=nhist,
+            n_maxinterp=n_maxinterp,
+            n_modelpoints=n_modelpoints,
+            n_history=n_history,
         )
 
-        xk = (xhist[model_indices[:mpoints]] - xmin) / delta_old
+        xk = (history_x[model_indices[:n_modelpoints]] - min_x) / delta_old
 
-        res = get_residuals(
+        approximation_error = get_approximation_error(
             xk=xk,
-            hess=hess,
-            fhist=fhist,
-            fmin=fmin,
-            fdiff=fdiff,
+            hessian=hessian,
+            history_criterion=history_criterion,
+            min_criterion=min_criterion,
+            gradient=gradient,
             model_indices=model_indices,
-            mpoints=mpoints,
-            nobs=nobs,
-            maxinterp=maxinterp,
+            n_modelpoints=n_modelpoints,
+            n_obs=n_obs,
+            n_maxinterp=n_maxinterp,
         )
 
-        jac_quadratic, hess_quadratic = get_params_quadratic_model(
-            L=L, Z=Z, N=N, M=M, res=res, mpoints=mpoints, n=n, nobs=nobs
+        params_gradient, params_hessian = get_params_quadratic_model(
+            lower_triangular=lower_triangular,
+            basis_null_space=basis_null_space,
+            monomial_basis=monomial_basis,
+            interpolation_set=interpolation_set,
+            approximation_error=approximation_error,
+            n_modelpoints=n_modelpoints,
+            n=n,
+            n_obs=n_obs,
         )
 
-        fdiff, hess = update_fdiff_and_hess(
-            fdiff=fdiff,
-            hess=hess,
-            jac_quadratic=jac_quadratic,
-            hess_quadratic=hess_quadratic,
+        gradient, hessian = update_gradient_and_hessian(
+            gradient=gradient,
+            hessian=hessian,
+            params_gradient=params_gradient,
+            params_hessian=params_hessian,
             delta=delta,
             delta_old=delta_old,
         )
 
-        fmin = fhist[minindex]
-        minnorm = fnorm[minindex]
-        jac_res, hess_res = calc_jac_and_hess_res(fdiff=fdiff, fmin=fmin, hess=hess)
+        min_criterion = history_criterion[index_min_x]
+        min_criterion_norm = history_criterion_norm[index_min_x]
+        first_derivative, second_derivative = calc_first_and_second_derivative(
+            gradient=gradient, min_criterion=min_criterion, hessian=hessian
+        )
 
-        gradient = jac_res
-        gnorm = np.linalg.norm(gradient)
-        gnorm *= delta
+        gradient_norm = np.linalg.norm(first_derivative)
+        gradient_norm *= delta
 
-        if gnorm < gtol:
+        if gradient_norm < gtol:
             reason = False
 
         if niter > maxiter:
             reason = False
 
         # Test for repeated model
-        if mpoints == last_mpoints:
+        if n_modelpoints == last_n_modelpoints:
             same = True
         else:
             same = False
 
-        for i in range(mpoints):
+        for i in range(n_modelpoints):
             if same:
                 if model_indices[i] == last_model_indices[i]:
                     same = True
@@ -437,16 +490,16 @@ def internal_solve_pounders(
                     same = False
             last_model_indices[i] = model_indices[i]
 
-        last_mpoints = mpoints
+        last_n_modelpoints = n_modelpoints
         if (same is True) and (delta == delta_old):
             # Identical model used in successive iterations
             reason = False
 
     rslt_dict = {
-        "solution_x": xhist[minindex, :],
-        "solution_criterion": fhist[minindex, :],
-        "history_x": xhist[:nhist, :],
-        "history_criterion": fhist[:nhist, :],
+        "solution_x": history_x[index_min_x, :],
+        "solution_criterion": history_criterion[index_min_x, :],
+        "history_x": history_x[:n_history, :],
+        "history_criterion": history_criterion[:n_history, :],
         "n_iterations": niter,
         "message": "Under development.",
     }

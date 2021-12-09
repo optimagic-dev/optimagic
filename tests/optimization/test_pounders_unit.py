@@ -5,13 +5,13 @@ import pandas as pd
 import pytest
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.pounders_auxiliary import add_more_points
-from estimagic.optimization.pounders_auxiliary import calc_jac_and_hess_res
-from estimagic.optimization.pounders_auxiliary import find_nearby_points
+from estimagic.optimization.pounders_auxiliary import calc_first_and_second_derivative
+from estimagic.optimization.pounders_auxiliary import find_affine_points
+from estimagic.optimization.pounders_auxiliary import get_approximation_error
 from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
-from estimagic.optimization.pounders_auxiliary import get_residuals
 from estimagic.optimization.pounders_auxiliary import improve_model
 from estimagic.optimization.pounders_auxiliary import update_center
-from estimagic.optimization.pounders_auxiliary import update_fdiff_and_hess
+from estimagic.optimization.pounders_auxiliary import update_gradient_and_hessian
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -30,22 +30,24 @@ def criterion():
 
 @pytest.fixture(
     params=[
-        "qmat_zero_i",
-        "qmat_zero_ii",
-        "qmat_zero_iii",
-        "qmat_zero_iv",
-        "qmat_nonzero_i",
-        "qmat_nonzero_ii",
-        "qmat_nonzero_iii",
+        "model_improving_points_zero_i",
+        "model_improving_points_zero_ii",
+        "model_improving_points_zero_iii",
+        "model_improving_points_zero_iv",
+        "model_improving_points_nonzero_i",
+        "model_improving_points_nonzero_ii",
+        "model_improving_points_nonzero_iii",
     ]
 )
-def dict_find_nearby_points(request):
-    return pd.read_pickle(TEST_FIXTURES_DIR / f"find_nearby_points_{request.param}.pkl")
+def dict_find_affine_points(request):
+    return pd.read_pickle(TEST_FIXTURES_DIR / f"find_affine_points_{request.param}.pkl")
 
 
 @pytest.fixture(params=["4", "7"])
-def dict_get_residuals(request):
-    return pd.read_pickle(TEST_FIXTURES_DIR / f"get_residuals_iter_{request.param}.pkl")
+def dict_get_approximation_error(request):
+    return pd.read_pickle(
+        TEST_FIXTURES_DIR / f"get_approximation_error_iter_{request.param}.pkl"
+    )
 
 
 @pytest.fixture(params=["i", "ii"])
@@ -64,194 +66,222 @@ def dict_add_more_points():
 
 
 @pytest.fixture
-def dict_get_params_quadratic():
-    return pd.read_pickle(TEST_FIXTURES_DIR / "get_params_quadratic.pkl")
+def dict_get_params_quadratic_model():
+    return pd.read_pickle(TEST_FIXTURES_DIR / "get_params_quadratic_model.pkl")
 
 
 @pytest.fixture
-def dict_update_fdiff_and_hess():
-    return pd.read_pickle(TEST_FIXTURES_DIR / "update_fdiff_and_hess.pkl")
+def dict_update_gradient_and_hessian():
+    return pd.read_pickle(TEST_FIXTURES_DIR / "update_gradient_and_hessian.pkl")
 
 
 @pytest.fixture
-def dict_calc_jac_and_hess_res():
-    return pd.read_pickle(TEST_FIXTURES_DIR / "calc_jac_and_hess_res.pkl")
+def dict_calc_first_and_second_derivative():
+    return pd.read_pickle(TEST_FIXTURES_DIR / "calc_first_and_second_derivative.pkl")
 
 
 def test_update_center(dict_update_center):
     (
-        xmin_out,
-        fmin_out,
-        fdiff_out,
-        minnorm_out,
-        jac_res_out,
-        minindex_out,
+        min_x_out,
+        min_criterion_out,
+        gradient_out,
+        min_criterion_norm_out,
+        first_derivative_out,
+        index_min_x_out,
     ) = update_center(
         xplus=dict_update_center["xplus"],
-        xmin=dict_update_center["xmin"],
-        xhist=dict_update_center["xhist"],
+        min_x=dict_update_center["min_x"],
+        history_x=dict_update_center["history_x"],
         delta=dict_update_center["delta"],
-        fmin=dict_update_center["fmin"],
-        fdiff=dict_update_center["fdiff"],
-        fnorm=dict_update_center["fnorm"],
-        hess=dict_update_center["hess"],
-        jac_res=dict_update_center["jac_res"],
-        hess_res=dict_update_center["hess_res"],
-        nhist=dict_update_center["nhist"],
+        min_criterion=dict_update_center["min_criterion"],
+        gradient=dict_update_center["gradient"],
+        history_criterion_norm=dict_update_center["history_criterion_norm"],
+        hessian=dict_update_center["hessian"],
+        first_derivative=dict_update_center["first_derivative"],
+        second_derivative=dict_update_center["second_derivative"],
+        n_history=dict_update_center["n_history"],
     )
-    aaae(xmin_out, dict_update_center["xmin_expected"])
-    aaae(fmin_out, dict_update_center["fmin_expected"])
-    aaae(fdiff_out, dict_update_center["fdiff_expected"])
-    aaae(minnorm_out, dict_update_center["minnorm_expected"])
-    aaae(jac_res_out, dict_update_center["jac_res_expected"], decimal=5)
-    assert np.allclose(minindex_out, dict_update_center["minindex_expected"])
+    aaae(min_x_out, dict_update_center["min_x_expected"])
+    aaae(min_criterion_out, dict_update_center["min_criterion_expected"])
+    aaae(gradient_out, dict_update_center["gradient_expected"])
+    aaae(min_criterion_norm_out, dict_update_center["min_criterion_norm_expected"])
+    aaae(
+        first_derivative_out, dict_update_center["first_derivative_expected"], decimal=5
+    )
+    assert np.allclose(index_min_x_out, dict_update_center["index_min_x_expected"])
 
 
-def test_find_nearby_points(dict_find_nearby_points):
-    qmat_out, model_indices_out, mpoints_out, q_is_I_out = find_nearby_points(
-        xhist=dict_find_nearby_points["xhist"],
-        xmin=dict_find_nearby_points["xmin"],
-        qmat=dict_find_nearby_points["qmat"],
-        q_is_I=dict_find_nearby_points["q_is_I"],
-        delta=dict_find_nearby_points["delta"],
-        c=dict_find_nearby_points["c"],
-        model_indices=dict_find_nearby_points["model_indices"],
-        mpoints=dict_find_nearby_points["mpoints"],
-        nhist=dict_find_nearby_points["nhist"],
+def test_find_affine_points(dict_find_affine_points):
+    (
+        model_improving_points_out,
+        model_indices_out,
+        n_modelpoints_out,
+        project_x_onto_null_out,
+    ) = find_affine_points(
+        history_x=dict_find_affine_points["history_x"],
+        min_x=dict_find_affine_points["min_x"],
+        model_improving_points=dict_find_affine_points["model_improving_points"],
+        project_x_onto_null=dict_find_affine_points["project_x_onto_null"],
+        delta=dict_find_affine_points["delta"],
+        c=dict_find_affine_points["c"],
+        model_indices=dict_find_affine_points["model_indices"],
+        n_modelpoints=dict_find_affine_points["n_modelpoints"],
+        n_history=dict_find_affine_points["n_history"],
         theta1=1e-5,
         n=3,
     )
 
-    aaae(qmat_out, dict_find_nearby_points["qmat_expected"])
-    aaae(model_indices_out, dict_find_nearby_points["model_indices_expected"])
-    assert np.allclose(mpoints_out, dict_find_nearby_points["mpoints_expected"])
-    assert np.allclose(q_is_I_out, 0)
+    aaae(
+        model_improving_points_out,
+        dict_find_affine_points["model_improving_points_expected"],
+    )
+    aaae(model_indices_out, dict_find_affine_points["model_indices_expected"])
+    assert np.allclose(
+        n_modelpoints_out, dict_find_affine_points["n_modelpoints_expected"]
+    )
+    assert np.allclose(project_x_onto_null_out, True)
 
 
 def test_improve_model(dict_improve_model, criterion):
     (
-        xhist_out,
-        fhist_out,
+        history_x_out,
+        history_criterion_out,
         _,
         model_indices_out,
-        mpoints_out,
-        nhist_out,
+        n_modelpoints_out,
+        n_history_out,
     ) = improve_model(
-        xhist=dict_improve_model["xhist"],
-        fhist=dict_improve_model["fhist"],
-        fnorm=dict_improve_model["fnorm"],
-        jac_res=dict_improve_model["jac_res"],
-        hess_res=dict_improve_model["hess_res"],
-        qmat=dict_improve_model["qmat"],
+        history_x=dict_improve_model["history_x"],
+        history_criterion=dict_improve_model["history_criterion"],
+        history_criterion_norm=dict_improve_model["history_criterion_norm"],
+        first_derivative=dict_improve_model["first_derivative"],
+        second_derivative=dict_improve_model["second_derivative"],
+        model_improving_points=dict_improve_model["model_improving_points"],
         model_indices=dict_improve_model["model_indices"],
-        minindex=dict_improve_model["minindex"],
-        mpoints=dict_improve_model["mpoints"],
-        nhist=dict_improve_model["nhist"],
+        index_min_x=dict_improve_model["index_min_x"],
+        n_modelpoints=dict_improve_model["n_modelpoints"],
+        n_history=dict_improve_model["n_history"],
         delta=dict_improve_model["delta"],
         lower_bounds=None,
         upper_bounds=None,
-        addallpoints=1,
+        add_all_points=1,
         n=3,
         criterion=criterion,
     )
 
-    aaae(xhist_out, dict_improve_model["xhist_expected"])
-    aaae(fhist_out, dict_improve_model["fhist_expected"])
+    aaae(history_x_out, dict_improve_model["history_x_expected"])
+    aaae(history_criterion_out, dict_improve_model["history_criterion_expected"])
     aaae(model_indices_out, dict_improve_model["model_indices_expected"])
-    assert np.allclose(mpoints_out, dict_improve_model["mpoints_expected"])
-    assert np.allclose(nhist_out, dict_improve_model["nhist_expected"])
+    assert np.allclose(n_modelpoints_out, dict_improve_model["n_modelpoints_expected"])
+    assert np.allclose(n_history_out, dict_improve_model["n_history_expected"])
 
 
 def test_add_more_points(dict_add_more_points):
     n = 3
-    maxinterp = 2 * n + 1
+    n_maxinterp = 2 * n + 1
 
-    L_out, Z_out, N_out, M_out, mpoints_out = add_more_points(
-        xhist=dict_add_more_points["xhist"],
-        xmin=dict_add_more_points["xmin"],
+    (
+        lower_triangular,
+        basis_null_space,
+        monomial_basis,
+        interpolation_set,
+        n_modelpoints,
+    ) = add_more_points(
+        history_x=dict_add_more_points["history_x"],
+        min_x=dict_add_more_points["min_x"],
         model_indices=dict_add_more_points["model_indices"],
-        minindex=dict_add_more_points["minindex"],
+        index_min_x=dict_add_more_points["index_min_x"],
         delta=dict_add_more_points["delta"],
-        mpoints=dict_add_more_points["mpoints"],
-        nhist=dict_add_more_points["nhist"],
+        n_modelpoints=dict_add_more_points["n_modelpoints"],
+        n_history=dict_add_more_points["n_history"],
         c2=10,
         theta2=1e-4,
         n=n,
-        maxinterp=maxinterp,
+        n_maxinterp=n_maxinterp,
     )
 
-    aaae(L_out, dict_add_more_points["L_expected"])
-    aaae(Z_out, dict_add_more_points["Z_expected"])
-    aaae(N_out, dict_add_more_points["N_expected"])
-    aaae(M_out, dict_add_more_points["M_expected"])
-    assert np.allclose(mpoints_out, dict_add_more_points["mpoints_expected"])
+    aaae(lower_triangular, dict_add_more_points["lower_triangular_expected"])
+    aaae(basis_null_space, dict_add_more_points["basis_null_space_expected"])
+    aaae(monomial_basis, dict_add_more_points["monomial_basis_expected"])
+    aaae(interpolation_set, dict_add_more_points["interpolation_set_expected"])
+    assert np.allclose(n_modelpoints, dict_add_more_points["n_modelpoints_expected"])
 
 
-def test_get_residuals(dict_get_residuals):
-    xhist = dict_get_residuals["xhist"]
-    xmin = dict_get_residuals["xmin"]
-    model_indices = dict_get_residuals["model_indices"]
-    mpoints = dict_get_residuals["mpoints"]
-    delta_old = dict_get_residuals["delta_old"]
+def test_get_approximation_error(dict_get_approximation_error):
+    history_x = dict_get_approximation_error["history_x"]
+    min_x = dict_get_approximation_error["min_x"]
+    model_indices = dict_get_approximation_error["model_indices"]
+    n_modelpoints = dict_get_approximation_error["n_modelpoints"]
+    delta_old = dict_get_approximation_error["delta_old"]
 
     n = 3
-    maxinterp = 2 * n + 1
-    nobs = 214
+    n_obs = 214
+    n_maxinterp = 2 * n + 1
 
-    xk = (xhist[model_indices[:mpoints]] - xmin) / delta_old
+    xk = (history_x[model_indices[:n_modelpoints]] - min_x) / delta_old
 
-    residuals = get_residuals(
+    approximiation_error = get_approximation_error(
         xk=xk,
-        hess=dict_get_residuals["hess"],
-        fhist=dict_get_residuals["fhist"],
-        fmin=dict_get_residuals["fmin"],
-        fdiff=dict_get_residuals["fdiff"],
+        hessian=dict_get_approximation_error["hessian"],
+        history_criterion=dict_get_approximation_error["history_criterion"],
+        min_criterion=dict_get_approximation_error["min_criterion"],
+        gradient=dict_get_approximation_error["gradient"],
         model_indices=model_indices,
-        mpoints=mpoints,
-        nobs=nobs,
-        maxinterp=maxinterp,
+        n_modelpoints=n_modelpoints,
+        n_obs=n_obs,
+        n_maxinterp=n_maxinterp,
     )
 
-    aaae(xk, dict_get_residuals["xk"])
-    aaae(residuals, dict_get_residuals["residuals_expected"])
+    aaae(xk, dict_get_approximation_error["xk"])
+    aaae(
+        approximiation_error,
+        dict_get_approximation_error["approximation_error_expected"],
+    )
 
 
-def test_get_params_quadratic(dict_get_params_quadratic):
-    jac_quadratic, hess_quadratic = get_params_quadratic_model(
-        L=dict_get_params_quadratic["L"],
-        Z=dict_get_params_quadratic["Z"],
-        N=dict_get_params_quadratic["N"],
-        M=dict_get_params_quadratic["M"],
-        res=dict_get_params_quadratic["residuals"],
-        mpoints=dict_get_params_quadratic["mpoints"],
+def test_get_params_quadratic_model(dict_get_params_quadratic_model):
+    params_gradient, params_hessian = get_params_quadratic_model(
+        lower_triangular=dict_get_params_quadratic_model["lower_triangular"],
+        basis_null_space=dict_get_params_quadratic_model["basis_null_space"],
+        monomial_basis=dict_get_params_quadratic_model["monomial_basis"],
+        interpolation_set=dict_get_params_quadratic_model["interpolation_set"],
+        approximation_error=dict_get_params_quadratic_model["approximation_error"],
+        n_modelpoints=dict_get_params_quadratic_model["n_modelpoints"],
         n=3,
-        nobs=214,
+        n_obs=214,
     )
 
-    aaae(jac_quadratic, dict_get_params_quadratic["jac_quadratic_expected"])
-    aaae(hess_quadratic, dict_get_params_quadratic["hess_quadratic_expected"])
+    aaae(params_gradient, dict_get_params_quadratic_model["params_gradient_expected"])
+    aaae(params_hessian, dict_get_params_quadratic_model["params_hessian_expected"])
 
 
-def test_update_fdiff_and_hess(dict_update_fdiff_and_hess):
-    fdiff_out, hess_out = update_fdiff_and_hess(
-        fdiff=dict_update_fdiff_and_hess["fdiff"],
-        hess=dict_update_fdiff_and_hess["hess"],
-        jac_quadratic=dict_update_fdiff_and_hess["jac_quadratic"],
-        hess_quadratic=dict_update_fdiff_and_hess["hess_quadratic"],
-        delta=dict_update_fdiff_and_hess["delta"],
-        delta_old=dict_update_fdiff_and_hess["delta_old"],
+def test_update_gradient_and_hessian(dict_update_gradient_and_hessian):
+    gradient_out, hessian_out = update_gradient_and_hessian(
+        gradient=dict_update_gradient_and_hessian["gradient"],
+        hessian=dict_update_gradient_and_hessian["hessian"],
+        params_gradient=dict_update_gradient_and_hessian["params_gradient"],
+        params_hessian=dict_update_gradient_and_hessian["params_hessian"],
+        delta=dict_update_gradient_and_hessian["delta"],
+        delta_old=dict_update_gradient_and_hessian["delta_old"],
     )
 
-    aaae(fdiff_out, dict_update_fdiff_and_hess["fdiff_expected"])
-    aaae(hess_out, dict_update_fdiff_and_hess["hess_expected"])
+    aaae(gradient_out, dict_update_gradient_and_hessian["gradient_expected"])
+    aaae(hessian_out, dict_update_gradient_and_hessian["hessian_expected"])
 
 
-def test_calc_jac_and_hess_res(dict_calc_jac_and_hess_res):
-    jac_res, hess_res = calc_jac_and_hess_res(
-        fdiff=dict_calc_jac_and_hess_res["fdiff"],
-        fmin=dict_calc_jac_and_hess_res["fmin"],
-        hess=dict_calc_jac_and_hess_res["hess"],
+def test_calc_first_and_second_derivative(dict_calc_first_and_second_derivative):
+    first_derivative, second_derivative = calc_first_and_second_derivative(
+        gradient=dict_calc_first_and_second_derivative["gradient"],
+        min_criterion=dict_calc_first_and_second_derivative["min_criterion"],
+        hessian=dict_calc_first_and_second_derivative["hessian"],
     )
 
-    aaae(jac_res, dict_calc_jac_and_hess_res["jac_res_expected"])
-    aaae(hess_res, dict_calc_jac_and_hess_res["hess_res_expected"], decimal=3)
+    aaae(
+        first_derivative,
+        dict_calc_first_and_second_derivative["first_derivative_expected"],
+    )
+    aaae(
+        second_derivative,
+        dict_calc_first_and_second_derivative["second_derivative_expected"],
+        decimal=3,
+    )
