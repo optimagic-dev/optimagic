@@ -61,7 +61,7 @@ def pounders(
         **trustregion_subproblem_options,
     }
 
-    rslt = internal_solve_pounders(
+    result_sub = internal_solve_pounders(
         criterion=criterion,
         x0=x,
         n_obs=n_errors,
@@ -86,7 +86,7 @@ def pounders(
         gtol_sub=trustregion_subproblem_options["gtol"],
     )
 
-    return rslt
+    return result_sub
 
 
 def internal_solve_pounders(
@@ -149,8 +149,8 @@ def internal_solve_pounders(
         - solution (np.ndarray): Solution vector.
         - gradient (np.ndarray): Gradient associated with the solution vector.
     """
-    n = x0.shape[0]  # number of model parameters
-    n_maxinterp = 2 * n + 1  # max number of interpolation points
+    n = x0.shape[0]
+    n_maxinterp = 2 * n + 1
     model_indices = np.zeros(n_maxinterp, dtype=int)
 
     history_x = np.zeros((maxiter * 2, n))
@@ -170,8 +170,6 @@ def internal_solve_pounders(
         if np.max(x0 + delta - upper_bounds) > 1e-10:
             raise ValueError("Starting points + delta > upper bounds.")
 
-    # This provides enough information to approximate the gradient of the objective
-    # using a forward difference scheme.
     history_x[0] = x0
     history_criterion[0, :] = criterion(x0)
     history_criterion_norm[0] = compute_criterion_norm(
@@ -223,7 +221,7 @@ def internal_solve_pounders(
         niter += 1
 
         # Solve the subproblem min{Q(s): ||s|| <= 1.0}
-        rslt = solve_subproblem(
+        result_sub = solve_subproblem(
             solution=history_x[index_min_x, :],
             delta=delta,
             first_derivative=first_derivative,
@@ -236,8 +234,8 @@ def internal_solve_pounders(
             upper_bounds=upper_bounds,
         )
 
-        qmin = -rslt.fun
-        xplus = min_x + rslt.x * delta
+        qmin = -result_sub.fun
+        xplus = min_x + result_sub.x * delta
 
         history_x[n_history, :] = xplus
         history_criterion[n_history, :] = criterion(history_x[n_history, :])
@@ -324,7 +322,7 @@ def internal_solve_pounders(
 
         # Update the trust region radius
         delta_old = delta
-        norm_x_sub = np.sqrt(np.sum(rslt.x ** 2))
+        norm_x_sub = np.sqrt(np.sum(result_sub.x ** 2))
 
         if rho >= eta1 and norm_x_sub > 0.5 * delta:
             delta = min(delta * gamma1, delta_max)
@@ -495,7 +493,7 @@ def internal_solve_pounders(
             # Identical model used in successive iterations
             reason = False
 
-    rslt_dict = {
+    result_sub_dict = {
         "solution_x": history_x[index_min_x, :],
         "solution_criterion": history_criterion[index_min_x, :],
         "history_x": history_x[:n_history, :],
@@ -504,4 +502,4 @@ def internal_solve_pounders(
         "message": "Under development.",
     }
 
-    return rslt_dict
+    return result_sub_dict
