@@ -52,8 +52,6 @@ def check_optimization_options(options, usage, algorithm_mandatory=True):
 def check_numdiff_options(numdiff_options, usage):
     """Check numdiff_options for usage in estimation and optimization functions."""
 
-    """Check and process everything related to derivatives."""
-
     numdiff_options = {} if numdiff_options is None else numdiff_options
 
     internal_options = {
