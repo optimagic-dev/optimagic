@@ -74,16 +74,16 @@ def test_add_entries_initialized_extension_needed():
 
     for entry in xs, residuals:
         assert isinstance(entry, np.ndarray)
-        len(entry) == 8
+        assert len(entry) == 8
 
     assert history.get_n_fun() == 8
 
 
 @pytest.mark.xfail
 def test_add_centered_entries():
-    assert False
+    assert 1 == 2
 
 
 @pytest.mark.xfail
 def test_get_centered_entries():
-    assert False
+    assert 1 == 2
