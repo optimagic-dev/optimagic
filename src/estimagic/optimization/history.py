@@ -5,10 +5,12 @@ class LeastSquaresHistory:
     """Container to save and retrieve history entries for a least squares optimizer."""
 
     def __init__(self):
-        self.n_fun = 0
         self.xs = None
         self.residuals = None
         self.critvals = None
+        self.n_fun = 0
+        self.min_index = None
+        self.min_critval = np.inf
 
     def add_entries(self, xs, residuals):
         """Add new parameter vectors and residuals to the history.
@@ -23,6 +25,11 @@ class LeastSquaresHistory:
         xs = np.atleast_2d(xs)
         residuals = np.atleast_2d(residuals)
         critvals = np.atleast_1d((residuals ** 2).sum(axis=-1))
+
+        argmin_candidate = critvals.argmin()
+        min_candidate = critvals[argmin_candidate]
+        if min_candidate < self.min_critval:
+            self.min_index = argmin_candidate + self.n_fun
 
         if len(xs) != len(residuals):
             raise ValueError()
@@ -73,7 +80,7 @@ class LeastSquaresHistory:
         if index is not None:
             out = [arr[index] for arr in out]
 
-        return out
+        return tuple(out)
 
     def get_centered_entries(self, center_info, index=None):
         """Retrieve xs, residuals and critvals from the history.
@@ -99,6 +106,15 @@ class LeastSquaresHistory:
 
     def get_n_fun(self):
         return self.n_fun
+
+    def get_min_index(self):
+        return self.min_index
+
+    def get_best_entries(self):
+        return self.get_entries(index=self.min_index)
+
+    def get_best_centered_entries(self, center_info):
+        return self.get_centered_entries(self, center_info, index=self.min_index)
 
 
 def _add_entries_to_array(arr, new, position):
