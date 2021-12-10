@@ -1,6 +1,7 @@
 from functools import partial
 
 import numpy as np
+from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import add_more_points
 from estimagic.optimization.pounders_auxiliary import calc_first_and_second_derivative
 from estimagic.optimization.pounders_auxiliary import compute_criterion_norm
@@ -149,13 +150,17 @@ def internal_solve_pounders(
         - solution (np.ndarray): Solution vector.
         - gradient (np.ndarray): Gradient associated with the solution vector.
     """
+    centered_criterion = partial(centered_criterion_template, criterion=criterion)
+
+    history = LeastSquaresHistory()
+
     n = x0.shape[0]
     n_maxinterp = 2 * n + 1
     model_indices = np.zeros(n_maxinterp, dtype=int)
 
-    history_x = np.zeros((maxiter * 2, n))
-    history_criterion = np.zeros((maxiter * 2, n_obs))
-    history_criterion_norm = np.zeros(maxiter * 2)
+    history_x = np.zeros((maxiter * 2, n))  ###
+    history_criterion = np.zeros((maxiter * 2, n_obs))  ###
+    history_criterion_norm = np.zeros(maxiter * 2)  ###
 
     hessian = np.zeros((n_obs, n, n))
 
@@ -163,20 +168,16 @@ def internal_solve_pounders(
     niter = 0
 
     if lower_bounds is not None and upper_bounds is not None:
-        if np.max(x0 - upper_bounds) > 1e-10:
-            raise ValueError("Starting points > upper bounds.")
-        if np.max(lower_bounds - x0) > 1e-10:
-            raise ValueError("Starting points < lower bounds.")
         if np.max(x0 + delta - upper_bounds) > 1e-10:
             raise ValueError("Starting points + delta > upper bounds.")
 
-    history_x[0] = x0
-    history_criterion[0, :] = criterion(x0)
-    history_criterion_norm[0] = compute_criterion_norm(
-        criterion_value=history_criterion[0, :]
-    )
+    min_criterion = criterion(x0)
+    min_criterion_norm = compute_criterion_norm(min_criterion)
 
-    min_criterion_norm = history_criterion_norm[0]
+    history_x[0] = x0  ###
+    history_criterion[0, :] = min_criterion  ###
+    history_criterion_norm[0] = min_criterion_norm  ###
+
     index_min_x = 0
 
     # Increment parameters separately by delta
@@ -503,3 +504,9 @@ def internal_solve_pounders(
     }
 
     return result_sub_dict
+
+
+def centered_criterion_template(centered_x, center_info, criterion):
+    x = centered_x * center_info["radius"] + center_info["x"]
+    out = criterion(x) + center_info["residuals"]
+    return out
