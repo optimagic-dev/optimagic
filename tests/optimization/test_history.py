@@ -70,11 +70,10 @@ def test_add_entries_initialized_extension_needed():
     assert len(history.residuals) == 10
     assert len(history.critvals) == 10
 
-    xs, residuals, critvals = history.get_entries(index=-1)
+    xs, residuals, _ = history.get_entries(index=-1)
 
     for entry in xs, residuals:
         assert isinstance(entry, np.ndarray)
-        assert len(entry) == 8
 
     assert history.get_n_fun() == 8
 
