@@ -1,4 +1,3 @@
-import sys
 from functools import partial
 
 import numpy as np
@@ -39,117 +38,67 @@ def criterion():
     return partial(func, exog=exog, endog=endog)
 
 
+start_params = [
+    np.array([0.15, 0.008, 0.01]),
+    np.ones(3) * 0.25,
+    np.array([1e-6, 1e-2, 1e-6]),
+]
+
+TEST_CASES = []
+for subsolver in ["trust-constr", "L-BFGS-B"]:
+    for x0 in start_params:
+        for gtol in [1e-8]:
+            for subtol in [1e-8, 1e-9]:
+                TEST_CASES.append(
+                    (
+                        x0,
+                        gtol,
+                        subsolver,
+                        {"ftol": subtol, "xtol": subtol, "gtol": subtol},
+                    )
+                )
+
+
+@pytest.fixture()
+def options():
+    out = {
+        "n_obs": 214,
+        "delta": 0.1,
+        "delta_min": 1e-6,
+        "delta_max": 1e6,
+        "gamma0": 0.5,
+        "gamma1": 2.0,
+        "theta1": 1e-5,
+        "theta2": 1e-4,
+        "eta0": 0.0,
+        "eta1": 0.1,
+        "c1": np.sqrt(3),
+        "c2": 10,
+        "lower_bounds": None,
+        "upper_bounds": None,
+    }
+    return out
+
+
 @pytest.mark.parametrize(
-    "start_vec, gtol, solver_sub, trustregion_subproblem_options",
-    [
-        (
-            np.array([0.15, 0.008, 0.01]),
-            1e-7,
-            "trust-constr",
-            {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
-        ),
-        (
-            np.array([0.1, 0.1, 0.1]),
-            1e-9,
-            "trust-constr",
-            {"ftol": 1e-7, "xtol": 1e-7, "gtol": 1e-7},
-        ),
-        (
-            np.array([1e-6, 1e-6, 1e-6]),
-            1e-12,
-            "trust-constr",
-            {"ftol": 1e-8, "xtol": 1e-8, "gtol": 1e-8},
-        ),
-        (
-            np.array([-1e-6, -1e-6, -1e-6]),
-            1e-12,
-            "trust-constr",
-            {"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12},
-        ),
-        (
-            np.array([0.4, 0.4, 0.4]),
-            1e-12,
-            "trust-constr",
-            {"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12},
-        ),
-        (
-            np.array([0.15, 0.008, 0.01]),
-            1e-6,
-            "L-BFGS-B",
-            {"ftol": 1e-10, "xtol": None, "gtol": 1e-6},
-        ),
-        (
-            np.array([1e-6, 1e-6, 1e-6]),
-            1e-12,
-            "L-BFGS-B",
-            {"ftol": 1e-12, "xtol": None, "gtol": 1e-12},
-        ),
-        (
-            np.array([0.5, 0.5, 0.5]),
-            1e-12,
-            "L-BFGS-B",
-            {"ftol": 1e-12, "xtol": None, "gtol": 1e-12},
-        ),
-        (
-            np.array([0.15, 0.008, 0.01]),
-            1e-6,
-            "SLSQP",
-            {"ftol": 1e-10, "xtol": None, "gtol": None},
-        ),
-    ],
+    "start_vec, gtol, solver_sub, trustregion_subproblem_options", TEST_CASES
 )
-def test_solution_and_histories(
-    start_vec, gtol, solver_sub, trustregion_subproblem_options, criterion
+def test_solution(
+    start_vec, gtol, solver_sub, trustregion_subproblem_options, criterion, options
 ):
-    n_obs = 214
-    delta = 0.1
-    delta_min = 1e-6
-    delta_max = 1e6
-    gamma0 = 0.5
-    gamma1 = 2.0
-    theta1 = 1e-5
-    theta2 = 1e-4
-    eta0 = 0.0
-    eta1 = 0.1
-    c1 = np.sqrt(3)
-    c2 = 10
+
     maxiter = 200
 
     rslt = internal_solve_pounders(
         x0=start_vec,
-        n_obs=n_obs,
         criterion=criterion,
-        delta=delta,
-        delta_min=delta_min,
-        delta_max=delta_max,
-        gamma0=gamma0,
-        gamma1=gamma1,
-        theta1=theta1,
-        theta2=theta2,
-        eta0=eta0,
-        eta1=eta1,
-        c1=c1,
-        c2=c2,
         maxiter=maxiter,
         gtol=gtol,
         ftol_sub=trustregion_subproblem_options["ftol"],
         xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_sub=trustregion_subproblem_options["gtol"],
         solver_sub=solver_sub,
-        lower_bounds=None,
-        upper_bounds=None,
+        **options,
     )
 
-    aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]))
-
-    if (
-        sys.platform == "linux"
-        and sys.version_info > (3, 8)
-        and sys.version_info < (3, 9)
-    ):
-        # Only run on Linux, python version 3.8, since x and criterion histories
-        # differ on other systems
-        history_x, history_criterion = load_history(start_vec, solver_sub)
-
-        aaae(rslt["history_x"], history_x)
-        aaae(rslt["history_criterion"], history_criterion)
+    aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]), decimal=5)
