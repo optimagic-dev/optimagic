@@ -25,7 +25,7 @@ dependencies:
   - numpy
   - pandas
   - pdbpp
-  - petsc4py>=3.11
+  - petsc4py>=3.16.1
   - pygmo
   - pytest
   - pytest-cov
@@ -42,6 +42,8 @@ dependencies:
   - pytask>=0.0.11
   - nlopt
   - sphinx-panels
+  - pygmo
+  - chaospy
 
   - pip:
       - black
@@ -50,6 +52,6 @@ dependencies:
       - pre-commit
       - Py-BOBYQA
       - DFO-LS
-      - fides>=0.6.3
+      - fides==0.6.3
       - gif
       - gif[matplotlib]

@@ -4,11 +4,17 @@ import time
 import numpy as np
 import pytest
 from estimagic.config import IS_FIDES_INSTALLED
-from estimagic.optimization.fides_optimizers import fides
-from fides.hessian_approximation import Broyden
-from fides.hessian_approximation import FX
-from fides.hessian_approximation import SR1
 from numpy.testing import assert_allclose
+
+if IS_FIDES_INSTALLED:
+    from estimagic.optimization.fides_optimizers import fides
+    from fides.hessian_approximation import Broyden
+    from fides.hessian_approximation import FX
+    from fides.hessian_approximation import SR1
+else:
+    FX = lambda: None  # noqa: E731
+    SR1 = lambda: None  # noqa: E731
+    Broyden = lambda phi: None  # noqa: E731
 
 test_cases_no_contribs_needed = [
     {},
