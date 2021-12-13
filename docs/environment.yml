@@ -8,9 +8,9 @@ dependencies:
   - toml
 
   - pip:
-    - sphinx
-    - pydata-sphinx-theme>=0.3.0
-    - nbsphinx
-    - sphinxcontrib-bibtex
-    - sphinx-panels
-    - ../
+      - sphinx
+      - pydata-sphinx-theme>=0.3.0
+      - nbsphinx
+      - sphinxcontrib-bibtex
+      - sphinx-panels
+      - ../
