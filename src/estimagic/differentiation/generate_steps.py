@@ -168,7 +168,7 @@ def _calculate_or_validate_base_steps(base_steps, x, target, min_steps, scaling_
         if target == "first_derivative":
             base_steps = eps ** (1 / 2) * np.maximum(np.abs(x), 0.1) * scaling_factor
         elif target == "second_derivative":
-            base_steps = eps ** (1 / 3) * np.maximum(np.abs(x), 0.1) * scaling_factor
+            base_steps = eps ** (1 / 4) * np.maximum(np.abs(x), 0.1) * scaling_factor
         else:
             raise ValueError(f"Invalid target: {target}.")
         if min_steps is not None:

@@ -59,7 +59,7 @@ def first_derivative(
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
-        base_steps (numpy.ndarray, optional): 1d array of the same length as pasams.
+        base_steps (numpy.ndarray, optional): 1d array of the same length as params.
             base_steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
             If base_steps * scaling_factor conflicts with bounds, the actual steps will
@@ -297,7 +297,7 @@ def second_derivative(
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
-        base_steps (numpy.ndarray, optional): 1d array of the same length as pasams.
+        base_steps (numpy.ndarray, optional): 1d array of the same length as params.
             base_steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
             If base_steps * scaling_factor conflicts with bounds, the actual steps will
@@ -421,7 +421,9 @@ def second_derivative(
                 if j == k:
                     evaluation_points["cross_step"].append(np.nan)
                 else:
-                    point[k] -= 2 * step_arr[i, k]
+                    point = x.copy()
+                    point[j] += step_arr[i, j]
+                    point[k] -= step_arr[i, k]
                     evaluation_points["cross_step"].append(point)
 
     # convert the numpy arrays to whatever is needed by func
