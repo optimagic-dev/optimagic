@@ -405,10 +405,9 @@ def internal_solve_pounders(
             interpolation_set,
             n_modelpoints,
         ) = add_more_points(
-            history_x=history_x,
+            history=history,
             min_x=x_accepted,
             model_indices=model_indices,
-            index_min_x=accepted_index,
             delta=delta,
             c2=c2,
             theta2=theta2,

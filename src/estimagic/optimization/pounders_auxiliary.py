@@ -396,10 +396,9 @@ def improve_model(
 
 
 def add_more_points(
-    history_x,
+    history,
     min_x,
     model_indices,
-    index_min_x,
     delta,
     c2,
     theta2,
@@ -442,7 +441,10 @@ def add_more_points(
     monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
 
     for i in range(n + 1):
-        interpolation_set[i, 1:] = (history_x[model_indices[i], :] - min_x) / delta
+        center_info = {"x": min_x, "radius": delta, "residuals": 0}
+        interpolation_set[i, 1:], _, _ = history.get_centered_entries(
+            center_info, index=model_indices[i]
+        )
         monomial_basis[i, :] = _get_basis_quadratic_functions(
             x=interpolation_set[i, 1:]
         )
@@ -461,9 +463,9 @@ def add_more_points(
                 break
 
         if reject is False:
-            candidate_x = history_x[point] - history_x[index_min_x]
+            center_info = {"x": min_x, "radius": delta, "residuals": 0}
+            candidate_x, _, _ = history.get_centered_entries(center_info, index=point)
             candidate_norm = np.linalg.norm(candidate_x)
-            candidate_norm /= delta
 
             if candidate_norm > c2:
                 reject = True
@@ -472,7 +474,10 @@ def add_more_points(
             point -= 1
             continue
 
-        interpolation_set[n_modelpoints, 1:] = (history_x[point] - min_x) / delta
+        center_info = {"x": min_x, "radius": delta, "residuals": 0}
+        interpolation_set[n_modelpoints, 1:], _, _ = history.get_centered_entries(
+            center_info, index=point
+        )
         monomial_basis[n_modelpoints, :] = _get_basis_quadratic_functions(
             x=interpolation_set[n_modelpoints, 1:]
         )
