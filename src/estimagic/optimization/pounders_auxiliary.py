@@ -520,7 +520,6 @@ def add_more_points(
 
 
 def get_approximation_error(
-    history,
     xk,
     hessian,
     history_criterion,
