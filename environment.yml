@@ -52,6 +52,6 @@ dependencies:
       - pre-commit
       - Py-BOBYQA
       - DFO-LS
-      - fides>=0.7.1
+      - fides==0.7.1
       - gif
       - gif[matplotlib]
