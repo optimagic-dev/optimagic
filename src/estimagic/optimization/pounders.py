@@ -248,11 +248,10 @@ def internal_solve_pounders(
                 main_gradient,
                 accepted_index,
             ) = update_center(
-                xplus=x_candidate,
+                history=history,
+                accepted_index=accepted_index,
                 min_x=x_accepted,
-                history_x=history_x,
                 delta=delta,
-                min_criterion=residuals_accepted,
                 gradient=residual_gradients,
                 hessian=residual_hessians,
                 first_derivative=main_gradient,

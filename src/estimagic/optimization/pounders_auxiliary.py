@@ -17,11 +17,10 @@ def compute_criterion_norm(criterion_value):
 
 
 def update_center(
-    xplus,
+    history,
+    accepted_index,
     min_x,
-    history_x,
     delta,
-    min_criterion,
     gradient,
     hessian,
     first_derivative,
@@ -30,7 +29,12 @@ def update_center(
 ):
     """Update center."""
     # Update model to reflect new base point
-    x1 = (xplus - min_x) / delta
+    _, min_criterion, _ = history.get_entries(index=accepted_index)
+    center_info = {"x": min_x, "radius": delta, "residuals": min_criterion}
+    x1, _, _ = history.get_centered_entries(center_info, index=n_history - 1)
+
+    # Change current center
+    min_x, _, _ = history.get_best_entries()
 
     min_criterion = (
         min_criterion + np.dot(x1, gradient) + 0.5 * np.dot(np.dot(x1, hessian), x1)
@@ -40,9 +44,6 @@ def update_center(
     first_derivative = first_derivative + np.dot(second_derivative, x1)
 
     index_min_x = n_history - 1
-
-    # Change current center
-    min_x = history_x[index_min_x, :]
 
     return (
         min_x,
