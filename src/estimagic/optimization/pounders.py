@@ -241,23 +241,19 @@ def internal_solve_pounders(
         n_history += 1
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
-            (
-                x_accepted,
-                residuals_accepted,
-                residual_gradients,
-                main_gradient,
-                accepted_index,
-            ) = update_center(
+            (residuals_accepted, residual_gradients, main_gradient,) = update_center(
                 history=history,
                 accepted_index=accepted_index,
-                min_x=x_accepted,
+                x_accepted=x_accepted,
                 delta=delta,
-                gradient=residual_gradients,
-                hessian=residual_hessians,
-                first_derivative=main_gradient,
-                second_derivative=main_hessian,
+                residual_gradients=residual_gradients,
+                residual_hessians=residual_hessians,
+                main_gradient=main_gradient,
+                main_hessian=main_hessian,
                 n_history=n_history,
             )
+            x_accepted, _, _ = history.get_best_entries()
+            accepted_index = history.get_n_fun() - 1
 
         # Evaluate at a model improving point if necessary
         # Note: valid is True in first iteration
@@ -268,7 +264,7 @@ def internal_solve_pounders(
                 n_modelpoints,
                 project_x_onto_null,
             ) = find_affine_points(
-                history_x=history_x,
+                history=history,
                 min_x=x_accepted,
                 model_improving_points=np.zeros((n, n)),
                 project_x_onto_null=False,
@@ -327,7 +323,7 @@ def internal_solve_pounders(
             n_modelpoints,
             project_x_onto_null,
         ) = find_affine_points(
-            history_x=history_x,
+            history=history,
             min_x=x_accepted,
             model_improving_points=np.zeros((n, n)),
             project_x_onto_null=False,
@@ -350,7 +346,7 @@ def internal_solve_pounders(
                 n_modelpoints,
                 project_x_onto_null,
             ) = find_affine_points(
-                history_x=history_x,
+                history=history,
                 min_x=x_accepted,
                 model_improving_points=model_improving_points,
                 project_x_onto_null=project_x_onto_null,
@@ -420,6 +416,7 @@ def internal_solve_pounders(
         xk = (history_x[model_indices[:n_modelpoints]] - x_accepted) / delta_old
 
         approximation_error = get_approximation_error(
+            history=history,
             xk=xk,
             hessian=residual_hessians,
             history_criterion=history_criterion,

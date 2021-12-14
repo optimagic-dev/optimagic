@@ -19,38 +19,34 @@ def compute_criterion_norm(criterion_value):
 def update_center(
     history,
     accepted_index,
-    min_x,
+    x_accepted,
     delta,
-    gradient,
-    hessian,
-    first_derivative,
-    second_derivative,
+    residual_gradients,
+    residual_hessians,
+    main_gradient,
+    main_hessian,
     n_history,
 ):
     """Update center."""
-    # Update model to reflect new base point
-    _, min_criterion, _ = history.get_entries(index=accepted_index)
-    center_info = {"x": min_x, "radius": delta, "residuals": min_criterion}
+    # Change current center
+    x_accepted, _, _ = history.get_best_entries()
+    _, residuals_accepted, _ = history.get_entries(index=accepted_index)
+
+    center_info = {"x": x_accepted, "radius": delta, "residuals": residuals_accepted}
     x1, _, _ = history.get_centered_entries(center_info, index=n_history - 1)
 
-    # Change current center
-    min_x, _, _ = history.get_best_entries()
-
-    min_criterion = (
-        min_criterion + np.dot(x1, gradient) + 0.5 * np.dot(np.dot(x1, hessian), x1)
+    qk = (
+        residuals_accepted
+        + np.dot(x1, residual_gradients)
+        + 0.5 * np.dot(np.dot(x1, residual_hessians), x1)
     )
-
-    gradient = gradient + np.dot(hessian, x1).T
-    first_derivative = first_derivative + np.dot(second_derivative, x1)
-
-    index_min_x = n_history - 1
+    residual_gradients = residual_gradients + np.dot(residual_hessians, x1).T
+    main_gradient = main_gradient + np.dot(main_hessian, x1)
 
     return (
-        min_x,
-        min_criterion,
-        gradient,
-        first_derivative,
-        index_min_x,
+        qk,
+        residual_gradients,
+        main_gradient,
     )
 
 
@@ -70,6 +66,7 @@ def calc_first_and_second_derivative(gradient, min_criterion, hessian):
         - second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
     """
     first_derivative = np.dot(gradient, min_criterion)
+
     second_derivative = np.dot(gradient, gradient.T)
 
     dim_array = np.ones((1, hessian.ndim), int).ravel()
@@ -183,7 +180,7 @@ def solve_subproblem(
 
 
 def find_affine_points(
-    history_x,
+    history,
     min_x,
     model_improving_points,
     project_x_onto_null,
@@ -225,21 +222,22 @@ def find_affine_points(
             Relevant for next call of *find_nearby_points*.
     """
     for i in range(n_history - 1, -1, -1):
-        candidate_x = (history_x[i, :] - min_x) / delta
-        candidate_norm = np.linalg.norm(candidate_x)
+        center_info = {"x": min_x, "radius": delta, "residuals": 0}
+        x_candidate, _, _ = history.get_centered_entries(center_info, index=i)
+        candidate_norm = np.linalg.norm(x_candidate)
 
-        projected_x = candidate_x
+        x_projected = x_candidate
 
         if candidate_norm <= c:
             if project_x_onto_null is True:
-                projected_x, _ = qr_multiply(model_improving_points, projected_x)
+                x_projected, _ = qr_multiply(model_improving_points, x_projected)
 
-            proj = np.linalg.norm(projected_x[n_modelpoints:])
+            proj = np.linalg.norm(x_projected[n_modelpoints:])
 
             # Add this index to the model
             if proj >= theta1:
                 model_indices[n_modelpoints] = i
-                model_improving_points[:, n_modelpoints] = candidate_x
+                model_improving_points[:, n_modelpoints] = x_candidate
                 project_x_onto_null = True
                 n_modelpoints += 1
 
@@ -522,6 +520,7 @@ def add_more_points(
 
 
 def get_approximation_error(
+    history,
     xk,
     hessian,
     history_criterion,
