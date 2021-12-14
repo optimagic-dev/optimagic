@@ -225,7 +225,7 @@ def internal_solve_pounders(
         x_candidate = x_accepted + result_sub.x * delta
         residuals_candidate = criterion(x_candidate)
 
-        # history.add_entries(x_candidate, residuals_candidate)
+        # history.add_entries(x_candidate, residuals_candidate) # noqa: E800
         # ==================================================================================
         history_x = history.xs
         history_criterion = history.residuals
