@@ -156,10 +156,6 @@ def internal_solve_pounders(
     n_maxinterp = 2 * n + 1
     model_indices = np.zeros(n_maxinterp, dtype=int)
 
-    history_x = np.zeros((maxiter * 2, n))  ### # noqa: E262
-    history_criterion = np.zeros((maxiter * 2, n_obs))  ### # noqa: E262
-    history_criterion_norm = np.zeros(maxiter * 2)  ### # noqa: E262
-
     residual_hessians = np.zeros((n_obs, n, n))
 
     last_n_modelpoints = 0
@@ -170,12 +166,7 @@ def internal_solve_pounders(
             raise ValueError("Starting points + delta > upper bounds.")
 
     min_residuals = criterion(x0)
-    min_critval = compute_criterion_norm(min_residuals)
     history.add_entries(x0, min_residuals)
-
-    history_x[0] = x0  ### # noqa: E262
-    history_criterion[0, :] = min_residuals  ### # noqa: E262
-    history_criterion_norm[0] = min_critval  ### # noqa: E262
 
     accepted_index = 0
 
@@ -189,13 +180,6 @@ def internal_solve_pounders(
 
     history.add_entries(xs, residuals)
     accepted_index = history.get_min_index()
-
-    for i in range(n):  ### # noqa: E262
-        history_x[i + 1, :] = xs[i]  ### # noqa: E262
-        history_criterion[i + 1, :] = residuals[i]  ### # noqa: E262
-        history_criterion_norm[i + 1] = compute_criterion_norm(
-            residuals[i]
-        )  ### # noqa: E262
 
     min_x, min_residuals, _ = history.get_entries(index=accepted_index)
 
@@ -223,6 +207,11 @@ def internal_solve_pounders(
     while reason is True:
         niter += 1
 
+        # ==================================================================================
+        history_x = history.xs
+        history_criterion = history.residuals
+        history_criterion_norm = history.critvals
+        # ==================================================================================
         # Solve the subproblem min{Q(s): ||s|| <= 1.0}
         result_sub = solve_subproblem(
             solution=history_x[accepted_index, :],
@@ -256,7 +245,7 @@ def internal_solve_pounders(
                 min_x,
                 min_residuals,
                 residual_gradients,
-                min_critval,
+                _,  # remove this from the outputs of update_center
                 main_gradient,
                 accepted_index,
             ) = update_center(
@@ -463,7 +452,7 @@ def internal_solve_pounders(
         )
 
         min_residuals = history_criterion[accepted_index]
-        min_critval = history_criterion_norm[accepted_index]
+        _ = history_criterion_norm[accepted_index]
         main_gradient, main_hessian = calc_first_and_second_derivative(
             gradient=residual_gradients,
             min_criterion=min_residuals,
