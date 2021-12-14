@@ -45,10 +45,7 @@ start_params = [
 ]
 
 TEST_CASES = []
-for subsolver in [
-    "L-BFGS-B",
-    "trust-constr",
-]:  # noqa: E800
+for subsolver in ["L-BFGS-B", "trust-constr"]:
     for x0 in start_params:
         for gtol in [1e-8]:
             for subtol in [1e-8, 1e-9]:

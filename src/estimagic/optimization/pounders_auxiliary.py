@@ -22,7 +22,6 @@ def update_center(
     history_x,
     delta,
     min_criterion,
-    history_criterion_norm,
     gradient,
     hessian,
     first_derivative,
@@ -41,7 +40,6 @@ def update_center(
     first_derivative = first_derivative + np.dot(second_derivative, x1)
 
     index_min_x = n_history - 1
-    min_criterion_norm = history_criterion_norm[index_min_x]
 
     # Change current center
     min_x = history_x[index_min_x, :]
@@ -50,7 +48,6 @@ def update_center(
         min_x,
         min_criterion,
         gradient,
-        min_criterion_norm,
         first_derivative,
         index_min_x,
     )

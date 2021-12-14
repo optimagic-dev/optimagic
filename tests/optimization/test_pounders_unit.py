@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.config import TEST_FIXTURES_DIR
+from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import add_more_points
 from estimagic.optimization.pounders_auxiliary import calc_first_and_second_derivative
 from estimagic.optimization.pounders_auxiliary import find_affine_points
@@ -85,7 +86,6 @@ def test_update_center(dict_update_center):
         min_x_out,
         min_criterion_out,
         gradient_out,
-        min_criterion_norm_out,
         first_derivative_out,
         index_min_x_out,
     ) = update_center(
@@ -95,7 +95,6 @@ def test_update_center(dict_update_center):
         delta=dict_update_center["delta"],
         min_criterion=dict_update_center["min_criterion"],
         gradient=dict_update_center["gradient"],
-        history_criterion_norm=dict_update_center["history_criterion_norm"],
         hessian=dict_update_center["hessian"],
         first_derivative=dict_update_center["first_derivative"],
         second_derivative=dict_update_center["second_derivative"],
@@ -104,7 +103,6 @@ def test_update_center(dict_update_center):
     aaae(min_x_out, dict_update_center["min_x_expected"])
     aaae(min_criterion_out, dict_update_center["min_criterion_expected"])
     aaae(gradient_out, dict_update_center["gradient_expected"])
-    aaae(min_criterion_norm_out, dict_update_center["min_criterion_norm_expected"])
     aaae(
         first_derivative_out, dict_update_center["first_derivative_expected"], decimal=5
     )
@@ -143,7 +141,9 @@ def test_find_affine_points(dict_find_affine_points):
 
 
 def test_improve_model(dict_improve_model, criterion):
+    history = LeastSquaresHistory()
     (
+        _,
         history_x_out,
         history_criterion_out,
         _,
@@ -151,6 +151,7 @@ def test_improve_model(dict_improve_model, criterion):
         n_modelpoints_out,
         n_history_out,
     ) = improve_model(
+        history,
         history_x=dict_improve_model["history_x"],
         history_criterion=dict_improve_model["history_criterion"],
         history_criterion_norm=dict_improve_model["history_criterion_norm"],

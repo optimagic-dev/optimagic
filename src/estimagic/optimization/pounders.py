@@ -245,7 +245,6 @@ def internal_solve_pounders(
                 x_accepted,
                 residuals_accepted,
                 residual_gradients,
-                _,  # remove this from the outputs of update_center
                 main_gradient,
                 accepted_index,
             ) = update_center(
@@ -255,7 +254,6 @@ def internal_solve_pounders(
                 delta=delta,
                 min_criterion=residuals_accepted,
                 gradient=residual_gradients,
-                history_criterion_norm=history_criterion_norm,
                 hessian=residual_hessians,
                 first_derivative=main_gradient,
                 second_derivative=main_hessian,
