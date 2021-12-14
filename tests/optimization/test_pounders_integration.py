@@ -39,13 +39,16 @@ def criterion():
 
 
 start_params = [
-    # np.array([0.15, 0.008, 0.01]), # noqa: E800
+    np.array([0.15, 0.008, 0.01]),  # noqa: E800
     np.ones(3) * 0.25,
-    # np.array([1e-6, 1e-2, 1e-6]), # noqa: E800
+    np.array([1e-6, 1e-2, 1e-6]),  # noqa: E800
 ]
 
 TEST_CASES = []
-for subsolver in ["L-BFGS-B"]:  # , "trust-constr", ]: # noqa: E800
+for subsolver in [
+    "L-BFGS-B",
+    "trust-constr",
+]:  # noqa: E800
     for x0 in start_params:
         for gtol in [1e-8]:
             for subtol in [1e-8, 1e-9]:

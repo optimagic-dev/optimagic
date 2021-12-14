@@ -252,6 +252,7 @@ def find_affine_points(
 
 
 def improve_model(
+    history,
     history_x,
     history_criterion,
     history_criterion_norm,
@@ -335,6 +336,7 @@ def improve_model(
 
         if add_all_points != 0:
             (
+                history,
                 history_x,
                 history_criterion,
                 history_criterion_norm,
@@ -342,6 +344,7 @@ def improve_model(
                 n_modelpoints,
                 n_history,
             ) = _add_point(
+                history=history,
                 history_x=history_x,
                 history_criterion=history_criterion,
                 history_criterion_norm=history_criterion_norm,
@@ -359,6 +362,7 @@ def improve_model(
 
     if add_all_points != 1:
         (
+            history,
             history_x,
             history_criterion,
             history_criterion_norm,
@@ -366,6 +370,7 @@ def improve_model(
             n_modelpoints,
             n_history,
         ) = _add_point(
+            history=history,
             history_x=history_x,
             history_criterion=history_criterion,
             history_criterion_norm=history_criterion_norm,
@@ -382,6 +387,7 @@ def improve_model(
         )
 
     return (
+        history,
         history_x,
         history_criterion,
         history_criterion_norm,
@@ -679,6 +685,7 @@ def _get_basis_quadratic_functions(x):
 
 
 def _add_point(
+    history,
     history_x,
     history_criterion,
     history_criterion_norm,
@@ -744,6 +751,7 @@ def _add_point(
             np.stack([lower_bounds, history_x[n_history], upper_bounds]), axis=0
         )
 
+    history.add_entries(history_x[n_history], criterion(history_x[n_history]))
     # Compute value of new vector
     history_criterion[n_history] = criterion(history_x[n_history])
     history_criterion_norm[n_history] = compute_criterion_norm(
@@ -756,6 +764,7 @@ def _add_point(
     n_history += 1
 
     return (
+        history,
         history_x,
         history_criterion,
         history_criterion_norm,

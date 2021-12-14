@@ -203,6 +203,9 @@ def internal_solve_pounders(
     n_modelpoints = n + 1
 
     last_model_indices = np.zeros(n_maxinterp, dtype=int)
+    history_x = history.xs
+    history_criterion = history.residuals
+    history_criterion_norm = history.critvals
 
     while reason is True:
         niter += 1
@@ -225,18 +228,11 @@ def internal_solve_pounders(
         x_candidate = x_accepted + result_sub.x * delta
         residuals_candidate = criterion(x_candidate)
 
-        # history.add_entries(x_candidate, residuals_candidate) # noqa: E800
-        # ==================================================================================
-        history_x = history.xs
-        history_criterion = history.residuals
-        history_criterion_norm = history.critvals
-        # ==================================================================================
-
         history_x[n_history, :] = x_candidate
-        history_criterion[
-            n_history, :
-        ] = residuals_candidate  # criterion(x_candidate)# history_x[n_history, :])
+        history_criterion[n_history, :] = criterion(x_candidate)
         history_criterion_norm[n_history] = compute_criterion_norm(residuals_candidate)
+
+        history.add_entries(x_candidate, residuals_candidate)
 
         rho = (
             history_criterion_norm[accepted_index] - history_criterion_norm[n_history]
@@ -291,6 +287,7 @@ def internal_solve_pounders(
             if n_modelpoints < n:
                 add_all_points = 1
                 (
+                    history,
                     history_x,
                     history_criterion,
                     history_criterion_norm,
@@ -298,6 +295,7 @@ def internal_solve_pounders(
                     n_modelpoints,
                     n_history,
                 ) = improve_model(
+                    history=history,
                     history_x=history_x,
                     history_criterion=history_criterion,
                     history_criterion_norm=history_criterion_norm,
@@ -372,6 +370,7 @@ def internal_solve_pounders(
                 # Model not valid. Add geometry points
                 add_all_points = n - n_modelpoints
                 (
+                    history,
                     history_x,
                     history_criterion,
                     history_criterion_norm,
@@ -379,6 +378,7 @@ def internal_solve_pounders(
                     n_modelpoints,
                     n_history,
                 ) = improve_model(
+                    history=history,
                     history_x=history_x,
                     history_criterion=history_criterion,
                     history_criterion_norm=history_criterion_norm,
