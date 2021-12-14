@@ -119,7 +119,7 @@ class LeastSquaresHistory:
 
 def _add_entries_to_array(arr, new, position):
     if arr is None:
-        shape = 1000 if new.ndim == 1 else (1000, new.shape[1])
+        shape = 100_000 if new.ndim == 1 else (100_000, new.shape[1])
         arr = np.full(shape, np.nan)
 
     if len(arr) - position - len(new) < 0:
