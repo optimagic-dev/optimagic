@@ -233,9 +233,10 @@ def internal_solve_pounders(
         # ==================================================================================
 
         history_x[n_history, :] = x_candidate
-        history_criterion[n_history, :] = residuals_candidate # criterion(x_candidate)# history_x[n_history, :])
+        history_criterion[
+            n_history, :
+        ] = residuals_candidate  # criterion(x_candidate)# history_x[n_history, :])
         history_criterion_norm[n_history] = compute_criterion_norm(residuals_candidate)
-
 
         rho = (
             history_criterion_norm[accepted_index] - history_criterion_norm[n_history]
