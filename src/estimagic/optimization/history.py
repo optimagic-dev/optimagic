@@ -67,8 +67,8 @@ class LeastSquaresHistory:
                 be returned.
 
         Returns:
-            np.ndarray: 1d or 2d array with parameter vectors
-            np.ndarray: 1d or 2d array with residuals
+            np.ndarray: 1d or 2d array with parameter vectors.
+            np.ndarray: 1d or 2d array with residuals.
             np.ndarray: Float or 1d array with criterion values.
 
         """
@@ -81,6 +81,51 @@ class LeastSquaresHistory:
             out = [arr[index] for arr in out]
 
         return tuple(out)
+
+    def get_xs(self, index=None):
+        """Retrieve xs from history.
+
+        Args:
+            index (None, int or np.ndarray): Specifies the subset of rows that will
+                be returned.
+
+        Returns:
+            np.ndarray: 1d or 2d array with parameter vectors
+        """
+        out = self.xs[: self.n_fun]
+        out = out[index] if index is not None else out
+
+        return out
+
+    def get_residuals(self, index=None):
+        """Retrieve residuals from history.
+
+        Args:
+            index (None, int or np.ndarray): Specifies the subset of rows that will
+                be returned.
+
+        Returns:
+            np.ndarray: 1d or 2d array with residuals.
+        """
+        out = self.residuals[: self.n_fun]
+        out = out[index] if index is not None else out
+
+        return out
+
+    def get_critvals(self, index=None):
+        """Retrieve critvals from history.
+
+        Args:
+            index (None, int or np.ndarray): Specifies the subset of rows that will
+                be returned.
+
+        Returns:
+            np.ndarray: Float or 1d array with criterion values.
+        """
+        out = self.critvals[: self.n_fun]
+        out = out[index] if index is not None else out
+
+        return out
 
     def get_centered_entries(self, center_info, index=None):
         """Retrieve xs, residuals and critvals from the history.
@@ -104,6 +149,58 @@ class LeastSquaresHistory:
         critvals = (residuals ** 2).sum(axis=-1)
         return xs, residuals, critvals
 
+    def get_centered_xs(self, center_info, index=None):
+        """Retrieve xs from the history.
+
+        Args:
+            center_info (dict): Dictionary with the entries "x" and
+                "radius". The information is used to center parameters.
+            index (None, int or np.ndarray): Specifies the subset of rows that will
+                be returned.
+
+        Returns:
+            np.ndarray: 1d or 2d array with centered parameter vectors.
+        """
+        xs_unc = self.get_xs(index=index)
+        xs = (xs_unc - center_info["x"]) / center_info["radius"]
+
+        return xs
+
+    def get_centered_residuals(self, center_info, index=None):
+        """Retrieve residuals from the history.
+
+        Args:
+            center_info (dict): Dictionary with the entry "residuals".
+                The information is used to center residuals.
+            index (None, int or np.ndarray): Specifies the subset of rows that will
+                be returned.
+
+        Returns:
+            np.ndarray: 1d or 2d array with centered residuals.
+        """
+        residuals_unc = self.get_residuals(index=index)
+        residuals = residuals_unc - center_info["residuals"]
+
+        return residuals
+
+    def get_centered_critvals(self, center_info, index=None):
+        """Retrieve critvals from the history.
+
+        Args:
+            center_info (dict): Dictionary with the entry"residuals".
+                The information is used to center critvals.
+            index (None, int or np.ndarray): Specifies the subset of rows that will
+                be returned.
+
+        Returns:
+            np.ndarray: Float or 1d array with centered criterion values.
+        """
+        residuals_unc = self.get_residuals(index=index)
+        residuals = residuals_unc - center_info["residuals"]
+        critvals = (residuals ** 2).sum(axis=-1)
+
+        return critvals
+
     def get_n_fun(self):
         return self.n_fun
 
@@ -112,6 +209,15 @@ class LeastSquaresHistory:
 
     def get_best_entries(self):
         return self.get_entries(index=self.min_index)
+
+    def get_best_xs(self):
+        return self.get_xs(index=self.min_index)
+
+    def get_best_residuals(self):
+        return self.get_residuals(index=self.min_index)
+
+    def get_best_critvals(self):
+        return self.get_critvals(index=self.min_index)
 
     def get_best_centered_entries(self, center_info):
         return self.get_centered_entries(self, center_info, index=self.min_index)

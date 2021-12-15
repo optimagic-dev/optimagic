@@ -27,13 +27,19 @@ def test_add_entries_not_initialized(entries, is_center):
         history.add_entries(*entries)
 
     xs, residuals, critvals = history.get_entries()
+    xs_sinlge = history.get_xs()
+    residuals_sinlge = history.get_residuals()
+    critvals_sinlge = history.get_critvals()
 
     for entry in xs, residuals, critvals:
         assert isinstance(entry, np.ndarray)
 
     aaae(xs, np.arange(3).reshape(1, 3))
+    aaae(xs_sinlge, np.arange(3).reshape(1, 3))
     aaae(residuals, np.arange(5).reshape(1, 5))
+    aaae(residuals_sinlge, np.arange(5).reshape(1, 5))
     aaae(critvals, np.array([30.0]))
+    aaae(critvals_sinlge, np.array([30.0]))
 
 
 @pytest.mark.parametrize("entries, is_center", TEST_CASES)
@@ -48,13 +54,19 @@ def test_add_entries_initialized_with_space(entries, is_center):
         history.add_entries(*entries)
 
     xs, residuals, critvals = history.get_entries(index=-1)
+    xs_sinlge = history.get_xs(index=-1)
+    residuals_sinlge = history.get_residuals(index=-1)
+    critvals_sinlge = history.get_critvals(index=-1)
 
     for entry in xs, residuals:
         assert isinstance(entry, np.ndarray)
 
     aaae(xs, np.arange(3))
+    aaae(xs_sinlge, np.arange(3))
     aaae(residuals, np.arange(5))
+    aaae(residuals_sinlge, np.arange(5))
     assert critvals == 30
+    assert critvals_sinlge == 30
 
 
 def test_add_entries_initialized_extension_needed():
@@ -71,8 +83,10 @@ def test_add_entries_initialized_extension_needed():
     assert len(history.critvals) == 10
 
     xs, residuals, _ = history.get_entries(index=-1)
+    xs_sinlge = history.get_xs(index=-1)
+    residuals_sinlge = history.get_residuals(index=-1)
 
-    for entry in xs, residuals:
+    for entry in xs, xs_sinlge, residuals, residuals_sinlge:
         assert isinstance(entry, np.ndarray)
 
     assert history.get_n_fun() == 8

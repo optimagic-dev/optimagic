@@ -17,24 +17,14 @@ def compute_criterion_norm(criterion_value):
 
 
 def update_center(
-    history,
-    accepted_index,
-    x_accepted,
-    delta,
+    x1,
+    residuals_accepted,
     residual_gradients,
     residual_hessians,
     main_gradient,
     main_hessian,
-    n_history,
 ):
     """Update center."""
-    # Change current center
-    x_accepted, _, _ = history.get_best_entries()
-    _, residuals_accepted, _ = history.get_entries(index=accepted_index)
-
-    center_info = {"x": x_accepted, "radius": delta, "residuals": residuals_accepted}
-    x1, _, _ = history.get_centered_entries(center_info, index=n_history - 1)
-
     qk = (
         residuals_accepted
         + np.dot(x1, residual_gradients)

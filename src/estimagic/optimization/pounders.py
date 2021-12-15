@@ -241,18 +241,19 @@ def internal_solve_pounders(
         n_history += 1
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
+            residuals_accepted = history.get_residuals(index=accepted_index)
+            center_info = {"x": history.get_best_xs(), "radius": delta}
+            x1 = history.get_centered_xs(center_info, index=-1)
+
             (residuals_accepted, residual_gradients, main_gradient,) = update_center(
-                history=history,
-                accepted_index=accepted_index,
-                x_accepted=x_accepted,
-                delta=delta,
+                x1=x1,
+                residuals_accepted=residuals_accepted,
                 residual_gradients=residual_gradients,
                 residual_hessians=residual_hessians,
                 main_gradient=main_gradient,
                 main_hessian=main_hessian,
-                n_history=n_history,
             )
-            x_accepted, _, _ = history.get_best_entries()
+            x_accepted = history.get_best_xs()
             accepted_index = history.get_n_fun() - 1
 
         # Evaluate at a model improving point if necessary
