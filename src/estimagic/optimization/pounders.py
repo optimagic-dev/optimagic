@@ -4,7 +4,6 @@ import numpy as np
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import add_more_points
 from estimagic.optimization.pounders_auxiliary import calc_first_and_second_derivative
-from estimagic.optimization.pounders_auxiliary import compute_criterion_norm
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_approximation_error
 from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
@@ -187,10 +186,12 @@ def internal_solve_pounders(
     indices_not_min = [i for i in range(n + 1) if i != accepted_index]
 
     center_info = {"x": x_accepted, "radius": delta, "residuals": residuals_accepted}
-    xk, fdiff, _ = history.get_centered_entries(center_info, index=indices_not_min)
+    x_candidate, fdiff, _ = history.get_centered_entries(
+        center_info, index=indices_not_min
+    )
 
     # Determine the initial quadratic model
-    residual_gradients = np.linalg.solve(xk, fdiff)  # should this be called
+    residual_gradients = np.linalg.solve(x_candidate, fdiff)  # should this be called
 
     main_gradient = np.dot(residual_gradients, residuals_accepted)
     main_hessian = np.dot(residual_gradients, residual_gradients.T)
@@ -203,9 +204,6 @@ def internal_solve_pounders(
     n_modelpoints = n + 1
 
     last_model_indices = np.zeros(n_maxinterp, dtype=int)
-    history_x = history.xs
-    history_criterion = history.residuals
-    history_criterion_norm = history.critvals
 
     while reason is True:
         niter += 1
@@ -227,16 +225,9 @@ def internal_solve_pounders(
         qmin = -result_sub.fun
         x_candidate = x_accepted + result_sub.x * delta
         residuals_candidate = criterion(x_candidate)
-
-        history_x[n_history, :] = x_candidate
-        history_criterion[n_history, :] = criterion(x_candidate)
-        history_criterion_norm[n_history] = compute_criterion_norm(residuals_candidate)
-
         history.add_entries(x_candidate, residuals_candidate)
 
-        rho = (
-            history_criterion_norm[accepted_index] - history_criterion_norm[n_history]
-        ) / qmin
+        rho = (history.get_critvals(accepted_index) - history.get_critvals(-1)) / qmin
 
         n_history += 1
 
@@ -275,24 +266,12 @@ def internal_solve_pounders(
                 model_indices=model_indices,
                 n=n,
                 n_modelpoints=0,
-                n_history=n_history,
             )
 
             if n_modelpoints < n:
                 add_all_points = 1
-                (
-                    history,
-                    history_x,
-                    history_criterion,
-                    history_criterion_norm,
-                    model_indices,
-                    n_modelpoints,
-                    n_history,
-                ) = improve_model(
+                (history, model_indices, n_modelpoints, n_history,) = improve_model(
                     history=history,
-                    history_x=history_x,
-                    history_criterion=history_criterion,
-                    history_criterion_norm=history_criterion_norm,
                     first_derivative=main_gradient,
                     second_derivative=main_hessian,
                     model_improving_points=model_improving_points,
@@ -334,7 +313,6 @@ def internal_solve_pounders(
             model_indices=model_indices,
             n=n,
             n_modelpoints=0,
-            n_history=n_history,
         )
 
         if n_modelpoints == n:
@@ -357,25 +335,13 @@ def internal_solve_pounders(
                 model_indices=model_indices,
                 n=n,
                 n_modelpoints=n_modelpoints,
-                n_history=n_history,
             )
 
             if n > n_modelpoints:
                 # Model not valid. Add geometry points
                 add_all_points = n - n_modelpoints
-                (
-                    history,
-                    history_x,
-                    history_criterion,
-                    history_criterion_norm,
-                    model_indices,
-                    n_modelpoints,
-                    n_history,
-                ) = improve_model(
+                (history, model_indices, n_modelpoints, n_history,) = improve_model(
                     history=history,
-                    history_x=history_x,
-                    history_criterion=history_criterion,
-                    history_criterion_norm=history_criterion_norm,
                     first_derivative=main_gradient,
                     second_derivative=main_hessian,
                     model_improving_points=model_improving_points,
@@ -414,11 +380,14 @@ def internal_solve_pounders(
             n_history=n_history,
         )
 
-        xk = (history_x[model_indices[:n_modelpoints]] - x_accepted) / delta_old
+        center_info = {"x": x_accepted, "radius": delta_old}
+        x_candidates = history.get_centered_xs(
+            center_info, index=model_indices[:n_modelpoints]
+        )
 
         approximation_error = get_approximation_error(
             history=history,
-            xk=xk,
+            x_candidates=x_candidates,
             hessian=residual_hessians,
             gradient=residual_gradients,
             model_indices=model_indices,
@@ -447,8 +416,7 @@ def internal_solve_pounders(
             delta_old=delta_old,
         )
 
-        residuals_accepted = history_criterion[accepted_index]
-        _ = history_criterion_norm[accepted_index]
+        residuals_accepted = history.get_residuals(index=accepted_index)
         main_gradient, main_hessian = calc_first_and_second_derivative(
             gradient=residual_gradients,
             min_criterion=residuals_accepted,
@@ -483,16 +451,16 @@ def internal_solve_pounders(
             # Identical model used in successive iterations
             reason = False
 
-    result_sub_dict = {
-        "solution_x": history_x[accepted_index, :],
-        "solution_criterion": history_criterion[accepted_index, :],
-        "history_x": history_x[:n_history, :],
-        "history_criterion": history_criterion[:n_history, :],
+    result_dict = {
+        "solution_x": history.get_best_xs(),
+        "solution_criterion": history.get_best_residuals(),
+        "history_x": history.get_xs(),
+        "history_criterion": history.get_residuals(),
         "n_iterations": niter,
         "message": "Under development.",
     }
 
-    return result_sub_dict
+    return result_dict
 
 
 def centered_criterion_template(centered_x, center_info, criterion):

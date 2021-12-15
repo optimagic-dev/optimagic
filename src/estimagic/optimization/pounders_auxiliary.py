@@ -180,7 +180,6 @@ def find_affine_points(
     model_indices,
     n,
     n_modelpoints,
-    n_history,
 ):
     """Find affine points.
 
@@ -211,7 +210,7 @@ def find_affine_points(
             *model_improving_points* with vector *xk_plus*.
             Relevant for next call of *find_nearby_points*.
     """
-    for i in range(n_history - 1, -1, -1):
+    for i in range(history.get_n_fun() - 1, -1, -1):
         center_info = {"x": min_x, "radius": delta}
         x_candidate = history.get_centered_xs(center_info, index=i)
         candidate_norm = np.linalg.norm(x_candidate)
@@ -239,9 +238,6 @@ def find_affine_points(
 
 def improve_model(
     history,
-    history_x,
-    history_criterion,
-    history_criterion_norm,
     first_derivative,
     second_derivative,
     model_improving_points,
@@ -305,7 +301,7 @@ def improve_model(
     for i in range(n_modelpoints, n):
         dp = np.dot(model_improving_points[:, i], first_derivative)
 
-        # candidate_xodel says use the other model_improving_points!
+        # Go into other direction
         if dp > 0:
             model_improving_points[:, i] *= -1
 
@@ -319,19 +315,8 @@ def improve_model(
             minvalue = work[i]
 
         if add_all_points != 0:
-            (
-                history,
-                history_x,
-                history_criterion,
-                history_criterion_norm,
-                model_indices,
-                n_modelpoints,
-                n_history,
-            ) = _add_point(
+            (history, model_indices, n_modelpoints, n_history,) = _add_point(
                 history=history,
-                history_x=history_x,
-                history_criterion=history_criterion,
-                history_criterion_norm=history_criterion_norm,
                 model_improving_points=model_improving_points,
                 model_indices=model_indices,
                 index_min_x=index_min_x,
@@ -345,19 +330,8 @@ def improve_model(
             )
 
     if add_all_points != 1:
-        (
-            history,
-            history_x,
-            history_criterion,
-            history_criterion_norm,
-            model_indices,
-            n_modelpoints,
-            n_history,
-        ) = _add_point(
+        (history, model_indices, n_modelpoints, n_history,) = _add_point(
             history=history,
-            history_x=history_x,
-            history_criterion=history_criterion,
-            history_criterion_norm=history_criterion_norm,
             model_improving_points=model_improving_points,
             model_indices=model_indices,
             index_min_x=index_min_x,
@@ -372,9 +346,6 @@ def improve_model(
 
     return (
         history,
-        history_x,
-        history_criterion,
-        history_criterion_norm,
         model_indices,
         n_modelpoints,
         n_history,
@@ -431,9 +402,7 @@ def add_more_points(
         interpolation_set[i, 1:] = history.get_centered_xs(
             center_info, index=model_indices[i]
         )
-        monomial_basis[i, :] = _get_basis_quadratic_functions(
-            x=interpolation_set[i, 1:]
-        )
+        monomial_basis[i, :] = _get_basis_quadratic_function(x=interpolation_set[i, 1:])
 
     # Now we add points until we have n_maxinterp starting with the most recent ones
     point = n_history - 1
@@ -464,7 +433,7 @@ def add_more_points(
         interpolation_set[n_modelpoints, 1:] = history.get_centered_xs(
             center_info, index=point
         )
-        monomial_basis[n_modelpoints, :] = _get_basis_quadratic_functions(
+        monomial_basis[n_modelpoints, :] = _get_basis_quadratic_function(
             x=interpolation_set[n_modelpoints, 1:]
         )
 
@@ -509,7 +478,7 @@ def add_more_points(
 
 def get_approximation_error(
     history,
-    xk,
+    x_candidates,
     hessian,
     gradient,
     model_indices,
@@ -521,7 +490,7 @@ def get_approximation_error(
     approximation_error = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
 
     for j in range(n_obs):
-        xk_hessian = np.dot(xk, hessian[j, :, :])
+        x_hessian = np.dot(x_candidates, hessian[j, :, :])
 
         for i in range(n_modelpoints):
             residuals = history.get_residuals(index=model_indices[i])
@@ -529,8 +498,8 @@ def get_approximation_error(
             approximation_error[i, j] = (
                 residuals[j]
                 - residuals_min[j]
-                - np.dot(gradient[:, j], xk[i, :])
-                - 0.5 * np.dot(xk_hessian[i, :], xk[i, :])
+                - np.dot(gradient[:, j], x_candidates[i, :])
+                - 0.5 * np.dot(x_hessian[i, :], x_candidates[i, :])
             )
 
     return approximation_error
@@ -648,7 +617,7 @@ def _criterion_and_derivative_subproblem(
     return criterion, derivative
 
 
-def _get_basis_quadratic_functions(x):
+def _get_basis_quadratic_function(x):
     """Evaluate phi.
 
     Phi = .5*[x(1)^2  sqrt(2)*x(1)*x(2) ... sqrt(2)*x(1)*x(n) ...
@@ -676,9 +645,6 @@ def _get_basis_quadratic_functions(x):
 
 def _add_point(
     history,
-    history_x,
-    history_criterion,
-    history_criterion_norm,
     model_improving_points,
     model_indices,
     index_min_x,
@@ -732,21 +698,17 @@ def _add_point(
         - n_history (int): Current number candidate solutions for x.
     """
     # Create new vector in history
-    history_x[n_history] = model_improving_points[:, index]
-    history_x[n_history] = delta * history_x[n_history] + history_x[index_min_x]
+    n_history = history.get_n_fun()
+    x_candidate = model_improving_points[:, index]
+    x_candidate = delta * x_candidate + history.get_xs(index=index_min_x)
 
     # Project into feasible region
     if lower_bounds is not None and upper_bounds is not None:
-        history_x[n_history] = np.median(
-            np.stack([lower_bounds, history_x[n_history], upper_bounds]), axis=0
+        x_candidate = np.median(
+            np.stack([lower_bounds, x_candidate, upper_bounds]), axis=0
         )
 
-    history.add_entries(history_x[n_history], criterion(history_x[n_history]))
-    # Compute value of new vector
-    history_criterion[n_history] = criterion(history_x[n_history])
-    history_criterion_norm[n_history] = compute_criterion_norm(
-        history_criterion[n_history]
-    )
+    history.add_entries(x_candidate, criterion(x_candidate))
 
     # Add new vector to the model
     model_indices[n_modelpoints] = n_history
@@ -755,9 +717,6 @@ def _add_point(
 
     return (
         history,
-        history_x,
-        history_criterion,
-        history_criterion_norm,
         model_indices,
         n_modelpoints,
         n_history,
