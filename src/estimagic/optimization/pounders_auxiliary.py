@@ -198,7 +198,6 @@ def find_affine_points(
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
         n (int): Number of parameters.
         n_modelpoints (int): Current number of model points.
-        n_history (int): Current number candidate solutions for x.
 
     Returns:
         Tuple:
@@ -246,7 +245,6 @@ def improve_model(
     n_modelpoints,
     add_all_points,
     n,
-    n_history,
     delta,
     criterion,
     lower_bounds,
@@ -271,7 +269,6 @@ def improve_model(
         n_modelpoints (int): Current number of model points.
         add_all_points (int): If equal to 0, add points. Else, don't.
         n (int): Number of parameters.
-        n_history (int): Current number candidate solutions for x.
         delta (float): Delta, current trust-region radius.
         criterion (callable): Criterion function.
         lower_bounds (np.ndarray): lower_triangularower bounds.
@@ -290,7 +287,6 @@ def improve_model(
         - history_criterion_norm (np.ndarray): Array storing norm of the
             criterion function. Shape (1000,)
         - n_modelpoints (int): Current number of model points.
-        - n_history (int): Current number candidate solutions for x.
     """
     index_min_internal = 0
     minvalue = np.inf
@@ -315,14 +311,13 @@ def improve_model(
             minvalue = work[i]
 
         if add_all_points != 0:
-            (history, model_indices, n_modelpoints, n_history,) = _add_point(
+            (history, model_indices, n_modelpoints,) = _add_point(
                 history=history,
                 model_improving_points=model_improving_points,
                 model_indices=model_indices,
                 index_min_x=index_min_x,
                 index=i,
                 n_modelpoints=n_modelpoints,
-                n_history=n_history,
                 delta=delta,
                 criterion=criterion,
                 lower_bounds=lower_bounds,
@@ -330,14 +325,13 @@ def improve_model(
             )
 
     if add_all_points != 1:
-        (history, model_indices, n_modelpoints, n_history,) = _add_point(
+        (history, model_indices, n_modelpoints,) = _add_point(
             history=history,
             model_improving_points=model_improving_points,
             model_indices=model_indices,
             index_min_x=index_min_x,
             index=index_min_internal,
             n_modelpoints=n_modelpoints,
-            n_history=n_history,
             delta=delta,
             criterion=criterion,
             lower_bounds=lower_bounds,
@@ -348,7 +342,6 @@ def improve_model(
         history,
         model_indices,
         n_modelpoints,
-        n_history,
     )
 
 
@@ -362,7 +355,6 @@ def add_more_points(
     n,
     n_maxinterp,
     n_modelpoints,
-    n_history,
 ):
     """Add more points.
     Args:
@@ -380,7 +372,6 @@ def add_more_points(
         n (int): Number of parameters.
         n_maxinterp (int): candidate_xaximum number of interpolation points.
         n_modelpoints (int): Current number of model points.
-        n_history (int): Current number candidate solutions for x.
     Returns:
         Tuple:
         - lower_triangular (np.ndarray): lower_triangular matrix.
@@ -405,7 +396,7 @@ def add_more_points(
         monomial_basis[i, :] = _get_basis_quadratic_function(x=interpolation_set[i, 1:])
 
     # Now we add points until we have n_maxinterp starting with the most recent ones
-    point = n_history - 1
+    point = history.get_n_fun() - 1
     n_modelpoints = n + 1
 
     while (n_modelpoints < n_maxinterp) and (point >= 0):
@@ -650,7 +641,6 @@ def _add_point(
     index_min_x,
     index,
     n_modelpoints,
-    n_history,
     delta,
     criterion,
     lower_bounds,
@@ -674,7 +664,6 @@ def _add_point(
         index (int): Index relating to the parameter vector in
             *model_improving_points* that is added to *history_x*.
         n_modelpoints (int): Current number of model points.
-        n_history (int): Current number candidate solutions for x.
         delta (float): Delta, current trust-region radius.
         criterion (callable): Criterion function.
         lower_bounds (np.ndarray): lower_triangularower bounds.
@@ -695,7 +684,6 @@ def _add_point(
         - model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
         - n_modelpoints (int): Current number of model points.
-        - n_history (int): Current number candidate solutions for x.
     """
     # Create new vector in history
     n_history = history.get_n_fun()
@@ -713,11 +701,9 @@ def _add_point(
     # Add new vector to the model
     model_indices[n_modelpoints] = n_history
     n_modelpoints += 1
-    n_history += 1
 
     return (
         history,
         model_indices,
         n_modelpoints,
-        n_history,
     )

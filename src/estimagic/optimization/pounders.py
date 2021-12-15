@@ -200,7 +200,6 @@ def internal_solve_pounders(
 
     valid = True
     reason = True
-    n_history = n + 1
     n_modelpoints = n + 1
 
     last_model_indices = np.zeros(n_maxinterp, dtype=int)
@@ -228,8 +227,6 @@ def internal_solve_pounders(
         history.add_entries(x_candidate, residuals_candidate)
 
         rho = (history.get_critvals(accepted_index) - history.get_critvals(-1)) / qmin
-
-        n_history += 1
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
             residuals_accepted = history.get_residuals(index=accepted_index)
@@ -270,7 +267,7 @@ def internal_solve_pounders(
 
             if n_modelpoints < n:
                 add_all_points = 1
-                (history, model_indices, n_modelpoints, n_history,) = improve_model(
+                (history, model_indices, n_modelpoints,) = improve_model(
                     history=history,
                     first_derivative=main_gradient,
                     second_derivative=main_hessian,
@@ -280,7 +277,6 @@ def internal_solve_pounders(
                     n_modelpoints=n_modelpoints,
                     add_all_points=add_all_points,
                     n=n,
-                    n_history=n_history,
                     delta=delta,
                     criterion=criterion,
                     lower_bounds=lower_bounds,
@@ -340,7 +336,7 @@ def internal_solve_pounders(
             if n > n_modelpoints:
                 # Model not valid. Add geometry points
                 add_all_points = n - n_modelpoints
-                (history, model_indices, n_modelpoints, n_history,) = improve_model(
+                (history, model_indices, n_modelpoints,) = improve_model(
                     history=history,
                     first_derivative=main_gradient,
                     second_derivative=main_hessian,
@@ -350,7 +346,6 @@ def internal_solve_pounders(
                     n_modelpoints=n_modelpoints,
                     add_all_points=add_all_points,
                     n=n,
-                    n_history=n_history,
                     delta=delta,
                     criterion=criterion,
                     lower_bounds=lower_bounds,
@@ -377,7 +372,6 @@ def internal_solve_pounders(
             n=n,
             n_maxinterp=n_maxinterp,
             n_modelpoints=n_modelpoints,
-            n_history=n_history,
         )
 
         center_info = {"x": x_accepted, "radius": delta_old}
