@@ -6,10 +6,12 @@ class LeastSquaresHistory:
 
     def __init__(self):
         self.xs = None
+        self.best_xs = None
         self.residuals = None
+        self.best_residuals = None
         self.critvals = None
         self.n_fun = 0
-        self.min_index = None
+        self.min_index = 0
         self.min_critval = np.inf
 
     def add_entries(self, xs, residuals):
@@ -28,8 +30,11 @@ class LeastSquaresHistory:
 
         argmin_candidate = critvals.argmin()
         min_candidate = critvals[argmin_candidate]
+
         if min_candidate < self.min_critval:
             self.min_index = argmin_candidate + self.n_fun
+            self.best_xs = xs[argmin_candidate]
+            self.best_residuals = residuals[argmin_candidate]
 
         if len(xs) != len(residuals):
             raise ValueError()
@@ -143,14 +148,20 @@ class LeastSquaresHistory:
             np.ndarray: Float or 1d array with centered criterion values.
 
         """
+        if "x" not in center_info:
+            center_info["x"] = self.best_xs
+        if "residuals" not in center_info:
+            center_info["residuals"] = self.best_residuals
+
         xs_unc, residuals_unc, _ = self.get_entries(index=index)
         xs = (xs_unc - center_info["x"]) / center_info["radius"]
         residuals = residuals_unc - center_info["residuals"]
         critvals = (residuals ** 2).sum(axis=-1)
+
         return xs, residuals, critvals
 
     def get_centered_xs(self, center_info, index=None):
-        """Retrieve xs from the history.
+        """Retrieve centered xs from the history.
 
         Args:
             center_info (dict): Dictionary with the entries "x" and
@@ -161,13 +172,16 @@ class LeastSquaresHistory:
         Returns:
             np.ndarray: 1d or 2d array with centered parameter vectors.
         """
+        if "x" not in center_info:
+            center_info["x"] = self.best_xs
+
         xs_unc = self.get_xs(index=index)
         xs = (xs_unc - center_info["x"]) / center_info["radius"]
 
         return xs
 
     def get_centered_residuals(self, center_info, index=None):
-        """Retrieve residuals from the history.
+        """Retrieve centered residuals from the history.
 
         Args:
             center_info (dict): Dictionary with the entry "residuals".
@@ -184,7 +198,7 @@ class LeastSquaresHistory:
         return residuals
 
     def get_centered_critvals(self, center_info, index=None):
-        """Retrieve critvals from the history.
+        """Retrieve centered critvals from the history.
 
         Args:
             center_info (dict): Dictionary with the entry"residuals".

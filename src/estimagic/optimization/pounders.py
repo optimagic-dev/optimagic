@@ -180,18 +180,17 @@ def internal_solve_pounders(
     history.add_entries(xs, residuals)
     accepted_index = history.get_min_index()
 
-    x_accepted, residuals_accepted, _ = history.get_entries(index=accepted_index)
+    x_accepted, residuals_accepted, _ = history.get_best_entries()
 
     # Center around new trust-region and normalize to [-1, 1]
     indices_not_min = [i for i in range(n + 1) if i != accepted_index]
 
-    center_info = {"x": x_accepted, "radius": delta, "residuals": residuals_accepted}
     x_candidate, fdiff, _ = history.get_centered_entries(
-        center_info, index=indices_not_min
+        center_info={"radius": delta}, index=indices_not_min
     )
 
     # Determine the initial quadratic model
-    residual_gradients = np.linalg.solve(x_candidate, fdiff)  # should this be called
+    residual_gradients = np.linalg.solve(x_candidate, fdiff)
 
     main_gradient = np.dot(residual_gradients, residuals_accepted)
     main_hessian = np.dot(residual_gradients, residual_gradients.T)
@@ -254,7 +253,7 @@ def internal_solve_pounders(
                 project_x_onto_null,
             ) = find_affine_points(
                 history=history,
-                min_x=x_accepted,
+                x_accepted=x_accepted,
                 model_improving_points=np.zeros((n, n)),
                 project_x_onto_null=False,
                 delta=delta,
@@ -273,7 +272,7 @@ def internal_solve_pounders(
                     second_derivative=main_hessian,
                     model_improving_points=model_improving_points,
                     model_indices=model_indices,
-                    index_min_x=accepted_index,
+                    accepted_index=accepted_index,
                     n_modelpoints=n_modelpoints,
                     add_all_points=add_all_points,
                     n=n,
@@ -300,7 +299,7 @@ def internal_solve_pounders(
             project_x_onto_null,
         ) = find_affine_points(
             history=history,
-            min_x=x_accepted,
+            x_accepted=x_accepted,
             model_improving_points=np.zeros((n, n)),
             project_x_onto_null=False,
             delta=delta,
@@ -322,7 +321,7 @@ def internal_solve_pounders(
                 project_x_onto_null,
             ) = find_affine_points(
                 history=history,
-                min_x=x_accepted,
+                x_accepted=x_accepted,
                 model_improving_points=model_improving_points,
                 project_x_onto_null=project_x_onto_null,
                 delta=delta,
@@ -342,7 +341,7 @@ def internal_solve_pounders(
                     second_derivative=main_hessian,
                     model_improving_points=model_improving_points,
                     model_indices=model_indices,
-                    index_min_x=accepted_index,
+                    accepted_index=accepted_index,
                     n_modelpoints=n_modelpoints,
                     add_all_points=add_all_points,
                     n=n,
@@ -364,7 +363,7 @@ def internal_solve_pounders(
             n_modelpoints,
         ) = add_more_points(
             history=history,
-            min_x=x_accepted,
+            x_accepted=x_accepted,
             model_indices=model_indices,
             delta=delta,
             c2=c2,
@@ -382,6 +381,7 @@ def internal_solve_pounders(
         approximation_error = get_approximation_error(
             history=history,
             x_candidates=x_candidates,
+            residual_model_accepted=residuals_accepted,
             hessian=residual_hessians,
             gradient=residual_gradients,
             model_indices=model_indices,

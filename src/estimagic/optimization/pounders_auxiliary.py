@@ -171,7 +171,7 @@ def solve_subproblem(
 
 def find_affine_points(
     history,
-    min_x,
+    x_accepted,
     model_improving_points,
     project_x_onto_null,
     delta,
@@ -185,7 +185,7 @@ def find_affine_points(
 
     Args:
         history_x (np.ndarray): Array storing all candidates of the parameter vector.
-        min_x (np.ndarray): Values of parameter vector x that yield the lowest
+        x_accepted (np.ndarray): Values of parameter vector x that yield the lowest
             criterion function norm.
         model_improving_points (np.ndarray): Q matrix.
         project_x_onto_null (int): Indicator whether to calculate the QR
@@ -210,7 +210,7 @@ def find_affine_points(
             Relevant for next call of *find_nearby_points*.
     """
     for i in range(history.get_n_fun() - 1, -1, -1):
-        center_info = {"x": min_x, "radius": delta}
+        center_info = {"x": x_accepted, "radius": delta}
         x_candidate = history.get_centered_xs(center_info, index=i)
         candidate_norm = np.linalg.norm(x_candidate)
 
@@ -241,7 +241,7 @@ def improve_model(
     second_derivative,
     model_improving_points,
     model_indices,
-    index_min_x,
+    accepted_index,
     n_modelpoints,
     add_all_points,
     n,
@@ -264,7 +264,7 @@ def improve_model(
         model_improving_points (np.ndarray): Q matrix.
         model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
-        index_min_x (int): Index in *history_x* associated with the parameter vector
+        accepted_index (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
         n_modelpoints (int): Current number of model points.
         add_all_points (int): If equal to 0, add points. Else, don't.
@@ -288,7 +288,7 @@ def improve_model(
             criterion function. Shape (1000,)
         - n_modelpoints (int): Current number of model points.
     """
-    index_min_internal = 0
+    min_index_internal = 0
     minvalue = np.inf
     work = np.zeros(3)
 
@@ -307,7 +307,7 @@ def improve_model(
         work[i] = np.dot(model_improving_points[:, i], first_derivative_new)
 
         if (i == n_modelpoints) or (work[i] < minvalue):
-            index_min_internal = i
+            min_index_internal = i
             minvalue = work[i]
 
         if add_all_points != 0:
@@ -315,7 +315,7 @@ def improve_model(
                 history=history,
                 model_improving_points=model_improving_points,
                 model_indices=model_indices,
-                index_min_x=index_min_x,
+                accepted_index=accepted_index,
                 index=i,
                 n_modelpoints=n_modelpoints,
                 delta=delta,
@@ -329,8 +329,8 @@ def improve_model(
             history=history,
             model_improving_points=model_improving_points,
             model_indices=model_indices,
-            index_min_x=index_min_x,
-            index=index_min_internal,
+            accepted_index=accepted_index,
+            index=min_index_internal,
             n_modelpoints=n_modelpoints,
             delta=delta,
             criterion=criterion,
@@ -347,7 +347,7 @@ def improve_model(
 
 def add_more_points(
     history,
-    min_x,
+    x_accepted,
     model_indices,
     delta,
     c2,
@@ -360,11 +360,11 @@ def add_more_points(
     Args:
         history_x (np.ndarray): Array storing all candidates of the parameter
             vector. Shape (1000, *n*).
-        min_x (np.ndarray): Values of parameter vector x that yield the lowest
+        x_accepted (np.ndarray): Values of parameter vector x that yield the lowest
             criterion function norm.
         model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
-        index_min_x (int): Index in *history_x* associated with the parameter vector
+        accepted_index (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
         delta (float): Delta, current trust-region radius.
         c2 (int): C_2. Equal to 10 by default.
@@ -389,7 +389,7 @@ def add_more_points(
     monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
 
     for i in range(n + 1):
-        center_info = {"x": min_x, "radius": delta}
+        center_info = {"x": x_accepted, "radius": delta}
         interpolation_set[i, 1:] = history.get_centered_xs(
             center_info, index=model_indices[i]
         )
@@ -409,7 +409,7 @@ def add_more_points(
                 break
 
         if reject is False:
-            center_info = {"x": min_x, "radius": delta}
+            center_info = {"x": x_accepted, "radius": delta}
             candidate_x = history.get_centered_xs(center_info, index=point)
             candidate_norm = np.linalg.norm(candidate_x)
 
@@ -420,7 +420,7 @@ def add_more_points(
             point -= 1
             continue
 
-        center_info = {"x": min_x, "radius": delta}
+        center_info = {"x": x_accepted, "radius": delta}
         interpolation_set[n_modelpoints, 1:] = history.get_centered_xs(
             center_info, index=point
         )
@@ -470,6 +470,7 @@ def add_more_points(
 def get_approximation_error(
     history,
     x_candidates,
+    residual_model_accepted,
     hessian,
     gradient,
     model_indices,
@@ -485,10 +486,9 @@ def get_approximation_error(
 
         for i in range(n_modelpoints):
             residuals = history.get_residuals(index=model_indices[i])
-            residuals_min = history.get_best_residuals()
             approximation_error[i, j] = (
                 residuals[j]
-                - residuals_min[j]
+                - residual_model_accepted[j]
                 - np.dot(gradient[:, j], x_candidates[i, :])
                 - 0.5 * np.dot(x_hessian[i, :], x_candidates[i, :])
             )
@@ -638,7 +638,7 @@ def _add_point(
     history,
     model_improving_points,
     model_indices,
-    index_min_x,
+    accepted_index,
     index,
     n_modelpoints,
     delta,
@@ -659,7 +659,7 @@ def _add_point(
             vector to add to *history_x*. Shape (*n*, *n*).
         model_indices (np.ndarray): Indices related to *history_x*, i.e. the
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
-        index_min_x (int): Index in *history_x* associated with the parameter vector
+        accepted_index (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
         index (int): Index relating to the parameter vector in
             *model_improving_points* that is added to *history_x*.
@@ -685,10 +685,8 @@ def _add_point(
             candidates of x that are currently in the model. Shape (2 *n* + 1,).
         - n_modelpoints (int): Current number of model points.
     """
-    # Create new vector in history
-    n_history = history.get_n_fun()
     x_candidate = model_improving_points[:, index]
-    x_candidate = delta * x_candidate + history.get_xs(index=index_min_x)
+    x_candidate = delta * x_candidate + history.get_xs(index=accepted_index)
 
     # Project into feasible region
     if lower_bounds is not None and upper_bounds is not None:
@@ -699,7 +697,7 @@ def _add_point(
     history.add_entries(x_candidate, criterion(x_candidate))
 
     # Add new vector to the model
-    model_indices[n_modelpoints] = n_history
+    model_indices[n_modelpoints] = history.get_n_fun()
     n_modelpoints += 1
 
     return (
