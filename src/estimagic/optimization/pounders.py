@@ -417,10 +417,9 @@ def internal_solve_pounders(
         xk = (history_x[model_indices[:n_modelpoints]] - x_accepted) / delta_old
 
         approximation_error = get_approximation_error(
+            history=history,
             xk=xk,
             hessian=residual_hessians,
-            history_criterion=history_criterion,
-            min_criterion=residuals_accepted,
             gradient=residual_gradients,
             model_indices=model_indices,
             n_modelpoints=n_modelpoints,

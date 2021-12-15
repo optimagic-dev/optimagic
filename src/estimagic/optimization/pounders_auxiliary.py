@@ -212,8 +212,8 @@ def find_affine_points(
             Relevant for next call of *find_nearby_points*.
     """
     for i in range(n_history - 1, -1, -1):
-        center_info = {"x": min_x, "radius": delta, "residuals": 0}
-        x_candidate, _, _ = history.get_centered_entries(center_info, index=i)
+        center_info = {"x": min_x, "radius": delta}
+        x_candidate = history.get_centered_xs(center_info, index=i)
         candidate_norm = np.linalg.norm(x_candidate)
 
         x_projected = x_candidate
@@ -300,9 +300,7 @@ def improve_model(
     minvalue = np.inf
     work = np.zeros(3)
 
-    model_improving_points, _ = qr_multiply(
-        model_improving_points, np.eye(3), mode="right"
-    )
+    model_improving_points, _ = qr_multiply(model_improving_points, np.eye(3))
 
     for i in range(n_modelpoints, n):
         dp = np.dot(model_improving_points[:, i], first_derivative)
@@ -429,8 +427,8 @@ def add_more_points(
     monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
 
     for i in range(n + 1):
-        center_info = {"x": min_x, "radius": delta, "residuals": 0}
-        interpolation_set[i, 1:], _, _ = history.get_centered_entries(
+        center_info = {"x": min_x, "radius": delta}
+        interpolation_set[i, 1:] = history.get_centered_xs(
             center_info, index=model_indices[i]
         )
         monomial_basis[i, :] = _get_basis_quadratic_functions(
@@ -451,8 +449,8 @@ def add_more_points(
                 break
 
         if reject is False:
-            center_info = {"x": min_x, "radius": delta, "residuals": 0}
-            candidate_x, _, _ = history.get_centered_entries(center_info, index=point)
+            center_info = {"x": min_x, "radius": delta}
+            candidate_x = history.get_centered_xs(center_info, index=point)
             candidate_norm = np.linalg.norm(candidate_x)
 
             if candidate_norm > c2:
@@ -462,8 +460,8 @@ def add_more_points(
             point -= 1
             continue
 
-        center_info = {"x": min_x, "radius": delta, "residuals": 0}
-        interpolation_set[n_modelpoints, 1:], _, _ = history.get_centered_entries(
+        center_info = {"x": min_x, "radius": delta}
+        interpolation_set[n_modelpoints, 1:] = history.get_centered_xs(
             center_info, index=point
         )
         monomial_basis[n_modelpoints, :] = _get_basis_quadratic_functions(
@@ -510,10 +508,9 @@ def add_more_points(
 
 
 def get_approximation_error(
+    history,
     xk,
     hessian,
-    history_criterion,
-    min_criterion,
     gradient,
     model_indices,
     n_modelpoints,
@@ -527,9 +524,11 @@ def get_approximation_error(
         xk_hessian = np.dot(xk, hessian[j, :, :])
 
         for i in range(n_modelpoints):
+            residuals = history.get_residuals(index=model_indices[i])
+            residuals_min = history.get_best_residuals()
             approximation_error[i, j] = (
-                history_criterion[model_indices[i], j]
-                - min_criterion[j]
+                residuals[j]
+                - residuals_min[j]
                 - np.dot(gradient[:, j], xk[i, :])
                 - 0.5 * np.dot(xk_hessian[i, :], xk[i, :])
             )
