@@ -9,6 +9,7 @@ warnings or errors for that case.
 
 """
 import numpy as np
+from estimagic.utilities import namedtuple_from_kwargs
 
 
 def jacobian(evals, steps, f0, method):
@@ -55,59 +56,105 @@ def hessian(evals, steps, f0, method):
 
     Notation: f:R^dim_x -> R^dim_f. We compute the derivative at x0, with f0 = f(x0).
 
-    Note that the brackets in the finite difference formulae are not arbitrary but
+    The formulae in Rideout [2009] which are implemented here use three types of
+    function evaluations:
+
+    1. f(theta + delta_j e_j)
+    2. f(theta + delta_j e_j + delta_k e_k)
+    3. f(theta + delta_j e_j - delta_k e_k)
+
+    Which are called here: 1. ``evals_one``, 2. ``evals_two`` and 3. ``evals_cross``.
+    Note that theta denotes the x-value at which the derivative is evaluated, i.e. x0,
+    delta_j denotes the step size for the j-th variable and e_j the j-th standard basis
+    vector.
+
+    Note also that the brackets in the finite difference formulae are not arbitrary but
     improve the numerical accuracy, see Rideout [2009].
 
     Args:
         evals (dict[namedtuple]): Dictionary with keys "one_step" for function evals in
-            a single step direction, and "two_step" for evals in cross directions. Each
-            dict item has the fields called pos and neg for evaluations with positive
-            and negative steps, respectively. Each field is a numpy array of shape
-            (n_steps, dim_f, dim_x). It contains np.nan for evaluations that failed or
-            were not attempted because a one-sided derivative rule was chosen.
+            a single step direction, "two_step" for evals in two steps in the same
+            direction, and "cross_step" for evals in two steps in the opposite
+            direction. Each dict item has the fields called pos and neg for evaluations
+            with positive and negative steps, respectively. Each field is a numpy array
+            of shape (n_steps, dim_f, dim_x). It contains np.nan for evaluations that
+            failed or were not attempted because a one-sided derivative rule was chosen.
         steps (namedtuple): Namedtuple with the fields pos and neg. Each field
             contains a numpy array of shape (n_steps, dim_x) with the steps in
             the corresponding direction. The steps are always symmetric, in the sense
             that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
         f0 (numpy.ndarray): Numpy array of length dim_f with the output of the function
             at the user supplied parameters.
-        method (str): One of ["one", "two", "three"]. These correspond to the
-            approximations defined in Rideout [2009] equations [7, 8, 9].
+        method (str): One of {"forward", "backward", "central_average", "central_cross"}
+            These correspond to the finite difference approximations defined in
+            equations [7, x, 8, 9] in Rideout [2009], where ("backward", x) is not found
+            in Rideout [2009] but is the natural extension of equation 7 to the backward
+            case.
 
     Returns:
-        hess (numpy.ndarray): Numpy array of shape (n_steps, dim_f, dim_x) with
+        hess (numpy.ndarray): Numpy array of shape (n_steps, dim_f, dim_x, dim_x) with
             estimated Hessians. I.e. there are n_step hessian estimates.
 
     """
     n_steps, dim_f, dim_x = evals["one_step"].pos.shape
-    cross_steps = np.array(
-        [np.outer(steps.pos[j], steps.pos[j]) for j in range(n_steps)]
-    ).reshape(n_steps, 1, dim_x, dim_x)
     f0 = f0.reshape(1, dim_f, 1, 1)
-    if method == "one":
+
+    # rename variables to increase readability in formulas
+    evals_one = namedtuple_from_kwargs(
+        pos=np.expand_dims(evals["one_step"].pos, axis=3),
+        neg=np.expand_dims(evals["one_step"].neg, axis=3),
+    )
+    evals_two = evals["two_step"]
+    evals_cross = evals["cross_step"]
+
+    if method == "forward":
+        outer_steps = _calculate_outer_steps(steps.pos, n_steps, dim_x)
+        diffs = (evals_two.pos - evals_one.pos.swapaxes(2, 3)) - (evals_one.pos - f0)
+        hess = diffs / outer_steps
+    elif method == "backward":
+        outer_steps = _calculate_outer_steps(steps.neg, n_steps, dim_x)
+        diffs = (evals_two.neg - evals_one.neg.swapaxes(2, 3)) - (evals_one.neg - f0)
+        hess = diffs / outer_steps
+    elif method == "central_average":
+        outer_steps = _calculate_outer_steps(steps.pos, n_steps, dim_x)
         diffs = (
-            evals["two_step"].pos - evals["one_step"].pos.reshape(n_steps, -1, 1, dim_x)
-        ) - (evals["one_step"].pos.reshape(n_steps, -1, dim_x, 1) - f0)
-        hess = diffs / cross_steps
-    elif method == "two":
-        diffs = (
-            (
-                evals["two_step"].pos
-                - evals["one_step"].pos.reshape(n_steps, -1, 1, dim_x)
-            )
-            - (evals["one_step"].pos.reshape(n_steps, -1, dim_x, 1) - f0)
-            + (
-                evals["two_step"].neg
-                - evals["one_step"].neg.reshape(n_steps, -1, 1, dim_x)
-            )
-            - (evals["one_step"].neg.reshape(n_steps, -1, dim_x, 1) - f0)
+            (evals_two.pos - evals_one.pos.swapaxes(2, 3))
+            - (evals_one.pos - f0)
+            + (evals_two.neg - evals_one.neg.swapaxes(2, 3))
+            - (evals_one.neg - f0)
         )
-        hess = diffs / (2 * cross_steps)
-    elif method == "three":
-        diffs = (evals["two_step"].pos - evals["cross_step"]) - (
-            evals["cross_step"].transpose(0, 1, 3, 2) - evals["two_step"].neg
+        hess = diffs / (2 * outer_steps)
+    elif method == "central_cross":
+        outer_steps = _calculate_outer_steps(steps.pos, n_steps, dim_x)
+        diffs = (evals_two.pos - evals_cross) - (
+            evals_cross.swapaxes(2, 3) - evals_two.neg
         )
-        hess = diffs / (4 * cross_steps)
+        hess = diffs / (4 * outer_steps)
     else:
-        raise ValueError("Method has to be 'one', 'two' or 'three'.")
+        raise ValueError(
+            "Method has to be 'forward', 'backward', 'central_average' or ",
+            "'central_cross'.",
+        )
     return hess
+
+
+def _calculate_outer_steps(signed_steps, n_steps, dim_x):
+    """Calculate array of outer product of steps.
+
+    Args:
+        signed_steps (np.ndarray): Square array with either pos or neg steps returned
+            by :func:`~estimagic.differentiation.generate_steps.generate_steps` function
+        n_steps (int): Number of steps needed. For central methods, this is
+            the number of steps per direction. It is 1 if no Richardson extrapolation
+            is used.
+        dim_x (int): Dimension of input vector x.
+
+    Returns:
+        outer_steps (np.ndarray): Array with outer product of steps. Has dimension
+            (n_steps, 1, dim_x, dim_x).
+
+    """
+    outer_steps = np.array(
+        [np.outer(signed_steps[j], signed_steps[j]) for j in range(n_steps)]
+    ).reshape(n_steps, 1, dim_x, dim_x)
+    return outer_steps

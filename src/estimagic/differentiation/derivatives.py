@@ -1,7 +1,6 @@
 import functools
 import itertools
 import re
-from collections import OrderedDict
 from itertools import product
 
 import numpy as np
@@ -256,7 +255,7 @@ def second_derivative(
     func,
     params,
     func_kwargs=None,
-    method="two",
+    method="central_cross",
     n_steps=1,
     base_steps=None,
     scaling_factor=1,
@@ -293,7 +292,11 @@ def second_derivative(
             calculated. If it is a DataFrame, it can contain the columns "lower_bound"
             and "upper_bound" for bounds. See :ref:`params`.
         func_kwargs (dict): Additional keyword arguments for func, optional.
-        method (str): One of ["one", "two", "three"], default "two".
+        method (str): One of {"forward", "backward", "central_average", "central_cross"}
+            These correspond to the finite difference approximations defined in
+            equations [7, x, 8, 9] in Rideout [2009], where ("backward", x) is not found
+            in Rideout [2009] but is the natural extension of equation 7 to the backward
+            case. Default "central_cross".
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
@@ -383,10 +386,14 @@ def second_derivative(
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
 
+    implemented_methods = {"forward", "backward", "central_average", "central_cross"}
+    if method not in implemented_methods:
+        raise ValueError(f"Method has to be in {implemented_methods}.")
+
     # generate the step array
     steps = generate_steps(
         x=x,
-        method="central",
+        method=("central" if "central" in method else method),
         n_steps=n_steps,
         target="second_derivative",
         base_steps=base_steps,
@@ -473,57 +480,36 @@ def second_derivative(
         for step_type, evals in raw_evals.items()
     }
 
-    # reshape arrays for finite differences
+    # reshape arrays into dimension (n_steps, dim_f, dim_x) or (n_steps, dim_f, dim_x,
+    # dim_x) for finite differences
     evals = {}
-    evals["one_step"] = np.array(raw_evals["one_step"]).reshape(2, n_steps, len(x), -1)
-    evals["one_step"] = np.transpose(evals["one_step"], axes=(0, 1, 3, 2))
-    evals["one_step"] = namedtuple_from_kwargs(
-        pos=evals["one_step"][0], neg=evals["one_step"][1]
+    evals["one_step"] = _reshape_one_step_evals(raw_evals["one_step"], n_steps, len(x))
+    evals["two_step"] = _reshape_two_step_evals(raw_evals["two_step"], n_steps, len(x))
+    evals["cross_step"] = _reshape_cross_step_evals(
+        raw_evals["cross_step"], n_steps, len(x), f0
     )
-
-    tril_idx = np.tril_indices(len(x), -1)
-    evals["two_step"] = np.array(raw_evals["two_step"]).reshape(
-        2, n_steps, len(x), len(x), -1
-    )
-    evals["two_step"] = np.transpose(evals["two_step"], axes=(0, 1, 4, 2, 3))
-    evals["two_step"][:, :, :, tril_idx[0], tril_idx[1]] = evals["two_step"].transpose(
-        (0, 1, 2, 4, 3)
-    )[:, :, :, tril_idx[0], tril_idx[1]]
-    evals["two_step"] = namedtuple_from_kwargs(
-        pos=evals["two_step"][0], neg=evals["two_step"][1]
-    )
-
-    diag_idx = np.diag_indices(len(x))
-    evals["cross_step"] = np.array(raw_evals["cross_step"]).reshape(
-        2, n_steps, len(x), len(x), -1
-    )
-    evals["cross_step"] = np.transpose(evals["cross_step"], axes=(0, 1, 4, 2, 3))
-    evals["cross_step"][0][:, :, tril_idx[0], tril_idx[1]] = evals["cross_step"][
-        1
-    ].transpose(0, 1, 3, 2)[:, :, tril_idx[0], tril_idx[1]]
-    evals["cross_step"][0][:, :, diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[
-        np.newaxis, :, :
-    ]
-    evals["cross_step"] = evals["cross_step"][0]
 
     # apply finite difference formulae
     hess_candidates = {}
-    for m in ["one", "two", "three"]:
+    for m in ["forward", "backward", "central_average", "central_cross"]:
         hess_candidates[m] = finite_differences.hessian(evals, steps, f0, m)
 
     # get the best derivative estimate out of all derivative estimates that could be
     # calculated, given the function evaluations.
     orders = {
-        "three": ["three", "two", "one"],
-        "one": ["one", "three", "two"],
-        "two": ["two", "three", "one"],
+        "central_cross": ["central_cross", "central_average", "forward", "backward"],
+        "central_average": ["central_average", "central_cross", "forward", "backward"],
+        "forward": ["forward", "backward", "central_average", "central_cross"],
+        "backward": ["backward", "forward", "central_average", "central_cross"],
     }
 
     if n_steps == 1:
         hess = _consolidate_one_step_derivatives(hess_candidates, orders[method])
         updated_candidates = None
     else:
-        raise ValueError("Richardson extrapolation is not implemented yet.")
+        raise ValueError(
+            "Richardson extrapolation is not implemented for the second derivative yet."
+        )
 
     # raise error if necessary
     if error_handling in ("raise", "raise_strict") and np.isnan(hess).any():
@@ -541,6 +527,63 @@ def second_derivative(
     )
     result = {**result, **info}
     return result
+
+
+def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
+    """Reshape raw_evals for evaluation points with one step.
+
+    Returned object is a namedtuple with entries 'pos' and 'neg' corresponding to
+    positive and negative steps. Each entry will be a numpy array with dimension
+    (n_steps, dim_f, dim_x).
+
+    """
+    evals = np.array(raw_evals_one_step).reshape(2, n_steps, dim_x, -1)
+    evals = np.transpose(evals, axes=(0, 1, 3, 2))
+    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    return evals
+
+
+def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
+    """Reshape raw_evals for evaluation points with two steps.
+
+    Returned object is a namedtuple with entries 'pos' and 'neg' corresponding to
+    positive and negative steps. Each entry will be a numpy array with dimension
+    (n_steps, dim_f, dim_x, dim_x). Since the array is, by definition, symmetric over
+    the last two dimensions, the function is not evaluated on both sides to save
+    computation time and the information is simply copied here.
+
+    """
+    tril_idx = np.tril_indices(dim_x, -1)
+    evals = np.array(raw_evals_two_step).reshape(2, n_steps, dim_x, dim_x, -1)
+    evals = np.transpose(evals, axes=(0, 1, 4, 2, 3))
+    evals[:, :, :, tril_idx[0], tril_idx[1]] = evals.transpose((0, 1, 2, 4, 3))[
+        :, :, :, tril_idx[0], tril_idx[1]
+    ]
+    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    return evals
+
+
+def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
+    """Reshape raw_evals for evaluation points with cross steps.
+
+    Returned object is a namedtuple with entries 'pos' and 'neg' corresponding to
+    positive and negative steps. Each entry will be a numpy array with dimension
+    (n_steps, dim_f, dim_x, dim_x). Since the array is, by definition, symmetric over
+    the last two dimensions, the function is not evaluated on both sides to save
+    computation time and the information is simply copied here. Furthermore, as we use
+    the same stepsize for all directions the diagonal must be equal to f0.
+
+    """
+    tril_idx = np.tril_indices(dim_x, -1)
+    diag_idx = np.diag_indices(dim_x)
+    evals = np.array(raw_evals_cross_step).reshape(2, n_steps, dim_x, dim_x, -1)
+    evals = np.transpose(evals, axes=(0, 1, 4, 2, 3))
+    evals[0][:, :, tril_idx[0], tril_idx[1]] = evals[1].transpose(0, 1, 3, 2)[
+        :, :, tril_idx[0], tril_idx[1]
+    ]
+    evals[0][:, :, diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[np.newaxis, :, :]
+    evals = evals[0]
+    return evals
 
 
 def _process_bounds(lower_bounds, upper_bounds, params):
@@ -594,32 +637,33 @@ def _convert_evaluation_data_to_frame(steps, evals):
 
     """
     n_steps, dim_f, dim_x = evals.pos.shape
-    params_index = range(dim_x)
 
     dfs = []
     for direction, step_arr, eval_arr in zip((1, -1), steps, evals):
-        df_steps = (
-            pd.DataFrame(step_arr, columns=params_index)
-            .reset_index()
-            .rename(columns={"index": "step_number"})
-            .melt(id_vars="step_number", var_name="dim_x", value_name="step")
-            .sort_values("step_number")
-            .reset_index(drop=True)
-            .apply(lambda col: col.abs() if col.name == "step" else col)
+
+        df_steps = pd.DataFrame(step_arr, columns=range(dim_x))
+        df_steps = df_steps.reset_index()
+        df_steps = df_steps.rename(columns={"index": "step_number"})
+        df_steps = df_steps.melt(
+            id_vars="step_number", var_name="dim_x", value_name="step"
         )
+        df_steps = df_steps.sort_values("step_number")
+        df_steps = df_steps.reset_index(drop=True)
+        df_steps = df_steps.apply(lambda col: col.abs() if col.name == "step" else col)
+
         eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
-        df_evals = (
-            pd.concat((df_steps, pd.DataFrame(eval_arr)), axis=1)
-            .melt(
-                id_vars=["step_number", "dim_x", "step"],
-                var_name="dim_f",
-                value_name="eval",
-            )
-            .assign(**{"sign": direction})
-            .set_index(["sign", "step_number", "dim_x", "dim_f"])
-            .sort_index()
+        df_evals = pd.concat((df_steps, pd.DataFrame(eval_arr)), axis=1)
+        df_evals = df_evals.melt(
+            id_vars=["step_number", "dim_x", "step"],
+            var_name="dim_f",
+            value_name="eval",
         )
+        df_evals = df_evals.assign(**{"sign": direction})
+        df_evals = df_evals.set_index(["sign", "step_number", "dim_x", "dim_f"])
+        df_evals = df_evals.sort_index()
+
         dfs.append(df_evals)
+
     df = pd.concat(dfs).astype({"step": float, "eval": float})
     return df
 
@@ -642,11 +686,9 @@ def _convert_richardson_candidates_to_frame(jac, err):
     for key, value in jac.items():
         method, num_term = _split_into_str_and_int(key)
         df = pd.DataFrame(value.T, columns=range(dim_f))
-        df = df.assign(**{"dim_x": range(dim_x)})
+        df = df.assign(dim_x=range(dim_x))
         df = df.melt(id_vars="dim_x", var_name="dim_f", value_name="der")
-        df = df.assign(
-            **{"method": method, "num_term": num_term, "err": err[key].T.flatten()}
-        )
+        df = df.assign(method=method, num_term=num_term, err=err[key].T.flatten())
         dfs.append(df)
 
     df = pd.concat(dfs)
@@ -717,8 +759,8 @@ def _consolidate_extrapolated(candidates):
     extrapolated derivative estimates can be estimated.
 
     Args:
-        candidates (OrderedDict): Dictionary containing different derivative estimates
-            and their error estimates.
+        candidates (dict): Dictionary containing different derivative estimates and
+            their error estimates.
 
     Returns:
         consolidated (np.ndarray): Array of same shape as input derivative estimates.
@@ -761,8 +803,8 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
             is used.
 
     Returns:
-        richardson_candidates (OrderedDict): Dictionary with derivative estimates and
-            error estimates from different methods.
+        richardson_candidates (dict): Dictionary with derivative estimates and error
+            estimates from different methods.
             - Keys correspond to the method used, i.e. forward, backward or central
             differences and the number of terms used in the Richardson extrapolation.
             - Values represent the corresponding derivative estimate and error
@@ -772,7 +814,7 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
             further dimension.
 
     """
-    richardson_candidates = OrderedDict()
+    richardson_candidates = {}
     for method in ["forward", "backward", "central"]:
         for num_terms in range(1, n_steps):
             derivative, error = richardson_extrapolation(
