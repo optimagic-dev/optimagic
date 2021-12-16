@@ -300,7 +300,7 @@ def improve_main_model(
     main_model,
     model_improving_points,
     model_indices,
-    accepted_index,
+    x_accepted,
     n_modelpoints,
     add_all_points,
     n,
@@ -319,8 +319,8 @@ def improve_main_model(
             points to improve the main model.
         model_indices (np.ndarray): Indices of the candidates of x that are
             currently in the model. Shape (2 *n* + 1,).
-        accepted_index (int): Index in *history_x* associated with the parameter vector
-            that yields the lowest criterion function norm.
+        x_accepted (np.ndarray): Accepted solution vector of the subproblem of
+            shape (n,).
         n_modelpoints (int): Current number of model points.
         add_all_points (int): If equal to 0, add points. Else, don't.
         n (int): Number of parameters.
@@ -370,7 +370,7 @@ def improve_main_model(
                 history=history,
                 model_improving_points=model_improving_points,
                 model_indices=model_indices,
-                accepted_index=accepted_index,
+                x_accepted=x_accepted,
                 index=i,
                 n_modelpoints=n_modelpoints,
                 delta=delta,
@@ -384,7 +384,7 @@ def improve_main_model(
             history=history,
             model_improving_points=model_improving_points,
             model_indices=model_indices,
-            accepted_index=accepted_index,
+            x_accepted=x_accepted,
             index=min_index_internal,
             n_modelpoints=n_modelpoints,
             delta=delta,
@@ -419,8 +419,6 @@ def add_more_points(
             shape (n,).
         model_indices (np.ndarray): Indices of the candidates of x that are
             currently in the model. Shape (2 *n* + 1,).
-        accepted_index (int): Index in *history_x* associated with the parameter vector
-            that yields the lowest criterion function norm.
         delta (float): Delta, current trust-region radius.
         c2 (int): C_2. Equal to 10 by default.
         theta2 (float): Theta_2.
@@ -444,8 +442,8 @@ def add_more_points(
     interpolation_set[:, 0] = 1
     monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
 
+    center_info = {"x": x_accepted, "radius": delta}
     for i in range(n + 1):
-        center_info = {"x": x_accepted, "radius": delta}
         interpolation_set[i, 1:] = history.get_centered_xs(
             center_info, index=model_indices[i]
         )
@@ -465,7 +463,6 @@ def add_more_points(
                 break
 
         if reject is False:
-            center_info = {"x": x_accepted, "radius": delta}
             candidate_x = history.get_centered_xs(center_info, index=point)
             candidate_norm = np.linalg.norm(candidate_x)
 
@@ -476,7 +473,6 @@ def add_more_points(
             point -= 1
             continue
 
-        center_info = {"x": x_accepted, "radius": delta}
         interpolation_set[n_modelpoints, 1:] = history.get_centered_xs(
             center_info, index=point
         )
@@ -702,7 +698,7 @@ def _add_point(
     history,
     model_improving_points,
     model_indices,
-    accepted_index,
+    x_accepted,
     index,
     n_modelpoints,
     delta,
@@ -718,8 +714,8 @@ def _add_point(
             vector to add to *history_x*. Shape (*n*, *n*).
         model_indices (np.ndarray): Indices of the candidates of x that are
             currently in the model. Shape (2 *n* + 1,).
-        accepted_index (int): Index in *history_x* associated with the parameter vector
-            that yields the lowest criterion function norm.
+        x_accepted (np.ndarray): Accepted solution vector of the subproblem of
+            shape (n,).
         index (int): Index relating to the parameter vector in
             *model_improving_points* that is added to *history_x*.
         n_modelpoints (int): Current number of model points.
@@ -739,8 +735,7 @@ def _add_point(
             currently in the model. Shape (2 *n* + 1,).
         - n_modelpoints (int): Current number of model points.
     """
-    x_candidate = model_improving_points[:, index]
-    x_candidate = delta * x_candidate + history.get_xs(index=accepted_index)
+    x_candidate = delta * model_improving_points[:, index] + x_accepted
 
     # Project into feasible region
     if lower_bounds is not None and upper_bounds is not None:
