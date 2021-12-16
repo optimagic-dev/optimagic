@@ -6,75 +6,134 @@ from scipy.optimize import Bounds
 from scipy.optimize import minimize
 
 
-def compute_criterion_norm(criterion_value):
-    """Returns norm of the criterion function value.
-    Args:
-        criterion_value (np.ndarray): Value of the criterion function.
-    Returns:
-        (float): Norm of the criterion function.
-    """
-    return np.dot(criterion_value, criterion_value)
-
-
-def update_center(
-    x1,
-    residuals_accepted,
-    residual_gradients,
-    residual_hessians,
-    main_gradient,
-    main_hessian,
-):
-    """Update center."""
-    qk = (
-        residuals_accepted
-        + np.dot(x1, residual_gradients)
-        + 0.5 * np.dot(np.dot(x1, residual_hessians), x1)
-    )
-    residual_gradients = residual_gradients + np.dot(residual_hessians, x1).T
-    main_gradient = main_gradient + np.dot(main_hessian, x1)
-
-    return (
-        qk,
-        residual_gradients,
-        main_gradient,
-    )
-
-
-def calc_first_and_second_derivative(gradient, min_criterion, hessian):
-    """Calculate first and second derivative of the criterion.
+def update_initial_residual_model(residual_model, x_candidate, residuals_candidate):
+    """Update linear and square terms of the initial residual model.
 
     Args:
-        gradient (np.ndarray): Difference between the criterion function values
-        and *min_criterion*. Shape (*n*, *n_obs*)
-        min_criterion (np.ndarray): Values of criterion function associated with
-            parameter vector x that yields the lowest criterion function norm.
-        hessian (np.ndarray): Hessian matrix. Shape (*n_obs*, *n*, *n*).
+        residual_model (dict): Parameters of the residual model including
+            "intercepts", "linear_terms", and "square terms".
+        x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
+        residuals_candidate (np.ndarray): Array of the corresponding centered
+            residuals of shape (n, nobs).
+    """
+    n, n_obs = x_candidate.shape[0], residuals_candidate.shape[1]
+
+    residual_model["linear_terms"] = np.linalg.solve(x_candidate, residuals_candidate)
+    residual_model["square_terms"] = np.zeros((n_obs, n, n))
+
+    return residual_model
+
+
+def update_residual_model(residual_model, coefficients_to_add, delta, delta_old):
+    """Update linear and square terms of the residual model.
+
+    Args:
+        residual_model (dict): Parameters of the residual model including
+            "intercepts", "linear_terms", and "square terms".
+        coefficients_to_add (dict): Coefficients used for updating the
+            parameters of the residual model.
+        delta (float): Trust region radius of the current iteration.
+        delta_old (float): Trust region radius of the previous iteration.
 
     Returns:
-        Tuple:
-        - first_derivative (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
-        - second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
+        residual_model (dict): Updated parameters of the residual model.
     """
-    first_derivative = np.dot(gradient, min_criterion)
-
-    second_derivative = np.dot(gradient, gradient.T)
-
-    dim_array = np.ones((1, hessian.ndim), int).ravel()
-    dim_array[0] = -1
-    min_criterion_reshaped = min_criterion.reshape(dim_array)
-
-    second_derivative = second_derivative + np.sum(
-        min_criterion_reshaped * hessian, axis=0
+    residual_model["linear_terms"] = (
+        coefficients_to_add["linear_terms"]
+        + (delta / delta_old) * residual_model["linear_terms"]
     )
 
-    return first_derivative, second_derivative
+    residual_model["square_terms"] = (
+        coefficients_to_add["square_terms"]
+        + (delta / delta_old) ** 2 * residual_model["square_terms"]
+    )
+
+    return residual_model
+
+
+def update_main_from_residual_model(residual_model, first_evaluation=False):
+    """Update linear and square terms of the main model via the residual model.
+
+    Args:
+        residual_model (dict): Parameters of the residual model including
+            "intercepts", "linear_terms", and "square terms".
+        first_evaluation (bool): Indicator whether we update the main model
+            for the first time, in which case the "square_terms" are not computed.
+
+    Returns:
+        main_model (dict): Updated parameters of the main model including
+            "linear_terms", and "square terms" (if *first_evaluation* is False).
+    """
+    intercepts_residual_model = residual_model["intercepts"]
+    linear_terms_residual_model = residual_model["linear_terms"]
+
+    linear_terms = np.dot(linear_terms_residual_model, intercepts_residual_model)
+    square_terms = np.dot(linear_terms_residual_model, linear_terms_residual_model.T)
+
+    if first_evaluation is False:
+        square_terms_residual_model = residual_model["square_terms"]
+
+        dim_array = np.ones((1, square_terms_residual_model.ndim), int).ravel()
+        dim_array[0] = -1
+        intercepts_reshaped = intercepts_residual_model.reshape(dim_array)
+
+        square_terms = square_terms + np.sum(
+            intercepts_reshaped * square_terms_residual_model, axis=0
+        )
+
+    main_model = {"linear_terms": linear_terms, "square_terms": square_terms}
+
+    return main_model
+
+
+def accept_candidate_into_main_model(main_model, x_candidate):
+    """Use accepted candidate to update the linear terms of the residual model.
+
+    Args:
+        main_model (dict): Parameters of the main model including
+            "linear_terms" and "square terms".
+        x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
+
+    Returns:
+        main_model (dict): Parameters of the main model with updated
+            "linear_terms".
+    """
+    main_model["linear_terms"] = main_model["linear_terms"] + np.dot(
+        main_model["square_terms"], x_candidate
+    )
+
+    return main_model
+
+
+def accept_candidate_into_residual_model(residual_model, x_candidate):
+    """Use accepted candidate to update the residual model.
+
+    Args:
+        residual_model (dict): Parameters of the residual model including
+            "intercepts", "linear_terms", and "square terms".
+        x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
+
+    Returns:
+        residual_model (dict): Parameters of the residual model with updated
+            "intercepts" and "linear_terms".
+    """
+    residual_model["intercepts"] = (
+        residual_model["intercepts"]
+        + np.dot(x_candidate, residual_model["linear_terms"])
+        + 0.5 * np.dot(np.dot(x_candidate, residual_model["square_terms"]), x_candidate)
+    )
+    residual_model["linear_terms"] = (
+        residual_model["linear_terms"]
+        + np.dot(residual_model["square_terms"], x_candidate).T
+    )
+
+    return residual_model
 
 
 def solve_subproblem(
     solution,
     delta,
-    first_derivative,
-    second_derivative,
+    main_model,
     ftol,
     xtol,
     gtol,
@@ -87,8 +146,8 @@ def solve_subproblem(
     Args:
         solution (np.ndarray): Current solution vector.
         delta (float): Current trust region radius.
-        first_derivative (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
-        second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
+        main_model (dict): Parameters of the main model including
+            "linear_terms" and "square terms".
         gtol (float): Gradient tolerance. Stopping criterion.
         solver (str): candidate_xinimizer used to solve the bound-constraint subproblem.
             Currently, three solvers from the scipy library are supported.
@@ -106,7 +165,7 @@ def solve_subproblem(
         Dict[str, np.ndarray]: Result dictionary.
     """
     # Initial guess
-    n = first_derivative.shape[0]
+    n = solution.shape[0]
     x0 = np.zeros(n)
 
     # Normalize bounds. If not specified, use unit cube [-1, 1]
@@ -144,14 +203,13 @@ def solve_subproblem(
     else:
         raise ValueError("Subproblem solver is not supported.")
 
-    evaluate_subproblem = partial(
-        _criterion_and_derivative_subproblem,
-        first_derivative=first_derivative,
-        second_derivative=second_derivative,
+    evaluate_main_model = partial(
+        _evaluate_main_model,
+        **main_model,
     )
 
     rslt = minimize(
-        evaluate_subproblem,
+        evaluate_main_model,
         x0,
         method=solver,
         jac=True,
@@ -184,13 +242,15 @@ def find_affine_points(
     """Find affine points.
 
     Args:
-        history_x (np.ndarray): Array storing all candidates of the parameter vector.
-        x_accepted (np.ndarray): Values of parameter vector x that yield the lowest
-            criterion function norm.
-        model_improving_points (np.ndarray): Q matrix.
+        history (class): Class storing history of xs, residuals, and critvals.
+        x_accepted (np.ndarray): Accepted solution vector of the subproblem of
+            shape (n,).
+        model_improving_points (np.ndarray): Array of shape (*n*, *n*) including
+            points to improve the main model or, if *project_x_onto_null* is False,
+            containing zeros.
         project_x_onto_null (int): Indicator whether to calculate the QR
             decomposition of *model_improving_points* and multiply
-            *model_improving_points* with vector *xk_plus*.
+             with vector *x_projected*.
         delta (float): Delta, current trust-region radius.
         theta1 (float): Theta_1.
         c (float): C.
@@ -206,8 +266,8 @@ def find_affine_points(
         - n_modelpoints (int): Current number of model points.
         - project_x_onto_null (int): Indicator whether to calculate the QR
             decomposition of *model_improving_points* and multiply
-            *model_improving_points* with vector *xk_plus*.
-            Relevant for next call of *find_nearby_points*.
+            with vector *x_projected*.
+            Relevant for next call of *find_affine_points()*.
     """
     for i in range(history.get_n_fun() - 1, -1, -1):
         center_info = {"x": x_accepted, "radius": delta}
@@ -235,10 +295,9 @@ def find_affine_points(
     return model_improving_points, model_indices, n_modelpoints, project_x_onto_null
 
 
-def improve_model(
+def improve_main_model(
     history,
-    first_derivative,
-    second_derivative,
+    main_model,
     model_improving_points,
     model_indices,
     accepted_index,
@@ -253,17 +312,13 @@ def improve_model(
     """Improve the model.
 
     Args:
-        history_x (np.ndarray): Array storing all candidates of the parameter
-            vector. Shape (1000, *n*).
-        history_criterion (np.ndarray): Array storing all evaluations of the criterion
-            function. Shape(1000, *n_obs*).
-        history_criterion_norm (np.ndarray): Array storing norm of the criterion
-            function. Shape (1000,).
-        first_derivative (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
-        second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
-        model_improving_points (np.ndarray): Q matrix.
-        model_indices (np.ndarray): Indices related to *history_x*, i.e. the
-            candidates of x that are currently in the model. Shape (2 *n* + 1,).
+        history (class): Class storing history of xs, residuals, and critvals.
+        main_model (dict): Parameters of the main model including
+            "linear_terms" and "square terms".
+        model_improving_points (np.ndarray): Array of shape (*n*, *n*) including
+            points to improve the main model.
+        model_indices (np.ndarray): Indices of the candidates of x that are
+            currently in the model. Shape (2 *n* + 1,).
         accepted_index (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
         n_modelpoints (int): Current number of model points.
@@ -280,35 +335,35 @@ def improve_model(
 
     Returns:
         Tuple:
-        - history_x (np.ndarray): Array storing all candidates of the parameter
-            vector. Shape (1000, *n*).
-        - history_criterion (np.ndarray): Array storing all evaluations of the criterion
-            function. Shape(1000, *n_obs*).
+        - history (class): Class storing history of xs, residuals, and critvals.
         - history_criterion_norm (np.ndarray): Array storing norm of the
             criterion function. Shape (1000,)
         - n_modelpoints (int): Current number of model points.
     """
+    linear_terms = main_model["linear_terms"]
+    square_terms = main_model["square_terms"]
+
     min_index_internal = 0
-    minvalue = np.inf
-    work = np.zeros(3)
+    x_min_internal = np.inf
+    x_candidate = np.zeros(3)
 
     model_improving_points, _ = qr_multiply(model_improving_points, np.eye(3))
 
     for i in range(n_modelpoints, n):
-        dp = np.dot(model_improving_points[:, i], first_derivative)
+        dp = np.dot(model_improving_points[:, i], linear_terms)
 
         # Go into other direction
         if dp > 0:
             model_improving_points[:, i] *= -1
 
-        first_derivative_new = first_derivative + 0.5 * np.dot(
-            second_derivative, model_improving_points[:, i]
+        linear_terms_new = linear_terms + 0.5 * np.dot(
+            square_terms, model_improving_points[:, i]
         )
-        work[i] = np.dot(model_improving_points[:, i], first_derivative_new)
+        x_candidate[i] = np.dot(model_improving_points[:, i], linear_terms_new)
 
-        if (i == n_modelpoints) or (work[i] < minvalue):
+        if (i == n_modelpoints) or (x_candidate[i] < x_min_internal):
             min_index_internal = i
-            minvalue = work[i]
+            x_min_internal = x_candidate[i]
 
         if add_all_points != 0:
             (history, model_indices, n_modelpoints,) = _add_point(
@@ -357,13 +412,13 @@ def add_more_points(
     n_modelpoints,
 ):
     """Add more points.
+
     Args:
-        history_x (np.ndarray): Array storing all candidates of the parameter
-            vector. Shape (1000, *n*).
-        x_accepted (np.ndarray): Values of parameter vector x that yield the lowest
-            criterion function norm.
-        model_indices (np.ndarray): Indices related to *history_x*, i.e. the
-            candidates of x that are currently in the model. Shape (2 *n* + 1,).
+        history (class): Class storing history of xs, residuals, and critvals.
+        x_accepted (np.ndarray): Accepted solution vector of the subproblem of
+            shape (n,).
+        model_indices (np.ndarray): Indices of the candidates of x that are
+            currently in the model. Shape (2 *n* + 1,).
         accepted_index (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
         delta (float): Delta, current trust-region radius.
@@ -372,6 +427,7 @@ def add_more_points(
         n (int): Number of parameters.
         n_maxinterp (int): candidate_xaximum number of interpolation points.
         n_modelpoints (int): Current number of model points.
+
     Returns:
         Tuple:
         - lower_triangular (np.ndarray): lower_triangular matrix.
@@ -470,33 +526,46 @@ def add_more_points(
 def get_approximation_error(
     history,
     x_candidates,
-    residual_model_accepted,
-    hessian,
-    gradient,
+    residual_model,
     model_indices,
     n_modelpoints,
     n_obs,
     n_maxinterp,
 ):
-    """Calculate approximation error."""
+    """Calculate the approximation error of the residual model.
+
+    Args:
+        history (class): Class storing history of xs, residuals, and critvals.
+        x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
+        residual_model (dict): Parameters of the residual model including
+            "intercepts", "linear_terms", and "square terms".
+        model_indices (np.ndarray): Indices of the candidates of x that are
+            currently in the model. Shape (2 *n* + 1,).
+        n_modelpoints (int): Current number of model points.
+        n_maxinterp (int): candidate_xaximum number of interpolation points.
+        n_modelpoints (int): Current number of model points.
+
+    Returns:
+        (np.ndarray): Approximation error of the residual model of shape (n_obs,).
+    """
     approximation_error = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
 
     for j in range(n_obs):
-        x_hessian = np.dot(x_candidates, hessian[j, :, :])
+        x_square_terms = np.dot(x_candidates, residual_model["square_terms"][j, :, :])
 
         for i in range(n_modelpoints):
             residuals = history.get_residuals(index=model_indices[i])
             approximation_error[i, j] = (
                 residuals[j]
-                - residual_model_accepted[j]
-                - np.dot(gradient[:, j], x_candidates[i, :])
-                - 0.5 * np.dot(x_hessian[i, :], x_candidates[i, :])
+                - residual_model["intercepts"][j]
+                - np.dot(residual_model["linear_terms"][:, j], x_candidates[i, :])
+                - 0.5 * np.dot(x_square_terms[i, :], x_candidates[i, :])
             )
 
     return approximation_error
 
 
-def get_params_quadratic_model(
+def get_coefficients_residual_model(
     lower_triangular,
     basis_null_space,
     monomial_basis,
@@ -506,11 +575,15 @@ def get_params_quadratic_model(
     n,
     n_obs,
 ):
-    """Get parameters of quadratic model.
+    """Get coefficients of the residual model.
 
-    Computes the parameters of the quadratic model Q(x) = c + g'x + 0.5 x G x'
+    Computes the parameters of the quadratic residual model
+
+    Q(x) = c + g'x + 0.5 x G x'
+
     that satisfies the interpolation conditions Q(X[:,j]) = f(j)
     for j= 1,..., m and with a Hessian matrix of least Frobenius norm.
+
     Args:
         lower_triangular (np.ndarray): lower_triangular matrix.
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
@@ -527,11 +600,8 @@ def get_params_quadratic_model(
         n_obs (int): Number of observations.
 
     Returns:
-        Tuple:
-        - params_gradient (np.ndarray): Jacobian of the quadratic model.
-            Shape (*n_obs*, *n*).
-        - params_hessian (np.ndarray): Hessian of the quadratic model.
-            Shape (*n_obs*, *n*, *n*).
+        (dict): Coefficients for updating the "linear_terms" and "square_terms"
+            of the residual model.
     """
     params_gradient = np.zeros((n_obs, n))
     params_hessian = np.zeros((n_obs, n, n))
@@ -571,39 +641,33 @@ def get_params_quadratic_model(
                 params_hessian[k, i, j] = beta[num] / np.sqrt(2)
                 num += 1
 
-    return params_gradient, params_hessian
+    coefficients_to_add = {
+        "linear_terms": params_gradient.T,
+        "square_terms": params_hessian,
+    }
+
+    return coefficients_to_add
 
 
-def update_gradient_and_hessian(
-    gradient, hessian, params_gradient, params_hessian, delta, delta_old
-):
-    """Update gradient and Hessian."""
-    gradient_new = (delta / delta_old) * gradient + params_gradient.T
-    hessian_new = (delta / delta_old) ** 2 * hessian + params_hessian
-
-    return gradient_new, hessian_new
-
-
-def _criterion_and_derivative_subproblem(
+def _evaluate_main_model(
     x,
-    first_derivative,
-    second_derivative,
+    linear_terms,
+    square_terms,
 ):
-    """Returns the objective and gradient of the subproblem.
+    """Evaluate the criterion and derivative of the main model.
 
     Args:
-        x (np.ndarray): Parameter vector.
-        first_derivative (np.ndarray): Residuals of the Jacobian. Shape (*n*,).
-        second_derivative (np.ndarray): Residuals of the Hessian. Shape (*n*, *n*).
+        x (np.ndarray): Parameter vector of zeros.
+        linear_terms (np.ndarray): Linear terms of the main model of shape (*n*,).
+        square_terms (np.ndarray): Square terms of the main model of shape (*n*, *n*).
+
     Returns:
         Tuple:
-        - obj (float): Value of the objective function.
-        - grad (np.ndarray): Gradient vector. Shape (*n*,).
+        - criterion (float): Criterion value of the main model.
+        - derivative (np.ndarray): Derivative of the main model of shape (*n*,).
     """
-    criterion = np.dot(first_derivative, x) + 0.5 * np.dot(
-        np.dot(x, second_derivative), x
-    )
-    derivative = first_derivative + np.dot(second_derivative, x)
+    criterion = np.dot(linear_terms, x) + 0.5 * np.dot(np.dot(x, square_terms), x)
+    derivative = linear_terms + np.dot(square_terms, x)
 
     return criterion, derivative
 
@@ -617,7 +681,7 @@ def _get_basis_quadratic_function(x):
         x (np.ndarray): Parameter vector of shape (*n*,).
         n (int): Number of parameters.
     Returns:
-        (np.ndarray): Monomial basis of shape (*n* (*n* + 1) / 2,)
+        (np.ndarray): Monomial basis of x with shape (*n* (*n* + 1) / 2,).
     """
     n = x.shape[0]
     monomial_basis = np.zeros(int(n * (n + 1) / 2))
@@ -649,16 +713,11 @@ def _add_point(
     """Add point to the model
 
     Args:
-        history_x (np.ndarray): Array storing all candidates of the parameter
-            vector. Shape (1000, *n*).
-        history_criterion (np.ndarray): Array storing all evaluations of the criterion
-            function. Shape(1000, *n_obs*).
-        history_criterion_norm (np.ndarray): Array storing norm of the criterion
-            function. Shape (1000,).
+        history (class): Class storing history of xs, residuals, and critvals.
         model_improving_points (np.ndarray): Q matrix containing the parameter
             vector to add to *history_x*. Shape (*n*, *n*).
-        model_indices (np.ndarray): Indices related to *history_x*, i.e. the
-            candidates of x that are currently in the model. Shape (2 *n* + 1,).
+        model_indices (np.ndarray): Indices of the candidates of x that are
+            currently in the model. Shape (2 *n* + 1,).
         accepted_index (int): Index in *history_x* associated with the parameter vector
             that yields the lowest criterion function norm.
         index (int): Index relating to the parameter vector in
@@ -675,14 +734,9 @@ def _add_point(
 
     Returns:
         Tuple:
-        - history_x (np.ndarray): Array storing all candidates of the parameter
-            vector. Shape (1000, *n*).
-        - history_criterion (np.ndarray): Array storing all evaluations of the criterion
-            function. Shape(1000, *n_obs*).
-        - history_criterion_norm (np.ndarray): Array storing norm of the
-            criterion function. Shape (1000,).
-        - model_indices (np.ndarray): Indices related to *history_x*, i.e. the
-            candidates of x that are currently in the model. Shape (2 *n* + 1,).
+        - history (class): Class storing history of xs, residuals, and critvals.
+        - model_indices (np.ndarray): Indices of the candidates of x that are
+            currently in the model. Shape (2 *n* + 1,).
         - n_modelpoints (int): Current number of model points.
     """
     x_candidate = model_improving_points[:, index]

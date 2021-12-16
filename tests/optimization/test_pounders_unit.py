@@ -6,13 +6,12 @@ import pytest
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import add_more_points
-from estimagic.optimization.pounders_auxiliary import calc_first_and_second_derivative
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_approximation_error
-from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
-from estimagic.optimization.pounders_auxiliary import improve_model
-from estimagic.optimization.pounders_auxiliary import update_center
-from estimagic.optimization.pounders_auxiliary import update_gradient_and_hessian
+from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
+from estimagic.optimization.pounders_auxiliary import improve_main_model
+from estimagic.optimization.pounders_auxiliary import update_main_from_residual_model
+from estimagic.optimization.pounders_auxiliary import update_residual_model
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -57,57 +56,23 @@ def dict_improve_model(request):
 
 
 @pytest.fixture
-def dict_update_center():
-    return pd.read_pickle(TEST_FIXTURES_DIR / "update_center.pkl")
-
-
-@pytest.fixture
 def dict_add_more_points():
     return pd.read_pickle(TEST_FIXTURES_DIR / "add_more_points.pkl")
 
 
 @pytest.fixture
-def dict_get_params_quadratic_model():
+def dict_get_coefficients_residual_model():
     return pd.read_pickle(TEST_FIXTURES_DIR / "get_params_quadratic_model.pkl")
 
 
 @pytest.fixture
-def dict_update_gradient_and_hessian():
+def dict_update_residual_model():
     return pd.read_pickle(TEST_FIXTURES_DIR / "update_gradient_and_hessian.pkl")
 
 
 @pytest.fixture
-def dict_calc_first_and_second_derivative():
+def dict_update_main_from_residual_model():
     return pd.read_pickle(TEST_FIXTURES_DIR / "calc_first_and_second_derivative.pkl")
-
-
-@pytest.mark.skip(reason="refactoring")
-def test_update_center(dict_update_center):
-    (
-        min_x_out,
-        min_criterion_out,
-        gradient_out,
-        first_derivative_out,
-        index_min_x_out,
-    ) = update_center(
-        xplus=dict_update_center["xplus"],
-        min_x=dict_update_center["min_x"],
-        history_x=dict_update_center["history_x"],
-        delta=dict_update_center["delta"],
-        min_criterion=dict_update_center["min_criterion"],
-        gradient=dict_update_center["gradient"],
-        hessian=dict_update_center["hessian"],
-        first_derivative=dict_update_center["first_derivative"],
-        second_derivative=dict_update_center["second_derivative"],
-        n_history=dict_update_center["n_history"],
-    )
-    aaae(min_x_out, dict_update_center["min_x_expected"])
-    aaae(min_criterion_out, dict_update_center["min_criterion_expected"])
-    aaae(gradient_out, dict_update_center["gradient_expected"])
-    aaae(
-        first_derivative_out, dict_update_center["first_derivative_expected"], decimal=5
-    )
-    assert np.allclose(index_min_x_out, dict_update_center["index_min_x_expected"])
 
 
 @pytest.mark.skip(reason="refactoring")
@@ -153,7 +118,7 @@ def test_improve_model(dict_improve_model, criterion):
         model_indices_out,
         n_modelpoints_out,
         n_history_out,
-    ) = improve_model(
+    ) = improve_main_model(
         history,
         history_x=dict_improve_model["history_x"],
         history_criterion=dict_improve_model["history_criterion"],
@@ -245,49 +210,69 @@ def test_get_approximation_error(dict_get_approximation_error):
     )
 
 
-def test_get_params_quadratic_model(dict_get_params_quadratic_model):
-    params_gradient, params_hessian = get_params_quadratic_model(
-        lower_triangular=dict_get_params_quadratic_model["lower_triangular"],
-        basis_null_space=dict_get_params_quadratic_model["basis_null_space"],
-        monomial_basis=dict_get_params_quadratic_model["monomial_basis"],
-        interpolation_set=dict_get_params_quadratic_model["interpolation_set"],
-        approximation_error=dict_get_params_quadratic_model["approximation_error"],
-        n_modelpoints=dict_get_params_quadratic_model["n_modelpoints"],
+def test_get_coefficients_residual_model(dict_get_coefficients_residual_model):
+    coefficients_to_add = get_coefficients_residual_model(
+        lower_triangular=dict_get_coefficients_residual_model["lower_triangular"],
+        basis_null_space=dict_get_coefficients_residual_model["basis_null_space"],
+        monomial_basis=dict_get_coefficients_residual_model["monomial_basis"],
+        interpolation_set=dict_get_coefficients_residual_model["interpolation_set"],
+        approximation_error=dict_get_coefficients_residual_model["approximation_error"],
+        n_modelpoints=dict_get_coefficients_residual_model["n_modelpoints"],
         n=3,
         n_obs=214,
     )
 
-    aaae(params_gradient, dict_get_params_quadratic_model["params_gradient_expected"])
-    aaae(params_hessian, dict_get_params_quadratic_model["params_hessian_expected"])
-
-
-def test_update_gradient_and_hessian(dict_update_gradient_and_hessian):
-    gradient_out, hessian_out = update_gradient_and_hessian(
-        gradient=dict_update_gradient_and_hessian["gradient"],
-        hessian=dict_update_gradient_and_hessian["hessian"],
-        params_gradient=dict_update_gradient_and_hessian["params_gradient"],
-        params_hessian=dict_update_gradient_and_hessian["params_hessian"],
-        delta=dict_update_gradient_and_hessian["delta"],
-        delta_old=dict_update_gradient_and_hessian["delta_old"],
+    aaae(
+        coefficients_to_add["linear_terms"],
+        dict_get_coefficients_residual_model["params_gradient_expected"].T,
+    )
+    aaae(
+        coefficients_to_add["square_terms"],
+        dict_get_coefficients_residual_model["params_hessian_expected"],
     )
 
-    aaae(gradient_out, dict_update_gradient_and_hessian["gradient_expected"])
-    aaae(hessian_out, dict_update_gradient_and_hessian["hessian_expected"])
 
+def test_update_residual_model(dict_update_residual_model):
+    residual_model = {
+        "linear_terms": dict_update_residual_model["gradient"],
+        "square_terms": dict_update_residual_model["hessian"],
+    }
+    coefficients_to_add = {
+        "linear_terms": dict_update_residual_model["params_gradient"].T,
+        "square_terms": dict_update_residual_model["params_hessian"],
+    }
 
-def test_calc_first_and_second_derivative(dict_calc_first_and_second_derivative):
-    first_derivative, second_derivative = calc_first_and_second_derivative(
-        gradient=dict_calc_first_and_second_derivative["gradient"],
-        min_criterion=dict_calc_first_and_second_derivative["min_criterion"],
-        hessian=dict_calc_first_and_second_derivative["hessian"],
+    residual_model = update_residual_model(
+        residual_model=residual_model,
+        coefficients_to_add=coefficients_to_add,
+        delta=dict_update_residual_model["delta"],
+        delta_old=dict_update_residual_model["delta_old"],
     )
 
     aaae(
-        first_derivative,
-        dict_calc_first_and_second_derivative["first_derivative_expected"],
+        residual_model["linear_terms"],
+        dict_update_residual_model["gradient_expected"],
     )
     aaae(
-        second_derivative,
-        dict_calc_first_and_second_derivative["second_derivative_expected"],
+        residual_model["square_terms"],
+        dict_update_residual_model["hessian_expected"],
+    )
+
+
+def test_update_main_from_residual_model(dict_update_main_from_residual_model):
+    residual_model = {
+        "intercepts": dict_update_main_from_residual_model["min_criterion"],
+        "linear_terms": dict_update_main_from_residual_model["gradient"],
+        "square_terms": dict_update_main_from_residual_model["hessian"],
+    }
+    main_model = update_main_from_residual_model(residual_model, first_evaluation=False)
+
+    aaae(
+        main_model["linear_terms"],
+        dict_update_main_from_residual_model["first_derivative_expected"],
+    )
+    aaae(
+        main_model["square_terms"],
+        dict_update_main_from_residual_model["second_derivative_expected"],
         decimal=3,
     )

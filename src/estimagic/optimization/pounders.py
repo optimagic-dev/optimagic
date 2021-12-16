@@ -2,15 +2,19 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.history import LeastSquaresHistory
+from estimagic.optimization.pounders_auxiliary import accept_candidate_into_main_model
+from estimagic.optimization.pounders_auxiliary import (
+    accept_candidate_into_residual_model,
+)
 from estimagic.optimization.pounders_auxiliary import add_more_points
-from estimagic.optimization.pounders_auxiliary import calc_first_and_second_derivative
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_approximation_error
-from estimagic.optimization.pounders_auxiliary import get_params_quadratic_model
-from estimagic.optimization.pounders_auxiliary import improve_model
+from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
+from estimagic.optimization.pounders_auxiliary import improve_main_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
-from estimagic.optimization.pounders_auxiliary import update_center
-from estimagic.optimization.pounders_auxiliary import update_gradient_and_hessian
+from estimagic.optimization.pounders_auxiliary import update_initial_residual_model
+from estimagic.optimization.pounders_auxiliary import update_main_from_residual_model
+from estimagic.optimization.pounders_auxiliary import update_residual_model
 
 
 def pounders(
@@ -155,8 +159,6 @@ def internal_solve_pounders(
     n_maxinterp = 2 * n + 1
     model_indices = np.zeros(n_maxinterp, dtype=int)
 
-    residual_hessians = np.zeros((n_obs, n, n))
-
     last_n_modelpoints = 0
     niter = 0
 
@@ -180,21 +182,21 @@ def internal_solve_pounders(
     history.add_entries(xs, residuals)
     accepted_index = history.get_min_index()
 
-    x_accepted, residuals_accepted, _ = history.get_best_entries()
-
     # Center around new trust-region and normalize to [-1, 1]
     indices_not_min = [i for i in range(n + 1) if i != accepted_index]
 
-    x_candidate, fdiff, _ = history.get_centered_entries(
+    x_candidate, residuals_candidate, _ = history.get_centered_entries(
         center_info={"radius": delta}, index=indices_not_min
     )
 
-    # Determine the initial quadratic model
-    residual_gradients = np.linalg.solve(x_candidate, fdiff)
+    residual_model = {"intercepts": history.get_best_residuals()}
+    residual_model = update_initial_residual_model(
+        residual_model, x_candidate, residuals_candidate
+    )
+    main_model = update_main_from_residual_model(residual_model, first_evaluation=True)
 
-    main_gradient = np.dot(residual_gradients, residuals_accepted)
-    main_hessian = np.dot(residual_gradients, residual_gradients.T)
-    gradient_norm = np.linalg.norm(main_gradient)
+    x_accepted = history.get_best_xs()
+    gradient_norm = np.linalg.norm(main_model["linear_terms"])
     gradient_norm *= delta
 
     valid = True
@@ -210,8 +212,7 @@ def internal_solve_pounders(
         result_sub = solve_subproblem(
             solution=x_accepted,
             delta=delta,
-            first_derivative=main_gradient,
-            second_derivative=main_hessian,
+            main_model=main_model,
             ftol=ftol_sub,
             xtol=xtol_sub,
             gtol=gtol_sub,
@@ -228,17 +229,15 @@ def internal_solve_pounders(
         rho = (history.get_critvals(accepted_index) - history.get_critvals(-1)) / qmin
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
-            residuals_accepted = history.get_residuals(index=accepted_index)
+            residual_model["intercepts"] = history.get_residuals(index=accepted_index)
             center_info = {"x": history.get_best_xs(), "radius": delta}
-            x1 = history.get_centered_xs(center_info, index=-1)
+            x_candidate = history.get_centered_xs(center_info, index=-1)
 
-            (residuals_accepted, residual_gradients, main_gradient,) = update_center(
-                x1=x1,
-                residuals_accepted=residuals_accepted,
-                residual_gradients=residual_gradients,
-                residual_hessians=residual_hessians,
-                main_gradient=main_gradient,
-                main_hessian=main_hessian,
+            residual_model = accept_candidate_into_residual_model(
+                residual_model=residual_model, x_candidate=x_candidate
+            )
+            main_model = accept_candidate_into_main_model(
+                main_model=main_model, x_candidate=x_candidate
             )
             x_accepted = history.get_best_xs()
             accepted_index = history.get_n_fun() - 1
@@ -266,10 +265,9 @@ def internal_solve_pounders(
 
             if n_modelpoints < n:
                 add_all_points = 1
-                (history, model_indices, n_modelpoints,) = improve_model(
+                (history, model_indices, n_modelpoints,) = improve_main_model(
                     history=history,
-                    first_derivative=main_gradient,
-                    second_derivative=main_hessian,
+                    main_model=main_model,
                     model_improving_points=model_improving_points,
                     model_indices=model_indices,
                     accepted_index=accepted_index,
@@ -335,10 +333,9 @@ def internal_solve_pounders(
             if n > n_modelpoints:
                 # Model not valid. Add geometry points
                 add_all_points = n - n_modelpoints
-                (history, model_indices, n_modelpoints,) = improve_model(
+                (history, model_indices, n_modelpoints,) = improve_main_model(
                     history=history,
-                    first_derivative=main_gradient,
-                    second_derivative=main_hessian,
+                    main_model=main_model,
                     model_improving_points=model_improving_points,
                     model_indices=model_indices,
                     accepted_index=accepted_index,
@@ -381,16 +378,14 @@ def internal_solve_pounders(
         approximation_error = get_approximation_error(
             history=history,
             x_candidates=x_candidates,
-            residual_model_accepted=residuals_accepted,
-            hessian=residual_hessians,
-            gradient=residual_gradients,
+            residual_model=residual_model,
             model_indices=model_indices,
             n_modelpoints=n_modelpoints,
             n_obs=n_obs,
             n_maxinterp=n_maxinterp,
         )
 
-        params_gradient, params_hessian = get_params_quadratic_model(
+        coefficients_residual_model = get_coefficients_residual_model(
             lower_triangular=lower_triangular,
             basis_null_space=basis_null_space,
             monomial_basis=monomial_basis,
@@ -401,23 +396,17 @@ def internal_solve_pounders(
             n_obs=n_obs,
         )
 
-        residual_gradients, residual_hessians = update_gradient_and_hessian(
-            gradient=residual_gradients,
-            hessian=residual_hessians,
-            params_gradient=params_gradient,
-            params_hessian=params_hessian,
+        residual_model["intercepts"] = history.get_residuals(index=accepted_index)
+        residual_model = update_residual_model(
+            residual_model=residual_model,
+            coefficients_to_add=coefficients_residual_model,
             delta=delta,
             delta_old=delta_old,
         )
 
-        residuals_accepted = history.get_residuals(index=accepted_index)
-        main_gradient, main_hessian = calc_first_and_second_derivative(
-            gradient=residual_gradients,
-            min_criterion=residuals_accepted,
-            hessian=residual_hessians,
-        )
+        main_model = update_main_from_residual_model(residual_model)
 
-        gradient_norm = np.linalg.norm(main_gradient)
+        gradient_norm = np.linalg.norm(main_model["linear_terms"])
         gradient_norm *= delta
 
         if gradient_norm < gtol:
