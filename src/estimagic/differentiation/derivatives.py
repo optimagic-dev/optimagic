@@ -518,6 +518,8 @@ def second_derivative(
     # results processing
     derivative = np.squeeze(hess)
     derivative = _add_index_to_second_derivative(derivative, params_index, out_index)
+    if len(derivative.shape) == 0:
+        derivative = float(derivative)
 
     result = {"derivative": derivative}
     if return_func_value:

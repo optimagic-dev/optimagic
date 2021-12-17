@@ -12,8 +12,10 @@ from estimagic.differentiation.derivatives import (
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
 from estimagic.differentiation.derivatives import _select_minimizer_along_axis
 from estimagic.differentiation.derivatives import first_derivative
+from estimagic.differentiation.derivatives import second_derivative
 from estimagic.examples.numdiff_functions import logit_loglike
 from estimagic.examples.numdiff_functions import logit_loglike_gradient
+from estimagic.examples.numdiff_functions import logit_loglike_hessian
 from estimagic.examples.numdiff_functions import logit_loglikeobs
 from estimagic.examples.numdiff_functions import logit_loglikeobs_jacobian
 from estimagic.utilities import namedtuple_from_kwargs
@@ -30,6 +32,14 @@ def binary_choice_inputs():
 
 
 methods = ["forward", "backward", "central"]
+
+accuracy_second_derivative = {
+    "forward": 2,
+    "backward": 1,
+    "central_average": 2,
+    "central_cross": 1,
+}
+methods_second_derivative = list(accuracy_second_derivative.keys())
 
 
 @pytest.mark.parametrize("method", methods)
@@ -83,6 +93,25 @@ def test_first_derivative_gradient(binary_choice_inputs, method):
     aaae(calculated["derivative"], expected, decimal=4)
 
 
+@pytest.mark.parametrize("method", methods_second_derivative)
+def test_second_derivative_hessian(binary_choice_inputs, method):
+    fix = binary_choice_inputs
+    func = partial(logit_loglike, y=fix["y"], x=fix["x"])
+
+    calculated = second_derivative(
+        func=func,
+        method=method,
+        params=fix["params_np"],
+        n_steps=1,
+        f0=func(fix["params_np"]),
+        n_cores=1,
+    )
+
+    expected = logit_loglike_hessian(fix["params_np"], fix["y"], fix["x"])
+
+    aaae(calculated["derivative"], expected, decimal=accuracy_second_derivative[method])
+
+
 @pytest.mark.parametrize("method", methods)
 def test_first_derivative_scalar(method):
     def f(x):
@@ -91,6 +120,18 @@ def test_first_derivative_scalar(method):
     calculated = first_derivative(f, 3.0, n_cores=1)
     expected = 6.0
     assert calculated["derivative"] == expected
+
+
+@pytest.mark.parametrize("method", methods_second_derivative)
+def test_second_derivative_scalar(method):
+    def f(x):
+        return x ** 2
+
+    calculated = second_derivative(f, 3.0, n_cores=1)
+    expected = 2.0
+
+    tolerance = 1.5 * 10 ** (-6)
+    assert np.abs(calculated["derivative"] - expected) < tolerance
 
 
 @pytest.mark.parametrize("method", methods)
@@ -103,6 +144,21 @@ def test_first_derivative_scalar_with_return_func_value(method):
     )
     expected = {"derivative": 6.0, "func_value": 9.0}
     assert calculated == expected
+
+
+@pytest.mark.parametrize("method", methods_second_derivative)
+def test_second_derivative_scalar_with_return_func_value(method):
+    def f(x):
+        return x ** 3
+
+    calculated = second_derivative(
+        f, 3.0, return_func_value=True, return_info=False, n_cores=1
+    )
+    expected = {"derivative": 18.0, "func_value": 27.0}
+
+    tolerance = 1.5 * 10 ** (-6)
+    assert calculated["func_value"] == expected["func_value"]
+    assert np.abs(calculated["derivative"] - expected["derivative"]) < tolerance
 
 
 def test_nan_skipping_batch_evaluator():
