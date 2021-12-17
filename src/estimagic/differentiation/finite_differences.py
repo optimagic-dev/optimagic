@@ -108,28 +108,28 @@ def hessian(evals, steps, f0, method):
     evals_cross = evals["cross_step"]
 
     if method == "forward":
-        outer_steps = _calculate_outer_steps(steps.pos, n_steps, dim_x)
+        outer_product_steps = _calculate_outer_product_steps(steps.pos, n_steps, dim_x)
         diffs = (evals_two.pos - evals_one.pos.swapaxes(2, 3)) - (evals_one.pos - f0)
-        hess = diffs / outer_steps
+        hess = diffs / outer_product_steps
     elif method == "backward":
-        outer_steps = _calculate_outer_steps(steps.neg, n_steps, dim_x)
+        outer_product_steps = _calculate_outer_product_steps(steps.neg, n_steps, dim_x)
         diffs = (evals_two.neg - evals_one.neg.swapaxes(2, 3)) - (evals_one.neg - f0)
-        hess = diffs / outer_steps
+        hess = diffs / outer_product_steps
     elif method == "central_average":
-        outer_steps = _calculate_outer_steps(steps.pos, n_steps, dim_x)
+        outer_product_steps = _calculate_outer_product_steps(steps.pos, n_steps, dim_x)
         diffs = (
             (evals_two.pos - evals_one.pos.swapaxes(2, 3))
             - (evals_one.pos - f0)
             + (evals_two.neg - evals_one.neg.swapaxes(2, 3))
             - (evals_one.neg - f0)
         )
-        hess = diffs / (2 * outer_steps)
+        hess = diffs / (2 * outer_product_steps)
     elif method == "central_cross":
-        outer_steps = _calculate_outer_steps(steps.pos, n_steps, dim_x)
+        outer_product_steps = _calculate_outer_product_steps(steps.pos, n_steps, dim_x)
         diffs = (evals_two.pos - evals_cross) - (
             evals_cross.swapaxes(2, 3) - evals_two.neg
         )
-        hess = diffs / (4 * outer_steps)
+        hess = diffs / (4 * outer_product_steps)
     else:
         raise ValueError(
             "Method has to be 'forward', 'backward', 'central_average' or ",
@@ -138,7 +138,7 @@ def hessian(evals, steps, f0, method):
     return hess
 
 
-def _calculate_outer_steps(signed_steps, n_steps, dim_x):
+def _calculate_outer_product_steps(signed_steps, n_steps, dim_x):
     """Calculate array of outer product of steps.
 
     Args:
@@ -150,11 +150,11 @@ def _calculate_outer_steps(signed_steps, n_steps, dim_x):
         dim_x (int): Dimension of input vector x.
 
     Returns:
-        outer_steps (np.ndarray): Array with outer product of steps. Has dimension
-            (n_steps, 1, dim_x, dim_x).
+        outer_product_steps (np.ndarray): Array with outer product of steps. Has
+            dimension (n_steps, 1, dim_x, dim_x).
 
     """
-    outer_steps = np.array(
+    outer_product_steps = np.array(
         [np.outer(signed_steps[j], signed_steps[j]) for j in range(n_steps)]
     ).reshape(n_steps, 1, dim_x, dim_x)
-    return outer_steps
+    return outer_product_steps

@@ -10,6 +10,9 @@ from estimagic.differentiation.derivatives import (
     _convert_richardson_candidates_to_frame,
 )
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
+from estimagic.differentiation.derivatives import _reshape_cross_step_evals
+from estimagic.differentiation.derivatives import _reshape_one_step_evals
+from estimagic.differentiation.derivatives import _reshape_two_step_evals
 from estimagic.differentiation.derivatives import _select_minimizer_along_axis
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.differentiation.derivatives import second_derivative
@@ -309,3 +312,51 @@ def test__select_minimizer_along_axis():
     expected = (np.array([[0, 5], [6, 3]]), np.array([[0, 0], [0, 0]]))
     got = _select_minimizer_along_axis(der, err)
     aaae(expected, got)
+
+
+def test_reshape_one_step_evals():
+    n_steps, dim_f, dim_x = 2, 3, 4
+    raw_evals_one_step = np.arange(2 * n_steps * dim_f * dim_x)
+
+    pos_expected = np.array(
+        [
+            [[0, 3, 6, 9], [1, 4, 7, 10], [2, 5, 8, 11]],
+            [[12, 15, 18, 21], [13, 16, 19, 22], [14, 17, 20, 23]],
+        ]
+    )
+    neg_expected = np.array(
+        [
+            [[24, 27, 30, 33], [25, 28, 31, 34], [26, 29, 32, 35]],
+            [[36, 39, 42, 45], [37, 40, 43, 46], [38, 41, 44, 47]],
+        ]
+    )
+
+    got = _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x)
+    assert np.all(got.pos == pos_expected)
+    assert np.all(got.neg == neg_expected)
+
+
+def test_reshape_two_step_evals():
+    n_steps, dim_x, dim_f = 1, 2, 2
+    raw_evals_two_step = np.arange(2 * n_steps * dim_f * dim_x * dim_x)
+
+    pos_expected = np.array([[[[0, 2], [2, 6]], [[1, 3], [3, 7]]]])
+    neg_expected = np.array([[[[8, 10], [10, 14]], [[9, 11], [11, 15]]]])
+
+    got = _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x)
+    assert np.all(got.pos == pos_expected)
+    assert np.all(got.neg == neg_expected)
+
+
+def test_reshape_cross_step_evals():
+    n_steps = 1
+    dim_x = 2
+    dim_f = 2
+    f0 = np.array([-1000, 1000])
+
+    raw_evals_cross_step = np.arange(2 * n_steps * dim_f * dim_x * dim_x)
+
+    expected = np.array([[[[-1000, 2], [10, -1000]], [[1000, 3], [11, 1000]]]])
+
+    got = _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0)
+    assert np.all(got == expected)

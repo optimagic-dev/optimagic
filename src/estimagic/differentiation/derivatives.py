@@ -540,7 +540,7 @@ def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
 
     """
     evals = np.array(raw_evals_one_step).reshape(2, n_steps, dim_x, -1)
-    evals = np.transpose(evals, axes=(0, 1, 3, 2))
+    evals = evals.swapaxes(2, 3)
     evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
     return evals
 
@@ -557,9 +557,9 @@ def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
     """
     tril_idx = np.tril_indices(dim_x, -1)
     evals = np.array(raw_evals_two_step).reshape(2, n_steps, dim_x, dim_x, -1)
-    evals = np.transpose(evals, axes=(0, 1, 4, 2, 3))
-    evals[:, :, :, tril_idx[0], tril_idx[1]] = evals.transpose((0, 1, 2, 4, 3))[
-        :, :, :, tril_idx[0], tril_idx[1]
+    evals = evals.transpose(0, 1, 4, 2, 3)
+    evals[..., tril_idx[0], tril_idx[1]] = evals.swapaxes(3, 4)[
+        ..., tril_idx[0], tril_idx[1]
     ]
     evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
     return evals
@@ -572,18 +572,18 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     positive and negative steps. Each entry will be a numpy array with dimension
     (n_steps, dim_f, dim_x, dim_x). Since the array is, by definition, symmetric over
     the last two dimensions, the function is not evaluated on both sides to save
-    computation time and the information is simply copied here. Furthermore, as we use
+    computation time and the information is simply copied here. Furthermore, if we use
     the same stepsize for all directions the diagonal must be equal to f0.
 
     """
     tril_idx = np.tril_indices(dim_x, -1)
     diag_idx = np.diag_indices(dim_x)
     evals = np.array(raw_evals_cross_step).reshape(2, n_steps, dim_x, dim_x, -1)
-    evals = np.transpose(evals, axes=(0, 1, 4, 2, 3))
-    evals[0][:, :, tril_idx[0], tril_idx[1]] = evals[1].transpose(0, 1, 3, 2)[
-        :, :, tril_idx[0], tril_idx[1]
+    evals = evals.transpose(0, 1, 4, 2, 3)
+    evals[0][..., tril_idx[0], tril_idx[1]] = evals[1].swapaxes(2, 3)[
+        ..., tril_idx[0], tril_idx[1]
     ]
-    evals[0][:, :, diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[np.newaxis, :, :]
+    evals[0][..., diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[np.newaxis, ...]
     evals = evals[0]
     return evals
 
