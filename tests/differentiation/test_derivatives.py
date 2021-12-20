@@ -105,8 +105,8 @@ def test_second_derivative_hessian(binary_choice_inputs, method):
 
     expected = logit_loglike_hessian(fix["params_np"], fix["y"], fix["x"])
 
-    assert np.max(np.abs(calculated["derivative"] - expected)) < 10 ** (-2)
-    assert np.mean(np.abs(calculated["derivative"] - expected)) < 10 ** (-3)
+    assert np.max(np.abs(calculated["derivative"] - expected)) < 1.5 * 10 ** (-2)
+    assert np.mean(np.abs(calculated["derivative"] - expected)) < 1.5 * 10 ** (-3)
 
 
 @pytest.mark.parametrize("method", methods)
