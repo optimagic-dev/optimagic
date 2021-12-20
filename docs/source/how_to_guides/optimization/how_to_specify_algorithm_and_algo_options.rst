@@ -2680,7 +2680,7 @@ The Fides Optimizer
 estimagic supports the `Fides Optimizer
 <https://fides-optimizer.readthedocs.io/en/latest>`_. To use Fides, you need to have
 `the fides package <https://github.com/fides-dev/fides>`_ installed (``pip install
-fides>=0.7.4``).
+fides>=0.7.4``, make sure you have at least 0.7.1).
 
 
 .. warning::
