@@ -47,7 +47,7 @@ def fides(
     if not IS_FIDES_INSTALLED:
         raise NotImplementedError(
             "The fides package is not installed. You can install it with "
-            "`pip install fides>=0.7.1`."
+            "`pip install fides>=0.7.4`."
         )
 
     fides_options = {
@@ -59,7 +59,6 @@ def fides(
         "gamma2": trustregion_increase_factor,
         "gatol": convergence_absolute_gradient_tolerance,
         "grtol": convergence_relative_gradient_tolerance,
-        "history_file": None,
         "maxiter": stopping_max_iterations,
         "maxtime": stopping_max_seconds,
         "mu": trustregion_decrease_threshold,
