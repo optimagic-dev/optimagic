@@ -127,8 +127,7 @@ def test_second_derivative_scalar(method):
     calculated = second_derivative(f, 3.0, n_cores=1)
     expected = 2.0
 
-    tolerance = 1.5 * 10 ** (-6)
-    assert np.abs(calculated["derivative"] - expected) < tolerance
+    assert np.abs(calculated["derivative"] - expected) < 1.5 * 10 ** (-6)
 
 
 @pytest.mark.parametrize("method", methods)
@@ -153,9 +152,8 @@ def test_second_derivative_scalar_with_return_func_value(method):
     )
     expected = {"derivative": 18.0, "func_value": 27.0}
 
-    tolerance = 1.5 * 10 ** (-6)
     assert calculated["func_value"] == expected["func_value"]
-    assert np.abs(calculated["derivative"] - expected["derivative"]) < tolerance
+    assert np.abs(calculated["derivative"] - expected["derivative"]) < 1.5 * 10 ** (-6)
 
 
 def test_nan_skipping_batch_evaluator():
@@ -350,7 +348,9 @@ def test_reshape_cross_step_evals():
 
     raw_evals_cross_step = np.arange(2 * n_steps * dim_f * dim_x * dim_x)
 
-    expected = np.array([[[[-1000, 2], [10, -1000]], [[1000, 3], [11, 1000]]]])
+    expected_pos = np.array([[[[-1000, 2], [10, -1000]], [[1000, 3], [11, 1000]]]])
+    expected_neg = expected_pos.swapaxes(2, 3)
 
     got = _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0)
-    assert np.all(got == expected)
+    assert np.all(got.pos == expected_pos)
+    assert np.all(got.neg == expected_neg)

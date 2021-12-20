@@ -364,9 +364,17 @@ def second_derivative(
                 internal derivative method when altering the params vector at one
                 dimension, returned if return_info is True.
 
-            - "func_evals_two_step" (pandas.DataFrame): Function evaluations produced by
-                internal derivative method when altering the params vector at two
-                dimensions, returned if return_info is True.
+            - "func_evals_two_step" (pandas.DataFrame): This features is not implemented
+                yet and therefore set to None. Once implemented it will contain
+                function evaluations produced by internal derivative method when
+                altering the params vector at two dimensions, returned if return_info is
+                True.
+
+            - "func_evals_cross_step" (pandas.DataFrame): This features is not
+                implemented yet and therefore set to None. Once implemented it will
+                contain function evaluations produced by internal derivative method when
+                altering the params vector at two dimensions in different directions,
+                returned if return_info is True.
 
     """
     lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
@@ -525,7 +533,7 @@ def second_derivative(
     info = _collect_additional_info(
         return_info, steps, evals, updated_candidates, target="second_derivative"
     )
-    result = {**result, **info, **{"steps": steps}}
+    result = {**result, **info}
     return result
 
 
@@ -535,6 +543,13 @@ def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
     Returned object is a namedtuple with entries 'pos' and 'neg' corresponding to
     positive and negative steps. Each entry will be a numpy array with dimension
     (n_steps, dim_f, dim_x).
+
+    Mathematical:
+
+            evals.pos = (f(x0 + delta_jl e_j))
+            evals.neg = (f(x0 - delta_jl e_j))
+
+        for j=1,...,dim_x and l=1,...,n_steps
 
     """
     evals = np.array(raw_evals_one_step).reshape(2, n_steps, dim_x, -1)
@@ -552,13 +567,18 @@ def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
     the last two dimensions, the function is not evaluated on both sides to save
     computation time and the information is simply copied here.
 
+    Mathematical:
+
+            evals.pos = (f(x0 + delta_jl e_j + delta_kl e_k))
+            evals.neg = (f(x0 - delta_jl e_j - delta_kl e_k))
+
+        for j,k=1,...,dim_x and l=1,...,n_steps
+
     """
     tril_idx = np.tril_indices(dim_x, -1)
     evals = np.array(raw_evals_two_step).reshape(2, n_steps, dim_x, dim_x, -1)
     evals = evals.transpose(0, 1, 4, 2, 3)
-    evals[..., tril_idx[0], tril_idx[1]] = evals.swapaxes(3, 4)[
-        ..., tril_idx[0], tril_idx[1]
-    ]
+    evals[..., tril_idx[0], tril_idx[1]] = evals[..., tril_idx[1], tril_idx[0]]
     evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
     return evals
 
@@ -570,20 +590,27 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     positive and negative steps. Each entry will be a numpy array with dimension
     (n_steps, dim_f, dim_x, dim_x). Since the array is, by definition, symmetric over
     the last two dimensions, the function is not evaluated on both sides to save
-    computation time and the information is simply copied here. Equivalently we know
-    that the diagonal must be equal to f0, since on the diagonal we add and subtract the
-    same step.
+    computation time and the information is simply copied here. In comparison to the
+    two_step case, however, this symmetry holds only over the dimension 'pos' and 'neg'.
+    That is, the lower triangular of the last two dimensions of 'pos' must equal the
+    upper triangular of the last two dimensions of 'neg'. Further, the diagonal of the
+    last two dimensions must be equal to f0.
+
+    Mathematical:
+
+            evals.pos = (f(x0 + delta_jl e_j - delta_kl e_k))
+            evals.neg = (f(x0 - delta_jl e_j + delta_kl e_k))
+
+        for j,k=1,...,dim_x and l=1,...,n_steps
 
     """
     tril_idx = np.tril_indices(dim_x, -1)
     diag_idx = np.diag_indices(dim_x)
     evals = np.array(raw_evals_cross_step).reshape(2, n_steps, dim_x, dim_x, -1)
     evals = evals.transpose(0, 1, 4, 2, 3)
-    evals[0][..., tril_idx[0], tril_idx[1]] = evals[1].swapaxes(2, 3)[
-        ..., tril_idx[0], tril_idx[1]
-    ]
+    evals[0][..., tril_idx[0], tril_idx[1]] = evals[1][..., tril_idx[1], tril_idx[0]]
     evals[0][..., diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[np.newaxis, ...]
-    evals = evals[0]
+    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[0].swapaxes(2, 3))
     return evals
 
 
@@ -979,9 +1006,9 @@ def _collect_additional_info(return_info, steps, evals, updated_candidates, targ
             info["func_evals"] = func_evals
         else:
             one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
-            two_step = None
             info["func_evals_one_step"] = one_step
-            info["func_evals_two_step"] = two_step
+            info["func_evals_two_step"] = None
+            info["func_evals_cross_step"] = None
 
         if updated_candidates is not None:
             # combine derivative candidates in accessible data frame

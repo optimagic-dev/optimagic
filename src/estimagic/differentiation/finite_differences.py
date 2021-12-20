@@ -63,10 +63,10 @@ def hessian(evals, steps, f0, method):
     2. f(theta + delta_j e_j + delta_k e_k)
     3. f(theta + delta_j e_j - delta_k e_k)
 
-    Which are called here: 1. ``evals_one``, 2. ``evals_two`` and 3. ``evals_cross``.
-    Note that theta denotes the x-value at which the derivative is evaluated, i.e. x0,
-    delta_j denotes the step size for the j-th variable and e_j the j-th standard basis
-    vector.
+    Which are called here: 1. ``evals_one``, 2. ``evals_two`` and 3. ``evals_cross``,
+    corresponding to the idea that we are moving in one direction, in two directions and
+    in two cross directions (opposite signs). Note that theta denotes x0, delta_j the
+    step size for the j-th variable and e_j the j-th standard basis vector.
 
     Note also that the brackets in the finite difference formulae are not arbitrary but
     improve the numerical accuracy, see Rideout [2009].
@@ -117,18 +117,12 @@ def hessian(evals, steps, f0, method):
         hess = diffs / outer_product_steps
     elif method == "central_average":
         outer_product_steps = _calculate_outer_product_steps(steps.pos, n_steps, dim_x)
-        diffs = (
-            (evals_two.pos - evals_one.pos.swapaxes(2, 3))
-            - (evals_one.pos - f0)
-            + (evals_two.neg - evals_one.neg.swapaxes(2, 3))
-            - (evals_one.neg - f0)
-        )
-        hess = diffs / (2 * outer_product_steps)
+        forward = (evals_two.pos - evals_one.pos.swapaxes(2, 3)) - (evals_one.pos - f0)
+        backward = (evals_two.neg - evals_one.neg.swapaxes(2, 3)) - (evals_one.neg - f0)
+        hess = (forward + backward) / (2 * outer_product_steps)
     elif method == "central_cross":
         outer_product_steps = _calculate_outer_product_steps(steps.pos, n_steps, dim_x)
-        diffs = (evals_two.pos - evals_cross) - (
-            evals_cross.swapaxes(2, 3) - evals_two.neg
-        )
+        diffs = (evals_two.pos - evals_cross.pos) - (evals_cross.neg - evals_two.neg)
         hess = diffs / (4 * outer_product_steps)
     else:
         raise ValueError(
