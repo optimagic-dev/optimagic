@@ -572,8 +572,9 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     positive and negative steps. Each entry will be a numpy array with dimension
     (n_steps, dim_f, dim_x, dim_x). Since the array is, by definition, symmetric over
     the last two dimensions, the function is not evaluated on both sides to save
-    computation time and the information is simply copied here. Furthermore, if we use
-    the same stepsize for all directions the diagonal must be equal to f0.
+    computation time and the information is simply copied here. Equivalently we know
+    that the diagonal must be equal to f0, since on the diagonal we add and subtract the
+    same step.
 
     """
     tril_idx = np.tril_indices(dim_x, -1)
