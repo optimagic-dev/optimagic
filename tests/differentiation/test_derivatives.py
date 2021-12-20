@@ -35,14 +35,7 @@ def binary_choice_inputs():
 
 
 methods = ["forward", "backward", "central"]
-
-accuracy_second_derivative = {
-    "forward": 2,
-    "backward": 1,
-    "central_average": 2,
-    "central_cross": 1,
-}
-methods_second_derivative = list(accuracy_second_derivative.keys())
+methods_second_derivative = ["forward", "backward", "central_average", "central_cross"]
 
 
 @pytest.mark.parametrize("method", methods)
@@ -111,8 +104,7 @@ def test_second_derivative_hessian(binary_choice_inputs, method):
     )
 
     expected = logit_loglike_hessian(fix["params_np"], fix["y"], fix["x"])
-
-    aaae(calculated["derivative"], expected, decimal=accuracy_second_derivative[method])
+    aaae(calculated["derivative"], expected, decimal=3)
 
 
 @pytest.mark.parametrize("method", methods)

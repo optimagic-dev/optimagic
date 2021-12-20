@@ -527,7 +527,7 @@ def second_derivative(
     info = _collect_additional_info(
         return_info, steps, evals, updated_candidates, target="second_derivative"
     )
-    result = {**result, **info}
+    result = {**result, **info, **{"steps": steps}}
     return result
 
 
