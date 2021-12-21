@@ -274,7 +274,7 @@ def second_derivative(
     """Evaluate second derivative of func at params according to method and step options
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
-    array. Then the Hessian of that function is calculated. The resulting derivative
+    array. Then the Hessians of that function are calculated. The resulting derivative
     estimate is always a :class:`numpy.ndarray`.
 
     The parameters and the function output can be pandas objects (Series or DataFrames
