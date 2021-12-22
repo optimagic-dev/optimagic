@@ -1,6 +1,6 @@
 import functools
+import itertools
 import re
-from collections import OrderedDict
 from itertools import product
 
 import numpy as np
@@ -58,7 +58,7 @@ def first_derivative(
         n_steps (int): Number of steps needed. For central methods, this is
             the number of steps per direction. It is 1 if no Richardson extrapolation
             is used.
-        base_steps (numpy.ndarray, optional): 1d array of the same length as pasams.
+        base_steps (numpy.ndarray, optional): 1d array of the same length as params.
             base_steps * scaling_factor is the absolute value of the first (and possibly
             only) step used in the finite differences approximation of the derivative.
             If base_steps * scaling_factor conflicts with bounds, the actual steps will
@@ -244,9 +244,374 @@ def first_derivative(
     if return_func_value:
         result["func_value"] = func_value
 
-    info = _collect_additional_info(return_info, steps, evals, updated_candidates)
+    info = _collect_additional_info(
+        return_info, steps, evals, updated_candidates, target="first_derivative"
+    )
     result = {**result, **info}
     return result
+
+
+def second_derivative(
+    func,
+    params,
+    func_kwargs=None,
+    method="central_cross",
+    n_steps=1,
+    base_steps=None,
+    scaling_factor=1,
+    lower_bounds=None,
+    upper_bounds=None,
+    step_ratio=2,
+    min_steps=None,
+    f0=None,
+    n_cores=DEFAULT_N_CORES,
+    error_handling="continue",
+    batch_evaluator="joblib",
+    return_func_value=False,
+    return_info=True,
+    key=None,
+):
+    """Evaluate second derivative of func at params according to method and step options
+
+    Internally, the function is converted such that it maps from a 1d array to a 1d
+    array. Then the Hessians of that function are calculated. The resulting derivative
+    estimate is always a :class:`numpy.ndarray`.
+
+    The parameters and the function output can be pandas objects (Series or DataFrames
+    with value column). In that case the output of second_derivative is also a pandas
+    object and with appropriate index and columns.
+
+    Detailed description of all options that influence the step size as well as an
+    explanation of how steps are adjusted to bounds in case of a conflict,
+    see :func:`~estimagic.differentiation.generate_steps.generate_steps`.
+
+    Args:
+        func (callable): Function of which the derivative is calculated.
+        params (numpy.ndarray, pandas.Series or pandas.DataFrame): 1d numpy array or
+            :class:`pandas.DataFrame` with parameters at which the derivative is
+            calculated. If it is a DataFrame, it can contain the columns "lower_bound"
+            and "upper_bound" for bounds. See :ref:`params`.
+        func_kwargs (dict): Additional keyword arguments for func, optional.
+        method (str): One of {"forward", "backward", "central_average", "central_cross"}
+            These correspond to the finite difference approximations defined in
+            equations [7, x, 8, 9] in Rideout [2009], where ("backward", x) is not found
+            in Rideout [2009] but is the natural extension of equation 7 to the backward
+            case. Default "central_cross".
+        n_steps (int): Number of steps needed. For central methods, this is
+            the number of steps per direction. It is 1 if no Richardson extrapolation
+            is used.
+        base_steps (numpy.ndarray, optional): 1d array of the same length as params.
+            base_steps * scaling_factor is the absolute value of the first (and possibly
+            only) step used in the finite differences approximation of the derivative.
+            If base_steps * scaling_factor conflicts with bounds, the actual steps will
+            be adjusted. If base_steps is not provided, it will be determined according
+            to a rule of thumb as long as this does not conflict with min_steps.
+        scaling_factor (numpy.ndarray or float): Scaling factor which is applied to
+            base_steps. If it is an numpy.ndarray, it needs to be as long as params.
+            scaling_factor is useful if you want to increase or decrease the base_step
+            relative to the rule-of-thumb or user provided base_step, for example to
+            benchmark the effect of the step size. Default 1.
+        lower_bounds (numpy.ndarray): 1d array with lower bounds for each parameter. If
+            params is a DataFrame and has the columns "lower_bound", this will be taken
+            as lower_bounds if now lower_bounds have been provided explicitly.
+        upper_bounds (numpy.ndarray): 1d array with upper bounds for each parameter. If
+            params is a DataFrame and has the columns "upper_bound", this will be taken
+            as upper_bounds if no upper_bounds have been provided explicitly.
+        step_ratio (float, numpy.array): Ratio between two consecutive Richardson
+            extrapolation steps in the same direction. default 2.0. Has to be larger
+            than one. The step ratio is only used if n_steps > 1.
+        min_steps (numpy.ndarray): Minimal possible step sizes that can be chosen to
+            accommodate bounds. Must have same length as params. By default min_steps is
+            equal to base_steps, i.e step size is not decreased beyond what is optimal
+            according to the rule of thumb.
+        f0 (numpy.ndarray): 1d numpy array with func(x), optional.
+        n_cores (int): Number of processes used to parallelize the function
+            evaluations. Default 1.
+        error_handling (str): One of "continue" (catch errors and continue to calculate
+            derivative estimates. In this case, some derivative estimates can be
+            missing but no errors are raised), "raise" (catch errors and continue
+            to calculate derivative estimates at fist but raise an error if all
+            evaluations for one parameter failed) and "raise_strict" (raise an error
+            as soon as a function evaluation fails).
+        batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or Callable with the same interface
+            as the estimagic batch_evaluators.
+        return_func_value (bool): If True, return function value at params, stored in
+            output dict under "func_value". Default False. This is useful when using
+            first_derivative during optimization.
+        return_info (bool): If True, return additional information on function
+            evaluations and internal derivative candidates, stored in output dict under
+            "func_evals" and "derivative_candidates". Derivative candidates are only
+            returned if n_steps > 1. Default True.
+        key (str): If func returns a dictionary, take the derivative of
+            func(params)[key].
+
+    Returns:
+        result (dict): Result dictionary with keys:
+            - "derivative" (numpy.ndarray, pandas.Series or pandas.DataFrame): The
+                estimated second derivative of func at params. The shape of the output
+                depends on the dimension of params and func(params):
+
+                - f: R -> R leads to shape (1,), usually called second derivative
+                - f: R^m -> R leads to shape (m, m), usually called Hessian
+                - f: R -> R^n leads to shape (n,), usually called Hessian
+                - f: R^m -> R^n leads to shape (n, m, m), usually called Hessian tensor
+
+            - "func_value" (numpy.ndarray, pandas.Series or pandas.DataFrame): Function
+                value at params, returned if return_func_value is True.
+
+            - "func_evals_one_step" (pandas.DataFrame): Function evaluations produced by
+                internal derivative method when altering the params vector at one
+                dimension, returned if return_info is True.
+
+            - "func_evals_two_step" (pandas.DataFrame): This features is not implemented
+                yet and therefore set to None. Once implemented it will contain
+                function evaluations produced by internal derivative method when
+                altering the params vector at two dimensions, returned if return_info is
+                True.
+
+            - "func_evals_cross_step" (pandas.DataFrame): This features is not
+                implemented yet and therefore set to None. Once implemented it will
+                contain function evaluations produced by internal derivative method when
+                altering the params vector at two dimensions in different directions,
+                returned if return_info is True.
+
+    """
+    lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
+
+    # handle keyword arguments
+    func_kwargs = {} if func_kwargs is None else func_kwargs
+    partialed_func = functools.partial(func, **func_kwargs)
+
+    # convert params to numpy, but keep label information
+    params_index = (
+        params.index if isinstance(params, (pd.DataFrame, pd.Series)) else None
+    )
+
+    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
+    x = np.atleast_1d(x).astype(float)
+
+    if np.isnan(x).any():
+        raise ValueError("The parameter vector must not contain NaNs.")
+
+    implemented_methods = {"forward", "backward", "central_average", "central_cross"}
+    if method not in implemented_methods:
+        raise ValueError(f"Method has to be in {implemented_methods}.")
+
+    # generate the step array
+    steps = generate_steps(
+        x=x,
+        method=("central" if "central" in method else method),
+        n_steps=n_steps,
+        target="second_derivative",
+        base_steps=base_steps,
+        scaling_factor=scaling_factor,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        step_ratio=step_ratio,
+        min_steps=min_steps,
+    )
+
+    # generate parameter vectors at which func has to be evaluated as numpy arrays
+    evaluation_points = {"one_step": [], "two_step": [], "cross_step": []}
+    for step_arr in steps:
+        # single direction steps
+        for i, j in product(range(n_steps), range(len(x))):
+            if np.isnan(step_arr[i, j]):
+                evaluation_points["one_step"].append(np.nan)
+            else:
+                point = x.copy()
+                point[j] += step_arr[i, j]
+                evaluation_points["one_step"].append(point)
+        # two and cross direction steps
+        for i, j, k in product(range(n_steps), range(len(x)), range(len(x))):
+            if j > k or np.isnan(step_arr[i, j]) or np.isnan(step_arr[i, k]):
+                evaluation_points["two_step"].append(np.nan)
+                evaluation_points["cross_step"].append(np.nan)
+            else:
+                point = x.copy()
+                point[j] += step_arr[i, j]
+                point[k] += step_arr[i, k]
+                evaluation_points["two_step"].append(point)
+                if j == k:
+                    evaluation_points["cross_step"].append(np.nan)
+                else:
+                    point = x.copy()
+                    point[j] += step_arr[i, j]
+                    point[k] -= step_arr[i, k]
+                    evaluation_points["cross_step"].append(point)
+
+    # convert the numpy arrays to whatever is needed by func
+    evaluation_points = {
+        step_type: _convert_evaluation_points_to_original(points, params)
+        for step_type, points in evaluation_points.items()
+    }
+
+    # we always evaluate f0, so we can fall back to one-sided derivatives if
+    # two-sided derivatives fail. The extra cost is negligible in most cases.
+    if f0 is None:
+        evaluation_points["one_step"].append(params)
+
+    # do the function evaluations for one and two step, including error handling
+    batch_error_handling = "raise" if error_handling == "raise_strict" else "continue"
+    raw_evals = _nan_skipping_batch_evaluator(
+        func=partialed_func,
+        arguments=list(itertools.chain.from_iterable(evaluation_points.values())),
+        n_cores=n_cores,
+        error_handling=batch_error_handling,
+        batch_evaluator=batch_evaluator,
+    )
+
+    # extract information on exceptions that occurred during function evaluations
+    exc_info = "\n\n".join([val for val in raw_evals if isinstance(val, str)])
+    raw_evals = [val if not isinstance(val, str) else np.nan for val in raw_evals]
+
+    n_one_step, n_two_step, n_cross_step = map(len, evaluation_points.values())
+    raw_evals = {
+        "one_step": raw_evals[:n_one_step],
+        "two_step": raw_evals[n_one_step : n_two_step + n_one_step],
+        "cross_step": raw_evals[n_two_step + n_one_step :],
+    }
+
+    # store full function value at params as func_value and a processed version of it
+    # that we need to calculate derivatives as f0
+    if f0 is None:
+        f0 = raw_evals["one_step"][-1]
+        raw_evals["one_step"] = raw_evals["one_step"][:-1]
+    f0 = f0[key] if isinstance(f0, dict) else f0
+    out_index = f0.index if isinstance(f0, pd.Series) else None
+    f0 = np.atleast_1d(f0)
+
+    # convert the raw evaluations to numpy arrays
+    raw_evals = {
+        step_type: _convert_evals_to_numpy(evals, key)
+        for step_type, evals in raw_evals.items()
+    }
+
+    # reshape arrays into dimension (n_steps, dim_f, dim_x) or (n_steps, dim_f, dim_x,
+    # dim_x) for finite differences
+    evals = {}
+    evals["one_step"] = _reshape_one_step_evals(raw_evals["one_step"], n_steps, len(x))
+    evals["two_step"] = _reshape_two_step_evals(raw_evals["two_step"], n_steps, len(x))
+    evals["cross_step"] = _reshape_cross_step_evals(
+        raw_evals["cross_step"], n_steps, len(x), f0
+    )
+
+    # apply finite difference formulae
+    hess_candidates = {}
+    for m in ["forward", "backward", "central_average", "central_cross"]:
+        hess_candidates[m] = finite_differences.hessian(evals, steps, f0, m)
+
+    # get the best derivative estimate out of all derivative estimates that could be
+    # calculated, given the function evaluations.
+    orders = {
+        "central_cross": ["central_cross", "central_average", "forward", "backward"],
+        "central_average": ["central_average", "central_cross", "forward", "backward"],
+        "forward": ["forward", "backward", "central_average", "central_cross"],
+        "backward": ["backward", "forward", "central_average", "central_cross"],
+    }
+
+    if n_steps == 1:
+        hess = _consolidate_one_step_derivatives(hess_candidates, orders[method])
+        updated_candidates = None
+    else:
+        raise ValueError(
+            "Richardson extrapolation is not implemented for the second derivative yet."
+        )
+
+    # raise error if necessary
+    if error_handling in ("raise", "raise_strict") and np.isnan(hess).any():
+        raise Exception(exc_info)
+
+    # results processing
+    derivative = np.squeeze(hess)
+    derivative = _add_index_to_second_derivative(derivative, params_index, out_index)
+
+    result = {"derivative": derivative}
+    if return_func_value:
+        result["func_value"] = f0
+    info = _collect_additional_info(
+        return_info, steps, evals, updated_candidates, target="second_derivative"
+    )
+    result = {**result, **info}
+    return result
+
+
+def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
+    """Reshape raw_evals for evaluation points with one step.
+
+    Returned object is a namedtuple with entries 'pos' and 'neg' corresponding to
+    positive and negative steps. Each entry will be a numpy array with dimension
+    (n_steps, dim_f, dim_x).
+
+    Mathematical:
+
+            evals.pos = (f(x0 + delta_jl e_j))
+            evals.neg = (f(x0 - delta_jl e_j))
+
+        for j=1,...,dim_x and l=1,...,n_steps
+
+    """
+    evals = np.array(raw_evals_one_step).reshape(2, n_steps, dim_x, -1)
+    evals = evals.swapaxes(2, 3)
+    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    return evals
+
+
+def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
+    """Reshape raw_evals for evaluation points with two steps.
+
+    Returned object is a namedtuple with entries 'pos' and 'neg' corresponding to
+    positive and negative steps. Each entry will be a numpy array with dimension
+    (n_steps, dim_f, dim_x, dim_x). Since the array is, by definition, symmetric over
+    the last two dimensions, the function is not evaluated on both sides to save
+    computation time and the information is simply copied here.
+
+    Mathematical:
+
+            evals.pos = (f(x0 + delta_jl e_j + delta_kl e_k))
+            evals.neg = (f(x0 - delta_jl e_j - delta_kl e_k))
+
+        for j,k=1,...,dim_x and l=1,...,n_steps
+
+    """
+    tril_idx = np.tril_indices(dim_x, -1)
+    evals = np.array(raw_evals_two_step).reshape(2, n_steps, dim_x, dim_x, -1)
+    evals = evals.transpose(0, 1, 4, 2, 3)
+    evals[..., tril_idx[0], tril_idx[1]] = evals[..., tril_idx[1], tril_idx[0]]
+    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    return evals
+
+
+def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
+    """Reshape raw_evals for evaluation points with cross steps.
+
+    Returned object is a namedtuple with entries 'pos' and 'neg' corresponding to
+    positive and negative steps. Each entry will be a numpy array with dimension
+    (n_steps, dim_f, dim_x, dim_x). Since the array is, by definition, symmetric over
+    the last two dimensions, the function is not evaluated on both sides to save
+    computation time and the information is simply copied here. In comparison to the
+    two_step case, however, this symmetry holds only over the dimension 'pos' and 'neg'.
+    That is, the lower triangular of the last two dimensions of 'pos' must equal the
+    upper triangular of the last two dimensions of 'neg'. Further, the diagonal of the
+    last two dimensions must be equal to f0.
+
+    Mathematical:
+
+            evals.pos = (f(x0 + delta_jl e_j - delta_kl e_k))
+            evals.neg = (f(x0 - delta_jl e_j + delta_kl e_k))
+
+        for j,k=1,...,dim_x and l=1,...,n_steps
+
+    """
+    tril_idx = np.tril_indices(dim_x, -1)
+    diag_idx = np.diag_indices(dim_x)
+    evals = np.array(raw_evals_cross_step).reshape(2, n_steps, dim_x, dim_x, -1)
+    evals = evals.transpose(0, 1, 4, 2, 3)
+    evals[0][..., tril_idx[0], tril_idx[1]] = evals[1][..., tril_idx[1], tril_idx[0]]
+    evals[0][..., diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[np.newaxis, ...]
+    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[0].swapaxes(2, 3))
+    return evals
 
 
 def _process_bounds(lower_bounds, upper_bounds, params):
@@ -300,32 +665,33 @@ def _convert_evaluation_data_to_frame(steps, evals):
 
     """
     n_steps, dim_f, dim_x = evals.pos.shape
-    params_index = range(dim_x)
 
     dfs = []
     for direction, step_arr, eval_arr in zip((1, -1), steps, evals):
-        df_steps = (
-            pd.DataFrame(step_arr, columns=params_index)
-            .reset_index()
-            .rename(columns={"index": "step_number"})
-            .melt(id_vars="step_number", var_name="dim_x", value_name="step")
-            .sort_values("step_number")
-            .reset_index(drop=True)
-            .apply(lambda col: col.abs() if col.name == "step" else col)
+
+        df_steps = pd.DataFrame(step_arr, columns=range(dim_x))
+        df_steps = df_steps.reset_index()
+        df_steps = df_steps.rename(columns={"index": "step_number"})
+        df_steps = df_steps.melt(
+            id_vars="step_number", var_name="dim_x", value_name="step"
         )
+        df_steps = df_steps.sort_values("step_number")
+        df_steps = df_steps.reset_index(drop=True)
+        df_steps = df_steps.apply(lambda col: col.abs() if col.name == "step" else col)
+
         eval_arr = np.transpose(eval_arr, (0, 2, 1)).reshape(-1, dim_f)
-        df_evals = (
-            pd.concat((df_steps, pd.DataFrame(eval_arr)), axis=1)
-            .melt(
-                id_vars=["step_number", "dim_x", "step"],
-                var_name="dim_f",
-                value_name="eval",
-            )
-            .assign(**{"sign": direction})
-            .set_index(["sign", "step_number", "dim_x", "dim_f"])
-            .sort_index()
+        df_evals = pd.concat((df_steps, pd.DataFrame(eval_arr)), axis=1)
+        df_evals = df_evals.melt(
+            id_vars=["step_number", "dim_x", "step"],
+            var_name="dim_f",
+            value_name="eval",
         )
+        df_evals = df_evals.assign(**{"sign": direction})
+        df_evals = df_evals.set_index(["sign", "step_number", "dim_x", "dim_f"])
+        df_evals = df_evals.sort_index()
+
         dfs.append(df_evals)
+
     df = pd.concat(dfs).astype({"step": float, "eval": float})
     return df
 
@@ -348,11 +714,9 @@ def _convert_richardson_candidates_to_frame(jac, err):
     for key, value in jac.items():
         method, num_term = _split_into_str_and_int(key)
         df = pd.DataFrame(value.T, columns=range(dim_f))
-        df = df.assign(**{"dim_x": range(dim_x)})
+        df = df.assign(dim_x=range(dim_x))
         df = df.melt(id_vars="dim_x", var_name="dim_f", value_name="der")
-        df = df.assign(
-            **{"method": method, "num_term": num_term, "err": err[key].T.flatten()}
-        )
+        df = df.assign(method=method, num_term=num_term, err=err[key].T.flatten())
         dfs.append(df)
 
     df = pd.concat(dfs)
@@ -423,8 +787,8 @@ def _consolidate_extrapolated(candidates):
     extrapolated derivative estimates can be estimated.
 
     Args:
-        candidates (OrderedDict): Dictionary containing different derivative estimates
-            and their error estimates.
+        candidates (dict): Dictionary containing different derivative estimates and
+            their error estimates.
 
     Returns:
         consolidated (np.ndarray): Array of same shape as input derivative estimates.
@@ -467,8 +831,8 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
             is used.
 
     Returns:
-        richardson_candidates (OrderedDict): Dictionary with derivative estimates and
-            error estimates from different methods.
+        richardson_candidates (dict): Dictionary with derivative estimates and error
+            estimates from different methods.
             - Keys correspond to the method used, i.e. forward, backward or central
             differences and the number of terms used in the Richardson extrapolation.
             - Values represent the corresponding derivative estimate and error
@@ -478,7 +842,7 @@ def _compute_richardson_candidates(jac_candidates, steps, n_steps):
             further dimension.
 
     """
-    richardson_candidates = OrderedDict()
+    richardson_candidates = {}
     for method in ["forward", "backward", "central"]:
         for num_terms in range(1, n_steps):
             derivative, error = richardson_extrapolation(
@@ -586,6 +950,32 @@ def _add_index_to_derivative(derivative, params_index, out_index):
     return derivative
 
 
+def _add_index_to_second_derivative(derivative, params_index, out_index):
+    if len(derivative.shape) == 1:
+        if derivative.shape[0] == 1 and params_index is not None:
+            derivative = pd.Series(derivative, index=params_index)
+        if derivative.shape[0] > 1 and out_index is not None:
+            derivative = pd.Series(derivative, index=out_index)
+    if len(derivative.shape) == 2 and params_index is not None:
+        derivative = pd.DataFrame(derivative, columns=params_index, index=params_index)
+    if (
+        len(derivative.shape) == 3
+        and params_index is not None
+        and out_index is not None
+    ):
+        derivative = pd.concat(
+            (
+                pd.DataFrame(
+                    derivative[dim_f], columns=params_index, index=params_index
+                )
+                for dim_f in range(derivative.shape[0])
+            ),
+            axis=0,
+            keys=out_index,
+        )
+    return derivative
+
+
 def _split_into_str_and_int(s):
     """Splits string in str and int parts.
 
@@ -606,13 +996,19 @@ def _split_into_str_and_int(s):
     return str_part, int(int_part)
 
 
-def _collect_additional_info(return_info, steps, evals, updated_candidates):
+def _collect_additional_info(return_info, steps, evals, updated_candidates, target):
     """Combine additional information in dict if return_info is True."""
     info = {}
     if return_info:
         # save function evaluations to accessible data frame
-        func_evals = _convert_evaluation_data_to_frame(steps, evals)
-        info["func_evals"] = func_evals
+        if target == "first_derivative":
+            func_evals = _convert_evaluation_data_to_frame(steps, evals)
+            info["func_evals"] = func_evals
+        else:
+            one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
+            info["func_evals_one_step"] = one_step
+            info["func_evals_two_step"] = None
+            info["func_evals_cross_step"] = None
 
         if updated_candidates is not None:
             # combine derivative candidates in accessible data frame

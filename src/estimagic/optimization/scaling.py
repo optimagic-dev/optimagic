@@ -23,17 +23,23 @@ def calculate_scaling_factor_and_offset(
     clipping_value=0.1,
     magnitude=1,
     numdiff_options=None,
+    processed_params=None,
+    processed_constraints=None,
 ):
     numdiff_options = {} if numdiff_options is None else numdiff_options
     to_internal, from_internal = get_reparametrize_functions(
         params=params,
         constraints=constraints,
+        processed_params=processed_params,
+        processed_constraints=processed_constraints,
     )
 
     x = to_internal(params["value"].to_numpy())
 
     if method in ("bounds", "gradient"):
-        lower_bounds, upper_bounds = get_internal_bounds(params, constraints)
+        lower_bounds, upper_bounds = get_internal_bounds(
+            params, constraints, processed_params=processed_params
+        )
 
     if method == "start_values":
         raw_factor = np.clip(np.abs(x), clipping_value, np.inf)

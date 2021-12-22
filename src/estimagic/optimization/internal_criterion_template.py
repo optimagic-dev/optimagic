@@ -5,6 +5,7 @@ import numpy as np
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
 from estimagic.logging.database_utilities import append_row
+from estimagic.optimization.process_results import switch_sign
 from estimagic.utilities import hash_array
 
 
@@ -24,7 +25,7 @@ CRITERION_ERROR_MESSAGE = (
 
 NO_PRIMARY_MESSAGE = (
     "The primary criterion entry of the {} algorithm is {} but the output of your "
-    "criterion function only contains the enties:\n{}"
+    "criterion function only contains the entries:\n{}"
 )
 
 
@@ -41,14 +42,14 @@ def internal_criterion_and_derivative_template(
     derivative,
     criterion_and_derivative,
     numdiff_options,
-    database,
-    database_path,
-    log_options,
+    logging,
+    db_kwargs,
     error_handling,
     error_penalty,
     first_criterion_evaluation,
     cache,
     cache_size,
+    fixed_log_data,
 ):
     """Template for the internal criterion and derivative function.
 
@@ -73,7 +74,7 @@ def internal_criterion_and_derivative_template(
             of the internal criterion.
         algorithm_info (dict): Dict with the following entries:
             "primary_criterion_entry": One of "value", "contributions" and
-                "root_contributions"
+                "root_contributions" or "dict".
             "parallelizes": Bool that indicates if the algorithm calls the internal
                 criterion function in parallel. If so, caching is disabled.
             "needs_scaling": bool
@@ -92,9 +93,8 @@ def internal_criterion_and_derivative_template(
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives. See :ref:`first_derivative` for details. Note that the default
             method is changed to "forward" for speed reasons.
-        database (sqlalchemy.MetaData): Bound MetaData object.
-        database_path (pathlib.Path): Path to the database.
-        log_options (dict): Additional keyword arguments to configure the logging.
+        logging (bool): Wether logging is used.
+        db_kwargs (dict): Dictionary with entries "database", "path" and "fast_logging".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
@@ -111,6 +111,8 @@ def internal_criterion_and_derivative_template(
             "external_params", "output".
         cache (dict): Dictionary used as cache for criterion and derivative evaluations.
         cache_size (int): Number of evaluations that are kept in cache. Default 10.
+        fixed_log_data (dict): Dictionary with fixed data to be saved in the database.
+            Has the entries "stage" (str) and "substage" (int).
 
     Returns:
         float, np.ndarray or tuple: If task=="criterion" it returns the output of
@@ -230,15 +232,14 @@ def internal_criterion_and_derivative_template(
         cache_entry.get("derivative", new_derivative), algorithm_info
     )
 
-    if (new_criterion is not None or new_derivative is not None) and database:
+    if (new_criterion is not None or new_derivative is not None) and logging:
         _log_new_evaluations(
             new_criterion=new_criterion,
             new_derivative=new_derivative,
             external_x=external_x,
             caught_exceptions=caught_exceptions,
-            database=database,
-            database_path=database_path,
-            log_options=log_options,
+            db_kwargs=db_kwargs,
+            fixed_log_data=fixed_log_data,
         )
 
     res = _get_output_for_optimizer(
@@ -377,7 +378,7 @@ def _check_and_harmonize_criterion_output(output, algorithm_info):
         if "value" not in output and "contributions" in output:
             output["value"] = output["contributions"].sum()
 
-        if primary not in output:
+        if primary not in output and primary != "dict":
             raise ValueError(
                 NO_PRIMARY_MESSAGE.format(algo_name, primary, list(output))
             )
@@ -424,9 +425,8 @@ def _log_new_evaluations(
     new_derivative,
     external_x,
     caught_exceptions,
-    database,
-    database_path,
-    log_options,
+    db_kwargs,
+    fixed_log_data,
 ):
     """Write the new evaluations and additional information into the database.
 
@@ -439,6 +439,7 @@ def _log_new_evaluations(
         "params": external_x,
         "timestamp": datetime.datetime.now(),
         "valid": True,
+        **fixed_log_data,
     }
 
     if new_derivative is not None:
@@ -453,14 +454,9 @@ def _log_new_evaluations(
         data = {**data, **new_criterion}
         data["value"] = float(data["value"])
 
-    if "suffix" in log_options:
-        name = "optimization_iterations" + "_" + log_options["suffix"]
-    else:
-        name = "optimization_iterations"
+    name = "optimization_iterations"
 
-    fast_logging = log_options.get("fast_logging", False)
-
-    append_row(data, name, database, database_path, fast_logging)
+    append_row(data, name, **db_kwargs)
 
 
 def _get_output_for_optimizer(
@@ -469,9 +465,14 @@ def _get_output_for_optimizer(
     primary = algorithm_info["primary_criterion_entry"]
 
     if "criterion" in task:
-        crit = new_criterion[primary]
-        crit = crit if np.isscalar(crit) else np.array(crit)
-        crit = crit if direction == "minimize" else -crit
+        if primary != "dict":
+            crit = new_criterion[primary]
+            crit = crit if np.isscalar(crit) else np.array(crit)
+            crit = crit if direction == "minimize" else -crit
+        else:
+            crit = new_criterion
+            if direction == "maximize":
+                crit = switch_sign(crit)
 
     if "derivative" in task:
         deriv = np.array(new_derivative[primary])

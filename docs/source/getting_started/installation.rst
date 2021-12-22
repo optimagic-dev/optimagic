@@ -11,7 +11,7 @@ a terminal or shell:
 
 ``$ conda config --add channels conda-forge``
 
-``$ conda install -c opensourceeconomics estimagic``
+``$ conda install estimagic``
 
 The first line adds conda-forge to your conda channels. This is necessary for
 conda to find all dependencies of estimagic. The second line installs estimagic
@@ -45,4 +45,4 @@ To enable all algorithms at once, do the following:
 
 ``conda install pygmo``
 
-``pip install fides>=0.6.3`` (Make sure you have at least 0.6.3)
+``pip install fides>=0.7.4 (Make sure you have at least 0.7.1)``

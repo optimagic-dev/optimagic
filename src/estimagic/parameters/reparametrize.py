@@ -89,6 +89,8 @@ def reparametrize_from_internal(
     pre_replacements,
     processed_constraints,
     post_replacements,
+    params,
+    return_numpy=True,
     scaling_factor=None,
     scaling_offset=None,
 ):
@@ -103,6 +105,8 @@ def reparametrize_from_internal(
             element in array contains the position of the internal parameter that has to
             be copied to the i_th position of the external parameter vector or -1 if no
             value has to be copied.
+        params (pandas.DataFrame): See :ref:`params`.
+        return_numpy (bool): If True, a 1d array with flattened parameters is returned.
         processed_constraints (list): List of processed and consolidated constraint
             dictionaries. Can have the types "linear", "probability", "covariance"
             and "sdcorr".
@@ -135,7 +139,13 @@ def reparametrize_from_internal(
     # do post-replacements
     external_values = post_replace(external_values, post_replacements)
 
-    return external_values
+    if return_numpy:
+        out = external_values
+    else:
+        out = params.copy()
+        out["value"] = external_values
+
+    return out
 
 
 def convert_external_derivative_to_internal(

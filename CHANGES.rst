@@ -19,7 +19,12 @@ moments. The breaking changes are:
 - The comparison plot function is removed.
 - first_derivative now returns a dictionary, independent of arguments.
 - structure of the logging database has changed
+- there is an additional boolean flag named ``scaling`` in minimize and maximize
 
+- :gh:`251` Allows the loading, running and visualization of benchmarks
+  (:ghuser:`janosg`, :ghuser:`mpetrosian` and :ghuser:`roecla`)
+- :gh:`196` Adds support for multistart optimizations (:ghuser:`asouther4` and
+  :ghuser:`janosg`)
 - :gh:`248` Adds the fides optimizer (:ghuser:`roecla`)
 - :gh:`146` Adds ``estimate_ml`` functionality (:ghuser:`janosg`, :ghuser:`LuisCald`
   and :ghuser:`s6soverd`).

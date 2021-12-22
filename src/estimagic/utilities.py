@@ -105,7 +105,7 @@ def dimension_to_number_of_triangular_elements(dim):
     return int(dim * (dim + 1) / 2)
 
 
-def propose_algorithms(requested_algo, possibilities, number=3):
+def propose_alternatives(requested_algo, possibilities, number=3):
     """Propose a a number of algorithms based on similarity to the requested algorithm.
 
     Args:
@@ -119,9 +119,9 @@ def propose_algorithms(requested_algo, possibilities, number=3):
 
     Example:
         >>> possibilities = ["scipy_lbfgsb", "scipy_slsqp", "nlopt_lbfgsb"]
-        >>> propose_algorithms("scipy_L-BFGS-B", possibilities, number=1)
+        >>> propose_alternatives("scipy_L-BFGS-B", possibilities, number=1)
         ['scipy_lbfgsb']
-        >>> propose_algorithms("L-BFGS-B", possibilities, number=2)
+        >>> propose_alternatives("L-BFGS-B", possibilities, number=2)
         ['scipy_lbfgsb', 'nlopt_lbfgsb']
 
     """

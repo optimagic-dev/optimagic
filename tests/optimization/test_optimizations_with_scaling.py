@@ -46,6 +46,7 @@ def test_optimizations_with_scaling(algorithm, scaling_options):
         params=params,
         constraints=constraints,
         algorithm=algorithm,
+        scaling=True,
         scaling_options=scaling_options,
         derivative=sos_gradient,
     )

@@ -9,8 +9,10 @@ path_or_database. Otherwise, the functions may be very slow.
 """
 from pathlib import Path
 
+import pandas as pd
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
+from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import read_specific_row
 from sqlalchemy import MetaData
 
@@ -97,6 +99,48 @@ def read_start_params(path_or_database):
     return start_params
 
 
+def read_optimization_histories(path_or_database):
+    """Read a histories out values, parameters and other information."""
+    database = load_database(**_process_path_or_database(path_or_database))
+
+    start_params = read_start_params(path_or_database)
+
+    raw_res, _ = read_new_rows(
+        database=database,
+        table_name="optimization_iterations",
+        last_retrieved=0,
+        return_type="dict_of_lists",
+    )
+
+    params_history = pd.DataFrame(raw_res["params"], columns=start_params.index)
+    value_history = pd.Series(raw_res["value"])
+
+    metadata = pd.DataFrame()
+    metadata["timestamps"] = raw_res["timestamp"]
+    metadata["valid"] = raw_res["valid"]
+    metadata["has_value"] = value_history.notnull()
+    metadata["has_derivative"] = [d is not None for d in raw_res["internal_derivative"]]
+
+    histories = {
+        "values": value_history.dropna(),
+        "params": params_history,
+        "metadata": metadata,
+    }
+
+    if "contributions" in raw_res:
+        first_contrib = raw_res["contributions"][0]
+        if isinstance(first_contrib, pd.Series):
+            columns = first_contrib.index
+        else:
+            columns = None
+        contributions_history = pd.DataFrame(
+            raw_res["contributions"], columns=columns
+        ).dropna()
+        histories["contributions"] = contributions_history
+
+    return histories
+
+
 def _process_path_or_database(path_or_database):
     """Make inputs for load_database out of path_or_database.
 
@@ -126,3 +170,25 @@ def _process_path_or_database(path_or_database):
             "path_or_database must be a path or sqlalchemy.MetaData object"
         )
     return res
+
+
+def read_steps_table(path_or_database):
+    """Load the start parameters DataFrame.
+
+    Args:
+        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
+
+    Returns:
+        params (pd.DataFrame): see :ref:`params`.
+
+    """
+    database = load_database(**_process_path_or_database(path_or_database))
+    steps_table, _ = read_new_rows(
+        database=database,
+        table_name="steps",
+        last_retrieved=0,
+        return_type="list_of_dicts",
+    )
+    steps_df = pd.DataFrame(steps_table)
+
+    return steps_df

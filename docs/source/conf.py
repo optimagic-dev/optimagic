@@ -63,7 +63,6 @@ autodoc_mock_imports = [
     "fuzzywuzzy",
     "joblib",
     "nlopt",
-    "numpy",
     "pandas",
     "pytest",
     "pygmo",
@@ -72,6 +71,7 @@ autodoc_mock_imports = [
     "tornado",
     "petsc4py",
     "statsmodels",
+    "chaospy",
 ]
 
 extlinks = {

@@ -2,10 +2,9 @@
 estimagic
 =========
 
-estimagic is a Python package that provides high-quality and user-friendly tools
-to fit large scale empirical models to data and make inferences about the estimated
-model parameters. It is especially suited to solve difficult constrained optimization
-problems.
+estimagic is a Python package to fit large scale empirical models to data and make
+inferences about the estimated model parameters. It is especially suited to solve
+difficult constrained optimization problems.
 
 estimagic provides several advantages over similar packages, including a unified
 interface that supports a large number of local and global optimization algorithms
@@ -21,19 +20,22 @@ Tools
 Optimization
 ------------
 
-- estimagic wraps all algorithms from *scipy.optimize* and many more become
-  available when installing optional dependencies. See :ref:`list_of_algorithms`
-- estimagic can automatically implement many types of constraints via
-  reparametrization, with any optimizer that supports bounds. See :ref:`constraints`
+- estimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more.
+  See :ref:`list_of_algorithms`
+- estimagic implements constraints efficiently via reparametrization, so you can solve
+  constrained problems with any optimzer that supports bounds. See :ref:`constraints`
 - estimagic encourages name-based parameters handling. Parameters are specified
   as pandas DataFrames with any kind of single or MultiIndex. See :ref:`params`.
 - The complete history of parameters and function evaluations can be saved in a
   database for maximum reproducibility. See `How to use logging`_
+- Painless and efficient multistart optimization. See `How to do multistart`_
 - The progress of the optimization is displayed in real time via an
   interactive dashboard. See :ref:`dashboard`.
 
 
 .. _How to use logging: how_to_guides/optimization/how_to_use_logging.ipynb
+
+.. _How to do multistart: how_to_guides/optimization/how_to_do_multistart_optimizations.ipynb
 
 
   .. image:: _static/images/dashboard.gif
