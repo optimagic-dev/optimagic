@@ -87,21 +87,9 @@ def update_main_from_residual_model(
         # 1d array *intercepts_residual_model* along axis 0 of the former.
         square_terms_residual_model = residual_model["square_terms"]
 
-        # Define *given_axis* along which elementwise multiplication with
-        # broadcasting is to be performed.
-        given_axis = 0
-
-        # Create *dim_array*, which will be used to reshape 1d array
-        # *intercepts_residual_model* to 3d. The reshaped version will have
-        # singleton dimensions except for the *given_axis*.
-        # We set *given_axis' to -1 such that the entire length of elements along
-        # that axis is used.
         dim_array = np.ones((1, square_terms_residual_model.ndim), int).ravel()
-        dim_array[given_axis] = -1
+        dim_array[0] = -1
 
-        # Reshape *intercepts_residual_model* with dim_array and perform
-        # elementwise multiplication with broadcasting along the singleton
-        # dimensions.
         intercepts_reshaped = intercepts_residual_model.reshape(dim_array)
 
         square_terms_main_model = square_terms_main_model + np.sum(
@@ -442,16 +430,18 @@ def add_more_points(
             Shape(*n_maxinterp*, *n* + 1).
         - n_modelpoints (int): Current number of model points.
     """
-    interpolation_set = np.zeros((n_maxinterp, n + 1))
-    interpolation_set[:, 0] = 1
+    x_sample_monomial_basis = np.zeros((n_maxinterp, n + 1))
+    x_sample_monomial_basis[:, 0] = 1
     monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
 
     center_info = {"x": x_accepted, "radius": delta}
     for i in range(n + 1):
-        interpolation_set[i, 1:] = history.get_centered_xs(
+        x_sample_monomial_basis[i, 1:] = history.get_centered_xs(
             center_info, index=model_indices[i]
         )
-        monomial_basis[i, :] = _get_basis_quadratic_function(x=interpolation_set[i, 1:])
+        monomial_basis[i, :] = _get_basis_quadratic_function(
+            x=x_sample_monomial_basis[i, 1:]
+        )
 
     # Now we add points until we have n_maxinterp starting with the most recent ones
     point = history.get_n_fun() - 1
@@ -477,18 +467,18 @@ def add_more_points(
             point -= 1
             continue
 
-        interpolation_set[n_modelpoints, 1:] = history.get_centered_xs(
+        x_sample_monomial_basis[n_modelpoints, 1:] = history.get_centered_xs(
             center_info, index=point
         )
         monomial_basis[n_modelpoints, :] = _get_basis_quadratic_function(
-            x=interpolation_set[n_modelpoints, 1:]
+            x=x_sample_monomial_basis[n_modelpoints, 1:]
         )
 
-        interpolation_set_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
-        interpolation_set_with_zeros[:n_maxinterp, : n + 1] = interpolation_set
+        x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
+        x_sample_full_with_zeros[:n_maxinterp, : n + 1] = x_sample_monomial_basis
 
         lower_triangular_tmp, _ = qr_multiply(
-            interpolation_set_with_zeros[: n_modelpoints + 1, :],
+            x_sample_full_with_zeros[: n_modelpoints + 1, :],
             monomial_basis.T[: int(n * (n + 1) / 2), : n_modelpoints + 1],
         )
         beta = np.linalg.svd(lower_triangular_tmp.T[n + 1 :], compute_uv=False)
@@ -503,9 +493,9 @@ def add_more_points(
         point -= 1
 
     # Orthogonal basis for the null space of M, where M is the
-    # interpolation set
+    # sample of xs forming the monomial basis
     basis_null_space, _ = qr_multiply(
-        interpolation_set_with_zeros[:n_modelpoints, :],
+        x_sample_full_with_zeros[:n_modelpoints, :],
         np.eye(n_maxinterp)[:, :n_modelpoints],
     )
     basis_null_space = basis_null_space[:, n + 1 : n_modelpoints]
@@ -518,14 +508,14 @@ def add_more_points(
         lower_triangular,
         basis_null_space,
         monomial_basis,
-        interpolation_set,
+        x_sample_monomial_basis,
         n_modelpoints,
     )
 
 
 def interpolate_f(
     history,
-    x_sample,
+    interpolation_set,
     residual_model,
     model_indices,
     n_modelpoints,
@@ -555,7 +545,9 @@ def interpolate_f(
     f_interpolated = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
 
     for j in range(n_obs):
-        x_square_terms = np.dot(x_sample, residual_model["square_terms"][j, :, :])
+        x_square_terms = np.dot(
+            interpolation_set, residual_model["square_terms"][j, :, :]
+        )
 
         for i in range(n_modelpoints):
             center_info = {"residuals": residual_model["intercepts"]}
@@ -565,8 +557,8 @@ def interpolate_f(
 
             f_interpolated[i, j] = (
                 residuals[j]
-                - np.dot(residual_model["linear_terms"][:, j], x_sample[i, :])
-                - 0.5 * np.dot(x_square_terms[i, :], x_sample[i, :])
+                - np.dot(residual_model["linear_terms"][:, j], interpolation_set[i, :])
+                - 0.5 * np.dot(x_square_terms[i, :], interpolation_set[i, :])
             )
 
     return f_interpolated

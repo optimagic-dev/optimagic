@@ -378,13 +378,13 @@ def internal_solve_pounders(
         )
 
         center_info = {"x": x_accepted, "radius": delta_old}
-        x_sample = history.get_centered_xs(
+        interpolation_set = history.get_centered_xs(
             center_info, index=model_indices[:n_modelpoints]
         )
 
         f_interpolated = interpolate_f(
             history=history,
-            x_sample=x_sample,
+            interpolation_set=interpolation_set,
             residual_model=residual_model,
             model_indices=model_indices,
             n_modelpoints=n_modelpoints,
