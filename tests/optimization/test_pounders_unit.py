@@ -7,9 +7,9 @@ from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import add_more_points
 from estimagic.optimization.pounders_auxiliary import find_affine_points
-from estimagic.optimization.pounders_auxiliary import get_approximation_error
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
 from estimagic.optimization.pounders_auxiliary import improve_main_model
+from estimagic.optimization.pounders_auxiliary import interpolate_f
 from estimagic.optimization.pounders_auxiliary import update_main_from_residual_model
 from estimagic.optimization.pounders_auxiliary import update_residual_model
 from numpy.testing import assert_array_almost_equal as aaae
@@ -44,10 +44,8 @@ def dict_find_affine_points(request):
 
 
 @pytest.fixture(params=["4", "7"])
-def dict_get_approximation_error(request):
-    return pd.read_pickle(
-        TEST_FIXTURES_DIR / f"get_approximation_error_iter_{request.param}.pkl"
-    )
+def dict_interpolate_f(request):
+    return pd.read_pickle(TEST_FIXTURES_DIR / f"interpolate_f_iter_{request.param}.pkl")
 
 
 @pytest.fixture
@@ -194,12 +192,12 @@ def test_add_more_points(dict_add_more_points):
 
 
 @pytest.mark.skip(reason="refactoring")
-def test_get_approximation_error(dict_get_approximation_error):
-    history_x = dict_get_approximation_error["history_x"]
-    min_x = dict_get_approximation_error["min_x"]
-    model_indices = dict_get_approximation_error["model_indices"]
-    n_modelpoints = dict_get_approximation_error["n_modelpoints"]
-    delta_old = dict_get_approximation_error["delta_old"]
+def test_interpolate_f(dict_interpolate_f):
+    history_x = dict_interpolate_f["history_x"]
+    min_x = dict_interpolate_f["min_x"]
+    model_indices = dict_interpolate_f["model_indices"]
+    n_modelpoints = dict_interpolate_f["n_modelpoints"]
+    delta_old = dict_interpolate_f["delta_old"]
 
     n = 3
     n_obs = 214
@@ -207,22 +205,22 @@ def test_get_approximation_error(dict_get_approximation_error):
 
     xk = (history_x[model_indices[:n_modelpoints]] - min_x) / delta_old
 
-    approximiation_error = get_approximation_error(
+    approximiation_error = interpolate_f(
         xk=xk,
-        hessian=dict_get_approximation_error["hessian"],
-        history_criterion=dict_get_approximation_error["history_criterion"],
-        min_criterion=dict_get_approximation_error["min_criterion"],
-        gradient=dict_get_approximation_error["gradient"],
+        hessian=dict_interpolate_f["hessian"],
+        history_criterion=dict_interpolate_f["history_criterion"],
+        min_criterion=dict_interpolate_f["min_criterion"],
+        gradient=dict_interpolate_f["gradient"],
         model_indices=model_indices,
         n_modelpoints=n_modelpoints,
         n_obs=n_obs,
         n_maxinterp=n_maxinterp,
     )
 
-    aaae(xk, dict_get_approximation_error["xk"])
+    aaae(xk, dict_interpolate_f["xk"])
     aaae(
         approximiation_error,
-        dict_get_approximation_error["approximation_error_expected"],
+        dict_interpolate_f["f_interpolated_expected"],
     )
 
 
@@ -232,7 +230,7 @@ def test_get_coefficients_residual_model(dict_get_coefficients_residual_model):
         basis_null_space=dict_get_coefficients_residual_model["basis_null_space"],
         monomial_basis=dict_get_coefficients_residual_model["monomial_basis"],
         interpolation_set=dict_get_coefficients_residual_model["interpolation_set"],
-        approximation_error=dict_get_coefficients_residual_model["approximation_error"],
+        f_interpolated=dict_get_coefficients_residual_model["approximation_error"],
         n_modelpoints=dict_get_coefficients_residual_model["n_modelpoints"],
         n=3,
         n_obs=214,
@@ -281,7 +279,9 @@ def test_update_main_from_residual_model(dict_update_main_from_residual_model):
         "linear_terms": dict_update_main_from_residual_model["gradient"],
         "square_terms": dict_update_main_from_residual_model["hessian"],
     }
-    main_model = update_main_from_residual_model(residual_model, first_evaluation=False)
+    main_model = update_main_from_residual_model(
+        residual_model, multiply_square_terms_with_residuals=True
+    )
 
     aaae(
         main_model["linear_terms"],

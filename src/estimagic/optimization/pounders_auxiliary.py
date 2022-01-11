@@ -56,37 +56,62 @@ def update_residual_model(residual_model, coefficients_to_add, delta, delta_old)
     return residual_model
 
 
-def update_main_from_residual_model(residual_model, first_evaluation=False):
+def update_main_from_residual_model(
+    residual_model, multiply_square_terms_with_residuals=True
+):
     """Update linear and square terms of the main model via the residual model.
 
     Args:
         residual_model (dict): Parameters of the residual model including
             "intercepts", "linear_terms", and "square terms".
-        first_evaluation (bool): Indicator whether we update the main model
-            for the first time, in which case the "square_terms" are not computed.
+        multiply_square_terms_with_residuals (bool): Indicator whether we
+            multiply the main model's "square terms" with the residuals, i.e.
+            the intercepts of the residual model.
 
     Returns:
         main_model (dict): Updated parameters of the main model including
-            "linear_terms", and "square terms" (if *first_evaluation* is False).
+            "linear_terms" and "square terms".
     """
     intercepts_residual_model = residual_model["intercepts"]
     linear_terms_residual_model = residual_model["linear_terms"]
 
-    linear_terms = np.dot(linear_terms_residual_model, intercepts_residual_model)
-    square_terms = np.dot(linear_terms_residual_model, linear_terms_residual_model.T)
+    linear_terms_main_model = np.dot(
+        linear_terms_residual_model, intercepts_residual_model
+    )
+    square_terms_main_model = np.dot(
+        linear_terms_residual_model, linear_terms_residual_model.T
+    )
 
-    if first_evaluation is False:
+    if multiply_square_terms_with_residuals is True:
+        # Multiply 3d array *square_terms_residual_model* with
+        # 1d array *intercepts_residual_model* along axis 0 of the former.
         square_terms_residual_model = residual_model["square_terms"]
 
+        # Define *given_axis* along which elementwise multiplication with
+        # broadcasting is to be performed.
+        given_axis = 0
+
+        # Create *dim_array*, which will be used to reshape 1d array
+        # *intercepts_residual_model* to 3d. The reshaped version will have
+        # singleton dimensions except for the *given_axis*.
+        # We set *given_axis' to -1 such that the entire length of elements along
+        # that axis is used.
         dim_array = np.ones((1, square_terms_residual_model.ndim), int).ravel()
-        dim_array[0] = -1
+        dim_array[given_axis] = -1
+
+        # Reshape *intercepts_residual_model* with dim_array and perform
+        # elementwise multiplication with broadcasting along the singleton
+        # dimensions.
         intercepts_reshaped = intercepts_residual_model.reshape(dim_array)
 
-        square_terms = square_terms + np.sum(
+        square_terms_main_model = square_terms_main_model + np.sum(
             intercepts_reshaped * square_terms_residual_model, axis=0
         )
 
-    main_model = {"linear_terms": linear_terms, "square_terms": square_terms}
+    main_model = {
+        "linear_terms": linear_terms_main_model,
+        "square_terms": square_terms_main_model,
+    }
 
     return main_model
 
@@ -100,14 +125,16 @@ def update_main_model_with_new_accepted_x(main_model, x_candidate):
         x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
 
     Returns:
-        main_model (dict): Parameters of the main model with updated
+        main_model_updated (dict): Parameters of the main model with updated
             "linear_terms".
     """
-    main_model["linear_terms"] = main_model["linear_terms"] + np.dot(
+    main_model_updated = main_model.copy()
+
+    main_model_updated["linear_terms"] = main_model["linear_terms"] + np.dot(
         main_model["square_terms"], x_candidate
     )
 
-    return main_model
+    return main_model_updated
 
 
 def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
@@ -346,7 +373,7 @@ def improve_main_model(
     current_history = history.get_n_fun()
     linear_terms = main_model["linear_terms"]
 
-    x_candidate = np.zeros(3)
+    x_candidate = np.zeros(n)
     x_candidates_list = []
     criterion_candidates_list = []
 
@@ -496,7 +523,7 @@ def add_more_points(
     )
 
 
-def get_approximation_error(
+def interpolate_f(
     history,
     x_sample,
     residual_model,
@@ -505,7 +532,10 @@ def get_approximation_error(
     n_obs,
     n_maxinterp,
 ):
-    """Calculate the approximation error of the residual model.
+    """Interpolate f via the quadratic residual model.
+
+    If the point x_k belongs to the interpolation set, one can show that
+    c = f (x_k).
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
@@ -520,23 +550,26 @@ def get_approximation_error(
         n_modelpoints (int): Current number of model points.
 
     Returns:
-        (np.ndarray): Approximation error of the residual model of shape (n_obs,).
+        (np.ndarray): Interpolated function f. Array of shape (n_obs,).
     """
-    approximation_error = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
+    f_interpolated = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
 
     for j in range(n_obs):
         x_square_terms = np.dot(x_sample, residual_model["square_terms"][j, :, :])
 
         for i in range(n_modelpoints):
-            residuals = history.get_residuals(index=model_indices[i])
-            approximation_error[i, j] = (
+            center_info = {"residuals": residual_model["intercepts"]}
+            residuals = history.get_centered_residuals(
+                center_info, index=model_indices[i]
+            )
+
+            f_interpolated[i, j] = (
                 residuals[j]
-                - residual_model["intercepts"][j]
                 - np.dot(residual_model["linear_terms"][:, j], x_sample[i, :])
                 - 0.5 * np.dot(x_square_terms[i, :], x_sample[i, :])
             )
 
-    return approximation_error
+    return f_interpolated
 
 
 def get_coefficients_residual_model(
@@ -544,14 +577,14 @@ def get_coefficients_residual_model(
     basis_null_space,
     monomial_basis,
     interpolation_set,
-    approximation_error,
+    f_interpolated,
     n_modelpoints,
     n,
     n_obs,
 ):
     """Get coefficients of the residual model.
 
-    Computes the parameters of the quadratic residual model
+    Computes the parameters of the quadratic residual model:
 
     Q(x) = c + g'x + 0.5 x G x'
 
@@ -567,7 +600,7 @@ def get_coefficients_residual_model(
             Shape(*n_maxinterp*, *n* + 1).
         interpolation_set (np.ndarray): Interpolation set.
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
-        approximation_error (np.ndarray): Approximation_error.
+        f_interpolated (np.ndarray): f_interpolated.
             Shape (*n_maxinterp*, *n_obs*).
         n_modelpoints (int): Current number of model points.
         n (int): Number of parameters.
@@ -589,17 +622,18 @@ def get_coefficients_residual_model(
 
     for k in range(n_obs):
         if n_modelpoints != (n + 1):
-            omega = np.dot(
+            lower_triangular_omega = np.dot(
                 basis_null_space[:n_modelpoints, :].T,
-                approximation_error[:n_modelpoints, k],
+                f_interpolated[:n_modelpoints, k],
             )
             omega = np.linalg.solve(
-                np.atleast_2d(lower_triangular_square), np.atleast_1d(omega)
+                np.atleast_2d(lower_triangular_square),
+                np.atleast_1d(lower_triangular_omega),
             )
 
             beta = np.dot(np.atleast_2d(lower_triangular), omega)
 
-        rhs = approximation_error[:n_modelpoints, k] - np.dot(
+        rhs = f_interpolated[:n_modelpoints, k] - np.dot(
             monomial_basis[:n_modelpoints, :], beta
         )
 

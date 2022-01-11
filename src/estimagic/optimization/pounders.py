@@ -4,9 +4,9 @@ import numpy as np
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import add_more_points
 from estimagic.optimization.pounders_auxiliary import find_affine_points
-from estimagic.optimization.pounders_auxiliary import get_approximation_error
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
 from estimagic.optimization.pounders_auxiliary import improve_main_model
+from estimagic.optimization.pounders_auxiliary import interpolate_f
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import update_initial_residual_model
 from estimagic.optimization.pounders_auxiliary import update_main_from_residual_model
@@ -187,15 +187,23 @@ def internal_solve_pounders(
     # Center around new trust-region and normalize to [-1, 1]
     indices_not_min = [i for i in range(n + 1) if i != accepted_index]
 
+    center_info = {
+        "x": history.get_best_xs(),
+        "residuals": history.get_best_residuals(),
+        "radius": delta,
+    }
     x_candidate, residuals_candidate, _ = history.get_centered_entries(
-        center_info={"x": history.get_best_xs(), "radius": delta}, index=indices_not_min
+        center_info=center_info,
+        index=indices_not_min,
     )
 
     residual_model = {"intercepts": history.get_best_residuals()}
     residual_model = update_initial_residual_model(
         residual_model, x_candidate, residuals_candidate
     )
-    main_model = update_main_from_residual_model(residual_model, first_evaluation=True)
+    main_model = update_main_from_residual_model(
+        residual_model, multiply_square_terms_with_residuals=False
+    )
 
     x_accepted = history.get_best_xs()
     gradient_norm = np.linalg.norm(main_model["linear_terms"])
@@ -242,7 +250,7 @@ def internal_solve_pounders(
                 main_model=main_model, x_candidate=x_candidate
             )
             x_accepted = history.get_best_xs()
-            accepted_index = history.get_n_fun() - 1
+            accepted_index = history.get_min_index()
 
         # Evaluate at a model improving point if necessary
         # Note: valid is True in first iteration
@@ -374,7 +382,7 @@ def internal_solve_pounders(
             center_info, index=model_indices[:n_modelpoints]
         )
 
-        approximation_error = get_approximation_error(
+        f_interpolated = interpolate_f(
             history=history,
             x_sample=x_sample,
             residual_model=residual_model,
@@ -389,7 +397,7 @@ def internal_solve_pounders(
             basis_null_space=basis_null_space,
             monomial_basis=monomial_basis,
             interpolation_set=interpolation_set,
-            approximation_error=approximation_error,
+            f_interpolated=f_interpolated,
             n_modelpoints=n_modelpoints,
             n=n,
             n_obs=n_obs,

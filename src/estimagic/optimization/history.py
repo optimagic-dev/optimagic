@@ -12,6 +12,7 @@ class LeastSquaresHistory:
         self.critvals = None
         self.n_fun = 0
         self.min_index = 0
+        self.accepted = 0
         self.min_critval = np.inf
 
     def add_entries(self, xs, residuals):
@@ -80,7 +81,7 @@ class LeastSquaresHistory:
 
         out = (getattr(self, name)[: self.n_fun] for name in names)
 
-        # reducing arrays to length n_fun ensures that invalid indices raise IndexError
+        # Reducing arrays to length n_fun ensures that invalid indices raise IndexError
         if index is not None:
             out = [arr[index] for arr in out]
 
@@ -146,11 +147,6 @@ class LeastSquaresHistory:
             np.ndarray: 1d or 2d array with centered residuals
             np.ndarray: Float or 1d array with centered criterion values.
         """
-        if "x" not in center_info:
-            center_info["x"] = self.best_xs
-        if "residuals" not in center_info:
-            center_info["residuals"] = self.best_residuals
-
         xs_unc, residuals_unc, _ = self.get_entries(index=index)
         xs = (xs_unc - center_info["x"]) / center_info["radius"]
         residuals = residuals_unc - center_info["residuals"]
@@ -170,9 +166,6 @@ class LeastSquaresHistory:
         Returns:
             np.ndarray: 1d or 2d array with centered parameter vectors.
         """
-        if "x" not in center_info:
-            center_info["x"] = self.best_xs
-
         xs_unc = self.get_xs(index=index)
         xs = (xs_unc - center_info["x"]) / center_info["radius"]
 
