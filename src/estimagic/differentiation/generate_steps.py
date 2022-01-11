@@ -115,10 +115,7 @@ def generate_steps(
         pos[pos > upper_step_bounds.reshape(-1, 1)] = np.nan
         neg[neg < lower_step_bounds.reshape(-1, 1)] = np.nan
 
-    pos_exact = _make_exact(pos)
-    neg_exact = _make_exact(neg)
-
-    steps = namedtuple_from_kwargs(pos=pos_exact.T, neg=neg_exact.T)
+    steps = namedtuple_from_kwargs(pos=pos.T, neg=neg.T)
 
     return steps
 
@@ -257,12 +254,3 @@ def _rescale_to_accomodate_bounds(
 
 def _fillna(x, val):
     return np.where(np.isnan(x), val, x)
-
-
-def _make_exact(h):
-    """Make sure h is an exact representable number
-
-    This is important when calculating numerical derivates and is accomplished by adding
-    1.0 and then subtracting 1.0.
-    """
-    return (h + 1.0) - 1.0
