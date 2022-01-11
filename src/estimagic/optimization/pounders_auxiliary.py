@@ -403,7 +403,7 @@ def add_more_points(
     n_maxinterp,
     n_modelpoints,
 ):
-    """Add more points.
+    """Add more points to the residual model.
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
@@ -420,15 +420,18 @@ def add_more_points(
 
     Returns:
         Tuple:
-        - lower_triangular (np.ndarray): lower_triangular matrix.
+        - lower_triangular (np.ndarray): Lower triangular matrix.
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
-        - basis_null_space (np.ndarray): basis_null_space matrix.
+        - basis_null_space (np.ndarray): Basis for the null space.
             Shape(*n_maxinterp*, len(*n* + 1 : *n_modelpoints*)).
-        - monomial_basis (np.ndarray): monomial_basis matrix.
+        - monomial_basis (np.ndarray): Momial basis matrix.
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
-        - interpolation_set (np.ndarray): interpolation set.
-            Shape(*n_maxinterp*, *n* + 1).
-        - n_modelpoints (int): Current number of model points.
+        - x_sample_monomial_basis (np.ndarray): Sample of xs used for
+            building the monomial basis. When taken together, they
+            form a basis for the linear space of quadratics in *n*
+            variables.
+            Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
+        - n_modelpoints (int): Current number points in the residual model.
     """
     x_sample_monomial_basis = np.zeros((n_maxinterp, n + 1))
     x_sample_monomial_basis[:, 0] = 1
@@ -568,7 +571,7 @@ def get_coefficients_residual_model(
     lower_triangular,
     basis_null_space,
     monomial_basis,
-    interpolation_set,
+    x_sample_monomial_basis,
     f_interpolated,
     n_modelpoints,
     n,
@@ -590,7 +593,10 @@ def get_coefficients_residual_model(
             Shape(:*n_modelpoints*, *n* + 1 : *n_modelpoints*).
         monomial_basis (np.ndarray): monomial_basis matrix.
             Shape(*n_maxinterp*, *n* + 1).
-        interpolation_set (np.ndarray): Interpolation set.
+        x_sample_monomial_basis (np.ndarray): Sample of xs used for
+            building the monomial basis. When taken together, they
+            form a basis for the linear space of quadratics in *n*
+            variables.
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
         f_interpolated (np.ndarray): f_interpolated.
             Shape (*n_maxinterp*, *n_obs*).
@@ -629,7 +635,7 @@ def get_coefficients_residual_model(
             monomial_basis[:n_modelpoints, :], beta
         )
 
-        alpha = np.linalg.solve(interpolation_set[: n + 1, : n + 1], rhs[: n + 1])
+        alpha = np.linalg.solve(x_sample_monomial_basis[: n + 1, : n + 1], rhs[: n + 1])
         params_gradient[k, :] = alpha[1 : (n + 1)]
 
         num = 0

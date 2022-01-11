@@ -168,7 +168,7 @@ def test_add_more_points(dict_add_more_points):
         lower_triangular,
         basis_null_space,
         monomial_basis,
-        interpolation_set,
+        x_sample_monomial_basis,
         n_modelpoints,
     ) = add_more_points(
         history_x=dict_add_more_points["history_x"],
@@ -187,7 +187,7 @@ def test_add_more_points(dict_add_more_points):
     aaae(lower_triangular, dict_add_more_points["lower_triangular_expected"])
     aaae(basis_null_space, dict_add_more_points["basis_null_space_expected"])
     aaae(monomial_basis, dict_add_more_points["monomial_basis_expected"])
-    aaae(interpolation_set, dict_add_more_points["interpolation_set_expected"])
+    aaae(x_sample_monomial_basis, dict_add_more_points["interpolation_set_expected"])
     assert np.allclose(n_modelpoints, dict_add_more_points["n_modelpoints_expected"])
 
 
@@ -229,7 +229,9 @@ def test_get_coefficients_residual_model(dict_get_coefficients_residual_model):
         lower_triangular=dict_get_coefficients_residual_model["lower_triangular"],
         basis_null_space=dict_get_coefficients_residual_model["basis_null_space"],
         monomial_basis=dict_get_coefficients_residual_model["monomial_basis"],
-        interpolation_set=dict_get_coefficients_residual_model["interpolation_set"],
+        x_sample_monomial_basis=dict_get_coefficients_residual_model[
+            "interpolation_set"
+        ],
         f_interpolated=dict_get_coefficients_residual_model["approximation_error"],
         n_modelpoints=dict_get_coefficients_residual_model["n_modelpoints"],
         n=3,

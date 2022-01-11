@@ -363,7 +363,7 @@ def internal_solve_pounders(
             lower_triangular,
             basis_null_space,
             monomial_basis,
-            interpolation_set,
+            x_sample_monomial_basis,
             n_modelpoints,
         ) = add_more_points(
             history=history,
@@ -396,7 +396,7 @@ def internal_solve_pounders(
             lower_triangular=lower_triangular,
             basis_null_space=basis_null_space,
             monomial_basis=monomial_basis,
-            interpolation_set=interpolation_set,
+            x_sample_monomial_basis=x_sample_monomial_basis,
             f_interpolated=f_interpolated,
             n_modelpoints=n_modelpoints,
             n=n,
