@@ -16,12 +16,15 @@ def update_initial_residual_model(residual_model, x_candidate, residuals_candida
         residuals_candidate (np.ndarray): Array of the corresponding centered
             residuals of shape (n, nobs).
     """
+    out_residual_model = residual_model.copy()
     n, n_obs = x_candidate.shape[0], residuals_candidate.shape[1]
 
-    residual_model["linear_terms"] = np.linalg.solve(x_candidate, residuals_candidate)
-    residual_model["square_terms"] = np.zeros((n_obs, n, n))
+    out_residual_model["linear_terms"] = np.linalg.solve(
+        x_candidate, residuals_candidate
+    )
+    out_residual_model["square_terms"] = np.zeros((n_obs, n, n))
 
-    return residual_model
+    return out_residual_model
 
 
 def update_residual_model(residual_model, coefficients_to_add, delta, delta_old):
@@ -38,6 +41,8 @@ def update_residual_model(residual_model, coefficients_to_add, delta, delta_old)
     Returns:
         residual_model (dict): Updated parameters of the residual model.
     """
+    residual_model = residual_model.copy()
+
     residual_model["linear_terms"] = (
         coefficients_to_add["linear_terms"]
         + (delta / delta_old) * residual_model["linear_terms"]
@@ -86,7 +91,7 @@ def update_main_from_residual_model(residual_model, first_evaluation=False):
     return main_model
 
 
-def accept_candidate_into_main_model(main_model, x_candidate):
+def update_main_model_with_new_accepted_x(main_model, x_candidate):
     """Use accepted candidate to update the linear terms of the residual model.
 
     Args:
@@ -105,7 +110,7 @@ def accept_candidate_into_main_model(main_model, x_candidate):
     return main_model
 
 
-def accept_candidate_into_residual_model(residual_model, x_candidate):
+def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
     """Use accepted candidate to update the residual model.
 
     Args:
@@ -302,14 +307,13 @@ def improve_main_model(
     model_indices,
     x_accepted,
     n_modelpoints,
-    add_all_points,
     n,
     delta,
     criterion,
     lower_bounds,
     upper_bounds,
 ):
-    """Improve the model.
+    """Add points until main model is linear.
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
@@ -322,7 +326,6 @@ def improve_main_model(
         x_accepted (np.ndarray): Accepted solution vector of the subproblem of
             shape (n,).
         n_modelpoints (int): Current number of model points.
-        add_all_points (int): If equal to 0, add points. Else, don't.
         n (int): Number of parameters.
         delta (float): Delta, current trust-region radius.
         criterion (callable): Criterion function.
@@ -340,64 +343,38 @@ def improve_main_model(
             criterion function. Shape (1000,)
         - n_modelpoints (int): Current number of model points.
     """
+    current_history = history.get_n_fun()
     linear_terms = main_model["linear_terms"]
-    square_terms = main_model["square_terms"]
 
-    min_index_internal = 0
-    x_min_internal = np.inf
     x_candidate = np.zeros(3)
+    x_candidates_list = []
+    criterion_candidates_list = []
 
     model_improving_points, _ = qr_multiply(model_improving_points, np.eye(3))
 
     for i in range(n_modelpoints, n):
-        dp = np.dot(model_improving_points[:, i], linear_terms)
+        change_direction = np.dot(model_improving_points[:, i], linear_terms)
 
-        # Go into other direction
-        if dp > 0:
+        if change_direction > 0:
             model_improving_points[:, i] *= -1
 
-        linear_terms_new = linear_terms + 0.5 * np.dot(
-            square_terms, model_improving_points[:, i]
-        )
-        x_candidate[i] = np.dot(model_improving_points[:, i], linear_terms_new)
+        x_candidate = delta * model_improving_points[:, i] + x_accepted
 
-        if (i == n_modelpoints) or (x_candidate[i] < x_min_internal):
-            min_index_internal = i
-            x_min_internal = x_candidate[i]
-
-        if add_all_points != 0:
-            (history, model_indices, n_modelpoints,) = _add_point(
-                history=history,
-                model_improving_points=model_improving_points,
-                model_indices=model_indices,
-                x_accepted=x_accepted,
-                index=i,
-                n_modelpoints=n_modelpoints,
-                delta=delta,
-                criterion=criterion,
-                lower_bounds=lower_bounds,
-                upper_bounds=upper_bounds,
+        # Project into feasible region
+        if lower_bounds is not None and upper_bounds is not None:
+            x_candidate = np.median(
+                np.stack([lower_bounds, x_candidate, upper_bounds]), axis=0
             )
+        criterion_candidate = criterion(x_candidate)
 
-    if add_all_points != 1:
-        (history, model_indices, n_modelpoints,) = _add_point(
-            history=history,
-            model_improving_points=model_improving_points,
-            model_indices=model_indices,
-            x_accepted=x_accepted,
-            index=min_index_internal,
-            n_modelpoints=n_modelpoints,
-            delta=delta,
-            criterion=criterion,
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
-        )
+        x_candidates_list.append(x_candidate)
+        criterion_candidates_list.append(criterion_candidate)
 
-    return (
-        history,
-        model_indices,
-        n_modelpoints,
-    )
+        model_indices[i] = current_history + i - n_modelpoints
+
+    history.add_entries(x_candidates_list, criterion_candidates_list)
+
+    return history, model_indices
 
 
 def add_more_points(
@@ -521,7 +498,7 @@ def add_more_points(
 
 def get_approximation_error(
     history,
-    x_candidates,
+    x_sample,
     residual_model,
     model_indices,
     n_modelpoints,
@@ -532,7 +509,8 @@ def get_approximation_error(
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
-        x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
+        x_sample (np.ndarray): Vector of centered x samples of shape
+            (maxinterp,n).
         residual_model (dict): Parameters of the residual model including
             "intercepts", "linear_terms", and "square terms".
         model_indices (np.ndarray): Indices of the candidates of x that are
@@ -547,15 +525,15 @@ def get_approximation_error(
     approximation_error = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
 
     for j in range(n_obs):
-        x_square_terms = np.dot(x_candidates, residual_model["square_terms"][j, :, :])
+        x_square_terms = np.dot(x_sample, residual_model["square_terms"][j, :, :])
 
         for i in range(n_modelpoints):
             residuals = history.get_residuals(index=model_indices[i])
             approximation_error[i, j] = (
                 residuals[j]
                 - residual_model["intercepts"][j]
-                - np.dot(residual_model["linear_terms"][:, j], x_candidates[i, :])
-                - 0.5 * np.dot(x_square_terms[i, :], x_candidates[i, :])
+                - np.dot(residual_model["linear_terms"][:, j], x_sample[i, :])
+                - 0.5 * np.dot(x_square_terms[i, :], x_sample[i, :])
             )
 
     return approximation_error
@@ -692,65 +670,3 @@ def _get_basis_quadratic_function(x):
             j += 1
 
     return monomial_basis
-
-
-def _add_point(
-    history,
-    model_improving_points,
-    model_indices,
-    x_accepted,
-    index,
-    n_modelpoints,
-    delta,
-    criterion,
-    lower_bounds,
-    upper_bounds,
-):
-    """Add point to the model
-
-    Args:
-        history (class): Class storing history of xs, residuals, and critvals.
-        model_improving_points (np.ndarray): Q matrix containing the parameter
-            vector to add to *history_x*. Shape (*n*, *n*).
-        model_indices (np.ndarray): Indices of the candidates of x that are
-            currently in the model. Shape (2 *n* + 1,).
-        x_accepted (np.ndarray): Accepted solution vector of the subproblem of
-            shape (n,).
-        index (int): Index relating to the parameter vector in
-            *model_improving_points* that is added to *history_x*.
-        n_modelpoints (int): Current number of model points.
-        delta (float): Delta, current trust-region radius.
-        criterion (callable): Criterion function.
-        lower_bounds (np.ndarray): lower_triangularower bounds.
-            candidate_xust have same length as the initial guess of the
-            parameter vector. Equal to -1 if not provided by the user.
-        upper_bounds (np.ndarray): Upper bounds.
-            candidate_xust have same length as the initial guess of the
-            parameter vector. Equal to 1 if not provided by the user.
-
-    Returns:
-        Tuple:
-        - history (class): Class storing history of xs, residuals, and critvals.
-        - model_indices (np.ndarray): Indices of the candidates of x that are
-            currently in the model. Shape (2 *n* + 1,).
-        - n_modelpoints (int): Current number of model points.
-    """
-    x_candidate = delta * model_improving_points[:, index] + x_accepted
-
-    # Project into feasible region
-    if lower_bounds is not None and upper_bounds is not None:
-        x_candidate = np.median(
-            np.stack([lower_bounds, x_candidate, upper_bounds]), axis=0
-        )
-
-    history.add_entries(x_candidate, criterion(x_candidate))
-
-    # Add new vector to the model
-    model_indices[n_modelpoints] = history.get_n_fun()
-    n_modelpoints += 1
-
-    return (
-        history,
-        model_indices,
-        n_modelpoints,
-    )

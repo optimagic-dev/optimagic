@@ -2,10 +2,6 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.history import LeastSquaresHistory
-from estimagic.optimization.pounders_auxiliary import accept_candidate_into_main_model
-from estimagic.optimization.pounders_auxiliary import (
-    accept_candidate_into_residual_model,
-)
 from estimagic.optimization.pounders_auxiliary import add_more_points
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_approximation_error
@@ -14,7 +10,13 @@ from estimagic.optimization.pounders_auxiliary import improve_main_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import update_initial_residual_model
 from estimagic.optimization.pounders_auxiliary import update_main_from_residual_model
+from estimagic.optimization.pounders_auxiliary import (
+    update_main_model_with_new_accepted_x,
+)
 from estimagic.optimization.pounders_auxiliary import update_residual_model
+from estimagic.optimization.pounders_auxiliary import (
+    update_residual_model_with_new_accepted_x,
+)
 
 
 def pounders(
@@ -186,7 +188,7 @@ def internal_solve_pounders(
     indices_not_min = [i for i in range(n + 1) if i != accepted_index]
 
     x_candidate, residuals_candidate, _ = history.get_centered_entries(
-        center_info={"radius": delta}, index=indices_not_min
+        center_info={"x": history.get_best_xs(), "radius": delta}, index=indices_not_min
     )
 
     residual_model = {"intercepts": history.get_best_residuals()}
@@ -233,10 +235,10 @@ def internal_solve_pounders(
             center_info = {"x": history.get_best_xs(), "radius": delta}
             x_candidate = history.get_centered_xs(center_info, index=-1)
 
-            residual_model = accept_candidate_into_residual_model(
+            residual_model = update_residual_model_with_new_accepted_x(
                 residual_model=residual_model, x_candidate=x_candidate
             )
-            main_model = accept_candidate_into_main_model(
+            main_model = update_main_model_with_new_accepted_x(
                 main_model=main_model, x_candidate=x_candidate
             )
             x_accepted = history.get_best_xs()
@@ -264,21 +266,20 @@ def internal_solve_pounders(
             )
 
             if n_modelpoints < n:
-                add_all_points = 1
-                (history, model_indices, n_modelpoints,) = improve_main_model(
+                history, model_indices = improve_main_model(
                     history=history,
                     main_model=main_model,
                     model_improving_points=model_improving_points,
                     model_indices=model_indices,
                     x_accepted=x_accepted,
                     n_modelpoints=n_modelpoints,
-                    add_all_points=add_all_points,
                     n=n,
                     delta=delta,
                     criterion=criterion,
                     lower_bounds=lower_bounds,
                     upper_bounds=upper_bounds,
                 )
+                n_modelpoints = n
 
         # Update the trust region radius
         delta_old = delta
@@ -330,9 +331,8 @@ def internal_solve_pounders(
                 n_modelpoints=n_modelpoints,
             )
 
-            if n > n_modelpoints:
+            if n_modelpoints < n:
                 # Model not valid. Add geometry points
-                add_all_points = n - n_modelpoints
                 (history, model_indices, n_modelpoints,) = improve_main_model(
                     history=history,
                     main_model=main_model,
@@ -340,7 +340,6 @@ def internal_solve_pounders(
                     model_indices=model_indices,
                     x_accepted=x_accepted,
                     n_modelpoints=n_modelpoints,
-                    add_all_points=add_all_points,
                     n=n,
                     delta=delta,
                     criterion=criterion,
@@ -371,13 +370,13 @@ def internal_solve_pounders(
         )
 
         center_info = {"x": x_accepted, "radius": delta_old}
-        x_candidates = history.get_centered_xs(
+        x_sample = history.get_centered_xs(
             center_info, index=model_indices[:n_modelpoints]
         )
 
         approximation_error = get_approximation_error(
             history=history,
-            x_candidates=x_candidates,
+            x_sample=x_sample,
             residual_model=residual_model,
             model_indices=model_indices,
             n_modelpoints=n_modelpoints,

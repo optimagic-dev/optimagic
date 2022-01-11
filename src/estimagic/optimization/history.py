@@ -22,7 +22,6 @@ class LeastSquaresHistory:
                 parameter vectors.
             residuals (np.ndarray or list): 1d or 2d array or list of 1d arrays with
                 least square residuals.
-
         """
         xs = np.atleast_2d(xs)
         residuals = np.atleast_2d(residuals)
@@ -146,7 +145,6 @@ class LeastSquaresHistory:
             np.ndarray: 1d or 2d array with centered parameter vectors
             np.ndarray: 1d or 2d array with centered residuals
             np.ndarray: Float or 1d array with centered criterion values.
-
         """
         if "x" not in center_info:
             center_info["x"] = self.best_xs

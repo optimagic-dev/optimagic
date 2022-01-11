@@ -50,11 +50,6 @@ def dict_get_approximation_error(request):
     )
 
 
-@pytest.fixture(params=["i", "ii"])
-def dict_improve_model(request):
-    return pd.read_pickle(TEST_FIXTURES_DIR / f"improve_model_{request.param}.pkl")
-
-
 @pytest.fixture
 def dict_add_more_points():
     return pd.read_pickle(TEST_FIXTURES_DIR / "add_more_points.pkl")
@@ -73,6 +68,50 @@ def dict_update_residual_model():
 @pytest.fixture
 def dict_update_main_from_residual_model():
     return pd.read_pickle(TEST_FIXTURES_DIR / "calc_first_and_second_derivative.pkl")
+
+
+@pytest.fixture(params=["i", "ii"])
+def dicts_improve_model(request, criterion):
+    history = LeastSquaresHistory()
+    dict_ = pd.read_pickle(TEST_FIXTURES_DIR / f"improve_model_{request.param}.pkl")
+
+    n = 3
+    n_modelpoints = dict_["n_modelpoints"]
+    history.add_entries(
+        dict_["history_x"][: -(n - n_modelpoints)],
+        dict_["history_criterion"][: -(n - n_modelpoints)],
+    )
+
+    index_min_x = dict_["index_min_x"]
+    x_accepted = dict_["history_x"][index_min_x]
+    delta = dict_["delta"]
+    main_model = {
+        "linear_terms": dict_["first_derivative"],
+        "square_terms": dict_["second_derivative"],
+    }
+    model_improving_points = dict_["model_improving_points"]
+    model_indices = dict_["model_indices"]
+
+    inputs_dict = {
+        "history": history,
+        "main_model": main_model,
+        "model_improving_points": model_improving_points,
+        "model_indices": model_indices,
+        "x_accepted": x_accepted,
+        "n_modelpoints": n_modelpoints,
+        "n": n,
+        "delta": delta,
+        "criterion": criterion,
+        "lower_bounds": None,
+        "upper_bounds": None,
+    }
+
+    expected_dict = {
+        "model_indices_expected": dict_["model_indices_expected"],
+        "history_x_expected": dict_["history_x_expected"],
+    }
+
+    return inputs_dict, expected_dict
 
 
 @pytest.mark.skip(reason="refactoring")
@@ -107,42 +146,19 @@ def test_find_affine_points(dict_find_affine_points):
     assert np.allclose(project_x_onto_null_out, True)
 
 
-@pytest.mark.skip(reason="refactoring")
-def test_improve_model(dict_improve_model, criterion):
-    history = LeastSquaresHistory()
-    (
-        _,
-        history_x_out,
-        history_criterion_out,
-        _,
-        model_indices_out,
-        n_modelpoints_out,
-        n_history_out,
-    ) = improve_main_model(
-        history,
-        history_x=dict_improve_model["history_x"],
-        history_criterion=dict_improve_model["history_criterion"],
-        history_criterion_norm=dict_improve_model["history_criterion_norm"],
-        first_derivative=dict_improve_model["first_derivative"],
-        second_derivative=dict_improve_model["second_derivative"],
-        model_improving_points=dict_improve_model["model_improving_points"],
-        model_indices=dict_improve_model["model_indices"],
-        index_min_x=dict_improve_model["index_min_x"],
-        n_modelpoints=dict_improve_model["n_modelpoints"],
-        n_history=dict_improve_model["n_history"],
-        delta=dict_improve_model["delta"],
-        lower_bounds=None,
-        upper_bounds=None,
-        add_all_points=1,
-        n=3,
-        criterion=criterion,
+def test_improve_model(dicts_improve_model):
+    inputs_dict, expected_dict = dicts_improve_model
+
+    history_out, model_indices_out = improve_main_model(
+        **inputs_dict,
     )
 
-    aaae(history_x_out, dict_improve_model["history_x_expected"])
-    aaae(history_criterion_out, dict_improve_model["history_criterion_expected"])
-    aaae(model_indices_out, dict_improve_model["model_indices_expected"])
-    assert np.allclose(n_modelpoints_out, dict_improve_model["n_modelpoints_expected"])
-    assert np.allclose(n_history_out, dict_improve_model["n_history_expected"])
+    aaae(model_indices_out, expected_dict["model_indices_expected"])
+    for index_x_added in range(inputs_dict["n"] - inputs_dict["n_modelpoints"], 0, -1):
+        aaae(
+            history_out.get_xs(index=-index_x_added),
+            expected_dict["history_x_expected"][-index_x_added],
+        )
 
 
 @pytest.mark.skip(reason="refactoring")
