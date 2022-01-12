@@ -332,7 +332,7 @@ def improve_main_model(
     lower_bounds,
     upper_bounds,
 ):
-    """Add points until main model is linear.
+    """Add points until main model is fully linear.
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
@@ -407,7 +407,7 @@ def add_more_points(
     n_maxinterp,
     n_modelpoints,
 ):
-    """Add more points to the residual model.
+    """Add more interpolation points to the residual model.
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
