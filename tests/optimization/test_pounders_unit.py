@@ -5,10 +5,14 @@ import pandas as pd
 import pytest
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.history import LeastSquaresHistory
-from estimagic.optimization.pounders_auxiliary import add_more_points
+from estimagic.optimization.pounders_auxiliary import (
+    add_points_until_main_model_fully_linear,
+)
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
-from estimagic.optimization.pounders_auxiliary import improve_main_model
+from estimagic.optimization.pounders_auxiliary import (
+    get_interpolation_matrices_residual_model,
+)
 from estimagic.optimization.pounders_auxiliary import interpolate_f
 from estimagic.optimization.pounders_auxiliary import update_initial_residual_model
 from estimagic.optimization.pounders_auxiliary import update_main_from_residual_model
@@ -194,7 +198,7 @@ def data_find_affine_points(request):
 
 
 @pytest.fixture(params=["i", "ii"])
-def data_improve_model(request, criterion):
+def data_add_points_until_main_model_fully_linear(request, criterion):
     test_data = pd.read_pickle(
         TEST_FIXTURES_DIR
         / f"add_points_until_main_model_fully_linear_{request.param}.pkl"
@@ -446,10 +450,12 @@ def test_find_affine_points(data_find_affine_points):
     assert np.allclose(project_x_onto_null_out, True)
 
 
-def test_improve_model(data_improve_model):
-    inputs, expected = data_improve_model
+def test_add_points_until_main_model_fully_linear(
+    data_add_points_until_main_model_fully_linear,
+):
+    inputs, expected = data_add_points_until_main_model_fully_linear
 
-    history_out, model_indices_out = improve_main_model(
+    history_out, model_indices_out = add_points_until_main_model_fully_linear(
         **inputs,
     )
 
@@ -471,7 +477,7 @@ def test_get_interpolation_matrices_residual_model(
         monomial_basis,
         x_sample_monomial_basis,
         n_modelpoints,
-    ) = add_more_points(**inputs)
+    ) = get_interpolation_matrices_residual_model(**inputs)
 
     aaae(lower_triangular, expected["lower_triangular_expected"])
     aaae(basis_null_space, expected["basis_null_space_expected"])

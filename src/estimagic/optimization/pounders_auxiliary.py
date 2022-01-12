@@ -319,7 +319,7 @@ def find_affine_points(
     return model_improving_points, model_indices, n_modelpoints, project_x_onto_null
 
 
-def improve_main_model(
+def add_points_until_main_model_fully_linear(
     history,
     main_model,
     model_improving_points,
@@ -396,7 +396,7 @@ def improve_main_model(
     return history, model_indices
 
 
-def add_more_points(
+def get_interpolation_matrices_residual_model(
     history,
     x_accepted,
     model_indices,
@@ -407,7 +407,7 @@ def add_more_points(
     n_maxinterp,
     n_modelpoints,
 ):
-    """Add more interpolation points to the residual model.
+    """Obtain matrices that will be used for interpolating the residual model.
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
@@ -579,28 +579,28 @@ def get_coefficients_residual_model(
     n,
     n_obs,
 ):
-    """Get coefficients of the residual model.
+    """Computes the coefficients of the quadratic residual model.
 
-    Computes the parameters of the quadratic residual model:
+    The residual model:
 
-    Q(x) = c + g'x + 0.5 x G x'
+        Q(x) = c + g'x + 0.5 x G x'
 
-    that satisfies the interpolation conditions Q(X[:,j]) = f(j)
+    satisfies the interpolation conditions Q(X[:,j]) = f(j)
     for j= 1,..., m and with a Hessian matrix of least Frobenius norm.
 
     Args:
-        lower_triangular (np.ndarray): lower_triangular matrix.
+        lower_triangular (np.ndarray): Lower triangular matrix.
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
-        basis_null_space (np.ndarray): basis_null_space matrix.
-            Shape(:*n_modelpoints*, *n* + 1 : *n_modelpoints*).
-        monomial_basis (np.ndarray): monomial_basis matrix.
-            Shape(*n_maxinterp*, *n* + 1).
+        basis_null_space (np.ndarray): Basis for the null space.
+            Shape(*n_maxinterp*, len(*n* + 1 : *n_modelpoints*)).
+        monomial_basis (np.ndarray): Monomial basis for quadratic functions of x.
+            Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
         x_sample_monomial_basis (np.ndarray): Sample of xs used for
             building the monomial basis. When taken together, they
             form a basis for the linear space of quadratics in *n*
             variables.
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
-        f_interpolated (np.ndarray): f_interpolated.
+        f_interpolated (np.ndarray): Interpolated criterion function f.
             Shape (*n_maxinterp*, *n_obs*).
         n_modelpoints (int): Current number of model points.
         n (int): Number of parameters.

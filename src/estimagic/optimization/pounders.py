@@ -2,10 +2,14 @@ from functools import partial
 
 import numpy as np
 from estimagic.optimization.history import LeastSquaresHistory
-from estimagic.optimization.pounders_auxiliary import add_more_points
+from estimagic.optimization.pounders_auxiliary import (
+    add_points_until_main_model_fully_linear,
+)
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
-from estimagic.optimization.pounders_auxiliary import improve_main_model
+from estimagic.optimization.pounders_auxiliary import (
+    get_interpolation_matrices_residual_model,
+)
 from estimagic.optimization.pounders_auxiliary import interpolate_f
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import update_initial_residual_model
@@ -274,7 +278,7 @@ def internal_solve_pounders(
             )
 
             if n_modelpoints < n:
-                history, model_indices = improve_main_model(
+                history, model_indices = add_points_until_main_model_fully_linear(
                     history=history,
                     main_model=main_model,
                     model_improving_points=model_improving_points,
@@ -341,7 +345,11 @@ def internal_solve_pounders(
 
             if n_modelpoints < n:
                 # Model not valid. Add geometry points
-                (history, model_indices, n_modelpoints,) = improve_main_model(
+                (
+                    history,
+                    model_indices,
+                    n_modelpoints,
+                ) = add_points_until_main_model_fully_linear(
                     history=history,
                     main_model=main_model,
                     model_improving_points=model_improving_points,
@@ -365,7 +373,7 @@ def internal_solve_pounders(
             monomial_basis,
             x_sample_monomial_basis,
             n_modelpoints,
-        ) = add_more_points(
+        ) = get_interpolation_matrices_residual_model(
             history=history,
             x_accepted=x_accepted,
             model_indices=model_indices,
