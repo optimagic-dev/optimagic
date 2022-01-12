@@ -10,10 +10,15 @@ from estimagic.differentiation.derivatives import (
     _convert_richardson_candidates_to_frame,
 )
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
+from estimagic.differentiation.derivatives import _reshape_cross_step_evals
+from estimagic.differentiation.derivatives import _reshape_one_step_evals
+from estimagic.differentiation.derivatives import _reshape_two_step_evals
 from estimagic.differentiation.derivatives import _select_minimizer_along_axis
 from estimagic.differentiation.derivatives import first_derivative
+from estimagic.differentiation.derivatives import second_derivative
 from estimagic.examples.numdiff_functions import logit_loglike
 from estimagic.examples.numdiff_functions import logit_loglike_gradient
+from estimagic.examples.numdiff_functions import logit_loglike_hessian
 from estimagic.examples.numdiff_functions import logit_loglikeobs
 from estimagic.examples.numdiff_functions import logit_loglikeobs_jacobian
 from estimagic.utilities import namedtuple_from_kwargs
@@ -30,6 +35,7 @@ def binary_choice_inputs():
 
 
 methods = ["forward", "backward", "central"]
+methods_second_derivative = ["forward", "backward", "central_average", "central_cross"]
 
 
 @pytest.mark.parametrize("method", methods)
@@ -83,6 +89,26 @@ def test_first_derivative_gradient(binary_choice_inputs, method):
     aaae(calculated["derivative"], expected, decimal=4)
 
 
+@pytest.mark.parametrize("method", methods_second_derivative)
+def test_second_derivative_hessian(binary_choice_inputs, method):
+    fix = binary_choice_inputs
+    func = partial(logit_loglike, y=fix["y"], x=fix["x"])
+
+    calculated = second_derivative(
+        func=func,
+        method=method,
+        params=fix["params_np"],
+        n_steps=1,
+        f0=func(fix["params_np"]),
+        n_cores=1,
+    )
+
+    expected = logit_loglike_hessian(fix["params_np"], fix["y"], fix["x"])
+
+    assert np.max(np.abs(calculated["derivative"] - expected)) < 1.5 * 10 ** (-2)
+    assert np.mean(np.abs(calculated["derivative"] - expected)) < 1.5 * 10 ** (-3)
+
+
 @pytest.mark.parametrize("method", methods)
 def test_first_derivative_scalar(method):
     def f(x):
@@ -91,6 +117,17 @@ def test_first_derivative_scalar(method):
     calculated = first_derivative(f, 3.0, n_cores=1)
     expected = 6.0
     assert calculated["derivative"] == expected
+
+
+@pytest.mark.parametrize("method", methods_second_derivative)
+def test_second_derivative_scalar(method):
+    def f(x):
+        return x ** 2
+
+    calculated = second_derivative(f, 3.0, n_cores=1)
+    expected = 2.0
+
+    assert np.abs(calculated["derivative"] - expected) < 1.5 * 10 ** (-6)
 
 
 @pytest.mark.parametrize("method", methods)
@@ -103,6 +140,20 @@ def test_first_derivative_scalar_with_return_func_value(method):
     )
     expected = {"derivative": 6.0, "func_value": 9.0}
     assert calculated == expected
+
+
+@pytest.mark.parametrize("method", methods_second_derivative)
+def test_second_derivative_scalar_with_return_func_value(method):
+    def f(x):
+        return x ** 3
+
+    calculated = second_derivative(
+        f, 3.0, return_func_value=True, return_info=False, n_cores=1
+    )
+    expected = {"derivative": 18.0, "func_value": 27.0}
+
+    assert calculated["func_value"] == expected["func_value"]
+    assert np.abs(calculated["derivative"] - expected["derivative"]) < 1.5 * 10 ** (-6)
 
 
 def test_nan_skipping_batch_evaluator():
@@ -253,3 +304,53 @@ def test__select_minimizer_along_axis():
     expected = (np.array([[0, 5], [6, 3]]), np.array([[0, 0], [0, 0]]))
     got = _select_minimizer_along_axis(der, err)
     aaae(expected, got)
+
+
+def test_reshape_one_step_evals():
+    n_steps, dim_f, dim_x = 2, 3, 4
+    raw_evals_one_step = np.arange(2 * n_steps * dim_f * dim_x)
+
+    pos_expected = np.array(
+        [
+            [[0, 3, 6, 9], [1, 4, 7, 10], [2, 5, 8, 11]],
+            [[12, 15, 18, 21], [13, 16, 19, 22], [14, 17, 20, 23]],
+        ]
+    )
+    neg_expected = np.array(
+        [
+            [[24, 27, 30, 33], [25, 28, 31, 34], [26, 29, 32, 35]],
+            [[36, 39, 42, 45], [37, 40, 43, 46], [38, 41, 44, 47]],
+        ]
+    )
+
+    got = _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x)
+    assert np.all(got.pos == pos_expected)
+    assert np.all(got.neg == neg_expected)
+
+
+def test_reshape_two_step_evals():
+    n_steps, dim_x, dim_f = 1, 2, 2
+    raw_evals_two_step = np.arange(2 * n_steps * dim_f * dim_x * dim_x)
+
+    pos_expected = np.array([[[[0, 2], [2, 6]], [[1, 3], [3, 7]]]])
+    neg_expected = np.array([[[[8, 10], [10, 14]], [[9, 11], [11, 15]]]])
+
+    got = _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x)
+    assert np.all(got.pos == pos_expected)
+    assert np.all(got.neg == neg_expected)
+
+
+def test_reshape_cross_step_evals():
+    n_steps = 1
+    dim_x = 2
+    dim_f = 2
+    f0 = np.array([-1000, 1000])
+
+    raw_evals_cross_step = np.arange(2 * n_steps * dim_f * dim_x * dim_x)
+
+    expected_pos = np.array([[[[-1000, 2], [10, -1000]], [[1000, 3], [11, 1000]]]])
+    expected_neg = expected_pos.swapaxes(2, 3)
+
+    got = _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0)
+    assert np.all(got.pos == expected_pos)
+    assert np.all(got.neg == expected_neg)
