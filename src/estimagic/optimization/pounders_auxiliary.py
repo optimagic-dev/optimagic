@@ -6,25 +6,27 @@ from scipy.optimize import Bounds
 from scipy.optimize import minimize
 
 
-def update_initial_residual_model(residual_model, x_candidate, residuals_candidate):
+def update_initial_residual_model(
+    initial_residual_model, x_candidate, residuals_candidate
+):
     """Update linear and square terms of the initial residual model.
 
     Args:
-        residual_model (dict): Parameters of the residual model including
-            "intercepts", "linear_terms", and "square terms".
+        initial_residual_model (dict): Parameters of the initial residual model
+            including "intercepts", "linear_terms", and "square terms".
         x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
         residuals_candidate (np.ndarray): Array of the corresponding centered
             residuals of shape (n, nobs).
     """
-    out_residual_model = residual_model.copy()
+    residual_model_updated = initial_residual_model.copy()
     n, n_obs = x_candidate.shape[0], residuals_candidate.shape[1]
 
-    out_residual_model["linear_terms"] = np.linalg.solve(
+    residual_model_updated["linear_terms"] = np.linalg.solve(
         x_candidate, residuals_candidate
     )
-    out_residual_model["square_terms"] = np.zeros((n_obs, n, n))
+    residual_model_updated["square_terms"] = np.zeros((n_obs, n, n))
 
-    return out_residual_model
+    return residual_model_updated
 
 
 def update_residual_model(residual_model, coefficients_to_add, delta, delta_old):
@@ -137,17 +139,19 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
         residual_model (dict): Parameters of the residual model with updated
             "intercepts" and "linear_terms".
     """
-    residual_model["intercepts"] = (
+    residual_model_updated = residual_model.copy()
+
+    residual_model_updated["intercepts"] = (
         residual_model["intercepts"]
         + np.dot(x_candidate, residual_model["linear_terms"])
         + 0.5 * np.dot(np.dot(x_candidate, residual_model["square_terms"]), x_candidate)
     )
-    residual_model["linear_terms"] = (
+    residual_model_updated["linear_terms"] = (
         residual_model["linear_terms"]
         + np.dot(residual_model["square_terms"], x_candidate).T
     )
 
-    return residual_model
+    return residual_model_updated
 
 
 def solve_subproblem(
@@ -424,7 +428,7 @@ def add_more_points(
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
         - basis_null_space (np.ndarray): Basis for the null space.
             Shape(*n_maxinterp*, len(*n* + 1 : *n_modelpoints*)).
-        - monomial_basis (np.ndarray): Momial basis matrix.
+        - monomial_basis (np.ndarray): Monomial basis for quadratic functions of x.
             Shape(*n_maxinterp*, *n* (*n* + 1) / 2).
         - x_sample_monomial_basis (np.ndarray): Sample of xs used for
             building the monomial basis. When taken together, they
@@ -442,9 +446,7 @@ def add_more_points(
         x_sample_monomial_basis[i, 1:] = history.get_centered_xs(
             center_info, index=model_indices[i]
         )
-        monomial_basis[i, :] = _get_basis_quadratic_function(
-            x=x_sample_monomial_basis[i, 1:]
-        )
+        monomial_basis[i, :] = _get_monomial_basis(x_sample_monomial_basis[i, 1:])
 
     # Now we add points until we have n_maxinterp starting with the most recent ones
     point = history.get_n_fun() - 1
@@ -473,8 +475,8 @@ def add_more_points(
         x_sample_monomial_basis[n_modelpoints, 1:] = history.get_centered_xs(
             center_info, index=point
         )
-        monomial_basis[n_modelpoints, :] = _get_basis_quadratic_function(
-            x=x_sample_monomial_basis[n_modelpoints, 1:]
+        monomial_basis[n_modelpoints, :] = _get_monomial_basis(
+            x_sample_monomial_basis[n_modelpoints, 1:]
         )
 
         x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
@@ -678,14 +680,15 @@ def _evaluate_main_model(
     return criterion, derivative
 
 
-def _get_basis_quadratic_function(x):
-    """Evaluate phi.
+def _get_monomial_basis(x):
+    """Get the monomial basis, i.e. basis for quadratic functions, of x.
 
-    Phi = .5*[x(1)^2  sqrt(2)*x(1)*x(2) ... sqrt(2)*x(1)*x(n) ...
+    Monomial basis = .5*[x(1)^2  sqrt(2)*x(1)*x(2) ... sqrt(2)*x(1)*x(n) ...
         ... x(2)^2 sqrt(2)*x(2)*x(3) .. x(n)^2]
+
     Args:
         x (np.ndarray): Parameter vector of shape (*n*,).
-        n (int): Number of parameters.
+
     Returns:
         (np.ndarray): Monomial basis of x with shape (*n* (*n* + 1) / 2,).
     """

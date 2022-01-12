@@ -197,9 +197,9 @@ def internal_solve_pounders(
         index=indices_not_min,
     )
 
-    residual_model = {"intercepts": history.get_best_residuals()}
+    initial_residual_model = {"intercepts": history.get_best_residuals()}
     residual_model = update_initial_residual_model(
-        residual_model, x_candidate, residuals_candidate
+        initial_residual_model, x_candidate, residuals_candidate
     )
     main_model = update_main_from_residual_model(
         residual_model, multiply_square_terms_with_residuals=False

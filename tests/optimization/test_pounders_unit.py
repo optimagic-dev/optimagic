@@ -10,8 +10,15 @@ from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
 from estimagic.optimization.pounders_auxiliary import improve_main_model
 from estimagic.optimization.pounders_auxiliary import interpolate_f
+from estimagic.optimization.pounders_auxiliary import update_initial_residual_model
 from estimagic.optimization.pounders_auxiliary import update_main_from_residual_model
+from estimagic.optimization.pounders_auxiliary import (
+    update_main_model_with_new_accepted_x,
+)
 from estimagic.optimization.pounders_auxiliary import update_residual_model
+from estimagic.optimization.pounders_auxiliary import (
+    update_residual_model_with_new_accepted_x,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -229,6 +236,104 @@ def dicts_find_affine_points(request):
     }
 
     return inputs_dict, expected_dict
+
+
+@pytest.fixture
+def dicts_update_initial_residual_model():
+    dict_ = pd.read_pickle(TEST_FIXTURES_DIR / "update_initial_residual_model.pkl")
+
+    inputs_dict = {}
+
+    inputs_dict["initial_residual_model"] = dict_["initial_residual_model"]
+    inputs_dict["x_candidate"] = dict_["x_candidate"]
+    inputs_dict["residuals_candidate"] = dict_["residuals_candidate"]
+
+    expected_dict = dict_["residual_model_expected"]
+
+    return inputs_dict, expected_dict
+
+
+@pytest.fixture
+def dicts_update_main_model_with_new_accepted_x():
+    dict_ = pd.read_pickle(TEST_FIXTURES_DIR / "update_center.pkl")
+    inputs_dict = {}
+    expected_dict = {}
+
+    main_model = {
+        "linear_terms": dict_["first_derivative"],
+        "square_terms": dict_["second_derivative"],
+    }
+
+    inputs_dict["main_model"] = main_model
+    inputs_dict["x_candidate"] = (dict_["xplus"] - dict_["min_x"]) / dict_["delta"]
+
+    expected_dict["linear_terms"] = dict_["first_derivative_expected"]  # fdiff
+
+    return inputs_dict, expected_dict
+
+
+@pytest.fixture
+def dicts_update_residual_model_with_new_accepted_x():
+    dict_ = pd.read_pickle(TEST_FIXTURES_DIR / "update_center.pkl")
+    inputs_dict = {}
+    expected_dict = {}
+
+    residual_model = {
+        "intercepts": dict_["min_criterion"],
+        "linear_terms": dict_["gradient"],
+        "square_terms": dict_["hessian"],
+    }
+
+    inputs_dict["residual_model"] = residual_model
+    inputs_dict["x_candidate"] = (dict_["xplus"] - dict_["min_x"]) / dict_["delta"]
+
+    expected_dict["intercepts"] = dict_["min_criterion_expected"]
+    expected_dict["linear_terms"] = dict_["gradient_expected"]
+
+    return inputs_dict, expected_dict
+
+
+def test_update_initial_residual_model(dicts_update_initial_residual_model):
+    inputs_dict, residual_model_expected = dicts_update_initial_residual_model
+
+    residual_model_out = update_initial_residual_model(**inputs_dict)
+
+    aaae(residual_model_out["intercepts"], residual_model_expected["intercepts"])
+    aaae(residual_model_out["linear_terms"], residual_model_expected["linear_terms"])
+
+
+def test_update_residual_model_with_new_accepted_x(
+    dicts_update_residual_model_with_new_accepted_x,
+):
+    (
+        inputs_dict,
+        residual_model_expected,
+    ) = dicts_update_residual_model_with_new_accepted_x
+
+    residual_model_out = update_residual_model_with_new_accepted_x(**inputs_dict)
+
+    aaae(residual_model_out["intercepts"], residual_model_expected["intercepts"])
+    aaae(residual_model_out["linear_terms"], residual_model_expected["linear_terms"])
+    aaae(
+        residual_model_out["square_terms"],
+        inputs_dict["residual_model"]["square_terms"],
+    )
+
+
+@pytest.mark.xfail(
+    reason="Known differences in rounding of numbers that are virtually zero."
+)
+def test_update_main_model_with_new_accepted_x(
+    dicts_update_main_model_with_new_accepted_x,
+):
+    (
+        inputs_dict,
+        main_model_expected,
+    ) = dicts_update_main_model_with_new_accepted_x
+
+    main_model_out = update_main_model_with_new_accepted_x(**inputs_dict)
+
+    aaae(main_model_out["linear_terms"], main_model_expected["linear_terms"])
 
 
 def test_find_affine_points(dicts_find_affine_points):
