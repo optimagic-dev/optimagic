@@ -1,4 +1,8 @@
+from itertools import product
+
 import numpy as np
+import pytest
+from estimagic.optimization.trust_region_management import _compute_optimality_criterion
 from estimagic.optimization.trust_region_management import _create_upscaled_lhs_sample
 from estimagic.optimization.trust_region_management import _scale_down_points
 from estimagic.optimization.trust_region_management import _scale_up_points
@@ -7,13 +11,6 @@ from estimagic.optimization.trust_region_management import (
     get_next_trust_region_points_latin_hypercube,
 )
 from numpy.testing import assert_array_almost_equal as aaae
-
-
-def get_upscaled_points(n_points, n_dim, n_designs):
-    points = _create_upscaled_lhs_sample(n_dim, n_points, n_designs)
-    if n_designs == 1:
-        points = np.squeeze(points)
-    return points
 
 
 def test_scaling_bijection():
@@ -25,7 +22,8 @@ def test_scaling_bijection():
     center = np.ones(params["n_dim"])
     radius = 0.1
 
-    points = get_upscaled_points(**params)
+    points = _create_upscaled_lhs_sample(**params)
+    points = np.squeeze(points)
     downscaled = _scale_down_points(points, center, radius, params["n_points"])
     upscaled = _scale_up_points(downscaled, center, radius, params["n_points"])
 
@@ -106,10 +104,8 @@ def test_get_existing_points_high_dim():
 def test_latin_hypercube_property():
     """Check that for each single dimension the points are uniformly distributed."""
     n_dim, n_points = np.random.randint(2, 100, size=2)
-    sample = _create_upscaled_lhs_sample(n_dim, n_points)
-
+    sample = _create_upscaled_lhs_sample(n_dim, n_points, n_designs=1)
     index = np.arange(n_points)
-
     for j in range(n_dim):
         aaae(index, np.sort(sample[0][:, j]))
 
@@ -122,9 +118,65 @@ def test_extend_upscaled_lhs_sample():
     pass
 
 
-def test_get_next_trust_region_points_latin_hypercube_single_use():
-    pass
+@pytest.mark.parametrize(
+    "center, radius, n_points, optimality_criterion, lhs_design, n_iter",
+    product(
+        [np.ones(d) for d in (2, 5)],
+        [0.05, 0.1],
+        [10, 100],
+        ["a-optimal", "e-optimal", "d-optimal", "g-optimal"],
+        ["centered", "random"],
+        [1, 100],
+    ),
+)
+def test_get_next_trust_region_points_latin_hypercube_single_use(
+    center, radius, n_points, optimality_criterion, lhs_design, n_iter
+):
+    """Check that function can be called with all arguments and that the resulting
+    sampe fulfills some basic conditions.
+
+    """
+    sample, _ = get_next_trust_region_points_latin_hypercube(
+        center=center,
+        radius=radius,
+        n_points=n_points,
+        n_iter=n_iter,
+        lhs_design=lhs_design,
+        optimality_criterion=optimality_criterion,
+    )
+
+    decimal = 8 if lhs_design == "centered" else 2
+
+    assert sample.shape == (n_points, len(center))
+    aaae(sample.mean(axis=0), center, decimal=decimal)
 
 
-def test_get_next_trust_region_points_latin_hypercube_iteration():
-    pass
+@pytest.mark.parametrize(
+    "optimality_criterion", ["a-optimal", "e-optimal", "d-optimal", "g-optimal"]
+)
+def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
+    optimality_criterion,
+):
+    """Check that the optimal sample is actually optimal."""
+    sample, _ = get_next_trust_region_points_latin_hypercube(
+        center=np.ones(5),
+        radius=0.1,
+        n_points=10,
+        n_iter=1,
+        lhs_design="centered",
+        optimality_criterion=optimality_criterion,
+    )
+
+    optimized_sample, crit_vals = get_next_trust_region_points_latin_hypercube(
+        center=np.ones(5),
+        radius=0.1,
+        n_points=10,
+        n_iter=50_000,
+        lhs_design="centered",
+        optimality_criterion=optimality_criterion,
+    )
+
+    assert len(np.unique(crit_vals)) > 1
+    assert _compute_optimality_criterion(
+        sample, optimality_criterion
+    ) > _compute_optimality_criterion(optimized_sample, optimality_criterion)
