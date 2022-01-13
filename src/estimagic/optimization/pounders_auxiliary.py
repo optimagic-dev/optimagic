@@ -319,7 +319,7 @@ def find_affine_points(
     return model_improving_points, model_indices, n_modelpoints, project_x_onto_null
 
 
-def add_points_until_main_model_fully_linear(
+def add_points_to_make_main_model_fully_linear(
     history,
     main_model,
     model_improving_points,
@@ -331,6 +331,8 @@ def add_points_until_main_model_fully_linear(
     criterion,
     lower_bounds,
     upper_bounds,
+    batch_evaluator,
+    n_cores,
 ):
     """Add points until main model is fully linear.
 
@@ -384,12 +386,12 @@ def add_points_until_main_model_fully_linear(
             x_candidate = np.median(
                 np.stack([lower_bounds, x_candidate, upper_bounds]), axis=0
             )
-        criterion_candidate = criterion(x_candidate)
-
         x_candidates_list.append(x_candidate)
-        criterion_candidates_list.append(criterion_candidate)
-
         model_indices[i] = current_history + i - n_modelpoints
+
+    criterion_candidates_list = batch_evaluator(
+        criterion, arguments=x_candidates_list, n_cores=n_cores
+    )
 
     history.add_entries(x_candidates_list, criterion_candidates_list)
 

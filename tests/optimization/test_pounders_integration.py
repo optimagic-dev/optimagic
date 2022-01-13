@@ -3,6 +3,7 @@ from functools import partial
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
@@ -98,6 +99,8 @@ def test_solution(
         xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_sub=trustregion_subproblem_options["gtol"],
         solver_sub=solver_sub,
+        n_cores=1,
+        batch_evaluator=joblib_batch_evaluator,
         **options,
     )
 

@@ -3,10 +3,11 @@ from functools import partial
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
-    add_points_until_main_model_fully_linear,
+    add_points_to_make_main_model_fully_linear,
 )
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
@@ -455,8 +456,8 @@ def test_add_points_until_main_model_fully_linear(
 ):
     inputs, expected = data_add_points_until_main_model_fully_linear
 
-    history_out, model_indices_out = add_points_until_main_model_fully_linear(
-        **inputs,
+    history_out, model_indices_out = add_points_to_make_main_model_fully_linear(
+        **inputs, n_cores=1, batch_evaluator=joblib_batch_evaluator
     )
 
     aaae(model_indices_out, expected["model_indices_expected"])

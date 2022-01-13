@@ -1,9 +1,11 @@
 from functools import partial
 
+import estimagic.batch_evaluators as be
 import numpy as np
+from estimagic.config import DEFAULT_N_CORES
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
-    add_points_until_main_model_fully_linear,
+    add_points_to_make_main_model_fully_linear,
 )
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
@@ -43,7 +45,12 @@ def pounders(
     c2=10,
     trustregion_subproblem_solver="trust-constr",
     trustregion_subproblem_options=None,
+    batch_evaluator="joblib",
+    n_cores=DEFAULT_N_CORES,
 ):
+    if isinstance(batch_evaluator, str):
+        batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
+
     algorithm_info = {
         "primary_criterion_entry": "root_contributions",
         "parallelizes": False,
@@ -94,6 +101,8 @@ def pounders(
         ftol_sub=trustregion_subproblem_options["ftol"],
         xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_sub=trustregion_subproblem_options["gtol"],
+        batch_evaluator=batch_evaluator,
+        n_cores=n_cores,
     )
 
     return result_sub
@@ -122,6 +131,8 @@ def internal_solve_pounders(
     solver_sub,
     lower_bounds,
     upper_bounds,
+    batch_evaluator,
+    n_cores,
 ):
     """Minimize criterion function using POUNDERS.
 
@@ -172,18 +183,13 @@ def internal_solve_pounders(
         if np.max(x0 + delta - upper_bounds) > 1e-10:
             raise ValueError("Starting points + delta > upper bounds.")
 
-    residuals_accepted = criterion(x0)
-    history.add_entries(x0, residuals_accepted)
-
-    accepted_index = 0
-
-    xs = []
+    xs = [x0]
     for i in range(n):
         x1 = np.copy(x0)
         x1[i] += delta
         xs.append(x1)
 
-    residuals = [criterion(x) for x in xs]
+    residuals = batch_evaluator(criterion, arguments=xs, n_cores=n_cores)
 
     history.add_entries(xs, residuals)
     accepted_index = history.get_min_index()
@@ -278,7 +284,7 @@ def internal_solve_pounders(
             )
 
             if n_modelpoints < n:
-                history, model_indices = add_points_until_main_model_fully_linear(
+                history, model_indices = add_points_to_make_main_model_fully_linear(
                     history=history,
                     main_model=main_model,
                     model_improving_points=model_improving_points,
@@ -290,6 +296,8 @@ def internal_solve_pounders(
                     criterion=criterion,
                     lower_bounds=lower_bounds,
                     upper_bounds=upper_bounds,
+                    batch_evaluator=batch_evaluator,
+                    n_cores=n_cores,
                 )
                 n_modelpoints = n
 
@@ -349,7 +357,7 @@ def internal_solve_pounders(
                     history,
                     model_indices,
                     n_modelpoints,
-                ) = add_points_until_main_model_fully_linear(
+                ) = add_points_to_make_main_model_fully_linear(
                     history=history,
                     main_model=main_model,
                     model_improving_points=model_improving_points,
@@ -361,6 +369,8 @@ def internal_solve_pounders(
                     criterion=criterion,
                     lower_bounds=lower_bounds,
                     upper_bounds=upper_bounds,
+                    batch_evaluator=batch_evaluator,
+                    n_cores=n_cores,
                 )
 
         model_indices[1 : n_modelpoints + 1] = model_indices[:n_modelpoints]
