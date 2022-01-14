@@ -110,14 +110,6 @@ def test_latin_hypercube_property():
         aaae(index, np.sort(sample[0][:, j]))
 
 
-def test_get_empty_bin_info():
-    pass
-
-
-def test_extend_upscaled_lhs_sample():
-    pass
-
-
 @pytest.mark.parametrize(
     "center, radius, n_points, optimality_criterion, lhs_design, n_iter",
     product(
@@ -158,7 +150,7 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
     optimality_criterion,
 ):
     """Check that the optimal sample is actually optimal."""
-    sample, _ = get_next_trust_region_points_latin_hypercube(
+    sample, crit_vals_single = get_next_trust_region_points_latin_hypercube(
         center=np.ones(5),
         radius=0.1,
         n_points=10,
@@ -166,8 +158,9 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
         lhs_design="centered",
         optimality_criterion=optimality_criterion,
     )
+    crit_val_sample = _compute_optimality_criterion(sample, optimality_criterion)
 
-    optimized_sample, crit_vals = get_next_trust_region_points_latin_hypercube(
+    optimized_sample, crit_vals_many = get_next_trust_region_points_latin_hypercube(
         center=np.ones(5),
         radius=0.1,
         n_points=10,
@@ -175,8 +168,11 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
         lhs_design="centered",
         optimality_criterion=optimality_criterion,
     )
+    crit_val_optimized_sample = _compute_optimality_criterion(
+        optimized_sample, optimality_criterion
+    )
 
-    assert len(np.unique(crit_vals)) > 1
-    assert _compute_optimality_criterion(
-        sample, optimality_criterion
-    ) > _compute_optimality_criterion(optimized_sample, optimality_criterion)
+    assert len(np.unique(crit_vals_many)) > 10_000
+    assert crit_val_sample > crit_val_optimized_sample
+    assert crit_vals_single > np.min(crit_vals_many)
+    assert crit_val_optimized_sample == np.min(crit_vals_many)

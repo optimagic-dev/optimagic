@@ -59,17 +59,20 @@ def get_next_trust_region_points_latin_hypercube(
         candidates = np.concatenate((existing_upscaled, candidates), axis=1)
         n_new_points = n_points - len(existing_points)
 
+    candidates = candidates.astype(float)
+    if lhs_design == "centered" and n_new_points > 0:
+        candidates[:, -n_new_points:, :] += 0.5
+    elif lhs_design == "random" and n_new_points > 0:
+        candidates[:, -n_new_points:, :] += np.random.uniform(
+            size=(n_new_points, n_dim)
+        )
+
+    candidates = _scale_down_points(candidates, center, radius, n_points)
+
     crit_func = partial(_compute_optimality_criterion, criterion=optimality_criterion)
     crit_vals = crit_func(candidates)
-    upscaled_points = candidates[np.argmin(crit_vals)]
+    points = candidates[np.argmin(crit_vals)]
 
-    points = upscaled_points.astype(float)
-    if lhs_design == "centered" and n_new_points > 0:
-        points[-n_new_points:] += 0.5
-    elif lhs_design == "random" and n_new_points > 0:
-        points[-n_new_points:] += np.random.uniform(size=(n_new_points, n_dim))
-
-    points = _scale_down_points(points, center, radius, n_points)
     return points, crit_vals
 
 
@@ -84,7 +87,7 @@ def get_existing_points(old_sample, new_center, new_radius):
 
     Returns:
         existing (np.ndarray): Points in old_sample that fall into
-            the new region.
+            the new region. If there are no points, returns None.
 
     """
     lower = new_center - new_radius
@@ -133,19 +136,22 @@ def _compute_optimality_criterion(x, criterion):
 
     prod = np.matmul(x.transpose(0, 2, 1), x)
 
+    if criterion in {"a-optimal", "d-optimal", "g-optimal"}:
+        if x.shape[1] < x.shape[2]:
+            inv = np.linalg.inv(prod + 0.01 * np.eye(x.shape[2]))
+        else:
+            inv = np.linalg.inv(prod)
+
     if criterion == "a-optimal":
-        inv = np.linalg.pinv(prod)
         crit_vals = inv.trace(axis1=1, axis2=2)
     elif criterion == "d-optimal":
-        inv = np.linalg.pinv(prod)
-        crit_vals = -np.linalg.det(inv)
+        crit_vals = np.linalg.det(inv)
     elif criterion == "g-optimal":
-        inv = np.linalg.pinv(prod)
         hat_mat = np.matmul(np.matmul(x, inv), x.transpose(0, 2, 1))
-        crit_vals = -np.max(np.diagonal(hat_mat.T), axis=1)
+        crit_vals = np.max(np.diagonal(hat_mat.T), axis=1)
     elif criterion == "e-optimal":
         eig_vals = np.linalg.eig(prod)[0]
-        crit_vals = -np.min(eig_vals, axis=1)
+        crit_vals = -np.min(eig_vals, axis=1)  # minus because we maximize
 
     return crit_vals
 
@@ -207,7 +213,8 @@ def _scale_down_points(points, center, radius, n_points):
     :func:`_scale_up_points`.
 
     Args:
-        points (np.ndarray): Previously sampled Latin Hypercube, 2d.
+        points (np.ndarray): Previously sampled Latin Hypercube. If 3d the scaling will
+            be performed along the last 2 dimenions.
         center (np.ndarray): Center of the new trust region, 1d.
             Must fufill len(center) == points.shape[1].
         radius (float): Radius of the new trust region.
