@@ -63,7 +63,6 @@ for subsolver in ["L-BFGS-B", "trust-constr"]:
 @pytest.fixture()
 def options():
     out = {
-        "n_obs": 214,
         "delta": 0.1,
         "delta_min": 1e-6,
         "delta_max": 1e6,

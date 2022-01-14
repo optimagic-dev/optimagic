@@ -185,7 +185,6 @@ def data_find_affine_points(request):
         "theta1": test_data["theta1"],
         "c": test_data["c"],
         "model_indices": test_data["model_indices"],
-        "n": test_data["n"],
         "n_modelpoints": test_data["n_modelpoints"],
     }
 
@@ -228,7 +227,6 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
         "model_indices": test_data["model_indices"],
         "x_accepted": x_accepted,
         "n_modelpoints": n_modelpoints,
-        "n": n,
         "delta": test_data["delta"],
         "criterion": criterion,
         "lower_bounds": None,
@@ -263,18 +261,17 @@ def data_get_interpolation_matrices_residual_model():
         "delta": test_data["delta"],
         "c2": 10,
         "theta2": 1e-4,
-        "n": n,
         "n_maxinterp": 2 * n + 1,
         "n_modelpoints": test_data["n_modelpoints"],
     }
 
     expected_dict = {
-        "lower_triangular_expected": test_data["lower_triangular_expected"],
-        "basis_null_space_expected": test_data["basis_null_space_expected"],
-        "monomial_basis_expected": test_data["monomial_basis_expected"],
         "x_sample_monomial_basis_expected": test_data[
             "x_sample_monomial_basis_expected"
         ],
+        "monomial_basis_expected": test_data["monomial_basis_expected"],
+        "basis_null_space_expected": test_data["basis_null_space_expected"],
+        "lower_triangular_expected": test_data["lower_triangular_expected"],
         "n_modelpoints_expected": test_data["n_modelpoints_expected"],
     }
 
@@ -316,7 +313,6 @@ def data_interpolate_f(request):
         "interpolation_set": interpolation_set,
         "model_indices": model_indices,
         "n_modelpoints": n_modelpoints,
-        "n_obs": 214,
         "n_maxinterp": 2 * n + 1,
     }
 
@@ -335,14 +331,12 @@ def data_get_coefficients_residual_model():
     )
 
     inputs_dict = {
-        "lower_triangular": test_data["lower_triangular"],
-        "basis_null_space": test_data["basis_null_space"],
-        "monomial_basis": test_data["monomial_basis"],
         "x_sample_monomial_basis": test_data["x_sample_monomial_basis"],
+        "monomial_basis": test_data["monomial_basis"],
+        "basis_null_space": test_data["basis_null_space"],
+        "lower_triangular": test_data["lower_triangular"],
         "f_interpolated": test_data["f_interpolated"],
         "n_modelpoints": test_data["n_modelpoints"],
-        "n": 3,
-        "n_obs": 214,
     }
 
     expected_dict = {
@@ -455,13 +449,14 @@ def test_add_points_until_main_model_fully_linear(
     data_add_points_until_main_model_fully_linear,
 ):
     inputs, expected = data_add_points_until_main_model_fully_linear
+    n = 3
 
     history_out, model_indices_out = add_points_to_make_main_model_fully_linear(
         **inputs, n_cores=1, batch_evaluator=joblib_batch_evaluator
     )
 
     aaae(model_indices_out, expected["model_indices_expected"])
-    for index_added in range(inputs["n"] - inputs["n_modelpoints"], 0, -1):
+    for index_added in range(n - inputs["n_modelpoints"], 0, -1):
         aaae(
             history_out.get_xs(index=-index_added),
             expected["history_x_expected"][-index_added],
@@ -473,17 +468,17 @@ def test_get_interpolation_matrices_residual_model(
 ):
     inputs, expected = data_get_interpolation_matrices_residual_model
     (
-        lower_triangular,
-        basis_null_space,
-        monomial_basis,
         x_sample_monomial_basis,
+        monomial_basis,
+        basis_null_space,
+        lower_triangular,
         n_modelpoints,
     ) = get_interpolation_matrices_residual_model(**inputs)
 
-    aaae(lower_triangular, expected["lower_triangular_expected"])
-    aaae(basis_null_space, expected["basis_null_space_expected"])
-    aaae(monomial_basis, expected["monomial_basis_expected"])
     aaae(x_sample_monomial_basis, expected["x_sample_monomial_basis_expected"])
+    aaae(monomial_basis, expected["monomial_basis_expected"])
+    aaae(basis_null_space, expected["basis_null_space_expected"])
+    aaae(lower_triangular, expected["lower_triangular_expected"])
     assert np.allclose(n_modelpoints, expected["n_modelpoints_expected"])
 
 

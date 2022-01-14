@@ -48,6 +48,80 @@ def pounders(
     batch_evaluator="joblib",
     n_cores=DEFAULT_N_CORES,
 ):
+    """Interface for the POUNDERS algorithm.
+
+    Args:
+        criterion_and_derivative (callable): Function that returns criterion
+            and derivative as a tuple.
+        x (np.ndarray): Initial guess of the parameter vector. Starting points.
+        lower_bounds (np.ndarray): Lower bounds.
+            Must have same length as the initial guess of the
+            parameter vector. Equal to -1 if not provided by the user.
+        upper_bounds (np.ndarray): Upper bounds.
+            Must have same length as the initial guess of the
+            parameter vector. Equal to 1 if not provided by the user.
+        convergence_absolute_gradient_tolerance (float) Default is 1e-4.
+        stopping_max_iterations (int): Maximum number of iterations.
+            If reached, terminate. Default is 200.
+        trustregion_initial_radius (float): Delta, initial trust-region radius.
+            0.1 by default.
+        trustregion_minimal_radius (float): Minimal trust-region radius.
+            1e-6 by default.
+        trustregion_maximal_radius (float): Maximal trust-region radius.
+            1e6 by default.
+        trustregion_shrinking_factor_not_successful (float): Shrinking factor of
+            the trust-region radius in case the solution vector of the suproblem
+            is not accepted, but the model is fully linear (i.e. "valid").
+            Defualt is 0.5.
+        trustregion_expansion_factor_successful (float): Shrinking factor of
+            the trust-region radius in case the solution vector of the suproblem
+            is accepted. Default is 2.
+        theta1 (float): Threshold for adding the current x candidate to the
+            model. Function argument to find_affine_points(). Default is 1e-5.
+        theta2 (float): Threshold for adding the current x candidate to the
+            model. Argument to get_interpolation_matrices_residual_model().
+            Default is 1e-4.
+        trustregion_threshold_successful (float): Threshold for accepting the
+            solution vector of the subproblem as the best x candidate.
+            Default is 0.
+        trustregion_threshold_very_successful(float): Threshold for accepting the
+            solution vector of the subproblem as the best x candidate.
+            Default is 0.1.
+        c1 (float): Treshold for accepting the norm of our current x candidate.
+            Function argument to find_affine_points() for the case where input array
+            *model_improving_points* is zero.
+        c2 (int)): Treshold for accepting the norm of our current x candidate.
+            Equal to 10 by default. Argument to find_affine_points() in case
+            the input array *model_improving_points* is not zero.
+        trustregion_subproblem_solver (str): Scipy minimizer employed to solve
+            the subproblem. Currently, three bound-constraint minimizers are supported:
+            - "trust-constr" (default)
+            - "L-BFGS-B"
+            - "SLSQP"
+        trustregion_subproblem_options (dict): Options dictionary containing
+            stopping criteria for the subproblem. These are the tolerance levels:
+            "ftol", "xtol", and "gtol". None of them have to be specified by default,
+            but can be.
+        batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or callable with the same interface
+            as the estimagic batch_evaluators. Default is "joblib".
+        n_cores (int): Number of processes used to parallelize the function
+            evaluations. Default is 1.
+
+    Returns:
+        (dict) Result dictionary containing:
+
+        - solution_x (np.ndarray): Solution vector of shape (n,).
+        - solution_criterion (np.ndarray): Values of the criterion function at the
+            solution vector. Shape (n_obs,).
+        - history_x (np.ndarray): Entire history of x. Shape (history.get_n_fun(), n).
+        - history_criterion (np.ndarray): Entire history of the criterion function
+            evaluations. Shape (history.get_n_fun(), n_obs)
+        - n_iterations (int): Number of iterations the algorithm ran before finding a
+            solution vector or reaching maxiter.
+        - message (str): Message to the user. Currently it says: "Under development."
+    """
+
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
 
@@ -59,11 +133,6 @@ def pounders(
     }
     criterion = partial(
         criterion_and_derivative, algorithm_info=algorithm_info, task="criterion"
-    )
-    n_errors = len(
-        criterion_and_derivative.keywords["first_criterion_evaluation"]["output"][
-            "root_contributions"
-        ]
     )
 
     if c1 is None:
@@ -81,7 +150,6 @@ def pounders(
     result_sub = internal_solve_pounders(
         criterion=criterion,
         x0=x,
-        n_obs=n_errors,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         gtol=convergence_absolute_gradient_tolerance,
@@ -109,9 +177,12 @@ def pounders(
 
 
 def internal_solve_pounders(
-    x0,
-    n_obs,
     criterion,
+    x0,
+    lower_bounds,
+    upper_bounds,
+    gtol,
+    maxiter,
     delta,
     delta_min,
     delta_max,
@@ -123,52 +194,79 @@ def internal_solve_pounders(
     eta1,
     c1,
     c2,
-    maxiter,
-    gtol,
+    solver_sub,
     ftol_sub,
     xtol_sub,
     gtol_sub,
-    solver_sub,
-    lower_bounds,
-    upper_bounds,
     batch_evaluator,
     n_cores,
 ):
     """Minimize criterion function using POUNDERS.
 
     Args:
+        criterion_and_derivative (callable): Function that returns criterion
+            and derivative as a tuple.
         x0 (np.ndarray): Initial guess of the parameter vector. Starting points.
-        n_obs (int): Number of observations/evaluation points.
-        criterion (callable): Criterion function to be minimized.
-        delta (float): Delta, initial trust-region radius.
-        delta_min (float): Minimum value for delta.
-        delta_max (float): Maximum value for delta.
-        gamma0 (float): Gamma_0.
-        gamma1 (float): Gamma_1.
-        theta1 (float): Theta_1.
-        theta2 (float): Theta_2.
-        eta0 (float): Eta_0.
-        eta1 (float): Eta_1.
-        c1 (float): C_1. Equal to sqrt(*nparams*) by default.
-        c2 (int)): C_2. Equal to 10 by default.
-        maxiter (int): Maximum number of iterations. If reached, terminate.
-        gtol_sub (float): Gradient norm used in the subproblem.
-        solver_sub (str): Bound-constraint minimizer for the subproblem.
-            Currently, three solvers from the scipy library are supported.
-            - "trust-constr"
-            - "L-BFGS-B"
-            - "SLSQP"
         lower_bounds (np.ndarray): Lower bounds.
             Must have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
         upper_bounds (np.ndarray): Upper bounds.
             Must have same length as the initial guess of the
             parameter vector. Equal to 1 if not provided by the user.
+        gtol (float): Convergence criterion of the absolute gradient norm.
+            Default is 1e-4.
+        maxiter (int): Maximum number of iterations. If reached, terminate.
+        delta (float): Delta, initial trust-region radius.
+        delta_min (float): Minimal trust-region radius.
+        delta_max (float): Maximal trust-region radius.
+        gamma0 (float): Shrinking factor of the trust-region radius in case the
+            solution vector of the suproblem is not accepted, but the model is fully
+            linar (i.e. "valid").
+        gamma1 (float): Expansion factor of the trust-region radius in case the
+            solution vector of the suproblem is accepted.
+        theta1 (float): Threshold for adding the current x candidate
+            to the model. Function argument to find_affine_points().
+        theta2 (float): Threshold for adding the current x candidate
+            to the model. Argument to get_interpolation_matrices_residual_model().
+        eta0 (float): Threshold for accepting the solution vector of the
+            subproblem as the best x candidate.
+        eta1 (float): Threshold for accepting the solution vector of the
+            subproblem as the best x candidate.
+        c1 (float): Treshold for accepting the norm of our current x candidate.
+            Equal to sqrt(n) by default. Argument to find_affine_points() in case
+            the input array *model_improving_points* is zero.
+        c2 (int)): Treshold for accepting the norm of our current x candidate.
+            Equal to 10 by default. Argument to find_affine_points() in case
+            the input array *model_improving_points* is not zero.
+        solver_sub (str): Bound-constraint minimizer for the subproblem.
+            Currently, three solvers from the scipy library are supported.
+            - "trust-constr" (default)
+            - "L-BFGS-B"
+            - "SLSQP"
+        ftol_sub (float): Tolerance for f, the criterion function value.
+            Stopping criterion for the subproblem.
+        xtol_sub (float): Tolerance for solution vector x.
+            Stopping criterion for the subproblem.
+        gtol_sub (float): Tolerance for the absolute gradient norm.
+            Stopping criterion for the subproblem.
+        batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
+            (currently 'joblib' and 'pathos_mp') or callable with the same interface
+            as the estimagic batch_evaluators.
+        n_cores (int): Number of processes used to parallelize the function
+            evaluations. Default is 1.
 
     Returns:
-        Tuple:
-        - solution (np.ndarray): Solution vector.
-        - gradient (np.ndarray): Gradient associated with the solution vector.
+        (dict) Result dictionary containing:
+
+        - solution_x (np.ndarray): Solution vector of shape (n,).
+        - solution_criterion (np.ndarray): Values of the criterion function at the
+            solution vector. Shape (n_obs,).
+        - history_x (np.ndarray): Entire history of x. Shape (history.get_n_fun(), n).
+        - history_criterion (np.ndarray): Entire history of the criterion function
+            evaluations. Shape (history.get_n_fun(), n_obs)
+        - n_iterations (int): Number of iterations the algorithm ran before finding a
+            solution vector or reaching maxiter.
+        - message (str): Message to the user. Currently it says: "Under development."
     """
     history = LeastSquaresHistory()
 
@@ -262,7 +360,9 @@ def internal_solve_pounders(
             x_accepted = history.get_best_xs()
             accepted_index = history.get_min_index()
 
-        # Evaluate at a model improving point if necessary
+        # The model is deemend "not valid" if it has less than n model points.
+        # Otherwise, if the model has n points it is considered "valid" or
+        # "fully linear".
         # Note: valid is True in first iteration
         if valid is False:
             (
@@ -279,7 +379,6 @@ def internal_solve_pounders(
                 theta1=theta1,
                 c=c1,
                 model_indices=model_indices,
-                n=n,
                 n_modelpoints=0,
             )
 
@@ -291,7 +390,6 @@ def internal_solve_pounders(
                     model_indices=model_indices,
                     x_accepted=x_accepted,
                     n_modelpoints=n_modelpoints,
-                    n=n,
                     delta=delta,
                     criterion=criterion,
                     lower_bounds=lower_bounds,
@@ -325,7 +423,6 @@ def internal_solve_pounders(
             theta1=theta1,
             c=c1,
             model_indices=model_indices,
-            n=n,
             n_modelpoints=0,
         )
 
@@ -347,7 +444,6 @@ def internal_solve_pounders(
                 theta1=theta1,
                 c=c2,
                 model_indices=model_indices,
-                n=n,
                 n_modelpoints=n_modelpoints,
             )
 
@@ -364,7 +460,6 @@ def internal_solve_pounders(
                     model_indices=model_indices,
                     x_accepted=x_accepted,
                     n_modelpoints=n_modelpoints,
-                    n=n,
                     delta=delta,
                     criterion=criterion,
                     lower_bounds=lower_bounds,
@@ -378,10 +473,10 @@ def internal_solve_pounders(
         model_indices[0] = accepted_index
 
         (
-            lower_triangular,
-            basis_null_space,
-            monomial_basis,
             x_sample_monomial_basis,
+            monomial_basis,
+            basis_null_space,
+            lower_triangular,
             n_modelpoints,
         ) = get_interpolation_matrices_residual_model(
             history=history,
@@ -390,7 +485,6 @@ def internal_solve_pounders(
             delta=delta,
             c2=c2,
             theta2=theta2,
-            n=n,
             n_maxinterp=n_maxinterp,
             n_modelpoints=n_modelpoints,
         )
@@ -406,19 +500,16 @@ def internal_solve_pounders(
             residual_model=residual_model,
             model_indices=model_indices,
             n_modelpoints=n_modelpoints,
-            n_obs=n_obs,
             n_maxinterp=n_maxinterp,
         )
 
         coefficients_residual_model = get_coefficients_residual_model(
-            lower_triangular=lower_triangular,
-            basis_null_space=basis_null_space,
-            monomial_basis=monomial_basis,
             x_sample_monomial_basis=x_sample_monomial_basis,
+            monomial_basis=monomial_basis,
+            basis_null_space=basis_null_space,
+            lower_triangular=lower_triangular,
             f_interpolated=f_interpolated,
             n_modelpoints=n_modelpoints,
-            n=n,
-            n_obs=n_obs,
         )
 
         residual_model["intercepts"] = history.get_residuals(index=accepted_index)
@@ -469,9 +560,3 @@ def internal_solve_pounders(
     }
 
     return result_dict
-
-
-def centered_criterion_template(centered_x, center_info, criterion):
-    x = centered_x * center_info["radius"] + center_info["x"]
-    out = criterion(x) + center_info["residuals"]
-    return out
