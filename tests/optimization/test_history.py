@@ -92,11 +92,40 @@ def test_add_entries_initialized_extension_needed():
     assert history.get_n_fun() == 8
 
 
-@pytest.mark.xfail
 def test_add_centered_entries():
-    assert 1 == 2
+    history = LeastSquaresHistory()
+    history.add_entries(np.ones((2, 2)), np.ones((2, 4)))
+    center_info = {
+        "x": history.get_xs(index=-1),
+        "residuals": history.get_residuals(index=-1),
+        "radius": 0.5,
+    }
+    history.add_centered_entries(
+        xs=np.ones(2), residuals=np.ones(4) * 2, center_info=center_info
+    )
+
+    xs, residuals, critvals = history.get_entries(index=-1)
+
+    aaae(xs, np.array([1.5, 1.5]))
+    aaae(residuals, np.array([3, 3, 3, 3]))
+    assert critvals == 36
+    assert history.get_n_fun() == 3
 
 
-@pytest.mark.xfail
 def test_get_centered_entries():
-    assert 1 == 2
+    history = LeastSquaresHistory()
+    history.add_entries(np.ones((4, 3)), np.ones((4, 5)))
+    center_info = {
+        "x": np.arange(3),
+        "residuals": np.arange(5),
+        "radius": 0.25,
+    }
+
+    xs, residuals, critvals = history.get_centered_entries(
+        center_info=center_info, index=-1
+    )
+
+    aaae(xs, np.array([4, 0, -4]))
+    aaae(residuals, np.arange(1, -4, -1))
+    assert critvals == 15
+    assert history.get_n_fun() == 4
