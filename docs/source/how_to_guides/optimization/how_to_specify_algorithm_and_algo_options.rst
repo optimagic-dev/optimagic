@@ -433,6 +433,90 @@ dependencies to use them:
       process, with ``trustregion_initial_radius`` being its initial value.
 
 
+.. _own_algorithms:
+
+Own optimizers
+--------------
+
+Estimagic's own algorithms are considered experimental and should not be used for
+publication yet.
+
+In the long run we plan to implement a few high quality optimizers that are specially
+suited for difficult optimizations that arise in estimation problems. Examples are
+optimizers that exploit a nonlinear least-squares structure and can deal with
+noisy criterion functions.
+
+
+.. dropdown:: pounders
+
+    Minimize a function using the POUNDERS algorithm.
+
+    POUNDERs (:cite:`Benson2017`, :cite:`Wild2015`, `GitHub repository
+    <https://github.com/erdc/petsc4py>`_)
+
+    can be a useful tool for economists who estimate structural models using
+    indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
+    POUNDERs is tailored for minimizing a non-linear sum of squares objective function,
+    and therefore may require fewer iterations to arrive at a local optimum than
+    Nelder-Mead.
+
+    The criterion function :func:`func` should return a dictionary with the following
+    fields:
+
+    1. ``"value"``: The sum of squared (potentially weighted) errors.
+    2. ``"root_contributions"``: An array containing the root (weighted) contributions.
+
+    Scaling the problem is necessary such that bounds correspond to the unit hypercube
+    :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
+    changes in parameters result in similar order-of-magnitude changes in the criterion
+    value(s).
+
+    pounders support the following options:
+
+    - **stopping_max_iterations** (int): Maximum number of iterations.
+      If reached, terminate. Default is 200.
+    - **trustregion_initial_radius (float)**: Delta, initial trust-region radius.
+      0.1 by default.
+    - **trustregion_minimal_radius** (float): Minimal trust-region radius.
+      1e-6 by default.
+    - **trustregion_maximal_radius** (float): Maximal trust-region radius.
+        1e6 by default.
+    - **trustregion_shrinking_factor_not_successful** (float): Shrinking factor of
+      the trust-region radius in case the solution vector of the suproblem
+      is not accepted, but the model is fully linear (i.e. "valid").
+      Defualt is 0.5.
+    - **trustregion_expansion_factor_successful** (float): Shrinking factor of
+      the trust-region radius in case the solution vector of the suproblem
+      is accepted. Default is 2.
+    - **theta1** (float): Threshold for adding the current x candidate to the
+      model. Function argument to find_affine_points(). Default is 1e-5.
+    - **theta2** (float): Threshold for adding the current x candidate to the model.
+      Argument to get_interpolation_matrices_residual_model(). Default is 1e-4.
+    - **trustregion_threshold_successful** (float): Threshold for accepting the
+        solution vector of the subproblem as the best x candidate. Default is 0.
+    - **trustregion_threshold_very_successful** (float): Threshold for accepting the
+        solution vector of the subproblem as the best x candidate. Default is 0.1.
+    - **c1** (float): Treshold for accepting the norm of our current x candidate.
+      Function argument to find_affine_points() for the case where input array
+      *model_improving_points* is zero.
+    - **c2** (int): Treshold for accepting the norm of our current x candidate.
+      Equal to 10 by default. Argument to find_affine_points() in case
+      the input array *model_improving_points* is not zero.
+    - **trustregion_subproblem_solver** (str): Scipy minimizer employed to solve
+        the subproblem. Currently, three bound-constraint minimizers are supported:
+        - "trust-constr" (default)
+        - "L-BFGS-B"
+        - "SLSQP"
+    - **trustregion_subproblem_options** (dict): Options dictionary containing
+      stopping criteria for the subproblem. These are the tolerance levels:
+      "ftol", "xtol", and "gtol". None of them have to be specified by default,
+      but can be.
+    - **batch_evaluator** (str or callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or callable with the same interface
+      as the estimagic batch_evaluators. Default is "joblib".
+    - **n_cores (int)**: Number of processes used to parallelize the function
+      evaluations. Default is 1.
+
 
 .. _tao_algorithms:
 

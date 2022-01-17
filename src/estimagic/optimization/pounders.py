@@ -51,85 +51,9 @@ def pounders(
 ):
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
 
-    POUNDERS (Practical Optimization Using No Derivatives for sums of Squares)
-    is a derivative-free optimization algorithm that finds local solutions to
-    non-linear least squares problems. It exploits the least-squares structure
-    by collecting smooth surrogate models, one for each residual.
+    For details see :ref:`list_of_scipy_algorithms`.
 
-    Bound-constraints are supported.
-
-    Args:
-        criterion_and_derivative (callable): Function that returns criterion
-            and derivative as a tuple.
-        x (np.ndarray): Initial guess of the parameter vector. Starting points.
-        lower_bounds (np.ndarray): Lower bounds.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to -1 if not provided by the user.
-        upper_bounds (np.ndarray): Upper bounds.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to 1 if not provided by the user.
-        convergence_absolute_gradient_tolerance (float) Default is 1e-4.
-        stopping_max_iterations (int): Maximum number of iterations.
-            If reached, terminate. Default is 200.
-        trustregion_initial_radius (float): Delta, initial trust-region radius.
-            0.1 by default.
-        trustregion_minimal_radius (float): Minimal trust-region radius.
-            1e-6 by default.
-        trustregion_maximal_radius (float): Maximal trust-region radius.
-            1e6 by default.
-        trustregion_shrinking_factor_not_successful (float): Shrinking factor of
-            the trust-region radius in case the solution vector of the suproblem
-            is not accepted, but the model is fully linear (i.e. "valid").
-            Defualt is 0.5.
-        trustregion_expansion_factor_successful (float): Shrinking factor of
-            the trust-region radius in case the solution vector of the suproblem
-            is accepted. Default is 2.
-        theta1 (float): Threshold for adding the current x candidate to the
-            model. Function argument to find_affine_points(). Default is 1e-5.
-        theta2 (float): Threshold for adding the current x candidate to the
-            model. Argument to get_interpolation_matrices_residual_model().
-            Default is 1e-4.
-        trustregion_threshold_successful (float): Threshold for accepting the
-            solution vector of the subproblem as the best x candidate.
-            Default is 0.
-        trustregion_threshold_very_successful(float): Threshold for accepting the
-            solution vector of the subproblem as the best x candidate.
-            Default is 0.1.
-        c1 (float): Treshold for accepting the norm of our current x candidate.
-            Function argument to find_affine_points() for the case where input array
-            *model_improving_points* is zero.
-        c2 (int)): Treshold for accepting the norm of our current x candidate.
-            Equal to 10 by default. Argument to find_affine_points() in case
-            the input array *model_improving_points* is not zero.
-        trustregion_subproblem_solver (str): Scipy minimizer employed to solve
-            the subproblem. Currently, three bound-constraint minimizers are supported:
-            - "trust-constr" (default)
-            - "L-BFGS-B"
-            - "SLSQP"
-        trustregion_subproblem_options (dict): Options dictionary containing
-            stopping criteria for the subproblem. These are the tolerance levels:
-            "ftol", "xtol", and "gtol". None of them have to be specified by default,
-            but can be.
-        batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
-            (currently 'joblib' and 'pathos_mp') or callable with the same interface
-            as the estimagic batch_evaluators. Default is "joblib".
-        n_cores (int): Number of processes used to parallelize the function
-            evaluations. Default is 1.
-
-    Returns:
-        (dict) Result dictionary containing:
-
-        - solution_x (np.ndarray): Solution vector of shape (n,).
-        - solution_criterion (np.ndarray): Values of the criterion function at the
-            solution vector. Shape (n_obs,).
-        - history_x (np.ndarray): Entire history of x. Shape (history.get_n_fun(), n).
-        - history_criterion (np.ndarray): Entire history of the criterion function
-            evaluations. Shape (history.get_n_fun(), n_obs)
-        - n_iterations (int): Number of iterations the algorithm ran before finding a
-            solution vector or reaching maxiter.
-        - message (str): Message to the user. Currently it says: "Under development."
     """
-
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
 
