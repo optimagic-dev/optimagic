@@ -3,7 +3,23 @@ import numpy as np
 
 
 class LeastSquaresHistory:
-    """Container to save and retrieve history entries for a least-squares optimizer."""
+    """Container to save and retrieve history entries for a least-square optimizer.
+
+    These entries are:
+    - xs
+    - residuals
+    - critvals
+
+    The class automatically determines the 'best' entries, i.e. entries related to
+    the xs that yield the smallest critval - given all xs stored so far.
+
+    Xs and residuals can be both saved and accessed in their centered
+    and uncentered form. 'Centered' meaning that they are scaled by their
+    corresponding 'best' entry. 'Uncentered' simply being the raw entries.
+
+    Critvals don't need to be added explicitly, as they are computed internally
+    as the sum of squares of the residuals whenever new entries are added.
+    """
 
     def __init__(self):
         self.xs = None
@@ -12,8 +28,7 @@ class LeastSquaresHistory:
         self.best_residuals = None
         self.critvals = None
         self.n_fun = 0
-        self.min_index = 0
-        self.accepted = 0
+        self.best_index = 0
         self.min_critval = np.inf
 
     def add_entries(self, xs, residuals):
@@ -33,7 +48,7 @@ class LeastSquaresHistory:
         min_candidate = critvals[argmin_candidate]
 
         if min_candidate < self.min_critval:
-            self.min_index = argmin_candidate + self.n_fun
+            self.best_index = argmin_candidate + self.n_fun
             self.best_xs = xs[argmin_candidate]
             self.best_residuals = residuals[argmin_candidate]
 
@@ -211,22 +226,22 @@ class LeastSquaresHistory:
         return self.n_fun
 
     def get_min_index(self):
-        return self.min_index
+        return self.best_index
 
     def get_best_entries(self):
-        return self.get_entries(index=self.min_index)
+        return self.get_entries(index=self.best_index)
 
     def get_best_xs(self):
-        return self.get_xs(index=self.min_index)
+        return self.get_xs(index=self.best_index)
 
     def get_best_residuals(self):
-        return self.get_residuals(index=self.min_index)
+        return self.get_residuals(index=self.best_index)
 
     def get_best_critvals(self):
-        return self.get_critvals(index=self.min_index)
+        return self.get_critvals(index=self.best_index)
 
     def get_best_centered_entries(self, center_info):
-        return self.get_centered_entries(self, center_info, index=self.min_index)
+        return self.get_centered_entries(self, center_info, index=self.best_index)
 
 
 def _add_entries_to_array(arr, new, position):

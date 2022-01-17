@@ -42,7 +42,6 @@ def criterion():
 
 start_params = [
     np.array([0.15, 0.008, 0.01]),
-    # np.ones(3) * 0.25, # noqa: E800
     np.array([1e-6, 1e-2, 1e-6]),
 ]
 
