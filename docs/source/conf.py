@@ -64,6 +64,7 @@ autodoc_mock_imports = [
     "joblib",
     "nlopt",
     "pandas",
+    "plotly",
     "pytest",
     "pygmo",
     "scipy",

@@ -44,6 +44,7 @@ dependencies:
   - sphinx-panels
   - pygmo
   - chaospy
+  - plotly>=5.5.0
 
   - pip:
       - black
