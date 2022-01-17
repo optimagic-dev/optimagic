@@ -11,7 +11,7 @@ class LeastSquaresHistory:
     - critvals
 
     The class automatically determines the 'best' entries, i.e. entries related to
-    the xs that yield the smallest critval - given all xs stored so far.
+    the x that yield the smallest critval - given all xs stored so far.
 
     Xs and residuals can be both saved and accessed in their centered
     and uncentered form. 'Centered' meaning that they are scaled by their
@@ -23,7 +23,7 @@ class LeastSquaresHistory:
 
     def __init__(self):
         self.xs = None
-        self.best_xs = None
+        self.best_x = None
         self.residuals = None
         self.best_residuals = None
         self.critvals = None
@@ -49,7 +49,7 @@ class LeastSquaresHistory:
 
         if min_candidate < self.min_critval:
             self.best_index = argmin_candidate + self.n_fun
-            self.best_xs = xs[argmin_candidate]
+            self.best_x = xs[argmin_candidate]
             self.best_residuals = residuals[argmin_candidate]
 
         if len(xs) != len(residuals):
@@ -231,7 +231,7 @@ class LeastSquaresHistory:
     def get_best_entries(self):
         return self.get_entries(index=self.best_index)
 
-    def get_best_xs(self):
+    def get_best_x(self):
         return self.get_xs(index=self.best_index)
 
     def get_best_residuals(self):

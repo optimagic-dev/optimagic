@@ -228,7 +228,7 @@ def internal_solve_pounders(
     indices_not_min = [i for i in range(n + 1) if i != accepted_index]
 
     center_info = {
-        "x": history.get_best_xs(),
+        "x": history.get_best_x(),
         "residuals": history.get_best_residuals(),
         "radius": delta,
     }
@@ -245,7 +245,7 @@ def internal_solve_pounders(
         residual_model, multiply_square_terms_with_residuals=False
     )
 
-    x_accepted = history.get_best_xs()
+    x_accepted = history.get_best_x()
     gradient_norm = np.linalg.norm(main_model["linear_terms"])
     gradient_norm *= delta
 
@@ -280,7 +280,7 @@ def internal_solve_pounders(
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
             residual_model["intercepts"] = history.get_residuals(index=accepted_index)
-            center_info = {"x": history.get_best_xs(), "radius": delta}
+            center_info = {"x": history.get_best_x(), "radius": delta}
             x_candidate = history.get_centered_xs(center_info, index=-1)
 
             residual_model = update_residual_model_with_new_accepted_x(
@@ -289,7 +289,7 @@ def internal_solve_pounders(
             main_model = update_main_model_with_new_accepted_x(
                 main_model=main_model, x_candidate=x_candidate
             )
-            x_accepted = history.get_best_xs()
+            x_accepted = history.get_best_x()
             accepted_index = history.get_min_index()
 
         # The model is deemend "not valid" if it has less than n model points.
@@ -483,7 +483,7 @@ def internal_solve_pounders(
             reason = False
 
     result_dict = {
-        "solution_x": history.get_best_xs(),
+        "solution_x": history.get_best_x(),
         "solution_criterion": history.get_best_residuals(),
         "history_x": history.get_xs(),
         "history_criterion": history.get_residuals(),
