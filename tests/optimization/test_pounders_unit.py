@@ -1,3 +1,4 @@
+"""Test the auxiliary functions of the pounders algorithm."""
 from functools import partial
 
 import numpy as np

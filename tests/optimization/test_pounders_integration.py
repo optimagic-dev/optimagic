@@ -1,3 +1,4 @@
+"""Test the internal pounders interface."""
 from functools import partial
 
 import numpy as np

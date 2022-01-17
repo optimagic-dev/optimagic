@@ -1,3 +1,4 @@
+"""Auxiliary functions for the pounders algorithm."""
 from functools import partial
 
 import numpy as np

@@ -1,3 +1,4 @@
+"""Implement the pounders algorithm"""
 from functools import partial
 
 import estimagic.batch_evaluators as be
@@ -48,7 +49,14 @@ def pounders(
     batch_evaluator="joblib",
     n_cores=DEFAULT_N_CORES,
 ):
-    """Interface for the POUNDERS algorithm.
+    """Find the local minimum to a non-linear least-squares problem using POUNDERS.
+
+    POUNDERS (Practical Optimization Using No Derivatives for sums of Squares)
+    is a derivative-free optimization algorithm that finds local solutions to
+    non-linear least squares problems. It exploits the least-squares structure
+    by collecting smooth surrogate models, one for each residual.
+
+    Bound-constraints are supported.
 
     Args:
         criterion_and_derivative (callable): Function that returns criterion
@@ -201,7 +209,7 @@ def internal_solve_pounders(
     batch_evaluator,
     n_cores,
 ):
-    """Minimize criterion function using POUNDERS.
+    """Minimize the criterion function using POUNDERS.
 
     Args:
         criterion_and_derivative (callable): Function that returns criterion

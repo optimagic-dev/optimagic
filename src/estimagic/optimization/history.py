@@ -1,8 +1,9 @@
+"""History class for pounders and similar optimizers."""
 import numpy as np
 
 
 class LeastSquaresHistory:
-    """Container to save and retrieve history entries for a least squares optimizer."""
+    """Container to save and retrieve history entries for a least-squares optimizer."""
 
     def __init__(self):
         self.xs = None
