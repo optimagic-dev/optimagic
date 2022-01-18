@@ -4,6 +4,7 @@ from functools import partial
 import numpy as np
 import pandas as pd
 import pytest
+import yaml
 from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.history import LeastSquaresHistory
@@ -27,6 +28,14 @@ from estimagic.optimization.pounders_auxiliary import (
 )
 from numpy.testing import assert_array_almost_equal as aaae
 
+
+def read_yaml(path):
+    with open(rf"{path}") as file:
+        data = yaml.full_load(file)
+
+    return data
+
+
 # ======================================================================================
 # Fixtures
 # ======================================================================================
@@ -47,12 +56,16 @@ def criterion():
 
 @pytest.fixture
 def data_update_initial_residual_model():
-    test_data = pd.read_pickle(TEST_FIXTURES_DIR / "update_initial_residual_model.pkl")
+    test_data = read_yaml(TEST_FIXTURES_DIR / "update_initial_residual_model.yaml")
     inputs_dict = {}
 
-    inputs_dict["initial_residual_model"] = test_data["initial_residual_model"]
-    inputs_dict["x_candidate"] = test_data["x_candidate"]
-    inputs_dict["residuals_candidate"] = test_data["residuals_candidate"]
+    initial_residual_model = {
+        "intercepts": np.array(test_data["initial_residual_model"]["intercepts"])
+    }
+
+    inputs_dict["initial_residual_model"] = initial_residual_model
+    inputs_dict["x_candidate"] = np.array(test_data["x_candidate"])
+    inputs_dict["residuals_candidate"] = np.array(test_data["residuals_candidate"])
 
     expected_dict = test_data["residual_model_expected"]
 
@@ -61,15 +74,15 @@ def data_update_initial_residual_model():
 
 @pytest.fixture
 def data_update_residual_model():
-    test_data = pd.read_pickle(TEST_FIXTURES_DIR / "update_residual_model.pkl")
+    test_data = read_yaml(TEST_FIXTURES_DIR / "update_residual_model.yaml")
 
     residual_model = {
-        "linear_terms": test_data["linear_terms"],
-        "square_terms": test_data["square_terms"],
+        "linear_terms": np.array(test_data["linear_terms"]),
+        "square_terms": np.array(test_data["square_terms"]),
     }
     coefficients_to_add = {
-        "linear_terms": test_data["coefficients_linear_terms"].T,
-        "square_terms": test_data["coefficients_square_terms"],
+        "linear_terms": np.array(test_data["coefficients_linear_terms"]).T,
+        "square_terms": np.array(test_data["coefficients_square_terms"]),
     }
 
     inputs_dict = {
@@ -89,14 +102,12 @@ def data_update_residual_model():
 
 @pytest.fixture
 def data_update_main_from_residual_model():
-    test_data = pd.read_pickle(
-        TEST_FIXTURES_DIR / "update_main_from_residual_model.pkl"
-    )
+    test_data = read_yaml(TEST_FIXTURES_DIR / "update_main_from_residual_model.yaml")
 
     residual_model = {
-        "intercepts": test_data["residuals"],
-        "linear_terms": test_data["linear_terms_residual_model"],
-        "square_terms": test_data["square_terms_residual_model"],
+        "intercepts": np.array(test_data["residuals"]),
+        "linear_terms": np.array(test_data["linear_terms_residual_model"]),
+        "square_terms": np.array(test_data["square_terms_residual_model"]),
     }
 
     main_model_expected = {
@@ -109,21 +120,21 @@ def data_update_main_from_residual_model():
 
 @pytest.fixture
 def data_update_residual_model_with_new_accepted_x():
-    test_data = pd.read_pickle(
-        TEST_FIXTURES_DIR / "update_residual_model_with_new_accepted_x.pkl"
+    test_data = read_yaml(
+        TEST_FIXTURES_DIR / "update_residual_model_with_new_accepted_x.yaml"
     )
     inputs_dict = {}
     expected_dict = {}
 
     residual_model = {
-        "intercepts": test_data["residuals"],
-        "linear_terms": test_data["linear_terms"],
-        "square_terms": test_data["square_terms"],
+        "intercepts": np.array(test_data["residuals"]),
+        "linear_terms": np.array(test_data["linear_terms"]),
+        "square_terms": np.array(test_data["square_terms"]),
     }
 
     inputs_dict["residual_model"] = residual_model
     inputs_dict["x_candidate"] = (
-        test_data["x_candidate_uncentered"] - test_data["best_xs"]
+        np.array(test_data["x_candidate_uncentered"]) - np.array(test_data["best_x"])
     ) / test_data["delta"]
 
     expected_dict["intercepts"] = test_data["residuals_expected"]
@@ -134,20 +145,20 @@ def data_update_residual_model_with_new_accepted_x():
 
 @pytest.fixture
 def data_update_main_model_with_new_accepted_x():
-    test_data = pd.read_pickle(
-        TEST_FIXTURES_DIR / "update_main_model_with_new_accepted_x.pkl"
+    test_data = read_yaml(
+        TEST_FIXTURES_DIR / "update_main_model_with_new_accepted_x.yaml"
     )
     inputs_dict = {}
     expected_dict = {}
 
     main_model = {
-        "linear_terms": test_data["linear_terms"],
-        "square_terms": test_data["square_terms"],
+        "linear_terms": np.array(test_data["linear_terms"]),
+        "square_terms": np.array(test_data["square_terms"]),
     }
 
     inputs_dict["main_model"] = main_model
     inputs_dict["x_candidate"] = (
-        test_data["x_candidate_uncentered"] - test_data["best_xs"]
+        np.array(test_data["x_candidate_uncentered"]) - np.array(test_data["best_x"])
     ) / test_data["delta"]
 
     expected_dict["linear_terms"] = test_data["linear_terms_expected"]
@@ -167,25 +178,23 @@ def data_update_main_model_with_new_accepted_x():
     ]
 )
 def data_find_affine_points(request):
-    test_data = pd.read_pickle(
-        TEST_FIXTURES_DIR / f"find_affine_points_{request.param}.pkl"
+    test_data = read_yaml(
+        TEST_FIXTURES_DIR / f"find_affine_points_{request.param}.yaml"
     )
 
     history = LeastSquaresHistory()
-    history.add_entries(
-        test_data["history_x"],
-        np.zeros(test_data["history_x"].shape),
-    )
+    history_x = np.array(test_data["history_x"])
+    history.add_entries(history_x, np.zeros(history_x.shape))
 
     inputs_dict = {
         "history": history,
-        "x_accepted": test_data["x_accepted"],
-        "model_improving_points": test_data["model_improving_points"],
+        "x_accepted": np.array(test_data["x_accepted"]),
+        "model_improving_points": np.array(test_data["model_improving_points"]),
         "project_x_onto_null": test_data["project_x_onto_null"],
         "delta": test_data["delta"],
         "theta1": test_data["theta1"],
         "c": test_data["c"],
-        "model_indices": test_data["model_indices"],
+        "model_indices": np.array(test_data["model_indices"]),
         "n_modelpoints": test_data["n_modelpoints"],
     }
 
@@ -200,33 +209,33 @@ def data_find_affine_points(request):
 
 @pytest.fixture(params=["i", "ii"])
 def data_add_points_until_main_model_fully_linear(request, criterion):
-    test_data = pd.read_pickle(
+    test_data = read_yaml(
         TEST_FIXTURES_DIR
-        / f"add_points_until_main_model_fully_linear_{request.param}.pkl"
+        / f"add_points_until_main_model_fully_linear_{request.param}.yaml"
     )
 
     history = LeastSquaresHistory()
     n = 3
     n_modelpoints = test_data["n_modelpoints"]
     history.add_entries(
-        test_data["history_x"][: -(n - n_modelpoints)],
-        test_data["history_criterion"][: -(n - n_modelpoints)],
+        np.array(test_data["history_x"])[: -(n - n_modelpoints)],
+        np.array(test_data["history_criterion"])[: -(n - n_modelpoints)],
     )
 
     main_model = {
-        "linear_terms": test_data["linear_terms"],
-        "square_terms": test_data["square_terms"],
+        "linear_terms": np.array(test_data["linear_terms"]),
+        "square_terms": np.array(test_data["square_terms"]),
     }
 
-    index_best_xs = test_data["index_best_xs"]
-    x_accepted = test_data["history_x"][index_best_xs]
+    index_best_x = test_data["index_best_x"]
+    x_accepted = test_data["history_x"][index_best_x]
 
     inputs_dict = {
         "history": history,
         "main_model": main_model,
-        "model_improving_points": test_data["model_improving_points"],
-        "model_indices": test_data["model_indices"],
-        "x_accepted": x_accepted,
+        "model_improving_points": np.array(test_data["model_improving_points"]),
+        "model_indices": np.array(test_data["model_indices"]),
+        "x_accepted": np.array(x_accepted),
         "n_modelpoints": n_modelpoints,
         "delta": test_data["delta"],
         "criterion": criterion,
@@ -244,21 +253,19 @@ def data_add_points_until_main_model_fully_linear(request, criterion):
 
 @pytest.fixture
 def data_get_interpolation_matrices_residual_model():
-    test_data = pd.read_pickle(
-        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.pkl"
+    test_data = read_yaml(
+        TEST_FIXTURES_DIR / "get_interpolation_matrices_residual_model.yaml"
     )
 
     history = LeastSquaresHistory()
-    history.add_entries(
-        test_data["history_x"],
-        np.zeros(test_data["history_x"].shape),
-    )
+    history_x = np.array(test_data["history_x"])
+    history.add_entries(history_x, np.zeros(history_x.shape))
 
     n = 3
     inputs_dict = {
         "history": history,
-        "x_accepted": test_data["x_accepted"],
-        "model_indices": test_data["model_indices"],
+        "x_accepted": np.array(test_data["x_accepted"]),
+        "model_indices": np.array(test_data["model_indices"]),
         "delta": test_data["delta"],
         "c2": 10,
         "theta2": 1e-4,
@@ -281,24 +288,24 @@ def data_get_interpolation_matrices_residual_model():
 
 @pytest.fixture(params=["4", "7"])
 def data_interpolate_f(request):
-    test_data = pd.read_pickle(
-        TEST_FIXTURES_DIR / f"interpolate_f_iter_{request.param}.pkl"
+    test_data = read_yaml(
+        TEST_FIXTURES_DIR / f"interpolate_f_iter_{request.param}.yaml"
     )
 
     history = LeastSquaresHistory()
     history.add_entries(
-        test_data["history_x"],
-        test_data["history_criterion"],
+        np.array(test_data["history_x"]),
+        np.array(test_data["history_criterion"]),
     )
 
     residual_model = {
-        "intercepts": test_data["residuals"],
-        "linear_terms": test_data["linear_terms_residual_model"],
-        "square_terms": test_data["square_terms_residual_model"],
+        "intercepts": np.array(test_data["residuals"]),
+        "linear_terms": np.array(test_data["linear_terms_residual_model"]),
+        "square_terms": np.array(test_data["square_terms_residual_model"]),
     }
 
-    x_accepted = test_data["x_accepted"]
-    model_indices = test_data["model_indices"]
+    x_accepted = np.array(test_data["x_accepted"])
+    model_indices = np.array(test_data["model_indices"])
     n_modelpoints = test_data["n_modelpoints"]
     delta_old = test_data["delta_old"]
 
@@ -327,22 +334,20 @@ def data_interpolate_f(request):
 
 @pytest.fixture
 def data_get_coefficients_residual_model():
-    test_data = pd.read_pickle(
-        TEST_FIXTURES_DIR / "get_coefficients_residual_model.pkl"
-    )
+    test_data = read_yaml(TEST_FIXTURES_DIR / "get_coefficients_residual_model.yaml")
 
     inputs_dict = {
-        "x_sample_monomial_basis": test_data["x_sample_monomial_basis"],
-        "monomial_basis": test_data["monomial_basis"],
-        "basis_null_space": test_data["basis_null_space"],
-        "lower_triangular": test_data["lower_triangular"],
-        "f_interpolated": test_data["f_interpolated"],
+        "x_sample_monomial_basis": np.array(test_data["x_sample_monomial_basis"]),
+        "monomial_basis": np.array(test_data["monomial_basis"]),
+        "basis_null_space": np.array(test_data["basis_null_space"]),
+        "lower_triangular": np.array(test_data["lower_triangular"]),
+        "f_interpolated": np.array(test_data["f_interpolated"]),
         "n_modelpoints": test_data["n_modelpoints"],
     }
 
     expected_dict = {
-        "linear_terms": test_data["linear_terms_expected"],
-        "square_terms": test_data["square_terms_expected"],
+        "linear_terms": np.array(test_data["linear_terms_expected"]).T,
+        "square_terms": np.array(test_data["square_terms_expected"]),
     }
 
     return inputs_dict, expected_dict
@@ -497,7 +502,7 @@ def test_get_coefficients_residual_model(data_get_coefficients_residual_model):
 
     aaae(
         coefficients_to_add["linear_terms"],
-        expected["linear_terms"].T,
+        expected["linear_terms"],
     )
     aaae(
         coefficients_to_add["square_terms"],

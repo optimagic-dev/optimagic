@@ -471,7 +471,7 @@ noisy criterion functions.
     changes in parameters result in similar order-of-magnitude changes in the criterion
     value(s).
 
-    pounders support the following options:
+    pounders supports the following options:
 
     - **stopping_max_iterations** (int): Maximum number of iterations.
       If reached, terminate. Default is 200.
@@ -492,10 +492,10 @@ noisy criterion functions.
       model. Function argument to find_affine_points(). Default is 1e-5.
     - **theta2** (float): Threshold for adding the current x candidate to the model.
       Argument to get_interpolation_matrices_residual_model(). Default is 1e-4.
-    - **trustregion_threshold_successful** (float): Threshold for accepting the
+    - **trustregion_threshold_successful** (float): First threshold for accepting the
         solution vector of the subproblem as the best x candidate. Default is 0.
-    - **trustregion_threshold_very_successful** (float): Threshold for accepting the
-        solution vector of the subproblem as the best x candidate. Default is 0.1.
+    - **trustregion_threshold_very_successful** (float): Second threshold for accepting
+        the solution vector of the subproblem as the best x candidate. Default is 0.1.
     - **c1** (float): Treshold for accepting the norm of our current x candidate.
       Function argument to find_affine_points() for the case where input array
       *model_improving_points* is zero.

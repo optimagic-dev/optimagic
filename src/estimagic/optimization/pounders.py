@@ -160,9 +160,9 @@ def internal_solve_pounders(
             to the model. Function argument to find_affine_points().
         theta2 (float): Threshold for adding the current x candidate
             to the model. Argument to get_interpolation_matrices_residual_model().
-        eta0 (float): Threshold for accepting the solution vector of the
+        eta0 (float): First threshold for accepting the solution vector of the
             subproblem as the best x candidate.
-        eta1 (float): Threshold for accepting the solution vector of the
+        eta1 (float): Second threshold for accepting the solution vector of the
             subproblem as the best x candidate.
         c1 (float): Treshold for accepting the norm of our current x candidate.
             Equal to sqrt(n) by default. Argument to find_affine_points() in case
