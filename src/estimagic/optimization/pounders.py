@@ -222,7 +222,7 @@ def internal_solve_pounders(
     residuals = batch_evaluator(criterion, arguments=xs, n_cores=n_cores)
 
     history.add_entries(xs, residuals)
-    accepted_index = history.get_min_index()
+    accepted_index = history.get_best_index()
 
     # Center around new trust-region and normalize to [-1, 1]
     indices_not_min = [i for i in range(n + 1) if i != accepted_index]
@@ -290,7 +290,7 @@ def internal_solve_pounders(
                 main_model=main_model, x_candidate=x_candidate
             )
             x_accepted = history.get_best_x()
-            accepted_index = history.get_min_index()
+            accepted_index = history.get_best_index()
 
         # The model is deemend "not valid" if it has less than n model points.
         # Otherwise, if the model has n points it is considered "valid" or

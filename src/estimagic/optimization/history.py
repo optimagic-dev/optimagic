@@ -29,7 +29,7 @@ class LeastSquaresHistory:
         self.critvals = None
         self.n_fun = 0
         self.best_index = 0
-        self.min_critval = np.inf
+        self.best_critval = np.inf
 
     def add_entries(self, xs, residuals):
         """Add new parameter vectors and residuals to the history.
@@ -47,7 +47,7 @@ class LeastSquaresHistory:
         argmin_candidate = critvals.argmin()
         min_candidate = critvals[argmin_candidate]
 
-        if min_candidate < self.min_critval:
+        if min_candidate < self.best_critval:
             self.best_index = argmin_candidate + self.n_fun
             self.best_x = xs[argmin_candidate]
             self.best_residuals = residuals[argmin_candidate]
@@ -225,7 +225,7 @@ class LeastSquaresHistory:
     def get_n_fun(self):
         return self.n_fun
 
-    def get_min_index(self):
+    def get_best_index(self):
         return self.best_index
 
     def get_best_entries(self):
