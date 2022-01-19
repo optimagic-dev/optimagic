@@ -1,15 +1,36 @@
 Credits
 =======
 
-Estimagic was originally designed by `Janoś Gabler
-<https://github.com/janosg>`_) and is now actively developed by five core-developers:
-- `Janoś Gabler <https://github.com/janosg>`_
-- `Klara Röhrl <https://github.com/roecla>`_
-- `Tobias Raabe <https://github.com/tobiasraabe>`_
-- `Tim Mensinger <https://github.com/timmens>`_
-- Sebastian Gsell <https://github.com/segsell>`_
+Core Team
+---------
 
-Moreover we had many contributions from the community. In particular we want to thank:
++---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
++ .. figure:: _static/images/janos.jpg                          + .. figure:: _static/images/klara.jpg                          + .. figure:: _static/images/tobi.png                               +
++     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
++                                                               +                                                               +                                                                   +
++     `Janoś Gabler <https://github.com/janosg>`_               +     `Klara Röhrl <https://github.com/roecla>`_                +     `Tobias Raabe <https://github.com/tobiasraabe>`_              +
++                                                               +                                                               +                                                                   +
++     (BDFL)                                                    +     (Core Developer)                                          +     (Core Developer)                                              +
++---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
++ .. figure:: _static/images/tim.jpeg                           + .. figure:: _static/images/sebi.jpg                           + .. figure:: _static/images/hmg.jpg                                +
++     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
++                                                               +                                                               +                                                                   +
++     `Tim Mensinger <https://github.com/timmens>`_             +     `Sebastian Gsell <https://github.com/segsell>`_           +     `Hans-Martin von Gaudecker <https://github.com/hmgaudecker>`_ +
++                                                               +                                                               +                                                                   +
++     (Core Developer)                                          +     (Core Developer)                                          +     (Core User, Facilitator)                                      +
++---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
+
+
+Janoś is the original developer and architect behind estimagic.
+All core developers have made major contributions to several areas of estimagic.
+Hans-Martin has supported the development of estimagic with feedback and discussions, by
+encouraging work on estimagic and securing funding.
+
+Contributors
+------------
+
+We are grateful for many (sometimes very large!) contributions from the community. In
+particular, we want to thank:
 
 - Mariam Petrosyan
 - Moritz Mendel
@@ -27,11 +48,12 @@ Moreover we had many contributions from the community. In particular we want to 
 - Madhurima Chandra
 - Vijaybabu Gangaprasad
 
-We are also grateful to our core-user
-`Hans-Martin von Gaudecker <https://www.wiwi.uni-bonn.de/gaudecker>`_ who always uses
-the latest version of estimagic and provides valuable feedback. Finally, we want to
-thank `Kenneth Judd <https://kenjudd.org/>`_ for great feedback regarding numerical
-optimization and differentiation.
-
 If you want to find your name here as well, please contact us or browse through our
 Issues and submit a Pull Request.
+
+
+Acknowledgements
+----------------
+
+We want to thank `Kenneth Judd <https://kenjudd.org/>`_ for great feedback regarding
+numerical optimization and differentiation.
