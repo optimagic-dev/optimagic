@@ -11,17 +11,16 @@ def _cdf(x):
     return 1 / (1 + np.exp(-x))
 
 
-def scoreobs(endog, exog, params):
+def get_scoreobs(endog, exog, params):
     return (endog - _cdf(np.dot(exog, params)))[:, None] * exog
 
 
-def loglikeobs(endog, exog, params):
+def get_loglikeobs(endog, exog, params):
     q = 2 * endog - 1
     return np.log(_cdf(q * np.dot(exog, params)))
 
 
-@pytest.fixture
-def data():
+def generate_test_data():
     np.random.seed(12)
 
     num_observations = 5000
@@ -38,46 +37,55 @@ def data():
     return endog, exog
 
 
-def test_logit(data):
-    endog, exog = data
-    scoreobs_p = partial(scoreobs, endog, exog)
-    loglikeobs_p = partial(loglikeobs, endog, exog)
+def criterion_and_derivative(params, task="criterionb_and_derivative"):
+    """Logit criterion function and derivative.
 
-    def logit_criterion(params, task="criterion_and_derivative"):
-        """Logit criterion function.
-        Args:
-            params (np.ndarray): Parameter vector of shape (n_obs,).
-            task (str): If task=="criterion", compute log-likelihood.
-                If task=="derivative", compute gradient.
-                If task="criterion_and_derivative", compute both.
-        Returns:
-            np.ndarray or tuple: If task=="criterion" it returns the output of
-                criterion, which is a 1d numpy array.
-                If task=="derivative" it returns the first derivative of criterion,
-                which is a numpy array.
-                If task=="criterion_and_derivative" it returns both as a tuple.
-        """
-        res = ()
+    Args:
+        params (np.ndarray): Parameter vector of shape (n_obs,).
+        task (str): If task=="criterion", compute log-likelihood.
+            If task=="derivative", compute derivative.
+            If task="criterion_and_derivative", compute both.
 
-        if "criterion" in task:
-            res += (-loglikeobs_p(params),)
-        if "derivative" in task:
-            res += (scoreobs_p(params),)
+    Returns:
+        (np.ndarray or tuple): If task=="criterion" it returns the output of
+            criterion, which is a 1d numpy array.
+            If task=="derivative" it returns the first derivative of criterion,
+            which is a numpy array.
+            If task=="criterion_and_derivative" it returns both as a tuple.
+    """
+    endog, exog = generate_test_data()
+    scoreobs_p = partial(get_scoreobs, endog, exog)
+    loglikeobs_p = partial(get_loglikeobs, endog, exog)
 
-        if len(res) == 1:
-            (res,) = res
+    res = ()
 
-        return res
+    if "criterion" in task:
+        res += (-loglikeobs_p(params),)
+    if "derivative" in task:
+        res += (scoreobs_p(params),)
 
-    params = np.zeros(exog.shape[1])
-    result_dict = bhhh_internal(
-        criterion_and_derivative=logit_criterion,
+    if len(res) == 1:
+        (res,) = res
+
+    return res
+
+
+@pytest.fixture
+def result_statsmodels():
+    endog, exog = generate_test_data()
+    result = sm.Logit(endog, exog).fit()
+
+    return result
+
+
+def test_logit(result_statsmodels):
+    params = np.zeros(3)
+
+    result_bhhh = bhhh_internal(
+        criterion_and_derivative=criterion_and_derivative,
         x=params,
         convergence_absolute_gradient_tolerance=1e-8,
         stopping_max_iterations=200,
     )
 
-    statsmodels_result = sm.Logit(endog, exog).fit()
-    expected_x = statsmodels_result.params
-
-    aaae(result_dict["solution_x"], expected_x, decimal=4)
+    aaae(result_bhhh["solution_x"], result_statsmodels.params, decimal=4)
