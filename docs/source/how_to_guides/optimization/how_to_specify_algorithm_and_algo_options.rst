@@ -539,8 +539,8 @@ noisy criterion functions.
 
     It may additionally return the field:
 
-    3. ``"derivative"``: An array containing the derivative of the objective
-      function, i.e. the derivative of the likelihood function.
+    3. ``"derivative"``: An array containing the gradient of the likelihood
+      function for each observation.
 
 
     bhhh supports the following options:

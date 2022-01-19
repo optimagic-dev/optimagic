@@ -59,13 +59,13 @@ def bhhh_internal(
             solution vector or reaching stopping_max_iterations.
         - message (str): Message to the user. Currently it says: "Under development."
     """
-    criterion_accepted, gradient_sum = criterion_and_derivative(
+    criterion_accepted, gradient = criterion_and_derivative(
         x, task="criterion_and_derivative"
     )
     x_accepted = x
 
-    hessian_approx = np.dot(gradient_sum.T, gradient_sum)
-    gradient_sum = np.sum(gradient_sum, axis=0)
+    hessian_approx = np.dot(gradient.T, gradient)
+    gradient_sum = np.sum(gradient, axis=0)
     direction = np.linalg.solve(hessian_approx, gradient_sum)
     gtol = np.dot(gradient_sum, direction)
 
@@ -81,11 +81,11 @@ def bhhh_internal(
 
         # If previous step was accepted
         if step_size == initial_step_size:
-            gradient_sum = criterion_and_derivative(x_candidate, task="derivative")
-            hessian_approx = np.dot(gradient_sum.T, gradient_sum)
+            gradient = criterion_and_derivative(x_candidate, task="derivative")
+            hessian_approx = np.dot(gradient.T, gradient)
 
         else:
-            criterion_candidate, gradient_sum = criterion_and_derivative(
+            criterion_candidate, gradient = criterion_and_derivative(
                 x_candidate, task="criterion_and_derivative"
             )
 
@@ -107,12 +107,12 @@ def bhhh_internal(
             x_accepted = x_candidate
             criterion_accepted = criterion_candidate
 
-            gradient_sum = np.sum(gradient_sum, axis=0)
+            gradient_sum = np.sum(gradient, axis=0)
             direction = np.linalg.solve(hessian_approx, gradient_sum)
             gtol = np.dot(gradient_sum, direction)
 
             if gtol < 0:
-                hessian_approx = np.dot(gradient_sum.T, gradient_sum)
+                hessian_approx = np.dot(gradient.T, gradient)
                 direction = np.linalg.solve(hessian_approx, gradient_sum)
 
             # Reset stepsize
