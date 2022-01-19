@@ -1,5 +1,6 @@
 import itertools
 from functools import partial
+from itertools import combinations
 
 import numpy as np
 
@@ -9,8 +10,9 @@ def get_next_trust_region_points_latin_hypercube(
     radius,
     n_points,
     existing_points=None,
-    optimality_criterion="a-optimal",
+    optimality_criterion="maximin",
     lhs_design="centered",
+    target="linear",
     n_iter=10_000,
 ):
     """Generate new points at which the criterion should be evaluated.
@@ -27,10 +29,17 @@ def get_next_trust_region_points_latin_hypercube(
             are badly spaced.
         existing_points (np.ndarray): 2d Array where each row is a parameter vector at
             which the criterion has already been evaluated.
-        optimality_criterion (str): One of "a-optimal", "d-optimal", "e-optimal" or
-            "g-optimal". Default "a-optimal".
+        optimality_criterion (str): One of "a-optimal", "d-optimal", "e-optimal",
+            "g-optimal" or "maximin". Default "maximin".
         lhs_design (str): One of "random", "centered". Determines how sample points are
             spaced inside bins. Default 'centered'.
+        target (str): One of "linear", "quadratic" or "polynomial". Determines in which
+            space the criterion is evaluated. For "quadratic" the Latin-Hypercube sample
+            X is mapped onto Y(X) = [X, X ** 2] and the criterion value for X is
+            computed using Y(X). For "polynomial" Y(X) will also include all cross
+            terms. This can be useful if one chooses an optimality criterion that
+            minimizes e.g. the variance of the least-squares estimator, while using a
+            quadratic or polynomial model. Default is "linear".
         n_iter (int): Iterations considered in random search.
 
     Returns:
@@ -69,11 +78,97 @@ def get_next_trust_region_points_latin_hypercube(
 
     candidates = _scale_down_points(candidates, center, radius, n_points)
 
-    crit_func = partial(_compute_optimality_criterion, criterion=optimality_criterion)
+    crit_func = partial(
+        compute_optimality_criterion, criterion=optimality_criterion, target=target
+    )
     crit_vals = crit_func(candidates)
     points = candidates[np.argmin(crit_vals)]
 
     return points, crit_vals
+
+
+def compute_optimality_criterion(x, criterion, target):
+    """Compute optimality criterion of data matrix along axis.
+
+    Implements criteria that measure the dispersion of sample points in a space.
+    Optimization with respect to the criteria leads to certain properties of, for
+    example, the estimated parametes in a least squares regression. See
+    https://en.wikipedia.org/wiki/Optimal_design for more information on the specific
+    criteria.
+
+    Brief explaination:
+    - a: minimizes the average variance of the least squares estimator
+    - d: maximizes the determinant information matrix of the least squares estimator
+    - e: maximizes the minimum eigenvalue of the information matrix
+    - g: minimizes the maximum variance of the predicted value in the least squares case
+    - maximin: maximizes the minimum (l-infinity) distance between any two points
+
+    Args:
+        x (np.ndarray): Data matrix. If 3d, computes the criterion value along the first
+            dimension.
+        criterion (str): Criterion type, must be in {'a-optimal', 'd-optimal',
+            'e-optimal', 'g-optimal', 'maximin'}.
+        target (str): One of "linear", "quadratic" or "polynomial". Determines in which
+            space the criterion is evaluated. For "quadratic" the Latin-Hypercube sample
+            X is mapped onto Y(X) = [X, X ** 2] and the criterion value for X is
+            computed using Y(X). For "polynomial" Y(X) will also include all cross
+            terms. This can be useful if one chooses an optimality criterion that
+            minimizes e.g. the variance of the least-squares estimator, while using a
+            quadratic or polynomial model.
+
+    Returns:
+        crit_vals (np.ndarray): Criterion values.
+
+    """
+    implemented_criteria = {
+        "a-optimal",
+        "d-optimal",
+        "e-optimal",
+        "g-optimal",
+        "maximin",
+    }
+    if criterion not in implemented_criteria:
+        raise ValueError(f"Invalid criterion. Must be in {implemented_criteria}.")
+
+    implemented_targets = {"linear", "quadratic"}
+    if target not in implemented_targets:
+        raise ValueError(f"Invalid target. Must be in {implemented_targets}.")
+
+    # pre-processing
+    if x.ndim == 2:
+        x = np.expand_dims(x, axis=0)
+
+    if target == "quadratic":
+        x = np.concatenate((x, x ** 2), axis=2)
+
+    # common computations
+    prod = np.matmul(x.transpose(0, 2, 1), x)
+
+    if criterion in {"a-optimal", "g-optimal"}:
+        if x.shape[1] < x.shape[2]:
+            inv = np.linalg.inv(prod + 0.01 * np.eye(x.shape[2]))
+        else:
+            inv = np.linalg.inv(prod)
+
+    # compute criteria
+    if criterion == "a-optimal":
+        crit_vals = inv.trace(axis1=1, axis2=2)
+    elif criterion == "g-optimal":
+        hat_mat = np.matmul(np.matmul(x, inv), x.transpose(0, 2, 1))
+        crit_vals = np.max(np.diagonal(hat_mat.T), axis=1)
+    elif criterion == "d-optimal":
+        crit_vals = -np.linalg.det(prod)  # minus because we maximize
+    elif criterion == "e-optimal":
+        eig_vals = np.linalg.eig(prod)[0]
+        crit_vals = -np.min(eig_vals, axis=1)  # minus because we maximize
+    elif criterion == "maximin":
+        distances = []
+        for row1, row2 in list(combinations(range(x.shape[1]), 2)):
+            dist = np.linalg.norm(x[:, row1, :] - x[:, row2, :], axis=1, ord=np.inf)
+            distances.append(dist)
+        crit_vals = -np.vstack(distances).min(axis=0)  # minus because we maximize
+
+    return crit_vals
 
 
 def get_existing_points(old_sample, new_center, new_radius):
@@ -100,60 +195,6 @@ def get_existing_points(old_sample, new_center, new_radius):
 
     existing = np.array(existing) if len(existing) > 0 else None
     return existing
-
-
-def _compute_optimality_criterion(x, criterion):
-    """Compute optimality criterion of data matrix along axis.
-
-    Implements criteria that measure the dispersion of sample points in a space.
-    Optimization with respect to the criteria leads to certain properties of, for
-    example, the estimated parametes in a least squares regression. See
-    https://en.wikipedia.org/wiki/Optimal_design for more information on the specific
-    criteria.
-
-    Brief explaination:
-    - a: minimizes the average variance of the least squares estimator
-    - d: maximizes the differential Shannon information of the estimates
-    - e: maximizes the minimum eigenvalue of the information matrix
-    - g: minimizes the maximum variance of the predicted value in a least squares case
-
-    Args:
-        x (np.ndarray): Data matrix. If 3d, computes the criterion value along the first
-            dimension.
-        criterion (str): Criterion type, must be in {'a-optimal', 'd-optimal',
-            'e-optimal', 'g-optimal'}.
-
-    Returns:
-        crit_vals (np.ndarray): Criterion values.
-
-    """
-    implemented_criteria = {"a-optimal", "d-optimal", "e-optimal", "g-optimal"}
-    if criterion not in implemented_criteria:
-        raise ValueError(f"Invalid criterion. Must be in {implemented_criteria}.")
-
-    if x.ndim == 2:
-        x = np.expand_dims(x, axis=0)
-
-    prod = np.matmul(x.transpose(0, 2, 1), x)
-
-    if criterion in {"a-optimal", "d-optimal", "g-optimal"}:
-        if x.shape[1] < x.shape[2]:
-            inv = np.linalg.inv(prod + 0.01 * np.eye(x.shape[2]))
-        else:
-            inv = np.linalg.inv(prod)
-
-    if criterion == "a-optimal":
-        crit_vals = inv.trace(axis1=1, axis2=2)
-    elif criterion == "d-optimal":
-        crit_vals = np.linalg.det(inv)
-    elif criterion == "g-optimal":
-        hat_mat = np.matmul(np.matmul(x, inv), x.transpose(0, 2, 1))
-        crit_vals = np.max(np.diagonal(hat_mat.T), axis=1)
-    elif criterion == "e-optimal":
-        eig_vals = np.linalg.eig(prod)[0]
-        crit_vals = -np.min(eig_vals, axis=1)  # minus because we maximize
-
-    return crit_vals
 
 
 def _create_upscaled_lhs_sample(n_dim, n_points, n_designs, dtype=np.uint8):
