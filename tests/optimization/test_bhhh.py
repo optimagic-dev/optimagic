@@ -5,19 +5,7 @@ import pytest
 import statsmodels.api as sm
 from estimagic.optimization.bhhh import bhhh_internal
 from numpy.testing import assert_array_almost_equal as aaae
-
-
-def _cdf(x):
-    return 1 / (1 + np.exp(-x))
-
-
-def get_scoreobs(endog, exog, params):
-    return (endog - _cdf(np.dot(exog, params)))[:, None] * exog
-
-
-def get_loglikeobs(endog, exog, params):
-    q = 2 * endog - 1
-    return np.log(_cdf(q * np.dot(exog, params)))
+from scipy.stats import norm
 
 
 def generate_test_data():
@@ -37,11 +25,46 @@ def generate_test_data():
     return endog, exog
 
 
-def criterion_and_derivative(params, task="criterionb_and_derivative"):
-    """Logit criterion function and derivative.
+def _cdf_logit(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def get_loglikelihood_logit(endog, exog, x):
+    q = 2 * endog - 1
+    linear_prediction = np.dot(exog, x)
+
+    return np.log(_cdf_logit(q * linear_prediction))
+
+
+def get_score_logit(endog, exog, x):
+    linear_prediction = np.dot(exog, x)
+
+    return (endog - _cdf_logit(linear_prediction))[:, None] * exog
+
+
+def get_loglikelihood_probit(endog, exog, x):
+    q = 2 * endog - 1
+    linear_prediction = np.dot(exog, x[: exog.shape[1]])
+
+    return np.log(norm.cdf(q * linear_prediction))
+
+
+def get_score_probit(endog, exog, x):
+    q = 2 * endog - 1
+    linear_prediction = np.dot(exog, x[: exog.shape[1]])
+
+    derivative_loglikelihood = (
+        q * norm.pdf(q * linear_prediction) / norm.cdf(q * linear_prediction)
+    )
+
+    return derivative_loglikelihood[:, None] * exog
+
+
+def criterion_and_derivative_logit(x, task="criterion_and_derivative"):
+    """Return Logit criterion and derivative.
 
     Args:
-        params (np.ndarray): Parameter vector of shape (n_obs,).
+        x (np.ndarray): Parameter vector of shape (n_obs,).
         task (str): If task=="criterion", compute log-likelihood.
             If task=="derivative", compute derivative.
             If task="criterion_and_derivative", compute both.
@@ -54,38 +77,89 @@ def criterion_and_derivative(params, task="criterionb_and_derivative"):
             If task=="criterion_and_derivative" it returns both as a tuple.
     """
     endog, exog = generate_test_data()
-    scoreobs_p = partial(get_scoreobs, endog, exog)
-    loglikeobs_p = partial(get_loglikeobs, endog, exog)
+    score = partial(get_score_logit, endog, exog)
+    loglike = partial(get_loglikelihood_logit, endog, exog)
 
-    res = ()
+    result = ()
 
     if "criterion" in task:
-        res += (-loglikeobs_p(params),)
+        result += (-loglike(x),)
     if "derivative" in task:
-        res += (scoreobs_p(params),)
+        result += (score(x),)
 
-    if len(res) == 1:
-        (res,) = res
+    if len(result) == 1:
+        (result,) = result
 
-    return res
+    return result
+
+
+def criterion_and_derivative_probit(x, task="criterion_and_derivative"):
+    """Return Probit criterion and derivative.
+
+    Args:
+        x (np.ndarray): Parameter vector of shape (n_obs,).
+        task (str): If task=="criterion", compute log-likelihood.
+            If task=="derivative", compute derivative.
+            If task="criterion_and_derivative", compute both.
+
+    Returns:
+        (np.ndarray or tuple): If task=="criterion" it returns the output of
+            criterion, which is a 1d numpy array.
+            If task=="derivative" it returns the first derivative of criterion,
+            which is a numpy array.
+            If task=="criterion_and_derivative" it returns both as a tuple.
+    """
+    endog, exog = generate_test_data()
+
+    score = partial(get_score_probit, endog, exog)
+    loglike = partial(get_loglikelihood_probit, endog, exog)
+
+    result = ()
+
+    if "criterion" in task:
+        result += (-loglike(x),)
+    if "derivative" in task:
+        result += (score(x),)
+
+    if len(result) == 1:
+        (result,) = result
+
+    return result
 
 
 @pytest.fixture
-def result_statsmodels():
+def result_statsmodels_logit():
     endog, exog = generate_test_data()
     result = sm.Logit(endog, exog).fit()
 
     return result
 
 
-def test_logit(result_statsmodels):
-    params = np.zeros(3)
+@pytest.fixture
+def result_statsmodels_probit():
+    endog, exog = generate_test_data()
+    result = sm.Probit(endog, exog).fit()
+
+    return result
+
+
+@pytest.mark.parametrize(
+    "criterion_and_derivative, result_statsmodels",
+    [
+        (criterion_and_derivative_logit, "result_statsmodels_logit"),
+        (criterion_and_derivative_probit, "result_statsmodels_probit"),
+    ],
+)
+def test_maximum_likelihood(criterion_and_derivative, result_statsmodels, request):
+    result_expected = request.getfixturevalue(result_statsmodels)
+
+    x = np.zeros(3)
 
     result_bhhh = bhhh_internal(
         criterion_and_derivative=criterion_and_derivative,
-        x=params,
+        x=x,
         convergence_absolute_gradient_tolerance=1e-8,
         stopping_max_iterations=200,
     )
 
-    aaae(result_bhhh["solution_x"], result_statsmodels.params, decimal=4)
+    aaae(result_bhhh["solution_x"], result_expected.params, decimal=4)

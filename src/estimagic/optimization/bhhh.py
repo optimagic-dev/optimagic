@@ -59,15 +59,15 @@ def bhhh_internal(
             solution vector or reaching maxiter.
         - message (str): Message to the user. Currently it says: "Under development."
     """
-    criterion_accepted, gradient = criterion_and_derivative(
+    criterion_accepted, derivative = criterion_and_derivative(
         x, task="criterion_and_derivative"
     )
     x_accepted = x
 
-    hessian_approx = np.dot(gradient.T, gradient)
-    gradient_sum = np.sum(gradient, axis=0)
-    direction = np.linalg.solve(hessian_approx, gradient_sum)
-    gtol = np.dot(gradient_sum, direction)
+    hessian_approx = np.dot(derivative.T, derivative)
+    gradient = np.sum(derivative, axis=0)
+    direction = np.linalg.solve(hessian_approx, gradient)
+    gtol = np.dot(gradient, direction)
 
     initial_step_size = 1
     step_size = initial_step_size
@@ -81,11 +81,11 @@ def bhhh_internal(
 
         # If previous step was accepted
         if step_size == initial_step_size:
-            gradient = criterion_and_derivative(x_candidate, task="derivative")
-            hessian_approx = np.dot(gradient.T, gradient)
+            derivative = criterion_and_derivative(x_candidate, task="derivative")
+            hessian_approx = np.dot(derivative.T, derivative)
 
         else:
-            criterion_candidate, gradient = criterion_and_derivative(
+            criterion_candidate, derivative = criterion_and_derivative(
                 x_candidate, task="criterion_and_derivative"
             )
 
@@ -107,13 +107,13 @@ def bhhh_internal(
             x_accepted = x_candidate
             criterion_accepted = criterion_candidate
 
-            gradient_sum = np.sum(gradient, axis=0)
-            direction = np.linalg.solve(hessian_approx, gradient_sum)
-            gtol = np.dot(gradient_sum, direction)
+            gradient = np.sum(derivative, axis=0)
+            direction = np.linalg.solve(hessian_approx, gradient)
+            gtol = np.dot(gradient, direction)
 
             if gtol < 0:
-                hessian_approx = np.dot(gradient.T, gradient)
-                direction = np.linalg.solve(hessian_approx, gradient_sum)
+                hessian_approx = np.dot(derivative.T, derivative)
+                direction = np.linalg.solve(hessian_approx, gradient)
 
             # Reset stepsize
             step_size = initial_step_size
