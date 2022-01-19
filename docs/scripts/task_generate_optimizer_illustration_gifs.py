@@ -455,9 +455,7 @@ def task_create_stylized_algo_gif(produces, plot_data):
     not PRESENTATIONS.exists(),
     reason="Not building things in estimagic_presentations because directory is not there.",
 )
-@pytask.mark.produces(
-    OUT_PRESENTATIONS / "example-function.svg"
-)
+@pytask.mark.produces(OUT_PRESENTATIONS / "example-function.svg")
 def task_plot_bare_function(produces):
     fig, ax = plot_function()
     plt.savefig(produces)
