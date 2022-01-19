@@ -518,6 +518,39 @@ noisy criterion functions.
       evaluations. Default is 1.
 
 
+.. dropdown:: bhhh
+
+
+    Minimize a likelihood function using the bhhh algorithm.
+
+    BHHH (:cite:`Berndt1974`) can - and should ONLY - be used for minimizing
+    (or maximizing) a likelihood. It is similar to the Newton-Raphson
+    algorithm, but replaces the Hessian matrix with the outer product of the
+    gradient. This approximation is based on the information matrix equality
+    (:cite:`Halbert1982`) and is thus only vaid when minimizing (or maximizing)
+    a likelihood.
+
+    The criterion function :func:`func` should return a dictionary with the following
+    fields:
+
+    1. ``"value"``: The sum of the likelihood contributions.
+    2. ``"contributions"``: An array containing the (weighted) contributions of
+      the likelihood function.
+
+    It may additionally return the field:
+
+    3. ``"derivative"``: An array containing the derivative of the objective
+      function, i.e. the derivative of the likelihood function.
+
+
+    bhhh supports the following options:
+
+    - **convergence_absolute_gradient_tolerance** (float): Stopping criterion for the
+      gradient tolerance. Default is 1e-8.
+    - **stopping_max_iterations** (int): Maximum number of iterations.
+      If reached, terminate. Default is 200.
+
+
 .. _tao_algorithms:
 
 Optimizers from the Toolkit for Advanced Optimization (TAO)

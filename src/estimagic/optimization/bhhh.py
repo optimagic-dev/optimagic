@@ -12,7 +12,7 @@ def bhhh(
     """
     Minimize a likelihood function using the BHHH algorithm.
 
-    For details,
+    For details, see :ref:`_own_algorithms`.
     """
     algorithm_info = {
         "primary_criterion_entry": "root_contributions",
@@ -44,30 +44,30 @@ def bhhh_internal(
     Minimize scalar function of one or more variables via the BHHH algorithm.
     Args:
         criterion_and_derivative (callable): The objective function to be minimized.
-        x (np.ndarray): Initial guess. Array of real elements of size (n,),
-            where `n` is the number of parameters.
-        convergence_absolute_gradient_tolerance (float): Tolerance for termination.
-        stopping_max_iterations (int): Maximum number of iterations to perform.
+        x (np.ndarray): Initial guess of the parameter vector (starting points).
+        convergence_absolute_gradient_tolerance (float): Stopping criterion for the
+            gradient tolerance.
+        stopping_max_iterations (int): Maximum number of iterations. If reached,
+            terminate.
 
     Returns:
         (dict) Result dictionary containing:
 
         - solution_x (np.ndarray): Solution vector of shape (n,).
-        - solution_criterion (np.ndarray): Values of the criterion function at the
-            solution vector. Shape (n_obs,).
+        - solution_criterion (np.ndarray): Likelihood at the solution. Shape (n_obs,).
         - n_iterations (int): Number of iterations the algorithm ran before finding a
-            solution vector or reaching maxiter.
+            solution vector or reaching stopping_max_iterations.
         - message (str): Message to the user. Currently it says: "Under development."
     """
-    criterion_accepted, derivative = criterion_and_derivative(
+    criterion_accepted, gradient_sum = criterion_and_derivative(
         x, task="criterion_and_derivative"
     )
     x_accepted = x
 
-    hessian_approx = np.dot(derivative.T, derivative)
-    gradient = np.sum(derivative, axis=0)
-    direction = np.linalg.solve(hessian_approx, gradient)
-    gtol = np.dot(gradient, direction)
+    hessian_approx = np.dot(gradient_sum.T, gradient_sum)
+    gradient_sum = np.sum(gradient_sum, axis=0)
+    direction = np.linalg.solve(hessian_approx, gradient_sum)
+    gtol = np.dot(gradient_sum, direction)
 
     initial_step_size = 1
     step_size = initial_step_size
@@ -81,11 +81,11 @@ def bhhh_internal(
 
         # If previous step was accepted
         if step_size == initial_step_size:
-            derivative = criterion_and_derivative(x_candidate, task="derivative")
-            hessian_approx = np.dot(derivative.T, derivative)
+            gradient_sum = criterion_and_derivative(x_candidate, task="derivative")
+            hessian_approx = np.dot(gradient_sum.T, gradient_sum)
 
         else:
-            criterion_candidate, derivative = criterion_and_derivative(
+            criterion_candidate, gradient_sum = criterion_and_derivative(
                 x_candidate, task="criterion_and_derivative"
             )
 
@@ -107,13 +107,13 @@ def bhhh_internal(
             x_accepted = x_candidate
             criterion_accepted = criterion_candidate
 
-            gradient = np.sum(derivative, axis=0)
-            direction = np.linalg.solve(hessian_approx, gradient)
-            gtol = np.dot(gradient, direction)
+            gradient_sum = np.sum(gradient_sum, axis=0)
+            direction = np.linalg.solve(hessian_approx, gradient_sum)
+            gtol = np.dot(gradient_sum, direction)
 
             if gtol < 0:
-                hessian_approx = np.dot(derivative.T, derivative)
-                direction = np.linalg.solve(hessian_approx, gradient)
+                hessian_approx = np.dot(gradient_sum.T, gradient_sum)
+                direction = np.linalg.solve(hessian_approx, gradient_sum)
 
             # Reset stepsize
             step_size = initial_step_size
