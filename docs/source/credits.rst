@@ -1,25 +1,37 @@
 Credits
 =======
 
-Estimagic is designed and maintained by Janos Gabler (`janosg
-<https://github.com/janosg>`_).
+Estimagic was originally designed by `Janoś Gabler
+<https://github.com/janosg>`_) and is now actively developed by five core-developers:
+- `Janoś Gabler <https://github.com/janosg>`_
+- `Klara Röhrl <https://github.com/roecla>`_
+- `Tobias Raabe <https://github.com/tobiasraabe>`_
+- `Tim Mensinger <https://github.com/timmens>`_
+- Sebastian Gsell <https://github.com/segsell>`_
 
-However, it has been a collaborative project right from the start.
+Moreover we had many contributions from the community. In particular we want to thank:
 
-In particular we would like to thank:
+- Mariam Petrosyan
+- Moritz Mendel
+- Max Blesch
+- Christian Zimpelmann
+- Robin Musolff
+- Annica Gehlen
+- Sofia Badini
+- Sofya Akimova
+- Xuefei Han
+- Leiqiong Wan
+- Andrew Souther
+- Luis Calderon
+- Linda Maokomatanda
+- Madhurima Chandra
+- Vijaybabu Gangaprasad
 
-- Klara Röhrl (`roecla <https://github.com/roecla>`_) for writing most of the dashboard
-  code, contributing plots and doing code reviews.
-- Tobias Raabe (`tobiasraabe <https://github.com/tobiasraabe>`_) for setting up the
-  continuous integration and contributing several bug-fixes and improvements.
-- Max Blesch (`MaxBlesch <https://github.com/MaxBlesch>`_) for contributing code for
-  numerical integration and calculation of standard errors for GMM and MSM estimators
-- Linda Maokomatanda (`lindamaok899 <https://github.com/lindamaok899>`_) for
-  contributing code for the calculation of likelihood standard errors
-- Moritz Mendel (`mo2561057 <https://github.com/mo2561057>`_) for wrapping the pounders
-  algorithm from TAO
-- Tim Mensinger (`timmens <https://github.com/timmens>`_) for contributions to numerical
-  differentiation and closed form derivatives for the constraints.
+We are also grateful to our core-user
+`Hans-Martin von Gaudecker <https://www.wiwi.uni-bonn.de/gaudecker>`_ who always uses
+the latest version of estimagic and provides valuable feedback. Finally, we want to
+thank `Kenneth Judd <https://kenjudd.org/>`_ for great feedback regarding numerical
+optimization and differentiation.
 
 If you want to find your name here as well, please contact us or browse through our
 Issues and submit a Pull Request.
