@@ -9,10 +9,15 @@ import seaborn as sns
 import statsmodels.formula.api as sm
 from scipy.optimize import minimize
 
+plt.style.use("dark_background")
 
 gif.options.matplotlib["dpi"] = 200
 
 OUT = Path(__file__).resolve().parent.parent / "source" / "_static" / "images"
+PRESENTATIONS = (
+    Path(__file__).resolve().parent.parent.parent.parent / "estimagic_presentations"
+)
+OUT_PRESENTATIONS = PRESENTATIONS / "src" / "figures-generated-from-estimagic-docs"
 
 
 # ======================================================================================
@@ -331,12 +336,26 @@ def _regression_surrogate(x, x0, radius):
 # Make convergence gifs
 # ======================================================================================
 
-algorithms = ["Cobyla", "L-BFGS-B", "Nelder-Mead", "trust-ncg"]
+ALGORITHMS = ["Cobyla", "L-BFGS-B", "Nelder-Mead", "trust-ncg"]
 
-PARMETRIZATON = [(OUT / f"history_{algo.lower()}.gif", algo) for algo in algorithms]
+PARAMETRIZATON = [
+    (
+        {
+            # Only use first frame since N iterations is unknown
+            **(
+                {"00": OUT_PRESENTATIONS / f"{algo.lower()}" / f"iteration-00.svg"}
+                if PRESENTATIONS.exists()
+                else {}
+            ),
+            **{"gif": OUT / f"history-{algo.lower()}.gif"},
+        },
+        algo,
+    )
+    for algo in ALGORITHMS
+]
 
 
-@pytask.mark.parametrize("produces, algorithm", PARMETRIZATON)
+@pytask.mark.parametrize("produces, algorithm", PARAMETRIZATON)
 def task_create_convergence_gif(produces, algorithm):
     start_x = np.array([2])
     hessian = example_hessian if algorithm == "trust-ncg" else NotImplementedError
@@ -348,7 +367,7 @@ def task_create_convergence_gif(produces, algorithm):
     points = res.history + [res.history[-1]] * 2
 
     @gif.frame
-    def _plot_history(points):
+    def _plot_history(points, i, produces):
         fig, ax = plot_function()
         sns.rugplot(points, ax=ax)
         plt.plot(
@@ -357,35 +376,51 @@ def task_create_convergence_gif(produces, algorithm):
             marker="*",
         )
         sns.despine()
+        if "00" in produces:
+            plt.savefig(
+                str(produces["00"].absolute()).replace(
+                    "iteration-00.svg", f"iteration-{i:02d}.svg"
+                )
+            )
 
-    frames = []
-    for i in range(len(points)):
-        frames.append(_plot_history(points[: i + 1]))
+    frames = [_plot_history(points[: i + 1], i, produces) for i in range(len(points))]
 
-    gif.save(frames, produces, duration=2.5, unit="s")
+    gif.save(frames, produces["gif"], duration=2.5, unit="s")
 
 
 # ======================================================================================
 # Make explanation gifs
 # ======================================================================================
 STYLIZED_ALGORITHMS = {
-    "direct_search": _generate_stylized_direct_search_data,
-    "line_search": _generate_stylized_line_search_data,
-    "gradient_based_trust_region": _generate_stylized_gradient_based_trust_region_data,
-    "gradient_free_trust_region": _generate_stylized_gradient_free_trust_region_data,
+    "direct-search": _generate_stylized_direct_search_data(),
+    "line-search": _generate_stylized_line_search_data(),
+    "gradient-based-trust-region": _generate_stylized_gradient_based_trust_region_data(),
+    "gradient-free-trust-region": _generate_stylized_gradient_free_trust_region_data(),
 }
 
-PARMETRIZATON = [(OUT / f"stylized_{algo}.gif", algo) for algo in STYLIZED_ALGORITHMS]
+PARAMETRIZATON = [
+    (
+        {
+            **{
+                i: OUT_PRESENTATIONS / f"stylized-{algo}" / f"iteration-{i:02d}.svg"
+                for i in range(len(plot_data))
+                if PRESENTATIONS.exists()
+            },
+            **{"gif": OUT / f"stylized-{algo}.gif"},
+        },
+        plot_data,
+    )
+    for algo, plot_data in STYLIZED_ALGORITHMS.items()
+]
 
 
-@pytask.mark.parametrize("produces, algorithm", PARMETRIZATON)
-def task_create_stylized_algo_gif(produces, algorithm):
-    plot_data = STYLIZED_ALGORITHMS[algorithm]()
+@pytask.mark.parametrize("produces, plot_data", PARAMETRIZATON)
+def task_create_stylized_algo_gif(produces, plot_data):
     # repeat the last point to show it longer in the gif
     plot_data = plot_data + [plot_data[-1]] * 2
 
     @gif.frame
-    def visualize_step(evaluated_x, new_x, aux_line=None, remark=None):
+    def visualize_step(evaluated_x, new_x, aux_line=None, remark=None, i=None):
         fig, ax = plot_function()
         sns.rugplot(x=evaluated_x)
         ax.plot([new_x], [example_criterion(new_x)], marker="*")
@@ -402,15 +437,27 @@ def task_create_stylized_algo_gif(produces, algorithm):
                 wrap=True,
                 fontsize=14,
                 bbox={
-                    "facecolor": "white",
-                    "alpha": 0.5,
+                    "facecolor": "black",
+                    "alpha": 0.05,
                     "pad": 5,
-                    "edgecolor": "#ffffff00",
+                    "edgecolor": "black",  # "#ffffff00",
                 },
             )
+        if i in produces:
+            plt.savefig(produces[i])
 
-    frames = []
-    for data in plot_data:
-        frames.append(visualize_step(**data))
+    frames = [visualize_step(**data, i=i) for i, data in enumerate(plot_data)]
 
-    gif.save(frames, produces, duration=7.5, unit="s")
+    gif.save(frames, produces["gif"], duration=7.5, unit="s")
+
+
+@pytask.mark.skipif(
+    not PRESENTATIONS.exists(),
+    reason="Not building things in estimagic_presentations because directory is not there.",
+)
+@pytask.mark.produces(
+    OUT_PRESENTATIONS / "example-function.svg"
+)
+def task_plot_bare_function(produces):
+    fig, ax = plot_function()
+    plt.savefig(produces)
