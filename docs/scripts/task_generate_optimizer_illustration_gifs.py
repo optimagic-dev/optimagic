@@ -9,7 +9,7 @@ import seaborn as sns
 import statsmodels.formula.api as sm
 from scipy.optimize import minimize
 
-# plt.style.use("dark_background")
+# plt.style.use("dark_background")  # noqa: 800
 
 gif.options.matplotlib["dpi"] = 200
 
@@ -113,7 +113,7 @@ def plot_function():
 # ======================================================================================
 
 
-def _generate_stylized_line_search_data():
+def _data_stylized_line_search():
     remarks = [
         "Initial evaluation: Large gradient, low curvature: Make a big step.",
         "Iteration 1: Large gradient, large curvature: Make a smaller step.",
@@ -160,7 +160,7 @@ def _generate_stylized_line_search_data():
     return data
 
 
-def _generate_stylized_direct_search_data():
+def _data_stylized_direct_search():
     remarks = [
         (
             "Initial evaluation: candidate value worse than original value. "
@@ -210,7 +210,7 @@ def _generate_stylized_direct_search_data():
     return data
 
 
-def _generate_stylized_gradient_based_trust_region_data():
+def _data_stylized_gradient_based_trust_region():
     remarks = [
         "Actual vs. expected improvement is large. Accept point, increase radius",
         "Actual vs. expected improvement < 1 but large. Accept point, increase radius.",
@@ -251,7 +251,7 @@ def _generate_stylized_gradient_based_trust_region_data():
     return data
 
 
-def _generate_stylized_gradient_free_trust_region_data():
+def _data_stylized_gradient_free_trust_region():
     remarks = [
         "Actual vs. expected improvement is large. Accept point, increase radius.",
         "Actual vs. expected improvement is large. Accept point, increase radius.",
@@ -343,7 +343,7 @@ PARAMETRIZATON = [
         {
             # Only use first frame since N iterations is unknown
             **(
-                {"00": OUT_PRESENTATIONS / f"{algo.lower()}" / f"iteration-00.svg"}
+                {"00": OUT_PRESENTATIONS / f"{algo.lower()}" / "iteration-00.svg"}
                 if PRESENTATIONS.exists()
                 else {}
             ),
@@ -392,10 +392,10 @@ def task_create_convergence_gif(produces, algorithm):
 # Make explanation gifs
 # ======================================================================================
 STYLIZED_ALGORITHMS = {
-    "direct-search": _generate_stylized_direct_search_data(),
-    "line-search": _generate_stylized_line_search_data(),
-    "gradient-based-trust-region": _generate_stylized_gradient_based_trust_region_data(),
-    "gradient-free-trust-region": _generate_stylized_gradient_free_trust_region_data(),
+    "direct-search": _data_stylized_direct_search(),
+    "line-search": _data_stylized_line_search(),
+    "gradient-based-trust-region": _data_stylized_gradient_based_trust_region(),
+    "gradient-free-trust-region": _data_stylized_gradient_free_trust_region(),
 }
 
 PARAMETRIZATON = [
@@ -453,7 +453,7 @@ def task_create_stylized_algo_gif(produces, plot_data):
 
 @pytask.mark.skipif(
     not PRESENTATIONS.exists(),
-    reason="Not building things in estimagic_presentations because directory is not there.",
+    reason="Directory estimagic_presentations does not exist: Ignore figures.",
 )
 @pytask.mark.produces(OUT_PRESENTATIONS / "example-function.svg")
 def task_plot_bare_function(produces):
