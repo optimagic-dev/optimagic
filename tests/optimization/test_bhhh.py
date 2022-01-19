@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 import pytest
 import statsmodels.api as sm
-from estimagic.optimization.bhhh import minimize_bhhh
+from estimagic.optimization.bhhh import bhhh_internal
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -20,7 +20,7 @@ def loglikeobs(endog, exog, params):
     return np.log(_cdf(q * np.dot(exog, params)))
 
 
-@pytest.fixture()
+@pytest.fixture
 def data():
     np.random.seed(12)
 
@@ -38,20 +38,18 @@ def data():
     return endog, exog
 
 
-def test_logit_compare_bhhh_and_sm(data):
+def test_logit(data):
     endog, exog = data
     scoreobs_p = partial(scoreobs, endog, exog)
     loglikeobs_p = partial(loglikeobs, endog, exog)
 
     def logit_criterion(params, task="criterion_and_derivative"):
         """Logit criterion function.
-
         Args:
             params (np.ndarray): Parameter vector of shape (n_obs,).
             task (str): If task=="criterion", compute log-likelihood.
-                If task=="derivative", compute jacobian.
+                If task=="derivative", compute gradient.
                 If task="criterion_and_derivative", compute both.
-
         Returns:
             np.ndarray or tuple: If task=="criterion" it returns the output of
                 criterion, which is a 1d numpy array.
@@ -72,9 +70,14 @@ def test_logit_compare_bhhh_and_sm(data):
         return res
 
     params = np.zeros(exog.shape[1])
-    calculated = minimize_bhhh(criterion_and_derivative=logit_criterion, x=params)
+    result_dict = bhhh_internal(
+        criterion_and_derivative=logit_criterion,
+        x=params,
+        convergence_absolute_gradient_tolerance=1e-8,
+        stopping_max_iterations=200,
+    )
 
-    sm_res = sm.Logit(endog, exog).fit()
-    expected = sm_res.params
+    statsmodels_result = sm.Logit(endog, exog).fit()
+    expected_x = statsmodels_result.params
 
-    aaae(calculated, expected, decimal=4)
+    aaae(result_dict["solution_x"], expected_x, decimal=4)
