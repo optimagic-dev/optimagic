@@ -2,10 +2,10 @@ from itertools import product
 
 import numpy as np
 import pytest
-from estimagic.optimization.trust_region_management import _compute_optimality_criterion
 from estimagic.optimization.trust_region_management import _create_upscaled_lhs_sample
 from estimagic.optimization.trust_region_management import _scale_down_points
 from estimagic.optimization.trust_region_management import _scale_up_points
+from estimagic.optimization.trust_region_management import compute_optimality_criterion
 from estimagic.optimization.trust_region_management import get_existing_points
 from estimagic.optimization.trust_region_management import (
     get_next_trust_region_points_latin_hypercube,
@@ -111,18 +111,19 @@ def test_latin_hypercube_property():
 
 
 @pytest.mark.parametrize(
-    "center, radius, n_points, optimality_criterion, lhs_design, n_iter",
+    "center, radius, n_points, optimality_criterion, lhs_design, target, n_iter",
     product(
         [np.ones(d) for d in (2, 5)],
         [0.05, 0.1],
         [10, 100],
-        ["a-optimal", "e-optimal", "d-optimal", "g-optimal"],
+        ["a-optimal", "e-optimal", "d-optimal", "g-optimal", "maximin"],
         ["centered", "random"],
+        ["linear", "quadratic"],
         [1, 100],
     ),
 )
 def test_get_next_trust_region_points_latin_hypercube_single_use(
-    center, radius, n_points, optimality_criterion, lhs_design, n_iter
+    center, radius, n_points, optimality_criterion, lhs_design, target, n_iter
 ):
     """Check that function can be called with all arguments and that the resulting
     sampe fulfills some basic conditions.
@@ -144,7 +145,8 @@ def test_get_next_trust_region_points_latin_hypercube_single_use(
 
 
 @pytest.mark.parametrize(
-    "optimality_criterion", ["a-optimal", "e-optimal", "d-optimal", "g-optimal"]
+    "optimality_criterion",
+    ["a-optimal", "e-optimal", "d-optimal", "g-optimal", "maximin"],
 )
 def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
     optimality_criterion,
@@ -157,8 +159,11 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
         n_iter=1,
         lhs_design="centered",
         optimality_criterion=optimality_criterion,
+        target="linear",
     )
-    crit_val_sample = _compute_optimality_criterion(sample, optimality_criterion)
+    crit_val_sample = compute_optimality_criterion(
+        sample, optimality_criterion, target="linear"
+    )
 
     optimized_sample, crit_vals_many = get_next_trust_region_points_latin_hypercube(
         center=np.ones(5),
@@ -167,12 +172,15 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
         n_iter=50_000,
         lhs_design="centered",
         optimality_criterion=optimality_criterion,
+        target="linear",
     )
-    crit_val_optimized_sample = _compute_optimality_criterion(
-        optimized_sample, optimality_criterion
+    crit_val_optimized_sample = compute_optimality_criterion(
+        optimized_sample, optimality_criterion, target="linear"
     )
 
-    assert len(np.unique(crit_vals_many)) > 10_000
+    if optimality_criterion != "maximin":
+        # by design of the criterion only few values are possible
+        assert len(np.unique(crit_vals_many)) > 10_000
     assert crit_val_sample > crit_val_optimized_sample
     assert crit_vals_single > np.min(crit_vals_many)
     assert crit_val_optimized_sample == np.min(crit_vals_many)

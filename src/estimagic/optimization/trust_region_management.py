@@ -19,7 +19,7 @@ def get_next_trust_region_points_latin_hypercube(
 
     Generates an (optimal) Latin hypercube sample taking into account already existing
     points. Optimality is defined via different criteria, see
-    :func:`_compute_optimality_criterion`. The best sample is chosen via random search.
+    :func:`compute_optimality_criterion`. The best sample is chosen via random search.
 
     Args:
         center (np.ndarray): Center of the current trust region.
@@ -33,12 +33,11 @@ def get_next_trust_region_points_latin_hypercube(
             "g-optimal" or "maximin". Default "maximin".
         lhs_design (str): One of "random", "centered". Determines how sample points are
             spaced inside bins. Default 'centered'.
-        target (str): One of "linear", "quadratic" or "polynomial". Determines in which
-            space the criterion is evaluated. For "quadratic" the Latin-Hypercube sample
-            X is mapped onto Y(X) = [X, X ** 2] and the criterion value for X is
-            computed using Y(X). For "polynomial" Y(X) will also include all cross
-            terms. This can be useful if one chooses an optimality criterion that
-            minimizes e.g. the variance of the least-squares estimator, while using a
+        target (str): One of "linear" or "quadratic". Determines in which space the
+            criterion is evaluated. For "quadratic" the Latin-Hypercube sample X is
+            mapped onto Y(X) = [X, X ** 2] and the criterion value for X is computed
+            using Y(X).  This can be useful if one chooses an optimality criterion that
+            minimizes e.g.  the variance of the least-squares estimator, while using a
             quadratic or polynomial model. Default is "linear".
         n_iter (int): Iterations considered in random search.
 
