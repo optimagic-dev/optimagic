@@ -9,7 +9,7 @@ import seaborn as sns
 import statsmodels.formula.api as sm
 from scipy.optimize import minimize
 
-plt.style.use("dark_background")
+# plt.style.use("dark_background")
 
 gif.options.matplotlib["dpi"] = 200
 
