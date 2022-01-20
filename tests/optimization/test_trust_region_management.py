@@ -126,7 +126,7 @@ def test_get_next_trust_region_points_latin_hypercube_single_use(
     center, radius, n_points, optimality_criterion, lhs_design, target, n_iter
 ):
     """Check that function can be called with all arguments and that the resulting
-    sampe fulfills some basic conditions.
+    sampe fulfills some basic Latin-Hypercube condition.
 
     """
     sample, _ = get_next_trust_region_points_latin_hypercube(

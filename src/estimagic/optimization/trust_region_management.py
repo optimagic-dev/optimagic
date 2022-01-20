@@ -147,14 +147,18 @@ def compute_optimality_criterion(x, criterion, target):
         if x.shape[1] < x.shape[2]:
             inv = np.linalg.inv(prod + 0.01 * np.eye(x.shape[2]))
         else:
-            inv = np.linalg.inv(prod)
+            is_invertible = np.linalg.cond(prod) < 1 / np.finfo(float).eps
+            inv = np.linalg.inv(prod[is_invertible])
+            crit_vals = np.tile(np.inf, x.shape[0])
 
     # compute criteria
     if criterion == "a-optimal":
-        crit_vals = inv.trace(axis1=1, axis2=2)
+        crit_vals[is_invertible] = inv.trace(axis1=1, axis2=2)
     elif criterion == "g-optimal":
-        hat_mat = np.matmul(np.matmul(x, inv), x.transpose(0, 2, 1))
-        crit_vals = np.max(np.diagonal(hat_mat.T), axis=1)
+        hat_mat = np.matmul(
+            np.matmul(x[is_invertible], inv), x[is_invertible].transpose(0, 2, 1)
+        )
+        crit_vals[is_invertible] = np.max(np.diagonal(hat_mat.T), axis=1)
     elif criterion == "d-optimal":
         crit_vals = -np.linalg.det(prod)  # minus because we maximize
     elif criterion == "e-optimal":
