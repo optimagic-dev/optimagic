@@ -19,9 +19,9 @@ def estimation_table(
     show_inference=True,
     confidence_intervals=False,
     show_stars=True,
-    sig_levels=(0.1, 0.05, 0.01),
-    sig_digits=2,
-    left_decimals=1,
+    significance_levels=(0.1, 0.05, 0.01),
+    float_format="{0:.4g}",
+    padding=1,
     show_footer=True,
     stats_dict=None,
     append_notes=True,
@@ -59,13 +59,15 @@ def estimation_table(
             error/confidence intervals). Defalut is True.
         show_stars (bool): a boolean variable for printing significance stars.
             Default is True.
-        sig_levels (list): a list of floats for p value's significance cutt-off values.
-            Default is [0.1,0.05,0.01].
-        sig_digits (int): an integer for the number of digits to the right of the
+        significance_levels (list): a list of floats for p value's significance cutt-off
+            values. Default is [0.1,0.05,0.01].
+        float_format (int): an integer for the number of digits to the right of the
             decimal point to round to. Default is 2.
-        left_decimals (int): an integer used for aligning LaTex columns. Affects the
+        padding (int): an integer used for aligning LaTex columns. Affects the
             alignment of the columns to the left of the decimal point of numerical
-            entries. Default is 1.
+            entries. Default is 1. If the number of models is more than 2, set the
+            value of padding to 3 or more to avoid columns overlay in the tex output.
+
         confidence_intervals (bool): a boolean variable for printin confidence
             intervals or standard errors as precision. If False standard errors
             are printed. Default is False.
@@ -92,8 +94,6 @@ def estimation_table(
         - Compiling LaTex tables requires the package siunitx.
         - Add \sisetup{input-symbols = ()} to your main tex file for proper
             compilation
-        - If the number of models is more than 2, set the value of left_decimals
-            to 3 or more to avoid columns overlay in the tex output.
 
     """
     assert isinstance(models, list), "Please, provide models as a list"
@@ -126,8 +126,8 @@ def estimation_table(
     to_concat = [
         _convert_model_to_series(
             df,
-            sig_levels,
-            sig_digits,
+            significance_levels,
+            float_format,
             show_inference,
             confidence_intervals,
             show_stars,
@@ -144,12 +144,23 @@ def estimation_table(
         custom_model_names,
     )
     to_concat = [
-        _create_statistics_sr(mod, stats_dict, sig_levels, show_stars, sig_digits)
+        _create_statistics_sr(
+            mod, stats_dict, significance_levels, show_stars, float_format
+        )
         for mod in models
     ]
     footer_df = pd.concat(to_concat, axis=1)
     footer_df.columns = body_df.columns
     if return_type == "latex" or str(return_type).endswith(".tex"):
+        # Use the float format of the parameter value series to infer the number
+        # of digits to the right from the decimal points.
+        # Needed for table formatting.
+        right_align = (
+            _format_series(df_list[0]["value"], float_format)
+            .str.split(".", expand=True)[1]
+            .str.len()
+            .unique()[0]
+        )
         if siunitx_warning:
             warn(
                 r"""LaTeX compilation requires the package siunitx and adding
@@ -159,12 +170,12 @@ def estimation_table(
         if len(models) > 2:
             if alignment_warning:
                 warn(
-                    """Set the value of left_decimals to 3 or higher to avoid overlay
+                    """Set the value of padding to 3 or higher to avoid overlay
                         of columns. To turn this warning off set value of
                         alignment_warning = False"""
                 )
         notes_tex = _generate_notes_latex(
-            append_notes, notes_label, sig_levels, custom_notes, body_df
+            append_notes, notes_label, significance_levels, custom_notes, body_df
         )
         res_table = tabular_tex(
             body_df,
@@ -173,13 +184,13 @@ def estimation_table(
             render_options,
             custom_index_names,
             custom_model_names,
-            left_decimals,
-            sig_digits,
+            padding,
+            right_align,
             show_footer,
         )
     elif return_type == "html" or str(return_type).endswith(".html"):
         footer = _generate_notes_html(
-            append_notes, notes_label, sig_levels, custom_notes, body_df
+            append_notes, notes_label, significance_levels, custom_notes, body_df
         )
         res_table = tabular_html(
             body_df, footer_df, footer, render_options, custom_index_names, show_footer
@@ -189,10 +200,10 @@ def estimation_table(
             "body_df": body_df,
             "footer_df": footer_df,
             "notes_tex": _generate_notes_latex(
-                append_notes, notes_label, sig_levels, custom_notes, body_df
+                append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
             "notes_html": _generate_notes_html(
-                append_notes, notes_label, sig_levels, custom_notes, body_df
+                append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
         }
     if str(return_type).endswith((".html", ".tex")):
@@ -209,8 +220,8 @@ def tabular_tex(
     render_options,
     custom_index_names,
     custom_model_names,
-    left_decimals,
-    sig_digits,
+    padding,
+    right_align,
     show_footer,
 ):
     """Return estimation table in LaTeX format as string.
@@ -224,7 +235,7 @@ def tabular_tex(
         render_options(dict): the pd.to_latex() kwargs to apply if default options
             need to be updated.
         lef_decimals (int): see main docstring
-        sig_digits (int): see main docstring
+        float_format (int): see main docstring
         show_footer (bool): see main docstring
 
     Returns:
@@ -239,7 +250,7 @@ def tabular_tex(
         "escape": False,
         "na_rep": "",
         "column_format": "l" * n_levels
-        + "S[table-format ={}.{}]".format(left_decimals, sig_digits) * n_columns,
+        + "S[table-format ={}.{}]".format(padding, right_align) * n_columns,
         "multicolumn_format": "c",
     }
     if custom_index_names:
@@ -360,8 +371,8 @@ def _process_model(model):
 
 def _convert_model_to_series(
     df,
-    sig_levels,
-    sig_digits,
+    significance_levels,
+    float_format,
     show_inference,
     confidence_intervals,
     show_stars,
@@ -371,8 +382,8 @@ def _convert_model_to_series(
     Args:
 
         df (DataFrame): params DataFrame of the model
-        sig_levels (list): see main docstring
-        sig_digits (int): see main docstring
+        significance_levels (list): see main docstring
+        float_format (int): see main docstring
         show_inference (bool): see main docstring
         confidence_intervals (bool): see main docstring
         show_stars (bool): see main docstring
@@ -380,17 +391,17 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
-
+    value_sr = _format_series(df["value"], float_format)
     if show_stars:
-        sig_bins = [-1] + sorted(sig_levels) + [2]
-        value_sr = round(df["value"], sig_digits).replace(np.nan, "").astype("str")
+        sig_bins = [-1] + sorted(significance_levels) + [2]
         value_sr += "$^{"
         value_sr += (
             pd.cut(
                 df["p_value"],
                 bins=sig_bins,
                 labels=[
-                    "*" * (len(sig_levels) - i) for i in range(len(sig_levels) + 1)
+                    "*" * (len(significance_levels) - i)
+                    for i in range(len(significance_levels) + 1)
                 ],
             )
             .astype("str")
@@ -398,28 +409,18 @@ def _convert_model_to_series(
             .replace(np.nan, "")
         )
         value_sr += " }$"
-    else:
-        value_sr = round(df["value"], sig_digits).replace(np.nan, "").astype("str")
-
     if show_inference:
         if confidence_intervals:
+            ci_lower = _format_series(df["ci_lower"], float_format)
+            ci_upper = _format_series(df["ci_upper"], float_format)
             inference_sr = "{("
-            inference_sr += (
-                round(df["ci_lower"], sig_digits).replace(np.nan, "").astype("str")
-            )
+            inference_sr += ci_lower
             inference_sr += r"\,;\,"
-            inference_sr += (
-                round(df["ci_upper"], sig_digits).replace(np.nan, "").astype("str")
-            )
+            inference_sr += ci_upper
             inference_sr += ")}"
         else:
-            inference_sr = (
-                "("
-                + round(df["standard_error"], sig_digits)
-                .replace(np.nan, "")
-                .astype("str")
-                + ")"
-            )
+            standard_error = _format_series(df["standard_error"], float_format)
+            inference_sr = "(" + standard_error + ")"
 
         # replace empty braces with empty string
         # combine the two into one series Done
@@ -461,15 +462,17 @@ def _combine_series(value_sr, inference_sr):
     return df[""]
 
 
-def _create_statistics_sr(model, stats_dict, sig_levels, show_stars, sig_digits):
+def _create_statistics_sr(
+    model, stats_dict, significance_levels, show_stars, float_format
+):
     """Process statistics values, return string series.
 
     Args:
         model (estimation result): see main docstring
         stats_dict (dict): see main docstring
-        sig_levels (list): see main docstring
+        significance_levels (list): see main docstring
         show_stars (bool): see main docstring
-        sig_digits (int): see main focstring
+        float_format (int): see main focstring
 
     Returns:
         series: string series with summary statistics values and additional info
@@ -483,14 +486,21 @@ def _create_statistics_sr(model, stats_dict, sig_levels, show_stars, sig_digits)
     else:
         show_dof = None
     for k in stats_dict:
-        series_dict[k] = str(
-            round(model.info.get(stats_dict[k], np.nan), sig_digits)
-        ).replace("nan", "")
+        stat_value = model.info.get(stats_dict[k], np.nan)
+        if isinstance(float_format, int):
+            stat_value = round(stat_value, float_format)
+        elif isinstance(float_format, str):
+            stat_value = float_format.format(stat_value)
+        elif callable(float_format):
+            stat_value = float_format(stat_value)
+        series_dict[k] = str(stat_value).replace("nan", "")
     if "fvalue" in model.info and "F Statistic" in series_dict:
         if show_stars and "f_pvalue" in model.info:
-            sig_bins = [-1] + sorted(sig_levels) + [2]
+            sig_bins = [-1] + sorted(significance_levels) + [2]
             sig_icon_fstat = "*" * (
-                len(sig_levels) - np.digitize(model.info["f_pvalue"], sig_bins) + 1
+                len(significance_levels)
+                - np.digitize(model.info["f_pvalue"], sig_bins)
+                + 1
             )
             series_dict["F Statistic"] = (
                 series_dict["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
@@ -581,13 +591,15 @@ def _process_body_df(
     return df
 
 
-def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, df):
+def _generate_notes_latex(
+    append_notes, notes_label, significance_levels, custom_notes, df
+):
     """Generate the LaTex script of the notes section.
 
     Args:
         append_notes (bool): see main docstring
         notes_label (str): see main docstring
-        sig_levels (list): see main docstring
+        significance_levels (list): see main docstring
         custom_notes (str): see main docstring
         df (DataFrame): params DataFrame of estimation model
 
@@ -597,7 +609,7 @@ def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, d
     """
     n_levels = df.index.nlevels
     n_columns = len(df.columns)
-    sig_levels = sorted(sig_levels)
+    significance_levels = sorted(significance_levels)
     notes_text = "\\midrule\n"
     if append_notes:
         notes_text += "\\textit{{{}}} & \\multicolumn{{{}}}{{r}}{{".format(
@@ -605,10 +617,10 @@ def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, d
         )
         # iterate over penultimate sig_level since last item of legend is not
         # followed by a semi column
-        for i in range(len(sig_levels) - 1):
-            star = "*" * (len(sig_levels) - i)
-            notes_text += "$^{{{}}}$p$<${};".format(star, str(sig_levels[i]))
-        notes_text += "$^{*}$p$<$" + str(sig_levels[-1]) + "} \\\\\n"
+        for i in range(len(significance_levels) - 1):
+            star = "*" * (len(significance_levels) - i)
+            notes_text += "$^{{{}}}$p$<${};".format(star, str(significance_levels[i]))
+        notes_text += "$^{*}$p$<$" + str(significance_levels[-1]) + "} \\\\\n"
         if custom_notes:
             amp_n = "&" * n_levels
             if isinstance(custom_notes, list):
@@ -631,13 +643,15 @@ def _generate_notes_latex(append_notes, notes_label, sig_levels, custom_notes, d
     return notes_text
 
 
-def _generate_notes_html(append_notes, notes_label, sig_levels, custom_notes, df):
+def _generate_notes_html(
+    append_notes, notes_label, significance_levels, custom_notes, df
+):
     """Generate the html script of the notes section of the estimation table.
 
     Args:
         append_notes (bool): see main docstring
         notes_label (str): see main docstring
-        sig_levels (list): see main docstring
+        significance_levels (list): see main docstring
         custom_notes (str): see main docstring
         df (DataFrame): params DataFrame of estimation model
 
@@ -647,7 +661,7 @@ def _generate_notes_html(append_notes, notes_label, sig_levels, custom_notes, df
     """
     n_levels = df.index.nlevels
     n_columns = len(df.columns)
-    sig_levels = sorted(sig_levels)
+    significance_levels = sorted(significance_levels)
     notes_text = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
         </td></tr>""".format(
         n_columns + n_levels
@@ -658,10 +672,10 @@ def _generate_notes_html(append_notes, notes_label, sig_levels, custom_notes, df
         style="text-align: right">""".format(
             notes_label, n_columns + n_levels - 1
         )
-        for i in range(len(sig_levels) - 1):
-            stars = "*" * (len(sig_levels) - i)
-            notes_text += "<sup>{}</sup>p&lt;{}; ".format(stars, sig_levels[i])
-        notes_text += """<sup>*</sup>p&lt;{} </td>""".format(sig_levels[-1])
+        for i in range(len(significance_levels) - 1):
+            stars = "*" * (len(significance_levels) - i)
+            notes_text += "<sup>{}</sup>p&lt;{}; ".format(stars, significance_levels[i])
+        notes_text += """<sup>*</sup>p&lt;{} </td>""".format(significance_levels[-1])
         if custom_notes:
             if isinstance(custom_notes, list):
                 assert all(
@@ -723,3 +737,13 @@ def _extract_info_from_sm(model):
     info["resid_std_err"] = np.sqrt(model.scale)
     info["n_obs"] = model.df_model + model.df_resid + 1
     return info
+
+
+def _format_series(sr, float_format):
+    if isinstance(float_format, str):
+        sr_formatted = sr.map(float_format.format).replace(np.nan, "").astype("str")
+    elif isinstance(float_format, int):
+        sr_formatted = round(sr, float_format).replace(np.nan, "").astype("str")
+    elif callable(float_format):
+        sr_formatted = sr.map(float_format).replace(np.nan, "").astype("str")
+    return sr_formatted
