@@ -184,3 +184,41 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
     assert crit_val_sample > crit_val_optimized_sample
     assert crit_vals_single > np.min(crit_vals_many)
     assert crit_val_optimized_sample == np.min(crit_vals_many)
+
+
+def test_extend_upscaled_lhs_sample():
+    """Test that existing points are correctly used.
+
+    This fails at the moment due to mysterious reasons. Failure is probably related to
+    some bug in _get_empty_bin_info.
+
+
+    Rewrite test so that it also calls the actual function _extend_upscaled_lhs_sample.
+
+    """
+    first_center = np.ones(2)
+    first_radius = 0.1
+    first_sample, _ = get_next_trust_region_points_latin_hypercube(
+        first_center, first_radius, n_points=30, n_iter=10
+    )
+
+    second_center = 0.9 * np.ones(2)
+    second_radius = 0.2
+
+    existing_points = get_existing_points(first_sample, second_center, second_radius)
+
+    second_sample, _ = get_next_trust_region_points_latin_hypercube(
+        second_center,
+        second_radius,
+        n_points=30,
+        existing_points=existing_points,
+        n_iter=10,
+    )
+
+    assert len(existing_points) > 0
+    assert np.all(existing_points == second_sample[1 : len(existing_points), :])
+
+
+def test_get_empty_bin_info():
+    """Test this properly!"""
+    pass
