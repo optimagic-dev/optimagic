@@ -1,18 +1,22 @@
 from itertools import combinations
 from itertools import product
 
+import estimagic.batch_evaluators as be
 import numpy as np
 import plotly.graph_objects as go
+from estimagic.config import DEFAULT_N_CORES as N_CORES
 from estimagic.utilities import check_all_params_are_bounded
 from estimagic.utilities import create_string_from_index_element
 from plotly.subplots import make_subplots
 
 
-def plot_2d_effects(
+def plot_bivariate_effects(
     criterion,
     params,
     n_gridpoints=10,
     plots_per_row=2,
+    batch_evaluator="joblib",
+    n_cores=N_CORES,
 ):
     """Plot the surface of the criterion on 2D grids around a given value.
 
@@ -30,6 +34,9 @@ def plot_2d_effects(
         Fig: plotly.graph_objects.Figure
 
     """
+    if isinstance(batch_evaluator, str):
+        batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
+
     check_all_params_are_bounded(params)
 
     params = params.copy()
@@ -38,25 +45,25 @@ def plot_2d_effects(
 
     points = _create_points_to_evaluate(params, n_gridpoints)
     params_to_evaluate = _create_params_to_evaluate(points, params)
-    points["criterion_value"] = [criterion(p) for p in params_to_evaluate]
 
-    param_combinations = combinations(params.index, 2)
+    points["criterion_value"] = batch_evaluator(
+        criterion, params_to_evaluate, n_cores=n_cores
+    )
+
+    # needs to be a list to use enumerate below
+    param_combinations = list(combinations(params.index, 2))
     surfaces = _create_surfaces(points, params, param_combinations)
 
+    n_plots = len(surfaces)
     n_cols = plots_per_row
-    n_rows = int(np.ceil(len(surfaces) / n_cols))
+    n_rows = int(np.ceil(n_plots / n_cols))
     specs = [[{"is_3d": True}] * n_cols] * n_rows
-    fig = make_subplots(
-        rows=n_rows,
-        cols=n_cols,
-        specs=specs,
-    )
+    fig = make_subplots(rows=n_rows, cols=n_cols, specs=specs)
 
     row = 1  # Plotly starts counting at 1
     column = 1
     for surface in surfaces:
         fig.add_trace(surface, row=row, col=column)
-
         if column < n_cols:
             column += 1
         else:
@@ -64,7 +71,30 @@ def plot_2d_effects(
             row += 1
 
     # style plot
-    fig.update_layout(width=n_cols * 400, height=n_rows * 400)
+    layout = {"width": 400 * n_cols, "height": 400 * n_rows}
+    for i, (x_loc, y_loc) in enumerate(param_combinations):
+        plot_name = "scene" if i == 0 else f"scene{i+1}"
+        x_name = params.loc[x_loc, "name"]
+        y_name = params.loc[y_loc, "name"]
+        layout[plot_name] = {
+            "xaxis": {
+                "title_text": x_name,
+                "showbackground": False,
+                "gridcolor": "lightgray",
+            },
+            "yaxis": {
+                "title_text": y_name,
+                "showbackground": False,
+                "gridcolor": "lightgray",
+            },
+            "zaxis": {
+                "title": "criterion value",
+                "showbackground": False,
+                "gridcolor": "lightgray",
+            },
+        }
+
+    fig.update_layout(**layout)
 
     return fig
 
