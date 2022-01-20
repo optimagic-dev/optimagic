@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from estimagic.utilities import index_element_to_string
 from estimagic.visualization.colors import get_colors
 
 
@@ -35,7 +36,7 @@ def plot_univariate_effects(
         raise ValueError("All parameters need a finite upper bound.")
 
     if "name" not in params.columns:
-        names = [_index_element_to_string(tup) for tup in params.index]
+        names = [index_element_to_string(tup) for tup in params.index]
         params["name"] = names
 
     plot_data = _get_plot_data(
@@ -110,12 +111,3 @@ def _get_plot_data(params, use_random_value, value_identifier, n_gridpoints):
 
     plot_data = pd.concat(to_concat).reset_index()
     return plot_data
-
-
-def _index_element_to_string(element, separator="_"):
-    if isinstance(element, (tuple, list)):
-        as_strings = [str(entry).replace("-", "_") for entry in element]
-        res_string = separator.join(as_strings)
-    else:
-        res_string = str(element)
-    return res_string

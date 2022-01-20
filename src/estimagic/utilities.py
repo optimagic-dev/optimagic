@@ -310,3 +310,12 @@ def calculate_trustregion_initial_radius(x):
     """
     x_norm = np.linalg.norm(x, ord=np.inf)
     return 0.1 * max(x_norm, 1)
+
+
+def index_element_to_string(element, separator="_"):
+    if isinstance(element, (tuple, list)):
+        as_strings = [str(entry).replace("-", "_") for entry in element]
+        res_string = separator.join(as_strings)
+    else:
+        res_string = str(element)
+    return res_string
