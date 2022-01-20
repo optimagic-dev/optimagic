@@ -20,7 +20,7 @@ def estimation_table(
     confidence_intervals=False,
     show_stars=True,
     significance_levels=(0.1, 0.05, 0.01),
-    float_format="{0:.4g}",
+    number_format="{0:.4g}",
     padding=1,
     show_footer=True,
     stats_dict=None,
@@ -61,7 +61,7 @@ def estimation_table(
             Default is True.
         significance_levels (list): a list of floats for p value's significance cutt-off
             values. Default is [0.1,0.05,0.01].
-        float_format (int): an integer for the number of digits to the right of the
+        number_format (int): an integer for the number of digits to the right of the
             decimal point to round to. Default is 2.
         padding (int): an integer used for aligning LaTex columns. Affects the
             alignment of the columns to the left of the decimal point of numerical
@@ -127,7 +127,7 @@ def estimation_table(
         _convert_model_to_series(
             df,
             significance_levels,
-            float_format,
+            number_format,
             show_inference,
             confidence_intervals,
             show_stars,
@@ -145,7 +145,7 @@ def estimation_table(
     )
     to_concat = [
         _create_statistics_sr(
-            mod, stats_dict, significance_levels, show_stars, float_format
+            mod, stats_dict, significance_levels, show_stars, number_format
         )
         for mod in models
     ]
@@ -156,7 +156,7 @@ def estimation_table(
         # of digits to the right from the decimal points.
         # Needed for table formatting.
         right_align = (
-            _format_series(df_list[0]["value"], float_format)
+            _format_series(df_list[0]["value"], number_format)
             .str.split(".", expand=True)[1]
             .str.len()
             .unique()[0]
@@ -235,7 +235,7 @@ def tabular_tex(
         render_options(dict): the pd.to_latex() kwargs to apply if default options
             need to be updated.
         lef_decimals (int): see main docstring
-        float_format (int): see main docstring
+        number_format (int): see main docstring
         show_footer (bool): see main docstring
 
     Returns:
@@ -372,7 +372,7 @@ def _process_model(model):
 def _convert_model_to_series(
     df,
     significance_levels,
-    float_format,
+    number_format,
     show_inference,
     confidence_intervals,
     show_stars,
@@ -383,7 +383,7 @@ def _convert_model_to_series(
 
         df (DataFrame): params DataFrame of the model
         significance_levels (list): see main docstring
-        float_format (int): see main docstring
+        number_format (int): see main docstring
         show_inference (bool): see main docstring
         confidence_intervals (bool): see main docstring
         show_stars (bool): see main docstring
@@ -391,7 +391,7 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
-    value_sr = _format_series(df["value"], float_format)
+    value_sr = _format_series(df["value"], number_format)
     if show_stars:
         sig_bins = [-1] + sorted(significance_levels) + [2]
         value_sr += "$^{"
@@ -411,15 +411,15 @@ def _convert_model_to_series(
         value_sr += " }$"
     if show_inference:
         if confidence_intervals:
-            ci_lower = _format_series(df["ci_lower"], float_format)
-            ci_upper = _format_series(df["ci_upper"], float_format)
+            ci_lower = _format_series(df["ci_lower"], number_format)
+            ci_upper = _format_series(df["ci_upper"], number_format)
             inference_sr = "{("
             inference_sr += ci_lower
             inference_sr += r"\,;\,"
             inference_sr += ci_upper
             inference_sr += ")}"
         else:
-            standard_error = _format_series(df["standard_error"], float_format)
+            standard_error = _format_series(df["standard_error"], number_format)
             inference_sr = "(" + standard_error + ")"
 
         # replace empty braces with empty string
@@ -463,7 +463,7 @@ def _combine_series(value_sr, inference_sr):
 
 
 def _create_statistics_sr(
-    model, stats_dict, significance_levels, show_stars, float_format
+    model, stats_dict, significance_levels, show_stars, number_format
 ):
     """Process statistics values, return string series.
 
@@ -472,7 +472,7 @@ def _create_statistics_sr(
         stats_dict (dict): see main docstring
         significance_levels (list): see main docstring
         show_stars (bool): see main docstring
-        float_format (int): see main focstring
+        number_format (int): see main focstring
 
     Returns:
         series: string series with summary statistics values and additional info
@@ -487,12 +487,12 @@ def _create_statistics_sr(
         show_dof = None
     for k in stats_dict:
         stat_value = model.info.get(stats_dict[k], np.nan)
-        if isinstance(float_format, int):
-            stat_value = round(stat_value, float_format)
-        elif isinstance(float_format, str):
-            stat_value = float_format.format(stat_value)
-        elif callable(float_format):
-            stat_value = float_format(stat_value)
+        if isinstance(number_format, int):
+            stat_value = round(stat_value, number_format)
+        elif isinstance(number_format, str):
+            stat_value = number_format.format(stat_value)
+        elif callable(number_format):
+            stat_value = number_format(stat_value)
         series_dict[k] = str(stat_value).replace("nan", "")
     if "fvalue" in model.info and "F Statistic" in series_dict:
         if show_stars and "f_pvalue" in model.info:
@@ -739,11 +739,31 @@ def _extract_info_from_sm(model):
     return info
 
 
-def _format_series(sr, float_format):
-    if isinstance(float_format, str):
-        sr_formatted = sr.map(float_format.format).replace(np.nan, "").astype("str")
-    elif isinstance(float_format, int):
-        sr_formatted = round(sr, float_format).replace(np.nan, "").astype("str")
-    elif callable(float_format):
-        sr_formatted = sr.map(float_format).replace(np.nan, "").astype("str")
+def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
+    """Format series according to the specified formatter."""
+    if isinstance(number_format, str):
+        sr_formatted = sr.map(number_format.format)
+    elif isinstance(number_format, list) or isinstance(number_format, tuple):
+        sr_formatted = sr
+        for formatter in number_format[:-1]:
+            sr_formatted = sr_formatted.map(formatter.format).astype("float")
+        sr_formatted = sr_formatted.map(number_format[-1].format)
+    elif isinstance(number_format, int):
+        sr_formatted = round(sr, number_format)
+    elif callable(number_format):
+        sr_formatted = sr.map(number_format)
+    sr_formatted = sr_formatted.replace(np.nan, "").astype("str")
+    if add_trailing_zeros:
+        trail = (
+            sr_formatted.str.split(".", expand=True)[1]
+            .astype("str")
+            .replace("None", "")
+        )
+        trail_length = trail.str.len().replace(np.nan, 0)
+        max_trail = trail_length[~trail.str.contains("e")].max()
+        lead = sr_formatted.str.split(".", expand=True)[0]
+        sr_formatted = sr_formatted.where(
+            sr_formatted.str.contains("e"),
+            lead + "." + trail + np.char.multiply("0", max_trail - trail_length),
+        )
     return sr_formatted
