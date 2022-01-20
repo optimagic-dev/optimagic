@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from estimagic.utilities import index_element_to_string
+from estimagic.utilities import check_all_params_are_bounded
+from estimagic.utilities import create_string_from_index_element
 from estimagic.visualization.colors import get_colors
 
 
@@ -24,20 +25,10 @@ def plot_univariate_effects(
 
     """
     np.random.seed(seed)
-    if (
-        "lower_bound" not in params.columns
-        or not np.isfinite(params["lower_bound"]).all()
-    ):
-        raise ValueError("All parameters need a finite lower bound.")
-    if (
-        "upper_bound" not in params.columns
-        or not np.isfinite(params["upper_bound"]).all()
-    ):
-        raise ValueError("All parameters need a finite upper bound.")
+    check_all_params_are_bounded(params)
 
     if "name" not in params.columns:
-        names = [index_element_to_string(tup) for tup in params.index]
-        params["name"] = names
+        params["name"] = [create_string_from_index_element(tup) for tup in params.index]
 
     plot_data = _get_plot_data(
         params=params,

@@ -3,6 +3,8 @@ from itertools import product
 
 import numpy as np
 import plotly.graph_objects as go
+from estimagic.utilities import check_all_params_are_bounded
+from estimagic.utilities import create_string_from_index_element
 from plotly.subplots import make_subplots
 
 
@@ -12,13 +14,14 @@ def plot_2d_effects(
     n_gridpoints=10,
     plots_per_row=2,
 ):
-    """Plot the surface of the criterion on 2D grids at given and random values.
+    """Plot the surface of the criterion on 2D grids around a given value.
 
     Args:
         criterion (callable): criterion function. Takes a DataFrame and
             returns a scalar value or dictionary with the entry "value".
         params (pandas.DataFrame): See :ref:`params`. Must contain finite
-            lower and upper bounds for all parameters.
+            lower and upper bounds for all parameters. The plots will cover the whole
+            distance between the bounds.
         n_gridpoints (int): Number of gridpoints in each direction on which the
             criterion function is evaluated.
         plots_per_row (int): How many plots are plotted per row.
@@ -27,16 +30,15 @@ def plot_2d_effects(
         Fig: plotly.graph_objects.Figure
 
     """
-    params = params.copy()
+    check_all_params_are_bounded(params)
 
-    _assert_all_params_are_bounded(params)
+    params = params.copy()
+    if "name" not in params.columns:
+        params["name"] = [create_string_from_index_element(tup) for tup in params.index]
 
     points = _create_points_to_evaluate(params, n_gridpoints)
-
-    # parallelize this
-    points["criterion_value"] = [
-        criterion(points.loc[row_id].to_frame(name="value")) for row_id in points.index
-    ]
+    params_to_evaluate = _create_params_to_evaluate(points, params)
+    points["criterion_value"] = [criterion(p) for p in params_to_evaluate]
 
     param_combinations = combinations(params.index, 2)
     surfaces = _create_surfaces(points, params, param_combinations)
@@ -44,39 +46,27 @@ def plot_2d_effects(
     n_cols = plots_per_row
     n_rows = int(np.ceil(len(surfaces) / n_cols))
     specs = [[{"is_3d": True}] * n_cols] * n_rows
-    fig = make_subplots(rows=n_rows, cols=n_cols, specs=specs)
+    fig = make_subplots(
+        rows=n_rows,
+        cols=n_cols,
+        specs=specs,
+    )
 
-    # Plotly starts counting at 1
-    row = 1
+    row = 1  # Plotly starts counting at 1
     column = 1
     for surface in surfaces:
         fig.add_trace(surface, row=row, col=column)
+
         if column < n_cols:
             column += 1
         else:
             column = 1
             row += 1
 
+    # style plot
+    fig.update_layout(width=n_cols * 400, height=n_rows * 400)
+
     return fig
-
-
-def _assert_all_params_are_bounded(params):
-    """Raise a ValueError in case any parameter is missing a lower or upper bound.
-
-    Args:
-        params (pandas.DataFrame): params DataFrame.
-
-    Raises:
-        ValueError: When "lower_bound" or "upper_bound" are missing for any
-            parameter or in general.
-
-    """
-    for bound_type in ["lower", "upper"]:
-        if (
-            f"{bound_type}_bound" not in params.columns
-            or not np.isfinite(params[f"{bound_type}_bound"]).all()
-        ):
-            raise ValueError(f"All parameters need a finite {bound_type} bound.")
 
 
 def _create_points_to_evaluate(params, n_gridpoints):
@@ -97,13 +87,13 @@ def _create_points_to_evaluate(params, n_gridpoints):
 
     points = params[["value"]].T
 
-    for x_name, y_name in param_combis:
-        x_values = _create_linspace_with_start_value(params, x_name, n_gridpoints)
-        y_values = _create_linspace_with_start_value(params, y_name, n_gridpoints)
+    for x_loc, y_loc in param_combis:
+        x_values = _create_linspace_with_start_value(params, x_loc, n_gridpoints)
+        y_values = _create_linspace_with_start_value(params, y_loc, n_gridpoints)
 
         for x_val, y_val in product(x_values, y_values):
             new_point = params["value"].copy()
-            new_point[x_name, y_name] = x_val, y_val
+            new_point[x_loc, y_loc] = x_val, y_val
             points = points.append(new_point)
 
     unique_points = points.drop_duplicates()
@@ -138,11 +128,11 @@ def _create_linspace_with_start_value(params, row_id, n_gridpoints):
 
 def _create_surfaces(points, params, param_combinations):
     surfaces = []
-    for x_name, y_name in param_combinations:
+    for x_loc, y_loc in param_combinations:
         reduced_points = _reduce_to_points_with_fixed_other_dimensions(
-            points, params, x_name, y_name
+            points, params, x_loc, y_loc
         )
-        long_data = reduced_points.set_index([x_name, y_name])["criterion_value"]
+        long_data = reduced_points.set_index([x_loc, y_loc])["criterion_value"]
         z = long_data.unstack()
         x = z.index
         y = z.columns
@@ -159,10 +149,31 @@ def _create_surfaces(points, params, param_combinations):
     return surfaces
 
 
-def _reduce_to_points_with_fixed_other_dimensions(points, params, x_name, y_name):
+def _reduce_to_points_with_fixed_other_dimensions(points, params, x_loc, y_loc):
     """Reduce points to those that are fixed in all other dimensions"""
-    fixed_params = params.index.drop([x_name, y_name])
+    fixed_params = params.index.drop([x_loc, y_loc])
     fixed_values = params.loc[fixed_params, "value"]
     keep = (points[fixed_params] == fixed_values).all(axis=1)
     reduced = points[keep]
     return reduced
+
+
+def _create_params_to_evaluate(points, params):
+    """Create full params DataFrames with points to evaluate as "value" column.
+
+    Args:
+        points (pandas.DataFrame): Each point at which the criterion will be evaluated
+            is a row. Columns are the index of params.
+        params (pandas.DataFrame): See :ref:`params`.
+
+    Returns:
+        list: each entry is a params DataFrame with the "value" column replaced with
+            one of the given points.
+
+    """
+    params_to_evaluate = []
+    for loc in points.index:
+        full_p = params.copy()
+        full_p["value"] = points.loc[loc]
+        params_to_evaluate.append(full_p)
+    return params_to_evaluate

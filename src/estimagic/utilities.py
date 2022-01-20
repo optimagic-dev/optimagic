@@ -312,10 +312,29 @@ def calculate_trustregion_initial_radius(x):
     return 0.1 * max(x_norm, 1)
 
 
-def index_element_to_string(element, separator="_"):
+def create_string_from_index_element(element, separator="_"):
     if isinstance(element, (tuple, list)):
         as_strings = [str(entry).replace("-", "_") for entry in element]
         res_string = separator.join(as_strings)
     else:
         res_string = str(element)
     return res_string
+
+
+def check_all_params_are_bounded(params):
+    """Raise a ValueError in case any parameter is missing a lower or upper bound.
+
+    Args:
+        params (pandas.DataFrame): params DataFrame.
+
+    Raises:
+        ValueError: When "lower_bound" or "upper_bound" are missing for any
+            parameter or in general.
+
+    """
+    for bound_type in ["lower", "upper"]:
+        if (
+            f"{bound_type}_bound" not in params.columns
+            or not np.isfinite(params[f"{bound_type}_bound"]).all()
+        ):
+            raise ValueError(f"All parameters need a finite {bound_type} bound.")

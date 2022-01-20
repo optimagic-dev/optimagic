@@ -29,8 +29,8 @@ from estimagic.parameters.parameter_conversion import get_reparametrize_function
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.parameters.process_constraints import process_constraints
+from estimagic.utilities import create_string_from_index_element
 from estimagic.utilities import hash_array
-from estimagic.utilities import index_element_to_string
 
 
 def maximize(
@@ -811,7 +811,7 @@ def _add_name_and_group_columns_to_params(params):
         params["group"] = "All Parameters"
 
     if "name" not in params.columns:
-        names = [index_element_to_string(tup) for tup in params.index]
+        names = [create_string_from_index_element(tup) for tup in params.index]
         params["name"] = names
     else:
         params["name"] = params["name"].str.replace("-", "_")
