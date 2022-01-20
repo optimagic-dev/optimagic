@@ -2,6 +2,7 @@ from itertools import combinations
 from itertools import product
 
 import numpy as np
+import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 
@@ -34,15 +35,27 @@ def plot_2d_effects(
 
     # parallelize this
     points["criterion_value"] = [
-        criterion(points.loc[row_id, params.index].to_frame(name="value"))
-        for row_id in points.index
+        criterion(points.loc[row_id].to_frame(name="value")) for row_id in points.index
     ]
 
-    # create the plot
     param_combinations = combinations(params.index, 2)
+    surfaces = _create_surfaces(points, params, param_combinations)
+
     n_cols = plots_per_row
-    n_rows = int(np.ceil(len(param_combinations) / n_cols))
-    fig = make_subplots(rows=n_rows, cols=n_cols)
+    n_rows = int(np.ceil(len(surfaces) / n_cols))
+    specs = [[{"is_3d": True}] * n_cols] * n_rows
+    fig = make_subplots(rows=n_rows, cols=n_cols, specs=specs)
+
+    # Plotly starts counting at 1
+    row = 1
+    column = 1
+    for surface in surfaces:
+        fig.add_trace(surface, row=row, col=column)
+        if column < n_cols:
+            column += 1
+        else:
+            column = 1
+            row += 1
 
     return fig
 
@@ -121,3 +134,35 @@ def _create_linspace_with_start_value(params, row_id, n_gridpoints):
     x_space = np.append(x_space_without_start_value, [given_value])
     x_space.sort()
     return x_space
+
+
+def _create_surfaces(points, params, param_combinations):
+    surfaces = []
+    for x_name, y_name in param_combinations:
+        reduced_points = _reduce_to_points_with_fixed_other_dimensions(
+            points, params, x_name, y_name
+        )
+        long_data = reduced_points.set_index([x_name, y_name])["criterion_value"]
+        z = long_data.unstack()
+        x = z.index
+        y = z.columns
+
+        surfaces.append(
+            go.Surface(
+                x=x,
+                y=y,
+                z=z,
+                showscale=False,
+                colorscale="rdbu_r",  # coolwarm
+            )
+        )
+    return surfaces
+
+
+def _reduce_to_points_with_fixed_other_dimensions(points, params, x_name, y_name):
+    """Reduce points to those that are fixed in all other dimensions"""
+    fixed_params = params.index.drop([x_name, y_name])
+    fixed_values = params.loc[fixed_params, "value"]
+    keep = (points[fixed_params] == fixed_values).all(axis=1)
+    reduced = points[keep]
+    return reduced
