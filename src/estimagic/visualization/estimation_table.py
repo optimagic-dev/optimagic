@@ -408,9 +408,16 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
-    value_sr = _format_series(
-        df["value"], number_format, add_trailing_zeros, add_leading_zeros
+    format_cols = ["value"]
+    if show_inference:
+        if confidence_intervals:
+            format_cols += ["ci_lower", "ci_upper"]
+        else:
+            format_cols.append("standard_error")
+    df_formatted = _format_frame(
+        df[format_cols], number_format, add_trailing_zeros, add_leading_zeros
     )
+    value_sr = df_formatted["value"]
     if show_stars:
         sig_bins = [-1] + sorted(significance_levels) + [2]
         value_sr += "$^{"
@@ -430,24 +437,15 @@ def _convert_model_to_series(
         value_sr += " }$"
     if show_inference:
         if confidence_intervals:
-            ci_lower = _format_series(
-                df["ci_lower"], number_format, add_trailing_zeros, add_leading_zeros
-            )
-            ci_upper = _format_series(
-                df["ci_upper"], number_format, add_trailing_zeros, add_leading_zeros
-            )
+            ci_lower = df_formatted["ci_lower"]
+            ci_upper = df_formatted["ci_upper"]
             inference_sr = "{("
             inference_sr += ci_lower
             inference_sr += r"\,;\,"
             inference_sr += ci_upper
             inference_sr += ")}"
         else:
-            standard_error = _format_series(
-                df["standard_error"],
-                number_format,
-                add_trailing_zeros,
-                add_leading_zeros,
-            )
+            standard_error = df_formatted["standard_error"]
             inference_sr = "(" + standard_error + ")"
 
         # replace empty braces with empty string
@@ -792,10 +790,11 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
         trail_length = trail.str.len().replace(np.nan, 0)
         max_trail = trail_length[~trail.str.contains("e")].max()
         lead = sr_formatted.str.split(".", expand=True)[0]
-        sr_formatted = sr_formatted.where(
-            (sr_formatted.str.contains("e")) | (sr_formatted == ""),
-            lead + "." + trail + np.char.multiply("0", max_trail - trail_length),
-        )
+        if max_trail > 0:
+            sr_formatted = sr_formatted.where(
+                (sr_formatted.str.contains("e")) | (sr_formatted == ""),
+                lead + "." + trail + np.char.multiply("0", max_trail - trail_length),
+            )
     if add_leading_zeros:
         lead = sr_formatted.str.split(".", expand=True)[0]
         lead_length = lead.str.len()
@@ -805,3 +804,46 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
             np.char.multiply("0", max_lead - lead_length) + sr_formatted,
         )
     return sr_formatted
+
+
+def _format_frame(df, number_format, add_trailing_zeros, add_leading_zeros):
+    """Format data frame according to the specified formatter."""
+    if isinstance(number_format, str):
+        df_formatted = df.applymap(number_format.format)
+    elif isinstance(number_format, list) or isinstance(number_format, tuple):
+        df_formatted = df.copy(deep=True)
+        for formatter in number_format[:-1]:
+            df_formatted = df_formatted.applymap(formatter.format).astype("float")
+        df_formatted = df_formatted.applymap(number_format[-1].format)
+    elif isinstance(number_format, int):
+        df_formatted = round(df, number_format)
+    elif callable(number_format):
+        df_formatted = df.applymap(number_format)
+    df_formatted = df_formatted.replace(np.nan, "").astype("str").replace("nan", "")
+    if add_trailing_zeros:
+        trails = pd.DataFrame(index=df_formatted.index)
+        trail_lengths = pd.DataFrame(index=df_formatted.index)
+        max_trails = []
+        leads = pd.DataFrame(index=df_formatted.index)
+        for c in df_formatted.columns:
+            trail = (
+                df_formatted[c]
+                .str.split(".", expand=True)[1]
+                .astype("str")
+                .replace("None", "")
+            )
+            trail_length = trail.str.len().replace(np.nan, 0)
+            max_trail = trail_length[~trail.str.contains("e")].max()
+            lead = df_formatted[c].str.split(".", expand=True)[0]
+            trails[c] = trail
+            max_trails.append(max_trail)
+            leads[c] = lead
+            trail_lengths[c] = trail_length
+        max_trail = np.max(max_trails)
+        if max_trail > 0:
+            df_formatted = df_formatted.where(
+                (df_formatted.apply(lambda x: x.str.contains("e")))
+                | (df_formatted == ""),
+                leads + "." + trails + np.char.multiply("0", max_trail - trail_lengths),
+            )
+    return df_formatted
