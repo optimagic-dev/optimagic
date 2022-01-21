@@ -207,10 +207,14 @@ details.dropdown .summary-up, details.dropdown .summary-down {
 
 /* Background color of dropdown boxes */
 .card {
+<<<<<<< HEAD
   background-color: #ebf0f5 !important;
 }
 
 /* Color of inline code */
 :root {
   --pst-color-inline-code: 204, 0, 0 !important;
+=======
+  background-color: #ebf0f5;
+>>>>>>> e3217a315dab34936b6b5ee2f96c0be150d164a7
 }
