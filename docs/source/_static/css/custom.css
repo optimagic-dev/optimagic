@@ -184,14 +184,33 @@ table.rows tr:nth-child(odd) {
 
 /* reduce size of dropdown boxes and change color */
 
-details.dropdown summary {
-  padding: 0.2rem;
+/* Title text attributes */
+details.dropdown .summary-title {
+  font-weight: bold !important;
+  font-family: var(--pst-font-family-monospace) !important;
 }
 
+/* Space of box around the text */
+details.dropdown summary {
+  padding: 0.4rem !important;
+}
+
+/* Vertical spacing of arrow */
+details.dropdown .summary-up, details.dropdown .summary-down {
+  top: 0.5em !important;
+}
+
+/* Vertical space between dropdown boxes */
 .mb-3, .my-3 {
   margin-bottom: 0.2rem !important;
 }
 
+/* Background color of dropdown boxes */
 .card {
-  background-color: #ebf0f5;
+  background-color: #ebf0f5 !important;
+}
+
+/* Color of inline code */
+:root {
+  --pst-color-inline-code: 204, 0, 0 !important;
 }
