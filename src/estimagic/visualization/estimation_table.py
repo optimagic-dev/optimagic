@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from copy import copy
+from copy import deepcopy
 from warnings import warn
 
 import numpy as np
@@ -149,7 +149,13 @@ def estimation_table(
     )
     to_concat = [
         _create_statistics_sr(
-            mod, stat_keys, significance_levels, show_stars, number_format
+            mod,
+            stat_keys,
+            significance_levels,
+            show_stars,
+            number_format,
+            add_trailing_zeros,
+            add_leading_zeros,
         )
         for mod in models
     ]
@@ -485,7 +491,13 @@ def _combine_series(value_sr, inference_sr):
 
 
 def _create_statistics_sr(
-    model, stat_keys, significance_levels, show_stars, number_format
+    model,
+    stat_keys,
+    significance_levels,
+    show_stars,
+    number_format,
+    add_trailing_zeros,
+    add_leading_zeros,
 ):
     """Process statistics values, return string series.
 
@@ -498,25 +510,20 @@ def _create_statistics_sr(
 
     Returns:
         series: string series with summary statistics values and additional info
-            if applied.
+            if applicable.
 
     """
     stat_values = {}
-    stat_keys = copy(stat_keys)
+    stat_keys = deepcopy(stat_keys)
     if "show_dof" in stat_keys:
         show_dof = stat_keys.pop("show_dof")
     else:
         show_dof = None
     for k in stat_keys:
-        val = model.info.get(stat_keys[k], np.nan)
-        if isinstance(number_format, int):
-            val = round(val, number_format)
-        elif isinstance(number_format, str):
-            val = number_format.format(val)
-        elif callable(number_format):
-            val = number_format(val)
-        stat_values[k] = str(val).replace("nan", "")
-
+        stat_values[k] = model.info.get(stat_keys[k], np.nan)
+    stat_values = _format_series(
+        pd.Series(stat_values), number_format, add_trailing_zeros, add_leading_zeros
+    ).to_dict()
     if "fvalue" in model.info and "F Statistic" in stat_values:
         if show_stars and "f_pvalue" in model.info:
             sig_bins = [-1] + sorted(significance_levels) + [2]
@@ -767,7 +774,7 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
     if isinstance(number_format, str):
         sr_formatted = sr.map(number_format.format)
     elif isinstance(number_format, list) or isinstance(number_format, tuple):
-        sr_formatted = sr
+        sr_formatted = sr.copy(deep=True)
         for formatter in number_format[:-1]:
             sr_formatted = sr_formatted.map(formatter.format).astype("float")
         sr_formatted = sr_formatted.map(number_format[-1].format)
