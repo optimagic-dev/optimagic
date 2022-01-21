@@ -37,14 +37,14 @@ def _tree_just_flatten(tree):
     return out
 
 
-def tree_unflatten(tree, flat):
+def tree_unflatten(treedef, flat):
     flat = iter(flat)
-    tree_type = type(tree)
+    tree_type = type(treedef)
 
     if tree_type not in REGISTRY:
         return next(flat)
     else:
-        items, info = REGISTRY[tree_type]["flatten"](tree)
+        items, info = REGISTRY[tree_type]["flatten"](treedef)
         unflattened_items = []
         for item in items:
             if type(item) in REGISTRY:
