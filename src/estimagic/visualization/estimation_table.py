@@ -508,14 +508,14 @@ def _create_statistics_sr(
     else:
         show_dof = None
     for k in stat_keys:
-        stat_value = model.info.get(stat_keys[k], np.nan)
+        val = model.info.get(stat_keys[k], np.nan)
         if isinstance(number_format, int):
-            stat_value = round(stat_value, number_format)
+            val = round(val, number_format)
         elif isinstance(number_format, str):
-            stat_value = number_format.format(stat_value)
+            val = number_format.format(val)
         elif callable(number_format):
-            stat_value = number_format(stat_value)
-        stat_values[k] = str(stat_value).replace("nan", "")
+            val = number_format(val)
+        stat_values[k] = str(val).replace("nan", "")
 
     if "fvalue" in model.info and "F Statistic" in stat_values:
         if show_stars and "f_pvalue" in model.info:
@@ -775,7 +775,7 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
         sr_formatted = round(sr, number_format)
     elif callable(number_format):
         sr_formatted = sr.map(number_format)
-    sr_formatted = sr_formatted.replace(np.nan, "").astype("str")
+    sr_formatted = sr_formatted.replace(np.nan, "").astype("str").replace("nan", "")
     if add_trailing_zeros:
         trail = (
             sr_formatted.str.split(".", expand=True)[1]
@@ -786,12 +786,15 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
         max_trail = trail_length[~trail.str.contains("e")].max()
         lead = sr_formatted.str.split(".", expand=True)[0]
         sr_formatted = sr_formatted.where(
-            sr_formatted.str.contains("e"),
+            (sr_formatted.str.contains("e")) | (sr_formatted == ""),
             lead + "." + trail + np.char.multiply("0", max_trail - trail_length),
         )
     if add_leading_zeros:
         lead = sr_formatted.str.split(".", expand=True)[0]
         lead_length = lead.str.len()
         max_lead = lead_length.max()
-        sr_formatted = np.char.multiply("0", max_lead - lead_length) + sr_formatted
+        sr_formatted = sr_formatted.where(
+            sr_formatted == "",
+            np.char.multiply("0", max_lead - lead_length) + sr_formatted,
+        )
     return sr_formatted
