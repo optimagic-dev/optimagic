@@ -20,10 +20,12 @@ def estimation_table(
     confidence_intervals=False,
     show_stars=True,
     significance_levels=(0.1, 0.05, 0.01),
-    number_format="{0:.4g}",
+    number_format=("{0:.3g}", "{0:.5f}", "{0:.4g}"),
+    add_trailing_zeros=True,
+    add_leading_zeros=False,
     padding=1,
     show_footer=True,
-    stats_dict=None,
+    stat_keys=None,
     append_notes=True,
     notes_label="Note:",
     custom_notes=None,
@@ -73,7 +75,7 @@ def estimation_table(
             are printed. Default is False.
         show_footer (bool): a boolean variable for printing statistics, e.g. R2,
             Obs numbers. Default is True.
-        stats_dict (dict): a dictionary with printed statistics names as keys,
+        stat_keys (dict): a dictionary with printed statistics names as keys,
             and statistics statistics names to be retrieved from model.info as values.
             Default is dictionary with common statistics of stats model linear
             regression.
@@ -108,8 +110,8 @@ def estimation_table(
         if "" not in name_list:
             custom_col_names = name_list
     # Set some defaults:
-    if not stats_dict:
-        stats_dict = {
+    if not stat_keys:
+        stat_keys = {
             "Observations": "n_obs",
             "R$^2$": "rsquared",
             "Adj. R$^2$": "rsquared_adj",
@@ -128,6 +130,8 @@ def estimation_table(
             df,
             significance_levels,
             number_format,
+            add_trailing_zeros,
+            add_leading_zeros,
             show_inference,
             confidence_intervals,
             show_stars,
@@ -145,7 +149,7 @@ def estimation_table(
     )
     to_concat = [
         _create_statistics_sr(
-            mod, stats_dict, significance_levels, show_stars, number_format
+            mod, stat_keys, significance_levels, show_stars, number_format
         )
         for mod in models
     ]
@@ -156,10 +160,15 @@ def estimation_table(
         # of digits to the right from the decimal points.
         # Needed for table formatting.
         right_align = (
-            _format_series(df_list[0]["value"], number_format)
+            _format_series(
+                df_list[0]["value"],
+                number_format,
+                add_trailing_zeros,
+                add_leading_zeros,
+            )
             .str.split(".", expand=True)[1]
             .str.len()
-            .unique()[0]
+            .max()
         )
         if siunitx_warning:
             warn(
@@ -373,6 +382,8 @@ def _convert_model_to_series(
     df,
     significance_levels,
     number_format,
+    add_trailing_zeros,
+    add_leading_zeros,
     show_inference,
     confidence_intervals,
     show_stars,
@@ -391,7 +402,9 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
-    value_sr = _format_series(df["value"], number_format)
+    value_sr = _format_series(
+        df["value"], number_format, add_trailing_zeros, add_leading_zeros
+    )
     if show_stars:
         sig_bins = [-1] + sorted(significance_levels) + [2]
         value_sr += "$^{"
@@ -411,15 +424,24 @@ def _convert_model_to_series(
         value_sr += " }$"
     if show_inference:
         if confidence_intervals:
-            ci_lower = _format_series(df["ci_lower"], number_format)
-            ci_upper = _format_series(df["ci_upper"], number_format)
+            ci_lower = _format_series(
+                df["ci_lower"], number_format, add_trailing_zeros, add_leading_zeros
+            )
+            ci_upper = _format_series(
+                df["ci_upper"], number_format, add_trailing_zeros, add_leading_zeros
+            )
             inference_sr = "{("
             inference_sr += ci_lower
             inference_sr += r"\,;\,"
             inference_sr += ci_upper
             inference_sr += ")}"
         else:
-            standard_error = _format_series(df["standard_error"], number_format)
+            standard_error = _format_series(
+                df["standard_error"],
+                number_format,
+                add_trailing_zeros,
+                add_leading_zeros,
+            )
             inference_sr = "(" + standard_error + ")"
 
         # replace empty braces with empty string
@@ -463,13 +485,13 @@ def _combine_series(value_sr, inference_sr):
 
 
 def _create_statistics_sr(
-    model, stats_dict, significance_levels, show_stars, number_format
+    model, stat_keys, significance_levels, show_stars, number_format
 ):
     """Process statistics values, return string series.
 
     Args:
         model (estimation result): see main docstring
-        stats_dict (dict): see main docstring
+        stat_keys (dict): see main docstring
         significance_levels (list): see main docstring
         show_stars (bool): see main docstring
         number_format (int): see main focstring
@@ -479,22 +501,23 @@ def _create_statistics_sr(
             if applied.
 
     """
-    series_dict = {}
-    stats_dict = copy(stats_dict)
-    if "show_dof" in stats_dict:
-        show_dof = stats_dict.pop("show_dof")
+    stat_values = {}
+    stat_keys = copy(stat_keys)
+    if "show_dof" in stat_keys:
+        show_dof = stat_keys.pop("show_dof")
     else:
         show_dof = None
-    for k in stats_dict:
-        stat_value = model.info.get(stats_dict[k], np.nan)
+    for k in stat_keys:
+        stat_value = model.info.get(stat_keys[k], np.nan)
         if isinstance(number_format, int):
             stat_value = round(stat_value, number_format)
         elif isinstance(number_format, str):
             stat_value = number_format.format(stat_value)
         elif callable(number_format):
             stat_value = number_format(stat_value)
-        series_dict[k] = str(stat_value).replace("nan", "")
-    if "fvalue" in model.info and "F Statistic" in series_dict:
+        stat_values[k] = str(stat_value).replace("nan", "")
+
+    if "fvalue" in model.info and "F Statistic" in stat_values:
         if show_stars and "f_pvalue" in model.info:
             sig_bins = [-1] + sorted(significance_levels) + [2]
             sig_icon_fstat = "*" * (
@@ -502,23 +525,23 @@ def _create_statistics_sr(
                 - np.digitize(model.info["f_pvalue"], sig_bins)
                 + 1
             )
-            series_dict["F Statistic"] = (
-                series_dict["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
+            stat_values["F Statistic"] = (
+                stat_values["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
             )
         if show_dof:
             fstat_str = "{{{}(df={};{})}}"
-            series_dict["F Statistic"] = fstat_str.format(
-                series_dict["F Statistic"],
+            stat_values["F Statistic"] = fstat_str.format(
+                stat_values["F Statistic"],
                 model.info["df_model"],
                 model.info["df_resid"],
             )
-    if "resid_std_err" in model.info and "Residual Std. Error" in series_dict:
+    if "resid_std_err" in model.info and "Residual Std. Error" in stat_values:
         if show_dof:
             rse_str = "{{{}(df={})}}"
-            series_dict["Residual Std. Error"] = rse_str.format(
-                series_dict["Residual Std. Error"], model.info["df_resid"]
+            stat_values["Residual Std. Error"] = rse_str.format(
+                stat_values["Residual Std. Error"], model.info["df_resid"]
             )
-    stat_sr = pd.Series(series_dict)
+    stat_sr = pd.Series(stat_values)
     # the follwing is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
     stat_ind = np.empty((len(stat_sr), model.params.index.nlevels - 1), dtype=str)
@@ -766,4 +789,9 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
             sr_formatted.str.contains("e"),
             lead + "." + trail + np.char.multiply("0", max_trail - trail_length),
         )
+    if add_leading_zeros:
+        lead = sr_formatted.str.split(".", expand=True)[0]
+        lead_length = lead.str.len()
+        max_lead = lead_length.max()
+        sr_formatted = np.char.multiply("0", max_lead - lead_length) + sr_formatted
     return sr_formatted
