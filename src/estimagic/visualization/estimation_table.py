@@ -797,11 +797,16 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
             )
     if add_leading_zeros:
         lead = sr_formatted.str.split(".", expand=True)[0]
-        lead_length = lead.str.len()
+        lead_length = lead.str.lstrip("-").str.len()
         max_lead = lead_length.max()
         sr_formatted = sr_formatted.where(
-            sr_formatted == "",
+            (sr_formatted == "") | (sr_formatted.str.startswith("-")),
             np.char.multiply("0", max_lead - lead_length) + sr_formatted,
+        )
+        sr_formatted = sr_formatted.where(
+            ~sr_formatted.str.startswith("-"),
+            np.char.add("-", np.char.multiply("0", max_lead - lead_length))
+            + sr_formatted.str.lstrip("-"),
         )
     return sr_formatted
 
@@ -846,4 +851,24 @@ def _format_frame(df, number_format, add_trailing_zeros, add_leading_zeros):
                 | (df_formatted == ""),
                 leads + "." + trails + np.char.multiply("0", max_trail - trail_lengths),
             )
+    if add_leading_zeros:
+        max_leads = []
+        lead_lengths = pd.DataFrame(index=df_formatted.index)
+        for c in df_formatted.columns:
+            lead = df_formatted[c].str.split(".", expand=True)[0]
+            lead_length = lead.str.lstrip("-").str.len()
+            max_lead = lead_length.max()
+            max_leads.append(max_lead)
+            lead_lengths[c] = lead_length
+        max_lead = np.max(max_leads)
+        df_formatted = df_formatted.where(
+            (df_formatted == "")
+            | (df_formatted.apply(lambda x: x.str.startswith("-"))),
+            np.char.multiply("0", max_lead - lead_lengths) + df_formatted,
+        )
+        df_formatted.where(
+            ~df_formatted.apply(lambda x: x.str.startswith("-")),
+            np.char.add("-", np.char.multiply("0", max_lead - lead_lengths))
+            + df_formatted.apply(lambda x: x.str.lstrip("-")),
+        )
     return df_formatted
