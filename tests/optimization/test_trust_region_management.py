@@ -3,6 +3,8 @@ from itertools import product
 import numpy as np
 import pytest
 from estimagic.optimization.trust_region_management import _create_upscaled_lhs_sample
+from estimagic.optimization.trust_region_management import _extend_upscaled_lhs_sample
+from estimagic.optimization.trust_region_management import _get_empty_bin_info
 from estimagic.optimization.trust_region_management import _scale_down_points
 from estimagic.optimization.trust_region_management import _scale_up_points
 from estimagic.optimization.trust_region_management import compute_optimality_criterion
@@ -87,20 +89,6 @@ def test_get_existing_points():
     aaae(expected, got)
 
 
-def test_get_existing_points_high_dim():
-    """Check that the curse-of-dimensionality applies to our function."""
-    n_dim = 100
-    n_points = 25
-    old_center = np.ones(n_dim)
-    old_radius = 0.1
-    old_sample, _ = get_next_trust_region_points_latin_hypercube(
-        old_center, old_radius, n_points, n_iter=10
-    )
-
-    got = get_existing_points(old_sample, old_center * 1.05, old_radius)
-    assert got is None
-
-
 def test_latin_hypercube_property():
     """Check that for each single dimension the points are uniformly distributed."""
     n_dim, n_points = np.random.randint(2, 100, size=2)
@@ -126,17 +114,17 @@ def test_get_next_trust_region_points_latin_hypercube_single_use(
     center, radius, n_points, optimality_criterion, lhs_design, target, n_iter
 ):
     """Check that function can be called with all arguments and that the resulting
-    sampe fulfills some basic Latin-Hypercube condition.
+    sample fulfills some basic Latin-Hypercube condition.
 
     """
-    sample, _ = get_next_trust_region_points_latin_hypercube(
+    sample = get_next_trust_region_points_latin_hypercube(
         center=center,
         radius=radius,
         n_points=n_points,
         n_iter=n_iter,
         lhs_design=lhs_design,
         optimality_criterion=optimality_criterion,
-    )
+    )["points"]
 
     decimal = 8 if lhs_design == "centered" else 2
 
@@ -152,7 +140,7 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
     optimality_criterion,
 ):
     """Check that the optimal sample is actually optimal."""
-    sample, crit_vals_single = get_next_trust_region_points_latin_hypercube(
+    sample = get_next_trust_region_points_latin_hypercube(
         center=np.ones(5),
         radius=0.1,
         n_points=10,
@@ -161,11 +149,8 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
         optimality_criterion=optimality_criterion,
         target="linear",
     )
-    crit_val_sample = compute_optimality_criterion(
-        sample, optimality_criterion, target="linear"
-    )
 
-    optimized_sample, crit_vals_many = get_next_trust_region_points_latin_hypercube(
+    optimized_sample = get_next_trust_region_points_latin_hypercube(
         center=np.ones(5),
         radius=0.1,
         n_points=10,
@@ -175,50 +160,71 @@ def test_get_next_trust_region_points_latin_hypercube_optimality_criterion(
         target="linear",
     )
     crit_val_optimized_sample = compute_optimality_criterion(
-        optimized_sample, optimality_criterion, target="linear"
+        optimized_sample["points"], optimality_criterion, target="linear"
     )
 
     if optimality_criterion != "maximin":
         # by design of the criterion only few values are possible
-        assert len(np.unique(crit_vals_many)) > 10_000
-    assert crit_val_sample > crit_val_optimized_sample
-    assert crit_vals_single > np.min(crit_vals_many)
-    assert crit_val_optimized_sample == np.min(crit_vals_many)
+        assert len(np.unique(optimized_sample["crit_vals"])) > 10_000
+    assert sample["crit_vals"] > np.min(optimized_sample["crit_vals"])
+    assert crit_val_optimized_sample == np.min(optimized_sample["crit_vals"])
 
 
 def test_extend_upscaled_lhs_sample():
     """Test that existing points are correctly used.
 
-    This fails at the moment due to mysterious reasons. Failure is probably related to
-    some bug in _get_empty_bin_info.
-
-
-    Rewrite test so that it also calls the actual function _extend_upscaled_lhs_sample.
+    We want two draw 2 points with 1 existing point. Because of the center and
+    radius there is only one possible point to draw in the upscaled space: (0, 0).
 
     """
-    first_center = np.ones(2)
-    first_radius = 0.1
-    first_sample, _ = get_next_trust_region_points_latin_hypercube(
-        first_center, first_radius, n_points=30, n_iter=10
+    n_points = 2
+    second_center = 0.4 * np.ones(2)
+    second_radius = 0.1
+
+    existing_points = np.array([[0.45, 0.45]])
+
+    existing_scaled = _scale_up_points(
+        existing_points, second_center, second_radius, n_points
     )
+    empty_bins = _get_empty_bin_info(existing_scaled, n_points)
+    new_points = _extend_upscaled_lhs_sample(
+        empty_bins, n_points, n_designs=1, dtype=np.uint8
+    )[0]
 
-    second_center = 0.9 * np.ones(2)
-    second_radius = 0.2
-
-    existing_points = get_existing_points(first_sample, second_center, second_radius)
-
-    second_sample, _ = get_next_trust_region_points_latin_hypercube(
-        second_center,
-        second_radius,
-        n_points=30,
-        existing_points=existing_points,
-        n_iter=10,
-    )
-
-    assert len(existing_points) > 0
-    assert np.all(existing_points == second_sample[1 : len(existing_points), :])
+    assert np.all(new_points == np.array([[0, 0]]))
 
 
 def test_get_empty_bin_info():
-    """Test this properly!"""
-    pass
+    """Test that correct empty bins are returned.
+
+    In a 2-d Latin-Hypercube where the first two points are correctly placed over the
+    first 2 dimensions, the only possible place for the 3rd point is at position (2, 2).
+
+    """
+    existing_upscaled_list = [np.array([[0, 0], [1, 1]]), np.array([[0, 1], [1, 0]])]
+
+    empty_bins = []
+    for existing_upscaled in existing_upscaled_list:
+        empty_bins.append(_get_empty_bin_info(existing_upscaled, n_points=3))
+
+    for empty_bin in empty_bins:
+        assert np.all(empty_bin == np.array([[2, 2]]))
+
+
+def test_get_empty_bin_info_multiple_points():
+    """Test that correct number of empty bins is returned to create a Latin-Hypercube.
+
+    This is due to the fact that two existing points fall into the same bin, and are
+    therefore viewed as only one.
+
+    """
+    existing_upscaled = np.array(
+        [
+            [0.25, 0],
+            [0.75, 0],
+        ]
+    )
+    expected = np.array([[1, 1], [2, 2]])
+    got = _get_empty_bin_info(existing_upscaled, n_points=3)
+
+    assert np.all(expected == got)

@@ -17,6 +17,15 @@ def get_next_trust_region_points_latin_hypercube(
 ):
     """Generate new points at which the criterion should be evaluated.
 
+    Important note
+    --------------
+    If existing points are passed the returned sample of points may exceed the number
+    of requested points, and the sample is will not be a valid Latin-Hypercube. The
+    sample will, however, include a subset of points that constitutes a valid
+    Latin-Hyercube.
+
+    Description
+    -----------
     Generates an (optimal) Latin hypercube sample taking into account already existing
     points. Optimality is defined via different criteria, see
     :func:`compute_optimality_criterion`. The best sample is chosen via random search.
@@ -42,9 +51,10 @@ def get_next_trust_region_points_latin_hypercube(
         n_iter (int): Iterations considered in random search.
 
     Returns:
-        - points (np.ndarray): The (optimal) Latin hypercube sample. Has shape
+        out (dict): Dictionary with entries:
+        - 'points' (np.ndarray): The (optimal) Latin hypercube sample. Has shape
         (n_points, len(center)).
-        - crit_vals (np.ndarray): 1d array of length n_iter, containing the criterion
+        - 'crit_vals' (np.ndarray): 1d array of length n_iter, containing the criterion
         values assigned to each candidate sample. Mainly used for debugging.
 
     """
@@ -83,7 +93,8 @@ def get_next_trust_region_points_latin_hypercube(
     crit_vals = crit_func(candidates)
     points = candidates[np.argmin(crit_vals)]
 
-    return points, crit_vals
+    out = {"points": points, "crit_vals": crit_vals}
+    return out
 
 
 def compute_optimality_criterion(x, criterion, target):
@@ -281,9 +292,8 @@ def _get_empty_bin_info(existing_upscaled, n_points):
 
     Returns:
         out (np.ndarray): Empty bins for each dimension. Has shape
-            (len(existing_upscaled) - n_points, n_dim).  Non-empty bins are marked by
-            -1, and occur since not all dimensions must have the same number of empty
-            bins.
+            (len(existing_upscaled) - n_points, n_dim). Non-empty bins are marked by -1,
+            and occur since not all dimensions must have the same number of empty bins.
 
     """
     n_dim = existing_upscaled.shape[1]
