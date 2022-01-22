@@ -783,7 +783,7 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
     sr_formatted = sr_formatted.replace(np.nan, "").astype("str").replace("nan", "")
     if add_trailing_zeros:
         trail = (
-            sr_formatted.str.split(".", expand=True)[1]
+            sr_formatted.apply(lambda x: x.split(".")[-1])
             .astype("str")
             .replace("None", "")
         )
@@ -826,45 +826,39 @@ def _format_frame(df, number_format, add_trailing_zeros, add_leading_zeros):
         df_formatted = df.applymap(number_format)
     df_formatted = df_formatted.replace(np.nan, "").astype("str").replace("nan", "")
     if add_trailing_zeros:
-        trails = pd.DataFrame(index=df_formatted.index)
-        trail_lengths = pd.DataFrame(index=df_formatted.index)
-        max_trails = []
-        leads = pd.DataFrame(index=df_formatted.index)
-        for c in df_formatted.columns:
-            trail = (
-                df_formatted[c]
-                .str.split(".", expand=True)[1]
-                .astype("str")
-                .replace("None", "")
-            )
-            trail_length = trail.str.len().replace(np.nan, 0)
-            max_trail = trail_length[~trail.str.contains("e")].max()
-            lead = df_formatted[c].str.split(".", expand=True)[0]
-            trails[c] = trail
-            max_trails.append(max_trail)
-            leads[c] = lead
-            trail_lengths[c] = trail_length
-        max_trail = np.max(max_trails)
+        trails = (
+            df_formatted.apply(lambda x: x.str.split(".", expand=True)[1])
+            .astype("str")
+            .replace("None", "")
+        )
+        leads = df_formatted.apply(lambda x: x.str.split(".", expand=True)[0]).astype(
+            "str"
+        )
+        trail_lengths = trails.astype("str").apply(lambda x: x.str.len())
+        max_trail = (
+            trail_lengths[~trails.astype("str").apply(lambda x: x.str.contains("e"))]
+            .max()
+            .max()
+        )
         if max_trail > 0:
             df_formatted = df_formatted.where(
                 (df_formatted.apply(lambda x: x.str.contains("e")))
                 | (df_formatted == ""),
-                leads + "." + trails + np.char.multiply("0", max_trail - trail_lengths),
+                leads
+                + "."
+                + trails
+                + np.char.multiply("0", (max_trail - trail_lengths).astype("int")),
             )
     if add_leading_zeros:
-        max_leads = []
-        lead_lengths = pd.DataFrame(index=df_formatted.index)
-        for c in df_formatted.columns:
-            lead = df_formatted[c].str.split(".", expand=True)[0]
-            lead_length = lead.str.lstrip("-").str.len()
-            max_lead = lead_length.max()
-            max_leads.append(max_lead)
-            lead_lengths[c] = lead_length
-        max_lead = np.max(max_leads)
+        lead_lengths = df_formatted.apply(
+            lambda x: x.str.split(".", expand=True)[0].str.lstrip("-").str.len()
+        )
+        max_lead = lead_lengths.max().max()
         df_formatted = df_formatted.where(
             (df_formatted == "")
             | (df_formatted.apply(lambda x: x.str.startswith("-"))),
-            np.char.multiply("0", max_lead - lead_lengths) + df_formatted,
+            np.char.multiply("0", (max_lead - lead_lengths).astype("int"))
+            + df_formatted,
         )
         df_formatted.where(
             ~df_formatted.apply(lambda x: x.str.startswith("-")),
