@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+from estimagic.parameters.tree_utils import leaf_names
+from estimagic.parameters.tree_utils import tree_equal
 from estimagic.parameters.tree_utils import tree_flatten
 from estimagic.parameters.tree_utils import tree_map
 from estimagic.parameters.tree_utils import tree_multimap
@@ -9,17 +11,17 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 @pytest.fixture
 def example_tree():
-    return ([1, np.array([2, 3]), {"a": np.array([4, 5])}], 6)
+    return ([1, np.array([2, 3]), {"a": np.array([4, 5]), "b": 6}], 7)
 
 
 @pytest.fixture
 def example_flat():
-    return [1, np.array([2, 3]), np.array([4, 5]), 6]
+    return [1, np.array([2, 3]), np.array([4, 5]), 6, 7]
 
 
 @pytest.fixture
 def example_treedef():
-    return (["*", "*", {"a": "*"}], "*")
+    return (["*", "*", {"a": "*", "b": "*"}], "*")
 
 
 def test_tree_flatten(example_tree, example_flat, example_treedef):
@@ -28,18 +30,10 @@ def test_tree_flatten(example_tree, example_flat, example_treedef):
     _assert_list_with_arrays_is_equal(flat, example_flat)
 
 
-def test_tree_unflatten(example_flat, example_treedef):
+def test_tree_unflatten(example_flat, example_treedef, example_tree):
     unflat = tree_unflatten(example_treedef, example_flat)
 
-    assert isinstance(unflat, tuple)
-    assert isinstance(unflat[0], list)
-    assert isinstance(unflat[1], int)
-    assert len(unflat) == 2
-    assert unflat[1] == 6
-    assert unflat[0][0] == 1
-    aaae(unflat[0][1], np.array([2, 3]))
-    assert isinstance(unflat[0][2], dict)
-    aaae(unflat[0][2]["a"], np.array([4, 5]))
+    assert tree_equal(unflat, example_tree)
 
 
 def test_tree_map():
@@ -54,6 +48,13 @@ def test_tree_multimap():
     mapped = tree_map(lambda x: x ** 2, tree)
     multimapped = tree_multimap(lambda x, y: x * y, tree, tree)
     assert mapped == multimapped
+
+
+def test_leaf_names(example_tree):
+    names = leaf_names(example_tree)
+
+    expected_names = ["0_0", "0_1", "0_2_a", "0_2_b", "1"]
+    assert names == expected_names
 
 
 def _assert_list_with_arrays_is_equal(list1, list2):
