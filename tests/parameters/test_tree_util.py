@@ -1,13 +1,13 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.parameters.tree_utils import leaf_names
-from estimagic.parameters.tree_utils import tree_equal
-from estimagic.parameters.tree_utils import tree_flatten
-from estimagic.parameters.tree_utils import tree_map
-from estimagic.parameters.tree_utils import tree_multimap
-from estimagic.parameters.tree_utils import tree_unflatten
-from estimagic.parameters.tree_utils import tree_update
+from estimagic.parameters.tree_util import leaf_names
+from estimagic.parameters.tree_util import tree_equal
+from estimagic.parameters.tree_util import tree_flatten
+from estimagic.parameters.tree_util import tree_map
+from estimagic.parameters.tree_util import tree_multimap
+from estimagic.parameters.tree_util import tree_unflatten
+from estimagic.parameters.tree_util import tree_update
 from numpy.testing import assert_array_almost_equal as aaae
 
 
