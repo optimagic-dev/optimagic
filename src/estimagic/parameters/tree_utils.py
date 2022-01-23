@@ -28,7 +28,7 @@ DEFAULT_PYTREE_REGISTRY = {
     dict: {
         "flatten": lambda tree: (list(tree.values()), list(tree)),
         "unflatten": lambda aux_data, children: dict(zip(aux_data, children)),
-        "names": lambda tree: list(tree),
+        "names": lambda tree: list(map(str, list(tree))),
     },
     tuple: {
         "flatten": lambda tree: (list(tree), None),
@@ -159,32 +159,38 @@ def tree_multimap(func, *trees, is_leaf=None, registry=None):
     return out
 
 
-def leaf_names(tree, prefix=None, is_leaf=None, registry=None):
+def leaf_names(tree, is_leaf=None, registry=None, separator="_"):
     registry = _process_pytree_registry(registry)
     is_leaf = _process_is_leaf(is_leaf)
-    return _leaf_names(tree, prefix, is_leaf=is_leaf, registry=registry)
+    return _leaf_names(tree, is_leaf=is_leaf, registry=registry, separator=separator)
 
 
-def _leaf_names(tree, prefix=None, is_leaf=None, registry=None):
+def _leaf_names(tree, is_leaf, registry, separator, prefix=None):
     out = []
     tree_type = type(tree)
 
-    if tree_type not in registry:
+    if tree_type not in registry or is_leaf(tree):
         out.append(prefix)
     else:
         subtrees, info = registry[tree_type]["flatten"](tree)
         names = registry[tree_type]["names"](tree)
         for name, subtree in zip(names, subtrees):
             if type(subtree) in registry:
-                out += leaf_names(subtree, _add_prefix(prefix, name))
+                out += _leaf_names(
+                    subtree,
+                    is_leaf=is_leaf,
+                    registry=registry,
+                    separator=separator,
+                    prefix=_add_prefix(prefix, name, separator),
+                )
             else:
-                out.append(_add_prefix(prefix, name))
+                out.append(_add_prefix(prefix, name, separator))
     return out
 
 
-def _add_prefix(prefix, string):
+def _add_prefix(prefix, string, separator):
     if prefix not in (None, ""):
-        out = "_".join([prefix, string])
+        out = separator.join([prefix, string])
     else:
         out = string
     return out
@@ -193,7 +199,7 @@ def _add_prefix(prefix, string):
 def _process_pytree_registry(registry):
     if registry is None:
         registry = DEFAULT_PYTREE_REGISTRY
-    elif registry == "extend":
+    elif registry == "extended":
         registry = EXTENDED_PYTREE_REGISTRY
 
     return registry
@@ -222,3 +228,18 @@ def tree_equal(tree, other, is_leaf=None, registry=None):
             eq = first == second
         equal = equal and eq
     return equal
+
+
+def tree_update(tree, other, is_leaf=None, registry=None):
+    first_flat, first_treedef = tree_flatten(tree, is_leaf=is_leaf, registry=registry)
+    first_names = leaf_names(tree, is_leaf=is_leaf, registry=registry)
+    first_dict = dict(zip(first_names, first_flat))
+
+    other_flat, _ = tree_flatten(other, is_leaf=is_leaf, registry=registry)
+    other_names = leaf_names(other, is_leaf=is_leaf, registry=registry)
+    other_dict = dict(zip(other_names, other_flat))
+
+    combined = list({**first_dict, **other_dict}.values())
+
+    out = tree_unflatten(first_treedef, combined, is_leaf=is_leaf, registry=registry)
+    return out
