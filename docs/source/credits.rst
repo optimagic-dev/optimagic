@@ -56,7 +56,7 @@ Acknowledgements
 ----------------
 
 Funded by the `TRA Modelling`_ (University of Bonn) as part of the Excellence Strategy
-of the federal and stat governments.
+of the federal and state governments.
 
 .. figure:: _static/images/tra_logo.png
     :width: 100px
