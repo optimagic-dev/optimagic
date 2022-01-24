@@ -55,5 +55,16 @@ Issues and submit a Pull Request.
 Acknowledgements
 ----------------
 
+Funded by the `TRA Modelling`_ (University of Bonn) as part of the Excellence Strategy
+of the federal and stat governments.
+
+.. figure:: _static/images/tra_logo.png
+    :width: 100px
+
+----------------------------------------------------------------------------------------
+
 We want to thank `Kenneth Judd <https://kenjudd.org/>`_ for great feedback regarding
 numerical optimization and differentiation.
+
+
+.. _TRA Modelling: https://www.uni-bonn.de/en/research-and-teaching/research-profile/transdisciplinary-research-areas/tra-1-modelling
