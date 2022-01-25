@@ -24,7 +24,6 @@ repos:
     -   id: debug-statements
     -   id: end-of-file-fixer
     -   id: fix-byte-order-marker
-    -   id: forbid-new-submodules
     -   id: mixed-line-ending
     -   id: no-commit-to-branch
         args: [--branch, main]
