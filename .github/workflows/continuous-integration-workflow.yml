@@ -2,7 +2,7 @@ name: Continuous Integration Workflow
 on:
   push:
     branches:
-    - master
+    - main
   pull_request:
     branches:
     - '*'
