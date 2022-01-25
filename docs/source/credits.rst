@@ -59,7 +59,7 @@ Funded by the `TRA Modelling`_ (University of Bonn) as part of the Excellence St
 of the federal and state governments.
 
 .. figure:: _static/images/tra_logo.png
-    :width: 100px
+    :width: 200px
 
 ----------------------------------------------------------------------------------------
 
