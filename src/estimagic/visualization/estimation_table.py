@@ -165,17 +165,18 @@ def estimation_table(
         # Use the float format of the parameter value series to infer the number
         # of digits to the right from the decimal points.
         # Needed for table formatting.
-        right_align = (
-            _format_series(
-                df_list[0]["value"],
-                number_format,
-                add_trailing_zeros,
-                add_leading_zeros,
+        try:
+            right_align = int(
+                body_df.apply(
+                    lambda x: x.astype("str")
+                    .str.split(".", expand=True)[1]
+                    .str.replace(r"\D+", "", regex=True)
+                    .str.len()
+                    .max()
+                ).max()
             )
-            .str.split(".", expand=True)[1]
-            .str.len()
-            .max()
-        )
+        except KeyError:
+            right_align = 0
         if siunitx_warning:
             warn(
                 r"""LaTeX compilation requires the package siunitx and adding
