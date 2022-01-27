@@ -1,6 +1,7 @@
 """
 Implementation of parallelosation of Nelder-Mead algorithm
 """
+import numpy as np
 from estimagic import batch_evaluators
 from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
@@ -9,29 +10,13 @@ from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
 )
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
-from numpy import abs
-from numpy import argsort
-from numpy import array
-from numpy import eye
-from numpy import fill_diagonal
-from numpy import float64
-from numpy import full
-from numpy import hstack
-from numpy import max
-from numpy import maximum
-from numpy import minimum
-from numpy import nonzero
-from numpy import ones
-from numpy import split
-from numpy import take
-from numpy import vstack
 
 
 def neldermead_parallel(
     criterion,
     x,
     *,
-    init_simplex_method="Gao-Han",
+    init_simplex_method="gao_han",
     n_cores=1,
     adaptive=True,
     maxiter=STOPPING_MAX_ITERATIONS,
@@ -51,8 +36,10 @@ def neldermead_parallel(
 
     x (array_like): 1-D array of initial value of parameters
 
-    init_simplex_method (string): Name of the method to create initial simplex.
-        The default is "Gao-Han".
+    init_simplex_method (string or callable): Name of the method to create initial
+        simplex or callable which takes as an argument initial value of parameters
+        and returns initial simplex as j+1 x j array, where j is length of x.
+        The default is "gao_han".
 
     n_cores (int): Degrees of parallization. The default is 1 (no parallelization).
 
@@ -70,7 +57,7 @@ def neldermead_parallel(
     convergence_abs_params_tol (float): maximal distance between points in the simplex.
         The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
 
-    batch_evaluator (string or callbale): See :ref:`batch_evaluators` for
+    batch_evaluator (string or callable): See :ref:`batch_evaluators` for
         details. Default "joblib".
 
     Returns
@@ -87,9 +74,8 @@ def neldermead_parallel(
     if n_cores <= 1:
         p = 1  # if number of cores is nonpositive, set it to 1
     else:
-        if (
-            n_cores >= j
-        ):  # number of parallelisation cannot be bigger than number of parameters
+        if n_cores >= j:  # number of parallelisation cannot be bigger than
+            # the number of parameters minus 1
             p = int(j - 1)
         else:
             p = int(n_cores)
@@ -98,72 +84,17 @@ def neldermead_parallel(
     # for a discussion about Nlder-Mead parameters see Gao F., Han L., Implementing the
     # Nelder-Mead siplex algorithm with adaptive parameters, Computational Optimization
     # and Applications, 2012
-    if adaptive:
-        # algorithem parameters alla Gao-Han (adaptive)
-        alpha, gamma, beta, tau = (
-            1,
-            1 + 2 / j,
-            0.75 - 1 / (2 * j),
-            1 - 1 / j,
-        )
-    else:
-        # standard setting of Nelder-Mead
-        alpha, gamma, beta, tau = (
-            1,
-            2,
-            0.5,
-            0.5,
-        )
+    alpha, gamma, beta, tau = _init_algo_params(adaptive, j)
 
     # construct initial simplex using one of feasible methods
-    s = vstack(
-        [
-            x,
-        ]
-        * (j + 1)
-    ).astype(float64)
-
     # see Wssing, Simon, Proper initialization is crucial for
     # the Nelder–Mead simplex search, Optimization Letters, 2019
     # for a discussion about the choice of initialization
-    if init_simplex_method == "Pfeffer":
 
-        c_p = 0.05
-
-        # initial simplex
-        fill_diagonal(s[1:, :], x * c_p * (x != 0) + 0.00025 * (x == 0))
-
-    elif init_simplex_method == "Nash":  # alla Nash (1990)
-
-        c_n = 0.1
-
-        # initial simplex
-        fill_diagonal(s[1:, :], (x != 0) * (max(x) * c_n + x) + c_n / 100 * (x == 0))
-
-    elif init_simplex_method == "Gao-Han":  # alla Gao & Han (2012)
-
-        c_h = minimum(maximum(max(x), 1), 10)
-
-        # initial simplex
-        s = (
-            s
-            + vstack(
-                [
-                    array([[(1 - (j + 1) ** 0.5) / j]]) * ones([1, j]),
-                    eye(j),
-                ]
-            )
-            * c_h
-        )
-
-    elif init_simplex_method == "Varadhan-Borchers":  # alla Spendley et al. (1962)
-
-        c_s = maximum(1, ((x ** 2).sum()) ** 0.5)
-        beta1 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 + j - 1)
-        beta2 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 + -1)
-
-        # initial simplex
-        s[1:, :] = s[1:, :] + full([j, j], beta2) + eye(j) * (beta1 - beta2)
+    if not callable(init_simplex_method):
+        s = globals()["_" + init_simplex_method](x)
+    else:
+        s = init_simplex_method(x)
 
     # check if batch is callable
     if not callable(batch_evaluator):
@@ -172,7 +103,9 @@ def neldermead_parallel(
         )
 
     # calculate criterion values for the initial simplex
-    f_s = array(batch_evaluator(func=criterion, arguments=s, n_cores=n_cores))[:, None]
+    f_s = np.array(batch_evaluator(func=criterion, arguments=s, n_cores=n_cores))[
+        :, None
+    ]
 
     # parallelized function
     def func_parallel(args):
@@ -192,13 +125,13 @@ def neldermead_parallel(
 
             if f_s_j_e < f_s_0:  # if the expansion point is better than the best point
 
-                return hstack(
+                return np.hstack(
                     [s_j_e, f_s_j_e, 0]
                 )  # return the expansion point as a new point
 
             else:  # if the expansion point is worse than the best point
 
-                return hstack(
+                return np.hstack(
                     [s_j_r, f_s_j_r, 0]
                 )  # return the reflection point as a new point
 
@@ -206,7 +139,9 @@ def neldermead_parallel(
             f_s_j_r < f_s_j_1
         ):  # if reflection point is better than the next worst point
 
-            return hstack([s_j_r, f_s_j_r, 0])  # return reflection point as a new point
+            return np.hstack(
+                [s_j_r, f_s_j_r, 0]
+            )  # return reflection point as a new point
 
         else:  # if the reflection point is worse than the next worst point
 
@@ -222,26 +157,26 @@ def neldermead_parallel(
                 s_j_c
             )  # calculate a value of the criterion at contraction point
 
-            if f_s_j_c < minimum(
+            if f_s_j_c < np.minimum(
                 f_s_j, f_s_j_r
             ):  # if ta value of the criterion at contraction point is better
                 # than original and refrelction point
 
-                return hstack(
+                return np.hstack(
                     [s_j_c, f_s_j_c, 0]
                 )  # return contraction point as as new point
 
             else:
                 if f_s_j_r < f_s_j:
 
-                    return hstack(
+                    return np.hstack(
                         [s_j_r, f_s_j_r, 1]
                     )  # return reflection point as a new point
 
                 else:  # if value of the criterion at contraction point is worse
                     # than the value uf the criterion at the reflection
                     # and the initial points
-                    return hstack(
+                    return np.hstack(
                         [s_j, f_s_j, 1]
                     )  # return the old point as a new point
 
@@ -253,9 +188,9 @@ def neldermead_parallel(
         iterations += 1  # new iteration
 
         # sort points and arguments increasing
-        row = argsort(f_s.ravel())
-        s = take(s, row, axis=0)
-        f_s = take(f_s, row, axis=0)
+        row = np.argsort(f_s.ravel())
+        s = np.take(s, row, axis=0)
+        f_s = np.take(f_s, row, axis=0)
 
         # calculate centroid
         m = (s[:-p, :].sum(axis=0)) / (j - p + 1)
@@ -264,8 +199,8 @@ def neldermead_parallel(
         s_j_r = m + alpha * (m - s[-p:, :])
 
         # calculate new points of simplex
-        s[-p:, :], f_s[-p:, :], shrink_count = split(
-            vstack(
+        s[-p:, :], f_s[-p:, :], shrink_count = np.split(
+            np.vstack(
                 batch_evaluator(
                     func=func_parallel,
                     arguments=tuple(
@@ -294,7 +229,7 @@ def neldermead_parallel(
             )  # new simplex is a linear combination of the best point
             # and remaining points
             # evaluate function at new simplex
-            f_s = array(
+            f_s = np.array(
                 batch_evaluator(
                     func=criterion,
                     arguments=s,
@@ -304,9 +239,9 @@ def neldermead_parallel(
 
         # termination criteria
         if (
-            max(abs(f_s[0, :] - f_s[1:, :])) <= convergence_abs_criterion_tol
-            and max(
-                abs(
+            np.max(np.abs(f_s[0, :] - f_s[1:, :])) <= convergence_abs_criterion_tol
+            and np.max(
+                np.abs(
                     s[0, :]
                     - s[
                         1:,
@@ -326,10 +261,120 @@ def neldermead_parallel(
 
     # save results
     result = {
-        "solution_x": s[nonzero(f_s == f_s.min())[0][0], :],
+        "solution_x": s[np.nonzero(f_s == f_s.min())[0][0], :],
         "solution_criterion": f_s.min(),
         "n_iterations": iterations,
         "success": converge,
         "reached_convergence_criterion": reason_to_stop,
     }
     return result
+
+
+# set parameters of Nelder-Mead algorithm
+# for a discussion about Nlder-Mead parameters see Gao F., Han L., Implementing the
+# Nelder-Mead siplex algorithm with adaptive parameters, Computational Optimization
+# and Applications, 2012
+def _init_algo_params(adaptive, j):
+
+    if adaptive:
+        # algorithem parameters alla Gao-Han (adaptive)
+        return (
+            1,
+            1 + 2 / j,
+            0.75 - 1 / (2 * j),
+            1 - 1 / j,
+        )
+    else:
+        # standard setting of Nelder-Mead
+        return (
+            1,
+            2,
+            0.5,
+            0.5,
+        )
+
+
+# initial structure of the simplex
+def _init_simplex(x):
+
+    s = np.vstack(
+        [
+            x,
+        ]
+        * (len(x) + 1)
+    ).astype(np.float64)
+
+    return s
+
+
+# initilize due to L. Pfeffer at Standford (Matlab fminsearch and SciPy default option)
+def _pfeffer(x):
+
+    s = _init_simplex(x)
+
+    # method parameters
+    c_p = 0.05
+
+    # initial simplex
+    np.fill_diagonal(s[1:, :], x * c_p * (x != 0) + 0.00025 * (x == 0))
+
+    return s
+
+
+# adopted from Nash (R default option)
+# see Nash, J.C.: Compact numerical methods for computers: linear algebra and
+# function minimisation, 2nd edn. Adam Hilger Ltd., Bristol (1990) for details
+def _nash(x):
+
+    s = _init_simplex(x)
+
+    # method parameters
+    c_n = 0.1
+
+    # initial simplex
+    np.fill_diagonal(s[1:, :], (x != 0) * (np.max(x) * c_n + x) + c_n / 100 * (x == 0))
+    return s
+
+
+# adopted from Gao F., Han L., Implementing the
+# Nelder-Mead siplex algorithm with adaptive parameters, Computational Optimizatio
+def _gao_han(x):
+
+    s = _init_simplex(x)
+
+    # method parameters
+    c_h = np.minimum(np.maximum(np.max(x), 1), 10)
+    j = len(x)
+
+    # initial simplex
+    s = (
+        s
+        + np.vstack(
+            [
+                np.array([[(1 - (j + 1) ** 0.5) / j]]) * np.ones([1, j]),
+                np.eye(j),
+            ]
+        )
+        * c_h
+    )
+
+    return s
+
+
+# adopted by Varadhan and Borchers for the R package dfoptim
+# see Varadhan, R., Borchers, H.W.: Dfoptim: derivative-free optimization (2016).
+# https://CRAN.R-project. org/package=dfoptim. R package version 2016.7-1 for details
+def _varadhan_borchers(x):
+
+    s = _init_simplex(x)
+
+    # method parameters
+    j = len(x)
+    c_s = np.maximum(1, ((x ** 2).sum()) ** 0.5)
+    beta1 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 + j - 1)
+    beta2 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 + -1)
+
+    # initial simplex
+    s[1:, :] = s[1:, :] + np.full([j, j], beta2) + np.eye(j) * (beta1 - beta2)
+
+    return s
