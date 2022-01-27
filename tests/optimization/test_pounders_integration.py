@@ -1,8 +1,10 @@
+"""Test the internal pounders interface."""
 from functools import partial
 
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
@@ -40,12 +42,11 @@ def criterion():
 
 start_params = [
     np.array([0.15, 0.008, 0.01]),
-    np.ones(3) * 0.25,
     np.array([1e-6, 1e-2, 1e-6]),
 ]
 
 TEST_CASES = []
-for subsolver in ["trust-constr", "L-BFGS-B"]:
+for subsolver in ["L-BFGS-B", "trust-constr"]:
     for x0 in start_params:
         for gtol in [1e-8]:
             for subtol in [1e-8, 1e-9]:
@@ -62,7 +63,6 @@ for subsolver in ["trust-constr", "L-BFGS-B"]:
 @pytest.fixture()
 def options():
     out = {
-        "n_obs": 214,
         "delta": 0.1,
         "delta_min": 1e-6,
         "delta_max": 1e6,
@@ -98,6 +98,8 @@ def test_solution(
         xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_sub=trustregion_subproblem_options["gtol"],
         solver_sub=solver_sub,
+        n_cores=1,
+        batch_evaluator=joblib_batch_evaluator,
         **options,
     )
 
