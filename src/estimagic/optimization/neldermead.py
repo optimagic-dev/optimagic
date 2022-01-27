@@ -313,7 +313,7 @@ def _pfeffer(x):
     s = _init_simplex(x)
 
     # method parameters
-    c_p = 0.05
+    c_p = 1.05
 
     # initial simplex
     np.fill_diagonal(s[1:, :], x * c_p * (x != 0) + 0.00025 * (x == 0))
@@ -332,7 +332,7 @@ def _nash(x):
     c_n = 0.1
 
     # initial simplex
-    np.fill_diagonal(s[1:, :], (x != 0) * (np.max(x) * c_n + x) + c_n / 100 * (x == 0))
+    np.fill_diagonal(s[1:, :], (x != 0) * (np.max(x) * c_n + x) + c_n * (x == 0))
     return s
 
 
@@ -372,7 +372,7 @@ def _varadhan_borchers(x):
     j = len(x)
     c_s = np.maximum(1, ((x ** 2).sum()) ** 0.5)
     beta1 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 + j - 1)
-    beta2 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 + -1)
+    beta2 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 - 1)
 
     # initial simplex
     s[1:, :] = s[1:, :] + np.full([j, j], beta2) + np.eye(j) * (beta1 - beta2)
