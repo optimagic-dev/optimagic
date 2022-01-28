@@ -518,6 +518,42 @@ noisy criterion functions.
       evaluations. Default is 1.
 
 
+.. dropdown:: neldermead_parallel
+
+    Minimize a function using the neldermead_parallel algorithm.
+
+    This is a parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
+    implementation of the simplex function minimization routine,
+    Computational Economics, 2007.
+
+    The algorithm was implemented by Jacek Barszczewski
+
+    The algorithm supports the following options:
+
+    - **init_simplex_method** (string or callable): Name of the method to create initial
+      simplex or callable which takes as an argument initial value of parameters
+      and returns initial simplex as j+1 x j array, where j is length of x.
+      The default is "gao_han".
+    - **n_cores** (int): Degree of parallization. The default is 1 (no parallelization).
+
+    - **adaptive** (bool): Adjust parameters of Nelder-Mead algorithm to account
+      for simplex size. The default is True.
+
+    - **stopping.max_iterations** (int): Maximum number of algorithm iterations.
+      The default is STOPPING_MAX_ITERATIONS.
+
+    - **convergence.absolute_criterion_tolerance** (float): maximal difference between
+      function value evaluated on simplex points.
+      The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE.
+
+    - **convergence.absolute_params_tolerance** (float): maximal distance between points
+      in the simplex. The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
+
+    - **batch_evaluator** (string or callable): See :ref:`batch_evaluators` for
+        details. Default "joblib".
+
+
+
 .. _tao_algorithms:
 
 Optimizers from the Toolkit for Advanced Optimization (TAO)

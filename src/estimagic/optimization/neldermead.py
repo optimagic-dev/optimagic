@@ -1,6 +1,8 @@
 """
 Implementation of parallelosation of Nelder-Mead algorithm
 """
+from functools import partial
+
 import numpy as np
 from estimagic import batch_evaluators
 from estimagic.optimization.algo_options import (
@@ -13,15 +15,15 @@ from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 
 
 def neldermead_parallel(
-    criterion,
+    criterion_and_derivative,
     x,
     *,
     init_simplex_method="gao_han",
     n_cores=1,
     adaptive=True,
-    maxiter=STOPPING_MAX_ITERATIONS,
-    convergence_abs_criterion_tol=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
-    convergence_abs_params_tol=CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,
+    stopping_max_iterations=STOPPING_MAX_ITERATIONS,
+    convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
+    convergence_absolute_params_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE,  # noqa: E501
     batch_evaluator="joblib",
 ):
     """
@@ -31,8 +33,8 @@ def neldermead_parallel(
 
     Parameters
     ----------
-    criterion (callable): A function that takes a Numpy array_like as an argument
-        and return scalar floating point or a :class:`numpy.ndarray`
+    criterion_and_derivative (callable): A function that takes a Numpy array_like as
+        an argument and return scalar floating point or a :class:`numpy.ndarray`
 
     x (array_like): 1-D array of initial value of parameters
 
@@ -47,15 +49,15 @@ def neldermead_parallel(
         for simplex size.
         The default is True.
 
-    maxiter (int): Maximum number of algorithm iterations.
+    stopping_max_iterations (int): Maximum number of algorithm iterations.
         The default is STOPPING_MAX_ITERATIONS.
 
-    convergence_abs_criterion_tol (float): maximal difference between function
-        value evaluated on simplex points.
+    convergence_absolute_criterion_tolerance (float): maximal difference between
+        function value evaluated on simplex points.
         The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE.
 
-    convergence_abs_params_tol (float): maximal distance between points in the simplex.
-        The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
+    convergence_absolute_params_tolerance (float): maximal distance between points in
+        the simplex. The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
 
     batch_evaluator (string or callable): See :ref:`batch_evaluators` for
         details. Default "joblib".
@@ -66,9 +68,21 @@ def neldermead_parallel(
         DESCRIPTION.
 
     """
+    algo_info = {
+        "primary_criterion_entry": "value",
+        "parallelizes": True,
+        "needs_scaling": True,
+        "name": "parallel_neldermead",
+    }
+    criterion = partial(
+        criterion_and_derivative,
+        task="criterion",
+        algorithm_info=algo_info,
+    )
 
     if x.ndim >= 1:
         x = x.ravel()  # check if the vector of initial values is one-dimensional
+
     j = len(x)  # size of the parameter vector
 
     if n_cores <= 1:
@@ -239,7 +253,8 @@ def neldermead_parallel(
 
         # termination criteria
         if (
-            np.max(np.abs(f_s[0, :] - f_s[1:, :])) <= convergence_abs_criterion_tol
+            np.max(np.abs(f_s[0, :] - f_s[1:, :]))
+            <= convergence_absolute_criterion_tolerance
             and np.max(
                 np.abs(
                     s[0, :]
@@ -248,12 +263,14 @@ def neldermead_parallel(
                     ]
                 )
             )
-            <= convergence_abs_params_tol
+            <= convergence_absolute_params_tolerance
         ):
             optimal = True
             converge = True
             reason_to_stop = "Termination codition satisfied"
-        elif iterations >= maxiter:  # if maximum amount of iteration is exceeded
+        elif (
+            iterations >= stopping_max_iterations
+        ):  # if maximum amount of iteration is exceeded
             optimal = True
             converge = False
             reason_to_stop = "Maximum number of interation exceeded"
