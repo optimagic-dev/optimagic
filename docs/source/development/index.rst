@@ -9,3 +9,4 @@ Development
    styleguide
    roadmap
    releases
+   eeps
