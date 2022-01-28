@@ -227,24 +227,16 @@ in terms of pytrees and look at a JAX calculated jacobian in both cases:
 .. code-block:: python
 
     {
-        'c':
-        {
-            'a': DeviceArray([[2., 0.],
-                              [0., 4.]], dtype=float32),
-
-            'b': DeviceArray([[0., 0., 0.],
-                              [0., 0., 0.]], dtype=float32)
+        "c": {
+            "a": DeviceArray([[2.0, 0.0], [0.0, 4.0]], dtype=float32),
+            "b": DeviceArray([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], dtype=float32),
         },
-        'd':
-        {
-            'a': DeviceArray([[0., 0.],
-                              [0., 0.],
-                              [0., 0.]], dtype=float32),
-
-            'b': DeviceArray([[ 6.,  0.,  0.],
-                              [ 0.,  8.,  0.],
-                              [ 0.,  0., 10.]], dtype=float32)
-        }
+        "d": {
+            "a": DeviceArray([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=float32),
+            "b": DeviceArray(
+                [[6.0, 0.0, 0.0], [0.0, 8.0, 0.0], [0.0, 0.0, 10.0]], dtype=float32
+            ),
+        },
     }
 
 The outputs for hessians have even deeper nesting and three dimensional arrays inside
