@@ -227,7 +227,7 @@ in terms of pytrees and look at a JAX calculated jacobian in both cases:
 .. code-block:: python
 
     {
-        'c': 
+        'c':
         {
             'a': DeviceArray([[2., 0.],
                               [0., 4.]], dtype=float32),
