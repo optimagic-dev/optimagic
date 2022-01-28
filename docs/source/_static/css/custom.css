@@ -212,5 +212,5 @@ details.dropdown .summary-up, details.dropdown .summary-down {
 
 /* Color of inline code */
 :root {
-  --pst-color-inline-code: 204, 0, 0 !important;
+  --pst-color-inline-code: 160, 4, 4 !important;
 }
