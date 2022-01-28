@@ -17,8 +17,9 @@ plt.rcParams.update(
 
 
 def convergence_plot(
-    problems=None,
-    results=None,
+    problems,
+    results,
+    *,
     problem_subset=None,
     algorithm_subset=None,
     n_cols=2,
