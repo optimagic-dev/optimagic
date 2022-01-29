@@ -104,25 +104,118 @@ add pandas.Series and pandas.DataFrame (with varying definitions, depending on t
 application).
 
 
-Backwards compatibility
+Optimization by Example
 =======================
 
-All changes are fully backwards compatible.
+In this example we use a hypothetical criterion function with pytree inputs and outputs
+to describe how how a user can optimize it.  We also give a rough intuition what happens
+behind the scenes and with which registries the pytree functions are called.
 
 
+Inputs
+------
 
-Use of pytrees in estimagic
-===========================
+Consider a criterion function that takes parameters in the following format:
+
+.. code-block:: python
+
+    params = {
+        "delta": 0.95,
+        "utility": pd.DataFrame(
+            [[0.5, 0]] * 3, index=["a", "b", "c"], columns=["value", "lower_bound"]
+        ),
+        "probs": np.array([[0.8, 0.2], [0.3, 0.7]]),
+    }
+
+Outputs
+-------
+
+The criterion function returns a dictionary of the form:
+
+.. code-block:: python
+
+    {
+        "value": 1.1,
+        "contributions": {"a": np.array([0.36, 0.25]), "b": 0.49},
+        "root_contributions": {"a": np.array([0.6, 0.5]), "b": 0.7},
+    }
 
 
-``params`` for optimization and differentiation
------------------------------------------------
+Run an optimization
+-------------------
+
+.. code-block:: python
+
+    from estimagic import minimize
+
+    minimize(
+        criterion=crit,
+        params=params,
+        algorithm="scipy_lbfgsb",
+    )
+
+The internal optimizer (in this case the lbfgsb algorithm from scipy) will only see
+a modified version of ``crit`` that takes a 1d numpy array as only argument and
+returns a scalar float (the "value" entry of the result of crit). Numerical derivatives
+are also taken on that function.
+
+If instead a derivative based least squares optimizer like ``"scipy_ls_dogbox"`` had
+been used, the internal optimizer would see a modified version of ``crit`` that takes
+a 1d numpy array and returns a 1d numpy array (the flattened version of the
+``"root_contributions"`` entry of the result of crit).
 
 
+To do the conversion between the pytrees and the flat arrays, we would use
+``tree_flatten`` and ``tree_unflatten`` with the following container types:
+- dict
+- list
+- tuple
+- numpy.ndarray
+- pd.Series
+- pd.DataFrame (when flattening params only the value column would be considered.
+when flattening the output of criterion, all numerical values of the DataFrame would
+be considered)
 
 
-How to specify constraints when ``params`` are pytrees
-------------------------------------------------------
+The optimization output
+-----------------------
+
+The following entries of the output of minimize are affected by the change:
+- ``"solution_params"``: A pytree with the same structure as ``params``
+- ``"solution_criterion"``: The output dictionary of crit evaluated solution params
+- ``solution_derivative``: Maybe we should not even have this entry. In its current
+form it is meaningless because it is a derivative with respect to internal
+parameters.
+
+
+Add a bound on "delta"
+----------------------
+
+Bounds on parameters that are inside a DataFrame with "value" column can simply be
+specified as before. For all others, there are separate ``lower_bounds`` and
+``upper_bounds`` arguments in ``maximize`` and ``minimize``.
+
+
+``lower_bounds`` and ``upper_bounds`` are pytrees of the same structure as ``params``
+or a sub-tree that preserves enough structure to match all bounds. For example:
+
+
+.. code-block:: python
+
+    minimize(
+        criterion=crit,
+        params=params,
+        algorithm="scipy_lbfgsb",
+        lower_bounds={"delta": 0},
+        upper_bounds={"delta": 1},
+    )
+
+This would add bounds for delta, keep the bounds on all ``"utility"`` parameters
+and have no bounds on the ``"probs"`` parameters.
+
+
+Add a constraint
+----------------
 
 Currently, parameters to which a constraint is applied are selected via a "loc" or
 "query" entry in the constraint dictionary.
@@ -136,26 +229,80 @@ params, i.e. only "value" column of DataFrames is considered, unless the user
 overrides container definition). For constraints where order plays a role
 (e.g. increasing), the order defined by ``tree_flatten`` is used.
 
+As an example, let's add probability constraints for each row of ``"probs"``:
 
 
-The output of criterion functions and functions to be differentiated
---------------------------------------------------------------------
+.. code-block:: python
 
-TBD
+    constraints = [
+        {"selector": lambda params: params["probs"][0], "type": "probability"},
+        {"selector": lambda params: params["probs"][1], "type": "probability"},
+    ]
+
+    minimize(
+        criterion=crit,
+        params=params,
+        algorithm="scipy_lbfgsb",
+        constraints=constraints,
+    )
+
+
+Internally, constraints are already applied on a 1 dimensional numpy array and the
+parameter selections specified by "loc" and "query" are translated into positions in
+that array. The only thing that changes is that we now also have to translate the
+parameter selections from "selector" functions into positions. This is trivial by
+calling ``tree_unflatten`` on an ``np.arange()`` of suitable length, calling
+the selector functions on the resulting pytree and recording all numbers that are there.
+
+
+Numerical derivatives during optimization
+-----------------------------------------
+
+Derivatives are taken on modified functions that map from 1d numpy array to scalars
+or 1d numpy arrays.
+
+
+Closed form derivatives
+-----------------------
+
+.. danger:: It is not clear yet what closed form derivatives need to look like.
+    Since most of them will be calculated by JAX (at least in our applications)
+    it would be good to be JAX compatible in all cases that are supported by JAX.
+    In all cases, they should be aligned with the results one would get from when using
+    our numerical derivative functions directly on the criterion function, even though
+    this would not happen during optimization.
+
+
+Numerical derivatives by example
+================================
 
 
 
-Empirical moments and output of ``simulate_moments``
-----------------------------------------------------
-
-TBD
 
 
 
-Output of ``outcome`` function in bootstrap
--------------------------------------------
+Likelihood Estimation by example
+================================
 
-TBD
+
+
+
+
+
+
+
+
+
+
+
+
+
+Backwards compatibility
+=======================
+
+All changes are fully backwards compatible.
+
+
 
 
 
@@ -242,11 +389,43 @@ in terms of pytrees and look at a JAX calculated jacobian in both cases:
 The outputs for hessians have even deeper nesting and three dimensional arrays inside
 the nested dictionary.
 
+The JAX solution represents an extreme approach in the sense that it never tries to
+flatten anything in order to avoid high dimensional or nested outputs. This is the
+only possible choice, considering the goals of JAX:
+1. It is essentially a library that implements n-dimensional arrays
+2. Everything is composable, i.e. there are never things that are just results and
+not inputs for further calculations.
 
-Can we do the same?
--------------------
+
+The other extreme would be to flatten all pytrees into pandas.Series or DataFrames with
+"value" column. This would bring us back to the state before pytrees. However, it is
+not a desirable solution because the outputs are hard to work with and it would even be
+hard to ensure backwards compatibility for the case where parameters are just one
+DataFrame with value column.
 
 
+Can we do the same as JAX
+-------------------------
+
+Unfortunately, we cannot do exactly the same. The main reasons are:
+
+- We have to allow for pytrees containing DataFrames for backward compatibility and
+  those do not have a natural extension in arbitrary dimensions.
+- For estimation results (at least for summaries from which tables can be produced) we
+  need a way to "add columns" to a pytree. This is a form of higher dimensional
+  extension of pytrees that does not have a counterpart in JAX
+- A covariance matrix that is represented similar to the jacobian above is not useful
+  for most users of estimagic
+
+
+
+Design goals
+------------
+
+1. If a derivative is taken, that could also be taken with JAX, it should produce
+the same output.
+2. Our solution needs to naturally nest the current behavior when ``params`` are just
+one DataFrame with value column.
 
 
 Compatibility with plotting and estimation tables
