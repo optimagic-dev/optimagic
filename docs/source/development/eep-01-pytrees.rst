@@ -29,11 +29,18 @@ is implemented in `Pybaum`_, developed by :ghuser:`janosg` and :ghuser:`tobiasra
 .. _Pybaum: https://github.com/OpenSourceEconomics/pybaum
 
 
+Backwards compatibility
+=======================
+
+All changes are fully backwards compatible.
+
+
 Motivation
 ==========
 
 Estimagic has many functions that require user written functions as inputs. Examples
 are:
+
 - criterion functions and their derivatives for optimization
 - functions of which numerical derivatives are taken
 - functions that calculate simulated moments
@@ -104,16 +111,17 @@ add pandas.Series and pandas.DataFrame (with varying definitions, depending on t
 application).
 
 
-Optimization by Example
-=======================
+Optimization with pytrees
+=========================
 
-In this example we use a hypothetical criterion function with pytree inputs and outputs
-to describe how how a user can optimize it.  We also give a rough intuition what happens
+In this section we look at optimizations that become possible with the proposed changes.
+As an example we use a hypothetical criterion function with pytree inputs and outputs
+to describe how a user can optimize it. We also give a rough intuition what happens
 behind the scenes and with which registries the pytree functions are called.
 
 
-Inputs
-------
+The criterion function
+----------------------
 
 Consider a criterion function that takes parameters in the following format:
 
@@ -127,8 +135,6 @@ Consider a criterion function that takes parameters in the following format:
         "probs": np.array([[0.8, 0.2], [0.3, 0.7]]),
     }
 
-Outputs
--------
 
 The criterion function returns a dictionary of the form:
 
@@ -167,25 +173,30 @@ a 1d numpy array and returns a 1d numpy array (the flattened version of the
 
 To do the conversion between the pytrees and the flat arrays, we would use
 ``tree_flatten`` and ``tree_unflatten`` with the following container types:
+
 - dict
 - list
 - tuple
 - numpy.ndarray
 - pd.Series
 - pd.DataFrame (when flattening params only the value column would be considered.
-when flattening the output of criterion, all numerical values of the DataFrame would
-be considered)
+  when flattening the output of criterion, all numerical values of the DataFrame would
+  be considered)
 
 
 The optimization output
 -----------------------
 
 The following entries of the output of minimize are affected by the change:
+
 - ``"solution_params"``: A pytree with the same structure as ``params``
 - ``"solution_criterion"``: The output dictionary of crit evaluated solution params
-- ``solution_derivative``: Maybe we should not even have this entry. In its current
-form it is meaningless because it is a derivative with respect to internal
-parameters.
+- ``solution_derivative``: Maybe we should not even have this entry.
+
+.. danger:: We need to discuss if an in which form we want to have a solution
+    derivative entry. In it's current form it is useless if constraints are used.
+    This gets worse when we allow for pytrees and translating this into a meaningful
+    shape might be very difficult.
 
 
 Add a bound on "delta"
@@ -265,74 +276,26 @@ or 1d numpy arrays.
 Closed form derivatives
 -----------------------
 
-.. danger:: It is not clear yet what closed form derivatives need to look like.
-    Since most of them will be calculated by JAX (at least in our applications)
-    it would be good to be JAX compatible in all cases that are supported by JAX.
-    In all cases, they should be aligned with the results one would get from when using
-    our numerical derivative functions directly on the criterion function, even though
-    this would not happen during optimization.
+Closed form derivatives need to take the exact same format as one would obtain
+when applying our numerical derivatives to the criterion function (see below). This is
+also compatible with JAX (in all cases that are supported by JAX) and thus a natural
+requirement since in most cases closed form derivatives will be calculated via JAX.
+
+Numerical derivatives with pytrees
+==================================
+
+Problem: Higher dimensional extensions of pytrees
+-------------------------------------------------
+
+The derivative of a function that maps from a 1d array to a 1d array (usually called
+Jacobian) is a 2d matrix. If the 1d arrays are replaced by pytrees, we need a
+two dimensional extension of the pytrees. Below we well look at how JAX does this
+and why we cannot simply copy that solution, even though we want to stay as compatible
+with it as possible.
 
 
-Numerical derivatives by example
-================================
-
-
-
-
-
-
-Likelihood Estimation by example
-================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Backwards compatibility
-=======================
-
-All changes are fully backwards compatible.
-
-
-
-
-
-
-Higher dimensional extensions of pytrees
-========================================
-
-Intuition for the problem
--------------------------
-
-Pytrees usually replace function inputs or outputs that are represented as vectors in
-math and as 1d numpy arrays in code. This is the case for optimization, differentiation
-estimation and bootstrapping in estimagic.
-
-In those applications, higher dimensional objects might arise. For example, the
-first derivative of a function that takes a vector and returns a vector (the Jacobian)
-is a matrix. The second derivative of such a function (the Hessians) would usually be
-defined as a 3d array. Another example of higher dimensional objects are covariance
-matrices of parameter vectors that arise during estimation.
-
-
-How does JAX do it
-------------------
-
-JAX's solution to this problem entails two things:
-
-1. Functions that deal with higher dimensional extensions of pytrees only allow pytrees
-where all leaves have a natural higher dimensional extension (e.g. numbers become
-1d arrays, 1d arrays become 2d arrays, ...
-2. These function return deeply nested pytrees of arrays to accomodate all results.
+The JAX interface
+-----------------
 
 Let's look at an example. We first define a function in terms of 1d arrays and then
 in terms of pytrees and look at a JAX calculated jacobian in both cases:
@@ -344,17 +307,18 @@ in terms of pytrees and look at a JAX calculated jacobian in both cases:
         return x ** 2
 
 
-    x = jnp.array([1, 2, 3, 4, 5.0])
+    x = jnp.array([1, 2, 3, 4, 5, 6.0])
 
     jacobian(square)(x)
 
 .. code-block:: bash
 
-    DeviceArray([[ 2.,  0.,  0.,  0.,  0.],
-                 [ 0.,  4.,  0.,  0.,  0.],
-                 [ 0.,  0.,  6.,  0.,  0.],
-                 [ 0.,  0.,  0.,  8.,  0.],
-                 [ 0.,  0.,  0.,  0., 10.]], dtype=float32)
+    DeviceArray([[ 2.,  0.,  0.,  0.,  0.,  0],
+                 [ 0.,  4.,  0.,  0.,  0.,  0],
+                 [ 0.,  0.,  6.,  0.,  0.,  0],
+                 [ 0.,  0.,  0.,  8.,  0.,  0],
+                 [ 0.,  0.,  0.,  0., 10.,  0],
+                 [ 0.,  0.,  0.,  0.,  0., 12]], dtype=float32)
 
 
 .. code-block:: python
@@ -362,75 +326,203 @@ in terms of pytrees and look at a JAX calculated jacobian in both cases:
     def tree_square(x):
         out = {
             "c": x["a"] ** 2,
-            "d": x["b"] ** 2,
+            "d": x["b"].flatten() ** 2,
         }
+
         return out
 
 
-    tree_x = {"a": jnp.array([1.0, 2]), "b": jnp.array([3.0, 4, 5])}
+    tree_x = {"a": jnp.array([1, 2.0]), "b": jnp.array([[3, 4], [5, 6.0]])}
+
 
     jacobian(tree_square)(tree_x)
+
+Instead of showing the entire results, let's just look at the resulting tree structure
+and array shapes:
+
 
 .. code-block:: python
 
     {
         "c": {
-            "a": DeviceArray([[2.0, 0.0], [0.0, 4.0]], dtype=float32),
-            "b": DeviceArray([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], dtype=float32),
+            "a": (2, 2),
+            "b": (2, 2, 2),
         },
         "d": {
-            "a": DeviceArray([[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]], dtype=float32),
-            "b": DeviceArray(
-                [[6.0, 0.0, 0.0], [0.0, 8.0, 0.0], [0.0, 0.0, 10.0]], dtype=float32
-            ),
+            "a": (4, 2),
+            "b": (4, 2, 2),
         },
     }
 
 The outputs for hessians have even deeper nesting and three dimensional arrays inside
-the nested dictionary.
-
-The JAX solution represents an extreme approach in the sense that it never tries to
-flatten anything in order to avoid high dimensional or nested outputs. This is the
-only possible choice, considering the goals of JAX:
-1. It is essentially a library that implements n-dimensional arrays
-2. Everything is composable, i.e. there are never things that are just results and
-not inputs for further calculations.
+the nested dictionary. Similarly, we would get higher dimensional arrays if one of
+the original pytrees had already contained a 2d array.
 
 
-The other extreme would be to flatten all pytrees into pandas.Series or DataFrames with
-"value" column. This would bring us back to the state before pytrees. However, it is
-not a desirable solution because the outputs are hard to work with and it would even be
-hard to ensure backwards compatibility for the case where parameters are just one
-DataFrame with value column.
+Limitations of the JAX interface
+--------------------------------
+
+Most JAX functions `only work with Pytrees of arrays
+<https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions>`_, whereas
+estimagic allows pytrees containing pandas.Series and pandas.DataFrames with value
+column. Unfortunately, this poses non-trivial challenges for numerical derivatives
+because those data types have no natural extension in arbtirary dimensions.
 
 
-Can we do the same as JAX
--------------------------
+Proposed solution
+-----------------
 
-Unfortunately, we cannot do exactly the same. The main reasons are:
+Our solution needs to fulfill two requirements:
 
-- We have to allow for pytrees containing DataFrames for backward compatibility and
-  those do not have a natural extension in arbitrary dimensions.
-- For estimation results (at least for summaries from which tables can be produced) we
-  need a way to "add columns" to a pytree. This is a form of higher dimensional
-  extension of pytrees that does not have a counterpart in JAX
-- A covariance matrix that is represented similar to the jacobian above is not useful
-  for most users of estimagic
+1. Compatible with JAX in the sense than whenever a derivative can be calculated with
+JAX it can also be calculated with estimagic and the result has the same structure.
+2. Compatible with the rest of estimagic in the sense that any function that can be
+optimized can also be differentiated. In the special case of differentiating with
+respect to a DataFrame it also needs to be backwards compatible.
+
+A solution that achieves this is to treat Series and DataFrames with value columns as
+1d arrays and other DataFrames as 2d arrays, then proceed as in JAX and finally try
+to preserve as much index and column information as possible.
+
+This leads to very natural results in the typical usecases with flat dicts of Series
+or params DataFrames both as inputs and outputs and is backwards compatible with
+everything that is supported already.
+
+Howeverer, similar to JAX, not everything that is supported will also be a good idea.
+Predicting where a pandas Object is preserved and where it will be replaced by an array
+might be hard for very nested pytrees. However, these rules are mainly defined to avoid
+hard limitations that have to be checked and documented. Users will learn to avoid too
+much complexity by avoiding complex pytrees as inputs and outputs at the same time.
+
+
+Examples of pytrees with DataFrames
+-----------------------------------
+
+We repeat the example from the JAX interface above with the following changes:
+
+1. The 1d numpy array in x["a"] is replaced by a DataFrame with value column
+2. The "d" entry in the output becomes a Series instead of a 1d numpy array.
+
+
+.. code-block:: python
+
+    def pd_tree_square(x):
+        out = {
+            "c": x["a"]["value"] ** 2,
+            "d": pd.Series(x["b"].flatten() ** 2, index=list("jklm")),
+        }
+
+        return out
+
+
+    pd_tree_x = {
+        "a": pd.DataFrame(data=[[1], [2]], index=["alpha", "beta"], columns=["value"]),
+        "b": np.array([[3, 4], [5, 6]]),
+    }
+
+    pd_tree_square(pd_tree_x)
+
+
+::
+
+    {
+        'c':
+            "alpha"    1
+            "beta"     4
+            "dtype": int64,
+        'd':
+            "j"        9
+            "k"       16
+            "l"       25
+            "m"       36
+            dtype: int64,
+    }
+
+The resulting shapes of the jacobian will be the same as before. For all arrays
+with only two dimensions we can preserve some information from the Series and DataFrame
+indices. On the higher dimensional ones, this will be lost.
+
+.. code-block:: python
+
+    {
+        "c": {
+            "a": (2, 2),  # df with columns ["alpha", "beta"], index ["alpha", "beta"]
+            "b": (2, 2, 2),  # numpy array without label information
+        },
+        "d": {
+            "a": (4, 2),  # columns ["alpha", "beta"], index [0, 1, 2, 3]
+            "b": (4, 2, 2),  # numpy array without label information
+        },
+    }
 
 
 
-Design goals
-------------
+To get more intuition for the structure of the result, let's add a few labels to the
+very first jacobian:
 
-1. If a derivative is taken, that could also be taken with JAX, it should produce
-the same output.
-2. Our solution needs to naturally nest the current behavior when ``params`` are just
-one DataFrame with value column.
+
++--------+----------+----------+----------+----------+----------+----------+----------+
+|        |          | a        |          | b        |          |          |          |
++--------+----------+----------+----------+----------+----------+----------+----------+
+|        |          | alpha    | beta     | j        | k        | l        | m        |
++--------+----------+----------+----------+----------+----------+----------+----------+
+| c      | alpha    | 2        | 0        | 0        | 0        | 0        | 0        |
++        +----------+----------+----------+----------+----------+----------+----------+
+|        | beta     | 0        | 4        | 0        | 0        | 0        | 0        |
++--------+----------+----------+----------+----------+----------+----------+----------+
+| d      | 0        | 0        | 0        | 6        | 0        | 0        | 0        |
++        +----------+----------+----------+----------+----------+----------+----------+
+|        | 1        | 0        | 0        | 0        | 8        | 0        | 0        |
++        +----------+----------+----------+----------+----------+----------+----------+
+|        | 2        | 0        | 0        | 0        | 0        | 10       | 0        |
++        +----------+----------+----------+----------+----------+----------+----------+
+|        | 3        | 0        | 0        | 0        | 0        | 0        | 12       |
++--------+----------+----------+----------+----------+----------+----------+----------+
+
+
+The indices ["j", "k", "l", "m"] unfortunately never made it into the result because
+they were only applied to elements that already came from a 2d array and thus always
+have a 3d Jacobian, i.e. the result entry ``["c"][b"]`` is a reshaped version of the
+upper right 2 by 4 array and the result entry ``["d"]["b"]`` is a reshaped version of
+the lower right 4 by 4 array.
+
+
+Implementation
+--------------
+
+.. danger:: This is the only place in the EEP where I have now clue what the
+    implementation will look like. ``pybaum`` does not yet support the generation of
+    higher dimensional extensions of pytrees even for simple pytrees of arrays.
+
+    My guess is that internally we would always flatten inputs and outputs as much as
+    possible, calculate numerical derivatives and then parse the resulting numerical
+    derivatives to give them the same structure as in JAX. Ideas are welcome!
+
+
+
+
+
+
+Estimation summaries with pytrees
+=================================
+
+
+Covariance matrices with pytrees
+================================
+
+
+Moments in MSM estimation as pytrees
+====================================
+
+
+Sensitivity measures as pytrees
+===============================
+
+
 
 
 Compatibility with plotting and estimation tables
 =================================================
-
 
 
 
@@ -468,18 +560,3 @@ If you want to use automatic differentiation with estimagic you will thus have t
 restrict yourself in the way you specify parameters.
 
 We will try to find a way of extending JAX but it probably won't happen very soon.
-
-
-Need for documentation
-======================
-
-New documentation
------------------
-
-- New best practices for params
-- Examples of optimizing over a custom params class
-- Examples of simulated moments with pytree
-
-
-Adjustments
------------
