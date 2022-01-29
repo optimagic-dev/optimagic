@@ -429,7 +429,7 @@ We repeat the example from the JAX interface above with the following changes:
         'c':
             "alpha"    1
             "beta"     4
-            "dtype": int64,
+            dtype: int64,
         'd':
             "j"        9
             "k"       16
