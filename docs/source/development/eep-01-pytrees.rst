@@ -499,12 +499,88 @@ Implementation
     derivatives to give them the same structure as in JAX. Ideas are welcome!
 
 
-
-
-
-
 Estimation summaries with pytrees
 =================================
+
+
+Currently, estimation summaries ar DataFrames. The estimated parameters are in the
+``"value"`` column. There are other columns with standard errors, p-values,
+significance stars and confidence intervals.
+
+This is another form of higher dimensional extension of pytrees, where we need to add
+additional columns. There are two ways in which estimation summaries could be
+presented. I suggest we offer both. The first is more geared towards generating
+estimation tables and serving as actual summary to be looked at in a jupyter notebook.
+It is also backwards compatible and should thus be the default.
+The second is more geared towards further calculations. There will be utility functions
+to convert between the two.
+
+
+Both formats will be explained using the ``params`` pytree from the optimization
+example (reproduced here for convenience):
+
+
+
+Format 1: Everything becomes a DataFrame
+----------------------------------------
+
+In this approach we do the following conversions:
+
+1. numpy arrays are flattened and converted to DataFrames with one column called
+   "value". The index contains the original positions of elements.
+2. pandas.Series are converted to DataFrames. The index remains unchanged. The
+   column is called "value".
+3. scalars become DataFrames with one row with index 0 and one column called "value".
+4. all DataFrames without value column are stacked into a DataFrame with just one
+   column called "value".
+
+After these transformations, all numbers of the original pytree are stored in
+DataFrames with "value" column. Additional columns with standard errors and the like
+can then simply be assigned as before.
+
+For more intuition, let's see how this would look in an example. For simplicity we
+only add a column with stars and ommit standard errors, p-values and confidence
+intervals. We use the same example as in the optimization section:
+
+.. code-block:: python
+
+    params = {
+        "delta": 0.95,
+        "utility": pd.DataFrame(
+            [[0.5, 0]] * 3, index=["a", "b", "c"], columns=["value", "lower_bound"]
+        ),
+        "probs": np.array([[0.8, 0.2], [0.3, 0.7]]),
+    }
+
+::
+
+    {
+    'delta':
+              value stars
+        0     0.95   ***,
+    'utility':
+              value stars
+        a     0.5    **
+        b     0.5    **
+        c     0.5    **,
+    'probs':
+              value stars
+        0 0   0.8   ***
+          1   0.2     *
+        1 0   0.3    **
+          1   0.7   ***,
+    }
+
+
+Format 2: Dictionary of pytrees
+-------------------------------
+
+The second solution is a dictionary of pytrees the keys are the columns of the current
+summary but probably in plural, i.e. "values", "standard_errors", "p-values", ...;
+
+Each value is a pytree with the exact same structure as ``params``. If this pytree
+contains DataFrames with "value" column, only that column is updated. i.e. standard
+errors would be accessed via ``summary["standard_errors"]["my_df"]["value"]``.
 
 
 Covariance matrices with pytrees
@@ -558,5 +634,3 @@ of arrays and numbers for automatic differentiation.
 
 If you want to use automatic differentiation with estimagic you will thus have to
 restrict yourself in the way you specify parameters.
-
-We will try to find a way of extending JAX but it probably won't happen very soon.
