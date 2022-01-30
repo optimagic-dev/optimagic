@@ -784,7 +784,7 @@ def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
     sr_formatted = sr_formatted.replace(np.nan, "").astype("str").replace("nan", "")
     if add_trailing_zeros:
         trail = (
-            sr_formatted.apply(lambda x: x.split(".")[-1])
+            sr_formatted.str.split(".", expand=True)[1]
             .astype("str")
             .replace("None", "")
         )

@@ -30,26 +30,26 @@ def test_estimation_table():
     exp = {}
     body_str = """
         index,{(1)}
-        const,152.13$^{*** }$
+        const,152.00$^{*** }$
         ,(2.85)
-        Age,37.24$^{ }$
-        ,(64.12)
-        Sex,-106.58$^{* }$
-        ,(62.13)
-        BMI,787.18$^{*** }$
-        ,(65.42)
-        ABP,416.67$^{*** }$
-        ,(69.49)
+        Age,37.20$^{ }$
+        ,(64.10)
+        Sex,-107.00$^{* }$
+        ,(62.10)
+        BMI,787.00$^{*** }$
+        ,(65.40)
+        ABP,417.00$^{*** }$
+        ,(69.50)
     """
     exp["body_df"] = _read_csv_string(body_str).fillna("")
     exp["body_df"].set_index("index", inplace=True)
     footer_str = """
          ,{(1)}
-        Observations,442.0
-        R$^2$,0.4
-        Adj. R$^2$,0.39
-        Residual Std. Error,59.98
-        F Statistic,72.91$^{***}$
+        Observations,442.000
+        R$^2$,0.400
+        Adj. R$^2$,0.395
+        Residual Std. Error,60.000
+        F Statistic,72.900$^{***}$
     """
     exp["footer_df"] = _read_csv_string(footer_str).fillna("")
     exp["footer_df"].set_index(" ", inplace=True)
@@ -130,25 +130,27 @@ def test_process_model_dict():
 def test_convert_model_to_series_conf_int():
     df = pd.DataFrame(
         np.array(
-            [[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3], [1.2, 3.3, 4.3]]
+            [[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3], [1.2, 3.3, 4.33]]
         ).T,
         columns=["value", "p_value", "ci_lower", "ci_upper"],
         index=["a", "b", "c"],
     )
     si_lev = [0.1, 0.05, 0.01]
-    si_dig = 2
+    nf = 2
     ci = True
     si = True
     ss = True
-    res = _convert_model_to_series(df, si_lev, si_dig, si, ci, ss)
+    atz = True
+    alz = False
+    res = _convert_model_to_series(df, si_lev, nf, atz, alz, si, ci, ss)
     exp = pd.Series(
         [
-            "0.6$^{ }$",
-            r"{(0.6\,;\,1.2)}",
-            "2.3$^{** }$",
-            r"{(2.3\,;\,3.3)}",
-            "3.3$^{*** }$",
-            r"{(3.3\,;\,4.3)}",
+            "0.60$^{ }$",
+            r"{(0.60\,;\,1.20)}",
+            "2.30$^{** }$",
+            r"{(2.30\,;\,3.30)}",
+            "3.30$^{*** }$",
+            r"{(3.30\,;\,4.33)}",
         ],
         index=["a", "", "b", "", "c", ""],
         name="",
@@ -164,11 +166,13 @@ def test_convert_model_to_series_std_err():
         index=["a", "b", "c"],
     )
     si_lev = [0.1, 0.05, 0.01]
-    si_dig = 2
+    nf = 2
+    atz = True
+    alz = False
     ci = False
     si = True
     ss = True
-    res = _convert_model_to_series(df, si_lev, si_dig, si, ci, ss)
+    res = _convert_model_to_series(df, si_lev, nf, atz, alz, si, ci, ss)
     exp = pd.Series(
         ["0.6$^{ }$", "(0.6)", "2.3$^{** }$", "(2.3)", "3.3$^{*** }$", "(3.3)"],
         index=["a", "", "b", "", "c", ""],
@@ -185,11 +189,13 @@ def test_convert_model_to_series_no_inference():
         index=["a", "b", "c"],
     )
     si_lev = [0.1, 0.05, 0.01]
-    si_dig = 2
+    nf = 2
+    atz = True
+    alz = False
     ci = False
     si = False
     ss = True
-    res = _convert_model_to_series(df, si_lev, si_dig, si, ci, ss)
+    res = _convert_model_to_series(df, si_lev, nf, atz, alz, si, ci, ss)
     exp = pd.Series(
         ["0.6$^{ }$", "2.3$^{** }$", "3.3$^{*** }$"], index=["a", "b", "c"], name=""
     )
@@ -201,13 +207,15 @@ def test_create_statistics_sr():
     df = pd.DataFrame(np.empty((10, 3)), columns=["a", "b", "c"])
     df.index = pd.MultiIndex.from_arrays(np.array([np.arange(10), np.arange(10)]))
     info_dict = {"rsquared": 0.45, "n_obs": 400}
-    sig_dig = 2
+    nf = 2
+    atz = True
+    alz = False
     sig_levels = [0.1, 0.2]
     show_stars = False
     model = NamedTup(params=df, info=info_dict)
     stats_dict = {"Observations": "n_obs", "R2": "rsquared", "show_dof": False}
-    res = _create_statistics_sr(model, stats_dict, sig_levels, show_stars, sig_dig)
-    exp = pd.Series([str(400), str(0.45)])
+    res = _create_statistics_sr(model, stats_dict, sig_levels, show_stars, nf, atz, alz)
+    exp = pd.Series(["400.00", "0.45"])
     exp.index = pd.MultiIndex.from_arrays(
         np.array([np.array(["Observations", "R2"]), np.array(["", ""])])
     )
