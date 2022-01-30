@@ -792,3 +792,38 @@ of arrays and numbers for automatic differentiation.
 
 If you want to use automatic differentiation with estimagic you will thus have to
 restrict yourself in the way you specify parameters.
+
+
+Milestones
+==========
+
+Implementing all of the proposed changes will take a time. Since all of them are
+fully backwards compatible, we do not have to finish all of them at once, even if that
+means that some areas of estimagic alread support pytrees and others do not.
+
+We suggest the following work packages and tentative order in which we tackle them
+
+
++----------------------------------------------------+------------------------+--------+
+|                                                    | Assignee               | Status |
++----------------------------------------------------+------------------------+--------+
+| Basic tree functions in pybaum                     | :ghuser:`janosg`       | ✅     |
++----------------------------------------------------+------------------------+--------+
+| Conversion functions between flat and nested 2d    | :ghuser:`janosg`       | ❌     |
+| representations of jacobians, covariance matrices, |                        |        |
+| etc. (mostly in pybaum)                            |                        |        |
++----------------------------------------------------+------------------------+--------+
+| Better name and group functions for dashboard      |                        | ❌     |
++----------------------------------------------------+------------------------+--------+
+| Pytree support for optimization                    | :ghuser:`janosg`       | ❌     |
++----------------------------------------------------+------------------------+--------+
+| Pytree support for first_derivative                | :ghuser:`timmens`      | ❌     |
++----------------------------------------------------+------------------------+--------+
+| Pytree support for second_derivative               | :ghuser:`timmens`      | ❌     |
++----------------------------------------------------+------------------------+--------+
+| Pytree support in ML estimation                    |                        | ❌     |
++----------------------------------------------------+------------------------+--------+
+| Pytree support in Bootstrap                        |                        | ❌     |
++----------------------------------------------------+------------------------+--------+
+| Pytree support in MSM estimation                   |                        | ❌     |
++----------------------------------------------------+------------------------+--------+
