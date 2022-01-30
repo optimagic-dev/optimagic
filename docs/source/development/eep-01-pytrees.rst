@@ -115,13 +115,13 @@ Difference between pytrees in JAX and estimagic
 ===============================================
 
 Most JAX functions `only work with Pytrees of arrays
-<https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions>`_, pytrees
-where container types are dicts, lists and tuples and all leaves are arrays.
+<https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions>`_, i.e.
+pytrees where container types are dicts, lists and tuples and all leaves are arrays.
 
 There are two ways to look at such pytrees:
 
 1. As pytree of arrays -> ``tree_flatten`` produces a list of arrays
-2. As pytree of numbers -> ``tree_flatetn`` produces a list of numbers
+2. As pytree of numbers -> ``tree_flatten`` produces a list of numbers
 
 The only difference between the two views is that for the second one, arrays have been
 registered as container types that can be flattened.
@@ -227,8 +227,8 @@ The following entries of the output of minimize are affected by the change:
     shape might be very difficult.
 
 
-Add a bound on "delta"
-----------------------
+Add bounds
+----------
 
 Bounds on parameters that are inside a DataFrame with "value" column can simply be
 specified as before. For all others, there are separate ``lower_bounds`` and
@@ -318,12 +318,11 @@ Problem: Higher dimensional extensions of pytrees
 The derivative of a function that maps from a 1d array to a 1d array (usually called
 Jacobian) is a 2d matrix. If the 1d arrays are replaced by pytrees, we need a
 two dimensional extension of the pytrees. Below we well look at how JAX does this
-and why we cannot simply copy that solution, even though we want to stay as compatible
-with it as possible.
+and why we cannot simply copy that solution.
 
 
-The JAX interface
------------------
+The JAX solution
+----------------
 
 Let's look at an example. We first define a function in terms of 1d arrays and then
 in terms of pytrees and look at a JAX calculated jacobian in both cases:
@@ -608,8 +607,8 @@ contains DataFrames with "value" column, only that column is updated. i.e. stand
 errors would be accessed via ``summary["standard_errors"]["my_df"]["value"]``.
 
 
-Presentation of covariance matrices
------------------------------------
+Representation of covariance matrices
+-------------------------------------
 
 A covariance matrix is a two dimensional extension of a ``params`` pytree. We could
 theoretically handle it exactly the same way as Jacobians. However, this would not be
@@ -663,23 +662,86 @@ MSM specific aspects of pytrees
 Valid formats of empirical and simulated moments
 ------------------------------------------------
 
+There are three types of moments in MSM estimation:
+- ``empirical moments``
+- The output of ``simulate_moments``
+- The output of ``calculate_moments``, needed to get a moments covariance matrix.
+
+We propose that moments can be stored as any valid estimagic pytree but of course all
+three types of moments have to be aligned, i.e. be stored in a tree of the same
+structure.
+
+This is a generalization of an interface that has already proven useful in
+`respy <https://github.com/OpenSourceEconomics/respy>`_,
+`sid <https://github.com/covid-19-impact-lab/sid>`_ and other applications. In the
+future, the project specific implementations of flatten and unflatten functions
+could simply be deleted.
 
 
-Presentation of sensitivity measures
-------------------------------------
+Representation of the weighting matrix and moments_cov
+------------------------------------------------------
 
+The weighting matrix for MSM estimation is represented as a DataFrame in the same
+way as the flat representation of the covariance matrices. Of course, the conversion
+functions that work for covariance matrices would also work here, but it is highly
+unlikely that a different representation of a weighting matrix is ever needed.
 
+Note that the user does not have to construct this weighting matrix manually. They
+can generate them using ``get_moments_cov`` and ``get_weighting_matrix``, so they
+do not need any knowledge of how the flattening works.
 
-Sensitivity measures as pytrees
-===============================
+Pepresentation of sensitivity measures
+--------------------------------------
 
+Sensitivity measures are similar to covariance matrices in the sense that they require
+a two dimensional extension of pytrees. The only difference is that for covariance
+matrices the two pytrees the same (namely the ``params``) and for sensitivity measures
+they are different (one is ``params``, the other ``moments``).
 
+We therefore suggest to use the same solution, i.e. to offer a flat representation in
+form of a DataFrame, a pytree representation and functions to convert between the two.
 
+Compatibility with estimation tables
+====================================
 
-Compatibility with plotting and estimation tables
-=================================================
+Estimation tables are constructed from estimation summaries. This continues to work for
+summaries where everything has been converted to DataFrames. Users will select
+individual DataFrames from a pytree of DataFrames, possibly concatenate or filter them
+and pass them to the estimation table function.
 
+Compatibility with plotting functions
+=====================================
 
+The following functions are affected:
+
+- ``plot_univariate_effects``
+- ``convergence_plot``
+- ``lollipop_plot``
+- ``derivative_plot``
+
+Most of them can be adjusted easily to the proposed changes. On all others we will
+simply raise errors and provide tutorials to work around the limitations.
+
+Compatibility with Dashboard
+============================
+
+The main challenge for the dashboard is that pytrees have no natural multi-column
+extension and thus it becomes harder to specify a group or name column. However,
+these features have not been used very much anyways.
+
+We propose to write a better automatic grouping and naming function for pytrees. That
+way it is simply not necessary to provide group and name columns and most of the users
+will get a better dashboard experience.
+
+Rules of thumb for both should be:
+
+1. Only parameters where the start values have a similar magnitude can be in the same
+   group, i.e. displayed in one lineplot.
+2. Parameters that are close to each other in the tree (i.e. have a common beginning
+   in their leaf_name should be in the same group.
+3. The plot title should subsume the commen parts of the tree-structure (i.e. name
+   we get from ``pybaum.leaf_names``.
+4. Most line plots should have approximately 5 lines, none should have more than 8.
 
 
 Advanced options for functions that work with pytrees

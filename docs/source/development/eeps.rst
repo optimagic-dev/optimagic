@@ -1,6 +1,6 @@
-===============================
-Estimagic enhancement proposals
-===============================
+====
+EEPs
+====
 
 
 Large changes to estimagic can be proposed in estimagic enhancement proposals, short
