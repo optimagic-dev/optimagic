@@ -624,6 +624,23 @@ since ``simulated_moments`` and ``empirical_moments`` always need to be pytrees 
 the same structure, they do not need separate registries and is_leaf functions.
 
 
+Pytree related reasons for a switch to result objects
+=====================================================
+
+There will be an other EEP that proposes to replace the result dictionaries we
+currently use everywhere in estimagic by result objects. While this in not completely
+related to pytrees, the switch to pytrees provides a few additional reasons:
+
+1. Since we sometimes provide provide results in several formats (e.g. summaries as
+   dict of pytrees and as pytree of DataFrames), the result dictionary would become
+   too large and confusing. Having result objects that just calculate specific formats
+   on demand can alleviate this.
+2. The result object can serve as a simplfied wrapper to pytree functions and pytree
+   conversion functions between pytree formats that abstracts from registry, is_leaf
+   and treedefs.
+3. Results objects allow to define a ``__repr__`` which becomes really useful as soon as
+   parameters are not just one DataFrame but for example, a dict of DataFrames.
+
 
 Compatibility with JAX autodiff
 ===============================
