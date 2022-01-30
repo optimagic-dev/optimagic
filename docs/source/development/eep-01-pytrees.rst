@@ -509,13 +509,34 @@ the lower right 4 by 4 array.
 Implementation
 --------------
 
-.. danger:: This is the only place in the EEP where I have now clue what the
-    implementation will look like. ``pybaum`` does not yet support the generation of
-    higher dimensional extensions of pytrees even for simple pytrees of arrays.
+We use the following terminology to describe the implementation:
 
-    My guess is that internally we would always flatten inputs and outputs as much as
-    possible, calculate numerical derivatives and then parse the resulting numerical
-    derivatives to give them the same structure as in JAX. Ideas are welcome!
+- input_tree: The pytree containing parameters, i.e. inputs to the function that is
+  differentiated.
+- output_tree: The pytree that is returned by the function being differentiated
+- derivative_tree: The pytree we want to generate, i.e. the pytree that would be
+  returned by JAX jacobian.
+- flat_derivative: The matrix version of the derivative_tree
+
+To simply reproduce the JAX behavior with pytrees of arrays, we could proceed in the
+following steps:
+
+- Create a modified function that maps from 1d array to 1d array
+- Calculate flat_derivative by taking numerical derivatives just as before
+- Calculate the shapes of all arrays in derivative_tree by concatenating the shapes
+  of the cartesian product of flattend output_tree and input_tree
+- Calculate the 2d versions of those arrays by taking the product over elements in the
+  shape tuple before concatenating.
+- Create a list of lists containing all arrays that will be in derivative_tree. The
+  values are taken from flat_derivative, using the previously calculated shapes.
+- call ``tree_unflatten`` on the inner lists with the treedef corresponding to
+  input_tree.
+- call ``tree_unflatten`` on the result of that with the treedef corresponding to
+  output_tree.
+
+
+To implement the extension to estimagic pytrees we would probably do exactly the same
+but have a bit more preparation and post-processing to do.
 
 
 General aspects of pytrees in estimation functions
