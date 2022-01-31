@@ -106,7 +106,7 @@ examples above would have five leafs. The flattened versions would look as follo
 
     [0, 1, 2, 3, 4]
 
-Needless to say, it is possible to register any iterable as container. For example, we
+Needless to say, it is possible to register anything as container. For example, we
 would add pandas.Series and pandas.DataFrame (with varying definitions, depending on the
 application).
 
@@ -115,16 +115,20 @@ Difference between pytrees in JAX and estimagic
 ===============================================
 
 Most JAX functions `only work with Pytrees of arrays
-<https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions>`_, i.e.
-pytrees where container types are dicts, lists and tuples and all leaves are arrays.
+<https://jax.readthedocs.io/en/latest/pytrees.html#pytrees-and-jax-functions>`_ and
+scalars, i.e. pytrees where container types are dicts, lists and tuples and all leaves
+are arrays or scalars. We will just call them pytrees of arrays because scalars are
+converted to arrays by JAX.
 
 There are two ways to look at such pytrees:
 
 1. As pytree of arrays -> ``tree_flatten`` produces a list of arrays
 2. As pytree of numbers -> ``tree_flatten`` produces a list of numbers
 
-The only difference between the two views is that for the second one, arrays have been
-registered as container types that can be flattened.
+The only difference between the two perspectives is that for the second one, arrays have
+been registered as container types that can be flattened. In JAX the term
+``ravel`` instead of ``flatten`` is sometimes used to make clear that the second
+perspective is meant.
 
 Estimagic functions work with slightly more general pytrees. On top of arrays, they
 can also contain scalars, pandas.Series and pandas.DataFrames.
@@ -147,14 +151,18 @@ interpret them as classical estimagic DataFrame and only consider the entries in
 ``"value"`` column when flattening the DataFrame into a list of numbers. If there is no
 column ``"value"``, all numeric columns of the DataFrame are considered.
 
+Note that internally, we will sometimes define flattening rules such that only some
+other columnn, e.g. only ``"lower_bound"`` is considered. However we never look at more
+than one column of a classical estimagic params DataFrame at a time.
+
 To distinguish between the different pytrees we use the terms JAX-pytree and
 estimagic-pytree.
 
 Optimization with pytrees
 =========================
 
-In this section we look at possible ways specify optimizations when parameters and some
-outputs of criterion functions can be estimagic-pytrees.
+In this section we look at possible ways to specify optimizations when parameters and
+some outputs of criterion functions can be estimagic-pytrees.
 
 As an example we use a hypothetical criterion function with pytree inputs and outputs
 to describe how a user can optimize it. We also give a rough intuition what happens
@@ -262,10 +270,10 @@ This keeps working as long as params are specified as a single DataFrame contain
 The value of that entry is a callable that takes the pytree and returns selected
 parameters.
 
-The selected parameters can be returned as estimagic-pytrees. For constraints where
-order plays a role (e.g., increasing), the order defined by ``tree_flatten`` is used.
-However we advise users to return one-dimensional arrays in that case, so they do not
-have to learn the internal of ``tree_flatten``.
+The ``selector`` function can return the selected parameter as estimagic-pytrees.
+For constraints where order plays a role (e.g., increasing), the order defined by
+``tree_flatten`` is used. However we advise users to return one-dimensional arrays in
+that case, so they do not have to learn the internal of ``tree_flatten``.
 
 As an example, let's add probability constraints for each row of ``"probs"``:
 
@@ -283,28 +291,23 @@ As an example, let's add probability constraints for each row of ``"probs"``:
         constraints=constraints,
     )
 
-Internally, constraints are already applied on a 1 dimensional numpy array and the
-parameter selections specified by "loc" and "query" are translated into positions in
-that array. What changes is that we now also have to translate the parameter selections
-from "selector" functions into positions. This is trivial by calling ``tree_unflatten``
-on an ``np.arange()`` of suitable length, calling the selector functions on the
-resulting pytree and recording all numbers that are there.
+The required changes to support this are relatively simple. This is because most
+functions that deal with constraints already work with a 1d array of parameters and
+the ``"loc"`` and ``"query"`` entries of constraints are internally translated to
+positions in tha array very early on.
 
 
-Numerical derivatives during optimization
------------------------------------------
+Derivatives during optimization
+-------------------------------
 
-Derivatives are taken on modified functions that map from 1d numpy array to scalars
-or 1d numpy arrays.
+If numerical derivatives are used, they are already taken on a modified function that
+map from 1d numpy array to scalars or 1d numpy arrays. Allowing for estimagic-pytrees
+in parameters and criterion outputs will not pose any difficulties here.
 
-
-Closed form derivatives
------------------------
-
-Closed form derivatives need to take the exact same format as one would obtain
-when applying our numerical derivatives to the criterion function (see below). This is
-also compatible with JAX (in all cases that are supported by JAX) and thus a natural
-requirement since in most cases closed form derivatives will be calculated via JAX.
+Closed form derivatives need to have the following interface: They expect ``params``
+in the exact same format as the criterion function as first argument. They return a
+derivative in the same format as our numerical derivative functions or JAXs autodiff
+functions when applied to the criterion function.
 
 Numerical derivatives with pytrees
 ==================================
@@ -688,7 +691,7 @@ There are three types of moments in MSM estimation:
 
 We propose that moments can be stored as any valid estimagic pytree but of course all
 three types of moments have to be aligned, i.e. be stored in a tree of the same
-structure.
+structure. We will raise an error if the trees do not have the same structure.
 
 This is a generalization of an interface that has already proven useful in
 `respy <https://github.com/OpenSourceEconomics/respy>`_,
