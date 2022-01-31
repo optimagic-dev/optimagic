@@ -301,7 +301,7 @@ Derivatives during optimization
 -------------------------------
 
 If numerical derivatives are used, they are already taken on a modified function that
-map from 1d numpy array to scalars or 1d numpy arrays. Allowing for estimagic-pytrees
+maps from 1d numpy array to scalars or 1d numpy arrays. Allowing for estimagic-pytrees
 in parameters and criterion outputs will not pose any difficulties here.
 
 Closed form derivatives need to have the following interface: They expect ``params``
