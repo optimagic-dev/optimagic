@@ -270,10 +270,11 @@ This keeps working as long as params are specified as a single DataFrame contain
 The value of that entry is a callable that takes the pytree and returns selected
 parameters.
 
-The ``selector`` function can return the selected parameter as estimagic-pytrees.
-For constraints where order plays a role (e.g., increasing), the order defined by
-``tree_flatten`` is used. However we advise users to return one-dimensional arrays in
-that case, so they do not have to learn the internal of ``tree_flatten``.
+The ``selector`` function may return the parameters in the form of an estimagic-pytree.
+Should order play a role for the constraints (e.g., increasing) the constraint will be
+applied to the flattened version of the pytree returned by the ``selector`` function.
+However, in the case that order matters, we advise users to return one-dimensional
+arrays (explicit is better than implicit).
 
 As an example, let's add probability constraints for each row of ``"probs"``:
 
