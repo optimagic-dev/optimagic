@@ -294,7 +294,7 @@ As an example, let's add probability constraints for each row of ``"probs"``:
 The required changes to support this are relatively simple. This is because most
 functions that deal with constraints already work with a 1d array of parameters and
 the ``"loc"`` and ``"query"`` entries of constraints are internally translated to
-positions in tha array very early on.
+positions in that array very early on.
 
 
 Derivatives during optimization
