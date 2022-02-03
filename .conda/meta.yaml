@@ -37,6 +37,7 @@ requirements:
     - seaborn
     - dill
     - chaospy
+    - pybaum
 
 test:
   requires:
