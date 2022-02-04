@@ -7,4 +7,4 @@ python:
   version: 3.7
 
 conda:
-  environment: docs/environment.yml
+  environment: docs/rtd_environment.yml

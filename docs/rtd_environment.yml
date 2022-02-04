@@ -1,0 +1,19 @@
+channels:
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  - python=3.9
+  - pip
+  - setuptools_scm
+  - toml
+
+  - sphinx
+  - sphinxcontrib-bibtex
+  - sphinx-panels
+  - ipython
+  - nbsphinx
+  - pydata-sphinx-theme>=0.3.0
+
+  - pip:
+      - ../
