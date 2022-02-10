@@ -1,4 +1,4 @@
-"""Test own BHHH algorithm."""
+"""Test the internal BHHH algorithm."""
 from functools import partial
 
 import numpy as np

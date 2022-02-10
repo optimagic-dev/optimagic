@@ -10,8 +10,7 @@ def bhhh(
     convergence_absolute_gradient_tolerance=1e-8,
     stopping_max_iterations=200,
 ):
-    """
-    Minimize a likelihood function using the BHHH algorithm.
+    """Minimize a likelihood function using the BHHH algorithm.
 
     For details, see :ref:`_own_algorithms`.
     """
@@ -41,8 +40,8 @@ def bhhh_internal(
     convergence_absolute_gradient_tolerance,
     stopping_max_iterations,
 ):
-    """
-    Minimize scalar function of one or more variables via the BHHH algorithm.
+    """Minimize a likelihood function using the BHHH algorithm.
+
     Args:
         criterion_and_derivative (callable): The objective function to be minimized.
         x (np.ndarray): Initial guess of the parameter vector (starting points).

@@ -1,4 +1,4 @@
-"""Implement the pounders algorithm"""
+"""Implement the POUNDERS algorithm"""
 from functools import partial
 
 import estimagic.batch_evaluators as be
@@ -52,7 +52,6 @@ def pounders(
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
 
     For details, see :ref:`_own_algorithms`.
-
     """
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
@@ -133,7 +132,7 @@ def internal_solve_pounders(
     batch_evaluator,
     n_cores,
 ):
-    """Minimize the criterion function using POUNDERS.
+    """Find the local minimum to a non-linear least-squares problem using POUNDERS.
 
     Args:
         criterion_and_derivative (callable): Function that returns criterion
