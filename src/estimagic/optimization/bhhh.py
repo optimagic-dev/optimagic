@@ -1,3 +1,4 @@
+"""Implement Berndt-Hall-Hall-Hausman (BHHH) algorithm."""
 from functools import partial
 
 import numpy as np
