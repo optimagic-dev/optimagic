@@ -35,7 +35,7 @@ if IS_NLOPT_INSTALLED:
 
 # drop private and helper functions
 AVAILABLE_ALGORITHMS = {
-    "bhhh": bhh,
+    "bhhh": bhhh,
     "neldermead_parallel": neldermead_parallel,
     "pounders": pounders,
 }
