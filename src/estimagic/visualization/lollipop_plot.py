@@ -5,6 +5,7 @@ from estimagic.visualization.colors import get_colors
 
 def lollipop_plot(
     data,
+    *,
     sharex=True,
     plot_bar=True,
     pairgrid_kws=None,
