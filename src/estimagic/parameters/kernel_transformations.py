@@ -126,7 +126,7 @@ def covariance_from_internal_jacobian(internal_values, constr):
     K = _commutation_matrix(dim)
     L = _elimination_matrix(dim)
 
-    left = np.eye(dim ** 2) + K
+    left = np.eye(dim**2) + K
     right = np.kron(chol, np.eye(dim))
 
     intermediate = left @ right
@@ -247,7 +247,7 @@ def sdcorr_from_internal_jacobian(internal_values, constr):
     Y = np.diag(identity.ravel("F"))
 
     #  with the wrong formulation in the tinyurl we would have had U = Y
-    norms = np.sqrt((X ** 2).sum(axis=1).reshape(-1, 1))
+    norms = np.sqrt((X**2).sum(axis=1).reshape(-1, 1))
     XX = X / norms
     U = Y @ np.kron(identity, XX) @ K
 
@@ -490,7 +490,7 @@ def _transformation_matrix(dim):
     num_na = np.count_nonzero(np.isnan(m))
     indices = m.argsort()[:-num_na]
 
-    rows = [_unit_vector_or_zeros(i, dim ** 2) for i in indices]
+    rows = [_unit_vector_or_zeros(i, dim**2) for i in indices]
 
     transformer = np.row_stack(rows)
     return transformer
@@ -524,9 +524,9 @@ def _commutation_matrix(dim):
     >>> assert_array_almost_equal(K @ vectorized, vectorized_transposed)
 
     """
-    row = np.arange(dim ** 2)
+    row = np.arange(dim**2)
     col = row.reshape((dim, dim), order="F").ravel()
-    commuter = np.zeros((dim ** 2, dim ** 2), dtype=np.int8)
+    commuter = np.zeros((dim**2, dim**2), dtype=np.int8)
     commuter[row, col] = 1
     return commuter
 
