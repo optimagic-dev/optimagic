@@ -13,7 +13,7 @@ from estimagic.visualization.convergence_plot import convergence_plot
 from estimagic.visualization.derivative_plot import derivative_plot
 from estimagic.visualization.lollipop_plot import lollipop_plot
 from estimagic.visualization.profile_plot import profile_plot
-from estimagic.visualization.univariate_effects import plot_univariate_effects
+from estimagic.visualization.slice_plot import slice_plot
 
 try:
     from ._version import version as __version__
@@ -39,6 +39,6 @@ __all__ = [
     "convergence_plot",
     "lollipop_plot",
     "derivative_plot",
-    "plot_univariate_effects",
+    "slice_plot",
     "__version__",
 ]
