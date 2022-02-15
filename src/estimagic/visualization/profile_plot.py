@@ -3,11 +3,10 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
+import plotly.express as px
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
-from estimagic.visualization.colors import get_colors
 
 
 plt.rcParams.update(
@@ -73,7 +72,7 @@ def profile_plot(
             convergence is fulfilled.
 
     Returns:
-        fig
+        plotly.Figure
 
     """
     if stopping_criterion is None:
@@ -118,18 +117,9 @@ def profile_plot(
     performance_profiles = for_each_alpha.groupby("alpha").mean().stack().reset_index()
 
     # Build plot
-    fig, ax = plt.subplots(figsize=(8, 6))
-    n_algos = len(solution_times.columns)
-    sns.lineplot(
-        data=performance_profiles,
-        x="alpha",
-        y=0,
-        hue="algorithm",
-        ax=ax,
-        lw=2.5,
-        alpha=1.0,
-        palette=get_colors("categorical", n_algos),
-    )
+
+    fig = px.line(performance_profiles, x="alpha", y=0, color="algorithm")
+    # dropped some styling parameters
 
     # Plot Styling
     xlabels = {
@@ -143,13 +133,14 @@ def profile_plot(
         ("walltime", False): "Wall Time Needed to Solve the Problem",
     }
 
-    ax.set_xlabel(xlabels[(runtime_measure, normalize_runtime)])
-    ax.set_ylabel("Share of Problems Solved")
-    spine_lw = ax.spines["bottom"].get_linewidth()
-    ax.axhline(1.0, color="silver", xmax=0.955, lw=spine_lw)
-    ax.legend(title=None)
-    fig.tight_layout()
+    fig.update_layout(
+        xaxis_title=xlabels[(runtime_measure, normalize_runtime)],
+        yaxis_title="Share of Problems Solved",
+        title=None,
+    )
+    # dropped tight layout and hline
 
+    fig.add_hline(y=1)  # dropped styling and what is xmax??
     return fig
 
 
