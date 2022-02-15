@@ -1,17 +1,16 @@
+import numpy as np
 import pandas as pd
-import seaborn as sns
-from estimagic.visualization.colors import get_colors
+import plotly.express as px
+import plotly.graph_objects as go
 
 
 def lollipop_plot(
     data,
     sharex=True,
     plot_bar=True,
-    pairgrid_kws=None,
     stripplot_kws=None,
     barplot_kws=None,
-    style=("whitegrid"),
-    dodge=True,
+    combine_plots_in_grid=True,
 ):
     """Make a lollipop plot.
 
@@ -22,100 +21,86 @@ def lollipop_plot(
             before passing it.
         sharex (bool): Whether the x-axis is shared across variables, default True.
         plot_bar (bool): Whether thin bars are plotted, default True.
-        pairgrid_kws (dict): Keyword arguments for for the creation of a Seaborn
-            PairGrid. Most notably, "height" and "aspect" to control the sizes.
+        pairgrid_kws (dict): Keyword arguments for for the creation of a facet grid.
+        Most notably, "facet_col_spacing" to control the space between facet columns.
         stripplot_kws (dict): Keyword arguments to plot the dots of the lollipop plot
-            via the stripplot function. Most notably, "color" and "size".
+            via the stripplot function. Most notably, "width" and "height".
         barplot_kws (dict): Keyword arguments to plot the lines of the lollipop plot
             via the barplot function. Most notably, "color" and "alpha". In contrast
             to seaborn, we allow for a "width" argument.
-        style (str): A seaborn style.
         dodge (bool): Wheter the lollipops for different datasets are plotted
             with an offset or on top of each other.
+        combine_plots_in_grid (bool): decide whether to return a one
+        figure containing subplots for each factor pair or a dictionary
+        of individual plots. Default True.
 
     Returns:
-        seaborn.PairGrid
+        plotly.Figure: The grid plot or dict of individual plots
 
     """
     data, varnames = _harmonize_data(data)
 
-    sns.set_style(style)
-    pairgrid_kws = {} if pairgrid_kws is None else pairgrid_kws
     stripplot_kws = {} if stripplot_kws is None else stripplot_kws
     barplot_kws = {} if barplot_kws is None else barplot_kws
 
-    colors = get_colors("categorical", len(data))
+    # Draw a facet dot plot using the strip function
+    g = go.Figure(
+        px.strip(
+            data,
+            x="values",
+            y="__name__",
+            facet_col="indep",
+            labels={"values": "", "__name__": "", "indep": ""},
+            stripmode="overlay",
+            **stripplot_kws
+        )
+    ).update_traces(jitter=0)
 
-    # Make the PairGrid
-    pairgrid_kws = {
-        "aspect": 0.5,
-        **pairgrid_kws,
-    }
+    g.update_layout(showlegend=False)
 
-    g = sns.PairGrid(
-        data,
-        x_vars=varnames,
-        y_vars=["__name__"],
-        hue="__hue__",
-        **pairgrid_kws,
-    )
+    # Use semantically meaningful titles for the facet
+    g.for_each_annotation(lambda a: a.update(text=a.text.split("=")[1]))
 
-    # Draw a dot plot using the stripplot function
-    combined_stripplot_kws = {
-        "size": 8,
-        "orient": "h",
-        "jitter": False,
-        "palette": colors,
-        "edgecolor": "#0000ffff",
-        "dodge": dodge,
-        **stripplot_kws,
-    }
-
-    g.map(sns.stripplot, **combined_stripplot_kws)
-
+    # Draw lines to the plot using the barplot function
     if plot_bar:
-        # Draw lines to the plot using the barplot function
-        combined_barplot_kws = {
-            "palette": colors,
-            "alpha": 0.5,
-            "width": 0.1,
-            "dodge": dodge,
-            **barplot_kws,
-        }
-        bar_height = combined_barplot_kws.pop("width")
-        g.map(sns.barplot, **combined_barplot_kws)
+        for col_facet, indep_name in enumerate(varnames):
+            g.add_bar(
+                x=data.loc[data["indep"] == indep_name, "values"],
+                y=data.loc[data["indep"] == indep_name, "__name__"],
+                orientation="h",
+                **barplot_kws,
+                row=1,
+                col=col_facet + 1,
+                width=0.025
+            )
 
-    # Adjust the width of the bars which seaborn.barplot does not allow
-    for ax in g.axes.flat:
-        for patch in ax.patches:
-            current_height = patch.get_height()
-            diff = current_height - bar_height
-            # we change the bar width
-            patch.set_height(bar_height)
-            # we recenter the bar
-            patch.set_y(patch.get_y() + diff * 0.5)
-
-    # Use the same x axis limits on all columns and add better labels
+    # Use the same x axis limits on all columns
     if sharex:
-        lower_candidate = data[varnames].min().min()
-        upper_candidate = data[varnames].max().max()
+        lower_candidate = data[["indep", "values"]].groupby("indep").min().min()
+        upper_candidate = data[["indep", "values"]].groupby("indep").max().max()
         padding = (upper_candidate - lower_candidate) / 10
         lower = lower_candidate - padding
         upper = upper_candidate + padding
-        g.set(xlim=(lower, upper), xlabel=None, ylabel=None)
+        g.update_yaxes(range=[lower, upper])
 
-    # Use semantically meaningful titles for the columns
-    for ax, title in zip(g.axes.flat, varnames):
+    # Accessing individual plots from the facet plot
+    g_list = []
 
-        # Set a different title for each axes
-        ax.set(title=title)
+    for i in range(len(varnames)):
 
-        # Make the grid horizontal instead of vertical
-        ax.xaxis.grid(False)
-        ax.yaxis.grid(False)
+        temp = go.Figure(g["data"][i])
+        if plot_bar:
+            temp.add_trace(g["data"][i + len(varnames)])
 
-    sns.despine(left=False, bottom=False)
-    return g
+        g_list.append(temp)
+
+    if combine_plots_in_grid:
+        out = g
+
+    else:
+        out = g_list
+
+    return out
 
 
 def _harmonize_data(data):
@@ -132,10 +117,14 @@ def _harmonize_data(data):
         to_concat.append(df)
 
     combined = pd.concat(to_concat)
+    # so that it is possibel to facet the strip plot
+    new_data = pd.melt(
+        combined, id_vars=["__name__", "__hue__"], var_name="indep", value_name="values"
+    )
 
-    varnames = [col for col in combined.columns if col not in ["__hue__", "__name__"]]
+    varnames = new_data["indep"].unique()
 
-    return combined, varnames
+    return new_data, varnames
 
 
 def _make_string_index(ind):
@@ -144,3 +133,10 @@ def _make_string_index(ind):
     else:
         out = ind.map(str).tolist()
     return out
+
+
+df = pd.DataFrame(
+    np.arange(12).reshape(4, 3),
+    index=pd.MultiIndex.from_tuples([(0, "a"), ("b", 1), ("a", "b"), (2, 3)]),
+    columns=["a", "b", "c"],
+)
