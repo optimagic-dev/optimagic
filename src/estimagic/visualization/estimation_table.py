@@ -124,19 +124,37 @@ def estimation_table(
     com_ind = []
     for d_ in for_index:
         com_ind += [ind for ind in d_.index.to_list() if ind not in com_ind]
-    df_list = [mod.params.reindex(com_ind) for mod in models]
+    format_cols = ["value"]
+    if show_inference:
+        if confidence_intervals:
+            format_cols += ["ci_lower", "ci_upper"]
+        else:
+            format_cols.append("standard_error")
+    df_list = [mod.params.reindex(com_ind)[format_cols] for mod in models]
+    raw_formatted = [_apply_number_format(df, number_format) for df in df_list]
+    right_decimals = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
+    if add_trailing_zeros:
+        formatted = [
+            _apply_number_format(df.astype("float"), right_decimals)
+            for df in raw_formatted
+        ]
+    else:
+        formatted = raw_formatted
+    to_convert = []
+    if show_stars:
+        for df, mod in zip(formatted, models):
+            to_convert.append(
+                pd.concat([df, mod.params.reindex(com_ind)["p_value"]], axis=1)
+            )
+    else:
+        to_convert = formatted
     to_concat = [
         _convert_model_to_series(
             df,
             significance_levels,
-            number_format,
-            add_trailing_zeros,
-            add_leading_zeros,
-            show_inference,
-            confidence_intervals,
             show_stars,
         )
-        for df in df_list
+        for df in to_convert
     ]
     body_df = pd.concat(to_concat, axis=1)
     body_df = _process_body_df(
@@ -155,28 +173,13 @@ def estimation_table(
             show_stars,
             number_format,
             add_trailing_zeros,
-            add_leading_zeros,
+            right_decimals,
         )
         for mod in models
     ]
     footer_df = pd.concat(to_concat, axis=1)
     footer_df.columns = body_df.columns
     if return_type == "latex" or str(return_type).endswith(".tex"):
-        # Use the float format of the parameter value series to infer the number
-        # of digits to the right from the decimal points.
-        # Needed for table formatting.
-        try:
-            right_align = int(
-                body_df.apply(
-                    lambda x: x.astype("str")
-                    .str.split(".", expand=True)[1]
-                    .str.replace(r"\D+", "", regex=True)
-                    .str.len()
-                    .max()
-                ).max()
-            )
-        except KeyError:
-            right_align = 0
         if siunitx_warning:
             warn(
                 r"""LaTeX compilation requires the package siunitx and adding
@@ -201,7 +204,7 @@ def estimation_table(
             custom_index_names,
             custom_model_names,
             padding,
-            right_align,
+            right_decimals,
             show_footer,
         )
     elif return_type == "html" or str(return_type).endswith(".html"):
@@ -388,11 +391,6 @@ def _process_model(model):
 def _convert_model_to_series(
     df,
     significance_levels,
-    number_format,
-    add_trailing_zeros,
-    add_leading_zeros,
-    show_inference,
-    confidence_intervals,
     show_stars,
 ):
     """Return processed value series with significance stars and inference information.
@@ -409,16 +407,7 @@ def _convert_model_to_series(
     Returns:
         sr (pd.Series): string series with values and inferences.
     """
-    format_cols = ["value"]
-    if show_inference:
-        if confidence_intervals:
-            format_cols += ["ci_lower", "ci_upper"]
-        else:
-            format_cols.append("standard_error")
-    df_formatted = _format_frame(
-        df[format_cols], number_format, add_trailing_zeros, add_leading_zeros
-    )
-    value_sr = df_formatted["value"]
+    value_sr = df["value"]
     if show_stars:
         sig_bins = [-1] + sorted(significance_levels) + [2]
         value_sr += "$^{"
@@ -436,22 +425,22 @@ def _convert_model_to_series(
             .replace(np.nan, "")
         )
         value_sr += " }$"
-    if show_inference:
-        if confidence_intervals:
-            ci_lower = df_formatted["ci_lower"]
-            ci_upper = df_formatted["ci_upper"]
-            inference_sr = "{("
-            inference_sr += ci_lower
-            inference_sr += r"\,;\,"
-            inference_sr += ci_upper
-            inference_sr += ")}"
-        else:
-            standard_error = df_formatted["standard_error"]
-            inference_sr = "(" + standard_error + ")"
+    if "ci_lower" in df:
+        ci_lower = df["ci_lower"]
+        ci_upper = df["ci_upper"]
+        inference_sr = "{("
+        inference_sr += ci_lower
+        inference_sr += r"\,;\,"
+        inference_sr += ci_upper
+        inference_sr += ")}"
+        sr = _combine_series(value_sr, inference_sr)
+    elif "standard_error" in df:
+        standard_error = df["standard_error"]
+        inference_sr = "(" + standard_error + ")"
+        sr = _combine_series(value_sr, inference_sr)
 
         # replace empty braces with empty string
         # combine the two into one series Done
-        sr = _combine_series(value_sr, inference_sr)
     else:
         sr = value_sr
     sr[~sr.apply(lambda x: bool(re.search(r"\d", x)))] = ""
@@ -496,7 +485,7 @@ def _create_statistics_sr(
     show_stars,
     number_format,
     add_trailing_zeros,
-    add_leading_zeros,
+    right_decimals,
 ):
     """Process statistics values, return string series.
 
@@ -519,10 +508,24 @@ def _create_statistics_sr(
     else:
         show_dof = None
     for k in stat_keys:
-        stat_values[k] = model.info.get(stat_keys[k], np.nan)
-    stat_values = _format_series(
-        pd.Series(stat_values), number_format, add_trailing_zeros, add_leading_zeros
-    ).to_dict()
+        if not (stat_keys[k] == "n_obs" or stat_keys[k] == "nobs"):
+            stat_values[k] = model.info.get(stat_keys[k], np.nan)
+    raw_formatted = _apply_number_format(
+        pd.DataFrame(pd.Series(stat_values)), number_format
+    )
+    if add_trailing_zeros:
+        formatted = _apply_number_format(raw_formatted.astype("float"), right_decimals)
+    else:
+        formatted = raw_formatted
+    stat_values = formatted.to_dict()[0]
+    if "n_obs" in stat_keys.values():
+        n_obs = model.info.get("n_obs", np.nan)
+        if not np.isnan(n_obs):
+            n_obs = int(n_obs)
+        stat_values[
+            list(stat_keys.keys())[list(stat_keys.values()).index("n_obs")]
+        ] = n_obs
+
     if "fvalue" in model.info and "F Statistic" in stat_values:
         if show_stars and "f_pvalue" in model.info:
             sig_bins = [-1] + sorted(significance_levels) + [2]
@@ -538,14 +541,14 @@ def _create_statistics_sr(
             fstat_str = "{{{}(df={};{})}}"
             stat_values["F Statistic"] = fstat_str.format(
                 stat_values["F Statistic"],
-                model.info["df_model"],
-                model.info["df_resid"],
+                int(model.info["df_model"]),
+                int(model.info["df_resid"]),
             )
     if "resid_std_err" in model.info and "Residual Std. Error" in stat_values:
         if show_dof:
             rse_str = "{{{}(df={})}}"
             stat_values["Residual Std. Error"] = rse_str.format(
-                stat_values["Residual Std. Error"], model.info["df_resid"]
+                stat_values["Residual Std. Error"], int(model.info["df_resid"])
             )
     stat_sr = pd.Series(stat_values)
     # the follwing is to make sure statistics dataframe has as many levels of
@@ -555,7 +558,7 @@ def _create_statistics_sr(
         [stat_sr.index.values.reshape(len(stat_sr), 1), stat_ind], axis=1
     ).T
     stat_sr.index = pd.MultiIndex.from_arrays(stat_ind)
-    return stat_sr
+    return stat_sr.astype("str").replace("nan", "")
 
 
 def _process_body_df(
@@ -768,102 +771,51 @@ def _extract_info_from_sm(model):
     return info
 
 
-def _format_series(sr, number_format, add_trailing_zeros, add_leading_zeros):
-    """Format series according to the specified formatter."""
-    if isinstance(number_format, str):
-        sr_formatted = sr.map(number_format.format)
-    elif isinstance(number_format, list) or isinstance(number_format, tuple):
-        sr_formatted = sr.copy(deep=True)
-        for formatter in number_format[:-1]:
-            sr_formatted = sr_formatted.map(formatter.format).astype("float")
-        sr_formatted = sr_formatted.map(number_format[-1].format)
-    elif isinstance(number_format, int):
-        sr_formatted = round(sr, number_format)
-    elif callable(number_format):
-        sr_formatted = sr.map(number_format)
-    sr_formatted = sr_formatted.replace(np.nan, "").astype("str").replace("nan", "")
-    if add_trailing_zeros:
-        trail = (
-            sr_formatted.str.split(".", expand=True)[1]
-            .astype("str")
-            .replace("None", "")
-        )
-        trail_length = trail.str.len().replace(np.nan, 0)
-        max_trail = trail_length[~trail.str.contains("e")].max()
-        lead = sr_formatted.str.split(".", expand=True)[0]
-        if max_trail > 0:
-            sr_formatted = sr_formatted.where(
-                (sr_formatted.str.contains("e")) | (sr_formatted == ""),
-                lead + "." + trail + np.char.multiply("0", max_trail - trail_length),
-            )
-    if add_leading_zeros:
-        lead = sr_formatted.str.split(".", expand=True)[0]
-        lead_length = lead.str.lstrip("-").str.len()
-        max_lead = lead_length.max()
-        sr_formatted = sr_formatted.where(
-            (sr_formatted == "") | (sr_formatted.str.startswith("-")),
-            np.char.multiply("0", max_lead - lead_length) + sr_formatted,
-        )
-        sr_formatted = sr_formatted.where(
-            ~sr_formatted.str.startswith("-"),
-            np.char.add("-", np.char.multiply("0", max_lead - lead_length))
-            + sr_formatted.str.lstrip("-"),
-        )
-    return sr_formatted
-
-
-def _format_frame(df, number_format, add_trailing_zeros, add_leading_zeros):
-    """Format data frame according to the specified formatter."""
-    if isinstance(number_format, str):
-        df_formatted = df.applymap(number_format.format)
-    elif isinstance(number_format, list) or isinstance(number_format, tuple):
-        df_formatted = df.copy(deep=True)
-        for formatter in number_format[:-1]:
+def _apply_number_format(df, number_format):
+    processed_format = _process_number_format(number_format)
+    if isinstance(processed_format, (list, tuple)):
+        df_formatted = df.copy(deep=True).astype("float")
+        for formatter in processed_format[:-1]:
             df_formatted = df_formatted.applymap(formatter.format).astype("float")
-        df_formatted = df_formatted.applymap(number_format[-1].format)
-    elif isinstance(number_format, int):
-        df_formatted = round(df, number_format)
-    elif callable(number_format):
-        df_formatted = df.applymap(number_format)
-    df_formatted = df_formatted.replace(np.nan, "").astype("str").replace("nan", "")
-    if add_trailing_zeros:
-        trails = (
-            df_formatted.apply(lambda x: x.str.split(".", expand=True)[1])
-            .astype("str")
-            .replace("None", "")
+        df_formatted = df_formatted.astype("float").applymap(
+            processed_format[-1].format
         )
-        leads = df_formatted.apply(lambda x: x.str.split(".", expand=True)[0]).astype(
-            "str"
-        )
-        trail_lengths = trails.astype("str").apply(lambda x: x.str.len())
-        max_trail = (
-            trail_lengths[~trails.astype("str").apply(lambda x: x.str.contains("e"))]
-            .max()
-            .max()
-        )
-        if max_trail > 0:
-            df_formatted = df_formatted.where(
-                (df_formatted.apply(lambda x: x.str.contains("e")))
-                | (df_formatted == ""),
-                leads
-                + "."
-                + trails
-                + np.char.multiply("0", (max_trail - trail_lengths).astype("int")),
-            )
-    if add_leading_zeros:
-        lead_lengths = df_formatted.apply(
-            lambda x: x.str.split(".", expand=True)[0].str.lstrip("-").str.len()
-        )
-        max_lead = lead_lengths.max().max()
-        df_formatted = df_formatted.where(
-            (df_formatted == "")
-            | (df_formatted.apply(lambda x: x.str.startswith("-"))),
-            np.char.multiply("0", (max_lead - lead_lengths).astype("int"))
-            + df_formatted,
-        )
-        df_formatted.where(
-            ~df_formatted.apply(lambda x: x.str.startswith("-")),
-            np.char.add("-", np.char.multiply("0", max_lead - lead_lengths))
-            + df_formatted.apply(lambda x: x.str.lstrip("-")),
-        )
+    elif isinstance(processed_format, "str"):
+        df_formatted = df.applymap(processed_format.format)
+    elif callable(processed_format):
+        df_formatted = df.applymap(processed_format)
     return df_formatted
+
+
+def _process_number_format(raw_format):
+    if isinstance(raw_format, str):
+        processed_format = [raw_format]
+    elif isinstance(raw_format, int):
+        processed_format = [f"{{0:.{raw_format}f}}"]
+    elif callable(raw_format) or isinstance(raw_format, (list, tuple)):
+        processed_format = raw_format
+    else:
+        raise TypeError("Invalid number format")
+    return processed_format
+
+
+def _get_digits_after_decimal(df):
+    max_trail = 0
+    for c in df.columns:
+        try:
+            trail_length = (
+                (
+                    df[c]
+                    .astype("str")
+                    .str.split(".", expand=True)[1]
+                    .astype("str")
+                    .replace("None", "")
+                )
+                .str.len()
+                .max()
+            )
+        except KeyError:
+            trail_length = 0
+        if trail_length > max_trail:
+            max_trail = trail_length
+    return max_trail
