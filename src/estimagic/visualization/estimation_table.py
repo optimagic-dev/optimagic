@@ -22,7 +22,6 @@ def estimation_table(
     significance_levels=(0.1, 0.05, 0.01),
     number_format=("{0:.3g}", "{0:.5f}", "{0:.4g}"),
     add_trailing_zeros=True,
-    add_leading_zeros=False,
     padding=1,
     show_footer=True,
     stat_keys=None,
@@ -134,10 +133,7 @@ def estimation_table(
     raw_formatted = [_apply_number_format(df, number_format) for df in df_list]
     right_decimals = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
     if add_trailing_zeros:
-        formatted = [
-            _apply_number_format(df.astype("float"), right_decimals)
-            for df in raw_formatted
-        ]
+        formatted = [_apply_number_format(df, right_decimals) for df in raw_formatted]
     else:
         formatted = raw_formatted
     to_convert = []
@@ -196,7 +192,7 @@ def estimation_table(
         notes_tex = _generate_notes_latex(
             append_notes, notes_label, significance_levels, custom_notes, body_df
         )
-        res_table = tabular_tex(
+        res_table = render_latex(
             body_df,
             footer_df,
             notes_tex,
@@ -232,7 +228,7 @@ def estimation_table(
     return res_table
 
 
-def tabular_tex(
+def render_latex(
     body_df,
     footer_df,
     notes_tex,
@@ -514,7 +510,7 @@ def _create_statistics_sr(
         pd.DataFrame(pd.Series(stat_values)), number_format
     )
     if add_trailing_zeros:
-        formatted = _apply_number_format(raw_formatted.astype("float"), right_decimals)
+        formatted = _apply_number_format(raw_formatted, right_decimals)
     else:
         formatted = raw_formatted
     stat_values = formatted.to_dict()[0]
@@ -780,8 +776,11 @@ def _apply_number_format(df, number_format):
         df_formatted = df_formatted.astype("float").applymap(
             processed_format[-1].format
         )
-    elif isinstance(processed_format, "str"):
-        df_formatted = df.applymap(processed_format.format)
+    elif isinstance(processed_format, str):
+        df_formatted = df.where(
+            df.apply(lambda x: x.astype("str").str.contains("e")),
+            df.apply(lambda x: x.astype("float").apply(processed_format.format)),
+        )
     elif callable(processed_format):
         df_formatted = df.applymap(processed_format)
     return df_formatted
@@ -791,7 +790,7 @@ def _process_number_format(raw_format):
     if isinstance(raw_format, str):
         processed_format = [raw_format]
     elif isinstance(raw_format, int):
-        processed_format = [f"{{0:.{raw_format}f}}"]
+        processed_format = f"{{0:.{raw_format}f}}"
     elif callable(raw_format) or isinstance(raw_format, (list, tuple)):
         processed_format = raw_format
     else:
@@ -805,7 +804,7 @@ def _get_digits_after_decimal(df):
         try:
             trail_length = (
                 (
-                    df[c]
+                    df[c][~df[c].astype("str").str.contains("e")]
                     .astype("str")
                     .str.split(".", expand=True)[1]
                     .astype("str")
