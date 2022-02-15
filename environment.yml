@@ -31,6 +31,7 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - scipy>=1.2.1
+  - plotly
   - seaborn
   - sphinx=2.4.4
   - pydata-sphinx-theme>=0.3.0
