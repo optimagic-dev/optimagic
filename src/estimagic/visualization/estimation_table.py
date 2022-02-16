@@ -9,7 +9,7 @@ import pandas as pd
 
 def estimation_table(
     models,
-    return_type,
+    return_type="data_frame",
     render_options=None,
     custom_param_names=None,
     show_col_names=True,
@@ -192,52 +192,60 @@ def estimation_table(
         notes_tex = _generate_notes_latex(
             append_notes, notes_label, significance_levels, custom_notes, body_df
         )
-        res_table = render_latex(
+        out = render_latex(
             body_df,
             footer_df,
+            right_decimals,
             notes_tex,
             render_options,
             custom_index_names,
             custom_model_names,
             padding,
-            right_decimals,
             show_footer,
         )
     elif return_type == "html" or str(return_type).endswith(".html"):
         footer = _generate_notes_html(
             append_notes, notes_label, significance_levels, custom_notes, body_df
         )
-        res_table = tabular_html(
+        out = render_html(
             body_df, footer_df, footer, render_options, custom_index_names, show_footer
         )
-    else:
-        res_table = {
+    elif return_type == "render_inputs":
+        out = {
             "body_df": body_df,
             "footer_df": footer_df,
             "notes_tex": _generate_notes_latex(
                 append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
+            "latex_right_alig": right_decimals,
             "notes_html": _generate_notes_html(
                 append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
         }
+    elif return_type == "data_frame":
+        if show_footer:
+            out = pd.concat([body_df, footer_df], axis=1)
+        else:
+            out = body_df
+    else:
+        raise TypeError("Invalid return type")
     if str(return_type).endswith((".html", ".tex")):
         with open(return_type, "w") as t:
-            t.write(res_table)
+            t.write(out)
 
-    return res_table
+    return out
 
 
 def render_latex(
     body_df,
     footer_df,
-    notes_tex,
-    render_options,
-    custom_index_names,
-    custom_model_names,
-    padding,
     right_align,
-    show_footer,
+    notes_tex,
+    render_options=None,
+    custom_index_names=None,
+    custom_model_names=None,
+    padding=1,
+    show_footer=True,
 ):
     """Return estimation table in LaTeX format as string.
 
@@ -302,7 +310,7 @@ def render_latex(
     return latex_str
 
 
-def tabular_html(
+def render_html(
     body_df, footer_df, notes_html, render_options, custom_index_names, show_footer
 ):
     """Return estimation table in html format as string.
