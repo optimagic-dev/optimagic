@@ -224,7 +224,10 @@ def estimation_table(
         }
     elif return_type == "data_frame":
         if show_footer:
-            out = pd.concat([body_df, footer_df], axis=1)
+            footer_df.index.names = body_df.index.names
+            out = pd.concat([body_df.reset_index(), footer_df.reset_index()]).set_index(
+                body_df.index.names
+            )
         else:
             out = body_df
     else:
