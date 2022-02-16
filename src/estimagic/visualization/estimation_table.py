@@ -175,7 +175,7 @@ def estimation_table(
     ]
     footer_df = pd.concat(to_concat, axis=1)
     footer_df.columns = body_df.columns
-    if return_type == "latex" or str(return_type).endswith(".tex"):
+    if str(return_type).endswith("tex"):
         if siunitx_warning:
             warn(
                 r"""LaTeX compilation requires the package siunitx and adding
@@ -203,7 +203,7 @@ def estimation_table(
             padding,
             show_footer,
         )
-    elif return_type == "html" or str(return_type).endswith(".html"):
+    elif str(return_type).endswith("html"):
         footer = _generate_notes_html(
             append_notes, notes_label, significance_levels, custom_notes, body_df
         )
