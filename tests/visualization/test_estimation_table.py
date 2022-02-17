@@ -25,7 +25,7 @@ est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).f
 
 def test_estimation_table():
     models = [est]
-    return_type = "python"
+    return_type = "render_inputs"
     res = estimation_table(models, return_type, append_notes=False)
     exp = {}
     body_str = """
@@ -45,11 +45,12 @@ def test_estimation_table():
     exp["body_df"].set_index("index", inplace=True)
     footer_str = """
          ,{(1)}
-        Observations,442.000
-        R$^2$,0.400
-        Adj. R$^2$,0.395
-        Residual Std. Error,60.000
-        F Statistic,72.900$^{***}$
+        R$^2$,0.40
+        Adj. R$^2$,0.40
+        Residual Std. Error,60.00
+        F Statistic,72.90$^{***}$
+        Observations,442
+
     """
     exp["footer_df"] = _read_csv_string(footer_str).fillna("")
     exp["footer_df"].set_index(" ", inplace=True)
@@ -127,30 +128,26 @@ def test_process_model_dict():
 
 
 # test convert_model_to_series for different arguments
-def test_convert_model_to_series_conf_int():
+def test_convert_model_to_series_with_ci():
     df = pd.DataFrame(
         np.array(
             [[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3], [1.2, 3.3, 4.33]]
         ).T,
         columns=["value", "p_value", "ci_lower", "ci_upper"],
         index=["a", "b", "c"],
-    )
-    si_lev = [0.1, 0.05, 0.01]
-    nf = 2
-    ci = True
-    si = True
-    ss = True
-    atz = True
-    alz = False
-    res = _convert_model_to_series(df, si_lev, nf, atz, alz, si, ci, ss)
+    ).astype("str")
+    df["p_value"] = df["p_value"].astype("float")
+    significance_levels = [0.1, 0.05, 0.01]
+    show_stars = True
+    res = _convert_model_to_series(df, significance_levels, show_stars)
     exp = pd.Series(
         [
-            "0.60$^{ }$",
-            r"{(0.60\,;\,1.20)}",
-            "2.30$^{** }$",
-            r"{(2.30\,;\,3.30)}",
-            "3.30$^{*** }$",
-            r"{(3.30\,;\,4.33)}",
+            "0.6$^{ }$",
+            r"{(0.6\,;\,1.2)}",
+            "2.3$^{** }$",
+            r"{(2.3\,;\,3.3)}",
+            "3.3$^{*** }$",
+            r"{(3.3\,;\,4.33)}",
         ],
         index=["a", "", "b", "", "c", ""],
         name="",
@@ -159,20 +156,16 @@ def test_convert_model_to_series_conf_int():
     ase(exp, res)
 
 
-def test_convert_model_to_series_std_err():
+def test_convert_model_to_series_with_se():
     df = pd.DataFrame(
         np.array([[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3]]).T,
         columns=["value", "p_value", "standard_error"],
         index=["a", "b", "c"],
-    )
-    si_lev = [0.1, 0.05, 0.01]
-    nf = 2
-    atz = True
-    alz = False
-    ci = False
-    si = True
-    ss = True
-    res = _convert_model_to_series(df, si_lev, nf, atz, alz, si, ci, ss)
+    ).astype("str")
+    df["p_value"] = df["p_value"].astype("float")
+    significance_levels = [0.1, 0.05, 0.01]
+    show_stars = True
+    res = _convert_model_to_series(df, significance_levels, show_stars)
     exp = pd.Series(
         ["0.6$^{ }$", "(0.6)", "2.3$^{** }$", "(2.3)", "3.3$^{*** }$", "(3.3)"],
         index=["a", "", "b", "", "c", ""],
@@ -182,20 +175,16 @@ def test_convert_model_to_series_std_err():
     ase(exp, res)
 
 
-def test_convert_model_to_series_no_inference():
+def test_convert_model_to_series_without_inference():
     df = pd.DataFrame(
-        np.array([[0.6, 2.3, 3.3], [0.11, 0.049, 0.009], [0.6, 2.3, 3.3]]).T,
-        columns=["value", "p_value", "standard_error"],
+        np.array([[0.6, 2.3, 3.3], [0.11, 0.049, 0.009]]).T,
+        columns=["value", "p_value"],
         index=["a", "b", "c"],
-    )
-    si_lev = [0.1, 0.05, 0.01]
-    nf = 2
-    atz = True
-    alz = False
-    ci = False
-    si = False
-    ss = True
-    res = _convert_model_to_series(df, si_lev, nf, atz, alz, si, ci, ss)
+    ).astype("str")
+    df["p_value"] = df["p_value"].astype("float")
+    significance_levels = [0.1, 0.05, 0.01]
+    show_stars = True
+    res = _convert_model_to_series(df, significance_levels, show_stars)
     exp = pd.Series(
         ["0.6$^{ }$", "2.3$^{** }$", "3.3$^{*** }$"], index=["a", "b", "c"], name=""
     )
@@ -206,18 +195,30 @@ def test_convert_model_to_series_no_inference():
 def test_create_statistics_sr():
     df = pd.DataFrame(np.empty((10, 3)), columns=["a", "b", "c"])
     df.index = pd.MultiIndex.from_arrays(np.array([np.arange(10), np.arange(10)]))
-    info_dict = {"rsquared": 0.45, "n_obs": 400}
-    nf = 2
-    atz = True
-    alz = False
+    info = {"rsquared": 0.45, "n_obs": 400, "rsquared_adj": 0.0002}
+    number_format = ("{0:.3g}", "{0:.5f}", "{0:.4g}")
+    add_trailing_zeros = True
     sig_levels = [0.1, 0.2]
     show_stars = False
-    model = NamedTup(params=df, info=info_dict)
-    stats_dict = {"Observations": "n_obs", "R2": "rsquared", "show_dof": False}
-    res = _create_statistics_sr(model, stats_dict, sig_levels, show_stars, nf, atz, alz)
-    exp = pd.Series(["400.00", "0.45"])
+    model = NamedTup(params=df, info=info)
+    stats_dict = {
+        "Observations": "n_obs",
+        "R2": "rsquared",
+        "show_dof": False,
+        "R2 Adj.": "rsquared_adj",
+    }
+    res = _create_statistics_sr(
+        model,
+        stats_dict,
+        sig_levels,
+        show_stars,
+        number_format,
+        add_trailing_zeros,
+        max_trail=4,
+    )
+    exp = pd.Series(["0.4500", "0.0002", "400"])
     exp.index = pd.MultiIndex.from_arrays(
-        np.array([np.array(["Observations", "R2"]), np.array(["", ""])])
+        np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])
     )
     ase(exp, res)
 
@@ -251,7 +252,7 @@ def test_process_body_df_indices():
     afe(res, exp, check_dtype=False)
 
 
-def test_process_params_df_columns():
+def test_process_body_df_columns():
 
     df = pd.DataFrame(np.ones((3, 6)), columns=list("abcdef"))
     custom_col_names = ["c" + str(i) for i in range(1, 7)]

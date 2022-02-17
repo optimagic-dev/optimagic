@@ -1,6 +1,7 @@
 import re
 from collections import namedtuple
 from copy import deepcopy
+from functools import partial
 from warnings import warn
 
 import numpy as np
@@ -131,9 +132,9 @@ def estimation_table(
             format_cols.append("standard_error")
     df_list = [mod.params.reindex(com_ind)[format_cols] for mod in models]
     raw_formatted = [_apply_number_format(df, number_format) for df in df_list]
-    right_decimals = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
+    max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
     if add_trailing_zeros:
-        formatted = [_apply_number_format(df, right_decimals) for df in raw_formatted]
+        formatted = [_apply_number_format(df, max_trail) for df in raw_formatted]
     else:
         formatted = raw_formatted
     to_convert = []
@@ -169,7 +170,7 @@ def estimation_table(
             show_stars,
             number_format,
             add_trailing_zeros,
-            right_decimals,
+            max_trail,
         )
         for mod in models
     ]
@@ -195,7 +196,7 @@ def estimation_table(
         out = render_latex(
             body_df,
             footer_df,
-            right_decimals,
+            max_trail,
             notes_tex,
             render_options,
             custom_index_names,
@@ -217,7 +218,7 @@ def estimation_table(
             "notes_tex": _generate_notes_latex(
                 append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
-            "latex_right_alig": right_decimals,
+            "latex_right_alig": max_trail,
             "notes_html": _generate_notes_html(
                 append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
@@ -268,6 +269,8 @@ def render_latex(
         latex_str (str): the string for LaTex table script.
 
     """
+    body_df = body_df.copy(deep=True)
+    body_df = body_df.applymap(_add_latex_syntax_around_scientfic_number_string)
     n_levels = body_df.index.nlevels
     n_columns = len(body_df.columns)
     # here you add all arguments of df.to_latex for which you want to change the default
@@ -445,12 +448,10 @@ def _convert_model_to_series(
         standard_error = df["standard_error"]
         inference_sr = "(" + standard_error + ")"
         sr = _combine_series(value_sr, inference_sr)
-
-        # replace empty braces with empty string
-        # combine the two into one series Done
     else:
         sr = value_sr
-    sr[~sr.apply(lambda x: bool(re.search(r"\d", x)))] = ""
+    # replace empty braces with empty string
+    sr.where(sr.apply(lambda x: bool(re.search(r"\d", x))), "")
     sr.name = ""
     return sr
 
@@ -492,7 +493,7 @@ def _create_statistics_sr(
     show_stars,
     number_format,
     add_trailing_zeros,
-    right_decimals,
+    max_trail,
 ):
     """Process statistics values, return string series.
 
@@ -515,13 +516,13 @@ def _create_statistics_sr(
     else:
         show_dof = None
     for k in stat_keys:
-        if not (stat_keys[k] == "n_obs" or stat_keys[k] == "nobs"):
+        if not stat_keys[k] == "n_obs":
             stat_values[k] = model.info.get(stat_keys[k], np.nan)
     raw_formatted = _apply_number_format(
         pd.DataFrame(pd.Series(stat_values)), number_format
     )
     if add_trailing_zeros:
-        formatted = _apply_number_format(raw_formatted, right_decimals)
+        formatted = _apply_number_format(raw_formatted, max_trail)
     else:
         formatted = raw_formatted
     stat_values = formatted.to_dict()[0]
@@ -788,13 +789,20 @@ def _apply_number_format(df, number_format):
             processed_format[-1].format
         )
     elif isinstance(processed_format, str):
-        df_formatted = df.where(
-            df.apply(lambda x: x.astype("str").str.contains("e")),
-            df.apply(lambda x: x.astype("float").apply(processed_format.format)),
+        df_formatted = df.applymap(
+            partial(_format_non_scientific_numbers, format_string=processed_format)
         )
     elif callable(processed_format):
         df_formatted = df.applymap(processed_format)
     return df_formatted
+
+
+def _format_non_scientific_numbers(number_string, format_string):
+    if "e" in number_string:
+        out = number_string
+    else:
+        out = format_string.format(float(number_string))
+    return out
 
 
 def _process_number_format(raw_format):
@@ -829,3 +837,13 @@ def _get_digits_after_decimal(df):
         if trail_length > max_trail:
             max_trail = trail_length
     return max_trail
+
+
+def _add_latex_syntax_around_scientfic_number_string(string):
+    if "e" not in string:
+        out = string
+    else:
+        prefix, *num_parts, suffix = re.split(r"([+-.\d+])", string)
+        number = "".join(num_parts)
+        out = f"{prefix}\\num{{{number}}}{suffix}"
+    return out
