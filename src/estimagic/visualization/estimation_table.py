@@ -180,7 +180,7 @@ def estimation_table(
         if siunitx_warning:
             warn(
                 r"""LaTeX compilation requires the package siunitx and adding
-                    \sisetup{input_symbols =()} to your main tex file. To turn
+                    \sisetup{input-symbols =()} to your main tex file. To turn
                     this warning off set value of siunitx_warning = False"""
             )
         if len(models) > 2:
@@ -279,7 +279,10 @@ def render_latex(
         "escape": False,
         "na_rep": "",
         "column_format": "l" * n_levels
-        + "S[table-format ={}.{}]".format(padding, right_align) * n_columns,
+        + "S[table-format ={}.{},table-space-text-post={{-**}}]".format(
+            padding, right_align
+        )
+        * n_columns,
         "multicolumn_format": "c",
     }
     if custom_index_names:
@@ -451,7 +454,7 @@ def _convert_model_to_series(
     else:
         sr = value_sr
     # replace empty braces with empty string
-    sr.where(sr.apply(lambda x: bool(re.search(r"\d", x))), "")
+    sr = sr.where(sr.apply(lambda x: bool(re.search(r"\d", x))), "")
     sr.name = ""
     return sr
 
