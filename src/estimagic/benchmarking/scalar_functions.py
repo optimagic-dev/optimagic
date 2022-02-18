@@ -59,6 +59,140 @@ def alpine2(x):
     return out
 
 
+def bartels(x):
+    x_1, x_2 = x
+    out = (
+        np.abs(x_1 ** 2 + x_2 ** 2 + x_1 * x_2)
+        + np.abs(np.sin(x_1))
+        + np.abs(np.cos(x_2))
+    )
+    return out
+
+
+def beale(x):
+    x_1, x_2 = x
+    out = (
+        (1.5 - x_1 + x_1 * x_2) ** 2
+        + (2.25 - x_1 + x_1 * x_2 ** 2) ** 2
+        + (2.625 - x_1 + x_1 * x_2 ** 3) * 2
+    )
+    return out
+
+
+def bird(x):
+    x_1, x_2 = x
+    res = np.sin(x_1) * np.exp((1 - np.cos(x_2)) ** 2)
+    out = res + np.cos(x_2) * np.exp((1 - np.sin(x_1)) ** 2) + (x_1 - x_2) ** 2
+    return out
+
+
+def bohachevsky1(x):
+    x_1, x_2 = x
+    out = (
+        x_1 ** 2
+        + 2 * x_2 ** 2
+        - 0.3 * np.cos(3 * np.pi * x_1)
+        - 0.4 * np.cos(4 * np.pi * x_2)
+        + 0.7
+    )
+    return out
+
+
+def bohachevsky2(x):
+    x_1, x_2 = x
+    out = (
+        x_1 ** 2
+        + 2 * x_2 ** 2
+        - 0.3 * np.cos(3 * np.pi * x_1) * np.cos(4 * np.pi * x_2)
+        + 0.3
+    )
+    return out
+
+
+def bohachevsky3(x):
+    x_1, x_2 = x
+    out = (
+        x_1 ** 2
+        + 2 * x_2 ** 2
+        - 0.3 * np.cos(3 * np.pi * x_1 + 4 * np.pi * x_2) * np.cos(4 * np.pi * x_2)
+        + 0.3
+    )
+    return out
+
+
+def booth(x):
+    x_1, x_2 = x
+    out = (x_1 + 2 * x_2 - 7) ** 2 + (2 * x_1 + x_2 - 5) ** 2
+    return out
+
+
+def branin(x):
+    x_1, x_2 = x
+    res = (x_2 - 5.1 / (4 * np.pi ** 2) * x_1 ** 2 + 5 / np.pi * x_1 - 6) ** 2
+    out = res + 10 * (1 - 1 / (8 * np.pi)) * np.cos(x_1) + 10
+    return out
+
+
+def brent(x):
+    x_1, x_2 = x
+    out = (x_1 + 10) ** 2 + (x_2 + 10) ** 2 + np.exp(-(x_1 ** 2) - x_2 ** 2)
+    return out
+
+
+def brown(x):
+    x_1, x_2 = x
+    out = np.sum((x_1 ** 2) ** (x_2 ** 2 + 1) + (x_2 ** 2) ** (x_1 ** 2 + 1))
+    return out
+
+
+def bukin6(x):
+    x_1, x_2 = x
+    out = 100 * np.sqrt(np.abs(x_2 - 0.01 * x_1 ** 2)) + 0.01 * np.abs(x_1 + 10)
+    return out
+
+
+def colville(x):
+    x_1, x_2, x_3, x_4 = x
+    res = 100 * (x_1 ** 2 - x_2) ** 2 + (x_1 - 1) ** 2 + (x_3 - 1) ** 2
+    out = (
+        res
+        + 90 * (x_3 ** 2 - x_4) ** 2
+        + 10.1 * ((x_2 - 1) ** 2 + (x_4 - 1) ** 2)
+        + 19.8 * (x_2 - 1) * (x_4 - 1)
+    )
+    return out
+
+
+def crossintray(x):
+    x_1, x_2 = x
+    out = (
+        -0.0001
+        * (
+            np.abs(np.sin(x_1) * np.sin(x_2))
+            * np.exp(np.abs(100 - np.sqrt(x_1 ** 2 + x_2 ** 2) / np.pi))
+            + 1
+        )
+        ** 0.1
+    )
+    return out
+
+
+def dejong5(x):
+    x_1, x_2 = x
+    b = [-32, -16, 0, 16, 32]
+    a = np.array([[x_1, x_2] for x_1 in b for x_2 in b])
+    out = (
+        0.002
+        + np.sum(
+            [
+                1 / ((i + 1) + (x_1 - a1) ** 6 + (x_2 - a2) ** 6)
+                for i, (a1, a2) in enumerate(a)
+            ]
+        )
+    ) ** -1
+    return out
+
+
 def rosenbrock(x):
     out = mw.rosenbrock(x) @ mw.rosenbrock(x)
     return out
