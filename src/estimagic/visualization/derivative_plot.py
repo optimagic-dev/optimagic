@@ -1,8 +1,9 @@
 """Visualize and compare derivative estimates."""
 import itertools
 
-import matplotlib.pyplot as plt
 import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 
 def derivative_plot(
@@ -47,13 +48,6 @@ def derivative_plot(
     grid_points = 2  # we do not need more than 2 grid points since all lines are affine
     func_value = np.atleast_1d(func_value)
     max_steps = df.groupby("dim_x")["step"].max()
-    palette = {
-        "forward": "tab:green",
-        "central": "tab:blue",
-        "backward": "tab:orange",
-        1: "green",
-        -1: "orange",
-    }
 
     # dimensions of problem. dimensions of params vector span the vertical axis while
     # dimensions of output span the horizontal axis of produced figure
@@ -61,23 +55,14 @@ def derivative_plot(
     dim_f = range(df["dim_f"].max() + 1)
 
     # plot
-    width = 10 * len(dim_f)
-    height = 11 * len(dim_x)
 
-    fig, axes = plt.subplots(len(dim_x), len(dim_f), figsize=(width, height))
-    axes = np.atleast_2d(axes)
-
-    for ax, (row, col) in zip(axes.flatten(), itertools.product(dim_x, dim_f)):
-        # labels and texts
-        ax.set_xlabel(fr"Value relative to $x_{{0, {row}}}$", fontsize=14)
-        ax.text(
-            0.35,
-            1.02,
-            f"dim_x, dim_f = {row, col}",
-            transform=ax.transAxes,
-            color="grey",
-            fontsize=14,
-        )
+    temp_titles = [x + 1 for x in range(len(dim_x) * len(dim_f))]
+    fig = make_subplots(rows=len(dim_x), cols=len(dim_f), subplot_titles=temp_titles)
+    titles = []
+    for (facet_row, facet_col), (row, col) in zip(
+        itertools.product(range(1, len(dim_x) + 1), range(1, len(dim_f) + 1)),
+        itertools.product(dim_x, dim_f),
+    ):
 
         # initial values and x grid
         y0 = func_value[col]
@@ -85,31 +70,41 @@ def derivative_plot(
 
         # plot function evaluations scatter points
         _scatter_data = func_evals.query("dim_x == @row & dim_f == @col")
-        ax.scatter(
-            _scatter_data["step"],
-            _scatter_data["eval"],
-            color="gray",
-            label="Function Evaluation",
-            edgecolor="black",
+
+        fig.add_trace(
+            go.Scatter(
+                x=_scatter_data["step"],
+                y=_scatter_data["eval"],
+                mode="markers",
+                marker={"color": "gray"},
+                name="Function Evaluation",
+            ),
+            row=facet_row,
+            col=facet_col,
         )
 
         # draw overall best derivative estimate
         _y = y0 + x_grid * df_der.loc[row, col]
-        ax.plot(
-            x_grid,
-            _y,
-            color="black",
-            label="Best Estimate",
-            zorder=2,
-            linewidth=1.5,
-            linestyle="dashdot",
+        fig.add_trace(
+            go.Scatter(
+                x=x_grid,
+                y=_y,
+                mode="lines",
+                line={"dash": "dash", "color": "black"},
+                name="Best Estimate",
+            ),
+            row=facet_row,
+            col=facet_col,
         )
 
         # draw best derivative estimate given each method
         for method in ["forward", "central", "backward"]:
             _y = y0 + x_grid * df_der_method.loc[method, row, col]
-            ax.plot(
-                x_grid, _y, color=palette[method], label=method, zorder=1, linewidth=2
+
+            fig.add_trace(
+                go.Scatter(x=x_grid, y=_y, mode="lines", name=method),
+                row=facet_row,
+                col=facet_col,
             )
 
         # fill area
@@ -118,17 +113,31 @@ def derivative_plot(
             diff = _x_y - np.array([0, y0])
             slope = diff[:, 1] / diff[:, 0]
             _y = y0 + x_grid * slope.reshape(-1, 1)
-            ax.plot(x_grid, _y.T, "--", color=palette[sign], linewidth=0.5)
-            ax.fill_between(x_grid, _y[0, :], _y[1, :], alpha=0.15, color=palette[sign])
+            fig.add_trace(
+                go.Scatter(x=x_grid, y=_y.T, mode="lines", name=sign),
+                row=facet_row,
+                col=facet_col,
+            )
 
-    # legend
-    ncol = 5 if len(dim_f) > 1 else 3
-    axes[0, 0].legend(
-        loc="upper center",
-        bbox_to_anchor=(len(dim_f) / 2 + 0.05 * len(dim_f), 1.15),
-        ncol=ncol,
-        fontsize=14,
-    )
+            fig.add_trace(
+                go.Scatter(x=x_grid, y=_y[0, :]), row=facet_row, col=facet_col
+            )
+            fig.add_trace(
+                go.Scatter(x=x_grid, y=_y[1, :], fill="tonexty"),
+                row=facet_row,
+                col=facet_col,
+            )
+
+        fig.update_xaxes(
+            row=facet_row, col=facet_col, title=fr"Value relative to $x_{0, row}$"
+        )
+
+        titles.append(f"dim_x, dim_f = {row, col}")
+
+    # Adding subtitles
+    update_subtitles = dict(zip(temp_titles, titles))
+    fig.for_each_annotation(lambda a: a.update(text=update_subtitles[int(a.text)]))
+
     return fig
 
 
