@@ -198,6 +198,170 @@ def rosenbrock(x):
     return out
 
 
+def rotatedhyperellipsoid(x):
+    d = x.shape[0]
+    out = np.sum([np.sum(x[: i + 1] ** 2) for i in range(d)])
+    return out
+
+
+def salomon(x):
+    res = 1 - np.cos(2 * np.pi * np.sqrt(np.sum(x ** 2)))
+    out = res + 0.1 * np.sqrt(np.sum(x ** 2))
+    return out
+
+
+def schaffel1(x):
+    x_1, x_2 = x
+    out = (
+        0.5
+        + (np.sin((x_1 ** 2 + x_2 ** 2) ** 2) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
+    )
+    return out
+
+
+def schaffel2(x):
+    x_1, x_2 = x
+    out = (
+        0.5
+        + (np.sin((x_1 ** 2 + x_2 ** 2)) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
+    )
+    return out
+
+
+def schaffel3(x):
+    x_1, x_2 = x
+    out = (
+        0.5
+        + (np.sin(np.cos(np.abs(x_1 ** 2 + x_2 ** 2))) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
+    )
+    return out
+
+
+def schaffel4(x):
+    x_1, x_2 = x
+    out = (
+        0.5
+        + (np.cos(np.sin(np.abs(x_1 ** 2 + x_2 ** 2))) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
+    )
+    return out
+
+
+def schwefel(x):
+    d = x.shape[0]
+    out = 418.9829 * d - np.sum(x * np.sin(np.sqrt(np.abs(x))))
+    return out
+
+
+def schwefel2_20(x):
+    out = np.sum(np.abs(x))
+    return out
+
+
+def schwefel2_21(x):
+    out = np.max(np.abs(x))
+    return out
+
+
+def schwefel2_22(x):
+    out = np.sum(np.abs(x)) + np.prod(np.abs(x))
+    return out
+
+
+def schwefel2_23(x):
+    out = np.sum(x ** 10)
+    return out
+
+
+def shubert(x):
+    d = x.shape[0]
+    for i in range(0, d):
+        out = np.prod(np.sum([i * np.cos((j + 1) * x[i] + j) for j in range(1, 5 + 1)]))
+    return out
+
+
+def shubert3(x):
+    out = np.sum(np.sum([j * np.sin((j + 1) * x + j) for j in range(1, 5 + 1)]))
+    return out
+
+
+def shubert4(x):
+    out = np.sum(np.sum([j * np.cos((j + 1) * x + j) for j in range(1, 5 + 1)]))
+    return out
+
+
+def sphere(x):
+    out = np.sum(x ** 2)
+    return out
+
+
+def styblinskitank(x):
+    out = 0.5 * np.sum(x ** 4 - 16 * x ** 2 + 5 * x)
+    return out
+
+
+def sumquares(x):
+    d = x.shape[0]
+    i = np.arange(1, d + 1)
+    out = np.sum(i * x ** 2)
+    return out
+
+
+def threehump(x):
+    x_1, x_2 = x
+    out = 2 * x_1 ** 2 - 1.05 * x_1 ** 4 + x_1 ** 6 * (1 / 6) + x_1 * x_2 + x_2 ** 2
+    return out
+
+
+def trid(x):
+    out = np.sum(x - 1) ** 2 - np.sum(x[1:] * x[:-1])
+    return out
+
+
+def wolfe(x):
+    x_1, x_2, x_3 = x
+    out = 4 / 3 * (x_1 ** 2 + x_2 ** 2 - x_1 * x_2) ** 0.75 + x_3
+    return out
+
+
+def xinsheyang(x):
+    d = x.shape[0]
+    i = np.arange(1, d + 1)
+    rand = np.random.random(d)
+    out = np.sum(rand * np.abs(x) ** i)
+    return out
+
+
+def xinsheyang2(x):
+    out = np.sum(np.abs(x)) * np.exp(-np.sum(np.sin(x ** 2)))
+    return out
+
+
+def xinsheyang3(x, m=5, beta=15):
+    res = np.exp(-np.sum((x / beta) ** (2 * m)))
+    out = res - 2 * np.exp(-np.sum(x ** 2)) * np.prod(np.cos(x) ** 2)
+    return out
+
+
+def xinsheyang4(x):
+    out = np.sum(np.sin(x) ** 2 - np.exp(-np.sum(x) ** 2)) * np.exp(
+        -np.sum(np.sin(np.sqrt(np.abs(x))) ** 2)
+    )
+    return out
+
+
+# According to the website global minimum at f(0,..,0) = -1,
+# but according to the internet global minimum at f(0,..,0) = 0
+def zakharov(x):
+    d = x.shape[0]
+    i = np.arange(1, d + 1)
+    out = np.sum(x ** 2) + np.sum(0.5 * i * x) ** 2 + np.sum(0.5 * i * x) ** 4
+    return out
+
+
 SCALAR_FUNCTION_PROBLEMS = {
     "ackley_good_start": {
         "criterion": ackley,
@@ -297,6 +461,76 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_x": np.array([-1.2, 1]),
         "solution_x": np.ones(2),
         "start_criterion": 24.2,
+        "solution_criterion": 0,
+    },
+    "xinsheyang_good_start": {
+        "criterion": xinsheyang,
+        "start_x": np.full(1, 1),
+        "solution_x": np.zeros(10),
+        "start_criterion": 0.7646279260733415,
+        "solution_criterion": 0,
+    },
+    "xinsheyang_bad_start": {
+        "criterion": xinsheyang,
+        "start_x": np.full(20, 4),
+        "solution_x": np.zeros(10),
+        "start_criterion": 1255254854146.7185,
+        "solution_criterion": 0,
+    },
+    "xinsheyang2_good_start": {
+        "criterion": xinsheyang2,
+        "start_x": np.full(1, 4),
+        "solution_x": np.zeros(10),
+        "start_criterion": 5.334513433011149,
+        "solution_criterion": 0,
+    },
+    "xinsheyang2_bad_start": {
+        "criterion": xinsheyang2,
+        "start_x": np.full(10, 4),
+        "solution_x": np.zeros(10),
+        "start_criterion": 711.8823227848003,
+        "solution_criterion": 0,
+    },
+    "xinsheyang3_good_start": {
+        "criterion": xinsheyang3,
+        "start_x": np.full(1, 1),
+        "solution_x": np.zeros(10),
+        "start_criterion": 0.7852124245010498,
+        "solution_criterion": -1,
+    },
+    "xinsheyang3_bad_start": {
+        "criterion": xinsheyang3,
+        "start_x": np.full(40, 3),
+        "solution_x": np.zeros(10),
+        "start_criterion": 0.9999959040083886,
+        "solution_criterion": -1,
+    },
+    "xinsheyang4_good_start": {
+        "criterion": xinsheyang4,
+        "start_x": np.zeros(1),
+        "solution_x": np.zeros(2),
+        "start_criterion": -1,
+        "solution_criterion": -2,
+    },
+    "xinsheyang4_bad_start": {
+        "criterion": xinsheyang4,
+        "start_x": np.full(20, 4),
+        "solution_x": np.zeros(2),
+        "start_criterion": 7.538971657276083e-07,
+        "solution_criterion": -2,
+    },
+    "zakharov_good_start": {
+        "criterion": zakharov,
+        "start_x": np.full(1, 3),
+        "solution_x": np.zeros(10),
+        "start_criterion": 16.3125,
+        "solution_criterion": 0,
+    },
+    "zakharov_bad_start": {
+        "criterion": zakharov,
+        "start_x": np.full(10, 3),
+        "solution_x": np.zeros(10),
+        "start_criterion": 46331935.3125,
         "solution_criterion": 0,
     },
 }
