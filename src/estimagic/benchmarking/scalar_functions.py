@@ -193,6 +193,151 @@ def dejong5(x):
     return out
 
 
+def deckkersaarts(x):
+    x_1, x_2 = x
+    out = (
+        1e5 * x_1 ** 2
+        + x_2 ** 2
+        - (x_1 ** 2 + x_2 ** 2)
+        + 1e-5 * (x_1 ** 2 + x_2 ** 2) ** 4
+    )
+    return out
+
+
+def dixonprice(x):
+    d = x.shape[0]
+    out = (x[0] - 1) ** 2 + np.sum(
+        [(i + 1) * (2 * x[i] ** 2 - x[i - 1]) ** 2 for i in range(1, d)]
+    )
+    return out
+
+
+def dropwave(x):
+    x_1, x_2 = x
+    out = -(1 + np.cos(12 * np.sqrt(x_1 ** 2 + x_2 ** 2))) / (
+        0.5 * (x_1 ** 2 + x_2 ** 2) + 2
+    )
+    return out
+
+
+def easom(x):
+    x_1, x_2 = x
+    out = (
+        -np.cos(x_1) * np.cos(x_2) * np.exp(-((x_1 - np.pi) ** 2) - (x_2 - np.pi) ** 2)
+    )
+    return out
+
+
+def eggcrate(x):
+    x_1, x_2 = x
+    out = x_1 ** 2 + x_2 ** 2 + 25 * (np.sin(x_1) ** 2 + np.sin(x_2) ** 2)
+    return out
+
+
+def eggholder(x):
+    x_1, x_2 = x
+    out = -(x_2 + 47) * np.sin(np.sqrt(np.abs(x_2 + x_1 / 2 + 47))) - x_1 * np.sin(
+        np.sqrt(np.abs(x_1 - x_2 - 47))
+    )
+    return out
+
+
+def exponential(x):
+    out = -np.exp(-0.5 * np.sum(x ** 2))
+    return out
+
+
+def forrester(x):
+    out = ((6 * x - 2) ** 2) * np.sin(12 * x - 4)
+    return out
+
+
+def goldsteinprice(x):
+    x_1, x_2 = x
+    res = 1 + (x_1 + x_2 + 1) ** 2 * (
+        19 - 14 * x_1 + 3 * x_1 ** 2 - 14 * x_2 + 6 * x_1 * x_2 + 3 * x_2 ** 2
+    )
+    out = res * (
+        30
+        + (2 * x_1 - 3 * x_2) ** 2
+        * (18 - 32 * x_1 + 12 * x_1 ** 2 + 48 * x_2 - 36 * x_1 * x_2 + 27 * x_2 ** 2)
+    )
+    return out
+
+
+def gramacylee(x):
+    out = np.sin(10 * np.pi * x) / 2 / x + (x - 1) ** 4
+    return out
+
+
+def griewank(x):
+    d = x.shape[0]
+    i = np.arange(1, d + 1)
+    out = 1 + np.sum(x ** 2 / 4000) - np.prod(np.cos(x / np.sqrt(i)))
+    return out
+
+
+def happycat(x):
+    d = x.shape[0]
+    norm = np.sum(x ** 2)
+    out = ((norm - d) ** 2) ** 0.5 + (1 / d) * (0.5 * norm + np.sum(x)) + 0.5
+    return out
+
+
+def himmelblau(x):
+    x_1, x_2 = x
+    out = (x_1 ** 2 + x_2 - 11) ** 2 + (x_1 + x_2 ** 2 - 7) ** 2
+    return out
+
+
+def holdertable(x):
+    x_1, x_2 = x
+    out = -np.abs(
+        np.sin(x_1)
+        * np.cos(x_2)
+        * np.exp(np.abs(1 - np.sqrt(x_1 ** 2 + x_2 ** 2) / np.pi))
+    )
+    return out
+
+
+def keane(x):
+    x_1, x_2 = x
+    out = -(np.sin(x_1 - x_2) ** 2 * np.sin(x_1 + x_2) ** 2) / np.sqrt(
+        x_1 ** 2 + x_2 ** 2
+    )
+    return out
+
+
+def langermann(x):
+    c = np.array([1, 2, 5, 2, 3])
+    a = np.array([[3, 5], [5, 2], [2, 1], [1, 4], [7, 9]])
+    out = np.sum(
+        [
+            c[i]
+            * np.exp(-1 / np.pi * np.sum((x - a[i]) ** 2))
+            * np.cos(np.pi * np.sum((x - a[i]) ** 2))
+            for i in range(5)
+        ]
+    )
+    return out
+
+
+def leon(x):
+    x_1, x_2 = x
+    out = 100 * (x_2 - x_1 ** 3) ** 2 + (1 - x_1) ** 2
+    return out
+
+
+def levy13(x):
+    x_1, x_2 = x
+    out = (
+        np.sin(3 * np.pi * x_1) ** 2
+        + (x_1 - 1) ** 2 * (1 + np.sin(3 * np.pi * x_2) ** 2)
+        + (x_2 - 1) ** 2 * (1 + np.sin(2 * np.pi * x_2) ** 2)
+    )
+    return out
+
+
 def rosenbrock(x):
     out = mw.rosenbrock(x) @ mw.rosenbrock(x)
     return out
