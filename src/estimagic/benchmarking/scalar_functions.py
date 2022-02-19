@@ -338,6 +338,87 @@ def levy13(x):
     return out
 
 
+def matyas(x):
+    x_1, x_2 = x
+    out = 0.26 * (x_1 ** 2 + x_2 ** 2) - 0.48 * x_1 * x_2
+    return out
+
+
+def mccormick(x):
+    x_1, x_2 = x
+    out = np.sin(x_1 + x_2) + (x_1 - x_2) ** 2 - 1.5 * x_1 + 2.5 * x_2 + 1
+    return out
+
+
+def michalewicz(x, m=10):
+    d = x.shape[0]
+    i = np.arange(1, d + 1)
+    out = -np.sum(np.sin(x) * np.sin(i * x ** 2 / np.pi) ** (2 * m))
+    return out
+
+
+def periodic(x):
+    out = 1 + np.sum(np.sin(x) ** 2) - 0.1 * np.exp(-np.sum(x ** 2))
+    return out
+
+
+def permzerodbeta(x, b=10):
+    d = x.shape[0]
+    out = np.sum(
+        [
+            (
+                np.sum(
+                    [((j + 1) + b * (x[j] ** (i + 1) - j ** (i + 1))) for j in range(d)]
+                )
+            )
+            ** 2
+            for i in range(d)
+        ]
+    )
+    return out
+
+
+def permdbeta(x, b=0.5):
+    d = x.shape[0]
+    j = np.arange(1, d + 1)
+    out = np.sum(
+        [np.sum((j ** i + b) * ((x / j) ** i - 1)) ** 2 for i in range(1, d + 1)]
+    )
+    return out
+
+
+def powell(x):
+    d = x.shape[0]
+    out = np.sum(np.abs(x) ** np.arange(2, d + 2))
+    return out
+
+
+def qing(x):
+    d = x.shape[0]
+    x_1 = np.power(x, 2)
+    res = 0
+    for i in range(d):
+        out = res + np.power(x_1[i] - (i + 1), 2)
+    return out
+
+
+def quartic(x):
+    d = x.shape[0]
+    out = np.sum(np.arange(1, d + 1) * x ** 4) + np.random.random()
+    return out
+
+
+def rastrigin(x):
+    d = x.shape[0]
+    out = 10 * d + np.sum(x ** 2 - 10 * np.cos(2 * np.pi * x))
+    return out
+
+
+def ridge(x, a=0.1, b=2):
+    out = x[0] + b * np.sum(x[1:] ** 2) ** a
+    return out
+
+
 def rosenbrock(x):
     out = mw.rosenbrock(x) @ mw.rosenbrock(x)
     return out
@@ -699,6 +780,160 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_x": np.array([-6, 0.35]),
         "solution_x": np.array([-10, 1]),
         "start_criterion": 10.040000000000004,
+        "solution_criterion": 0,
+    },
+    "matyas_good_start": {
+        "criterion": matyas,
+        "start_x": np.full(2, 0.01),
+        "solution_x": np.zeros(2),
+        "start_criterion": 4.000000000000009e-06,
+        "solution_criterion": 0,
+    },
+    "matyas_bad_start": {
+        "criterion": matyas,
+        "start_x": np.full(2, 100),
+        "solution_x": np.zeros(2),
+        "start_criterion": 400.0,
+        "solution_criterion": 0,
+    },
+    "mccormick_good_start": {
+        "criterion": mccormick,
+        "start_x": np.array([0, -1]),
+        "solution_x": np.array([-0.547, -1.547]),
+        "start_criterion": -1.3414709848078967,
+        "solution_criterion": -1.9132228873800594,
+    },
+    "mccormick_bad_start": {
+        "criterion": mccormick,
+        "start_x": np.array([4, -3]),
+        "solution_x": np.array([-0.547, -1.547]),
+        "start_criterion": 37.3414709848079,
+        "solution_criterion": -1.9132228873800594,
+    },
+    "michalewicz_good_start": {
+        "criterion": michalewicz,
+        "start_x": np.array([2.5, 1.5]),
+        "solution_x": np.array([2.2, 1.57]),
+        "start_criterion": -0.9214069505685454,
+        "solution_criterion": -1.801140718473825,
+    },
+    "michalewicz_bad_start": {
+        "criterion": michalewicz,
+        "start_x": np.array([0.5, 3]),
+        "solution_x": np.array([2.2, 1.57]),
+        "start_criterion": -3.6755801116192943e-07,
+        "solution_criterion": -1.801140718473825,
+    },
+    "periodic_good_start": {
+        "criterion": periodic,
+        "start_x": np.full(1, 0.001),
+        "solution_x": np.zeros(2),
+        "start_criterion": 0.9000010999996166,
+        "solution_criterion": 0.9,
+    },
+    "periodic_bad_start": {
+        "criterion": periodic,
+        "start_x": np.full(10, 20),
+        "solution_x": np.zeros(2),
+        "start_criterion": 9.33469030826131,
+        "solution_criterion": 0.9,
+    },
+    "permzerodbeta_good_start": {
+        "criterion": permzerodbeta,
+        "start_x": 0,
+        "solution_x": 0,
+        "start_criterion": 0,
+        "solution_criterion": 0,
+    },
+    "permzerodbeta_bad_start": {
+        "criterion": permzerodbeta,
+        "start_x": 0,
+        "solution_x": 0,
+        "start_criterion": 0,
+        "solution_criterion": 0,
+    },
+    "permdbeta_good_start": {
+        "criterion": permdbeta,
+        "start_x": 0,
+        "solution_x": 0,
+        "start_criterion": 0,
+        "solution_criterion": 0,
+    },
+    "permdbeta_bad_start": {
+        "criterion": permdbeta,
+        "start_x": 0,
+        "solution_x": 0,
+        "start_criterion": 0,
+        "solution_criterion": 0,
+    },
+    "powell_good_start": {
+        "criterion": powell,
+        "start_x": np.full(2, 0.75),
+        "solution_x": np.zeros(10),
+        "start_criterion": 0.984375,
+        "solution_criterion": 0,
+    },
+    "powell_bad_start": {
+        "criterion": powell,
+        "start_x": np.full(10, -1),
+        "solution_x": np.zeros(10),
+        "start_criterion": 10,
+        "solution_criterion": 0,
+    },
+    "qing_good_start": {
+        "criterion": qing,
+        "start_x": 0,
+        "solution_x": 0,
+        "start_criterion": 0,
+        "solution_criterion": 0,
+    },
+    "qing_bad_start": {
+        "criterion": qing,
+        "start_x": 0,
+        "solution_x": 0,
+        "start_criterion": 0,
+        "solution_criterion": 0,
+    },
+    "quartic_good_start": {
+        "criterion": quartic,
+        "start_x": np.full(2, 0.5),
+        "solution_x": np.zeros(100),
+        "start_criterion": 0.33739558456080454,
+        "solution_criterion": 0,
+    },
+    "quartic_bad_start": {
+        "criterion": quartic,
+        "start_x": np.full(10, 3),
+        "solution_x": np.zeros(100),
+        "start_criterion": 4455.571361777983,
+        "solution_criterion": 0,
+    },
+    "rastrigin_good_start": {
+        "criterion": rastrigin,
+        "start_x": np.full(1, 0.15),
+        "solution_x": np.zeros(9),
+        "start_criterion": 4.144647477075267,
+        "solution_criterion": 0,
+    },
+    "rastrigin_bad_start": {
+        "criterion": rastrigin,
+        "start_x": np.full(9, 3),
+        "solution_x": np.zeros(9),
+        "start_criterion": 81,
+        "solution_criterion": 0,
+    },
+    "ridge_good_start": {
+        "criterion": ridge,
+        "start_x": 0,
+        "solution_x": 0,
+        "start_criterion": 0,
+        "solution_criterion": 0,
+    },
+    "ridge_bad_start": {
+        "criterion": ridge,
+        "start_x": 0,
+        "solution_x": 0,
+        "start_criterion": 0,
         "solution_criterion": 0,
     },
     "rosenbrock_good_start": {
