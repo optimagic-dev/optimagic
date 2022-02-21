@@ -16,8 +16,12 @@ from estimagic.benchmarking import more_wild as mw
 
 
 def ackley(x):
-    res = -20 * np.exp(-0.2 * np.sqrt(np.mean(x ** 2)))
-    out = res - np.exp(np.mean(np.cos(2 * np.pi * x))) + 20 + np.exp(1)
+    out = (
+        -20 * np.exp(-0.2 * np.sqrt(np.mean(x ** 2)))
+        - np.exp(np.mean(np.cos(2 * np.pi * x)))
+        + 20
+        + np.exp(1)
+    )
     return out
 
 
@@ -29,8 +33,9 @@ def ackley2(x):
 
 def ackley3(x):
     x_1, x_2 = x
-    res = -200 * np.exp(-0.2 * np.sqrt(x_1 ** 2 + x_2 ** 2))
-    out = res + 5 * np.exp(np.cos(3 * x_1) + np.sin(3 * x_2))
+    out = -200 * np.exp(-0.2 * np.sqrt(x_1 ** 2 + x_2 ** 2)) + 5 * np.exp(
+        np.cos(3 * x_1) + np.sin(3 * x_2)
+    )
     return out
 
 
@@ -74,15 +79,18 @@ def beale(x):
     out = (
         (1.5 - x_1 + x_1 * x_2) ** 2
         + (2.25 - x_1 + x_1 * x_2 ** 2) ** 2
-        + (2.625 - x_1 + x_1 * x_2 ** 3) * 2
+        + (2.625 - x_1 + x_1 * x_2 ** 3) ** 2
     )
     return out
 
 
 def bird(x):
     x_1, x_2 = x
-    res = np.sin(x_1) * np.exp((1 - np.cos(x_2)) ** 2)
-    out = res + np.cos(x_2) * np.exp((1 - np.sin(x_1)) ** 2) + (x_1 - x_2) ** 2
+    out = (
+        np.sin(x_1) * np.exp((1 - np.cos(x_2)) ** 2)
+        + np.cos(x_2) * np.exp((1 - np.sin(x_1)) ** 2)
+        + (x_1 - x_2) ** 2
+    )
     return out
 
 
@@ -128,8 +136,11 @@ def booth(x):
 
 def branin(x):
     x_1, x_2 = x
-    res = (x_2 - 5.1 / (4 * np.pi ** 2) * x_1 ** 2 + 5 / np.pi * x_1 - 6) ** 2
-    out = res + 10 * (1 - 1 / (8 * np.pi)) * np.cos(x_1) + 10
+    out = (
+        (x_2 - 5.1 / (4 * np.pi ** 2) * x_1 ** 2 + 5 / np.pi * x_1 - 6) ** 2
+        + 10 * (1 - 1 / (8 * np.pi)) * np.cos(x_1)
+        + 10
+    )
     return out
 
 
@@ -153,9 +164,10 @@ def bukin6(x):
 
 def colville(x):
     x_1, x_2, x_3, x_4 = x
-    res = 100 * (x_1 ** 2 - x_2) ** 2 + (x_1 - 1) ** 2 + (x_3 - 1) ** 2
     out = (
-        res
+        100 * (x_1 ** 2 - x_2) ** 2
+        + (x_1 - 1) ** 2
+        + (x_3 - 1) ** 2
         + 90 * (x_3 ** 2 - x_4) ** 2
         + 10.1 * ((x_2 - 1) ** 2 + (x_4 - 1) ** 2)
         + 19.8 * (x_2 - 1) * (x_4 - 1)
@@ -198,7 +210,7 @@ def deckkersaarts(x):
     out = (
         1e5 * x_1 ** 2
         + x_2 ** 2
-        - (x_1 ** 2 + x_2 ** 2)
+        - (x_1 ** 2 + x_2 ** 2) ** 2
         + 1e-5 * (x_1 ** 2 + x_2 ** 2) ** 4
     )
     return out
@@ -248,16 +260,17 @@ def exponential(x):
 
 
 def forrester(x):
-    out = ((6 * x - 2) ** 2) * np.sin(12 * x - 4)
+    out = (6 * x - 2) ** 2 * np.sin(12 * x - 4)
     return out
 
 
 def goldsteinprice(x):
     x_1, x_2 = x
-    res = 1 + (x_1 + x_2 + 1) ** 2 * (
-        19 - 14 * x_1 + 3 * x_1 ** 2 - 14 * x_2 + 6 * x_1 * x_2 + 3 * x_2 ** 2
-    )
-    out = res * (
+    out = (
+        1
+        + (x_1 + x_2 + 1) ** 2
+        * (19 - 14 * x_1 + 3 * x_1 ** 2 - 14 * x_2 + 6 * x_1 * x_2 + 3 * x_2 ** 2)
+    ) * (
         30
         + (2 * x_1 - 3 * x_2) ** 2
         * (18 - 32 * x_1 + 12 * x_1 ** 2 + 48 * x_2 - 36 * x_1 * x_2 + 27 * x_2 ** 2)
@@ -266,7 +279,7 @@ def goldsteinprice(x):
 
 
 def gramacylee(x):
-    out = np.sin(10 * np.pi * x) / 2 / x + (x - 1) ** 4
+    out = np.sin(10 * np.pi * x) / (2 * x) + (x - 1) ** 4
     return out
 
 
@@ -279,8 +292,11 @@ def griewank(x):
 
 def happycat(x):
     d = x.shape[0]
-    norm = np.sum(x ** 2)
-    out = ((norm - d) ** 2) ** 0.5 + (1 / d) * (0.5 * norm + np.sum(x)) + 0.5
+    out = (
+        ((np.linalg.norm(x) ** 2 - d) ** 2) ** 0.5
+        + (1 / d) * (0.5 * np.linalg.norm(x) ** 2 + np.sum(x))
+        + 0.5
+    )
     return out
 
 
@@ -620,18 +636,16 @@ SCALAR_FUNCTION_PROBLEMS = {
     "ackley3_good_start": {
         "criterion": ackley3,
         "start_x": np.full(2, 3),
-        # no unique solution
-        "solution_x": None,
+        "solution_x": np.zeros(2),
         "start_criterion": -82.57324651934985,
-        "solution_criterion": -170.07756299785044,
+        "solution_criterion": -186.40859085770478,
     },
     "ackley3_bad_start": {
         "criterion": ackley3,
         "start_x": np.full(2, 25),
-        # no unique solution
-        "solution_x": None,
+        "solution_x": np.zeros(2),
         "start_criterion": 8.358584120180984,
-        "solution_criterion": -170.07756299785044,
+        "solution_criterion": -186.40859085770478,
     },
     "ackley4_good_start": {
         "criterion": ackley4,
@@ -700,14 +714,14 @@ SCALAR_FUNCTION_PROBLEMS = {
         "criterion": beale,
         "start_x": np.zeros(2),
         "solution_x": np.array([3, 0.5]),
-        "start_criterion": 12.5625,
+        "start_criterion": 14.203125,
         "solution_criterion": 0,
     },
     "beale_bad_start": {
         "criterion": beale,
         "start_x": np.array([4, -4]),
         "solution_x": np.array([3, 0.5]),
-        "start_criterion": 3702.5625,
+        "start_criterion": 70459.203125,
         "solution_criterion": 0,
     },
     "bird_good_start": {
@@ -754,6 +768,22 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_criterion": 884,
         "solution_criterion": 0,
     },
+    "branin_good_start": {
+        "criterion": branin,
+        "start_x": np.array([0, 6]),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 19.602112642270264,
+        "solution_criterion": 0.39788735772973816,
+    },
+    "branin_bad_start": {
+        "criterion": branin,
+        "start_x": np.array([6, 14]),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 185.59494487252852,
+        "solution_criterion": 0.39788735772973816,
+    },
     "brent": {
         "criterion": brent,
         "start_x": np.full(2, 5),
@@ -781,6 +811,324 @@ SCALAR_FUNCTION_PROBLEMS = {
         "solution_x": np.array([-10, 1]),
         "start_criterion": 10.040000000000004,
         "solution_criterion": 0,
+    },
+    "colville_good_start": {
+        "criterion": colville,
+        "start_x": np.zeros(4),
+        "solution_x": np.full(4, 1),
+        "start_criterion": 42,
+        "solution_criterion": 0,
+    },
+    "colville_bad_start": {
+        "criterion": colville,
+        "start_x": np.full(4, 9),
+        "solution_x": np.full(4, 1),
+        "start_criterion": 987648,
+        "solution_criterion": 0,
+    },
+    "crossintray_good_start_1": {
+        "criterion": crossintray,
+        "start_x": np.zeros(2),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": -0.0001,
+        "solution_criterion": -2.06261218,
+    },
+    "crossintray_good_start_2": {
+        "criterion": crossintray,
+        "start_x": np.full(2, 1),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": -2.03424158303853,
+        "solution_criterion": -2.06261218,
+    },
+    "crossintray_bad_start": {
+        "criterion": crossintray,
+        "start_x": np.full(2, 4),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": -1.7399663465548592,
+        "solution_criterion": -2.06261218,
+    },
+    "dejong5_good_start": {
+        "criterion": dejong5,
+        "start_x": np.full(2, -40),
+        "solution_x": np.full(2, -32),
+        "start_criterion": 499.5200236514581,
+        "solution_criterion": 0.998003838818649,
+    },
+    "dejong5_bad_start": {
+        "criterion": dejong5,
+        "start_x": np.full(2, 32),
+        "solution_x": np.full(2, -32),
+        "start_criterion": 23.809436615621898,
+        "solution_criterion": 0.998003838818649,
+    },
+    "deckkersaarts": {
+        "criterion": deckkersaarts,
+        "start_x": np.array([-6, 0.35]),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 10.040000000000004,
+        "solution_criterion": 25628.906250000004,
+    },
+    "dixonprice_start_1": {
+        "criterion": dixonprice,
+        "start_x": np.full(2, 2),
+        "solution_x": np.array([1, 1 / np.sqrt(2)]),
+        "start_criterion": 73,
+        "solution_criterion": 0,
+    },
+    "dixonprice_start_2": {
+        "criterion": dixonprice,
+        "start_x": np.full(2, 8),
+        "solution_x": np.array([1, 1 / np.sqrt(2)]),
+        "start_criterion": 28849,
+        "solution_criterion": 0,
+    },
+    "dropwave_good_start": {
+        "criterion": dropwave,
+        "start_x": np.full(2, 0.5),
+        "solution_x": np.zeros(2),
+        "start_criterion": -0.18213578404209926,
+        "solution_criterion": -1,
+    },
+    "dropwave_bad_start": {
+        "criterion": dropwave,
+        "start_x": np.full(2, 5),
+        "solution_x": np.zeros(2),
+        "start_criterion": -1.645731876039932e-05,
+        "solution_criterion": -1,
+    },
+    "easom": {
+        "criterion": easom,
+        "start_x": np.zeros(2),
+        "solution_x": np.full(2, np.pi),
+        "start_criterion": -2.675287991074243e-09,
+        "solution_criterion": -1,
+    },
+    "eggcrate_good_start": {
+        "criterion": eggcrate,
+        "start_x": np.full(2, 1),
+        "solution_x": np.zeros(2),
+        "start_criterion": 37.40367091367856,
+        "solution_criterion": 0,
+    },
+    "eggcrate_bad_start": {
+        "criterion": eggcrate,
+        "start_x": np.full(2, 4),
+        "solution_x": np.zeros(2),
+        "start_criterion": 60.637500845215335,
+        "solution_criterion": 0,
+    },
+    "eggholder_good_start": {
+        "criterion": eggholder,
+        "start_x": np.full(2, 400),
+        "solution_x": np.array([512, 404.2319]),
+        "start_criterion": -350.2552101265452,
+        "solution_criterion": -959.6406627106155,
+    },
+    "eggholder_bad_start_1": {
+        "criterion": eggholder,
+        "start_x": np.zeros(2),
+        "solution_x": np.array([512, 404.2319]),
+        "start_criterion": -25.460337185286313,
+        "solution_criterion": -959.6406627106155,
+    },
+    "eggholder_bad_start_2": {
+        "criterion": eggholder,
+        "start_x": np.array([-400, 400]),
+        "solution_x": np.array([512, 404.2319]),
+        "start_criterion": -291.18686186178957,
+        "solution_criterion": -959.6406627106155,
+    },
+    "eggholder_bad_start_3": {
+        "criterion": eggholder,
+        "start_x": np.full(2, -400),
+        "solution_x": np.array([512, 404.2319]),
+        "start_criterion": -135.9429868637175,
+        "solution_criterion": -959.6406627106155,
+    },
+    "exponential": {
+        "criterion": exponential,
+        "start_x": np.full(2, 0.5),
+        "solution_x": np.zeros(2),
+        "start_criterion": -0.7788007830714049,
+        "solution_criterion": -1,
+    },
+    "forrester": {
+        "criterion": forrester,
+        "start_x": 0.4,
+        "solution_x": 0.757249,
+        "start_criterion": 0.11477697454392392,
+        "solution_criterion": -6.020740055735769,
+    },
+    "goldsteinprice_good_start": {
+        "criterion": goldsteinprice,
+        "start_x": np.zeros(2),
+        "solution_x": np.array([0, -1]),
+        "start_criterion": 600,
+        "solution_criterion": 3,
+    },
+    "goldsteinprice_bad_start": {
+        "criterion": goldsteinprice,
+        "start_x": np.full(2, 2),
+        "solution_x": np.array([0, -1]),
+        "start_criterion": 76728,
+        "solution_criterion": 3,
+    },
+    "gramacylee_good_start": {
+        "criterion": gramacylee,
+        "start_x": 0.65,
+        "solution_x": 0.548563444,
+        "start_criterion": 0.7842370192307692,
+        "solution_criterion": -0.8690111349894997,
+    },
+    "gramacylee_bad_start": {
+        "criterion": gramacylee,
+        "start_x": 2,
+        "solution_x": 0.548563444,
+        "start_criterion": 0.9999999999999993,
+        "solution_criterion": -0.8690111349894997,
+    },
+    "griewank_good_start": {
+        "criterion": griewank,
+        "start_x": np.full(10, 3),
+        "solution_x": np.zeros(10),
+        "start_criterion": 1.0225294825857276,
+        "solution_criterion": 0,
+    },
+    "griewank_bad_start": {
+        "criterion": griewank,
+        "start_x": np.full(10, 15),
+        "solution_x": np.zeros(10),
+        "start_criterion": 1.9030221166090662,
+        "solution_criterion": 0,
+    },
+    "happycat_good_start": {
+        "criterion": happycat,
+        "start_x": np.zeros(10),
+        "solution_x": np.full(10, -1),
+        "start_criterion": 10.5,
+        "solution_criterion": 0,
+    },
+    "happycat_bad_start": {
+        "criterion": happycat,
+        "start_x": np.full(10, 2),
+        "solution_x": np.full(10, -1),
+        "start_criterion": 34.50000000000001,
+        "solution_criterion": 0,
+    },
+    "himmelblau_good_start": {
+        "criterion": himmelblau,
+        "start_x": np.zeros(2),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 170,
+        "solution_criterion": 0,
+    },
+    "himmelblau_bad_start": {
+        "criterion": himmelblau,
+        "start_x": np.full(2, 6),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 2186,
+        "solution_criterion": 0,
+    },
+    "holertable_good_start": {
+        "criterion": holdertable,
+        "start_x": np.full(2, 6),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": -1.4699802363264503,
+        "solution_criterion": -19.208502567767606,
+    },
+    "holdertable_bad_start": {
+        "criterion": holdertable,
+        "start_x": np.zeros(2),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 0,
+        "solution_criterion": -19.208502567767606,
+    },
+    "keane_good_start": {
+        "criterion": keane,
+        "start_x": np.full(2, 0.1),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 0,
+        "solution_criterion": -0.6736675210466049,
+    },
+    "keane_bad_start": {
+        "criterion": keane,
+        "start_x": np.full(2, 9),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 0,
+        "solution_criterion": -0.6736675210466049,
+    },
+    "leon_good_start": {
+        "criterion": leon,
+        "start_x": np.full(2, -1),
+        "solution_x": np.ones(2),
+        "start_criterion": 4,
+        "solution_criterion": 0,
+    },
+    "leon_bad_start": {
+        "criterion": leon,
+        "start_x": np.array([2, -2]),
+        "solution_x": np.ones(2),
+        "start_criterion": 10001,
+        "solution_criterion": 0,
+    },
+    "levy13_good_start": {
+        "criterion": levy13,
+        "start_x": np.zeros(2),
+        "solution_x": np.ones(2),
+        "start_criterion": 2,
+        "solution_criterion": 0,
+    },
+    "levy13_bad_start_1": {
+        "criterion": levy13,
+        "start_x": np.full(2, 8),
+        "solution_x": np.ones(2),
+        "start_criterion": 98,
+        "solution_criterion": 0,
+    },
+    "levy13_bad_start_2": {
+        "criterion": levy13,
+        "start_x": np.array([8, -8]),
+        "solution_x": np.ones(2),
+        "start_criterion": 130,
+        "solution_criterion": 0,
+    },
+    "langermann_start_1": {
+        "criterion": langermann,
+        "start_x": np.array([8, 1]),
+        "solution_x": np.array([2.00299219, 1.006096]),
+        "start_criterion": -0.08296460236001565,
+        "solution_criterion": -5.1621261599638375,
+    },
+    "langermann_start_2": {
+        "criterion": langermann,
+        "start_x": np.full(2, 8),
+        "solution_x": np.array([2.00299219, 1.006096]),
+        "start_criterion": -1.5872521647730398,
+        "solution_criterion": -5.1621261599638375,
+    },
+    "langermann_start_3": {
+        "criterion": langermann,
+        "start_x": np.full(2, 2),
+        "solution_x": np.array([2.00299219, 1.006096]),
+        "start_criterion": 4.11663984986056,
+        "solution_criterion": -5.1621261599638375,
+    },
+    "langermann_start_4": {
+        "criterion": langermann,
+        "start_x": np.zeros(2),
+        "solution_x": np.array([2.00299219, 1.006096]),
+        "start_criterion": 1.0271573538269159,
+        "solution_criterion": -5.1621261599638375,
     },
     "matyas_good_start": {
         "criterion": matyas,
