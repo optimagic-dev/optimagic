@@ -71,9 +71,7 @@ def expected_inputs():
 def test_trustregion_subsolver(expected_inputs):
     p_expected, q_min_expected = expected_inputs
 
-    trustregion_radius = 1
-
-    result = solve_trustregion_subproblem(evaluate_main_model, trustregion_radius)
+    result = solve_trustregion_subproblem(evaluate_main_model)
 
     aaae(result["p_solution"], p_expected)
     aaae(result["q_min"], q_min_expected)

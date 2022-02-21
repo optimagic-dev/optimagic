@@ -9,7 +9,7 @@ from scipy.linalg.lapack import dpotrf as compute_cholesky_factorization
 from scipy.optimize._trustregion_exact import estimate_smallest_singular_value
 
 
-def solve_trustregion_subproblem(fun, trustregion_radius):
+def solve_trustregion_subproblem(fun):
     """Solve the quadratic trust-region subproblem via nearly exact iterative method.
 
     This subproblem solver is mainly based on
@@ -82,7 +82,6 @@ def solve_trustregion_subproblem(fun, trustregion_radius):
     lambdas = get_initial_guess_for_lambdas(
         gnorm,
         model_hessian["initial"],
-        trustregion_radius,
     )
 
     converged = False
@@ -110,7 +109,6 @@ def solve_trustregion_subproblem(fun, trustregion_radius):
                 model_gradient,
                 model_hessian,
                 lambdas,
-                trustregion_radius,
                 stopping_criteria,
                 converged,
             )
@@ -120,7 +118,6 @@ def solve_trustregion_subproblem(fun, trustregion_radius):
                 p_candidate,
                 model_hessian,
                 lambdas,
-                trustregion_radius,
                 stopping_criteria,
                 converged,
             )
@@ -146,7 +143,6 @@ def solve_trustregion_subproblem(fun, trustregion_radius):
 def get_initial_guess_for_lambdas(
     gnorm,
     hessian,
-    trustregion_radius,
 ):
     """Return good initial guesses for lambda, its lower and upper bound.
 
@@ -159,7 +155,6 @@ def get_initial_guess_for_lambdas(
     Args:
         gnorm (float): Gradient norm.
         hessian (np.ndarray): Square hessian matrix.
-        trustregion_radius (float): trust-region radius.
 
     Returns:
         dict: Dictionary containing the initial (current) guess for the damping
@@ -180,14 +175,14 @@ def get_initial_guess_for_lambdas(
 
     lambdas["upper_bound"] = max(
         0,
-        gnorm / trustregion_radius
+        gnorm
         + min(-hessian_gershgorin_lower, hessian_frobenius_norm, hessian_infinity_norm),
     )
 
     lambdas["lower_bound"] = max(
         0,
         -min(hessian.diagonal()),
-        gnorm / trustregion_radius
+        gnorm
         - min(hessian_gershgorin_upper, hessian_frobenius_norm, hessian_infinity_norm),
     )
 
@@ -258,7 +253,6 @@ def find_new_candidate_and_update_parameters(
     model_gradient,
     model_hessian,
     lambdas,
-    trustregion_radius,
     stopping_criteria,
     converged,
 ):
@@ -287,7 +281,6 @@ def find_new_candidate_and_update_parameters(
             - "current"
             - "upper"
             - "lower"
-        trustregion_radius (float): Trust-region radius.
         stopping_criteria (dict): Dictionary of the two stopping criteria
             containing the following keys:
             - "k_easy" (float): Stopping criterion in the "easy" case.
@@ -330,16 +323,16 @@ def find_new_candidate_and_update_parameters(
     p_candidate = cho_solve((model_hessian["upper_triangular"], False), -model_gradient)
     p_norm = norm(p_candidate)
 
-    if p_norm <= trustregion_radius and lambdas["current"] == 0:
+    if p_norm <= 1 and lambdas["current"] == 0:
         converged = True
 
     # Solve `U.T w = p`
     w = solve_triangular(model_hessian["upper_triangular"], p_candidate, trans="T")
     w_norm = norm(w)
 
-    newton_step = _compute_newton_step(lambdas, p_norm, w_norm, trustregion_radius)
+    newton_step = _compute_newton_step(lambdas, p_norm, w_norm)
 
-    if p_norm < trustregion_radius:
+    if p_norm < 1:
         (
             p_candidate,
             model_hessian_updated,
@@ -350,7 +343,6 @@ def find_new_candidate_and_update_parameters(
             model_hessian,
             lambdas,
             newton_step,
-            trustregion_radius,
             stopping_criteria,
             converged,
         )
@@ -360,7 +352,6 @@ def find_new_candidate_and_update_parameters(
             lambdas,
             newton_step,
             p_norm,
-            trustregion_radius,
             stopping_criteria,
             converged,
         )
@@ -377,7 +368,6 @@ def check_for_interior_convergence_and_update(
     p_candidate,
     model_hessian,
     lambdas,
-    trustregion_radius,
     stopping_criteria,
     converged,
 ):
@@ -407,7 +397,6 @@ def check_for_interior_convergence_and_update(
             - "current"
             - "upper"
             - "lower"
-        trustregion_radius (float): Trust-region radius.
         stopping_criteria (dict): Dictionary of the two stopping criteria
             containing the following keys:
             - "k_easy" (float): Stopping criterion in the "easy" case.
@@ -438,12 +427,9 @@ def check_for_interior_convergence_and_update(
         converged = True
 
     s_min, z_min = estimate_smallest_singular_value(model_hessian["upper_triangular"])
-    step_len = trustregion_radius + 1
+    step_len = 2
 
-    if (
-        step_len ** 2 * s_min ** 2
-        <= stopping_criteria["k_hard"] * lambdas["current"] * trustregion_radius ** 2
-    ):
+    if step_len ** 2 * s_min ** 2 <= stopping_criteria["k_hard"] * lambdas["current"]:
         p_candidate = step_len * z_min
         converged = True
 
@@ -575,7 +561,7 @@ def _compute_gershgorin_bounds(hessian):
     return lower_bound, upper_bound
 
 
-def _compute_newton_step(lambdas, p_norm, w_norm, tr_radius):
+def _compute_newton_step(lambdas, p_norm, w_norm):
     """Compute the Newton step.
 
     Args:
@@ -588,13 +574,12 @@ def _compute_newton_step(lambdas, p_norm, w_norm, tr_radius):
         p_norm (float): Frobenius (i.e. L2-norm) of the candidate vector.
         w_norm (float): Frobenius (i.e. L2-norm) of vector w, which is the solution
             to the following triangular system: U.T w = p.
-        trustregion_radius (float): Trust-region radius.
 
     Returns:
         float: Newton step computed according to formula (4.44) p.87
             from Nocedal and Wright (2006).
     """
-    delta_lambda = (p_norm / w_norm) ** 2 * (p_norm - tr_radius) / tr_radius
+    delta_lambda = (p_norm / w_norm) ** 2 * (p_norm - 1)
     newton_step = lambdas["current"] + delta_lambda
 
     return newton_step
@@ -605,7 +590,6 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
     model_hessian,
     lambdas,
     newton_step,
-    trustregion_radius,
     stopping_criteria,
     converged,
 ):
@@ -636,7 +620,6 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
             - "lower"
         newton_step (float): Newton step computed according to formula (4.44)
             p.87 from Nocedal and Wright (2006).
-        trustregion_radius (float): Trust-region radius.
         stopping_criteria (dict): Dictionary of the two stopping criteria
             containing the following keys:
             - "k_easy" (float): Stopping criterion in the "easy" case.
@@ -679,16 +662,14 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
 
     s_min, z_min = estimate_smallest_singular_value(model_hessian["upper_triangular"])
 
-    step_len = _compute_smallest_step_len_for_candidate_vector(
-        p_candidate, z_min, trustregion_radius
-    )
+    step_len = _compute_smallest_step_len_for_candidate_vector(p_candidate, z_min)
 
     quadratic_term = np.dot(
         p_candidate, np.dot(model_hessian["initial_plus_lambda"], p_candidate)
     )
 
     relative_error = (step_len ** 2 * s_min ** 2) / (
-        quadratic_term + lambdas["current"] * trustregion_radius ** 2
+        quadratic_term + lambdas["current"]
     )
     if relative_error <= stopping_criteria["k_hard"]:
         p_candidate = p_candidate + step_len * z_min
@@ -723,7 +704,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
 
 
 def _update_lambdas_when_candidate_outside_trustregion(
-    lambdas, newton_step, p_norm, trustregion_radius, stopping_criteria, converged
+    lambdas, newton_step, p_norm, stopping_criteria, converged
 ):
     """Update lambas in the case that candidate vector lies outside trust-region.
 
@@ -737,7 +718,6 @@ def _update_lambdas_when_candidate_outside_trustregion(
         newton_step (float): Newton step computed according to formula (4.44)
             p.87 from Nocedal and Wright (2006).
         p_norm (float): Frobenius (i.e. L2-norm) of the candidate vector.
-        trustregion_radius (float): Trust-region radius.
         stopping_criteria (dict): Dictionary of the two stopping criteria
             containing the following keys:
             - "k_easy" (float): Stopping criterion in the "easy" case.
@@ -759,7 +739,7 @@ def _update_lambdas_when_candidate_outside_trustregion(
     """
     lambdas_updated = lambdas.copy()
 
-    relative_error = abs(p_norm - trustregion_radius) / trustregion_radius
+    relative_error = abs(p_norm - 1)
 
     if relative_error <= stopping_criteria["k_easy"]:
         converged = True
@@ -770,9 +750,7 @@ def _update_lambdas_when_candidate_outside_trustregion(
     return lambdas_updated, converged
 
 
-def _compute_smallest_step_len_for_candidate_vector(
-    p_candidate, z_min, trustregion_radius
-):
+def _compute_smallest_step_len_for_candidate_vector(p_candidate, z_min):
     """Compute the smallest step length for the candidate vector.
 
     Choose ``step_len`` with the smallest magnitude.
@@ -782,18 +760,17 @@ def _compute_smallest_step_len_for_candidate_vector(
     Args:
         p_candidate (np.ndarray): Candidate vector for the direction p.
         z_min (float): Smallest singular value of the hessian matrix.
-        trustregion_radius (float): Trust-region radius.
 
     Returns:
         (float) Step length with the smallest magnitude.
     """
-    ta, tb = _solve_scalar_quadratic_equation(p_candidate, z_min, trustregion_radius)
+    ta, tb = _solve_scalar_quadratic_equation(p_candidate, z_min)
     step_len = min([ta, tb], key=abs)
 
     return step_len
 
 
-def _solve_scalar_quadratic_equation(z, d, trustregion_radius):
+def _solve_scalar_quadratic_equation(z, d):
     """Return the sorted values that solve the scalar quadratic equation.
 
     Solve the scalar quadratic equation ||z + t d|| == trustregion_radius.
@@ -813,7 +790,6 @@ def _solve_scalar_quadratic_equation(z, d, trustregion_radius):
         z (np.ndarray): Eigenvector of the upper triangular hessian matrix.
         d (float): Smallest singular value of the upper triangular of the
             hessian matrix.
-        trustregion_radius (float): Trust-region radius.
 
     Returns
         Tuple: The two values of t, sorted from low to high.
@@ -822,7 +798,7 @@ def _solve_scalar_quadratic_equation(z, d, trustregion_radius):
     """
     a = np.dot(d, d)
     b = 2 * np.dot(z, d)
-    c = np.dot(z, z) - trustregion_radius ** 2
+    c = np.dot(z, z) - 1
     sqrt_discriminant = math.sqrt(b * b - 4 * a * c)
 
     aux = b + math.copysign(sqrt_discriminant, b)
