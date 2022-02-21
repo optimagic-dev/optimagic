@@ -16,6 +16,7 @@ def estimation_table(
     custom_param_names=None,
     show_col_names=True,
     custom_col_names=None,
+    endog_names_as_col_names=False,
     custom_model_names=None,
     custom_index_names=None,
     show_inference=True,
@@ -53,6 +54,8 @@ def estimation_table(
             Default is True
         custom_col_names (list): a list of strings to print as column names.
             Default is None.
+        endog_names_as_col_names (bool): if True, use the name of endogenous variables
+            as column names.
         custom_model_names (list): a list of strings to print as model names,
             possibly combining columns under common model names. Default is None.
         custom_index_names (list): a list of strings to print as the name of the
@@ -87,11 +90,11 @@ def estimation_table(
         custom_notes (list): a list of strings for additional notes. Default is None.
 
     Returns:
-        res_table (str or dictionary): depending on the rerturn type, a string
-            for html or latex tables, or a dictionary with atatistics and
-            parameters dataframes, and strings for footers is returned. If the
-            return type is a path, the function saves the resulting table at the
-            given path.
+        res_table (data frame, str or dictionary): depending on the rerturn type,
+            data frame with formatted strings, a string for html or latex tables,
+            or a dictionary with statistics and parameters dataframes, and strings
+            for footers is returned. If the return type is a path, the function saves
+            the resulting table at the given path.
 
     Notes:
         - Compiling LaTex tables requires the package siunitx.
@@ -105,11 +108,12 @@ def estimation_table(
     # info has the key estimation_name, replace custom col names with the  value
     # of this key.
     if not custom_col_names:
-        name_list = []
-        for model in models:
-            name_list.append(model.info.get("estimation_name", ""))
-        if "" not in name_list:
-            custom_col_names = name_list
+        if not endog_names_as_col_names:
+            name_list = [model.info.get("estimation_name", "") for model in models]
+            if "" not in name_list:
+                custom_col_names = name_list
+        else:
+            custom_col_names = [model.info["dependent_variable"] for model in models]
     # Set some defaults:
     if not stat_keys:
         stat_keys = {
