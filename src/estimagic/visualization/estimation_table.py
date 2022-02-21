@@ -17,6 +17,8 @@ def estimation_table(
     show_col_names=True,
     custom_col_names=None,
     endog_names_as_col_names=False,
+    endog_names_as_col_level=False,
+    custom_endog_names=None,
     custom_model_names=None,
     custom_index_names=None,
     show_inference=True,
@@ -47,7 +49,9 @@ def estimation_table(
         return_type (str): Can be "latex", "html", "python" or a file path with the
             extension .tex or .html. If "python", a dictionary with the entries
             "paramaters_df", "footer_df" and "footer (html and latex)" is returned.
-        render_options (dict): A dictionary with keyword arguments that are passed to
+        custom_param_names (dict): a dictionary with old names of parameters that should
+            be renamed as keys and respective new names as values. Default is None.
+        render_options (dict): a dictionary with keyword arguments that are passed to
             df.to_latex or df.to_html, depending on the return_type.
             The default is None.
         show_col_names (bool): a boolean variable for printing column numbers.
@@ -55,9 +59,14 @@ def estimation_table(
         custom_col_names (list): a list of strings to print as column names.
             Default is None.
         endog_names_as_col_names (bool): if True, use the name of endogenous variables
-            as column names.
-        custom_model_names (list): a list of strings to print as model names,
-            possibly combining columns under common model names. Default is None.
+            as column names. Default is False.
+        endog_names_as_col_level (bool): if True, use the name of endogenous variables
+            as additional level of column index.
+        custom_endog_names (dict): a dictionary with old names of endogenous variabels
+            that should be renamed as keys and respective new names as values.
+        custom_model_names (dictionary): a dictionary with keys to print as model names,
+            and values as columns to be combined under the respective model names.
+            Default is None.
         custom_index_names (list): a list of strings to print as the name of the
             parameter/variable column. To print index names, add index_names = True
             in the render options. Default is None.
@@ -107,13 +116,27 @@ def estimation_table(
     # if the value of custom_col_names is the default and EVERY models' attribute
     # info has the key estimation_name, replace custom col names with the  value
     # of this key.
+    endog_names = {
+        model.info.get("dependent_variable", ""): model.info.get(
+            "dependent_variable", ""
+        )
+        for model in models
+    }
+    if custom_endog_names:
+        endog_names = endog_names.update(custom_endog_names)
+    endog_names = endog_names.values()
     if not custom_col_names:
         if not endog_names_as_col_names:
             name_list = [model.info.get("estimation_name", "") for model in models]
-            if "" not in name_list:
-                custom_col_names = name_list
         else:
-            custom_col_names = [model.info["dependent_variable"] for model in models]
+            name_list = endog_names
+        if "" not in name_list:
+            custom_col_names = name_list
+    if not custom_model_names:
+        if endog_names_as_col_level:
+            custom_model_names = {
+                dep_var: [col_num] for col_num, dep_var in enumerate(endog_names)
+            }
     # Set some defaults:
     if not stat_keys:
         stat_keys = {
@@ -604,8 +627,7 @@ def _process_body_df(
         df.index.names = custom_index_names
     if custom_param_names:
         ind = df.index.to_frame()
-        for k in custom_param_names:
-            ind = ind.replace(k, custom_param_names[k])
+        ind = ind.replace(custom_param_names)
         df.index = pd.MultiIndex.from_frame(ind)
     if show_col_names:
         if custom_col_names:
@@ -744,7 +766,7 @@ def _generate_notes_html(
                         )
             elif isinstance(custom_notes, str):
                 notes_text += """
-                    <td></td><td colspan="{}"style="text-align: right">{}</td></tr>
+                    <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
                     """.format(
                     n_columns + n_levels - 1, custom_notes
                 )
