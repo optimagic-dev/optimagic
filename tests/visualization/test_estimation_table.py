@@ -25,8 +25,7 @@ est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).f
 
 def test_estimation_table():
     models = [est]
-    return_type = "render_inputs"
-    res = estimation_table(models, return_type, append_notes=False)
+    res = estimation_table(models, return_type="render_inputs", append_notes=False)
     exp = {}
     body_str = """
         index,{(1)}
