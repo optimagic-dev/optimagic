@@ -1,25 +1,70 @@
 Credits
 =======
 
-Estimagic is designed and maintained by Janos Gabler (`janosg
-<https://github.com/janosg>`_).
+Core Team
+---------
 
-However, it has been a collaborative project right from the start.
++---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
++ .. figure:: _static/images/janos.jpg                          + .. figure:: _static/images/klara.jpg                          + .. figure:: _static/images/tobi.png                               +
++     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
++                                                               +                                                               +                                                                   +
++     `Janoś Gabler <https://github.com/janosg>`_               +     `Klara Röhrl <https://github.com/roecla>`_                +     `Tobias Raabe <https://github.com/tobiasraabe>`_              +
++                                                               +                                                               +                                                                   +
++     (BDFL)                                                    +     (Core Developer)                                          +     (Core Developer)                                              +
++---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
++ .. figure:: _static/images/tim.jpeg                           + .. figure:: _static/images/sebi.jpg                           + .. figure:: _static/images/hmg.jpg                                +
++     :width: 175px                                             +     :width: 175px                                             +     :width: 175px                                                 +
++                                                               +                                                               +                                                                   +
++     `Tim Mensinger <https://github.com/timmens>`_             +     `Sebastian Gsell <https://github.com/segsell>`_           +     `Hans-Martin von Gaudecker <https://github.com/hmgaudecker>`_ +
++                                                               +                                                               +                                                                   +
++     (Core Developer)                                          +     (Core Developer)                                          +     (Core User, Facilitator)                                      +
++---------------------------------------------------------------+---------------------------------------------------------------+-------------------------------------------------------------------+
 
-In particular we would like to thank:
 
-- Klara Röhrl (`roecla <https://github.com/roecla>`_) for writing most of the dashboard
-  code, contributing plots and doing code reviews.
-- Tobias Raabe (`tobiasraabe <https://github.com/tobiasraabe>`_) for setting up the
-  continuous integration and contributing several bug-fixes and improvements.
-- Max Blesch (`MaxBlesch <https://github.com/MaxBlesch>`_) for contributing code for
-  numerical integration and calculation of standard errors for GMM and MSM estimators
-- Linda Maokomatanda (`lindamaok899 <https://github.com/lindamaok899>`_) for
-  contributing code for the calculation of likelihood standard errors
-- Moritz Mendel (`mo2561057 <https://github.com/mo2561057>`_) for wrapping the pounders
-  algorithm from TAO
-- Tim Mensinger (`timmens <https://github.com/timmens>`_) for contributions to numerical
-  differentiation and closed form derivatives for the constraints.
+Janoś is the original developer and architect behind estimagic.
+All core developers have made major contributions to several areas of estimagic.
+Hans-Martin has supported the development of estimagic with feedback and discussions, by
+encouraging work on estimagic and securing funding.
+
+Contributors
+------------
+
+We are grateful for many (sometimes very large!) contributions from the community. In
+particular, we want to thank:
+
+- Mariam Petrosyan
+- Moritz Mendel
+- Max Blesch
+- Christian Zimpelmann
+- Robin Musolff
+- Annica Gehlen
+- Sofia Badini
+- Sofya Akimova
+- Xuefei Han
+- Leiqiong Wan
+- Andrew Souther
+- Luis Calderon
+- Linda Maokomatanda
+- Madhurima Chandra
+- Vijaybabu Gangaprasad
 
 If you want to find your name here as well, please contact us or browse through our
 Issues and submit a Pull Request.
+
+
+Acknowledgements
+----------------
+
+Funded by the `TRA Modelling`_ (University of Bonn) as part of the Excellence Strategy
+of the federal and state governments.
+
+.. figure:: _static/images/tra_logo.png
+    :width: 200px
+
+----------------------------------------------------------------------------------------
+
+We want to thank `Kenneth Judd <https://kenjudd.org/>`_ for great feedback regarding
+numerical optimization and differentiation.
+
+
+.. _TRA Modelling: https://www.uni-bonn.de/en/research-and-teaching/research-profile/transdisciplinary-research-areas/tra-1-modelling

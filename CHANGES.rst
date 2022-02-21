@@ -6,6 +6,20 @@ chronological order. We follow `semantic versioning <https://semver.org/>`_ and 
 releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
+0.2.2
+-----
+
+- :gh:`276` Add parallel Nelder-Mead algorithm by :ghuser:`jacekb95`
+- :gh:`267` Update fides by :ghuser:`roecla`
+- :gh:`265` Refactor pounders algorithm by :ghuser:`segsell` and :ghuser:`janosg`.
+- :gh:`261` Add pure Python pounders algorithm by :ghuser:`segsell`.
+
+0.2.1
+-----
+
+- :gh:`260` Update MSM and ML notebooks by :ghuser:`timmens`.
+- :gh:`259` Several small fixes and improvements by :ghuser:`janosg` and
+  :ghuser:`roecla`.
 
 
 0.2.0

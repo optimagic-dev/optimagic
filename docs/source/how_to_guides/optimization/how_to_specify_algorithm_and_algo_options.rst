@@ -433,6 +433,72 @@ dependencies to use them:
       process, with ``trustregion_initial_radius`` being its initial value.
 
 
+.. dropdown::  scipy_ls_dogbox
+
+    Minimize a nonlinear least squares problem using a rectangular trust region method.
+
+    The algorithm supports the following options:
+
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
+      improvement between two iterations is below this.
+    - **convergence.relative_gradient_tolerance** (float): Stop when the gradient,
+      divided by the absolute value of the criterion function is smaller than this.
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this as
+      convergence.
+    - **tr_solver** (str): Method for solving trust-region subproblems, relevant only
+      for 'trf' and 'dogbox' methods.
+
+      - 'exact' is suitable for not very large problems with dense
+        Jacobian matrices. The computational complexity per iteration is
+        comparable to a singular value decomposition of the Jacobian
+        matrix.
+      - 'lsmr' is suitable for problems with sparse and large Jacobian
+        matrices. It uses the iterative procedure
+        `scipy.sparse.linalg.lsmr` for finding a solution of a linear
+        least-squares problem and only requires matrix-vector product
+        evaluations.
+        If None (default), the solver is chosen based on the type of Jacobian
+        returned on the first iteration.
+    - **tr_solver_options** (dict):  Keyword options passed to trust-region solver.
+
+      - ``tr_solver='exact'``: `tr_options` are ignored.
+      - ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+
+
+.. dropdown::  scipy_ls_trf
+
+    Minimize a nonlinear least squares problem using a trustregion reflective method.
+
+    The algorithm supports the following options:
+
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
+      improvement between two iterations is below this.
+    - **convergence.relative_gradient_tolerance** (float): Stop when the gradient,
+      divided by the absolute value of the criterion function is smaller than this.
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this as
+      convergence.
+    - **tr_solver** (str): Method for solving trust-region subproblems, relevant only
+      for 'trf' and 'dogbox' methods.
+
+      - 'exact' is suitable for not very large problems with dense
+        Jacobian matrices. The computational complexity per iteration is
+        comparable to a singular value decomposition of the Jacobian
+        matrix.
+      - 'lsmr' is suitable for problems with sparse and large Jacobian
+        matrices. It uses the iterative procedure
+        `scipy.sparse.linalg.lsmr` for finding a solution of a linear
+        least-squares problem and only requires matrix-vector product
+        evaluations.
+        If None (default), the solver is chosen based on the type of Jacobian
+        returned on the first iteration.
+    - **tr_solver_options** (dict):  Keyword options passed to trust-region solver.
+
+      - ``tr_solver='exact'``: `tr_options` are ignored.
+      - ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+
+
 .. _own_algorithms:
 
 Own optimizers
@@ -516,6 +582,42 @@ noisy criterion functions.
       as the estimagic batch_evaluators. Default is "joblib".
     - **n_cores (int)**: Number of processes used to parallelize the function
       evaluations. Default is 1.
+
+
+.. dropdown:: neldermead_parallel
+
+    Minimize a function using the neldermead_parallel algorithm.
+
+    This is a parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
+    implementation of the simplex function minimization routine,
+    Computational Economics, 2007.
+
+    The algorithm was implemented by Jacek Barszczewski
+
+    The algorithm supports the following options:
+
+    - **init_simplex_method** (string or callable): Name of the method to create initial
+      simplex or callable which takes as an argument initial value of parameters
+      and returns initial simplex as j+1 x j array, where j is length of x.
+      The default is "gao_han".
+    - **n_cores** (int): Degree of parallization. The default is 1 (no parallelization).
+
+    - **adaptive** (bool): Adjust parameters of Nelder-Mead algorithm to account
+      for simplex size. The default is True.
+
+    - **stopping.max_iterations** (int): Maximum number of algorithm iterations.
+      The default is STOPPING_MAX_ITERATIONS.
+
+    - **convergence.absolute_criterion_tolerance** (float): maximal difference between
+      function value evaluated on simplex points.
+      The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE.
+
+    - **convergence.absolute_params_tolerance** (float): maximal distance between points
+      in the simplex. The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
+
+    - **batch_evaluator** (string or callable): See :ref:`batch_evaluators` for
+        details. Default "joblib".
+
 
 
 .. _tao_algorithms:
