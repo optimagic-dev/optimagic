@@ -10,6 +10,7 @@ import pandas as pd
 
 def estimation_table(
     models,
+    *,
     return_type="data_frame",
     render_options=None,
     custom_param_names=None,
