@@ -116,15 +116,10 @@ def estimation_table(
     # if the value of custom_col_names is the default and EVERY models' attribute
     # info has the key estimation_name, replace custom col names with the  value
     # of this key.
-    endog_names = {
-        model.info.get("dependent_variable", ""): model.info.get(
-            "dependent_variable", ""
-        )
-        for model in models
-    }
+    endog_names = [model.info.get("dependent_variable", "") for model in models]
     if custom_endog_names:
-        endog_names = endog_names.update(custom_endog_names)
-    endog_names = endog_names.values()
+        for loc, name in enumerate(endog_names):
+            endog_names[loc] = custom_endog_names.get(name, name)
     if not custom_col_names:
         if not endog_names_as_col_names:
             name_list = [model.info.get("estimation_name", "") for model in models]
@@ -207,8 +202,14 @@ def estimation_table(
     if str(return_type).endswith("tex"):
         if siunitx_warning:
             warn(
-                r"""LaTeX compilation requires the package siunitx and adding
-                    \sisetup{input-symbols =()} to your main tex file. To turn
+                r"""Proper LaTeX compilation requires the package siunitx and adding
+                   \sisetup{
+                        group-digits             = false,
+                        input-symbols            = (),
+                        table-align-text-pre     = false,
+                        table-align-text-post    = false
+                    }
+                    to your main tex file. To turn
                     this warning off set value of siunitx_warning = False"""
             )
         if len(models) > 2:
@@ -298,6 +299,12 @@ def render_latex(
 
     """
     body_df = body_df.copy(deep=True)
+    for i in range(body_df.columns.nlevels):
+        body_df = body_df.rename(
+            {c: "{" + c + "}" for c in body_df.columns.get_level_values(i)},
+            axis=1,
+            level=i,
+        )
     body_df = body_df.applymap(_add_latex_syntax_around_scientfic_number_string)
     n_levels = body_df.index.nlevels
     n_columns = len(body_df.columns)
@@ -335,6 +342,11 @@ def render_latex(
         )
     latex_str = latex_str.split("\\bottomrule")[0]
     if show_footer:
+        if "Observations" in footer_df.index.get_level_values(0):
+            footer_df = footer_df.copy(deep=True)
+            footer_df.loc["Observations"] = footer_df.loc["Observations"].applymap(
+                _center_align_tex
+            )
         stats_str = footer_df.to_latex(**default_options)
         stats_str = (
             "\\midrule" + stats_str.split("\\midrule")[1].split("\\bottomrule")[0]
@@ -622,6 +634,11 @@ def _process_body_df(
         processed_df (DataFrame): string DataFrame with customized header.
 
     """
+    if show_col_names:
+        if custom_col_names:
+            df.columns = custom_col_names
+        else:
+            df.columns = ["(" + str(col + 1) + ")" for col in range(len(df.columns))]
 
     if custom_index_names:
         df.index.names = custom_index_names
@@ -629,11 +646,6 @@ def _process_body_df(
         ind = df.index.to_frame()
         ind = ind.replace(custom_param_names)
         df.index = pd.MultiIndex.from_frame(ind)
-    if show_col_names:
-        if custom_col_names:
-            df.columns = ["{" + cn + "}" for cn in custom_col_names]
-        else:
-            df.columns = ["{(" + str(col + 1) + ")}" for col in range(len(df.columns))]
     if custom_model_names:
         assert isinstance(
             custom_model_names, dict
@@ -653,10 +665,10 @@ def _process_body_df(
             k: v
             for k, v in sorted(custom_model_names.items(), key=lambda item: item[1])
         }
-        flev = ["{}"] * len(cols)
+        flev = [""] * len(cols)
         for k in custom_model_names:
             for v in custom_model_names[k]:
-                flev[v] = "{" + k + "}"
+                flev[v] = k
         df.columns = pd.MultiIndex.from_tuples(list(zip(flev, cols)))
     return df
 
@@ -875,5 +887,9 @@ def _add_latex_syntax_around_scientfic_number_string(string):
     else:
         prefix, *num_parts, suffix = re.split(r"([+-.\d+])", string)
         number = "".join(num_parts)
-        out = f"{prefix}\\num{{{number}}}{suffix}"
+        out = f"{prefix}{{{number}}}{suffix}"
     return out
+
+
+def _center_align_tex(n_obs):
+    return f"\\multicolumn{{1}}{{c}}{{{n_obs}}}"

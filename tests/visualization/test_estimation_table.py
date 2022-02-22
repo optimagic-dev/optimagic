@@ -28,7 +28,7 @@ def test_estimation_table():
     res = estimation_table(models, return_type="render_inputs", append_notes=False)
     exp = {}
     body_str = """
-        index,{(1)}
+        index,(1)
         const,152.00$^{*** }$
         ,(2.85)
         Age,37.20$^{ }$
@@ -43,7 +43,7 @@ def test_estimation_table():
     exp["body_df"] = _read_csv_string(body_str).fillna("")
     exp["body_df"].set_index("index", inplace=True)
     footer_str = """
-         ,{(1)}
+         ,(1)
         R$^2$,0.40
         Adj. R$^2$,0.40
         Residual Std. Error,60.00
