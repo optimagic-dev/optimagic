@@ -1,9 +1,9 @@
-"""Test suite for the pounders subsolvers."""
+"""Test various solvers for quadratic trust-region subproblems."""
 from functools import partial
 
 import numpy as np
 import pytest
-from estimagic.optimization.pounders_trustregion_subsolver import (
+from estimagic.optimization.quadratic_subsolvers import (
     solve_trustregion_subproblem,
 )
 from numpy.testing import assert_array_almost_equal as aaae
