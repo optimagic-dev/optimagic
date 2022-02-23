@@ -518,6 +518,27 @@ def schwefel2_23(x):
     return out
 
 
+def shekel(x):
+    x_1, x_2, x_3, x_4 = x
+    b = 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
+    c = np.array(
+        [
+            [4, 4, 4, 4],
+            [1, 1, 1, 1],
+            [8, 8, 8, 8],
+            [6, 6, 6, 6],
+            [3, 7, 3, 7],
+            [2, 9, 2, 9],
+            [5, 3, 5, 3],
+            [8, 1, 8, 1],
+            [6, 2, 6, 2],
+            [7, 3.6, 7, 3.6],
+        ]
+    )
+    out = -np.sum([np.sum((x[i] - c[i]) ** 2 + b[i]) ** -1 for i in range(10)])
+    return out
+
+
 def shubert(x):
     d = x.shape[0]
     for i in range(0, d):
@@ -555,6 +576,12 @@ def sumsquares(x):
 def threehump(x):
     x_1, x_2 = x
     out = 2 * x_1 ** 2 - 1.05 * x_1 ** 4 + x_1 ** 6 * (1 / 6) + x_1 * x_2 + x_2 ** 2
+    return out
+
+
+def thevenot(x, m=5, b=15):
+    res = np.exp(-np.sum((x / b) ** (2 * m)))
+    out = res - 2 * np.exp(-np.prod(x ** 2)) * np.prod(np.cos(x) ** 2)
     return out
 
 
