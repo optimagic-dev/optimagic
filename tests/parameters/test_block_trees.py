@@ -54,7 +54,7 @@ def test_matrix_to_block_tree_only_params_dfs():
 # tests against jax
 
 
-def test_block_tree_to_matrix_array_and_scalar_symmetric():
+def test_block_tree_to_matrix_array_and_scalar():
     t1 = {"c": np.arange(3), "d": (2.0, 1)}
     t2 = {"a": 1.0, "b": np.arange(2)}
 
