@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
+from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.block_trees import matrix_to_block_tree
+from numpy.testing import assert_array_equal
 from pybaum import tree_equal
 
 
@@ -50,3 +52,22 @@ def test_matrix_to_block_tree_only_params_dfs():
 # one params df (make sure we don't get a list back)
 # dataframe and scalar
 # tests against jax
+
+
+def test_block_tree_to_matrix_array_and_scalar_symmetric():
+    t1 = {"c": np.arange(3), "d": (2.0, 1)}
+    t2 = {"a": 1.0, "b": np.arange(2)}
+
+    expected = np.arange(15).reshape(5, 3)
+
+    block_tree = {
+        "c": {"a": np.array([0, 3, 6]), "b": np.array([[1, 2], [4, 5], [7, 8]])},
+        "d": (
+            {"a": np.array(9), "b": np.array([10, 11])},
+            {"a": np.array(12), "b": np.array([13, 14])},
+        ),
+    }
+
+    calculated = block_tree_to_matrix(block_tree, t1, t2)
+
+    assert_array_equal(expected, calculated)

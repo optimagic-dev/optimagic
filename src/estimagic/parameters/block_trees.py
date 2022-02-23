@@ -39,6 +39,35 @@ def matrix_to_block_tree(matrix, tree1, tree2):
     return block_tree
 
 
+def block_tree_to_matrix(block_tree, tree1, tree2):
+    flat1, _ = tree_flatten(tree1)
+    flat2, _ = tree_flatten(tree2)
+
+    flat1_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat1]
+    flat2_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat2]
+
+    size1 = [np.size(a) for a in flat1_np]
+    size2 = [np.size(a) for a in flat2_np]
+
+    n_blocks1 = len(size1)
+    n_blocks2 = len(size2)
+
+    flat_block_tree, _ = tree_flatten(block_tree)
+
+    block_rows_raw = [
+        flat_block_tree[n_blocks2 * i : n_blocks2 * (i + 1)] for i in range(n_blocks1)
+    ]
+
+    block_rows = []
+    for s1, row in zip(size1, block_rows_raw):
+        row_reshaped = [a.reshape(s1, s2) for (s2, a) in zip(size2, row)]
+        row_concatenated = np.concatenate(row_reshaped, axis=1)
+        block_rows.append(row_concatenated)
+
+    matrix = np.concatenate(block_rows, axis=0)
+    return matrix
+
+
 def _convert_pandas_objects_to_numpy(obj):
     if not isinstance(obj, (pd.Series, pd.DataFrame)):
         return obj
@@ -63,7 +92,7 @@ def _convert_raw_block_to_pandas(raw_block, leaf1, leaf2):
 
     # can only happen if one leaf is a scalar and the other a pandas
     # object that is interpreted as one-dimensional. We want to convert
-    # te block to a series wtih the index of the pandas object
+    # the block to a series wtih the index of the pandas object
     if np.ndim(raw_block) == 1:
         out = pd.Series(raw_block, index=_select_non_none(index1, index2))
 
