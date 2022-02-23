@@ -9,6 +9,19 @@ that may happen in chats, issues, pull requests, in person, or by any other mean
 Simple extensions (like adding new optimizers) do not need to be discussed with such
 a formal process.
 
+If the author of an EEP feels that it is ready to be accepted they need to make a
+post in our `zulip workspace <https://ose.zulipchat.com>`_ and a comment on the PR that
+contains the following information:
+
+1. Summary of all contentious aspects of the EEP and how they have been resolved
+2. Every interested party has seven days to comment on the PR proposing the EEP,
+   either with approval or objections.
+3. If there are no unresolved objections after seven days, the EEP will automatically
+   be accepted.
+
+Note that The Pull Requests that actually implements the proposed enhancements still
+requires a standard review cycle.
+
 
 These EEPs are currently in place:
 
