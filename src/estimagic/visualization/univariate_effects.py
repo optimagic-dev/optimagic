@@ -5,7 +5,7 @@ from estimagic.visualization.colors import get_colors
 
 
 def plot_univariate_effects(
-    criterion, params, n_gridpoints=21, n_random_values=2, plots_per_row=2, seed=5471
+    criterion, params, *, n_gridpoints=21, n_random_values=2, plots_per_row=2, seed=5471
 ):
     """Plot criterion along coordinates at given and random values.
 

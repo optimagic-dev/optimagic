@@ -387,9 +387,9 @@ def _varadhan_borchers(x):
 
     # method parameters
     j = len(x)
-    c_s = np.maximum(1, ((x ** 2).sum()) ** 0.5)
-    beta1 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 + j - 1)
-    beta2 = c_s / (j * 2 ** 0.5) * ((j + 1) ** 0.5 - 1)
+    c_s = np.maximum(1, ((x**2).sum()) ** 0.5)
+    beta1 = c_s / (j * 2**0.5) * ((j + 1) ** 0.5 + j - 1)
+    beta2 = c_s / (j * 2**0.5) * ((j + 1) ** 0.5 - 1)
 
     # initial simplex
     s[1:, :] = s[1:, :] + np.full([j, j], beta2) + np.eye(j) * (beta1 - beta2)

@@ -5,7 +5,9 @@ from estimagic.utilities import robust_inverse
 from scipy.linalg import block_diag
 
 
-def get_moments_cov(data, calculate_moments, moment_kwargs=None, bootstrap_kwargs=None):
+def get_moments_cov(
+    data, calculate_moments, *, moment_kwargs=None, bootstrap_kwargs=None
+):
     """Bootstrap the covariance matrix of the moment conditions.
 
     Args:

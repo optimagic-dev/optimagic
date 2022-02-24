@@ -295,6 +295,7 @@ def get_msm_optimization_functions(
     simulate_moments,
     empirical_moments,
     weights,
+    *,
     simulate_moments_kwargs=None,
     jacobian=None,
     jacobian_kwargs=None,
