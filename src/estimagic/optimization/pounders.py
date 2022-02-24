@@ -333,7 +333,7 @@ def internal_solve_pounders(
 
         # Update the trust region radius
         delta_old = delta
-        norm_x_sub = np.sqrt(np.sum(result_sub.x ** 2))
+        norm_x_sub = np.sqrt(np.sum(result_sub.x**2))
 
         if rho >= eta1 and norm_x_sub > 0.5 * delta:
             delta = min(delta * gamma1, delta_max)

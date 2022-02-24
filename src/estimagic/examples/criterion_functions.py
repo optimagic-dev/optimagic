@@ -190,7 +190,7 @@ def rosenbrock_gradient(params):
     l4 = np.append(l4, 0)
     l5 = np.full((len(params["value"]) - 1), 2)
     l5 = np.append(l5, 0)
-    return 100 * (4 * (l1 ** 3) + 2 * l2 - 2 * (l3 ** 2) - 4 * (l4 * x)) + 2 * l1 - l5
+    return 100 * (4 * (l1**3) + 2 * l2 - 2 * (l3**2) - 4 * (l4 * x)) + 2 * l1 - l5
 
 
 def rosenbrock_criterion_and_gradient(params):
@@ -324,13 +324,13 @@ def sos_pandas_jacobian(params):
 def sos_criterion_and_gradient(params):
     """Calculate sum of squares criterion value and gradient."""
     x = params["value"].to_numpy()
-    return (x ** 2).sum(), 2 * x
+    return (x**2).sum(), 2 * x
 
 
 def sos_criterion_and_jacobian(params):
     """Calculate sum of squares criterion value and Jacobian."""
     x = params["value"].to_numpy()
-    return {"contributions": x ** 2, "value": (x ** 2).sum()}, np.diag(2 * x)
+    return {"contributions": x**2, "value": (x**2).sum()}, np.diag(2 * x)
 
 
 def sos_dict_derivative(params):
@@ -361,7 +361,7 @@ def sos_double_dict_criterion_and_derivative_with_pd_objects(params):
 
 
 def _out_dict_from_root_contribs(root_contribs):
-    contribs = root_contribs ** 2
+    contribs = root_contribs**2
     out = {
         "value": contribs.sum(),
         "contributions": contribs,
