@@ -344,8 +344,9 @@ def render_latex(
     if show_footer:
         if "Observations" in footer_df.index.get_level_values(0):
             footer_df = footer_df.copy(deep=True)
+
             footer_df.loc["Observations"] = footer_df.loc["Observations"].applymap(
-                _center_align_tex
+                _left_align_tex
             )
         stats_str = footer_df.to_latex(**default_options)
         stats_str = (
@@ -891,5 +892,5 @@ def _add_latex_syntax_around_scientfic_number_string(string):
     return out
 
 
-def _center_align_tex(n_obs):
-    return f"\\multicolumn{{1}}{{c}}{{{n_obs}}}"
+def _left_align_tex(n_obs):
+    return f"\\multicolumn{{1}}{{l}}{{{n_obs}}}"
