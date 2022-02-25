@@ -19,8 +19,8 @@ contains the following information:
 3. If there are no unresolved objections after seven days, the EEP will automatically
    be accepted.
 
-Note that The Pull Requests that actually implements the proposed enhancements still
-requires a standard review cycle.
+Note that the Pull Requests that actually implement the proposed enhancements still
+require a standard review cycle.
 
 
 These EEPs are currently in place:

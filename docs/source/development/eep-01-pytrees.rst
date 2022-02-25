@@ -229,7 +229,7 @@ The following entries of the output of minimize are affected by the change:
 - ``"solution_criterion"``: The output dictionary of ``crit`` evaluated solution params
 - ``solution_derivative``: Maybe we should not even have this entry.
 
-.. danger:: We need to discuss if an in which form we want to have a solution
+.. danger:: We need to discuss if and in which form we want to have a solution
     derivative entry. In it's current form it is useless if constraints are used.
     This gets worse when we allow for pytrees and translating this into a meaningful
     shape might be very difficult.
@@ -318,7 +318,7 @@ Problem: Higher dimensional extensions of pytrees
 
 The derivative of a function that maps from a 1d array to a 1d array (usually called
 Jacobian) is a 2d matrix. If the 1d arrays are replaced by pytrees, we need a
-two dimensional extension of the pytrees. Below we well look at how JAX does this
+two dimensional extension of the pytrees. Below we will look at how JAX does this
 and why we cannot simply copy that solution.
 
 
@@ -411,7 +411,7 @@ This leads to very natural results in the typical usecases with flat dicts of Se
 or params DataFrames both as inputs and outputs and is backwards compatible with
 everything that is supported already.
 
-Howeverer, similar to JAX, not everything that is supported will also be a good idea.
+However, similar to JAX, not everything that is supported will also be a good idea.
 Predicting where a pandas Object is preserved and where it will be replaced by an array
 might be hard for very nested pytrees. However, these rules are mainly defined to avoid
 hard limitations that have to be checked and documented. Users will learn to avoid too
@@ -548,7 +548,7 @@ Estimation summaries
 --------------------
 
 
-Currently, estimation summaries ar DataFrames. The estimated parameters are in the
+Currently, estimation summaries are DataFrames. The estimated parameters are in the
 ``"value"`` column. There are other columns with standard errors, p-values,
 significance stars and confidence intervals.
 
