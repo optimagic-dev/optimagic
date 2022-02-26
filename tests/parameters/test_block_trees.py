@@ -71,3 +71,35 @@ def test_block_tree_to_matrix_array_and_scalar():
     calculated = block_tree_to_matrix(block_tree, t1, t2)
 
     assert_array_equal(expected, calculated)
+
+
+def test_block_tree_to_matrix_only_params_dfs():
+    expected = np.arange(25).reshape(5, 5)
+
+    tree = {
+        "a": pd.DataFrame(index=["a", "b"]).assign(value=[1, 2]),
+        "b": pd.DataFrame(index=["j", "k", "l"]).assign(value=[3, 4, 5]),
+    }
+    block_tree = {
+        "a": {
+            "a": pd.DataFrame([[0, 1], [5, 6]], columns=["a", "b"], index=["a", "b"]),
+            "b": pd.DataFrame(
+                [[2, 3, 4], [7, 8, 9]], columns=["j", "k", "l"], index=["a", "b"]
+            ),
+        },
+        "b": {
+            "a": pd.DataFrame(
+                [[10, 11], [15, 16], [20, 21]],
+                index=["j", "k", "l"],
+                columns=["a", "b"],
+            ),
+            "b": pd.DataFrame(
+                [[12, 13, 14], [17, 18, 19], [22, 23, 24]],
+                index=["j", "k", "l"],
+                columns=["j", "k", "l"],
+            ),
+        },
+    }
+
+    calculated = block_tree_to_matrix(block_tree, tree, tree)
+    assert_array_equal(expected, calculated)

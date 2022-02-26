@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 from pybaum import tree_flatten
+from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_unflatten
 
 
@@ -40,8 +41,33 @@ def matrix_to_block_tree(matrix, tree1, tree2):
 
 
 def block_tree_to_matrix(block_tree, tree1, tree2):
-    flat1, _ = tree_flatten(tree1)
-    flat2, _ = tree_flatten(tree2)
+    """Convert a block tree to a matrix.
+
+    A block tree most often arises when one applies an operation to a function that maps
+    between two trees. Two main examples are the Jacobian of the function
+    f : tree1 -> tree2, which results in a block tree structure, or the covariance
+    matrix of a tree, in which case tree1 = tree2.
+
+    Args:
+        block_tree: A (block) pytree, must match dimensions of tree1 and tree2.
+        tree1: A pytree.
+        tree2: A pytree.
+
+    Returns:
+        matrix (np.ndarray): 2d array containing information stored in block_tree.
+
+    """
+    if len(block_tree) != len(tree1):
+        raise ValueError("First dimension of block_tree does not match that of tree1.")
+
+    selector_first_element = list(block_tree)[0] if isinstance(block_tree, dict) else 0
+    if len(block_tree[selector_first_element]) != len(tree2):
+        raise ValueError("Second dimension of block_tree does not match that of tree2.")
+
+    flat1 = tree_leaves(tree1)
+    flat2 = tree_leaves(tree2)
+
+    flat_block_tree = tree_leaves(block_tree)
 
     flat1_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat1]
     flat2_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat2]
@@ -52,15 +78,15 @@ def block_tree_to_matrix(block_tree, tree1, tree2):
     n_blocks1 = len(size1)
     n_blocks2 = len(size2)
 
-    flat_block_tree, _ = tree_flatten(block_tree)
-
     block_rows_raw = [
         flat_block_tree[n_blocks2 * i : n_blocks2 * (i + 1)] for i in range(n_blocks1)
     ]
 
     block_rows = []
     for s1, row in zip(size1, block_rows_raw):
-        row_reshaped = [a.reshape(s1, s2) for (s2, a) in zip(size2, row)]
+        shapes = [(s1, s2) for s2 in size2]
+        row_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in row]
+        row_reshaped = _reshape_list_to_2d(row_np, shapes)
         row_concatenated = np.concatenate(row_reshaped, axis=1)
         block_rows.append(row_concatenated)
 
@@ -126,6 +152,23 @@ def _select_non_none(first, second):
     elif second is None:
         out = first
     return out
+
+
+def _reshape_list_to_2d(list_to_reshape, shapes):
+    """Reshape list of numpy.ndarray according to list of shapes.
+
+    Args:
+        list_to_reshape (list): List containing numpy.ndarray's.
+        shapes (list): List of 2-dimensional shape tuples.
+
+    Returns:
+        reshaped (list): List containing the reshaped numpy.ndarray's.
+
+    """
+    if len(list_to_reshape) != len(shapes):
+        raise ValueError("Arguments must have the same number of elements.")
+    reshaped = [a.reshape(shape) for a, shape in zip(list_to_reshape, shapes)]
+    return reshaped
 
 
 def _is_pd_object(obj):
