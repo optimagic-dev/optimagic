@@ -25,7 +25,7 @@ def matrix_to_block_tree(matrix, tree1, tree2):
     ):
         row = []
         for leaf2, s2, block_values in zip(
-            flat1, shapes2, np.split(submat, block_bounds2, axis=1)
+            flat2, shapes2, np.split(submat, block_bounds2, axis=1)
         ):
             raw_block = block_values.reshape((*s1, *s2))
             block = _convert_raw_block_to_pandas(raw_block, leaf1, leaf2)
