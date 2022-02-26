@@ -1,19 +1,13 @@
-import matplotlib.pyplot as plt
+import itertools
+
 import numpy as np
-import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
 from estimagic.utilities import propose_alternatives
-from estimagic.visualization.colors import get_colors
-
-plt.rcParams.update(
-    {
-        "axes.spines.right": False,
-        "axes.spines.top": False,
-        "legend.frameon": False,
-    }
-)
+from plotly.subplots import make_subplots
 
 
 def convergence_plot(
@@ -82,6 +76,10 @@ def convergence_plot(
         fig
 
     """
+    # adding styling and coloring templates
+    palette = px.colors.qualitative.Plotly
+    template = "plotly_white"
+
     df, _ = create_convergence_histories(
         problems=problems,
         results=results,
@@ -111,36 +109,15 @@ def convergence_plot(
         + f"{'_normalized' if normalize_distance else ''}"
     )
 
-    # create plots
     remaining_problems = df["problem"].unique()
     n_rows = int(np.ceil(len(remaining_problems) / n_cols))
-    figsize = (n_cols * 6, n_rows * 4)
-    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=figsize)
+    # skipping figzise
 
-    if algorithm_subset is None:
-        algorithms = {tup[1] for tup in results.keys()}
-    else:
-        algorithms = algorithm_subset
-    palette = get_colors("categorical", number=len(algorithms))
+    temp_titles = [x + 1 for x in range(n_rows * n_cols)]
+    titles = []
+    g = make_subplots(rows=n_rows, cols=n_cols, subplot_titles=temp_titles)
 
-    for ax, prob_name in zip(axes.flatten(), remaining_problems):
-        to_plot = df[df["problem"] == prob_name]
-        sns.lineplot(
-            data=to_plot,
-            x=runtime_measure,
-            y=outcome,
-            hue="algorithm",
-            lw=2.5,
-            alpha=1.0,
-            ax=ax,
-            palette=palette,
-        )
-        ax.set_title(prob_name.replace("_", " ").title())
-        if distance_measure == "criterion" and not normalize_distance:
-            f_opt = problems[prob_name]["solution"]["value"]
-            ax.axhline(f_opt, label="true solution", lw=2.5)
-
-    # style plots
+    # pre - style plots labels
     y_labels = {
         "criterion": "Current Function Value",
         "monotone_criterion": "Best Function Value Found So Far",
@@ -156,22 +133,76 @@ def convergence_plot(
         "monotone_parameter_distance": "Distance Between the Best Parameters So Far\n"
         "and the Optimal Parameters",
     }
+
     x_labels = {
         "n_evaluations": "Number of Function Evaluations",
         "walltime": "Elapsed Time",
     }
-    for ax in axes.flatten():
-        ax.set_ylabel(y_labels[outcome])
-        ax.set_xlabel(x_labels[runtime_measure])
-        ax.legend(title=None)
 
-    # make empty plots invisible
-    n_empty_plots = len(axes.flatten()) - len(remaining_problems)
-    if n_empty_plots > 0:
-        for ax in axes.flatten()[-n_empty_plots:]:
-            ax.set_visible(False)
-    fig.tight_layout()
-    return fig
+    # create plots
+    # dropping usage of palette for algoritms
+
+    for (facet_row, facet_col), prob_name in zip(
+        itertools.product(range(1, n_rows + 1), range(1, n_cols + 1)),
+        remaining_problems,
+    ):
+        to_plot = df[df["problem"] == prob_name]
+        i = 0
+        for alg in to_plot["algorithm"].unique():
+            i = i + 1
+            temp = to_plot[to_plot["algorithm"] == alg]
+            g.add_trace(
+                go.Scatter(
+                    x=temp[runtime_measure],
+                    y=temp[outcome],
+                    mode="lines",
+                    legendgroup=i,
+                    name=alg,
+                    line={"color": palette[i]},
+                ),
+                row=facet_row,
+                col=facet_col,
+            )
+
+        if distance_measure == "criterion" and not normalize_distance:
+            f_opt = problems[prob_name]["solution"]["value"]
+            g.add_trace(
+                go.Scatter(
+                    y=[f_opt for i in to_plot[runtime_measure]],
+                    x=to_plot[runtime_measure],
+                    mode="lines",
+                    line={"color": palette[i + 1]},
+                    name="true solution",
+                    legendgroup=i + 1,
+                ),
+                row=facet_row,
+                col=facet_col,
+            )
+
+        titles.append(prob_name.replace("_", " ").title())
+        g.update_yaxes(row=facet_row, col=facet_col, title=y_labels[outcome])
+        g.update_xaxes(row=facet_row, col=facet_col, title=x_labels[runtime_measure])
+
+    # setting subtitles
+    update_subtitles = dict(zip(temp_titles, titles))
+    g.for_each_annotation(
+        lambda a: a.update(text=update_subtitles[int(a.text)])
+        if int(a.text) in update_subtitles
+        else a.update(text="")
+    )
+
+    # deleting duplicates in legend
+    names = set()
+    g.for_each_trace(
+        lambda trace: trace.update(showlegend=False)
+        if (trace.name in names)
+        else names.add(trace.name)
+    )
+
+    # setting template theme
+    g.update_layout(template=template)
+
+    return g
 
 
 def _check_only_allowed_subset_provided(subset, allowed, name):
