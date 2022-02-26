@@ -49,6 +49,17 @@ def test_matrix_to_block_tree_only_params_dfs():
     assert tree_equal(calculated, expected)
 
 
+def test_matrix_to_block_tree_single_element():
+    tree1 = {"a": 0}
+    tree2 = {"b": 1, "c": 2}
+
+    block_tree = {"a": {"b": 0, "c": 1}}
+    matrix = np.array([[0, 1]])
+
+    calculated = matrix_to_block_tree(matrix, tree1, tree2)
+    assert tree_equal(block_tree, calculated)
+
+
 # one params df (make sure we don't get a list back)
 # dataframe and scalar
 # tests against jax
