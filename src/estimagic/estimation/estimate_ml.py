@@ -150,11 +150,12 @@ def estimate_ml(
     # ==================================================================================
     is_optimized = optimize_options is False
 
-    check_optimization_options(
-        optimize_options,
-        usage="estimate_ml",
-        algorithm_mandatory=True,
-    )
+    if not is_optimized:
+        check_optimization_options(
+            optimize_options,
+            usage="estimate_ml",
+            algorithm_mandatory=True,
+        )
 
     jac_case = get_derivative_case(jacobian)
     hess_case = get_derivative_case(hessian)
