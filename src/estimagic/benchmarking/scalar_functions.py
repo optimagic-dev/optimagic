@@ -384,7 +384,10 @@ def permzerodbeta(x, b=10):
         [
             (
                 np.sum(
-                    [((j + 1) + b * (x[j] ** (i + 1) - j ** (i + 1))) for j in range(d)]
+                    [
+                        (((j + 1) + b) * (x[j] ** (i + 1) - (j + 1) ** -(i + 1)))
+                        for j in range(d)
+                    ]
                 )
             )
             ** 2
@@ -452,7 +455,7 @@ def salomon(x):
     return out
 
 
-def schaffel1(x):
+def schaffer1(x):
     x_1, x_2 = x
     out = (
         0.5
@@ -462,7 +465,7 @@ def schaffel1(x):
     return out
 
 
-def schaffel2(x):
+def schaffer2(x):
     x_1, x_2 = x
     out = (
         0.5
@@ -472,7 +475,7 @@ def schaffel2(x):
     return out
 
 
-def schaffel3(x):
+def schaffer3(x):
     x_1, x_2 = x
     out = (
         0.5
@@ -482,7 +485,7 @@ def schaffel3(x):
     return out
 
 
-def schaffel4(x):
+def schaffer4(x):
     x_1, x_2 = x
     out = (
         0.5
@@ -1215,30 +1218,30 @@ SCALAR_FUNCTION_PROBLEMS = {
     },
     "permzerodbeta_good_start": {
         "criterion": permzerodbeta,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
+        "start_x": np.array([0.2, 0.8]),
+        "solution_x": np.array([1, 1 / 2]),
+        "start_criterion": 61.614399999999975,
         "solution_criterion": 0,
     },
     "permzerodbeta_bad_start": {
         "criterion": permzerodbeta,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
+        "start_x": np.array([10, 2]),
+        "solution_x": np.array([1, 1 / 2]),
+        "start_criterion": 1299645.0,
         "solution_criterion": 0,
     },
     "permdbeta_good_start": {
         "criterion": permdbeta,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
+        "start_x": np.array([1, 1.75]),
+        "solution_x": np.array([1, 2]),
+        "start_criterion": 1.21002197265625,
         "solution_criterion": 0,
     },
     "permdbeta_bad_start": {
         "criterion": permdbeta,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
+        "start_x": np.array([10, 3]),
+        "solution_x": np.array([1, 2]),
+        "start_criterion": 23972.078125,
         "solution_criterion": 0,
     },
     "powell_good_start": {
@@ -1257,16 +1260,16 @@ SCALAR_FUNCTION_PROBLEMS = {
     },
     "qing_good_start": {
         "criterion": qing,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
+        "start_x": np.array([1.5, 1.5]),
+        "solution_x": np.array([2, 2, 2, 2]),
+        "start_criterion": 0.0625,
         "solution_criterion": 0,
     },
     "qing_bad_start": {
         "criterion": qing,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
+        "start_x": np.array([10, 10]),
+        "solution_x": np.array([2, 2, 2, 2]),
+        "start_criterion": 9604,
         "solution_criterion": 0,
     },
     "quartic_good_start": {
@@ -1299,17 +1302,17 @@ SCALAR_FUNCTION_PROBLEMS = {
     },
     "ridge_good_start": {
         "criterion": ridge,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
-        "solution_criterion": 0,
+        "start_x": np.array([-4, 0]),
+        "solution_x": np.array([-1, 0]),
+        "start_criterion": -4,
+        "solution_criterion": -1,
     },
     "ridge_bad_start": {
         "criterion": ridge,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
-        "solution_criterion": 0,
+        "start_x": np.array([2, 2]),
+        "solution_x": np.array([-1, 0]),
+        "start_criterion": 4.29739670999407,
+        "solution_criterion": -1,
     },
     "rosenbrock_good_start": {
         "criterion": rosenbrock,
@@ -1353,57 +1356,57 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_criterion": 2.945263054935206,
         "solution_criterion": 0,
     },
-    "schaffel1_good_start": {
-        "criterion": schaffel1,
+    "schaffer1_good_start": {
+        "criterion": schaffer1,
         "start_x": np.array([4, -4]),
         "solution_x": np.array([0, 0]),
         "start_criterion": 0.05412538364222219,
         "solution_criterion": 0,
     },
-    "schaffel1_bad_start": {
-        "criterion": schaffel1,
+    "schaffer1_bad_start": {
+        "criterion": schaffer1,
         "start_x": np.array([1, 1.5]),
         "solution_x": np.array([0, 0]),
         "start_criterion": 0.8217877372933657,
         "solution_criterion": 0,
     },
-    "schaffel2_good_start": {
-        "criterion": schaffel2,
+    "schaffer2_good_start": {
+        "criterion": schaffer2,
         "start_x": np.array([3, -4]),
         "solution_x": np.array([0, 0]),
         "start_criterion": 0.04076572112213522,
         "solution_criterion": 0,
     },
-    "schaffel2_bad_start": {
-        "criterion": schaffel2,
+    "schaffer2_bad_start": {
+        "criterion": schaffer2,
         "start_x": np.array([3, 7]),
         "solution_x": np.array([0, 0]),
         "start_criterion": 0.933992959675674,
         "solution_criterion": 0,
     },
-    "schaffel3_good_start": {
-        "criterion": schaffel3,
+    "schaffer3_good_start": {
+        "criterion": schaffer3,
         "start_x": np.array([-1, -4]),
         "solution_x": np.array([0, 1.253115]),
         "start_criterion": 0.08795185526199178,
         "solution_criterion": 0.0015668545260126288,
     },
-    "schaffel3_bad_start": {
-        "criterion": schaffel3,
+    "schaffer3_bad_start": {
+        "criterion": schaffer3,
         "start_x": np.array([-1, -7]),
         "solution_x": np.array([0, 1.253115]),
         "start_criterion": 0.6593946641439471,
         "solution_criterion": 0.0015668545260126288,
     },
-    "schaffel4_good_start": {
-        "criterion": schaffel4,
+    "schaffer4_good_start": {
+        "criterion": schaffer4,
         "start_x": np.array([1, -2.66]),
         "solution_x": np.array([0, 1.253115]),
         "start_criterion": 0.3173669258600901,
         "solution_criterion": 0.2925786328424814,
     },
-    "schaffel4_bad_start": {
-        "criterion": schaffel4,
+    "schaffer4_bad_start": {
+        "criterion": schaffer4,
         "start_x": np.array([0.25, -0.25]),
         "solution_x": np.array([0, 1.253115]),
         "start_criterion": 0.9844154691523228,
@@ -1577,18 +1580,32 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_criterion": 156566.66666666666,
         "solution_criterion": 0,
     },
+    "thevenot_good_start": {
+        "criterion": thevenot,
+        "start_x": np.full(200, 10),
+        "solution_x": np.zeros(10),
+        "start_criterion": 0.031169788108193906,
+        "solution_criterion": -1,
+    },
+    "thevenot_bad_start": {
+        "criterion": thevenot,
+        "start_x": np.full(1, 10),
+        "solution_x": np.zeros(10),
+        "start_criterion": 0.9828079689867767,
+        "solution_criterion": -1,
+    },
     "trid_good_start": {
         "criterion": trid,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
+        "start_x": np.array([1, 1]),
+        "solution_x": np.array([2, 2]),
+        "start_criterion": -1,
         "solution_criterion": 0,
     },
     "trid_bad_start": {
         "criterion": trid,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
+        "start_x": np.array([10, 2]),
+        "solution_x": np.array([2, 2]),
+        "start_criterion": 80,
         "solution_criterion": 0,
     },
     "wolfe_good_start": {
@@ -2155,7 +2172,7 @@ SCALAR_FUNCTION_TAGS = {
         "randomized_term": False,
         "parametric": False,
     },
-    "schaffel1": {
+    "schaffer1": {
         "continuous": True,
         "convex": False,
         "separable": False,
@@ -2164,7 +2181,7 @@ SCALAR_FUNCTION_TAGS = {
         "randomized_term": False,
         "parametric": False,
     },
-    "schaffel2": {
+    "schaffer2": {
         "continuous": True,
         "convex": False,
         "separable": False,
@@ -2173,7 +2190,7 @@ SCALAR_FUNCTION_TAGS = {
         "randomized_term": False,
         "parametric": False,
     },
-    "schaffel3": {
+    "schaffer3": {
         "continuous": True,
         "convex": False,
         "separable": False,
@@ -2182,7 +2199,7 @@ SCALAR_FUNCTION_TAGS = {
         "randomized_term": False,
         "parametric": False,
     },
-    "schaffel4": {
+    "schaffer4": {
         "continuous": True,
         "convex": False,
         "separable": False,
