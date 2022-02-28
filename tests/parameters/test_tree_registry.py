@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.parameters.tree_registry import get_registry
+from pandas.testing import assert_frame_equal
 from pybaum import leaf_names
 from pybaum import tree_flatten
 from pybaum import tree_unflatten
@@ -54,7 +55,8 @@ def test_unflatten_partially_numeric_df(other_df):
     registry = get_registry(extended=True)
     _, treedef = tree_flatten(other_df, registry=registry)
     unflat = tree_unflatten(treedef, [1, 2, 3, 4, 5, 6], registry=registry)
-    assert unflat.equals(other_df.assign(b=[1, 3, 5], c=[2, 4, 6]))
+    other_df = other_df.assign(b=[1, 3, 5], c=[2, 4, 6])
+    assert_frame_equal(unflat, other_df, check_dtype=False)
 
 
 def test_leaf_names_partially_numeric_df(other_df):

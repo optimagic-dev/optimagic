@@ -1,12 +1,21 @@
 """Functions to convert between array and block-tree representations of a matrix."""
 import numpy as np
 import pandas as pd
+from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_flatten
 from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_unflatten
 
 
 def matrix_to_block_tree(matrix, tree1, tree2):
+    # validate input dimension
+    extended_registry = get_registry(extended=True)
+    flat1_scalar = tree_leaves(tree1, registry=extended_registry)
+    flat2_scalar = tree_leaves(tree2, registry=extended_registry)
+
+    if matrix.shape != (len(flat1_scalar), len(flat2_scalar)):
+        raise ValueError("Shape of matrix does not match with shapes of input trees.")
+
     flat1, treedef1 = tree_flatten(tree1)
     flat2, treedef2 = tree_flatten(tree2)
 
@@ -91,6 +100,15 @@ def block_tree_to_matrix(block_tree, tree1, tree2):
         block_rows.append(row_concatenated)
 
     matrix = np.concatenate(block_rows, axis=0)
+
+    # validate output dimension
+    extended_registry = get_registry(extended=True)
+    flat1_scalar = tree_leaves(tree1, registry=extended_registry)
+    flat2_scalar = tree_leaves(tree2, registry=extended_registry)
+
+    if matrix.shape != (len(flat1_scalar), len(flat2_scalar)):
+        raise ValueError("Shape of matrix does not match with shapes of input trees.")
+
     return matrix
 
 

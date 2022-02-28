@@ -46,7 +46,17 @@ def test_matrix_to_block_tree_only_params_dfs():
             ),
         },
     }
-    assert tree_equal(calculated, expected)
+
+    def _frame_equal(left, right):
+        try:
+            pd.testing.assert_frame_equal(left, right)
+            return True
+        except AssertionError:
+            return False
+
+    assert tree_equal(
+        calculated, expected, equality_checkers={pd.DataFrame: _frame_equal}
+    )
 
 
 def test_matrix_to_block_tree_single_element():
