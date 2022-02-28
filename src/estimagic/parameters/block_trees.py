@@ -8,13 +8,23 @@ from pybaum import tree_unflatten
 
 
 def matrix_to_block_tree(matrix, tree1, tree2):
-    # validate input dimension
-    extended_registry = get_registry(extended=True)
-    flat1_scalar = tree_leaves(tree1, registry=extended_registry)
-    flat2_scalar = tree_leaves(tree2, registry=extended_registry)
+    """Convert a matrix to block-tree.
 
-    if matrix.shape != (len(flat1_scalar), len(flat2_scalar)):
-        raise ValueError("Shape of matrix does not match with shapes of input trees.")
+    A block tree most often arises when one applies an operation to a function that maps
+    between two trees. Two main examples are the Jacobian of the function
+    f : tree1 -> tree2, which results in a block tree structure, or the covariance
+    matrix of a tree, in which case tree1 = tree2.
+
+    Args:
+        matrix (numpy.ndarray): 2-d matrix represenation of the block tree.
+        tree1: A pytree.
+        tree2: A pytree.
+
+    Returns:
+        block_tree: A (block) pytree.
+
+    """
+    _check_dimensions(matrix, tree1, tree2)
 
     flat1, treedef1 = tree_flatten(tree1)
     flat2, treedef2 = tree_flatten(tree2)
@@ -101,14 +111,7 @@ def block_tree_to_matrix(block_tree, tree1, tree2):
 
     matrix = np.concatenate(block_rows, axis=0)
 
-    # validate output dimension
-    extended_registry = get_registry(extended=True)
-    flat1_scalar = tree_leaves(tree1, registry=extended_registry)
-    flat2_scalar = tree_leaves(tree2, registry=extended_registry)
-
-    if matrix.shape != (len(flat1_scalar), len(flat2_scalar)):
-        raise ValueError("Shape of matrix does not match with shapes of input trees.")
-
+    _check_dimensions(matrix, tree1, tree2)
     return matrix
 
 
@@ -191,3 +194,12 @@ def _reshape_list_to_2d(list_to_reshape, shapes):
 
 def _is_pd_object(obj):
     return isinstance(obj, (pd.Series, pd.DataFrame))
+
+
+def _check_dimensions(matrix, tree1, tree2):
+    extended_registry = get_registry(extended=True)
+    flat1 = tree_leaves(tree1, registry=extended_registry)
+    flat2 = tree_leaves(tree2, registry=extended_registry)
+
+    if matrix.shape != (len(flat1), len(flat2)):
+        raise ValueError("Shape of matrix does not match with shapes of input trees.")

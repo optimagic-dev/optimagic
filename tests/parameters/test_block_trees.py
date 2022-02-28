@@ -15,7 +15,7 @@ def test_matrix_to_block_tree_array_and_scalar():
         "b": {"a": np.array([3, 6]), "b": np.array([[4, 5], [7, 8]])},
     }
 
-    assert tree_equal(calculated, expected)
+    assert _tree_equal_up_to_dtype(calculated, expected)
 
 
 def test_matrix_to_block_tree_only_params_dfs():
@@ -47,16 +47,7 @@ def test_matrix_to_block_tree_only_params_dfs():
         },
     }
 
-    def _frame_equal(left, right):
-        try:
-            pd.testing.assert_frame_equal(left, right)
-            return True
-        except AssertionError as e:
-            raise e
-
-    assert tree_equal(
-        calculated, expected, equality_checkers={pd.DataFrame: _frame_equal}
-    )
+    assert _tree_equal_up_to_dtype(calculated, expected)
 
 
 def test_matrix_to_block_tree_single_element():
@@ -90,7 +81,6 @@ def test_block_tree_to_matrix_array_and_scalar():
     }
 
     calculated = block_tree_to_matrix(block_tree, t1, t2)
-
     assert_array_equal(expected, calculated)
 
 
@@ -124,3 +114,16 @@ def test_block_tree_to_matrix_only_params_dfs():
 
     calculated = block_tree_to_matrix(block_tree, tree, tree)
     assert_array_equal(expected, calculated)
+
+
+def _tree_equal_up_to_dtype(left, right):
+    # does not compare dtypes for pandas.DataFrame
+    return tree_equal(left, right, equality_checkers={pd.DataFrame: _frame_equal})
+
+
+def _frame_equal(left, right):
+    try:
+        pd.testing.assert_frame_equal(left, right, check_dtype=False)
+        return True
+    except AssertionError:
+        return False
