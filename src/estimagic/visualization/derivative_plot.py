@@ -9,6 +9,7 @@ from plotly.subplots import make_subplots
 
 def derivative_plot(
     derivative_result,
+    combine_plots_in_grid=True,
 ):
     """Plot evaluations and derivative estimates.
 
@@ -25,9 +26,12 @@ def derivative_plot(
         derivative_result (dict): The result dictionary of call to
             :func:`~estimagic.differentiation.derivatives.first_derivative` with
             return_info and return_func_value set to True.
+        combine_plots_in_grid (bool): decide whether to return a one
+            figure containing subplots for each factor pair or a dictionary
+            of individual plots. Default True.
 
     Returns:
-        fig (matplotlib.pyplot.figure): The figure.
+        plotly.Figure: The grid plot or dict of individual plots
 
     """
     # adding styling and coloring templates
@@ -59,15 +63,18 @@ def derivative_plot(
     dim_x = range(df["dim_x"].max() + 1)
     dim_f = range(df["dim_f"].max() + 1)
 
-    # plot
-    temp_titles = [x + 1 for x in range(len(dim_x) * len(dim_f))]
-    g = make_subplots(rows=len(dim_x), cols=len(dim_f), subplot_titles=temp_titles)
+    # plotting
 
+    # container for titles
     titles = []
-    for (facet_row, facet_col), (row, col) in zip(
-        itertools.product(range(1, len(dim_x) + 1), range(1, len(dim_f) + 1)),
-        itertools.product(dim_x, dim_f),
-    ):
+    # container for x-axis titles
+    x_axis = []
+    # container for individual plots
+    g_list = []
+
+    # creating data traces for plotting faceted/individual plots
+    for (row, col) in itertools.product(dim_x, dim_f):
+        g_ind = []  # container for data for traces in individual plot
 
         # initial values and x grid
         y0 = func_value[col]
@@ -77,55 +84,44 @@ def derivative_plot(
         y0 = func_value[col]
         x_grid = np.linspace(-max_steps[row], max_steps[row], grid_points)
 
-        # plot function evaluations scatter points
+        # function evaluations scatter points
         _scatter_data = func_evals.query("dim_x == @row & dim_f == @col")
 
-        g.add_trace(
-            go.Scatter(
-                x=_scatter_data["step"],
-                y=_scatter_data["eval"],
-                mode="markers",
-                name="Function Evaluation",
-                legendgroup=1,
-                marker={"color": palette[0]},
-            ),
-            row=facet_row,
-            col=facet_col,
+        trace_1 = go.Scatter(
+            x=_scatter_data["step"],
+            y=_scatter_data["eval"],
+            mode="markers",
+            name="Function Evaluation",
+            legendgroup=1,
+            marker={"color": palette[0]},
         )
+        g_ind.append(trace_1)
 
-        # draw overall best derivative estimate
+        # overall best derivative estimate
         _y = y0 + x_grid * df_der.loc[row, col]
-        g.add_trace(
-            go.Scatter(
+        trace_2 = go.Scatter(
+            x=x_grid,
+            y=_y,
+            mode="lines",
+            name="Best Estimate",
+            legendgroup=2,
+            line={"dash": "dash", "color": palette[1]},
+        )
+        g_ind.append(trace_2)
+
+        # best derivative estimate given each method
+        for i, method in enumerate(["forward", "central", "backward"]):
+            _y = y0 + x_grid * df_der_method.loc[method, row, col]
+
+            trace_3 = go.Scatter(
                 x=x_grid,
                 y=_y,
                 mode="lines",
-                name="Best Estimate",
-                legendgroup=2,
-                line={"dash": "dash", "color": palette[1]},
-            ),
-            row=facet_row,
-            col=facet_col,
-        )
-
-        # draw best derivative estimate given each method
-        i = 0
-        for method in ["forward", "central", "backward"]:
-            i = i + 1
-            _y = y0 + x_grid * df_der_method.loc[method, row, col]
-
-            g.add_trace(
-                go.Scatter(
-                    x=x_grid,
-                    y=_y,
-                    mode="lines",
-                    name=method,
-                    legendgroup=2 + i,
-                    line={"color": palette[2 + i]},
-                ),
-                row=facet_row,
-                col=facet_col,
+                name=method,
+                legendgroup=2 + i,
+                line={"color": palette[2 + i]},
             )
+            g_ind.append(trace_3)
 
         # fill area
         for sign in [1, -1]:
@@ -133,58 +129,102 @@ def derivative_plot(
             diff = _x_y - np.array([0, y0])
             slope = diff[:, 1] / diff[:, 0]
             _y = y0 + x_grid * slope.reshape(-1, 1)
-            g.add_trace(
-                go.Scatter(
-                    x=x_grid,
-                    y=_y[0, :],
-                    mode="lines",
-                    legendgroup=6,
-                    line={"color": palette[6]},
-                    showlegend=False,
-                ),
-                row=facet_row,
-                col=facet_col,
-            )
-            g.add_trace(
-                go.Scatter(
-                    x=x_grid,
-                    y=_y[1, :],
-                    mode="lines",
-                    name="",
-                    legendgroup=6,
-                    line={"color": palette[6]},
-                    fill="tonexty",
-                ),
-                row=facet_row,
-                col=facet_col,
-            )
 
-        # setting annotations
-        g.update_xaxes(
-            row=facet_row, col=facet_col, title=fr"Value relative to $x_{0, row}$"
+            trace_4 = go.Scatter(
+                x=x_grid,
+                y=_y[0, :],
+                mode="lines",
+                legendgroup=6,
+                line={"color": palette[6]},
+                showlegend=False,
+            )
+            g_ind.append(trace_4)
+
+            trace_5 = go.Scatter(
+                x=x_grid,
+                y=_y[1, :],
+                mode="lines",
+                name="",
+                legendgroup=6,
+                line={"color": palette[6]},
+                fill="tonexty",
+            )
+            g_ind.append(trace_5)
+
+        # subplot x titles
+        x_axis.append(fr"Value relative to x<sub>{0, row}</sub>")
+        # subplot titles
+        titles.append(f"dim_x, dim_f = {row, col}")
+        # list of traces for individual plots
+        g_list.append(g_ind)
+
+    # Plot with subplots
+    if combine_plots_in_grid:
+        g = make_subplots(rows=len(dim_x), cols=len(dim_f), subplot_titles=titles)
+        for ind, (facet_row, facet_col) in enumerate(
+            itertools.product(range(1, len(dim_x) + 1), range(1, len(dim_f) + 1))
+        ):
+            traces = g_list[ind]
+            for trace in range(len(traces)):
+                g.add_trace(traces[trace], row=facet_row, col=facet_col)
+
+        # deleting duplicates in legend
+        names = set()
+        g.for_each_trace(
+            lambda trace: trace.update(showlegend=False)
+            if (trace.name in names)
+            else names.add(trace.name)
         )
 
-        titles.append(f"dim_x, dim_f = {row, col}")
+        # setting x-axis titles
+        for i in range(1, len(g_list) + 1):
+            g["layout"]["xaxis{}".format(i)]["title"] = x_axis[i - 1]
 
-    # setting subtitles
-    update_subtitles = dict(zip(temp_titles, titles))
-    g.for_each_annotation(lambda a: a.update(text=update_subtitles[int(a.text)]))
-    # deleting duplicates in legend
-    names = set()
-    g.for_each_trace(
-        lambda trace: trace.update(showlegend=False)
-        if (trace.name in names)
-        else names.add(trace.name)
-    )
+        # setting template theme and size
+        g.update_layout(
+            template=template, height=300 * len(dim_x), width=500 * len(dim_f)
+        )
 
-    # setting template theme
-    g.update_layout(template=template)
+        # scientific notations for axis ticks
+        g.update_yaxes(tickformat=".2e")
+        g.update_xaxes(tickformat=".2e")
 
-    # scientific notations for axis ticks
-    g.update_yaxes(tickformat=".2e")
-    g.update_xaxes(tickformat=".2e")
+        out = g
 
-    return g
+    # Dictionary for individual plots
+    if not combine_plots_in_grid:
+        ind_dict = {}
+        for ind in range(len(g_list)):
+            ind_plot = go.Figure()
+            traces = g_list[ind]
+            for trace in range(len(traces)):
+                ind_plot.add_trace(traces[trace])
+            # adding title and styling axes and theme
+            ind_plot.update_layout(
+                title=titles[ind],
+                xaxis_title=x_axis[ind],
+                template=template,
+                height=300,
+                width=500,
+                title_x=0.5,
+            )
+            # scientific notations for axis ticks
+            ind_plot.update_yaxes(tickformat=".2e")
+            ind_plot.update_xaxes(tickformat=".2e")
+            # deleting duplicates in legend
+            names = set()
+            ind_plot.for_each_trace(
+                lambda trace: trace.update(showlegend=False)
+                if (trace.name in names)
+                else names.add(trace.name)
+            )
+            # adding to dictionary
+            key = titles[ind].replace(" ", "_").lower()
+            ind_dict[key] = ind_plot
+
+            out = ind_dict
+
+    return out
 
 
 def _select_derivative_with_minimal_error(df_jac_cand, given_method=False):
