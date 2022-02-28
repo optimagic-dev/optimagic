@@ -33,6 +33,9 @@ def slice_plot(
 
 
     """
+    # adding coloring template
+    template = "plotly_white"
+
     np.random.seed(seed)
     if (
         "lower_bound" not in params.columns
@@ -81,31 +84,45 @@ def slice_plot(
 
     plot_data["Criterion Value"] = function_values
 
-    g = px.line(
-        plot_data,
-        x="Parameter Value",
-        y="Criterion Value",
-        color="value_identifier",
-        facet_col="name",
-        facet_col_wrap=plots_per_row,
-    )
-    g.update_layout(showlegend=False)
+    # common plotting parameters
+    kws = {"x": "Parameter Value", "y": "Criterion Value", "color": "value_identifier"}
 
-    g_list = []
-    for i in plot_data["name"].unique():
-        ind = px.line(
-            plot_data[plot_data["name"] == i],
-            x="Parameter Value",
-            y="Criterion Value",
-            color="value_identifier",
-        )
-        ind.update_layout(showlegend=False)
-        g_list.append(ind)
-
+    # Plot with subplots
     if combine_plots_in_grid:
+
+        g = px.line(
+            plot_data,
+            **kws,
+            facet_col="name",
+            facet_col_wrap=plots_per_row,
+            width=500 * plots_per_row,
+            height=300 * len(plot_data["name"].unique()) / plots_per_row,
+        )
+        g.update_layout(showlegend=False, template=template)
+
         out = g
-    else:
-        out = g_list
+
+    # Dictionary for individual plots
+    if not combine_plots_in_grid:
+        ind_dict = {}
+        for i in plot_data["name"].unique():
+            ind = px.line(
+                plot_data[plot_data["name"] == i],
+                **kws,
+            )
+            ind.update_layout(
+                showlegend=False,
+                title="name=" + str(i),
+                height=300,
+                width=500,
+                title_x=0.5,
+                template=template,
+            )
+            # adding to dictionary
+            key = "name=" + str(i)
+            ind_dict[key] = ind
+
+            out = ind_dict
 
     return out
 
