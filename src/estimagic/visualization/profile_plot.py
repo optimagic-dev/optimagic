@@ -26,6 +26,7 @@ def profile_plot(
     stopping_criterion="y",
     x_precision=1e-4,
     y_precision=1e-4,
+    template="plotly_white",
 ):
     """Compare optimizers over a problem set.
 
@@ -70,13 +71,12 @@ def profile_plot(
             true criterion values (as percent of the distance between start
             and solution criterion value) before the criterion for clipping and
             convergence is fulfilled.
+        template (str): The template for the figure. Default is "plotly_white".
 
     Returns:
         plotly.Figure
 
     """
-    # adding coloring templates
-    template = "plotly_white"
 
     if stopping_criterion is None:
         raise ValueError(

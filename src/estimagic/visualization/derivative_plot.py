@@ -8,8 +8,7 @@ from plotly.subplots import make_subplots
 
 
 def derivative_plot(
-    derivative_result,
-    combine_plots_in_grid=True,
+    derivative_result, combine_plots_in_grid=True, template="plotly_white"
 ):
     """Plot evaluations and derivative estimates.
 
@@ -29,13 +28,13 @@ def derivative_plot(
         combine_plots_in_grid (bool): decide whether to return a one
             figure containing subplots for each factor pair or a dictionary
             of individual plots. Default True.
+        template (str): The template for the figure. Default is "plotly_white".
 
     Returns:
         plotly.Figure: The grid plot or dict of individual plots
 
     """
-    # adding styling and coloring templates
-    template = "plotly_white"
+    # adding coloring palette
     palette = px.colors.qualitative.Plotly
 
     func_value = derivative_result["func_value"]
@@ -255,6 +254,30 @@ def create_ind_dict(
     x_min=None,
     x_max=None,
 ):
+    """Create a dictionary for individual plots from a list of traces.
+
+    Args:
+        ind_list (iterable): The list of traces for each individual plot.
+        names (iterable): The list of titles for the each plot.
+        kws (dict): The dictionary for the layout.update, unified for each
+        individual plot.
+        x_title (iterable or None): The list of x-axis labels for each plot. If None,
+        then no labels are added.
+        y_title (iterable or None): The list of y-axis labels for each plot. If None,
+        then no labels are added.
+        clean_legend (bool): If True, then cleans the legend from duplicates.
+        Default False.
+        sci_notation (bool): If True then updates the ticks on x- and y-axis to
+        be displayed in a scientific notation. Default False.
+        share_xax (bool): If True, then the x-axis domain is the same
+        for each individual plot.
+        x_min (int or None): The lower bound for share_xax.
+        x_max (int or None): The upped bound for share_xax.
+
+    Returns:
+        dictionary of individual plots
+
+    """
     fig_dict = {}
     if x_title is None:
         x_title = ["" for ind in range(len(ind_list))]

@@ -11,6 +11,7 @@ def slice_plot(
     plots_per_row=2,
     combine_plots_in_grid=True,
     seed=5471,
+    template="plotly_white",
 ):
     """Plot criterion along coordinates at given and random values.
 
@@ -27,14 +28,13 @@ def slice_plot(
         combine_plots_in_grid (bool): decide whether to return a one
         figure containing subplots for each factor pair or a dictionary
         of individual plots. Default True.
+        template (str): The template for the figure. Default is "plotly_white".
 
     Returns:
         plotly.Figure: The grid plot or dict of individual plots
 
 
     """
-    # adding coloring template
-    template = "plotly_white"
 
     np.random.seed(seed)
     if (

@@ -16,6 +16,7 @@ def lollipop_plot(
     scatterplot_kws=None,
     barplot_kws=None,
     combine_plots_in_grid=True,
+    template="plotly_white",
 ):
     """Make a lollipop plot.
 
@@ -27,25 +28,22 @@ def lollipop_plot(
         sharex (bool): Whether the x-axis is shared across variables, default True.
         plot_bar (bool): Whether thin bars are plotted, default True.
         n_rows (int): Number of rows for a grid if plots are combined
-            in a grid, default 1.
+            in a grid, default 1. The number of columns is determined automatically.
         scatterplot_kws (dict): Keyword arguments to plot the dots of the lollipop plot
-            via the scatter function. Most notably, "width" and "height".
+            via the scatter function.
         barplot_kws (dict): Keyword arguments to plot the lines of the lollipop plot
-            via the barplot function. Most notably, "color" and "alpha". In contrast
-            to seaborn, we allow for a "width" argument.
-        dodge (bool): Wheter the lollipops for different datasets are plotted
-            with an offset or on top of each other.
+            via the barplot function.
         combine_plots_in_grid (bool): decide whether to return a one
         figure containing subplots for each factor pair or a dictionary
         of individual plots. Default True.
+        template (str): The template for the figure. Default is "plotly_white".
 
     Returns:
         plotly.Figure: The grid plot or dict of individual plots
 
     """
-    # adding styling and coloring templates
+    # adding coloring palette
     palette = px.colors.qualitative.Plotly
-    template = "plotly_white"
 
     data, varnames = _harmonize_data(data)
 
@@ -209,6 +207,30 @@ def create_ind_dict(
     x_min=None,
     x_max=None,
 ):
+    """Create a dictionary for individual plots from a list of traces.
+
+    Args:
+        ind_list (iterable): The list of traces for each individual plot.
+        names (iterable): The list of titles for the each plot.
+        kws (dict): The dictionary for the layout.update, unified for each
+        individual plot.
+        x_title (iterable or None): The list of x-axis labels for each plot. If None,
+        then no labels are added.
+        y_title (iterable or None): The list of y-axis labels for each plot. If None,
+        then no labels are added.
+        clean_legend (bool): If True, then cleans the legend from duplicates.
+        Default False.
+        sci_notation (bool): If True then updates the ticks on x- and y-axis to
+        be displayed in a scientific notation. Default False.
+        share_xax (bool): If True, then the x-axis domain is the same
+        for each individual plot.
+        x_min (int or None): The lower bound for share_xax.
+        x_max (int or None): The upped bound for share_xax.
+
+    Returns:
+        dictionary of individual plots
+
+    """
     fig_dict = {}
     if x_title is None:
         x_title = ["" for ind in range(len(ind_list))]
