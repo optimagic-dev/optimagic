@@ -43,11 +43,11 @@ test_cases_no_contribs_needed = [
 
 def criterion_and_derivative(x, task, algorithm_info):
     if task == "criterion":
-        return (x ** 2).sum()
+        return (x**2).sum()
     elif task == "derivative":
         return 2 * x
     elif task == "criterion_and_derivative":
-        return (x ** 2).sum(), 2 * x
+        return (x**2).sum(), 2 * x
     else:
         raise ValueError(f"Unknown task: {task}")
 
