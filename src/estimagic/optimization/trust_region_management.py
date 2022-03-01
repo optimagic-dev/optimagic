@@ -1,5 +1,4 @@
 import itertools
-from functools import partial
 from itertools import combinations
 
 import numpy as np
@@ -87,10 +86,9 @@ def get_next_trust_region_points_latin_hypercube(
 
     candidates = _scale_down_points(candidates, center, radius, n_points)
 
-    crit_func = partial(
-        compute_optimality_criterion, criterion=optimality_criterion, target=target
+    crit_vals = compute_optimality_criterion(
+        candidates, criterion=optimality_criterion, target=target
     )
-    crit_vals = crit_func(candidates)
     points = candidates[np.argmin(crit_vals)]
 
     out = {"points": points, "crit_vals": crit_vals}
