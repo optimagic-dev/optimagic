@@ -495,12 +495,6 @@ def yatpsq_2(x, dim_in):
     return fvec
 
 
-def arglale(x, dim_out):
-    fvec = np.zeros(dim_out)
-
-    pass
-
-
 def get_start_points_msqrta(dim_in, flag=1):
     bmat = np.zeros((dim_in, dim_in))
     for i in range(1, dim_in + 1):
@@ -727,6 +721,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 0,
     },
     "arglale": {
+        # arglale is the same as linear_full_rank with specific settings
         "criterion": partial(linear_full_rank, dim_out=400),
         "start_x": np.ones(100),
         "solution_x": None,
@@ -734,6 +729,7 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_criterion": 300,
     },
     "arglble": {
+        # arglble is the same as linear_rank_one with specific settings
         "criterion": partial(linear_rank_one, dim_out=400),
         "start_x": np.ones(100),
         "solution_x": None,
