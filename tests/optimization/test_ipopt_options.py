@@ -198,7 +198,7 @@ test_cases = [
 
 def criterion_and_derivative(x, task, algorithm_info):
     if task == "criterion":
-        return (x ** 2).sum()
+        return (x**2).sum()
     elif task == "derivative":
         return 2 * x
     else:

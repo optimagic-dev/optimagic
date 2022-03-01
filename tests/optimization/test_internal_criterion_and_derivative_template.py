@@ -205,7 +205,7 @@ def test_penalty_aggregations(seed):
     root_contribs = _penalty_root_contributions(x, constant, slope, x0, dim_out)
 
     assert np.isclose(scalar, contribs.sum())
-    assert np.isclose(scalar, (root_contribs ** 2).sum())
+    assert np.isclose(scalar, (root_contribs**2).sum())
 
 
 pairs = [
