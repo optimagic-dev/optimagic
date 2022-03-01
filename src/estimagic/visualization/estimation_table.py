@@ -11,7 +11,7 @@ import pandas as pd
 def estimation_table(
     models,
     *,
-    return_type="data_frame",
+    return_type="dataframe",
     render_options=None,
     custom_param_names=None,
     show_col_names=True,
@@ -42,36 +42,43 @@ def estimation_table(
     to be passed to tabular functions, or save tables to path.
 
     Args:
-        models (list): list of estimation results. The estimation results should either
-            have attributes info(dict) with summary statistics of the model and params
-            (DataFrame) with parameter values, standard erors and/or confidence
-            intervals and p values, or a sm regression result can be passed.
-        return_type (str): Can be "latex", "html", "python" or a file path with the
-            extension .tex or .html. If "python", a dictionary with the entries
-            "paramaters_df", "footer_df" and "footer (html and latex)" is returned.
-        custom_param_names (dict): a dictionary with old names of parameters that should
-            be renamed as keys and respective new names as values. Default is None.
+        models (list): list of estimation results. The models can come from
+            statmodels or be constructed from the outputs of `estimagic.estimate_ml`
+            or `estimagic.estimate_msm`. With a little bit of work it is also possible
+            to construct them out of R or other results. If a model is not a
+            statsmodels results they must be dictionaries or namedtuples with the
+            following entries: "params" (a DataFrame with value column), "info"
+            (a dictionary with summary statistics such as "n_obs", "rsquared", ...)
+            and "name" (a string). If a models is a statsmodels result, model.endog.name
+            is used as name and the rest is extracted from corresponding statsmodels
+            attributes. The model names do not have to be unique but if they are not,
+            models with the same name need to be grouped together.
+        return_type (str): Can be "dataframe", "latex", "html", "render_inputs" or a
+            file path with the extension .tex or .html. If "render_inputs" is passed,
+            a dictionary with the entries "body", "footer", "notes" and other
+            information is returned. The entries can be modified by the user (
+            e.g. formatting changes, renaming of columns index, ...) and then passed
+            to `render_latex` or render_htm`.
+        custom_param_names (dict): Dictionary that is used to rename parameters. The
+            keys are the old parameter names or index entries. The values are
+            the new names. Default None.
+        custom_index_names (dict or list): Dictionary or list to set the names of the
+            index levels of the parameters. Only used if "add_index_names" is set to
+            True in the render_options. Default None.
         render_options (dict): a dictionary with keyword arguments that are passed to
             df.to_latex or df.to_html, depending on the return_type.
             The default is None.
-        show_col_names (bool): a boolean variable for printing column numbers.
-            Default is True
-        custom_col_names (list): a list of strings to print as column names.
-            Default is None.
-        endog_names_as_col_names (bool): if True, use the name of endogenous variables
-            as column names. Default is False.
-        endog_names_as_col_level (bool): if True, use the name of endogenous variables
-            as additional level of column index.
-        custom_endog_names (dict): a dictionary with old names of endogenous variabels
-            that should be renamed as keys and respective new names as values.
-        custom_model_names (dictionary): a dictionary with keys to print as model names,
-            and values as columns to be combined under the respective model names.
-            Default is None.
-        custom_index_names (list): a list of strings to print as the name of the
-            parameter/variable column. To print index names, add index_names = True
-            in the render options. Default is None.
-        show_inference (bool): a boolean variable for printing precision (standard
-            error/confidence intervals). Defalut is True.
+        show_col_names (bool): If True, the column names are displayed. Default True.
+        show_col_groups (bool): If True, the column groups are displayed. Default False.
+        custom_col_names (dict or list): A list of column names or dict to rename the
+            default column names. The default column names are the model names if the
+            model names are unique, otherwise (1), (2), etc..
+        custom_col_groups (dict or list): A list of column group or dict to rename
+            the default column groups. The default column groups are the model names
+            if the model names are not unique and undefined otherwise.
+        inference_type (str or None): One of "standard_errors", "confidenece_intervals"
+            or None. Determines which kind of inference measure is displayed in the
+            table.
         show_stars (bool): a boolean variable for printing significance stars.
             Default is True.
         significance_levels (list): a list of floats for p value's significance cutt-off
@@ -82,11 +89,7 @@ def estimation_table(
             alignment of the columns to the left of the decimal point of numerical
             entries. Default is 1. If the number of models is more than 2, set the
             value of padding to 3 or more to avoid columns overlay in the tex output.
-
-        confidence_intervals (bool): a boolean variable for printin confidence
-            intervals or standard errors as precision. If False standard errors
-            are printed. Default is False.
-        show_footer (bool): a boolean variable for printing statistics, e.g. R2,
+        show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
             Obs numbers. Default is True.
         stat_keys (dict): a dictionary with printed statistics names as keys,
             and statistics statistics names to be retrieved from model.info as values.
@@ -252,7 +255,7 @@ def estimation_table(
                 append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
         }
-    elif return_type == "data_frame":
+    elif return_type == "dataframe":
         if show_footer:
             footer_df.index.names = body_df.index.names
             out = pd.concat([body_df.reset_index(), footer_df.reset_index()]).set_index(
