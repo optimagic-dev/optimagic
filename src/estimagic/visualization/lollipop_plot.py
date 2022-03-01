@@ -49,8 +49,33 @@ def lollipop_plot(
 
     data, varnames = _harmonize_data(data)
 
-    scatterplot_kws = {} if scatterplot_kws is None else scatterplot_kws
-    barplot_kws = {} if barplot_kws is None else barplot_kws
+    scatter_dict = {
+        "mode": "markers",
+        "marker": {"color": palette[0]},
+        "showlegend": False,
+    }
+
+    bar_dict = {
+        "orientation": "h",
+        "width": 0.03,
+        "marker": {"color": palette[0]},
+        "showlegend": False,
+    }
+
+    scatterplot_kws = (
+        scatter_dict
+        if scatterplot_kws is None
+        else scatter_dict.update(
+            {k: v for k, v in scatterplot_kws.items() if k not in scatter_dict}
+        )
+    )
+    barplot_kws = (
+        bar_dict
+        if barplot_kws is None
+        else bar_dict.update(
+            {k: v for k, v in barplot_kws.items() if k not in bar_dict}
+        )
+    )
 
     # container for individual plots
     g_list = []
@@ -62,27 +87,12 @@ def lollipop_plot(
         g_ind = []
         # dot plot using the scatter function
         to_plot = data[data["indep"] == indep_name]
-        trace_1 = go.Scatter(
-            x=to_plot["values"],
-            y=to_plot["__name__"],
-            mode="markers",
-            marker={"color": palette[0]},
-            showlegend=False,
-            **scatterplot_kws
-        )
+        trace_1 = go.Scatter(x=to_plot["values"], y=to_plot["__name__"], **scatter_dict)
         g_ind.append(trace_1)
 
         # bar plot
         if plot_bar:
-            trace_2 = go.Bar(
-                x=to_plot["values"],
-                y=to_plot["__name__"],
-                orientation="h",
-                width=0.025,
-                marker={"color": palette[0]},
-                showlegend=False,
-                **barplot_kws
-            )
+            trace_2 = go.Bar(x=to_plot["values"], y=to_plot["__name__"], **bar_dict)
         g_ind.append(trace_2)
 
         g_list.append(g_ind)
@@ -110,6 +120,8 @@ def lollipop_plot(
         for ind, (facet_row, facet_col) in enumerate(
             itertools.product(range(1, n_rows + 1), range(1, n_cols + 1))
         ):
+            if ind + 1 > len(g_list):
+                break  # empty plot in a grid when odd number of ind_plots
             traces = g_list[ind]
             for trace in range(len(traces)):
                 g.add_trace(traces[trace], row=facet_row, col=facet_col)
