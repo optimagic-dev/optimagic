@@ -1315,16 +1315,16 @@ SCALAR_FUNCTION_PROBLEMS = {
     "rosenbrock_good_start": {
         "criterion": rosenbrock,
         "start_x": np.full(3, 0.5),
-        "solution_x": np.full(1, 1),
-        "start_criterion": 1.5,
-        "solution_criterion": 1,
+        "solution_x": np.array([1, 1]),
+        "start_criterion": 6.5,
+        "solution_criterion": 0,
     },
     "rosenbrock_bad_start": {
         "criterion": rosenbrock,
         "start_x": np.full(10, -1.5),
-        "solution_x": np.full(1, 1),
-        "start_criterion": 123.75,
-        "solution_criterion": 1,
+        "solution_x": np.array([1, 1]),
+        "start_criterion": 1412.5,
+        "solution_criterion": 0,
     },
     "rotatedhyperellipsoid_good_start": {
         "criterion": rotatedhyperellipsoid,
