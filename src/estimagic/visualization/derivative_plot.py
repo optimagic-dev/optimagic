@@ -278,7 +278,7 @@ def create_ind_dict(
         if clean_legend:
             fig = clean_legend_duplicates(fig)
         if share_xax:
-            fig.update_xaxes(range=[min, max])
+            fig.update_xaxes(range=[x_min, x_max])
         # adding to dictionary
         key = names[ind].replace(" ", "_").lower()
         fig_dict[key] = fig

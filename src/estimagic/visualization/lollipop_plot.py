@@ -139,27 +139,20 @@ def lollipop_plot(
 
     # Dictionary for individual plots
     if not combine_plots_in_grid:
-        ind_dict = {}
-        for ind in range(len(g_list)):
-            ind_plot = go.Figure()
-            traces = g_list[ind]
-            for trace in range(len(traces)):
-                ind_plot.add_trace(traces[trace])
-            if sharex:
-                ind_plot.update_xaxes(range=[lower, upper])
-            # adding title and theme
-            ind_plot.update_layout(
-                title=titles[ind],
-                template=template,
-                height=150,
-                width=150,
-                title_x=0.5,
-                margin={"l": 10, "r": 10, "t": 30, "b": 10},
-            )
-            # adding to dictionary
-            key = titles[ind].replace(" ", "_").lower()
-            ind_dict[key] = ind_plot
-
+        ind_dict = create_ind_dict(
+            g_list,
+            titles,
+            share_xax=sharex,
+            x_min=lower,
+            x_max=upper,
+            kws={
+                "template": template,
+                "height": 150,
+                "width": 150,
+                "title_x": 0.5,
+                "margin": {"l": 10, "r": 10, "t": 30, "b": 10},
+            },
+        )
         out = ind_dict
 
     return out
@@ -202,3 +195,56 @@ df = pd.DataFrame(
     index=pd.MultiIndex.from_tuples([(0, "a"), ("b", 1), ("a", "b"), (2, 3)]),
     columns=["a", "b", "c"],
 )
+
+
+def create_ind_dict(
+    ind_list,
+    names,
+    kws,
+    x_title=None,
+    y_title=None,
+    clean_legend=False,
+    sci_notation=False,
+    share_xax=False,
+    x_min=None,
+    x_max=None,
+):
+    fig_dict = {}
+    if x_title is None:
+        x_title = ["" for ind in range(len(ind_list))]
+    if y_title is None:
+        y_title = ["" for ind in range(len(ind_list))]
+
+    for ind in range(len(ind_list)):
+        fig = go.Figure()
+        traces = ind_list[ind]
+        for trace in range(len(traces)):
+            fig.add_trace(traces[trace])
+        # adding title and styling axes and theme
+        fig.update_layout(
+            title=names[ind], xaxis_title=x_title[ind], yaxis_title=y_title[ind], **kws
+        )
+        # scientific notations for axis ticks
+        if sci_notation:
+            fig.update_yaxes(tickformat=".2e")
+            fig.update_xaxes(tickformat=".2e")
+        # deleting duplicates in legend
+        if clean_legend:
+            fig = clean_legend_duplicates(fig)
+        if share_xax:
+            fig.update_xaxes(range=[x_min, x_max])
+        # adding to dictionary
+        key = names[ind].replace(" ", "_").lower()
+        fig_dict[key] = fig
+
+    return fig_dict
+
+
+def clean_legend_duplicates(fig):
+    names = set()
+    fig.for_each_trace(
+        lambda trace: trace.update(showlegend=False)
+        if (trace.name in names)
+        else names.add(trace.name)
+    )
+    return fig

@@ -125,7 +125,7 @@ def convergence_plot(
         "monotone_criterion_normalized": "Share of Function Distance to Optimum<br>"
         + "Missing From Best So Far",
         "parameter_distance": "Distance Between Current and Optimal Parameters",
-        "parameter_distance_normalized": "Share of the Parameter Distance to Optimum<br>"
+        "parameter_distance_normalized": "Share of Parameter Distance to Optimum<br>"
         + "Missing From Current Parameters",
         "monotone_parameter_distance_normalized": "Share of the Parameter Distance "
         + "to Optimum<br> Missing From the Best Parameters So Far",
@@ -202,12 +202,7 @@ def convergence_plot(
                 )
 
         # deleting duplicates in legend
-        names = set()
-        g.for_each_trace(
-            lambda trace: trace.update(showlegend=False)
-            if (trace.name in names)
-            else names.add(trace.name)
-        )
+        g = clean_legend_duplicates(g)
 
         # setting template theme and size of the figure
         g.update_layout(
@@ -217,28 +212,18 @@ def convergence_plot(
 
     # Dictionary for individual plots
     if not combine_plots_in_grid:
+        xaxis_title = [x_labels[runtime_measure] for ind in range(len(g_list))]
+        yaxis_title = [y_labels[outcome] for ind in range(len(g_list))]
 
-        ind_dict = {}
-        for ind in range(len(g_list)):
-            ind_plot = go.Figure()
-            traces = g_list[ind]
-            for trace in range(len(traces)):
-                ind_plot.add_trace(traces[trace])
-            # adding title and styling axes and theme
-            ind_plot.update_layout(
-                title=titles[ind],
-                xaxis_title=x_labels[runtime_measure],
-                yaxis_title=y_labels[outcome],
-                template=template,
-                height=300,
-                width=500,
-                title_x=0.5,
-            )
-            # adding to dictionary
-            key = titles[ind].replace(" ", "_").lower()
-            ind_dict[key] = ind_plot
+        ind_dict = create_ind_dict(
+            g_list,
+            titles,
+            x_title=xaxis_title,
+            y_title=yaxis_title,
+            kws={"template": template, "height": 300, "width": 500, "title_x": 0.5},
+        )
 
-            out = ind_dict
+        out = ind_dict
 
     return out
 
@@ -265,3 +250,56 @@ def _check_only_allowed_subset_provided(subset, allowed, name):
                 proposed = propose_alternatives(entry, allowed)
                 missing_msg += f"Invalid {name}: {entry}. Did you mean {proposed}?\n"
             raise ValueError(missing_msg)
+
+
+def create_ind_dict(
+    ind_list,
+    names,
+    kws,
+    x_title=None,
+    y_title=None,
+    clean_legend=False,
+    sci_notation=False,
+    share_xax=False,
+    x_min=None,
+    x_max=None,
+):
+    fig_dict = {}
+    if x_title is None:
+        x_title = ["" for ind in range(len(ind_list))]
+    if y_title is None:
+        y_title = ["" for ind in range(len(ind_list))]
+
+    for ind in range(len(ind_list)):
+        fig = go.Figure()
+        traces = ind_list[ind]
+        for trace in range(len(traces)):
+            fig.add_trace(traces[trace])
+        # adding title and styling axes and theme
+        fig.update_layout(
+            title=names[ind], xaxis_title=x_title[ind], yaxis_title=y_title[ind], **kws
+        )
+        # scientific notations for axis ticks
+        if sci_notation:
+            fig.update_yaxes(tickformat=".2e")
+            fig.update_xaxes(tickformat=".2e")
+        # deleting duplicates in legend
+        if clean_legend:
+            fig = clean_legend_duplicates(fig)
+        if share_xax:
+            fig.update_xaxes(range=[x_min, x_max])
+        # adding to dictionary
+        key = names[ind].replace(" ", "_").lower()
+        fig_dict[key] = fig
+
+    return fig_dict
+
+
+def clean_legend_duplicates(fig):
+    names = set()
+    fig.for_each_trace(
+        lambda trace: trace.update(showlegend=False)
+        if (trace.name in names)
+        else names.add(trace.name)
+    )
+    return fig
