@@ -75,6 +75,9 @@ def profile_plot(
         plotly.Figure
 
     """
+    # adding coloring templates
+    template = "plotly_white"
+
     if stopping_criterion is None:
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
@@ -137,10 +140,13 @@ def profile_plot(
         xaxis_title=xlabels[(runtime_measure, normalize_runtime)],
         yaxis_title="Share of Problems Solved",
         title=None,
+        height=300,
+        width=500,
+        margin={"l": 10, "r": 10, "t": 30, "b": 10},
+        template=template,
     )
-    # dropped tight layout and hline
 
-    fig.add_hline(y=1)  # dropped styling and what is xmax??
+    fig.add_hline(y=1)  # dropped styling
     return fig
 
 
