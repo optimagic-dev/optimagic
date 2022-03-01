@@ -38,7 +38,7 @@ WEIGHTS = [
 def example_criterion(x):
     x = _unpack_x(x)
     exponents = np.arange(len(WEIGHTS))
-    return WEIGHTS @ x ** exponents
+    return WEIGHTS @ x**exponents
 
 
 def example_gradient(x):
@@ -304,7 +304,7 @@ def _taylor_expansion(x, x0):
     f_double_prime = example_hessian(x0)
 
     diff = x - x0
-    res = f + f_prime * diff + f_double_prime * 0.5 * diff ** 2
+    res = f + f_prime * diff + f_double_prime * 0.5 * diff**2
     return res
 
 

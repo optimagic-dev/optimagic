@@ -25,7 +25,6 @@ dependencies:
   - numpy
   - pandas
   - pdbpp
-  - petsc4py>=3.16.1
   - pygmo
   - pytest
   - pytest-cov
@@ -45,6 +44,7 @@ dependencies:
   - pygmo
   - chaospy
   - plotly>=5.5.0
+  - pybaum
 
   - pip:
       - black

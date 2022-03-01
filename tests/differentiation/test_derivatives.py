@@ -112,7 +112,7 @@ def test_second_derivative_hessian(binary_choice_inputs, method):
 @pytest.mark.parametrize("method", methods)
 def test_first_derivative_scalar(method):
     def f(x):
-        return x ** 2
+        return x**2
 
     calculated = first_derivative(f, 3.0, n_cores=1)
     expected = 6.0
@@ -122,7 +122,7 @@ def test_first_derivative_scalar(method):
 @pytest.mark.parametrize("method", methods_second_derivative)
 def test_second_derivative_scalar(method):
     def f(x):
-        return x ** 2
+        return x**2
 
     calculated = second_derivative(f, 3.0, n_cores=1)
     expected = 2.0
@@ -133,7 +133,7 @@ def test_second_derivative_scalar(method):
 @pytest.mark.parametrize("method", methods)
 def test_first_derivative_scalar_with_return_func_value(method):
     def f(x):
-        return x ** 2
+        return x**2
 
     calculated = first_derivative(
         f, 3.0, return_func_value=True, return_info=False, n_cores=1
@@ -145,7 +145,7 @@ def test_first_derivative_scalar_with_return_func_value(method):
 @pytest.mark.parametrize("method", methods_second_derivative)
 def test_second_derivative_scalar_with_return_func_value(method):
     def f(x):
-        return x ** 3
+        return x**3
 
     calculated = second_derivative(
         f, 3.0, return_func_value=True, return_info=False, n_cores=1
@@ -166,7 +166,7 @@ def test_nan_skipping_batch_evaluator():
         np.array([1, 4]),
     ]
     calculated = _nan_skipping_batch_evaluator(
-        func=lambda x: x ** 2,
+        func=lambda x: x**2,
         arguments=arglist,
         n_cores=1,
         error_handling="continue",

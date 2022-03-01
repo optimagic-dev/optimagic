@@ -334,7 +334,7 @@ def test_get_history_of_the_parameter_distance(benchmark_results):
         data=[
             ["prob1", "algo1", 0, 1],
             ["prob1", "algo1", 1, 0],
-            ["prob1", "algo1", 2, np.sqrt(2 * 0.5 ** 2)],
+            ["prob1", "algo1", 2, np.sqrt(2 * 0.5**2)],
             ["prob1", "algo2", 0, np.sqrt(5)],
             ["prob1", "algo2", 1, np.sqrt(2)],
             ["prob2", "algo1", 0, 1],
@@ -407,7 +407,7 @@ def test_create_convergence_histories(benchmark_results):
         data=[
             ["prob1", "algo1", 0, 1],
             ["prob1", "algo1", 1, 0],
-            ["prob1", "algo1", 2, np.sqrt(2 * 0.5 ** 2)],
+            ["prob1", "algo1", 2, np.sqrt(2 * 0.5**2)],
             ["prob1", "algo2", 0, np.sqrt(5)],
             ["prob1", "algo2", 1, np.sqrt(2)],
             ["prob2", "algo1", 0, 1],
