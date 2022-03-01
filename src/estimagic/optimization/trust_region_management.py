@@ -149,7 +149,7 @@ def compute_optimality_criterion(x, criterion, target):
         x = np.expand_dims(x, axis=0)
 
     if target == "quadratic":
-        x = np.concatenate((x, x ** 2), axis=2)
+        x = np.concatenate((x, x**2), axis=2)
 
     # common computations
     prod = np.matmul(x.transpose(0, 2, 1), x)
