@@ -6,6 +6,7 @@ import pandas as pd
 from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
+from estimagic.benchmarking.scalar_functions import SCALAR_FUNCTION_PROBLEMS
 
 
 def get_benchmark_problems(
@@ -96,6 +97,8 @@ def _get_raw_problems(name):
             "implemented. Do not use this for any published work."
         )
         raw_problems = CARTIS_ROBERTS_PROBLEMS
+    elif name == "scalar_functions":
+        raw_problems = SCALAR_FUNCTION_PROBLEMS
     elif name == "example":
         subset = {
             "linear_full_rank_good_start",

@@ -5,7 +5,7 @@ import pytest
 from estimagic import get_benchmark_problems
 
 PARMETRIZATION = []
-for name in ["more_wild", "cartis_roberts"]:
+for name in ["more_wild", "cartis_roberts", "scalar_functions"]:
     for additive, multiplicative in product([False, True], repeat=2):
         PARMETRIZATION.append((name, additive, multiplicative))
 
