@@ -1,14 +1,19 @@
+import itertools
+import math
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 
 def lollipop_plot(
     data,
     sharex=True,
     plot_bar=True,
-    stripplot_kws=None,
+    n_rows=1,
+    scatterplot_kws=None,
     barplot_kws=None,
     combine_plots_in_grid=True,
 ):
@@ -21,10 +26,10 @@ def lollipop_plot(
             before passing it.
         sharex (bool): Whether the x-axis is shared across variables, default True.
         plot_bar (bool): Whether thin bars are plotted, default True.
-        pairgrid_kws (dict): Keyword arguments for for the creation of a facet grid.
-        Most notably, "facet_col_spacing" to control the space between facet columns.
-        stripplot_kws (dict): Keyword arguments to plot the dots of the lollipop plot
-            via the stripplot function. Most notably, "width" and "height".
+        n_rows (int): Number of rows for a grid if plots are combined
+            in a grid, default 1.
+        scatterplot_kws (dict): Keyword arguments to plot the dots of the lollipop plot
+            via the scatter function. Most notably, "width" and "height".
         barplot_kws (dict): Keyword arguments to plot the lines of the lollipop plot
             via the barplot function. Most notably, "color" and "alpha". In contrast
             to seaborn, we allow for a "width" argument.
@@ -38,67 +43,112 @@ def lollipop_plot(
         plotly.Figure: The grid plot or dict of individual plots
 
     """
+    # adding styling and coloring templates
+    palette = px.colors.qualitative.Plotly
+    template = "plotly_white"
+
     data, varnames = _harmonize_data(data)
 
-    stripplot_kws = {} if stripplot_kws is None else stripplot_kws
+    scatterplot_kws = {} if scatterplot_kws is None else scatterplot_kws
     barplot_kws = {} if barplot_kws is None else barplot_kws
 
-    # Draw a facet dot plot using the strip function
-    g = go.Figure(
-        px.strip(
-            data,
-            x="values",
-            y="__name__",
-            facet_col="indep",
-            labels={"values": "", "__name__": "", "indep": ""},
-            stripmode="overlay",
-            **stripplot_kws
+    # container for individual plots
+    g_list = []
+    # container for titles
+    titles = []
+
+    # creating data traces for plotting faceted/individual plots
+    for indep_name in varnames:
+        g_ind = []
+        # dot plot using the scatter function
+        to_plot = data[data["indep"] == indep_name]
+        trace_1 = go.Scatter(
+            x=to_plot["values"],
+            y=to_plot["__name__"],
+            mode="markers",
+            marker={"color": palette[0]},
+            showlegend=False,
+            **scatterplot_kws
         )
-    ).update_traces(jitter=0)
+        g_ind.append(trace_1)
 
-    g.update_layout(showlegend=False)
-
-    # Use semantically meaningful titles for the facet
-    g.for_each_annotation(lambda a: a.update(text=a.text.split("=")[1]))
-
-    # Draw lines to the plot using the barplot function
-    if plot_bar:
-        for col_facet, indep_name in enumerate(varnames):
-            g.add_bar(
-                x=data.loc[data["indep"] == indep_name, "values"],
-                y=data.loc[data["indep"] == indep_name, "__name__"],
+        # bar plot
+        if plot_bar:
+            trace_2 = go.Bar(
+                x=to_plot["values"],
+                y=to_plot["__name__"],
                 orientation="h",
-                **barplot_kws,
-                row=1,
-                col=col_facet + 1,
-                width=0.025
+                width=0.025,
+                marker={"color": palette[0]},
+                showlegend=False,
+                **barplot_kws
             )
+        g_ind.append(trace_2)
 
-    # Use the same x axis limits on all columns
+        g_list.append(g_ind)
+        titles.append(indep_name)
+
     if sharex:
         lower_candidate = data[["indep", "values"]].groupby("indep").min().min()
         upper_candidate = data[["indep", "values"]].groupby("indep").max().max()
         padding = (upper_candidate - lower_candidate) / 10
         lower = lower_candidate - padding
         upper = upper_candidate + padding
-        g.update_yaxes(range=[lower, upper])
 
-    # Accessing individual plots from the facet plot
-    g_list = []
-
-    for i in range(len(varnames)):
-
-        temp = go.Figure(g["data"][i])
-        if plot_bar:
-            temp.add_trace(g["data"][i + len(varnames)])
-
-        g_list.append(temp)
-
+    # Plot with subplots
     if combine_plots_in_grid:
+        n_cols = math.ceil(len(varnames) / n_rows)
+
+        g = make_subplots(
+            rows=n_rows,
+            cols=n_cols,
+            subplot_titles=titles,
+            column_widths=[100] * n_cols,
+            row_heights=[60] * n_rows,
+        )
+
+        for ind, (facet_row, facet_col) in enumerate(
+            itertools.product(range(1, n_rows + 1), range(1, n_cols + 1))
+        ):
+            traces = g_list[ind]
+            for trace in range(len(traces)):
+                g.add_trace(traces[trace], row=facet_row, col=facet_col)
+        if sharex:
+            g.update_xaxes(range=[lower, upper])
+
+        g.update_layout(
+            template=template,
+            height=150 * n_rows,
+            width=150 * n_cols,
+            margin={"l": 10, "r": 10, "t": 30, "b": 10},
+        )
+
         out = g
 
-    else:
-        out = g_list
+    # Dictionary for individual plots
+    if not combine_plots_in_grid:
+        ind_dict = {}
+        for ind in range(len(g_list)):
+            ind_plot = go.Figure()
+            traces = g_list[ind]
+            for trace in range(len(traces)):
+                ind_plot.add_trace(traces[trace])
+            if sharex:
+                ind_plot.update_xaxes(range=[lower, upper])
+            # adding title and theme
+            ind_plot.update_layout(
+                title=titles[ind],
+                template=template,
+                height=150,
+                width=150,
+                title_x=0.5,
+                margin={"l": 10, "r": 10, "t": 30, "b": 10},
+            )
+            # adding to dictionary
+            key = titles[ind].replace(" ", "_").lower()
+            ind_dict[key] = ind_plot
+
+        out = ind_dict
 
     return out
 
