@@ -24,8 +24,12 @@ def test_get_problems(name, additive_noise, multiplicative_noise):
     params = first["inputs"]["params"]
 
     np.random.seed()
-    first_eval = func(params)["value"]
-    second_eval = func(params)["value"]
+    if name == "scalar_functions":
+        first_eval = func(params)
+        second_eval = func(params)
+    else:
+        first_eval = func(params)["value"]
+        second_eval = func(params)["value"]
 
     if is_noisy:
         assert first_eval != second_eval

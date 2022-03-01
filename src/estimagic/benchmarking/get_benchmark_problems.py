@@ -6,7 +6,7 @@ import pandas as pd
 from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
-from estimagic.benchmarking.scalar_functions import SCALAR_FUNCTION_PROBLEMS
+from estimagic.benchmarking.scalar_functions import SCALAR_FUNCTIONS_PROBLEMS
 
 
 def get_benchmark_problems(
@@ -72,14 +72,15 @@ def get_benchmark_problems(
         multiplicative_options = None
 
     problems = {}
-    for name, specification in raw_problems.items():
+    for problem_name, specification in raw_problems.items():
         inputs = _create_problem_inputs(
+            name,
             specification,
             additive_options=additive_options,
             multiplicative_options=multiplicative_options,
         )
 
-        problems[name] = {
+        problems[problem_name] = {
             "inputs": inputs,
             "solution": _create_problem_solution(specification),
             "info": specification.get("info", {}),
@@ -98,7 +99,7 @@ def _get_raw_problems(name):
         )
         raw_problems = CARTIS_ROBERTS_PROBLEMS
     elif name == "scalar_functions":
-        raw_problems = SCALAR_FUNCTION_PROBLEMS
+        raw_problems = SCALAR_FUNCTIONS_PROBLEMS
     elif name == "example":
         subset = {
             "linear_full_rank_good_start",
@@ -120,9 +121,12 @@ def _get_raw_problems(name):
     return raw_problems
 
 
-def _create_problem_inputs(specification, additive_options, multiplicative_options):
+def _create_problem_inputs(
+    name, specification, additive_options, multiplicative_options
+):
     _criterion = partial(
         _internal_criterion_template,
+        name,
         criterion=specification["criterion"],
         additive_options=additive_options,
         multiplicative_options=multiplicative_options,
@@ -157,7 +161,7 @@ def _create_problem_solution(specification):
 
 
 def _internal_criterion_template(
-    params, criterion, additive_options, multiplicative_options
+    name, params, criterion, additive_options, multiplicative_options
 ):
     x = params["value"].to_numpy()
     critval = criterion(x)
@@ -169,8 +173,9 @@ def _internal_criterion_template(
     )
 
     noisy_critval = critval + noise
-
-    if isinstance(noisy_critval, np.ndarray):
+    if name == "scalar_functions":
+        out = noisy_critval
+    elif isinstance(noisy_critval, np.ndarray):
         out = {
             "root_contributions": noisy_critval,
             "value": noisy_critval @ noisy_critval,

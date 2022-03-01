@@ -3,13 +3,13 @@ import pytest
 from estimagic.benchmarking import more_wild as mw
 
 """
-from estimagic.benchmarking.scalar_functions import SCALAR_FUNCTION_PROLBEMS
+from estimagic.benchmarking.scalar_functions import SCALAR_FUNCTIONS_PROLBEMS
 """
 
 
 def ackley(x):
     out = (
-        -20 * np.exp(-0.2 * np.sqrt(np.mean(x**2)))
+        -20 * np.exp(-0.2 * np.sqrt(np.mean(x ** 2)))
         - np.exp(np.mean(np.cos(2 * np.pi * x)))
         + 20
         + np.exp(1)
@@ -19,13 +19,13 @@ def ackley(x):
 
 def ackley2(x):
     x_1, x_2 = x
-    out = -200 * np.exp(-0.2 * np.sqrt(x_1**2 + x_2**2))
+    out = -200 * np.exp(-0.2 * np.sqrt(x_1 ** 2 + x_2 ** 2))
     return out
 
 
 def ackley3(x):
     x_1, x_2 = x
-    out = -200 * np.exp(-0.2 * np.sqrt(x_1**2 + x_2**2)) + 5 * np.exp(
+    out = -200 * np.exp(-0.2 * np.sqrt(x_1 ** 2 + x_2 ** 2)) + 5 * np.exp(
         np.cos(3 * x_1) + np.sin(3 * x_2)
     )
     return out
@@ -34,7 +34,7 @@ def ackley3(x):
 def ackley4(x):
     x_1, x_2 = x
     out = np.sum(
-        np.exp(-0.2) * np.sqrt(x_1**2 + x_2**2)
+        np.exp(-0.2) * np.sqrt(x_1 ** 2 + x_2 ** 2)
         + 3 * (np.cos(2 * x_1) + np.sin(2 * x_2))
     )
     return out
@@ -42,7 +42,7 @@ def ackley4(x):
 
 def adjiman(x):
     x_1, x_2 = x
-    out = np.cos(x_1) * np.sin(x_2) - x_1 / (x_2**2 + 1)
+    out = np.cos(x_1) * np.sin(x_2) - x_1 / (x_2 ** 2 + 1)
     return out
 
 
@@ -59,7 +59,7 @@ def alpine2(x):
 def bartels(x):
     x_1, x_2 = x
     out = (
-        np.abs(x_1**2 + x_2**2 + x_1 * x_2)
+        np.abs(x_1 ** 2 + x_2 ** 2 + x_1 * x_2)
         + np.abs(np.sin(x_1))
         + np.abs(np.cos(x_2))
     )
@@ -70,8 +70,8 @@ def beale(x):
     x_1, x_2 = x
     out = (
         (1.5 - x_1 + x_1 * x_2) ** 2
-        + (2.25 - x_1 + x_1 * x_2**2) ** 2
-        + (2.625 - x_1 + x_1 * x_2**3) ** 2
+        + (2.25 - x_1 + x_1 * x_2 ** 2) ** 2
+        + (2.625 - x_1 + x_1 * x_2 ** 3) ** 2
     )
     return out
 
@@ -89,8 +89,8 @@ def bird(x):
 def bohachevsky1(x):
     x_1, x_2 = x
     out = (
-        x_1**2
-        + 2 * x_2**2
+        x_1 ** 2
+        + 2 * x_2 ** 2
         - 0.3 * np.cos(3 * np.pi * x_1)
         - 0.4 * np.cos(4 * np.pi * x_2)
         + 0.7
@@ -101,8 +101,8 @@ def bohachevsky1(x):
 def bohachevsky2(x):
     x_1, x_2 = x
     out = (
-        x_1**2
-        + 2 * x_2**2
+        x_1 ** 2
+        + 2 * x_2 ** 2
         - 0.3 * np.cos(3 * np.pi * x_1) * np.cos(4 * np.pi * x_2)
         + 0.3
     )
@@ -112,8 +112,8 @@ def bohachevsky2(x):
 def bohachevsky3(x):
     x_1, x_2 = x
     out = (
-        x_1**2
-        + 2 * x_2**2
+        x_1 ** 2
+        + 2 * x_2 ** 2
         - 0.3 * np.cos(3 * np.pi * x_1 + 4 * np.pi * x_2) * np.cos(4 * np.pi * x_2)
         + 0.3
     )
@@ -129,7 +129,7 @@ def booth(x):
 def branin(x):
     x_1, x_2 = x
     out = (
-        (x_2 - 5.1 / (4 * np.pi**2) * x_1**2 + 5 / np.pi * x_1 - 6) ** 2
+        (x_2 - 5.1 / (4 * np.pi ** 2) * x_1 ** 2 + 5 / np.pi * x_1 - 6) ** 2
         + 10 * (1 - 1 / (8 * np.pi)) * np.cos(x_1)
         + 10
     )
@@ -138,29 +138,29 @@ def branin(x):
 
 def brent(x):
     x_1, x_2 = x
-    out = (x_1 + 10) ** 2 + (x_2 + 10) ** 2 + np.exp(-(x_1**2) - x_2**2)
+    out = (x_1 + 10) ** 2 + (x_2 + 10) ** 2 + np.exp(-(x_1 ** 2) - x_2 ** 2)
     return out
 
 
 def brown(x):
     x_1, x_2 = x
-    out = np.sum((x_1**2) ** (x_2**2 + 1) + (x_2**2) ** (x_1**2 + 1))
+    out = np.sum((x_1 ** 2) ** (x_2 ** 2 + 1) + (x_2 ** 2) ** (x_1 ** 2 + 1))
     return out
 
 
 def bukin6(x):
     x_1, x_2 = x
-    out = 100 * np.sqrt(np.abs(x_2 - 0.01 * x_1**2)) + 0.01 * np.abs(x_1 + 10)
+    out = 100 * np.sqrt(np.abs(x_2 - 0.01 * x_1 ** 2)) + 0.01 * np.abs(x_1 + 10)
     return out
 
 
 def colville(x):
     x_1, x_2, x_3, x_4 = x
     out = (
-        100 * (x_1**2 - x_2) ** 2
+        100 * (x_1 ** 2 - x_2) ** 2
         + (x_1 - 1) ** 2
         + (x_3 - 1) ** 2
-        + 90 * (x_3**2 - x_4) ** 2
+        + 90 * (x_3 ** 2 - x_4) ** 2
         + 10.1 * ((x_2 - 1) ** 2 + (x_4 - 1) ** 2)
         + 19.8 * (x_2 - 1) * (x_4 - 1)
     )
@@ -173,7 +173,7 @@ def crossintray(x):
         -0.0001
         * (
             np.abs(np.sin(x_1) * np.sin(x_2))
-            * np.exp(np.abs(100 - np.sqrt(x_1**2 + x_2**2) / np.pi))
+            * np.exp(np.abs(100 - np.sqrt(x_1 ** 2 + x_2 ** 2) / np.pi))
             + 1
         )
         ** 0.1
@@ -200,10 +200,10 @@ def dejong5(x):
 def deckkersaarts(x):
     x_1, x_2 = x
     out = (
-        1e5 * x_1**2
-        + x_2**2
-        - (x_1**2 + x_2**2) ** 2
-        + 1e-5 * (x_1**2 + x_2**2) ** 4
+        1e5 * x_1 ** 2
+        + x_2 ** 2
+        - (x_1 ** 2 + x_2 ** 2) ** 2
+        + 1e-5 * (x_1 ** 2 + x_2 ** 2) ** 4
     )
     return out
 
@@ -218,8 +218,8 @@ def dixonprice(x):
 
 def dropwave(x):
     x_1, x_2 = x
-    out = -(1 + np.cos(12 * np.sqrt(x_1**2 + x_2**2))) / (
-        0.5 * (x_1**2 + x_2**2) + 2
+    out = -(1 + np.cos(12 * np.sqrt(x_1 ** 2 + x_2 ** 2))) / (
+        0.5 * (x_1 ** 2 + x_2 ** 2) + 2
     )
     return out
 
@@ -234,7 +234,7 @@ def easom(x):
 
 def eggcrate(x):
     x_1, x_2 = x
-    out = x_1**2 + x_2**2 + 25 * (np.sin(x_1) ** 2 + np.sin(x_2) ** 2)
+    out = x_1 ** 2 + x_2 ** 2 + 25 * (np.sin(x_1) ** 2 + np.sin(x_2) ** 2)
     return out
 
 
@@ -247,7 +247,7 @@ def eggholder(x):
 
 
 def exponential(x):
-    out = -np.exp(-0.5 * np.sum(x**2))
+    out = -np.exp(-0.5 * np.sum(x ** 2))
     return out
 
 
@@ -261,11 +261,11 @@ def goldsteinprice(x):
     out = (
         1
         + (x_1 + x_2 + 1) ** 2
-        * (19 - 14 * x_1 + 3 * x_1**2 - 14 * x_2 + 6 * x_1 * x_2 + 3 * x_2**2)
+        * (19 - 14 * x_1 + 3 * x_1 ** 2 - 14 * x_2 + 6 * x_1 * x_2 + 3 * x_2 ** 2)
     ) * (
         30
         + (2 * x_1 - 3 * x_2) ** 2
-        * (18 - 32 * x_1 + 12 * x_1**2 + 48 * x_2 - 36 * x_1 * x_2 + 27 * x_2**2)
+        * (18 - 32 * x_1 + 12 * x_1 ** 2 + 48 * x_2 - 36 * x_1 * x_2 + 27 * x_2 ** 2)
     )
     return out
 
@@ -278,7 +278,7 @@ def gramacylee(x):
 def griewank(x):
     d = x.shape[0]
     i = np.arange(1, d + 1)
-    out = 1 + np.sum(x**2 / 4000) - np.prod(np.cos(x / np.sqrt(i)))
+    out = 1 + np.sum(x ** 2 / 4000) - np.prod(np.cos(x / np.sqrt(i)))
     return out
 
 
@@ -294,7 +294,7 @@ def happycat(x):
 
 def himmelblau(x):
     x_1, x_2 = x
-    out = (x_1**2 + x_2 - 11) ** 2 + (x_1 + x_2**2 - 7) ** 2
+    out = (x_1 ** 2 + x_2 - 11) ** 2 + (x_1 + x_2 ** 2 - 7) ** 2
     return out
 
 
@@ -303,7 +303,7 @@ def holdertable(x):
     out = -np.abs(
         np.sin(x_1)
         * np.cos(x_2)
-        * np.exp(np.abs(1 - np.sqrt(x_1**2 + x_2**2) / np.pi))
+        * np.exp(np.abs(1 - np.sqrt(x_1 ** 2 + x_2 ** 2) / np.pi))
     )
     return out
 
@@ -311,7 +311,7 @@ def holdertable(x):
 def keane(x):
     x_1, x_2 = x
     out = -(np.sin(x_1 - x_2) ** 2 * np.sin(x_1 + x_2) ** 2) / np.sqrt(
-        x_1**2 + x_2**2
+        x_1 ** 2 + x_2 ** 2
     )
     return out
 
@@ -332,7 +332,7 @@ def langermann(x):
 
 def leon(x):
     x_1, x_2 = x
-    out = 100 * (x_2 - x_1**3) ** 2 + (1 - x_1) ** 2
+    out = 100 * (x_2 - x_1 ** 3) ** 2 + (1 - x_1) ** 2
     return out
 
 
@@ -348,7 +348,7 @@ def levy13(x):
 
 def matyas(x):
     x_1, x_2 = x
-    out = 0.26 * (x_1**2 + x_2**2) - 0.48 * x_1 * x_2
+    out = 0.26 * (x_1 ** 2 + x_2 ** 2) - 0.48 * x_1 * x_2
     return out
 
 
@@ -361,12 +361,12 @@ def mccormick(x):
 def michalewicz(x, m=10):
     d = x.shape[0]
     i = np.arange(1, d + 1)
-    out = -np.sum(np.sin(x) * np.sin(i * x**2 / np.pi) ** (2 * m))
+    out = -np.sum(np.sin(x) * np.sin(i * x ** 2 / np.pi) ** (2 * m))
     return out
 
 
 def periodic(x):
-    out = 1 + np.sum(np.sin(x) ** 2) - 0.1 * np.exp(-np.sum(x**2))
+    out = 1 + np.sum(np.sin(x) ** 2) - 0.1 * np.exp(-np.sum(x ** 2))
     return out
 
 
@@ -393,7 +393,7 @@ def permdbeta(x, b=0.5):
     d = x.shape[0]
     j = np.arange(1, d + 1)
     out = np.sum(
-        [np.sum((j**i + b) * ((x / j) ** i - 1)) ** 2 for i in range(1, d + 1)]
+        [np.sum((j ** i + b) * ((x / j) ** i - 1)) ** 2 for i in range(1, d + 1)]
     )
     return out
 
@@ -414,14 +414,15 @@ def qing(x):
 
 
 def quartic(x):
+    np.random.seed(3)
     d = x.shape[0]
-    out = np.sum(np.arange(1, d + 1) * x**4) + np.random.random()
+    out = np.sum(np.arange(1, d + 1) * x ** 4) + np.random.random()
     return out
 
 
 def rastrigin(x):
     d = x.shape[0]
-    out = 10 * d + np.sum(x**2 - 10 * np.cos(2 * np.pi * x))
+    out = 10 * d + np.sum(x ** 2 - 10 * np.cos(2 * np.pi * x))
     return out
 
 
@@ -442,8 +443,8 @@ def rotatedhyperellipsoid(x):
 
 
 def salomon(x):
-    res = 1 - np.cos(2 * np.pi * np.sqrt(np.sum(x**2)))
-    out = res + 0.1 * np.sqrt(np.sum(x**2))
+    res = 1 - np.cos(2 * np.pi * np.sqrt(np.sum(x ** 2)))
+    out = res + 0.1 * np.sqrt(np.sum(x ** 2))
     return out
 
 
@@ -451,8 +452,8 @@ def schaffer1(x):
     x_1, x_2 = x
     out = (
         0.5
-        + (np.sin((x_1**2 + x_2**2) ** 2) ** 2 - 0.5)
-        / (1 + 0.001 * (x_1**2 + x_2**2)) ** 2
+        + (np.sin((x_1 ** 2 + x_2 ** 2) ** 2) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
     )
     return out
 
@@ -461,8 +462,8 @@ def schaffer2(x):
     x_1, x_2 = x
     out = (
         0.5
-        + (np.sin((x_1**2 + x_2**2)) ** 2 - 0.5)
-        / (1 + 0.001 * (x_1**2 + x_2**2)) ** 2
+        + (np.sin((x_1 ** 2 + x_2 ** 2)) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
     )
     return out
 
@@ -471,8 +472,8 @@ def schaffer3(x):
     x_1, x_2 = x
     out = (
         0.5
-        + (np.sin(np.cos(np.abs(x_1**2 + x_2**2))) ** 2 - 0.5)
-        / (1 + 0.001 * (x_1**2 + x_2**2)) ** 2
+        + (np.sin(np.cos(np.abs(x_1 ** 2 + x_2 ** 2))) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
     )
     return out
 
@@ -481,8 +482,8 @@ def schaffer4(x):
     x_1, x_2 = x
     out = (
         0.5
-        + (np.cos(np.sin(np.abs(x_1**2 + x_2**2))) ** 2 - 0.5)
-        / (1 + 0.001 * (x_1**2 + x_2**2)) ** 2
+        + (np.cos(np.sin(np.abs(x_1 ** 2 + x_2 ** 2))) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
     )
     return out
 
@@ -509,12 +510,13 @@ def schwefel2_22(x):
 
 
 def schwefel2_23(x):
-    out = np.sum(x**10)
+    out = np.sum(x ** 10)
     return out
 
 
 def shekel(x):
     x_1, x_2, x_3, x_4 = x
+    m = 10
     b = 1 / 10 * np.array([1, 2, 2, 4, 4, 6, 3, 7, 5, 5])
     c = np.array(
         [
@@ -530,14 +532,20 @@ def shekel(x):
             [7, 3.6, 7, 3.6],
         ]
     )
-    out = -np.sum([np.sum((x[i] - c[i]) ** 2 + b[i]) ** -1 for i in range(10)])
+    out = -np.sum(
+        [
+            (np.sum([(x[j] - c[i, j]) ** 2 for j in range(4)]) + b[i]) ** -1
+            for i in range(m)
+        ]
+    )
     return out
 
 
 def shubert(x):
-    d = x.shape[0]
-    for i in range(0, d):
-        out = np.prod(np.sum([i * np.cos((j + 1) * x[i] + j) for j in range(1, 5 + 1)]))
+    x_1, x_2 = x
+    out = (np.sum([j * np.cos((j + 1) * x_1 + j) for j in range(6)])) * (
+        np.sum([j * np.cos((j + 1) * x_2 + j) for j in range(6)])
+    )
     return out
 
 
@@ -552,31 +560,31 @@ def shubert4(x):
 
 
 def sphere(x):
-    out = np.sum(x**2)
+    out = np.sum(x ** 2)
     return out
 
 
 def styblinskitank(x):
-    out = 0.5 * np.sum(x**4 - 16 * x**2 + 5 * x)
+    out = 0.5 * np.sum(x ** 4 - 16 * x ** 2 + 5 * x)
     return out
 
 
 def sumsquares(x):
     d = x.shape[0]
     i = np.arange(1, d + 1)
-    out = np.sum(i * x**2)
+    out = np.sum(i * x ** 2)
     return out
 
 
 def threehump(x):
     x_1, x_2 = x
-    out = 2 * x_1**2 - 1.05 * x_1**4 + x_1**6 * (1 / 6) + x_1 * x_2 + x_2**2
+    out = 2 * x_1 ** 2 - 1.05 * x_1 ** 4 + x_1 ** 6 * (1 / 6) + x_1 * x_2 + x_2 ** 2
     return out
 
 
 def thevenot(x, m=5, b=15):
     res = np.exp(-np.sum((x / b) ** (2 * m)))
-    out = res - 2 * np.exp(-np.prod(x**2)) * np.prod(np.cos(x) ** 2)
+    out = res - 2 * np.exp(-np.prod(x ** 2)) * np.prod(np.cos(x) ** 2)
     return out
 
 
@@ -587,11 +595,12 @@ def trid(x):
 
 def wolfe(x):
     x_1, x_2, x_3 = x
-    out = 4 / 3 * (x_1**2 + x_2**2 - x_1 * x_2) ** 0.75 + x_3
+    out = 4 / 3 * (x_1 ** 2 + x_2 ** 2 - x_1 * x_2) ** 0.75 + x_3
     return out
 
 
 def xinsheyang(x):
+    np.random.seed(3)
     d = x.shape[0]
     i = np.arange(1, d + 1)
     rand = np.random.random(d)
@@ -600,13 +609,13 @@ def xinsheyang(x):
 
 
 def xinsheyang2(x):
-    out = np.sum(np.abs(x)) * np.exp(-np.sum(np.sin(x**2)))
+    out = np.sum(np.abs(x)) * np.exp(-np.sum(np.sin(x ** 2)))
     return out
 
 
 def xinsheyang3(x, m=5, beta=15):
     res = np.exp(-np.sum((x / beta) ** (2 * m)))
-    out = res - 2 * np.exp(-np.sum(x**2)) * np.prod(np.cos(x) ** 2)
+    out = res - 2 * np.exp(-np.sum(x ** 2)) * np.prod(np.cos(x) ** 2)
     return out
 
 
@@ -617,7 +626,16 @@ def xinsheyang4(x):
     return out
 
 
-SCALAR_FUNCTION_PROBLEMS = {
+# According to the website global minimum at f(0,..,0) = -1,
+# but according to the internet global minimum at f(0,..,0) = 0
+def zakharov(x):
+    d = x.shape[0]
+    i = np.arange(1, d + 1)
+    out = np.sum(x ** 2) + np.sum(0.5 * i * x) ** 2 + np.sum(0.5 * i * x) ** 4
+    return out
+
+
+SCALAR_FUNCTIONS_PROBLEMS = {
     "ackley_good_start": {
         "criterion": ackley,
         "start_x": np.full(10, 3),
@@ -1255,19 +1273,12 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_criterion": 9604,
         "solution_criterion": 0,
     },
-    "quartic_good_start": {
+    "quartic_solution": {
         "criterion": quartic,
-        "start_x": np.full(2, 0.5),
+        "start_x": np.ones(100),
         "solution_x": np.zeros(100),
-        "start_criterion": 0.33739558456080454,
-        "solution_criterion": 0,
-    },
-    "quartic_bad_start": {
-        "criterion": quartic,
-        "start_x": np.full(10, 3),
-        "solution_x": np.zeros(100),
-        "start_criterion": 4455.571361777983,
-        "solution_criterion": 0,
+        "start_criterion": 5050.550797902574,
+        "solution_criterion": 0.5507979025745755,
     },
     "rastrigin_good_start": {
         "criterion": rastrigin,
@@ -1300,16 +1311,16 @@ SCALAR_FUNCTION_PROBLEMS = {
     "rosenbrock_good_start": {
         "criterion": rosenbrock,
         "start_x": np.full(3, 0.5),
-        "solution_x": np.full(1, 1),
-        "start_criterion": 1.5,
-        "solution_criterion": 1,
+        "solution_x": np.array([1, 1]),
+        "start_criterion": 6.5,
+        "solution_criterion": 0,
     },
     "rosenbrock_bad_start": {
         "criterion": rosenbrock,
         "start_x": np.full(10, -1.5),
-        "solution_x": np.full(1, 1),
-        "start_criterion": 123.75,
-        "solution_criterion": 1,
+        "solution_x": np.array([1, 1]),
+        "start_criterion": 1412.5,
+        "solution_criterion": 0,
     },
     "rotatedhyperellipsoid_good_start": {
         "criterion": rotatedhyperellipsoid,
@@ -1397,17 +1408,17 @@ SCALAR_FUNCTION_PROBLEMS = {
     },
     "schwefel_good_start": {
         "criterion": schwefel,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
-        "solution_criterion": 0,
+        "start_x": np.array([420, 420]),
+        "solution_x": np.array([420.9687, 420.9687]),
+        "start_criterion": 0.2367647802917645,
+        "solution_criterion": 2.545567497236334e-05,
     },
     "schwefel_bad_start": {
         "criterion": schwefel,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
-        "solution_criterion": 0,
+        "start_x": np.array([1, 1]),
+        "solution_x": np.array([420.9687, 420.9687]),
+        "start_criterion": 836.2828580303842,
+        "solution_criterion": 2.545567497236334e-05,
     },
     "schwefel2_20_good_start": {
         "criterion": schwefel2_20,
@@ -1465,19 +1476,33 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_criterion": 2815675735.473633,
         "solution_criterion": 0,
     },
+    "shekel_good_start": {
+        "criterion": shekel,
+        "start_x": np.array([1, 1, 1, 1]),
+        "solution_x": np.array([4, 4, 4, 4]),
+        "start_criterion": -5.128471039662403,
+        "solution_criterion": -10.536283726219605,
+    },
+    "shekel_bad_start": {
+        "criterion": shekel,
+        "start_x": np.array([10, 50, 80, 40]),
+        "solution_x": np.array([4, 4, 4, 4]),
+        "start_criterion": -0.001113569345997643,
+        "solution_criterion": -10.536283726219605,
+    },
     "shubert_good_start": {
         "criterion": shubert,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
-        "solution_criterion": 0,
+        "start_x": np.array([-0.8, 5]),
+        "solution_x": np.array([-1.4251, -7.0835]),
+        "start_criterion": -140.07596851545017,
+        "solution_criterion": -186.73090685668902,
     },
     "shubert_bad_start": {
         "criterion": shubert,
-        "start_x": 0,
-        "solution_x": 0,
-        "start_criterion": 0,
-        "solution_criterion": 0,
+        "start_x": np.array([1, 10]),
+        "solution_x": np.array([-1.4251, -7.0835]),
+        "start_criterion": 5.9625568444156105,
+        "solution_criterion": -186.73090685668902,
     },
     "shubert3_good_start": {
         "criterion": shubert3,
@@ -1605,18 +1630,11 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_criterion": 52.16370213557839,
         "solution_criterion": 0,
     },
-    "xinsheyang_good_start": {
+    "xinsheyang_solution": {
         "criterion": xinsheyang,
-        "start_x": np.full(1, 1),
+        "start_x": np.full(4, 10),
         "solution_x": np.zeros(10),
-        "start_criterion": 0.7646279260733415,
-        "solution_criterion": 0,
-    },
-    "xinsheyang_bad_start": {
-        "criterion": xinsheyang,
-        "start_x": np.full(20, 4),
-        "solution_x": np.zeros(10),
-        "start_criterion": 1255254854146.7185,
+        "start_criterion": 5475.503552177131,
         "solution_criterion": 0,
     },
     "xinsheyang2_good_start": {
@@ -1661,10 +1679,24 @@ SCALAR_FUNCTION_PROBLEMS = {
         "start_criterion": 7.538971657276083e-07,
         "solution_criterion": -2,
     },
+    "zakharov_good_start": {
+        "criterion": zakharov,
+        "start_x": np.full(1, 3),
+        "solution_x": np.zeros(10),
+        "start_criterion": 16.3125,
+        "solution_criterion": 0,
+    },
+    "zakharov_bad_start": {
+        "criterion": zakharov,
+        "start_x": np.full(10, 3),
+        "solution_x": np.zeros(10),
+        "start_criterion": 46331935.3125,
+        "solution_criterion": 0,
+    },
 }
 
 
-@pytest.mark.parametrize("name, specification", list(SCALAR_FUNCTION_PROBLEMS.items()))
+@pytest.mark.parametrize("name, specification", list(SCALAR_FUNCTIONS_PROBLEMS.items()))
 def test_scalar_function_at_start_x(name, specification):
     _criterion = specification["criterion"]
     _x = specification["start_x"]
