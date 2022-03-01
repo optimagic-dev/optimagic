@@ -95,8 +95,8 @@ def slice_plot(
             **kws,
             facet_col="name",
             facet_col_wrap=plots_per_row,
-            width=500 * plots_per_row,
-            height=300 * len(plot_data["name"].unique()) / plots_per_row,
+            width=400 * plots_per_row,
+            height=200 * len(plot_data["name"].unique()) / plots_per_row,
         )
         g.update_layout(showlegend=False, template=template)
 
