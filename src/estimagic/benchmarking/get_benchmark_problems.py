@@ -129,7 +129,10 @@ def _create_problem_inputs(specification, additive_options, multiplicative_optio
     )
     _x = specification["start_x"]
 
-    _params = pd.DataFrame(_x.reshape(-1, 1), columns=["value"])
+    if isinstance(_x, np.ndarray):
+        _params = pd.DataFrame(_x.reshape(-1, 1), columns=["value"])
+    else:
+        _params = pd.DataFrame([_x], columns=["value"])
 
     inputs = {"criterion": _criterion, "params": _params}
     return inputs
@@ -140,7 +143,10 @@ def _create_problem_solution(specification):
     if _solution_x is None:
         _solution_x = specification["start_x"] * np.nan
 
-    _params = pd.DataFrame(_solution_x.reshape(-1, 1), columns=["value"])
+    if isinstance(_solution_x, np.ndarray):
+        _params = pd.DataFrame(_solution_x.reshape(-1, 1), columns=["value"])
+    else:
+        _params = pd.DataFrame([_solution_x], columns=["value"])
     _value = specification["solution_criterion"]
 
     solution = {
