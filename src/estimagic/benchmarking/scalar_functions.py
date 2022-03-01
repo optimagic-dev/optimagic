@@ -17,7 +17,7 @@ from estimagic.benchmarking import more_wild as mw
 
 def ackley(x):
     out = (
-        -20 * np.exp(-0.2 * np.sqrt(np.mean(x ** 2)))
+        -20 * np.exp(-0.2 * np.sqrt(np.mean(x**2)))
         - np.exp(np.mean(np.cos(2 * np.pi * x)))
         + 20
         + np.exp(1)
@@ -27,13 +27,13 @@ def ackley(x):
 
 def ackley2(x):
     x_1, x_2 = x
-    out = -200 * np.exp(-0.2 * np.sqrt(x_1 ** 2 + x_2 ** 2))
+    out = -200 * np.exp(-0.2 * np.sqrt(x_1**2 + x_2**2))
     return out
 
 
 def ackley3(x):
     x_1, x_2 = x
-    out = -200 * np.exp(-0.2 * np.sqrt(x_1 ** 2 + x_2 ** 2)) + 5 * np.exp(
+    out = -200 * np.exp(-0.2 * np.sqrt(x_1**2 + x_2**2)) + 5 * np.exp(
         np.cos(3 * x_1) + np.sin(3 * x_2)
     )
     return out
@@ -42,7 +42,7 @@ def ackley3(x):
 def ackley4(x):
     x_1, x_2 = x
     out = np.sum(
-        np.exp(-0.2) * np.sqrt(x_1 ** 2 + x_2 ** 2)
+        np.exp(-0.2) * np.sqrt(x_1**2 + x_2**2)
         + 3 * (np.cos(2 * x_1) + np.sin(2 * x_2))
     )
     return out
@@ -50,7 +50,7 @@ def ackley4(x):
 
 def adjiman(x):
     x_1, x_2 = x
-    out = np.cos(x_1) * np.sin(x_2) - x_1 / (x_2 ** 2 + 1)
+    out = np.cos(x_1) * np.sin(x_2) - x_1 / (x_2**2 + 1)
     return out
 
 
@@ -67,7 +67,7 @@ def alpine2(x):
 def bartels(x):
     x_1, x_2 = x
     out = (
-        np.abs(x_1 ** 2 + x_2 ** 2 + x_1 * x_2)
+        np.abs(x_1**2 + x_2**2 + x_1 * x_2)
         + np.abs(np.sin(x_1))
         + np.abs(np.cos(x_2))
     )
@@ -78,8 +78,8 @@ def beale(x):
     x_1, x_2 = x
     out = (
         (1.5 - x_1 + x_1 * x_2) ** 2
-        + (2.25 - x_1 + x_1 * x_2 ** 2) ** 2
-        + (2.625 - x_1 + x_1 * x_2 ** 3) ** 2
+        + (2.25 - x_1 + x_1 * x_2**2) ** 2
+        + (2.625 - x_1 + x_1 * x_2**3) ** 2
     )
     return out
 
@@ -97,8 +97,8 @@ def bird(x):
 def bohachevsky1(x):
     x_1, x_2 = x
     out = (
-        x_1 ** 2
-        + 2 * x_2 ** 2
+        x_1**2
+        + 2 * x_2**2
         - 0.3 * np.cos(3 * np.pi * x_1)
         - 0.4 * np.cos(4 * np.pi * x_2)
         + 0.7
@@ -109,8 +109,8 @@ def bohachevsky1(x):
 def bohachevsky2(x):
     x_1, x_2 = x
     out = (
-        x_1 ** 2
-        + 2 * x_2 ** 2
+        x_1**2
+        + 2 * x_2**2
         - 0.3 * np.cos(3 * np.pi * x_1) * np.cos(4 * np.pi * x_2)
         + 0.3
     )
@@ -120,8 +120,8 @@ def bohachevsky2(x):
 def bohachevsky3(x):
     x_1, x_2 = x
     out = (
-        x_1 ** 2
-        + 2 * x_2 ** 2
+        x_1**2
+        + 2 * x_2**2
         - 0.3 * np.cos(3 * np.pi * x_1 + 4 * np.pi * x_2) * np.cos(4 * np.pi * x_2)
         + 0.3
     )
@@ -137,7 +137,7 @@ def booth(x):
 def branin(x):
     x_1, x_2 = x
     out = (
-        (x_2 - 5.1 / (4 * np.pi ** 2) * x_1 ** 2 + 5 / np.pi * x_1 - 6) ** 2
+        (x_2 - 5.1 / (4 * np.pi**2) * x_1**2 + 5 / np.pi * x_1 - 6) ** 2
         + 10 * (1 - 1 / (8 * np.pi)) * np.cos(x_1)
         + 10
     )
@@ -146,29 +146,29 @@ def branin(x):
 
 def brent(x):
     x_1, x_2 = x
-    out = (x_1 + 10) ** 2 + (x_2 + 10) ** 2 + np.exp(-(x_1 ** 2) - x_2 ** 2)
+    out = (x_1 + 10) ** 2 + (x_2 + 10) ** 2 + np.exp(-(x_1**2) - x_2**2)
     return out
 
 
 def brown(x):
     x_1, x_2 = x
-    out = np.sum((x_1 ** 2) ** (x_2 ** 2 + 1) + (x_2 ** 2) ** (x_1 ** 2 + 1))
+    out = np.sum((x_1**2) ** (x_2**2 + 1) + (x_2**2) ** (x_1**2 + 1))
     return out
 
 
 def bukin6(x):
     x_1, x_2 = x
-    out = 100 * np.sqrt(np.abs(x_2 - 0.01 * x_1 ** 2)) + 0.01 * np.abs(x_1 + 10)
+    out = 100 * np.sqrt(np.abs(x_2 - 0.01 * x_1**2)) + 0.01 * np.abs(x_1 + 10)
     return out
 
 
 def colville(x):
     x_1, x_2, x_3, x_4 = x
     out = (
-        100 * (x_1 ** 2 - x_2) ** 2
+        100 * (x_1**2 - x_2) ** 2
         + (x_1 - 1) ** 2
         + (x_3 - 1) ** 2
-        + 90 * (x_3 ** 2 - x_4) ** 2
+        + 90 * (x_3**2 - x_4) ** 2
         + 10.1 * ((x_2 - 1) ** 2 + (x_4 - 1) ** 2)
         + 19.8 * (x_2 - 1) * (x_4 - 1)
     )
@@ -181,7 +181,7 @@ def crossintray(x):
         -0.0001
         * (
             np.abs(np.sin(x_1) * np.sin(x_2))
-            * np.exp(np.abs(100 - np.sqrt(x_1 ** 2 + x_2 ** 2) / np.pi))
+            * np.exp(np.abs(100 - np.sqrt(x_1**2 + x_2**2) / np.pi))
             + 1
         )
         ** 0.1
@@ -208,10 +208,10 @@ def dejong5(x):
 def deckkersaarts(x):
     x_1, x_2 = x
     out = (
-        1e5 * x_1 ** 2
-        + x_2 ** 2
-        - (x_1 ** 2 + x_2 ** 2) ** 2
-        + 1e-5 * (x_1 ** 2 + x_2 ** 2) ** 4
+        1e5 * x_1**2
+        + x_2**2
+        - (x_1**2 + x_2**2) ** 2
+        + 1e-5 * (x_1**2 + x_2**2) ** 4
     )
     return out
 
@@ -226,8 +226,8 @@ def dixonprice(x):
 
 def dropwave(x):
     x_1, x_2 = x
-    out = -(1 + np.cos(12 * np.sqrt(x_1 ** 2 + x_2 ** 2))) / (
-        0.5 * (x_1 ** 2 + x_2 ** 2) + 2
+    out = -(1 + np.cos(12 * np.sqrt(x_1**2 + x_2**2))) / (
+        0.5 * (x_1**2 + x_2**2) + 2
     )
     return out
 
@@ -242,7 +242,7 @@ def easom(x):
 
 def eggcrate(x):
     x_1, x_2 = x
-    out = x_1 ** 2 + x_2 ** 2 + 25 * (np.sin(x_1) ** 2 + np.sin(x_2) ** 2)
+    out = x_1**2 + x_2**2 + 25 * (np.sin(x_1) ** 2 + np.sin(x_2) ** 2)
     return out
 
 
@@ -255,7 +255,7 @@ def eggholder(x):
 
 
 def exponential(x):
-    out = -np.exp(-0.5 * np.sum(x ** 2))
+    out = -np.exp(-0.5 * np.sum(x**2))
     return out
 
 
@@ -269,11 +269,11 @@ def goldsteinprice(x):
     out = (
         1
         + (x_1 + x_2 + 1) ** 2
-        * (19 - 14 * x_1 + 3 * x_1 ** 2 - 14 * x_2 + 6 * x_1 * x_2 + 3 * x_2 ** 2)
+        * (19 - 14 * x_1 + 3 * x_1**2 - 14 * x_2 + 6 * x_1 * x_2 + 3 * x_2**2)
     ) * (
         30
         + (2 * x_1 - 3 * x_2) ** 2
-        * (18 - 32 * x_1 + 12 * x_1 ** 2 + 48 * x_2 - 36 * x_1 * x_2 + 27 * x_2 ** 2)
+        * (18 - 32 * x_1 + 12 * x_1**2 + 48 * x_2 - 36 * x_1 * x_2 + 27 * x_2**2)
     )
     return out
 
@@ -286,7 +286,7 @@ def gramacylee(x):
 def griewank(x):
     d = x.shape[0]
     i = np.arange(1, d + 1)
-    out = 1 + np.sum(x ** 2 / 4000) - np.prod(np.cos(x / np.sqrt(i)))
+    out = 1 + np.sum(x**2 / 4000) - np.prod(np.cos(x / np.sqrt(i)))
     return out
 
 
@@ -302,7 +302,7 @@ def happycat(x):
 
 def himmelblau(x):
     x_1, x_2 = x
-    out = (x_1 ** 2 + x_2 - 11) ** 2 + (x_1 + x_2 ** 2 - 7) ** 2
+    out = (x_1**2 + x_2 - 11) ** 2 + (x_1 + x_2**2 - 7) ** 2
     return out
 
 
@@ -311,7 +311,7 @@ def holdertable(x):
     out = -np.abs(
         np.sin(x_1)
         * np.cos(x_2)
-        * np.exp(np.abs(1 - np.sqrt(x_1 ** 2 + x_2 ** 2) / np.pi))
+        * np.exp(np.abs(1 - np.sqrt(x_1**2 + x_2**2) / np.pi))
     )
     return out
 
@@ -319,7 +319,7 @@ def holdertable(x):
 def keane(x):
     x_1, x_2 = x
     out = -(np.sin(x_1 - x_2) ** 2 * np.sin(x_1 + x_2) ** 2) / np.sqrt(
-        x_1 ** 2 + x_2 ** 2
+        x_1**2 + x_2**2
     )
     return out
 
@@ -340,7 +340,7 @@ def langermann(x):
 
 def leon(x):
     x_1, x_2 = x
-    out = 100 * (x_2 - x_1 ** 3) ** 2 + (1 - x_1) ** 2
+    out = 100 * (x_2 - x_1**3) ** 2 + (1 - x_1) ** 2
     return out
 
 
@@ -356,7 +356,7 @@ def levy13(x):
 
 def matyas(x):
     x_1, x_2 = x
-    out = 0.26 * (x_1 ** 2 + x_2 ** 2) - 0.48 * x_1 * x_2
+    out = 0.26 * (x_1**2 + x_2**2) - 0.48 * x_1 * x_2
     return out
 
 
@@ -369,12 +369,12 @@ def mccormick(x):
 def michalewicz(x, m=10):
     d = x.shape[0]
     i = np.arange(1, d + 1)
-    out = -np.sum(np.sin(x) * np.sin(i * x ** 2 / np.pi) ** (2 * m))
+    out = -np.sum(np.sin(x) * np.sin(i * x**2 / np.pi) ** (2 * m))
     return out
 
 
 def periodic(x):
-    out = 1 + np.sum(np.sin(x) ** 2) - 0.1 * np.exp(-np.sum(x ** 2))
+    out = 1 + np.sum(np.sin(x) ** 2) - 0.1 * np.exp(-np.sum(x**2))
     return out
 
 
@@ -401,7 +401,7 @@ def permdbeta(x, b=0.5):
     d = x.shape[0]
     j = np.arange(1, d + 1)
     out = np.sum(
-        [np.sum((j ** i + b) * ((x / j) ** i - 1)) ** 2 for i in range(1, d + 1)]
+        [np.sum((j**i + b) * ((x / j) ** i - 1)) ** 2 for i in range(1, d + 1)]
     )
     return out
 
@@ -424,13 +424,13 @@ def qing(x):
 def quartic(x):
     np.random.seed(3)
     d = x.shape[0]
-    out = np.sum(np.arange(1, d + 1) * x ** 4) + np.random.random()
+    out = np.sum(np.arange(1, d + 1) * x**4) + np.random.random()
     return out
 
 
 def rastrigin(x):
     d = x.shape[0]
-    out = 10 * d + np.sum(x ** 2 - 10 * np.cos(2 * np.pi * x))
+    out = 10 * d + np.sum(x**2 - 10 * np.cos(2 * np.pi * x))
     return out
 
 
@@ -451,8 +451,8 @@ def rotatedhyperellipsoid(x):
 
 
 def salomon(x):
-    res = 1 - np.cos(2 * np.pi * np.sqrt(np.sum(x ** 2)))
-    out = res + 0.1 * np.sqrt(np.sum(x ** 2))
+    res = 1 - np.cos(2 * np.pi * np.sqrt(np.sum(x**2)))
+    out = res + 0.1 * np.sqrt(np.sum(x**2))
     return out
 
 
@@ -460,8 +460,8 @@ def schaffer1(x):
     x_1, x_2 = x
     out = (
         0.5
-        + (np.sin((x_1 ** 2 + x_2 ** 2) ** 2) ** 2 - 0.5)
-        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
+        + (np.sin((x_1**2 + x_2**2) ** 2) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1**2 + x_2**2)) ** 2
     )
     return out
 
@@ -470,8 +470,8 @@ def schaffer2(x):
     x_1, x_2 = x
     out = (
         0.5
-        + (np.sin((x_1 ** 2 + x_2 ** 2)) ** 2 - 0.5)
-        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
+        + (np.sin((x_1**2 + x_2**2)) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1**2 + x_2**2)) ** 2
     )
     return out
 
@@ -480,8 +480,8 @@ def schaffer3(x):
     x_1, x_2 = x
     out = (
         0.5
-        + (np.sin(np.cos(np.abs(x_1 ** 2 + x_2 ** 2))) ** 2 - 0.5)
-        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
+        + (np.sin(np.cos(np.abs(x_1**2 + x_2**2))) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1**2 + x_2**2)) ** 2
     )
     return out
 
@@ -490,8 +490,8 @@ def schaffer4(x):
     x_1, x_2 = x
     out = (
         0.5
-        + (np.cos(np.sin(np.abs(x_1 ** 2 + x_2 ** 2))) ** 2 - 0.5)
-        / (1 + 0.001 * (x_1 ** 2 + x_2 ** 2)) ** 2
+        + (np.cos(np.sin(np.abs(x_1**2 + x_2**2))) ** 2 - 0.5)
+        / (1 + 0.001 * (x_1**2 + x_2**2)) ** 2
     )
     return out
 
@@ -518,7 +518,7 @@ def schwefel2_22(x):
 
 
 def schwefel2_23(x):
-    out = np.sum(x ** 10)
+    out = np.sum(x**10)
     return out
 
 
@@ -568,31 +568,31 @@ def shubert4(x):
 
 
 def sphere(x):
-    out = np.sum(x ** 2)
+    out = np.sum(x**2)
     return out
 
 
 def styblinskitank(x):
-    out = 0.5 * np.sum(x ** 4 - 16 * x ** 2 + 5 * x)
+    out = 0.5 * np.sum(x**4 - 16 * x**2 + 5 * x)
     return out
 
 
 def sumsquares(x):
     d = x.shape[0]
     i = np.arange(1, d + 1)
-    out = np.sum(i * x ** 2)
+    out = np.sum(i * x**2)
     return out
 
 
 def threehump(x):
     x_1, x_2 = x
-    out = 2 * x_1 ** 2 - 1.05 * x_1 ** 4 + x_1 ** 6 * (1 / 6) + x_1 * x_2 + x_2 ** 2
+    out = 2 * x_1**2 - 1.05 * x_1**4 + x_1**6 * (1 / 6) + x_1 * x_2 + x_2**2
     return out
 
 
 def thevenot(x, m=5, b=15):
     res = np.exp(-np.sum((x / b) ** (2 * m)))
-    out = res - 2 * np.exp(-np.prod(x ** 2)) * np.prod(np.cos(x) ** 2)
+    out = res - 2 * np.exp(-np.prod(x**2)) * np.prod(np.cos(x) ** 2)
     return out
 
 
@@ -603,7 +603,7 @@ def trid(x):
 
 def wolfe(x):
     x_1, x_2, x_3 = x
-    out = 4 / 3 * (x_1 ** 2 + x_2 ** 2 - x_1 * x_2) ** 0.75 + x_3
+    out = 4 / 3 * (x_1**2 + x_2**2 - x_1 * x_2) ** 0.75 + x_3
     return out
 
 
@@ -617,13 +617,13 @@ def xinsheyang(x):
 
 
 def xinsheyang2(x):
-    out = np.sum(np.abs(x)) * np.exp(-np.sum(np.sin(x ** 2)))
+    out = np.sum(np.abs(x)) * np.exp(-np.sum(np.sin(x**2)))
     return out
 
 
 def xinsheyang3(x, m=5, beta=15):
     res = np.exp(-np.sum((x / beta) ** (2 * m)))
-    out = res - 2 * np.exp(-np.sum(x ** 2)) * np.prod(np.cos(x) ** 2)
+    out = res - 2 * np.exp(-np.sum(x**2)) * np.prod(np.cos(x) ** 2)
     return out
 
 
@@ -639,7 +639,7 @@ def xinsheyang4(x):
 def zakharov(x):
     d = x.shape[0]
     i = np.arange(1, d + 1)
-    out = np.sum(x ** 2) + np.sum(0.5 * i * x) ** 2 + np.sum(0.5 * i * x) ** 4
+    out = np.sum(x**2) + np.sum(0.5 * i * x) ** 2 + np.sum(0.5 * i * x) ** 4
     return out
 
 
