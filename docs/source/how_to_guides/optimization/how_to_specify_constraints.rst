@@ -5,6 +5,20 @@
 How to specify constraints
 ===========================
 
+Constraints vs bounds
+=====================
+
+Estimagic distinguishes between bounds and constraints. Bounds are lower and upper
+bounds for parameters. In the literature they are sometimes called box constraints.
+Bounds are specified as "lower_bound" and "upper_bound" column of the params DataFrame.
+Examples with bounds can be found in `first_optimization`_.
+
+.. _first_optimization: ../../getting_started/first_optimization_with_estimagic.ipynb
+
+Constraints are more general constraints on the parameter. This ranges from rather
+simple ones (e.g. Parameters are fixed to a value, a group of parameters is required
+to be equal) to more complex ones (like general linear constraints).
+
 General structure of constraints
 ================================
 
