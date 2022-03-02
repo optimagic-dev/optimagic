@@ -11,6 +11,7 @@ from estimagic.benchmarking.scalar_functions import SCALAR_FUNCTIONS_PROBLEMS
 
 def get_benchmark_problems(
     name,
+    *,
     additive_noise=False,
     additive_noise_options=None,
     multiplicative_noise=False,

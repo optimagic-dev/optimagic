@@ -118,7 +118,7 @@ def watson(x):
         temp = i / 29
         sum_1 = (np.arange(1, dim_in) * temp ** np.arange(dim_in - 1) * x[1:]).sum()
         sum_2 = (temp ** np.arange(dim_in) * x).sum()
-        fvec[i - 1] = sum_1 - sum_2 ** 2 - 1.0
+        fvec[i - 1] = sum_1 - sum_2**2 - 1.0
     fvec[29] = x[0]
     fvec[30] = x[1] - x[0] ** 2 - 1.0
     return fvec
@@ -150,7 +150,7 @@ def brown_dennis(x, dim_out):
         temp = i / 5
         temp_1 = x[0] + temp * x[1] - np.exp(temp)
         temp_2 = x[2] + np.sin(temp) * x[3] - np.cos(temp)
-        fvec[i - 1] = temp_1 ** 2 + temp_2 ** 2
+        fvec[i - 1] = temp_1**2 + temp_2**2
     return fvec
 
 
@@ -169,7 +169,7 @@ def chebyquad(x, dim_out):
     for i in range(1, dim_out + 1):
         fvec[i - 1] = fvec[i - 1] / dim_in
         if i % 2 == 0:
-            fvec[i - 1] = fvec[i - 1] + 1 / (i ** 2 - 1.0)
+            fvec[i - 1] = fvec[i - 1] + 1 / (i**2 - 1.0)
     return fvec
 
 
