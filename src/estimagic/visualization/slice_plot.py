@@ -122,7 +122,7 @@ def slice_plot(
             key = "name=" + str(i)
             ind_dict[key] = ind
 
-            out = ind_dict
+        out = ind_dict
 
     return out
 
