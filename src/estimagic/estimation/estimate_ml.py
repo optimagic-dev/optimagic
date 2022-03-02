@@ -238,6 +238,8 @@ def estimate_ml(
             "Closed-form or pre-calculated Hessians are not yet compatible with "
             "constraints."
         )
+    elif hess_case == "pre-calculated":
+        int_hess = hessian
     else:
         int_hess = hessian(estimates, **hessian_kwargs)
 
