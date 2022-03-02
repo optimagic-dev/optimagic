@@ -219,7 +219,7 @@ def no_constraint_from_internal(
 
 
 def no_constraint_derivative_to_internal(
-    external_derivative, internal_values, scaling_factor
+    external_derivative, scaling_factor
 ):  # noqa: U100
     if scaling_factor is not None:
         out = external_derivative @ np.diag(scaling_factor)
