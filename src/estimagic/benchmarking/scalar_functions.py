@@ -891,14 +891,14 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "dejong5_good_start": {
         "criterion": dejong5,
-        "start_x": np.full(2, -40),
+        "start_x": np.full(2, -40, dtype=np.int64),
         "solution_x": np.full(2, -32),
         "start_criterion": 499.5200236514581,
         "solution_criterion": 0.998003838818649,
     },
     "dejong5_bad_start": {
         "criterion": dejong5,
-        "start_x": np.full(2, 32),
+        "start_x": np.full(2, 32, dtype=np.float64),
         "solution_x": np.full(2, -32),
         "start_criterion": 23.809436615621898,
         "solution_criterion": 0.998003838818649,
