@@ -8,7 +8,10 @@ from plotly.subplots import make_subplots
 
 
 def derivative_plot(
-    derivative_result, combine_plots_in_grid=True, template="plotly_white"
+    derivative_result,
+    combine_plots_in_grid=True,
+    template="plotly_white",
+    palette=px.colors.qualitative.Plotly,
 ):
     """Plot evaluations and derivative estimates.
 
@@ -29,13 +32,12 @@ def derivative_plot(
             figure containing subplots for each factor pair or a dictionary
             of individual plots. Default True.
         template (str): The template for the figure. Default is "plotly_white".
+        palette: The coloring palette for traces. Default is "qualitative.Plotly".
 
     Returns:
         plotly.Figure: The grid plot or dict of individual plots
 
     """
-    # adding coloring palette
-    palette = px.colors.qualitative.Plotly
 
     func_value = derivative_result["func_value"]
     func_evals = derivative_result["func_evals"]

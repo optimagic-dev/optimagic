@@ -25,6 +25,7 @@ def convergence_plot(
     y_precision=1e-4,
     combine_plots_in_grid=True,
     template="plotly_white",
+    palette=px.colors.qualitative.Plotly,
 ):
     """Plot convergence of optimizers for a set of problems.
 
@@ -77,13 +78,12 @@ def convergence_plot(
             figure containing subplots for each factor pair or a dictionary
             of individual plots. Default True.
         template (str): The template for the figure. Default is "plotly_white".
+        palette: The coloring palette for traces. Default is "qualitative.Plotly".
 
     Returns:
         plotly.Figure: The grid plot or dict of individual plots
 
     """
-    # adding coloring palette
-    palette = px.colors.qualitative.Plotly
 
     df, _ = create_convergence_histories(
         problems=problems,

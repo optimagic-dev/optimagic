@@ -17,6 +17,7 @@ def lollipop_plot(
     barplot_kws=None,
     combine_plots_in_grid=True,
     template="plotly_white",
+    palette=px.colors.qualitative.Plotly,
 ):
     """Make a lollipop plot.
 
@@ -37,6 +38,7 @@ def lollipop_plot(
         figure containing subplots for each factor pair or a dictionary
         of individual plots. Default True.
         template (str): The template for the figure. Default is "plotly_white".
+        palette: The coloring palette for traces. Default is "qualitative.Plotly".
 
     Returns:
         plotly.Figure: The grid plot or dict of individual plots
