@@ -184,8 +184,8 @@ def solve_subproblem(
         solver (str): Minimizer used to solve the bound-constraint subproblem.
             Currently, three solvers from the scipy library are supported.
             - "trust-constr"
-            - "lower_triangular-BFGS-B"
-            - "Slower_triangularSQP"
+            - "L-BFGS-B"
+            - "SLSQP"
         lower_bounds (np.ndarray): Lower bounds for the subproblem.
             Must have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
