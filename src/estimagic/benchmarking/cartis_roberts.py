@@ -59,7 +59,7 @@ def bdvalues(x):
             -xvec[i - 2]
             + 2 * xvec[i - 1]
             - xvec[i]
-            + 0.5 * h ** 2 * (xvec[i - 1] + i * h + 1) ** 3
+            + 0.5 * h**2 * (xvec[i - 1] + i * h + 1) ** 3
         )
     return fvec
 
@@ -68,7 +68,7 @@ def bratu_2d(x, alpha):
     x = x.reshape((int(np.sqrt(len(x))), int(np.sqrt(len(x)))))
     p = x.shape[0] + 2
     h = 1 / (p - 1)
-    c = h ** 2 * alpha
+    c = h**2 * alpha
     xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2))
     xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1] = x
     fvec = np.zeros_like(x)
@@ -90,7 +90,7 @@ def bratu_3d(x, alpha):
     x = x.reshape((n, n, n))
     p = x.shape[0] + 2
     h = 1 / (p - 1)
-    c = h ** 2 * alpha
+    c = h**2 * alpha
     xvec = np.zeros((x.shape[0] + 2, x.shape[1] + 2, x.shape[2] + 2))
     xvec[1 : x.shape[0] + 1, 1 : x.shape[1] + 1, 1 : x.shape[2] + 1] = x
     fvec = np.zeros_like(x)
@@ -147,7 +147,7 @@ def cbratu_2d(x):
     p = x.shape[1] + 2
     h = 1 / (p - 1)
     alpha = 5
-    c = h ** 2 * alpha
+    c = h**2 * alpha
     fvec = np.zeros_like(x)
     for i in range(2, p):
         for j in range(2, p):
@@ -195,11 +195,11 @@ def chemrcta(x):
     gamma = 25.0
     h = 1 / (dim_in - 1)
     cu1 = -h * pem
-    cui1 = 1 / (h ** 2 * pem) + 1 / h
-    cui = -1 / h - 2 / (h ** 2 * pem)
+    cui1 = 1 / (h**2 * pem) + 1 / h
+    cui = -1 / h - 2 / (h**2 * pem)
     ct1 = -h * peh
-    cti1 = 1 / (h ** 2 * peh) + 1 / h
-    cti = -beta - 1 / h - 2 / (h ** 2 * peh)
+    cti1 = 1 / (h**2 * peh) + 1 / h
+    cti = -beta - 1 / h - 2 / (h**2 * peh)
     fvec[0] = cu1 * x[0, 1] - x[0, 0] + h * pem
     fvec[1] = ct1 * x[1, 1] - x[1, 0] + h * peh
     for i in range(2, dim_in):
@@ -207,14 +207,14 @@ def chemrcta(x):
             -d * x[0, i - 1] * np.exp(gamma - gamma / x[1, i - 1])
             + (cui1) * x[0, i - 2]
             + cui * x[0, i - 1]
-            + x[0, i] / (h ** 2 * pem)
+            + x[0, i] / (h**2 * pem)
         )
         fvec[dim_in - 2 + i] = (
             b * d * x[0, i - 1] * np.exp(gamma - gamma / x[1, i - 1])
             + beta * x[1, i - 1]
             + cti1 * x[1, i - 2]
             + cti * x[1, i - 1]
-            + x[1, i] / (h ** 2 * peh)
+            + x[1, i] / (h**2 * peh)
         )
     fvec[-2] = x[0, -1] - x[0, -2]
     fvec[-1] = x[1, -1] - x[1, -2]
@@ -232,15 +232,15 @@ def chemrctb(x):
     gamma = 25.0
     h = 1 / (dim_in - 1)
     ct1 = -h * pe
-    cti1 = 1 / (h ** 2 * pe) + 1 / h
-    cti = -1 / h - 2 / (h ** 2 * pe)
+    cti1 = 1 / (h**2 * pe) + 1 / h
+    cti = -1 / h - 2 / (h**2 * pe)
     fvec[0] = ct1 * x[1] - x[0] + h * pe
     for i in range(2, dim_in):
         fvec[i - 1] = (
             d * (b + 1 - x[i - 1]) * np.exp(gamma - gamma / x[i - 1])
             + cti1 * x[i - 2]
             + cti * x[i - 1]
-            + x[i] / (h ** 2 * pe)
+            + x[i] / (h**2 * pe)
         )
     fvec[-1] = x[-1] - x[-2]
     return fvec
@@ -441,7 +441,7 @@ def penalty_2(x, a=1e-10):
         np.exp(x[1:] / 10) + np.exp(x[:-1] / 10) - y[1:dim_in]
     )
     fvec[dim_in:-1] = np.sqrt(a) * (np.exp(x[1:] / 10) - np.exp(-1 / 10))
-    fvec[-1] = (np.arange(1, dim_in + 1)[::-1] * x ** 2).sum() - 1
+    fvec[-1] = (np.arange(1, dim_in + 1)[::-1] * x**2).sum() - 1
     return fvec
 
 
@@ -455,10 +455,10 @@ def vardimne(x):
 
 
 def yatpsq_1(x, dim_in):
-    xvec = x[: dim_in ** 2]
+    xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
-    yvec = x[dim_in ** 2 : dim_in ** 2 + dim_in]
-    zvec = x[dim_in ** 2 + dim_in : dim_in ** 2 + 2 * dim_in]
+    yvec = x[dim_in**2 : dim_in**2 + dim_in]
+    zvec = x[dim_in**2 + dim_in : dim_in**2 + 2 * dim_in]
     fvec = np.zeros((dim_in, dim_in))
     for i in range(dim_in):
         for j in range(dim_in):
@@ -477,10 +477,10 @@ def yatpsq_1(x, dim_in):
 
 
 def yatpsq_2(x, dim_in):
-    xvec = x[: dim_in ** 2]
+    xvec = x[: dim_in**2]
     xvec = xvec.reshape((dim_in, dim_in))
-    yvec = x[dim_in ** 2 : dim_in ** 2 + dim_in]
-    zvec = x[dim_in ** 2 + dim_in : dim_in ** 2 + 2 * dim_in]
+    yvec = x[dim_in**2 : dim_in**2 + dim_in]
+    zvec = x[dim_in**2 + dim_in : dim_in**2 + 2 * dim_in]
     fvec = np.zeros((dim_in, dim_in))
     for i in range(dim_in):
         for j in range(dim_in):

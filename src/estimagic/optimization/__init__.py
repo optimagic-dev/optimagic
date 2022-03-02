@@ -14,6 +14,8 @@ from estimagic.optimization import nlopt_optimizers
 from estimagic.optimization import pygmo_optimizers
 from estimagic.optimization import scipy_optimizers
 from estimagic.optimization import tao_optimizers
+from estimagic.optimization.bhhh import bhhh
+from estimagic.optimization.neldermead import neldermead_parallel
 from estimagic.optimization.pounders import pounders
 
 
@@ -32,7 +34,12 @@ if IS_NLOPT_INSTALLED:
     )
 
 # drop private and helper functions
-AVAILABLE_ALGORITHMS = {"pounders": pounders}
+AVAILABLE_ALGORITHMS = {
+    "bhhh": bhhh,
+    "neldermead_parallel": neldermead_parallel,
+    "pounders": pounders,
+}
+
 PUBLIC_HELPERS = [
     "calculate_trustregion_initial_radius",
     "get_scipy_bounds",

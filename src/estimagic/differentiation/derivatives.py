@@ -16,6 +16,7 @@ from estimagic.utilities import namedtuple_from_kwargs
 def first_derivative(
     func,
     params,
+    *,
     func_kwargs=None,
     method="central",
     n_steps=1,
@@ -254,6 +255,7 @@ def first_derivative(
 def second_derivative(
     func,
     params,
+    *,
     func_kwargs=None,
     method="central_cross",
     n_steps=1,
