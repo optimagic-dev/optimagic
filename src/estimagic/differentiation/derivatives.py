@@ -50,10 +50,7 @@ def first_derivative(
 
     Args:
         func (callable): Function of which the derivative is calculated.
-        params (numpy.ndarray, pandas.Series or pandas.DataFrame): 1d numpy array or
-            :class:`pandas.DataFrame` with parameters at which the derivative is
-            calculated. If it is a DataFrame, it can contain the columns "lower_bound"
-            and "upper_bound" for bounds. See :ref:`params`.
+        params (pytree): A pytree. See :ref:`params`.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
