@@ -16,10 +16,7 @@ def estimation_table(
     custom_param_names=None,
     show_col_names=True,
     custom_col_names=None,
-    endog_names_as_col_names=False,
-    endog_names_as_col_level=False,
-    custom_endog_names=None,
-    custom_model_names=None,
+    custom_col_groups=None,
     custom_index_names=None,
     show_inference=True,
     confidence_intervals=False,
@@ -49,10 +46,11 @@ def estimation_table(
             statsmodels results they must be dictionaries or namedtuples with the
             following entries: "params" (a DataFrame with value column), "info"
             (a dictionary with summary statistics such as "n_obs", "rsquared", ...)
-            and "name" (a string). If a models is a statsmodels result, model.endog.name
-            is used as name and the rest is extracted from corresponding statsmodels
-            attributes. The model names do not have to be unique but if they are not,
-            models with the same name need to be grouped together.
+            and "name" (a string), or a DataFrame with value column.
+            If a models is a statsmodels result, model.endog_names is used as name and
+            the rest is extracted from corresponding statsmodels attributes. The model
+            names do not have to be unique but if they are not, models with the same
+            name dneed to be grouped together.
         return_type (str): Can be "dataframe", "latex", "html", "render_inputs" or a
             file path with the extension .tex or .html. If "render_inputs" is passed,
             a dictionary with the entries "body", "footer", "notes" and other
@@ -115,26 +113,40 @@ def estimation_table(
 
     """
     assert isinstance(models, list), "Please, provide models as a list"
-    models = [_process_model(mod) for mod in models]
+    models = [_process_model(model) for model in models]
     # if the value of custom_col_names is the default and EVERY models' attribute
     # info has the key estimation_name, replace custom col names with the  value
     # of this key.
-    endog_names = [model.info.get("dependent_variable", "") for model in models]
-    if custom_endog_names:
-        for loc, name in enumerate(endog_names):
-            endog_names[loc] = custom_endog_names.get(name, name)
+    model_names = _get_model_names(models)
+    _check_order_of_model_names(model_names)
+    default_col_names, default_col_groups = _get_default_column_names_and_groups(
+        model_names
+    )
+    # if default column groups is not undefined, rename group names using
+    # custom_col_groups.
+    if custom_col_groups:
+        if not default_col_groups:
+            assert isinstance(
+                custom_col_groups, list
+            ), """With unique model names, multiple models can't be grouped under
+            common group name. Provide list of unique group names instead, if you
+            wish to add column level."""
+    # Get mapping from group name to column position
+    if default_col_groups:
+        group_to_col_index = _create_group_to_col_position(default_col_groups)
+        # if custom names for column groups is given, rename
     if not custom_col_names:
-        if not endog_names_as_col_names:
-            name_list = [model.info.get("estimation_name", "") for model in models]
-        else:
-            name_list = endog_names
-        if "" not in name_list:
-            custom_col_names = name_list
-    if not custom_model_names:
-        if endog_names_as_col_level:
-            custom_model_names = {
-                dep_var: [col_num] for col_num, dep_var in enumerate(endog_names)
-            }
+        custom_col_names = default_col_names
+    elif isinstance(custom_col_names, dict):
+        custom_col_names = list(pd.Series(custom_col_names).replace(custom_col_names))
+    elif isinstance(custom_col_names, list):
+        pass
+    else:
+        raise TypeError(
+            """Invalid type for custom_col_names.
+            Can be either list or dictionary, or NoneType"""
+        )
+
     # Set some defaults:
     if not stat_keys:
         stat_keys = {
@@ -186,7 +198,7 @@ def estimation_table(
         custom_index_names,
         show_col_names,
         custom_col_names,
-        custom_model_names,
+        group_to_col_index,
     )
     to_concat = [
         _create_statistics_sr(
@@ -232,7 +244,7 @@ def estimation_table(
             notes_tex,
             render_options,
             custom_index_names,
-            custom_model_names,
+            group_to_col_index,
             padding,
             show_footer,
         )
@@ -418,31 +430,78 @@ def render_html(
 
 def _process_model(model):
     """Check model validity, convert to namedtuple."""
-    NamedTup = namedtuple("NamedTup", "params info")
+    ProcessedModel = namedtuple("NamedTup", "params info name")
     if hasattr(model, "params") and hasattr(model, "info"):
         assert isinstance(model.info, dict)
         assert isinstance(model.params, pd.DataFrame)
-        info_dict = model.info
-        params_df = model.params.copy(deep=True)
+        info = model.info
+        params = model.params.copy(deep=True)
+        if hasattr(model, "name"):
+            assert isinstance(model.name, str)
+            name = model.name
+        else:
+            name = ""
+
     else:
         if isinstance(model, dict):
-            params_df = model["params"].copy(deep=True)
-            info_dict = model.get("info", {})
+            params = model["params"].copy(deep=True)
+            info = model.get("info", {})
+            name = model.get("name", "")
         elif isinstance(model, pd.DataFrame):
-            params_df = model.copy(deep=True)
-            info_dict = {}
+            params = model.copy(deep=True)
+            info = {}
+            name = ""
         else:
             try:
-                params_df = _extract_params_from_sm(model)
-                info_dict = {**_extract_info_from_sm(model)}
+                params = _extract_params_from_sm(model)
+                info = {**_extract_info_from_sm(model)}
+                name = info.pop("name")
             except (KeyboardInterrupt, SystemExit):
                 raise
             except BaseException:
                 raise TypeError("Model {} does not have valid format".format(model))
-    if "pvalue" in params_df.columns:
-        params_df = params_df.rename(columns={"pvalue": "p_value"})
-    processed_model = NamedTup(params=params_df, info=info_dict)
+    if "pvalue" in params.columns:
+        params = params.rename(columns={"pvalue": "p_value"})
+    processed_model = ProcessedModel(params=params, info=info, name=name)
     return processed_model
+
+
+def _get_model_names(processed_models):
+    names = []
+    for i, mod in enumerate(processed_models):
+        if mod.name:
+            names.append(mod.name)
+        else:
+            names.append(f"({i + 1})")
+    return names
+
+
+def _get_default_column_names_and_groups(model_names):
+    if len(set(model_names)) == len(model_names):
+        col_groups = None
+        col_names = model_names
+    else:
+        col_groups = model_names
+        col_names = [f"({i + 1})" for i in range(len(model_names))]
+
+    return col_names, col_groups
+
+
+def _check_order_of_model_names(model_names):
+    group_to_col_index = _create_group_to_col_position(model_names)
+    for positions in group_to_col_index.values():
+        if positions != list(range(positions[0], positions[-1] + 1)):
+            raise ValueError(
+                "If there are repetitions in model_names, models with the "
+                f"same name need to be adjacent. You provided: {model_names}"
+            )
+
+
+def _create_group_to_col_position(column_groups):
+    group_to_col_index = {group: [] for group in list(set(column_groups))}
+    for i, group in enumerate(column_groups):
+        group_to_col_index[group].append(i)
+    return group_to_col_index
 
 
 def _convert_model_to_series(
@@ -639,11 +698,7 @@ def _process_body_df(
 
     """
     if show_col_names:
-        if custom_col_names:
-            df.columns = custom_col_names
-        else:
-            df.columns = ["(" + str(col + 1) + ")" for col in range(len(df.columns))]
-
+        df.columns = custom_col_names
     if custom_index_names:
         df.index.names = custom_index_names
     if custom_param_names:
@@ -819,7 +874,7 @@ def _extract_info_from_sm(model):
     ]
     for kv in key_values:
         info[kv] = getattr(model, kv)
-    info["dependent_variable"] = model.model.endog_names
+    info["name"] = model.model.endog_names
     info["resid_std_err"] = np.sqrt(model.scale)
     info["n_obs"] = model.df_model + model.df_resid + 1
     return info
