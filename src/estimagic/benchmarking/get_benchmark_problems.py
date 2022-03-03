@@ -10,6 +10,7 @@ from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
 
 def get_benchmark_problems(
     name,
+    *,
     additive_noise=False,
     additive_noise_options=None,
     multiplicative_noise=False,

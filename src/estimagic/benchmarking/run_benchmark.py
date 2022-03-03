@@ -19,6 +19,7 @@ def run_benchmark(
     problems,
     optimize_options,
     logging_directory,
+    *,
     batch_evaluator="joblib",
     n_cores=1,
     error_handling="continue",

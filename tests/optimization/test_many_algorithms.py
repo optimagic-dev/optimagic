@@ -20,7 +20,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 LOCAL_ALGORITHMS = {
     key: value
     for key, value in AVAILABLE_ALGORITHMS.items()
-    if key not in GLOBAL_ALGORITHMS
+    if key not in GLOBAL_ALGORITHMS and key != "bhhh"
 }
 
 GLOBAL_ALGORITHMS_AVAILABLE = [

@@ -10,6 +10,7 @@ from plotly.subplots import make_subplots
 
 def lollipop_plot(
     data,
+    *,
     sharex=True,
     plot_bar=True,
     n_rows=1,
