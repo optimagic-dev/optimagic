@@ -42,6 +42,11 @@ __all__ = [
     "convergence_plot",
     "lollipop_plot",
     "derivative_plot",
+<<<<<<< HEAD
     "slice_plot",
+=======
+    "plot_univariate_effects",
+    "estimation_table",
+>>>>>>> c14f743986262d508e55738c90737cb504fe987b
     "__version__",
 ]
