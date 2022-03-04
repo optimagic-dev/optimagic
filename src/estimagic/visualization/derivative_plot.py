@@ -4,13 +4,15 @@ import itertools
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+from estimagic.config import PLOTLY_TEMPLATE
+from estimagic.visualization.plot_help import create_grid_plot
+from estimagic.visualization.plot_help import create_ind_dict
 
 
 def derivative_plot(
     derivative_result,
     combine_plots_in_grid=True,
-    template="plotly_white",
+    template=PLOTLY_TEMPLATE,
     palette=px.colors.qualitative.Plotly,
 ):
     """Plot evaluations and derivative estimates.
@@ -153,48 +155,37 @@ def derivative_plot(
             g_ind.append(trace_5)
 
         # subplot x titles
-        x_axis.append(fr"Value relative to x<sub>{0, row}</sub>")
+        x_axis.append(rf"Value relative to x<sub>{0, row}</sub>")
         # subplot titles
         titles.append(f"dim_x, dim_f = {row, col}")
         # list of traces for individual plots
         g_list.append(g_ind)
 
+    common_dependencies = {
+        "ind_list": g_list,
+        "names": titles,
+        "clean_legend": True,
+        "scientific_notation": True,
+        "x_title": x_axis,
+    }
     # Plot with subplots
     if combine_plots_in_grid:
-        g = make_subplots(rows=len(dim_x), cols=len(dim_f), subplot_titles=titles)
-        for ind, (facet_row, facet_col) in enumerate(
-            itertools.product(range(1, len(dim_x) + 1), range(1, len(dim_f) + 1))
-        ):
-            traces = g_list[ind]
-            for trace in range(len(traces)):
-                g.add_trace(traces[trace], row=facet_row, col=facet_col)
-
-        # deleting duplicates in legend
-        g = clean_legend_duplicates(g)
-
-        # setting x-axis titles
-        for i in range(1, len(g_list) + 1):
-            g["layout"]["xaxis{}".format(i)]["title"] = x_axis[i - 1]
-
-        # setting template theme and size
-        g.update_layout(
-            template=template, height=300 * len(dim_x), width=500 * len(dim_f)
+        g = create_grid_plot(
+            rows=len(dim_x),
+            cols=len(dim_f),
+            **common_dependencies,
+            kws={
+                "template": template,
+                "height": 300 * len(dim_x),
+                "width": 500 * len(dim_f),
+            },
         )
-
-        # scientific notations for axis ticks
-        g.update_yaxes(tickformat=".2e")
-        g.update_xaxes(tickformat=".2e")
-
         out = g
 
     # Dictionary for individual plots
-    if not combine_plots_in_grid:
+    else:
         ind_dict = create_ind_dict(
-            g_list,
-            titles,
-            clean_legend=True,
-            sci_notation=True,
-            x_title=x_axis,
+            **common_dependencies,
             kws={"template": template, "height": 300, "width": 500, "title_x": 0.5},
         )
 
@@ -242,80 +233,3 @@ def _select_eval_with_lowest_and_highest_step(df_evals, sign, dim_x, dim_f):
     df = df.dropna().sort_index()
     out = df.head(1).append(df.tail(1)).values.copy()
     return out
-
-
-def create_ind_dict(
-    ind_list,
-    names,
-    kws,
-    x_title=None,
-    y_title=None,
-    clean_legend=False,
-    sci_notation=False,
-    share_xax=False,
-    x_min=None,
-    x_max=None,
-):
-    """Create a dictionary for individual plots from a list of traces.
-
-    Args:
-        ind_list (iterable): The list of traces for each individual plot.
-        names (iterable): The list of titles for the each plot.
-        kws (dict): The dictionary for the layout.update, unified for each
-        individual plot.
-        x_title (iterable or None): The list of x-axis labels for each plot. If None,
-        then no labels are added.
-        y_title (iterable or None): The list of y-axis labels for each plot. If None,
-        then no labels are added.
-        clean_legend (bool): If True, then cleans the legend from duplicates.
-        Default False.
-        sci_notation (bool): If True then updates the ticks on x- and y-axis to
-        be displayed in a scientific notation. Default False.
-        share_xax (bool): If True, then the x-axis domain is the same
-        for each individual plot.
-        x_min (int or None): The lower bound for share_xax.
-        x_max (int or None): The upped bound for share_xax.
-
-    Returns:
-        dictionary of individual plots
-
-    """
-    fig_dict = {}
-    if x_title is None:
-        x_title = ["" for ind in range(len(ind_list))]
-    if y_title is None:
-        y_title = ["" for ind in range(len(ind_list))]
-
-    for ind in range(len(ind_list)):
-        fig = go.Figure()
-        traces = ind_list[ind]
-        for trace in range(len(traces)):
-            fig.add_trace(traces[trace])
-        # adding title and styling axes and theme
-        fig.update_layout(
-            title=names[ind], xaxis_title=x_title[ind], yaxis_title=y_title[ind], **kws
-        )
-        # scientific notations for axis ticks
-        if sci_notation:
-            fig.update_yaxes(tickformat=".2e")
-            fig.update_xaxes(tickformat=".2e")
-        # deleting duplicates in legend
-        if clean_legend:
-            fig = clean_legend_duplicates(fig)
-        if share_xax:
-            fig.update_xaxes(range=[x_min, x_max])
-        # adding to dictionary
-        key = names[ind].replace(" ", "_").lower()
-        fig_dict[key] = fig
-
-    return fig_dict
-
-
-def clean_legend_duplicates(fig):
-    names = set()
-    fig.for_each_trace(
-        lambda trace: trace.update(showlegend=False)
-        if (trace.name in names)
-        else names.add(trace.name)
-    )
-    return fig

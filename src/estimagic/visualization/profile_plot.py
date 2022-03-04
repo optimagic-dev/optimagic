@@ -7,7 +7,7 @@ import plotly.express as px
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
-
+from estimagic.config import PLOTLY_TEMPLATE
 
 plt.rcParams.update(
     {
@@ -27,7 +27,7 @@ def profile_plot(
     stopping_criterion="y",
     x_precision=1e-4,
     y_precision=1e-4,
-    template="plotly_white",
+    template=PLOTLY_TEMPLATE,
 ):
     """Compare optimizers over a problem set.
 

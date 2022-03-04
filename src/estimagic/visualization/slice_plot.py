@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from estimagic.config import PLOTLY_TEMPLATE
 
 
 def slice_plot(
@@ -11,7 +12,7 @@ def slice_plot(
     plots_per_row=2,
     combine_plots_in_grid=True,
     seed=5471,
-    template="plotly_white",
+    template=PLOTLY_TEMPLATE,
 ):
     """Plot criterion along coordinates at given and random values.
 
