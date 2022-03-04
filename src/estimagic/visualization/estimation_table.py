@@ -15,7 +15,7 @@ def estimation_table(
     render_options=None,
     custom_param_names=None,
     show_col_names=True,
-    show_col_groups=False,
+    show_col_groups=None,
     custom_col_names=None,
     custom_col_groups=None,
     show_index_names=False,
@@ -117,26 +117,24 @@ def estimation_table(
     """
     # Check models are passed as a list.
     assert isinstance(models, list), "Please, provide models as a list"
-    # Make sure arguments pass some sanity checks
-    if custom_col_names:
-        assert show_col_names, """It makes sense to set show_column_names=True
-        if you are using custom_column_names"""
-    if custom_col_groups:
-        assert show_col_groups, """It makes sense to set show_col_groups=True
-        if you are using custom_column_names"""
-    if custom_index_names:
-        assert show_index_names, """It makes sense to set show_index_names=True
-        if you are using custom_column_names"""
+    # Process models
     models = [_process_model(model) for model in models]
     model_names = _get_model_names(models)
     default_col_names, default_col_groups = _get_default_column_names_and_groups(
         model_names
     )
-    col_groups = _customize_col_groups(default_col_groups, custom_col_groups)
-    col_names = _customize_col_names(default_col_names, custom_col_names)
-    # Get mapping from group name to column position
-    if col_groups:
-        group_to_col_position = _create_group_to_col_position(col_groups)
+    column_groups = _customize_col_groups(
+        default_col_groups=default_col_groups, custom_col_groups=custom_col_groups
+    )
+    column_names = _customize_col_names(
+        default_col_names=default_col_names, custom_col_names=custom_col_names
+    )
+    # Adapt the value of show_col_groups based on col_groups.
+    if show_col_groups is None:
+        if column_groups is not None:
+            show_col_groups = True
+        else:
+            show_col_groups = False
     # Set some defaults:
     if not stat_keys:
         stat_keys = {
@@ -188,14 +186,14 @@ def estimation_table(
         for df in to_convert
     ]
     body_df = pd.concat(to_concat, axis=1)
-    body_df = _process_body_df(
+    body_df = _process_frame_axes(
         body_df=body_df,
         custom_param_names=custom_param_names,
         custom_index_names=custom_index_names,
         show_col_names=show_col_names,
         show_col_groups=show_col_groups,
-        col_names=col_names,
-        col_groups=col_groups,
+        column_names=column_names,
+        column_groups=column_groups,
     )
     to_concat = [
         _create_statistics_sr(
@@ -254,7 +252,7 @@ def estimation_table(
             right_decimals=max_trail,
             notes=notes_tex,
             render_options=render_options,
-            group_to_col_position=group_to_col_position,
+            column_groups=column_groups,
             padding=padding,
             show_footer=show_footer,
         )
@@ -299,7 +297,7 @@ def render_latex(
     right_decimals,
     padding=1,
     render_options=None,
-    group_to_col_position=None,
+    column_groups=None,
     show_footer=True,
 ):
     """Return estimation table in LaTeX format as string.
@@ -327,11 +325,8 @@ def render_latex(
         render_options(dict): A dictionary with custom kwargs to pass to pd.to_latex(),
             to update the default options. An example is `{header: False}` that
             disables displaying column names.
-        group_to_col_position (dict): A mapping from column groups to positions of
-            columns in each group. Is used to draw centered midrules between column
-            groups and column names. Default None.
-        show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
-            Obs numbers. Default True.
+        col_groups (list): A list with column group titles if defined.
+        show_footer (bool): a boolean variable for displaying footer_df. Default True.
     Returns:
         latex_str (str): The resulting string with Latex tabular code.
 
@@ -363,6 +358,9 @@ def render_latex(
     if not default_options["index_names"]:
         body_df.index.names = [None] * body_df.index.nlevels
     latex_str = body_df.to_latex(**default_options)
+    # Get mapping from group name to column position
+    if column_groups is not None:
+        group_to_col_position = _create_group_to_col_position(column_groups)
     if group_to_col_position:
         temp_str = "\n"
         for k in group_to_col_position:
@@ -400,17 +398,21 @@ def render_html(body_df, footer_df, notes_html, render_options, show_footer):
     """Return estimation table in html format as string.
 
     Args:
-        body_df (DataFrame): the processed dataframe with parameter values and
-            precision (if applied) as strings.
-        footer_df (DataFrame): the processed dataframe with summary statistics
-            as strings.
-        notes_html (str): a string with html code for the notes section
-        render_options(dict): the pd.to_html() kwargs to apply if default options
-            need to be updated.
-        show_footer (bool): see main docstring
+        body_df (pandas.DataFrame): DataFrame with formatted strings of parameter
+            values, inferences (standard errors or confidence intervals, if
+            applicable) and significance stars (if applicable).
+        footer_df (pandas.DataFrame): DataFrame with formatted strings of summary
+            statistics (such as number of observations, r-squared, etc.)
+        notes_html (str): The html string with notes with additional information
+            (e.g. mapping from pvalues to significance stars) to append to the footer
+            of the estimation table string with LaTex code for the notes section.
+        render_options(dict): A dictionary with custom kwargs to pass to pd.to_latex(),
+            to update the default options. An example is `{header: False}` that
+            disables displaying column names.
+        show_footer (bool): a boolean variable for displaying footer_df. Default True.
 
     Returns:
-        html_str (str): the string for html table script.
+        latex_str (str): The resulting string with html tabular code.
 
     """
     n_levels = body_df.index.nlevels
@@ -423,11 +425,6 @@ def render_html(body_df, footer_df, notes_html, render_options, show_footer):
             html_str += default_options["caption"] + "<br>"
             default_options.pop("caption")
     html_str += body_df.to_html(**default_options).split("</tbody>\n</table>")[0]
-    # this line removes all the curly braces that were placed in order to get nice latex
-    # output. Since Html does not escape them, they need to be removed.
-    html_str = re.sub(
-        r"(?<=[\d)}{)a-zA-Z])}", "", re.sub(r"{(?=[}\d(a-zA-Z-])", "", html_str)
-    ).replace(r"\,", " ")
     if show_footer:
         stats_str = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
             </td></tr>""".format(
@@ -446,8 +443,14 @@ def render_html(body_df, footer_df, notes_html, render_options, show_footer):
 
 
 def _process_model(model):
-    """Check model validity, convert to namedtuple."""
-    ProcessedModel = namedtuple("NamedTup", "params info name")
+    """Check model validity, convert to namedtuple.
+    Args
+        model: Estimation result. See docstring of estimation_table for more info.
+    Returns:
+        processed_model: A namedtuple with attributes params, info and name.
+    """
+
+    ProcessedModel = namedtuple("ProcessedModel", "params info name")
     if hasattr(model, "params") and hasattr(model, "info"):
         assert isinstance(model.info, dict)
         assert isinstance(model.params, pd.DataFrame)
@@ -484,6 +487,14 @@ def _process_model(model):
 
 
 def _get_model_names(processed_models):
+    """Get names of model names if defined, set based on position otherwise.
+    Args:
+        processed_models (list): List of estimation results processed to namedtuples.
+    Returns:
+        names (list): List of model names given either by name attribute of each model
+            if defined or the position (counting from 1) of each model in parentheses.
+
+    """
     names = []
     for i, mod in enumerate(processed_models):
         if mod.name:
@@ -494,7 +505,34 @@ def _get_model_names(processed_models):
     return names
 
 
+def _check_order_of_model_names(model_names):
+    """Check identically named models are adjacent.
+    Args:
+        model_names (list): List of model names.
+    Returns:
+        raises ValueError if models that share a name are not next to each other.
+    """
+    group_to_col_index = _create_group_to_col_position(model_names)
+    for positions in group_to_col_index.values():
+        if positions != list(range(positions[0], positions[-1] + 1)):
+            raise ValueError(
+                "If there are repetitions in model_names, models with the "
+                f"same name need to be adjacent. You provided: {model_names}"
+            )
+
+
 def _get_default_column_names_and_groups(model_names):
+    """Get column names and groups to display in the estimation table.
+    Args:
+        model_names (list): List of model names.
+    Returns:
+        col_names (list): List of estimation column names to display in estimation
+            table. Same as model_names if model_names are unique. Given by column
+            position (counting from 1) in braces otherwise.
+        col_groups (list or NoneType): If defined, list of strings unique values
+            of which will define column groups. Not defined if model_names are unique.
+
+    """
     if len(set(model_names)) == len(model_names):
         col_groups = None
         col_names = model_names
@@ -505,7 +543,16 @@ def _get_default_column_names_and_groups(model_names):
     return col_names, col_groups
 
 
-def _customize_col_groups(custom_col_groups, default_col_groups):
+def _customize_col_groups(default_col_groups, custom_col_groups):
+    """Change default (inferred) column group titles using custom column groups.
+    Args:
+        custom_col_groups (list or dict): Dictionary mapping defautl column group
+            titles to custom column group titles, if the defautl column groups are
+            defined. Must be a list of the same lenght as models otherwise.
+        default_col_groups (list or NoneType): The inferred column groups.
+    Returns:
+        col_groups (list): Column groups to display in estimation table.
+    """
     if custom_col_groups:
         if not default_col_groups:
             assert isinstance(
@@ -518,9 +565,9 @@ def _customize_col_groups(custom_col_groups, default_col_groups):
             if isinstance(custom_col_groups, list):
                 col_groups = custom_col_groups
             elif isinstance(custom_col_groups, dict):
-                for old_key, new_key in custom_col_groups.items():
-                    default_col_groups[new_key] = default_col_groups.pop(old_key)
-                col_groups = default_col_groups
+                col_groups = (
+                    pd.Series(default_col_groups).replace(custom_col_groups).to_list()
+                )
             else:
                 raise TypeError(
                     """Invalid type for custom_col_groups. Can be either list
@@ -532,6 +579,15 @@ def _customize_col_groups(custom_col_groups, default_col_groups):
 
 
 def _customize_col_names(default_col_names, custom_col_names):
+    """Change default (inferred) column names using custom column names.
+    Args:
+        custom_col_names (list or dict): Dictionary mapping defautl column names
+            to custom column names, or list of display as the name of each
+            model column.
+        deafult_col_names (list): The default (inferred) column names.
+    Returns:
+        column_names (list): The column names to display in the estimatino table.
+    """
     if not custom_col_names:
         col_names = default_col_names
     elif isinstance(custom_col_names, dict):
@@ -546,17 +602,14 @@ def _customize_col_names(default_col_names, custom_col_names):
     return col_names
 
 
-def _check_order_of_model_names(model_names):
-    group_to_col_index = _create_group_to_col_position(model_names)
-    for positions in group_to_col_index.values():
-        if positions != list(range(positions[0], positions[-1] + 1)):
-            raise ValueError(
-                "If there are repetitions in model_names, models with the "
-                f"same name need to be adjacent. You provided: {model_names}"
-            )
-
-
 def _create_group_to_col_position(column_groups):
+    """Get mapping from column groups to column positions.
+    Args:
+        column_names (list): The column groups to display in the estimatino table.
+    Returns:
+        group_to_col_index(dict): The mapping from column group titles to column
+            positions.
+    """
     group_to_col_index = {group: [] for group in list(set(column_groups))}
     for i, group in enumerate(column_groups):
         group_to_col_index[group].append(i)
@@ -569,7 +622,6 @@ def _convert_frame_to_string_series(
     show_stars,
 ):
     """Return processed value series with significance stars and inference information.
-
     Args:
 
         df (DataFrame): params DataFrame of the model
@@ -630,9 +682,7 @@ def _combine_series(value_sr, inference_sr):
         values_sr (Series): string series of estimated parameter values
         inference_sr (Series): string series of inference values
     Returns:
-        series: combined string series of param and inference values.
-
-
+        series: combined string series of param and inference values
     """
 
     value_df = value_sr.to_frame(name="")
@@ -734,14 +784,14 @@ def _create_statistics_sr(
     return stat_sr.astype("str").replace("nan", "")
 
 
-def _process_body_df(
+def _process_frame_axes(
     df,
     custom_param_names,
     custom_index_names,
     show_col_names,
     show_col_groups,
-    col_names,
-    col_groups,
+    column_names,
+    column_groups,
 ):
     """Process body DataFrame, customize the header.
 
@@ -750,20 +800,24 @@ def _process_body_df(
         custom_param_names (dict): see main docstring
         custom_index_names (list): see main docstring
         show_col_names (bool): see main docstring
-        custom_col_names (list): see main docstring
-        custom_model_names (dict): see main docstring
+        column_names (list): List of column names to display in estimation table.
+        column_groups (list): List of column group titles to display in estimation
+            table.
 
     Returns:
         processed_df (DataFrame): string DataFrame with customized header.
 
     """
+    # The column names of the unprocessed data frame are empty strings.
+    # If show_col_names is True, rename columns using column_names.
+    # Add column level if show col_groups is True.
     if show_col_names:
         if show_col_groups:
             df.columns = pd.MultiIndex.from_tuples(
-                [(i, j) for i, j in zip(col_groups, col_names)]
+                [(i, j) for i, j in zip(column_groups, column_names)]
             )
         else:
-            df.columns = col_names
+            df.columns = column_names
     if custom_index_names:
         if isinstance(custom_index_names, list):
             df.index.names = custom_index_names
@@ -930,6 +984,14 @@ def _extract_info_from_sm(model):
 
 
 def _apply_number_format(df, number_format):
+    """Apply string format to DataFrame cells.
+    Args:
+        df (DataFrame): The DataFrame with float values to format.
+        number_format(str, list, tuple, callable or int): User defined number format
+            to apply to the DataFrame.
+    Returns:
+        df_formatted (DataFrame): Formatted DataFrame.
+    """
     processed_format = _process_number_format(number_format)
     if isinstance(processed_format, (list, tuple)):
         df_formatted = df.copy(deep=True).astype("float")
@@ -948,6 +1010,7 @@ def _apply_number_format(df, number_format):
 
 
 def _format_non_scientific_numbers(number_string, format_string):
+    """Apply number format if the number string is not in scientific format."""
     if "e" in number_string:
         out = number_string
     else:
@@ -956,6 +1019,9 @@ def _format_non_scientific_numbers(number_string, format_string):
 
 
 def _process_number_format(raw_format):
+    """Process the user define formatter.
+    Reduces cases for number format in apply_number_format.
+    """
     if isinstance(raw_format, str):
         processed_format = [raw_format]
     elif isinstance(raw_format, int):
@@ -968,6 +1034,7 @@ def _process_number_format(raw_format):
 
 
 def _get_digits_after_decimal(df):
+    """Get the maximum number of digits after a decimal point in a DataFrame."""
     max_trail = 0
     for c in df.columns:
         try:
@@ -990,6 +1057,9 @@ def _get_digits_after_decimal(df):
 
 
 def _add_latex_syntax_around_scientfic_number_string(string):
+    """Add curly braces around scientific numbers.
+    Otherwise, siuntix will raise an error.
+    """
     if "e" not in string:
         out = string
     else:
