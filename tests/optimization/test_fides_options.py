@@ -130,4 +130,4 @@ def test_fides_stop_after_tiny_time():
     end = time.time()
     duration = end - start
     assert not res["success"]
-    assert duration < 2e-3
+    assert duration < 1e-3
