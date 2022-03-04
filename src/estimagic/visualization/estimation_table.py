@@ -275,30 +275,52 @@ def estimation_table(
 def render_latex(
     body_df,
     footer_df,
-    right_decimals,
     notes_tex,
+    right_decimals,
+    padding=1,
     render_options=None,
     show_col_names=True,
-    show_index_names=False,
     show_col_groups=False,
+    show_index_names=False,
     group_to_col_position=None,
-    padding=1,
     show_footer=True,
 ):
     """Return estimation table in LaTeX format as string.
 
     Args:
-        body_df (pandas.DataFrame): the processed dataframe with parameter values and
-            precision (if applied) as strings.
-        footer_df (pandas.DataFrame): the processed dataframe with summary statistics as
-            strings.
-        notes_tex (str): a string with LaTex code for the notes section
-        render_options(dict): the pd.to_latex() kwargs to apply if default options
-            need to be updated.
-        lef_decimals (int): see main docstring
-        number_format (int): see main docstring
-        show_footer (bool): see main docstring
-
+        body_df (pandas.DataFrame): DataFrame with formatted strings of parameter
+            values, inferences (standard errors or confidence intervals, if
+            applicable) and significance stars (if applicable).
+        footer_df (pandas.DataFrame): DataFrame with formatted strings of summary
+            statistics (such as number of observations, r-squared, etc.)
+        notes_tex (str): The LaTex string with notes with additional information
+            (e.g. mapping from pvalues to significance stars) to append to the footer
+            of the estimation table string with LaTex code for the notes section.
+        right_decimals (int): An integer passed to the `table-format` argument of
+            siuntix tabular controls the number of figures that is reserved to the
+            right of the decimal point. Impacts distancing between table columns and
+            the distance between digits and non numerical parts (e.g. stars (*)) of
+            cell strings. For detailed information and usage examples see:
+            https://texdoc.org/serve/siunitx/0 (page 41).
+        padding (int): Like right_decimals, is used for table alignment in siuntix
+            table. Controls the number of figures reserved to the left from decimal
+            points and thus the space to the left from each table column.
+            For detailed information and usage examples see:
+            https://texdoc.org/serve/siunitx/0 (page 41)
+        render_options(dict): A dictionary with custom kwargs to pass to pd.to_latex(),
+            to update the default options. An example is `{header: False}` that
+            disables displaying column names.
+        show_col_names (bool): If both show_col_names and show_col_groups are False,
+            update `default_render_options` with `{'header': False}`. Default True.
+        show_col_groups (bool): If both show_col_names and show_col_groups are False,
+            update `default_render_options` with `{'header': False}`. Default False.
+        show_index_names (bool): If True, updates `default_render_options` with
+            `{'index_names': True}`. Default False.
+        show_group_to_col_position (dict): A mapping from column groups to positions of
+            columns in each group. Is used to draw centered midrules between column
+            groups and column names. Default None.
+        show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
+            Obs numbers. Default True.
     Returns:
         latex_str (str): the string for LaTex table script.
 
@@ -329,7 +351,7 @@ def render_latex(
         default_options.update(render_options)
     if show_index_names:
         default_options.update({"index_names": True})
-    if not show_col_names:
+    if not (show_col_names and show_col_groups):
         default_options.update({"header": False})
     if not default_options["index_names"]:
         body_df.index.names = [None] * body_df.index.nlevels
