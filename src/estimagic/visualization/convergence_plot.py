@@ -190,6 +190,10 @@ def convergence_plot(
         "x_title": xaxis_title,
         "y_title": yaxis_title,
     }
+    common_layout = {
+        "template": template,
+        "margin": {"l": 10, "r": 10, "t": 30, "b": 10},
+    }
 
     # Plot with subplots
     if combine_plots_in_grid:
@@ -197,7 +201,7 @@ def convergence_plot(
             rows=n_rows,
             cols=n_cols,
             **common_dependencies,
-            kws={"template": template, "height": 300 * n_rows, "width": 500 * n_cols},
+            kws={"height": 320 * n_rows, "width": 500 * n_cols, **common_layout},
         )
         out = g
 
@@ -206,7 +210,7 @@ def convergence_plot(
 
         ind_dict = create_ind_dict(
             **common_dependencies,
-            kws={"template": template, "height": 300, "width": 500, "title_x": 0.5},
+            kws={"height": 320, "width": 500, "title_x": 0.5, **common_layout},
         )
 
         out = ind_dict

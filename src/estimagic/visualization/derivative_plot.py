@@ -168,6 +168,11 @@ def derivative_plot(
         "scientific_notation": True,
         "x_title": x_axis,
     }
+    common_layout = {
+        "template": template,
+        "margin": {"l": 10, "r": 10, "t": 30, "b": 10},
+    }
+
     # Plot with subplots
     if combine_plots_in_grid:
         g = create_grid_plot(
@@ -175,9 +180,9 @@ def derivative_plot(
             cols=len(dim_f),
             **common_dependencies,
             kws={
-                "template": template,
                 "height": 300 * len(dim_x),
                 "width": 500 * len(dim_f),
+                **common_layout,
             },
         )
         out = g
@@ -186,7 +191,7 @@ def derivative_plot(
     else:
         ind_dict = create_ind_dict(
             **common_dependencies,
-            kws={"template": template, "height": 300, "width": 500, "title_x": 0.5},
+            kws={"height": 300, "width": 500, "title_x": 0.5, **common_layout},
         )
 
         out = ind_dict

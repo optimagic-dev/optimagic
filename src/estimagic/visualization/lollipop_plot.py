@@ -110,6 +110,10 @@ def lollipop_plot(
         "x_min": lower,
         "x_max": upper,
     }
+    common_layout = {
+        "template": template,
+        "margin": {"l": 10, "r": 10, "t": 30, "b": 10},
+    }
 
     # Plot with subplots
     if combine_plots_in_grid:
@@ -119,26 +123,15 @@ def lollipop_plot(
             rows=n_rows,
             cols=n_cols,
             **common_dependencies,
-            kws={
-                "template": template,
-                "height": 150 * n_rows,
-                "width": 150 * n_cols,
-                "margin": {"l": 10, "r": 10, "t": 30, "b": 10},
-            },
+            kws={"height": 150 * n_rows, "width": 150 * n_cols, **common_layout},
         )
         out = g
 
     # Dictionary for individual plots
     else:
         ind_dict = create_ind_dict(
-            kws={
-                **common_dependencies,
-                "template": template,
-                "height": 150,
-                "width": 150,
-                "title_x": 0.5,
-                "margin": {"l": 10, "r": 10, "t": 30, "b": 10},
-            },
+            **common_dependencies,
+            kws={"height": 150, "width": 150, "title_x": 0.5, **common_layout},
         )
         out = ind_dict
 
