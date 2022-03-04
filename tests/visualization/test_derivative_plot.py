@@ -113,4 +113,4 @@ def test_derivative_plot(func_and_params, n_steps):
         return_info=True,
     )
     fig = derivative_plot(derivative)
-    fig.clf()
+    del fig

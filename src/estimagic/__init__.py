@@ -12,7 +12,6 @@ from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from estimagic.visualization.convergence_plot import convergence_plot
 from estimagic.visualization.derivative_plot import derivative_plot
-from estimagic.visualization.estimation_table import estimation_table
 from estimagic.visualization.lollipop_plot import lollipop_plot
 from estimagic.visualization.profile_plot import profile_plot
 from estimagic.visualization.slice_plot import slice_plot
@@ -42,11 +41,6 @@ __all__ = [
     "convergence_plot",
     "lollipop_plot",
     "derivative_plot",
-<<<<<<< HEAD
     "slice_plot",
-=======
-    "plot_univariate_effects",
-    "estimation_table",
->>>>>>> c14f743986262d508e55738c90737cb504fe987b
     "__version__",
 ]

@@ -1,7 +1,6 @@
 import itertools
 
 import plotly.graph_objects as go
-from estimagic.config import PLOTLY_TEMPLATE
 from plotly.subplots import make_subplots
 
 
@@ -78,7 +77,7 @@ def create_grid_plot(
         fig.update_xaxes(range=[x_min, x_max])
 
     # setting template theme and size
-    fig.update_layout(template=PLOTLY_TEMPLATE, **kws)
+    fig.update_layout(**kws)
 
     return fig
 
@@ -132,11 +131,7 @@ def create_ind_dict(
             fig.add_trace(traces[trace])
         # adding title and styling axes and theme
         fig.update_layout(
-            template=PLOTLY_TEMPLATE,
-            title=names[ind],
-            xaxis_title=x_title[ind],
-            yaxis_title=y_title[ind],
-            **kws
+            title=names[ind], xaxis_title=x_title[ind], yaxis_title=y_title[ind], **kws
         )
         # scientific notations for axis ticks
         if scientific_notation:

@@ -24,10 +24,9 @@ def lollipop_plot(
     """Make a lollipop plot.
 
     Args:
-        data (pandas.DataFrame): The datapoints to be plotted. In contrast
-            to many seaborn functions, the whole data will be plotted. Thus if you
-            want to plot just some variables or rows you need to restrict the dataset
-            before passing it.
+        data (pandas.DataFrame): The datapoints to be plotted. The whole data will be
+        plotted. Thus if you want to plot just some variables or rows you need
+        to restrict the dataset before passing it.
         sharex (bool): Whether the x-axis is shared across variables, default True.
         plot_bar (bool): Whether thin bars are plotted, default True.
         n_rows (int): Number of rows for a grid if plots are combined
