@@ -268,7 +268,7 @@ def estimation_table(
             "notes_tex": _generate_notes_latex(
                 append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
-            "latex_right_alig": max_trail,
+            "latex_right_decimals": max_trail,
             "notes_html": _generate_notes_html(
                 append_notes, notes_label, significance_levels, custom_notes, body_df
             ),
