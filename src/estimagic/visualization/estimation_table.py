@@ -322,7 +322,7 @@ def render_latex(
         show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
             Obs numbers. Default True.
     Returns:
-        latex_str (str): the string for LaTex table script.
+        latex_str (str): The resulting string with Latex tabular code.
 
     """
     body_df = body_df.copy(deep=True)
