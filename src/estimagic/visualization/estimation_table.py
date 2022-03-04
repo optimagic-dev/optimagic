@@ -115,7 +115,18 @@ def estimation_table(
             compilation
 
     """
+    # Check models are passed as a list.
     assert isinstance(models, list), "Please, provide models as a list"
+    # Make sure arguments pass some sanity checks
+    if custom_col_names:
+        assert show_col_names, """It makes sense to set show_column_names=True
+        if you are using custom_column_names"""
+    if custom_col_groups:
+        assert show_col_groups, """It makes sense to set show_col_groups=True
+        if you are using custom_column_names"""
+    if custom_index_names:
+        assert show_index_names, """It makes sense to set show_index_names=True
+        if you are using custom_column_names"""
     models = [_process_model(model) for model in models]
     model_names = _get_model_names(models)
     default_col_names, default_col_groups = _get_default_column_names_and_groups(
@@ -200,6 +211,20 @@ def estimation_table(
     ]
     footer_df = pd.concat(to_concat, axis=1)
     footer_df.columns = body_df.columns
+    # set kwarg 'header' for to_latex() and to_html() based on
+    # show_column_names, show_col_groups, and show_index_names.
+    if not render_options:
+        if not (show_col_names and show_col_groups):
+            render_options = {"header": False}
+        if show_index_names:
+            render_options["index_names"] = True
+    else:
+        if not (show_col_names and show_col_groups):
+            render_options.update({"header": False})
+        if show_index_names:
+            render_options.update({"index_names": True})
+
+    # check return_type and get the output
     if str(return_type).endswith("tex"):
         if siunitx_warning:
             warn(
@@ -229,9 +254,6 @@ def estimation_table(
             right_decimals=max_trail,
             notes=notes_tex,
             render_options=render_options,
-            show_index_names=show_index_names,
-            show_col_names=show_col_names,
-            show_col_groups=show_col_groups,
             group_to_col_position=group_to_col_position,
             padding=padding,
             show_footer=show_footer,
@@ -240,9 +262,7 @@ def estimation_table(
         footer = _generate_notes_html(
             append_notes, notes_label, significance_levels, custom_notes, body_df
         )
-        out = render_html(
-            body_df, footer_df, footer, render_options, custom_index_names, show_footer
-        )
+        out = render_html(body_df, footer_df, footer, render_options, show_footer)
     elif return_type == "render_inputs":
         out = {
             "body_df": body_df,
@@ -279,9 +299,6 @@ def render_latex(
     right_decimals,
     padding=1,
     render_options=None,
-    show_col_names=True,
-    show_col_groups=False,
-    show_index_names=False,
     group_to_col_position=None,
     show_footer=True,
 ):
@@ -310,13 +327,7 @@ def render_latex(
         render_options(dict): A dictionary with custom kwargs to pass to pd.to_latex(),
             to update the default options. An example is `{header: False}` that
             disables displaying column names.
-        show_col_names (bool): If both show_col_names and show_col_groups are False,
-            update `default_render_options` with `{'header': False}`. Default True.
-        show_col_groups (bool): If both show_col_names and show_col_groups are False,
-            update `default_render_options` with `{'header': False}`. Default False.
-        show_index_names (bool): If True, updates `default_render_options` with
-            `{'index_names': True}`. Default False.
-        show_group_to_col_position (dict): A mapping from column groups to positions of
+        group_to_col_position (dict): A mapping from column groups to positions of
             columns in each group. Is used to draw centered midrules between column
             groups and column names. Default None.
         show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
@@ -349,10 +360,6 @@ def render_latex(
     }
     if render_options:
         default_options.update(render_options)
-    if show_index_names:
-        default_options.update({"index_names": True})
-    if not (show_col_names and show_col_groups):
-        default_options.update({"header": False})
     if not default_options["index_names"]:
         body_df.index.names = [None] * body_df.index.nlevels
     latex_str = body_df.to_latex(**default_options)
@@ -389,9 +396,7 @@ def render_latex(
     return latex_str
 
 
-def render_html(
-    body_df, footer_df, notes_html, render_options, custom_index_names, show_footer
-):
+def render_html(body_df, footer_df, notes_html, render_options, show_footer):
     """Return estimation table in html format as string.
 
     Args:
@@ -411,8 +416,6 @@ def render_html(
     n_levels = body_df.index.nlevels
     n_columns = len(body_df.columns)
     default_options = {"index_names": False, "na_rep": "", "justify": "center"}
-    if custom_index_names:
-        default_options.update({"index_names": True})
     html_str = ""
     if render_options:
         default_options.update(render_options)
