@@ -187,7 +187,7 @@ def estimation_table(
     ]
     body_df = pd.concat(to_concat, axis=1)
     body_df = _process_frame_axes(
-        body_df=body_df,
+        df=body_df,
         custom_param_names=custom_param_names,
         custom_index_names=custom_index_names,
         show_col_names=show_col_names,

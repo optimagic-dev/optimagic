@@ -8,14 +8,14 @@ import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
 from estimagic.visualization.estimation_table import _convert_frame_to_string_series
 from estimagic.visualization.estimation_table import _create_statistics_sr
-from estimagic.visualization.estimation_table import _process_body_df
+from estimagic.visualization.estimation_table import _process_frame_axes
 from estimagic.visualization.estimation_table import _process_model
 from estimagic.visualization.estimation_table import estimation_table
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 
 # test process_model for different model types
-NamedTup = namedtuple("NamedTup", "params info")
+ProcessedModel = namedtuple("ProcessedModel", "params info name")
 
 fix_path = EXAMPLE_DIR / "diabetes.csv"
 
@@ -28,7 +28,7 @@ def test_estimation_table():
     res = estimation_table(models, return_type="render_inputs", append_notes=False)
     exp = {}
     body_str = """
-        index,(1)
+        index,target
         const,152.00$^{*** }$
         ,(2.85)
         Age,37.20$^{ }$
@@ -43,7 +43,7 @@ def test_estimation_table():
     exp["body_df"] = _read_csv_string(body_str).fillna("")
     exp["body_df"].set_index("index", inplace=True)
     footer_str = """
-         ,(1)
+         ,target
         R$^2$,0.40
         Adj. R$^2$,0.40
         Residual Std. Error,60.00
@@ -60,7 +60,6 @@ def test_estimation_table():
         "notes_html"
     ] = """<tr><td colspan="2" style="border-bottom: 1px solid black">
         </td></tr>"""
-
     afe(exp["footer_df"], res["footer_df"])
     afe(exp["body_df"], res["body_df"], check_index_type=False)
     ase(pd.Series(exp["notes_html"]), pd.Series(res["notes_html"]))
@@ -75,41 +74,42 @@ def test_process_model_namedtuple():
     df["ci_lower"] = np.arange(10)
     df["ci_upper"] = np.arange(10)
     info = {"stat1": 0, "stat2": 0}
-    model = NamedTup(params=df, info=info)
+    name = "model_name"
+    model = ProcessedModel(params=df, info=info, name=name)
     res = _process_model(model)
     afe(res.params, df)
     ase(pd.Series(res.info), pd.Series(info))
+    assert name == res.name
 
 
 def test_process_model_stats_model():
-    par_df = pd.DataFrame(
+    params = pd.DataFrame(
         columns=["value", "p_value", "standard_error", "ci_lower", "ci_upper"],
         index=["const", "Age", "Sex", "BMI", "ABP"],
     )
-    par_df["value"] = [152.133484, 37.241211, -106.577520, 787.179313, 416.673772]
-    par_df["p_value"] = [
+    params["value"] = [152.133484, 37.241211, -106.577520, 787.179313, 416.673772]
+    params["p_value"] = [
         2.048808e-193,
         5.616557e-01,
         8.695658e-02,
         5.345260e-29,
         4.245663e-09,
     ]
-    par_df["standard_error"] = [2.852749, 64.117433, 62.125062, 65.424126, 69.494666]
-    par_df["ci_lower"] = [146.526671, -88.775663, -228.678572, 658.594255, 280.088446]
-    par_df["ci_upper"] = [157.740298, 163.258084, 15.523532, 915.764371, 553.259097]
-    info_dict = {}
-    info_dict["rsquared"] = 0.40026108237714
-    info_dict["rsquared_adj"] = 0.39477148130050055
-    info_dict["fvalue"] = 72.91259907398705
-    info_dict["f_pvalue"] = 2.700722880950139e-47
-    info_dict["df_model"] = 4.0
-    info_dict["df_resid"] = 437.0
-    info_dict["dependent_variable"] = "target"
-    info_dict["resid_std_err"] = 59.97560860753488
-    info_dict["n_obs"] = 442.0
+    params["standard_error"] = [2.852749, 64.117433, 62.125062, 65.424126, 69.494666]
+    params["ci_lower"] = [146.526671, -88.775663, -228.678572, 658.594255, 280.088446]
+    params["ci_upper"] = [157.740298, 163.258084, 15.523532, 915.764371, 553.259097]
+    info = {}
+    info["rsquared"] = 0.40026108237714
+    info["rsquared_adj"] = 0.39477148130050055
+    info["fvalue"] = 72.91259907398705
+    info["f_pvalue"] = 2.700722880950139e-47
+    info["df_model"] = 4.0
+    info["df_resid"] = 437.0
+    info["resid_std_err"] = 59.97560860753488
+    info["n_obs"] = 442.0
     res = _process_model(est)
-    afe(res.params, par_df)
-    ase(pd.Series(res.info), pd.Series(info_dict))
+    afe(res.params, params)
+    ase(pd.Series(res.info), pd.Series(info))
 
 
 def test_process_model_dict():
@@ -199,7 +199,7 @@ def test_create_statistics_sr():
     add_trailing_zeros = True
     sig_levels = [0.1, 0.2]
     show_stars = False
-    model = NamedTup(params=df, info=info)
+    model = ProcessedModel(params=df, info=info, name="target")
     stats_dict = {
         "Observations": "n_obs",
         "R2": "rsquared",
@@ -223,7 +223,7 @@ def test_create_statistics_sr():
 
 
 # test process_params_df for different arguments
-def test_process_body_df_indices():
+def test_process_frame_axes_indices():
     df = pd.DataFrame(np.ones((3, 3)), columns=list("abc"))
     df.index = pd.MultiIndex.from_arrays(
         np.array([["today", "today", "today"], ["var1", "var2", "var3"]])
@@ -231,13 +231,14 @@ def test_process_body_df_indices():
     df.index.names = ["l1", "l2"]
     par_map = {"today": "tomorrow", "var1": "1stvar"}
     name_map = ["period", "variable"]
-    res = _process_body_df(
+    res = _process_frame_axes(
         df,
         par_map,
         name_map,
-        show_col_names=False,
-        custom_col_names=None,
-        custom_model_names=None,
+        column_names=list("abc"),
+        show_col_names=True,
+        show_col_groups=False,
+        column_groups=None,
     )
     # expected:
     params = """
@@ -249,24 +250,6 @@ def test_process_body_df_indices():
     exp = _read_csv_string(params).fillna("")
     exp.set_index(["period", "variable"], inplace=True)
     afe(res, exp, check_dtype=False)
-
-
-def test_process_body_df_columns():
-
-    df = pd.DataFrame(np.ones((3, 6)), columns=list("abcdef"))
-    custom_col_names = ["c" + str(i) for i in range(1, 7)]
-    custom_model_names = {"m3-5": [2, 3, 4]}
-    exp = _process_body_df(df, None, None, True, custom_col_names, custom_model_names)
-    df.columns = pd.MultiIndex.from_arrays(
-        np.array(
-            [
-                ["{}", "{}", "{m3-5}", "{m3-5}", "{m3-5}", "{}"],
-                ["{c1}", "{c2}", "{c3}", "{c4}", "{c5}", "{c6}"],
-            ]
-        )
-    )
-
-    afe(df, exp, check_dtype=False)
 
 
 def _read_csv_string(string, index_cols=None):
