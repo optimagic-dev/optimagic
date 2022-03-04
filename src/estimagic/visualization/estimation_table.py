@@ -15,8 +15,10 @@ def estimation_table(
     render_options=None,
     custom_param_names=None,
     show_col_names=True,
+    show_col_groups=False,
     custom_col_names=None,
     custom_col_groups=None,
+    show_index_names=False,
     custom_index_names=None,
     show_inference=True,
     confidence_intervals=False,
@@ -60,6 +62,7 @@ def estimation_table(
         custom_param_names (dict): Dictionary that is used to rename parameters. The
             keys are the old parameter names or index entries. The values are
             the new names. Default None.
+        show_index_names (bool): If True, the index names are displayed. Default False.
         custom_index_names (dict or list): Dictionary or list to set the names of the
             index levels of the parameters. Only used if "add_index_names" is set to
             True in the render_options. Default None.
@@ -114,39 +117,15 @@ def estimation_table(
     """
     assert isinstance(models, list), "Please, provide models as a list"
     models = [_process_model(model) for model in models]
-    # if the value of custom_col_names is the default and EVERY models' attribute
-    # info has the key estimation_name, replace custom col names with the  value
-    # of this key.
     model_names = _get_model_names(models)
-    _check_order_of_model_names(model_names)
     default_col_names, default_col_groups = _get_default_column_names_and_groups(
         model_names
     )
-    # if default column groups is not undefined, rename group names using
-    # custom_col_groups.
-    if custom_col_groups:
-        if not default_col_groups:
-            assert isinstance(
-                custom_col_groups, list
-            ), """With unique model names, multiple models can't be grouped under
-            common group name. Provide list of unique group names instead, if you
-            wish to add column level."""
+    col_groups = _customize_col_groups(default_col_groups, custom_col_groups)
+    col_names = _customize_col_names(default_col_names, custom_col_names)
     # Get mapping from group name to column position
-    if default_col_groups:
-        group_to_col_index = _create_group_to_col_position(default_col_groups)
-        # if custom names for column groups is given, rename
-    if not custom_col_names:
-        custom_col_names = default_col_names
-    elif isinstance(custom_col_names, dict):
-        custom_col_names = list(pd.Series(custom_col_names).replace(custom_col_names))
-    elif isinstance(custom_col_names, list):
-        pass
-    else:
-        raise TypeError(
-            """Invalid type for custom_col_names.
-            Can be either list or dictionary, or NoneType"""
-        )
-
+    if col_groups:
+        group_to_col_position = _create_group_to_col_position(col_groups)
     # Set some defaults:
     if not stat_keys:
         stat_keys = {
@@ -157,24 +136,28 @@ def estimation_table(
             "F Statistic": "fvalue",
             "show_dof": None,
         }
-
-    for_index = [mod.params for mod in models]
+    # get common index as list.
+    params = [mod.params for mod in models]
     com_ind = []
-    for d_ in for_index:
+    for d_ in params:
         com_ind += [ind for ind in d_.index.to_list() if ind not in com_ind]
+    # get list of columns  that need to be formatted.
     format_cols = ["value"]
     if show_inference:
         if confidence_intervals:
             format_cols += ["ci_lower", "ci_upper"]
         else:
             format_cols.append("standard_error")
-    df_list = [mod.params.reindex(com_ind)[format_cols] for mod in models]
-    raw_formatted = [_apply_number_format(df, number_format) for df in df_list]
+    # reindex DataFrames with the common index and apply formatting.
+    to_format = [mod.params.reindex(com_ind)[format_cols] for mod in models]
+    raw_formatted = [_apply_number_format(df, number_format) for df in to_format]
     max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
     if add_trailing_zeros:
         formatted = [_apply_number_format(df, max_trail) for df in raw_formatted]
     else:
         formatted = raw_formatted
+    # make list of DataFrames to convert to string series. Append pvalues to the
+    # parameter DataFrames if show_stars is true.
     to_convert = []
     if show_stars:
         for df, mod in zip(formatted, models):
@@ -183,8 +166,10 @@ def estimation_table(
             )
     else:
         to_convert = formatted
+    # convert DataFrames to string series with inference and siginificance
+    # information.
     to_concat = [
-        _convert_model_to_series(
+        _convert_frame_to_string_series(
             df,
             significance_levels,
             show_stars,
@@ -193,12 +178,13 @@ def estimation_table(
     ]
     body_df = pd.concat(to_concat, axis=1)
     body_df = _process_body_df(
-        body_df,
-        custom_param_names,
-        custom_index_names,
-        show_col_names,
-        custom_col_names,
-        group_to_col_index,
+        body_df=body_df,
+        custom_param_names=custom_param_names,
+        custom_index_names=custom_index_names,
+        show_col_names=show_col_names,
+        show_col_groups=show_col_groups,
+        col_names=col_names,
+        col_groups=col_groups,
     )
     to_concat = [
         _create_statistics_sr(
@@ -238,15 +224,17 @@ def estimation_table(
             append_notes, notes_label, significance_levels, custom_notes, body_df
         )
         out = render_latex(
-            body_df,
-            footer_df,
-            max_trail,
-            notes_tex,
-            render_options,
-            custom_index_names,
-            group_to_col_index,
-            padding,
-            show_footer,
+            body_df=body_df,
+            footer_df=footer_df,
+            right_decimals=max_trail,
+            notes=notes_tex,
+            render_options=render_options,
+            show_index_names=show_index_names,
+            show_col_names=show_col_names,
+            show_col_groups=show_col_groups,
+            group_to_col_position=group_to_col_position,
+            padding=padding,
+            show_footer=show_footer,
         )
     elif str(return_type).endswith("html"):
         footer = _generate_notes_html(
@@ -287,11 +275,13 @@ def estimation_table(
 def render_latex(
     body_df,
     footer_df,
-    right_align,
+    right_decimals,
     notes_tex,
     render_options=None,
-    custom_index_names=None,
-    custom_model_names=None,
+    show_col_names=True,
+    show_index_names=False,
+    show_col_groups=False,
+    group_to_col_position=None,
     padding=1,
     show_footer=True,
 ):
@@ -330,23 +320,25 @@ def render_latex(
         "na_rep": "",
         "column_format": "l" * n_levels
         + "S[table-format ={}.{},table-space-text-post={{-**}}]".format(
-            padding, right_align
+            padding, right_decimals
         )
         * n_columns,
         "multicolumn_format": "c",
     }
-    if custom_index_names:
-        default_options.update({"index_names": True})
     if render_options:
         default_options.update(render_options)
+    if show_index_names:
+        default_options.update({"index_names": True})
+    if not show_col_names:
+        default_options.update({"header": False})
     if not default_options["index_names"]:
         body_df.index.names = [None] * body_df.index.nlevels
     latex_str = body_df.to_latex(**default_options)
-    if custom_model_names:
+    if group_to_col_position:
         temp_str = "\n"
-        for k in custom_model_names:
-            max_col = max(custom_model_names[k]) + n_levels + 1
-            min_col = min(custom_model_names[k]) + n_levels + 1
+        for k in group_to_col_position:
+            max_col = max(group_to_col_position[k]) + n_levels + 1
+            min_col = min(group_to_col_position[k]) + n_levels + 1
             temp_str += f"\\cmidrule(lr){{{min_col}-{max_col}}}"
             temp_str += "\n"
         latex_str = (
@@ -473,6 +465,7 @@ def _get_model_names(processed_models):
             names.append(mod.name)
         else:
             names.append(f"({i + 1})")
+    _check_order_of_model_names(names)
     return names
 
 
@@ -485,6 +478,47 @@ def _get_default_column_names_and_groups(model_names):
         col_names = [f"({i + 1})" for i in range(len(model_names))]
 
     return col_names, col_groups
+
+
+def _customize_col_groups(custom_col_groups, default_col_groups):
+    if custom_col_groups:
+        if not default_col_groups:
+            assert isinstance(
+                custom_col_groups, list
+            ), """With unique model names, multiple models can't be grouped under
+            common group name. Provide list of unique group names instead, if you
+            wish to add column level."""
+            col_groups = custom_col_groups
+        else:
+            if isinstance(custom_col_groups, list):
+                col_groups = custom_col_groups
+            elif isinstance(custom_col_groups, dict):
+                for old_key, new_key in custom_col_groups.items():
+                    default_col_groups[new_key] = default_col_groups.pop(old_key)
+                col_groups = default_col_groups
+            else:
+                raise TypeError(
+                    """Invalid type for custom_col_groups. Can be either list
+                    or dictionary, or NoneType"""
+                )
+    else:
+        col_groups = default_col_groups
+    return col_groups
+
+
+def _customize_col_names(default_col_names, custom_col_names):
+    if not custom_col_names:
+        col_names = default_col_names
+    elif isinstance(custom_col_names, dict):
+        col_names = list(pd.Series(custom_col_names).replace(custom_col_names))
+    elif isinstance(custom_col_names, list):
+        col_names = custom_col_names
+    else:
+        raise TypeError(
+            """Invalid type for custom_col_names.
+            Can be either list or dictionary, or NoneType"""
+        )
+    return col_names
 
 
 def _check_order_of_model_names(model_names):
@@ -504,7 +538,7 @@ def _create_group_to_col_position(column_groups):
     return group_to_col_index
 
 
-def _convert_model_to_series(
+def _convert_frame_to_string_series(
     df,
     significance_levels,
     show_stars,
@@ -680,8 +714,9 @@ def _process_body_df(
     custom_param_names,
     custom_index_names,
     show_col_names,
-    custom_col_names,
-    custom_model_names,
+    show_col_groups,
+    col_names,
+    col_groups,
 ):
     """Process body DataFrame, customize the header.
 
@@ -698,37 +733,26 @@ def _process_body_df(
 
     """
     if show_col_names:
-        df.columns = custom_col_names
+        if show_col_groups:
+            df.columns = pd.MultiIndex.from_tuples(
+                [(i, j) for i, j in zip(col_groups, col_names)]
+            )
+        else:
+            df.columns = col_names
     if custom_index_names:
-        df.index.names = custom_index_names
+        if isinstance(custom_index_names, list):
+            df.index.names = custom_index_names
+        elif isinstance(custom_index_names, dict):
+            df.rename_axis(index=custom_index_names, inplace=True)
+        else:
+            TypeError(
+                """Invalid custom_index_names types.
+                Can either be list or dict, or NoneType"""
+            )
     if custom_param_names:
         ind = df.index.to_frame()
         ind = ind.replace(custom_param_names)
         df.index = pd.MultiIndex.from_frame(ind)
-    if custom_model_names:
-        assert isinstance(
-            custom_model_names, dict
-        ), """Please provide a dictionary with model names as keys and lists of
-            respective column numbers as values"""
-        for val in custom_model_names.values():
-            assert isinstance(
-                val, list
-            ), """Provide list of integers for columns to be combined under a common
-                model name"""
-            if len(val) > 1:
-                assert all(
-                    i == j - 1 for i, j in zip(val, val[1:])
-                ), "Under common model name you can combine only adjacent columns"
-        cols = df.columns
-        custom_model_names = {
-            k: v
-            for k, v in sorted(custom_model_names.items(), key=lambda item: item[1])
-        }
-        flev = [""] * len(cols)
-        for k in custom_model_names:
-            for v in custom_model_names[k]:
-                flev[v] = k
-        df.columns = pd.MultiIndex.from_tuples(list(zip(flev, cols)))
     return df
 
 

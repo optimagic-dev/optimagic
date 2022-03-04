@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
-from estimagic.visualization.estimation_table import _convert_model_to_series
+from estimagic.visualization.estimation_table import _convert_frame_to_string_series
 from estimagic.visualization.estimation_table import _create_statistics_sr
 from estimagic.visualization.estimation_table import _process_body_df
 from estimagic.visualization.estimation_table import _process_model
@@ -138,7 +138,7 @@ def test_convert_model_to_series_with_ci():
     df["p_value"] = df["p_value"].astype("float")
     significance_levels = [0.1, 0.05, 0.01]
     show_stars = True
-    res = _convert_model_to_series(df, significance_levels, show_stars)
+    res = _convert_frame_to_string_series(df, significance_levels, show_stars)
     exp = pd.Series(
         [
             "0.6$^{ }$",
@@ -164,7 +164,7 @@ def test_convert_model_to_series_with_se():
     df["p_value"] = df["p_value"].astype("float")
     significance_levels = [0.1, 0.05, 0.01]
     show_stars = True
-    res = _convert_model_to_series(df, significance_levels, show_stars)
+    res = _convert_frame_to_string_series(df, significance_levels, show_stars)
     exp = pd.Series(
         ["0.6$^{ }$", "(0.6)", "2.3$^{** }$", "(2.3)", "3.3$^{*** }$", "(3.3)"],
         index=["a", "", "b", "", "c", ""],
@@ -183,7 +183,7 @@ def test_convert_model_to_series_without_inference():
     df["p_value"] = df["p_value"].astype("float")
     significance_levels = [0.1, 0.05, 0.01]
     show_stars = True
-    res = _convert_model_to_series(df, significance_levels, show_stars)
+    res = _convert_frame_to_string_series(df, significance_levels, show_stars)
     exp = pd.Series(
         ["0.6$^{ }$", "2.3$^{** }$", "3.3$^{*** }$"], index=["a", "b", "c"], name=""
     )
