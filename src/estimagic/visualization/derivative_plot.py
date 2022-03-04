@@ -1,5 +1,6 @@
 """Visualize and compare derivative estimates."""
 import itertools
+import warnings
 
 import numpy as np
 import plotly.express as px
@@ -7,6 +8,9 @@ import plotly.graph_objects as go
 from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.visualization.plot_help import create_grid_plot
 from estimagic.visualization.plot_help import create_ind_dict
+
+
+warnings.filterwarnings("ignore")
 
 
 def derivative_plot(
