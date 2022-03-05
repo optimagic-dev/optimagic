@@ -118,6 +118,7 @@ def test_process_model_stats_model():
     res = _process_model(est)
     afe(res.params, params)
     ase(pd.Series(res.info), pd.Series(info))
+    assert res.name == "target"
 
 
 def test_process_model_dict():
@@ -230,20 +231,21 @@ def test_create_statistics_sr():
     ase(exp, res)
 
 
-# test process_params_df for different arguments
+# test _process_frame_axes for different arguments
 def test_process_frame_axes_indices():
-    df = pd.DataFrame(np.ones((3, 3)), columns=list("abc"))
+    df = pd.DataFrame(np.ones((3, 3)), columns=["", "", ""])
     df.index = pd.MultiIndex.from_arrays(
         np.array([["today", "today", "today"], ["var1", "var2", "var3"]])
     )
     df.index.names = ["l1", "l2"]
-    par_map = {"today": "tomorrow", "var1": "1stvar"}
-    name_map = ["period", "variable"]
+    par_name_map = {"today": "tomorrow", "var1": "1stvar"}
+    index_name_map = ["period", "variable"]
+    column_names = list("abc")
     res = _process_frame_axes(
         df,
-        par_map,
-        name_map,
-        column_names=list("abc"),
+        custom_param_names=par_name_map,
+        custom_index_names=index_name_map,
+        column_names=column_names,
         show_col_names=True,
         show_col_groups=False,
         column_groups=None,
@@ -257,6 +259,24 @@ def test_process_frame_axes_indices():
     """
     exp = _read_csv_string(params).fillna("")
     exp.set_index(["period", "variable"], inplace=True)
+    afe(res, exp, check_dtype=False)
+
+
+def test_process_frame_axes_columns():
+    df = pd.DataFrame(np.ones((3, 3)), columns=["", "", ""])
+    col_names = list("abc")
+    col_groups = ["first", "first", "second"]
+    res = _process_frame_axes(
+        df=df,
+        custom_index_names=None,
+        custom_param_names=None,
+        show_col_groups=True,
+        show_col_names=True,
+        column_names=col_names,
+        column_groups=col_groups,
+    )
+    arrays = [np.array(col_groups), np.array(col_names)]
+    exp = pd.DataFrame(data=np.ones((3, 3)), columns=arrays)
     afe(res, exp, check_dtype=False)
 
 

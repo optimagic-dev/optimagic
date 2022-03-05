@@ -808,7 +808,7 @@ def _process_frame_axes(
         processed_df (DataFrame): string DataFrame with customized header.
 
     """
-    # The column names of the unprocessed data frame are empty strings.
+    # The column names of the  df are empty strings.
     # If show_col_names is True, rename columns using column_names.
     # Add column level if show col_groups is True.
     if show_col_names:
