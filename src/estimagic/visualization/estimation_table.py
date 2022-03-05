@@ -1011,7 +1011,7 @@ def _apply_number_format(df, number_format):
 
 def _format_non_scientific_numbers(number_string, format_string):
     """Apply number format if the number string is not in scientific format."""
-    if "e" in number_string:
+    if "e" in str(number_string):
         out = number_string
     else:
         out = format_string.format(float(number_string))
