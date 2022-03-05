@@ -9,6 +9,7 @@ from estimagic.config import EXAMPLE_DIR
 from estimagic.visualization.estimation_table import _apply_number_format
 from estimagic.visualization.estimation_table import _convert_frame_to_string_series
 from estimagic.visualization.estimation_table import _create_statistics_sr
+from estimagic.visualization.estimation_table import _get_digits_after_decimal
 from estimagic.visualization.estimation_table import _process_frame_axes
 from estimagic.visualization.estimation_table import _process_model
 from estimagic.visualization.estimation_table import estimation_table
@@ -254,19 +255,40 @@ def test_process_frame_axes_indices():
 
 
 def test_apply_number_format_tuple():
-    number_format = ("{0:.2g}", "{0:.2f}")
-    raw = pd.DataFrame(data=[1234.2332])
-    exp = pd.DataFrame(data=["1200.00"])
+    number_format = ("{0:.2g}", "{0:.2f}", "{0:.2g}")
+    raw = pd.DataFrame(data=[1234.2332, 0.0001])
+    exp = pd.DataFrame(data=["1.2e+03", "0"])
     res = _apply_number_format(df=raw, number_format=number_format)
     afe(exp, res)
 
 
 def test_apply_number_format_int():
     number_format = 3
-    raw = pd.DataFrame(data=[1234.2332])
-    exp = pd.DataFrame(data=["1234.233"])
+    raw = pd.DataFrame(data=["1234.2332", "1.2e+03"])
+    exp = pd.DataFrame(data=["1234.233", "1.2e+03"])
     res = _apply_number_format(df=raw, number_format=number_format)
     afe(exp, res)
+
+
+def test_apply_number_format_callable():
+    def nsf(num, n=3):
+        """n-Significant Figures"""
+        numstr = ("{0:.%ie}" % (n - 1)).format(num)
+        return numstr
+
+    raw = pd.DataFrame(data=[1234.2332, 0.0001])
+    exp = pd.DataFrame(data=["1.23e+03", "1.00e-04"])
+    res = _apply_number_format(df=raw, number_format=nsf)
+    afe(exp, res)
+
+
+def test_get_digits_after_decimal():
+    df = pd.DataFrame(
+        data=[["12.456", "0.00003", "1.23e+05"], ["16", "0.03", "1.2e+05"]]
+    ).T
+    exp = 5
+    res = _get_digits_after_decimal(df)
+    assert exp == res
 
 
 def _read_csv_string(string, index_cols=None):
