@@ -546,10 +546,10 @@ def _get_default_column_names_and_groups(model_names):
 def _customize_col_groups(default_col_groups, custom_col_groups):
     """Change default (inferred) column group titles using custom column groups.
     Args:
+        default_col_groups (list or NoneType): The inferred column groups.
         custom_col_groups (list or dict): Dictionary mapping defautl column group
             titles to custom column group titles, if the defautl column groups are
             defined. Must be a list of the same lenght as models otherwise.
-        default_col_groups (list or NoneType): The inferred column groups.
     Returns:
         col_groups (list): Column groups to display in estimation table.
     """
@@ -581,10 +581,10 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
 def _customize_col_names(default_col_names, custom_col_names):
     """Change default (inferred) column names using custom column names.
     Args:
-        custom_col_names (list or dict): Dictionary mapping defautl column names
-            to custom column names, or list of display as the name of each
-            model column.
         deafult_col_names (list): The default (inferred) column names.
+        custom_col_names (list or dict): Dictionary mapping default column names
+            to custom column names, or list to display as the name of each
+            model column.
     Returns:
         column_names (list): The column names to display in the estimatino table.
     """
