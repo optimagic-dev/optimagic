@@ -162,7 +162,6 @@ def estimation_table(
             stats=stats,
             right_decimals=max_trail,
             render_options=render_options,
-            column_groups=column_groups,
             padding=padding,
             show_footer=show_footer,
             append_notes=append_notes,
@@ -219,7 +218,6 @@ def render_latex(
     right_decimals,
     padding=1,
     render_options=None,
-    column_groups=None,
     show_footer=True,
     append_notes=True,
     notes_label="Note:",
@@ -279,6 +277,10 @@ def render_latex(
                     alignment_warning = False"""
             )
     params = params.copy(deep=True)
+    if params.columns.nlevels > 1:
+        column_groups = params.columns.get_level_values(0)
+    else:
+        column_groups = None
     for i in range(params.columns.nlevels):
         params = params.rename(
             {c: "{" + c + "}" for c in params.columns.get_level_values(i)},
@@ -306,8 +308,8 @@ def render_latex(
         params.index.names = [None] * params.index.nlevels
     latex_str = params.to_latex(**default_options)
     # Get mapping from group name to column position
-    if column_groups is not None:
-        group_to_col_position = _create_group_to_col_position(column_groups)
+
+    group_to_col_position = _create_group_to_col_position(column_groups)
     if group_to_col_position:
         temp_str = "\n"
         for k in group_to_col_position:
@@ -675,9 +677,12 @@ def _create_group_to_col_position(column_groups):
         group_to_col_index(dict): The mapping from column group titles to column
             positions.
     """
-    group_to_col_index = {group: [] for group in list(set(column_groups))}
-    for i, group in enumerate(column_groups):
-        group_to_col_index[group].append(i)
+    if column_groups is not None:
+        group_to_col_index = {group: [] for group in list(set(column_groups))}
+        for i, group in enumerate(column_groups):
+            group_to_col_index[group].append(i)
+    else:
+        group_to_col_index = None
     return group_to_col_index
 
 
