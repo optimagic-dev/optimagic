@@ -154,25 +154,6 @@ def estimation_table(
     )
     # check return_type and get the output
     if str(return_type).endswith("tex"):
-        if siunitx_warning:
-            warn(
-                r"""Proper LaTeX compilation requires the package siunitx and adding
-                   \sisetup{
-                        group-digits             = false,
-                        input-symbols            = (),
-                        table-align-text-pre     = false,
-                        table-align-text-post    = false
-                    }
-                    to your main tex file. To turn
-                    this warning off set value of siunitx_warning = False"""
-            )
-        if len(models) > 2:
-            if alignment_warning:
-                warn(
-                    """Set the value of padding to 3 or higher to avoid overlay
-                        of columns. To turn this warning off set value of
-                        alignment_warning = False"""
-                )
         out = render_latex(
             params=params,
             stats=stats,
@@ -239,6 +220,8 @@ def render_latex(
     notes_label="Note:",
     significance_levels=(0.1, 0.05, 0.01),
     custom_notes=None,
+    siunitx_warning=True,
+    alignment_warning=True,
 ):
     """Return estimation table in LaTeX format as string.
 
@@ -271,6 +254,25 @@ def render_latex(
         latex_str (str): The resulting string with Latex tabular code.
 
     """
+    if siunitx_warning:
+        warn(
+            r"""Proper LaTeX compilation requires the package siunitx and adding
+                   \sisetup{
+                        group-digits             = false,
+                        input-symbols            = (),
+                        table-align-text-pre     = false,
+                        table-align-text-post    = false
+                    }
+                    to your main tex file. To turn
+                    this warning off set value of siunitx_warning = False"""
+        )
+    if len(params.columns) > 2:
+        if alignment_warning:
+            warn(
+                """Set the value of padding to 3 or higher to avoid overlay
+                    of columns. To turn this warning off set value of
+                    alignment_warning = False"""
+            )
     params = params.copy(deep=True)
     for i in range(params.columns.nlevels):
         params = params.rename(
