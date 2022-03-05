@@ -5,7 +5,12 @@ import pytest
 from estimagic import get_benchmark_problems
 
 PARMETRIZATION = []
-for name in ["more_wild", "cartis_roberts", "scalar_functions"]:
+for name in [
+    "more_wild",
+    "cartis_roberts",
+    "scalar_functions",
+    "scalar_functions_extra",
+]:
     for additive, multiplicative in product([False, True], repeat=2):
         PARMETRIZATION.append((name, additive, multiplicative))
 
@@ -25,6 +30,9 @@ def test_get_problems(name, additive_noise, multiplicative_noise):
 
     np.random.seed()
     if name == "scalar_functions":
+        first_eval = func(params)
+        second_eval = func(params)
+    elif name == "scalar_functions_extra":
         first_eval = func(params)
         second_eval = func(params)
     else:

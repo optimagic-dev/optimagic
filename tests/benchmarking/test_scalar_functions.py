@@ -1,9 +1,16 @@
 import numpy as np
 import pytest
+from estimagic.benchmarking.scalar_functions import SCALAR_FUNCTIONS_EXTRA_PROBLEMS
 from estimagic.benchmarking.scalar_functions import SCALAR_FUNCTIONS_PROBLEMS
 
 
-@pytest.mark.parametrize("name, specification", list(SCALAR_FUNCTIONS_PROBLEMS.items()))
+@pytest.mark.parametrize(
+    "name, specification",
+    [
+        *list(SCALAR_FUNCTIONS_PROBLEMS.items()),
+        *list(SCALAR_FUNCTIONS_EXTRA_PROBLEMS.items()),
+    ],
+)
 def test_scalar_function_at_start_x(name, specification):
     _criterion = specification["criterion"]
     _x = specification["start_x"]

@@ -8,8 +8,13 @@ Axel Thevenot.
 We use the following sources of information to construct the
 benchmark set:
 
-- https://towardsdatascience.com/optimization-eye-pleasure-78-benchmark-test-functions-for-single-objective-optimization-92e7ed1d1f12
-- https://github.com/AxelThevenot/Python_Benchmark_Test_Optimization_Function_Single_Objective
+- https://tinyurl.com/2p8d8c5p
+- https://tinyurl.com/yc7zxwc7
+
+Currently some functions produce errros when benchmarking due to either
+one-dimensionality (Grimacy-Lee, Forrester), a random component within the function
+(Quartic, Xinsheyang) or other reasons (Ridge, Wolfe). The problems for these
+functions are aggregated in SCALAR_FUNCTIONS_EXTRA_PROLBMES.
 """
 import numpy as np
 from estimagic.benchmarking import more_wild as mw
@@ -628,14 +633,12 @@ def xinsheyang3(x, m=5, beta=15):
 
 
 def xinsheyang4(x):
-    out = np.sum(np.sin(x) ** 2 - np.exp(-np.sum(x) ** 2)) * np.exp(
+    out = np.sum(np.sin(x) ** 2 - np.exp(-np.sum(x**2))) * np.exp(
         -np.sum(np.sin(np.sqrt(np.abs(x))) ** 2)
     )
     return out
 
 
-# According to the website global minimum at f(0,..,0) = -1,
-# but according to the internet global minimum at f(0,..,0) = 0
 def zakharov(x):
     d = x.shape[0]
     i = np.arange(1, d + 1)
@@ -689,14 +692,16 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "ackley4_good_start": {
         "criterion": ackley4,
         "start_x": np.full(2, 3),
-        "solution_x": np.array([-1.51, -0.755]),
+        # no unique solution
+        "solution_x": None,
         "start_criterion": 5.515844770158779,
         "solution_criterion": -4.5901006651507235,
     },
     "ackley4_bad_start": {
         "criterion": ackley4,
         "start_x": np.full(2, 25),
-        "solution_x": np.array([-1.51, -0.755]),
+        # no unique solution
+        "solution_x": None,
         "start_criterion": 31.054276897735043,
         "solution_criterion": -4.5901006651507235,
     },
@@ -995,13 +1000,6 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_criterion": -0.7788007830714049,
         "solution_criterion": -1,
     },
-    "forrester": {
-        "criterion": forrester,
-        "start_x": 0.4,
-        "solution_x": 0.757249,
-        "start_criterion": 0.11477697454392392,
-        "solution_criterion": -6.020740055735769,
-    },
     "goldsteinprice_good_start": {
         "criterion": goldsteinprice,
         "start_x": np.zeros(2),
@@ -1015,20 +1013,6 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "solution_x": np.array([0, -1]),
         "start_criterion": 76728,
         "solution_criterion": 3,
-    },
-    "gramacylee_good_start": {
-        "criterion": gramacylee,
-        "start_x": 0.65,
-        "solution_x": 0.548563444,
-        "start_criterion": 0.7842370192307692,
-        "solution_criterion": -0.8690111349894997,
-    },
-    "gramacylee_bad_start": {
-        "criterion": gramacylee,
-        "start_x": 2,
-        "solution_x": 0.548563444,
-        "start_criterion": 0.9999999999999993,
-        "solution_criterion": -0.8690111349894997,
     },
     "griewank_good_start": {
         "criterion": griewank,
@@ -1256,7 +1240,7 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "powell_good_start": {
         "criterion": powell,
         "start_x": np.full(2, 0.75),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.984375,
         "solution_criterion": 0,
     },
@@ -1281,13 +1265,6 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_criterion": 9604,
         "solution_criterion": 0,
     },
-    "quartic_solution": {
-        "criterion": quartic,
-        "start_x": np.ones(100),
-        "solution_x": np.zeros(100),
-        "start_criterion": 5050.550797902574,
-        "solution_criterion": 0.5507979025745755,
-    },
     "rastrigin_good_start": {
         "criterion": rastrigin,
         "start_x": np.full(1, 0.15),
@@ -1302,52 +1279,38 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_criterion": 81,
         "solution_criterion": 0,
     },
-    "ridge_good_start": {
-        "criterion": ridge,
-        "start_x": np.array([-4, 0]),
-        "solution_x": np.array([-1, 0]),
-        "start_criterion": -4,
-        "solution_criterion": -1,
-    },
-    "ridge_bad_start": {
-        "criterion": ridge,
-        "start_x": np.array([2, 2]),
-        "solution_x": np.array([-1, 0]),
-        "start_criterion": 4.29739670999407,
-        "solution_criterion": -1,
-    },
     "rosenbrock_good_start": {
         "criterion": rosenbrock,
         "start_x": np.full(3, 0.5),
-        "solution_x": np.array([1, 1]),
+        "solution_x": np.full(3, 1),
         "start_criterion": 6.5,
         "solution_criterion": 0,
     },
     "rosenbrock_bad_start": {
         "criterion": rosenbrock,
         "start_x": np.full(10, -1.5),
-        "solution_x": np.array([1, 1]),
+        "solution_x": np.full(10, 1),
         "start_criterion": 1412.5,
         "solution_criterion": 0,
     },
     "rotatedhyperellipsoid_good_start": {
         "criterion": rotatedhyperellipsoid,
         "start_x": np.full(2, -0.25),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.1875,
         "solution_criterion": 0,
     },
     "rotatedhyperellipsoid_bad_start": {
         "criterion": rotatedhyperellipsoid,
         "start_x": np.full(3, -60),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(3),
         "start_criterion": 21600,
         "solution_criterion": 0,
     },
     "salomon_good_start": {
         "criterion": salomon,
         "start_x": np.full(2, 0.71),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.10073960731443472,
         "solution_criterion": 0,
     },
@@ -1361,28 +1324,28 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "schaffer1_good_start": {
         "criterion": schaffer1,
         "start_x": np.array([4, -4]),
-        "solution_x": np.array([0, 0]),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.05412538364222219,
         "solution_criterion": 0,
     },
     "schaffer1_bad_start": {
         "criterion": schaffer1,
         "start_x": np.array([1, 1.5]),
-        "solution_x": np.array([0, 0]),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.8217877372933657,
         "solution_criterion": 0,
     },
     "schaffer2_good_start": {
         "criterion": schaffer2,
         "start_x": np.array([3, -4]),
-        "solution_x": np.array([0, 0]),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.04076572112213522,
         "solution_criterion": 0,
     },
     "schaffer2_bad_start": {
         "criterion": schaffer2,
         "start_x": np.array([3, 7]),
-        "solution_x": np.array([0, 0]),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.933992959675674,
         "solution_criterion": 0,
     },
@@ -1431,7 +1394,7 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "schwefel2_20_good_start": {
         "criterion": schwefel2_20,
         "start_x": np.full(2, 0.25),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.5,
         "solution_criterion": 0,
     },
@@ -1445,7 +1408,7 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "schwefel2_21_good_start": {
         "criterion": schwefel2_21,
         "start_x": np.full(10, 0.001),
-        "solution_x": np.zeros(2),
+        "solution_x": np.zeros(10),
         "start_criterion": 0.001,
         "solution_criterion": 0,
     },
@@ -1459,21 +1422,21 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "schwefel2_22_good_start": {
         "criterion": schwefel2_22,
         "start_x": np.full(2, 0.5),
-        "solution_x": np.zeros(5),
+        "solution_x": np.zeros(2),
         "start_criterion": 1.25,
         "solution_criterion": 0,
     },
     "schwefel2_22_bad_start": {
         "criterion": schwefel2_22,
         "start_x": np.full(3, 100),
-        "solution_x": np.zeros(5),
+        "solution_x": np.zeros(3),
         "start_criterion": 1000300,
         "solution_criterion": 0,
     },
     "schwefel2_23_good_start": {
         "criterion": schwefel2_23,
         "start_x": np.full(4, 0.5),
-        "solution_x": np.zeros(5),
+        "solution_x": np.zeros(4),
         "start_criterion": 0.00390625,
         "solution_criterion": 0,
     },
@@ -1543,14 +1506,14 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "sphere_good_start": {
         "criterion": sphere,
         "start_x": np.full(2, 0.25),
-        "solution_x": np.zeros(5),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.125,
         "solution_criterion": 0,
     },
     "sphere_bad_start": {
         "criterion": sphere,
         "start_x": np.full(2, 3),
-        "solution_x": np.zeros(5),
+        "solution_x": np.zeros(2),
         "start_criterion": 18,
         "solution_criterion": 0,
     },
@@ -1571,14 +1534,14 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "sumsquares_good_start": {
         "criterion": sumsquares,
         "start_x": np.full(2, 0.5),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(2),
         "start_criterion": 0.75,
         "solution_criterion": 0.0,
     },
     "sumsquares_bad_start": {
         "criterion": sumsquares,
         "start_x": np.full(2, 10),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(2),
         "start_criterion": 300,
         "solution_criterion": 0.0,
     },
@@ -1599,7 +1562,7 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "thevenot_good_start": {
         "criterion": thevenot,
         "start_x": np.full(200, 10),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(200),
         "start_criterion": 0.031169788108193906,
         "solution_criterion": -1,
     },
@@ -1624,6 +1587,107 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_criterion": 80,
         "solution_criterion": 0,
     },
+    "xinsheyang2_good_start": {
+        "criterion": xinsheyang2,
+        "start_x": np.full(1, 4),
+        "solution_x": np.zeros(1),
+        "start_criterion": 5.334513433011149,
+        "solution_criterion": 0,
+    },
+    "xinsheyang2_bad_start": {
+        "criterion": xinsheyang2,
+        "start_x": np.full(10, 4),
+        "solution_x": np.zeros(10),
+        "start_criterion": 711.8823227848003,
+        "solution_criterion": 0,
+    },
+    "xinsheyang3_good_start": {
+        "criterion": xinsheyang3,
+        "start_x": np.full(1, 1),
+        "solution_x": np.zeros(1),
+        "start_criterion": 0.7852124245010498,
+        "solution_criterion": -1,
+    },
+    "xinsheyang3_bad_start": {
+        "criterion": xinsheyang3,
+        "start_x": np.full(40, 3),
+        "solution_x": np.zeros(40),
+        "start_criterion": 0.9999959040083886,
+        "solution_criterion": -1,
+    },
+    "xinsheyang4_good_start": {
+        "criterion": xinsheyang4,
+        "start_x": np.zeros(1),
+        "solution_x": np.zeros(2),
+        "start_criterion": -1,
+        "solution_criterion": -2,
+    },
+    "xinsheyang4_bad_start": {
+        "criterion": xinsheyang4,
+        "start_x": np.full(20, 4),
+        "solution_x": np.zeros(2),
+        "start_criterion": 7.538971657276083e-07,
+        "solution_criterion": -2,
+    },
+    "zakharov_good_start": {
+        "criterion": zakharov,
+        "start_x": np.full(1, 3),
+        "solution_x": np.zeros(1),
+        "start_criterion": 16.3125,
+        "solution_criterion": 0,
+    },
+    "zakharov_bad_start": {
+        "criterion": zakharov,
+        "start_x": np.full(10, 3),
+        "solution_x": np.zeros(10),
+        "start_criterion": 46331935.3125,
+        "solution_criterion": 0,
+    },
+}
+
+SCALAR_FUNCTIONS_EXTRA_PROBLEMS = {
+    "forrester": {
+        "criterion": forrester,
+        "start_x": 0.4,
+        "solution_x": 0.757249,
+        "start_criterion": 0.11477697454392392,
+        "solution_criterion": -6.020740055735769,
+    },
+    "gramacylee_good_start": {
+        "criterion": gramacylee,
+        "start_x": 0.65,
+        "solution_x": 0.548563444,
+        "start_criterion": 0.7842370192307692,
+        "solution_criterion": -0.8690111349894997,
+    },
+    "gramacylee_bad_start": {
+        "criterion": gramacylee,
+        "start_x": 2,
+        "solution_x": 0.548563444,
+        "start_criterion": 0.9999999999999993,
+        "solution_criterion": -0.8690111349894997,
+    },
+    "quartic_solution": {
+        "criterion": quartic,
+        "start_x": np.ones(100),
+        "solution_x": np.zeros(100),
+        "start_criterion": 5050.550797902574,
+        "solution_criterion": 0.5507979025745755,
+    },
+    "ridge_good_start": {
+        "criterion": ridge,
+        "start_x": np.array([-4, 0]),
+        "solution_x": np.array([-1, 0]),
+        "start_criterion": -4,
+        "solution_criterion": -1,
+    },
+    "ridge_bad_start": {
+        "criterion": ridge,
+        "start_x": np.array([2, 2]),
+        "solution_x": np.array([-1, 0]),
+        "start_criterion": 4.29739670999407,
+        "solution_criterion": -1,
+    },
     "wolfe_good_start": {
         "criterion": wolfe,
         "start_x": np.full(3, 0.25),
@@ -1645,63 +1709,8 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_criterion": 5475.503552177131,
         "solution_criterion": 0,
     },
-    "xinsheyang2_good_start": {
-        "criterion": xinsheyang2,
-        "start_x": np.full(1, 4),
-        "solution_x": np.zeros(10),
-        "start_criterion": 5.334513433011149,
-        "solution_criterion": 0,
-    },
-    "xinsheyang2_bad_start": {
-        "criterion": xinsheyang2,
-        "start_x": np.full(10, 4),
-        "solution_x": np.zeros(10),
-        "start_criterion": 711.8823227848003,
-        "solution_criterion": 0,
-    },
-    "xinsheyang3_good_start": {
-        "criterion": xinsheyang3,
-        "start_x": np.full(1, 1),
-        "solution_x": np.zeros(10),
-        "start_criterion": 0.7852124245010498,
-        "solution_criterion": -1,
-    },
-    "xinsheyang3_bad_start": {
-        "criterion": xinsheyang3,
-        "start_x": np.full(40, 3),
-        "solution_x": np.zeros(10),
-        "start_criterion": 0.9999959040083886,
-        "solution_criterion": -1,
-    },
-    "xinsheyang4_good_start": {
-        "criterion": xinsheyang4,
-        "start_x": np.zeros(1),
-        "solution_x": np.zeros(2),
-        "start_criterion": -1,
-        "solution_criterion": -2,
-    },
-    "xinsheyang4_bad_start": {
-        "criterion": xinsheyang4,
-        "start_x": np.full(20, 4),
-        "solution_x": np.zeros(2),
-        "start_criterion": 7.538971657276083e-07,
-        "solution_criterion": -2,
-    },
-    "zakharov_good_start": {
-        "criterion": zakharov,
-        "start_x": np.full(1, 3),
-        "solution_x": np.zeros(10),
-        "start_criterion": 16.3125,
-        "solution_criterion": 0,
-    },
-    "zakharov_bad_start": {
-        "criterion": zakharov,
-        "start_x": np.full(10, 3),
-        "solution_x": np.zeros(10),
-        "start_criterion": 46331935.3125,
-        "solution_criterion": 0,
-    },
 }
+
 
 SCALAR_FUNCTIONS_TAGS = {
     "ackley": {
@@ -1712,6 +1721,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 1,
+        "input_end": None,
     },
     "ackley2": {
         "continuous": False,
@@ -1721,6 +1732,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "ackley3": {
         "continuous": False,
@@ -1730,6 +1743,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "ackley4": {
         "continuous": False,
@@ -1739,6 +1754,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": None,
     },
     "adjiman": {
         "continuous": True,
@@ -1748,6 +1765,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "alpine1": {
         "continuous": False,
@@ -1757,6 +1776,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "alpine2": {
         "continuous": True,
@@ -1766,6 +1787,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "bartels": {
         "continuous": False,
@@ -1775,6 +1798,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "beale": {
         "continuous": True,
@@ -1784,6 +1809,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": 2,
     },
     "bird": {
         "continuous": True,
@@ -1793,6 +1820,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": 2,
     },
     "bohachevsky1": {
         "continuous": True,
@@ -1802,6 +1831,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "bohachevsky2": {
         "continuous": True,
@@ -1811,6 +1842,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "bohachevsky3": {
         "continuous": True,
@@ -1820,6 +1853,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "booth": {
         "continuous": True,
@@ -1829,6 +1864,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "branin": {
         "continuous": True,
@@ -1838,6 +1875,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "brent": {
         "continuous": True,
@@ -1847,6 +1886,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "brown": {
         "continuous": True,
@@ -1856,6 +1897,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": None,
     },
     "bukin6": {
         "continuous": True,
@@ -1865,6 +1908,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "colville": {
         "continuous": True,
@@ -1874,6 +1919,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 4,
+        "input_end": 4,
     },
     "crossintray": {
         "continuous": True,
@@ -1883,6 +1930,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "dejong5": {
         "continuous": True,
@@ -1892,6 +1941,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": 2,
     },
     "deckkersaarts": {
         "continuous": True,
@@ -1901,6 +1952,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "dixonprice": {
         "continuous": True,
@@ -1910,6 +1963,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "dropwave": {
         "continuous": True,
@@ -1919,6 +1974,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "easom": {
         "continuous": True,
@@ -1928,6 +1985,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "eggcrate": {
         "continuous": True,
@@ -1937,6 +1996,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "eggholder": {
         "continuous": False,
@@ -1946,6 +2007,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "exponential": {
         "continuous": True,
@@ -1955,6 +2018,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "forrester": {
         "continuous": True,
@@ -1964,6 +2029,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": 1,
     },
     "goldsteinprice": {
         "continuous": False,
@@ -1973,6 +2040,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "gramacylee": {
         "continuous": True,
@@ -1982,6 +2051,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": 1,
     },
     "griewank": {
         "continuous": True,
@@ -1991,6 +2062,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "happycat": {
         "continuous": True,
@@ -2000,6 +2073,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 1,
+        "input_end": None,
     },
     "himmelblau": {
         "continuous": True,
@@ -2009,6 +2084,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "holdertable": {
         "continuous": True,
@@ -2018,6 +2095,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "keane": {
         "continuous": True,
@@ -2027,6 +2106,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "langermann": {
         "continuous": True,
@@ -2036,6 +2117,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": 2,
     },
     "leon": {
         "continuous": True,
@@ -2045,6 +2128,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "levy13": {
         "continuous": True,
@@ -2054,6 +2139,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "matyas": {
         "continuous": True,
@@ -2063,6 +2150,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "mccormick": {
         "continuous": True,
@@ -2072,6 +2161,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "michalewicz": {
         "continuous": True,
@@ -2081,6 +2172,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": 2,
     },
     "periodic": {
         "continuous": True,
@@ -2090,6 +2183,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "permzerodbeta": {
         "continuous": True,
@@ -2099,6 +2194,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": 2,
     },
     "permdbeta": {
         "continuous": True,
@@ -2108,6 +2205,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": 2,
     },
     "powell": {
         "continuous": True,
@@ -2117,6 +2216,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "qing": {
         "continuous": True,
@@ -2126,6 +2227,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "quartic": {
         "continuous": True,
@@ -2135,6 +2238,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": True,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "rastrigin": {
         "continuous": True,
@@ -2144,6 +2249,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "ridge": {
         "continuous": True,
@@ -2153,6 +2260,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": None,
     },
     "rosenbrock": {
         "continuous": True,
@@ -2162,6 +2271,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 2,
+        "input_end": None,
     },
     "rotatedhyperellipsoid": {
         "continuous": True,
@@ -2171,6 +2282,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": None,
     },
     "salomon": {
         "continuous": True,
@@ -2180,6 +2293,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": None,
     },
     "schaffer1": {
         "continuous": True,
@@ -2189,6 +2304,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "schaffer2": {
         "continuous": True,
@@ -2198,6 +2315,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "schaffer3": {
         "continuous": True,
@@ -2207,6 +2326,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "schaffer4": {
         "continuous": True,
@@ -2216,6 +2337,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "schwefel": {
         "continuous": True,
@@ -2225,6 +2348,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "schwefel2_20": {
         "continuous": True,
@@ -2234,6 +2359,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "schwefel2_21": {
         "continuous": True,
@@ -2243,6 +2370,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": 20,
     },
     "schwefel2_22": {
         "continuous": True,
@@ -2252,6 +2381,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "schwefel2_23": {
         "continuous": True,
@@ -2261,6 +2392,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "shekel": {
         "continuous": True,
@@ -2270,6 +2403,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 4,
+        "input_end": 4,
     },
     "shubert": {
         "continuous": True,
@@ -2279,6 +2414,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "shubert3": {
         "continuous": True,
@@ -2288,6 +2425,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "shubert4": {
         "continuous": True,
@@ -2297,6 +2436,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "sphere": {
         "continuous": True,
@@ -2306,6 +2447,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "styblinskitank": {
         "continuous": True,
@@ -2315,6 +2458,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "sumsquares": {
         "continuous": True,
@@ -2324,6 +2469,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "thevenot": {
         "continuous": True,
@@ -2342,6 +2489,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": 2,
     },
     "trid": {
         "continuous": True,
@@ -2351,6 +2500,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 2,
+        "input_end": None,
     },
     "wolfe": {
         "continuous": True,
@@ -2360,6 +2511,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 3,
+        "input_end": 3,
     },
     "xinsheyang": {
         "continuous": False,
@@ -2369,6 +2522,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": True,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "xinsheyang2": {
         "continuous": False,
@@ -2378,6 +2533,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": True,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "xinsheyang3": {
         "continuous": True,
@@ -2387,6 +2544,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": True,
+        "input_start": 1,
+        "input_end": None,
     },
     "xinsheyang4": {
         "continuous": True,
@@ -2396,6 +2555,8 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
     "zakharov": {
         "continuous": False,
@@ -2405,5 +2566,7 @@ SCALAR_FUNCTIONS_TAGS = {
         "mutimodal": False,
         "randomized_term": False,
         "parametric": False,
+        "input_start": 1,
+        "input_end": None,
     },
 }
