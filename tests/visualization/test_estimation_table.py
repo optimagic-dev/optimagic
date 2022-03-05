@@ -8,6 +8,7 @@ import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
 from estimagic.visualization.estimation_table import _apply_number_format
 from estimagic.visualization.estimation_table import _convert_frame_to_string_series
+from estimagic.visualization.estimation_table import _create_group_to_col_position
 from estimagic.visualization.estimation_table import _create_statistics_sr
 from estimagic.visualization.estimation_table import _get_digits_after_decimal
 from estimagic.visualization.estimation_table import _process_frame_axes
@@ -288,6 +289,20 @@ def test_get_digits_after_decimal():
     ).T
     exp = 5
     res = _get_digits_after_decimal(df)
+    assert exp == res
+
+
+def test_create_group_to_col_position():
+    col_groups = [
+        "a_name",
+        "a_name",
+        "a_name",
+        "second_name",
+        "second_name",
+        "third_name",
+    ]
+    exp = {"a_name": [0, 1, 2], "second_name": [3, 4], "third_name": [5]}
+    res = _create_group_to_col_position(col_groups)
     assert exp == res
 
 
