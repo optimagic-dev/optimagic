@@ -166,6 +166,8 @@ def estimation_table(
             notes_label=notes_label,
             significance_levels=significance_levels,
             custom_notes=custom_notes,
+            siunitx_warning=siunitx_warning,
+            alignment_warning=alignment_warning,
         )
     elif str(return_type).endswith("html"):
         notes = _generate_notes_html(
