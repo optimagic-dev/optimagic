@@ -13,25 +13,25 @@ def estimation_table(
     *,
     return_type="dataframe",
     render_options=None,
-    custom_param_names=None,
     show_col_names=True,
     show_col_groups=None,
+    show_index_names=False,
+    show_inference=True,
+    show_stars=True,
+    show_footer=True,
+    custom_param_names=None,
     custom_col_names=None,
     custom_col_groups=None,
-    show_index_names=False,
     custom_index_names=None,
-    show_inference=True,
+    custom_notes=None,
     confidence_intervals=False,
-    show_stars=True,
     significance_levels=(0.1, 0.05, 0.01),
+    append_notes=True,
+    notes_label="Note:",
+    stat_keys=None,
     number_format=("{0:.3g}", "{0:.5f}", "{0:.4g}"),
     add_trailing_zeros=True,
     padding=1,
-    show_footer=True,
-    stat_keys=None,
-    append_notes=True,
-    notes_label="Note:",
-    custom_notes=None,
     siunitx_warning=True,
     alignment_warning=True,
 ):
@@ -55,52 +55,61 @@ def estimation_table(
             name dneed to be grouped together.
         return_type (str): Can be "dataframe", "latex", "html", "render_inputs" or a
             file path with the extension .tex or .html. If "render_inputs" is passed,
-            a dictionary with the entries "body", "footer", "notes" and other
+            a dictionary with the entries "body", "footer" and other
             information is returned. The entries can be modified by the user (
             e.g. formatting changes, renaming of columns index, ...) and then passed
-            to `render_latex` or render_htm`.
+            to `render_latex` or render_html`. Default "dataframe".
+        render_options (dict): a dictionary with keyword arguments that are passed to
+            df.to_latex or df.to_html, depending on the return_type.
+            The default None.
+        show_col_names (bool): If True, the column names are displayed. Default True.
+        show_col_groups (bool): If True, the column groups are displayed. Default None.
+        show_index_names (bool): If True, the index names are displayed. Default False.
+        show_inference(bool): If True, inference (standard errors or confidence
+            intervals) below param values. Default True.
+        show_stars (bool): a boolean variable for printing significance stars.
+            Default is True.
+        show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
+            Obs numbers. Default is True.
         custom_param_names (dict): Dictionary that is used to rename parameters. The
             keys are the old parameter names or index entries. The values are
             the new names. Default None.
-        show_index_names (bool): If True, the index names are displayed. Default False.
-        custom_index_names (dict or list): Dictionary or list to set the names of the
-            index levels of the parameters. Only used if "add_index_names" is set to
-            True in the render_options. Default None.
-        render_options (dict): a dictionary with keyword arguments that are passed to
-            df.to_latex or df.to_html, depending on the return_type.
-            The default is None.
-        show_col_names (bool): If True, the column names are displayed. Default True.
-        show_col_groups (bool): If True, the column groups are displayed. Default None.
         custom_col_names (dict or list): A list of column names or dict to rename the
             default column names. The default column names are the model names if the
             model names are unique, otherwise (1), (2), etc..
         custom_col_groups (dict or list): A list of column group or dict to rename
             the default column groups. The default column groups are the model names
             if the model names are not unique and undefined otherwise.
-        inference_type (str or None): One of "standard_errors", "confidenece_intervals"
-            or None. Determines which kind of inference measure is displayed in the
-            table.
-        show_stars (bool): a boolean variable for printing significance stars.
-            Default is True.
+        custom_index_names (dict or list): Dictionary or list to set the names of the
+            index levels of the parameters. Only used if "add_index_names" is set to
+            True in the render_options. Default None.
+        custom_notes (list): A list of strings for additional notes. Default is None.
+        confidence_intervals (bool): If True, display confidence intervals as inference
+            values. Display standard errors otherwise. Default False.
         significance_levels (list): a list of floats for p value's significance cutt-off
             values. Default is [0.1,0.05,0.01].
-        number_format (int): an integer for the number of digits to the right of the
+        append_notes (bool): A boolean variable for printing p value cutoff explanation
+            and additional notes, if applicable. Default is True.
+        notes_label (str): A sting to print as the title of the notes section, if
+            applicable. Default is 'Notes'
+        stat_keys (dict): A dictionary with printed statistics names as keys,
+            and statistics statistics names to be retrieved from model.info as values.
+            Default is dictionary with common statistics of stats model linear
+            regression.
+        number_format (int): An integer for the number of digits to the right of the
             decimal point to round to. Default is 2.
+        add_trailing_zeros (bool): If True, format floats such that they haave same
+            number of digits after the decimal point. Default True.
         padding (int): an integer used for aligning LaTex columns. Affects the
             alignment of the columns to the left of the decimal point of numerical
             entries. Default is 1. If the number of models is more than 2, set the
             value of padding to 3 or more to avoid columns overlay in the tex output.
-        show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
-            Obs numbers. Default is True.
-        stat_keys (dict): a dictionary with printed statistics names as keys,
-            and statistics statistics names to be retrieved from model.info as values.
-            Default is dictionary with common statistics of stats model linear
-            regression.
-        append_notes (bool): a boolean variable for printing p value cutoff explanation
-            and additional notes, if applicable. Default is True.
-        notes_label (str): a sting to print as the title of the notes section, if
-            applicable. Default is 'Notes'
-        custom_notes (list): a list of strings for additional notes. Default is None.
+        siunitx_watning (bool): If True, print warning about LaTex preamble to add for
+            proper compilation of  when working with siunitx package. Default True.
+        alignment_warning (bool): If True, print warning about siunitx table formatting,
+            to avoid column overlays. Default True.
+
+
 
     Returns:
         res_table (data frame, str or dictionary): depending on the rerturn type,
@@ -108,12 +117,6 @@ def estimation_table(
             or a dictionary with statistics and parameters dataframes, and strings
             for footers is returned. If the return type is a path, the function saves
             the resulting table at the given path.
-
-    Notes:
-        - Compiling LaTex tables requires the package siunitx.
-        - Add \sisetup{input-symbols = ()} to your main tex file for proper
-            compilation
-
     """
     # Check models are passed as a a list or tuple.
     if not isinstance(models, (tuple, list)):
@@ -170,15 +173,15 @@ def estimation_table(
             alignment_warning=alignment_warning,
         )
     elif str(return_type).endswith("html"):
-        notes = _generate_notes_html(
-            append_notes, notes_label, significance_levels, custom_notes, params
-        )
         out = render_html(
             params=params,
             stats=stats,
-            notes=notes,
             render_options=render_options,
             show_footer=show_footer,
+            append_notes=append_notes,
+            notes_label=notes_label,
+            custom_notes=custom_notes,
+            significance_levels=significance_levels,
         )
     elif return_type == "render_inputs":
         out = {
@@ -341,7 +344,16 @@ def render_latex(
     return latex_str
 
 
-def render_html(params, stats, notes, render_options, show_footer):
+def render_html(
+    params,
+    stats,
+    render_options=None,
+    show_footer=True,
+    append_notes=True,
+    notes_label="Note:",
+    custom_notes=None,
+    significance_levels=(0.1, 0.05, 0.01),
+):
     """Return estimation table in html format as string.
 
     Args:
@@ -384,6 +396,9 @@ def render_html(params, stats, notes, render_options, show_footer):
         )
         stats_str = re.sub(r"(?<=[\d)}{)])}", "", re.sub(r"{(?=[}\d(])", "", stats_str))
         html_str += stats_str
+    notes = _generate_notes_html(
+        append_notes, notes_label, significance_levels, custom_notes, params
+    )
     html_str += notes
     html_str += "</tbody>\n</table>"
     return html_str
