@@ -16,7 +16,7 @@ from estimagic.visualization.estimation_table import (
 )
 from estimagic.visualization.estimation_table import _get_digits_after_decimal
 from estimagic.visualization.estimation_table import _get_model_names
-from estimagic.visualization.estimation_table import _process_frame_axes
+from estimagic.visualization.estimation_table import _process_frame_indices
 from estimagic.visualization.estimation_table import _process_model
 from estimagic.visualization.estimation_table import estimation_table
 from pandas.testing import assert_frame_equal as afe
@@ -241,7 +241,7 @@ def test_process_frame_axes_indices():
     par_name_map = {"today": "tomorrow", "var1": "1stvar"}
     index_name_map = ["period", "variable"]
     column_names = list("abc")
-    res = _process_frame_axes(
+    res = _process_frame_indices(
         df,
         custom_param_names=par_name_map,
         custom_index_names=index_name_map,
@@ -266,7 +266,7 @@ def test_process_frame_axes_columns():
     df = pd.DataFrame(np.ones((3, 3)), columns=["", "", ""])
     col_names = list("abc")
     col_groups = ["first", "first", "second"]
-    res = _process_frame_axes(
+    res = _process_frame_indices(
         df=df,
         custom_index_names=None,
         custom_param_names=None,

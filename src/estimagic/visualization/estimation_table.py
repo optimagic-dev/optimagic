@@ -70,7 +70,7 @@ def estimation_table(
             df.to_latex or df.to_html, depending on the return_type.
             The default is None.
         show_col_names (bool): If True, the column names are displayed. Default True.
-        show_col_groups (bool): If True, the column groups are displayed. Default False.
+        show_col_groups (bool): If True, the column groups are displayed. Default None.
         custom_col_names (dict or list): A list of column names or dict to rename the
             default column names. The default column names are the model names if the
             model names are unique, otherwise (1), (2), etc..
@@ -115,9 +115,9 @@ def estimation_table(
             compilation
 
     """
-    # Check models are passed as a list.
-    assert isinstance(models, list), "Please, provide models as a list"
-    # Process models
+    # Check models are passed as a a list or tuple.
+    if not isinstance(models, (tuple, list)):
+        raise TypeError("Please, provide models as a iterables.")
     models = [_process_model(model) for model in models]
     model_names = _get_model_names(models)
     default_col_names, default_col_groups = _get_default_column_names_and_groups(
@@ -129,99 +129,29 @@ def estimation_table(
     column_names = _customize_col_names(
         default_col_names=default_col_names, custom_col_names=custom_col_names
     )
-    # Adapt the value of show_col_groups based on col_groups.
-    if show_col_groups is None:
-        if column_groups is not None:
-            show_col_groups = True
-        else:
-            show_col_groups = False
-    # Set some defaults:
-    if not stat_keys:
-        stat_keys = {
-            "Observations": "n_obs",
-            "R$^2$": "rsquared",
-            "Adj. R$^2$": "rsquared_adj",
-            "Residual Std. Error": "resid_std_err",
-            "F Statistic": "fvalue",
-            "show_dof": None,
-        }
-    # get common index as list.
-    dfs = [mod.params for mod in models]
-    com_ind = []
-    for d_ in dfs:
-        com_ind += [ind for ind in d_.index.to_list() if ind not in com_ind]
-    # get list of columns  that need to be formatted.
-    format_cols = ["value"]
-    if show_inference:
-        if confidence_intervals:
-            format_cols += ["ci_lower", "ci_upper"]
-        else:
-            format_cols.append("standard_error")
-    # reindex DataFrames with the common index and apply formatting.
-    to_format = [mod.params.reindex(com_ind)[format_cols] for mod in models]
-    raw_formatted = [_apply_number_format(df, number_format) for df in to_format]
-    max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
-    if add_trailing_zeros:
-        formatted = [_apply_number_format(df, max_trail) for df in raw_formatted]
-    else:
-        formatted = raw_formatted
-    # make list of DataFrames to convert to string series. Append pvalues to the
-    # parameter DataFrames if show_stars is true.
-    to_convert = []
-    if show_stars:
-        for df, mod in zip(formatted, models):
-            to_convert.append(
-                pd.concat([df, mod.params.reindex(com_ind)["p_value"]], axis=1)
-            )
-    else:
-        to_convert = formatted
-    # convert DataFrames to string series with inference and siginificance
-    # information.
-    to_concat = [
-        _convert_frame_to_string_series(
-            df,
-            significance_levels,
-            show_stars,
-        )
-        for df in to_convert
-    ]
-    params = pd.concat(to_concat, axis=1)
-    params = _process_frame_axes(
-        df=params,
-        custom_param_names=custom_param_names,
-        custom_index_names=custom_index_names,
-        show_col_names=show_col_names,
-        show_col_groups=show_col_groups,
-        column_names=column_names,
-        column_groups=column_groups,
+    show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
+    stat_keys = _set_default_stat_keys(stat_keys)
+    params, stats, max_trail = _get_reg_table_body_footer(
+        models,
+        column_names,
+        column_groups,
+        custom_param_names,
+        custom_index_names,
+        significance_levels,
+        stat_keys,
+        show_col_groups,
+        show_col_names,
+        show_stars,
+        show_inference,
+        confidence_intervals,
+        number_format,
+        add_trailing_zeros,
     )
-    to_concat = [
-        _create_statistics_sr(
-            mod,
-            stat_keys,
-            significance_levels,
-            show_stars,
-            number_format,
-            add_trailing_zeros,
-            max_trail,
-        )
-        for mod in models
-    ]
-    stats = pd.concat(to_concat, axis=1)
-    stats.columns = params.columns
     # set kwarg 'header' for to_latex() and to_html() based on
     # show_column_names, show_col_groups, and show_index_names.
-    if not render_options:
-        if not (show_col_names and show_col_groups):
-            render_options = {"header": False}
-        if show_index_names:
-            render_options["index_names"] = True
-    else:
-        if not (show_col_names and show_col_groups):
-            render_options.update({"header": False})
-        if show_index_names:
-            render_options.update({"index_names": True})
-
+    render_options = _update_render_options(
+        render_options, show_col_names, show_col_groups, show_index_names
+    )
     # check return_type and get the output
     if str(return_type).endswith("tex"):
         if siunitx_warning:
@@ -493,6 +423,109 @@ def _process_model(model):
     return processed_model
 
 
+def _get_reg_table_body_footer(
+    models,
+    column_names,
+    column_groups,
+    custom_param_names,
+    custom_index_names,
+    significance_levels,
+    stat_keys,
+    show_col_groups,
+    show_col_names,
+    show_stars,
+    show_inference,
+    confidence_intervals,
+    number_format,
+    add_trailing_zeros,
+):
+
+    common_index = _get_common_index([mod.params for mod in models])
+    cols_to_format = _get_cols_to_format(show_inference, confidence_intervals)
+    formatted_frames, max_trail = _reindex_and_format_param_frames(
+        models, common_index, cols_to_format, number_format, add_trailing_zeros
+    )
+    params = _build_reg_table_body(
+        formatted_frames,
+        models,
+        show_stars,
+        common_index,
+        significance_levels,
+        custom_param_names,
+        custom_index_names,
+        show_col_names,
+        show_col_groups,
+        column_names,
+        column_groups,
+    )
+    stats = _build_reg_table_footer(
+        models,
+        stat_keys,
+        significance_levels,
+        show_stars,
+        number_format,
+        add_trailing_zeros,
+        max_trail,
+    )
+    stats.columns = params.columns
+    return params, stats, max_trail
+
+
+def _get_common_index(dfs):
+    common_index = []
+    for d_ in dfs:
+        common_index += [ind for ind in d_.index.to_list() if ind not in common_index]
+    return common_index
+
+
+def _update_show_col_groups(show_col_groups, column_groups):
+    if show_col_groups is None:
+        if column_groups is not None:
+            show_col_groups = True
+        else:
+            show_col_groups = False
+    return show_col_groups
+
+
+def _update_render_options(
+    render_options, show_col_names, show_col_groups, show_index_names
+):
+    if not render_options:
+        if not (show_col_names and show_col_groups):
+            render_options = {"header": False}
+        if show_index_names:
+            render_options["index_names"] = True
+    else:
+        if not (show_col_names and show_col_groups):
+            render_options.update({"header": False})
+        if show_index_names:
+            render_options.update({"index_names": True})
+    return render_options
+
+
+def _set_default_stat_keys(stat_keys):
+    if not stat_keys:
+        stat_keys = {
+            "Observations": "n_obs",
+            "R$^2$": "rsquared",
+            "Adj. R$^2$": "rsquared_adj",
+            "Residual Std. Error": "resid_std_err",
+            "F Statistic": "fvalue",
+            "show_dof": None,
+        }
+    return stat_keys
+
+
+def _get_cols_to_format(show_inference, confidence_intervals):
+    cols = ["value"]
+    if show_inference:
+        if confidence_intervals:
+            cols += ["ci_lower", "ci_upper"]
+        else:
+            cols.append("standard_error")
+    return cols
+
+
 def _get_model_names(processed_models):
     """Get names of model names if defined, set based on position otherwise.
     Args:
@@ -621,6 +654,88 @@ def _create_group_to_col_position(column_groups):
     for i, group in enumerate(column_groups):
         group_to_col_index[group].append(i)
     return group_to_col_index
+
+
+def _reindex_and_format_param_frames(
+    models, index, columns, number_format, add_trailing_zeros
+):
+    to_format = [mod.params.reindex(index)[columns] for mod in models]
+    raw_formatted = [_apply_number_format(df, number_format) for df in to_format]
+    max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
+    if add_trailing_zeros:
+        formatted = [_apply_number_format(df, max_trail) for df in raw_formatted]
+    else:
+        formatted = raw_formatted
+    return formatted, max_trail
+
+
+def _build_reg_table_body(
+    dfs,
+    models,
+    show_stars,
+    index,
+    significance_levels,
+    custom_param_names,
+    custom_index_names,
+    show_col_names,
+    show_col_groups,
+    column_names,
+    column_groups,
+):
+    to_convert = []
+    if show_stars:
+        for df, mod in zip(dfs, models):
+            to_convert.append(
+                pd.concat([df, mod.params.reindex(index)["p_value"]], axis=1)
+            )
+    else:
+        to_convert = dfs
+    # convert DataFrames to string series with inference and siginificance
+    # information.
+    to_concat = [
+        _convert_frame_to_string_series(
+            df,
+            significance_levels,
+            show_stars,
+        )
+        for df in to_convert
+    ]
+    df = pd.concat(to_concat, axis=1)
+    df = _process_frame_indices(
+        df=df,
+        custom_param_names=custom_param_names,
+        custom_index_names=custom_index_names,
+        show_col_names=show_col_names,
+        show_col_groups=show_col_groups,
+        column_names=column_names,
+        column_groups=column_groups,
+    )
+    return df
+
+
+def _build_reg_table_footer(
+    models,
+    stat_keys,
+    significance_levels,
+    show_stars,
+    number_format,
+    add_trailing_zeros,
+    max_trail,
+):
+    to_concat = [
+        _create_statistics_sr(
+            mod,
+            stat_keys,
+            significance_levels,
+            show_stars,
+            number_format,
+            add_trailing_zeros,
+            max_trail,
+        )
+        for mod in models
+    ]
+    stats = pd.concat(to_concat, axis=1)
+    return stats
 
 
 def _convert_frame_to_string_series(
@@ -791,7 +906,7 @@ def _create_statistics_sr(
     return stat_sr.astype("str").replace("nan", "")
 
 
-def _process_frame_axes(
+def _process_frame_indices(
     df,
     custom_param_names,
     custom_index_names,
