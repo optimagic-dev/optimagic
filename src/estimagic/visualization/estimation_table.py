@@ -131,7 +131,7 @@ def estimation_table(
     )
     show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
     stat_keys = _set_default_stat_keys(stat_keys)
-    params, stats, max_trail = _get_reg_table_body_footer(
+    params, stats, max_trail = _get_reg_table_body_and_footer(
         models,
         column_names,
         column_groups,
@@ -173,18 +173,18 @@ def estimation_table(
                         of columns. To turn this warning off set value of
                         alignment_warning = False"""
                 )
-        notes = _generate_notes_latex(
-            append_notes, notes_label, significance_levels, custom_notes, params
-        )
         out = render_latex(
             params=params,
             stats=stats,
             right_decimals=max_trail,
-            notes=notes,
             render_options=render_options,
             column_groups=column_groups,
             padding=padding,
             show_footer=show_footer,
+            append_notes=append_notes,
+            notes_label=notes_label,
+            significance_levels=significance_levels,
+            custom_notes=custom_notes,
         )
     elif str(return_type).endswith("html"):
         notes = _generate_notes_html(
@@ -230,12 +230,15 @@ def estimation_table(
 def render_latex(
     params,
     stats,
-    notes_tex,
     right_decimals,
     padding=1,
     render_options=None,
     column_groups=None,
     show_footer=True,
+    append_notes=True,
+    notes_label="Note:",
+    significance_levels=(0.1, 0.05, 0.01),
+    custom_notes=None,
 ):
     """Return estimation table in LaTeX format as string.
 
@@ -324,7 +327,10 @@ def render_latex(
             "\\midrule" + stats_str.split("\\midrule")[1].split("\\bottomrule")[0]
         )
         latex_str += stats_str
-    latex_str += notes_tex
+    notes = _generate_notes_latex(
+        append_notes, notes_label, significance_levels, custom_notes, params
+    )
+    latex_str += notes
     latex_str += "\\bottomrule\n\\end{tabular}\n"
     if latex_str.startswith("\\begin{table}"):
         latex_str += "\n\\end{table}\n"
@@ -423,7 +429,7 @@ def _process_model(model):
     return processed_model
 
 
-def _get_reg_table_body_footer(
+def _get_reg_table_body_and_footer(
     models,
     column_names,
     column_groups,
