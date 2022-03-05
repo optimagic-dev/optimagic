@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
+from estimagic.visualization.estimation_table import _apply_number_format
 from estimagic.visualization.estimation_table import _convert_frame_to_string_series
 from estimagic.visualization.estimation_table import _create_statistics_sr
 from estimagic.visualization.estimation_table import _process_frame_axes
@@ -250,6 +251,22 @@ def test_process_frame_axes_indices():
     exp = _read_csv_string(params).fillna("")
     exp.set_index(["period", "variable"], inplace=True)
     afe(res, exp, check_dtype=False)
+
+
+def test_apply_number_format_tuple():
+    number_format = ("{0:.2g}", "{0:.2f}")
+    raw = pd.DataFrame(data=[1234.2332])
+    exp = pd.DataFrame(data=["1200.00"])
+    res = _apply_number_format(df=raw, number_format=number_format)
+    afe(exp, res)
+
+
+def test_apply_number_format_int():
+    number_format = 3
+    raw = pd.DataFrame(data=[1234.2332])
+    exp = pd.DataFrame(data=["1234.233"])
+    res = _apply_number_format(df=raw, number_format=number_format)
+    afe(exp, res)
 
 
 def _read_csv_string(string, index_cols=None):
