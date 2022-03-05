@@ -537,7 +537,12 @@ def _get_default_column_names_and_groups(model_names):
         col_groups = None
         col_names = model_names
     else:
-        col_groups = model_names
+        col_groups = []
+        for i, n in enumerate(model_names):
+            if n:
+                col_groups.apped(n)
+            else:
+                col_groups.append(f"({i+1})")
         col_names = [f"({i + 1})" for i in range(len(model_names))]
 
     return col_names, col_groups
