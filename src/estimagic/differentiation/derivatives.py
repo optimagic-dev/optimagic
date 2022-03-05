@@ -37,16 +37,14 @@ def first_derivative(
     """Evaluate first derivative of func at params according to method and step options.
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
-    array. Then the Jacobian of that function is calculated. The resulting derivative
-    estimate is always a :class:`numpy.ndarray`.
+    array. Then the Jacobian of that function is calculated.
 
-    The parameters and the function output can be pandas objects (Series or DataFrames
-    with value column). In that case the output of first_derivative is also a pandas
-    object and with appropriate index and columns.
+    The parameters and the function output can be general pytrees. By default the
+    resulting Jacobian will be returned as a block-pytree.
 
-    Detailed description of all options that influence the step size as well as an
-    explanation of how steps are adjusted to bounds in case of a conflict,
-    see :func:`~estimagic.differentiation.generate_steps.generate_steps`.
+    For a detailed description of all options that influence the step size as well as an
+    explanation of how steps are adjusted to bounds in case of a conflict, see
+    :func:`~estimagic.differentiation.generate_steps.generate_steps`.
 
     Args:
         func (callable): Function of which the derivative is calculated.
@@ -67,12 +65,8 @@ def first_derivative(
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        lower_bounds (numpy.ndarray): 1d array with lower bounds for each parameter. If
-            params is a DataFrame and has the columns "lower_bound", this will be taken
-            as lower_bounds if now lower_bounds have been provided explicitly.
-        upper_bounds (numpy.ndarray): 1d array with upper bounds for each parameter. If
-            params is a DataFrame and has the columns "upper_bound", this will be taken
-            as upper_bounds if no upper_bounds have been provided explicitly.
+        lower_bounds (pytree): To be written.
+        upper_bounds (pytree): To be written.
         step_ratio (float, numpy.array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. The step ratio is only used if n_steps > 1.
@@ -614,6 +608,19 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
 
 
 def _process_bounds(lower_bounds, upper_bounds, params):
+    """Process and consolidate parameter bounds.
+
+    Args:
+        lower_bounds (pytree):
+        upper_bounds (pytree):
+        params (pytree):
+
+    Returns:
+        tuple:
+        - lower_bounds (numpy.ndarray)
+        - upper_bounds (numpy.ndarray)
+
+    """
     lower_bounds = np.atleast_1d(lower_bounds) if lower_bounds is not None else None
     upper_bounds = np.atleast_1d(upper_bounds) if upper_bounds is not None else None
     if isinstance(params, pd.DataFrame):
