@@ -11,6 +11,7 @@ from estimagic.visualization.estimation_table import _convert_frame_to_string_se
 from estimagic.visualization.estimation_table import _create_group_to_col_position
 from estimagic.visualization.estimation_table import _create_statistics_sr
 from estimagic.visualization.estimation_table import _get_digits_after_decimal
+from estimagic.visualization.estimation_table import _get_model_names
 from estimagic.visualization.estimation_table import _process_frame_axes
 from estimagic.visualization.estimation_table import _process_model
 from estimagic.visualization.estimation_table import estimation_table
@@ -304,6 +305,18 @@ def test_create_group_to_col_position():
     exp = {"a_name": [0, 1, 2], "second_name": [3, 4], "third_name": [5]}
     res = _create_group_to_col_position(col_groups)
     assert exp == res
+
+
+def test_get_model_names():
+    m1 = ProcessedModel(params=None, info=None, name="a_name")
+    m2 = ProcessedModel(params=None, info=None, name="second_name")
+    m3 = ProcessedModel(params=None, info=None, name=None)
+    m4 = ProcessedModel(params=None, info=None, name=None)
+    m5 = ProcessedModel(params=None, info=None, name="third_name")
+    models = [m1, m2, m3, m4, m5]
+    res = _get_model_names(models)
+    exp = ["a_name", "second_name", "(3)", "(4)", "third_name"]
+    assert res == exp
 
 
 def _read_csv_string(string, index_cols=None):

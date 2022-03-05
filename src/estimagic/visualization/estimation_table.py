@@ -460,7 +460,7 @@ def _process_model(model):
             assert isinstance(model.name, str)
             name = model.name
         else:
-            name = ""
+            name = None
 
     else:
         if isinstance(model, dict):
@@ -470,7 +470,7 @@ def _process_model(model):
         elif isinstance(model, pd.DataFrame):
             params = model.copy(deep=True)
             info = {}
-            name = ""
+            name = None
         else:
             try:
                 params = _extract_params_from_sm(model)
