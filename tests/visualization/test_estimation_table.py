@@ -35,7 +35,7 @@ def test_estimation_table():
     models = [est]
     res = estimation_table(models, return_type="render_inputs", append_notes=False)
     exp = {}
-    body_str = """
+    body = """
         index,target
         const,152.00$^{*** }$
         ,(2.85)
@@ -48,8 +48,8 @@ def test_estimation_table():
         ABP,417.00$^{*** }$
         ,(69.50)
     """
-    exp["body_df"] = _read_csv_string(body_str).fillna("")
-    exp["body_df"].set_index("index", inplace=True)
+    exp["params"] = _read_csv_string(body).fillna("")
+    exp["params"].set_index("index", inplace=True)
     footer_str = """
          ,target
         R$^2$,0.40
@@ -59,17 +59,17 @@ def test_estimation_table():
         Observations,442
 
     """
-    exp["footer_df"] = _read_csv_string(footer_str).fillna("")
-    exp["footer_df"].set_index(" ", inplace=True)
-    exp["footer_df"].index.names = [None]
-    exp["footer_df"].index = pd.MultiIndex.from_arrays([exp["footer_df"].index])
+    exp["stats"] = _read_csv_string(footer_str).fillna("")
+    exp["stats"].set_index(" ", inplace=True)
+    exp["stats"].index.names = [None]
+    exp["stats"].index = pd.MultiIndex.from_arrays([exp["stats"].index])
     exp["notes_tex"] = "\\midrule\n"
     exp[
         "notes_html"
     ] = """<tr><td colspan="2" style="border-bottom: 1px solid black">
         </td></tr>"""
-    afe(exp["footer_df"], res["footer_df"])
-    afe(exp["body_df"], res["body_df"], check_index_type=False)
+    afe(exp["stats"], res["stats"])
+    afe(exp["params"], res["params"], check_index_type=False)
     ase(pd.Series(exp["notes_html"]), pd.Series(res["notes_html"]))
     ase(pd.Series(exp["notes_tex"]), pd.Series(res["notes_tex"]))
 

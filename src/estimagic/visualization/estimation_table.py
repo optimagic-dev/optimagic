@@ -146,9 +146,9 @@ def estimation_table(
             "show_dof": None,
         }
     # get common index as list.
-    params = [mod.params for mod in models]
+    dfs = [mod.params for mod in models]
     com_ind = []
-    for d_ in params:
+    for d_ in dfs:
         com_ind += [ind for ind in d_.index.to_list() if ind not in com_ind]
     # get list of columns  that need to be formatted.
     format_cols = ["value"]
@@ -185,9 +185,9 @@ def estimation_table(
         )
         for df in to_convert
     ]
-    body_df = pd.concat(to_concat, axis=1)
-    body_df = _process_frame_axes(
-        df=body_df,
+    params = pd.concat(to_concat, axis=1)
+    params = _process_frame_axes(
+        df=params,
         custom_param_names=custom_param_names,
         custom_index_names=custom_index_names,
         show_col_names=show_col_names,
@@ -207,8 +207,8 @@ def estimation_table(
         )
         for mod in models
     ]
-    footer_df = pd.concat(to_concat, axis=1)
-    footer_df.columns = body_df.columns
+    stats = pd.concat(to_concat, axis=1)
+    stats.columns = params.columns
     # set kwarg 'header' for to_latex() and to_html() based on
     # show_column_names, show_col_groups, and show_index_names.
     if not render_options:
@@ -243,44 +243,51 @@ def estimation_table(
                         of columns. To turn this warning off set value of
                         alignment_warning = False"""
                 )
-        notes_tex = _generate_notes_latex(
-            append_notes, notes_label, significance_levels, custom_notes, body_df
+        notes = _generate_notes_latex(
+            append_notes, notes_label, significance_levels, custom_notes, params
         )
         out = render_latex(
-            body_df=body_df,
-            footer_df=footer_df,
+            params=params,
+            stats=stats,
             right_decimals=max_trail,
-            notes=notes_tex,
+            notes=notes,
             render_options=render_options,
             column_groups=column_groups,
             padding=padding,
             show_footer=show_footer,
         )
     elif str(return_type).endswith("html"):
-        footer = _generate_notes_html(
-            append_notes, notes_label, significance_levels, custom_notes, body_df
+        notes = _generate_notes_html(
+            append_notes, notes_label, significance_levels, custom_notes, params
         )
-        out = render_html(body_df, footer_df, footer, render_options, show_footer)
+        out = render_html(
+            params=params,
+            stats=stats,
+            notes=notes,
+            render_options=render_options,
+            show_footer=show_footer,
+        )
     elif return_type == "render_inputs":
         out = {
-            "body_df": body_df,
-            "footer_df": footer_df,
+            "params": params,
+            "stats": stats,
             "notes_tex": _generate_notes_latex(
-                append_notes, notes_label, significance_levels, custom_notes, body_df
+                append_notes, notes_label, significance_levels, custom_notes, params
             ),
             "latex_right_decimals": max_trail,
             "notes_html": _generate_notes_html(
-                append_notes, notes_label, significance_levels, custom_notes, body_df
+                append_notes, notes_label, significance_levels, custom_notes, params
             ),
+            "render_options": render_options,
         }
     elif return_type == "dataframe":
         if show_footer:
-            footer_df.index.names = body_df.index.names
-            out = pd.concat([body_df.reset_index(), footer_df.reset_index()]).set_index(
-                body_df.index.names
+            stats.index.names = params.index.names
+            out = pd.concat([params.reset_index(), stats.reset_index()]).set_index(
+                params.index.names
             )
         else:
-            out = body_df
+            out = params
     else:
         raise TypeError("Invalid return type")
     if str(return_type).endswith((".html", ".tex")):
@@ -291,8 +298,8 @@ def estimation_table(
 
 
 def render_latex(
-    body_df,
-    footer_df,
+    params,
+    stats,
     notes_tex,
     right_decimals,
     padding=1,
@@ -303,10 +310,10 @@ def render_latex(
     """Return estimation table in LaTeX format as string.
 
     Args:
-        body_df (pandas.DataFrame): DataFrame with formatted strings of parameter
+        params (pandas.DataFrame): DataFrame with formatted strings of parameter
             values, inferences (standard errors or confidence intervals, if
             applicable) and significance stars (if applicable).
-        footer_df (pandas.DataFrame): DataFrame with formatted strings of summary
+        stats (pandas.DataFrame): DataFrame with formatted strings of summary
             statistics (such as number of observations, r-squared, etc.)
         notes_tex (str): The LaTex string with notes with additional information
             (e.g. mapping from pvalues to significance stars) to append to the footer
@@ -331,16 +338,16 @@ def render_latex(
         latex_str (str): The resulting string with Latex tabular code.
 
     """
-    body_df = body_df.copy(deep=True)
-    for i in range(body_df.columns.nlevels):
-        body_df = body_df.rename(
-            {c: "{" + c + "}" for c in body_df.columns.get_level_values(i)},
+    params = params.copy(deep=True)
+    for i in range(params.columns.nlevels):
+        params = params.rename(
+            {c: "{" + c + "}" for c in params.columns.get_level_values(i)},
             axis=1,
             level=i,
         )
-    body_df = body_df.applymap(_add_latex_syntax_around_scientfic_number_string)
-    n_levels = body_df.index.nlevels
-    n_columns = len(body_df.columns)
+    params = params.applymap(_add_latex_syntax_around_scientfic_number_string)
+    n_levels = params.index.nlevels
+    n_columns = len(params.columns)
     # here you add all arguments of df.to_latex for which you want to change the default
     default_options = {
         "index_names": False,
@@ -356,8 +363,8 @@ def render_latex(
     if render_options:
         default_options.update(render_options)
     if not default_options["index_names"]:
-        body_df.index.names = [None] * body_df.index.nlevels
-    latex_str = body_df.to_latex(**default_options)
+        params.index.names = [None] * params.index.nlevels
+    latex_str = params.to_latex(**default_options)
     # Get mapping from group name to column position
     if column_groups is not None:
         group_to_col_position = _create_group_to_col_position(column_groups)
@@ -376,13 +383,13 @@ def render_latex(
         )
     latex_str = latex_str.split("\\bottomrule")[0]
     if show_footer:
-        if "Observations" in footer_df.index.get_level_values(0):
-            footer_df = footer_df.copy(deep=True)
+        if "Observations" in stats.index.get_level_values(0):
+            stats = stats.copy(deep=True)
 
-            footer_df.loc["Observations"] = footer_df.loc["Observations"].applymap(
+            stats.loc["Observations"] = stats.loc["Observations"].applymap(
                 _left_align_tex
             )
-        stats_str = footer_df.to_latex(**default_options)
+        stats_str = stats.to_latex(**default_options)
         stats_str = (
             "\\midrule" + stats_str.split("\\midrule")[1].split("\\bottomrule")[0]
         )
@@ -394,16 +401,16 @@ def render_latex(
     return latex_str
 
 
-def render_html(body_df, footer_df, notes_html, render_options, show_footer):
+def render_html(params, stats, notes, render_options, show_footer):
     """Return estimation table in html format as string.
 
     Args:
-        body_df (pandas.DataFrame): DataFrame with formatted strings of parameter
+        params (pandas.DataFrame): DataFrame with formatted strings of parameter
             values, inferences (standard errors or confidence intervals, if
             applicable) and significance stars (if applicable).
-        footer_df (pandas.DataFrame): DataFrame with formatted strings of summary
+        stats (pandas.DataFrame): DataFrame with formatted strings of summary
             statistics (such as number of observations, r-squared, etc.)
-        notes_html (str): The html string with notes with additional information
+        notes (str): The html string with notes with additional information
             (e.g. mapping from pvalues to significance stars) to append to the footer
             of the estimation table string with LaTex code for the notes section.
         render_options(dict): A dictionary with custom kwargs to pass to pd.to_latex(),
@@ -415,8 +422,8 @@ def render_html(body_df, footer_df, notes_html, render_options, show_footer):
         latex_str (str): The resulting string with html tabular code.
 
     """
-    n_levels = body_df.index.nlevels
-    n_columns = len(body_df.columns)
+    n_levels = params.index.nlevels
+    n_columns = len(params.columns)
     default_options = {"index_names": False, "na_rep": "", "justify": "center"}
     html_str = ""
     if render_options:
@@ -424,20 +431,20 @@ def render_html(body_df, footer_df, notes_html, render_options, show_footer):
         if "caption" in default_options:
             html_str += default_options["caption"] + "<br>"
             default_options.pop("caption")
-    html_str += body_df.to_html(**default_options).split("</tbody>\n</table>")[0]
+    html_str += params.to_html(**default_options).split("</tbody>\n</table>")[0]
     if show_footer:
         stats_str = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
             </td></tr>""".format(
             n_levels + n_columns
         )
         stats_str += (
-            footer_df.to_html(**default_options)
+            stats.to_html(**default_options)
             .split("</thead>\n")[1]
             .split("</tbody>\n</table>")[0]
         )
         stats_str = re.sub(r"(?<=[\d)}{)])}", "", re.sub(r"{(?=[}\d(])", "", stats_str))
         html_str += stats_str
-    html_str += notes_html
+    html_str += notes
     html_str += "</tbody>\n</table>"
     return html_str
 
