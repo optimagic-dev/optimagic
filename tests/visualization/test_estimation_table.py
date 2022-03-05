@@ -323,19 +323,20 @@ def test_get_model_names():
 
 
 def test_get_default_column_names_and_groups():
-    m1 = ProcessedModel(params=None, info=None, name="a_name")
-    m2 = ProcessedModel(params=None, info=None, name="a_name")
-    m3 = ProcessedModel(params=None, info=None, name=None)
-    m4 = ProcessedModel(params=None, info=None, name=None)
-    m5 = ProcessedModel(params=None, info=None, name="third_name")
-    models = [m1, m2, m3, m4, m5]
-    res_names, res_groups = _get_default_column_names_and_groups(
-        [mod.name for mod in models]
-    )
-    exp_names = [f"({i+1})" for i in range(len(models))]
+    model_names = ["a_name", "a_name", "(3)", "(4)", "third_name"]
+    res_names, res_groups = _get_default_column_names_and_groups(model_names)
+    exp_names = [f"({i+1})" for i in range(len(model_names))]
     exp_groups = ["a_name", "a_name", "(3)", "(4)", "third_name"]
     assert res_names == exp_names
     assert res_groups == exp_groups
+
+
+def test_get_default_column_names_and_groups_undefined_groups():
+    model_names = ["a_name", "second_name", "(3)", "(4)", "third_name"]
+    res_names, res_groups = _get_default_column_names_and_groups(model_names)
+    exp_names = model_names
+    assert res_names == exp_names
+    assert pd.isna(res_groups)
 
 
 def _read_csv_string(string, index_cols=None):
