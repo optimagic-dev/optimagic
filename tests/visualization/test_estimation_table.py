@@ -10,6 +10,9 @@ from estimagic.visualization.estimation_table import _apply_number_format
 from estimagic.visualization.estimation_table import _convert_frame_to_string_series
 from estimagic.visualization.estimation_table import _create_group_to_col_position
 from estimagic.visualization.estimation_table import _create_statistics_sr
+from estimagic.visualization.estimation_table import (
+    _get_default_column_names_and_groups,
+)
 from estimagic.visualization.estimation_table import _get_digits_after_decimal
 from estimagic.visualization.estimation_table import _get_model_names
 from estimagic.visualization.estimation_table import _process_frame_axes
@@ -317,6 +320,22 @@ def test_get_model_names():
     res = _get_model_names(models)
     exp = ["a_name", "second_name", "(3)", "(4)", "third_name"]
     assert res == exp
+
+
+def test_get_default_column_names_and_groups():
+    m1 = ProcessedModel(params=None, info=None, name="a_name")
+    m2 = ProcessedModel(params=None, info=None, name="a_name")
+    m3 = ProcessedModel(params=None, info=None, name=None)
+    m4 = ProcessedModel(params=None, info=None, name=None)
+    m5 = ProcessedModel(params=None, info=None, name="third_name")
+    models = [m1, m2, m3, m4, m5]
+    res_names, res_groups = _get_default_column_names_and_groups(
+        [mod.name for mod in models]
+    )
+    exp_names = [f"({i+1})" for i in range(len(models))]
+    exp_groups = ["a_name", "a_name", "(3)", "(4)", "third_name"]
+    assert res_names == exp_names
+    assert res_groups == exp_groups
 
 
 def _read_csv_string(string, index_cols=None):
