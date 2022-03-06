@@ -88,9 +88,9 @@ def test_render_latex():
 def test_render_html():
     models = [_process_model(mod) for mod in [est, est1]]
     render_inputs = estimation_table(models, return_type="render_inputs")
-    out_render_latex = render_html(**render_inputs)
+    out_render_html = render_html(**render_inputs)
     out_estimation_table = estimation_table(models, return_type="html")
-    assert out_render_latex == out_estimation_table
+    assert out_render_html == out_estimation_table
 
 
 def test_process_model_namedtuple():
