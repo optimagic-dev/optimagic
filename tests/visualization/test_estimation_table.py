@@ -19,6 +19,7 @@ from estimagic.visualization.estimation_table import _get_model_names
 from estimagic.visualization.estimation_table import _process_frame_indices
 from estimagic.visualization.estimation_table import _process_model
 from estimagic.visualization.estimation_table import estimation_table
+from estimagic.visualization.estimation_table import render_html
 from estimagic.visualization.estimation_table import render_latex
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
@@ -81,6 +82,14 @@ def test_render_latex():
     out_estimation_table = estimation_table(
         models, return_type="latex", siunitx_warning=False
     )
+    assert out_render_latex == out_estimation_table
+
+
+def test_render_html():
+    models = [_process_model(mod) for mod in [est, est1]]
+    render_inputs = estimation_table(models, return_type="render_inputs")
+    out_render_latex = render_html(**render_inputs)
+    out_estimation_table = estimation_table(models, return_type="html")
     assert out_render_latex == out_estimation_table
 
 
