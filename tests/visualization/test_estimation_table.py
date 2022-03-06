@@ -34,20 +34,6 @@ est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).f
 est1 = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:5]])).fit()
 
 
-def _get_test_inputs_models():
-    df = pd.DataFrame(
-        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
-    )
-    df.index = pd.MultiIndex.from_tuples(
-        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")]
-    )
-    info = {"n_obs": 400}
-    mod1 = ProcessedModel(params=df, info=info, name="m1")
-    mod2 = ProcessedModel(params=df, info=info, name="m2")
-    models = [mod1, mod2]
-    return models
-
-
 def test_estimation_table():
     models = [est]
     res = estimation_table(models, return_type="render_inputs", append_notes=False)
@@ -408,3 +394,17 @@ def test_customize_col_groups_default():
 def _read_csv_string(string, index_cols=None):
     string = textwrap.dedent(string)
     return pd.read_csv(io.StringIO(string), index_col=index_cols)
+
+
+def _get_test_inputs_models():
+    df = pd.DataFrame(
+        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
+    )
+    df.index = pd.MultiIndex.from_tuples(
+        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")]
+    )
+    info = {"n_obs": 400}
+    mod1 = ProcessedModel(params=df, info=info, name="m1")
+    mod2 = ProcessedModel(params=df, info=info, name="m2")
+    models = [mod1, mod2]
+    return models
