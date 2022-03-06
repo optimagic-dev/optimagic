@@ -34,6 +34,20 @@ est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).f
 est1 = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:5]])).fit()
 
 
+def _get_test_inputs_models():
+    df = pd.DataFrame(
+        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
+    )
+    df.index = pd.MultiIndex.from_tuples(
+        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")]
+    )
+    info = {"n_obs": 400}
+    mod1 = ProcessedModel(params=df, info=info, name="m1")
+    mod2 = ProcessedModel(params=df, info=info, name="m2")
+    models = [mod1, mod2]
+    return models
+
+
 def test_estimation_table():
     models = [est]
     res = estimation_table(models, return_type="render_inputs", append_notes=False)
@@ -75,21 +89,27 @@ def test_estimation_table():
     afe(exp["params"], res["params"], check_index_type=False)
 
 
-def test_render_latex():
-    models = [_process_model(mod) for mod in [est, est1]]
-    render_inputs = estimation_table(models, return_type="render_inputs")
+def test_render_latex_with_render_inputs_and_estimation_table_with_rt_latex():
+    models = _get_test_inputs_models()
+    render_inputs = estimation_table(
+        models, return_type="render_inputs", confidence_intervals=True
+    )
     out_render_latex = render_latex(siunitx_warning=False, **render_inputs)
     out_estimation_table = estimation_table(
-        models, return_type="latex", siunitx_warning=False
+        models, return_type="latex", siunitx_warning=False, confidence_intervals=True
     )
     assert out_render_latex == out_estimation_table
 
 
-def test_render_html():
-    models = [_process_model(mod) for mod in [est, est1]]
-    render_inputs = estimation_table(models, return_type="render_inputs")
+def test_render_html_with_render_inputs_and_estimation_table_with_rt_html():
+    models = _get_test_inputs_models()
+    render_inputs = estimation_table(
+        models, return_type="render_inputs", confidence_intervals=True
+    )
     out_render_html = render_html(**render_inputs)
-    out_estimation_table = estimation_table(models, return_type="html")
+    out_estimation_table = estimation_table(
+        models, return_type="html", confidence_intervals=True
+    )
     assert out_render_html == out_estimation_table
 
 

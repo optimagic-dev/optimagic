@@ -318,14 +318,18 @@ def render_latex(
     if show_footer:
         if "Observations" in stats.index.get_level_values(0):
             stats = stats.copy(deep=True)
-
-            stats.loc[("Observations",)] = stats.loc[("Observations",)].map(
-                _left_align_tex
+            stats.loc[("Observations",)] = (
+                stats.loc[("Observations",)].apply(_left_align_tex).values
             )
         stats_str = stats.to_latex(**default_options)
-        stats_str = (
-            "\\midrule" + stats_str.split("\\midrule")[1].split("\\bottomrule")[0]
-        )
+        if "\\midrule" in stats_str:
+            stats_str = (
+                "\\midrule" + stats_str.split("\\midrule")[1].split("\\bottomrule")[0]
+            )
+        else:
+            stats_str = (
+                "\\midrule" + stats_str.split("\\toprule")[1].split("\\bottomrule")[0]
+            )
         latex_str += stats_str
     notes = _generate_notes_latex(
         append_notes, notes_label, significance_levels, custom_notes, params
@@ -510,7 +514,7 @@ def _update_render_options(
     render_options, show_col_names, show_col_groups, show_index_names
 ):
     if not render_options:
-        if not (show_col_names and show_col_groups):
+        if not (show_col_names or show_col_groups):
             render_options = {"header": False}
         if show_index_names:
             render_options["index_names"] = True
