@@ -196,11 +196,11 @@ def estimation_table(
             out = params
     else:
         raise TypeError("Invalid return type")
-    if str(return_type).endswith((".html", ".tex")):
+    if not str(return_type).endswith((".html", ".tex")):
+        return out
+    else:
         with open(return_type, "w") as t:
             t.write(out)
-
-    return out
 
 
 def render_latex(
