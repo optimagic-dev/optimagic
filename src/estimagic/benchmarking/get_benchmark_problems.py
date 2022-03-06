@@ -17,6 +17,8 @@ def get_benchmark_problems(
     additive_noise_options=None,
     multiplicative_noise=False,
     multiplicative_noise_options=None,
+    lower_input_dim=None,
+    upper_input_dim=None,
 ):
     """Get a dictionary of test problems for a benchmark.
 
@@ -60,6 +62,9 @@ def get_benchmark_problems(
 
     """
     raw_problems = _get_raw_problems(name)
+    raw_problems = _filter_problems_by_input_dim(
+        raw_problems, lower_input_dim, upper_input_dim
+    )
 
     if additive_noise:
         additive_options = _process_noise_options(additive_noise_options, False)
@@ -123,6 +128,19 @@ def _get_raw_problems(name):
     else:
         raise NotImplementedError()
     return raw_problems
+
+
+def _filter_problems_by_input_dim(problems, lower_input_dim, upper_input_dim):
+    lower = lower_input_dim or 0
+    upper = upper_input_dim or np.inf
+    if lower > upper:
+        raise ValueError("lower_input_dim must be smaller than upper_input_dim.")
+    filtered = {
+        name: problem
+        for name, problem in problems.items()
+        if (lower <= len(problem["start_x"]) <= upper)
+    }
+    return filtered
 
 
 def _create_problem_inputs(

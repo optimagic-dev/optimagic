@@ -649,16 +649,65 @@ def zakharov(x):
 SCALAR_FUNCTIONS_PROBLEMS = {
     "ackley_good_start": {
         "criterion": ackley,
-        "start_x": np.full(10, 3),
+        "start_x": np.full(10, 0.45),
         "solution_x": np.zeros(10),
-        "start_criterion": 9.023767278119472,
+        "start_criterion": 4.053325482003931,
+        "solution_criterion": 0,
+    },
+    "ackley_good_start2": {
+        "criterion": ackley,
+        "start_x": np.full(10, 0.65),
+        "solution_x": np.zeros(10),
+        "start_criterion": 4.60081686970857,
         "solution_criterion": 0,
     },
     "ackley_bad_start": {
         "criterion": ackley,
-        "start_x": np.full(10, 30),
+        "start_x": np.full(10, 1),
         "solution_x": np.zeros(10),
-        "start_criterion": 19.950424956466673,
+        "start_criterion": 3.6253849384403627,
+        "solution_criterion": 0,
+    },
+    "ackley_good_start_3": {
+        "criterion": ackley,
+        "start_x": np.full(100, 0.45),
+        "solution_x": np.zeros(100),
+        "start_criterion": 4.053325482003931,
+        "solution_criterion": 0,
+    },
+    "ackley_good_start_4": {
+        "criterion": ackley,
+        "start_x": np.full(100, 0.65),
+        "solution_x": np.zeros(100),
+        "start_criterion": 4.60081686970857,
+        "solution_criterion": 0,
+    },
+    "ackley_bad_start_2": {
+        "criterion": ackley,
+        "start_x": np.full(100, 1),
+        "solution_x": np.zeros(100),
+        "start_criterion": 3.6253849384403627,
+        "solution_criterion": 0,
+    },
+    "ackley_good_start_5": {
+        "criterion": ackley,
+        "start_x": np.full(4, 0.45),
+        "solution_x": np.zeros(4),
+        "start_criterion": 4.053325482003931,
+        "solution_criterion": 0,
+    },
+    "ackley_good_start_6": {
+        "criterion": ackley,
+        "start_x": np.full(4, 0.65),
+        "solution_x": np.zeros(4),
+        "start_criterion": 4.60081686970857,
+        "solution_criterion": 0,
+    },
+    "ackley_bad_start_3": {
+        "criterion": ackley,
+        "start_x": np.full(4, 1),
+        "solution_x": np.zeros(4),
+        "start_criterion": 3.6253849384403627,
         "solution_criterion": 0,
     },
     "ackley2_good_start": {
@@ -928,6 +977,56 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_x": np.full(2, 8),
         "solution_x": np.array([1, 1 / np.sqrt(2)]),
         "start_criterion": 28849,
+        "solution_criterion": 0,
+    },
+    "dixonprice_start_3": {
+        "criterion": dixonprice,
+        "start_x": np.full(10, 2),
+        "solution_x": np.array(
+            [2 ** (-(2**i - 2) * (2**-i)) for i in range(1, 11)]
+        ),
+        "start_criterion": 1945,
+        "solution_criterion": 0,
+    },
+    "dixonprice_start_4": {
+        "criterion": dixonprice,
+        "start_x": np.full(10, 8),
+        "solution_x": np.array(
+            [2 ** (-(2**i - 2) * (2**-i)) for i in range(1, 11)]
+        ),
+        "start_criterion": 777649,
+        "solution_criterion": 0,
+    },
+    "dixonprice_start_5": {
+        "criterion": dixonprice,
+        "start_x": np.full(100, 2),
+        "solution_x": np.array(
+            [2 ** (-(2**i - 2) * (2**-i)) for i in range(1, 101)]
+        ),
+        "start_criterion": 181765,
+        "solution_criterion": 0,
+    },
+    "dixonprice_start_6": {
+        "criterion": dixonprice,
+        "start_x": np.full(100, 8),
+        "solution_x": np.array(
+            [2 ** (-(2**i - 2) * (2**-i)) for i in range(1, 101)]
+        ),
+        "start_criterion": 72705649,
+        "solution_criterion": 0,
+    },
+    "dixonprice_start_7": {
+        "criterion": dixonprice,
+        "start_x": np.full(5, 2),
+        "solution_x": np.array([2 ** (-(2**i - 2) * (2**-i)) for i in range(1, 6)]),
+        "start_criterion": 505,
+        "solution_criterion": 0,
+    },
+    "dixonprice_start_8": {
+        "criterion": dixonprice,
+        "start_x": np.full(5, 8),
+        "solution_x": np.array([2 ** (-(2**i - 2) * (2**-i)) for i in range(1, 6)]),
+        "start_criterion": 201649,
         "solution_criterion": 0,
     },
     "dropwave_good_start": {
@@ -1648,22 +1747,22 @@ SCALAR_FUNCTIONS_PROBLEMS = {
 SCALAR_FUNCTIONS_EXTRA_PROBLEMS = {
     "forrester": {
         "criterion": forrester,
-        "start_x": 0.4,
-        "solution_x": 0.757249,
+        "start_x": np.array([0.4]),
+        "solution_x": np.array([0.757249]),
         "start_criterion": 0.11477697454392392,
         "solution_criterion": -6.020740055735769,
     },
     "gramacylee_good_start": {
         "criterion": gramacylee,
-        "start_x": 0.65,
-        "solution_x": 0.548563444,
+        "start_x": np.array([0.65]),
+        "solution_x": np.array([0.548563444]),
         "start_criterion": 0.7842370192307692,
         "solution_criterion": -0.8690111349894997,
     },
     "gramacylee_bad_start": {
         "criterion": gramacylee,
-        "start_x": 2,
-        "solution_x": 0.548563444,
+        "start_x": np.array([2]),
+        "solution_x": np.array([0.548563444]),
         "start_criterion": 0.9999999999999993,
         "solution_criterion": -0.8690111349894997,
     },
@@ -1705,7 +1804,7 @@ SCALAR_FUNCTIONS_EXTRA_PROBLEMS = {
     "xinsheyang_solution": {
         "criterion": xinsheyang,
         "start_x": np.full(4, 10),
-        "solution_x": np.zeros(10),
+        "solution_x": np.zeros(4),
         "start_criterion": 5475.503552177131,
         "solution_criterion": 0,
     },
