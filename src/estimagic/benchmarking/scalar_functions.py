@@ -45,10 +45,12 @@ def ackley3(x):
 
 
 def ackley4(x):
-    x_1, x_2 = x
     out = np.sum(
-        np.exp(-0.2) * np.sqrt(x_1**2 + x_2**2)
-        + 3 * (np.cos(2 * x_1) + np.sin(2 * x_2))
+        [
+            np.exp(-0.2) * np.sqrt(x[i] ** 2 + x[i + 1] ** 2)
+            + 3 * (np.cos(2 * x[i]) + np.sin(2 * x[i + 1]))
+            for i in range(len(x) - 1)
+        ]
     )
     return out
 
@@ -150,14 +152,24 @@ def branin(x):
 
 
 def brent(x):
-    x_1, x_2 = x
-    out = (x_1 + 10) ** 2 + (x_2 + 10) ** 2 + np.exp(-(x_1**2) - x_2**2)
+    out = np.sum(
+        [
+            (x[i] + 10) ** 2
+            + (x[i + 1] + 10) ** 2
+            + np.exp(-(x[i] ** 2) - x[i + 1] ** 2)
+            for i in range(len(x) - 1)
+        ]
+    )
     return out
 
 
 def brown(x):
-    x_1, x_2 = x
-    out = np.sum((x_1**2) ** (x_2**2 + 1) + (x_2**2) ** (x_1**2 + 1))
+    out = np.sum(
+        [
+            (x[i] ** 2) ** (x[i + 1] ** 2 + 1) + (x[i + 1] ** 2) ** (x[i] ** 2 + 1)
+            for i in range(len(x) - 1)
+        ]
+    )
     return out
 
 
@@ -740,18 +752,66 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "ackley4_good_start": {
         "criterion": ackley4,
-        "start_x": np.full(2, 3),
+        "start_x": np.full(2, 0.5),
         # no unique solution
         "solution_x": None,
-        "start_criterion": 5.515844770158779,
+        "start_criterion": 4.724249939495519,
         "solution_criterion": -4.5901006651507235,
     },
     "ackley4_bad_start": {
         "criterion": ackley4,
-        "start_x": np.full(2, 25),
+        "start_x": np.full(2, 0.8),
         # no unique solution
         "solution_x": None,
-        "start_criterion": 31.054276897735043,
+        "start_criterion": 3.837410350168504,
+        "solution_criterion": -4.5901006651507235,
+    },
+    "ackley4_good_start_2": {
+        "criterion": ackley4,
+        "start_x": np.full(10, 0.5),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 42.518249455459674,
+        "solution_criterion": -4.5901006651507235,
+    },
+    "ackley4_bad_start_2": {
+        "criterion": ackley4,
+        "start_x": np.full(10, 0.8),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 34.53669315151654,
+        "solution_criterion": -4.5901006651507235,
+    },
+    "ackley4_good_start_3": {
+        "criterion": ackley4,
+        "start_x": np.full(100, 0.5),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 467.70074401005644,
+        "solution_criterion": -4.5901006651507235,
+    },
+    "ackley4_bad_start_3": {
+        "criterion": ackley4,
+        "start_x": np.full(100, 0.8),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 379.90362466668194,
+        "solution_criterion": -4.5901006651507235,
+    },
+    "ackley4_good_start_4": {
+        "criterion": ackley4,
+        "start_x": np.full(5, 0.5),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 18.896999757982076,
+        "solution_criterion": -4.5901006651507235,
+    },
+    "ackley4_bad_start_4": {
+        "criterion": ackley4,
+        "start_x": np.full(5, 0.8),
+        # no unique solution
+        "solution_x": None,
+        "start_criterion": 15.349641400674017,
         "solution_criterion": -4.5901006651507235,
     },
     "adjiman": {
@@ -773,6 +833,34 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_x": np.full(10, 10),
         "solution_x": np.zeros(10),
         "start_criterion": 44.40211108893698,
+        "solution_criterion": 0,
+    },
+    "alpine1_good_start_2": {
+        "criterion": alpine1,
+        "start_x": np.full(100, 2),
+        "solution_x": np.zeros(100),
+        "start_criterion": 201.8594853651364,
+        "solution_criterion": 0,
+    },
+    "alpine1_bad_start_2": {
+        "criterion": alpine1,
+        "start_x": np.full(100, 10),
+        "solution_x": np.zeros(100),
+        "start_criterion": 444.02111088936994,
+        "solution_criterion": 0,
+    },
+    "alpine1_good_start_3": {
+        "criterion": alpine1,
+        "start_x": np.full(5, 2),
+        "solution_x": np.zeros(5),
+        "start_criterion": 10.092974268256818,
+        "solution_criterion": 0,
+    },
+    "alpine1_bad_start_3": {
+        "criterion": alpine1,
+        "start_x": np.full(5, 10),
+        "solution_x": np.zeros(5),
+        "start_criterion": 22.20105554446849,
         "solution_criterion": 0,
     },
     "alpine2_good_start": {
@@ -889,6 +977,27 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_x": np.full(2, 0.75),
         "solution_x": np.zeros(2),
         "start_criterion": 0.8139475940290111,
+        "solution_criterion": 0,
+    },
+    "brown_2": {
+        "criterion": brown,
+        "start_x": np.full(5, 0.75),
+        "solution_x": np.zeros(5),
+        "start_criterion": 3.2557903761160443,
+        "solution_criterion": 0,
+    },
+    "brown_3": {
+        "criterion": brown,
+        "start_x": np.full(10, 0.75),
+        "solution_x": np.zeros(10),
+        "start_criterion": 7.3255283462611,
+        "solution_criterion": 0,
+    },
+    "brown_4": {
+        "criterion": brown,
+        "start_x": np.full(100, 0.75),
+        "solution_x": np.zeros(100),
+        "start_criterion": 80.58081180887214,
         "solution_criterion": 0,
     },
     "bukin6_start_1": {
@@ -1094,9 +1203,30 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "exponential": {
         "criterion": exponential,
-        "start_x": np.full(2, 0.5),
+        "start_x": np.full(2, 1),
         "solution_x": np.zeros(2),
-        "start_criterion": -0.7788007830714049,
+        "start_criterion": -0.36787944117144233,
+        "solution_criterion": -1,
+    },
+    "exponential_2": {
+        "criterion": exponential,
+        "start_x": np.full(5, 1),
+        "solution_x": np.zeros(5),
+        "start_criterion": -0.0820849986238988,
+        "solution_criterion": -1,
+    },
+    "exponential_3": {
+        "criterion": exponential,
+        "start_x": np.full(10, 1),
+        "solution_x": np.zeros(10),
+        "start_criterion": -0.006737946999085467,
+        "solution_criterion": -1,
+    },
+    "exponential_4": {
+        "criterion": exponential,
+        "start_x": np.full(100, 1),
+        "solution_x": np.zeros(100),
+        "start_criterion": 0,
         "solution_criterion": -1,
     },
     "goldsteinprice_good_start": {
@@ -1115,16 +1245,44 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "griewank_good_start": {
         "criterion": griewank,
-        "start_x": np.full(10, 3),
+        "start_x": np.full(10, 1),
         "solution_x": np.zeros(10),
-        "start_criterion": 1.0225294825857276,
+        "start_criterion": 0.8067591547236139,
         "solution_criterion": 0,
     },
     "griewank_bad_start": {
         "criterion": griewank,
-        "start_x": np.full(10, 15),
+        "start_x": np.full(10, 1.5),
         "solution_x": np.zeros(10),
-        "start_criterion": 1.5627598318159033,
+        "start_criterion": 0.9996629460930679,
+        "solution_criterion": 0,
+    },
+    "griewank_good_start_2": {
+        "criterion": griewank,
+        "start_x": np.full(5, 1),
+        "solution_x": np.zeros(5),
+        "start_criterion": 0.728906414277732,
+        "solution_criterion": 0,
+    },
+    "griewank_bad_start_2": {
+        "criterion": griewank,
+        "start_x": np.full(5, 1.5),
+        "solution_x": np.zeros(5),
+        "start_criterion": 0.9899870375792171,
+        "solution_criterion": 0,
+    },
+    "griewank_good_start_3": {
+        "criterion": griewank,
+        "start_x": np.full(100, 1),
+        "solution_x": np.zeros(100),
+        "start_criterion": 0.9621730478304447,
+        "solution_criterion": 0,
+    },
+    "griewank_bad_start_3": {
+        "criterion": griewank,
+        "start_x": np.full(100, 1.5),
+        "solution_x": np.zeros(100),
+        "start_criterion": 1.0557972571754484,
         "solution_criterion": 0,
     },
     "happycat_good_start": {
@@ -1134,11 +1292,60 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_criterion": 10.5,
         "solution_criterion": 0,
     },
+    "happycat_good_start_2": {
+        "criterion": happycat,
+        "start_x": np.full(10, -2),
+        "solution_x": np.full(10, -1),
+        "start_criterion": 30.500000000000007,
+        "solution_criterion": 0,
+    },
     "happycat_bad_start": {
         "criterion": happycat,
         "start_x": np.full(10, 2),
         "solution_x": np.full(10, -1),
         "start_criterion": 34.50000000000001,
+        "solution_criterion": 0,
+    },
+    "happycat_good_start_3": {
+        "criterion": happycat,
+        "start_x": np.zeros(5),
+        "solution_x": np.full(5, -1),
+        "start_criterion": 5.5,
+        "solution_criterion": 0,
+    },
+    "happycat_good_start_4": {
+        "criterion": happycat,
+        "start_x": np.full(5, -2),
+        "solution_x": np.full(5, -1),
+        "start_criterion": 15.500000000000004,
+        "solution_criterion": 0,
+    },
+    "happycat_bad_start_2": {
+        "criterion": happycat,
+        "start_x": np.full(5, 2),
+        "solution_x": np.full(5, -1),
+        "start_criterion": 19.500000000000004,
+        "solution_criterion": 0,
+    },
+    "happycat_good_start_5": {
+        "criterion": happycat,
+        "start_x": np.zeros(100),
+        "solution_x": np.full(100, -1),
+        "start_criterion": 100.5,
+        "solution_criterion": 0,
+    },
+    "happycat_good_start_6": {
+        "criterion": happycat,
+        "start_x": np.full(100, -2),
+        "solution_x": np.full(100, -1),
+        "start_criterion": 300.5,
+        "solution_criterion": 0,
+    },
+    "happycat_bad_start_3": {
+        "criterion": happycat,
+        "start_x": np.full(100, 2),
+        "solution_x": np.full(100, -1),
+        "start_criterion": 304.5,
         "solution_criterion": 0,
     },
     "himmelblau_good_start": {
@@ -1336,88 +1543,270 @@ SCALAR_FUNCTIONS_PROBLEMS = {
         "start_criterion": 23972.078125,
         "solution_criterion": 0,
     },
-    "powell_good_start": {
+    "powell_start": {
         "criterion": powell,
-        "start_x": np.full(2, 0.75),
+        "start_x": np.ones(2),
         "solution_x": np.zeros(2),
-        "start_criterion": 0.984375,
+        "start_criterion": 2,
         "solution_criterion": 0,
     },
-    "powell_bad_start": {
+    "powell_start_2": {
         "criterion": powell,
-        "start_x": np.full(10, -1),
+        "start_x": np.ones(5),
+        "solution_x": np.zeros(5),
+        "start_criterion": 5,
+        "solution_criterion": 0,
+    },
+    "powell_start_3": {
+        "criterion": powell,
+        "start_x": np.ones(10),
         "solution_x": np.zeros(10),
         "start_criterion": 10,
         "solution_criterion": 0,
     },
+    "powell_start_4": {
+        "criterion": powell,
+        "start_x": np.ones(100),
+        "solution_x": np.zeros(100),
+        "start_criterion": 100,
+        "solution_criterion": 0,
+    },
     "qing_good_start": {
         "criterion": qing,
-        "start_x": np.array([1.5, 1.5, 1.5, 1.5]),
-        "solution_x": np.array([2, 2, 2, 2]),
+        "start_x": np.full(4, 1.5),
+        "solution_x": np.array([np.sqrt(i) for i in range(1, 5)]),
         "start_criterion": 3.0625,
         "solution_criterion": 0,
     },
     "qing_bad_start": {
         "criterion": qing,
-        "start_x": np.array([10, 10, 10, 10]),
-        "solution_x": np.array([2, 2, 2, 2]),
-        "start_criterion": 9216,
+        "start_x": np.full(4, 45),
+        "solution_x": np.array([np.sqrt(i) for i in range(1, 5)]),
+        "start_criterion": 4084441,
+        "solution_criterion": 0,
+    },
+    "qing_good_start_2": {
+        "criterion": qing,
+        "start_x": np.full(10, 1.5),
+        "solution_x": np.array([np.sqrt(i) for i in range(1, 11)]),
+        "start_criterion": 60.0625,
+        "solution_criterion": 0,
+    },
+    "qing_bad_start_2": {
+        "criterion": qing,
+        "start_x": np.full(10, 45),
+        "solution_x": np.array([np.sqrt(i) for i in range(1, 11)]),
+        "start_criterion": 4060225,
+        "solution_criterion": 0,
+    },
+    "qing_good_start_3": {
+        "criterion": qing,
+        "start_x": np.full(100, 1.5),
+        "solution_x": np.array([np.sqrt(i) for i in range(1, 101)]),
+        "start_criterion": 9555.0625,
+        "solution_criterion": 0,
+    },
+    "qing_bad_start_3": {
+        "criterion": qing,
+        "start_x": np.full(100, 45),
+        "solution_x": np.array([np.sqrt(i) for i in range(1, 101)]),
+        "start_criterion": 3705625,
         "solution_criterion": 0,
     },
     "rastrigin_good_start": {
         "criterion": rastrigin,
-        "start_x": np.full(9, 0.01),
-        "solution_x": np.zeros(9),
-        "start_criterion": 0.17849444145555537,
+        "start_x": np.full(5, 0.01),
+        "solution_x": np.zeros(5),
+        "start_criterion": 0.09916357858642044,
         "solution_criterion": 0,
     },
     "rastrigin_bad_start": {
         "criterion": rastrigin,
-        "start_x": np.full(9, 3),
-        "solution_x": np.zeros(9),
-        "start_criterion": 81,
+        "start_x": np.full(5, 0.5),
+        "solution_x": np.zeros(5),
+        "start_criterion": 101.25,
+        "solution_criterion": 0,
+    },
+    "rastrigin_good_start_2": {
+        "criterion": rastrigin,
+        "start_x": np.full(10, 0.01),
+        "solution_x": np.zeros(10),
+        "start_criterion": 0.19832715717284088,
+        "solution_criterion": 0,
+    },
+    "rastrigin_bad_start_2": {
+        "criterion": rastrigin,
+        "start_x": np.full(10, 0.5),
+        "solution_x": np.zeros(10),
+        "start_criterion": 202.5,
+        "solution_criterion": 0,
+    },
+    "rastrigin_good_start_3": {
+        "criterion": rastrigin,
+        "start_x": np.full(100, 0.01),
+        "solution_x": np.zeros(100),
+        "start_criterion": 1.9832715717283236,
+        "solution_criterion": 0,
+    },
+    "rastrigin_bad_start_3": {
+        "criterion": rastrigin,
+        "start_x": np.full(100, 0.5),
+        "solution_x": np.zeros(100),
+        "start_criterion": 2025,
         "solution_criterion": 0,
     },
     "rosenbrock_good_start": {
         "criterion": rosenbrock,
-        "start_x": np.full(3, 0.5),
-        "solution_x": np.full(3, 1),
+        "start_x": np.full(5, 0.5),
+        "solution_x": np.full(5, 1),
         "start_criterion": 6.5,
         "solution_criterion": 0,
     },
     "rosenbrock_bad_start": {
         "criterion": rosenbrock,
-        "start_x": np.full(10, -1.5),
+        "start_x": np.full(5, 10),
+        "solution_x": np.full(5, 1),
+        "start_criterion": 810081,
+        "solution_criterion": 0,
+    },
+    "rosenbrock_good_start_2": {
+        "criterion": rosenbrock,
+        "start_x": np.full(10, 0.5),
         "solution_x": np.full(10, 1),
-        "start_criterion": 1412.5,
+        "start_criterion": 6.5,
+        "solution_criterion": 0,
+    },
+    "rosenbrock_bad_start_2": {
+        "criterion": rosenbrock,
+        "start_x": np.full(10, 10),
+        "solution_x": np.full(10, 1),
+        "start_criterion": 810081,
+        "solution_criterion": 0,
+    },
+    "rosenbrock_good_start_3": {
+        "criterion": rosenbrock,
+        "start_x": np.full(100, 0.5),
+        "solution_x": np.full(100, 1),
+        "start_criterion": 6.5,
+        "solution_criterion": 0,
+    },
+    "rosenbrock_bad_start_3": {
+        "criterion": rosenbrock,
+        "start_x": np.full(100, 10),
+        "solution_x": np.full(100, 1),
+        "start_criterion": 810081,
         "solution_criterion": 0,
     },
     "rotatedhyperellipsoid_good_start": {
         "criterion": rotatedhyperellipsoid,
-        "start_x": np.full(2, -0.25),
+        "start_x": np.full(2, 1),
         "solution_x": np.zeros(2),
-        "start_criterion": 0.1875,
+        "start_criterion": 3,
         "solution_criterion": 0,
     },
     "rotatedhyperellipsoid_bad_start": {
         "criterion": rotatedhyperellipsoid,
-        "start_x": np.full(3, -60),
-        "solution_x": np.zeros(3),
-        "start_criterion": 21600,
+        "start_x": np.full(2, 60),
+        "solution_x": np.zeros(2),
+        "start_criterion": 10800,
+        "solution_criterion": 0,
+    },
+    "rotatedhyperellipsoid_good_start_2": {
+        "criterion": rotatedhyperellipsoid,
+        "start_x": np.full(5, 1),
+        "solution_x": np.zeros(5),
+        "start_criterion": 15,
+        "solution_criterion": 0,
+    },
+    "rotatedhyperellipsoid_bad_start_2": {
+        "criterion": rotatedhyperellipsoid,
+        "start_x": np.full(5, 60),
+        "solution_x": np.zeros(5),
+        "start_criterion": 54000,
+        "solution_criterion": 0,
+    },
+    "rotatedhyperellipsoid_good_start_3": {
+        "criterion": rotatedhyperellipsoid,
+        "start_x": np.full(10, 1),
+        "solution_x": np.zeros(10),
+        "start_criterion": 55,
+        "solution_criterion": 0,
+    },
+    "rotatedhyperellipsoid_bad_start_3": {
+        "criterion": rotatedhyperellipsoid,
+        "start_x": np.full(10, 60),
+        "solution_x": np.zeros(10),
+        "start_criterion": 198000,
+        "solution_criterion": 0,
+    },
+    "rotatedhyperellipsoid_good_start_4": {
+        "criterion": rotatedhyperellipsoid,
+        "start_x": np.full(100, 1),
+        "solution_x": np.zeros(100),
+        "start_criterion": 5050,
+        "solution_criterion": 0,
+    },
+    "rotatedhyperellipsoid_bad_start_4": {
+        "criterion": rotatedhyperellipsoid,
+        "start_x": np.full(100, 60),
+        "solution_x": np.zeros(100),
+        "start_criterion": 18180000,
         "solution_criterion": 0,
     },
     "salomon_good_start": {
         "criterion": salomon,
-        "start_x": np.full(2, 0.71),
+        "start_x": np.full(2, 0.1),
         "solution_x": np.zeros(2),
-        "start_criterion": 0.10073960731443472,
+        "start_criterion": 0.38362465351365477,
         "solution_criterion": 0,
     },
     "salomon_bad_start": {
         "criterion": salomon,
-        "start_x": np.full(10, 3),
+        "start_x": np.full(2, 0.5),
+        "solution_x": np.zeros(2),
+        "start_criterion": 1.3369660201600706,
+        "solution_criterion": 0,
+    },
+    "salomon_good_start_2": {
+        "criterion": salomon,
+        "start_x": np.full(5, 0.1),
+        "solution_x": np.zeros(5),
+        "start_criterion": 0.8572863440104372,
+        "solution_criterion": 0,
+    },
+    "salomon_bad_start_2": {
+        "criterion": salomon,
+        "start_x": np.full(5, 0.5),
+        "solution_x": np.zeros(5),
+        "start_criterion": 0.37443452079666983,
+        "solution_criterion": 0,
+    },
+    "salomon_good_start_3": {
+        "criterion": salomon,
+        "start_x": np.full(10, 0.1),
         "solution_x": np.zeros(10),
-        "start_criterion": 2.945263054935206,
+        "start_criterion": 1.435838597348861,
+        "solution_criterion": 0,
+    },
+    "salomon_bad_start_3": {
+        "criterion": salomon,
+        "start_x": np.full(10, 0.5),
+        "solution_x": np.zeros(10),
+        "start_criterion": 2.0309509797209184,
+        "solution_criterion": 0,
+    },
+    "salomon_good_start_4": {
+        "criterion": salomon,
+        "start_x": np.full(100, 0.1),
+        "solution_x": np.zeros(100),
+        "start_criterion": 0.10000000000000003,
+        "solution_criterion": 0,
+    },
+    "salomon_bad_start_4": {
+        "criterion": salomon,
+        "start_x": np.full(100, 0.5),
+        "solution_x": np.zeros(100),
+        "start_criterion": 0.5,
         "solution_criterion": 0,
     },
     "schaffer1_good_start": {
@@ -1513,8 +1902,8 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "schwefel2_21_bad_start": {
         "criterion": schwefel2_21,
-        "start_x": np.full(2, 100),
-        "solution_x": np.zeros(2),
+        "start_x": np.full(10, 100),
+        "solution_x": np.zeros(10),
         "start_criterion": 100,
         "solution_criterion": 0,
     },
