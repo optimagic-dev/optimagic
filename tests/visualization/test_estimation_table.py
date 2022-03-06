@@ -78,7 +78,7 @@ def test_estimation_table():
 def test_render_latex():
     models = [_process_model(mod) for mod in [est, est1]]
     render_inputs = estimation_table(models, return_type="render_inputs")
-    out_render_latex = render_latex(**render_inputs, siunitx_warning=False)
+    out_render_latex = render_latex(siunitx_warning=False, **render_inputs)
     out_estimation_table = estimation_table(
         models, return_type="latex", siunitx_warning=False
     )
