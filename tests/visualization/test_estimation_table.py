@@ -19,6 +19,7 @@ from estimagic.visualization.estimation_table import _get_model_names
 from estimagic.visualization.estimation_table import _process_frame_indices
 from estimagic.visualization.estimation_table import _process_model
 from estimagic.visualization.estimation_table import estimation_table
+from estimagic.visualization.estimation_table import render_latex
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 
@@ -29,6 +30,7 @@ fix_path = EXAMPLE_DIR / "diabetes.csv"
 
 df_ = pd.read_csv(fix_path, index_col=0)
 est = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:4]])).fit()
+est1 = sm.OLS(endog=df_["target"], exog=sm.add_constant(df_[df_.columns[0:5]])).fit()
 
 
 def test_estimation_table():
@@ -70,8 +72,16 @@ def test_estimation_table():
         </td></tr>"""
     afe(exp["stats"], res["stats"])
     afe(exp["params"], res["params"], check_index_type=False)
-    ase(pd.Series(exp["notes_html"]), pd.Series(res["notes_html"]))
-    ase(pd.Series(exp["notes_tex"]), pd.Series(res["notes_tex"]))
+
+
+def test_render_latex():
+    models = [_process_model(mod) for mod in [est, est1]]
+    render_inputs = estimation_table(models, return_type="render_inputs")
+    out_render_latex = render_latex(**render_inputs, siunitx_warning=False)
+    out_estimation_table = estimation_table(
+        models, return_type="latex", siunitx_warning=False
+    )
+    assert out_render_latex == out_estimation_table
 
 
 def test_process_model_namedtuple():
@@ -333,13 +343,11 @@ def test_create_group_to_col_position():
 
 def test_get_model_names():
     m1 = ProcessedModel(params=None, info=None, name="a_name")
-    m2 = ProcessedModel(params=None, info=None, name="second_name")
     m3 = ProcessedModel(params=None, info=None, name=None)
-    m4 = ProcessedModel(params=None, info=None, name=None)
     m5 = ProcessedModel(params=None, info=None, name="third_name")
-    models = [m1, m2, m3, m4, m5]
+    models = [m1, m3, m5]
     res = _get_model_names(models)
-    exp = ["a_name", "second_name", "(3)", "(4)", "third_name"]
+    exp = ["a_name", "(2)", "third_name"]
     assert res == exp
 
 

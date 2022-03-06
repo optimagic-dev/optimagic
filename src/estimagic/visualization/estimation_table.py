@@ -155,13 +155,18 @@ def estimation_table(
     render_options = _update_render_options(
         render_options, show_col_names, show_col_groups, show_index_names
     )
+    render_inputs = {
+        "params": params,
+        "stats": stats,
+        "right_decimals": max_trail,
+        "render_options": render_options,
+    }
+    if return_type == "render_inputs":
+        out = render_inputs
     # check return_type and get the output
-    if str(return_type).endswith("tex"):
+    elif str(return_type).endswith("tex"):
         out = render_latex(
-            params=params,
-            stats=stats,
-            right_decimals=max_trail,
-            render_options=render_options,
+            **render_inputs,
             padding=padding,
             show_footer=show_footer,
             append_notes=append_notes,
@@ -173,28 +178,14 @@ def estimation_table(
         )
     elif str(return_type).endswith("html"):
         out = render_html(
-            params=params,
-            stats=stats,
-            render_options=render_options,
+            **render_inputs,
             show_footer=show_footer,
             append_notes=append_notes,
             notes_label=notes_label,
             custom_notes=custom_notes,
             significance_levels=significance_levels,
         )
-    elif return_type == "render_inputs":
-        out = {
-            "params": params,
-            "stats": stats,
-            "notes_tex": _generate_notes_latex(
-                append_notes, notes_label, significance_levels, custom_notes, params
-            ),
-            "latex_right_decimals": max_trail,
-            "notes_html": _generate_notes_html(
-                append_notes, notes_label, significance_levels, custom_notes, params
-            ),
-            "render_options": render_options,
-        }
+
     elif return_type == "dataframe":
         if show_footer:
             stats.index.names = params.index.names
@@ -355,6 +346,7 @@ def render_html(
     notes_label="Note:",
     custom_notes=None,
     significance_levels=(0.1, 0.05, 0.01),
+    **kwargs,
 ):
     """Return estimation table in html format as string.
 
