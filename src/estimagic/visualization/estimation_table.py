@@ -319,7 +319,7 @@ def render_latex(
         if "Observations" in stats.index.get_level_values(0):
             stats = stats.copy(deep=True)
 
-            stats.loc["Observations"] = stats.loc["Observations"].applymap(
+            stats.loc[("Observations",)] = stats.loc[("Observations",)].map(
                 _left_align_tex
             )
         stats_str = stats.to_latex(**default_options)
