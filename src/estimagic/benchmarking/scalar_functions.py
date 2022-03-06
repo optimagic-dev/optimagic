@@ -1296,16 +1296,16 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "periodic_good_start": {
         "criterion": periodic,
-        "start_x": np.full(1, 0.001),
+        "start_x": np.full(2, 0.001),
         "solution_x": np.zeros(2),
-        "start_criterion": 0.9000010999996166,
+        "start_criterion": 0.9000021999991332,
         "solution_criterion": 0.9,
     },
     "periodic_bad_start": {
         "criterion": periodic,
-        "start_x": np.full(10, 20),
+        "start_x": np.full(2, 20),
         "solution_x": np.zeros(2),
-        "start_criterion": 9.33469030826131,
+        "start_criterion": 2.666938061652262,
         "solution_criterion": 0.9,
     },
     "permzerodbeta_good_start": {
@@ -1352,23 +1352,23 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "qing_good_start": {
         "criterion": qing,
-        "start_x": np.array([1.5, 1.5]),
+        "start_x": np.array([1.5, 1.5, 1.5, 1.5]),
         "solution_x": np.array([2, 2, 2, 2]),
-        "start_criterion": 0.0625,
+        "start_criterion": 3.0625,
         "solution_criterion": 0,
     },
     "qing_bad_start": {
         "criterion": qing,
-        "start_x": np.array([10, 10]),
+        "start_x": np.array([10, 10, 10, 10]),
         "solution_x": np.array([2, 2, 2, 2]),
-        "start_criterion": 9604,
+        "start_criterion": 9216,
         "solution_criterion": 0,
     },
     "rastrigin_good_start": {
         "criterion": rastrigin,
-        "start_x": np.full(1, 0.15),
+        "start_x": np.full(9, 0.01),
         "solution_x": np.zeros(9),
-        "start_criterion": 4.144647477075267,
+        "start_criterion": 0.17849444145555537,
         "solution_criterion": 0,
     },
     "rastrigin_bad_start": {
@@ -1667,9 +1667,9 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "thevenot_bad_start": {
         "criterion": thevenot,
-        "start_x": np.full(1, 10),
+        "start_x": np.full(10, 10),
         "solution_x": np.zeros(10),
-        "start_criterion": 0.9828079689867767,
+        "start_criterion": 0.8407883636280297,
         "solution_criterion": -1,
     },
     "trid_good_start": {
@@ -1716,16 +1716,16 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "xinsheyang4_good_start": {
         "criterion": xinsheyang4,
-        "start_x": np.zeros(1),
+        "start_x": np.full(2, -0.25),
         "solution_x": np.zeros(2),
-        "start_criterion": -1,
+        "start_criterion": -1.0372451149142845,
         "solution_criterion": -2,
     },
     "xinsheyang4_bad_start": {
         "criterion": xinsheyang4,
-        "start_x": np.full(20, 4),
+        "start_x": np.full(2, 4),
         "solution_x": np.zeros(2),
-        "start_criterion": 7.538971657276083e-07,
+        "start_criterion": 0.21919306362884822,
         "solution_criterion": -2,
     },
     "zakharov_good_start": {
