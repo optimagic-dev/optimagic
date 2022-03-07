@@ -268,6 +268,13 @@ def render_latex(
                     alignment_warning = False"""
             )
     params = params.copy(deep=True)
+    try:
+        ci_in_params = params.loc[("",)][params.columns[0]].str.contains(";").any()
+    except KeyError:
+        ci_in_params = False
+
+    if ci_in_params:
+        params.loc[("",)] = params.loc[("",)].applymap("{{{}}}".format).values
     if params.columns.nlevels > 1:
         column_groups = params.columns.get_level_values(0)
     else:
@@ -802,11 +809,11 @@ def _convert_frame_to_string_series(
     if "ci_lower" in df:
         ci_lower = df["ci_lower"]
         ci_upper = df["ci_upper"]
-        inference_sr = "{("
+        inference_sr = "("
         inference_sr += ci_lower
-        inference_sr += r"\,;\,"
+        inference_sr += r";"
         inference_sr += ci_upper
-        inference_sr += ")}"
+        inference_sr += ")"
         sr = _combine_series(value_sr, inference_sr)
     elif "standard_error" in df:
         standard_error = df["standard_error"]
