@@ -318,8 +318,8 @@ def render_latex(
     if show_footer:
         if "Observations" in stats.index.get_level_values(0):
             stats = stats.copy(deep=True)
-            stats.loc[("Observations",)] = (
-                stats.loc[("Observations",)].apply(_left_align_tex).values
+            stats.loc[("Observations",)] = _add_multicolumn_left_format(
+                stats.loc[("Observations",)].values
             )
         stats_str = stats.to_latex(**default_options)
         if "\\midrule" in stats_str:
@@ -1217,5 +1217,8 @@ def _add_latex_syntax_around_scientfic_number_string(string):
     return out
 
 
-def _left_align_tex(n_obs):
-    return f"\\multicolumn{{1}}{{l}}{{{n_obs}}}"
+def _add_multicolumn_left_format(obs_array):
+    out = []
+    for i in obs_array.flatten():
+        out.append(f"\\multicolumn{{1}}{{l}}{{{i}}}")
+    return np.array(out).reshape(obs_array.shape)

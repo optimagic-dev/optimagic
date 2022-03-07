@@ -1,9 +1,8 @@
-import io
-import textwrap
 from collections import namedtuple
 
 import numpy as np
 import pandas as pd
+import pytest
 import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
 from estimagic.visualization.estimation_table import _apply_number_format
@@ -23,6 +22,18 @@ from estimagic.visualization.estimation_table import render_html
 from estimagic.visualization.estimation_table import render_latex
 from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
+
+from tests.visualization.helpers_test_estimation_table import (
+    _get_test_inputs_multiindex,
+)
+from tests.visualization.helpers_test_estimation_table import (
+    _get_test_inputs_multiindex_multi_column,
+)
+from tests.visualization.helpers_test_estimation_table import (
+    _get_test_inputs_single_index,
+)
+from tests.visualization.helpers_test_estimation_table import _read_csv_string
+
 
 # test process_model for different model types
 ProcessedModel = namedtuple("ProcessedModel", "params info name")
@@ -75,28 +86,33 @@ def test_estimation_table():
     afe(exp["params"], res["params"], check_index_type=False)
 
 
-def test_render_latex_with_render_inputs_and_estimation_table_with_rt_latex():
-    models = _get_test_inputs_models()
-    render_inputs = estimation_table(
-        models, return_type="render_inputs", confidence_intervals=True
-    )
-    out_render_latex = render_latex(siunitx_warning=False, **render_inputs)
-    out_estimation_table = estimation_table(
-        models, return_type="latex", siunitx_warning=False, confidence_intervals=True
-    )
-    assert out_render_latex == out_estimation_table
+MODELS = [
+    _get_test_inputs_multiindex(),
+    _get_test_inputs_single_index(),
+    _get_test_inputs_multiindex_multi_column(),
+]
+PARAMETRIZATION = [("latex", render_latex, models) for models in MODELS]
+PARAMETRIZATION += [("html", render_html, models) for models in MODELS]
 
 
-def test_render_html_with_render_inputs_and_estimation_table_with_rt_html():
-    models = _get_test_inputs_models()
-    render_inputs = estimation_table(
+@pytest.mark.parametrize("return_type, render_func,models", PARAMETRIZATION)
+def test_out_estimation_table_and_render_functions_yield_same_result(
+    return_type, render_func, models
+):
+    first_stage = estimation_table(
         models, return_type="render_inputs", confidence_intervals=True
     )
-    out_render_html = render_html(**render_inputs)
-    out_estimation_table = estimation_table(
-        models, return_type="html", confidence_intervals=True
+    second_stage = render_func(
+        siunitx_warning=False, alignment_warning=False, **first_stage
     )
-    assert out_render_html == out_estimation_table
+    one_stage = estimation_table(
+        models,
+        return_type=return_type,
+        siunitx_warning=False,
+        alignment_warning=False,
+        confidence_intervals=True,
+    )
+    assert one_stage == second_stage
 
 
 def test_process_model_namedtuple():
@@ -389,22 +405,3 @@ def test_customize_col_groups_default():
     exp = ["first_name", "first_name", "(3)", "(4)", "fifth_name"]
     res = _customize_col_groups(default, mapping)
     assert exp == res
-
-
-def _read_csv_string(string, index_cols=None):
-    string = textwrap.dedent(string)
-    return pd.read_csv(io.StringIO(string), index_col=index_cols)
-
-
-def _get_test_inputs_models():
-    df = pd.DataFrame(
-        data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
-    )
-    df.index = pd.MultiIndex.from_tuples(
-        [("p_1", "v_1"), ("p_1", "v_2"), ("p_2", "v_2")]
-    )
-    info = {"n_obs": 400}
-    mod1 = ProcessedModel(params=df, info=info, name="m1")
-    mod2 = ProcessedModel(params=df, info=info, name="m2")
-    models = [mod1, mod2]
-    return models
