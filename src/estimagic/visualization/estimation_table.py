@@ -706,7 +706,7 @@ def _reindex_and_float_format_params(
 
 
 def _get_params_frames_with_common_index(models):
-    """Get common index from params DataFrames, reindex all frames using it."""
+    """Get a list of params frames, reindexed with a common index."""
     dfs = [model.params for model in models]
     common_index = _get_common_index(dfs)
     out = [model.params.reindex(common_index) for model in models]
