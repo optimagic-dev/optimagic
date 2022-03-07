@@ -81,7 +81,7 @@ def estimation_table(
             the default column groups. The default column groups are the model names
             if the model names are not unique and undefined otherwise.
         custom_index_names (dict or list): Dictionary or list to set the names of the
-            index levels of the parameters. Only used if "add_index_names" is set to
+            index levels of the parameters. Only used if "index_names" is set to
             True in the render_options. Default None.
         custom_notes (list): A list of strings for additional notes. Default is None.
         confidence_intervals (bool): If True, display confidence intervals as inference
@@ -92,12 +92,13 @@ def estimation_table(
             and additional notes, if applicable. Default is True.
         notes_label (str): A sting to print as the title of the notes section, if
             applicable. Default is 'Notes'
-        stat_keys (dict): A dictionary with printed statistics names as keys,
-            and statistics statistics names to be retrieved from model.info as values.
+        stat_keys (dict): A dictionary with displayed statistics names as keys,
+            and statistics names to be retrieved from model.info as values.
             Default is dictionary with common statistics of stats model linear
             regression.
-        number_format (int): An integer for the number of digits to the right of the
-            decimal point to round to. Default is 2.
+        number_format (int, str, iterable or callable): A callable, iterable, integer
+            or callable that is used to apply string formatter(s) to floats in the
+            table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
         add_trailing_zeros (bool): If True, format floats such that they haave same
             number of digits after the decimal point. Default True.
         padding (int): an integer used for aligning LaTex columns. Affects the
@@ -134,7 +135,7 @@ def estimation_table(
     )
     show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
     stat_keys = _set_default_stat_keys(stat_keys)
-    params, stats, max_trail = _get_reg_table_body_and_footer(
+    params, stats, max_trail = _get_estimation_table_body_and_footer(
         models,
         column_names,
         column_groups,
@@ -142,8 +143,8 @@ def estimation_table(
         custom_index_names,
         significance_levels,
         stat_keys,
-        show_col_groups,
         show_col_names,
+        show_col_groups,
         show_stars,
         show_inference,
         confidence_intervals,
@@ -225,9 +226,6 @@ def render_latex(
             applicable) and significance stars (if applicable).
         stats (pandas.DataFrame): DataFrame with formatted strings of summary
             statistics (such as number of observations, r-squared, etc.)
-        notes_tex (str): The LaTex string with notes with additional information
-            (e.g. mapping from pvalues to significance stars) to append to the footer
-            of the estimation table string with LaTex code for the notes section.
         right_decimals (int): An integer passed to the `table-format` argument of
             siuntix tabular controls the number of figures that is reserved to the
             right of the decimal point. Impacts distancing between table columns and
@@ -244,6 +242,18 @@ def render_latex(
             disables displaying column names.
         col_groups (list): A list with column group titles if defined.
         show_footer (bool): a boolean variable for displaying footer_df. Default True.
+        append_notes (bool): A boolean variable for printing p value cutoff explanation
+            and additional notes, if applicable. Default is True.
+        notes_label (str): A sting to print as the title of the notes section, if
+            applicable. Default is 'Notes'
+        significance_levels (list): a list of floats for p value's significance cutt-off
+            values. Default is [0.1,0.05,0.01].
+        custom_notes (list): A list of strings for additional notes. Default is None.
+        siunitx_watning (bool): If True, print warning about LaTex preamble to add for
+            proper compilation of  when working with siunitx package. Default True.
+        alignment_warning (bool): If True, print warning about siunitx table formatting,
+            to avoid column overlays. Default True.
+
     Returns:
         latex_str (str): The resulting string with Latex tabular code.
 
@@ -373,6 +383,12 @@ def render_html(
             to update the default options. An example is `{header: False}` that
             disables displaying column names.
         show_footer (bool): a boolean variable for displaying footer_df. Default True.
+        append_notes (bool): A boolean variable for printing p value cutoff explanation
+            and additional notes, if applicable. Default is True.
+        notes_label (str): A sting to print as the title of the notes section, if
+            applicable. Default is 'Notes'
+        significance_levels (list): a list of floats for p value's significance cutt-off
+            values. Default is [0.1,0.05,0.01].
 
     Returns:
         latex_str (str): The resulting string with html tabular code.
@@ -452,7 +468,7 @@ def _process_model(model):
     return processed_model
 
 
-def _get_reg_table_body_and_footer(
+def _get_estimation_table_body_and_footer(
     models,
     column_names,
     column_groups,
@@ -460,34 +476,72 @@ def _get_reg_table_body_and_footer(
     custom_index_names,
     significance_levels,
     stat_keys,
-    show_col_groups,
     show_col_names,
+    show_col_groups,
     show_stars,
     show_inference,
     confidence_intervals,
     number_format,
     add_trailing_zeros,
 ):
+    """Create params and stats blocs with significance stars and inference values.
 
-    common_index = _get_common_index([mod.params for mod in models])
-    cols_to_format = _get_cols_to_format(show_inference, confidence_intervals)
-    formatted_frames, max_trail = _reindex_and_format_param_frames(
-        models, common_index, cols_to_format, number_format, add_trailing_zeros
-    )
-    params = _build_reg_table_body(
-        formatted_frames,
+    Applies number formatting to parameters and summary statitistics.
+    Concatinates infere values to parameter values if applicable,
+    Adds significance stars if applicable.
+
+    Args:
+        models (list): List of named tuples with attributes 'params', 'info' and 'name'.
+        column_names (list): List of strigs to display as names of the model columns in
+            estimation table.
+        column_groups (list or NoneType): If defined, list of strings to display as
+            names of groups of model columns in estimation table.
+        custom_param_names (dict or list): A list of strings to display as parameter
+            names or a mapping from original to custom paramter names.
+        custom_index_names (dict or list): Dictionary or list to set the names of the
+            index levels of the parameters.
+        significance_levels (list): a list of floats for p value's significance
+            cutt-off values.
+        stat_keys (dict): A dictionary with displayed statistics names as keys,
+            and statistics names to be retrieved from model.info as values
+        show_col_names (bool): If True, the column names are displayed.
+        show_col_groups (bool): If True, the column groups are displayed.
+        show_stars (bool): a boolean variable for printing significance stars.
+        show_inference(bool): If True, inference (standard errors or confidence
+            intervals) below param values.
+        confidence_intervals (bool): If True, display confidence intervals as inference
+            values.
+        number_format (int, str, iterable or callable): A callable, iterable, integer
+            or callable that is used to apply string formatter(s) to floats in the
+            table.
+        add_trailing_zeros (bool): If True, format floats such that they haave same
+            number of digits after the decimal point.
+
+    Returns:
+        params (DataFrame): DataFrame data frame with formatted strings of parameter
+            and inference values and significance stars to display in estimation table.
+        stats (DataFrame): DataFrame with formatted strings of summary statistics to
+            display at the bottom of estimation table.
+        max_trail (int): Integer that shows the maximum number of digits after a decimal
+            point in the parameters DataFrame. Is passed to render_latex for formatting
+            tables in siunitx package.
+    """
+    params, max_trail = _build_estimation_table_body(
         models,
-        show_stars,
-        common_index,
-        significance_levels,
+        column_names,
+        column_groups,
         custom_param_names,
         custom_index_names,
         show_col_names,
         show_col_groups,
-        column_names,
-        column_groups,
+        show_inference,
+        show_stars,
+        confidence_intervals,
+        significance_levels,
+        number_format,
+        add_trailing_zeros,
     )
-    stats = _build_reg_table_footer(
+    stats = _build_estimation_table_footer(
         models,
         stat_keys,
         significance_levels,
@@ -500,14 +554,204 @@ def _get_reg_table_body_and_footer(
     return params, stats, max_trail
 
 
+def _build_estimation_table_body(
+    models,
+    column_names,
+    column_groups,
+    custom_param_names,
+    custom_index_names,
+    show_col_names,
+    show_col_groups,
+    show_inference,
+    show_stars,
+    confidence_intervals,
+    significance_levels,
+    number_format,
+    add_trailing_zeros,
+):
+
+    """Create params bloc significance stars and inference values.
+
+    Applies number formatting to parameters. Concatinates inference values
+    to parameter values if applicable. Adds significance stars if applicable.
+
+    Args:
+        models (list): List of named tuples with attributes 'params', 'info' and 'name'.
+        column_names (list): List of strigs to display as names of the model columns in
+            estimation table.
+        column_groups (list or NoneType): If defined, list of strings to display as
+            names of groups of model columns in estimation table.
+        custom_param_names (dict or list): A list of strings to display as parameter
+            names or a mapping from original to custom paramter names.
+        custom_index_names (dict or list): Dictionary or list to set the names of the
+            index levels of the parameters.
+        significance_levels (list): a list of floats for p value's significance
+            cutt-off values.
+        show_col_names (bool): If True, the column names are displayed.
+        show_col_groups (bool): If True, the column groups are displayed.
+        show_stars (bool): a boolean variable for printing significance stars.
+        show_inference(bool): If True, inference (standard errors or confidence
+            intervals) below param values.
+        confidence_intervals (bool): If True, display confidence intervals as inference
+            values.
+        number_format (int, str, iterable or callable): A callable, iterable, integer
+            or callable that is used to apply string formatter(s) to floats in the
+            table.
+        add_trailing_zeros (bool): If True, format floats such that they haave same
+            number of digits after the decimal point.
+
+    Returns:
+        params (DataFrame): DataFrame data frame with formatted strings of parameter
+            and inference values and significance stars to display in estimation table.
+        max_trail (int): Integer that shows the maximum number of digits after a decimal
+            point in the parameters DataFrame. Is passed to
+            `_build_estimation_table_footer` to get same number of trailing zeros as in
+            parameters DataFrame and torender_latex for formatting tables in siunitx
+            package.
+    """
+    dfs, max_trail = _reindex_and_float_format_params(
+        models, show_inference, confidence_intervals, number_format, add_trailing_zeros
+    )
+    to_convert = []
+    if show_stars:
+        for df, mod in zip(dfs, models):
+            to_convert.append(
+                pd.concat([df, mod.params.reindex(df.index)["p_value"]], axis=1)
+            )
+    else:
+        to_convert = dfs
+    # convert DataFrames to string series with inference and siginificance
+    # information.
+    to_concat = [
+        _convert_frame_to_string_series(
+            df,
+            significance_levels,
+            show_stars,
+        )
+        for df in to_convert
+    ]
+    df = pd.concat(to_concat, axis=1)
+    df = _process_frame_indices(
+        df=df,
+        custom_param_names=custom_param_names,
+        custom_index_names=custom_index_names,
+        show_col_names=show_col_names,
+        show_col_groups=show_col_groups,
+        column_names=column_names,
+        column_groups=column_groups,
+    )
+    return df, max_trail
+
+
+def _build_estimation_table_footer(
+    models,
+    stat_keys,
+    significance_levels,
+    show_stars,
+    number_format,
+    add_trailing_zeros,
+    max_trail,
+):
+    """Create params and stats blocs with significance stars and inference values.
+
+    Applies number formatting to parameters and summary statitistics.
+    Concatinates infere values to parameter values if applicable,
+    Adds significance stars if applicable.
+
+    Args:
+        models (list): List of named tuples with attributes 'params', 'info' and 'name'.
+        stat_keys (dict): A dictionary with displayed statistics names as keys,
+            and statistics names to be retrieved from model.info as values
+        significance_levels (list): a list of floats for p value's significance cutt-off
+            values.
+        number_format (int, str, iterable or callable): A callable, iterable, integer
+            or callable that is used to apply string formatter(s) to floats in the
+            table.
+        add_trailing_zeros (bool): If True, format floats such that they haave same
+            number of digits after the decimal point.
+        max_trail (int): If add_trailing_zeros is True, add corresponding number of
+            trailing zeros to floats in the stats DataFrame to have number of digits
+            after a decimal point equal to max_trail for each float.
+
+    Returns:
+        stats (DataFrame): DataFrame with formatted strings of summary statistics to
+            display at the bottom of estimation table.
+    """
+    to_concat = [
+        _create_statistics_sr(
+            mod,
+            stat_keys,
+            significance_levels,
+            show_stars,
+            number_format,
+            add_trailing_zeros,
+            max_trail,
+        )
+        for mod in models
+    ]
+    stats = pd.concat(to_concat, axis=1)
+    return stats
+
+
+def _reindex_and_float_format_params(
+    models, show_inference, confidence_intervals, number_format, add_trailing_zeros
+):
+    """Reindex all params DataFrames with a common index and apply number formatting."""
+    dfs = _get_params_frames_with_common_index(models)
+    cols_to_format = _get_cols_to_format(show_inference, confidence_intervals)
+    formatted_frames, max_trail = _apply_number_formatting_frames(
+        dfs, cols_to_format, number_format, add_trailing_zeros
+    )
+    return formatted_frames, max_trail
+
+
+def _get_params_frames_with_common_index(models):
+    """Get common index from params DataFrames, reindex all frames using it."""
+    dfs = [model.params for model in models]
+    common_index = _get_common_index(dfs)
+    out = [model.params.reindex(common_index) for model in models]
+    return out
+
+
 def _get_common_index(dfs):
+    """Get common index from a list of DataFrames."""
     common_index = []
     for d_ in dfs:
         common_index += [ind for ind in d_.index.to_list() if ind not in common_index]
     return common_index
 
 
+def _get_cols_to_format(show_inference, confidence_intervals):
+    """Get the list of names of columns that need to be formatted.
+    By default, formatting is applied to  parameter values. If inference values
+    need to displayed, adds confidence intervals or standard erros to the list.
+    """
+    cols = ["value"]
+    if show_inference:
+        if confidence_intervals:
+            cols += ["ci_lower", "ci_upper"]
+        else:
+            cols.append("standard_error")
+    return cols
+
+
+def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_zeros):
+    """Apply string formatter to specific columns of a list of DataFrames"""
+
+    raw_formatted = [_apply_number_format(df[columns], number_format) for df in dfs]
+    max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
+    if add_trailing_zeros:
+        formatted = [_apply_number_format(df, max_trail) for df in raw_formatted]
+    else:
+        formatted = raw_formatted
+    return formatted, max_trail
+
+
 def _update_show_col_groups(show_col_groups, column_groups):
+    """Set the value of show_col_groups to False or True given column_groups.
+    Updates the default None to True if column_groups is not None. Sets to False
+    otherwise.
+    """
     if show_col_groups is None:
         if column_groups is not None:
             show_col_groups = True
@@ -519,6 +763,7 @@ def _update_show_col_groups(show_col_groups, column_groups):
 def _update_render_options(
     render_options, show_col_names, show_col_groups, show_index_names
 ):
+    """Update default render_options of df.to_html() and df.to_latex()"""
     if not render_options:
         if not (show_col_names or show_col_groups):
             render_options = {"header": False}
@@ -533,6 +778,7 @@ def _update_render_options(
 
 
 def _set_default_stat_keys(stat_keys):
+    """Define some default summary statistics to display in estimation table."""
     if not stat_keys:
         stat_keys = {
             "Observations": "n_obs",
@@ -543,16 +789,6 @@ def _set_default_stat_keys(stat_keys):
             "show_dof": None,
         }
     return stat_keys
-
-
-def _get_cols_to_format(show_inference, confidence_intervals):
-    cols = ["value"]
-    if show_inference:
-        if confidence_intervals:
-            cols += ["ci_lower", "ci_upper"]
-        else:
-            cols.append("standard_error")
-    return cols
 
 
 def _get_model_names(processed_models):
@@ -686,88 +922,6 @@ def _create_group_to_col_position(column_groups):
     else:
         group_to_col_index = None
     return group_to_col_index
-
-
-def _reindex_and_format_param_frames(
-    models, index, columns, number_format, add_trailing_zeros
-):
-    to_format = [mod.params.reindex(index)[columns] for mod in models]
-    raw_formatted = [_apply_number_format(df, number_format) for df in to_format]
-    max_trail = int(max([_get_digits_after_decimal(df) for df in raw_formatted]))
-    if add_trailing_zeros:
-        formatted = [_apply_number_format(df, max_trail) for df in raw_formatted]
-    else:
-        formatted = raw_formatted
-    return formatted, max_trail
-
-
-def _build_reg_table_body(
-    dfs,
-    models,
-    show_stars,
-    index,
-    significance_levels,
-    custom_param_names,
-    custom_index_names,
-    show_col_names,
-    show_col_groups,
-    column_names,
-    column_groups,
-):
-    to_convert = []
-    if show_stars:
-        for df, mod in zip(dfs, models):
-            to_convert.append(
-                pd.concat([df, mod.params.reindex(index)["p_value"]], axis=1)
-            )
-    else:
-        to_convert = dfs
-    # convert DataFrames to string series with inference and siginificance
-    # information.
-    to_concat = [
-        _convert_frame_to_string_series(
-            df,
-            significance_levels,
-            show_stars,
-        )
-        for df in to_convert
-    ]
-    df = pd.concat(to_concat, axis=1)
-    df = _process_frame_indices(
-        df=df,
-        custom_param_names=custom_param_names,
-        custom_index_names=custom_index_names,
-        show_col_names=show_col_names,
-        show_col_groups=show_col_groups,
-        column_names=column_names,
-        column_groups=column_groups,
-    )
-    return df
-
-
-def _build_reg_table_footer(
-    models,
-    stat_keys,
-    significance_levels,
-    show_stars,
-    number_format,
-    add_trailing_zeros,
-    max_trail,
-):
-    to_concat = [
-        _create_statistics_sr(
-            mod,
-            stat_keys,
-            significance_levels,
-            show_stars,
-            number_format,
-            add_trailing_zeros,
-            max_trail,
-        )
-        for mod in models
-    ]
-    stats = pd.concat(to_concat, axis=1)
-    return stats
 
 
 def _convert_frame_to_string_series(
