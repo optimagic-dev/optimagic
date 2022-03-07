@@ -2091,8 +2091,8 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "schwefel2_22_bad_start_3": {
         "criterion": schwefel2_22,
-        "start_x": np.full(10, 100),
-        "solution_x": np.zeros(10),
+        "start_x": np.full(10, 100, dtype=np.int64),
+        "solution_x": np.zeros(10, dtype=np.int64),
         "start_criterion": 7766279631452242920,
         "solution_criterion": 0,
     },
@@ -2406,8 +2406,8 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     },
     "thevenot_good_start_2": {
         "criterion": thevenot,
-        "start_x": np.full(4, 50),
-        "solution_x": np.zeros(4),
+        "start_x": np.full(4, 50, dtype=np.int64),
+        "solution_x": np.zeros(4, dtype=np.int64),
         "start_criterion": 0.0,
         "solution_criterion": -1,
     },
