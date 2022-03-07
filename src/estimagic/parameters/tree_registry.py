@@ -1,4 +1,5 @@
 """Wrapper around pybaum get_registry to tailor it to estimagic."""
+from functools import partial
 from itertools import product
 
 import numpy as np
@@ -6,38 +7,47 @@ import pandas as pd
 from pybaum import get_registry as get_pybaum_registry
 
 
-def get_registry(extended=False):
+def get_registry(extended=False, value_col="value"):
+    """Return pytree registry.
+
+    Args:
+        extended (bool): If True appends types 'numpy.ndarray', 'pandas.Series' and
+            'pandas.DataFrame' to the registry.
+        value_col (str): This column is used as the data source for flattening and
+            unflattening a pytree. Defaults to 'value'.
+
+    Returns:
+        dict: The pytree registry.
+
+    """
     types = ["numpy.ndarray", "pandas.Series"] if extended else None
     registry = get_pybaum_registry(types=types)
     if extended:
         registry[pd.DataFrame] = {
-            "flatten": _flatten_df,
-            "unflatten": _unflatten_df,
+            "flatten": partial(_flatten_df, value_col=value_col),
+            "unflatten": partial(_unflatten_df, value_col=value_col),
             "names": _get_df_names,
         }
     return registry
 
 
-def _flatten_df(df):
-    if "value" in df:
-        flat = df["value"].tolist()
-        aux_data = {
-            "is_value_df": True,
-            "df": df,
-        }
+def _flatten_df(df, value_col):
+    is_value_col_df = value_col in df
+    if is_value_col_df:
+        flat = df[value_col].tolist()
     else:
-        flat = df.to_numpy().flatten().tolist()
-        aux_data = {
-            "is_value_df": False,
-            "df": df,
-        }
+        flat = [np.nan] * len(df)
 
+    aux_data = {
+        f"is_{value_col}_df": is_value_col_df,
+        "df": df,
+    }
     return flat, aux_data
 
 
-def _unflatten_df(aux_data, leaves):
-    if aux_data["is_value_df"]:
-        out = aux_data["df"].assign(value=leaves)
+def _unflatten_df(aux_data, leaves, value_col):
+    if aux_data[f"is_{value_col}_df"]:
+        out = aux_data["df"].assign(**{value_col: leaves})
     else:
         out = pd.DataFrame(
             data=np.array(leaves).reshape(aux_data["df"].shape),

@@ -10,6 +10,7 @@ from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
+from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.utilities import namedtuple_from_kwargs
 
 
@@ -118,7 +119,7 @@ def first_derivative(
                 1.
 
     """
-    lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
+    lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -370,7 +371,7 @@ def second_derivative(
                 returned if return_info is True.
 
     """
-    lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
+    lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
@@ -605,30 +606,6 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     evals[0][..., diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[np.newaxis, ...]
     evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[0].swapaxes(2, 3))
     return evals
-
-
-def _process_bounds(lower_bounds, upper_bounds, params):
-    """Process and consolidate parameter bounds.
-
-    Args:
-        lower_bounds (pytree):
-        upper_bounds (pytree):
-        params (pytree):
-
-    Returns:
-        tuple:
-        - lower_bounds (numpy.ndarray)
-        - upper_bounds (numpy.ndarray)
-
-    """
-    lower_bounds = np.atleast_1d(lower_bounds) if lower_bounds is not None else None
-    upper_bounds = np.atleast_1d(upper_bounds) if upper_bounds is not None else None
-    if isinstance(params, pd.DataFrame):
-        if lower_bounds is None and "lower_bound" in params.columns:
-            lower_bounds = params["lower_bound"].to_numpy()
-        if upper_bounds is None and "upper_bound" in params.columns:
-            upper_bounds = params["upper_bound"].to_numpy()
-    return lower_bounds, upper_bounds
 
 
 def _convert_evaluation_points_to_original(evaluation_points, params):
