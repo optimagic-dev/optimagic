@@ -6,6 +6,7 @@ import pytest
 import statsmodels.api as sm
 from estimagic.config import EXAMPLE_DIR
 from estimagic.visualization.estimation_table import _apply_number_format
+from estimagic.visualization.estimation_table import _check_order_of_model_names
 from estimagic.visualization.estimation_table import _convert_frame_to_string_series
 from estimagic.visualization.estimation_table import _create_group_to_col_position
 from estimagic.visualization.estimation_table import _create_statistics_sr
@@ -15,6 +16,9 @@ from estimagic.visualization.estimation_table import (
 )
 from estimagic.visualization.estimation_table import _get_digits_after_decimal
 from estimagic.visualization.estimation_table import _get_model_names
+from estimagic.visualization.estimation_table import (
+    _get_params_frames_with_common_index,
+)
 from estimagic.visualization.estimation_table import _process_frame_indices
 from estimagic.visualization.estimation_table import _process_model
 from estimagic.visualization.estimation_table import estimation_table
@@ -405,3 +409,42 @@ def test_customize_col_groups_default():
     exp = ["first_name", "first_name", "(3)", "(4)", "fifth_name"]
     res = _customize_col_groups(default, mapping)
     assert exp == res
+
+
+def test_get_params_frames_with_common_index():
+    m1 = ProcessedModel(
+        params=pd.DataFrame(np.ones(5), index=list("abcde")), info=None, name=None
+    )
+    m2 = ProcessedModel(
+        params=pd.DataFrame(np.ones(3), index=list("abc")), info=None, name=None
+    )
+    res = _get_params_frames_with_common_index([m1, m2])
+    exp = [
+        pd.DataFrame(np.ones(5), index=list("abcde")),
+        pd.DataFrame(
+            np.concatenate([np.ones(3), np.ones(2) * np.nan]), index=list("abcde")
+        ),
+    ]
+    afe(res[0], exp[0])
+    afe(res[1], exp[1])
+
+
+def test_get_params_frames_with_common_index_multiindex():
+    mi = pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1), ("b", 2), ("b", 3)])
+    m1 = ProcessedModel(params=pd.DataFrame(np.ones(5), index=mi), info=None, name=None)
+    m2 = ProcessedModel(
+        params=pd.DataFrame(np.ones(3), index=mi[:3]), info=None, name=None
+    )
+    res = _get_params_frames_with_common_index([m1, m2])
+    exp = [
+        pd.DataFrame(np.ones(5), index=mi),
+        pd.DataFrame(np.concatenate([np.ones(3), np.ones(2) * np.nan]), index=mi),
+    ]
+    afe(res[0], exp[0])
+    afe(res[1], exp[1])
+
+
+def test_check_order_of_model_names_raises_error():
+    model_names = ["a", "b", "a"]
+    with pytest.raises(ValueError):
+        _check_order_of_model_names(model_names)
