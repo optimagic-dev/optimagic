@@ -614,7 +614,7 @@ def thevenot(x, m=5, b=15):
 
 
 def trid(x):
-    out = np.sum(x - 1) ** 2 - np.sum(x[1:] * x[:-1])
+    out = np.sum((x - 1) ** 2) - np.sum([x[i] * x[i - 1] for i in range(1, len(x))])
     return out
 
 
@@ -2449,16 +2449,16 @@ SCALAR_FUNCTIONS_PROBLEMS = {
     "trid_good_start": {
         "criterion": trid,
         "start_x": np.array([1, 1]),
-        "solution_x": np.array([2, 2]),
+        "solution_x": np.array([i * (2 + 1 - i) for i in range(1, 3)]),
         "start_criterion": -1,
-        "solution_criterion": 0,
+        "solution_criterion": -2,
     },
     "trid_bad_start": {
         "criterion": trid,
         "start_x": np.array([10, 2]),
-        "solution_x": np.array([2, 2]),
-        "start_criterion": 80,
-        "solution_criterion": 0,
+        "solution_x": np.array([i * (2 + 1 - i) for i in range(1, 3)]),
+        "start_criterion": 62,
+        "solution_criterion": -2,
     },
     "xinsheyang2_good_start_1": {
         "criterion": xinsheyang2,
