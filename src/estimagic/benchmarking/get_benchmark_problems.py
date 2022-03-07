@@ -52,6 +52,10 @@ def get_benchmark_problems(
             implement multiplicative noise as `f_noisy = f * epsilon` but by
             `f_noisy` = f + (epsilon - 1) * f_clipped` where f_clipped is bounded
             away from zero from both sides by the clipping value.
+        lower_input_dim (int or None): Lower bound of function input dimension
+            for problems from the "scalar_functions" problem set.
+        upper_input_dim (int or None): Upper bound of function input dimension
+            for problems from the "scalar_functions" problem set.
 
     Returns:
         dict: Nested dictionary with benchmark problems of the structure:
