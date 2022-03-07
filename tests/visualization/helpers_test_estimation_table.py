@@ -8,7 +8,7 @@ import pandas as pd
 ProcessedModel = namedtuple("ProcessedModel", "params info name")
 
 
-def _get_test_inputs_multiindex():
+def _get_models_multiindex():
     df = pd.DataFrame(
         data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
     )
@@ -22,7 +22,7 @@ def _get_test_inputs_multiindex():
     return models
 
 
-def _get_test_inputs_single_index():
+def _get_models_single_index():
     df = pd.DataFrame(
         data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
     )
@@ -34,7 +34,7 @@ def _get_test_inputs_single_index():
     return models
 
 
-def _get_test_inputs_multiindex_multi_column():
+def _get_models_multiindex_multi_column():
     df = pd.DataFrame(
         data=np.ones((3, 4)), columns=["value", "ci_lower", "ci_upper", "p_value"]
     )

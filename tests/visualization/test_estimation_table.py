@@ -24,13 +24,13 @@ from pandas.testing import assert_frame_equal as afe
 from pandas.testing import assert_series_equal as ase
 
 from tests.visualization.helpers_test_estimation_table import (
-    _get_test_inputs_multiindex,
+    _get_models_multiindex,
 )
 from tests.visualization.helpers_test_estimation_table import (
-    _get_test_inputs_multiindex_multi_column,
+    _get_models_multiindex_multi_column,
 )
 from tests.visualization.helpers_test_estimation_table import (
-    _get_test_inputs_single_index,
+    _get_models_single_index,
 )
 from tests.visualization.helpers_test_estimation_table import _read_csv_string
 
@@ -87,9 +87,9 @@ def test_estimation_table():
 
 
 MODELS = [
-    _get_test_inputs_multiindex(),
-    _get_test_inputs_single_index(),
-    _get_test_inputs_multiindex_multi_column(),
+    _get_models_multiindex(),
+    _get_models_single_index(),
+    _get_models_multiindex_multi_column(),
 ]
 PARAMETRIZATION = [("latex", render_latex, models) for models in MODELS]
 PARAMETRIZATION += [("html", render_html, models) for models in MODELS]

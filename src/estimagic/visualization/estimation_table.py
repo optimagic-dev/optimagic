@@ -272,6 +272,7 @@ def render_latex(
         column_groups = params.columns.get_level_values(0)
     else:
         column_groups = None
+    group_to_col_position = _create_group_to_col_position(column_groups)
     for i in range(params.columns.nlevels):
         params = params.rename(
             {c: "{" + c + "}" for c in params.columns.get_level_values(i)},
@@ -299,8 +300,6 @@ def render_latex(
         params.index.names = [None] * params.index.nlevels
     latex_str = params.to_latex(**default_options)
     # Get mapping from group name to column position
-
-    group_to_col_position = _create_group_to_col_position(column_groups)
     if group_to_col_position:
         temp_str = "\n"
         for k in group_to_col_position:
