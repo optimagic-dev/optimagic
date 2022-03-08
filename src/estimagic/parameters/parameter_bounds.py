@@ -14,13 +14,12 @@ def get_bounds(params, lower_bounds=None, upper_bounds=None):
         lower_bounds (pytree): Must be a subtree of params.
         upper_bounds (pytree): Must be a subtree of params.
 
-
     Returns:
         np.ndarray: Consolidated and flattened lower_bounds.
         np.ndarray: Consolidated and flattened upper_bounds.
 
     """
-    registry = get_registry(extended=True)
+    registry = get_registry(extended=True, value_col="value")
     n_params = len(tree_leaves(params, registry=registry))
 
     registry.pop(pd.DataFrame)

@@ -7,14 +7,15 @@ import pandas as pd
 from pybaum import get_registry as get_pybaum_registry
 
 
-def get_registry(extended=False, value_col="value"):
+def get_registry(extended=False, value_col=None):
     """Return pytree registry.
 
     Args:
         extended (bool): If True appends types 'numpy.ndarray', 'pandas.Series' and
             'pandas.DataFrame' to the registry.
-        value_col (str): This column is used as the data source for flattening and
-            unflattening a pytree. Defaults to 'value'.
+        value_col (str): This column is used as the data source in a data frame when
+            flattening and unflattening a pytree. Defaults to None, in which case the
+            whole data frame is used as a data source.
 
     Returns:
         dict: The pytree registry.
@@ -35,8 +36,10 @@ def _flatten_df(df, value_col):
     is_value_col_df = value_col in df
     if is_value_col_df:
         flat = df[value_col].tolist()
-    else:
+    elif value_col is not None:
         flat = [np.nan] * len(df)
+    else:
+        flat = df.to_numpy().flatten().tolist()
 
     aux_data = {
         f"is_{value_col}_df": is_value_col_df,
