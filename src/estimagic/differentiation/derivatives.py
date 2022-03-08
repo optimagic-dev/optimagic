@@ -14,6 +14,7 @@ from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import namedtuple_from_kwargs
+from pybaum import leaf_names
 from pybaum import tree_flatten
 from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_unflatten
@@ -165,7 +166,9 @@ def first_derivative(
 
     # convert the numpy arrays to whatever is needed by func
     evaluation_points = [
-        _unflatten_if_ndarray(p, params_tree_def, registry) for p in evaluation_points
+        # entries are either a numpy.ndarray or np.nan
+        _unflatten_if_ndarray(p, params_tree_def, registry)
+        for p in evaluation_points
     ]
 
     # we always evaluate f0, so we can fall back to one-sided derivatives if
@@ -196,7 +199,6 @@ def first_derivative(
     f0_tree = f0[key] if isinstance(f0, dict) else f0
 
     f0 = tree_leaves(f0_tree, registry=registry)
-    f_was_scalar = np.isscalar(f0)
     f0 = np.atleast_1d(f0)
 
     # convert the raw evaluations to numpy arrays
@@ -233,8 +235,7 @@ def first_derivative(
         raise Exception(exc_info)
 
     # results processing
-    derivative = jac.flatten() if f_was_scalar else jac
-    derivative = matrix_to_block_tree(derivative, f0_tree, params)
+    derivative = matrix_to_block_tree(jac, f0_tree, params)
 
     result = {"derivative": derivative}
     if return_func_value:
@@ -437,6 +438,7 @@ def second_derivative(
 
     # convert the numpy arrays to whatever is needed by func
     evaluation_points = {
+        # entries are either a numpy.ndarray or np.nan
         step_type: [_unflatten_if_ndarray(p, params_tree_def, registry) for p in points]
         for step_type, points in evaluation_points.items()
     }
@@ -521,12 +523,12 @@ def second_derivative(
         raise Exception(exc_info)
 
     # results processing
+    derivative = [matrix_to_block_tree(h, params, params) for h in list(hess)]
     if f_was_scalar:
-        derivative = np.squeeze(hess, axis=0)
-        derivative = matrix_to_block_tree(derivative, params, params)
+        derivative = derivative[0]
     else:
-        # batch hessian case
-        raise NotImplementedError
+        names = leaf_names(f0_tree, registry=registry)
+        derivative = dict(zip(names, derivative))
 
     result = {"derivative": derivative}
     if return_func_value:
@@ -1017,18 +1019,6 @@ def _collect_additional_info(return_info, steps, evals, updated_candidates, targ
 
 
 def _is_exactly_nan(value):
-    """Check if value is np.nan.
-
-    Example:
-    >>> _is_exactly_nan(np.nan)
-    True
-    >>> _is_exactly_nan(1.0)
-    False
-    >>> import numpy as np
-    >>> _is_exactly_nan(np.array([np.nan]))
-    False
-
-    """
     return isinstance(value, float) and np.isnan(value)
 
 
