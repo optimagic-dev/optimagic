@@ -1,4 +1,4 @@
-"""Implement the pounders algorithm"""
+"""Implement the POUNDERS algorithm"""
 from functools import partial
 
 import estimagic.batch_evaluators as be
@@ -51,8 +51,7 @@ def pounders(
 ):
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
 
-    For details see :ref:`list_of_scipy_algorithms`.
-
+    For details, see :ref:`_own_algorithms`.
     """
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
@@ -133,12 +132,12 @@ def internal_solve_pounders(
     batch_evaluator,
     n_cores,
 ):
-    """Minimize the criterion function using POUNDERS.
+    """Find the local minimum to a non-linear least-squares problem using POUNDERS.
 
     Args:
         criterion_and_derivative (callable): Function that returns criterion
             and derivative as a tuple.
-        x0 (np.ndarray): Initial guess of the parameter vector. Starting points.
+        x0 (np.ndarray): Initial guess of the parameter vector (starting points).
         lower_bounds (np.ndarray): Lower bounds.
             Must have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
