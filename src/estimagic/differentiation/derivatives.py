@@ -617,28 +617,6 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     return evals
 
 
-def _convert_evaluation_points_to_original(evaluation_points, params):
-    if np.isscalar(params):
-        res = [p[0] if isinstance(p, np.ndarray) else p for p in evaluation_points]
-    elif isinstance(params, pd.DataFrame):
-        res = []
-        for point in evaluation_points:
-            if isinstance(point, np.ndarray):
-                pandas_point = params.copy(deep=True)
-                pandas_point["value"] = point
-                res.append(pandas_point)
-            else:
-                res.append(point)
-    elif isinstance(params, pd.Series):
-        res = [
-            pd.Series(p, index=params.index) if isinstance(p, np.ndarray) else p
-            for p in evaluation_points
-        ]
-    else:
-        res = evaluation_points
-    return res
-
-
 def _convert_evaluation_data_to_frame(steps, evals):
     """Convert evaluation data to (tidy) data frame.
 
@@ -936,42 +914,6 @@ def _nan_skipping_batch_evaluator(
             results.append(next(evaluations))
 
     return results
-
-
-def _add_index_to_derivative(derivative, params_index, out_index):
-    if len(derivative.shape) == 1 and params_index is not None:
-        derivative = pd.Series(derivative, index=params_index)
-    if len(derivative.shape) == 2 and (
-        params_index is not None or out_index is not None
-    ):
-        derivative = pd.DataFrame(derivative, columns=params_index, index=out_index)
-    return derivative
-
-
-def _add_index_to_second_derivative(derivative, params_index, out_index):
-    if len(derivative.shape) == 1:
-        if derivative.shape[0] == 1 and params_index is not None:
-            derivative = pd.Series(derivative, index=params_index)
-        if derivative.shape[0] > 1 and out_index is not None:
-            derivative = pd.Series(derivative, index=out_index)
-    if len(derivative.shape) == 2 and params_index is not None:
-        derivative = pd.DataFrame(derivative, columns=params_index, index=params_index)
-    if (
-        len(derivative.shape) == 3
-        and params_index is not None
-        and out_index is not None
-    ):
-        derivative = pd.concat(
-            (
-                pd.DataFrame(
-                    derivative[dim_f], columns=params_index, index=params_index
-                )
-                for dim_f in range(derivative.shape[0])
-            ),
-            axis=0,
-            keys=out_index,
-        )
-    return derivative
 
 
 def _split_into_str_and_int(s):
