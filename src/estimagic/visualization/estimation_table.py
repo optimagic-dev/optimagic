@@ -28,7 +28,7 @@ def estimation_table(
     significance_levels=(0.1, 0.05, 0.01),
     append_notes=True,
     notes_label="Note:",
-    stat_keys=None,
+    stats_options=None,
     number_format=("{0:.3g}", "{0:.5f}", "{0:.4g}"),
     add_trailing_zeros=True,
     padding=1,
@@ -90,7 +90,7 @@ def estimation_table(
             Default is True.
         show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
             Obs numbers. Default is True. Which statistics are displayed and how they
-            are labeled can be determined via ``stat_keys``.
+            are labeled can be determined via ``stats_options``.
         custom_param_names (dict): Dictionary that is used to rename parameters. The
             keys are the old parameter names or index entries. The values are
             the new names. Default None.
@@ -114,10 +114,12 @@ def estimation_table(
             and additional notes, if applicable. Default is True.
         notes_label (str): A sting to print as the title of the notes section, if
             applicable. Default is 'Notes'
-        stat_keys (dict): A dictionary with displayed statistics names as keys,
-            and statistics names to be retrieved from model.info as values.
-            Default is dictionary with common statistics of stats model linear
-            regression.
+        stats_options (dict): A dictionary that determines which statistics (e.g.
+            R-Squared, No. of Observations) are displayed and how they are labeled.
+            The keys are the names of the statistics inside the model.info dictionary
+            or attribute names of a statsmodels results object. The values are the new
+            labels to be displayed for those statistics, i.e. the set of the values is
+            used as row names in the table.
         number_format (int, str, iterable or callable): A callable, iterable, integer
             or callable that is used to apply string formatter(s) to floats in the
             table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
@@ -154,7 +156,7 @@ def estimation_table(
         default_col_names=default_col_names, custom_col_names=custom_col_names
     )
     show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
-    stat_keys = _set_default_stat_keys(stat_keys)
+    stats_options = _set_default_stats_options(stats_options)
     params, stats, max_trail = _get_estimation_table_body_and_footer(
         models,
         column_names,
@@ -162,7 +164,7 @@ def estimation_table(
         custom_param_names,
         custom_index_names,
         significance_levels,
-        stat_keys,
+        stats_options,
         show_col_names,
         show_col_groups,
         show_stars,
@@ -495,7 +497,7 @@ def _get_estimation_table_body_and_footer(
     custom_param_names,
     custom_index_names,
     significance_levels,
-    stat_keys,
+    stats_options,
     show_col_names,
     show_col_groups,
     show_stars,
@@ -522,7 +524,7 @@ def _get_estimation_table_body_and_footer(
             index levels of the parameters.
         significance_levels (list): a list of floats for p value's significance
             cutt-off values.
-        stat_keys (dict): A dictionary with displayed statistics names as keys,
+        stats_options (dict): A dictionary with displayed statistics names as keys,
             and statistics names to be retrieved from model.info as values
         show_col_names (bool): If True, the column names are displayed.
         show_col_groups (bool): If True, the column groups are displayed.
@@ -563,7 +565,7 @@ def _get_estimation_table_body_and_footer(
     )
     stats = _build_estimation_table_footer(
         models,
-        stat_keys,
+        stats_options,
         significance_levels,
         show_stars,
         number_format,
@@ -665,7 +667,7 @@ def _build_estimation_table_body(
 
 def _build_estimation_table_footer(
     models,
-    stat_keys,
+    stats_options,
     significance_levels,
     show_stars,
     number_format,
@@ -680,7 +682,7 @@ def _build_estimation_table_footer(
 
     Args:
         models (list): List of named tuples with attributes 'params', 'info' and 'name'.
-        stat_keys (dict): A dictionary with displayed statistics names as keys,
+        stats_options (dict): A dictionary with displayed statistics names as keys,
             and statistics names to be retrieved from model.info as values
         significance_levels (list): a list of floats for p value's significance cutt-off
             values.
@@ -700,7 +702,7 @@ def _build_estimation_table_footer(
     to_concat = [
         _create_statistics_sr(
             mod,
-            stat_keys,
+            stats_options,
             significance_levels,
             show_stars,
             number_format,
@@ -801,18 +803,17 @@ def _update_render_options(
     return render_options
 
 
-def _set_default_stat_keys(stat_keys):
+def _set_default_stats_options(stats_options):
     """Define some default summary statistics to display in estimation table."""
-    if not stat_keys:
-        stat_keys = {
-            "Observations": "n_obs",
-            "R$^2$": "rsquared",
-            "Adj. R$^2$": "rsquared_adj",
-            "Residual Std. Error": "resid_std_err",
-            "F Statistic": "fvalue",
-            "show_dof": None,
+    if not stats_options:
+        stats_options = {
+            "n_obs": "Observations",
+            "rsquared": "R$^2$",
+            "rsquared_adj": "Adj. R$^2$",
+            "resid_std_err": "Residual Std. Error",
+            "fvalue": "F Statistic",
         }
-    return stat_keys
+    return stats_options
 
 
 def _get_model_names(processed_models):
@@ -1055,7 +1056,7 @@ def _combine_series(value_sr, inference_sr):
 
 def _create_statistics_sr(
     model,
-    stat_keys,
+    stats_options,
     significance_levels,
     show_stars,
     number_format,
@@ -1066,7 +1067,7 @@ def _create_statistics_sr(
 
     Args:
         model (estimation result): see main docstring
-        stat_keys (dict): see main docstring
+        stats_options (dict): see main docstring
         significance_levels (list): see main docstring
         show_stars (bool): see main docstring
         number_format (int): see main focstring
@@ -1076,32 +1077,34 @@ def _create_statistics_sr(
             if applicable.
 
     """
-    stat_values = {}
-    stat_keys = deepcopy(stat_keys)
-    if "show_dof" in stat_keys:
-        show_dof = stat_keys.pop("show_dof")
+    stats_values = {}
+    stats_options = deepcopy(stats_options)
+    if "show_dof" in stats_options:
+        show_dof = stats_options.pop("show_dof")
     else:
         show_dof = None
-    for k in stat_keys:
-        if not stat_keys[k] == "n_obs":
-            stat_values[k] = model.info.get(stat_keys[k], np.nan)
+    for k in stats_options:
+        if k not in ["n_obs", "nobs"]:
+            stats_values[stats_options[k]] = model.info.get(k, np.nan)
     raw_formatted = _apply_number_format(
-        pd.DataFrame(pd.Series(stat_values)), number_format
+        pd.DataFrame(pd.Series(stats_values)), number_format
     )
     if add_trailing_zeros:
         formatted = _apply_number_format(raw_formatted, max_trail)
     else:
         formatted = raw_formatted
-    stat_values = formatted.to_dict()[0]
-    if "n_obs" in stat_keys.values():
+    stats_values = formatted.to_dict()[0]
+    if "n_obs" in stats_options:
         n_obs = model.info.get("n_obs", np.nan)
         if not np.isnan(n_obs):
             n_obs = int(n_obs)
-        stat_values[
-            list(stat_keys.keys())[list(stat_keys.values()).index("n_obs")]
-        ] = n_obs
-
-    if "fvalue" in model.info and "F Statistic" in stat_values:
+        stats_values[stats_options["n_obs"]] = n_obs
+    elif "nobs" in stats_options:
+        n_obs = model.info.get("nobs", np.nan)
+        if not np.isnan(n_obs):
+            n_obs = int(n_obs)
+        stats_values[stats_options["nobs"]] = n_obs
+    if "fvalue" in model.info and "F Statistic" in stats_values:
         if show_stars and "f_pvalue" in model.info:
             sig_bins = [-1] + sorted(significance_levels) + [2]
             sig_icon_fstat = "*" * (
@@ -1109,23 +1112,23 @@ def _create_statistics_sr(
                 - np.digitize(model.info["f_pvalue"], sig_bins)
                 + 1
             )
-            stat_values["F Statistic"] = (
-                stat_values["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
+            stats_values["F Statistic"] = (
+                stats_values["F Statistic"] + "$^{" + sig_icon_fstat + "}$"
             )
         if show_dof:
             fstat_str = "{{{}(df={};{})}}"
-            stat_values["F Statistic"] = fstat_str.format(
-                stat_values["F Statistic"],
+            stats_values["F Statistic"] = fstat_str.format(
+                stats_values["F Statistic"],
                 int(model.info["df_model"]),
                 int(model.info["df_resid"]),
             )
-    if "resid_std_err" in model.info and "Residual Std. Error" in stat_values:
+    if "resid_std_err" in model.info and "Residual Std. Error" in stats_values:
         if show_dof:
             rse_str = "{{{}(df={})}}"
-            stat_values["Residual Std. Error"] = rse_str.format(
-                stat_values["Residual Std. Error"], int(model.info["df_resid"])
+            stats_values["Residual Std. Error"] = rse_str.format(
+                stats_values["Residual Std. Error"], int(model.info["df_resid"])
             )
-    stat_sr = pd.Series(stat_values)
+    stat_sr = pd.Series(stats_values)
     # the follwing is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
     stat_ind = np.empty((len(stat_sr), model.params.index.nlevels - 1), dtype=str)

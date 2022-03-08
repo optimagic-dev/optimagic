@@ -100,9 +100,7 @@ PARAMETRIZATION += [("html", render_html, models) for models in MODELS]
 
 
 @pytest.mark.parametrize("return_type, render_func,models", PARAMETRIZATION)
-def test_out_estimation_table_and_render_functions_yield_same_result(
-    return_type, render_func, models
-):
+def test_one_and_stage_rendering_are_equal(return_type, render_func, models):
     first_stage = estimation_table(
         models, return_type="render_inputs", confidence_intervals=True
     )
@@ -254,15 +252,14 @@ def test_create_statistics_sr():
     sig_levels = [0.1, 0.2]
     show_stars = False
     model = ProcessedModel(params=df, info=info, name="target")
-    stats_dict = {
-        "Observations": "n_obs",
-        "R2": "rsquared",
-        "show_dof": False,
-        "R2 Adj.": "rsquared_adj",
+    stats_options = {
+        "n_obs": "Observations",
+        "rsquared": "R2",
+        "rsquared_adj": "R2 Adj.",
     }
     res = _create_statistics_sr(
         model,
-        stats_dict,
+        stats_options,
         sig_levels,
         show_stars,
         number_format,
@@ -277,7 +274,7 @@ def test_create_statistics_sr():
 
 
 # test _process_frame_axes for different arguments
-def test_process_frame_axes_indices():
+def test_process_frame_indices_index():
     df = pd.DataFrame(np.ones((3, 3)), columns=["", "", ""])
     df.index = pd.MultiIndex.from_arrays(
         np.array([["today", "today", "today"], ["var1", "var2", "var3"]])
@@ -307,7 +304,7 @@ def test_process_frame_axes_indices():
     afe(res, exp, check_dtype=False)
 
 
-def test_process_frame_axes_columns():
+def test_process_frame_indices_columns():
     df = pd.DataFrame(np.ones((3, 3)), columns=["", "", ""])
     col_names = list("abc")
     col_groups = ["first", "first", "second"]
