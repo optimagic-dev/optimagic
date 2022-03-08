@@ -527,7 +527,7 @@ def _get_estimation_table_body_and_footer(
     number_format,
     add_trailing_zeros,
 ):
-    """Create params and stats blocs with significance stars and inference values.
+    """Create body and footer blocs with significance stars and inference values.
 
     Applies number formatting to parameters and summary statitistics.
     Concatinates infere values to parameter values if applicable,
@@ -614,7 +614,7 @@ def _build_estimation_table_body(
     add_trailing_zeros,
 ):
 
-    """Create params bloc significance stars and inference values.
+    """Create body bloc significance stars and inference values.
 
     Applies number formatting to parameters. Concatinates inference values
     to parameter values if applicable. Adds significance stars if applicable.
@@ -697,7 +697,7 @@ def _build_estimation_table_footer(
     add_trailing_zeros,
     max_trail,
 ):
-    """Create params and stats blocs with significance stars and inference values.
+    """Create footer bloc of estimation table.
 
     Applies number formatting to parameters and summary statitistics.
     Concatinates infere values to parameter values if applicable,
