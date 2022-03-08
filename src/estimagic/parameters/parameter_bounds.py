@@ -46,8 +46,8 @@ def get_bounds(params, lower_bounds=None, upper_bounds=None):
     if len(upper_flat) != n_params:
         raise ValueError("upper_bounds do not match dimension of params.")
 
-    lower_flat = np.nan_to_num(lower_flat, nan=-np.inf)
-    upper_flat = np.nan_to_num(upper_flat, nan=np.inf)
+    lower_flat[np.isnan(lower_flat)] = -np.inf
+    upper_flat[np.isnan(upper_flat)] = np.inf
 
     return lower_flat, upper_flat
 

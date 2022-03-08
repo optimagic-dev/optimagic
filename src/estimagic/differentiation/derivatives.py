@@ -10,8 +10,13 @@ from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
+from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.parameter_bounds import get_bounds
+from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import namedtuple_from_kwargs
+from pybaum import tree_flatten
+from pybaum import tree_just_flatten as tree_leaves
+from pybaum import tree_unflatten
 
 
 def first_derivative(
@@ -125,13 +130,10 @@ def first_derivative(
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
-    # convert params to numpy, but keep label information
-    params_index = (
-        params.index if isinstance(params, (pd.DataFrame, pd.Series)) else None
-    )
-
-    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
-    x = np.atleast_1d(x).astype(float)
+    # convert params to numpy
+    registry = get_registry(extended=True)
+    x, params_tree_def = tree_flatten(params, registry=registry)
+    x = np.atleast_1d(x).astype(np.float64)
 
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
@@ -162,9 +164,9 @@ def first_derivative(
                 evaluation_points.append(point)
 
     # convert the numpy arrays to whatever is needed by func
-    evaluation_points = _convert_evaluation_points_to_original(
-        evaluation_points, params
-    )
+    evaluation_points = [
+        _unflatten_if_ndarray(p, params_tree_def, registry) for p in evaluation_points
+    ]
 
     # we always evaluate f0, so we can fall back to one-sided derivatives if
     # two-sided derivatives fail. The extra cost is negligible in most cases.
@@ -191,13 +193,14 @@ def first_derivative(
         f0 = raw_evals[-1]
         raw_evals = raw_evals[:-1]
     func_value = f0
-    f0 = f0[key] if isinstance(f0, dict) else f0
+    f0_tree = f0[key] if isinstance(f0, dict) else f0
+
+    f0 = tree_leaves(f0_tree, registry=registry)
     f_was_scalar = np.isscalar(f0)
-    out_index = f0.index if isinstance(f0, pd.Series) else None
     f0 = np.atleast_1d(f0)
 
     # convert the raw evaluations to numpy arrays
-    raw_evals = _convert_evals_to_numpy(raw_evals, key)
+    raw_evals = _convert_evals_to_numpy(raw_evals, key, registry)
 
     # apply finite difference formulae
     evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
@@ -231,7 +234,7 @@ def first_derivative(
 
     # results processing
     derivative = jac.flatten() if f_was_scalar else jac
-    derivative = _add_index_to_derivative(derivative, params_index, out_index)
+    derivative = matrix_to_block_tree(derivative, f0_tree, params)
 
     result = {"derivative": derivative}
     if return_func_value:
@@ -377,13 +380,10 @@ def second_derivative(
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
-    # convert params to numpy, but keep label information
-    params_index = (
-        params.index if isinstance(params, (pd.DataFrame, pd.Series)) else None
-    )
-
-    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
-    x = np.atleast_1d(x).astype(float)
+    # convert params to numpy
+    registry = get_registry(extended=True)
+    x, params_tree_def = tree_flatten(params, registry=registry)
+    x = np.atleast_1d(x).astype(np.float64)
 
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
@@ -437,7 +437,7 @@ def second_derivative(
 
     # convert the numpy arrays to whatever is needed by func
     evaluation_points = {
-        step_type: _convert_evaluation_points_to_original(points, params)
+        step_type: [_unflatten_if_ndarray(p, params_tree_def, registry) for p in points]
         for step_type, points in evaluation_points.items()
     }
 
@@ -472,13 +472,16 @@ def second_derivative(
     if f0 is None:
         f0 = raw_evals["one_step"][-1]
         raw_evals["one_step"] = raw_evals["one_step"][:-1]
-    f0 = f0[key] if isinstance(f0, dict) else f0
-    out_index = f0.index if isinstance(f0, pd.Series) else None
+    func_value = f0
+    f0_tree = f0[key] if isinstance(f0, dict) else f0
+
+    f0 = tree_leaves(f0_tree, registry=registry)
+    f_was_scalar = len(f0) == 1
     f0 = np.atleast_1d(f0)
 
     # convert the raw evaluations to numpy arrays
     raw_evals = {
-        step_type: _convert_evals_to_numpy(evals, key)
+        step_type: _convert_evals_to_numpy(evals, key, registry)
         for step_type, evals in raw_evals.items()
     }
 
@@ -518,12 +521,16 @@ def second_derivative(
         raise Exception(exc_info)
 
     # results processing
-    derivative = np.squeeze(hess)
-    derivative = _add_index_to_second_derivative(derivative, params_index, out_index)
+    if f_was_scalar:
+        derivative = np.squeeze(hess, axis=0)
+        derivative = matrix_to_block_tree(derivative, params, params)
+    else:
+        # batch hessian case
+        raise NotImplementedError
 
     result = {"derivative": derivative}
     if return_func_value:
-        result["func_value"] = f0
+        result["func_value"] = func_value
     info = _collect_additional_info(
         return_info, steps, evals, updated_candidates, target="second_derivative"
     )
@@ -707,7 +714,7 @@ def _convert_richardson_candidates_to_frame(jac, err):
     return df
 
 
-def _convert_evals_to_numpy(raw_evals, key):
+def _convert_evals_to_numpy(raw_evals, key, registry):
     """harmonize the output of the function evaluations.
 
     The raw_evals might contain dictionaries of which we only need one entry, scalar
@@ -717,8 +724,14 @@ def _convert_evals_to_numpy(raw_evals, key):
     """
     # get rid of dictionaries
     evals = [val[key] if isinstance(val, dict) else val for val in raw_evals]
+
     # get rid of pandas objects
-    evals = [np.array(val) if isinstance(val, pd.Series) else val for val in evals]
+    evals = [
+        np.array(tree_leaves(val, registry=registry), dtype=np.float64)
+        if not _is_exactly_nan(val)
+        else val
+        for val in evals
+    ]
 
     # find out the correct output shape
     try:
@@ -1001,3 +1014,27 @@ def _collect_additional_info(return_info, steps, evals, updated_candidates, targ
             info["derivative_candidates"] = derivative_candidates
 
     return info
+
+
+def _is_exactly_nan(value):
+    """Check if value is np.nan.
+
+    Example:
+    >>> _is_exactly_nan(np.nan)
+    True
+    >>> _is_exactly_nan(1.0)
+    False
+    >>> import numpy as np
+    >>> _is_exactly_nan(np.array([np.nan]))
+    False
+
+    """
+    return isinstance(value, float) and np.isnan(value)
+
+
+def _unflatten_if_ndarray(leaves, tree_def, registry):
+    if isinstance(leaves, np.ndarray):
+        out = tree_unflatten(tree_def, leaves, registry=registry)
+    else:
+        out = leaves
+    return out

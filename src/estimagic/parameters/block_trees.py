@@ -12,7 +12,7 @@ def matrix_to_block_tree(matrix, tree1, tree2):
 
     A block tree most often arises when one applies an operation to a function that maps
     between two trees. Two main examples are the Jacobian of the function
-    f : tree1 -> tree2, which results in a block tree structure, or the covariance
+    f : tree2 -> tree1, which results in a block tree structure, or the covariance
     matrix of a tree, in which case tree1 = tree2.
 
     Args:
@@ -64,7 +64,7 @@ def block_tree_to_matrix(block_tree, tree1, tree2):
 
     A block tree most often arises when one applies an operation to a function that maps
     between two trees. Two main examples are the Jacobian of the function
-    f : tree1 -> tree2, which results in a block tree structure, or the covariance
+    f : tree2 -> tree1, which results in a block tree structure, or the covariance
     matrix of a tree, in which case tree1 = tree2.
 
     Args:
