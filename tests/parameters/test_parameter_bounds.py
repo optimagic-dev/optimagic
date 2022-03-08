@@ -20,8 +20,8 @@ def params():
 def test_get_bounds_no_arguments(params):
     got_lower, got_upper = get_bounds(params)
 
-    expected_lower = np.array([np.nan] + 3 * [0] + 4 * [np.nan])
-    expected_upper = np.full(8, np.nan)
+    expected_lower = np.array([-np.inf] + 3 * [0] + 4 * [-np.inf])
+    expected_upper = np.full(8, np.inf)
 
     assert_array_equal(got_lower, expected_lower)
     assert_array_equal(got_upper, expected_upper)
@@ -32,8 +32,8 @@ def test_get_bounds_with_lower_bounds(params):
 
     got_lower, got_upper = get_bounds(params, lower_bounds=lower_bounds)
 
-    expected_lower = np.array([0.1] + 3 * [0] + 4 * [np.nan])
-    expected_upper = np.full(8, np.nan)
+    expected_lower = np.array([0.1] + 3 * [0] + 4 * [-np.inf])
+    expected_upper = np.full(8, np.inf)
 
     assert_array_equal(got_lower, expected_lower)
     assert_array_equal(got_upper, expected_upper)
@@ -47,8 +47,8 @@ def test_get_bounds_with_upper_bounds(params):
     }
     got_lower, got_upper = get_bounds(params, upper_bounds=upper_bounds)
 
-    expected_lower = np.array([np.nan] + 3 * [0] + 4 * [np.nan])
-    expected_upper = np.array([np.nan] + 3 * [1] + 4 * [np.nan])
+    expected_lower = np.array([-np.inf] + 3 * [0] + 4 * [-np.inf])
+    expected_upper = np.array([np.inf] + 3 * [1] + 4 * [np.inf])
 
     assert_array_equal(got_lower, expected_lower)
     assert_array_equal(got_upper, expected_upper)
@@ -66,7 +66,7 @@ def test_get_bounds_numpy():
     params = np.array([1, 2])
     got_lower, got_upper = get_bounds(params)
 
-    expected = np.array([np.nan, np.nan])
+    expected = np.array([np.inf, np.inf])
 
-    assert_array_equal(got_lower, expected)
+    assert_array_equal(got_lower, -expected)
     assert_array_equal(got_upper, expected)

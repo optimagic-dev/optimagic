@@ -27,20 +27,20 @@ def other_df():
 
 
 def test_flatten_df_with_value_column(value_df):
-    registry = get_registry(extended=True, value_col="value")
+    registry = get_registry(extended=True)
     flat, _ = tree_flatten(value_df, registry=registry)
     assert flat == [1, 3, 5]
 
 
 def test_unflatten_df_with_value_column(value_df):
-    registry = get_registry(extended=True, value_col="value")
+    registry = get_registry(extended=True)
     _, treedef = tree_flatten(value_df, registry=registry)
     unflat = tree_unflatten(treedef, [10, 11, 12], registry=registry)
     assert unflat.equals(value_df.assign(value=[10, 11, 12]))
 
 
 def test_leaf_names_df_with_value_column(value_df):
-    registry = get_registry(extended=True, value_col="value")
+    registry = get_registry(extended=True)
     names = leaf_names(value_df, registry=registry)
     assert names == ["alpha", "beta", "gamma"]
 
