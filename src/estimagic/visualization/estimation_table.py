@@ -157,7 +157,7 @@ def estimation_table(
     )
     show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
     stats_options = _set_default_stats_options(stats_options)
-    params, stats, max_trail = _get_estimation_table_body_and_footer(
+    body, footer, max_trail = _get_estimation_table_body_and_footer(
         models,
         column_names,
         column_groups,
@@ -179,8 +179,8 @@ def estimation_table(
         render_options, show_col_names, show_col_groups, show_index_names
     )
     render_inputs = {
-        "params": params,
-        "stats": stats,
+        "body": body,
+        "footer": footer,
         "right_decimals": max_trail,
         "render_options": render_options,
     }
@@ -211,12 +211,12 @@ def estimation_table(
 
     elif return_type == "dataframe":
         if show_footer:
-            stats.index.names = params.index.names
-            out = pd.concat([params.reset_index(), stats.reset_index()]).set_index(
-                params.index.names
+            footer.index.names = body.index.names
+            out = pd.concat([body.reset_index(), footer.reset_index()]).set_index(
+                body.index.names
             )
         else:
-            out = params
+            out = body
     else:
         raise ValueError(
             f"""Value of return type can be either of
@@ -231,8 +231,8 @@ def estimation_table(
 
 
 def render_latex(
-    params,
-    stats,
+    body,
+    footer,
     right_decimals,
     padding=1,
     render_options=None,
@@ -247,10 +247,10 @@ def render_latex(
     """Return estimation table in LaTeX format as string.
 
     Args:
-        params (pandas.DataFrame): DataFrame with formatted strings of parameter
+        body (pandas.DataFrame): DataFrame with formatted strings of parameter
             values, inferences (standard errors or confidence intervals, if
             applicable) and significance stars (if applicable).
-        stats (pandas.DataFrame): DataFrame with formatted strings of summary
+        footer (pandas.DataFrame): DataFrame with formatted strings of summary
             statistics (such as number of observations, r-squared, etc.)
         right_decimals (int): An integer passed to the `table-format` argument of
             siuntix tabular controls the number of figures that is reserved to the
@@ -296,35 +296,35 @@ def render_latex(
                     to your main tex file. To turn
                     this warning off set value of siunitx_warning = False"""
         )
-    if len(params.columns) > 2:
+    if len(body.columns) > 2:
         if alignment_warning:
             warn(
                 """Set the value of padding to 3 or higher to avoid overlay
                     of columns. To turn this warning off set value of
                     alignment_warning = False."""
             )
-    params = params.copy(deep=True)
+    body = body.copy(deep=True)
     try:
-        ci_in_params = params.loc[("",)][params.columns[0]].str.contains(";").any()
+        ci_in_params = body.loc[("",)][body.columns[0]].str.contains(";").any()
     except KeyError:
         ci_in_params = False
 
     if ci_in_params:
-        params.loc[("",)] = params.loc[("",)].applymap("{{{}}}".format).values
-    if params.columns.nlevels > 1:
-        column_groups = params.columns.get_level_values(0)
+        body.loc[("",)] = body.loc[("",)].applymap("{{{}}}".format).values
+    if body.columns.nlevels > 1:
+        column_groups = body.columns.get_level_values(0)
     else:
         column_groups = None
     group_to_col_position = _create_group_to_col_position(column_groups)
-    for i in range(params.columns.nlevels):
-        params = params.rename(
-            {c: "{" + c + "}" for c in params.columns.get_level_values(i)},
+    for i in range(body.columns.nlevels):
+        body = body.rename(
+            {c: "{" + c + "}" for c in body.columns.get_level_values(i)},
             axis=1,
             level=i,
         )
-    params = params.applymap(_add_latex_syntax_around_scientfic_number_string)
-    n_levels = params.index.nlevels
-    n_columns = len(params.columns)
+    body = body.applymap(_add_latex_syntax_around_scientfic_number_string)
+    n_levels = body.index.nlevels
+    n_columns = len(body.columns)
     # here you add all arguments of df.to_latex for which you want to change the default
     default_options = {
         "index_names": False,
@@ -340,8 +340,8 @@ def render_latex(
     if render_options:
         default_options.update(render_options)
     if not default_options["index_names"]:
-        params.index.names = [None] * params.index.nlevels
-    latex_str = params.to_latex(**default_options)
+        body.index.names = [None] * body.index.nlevels
+    latex_str = body.to_latex(**default_options)
     # Get mapping from group name to column position
     if group_to_col_position:
         temp_str = "\n"
@@ -358,12 +358,12 @@ def render_latex(
         )
     latex_str = latex_str.split("\\bottomrule")[0]
     if show_footer:
-        if "Observations" in stats.index.get_level_values(0):
-            stats = stats.copy(deep=True)
-            stats.loc[("Observations",)] = _add_multicolumn_left_format(
-                stats.loc[("Observations",)].values
+        if "Observations" in footer.index.get_level_values(0):
+            footer = footer.copy(deep=True)
+            footer.loc[("Observations",)] = _add_multicolumn_left_format(
+                footer.loc[("Observations",)].values
             )
-        stats_str = stats.to_latex(**default_options)
+        stats_str = footer.to_latex(**default_options)
         if "\\midrule" in stats_str:
             stats_str = (
                 "\\midrule" + stats_str.split("\\midrule")[1].split("\\bottomrule")[0]
@@ -374,7 +374,7 @@ def render_latex(
             )
         latex_str += stats_str
     notes = _generate_notes_latex(
-        append_notes, notes_label, significance_levels, custom_notes, params
+        append_notes, notes_label, significance_levels, custom_notes, body
     )
     latex_str += notes
     latex_str += "\\bottomrule\n\\end{tabular}\n"
@@ -384,8 +384,8 @@ def render_latex(
 
 
 def render_html(
-    params,
-    stats,
+    body,
+    footer,
     render_options=None,
     show_footer=True,
     append_notes=True,
@@ -397,10 +397,10 @@ def render_html(
     """Return estimation table in html format as string.
 
     Args:
-        params (pandas.DataFrame): DataFrame with formatted strings of parameter
+        body (pandas.DataFrame): DataFrame with formatted strings of parameter
             values, inferences (standard errors or confidence intervals, if
             applicable) and significance stars (if applicable).
-        stats (pandas.DataFrame): DataFrame with formatted strings of summary
+        footer (pandas.DataFrame): DataFrame with formatted strings of summary
             statistics (such as number of observations, r-squared, etc.)
         notes (str): The html string with notes with additional information
             (e.g. mapping from pvalues to significance stars) to append to the footer
@@ -420,8 +420,8 @@ def render_html(
         latex_str (str): The resulting string with html tabular code.
 
     """
-    n_levels = params.index.nlevels
-    n_columns = len(params.columns)
+    n_levels = body.index.nlevels
+    n_columns = len(body.columns)
     default_options = {"index_names": False, "na_rep": "", "justify": "center"}
     html_str = ""
     if render_options:
@@ -429,21 +429,21 @@ def render_html(
         if "caption" in default_options:
             html_str += default_options["caption"] + "<br>"
             default_options.pop("caption")
-    html_str += params.to_html(**default_options).split("</tbody>\n</table>")[0]
+    html_str += body.to_html(**default_options).split("</tbody>\n</table>")[0]
     if show_footer:
         stats_str = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
             </td></tr>""".format(
             n_levels + n_columns
         )
         stats_str += (
-            stats.to_html(**default_options)
+            footer.to_html(**default_options)
             .split("</thead>\n")[1]
             .split("</tbody>\n</table>")[0]
         )
         stats_str = re.sub(r"(?<=[\d)}{)])}", "", re.sub(r"{(?=[}\d(])", "", stats_str))
         html_str += stats_str
     notes = _generate_notes_html(
-        append_notes, notes_label, significance_levels, custom_notes, params
+        append_notes, notes_label, significance_levels, custom_notes, body
     )
     html_str += notes
     html_str += "</tbody>\n</table>"
@@ -561,16 +561,16 @@ def _get_estimation_table_body_and_footer(
             number of digits after the decimal point.
 
     Returns:
-        params (DataFrame): DataFrame data frame with formatted strings of parameter
+        body (DataFrame): DataFrame data frame with formatted strings of parameter
             and inference values and significance stars to display in estimation table.
-        stats (DataFrame): DataFrame with formatted strings of summary statistics to
+        footer (DataFrame): DataFrame with formatted strings of summary statistics to
             display at the bottom of estimation table.
         max_trail (int): Integer that shows the maximum number of digits after a decimal
             point in the parameters DataFrame. Is passed to render_latex for formatting
             tables in siunitx package.
 
     """
-    params, max_trail = _build_estimation_table_body(
+    body, max_trail = _build_estimation_table_body(
         models,
         column_names,
         column_groups,
@@ -585,7 +585,7 @@ def _get_estimation_table_body_and_footer(
         number_format,
         add_trailing_zeros,
     )
-    stats = _build_estimation_table_footer(
+    footer = _build_estimation_table_footer(
         models,
         stats_options,
         significance_levels,
@@ -594,8 +594,8 @@ def _get_estimation_table_body_and_footer(
         add_trailing_zeros,
         max_trail,
     )
-    stats.columns = params.columns
-    return params, stats, max_trail
+    footer.columns = body.columns
+    return body, footer, max_trail
 
 
 def _build_estimation_table_body(
@@ -645,7 +645,7 @@ def _build_estimation_table_body(
             number of digits after the decimal point.
 
     Returns:
-        params (DataFrame): DataFrame data frame with formatted strings of parameter
+        body (DataFrame): DataFrame data frame with formatted strings of parameter
             and inference values and significance stars to display in estimation table.
         max_trail (int): Integer that shows the maximum number of digits after a decimal
             point in the parameters DataFrame. Is passed to
@@ -719,7 +719,7 @@ def _build_estimation_table_footer(
             after a decimal point equal to max_trail for each float.
 
     Returns:
-        stats (DataFrame): DataFrame with formatted strings of summary statistics to
+        footer (DataFrame): DataFrame with formatted strings of summary statistics to
             display at the bottom of estimation table.
 
     """

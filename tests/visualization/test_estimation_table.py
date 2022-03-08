@@ -66,8 +66,8 @@ def test_estimation_table():
         ABP,417.00$^{*** }$
         ,(69.50)
     """
-    exp["params"] = _read_csv_string(body).fillna("")
-    exp["params"].set_index("index", inplace=True)
+    exp["body"] = _read_csv_string(body).fillna("")
+    exp["body"].set_index("index", inplace=True)
     footer_str = """
          ,target
         R$^2$,0.40
@@ -77,17 +77,17 @@ def test_estimation_table():
         Observations,442
 
     """
-    exp["stats"] = _read_csv_string(footer_str).fillna("")
-    exp["stats"].set_index(" ", inplace=True)
-    exp["stats"].index.names = [None]
-    exp["stats"].index = pd.MultiIndex.from_arrays([exp["stats"].index])
+    exp["footer"] = _read_csv_string(footer_str).fillna("")
+    exp["footer"].set_index(" ", inplace=True)
+    exp["footer"].index.names = [None]
+    exp["footer"].index = pd.MultiIndex.from_arrays([exp["footer"].index])
     exp["notes_tex"] = "\\midrule\n"
     exp[
         "notes_html"
     ] = """<tr><td colspan="2" style="border-bottom: 1px solid black">
         </td></tr>"""
-    afe(exp["stats"], res["stats"])
-    afe(exp["params"], res["params"], check_index_type=False)
+    afe(exp["footer"], res["footer"])
+    afe(exp["body"], res["body"], check_index_type=False)
 
 
 MODELS = [
