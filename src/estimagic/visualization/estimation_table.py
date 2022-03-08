@@ -156,7 +156,7 @@ def estimation_table(
         default_col_names=default_col_names, custom_col_names=custom_col_names
     )
     show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
-    stats_options = _set_default_stats_options(stats_options)
+    stats_options = _set_stats_options(stats_options)
     params, stats, max_trail = _get_estimation_table_body_and_footer(
         models,
         column_names,
@@ -827,17 +827,22 @@ def _update_render_options(
     return render_options
 
 
-def _set_default_stats_options(stats_options):
+def _set_stats_options(stats_options):
     """Define some default summary statistics to display in estimation table."""
-    if not stats_options:
-        stats_options = {
-            "n_obs": "Observations",
-            "rsquared": "R$^2$",
-            "rsquared_adj": "Adj. R$^2$",
-            "resid_std_err": "Residual Std. Error",
-            "fvalue": "F Statistic",
-        }
-    return stats_options
+    default_options = {
+        "n_obs": "Observations",
+        "rsquared": "R$^2$",
+        "rsquared_adj": "Adj. R$^2$",
+        "resid_std_err": "Residual Std. Error",
+        "fvalue": "F Statistic",
+    }
+    if stats_options:
+        if not isinstance(stats_options, dict):
+            raise TypeError(
+                f"Stats_options can be of type dict only. Not: {type(stats_options)}."
+            )
+        default_options.update(stats_options)
+    return default_options
 
 
 def _get_model_names(processed_models):
