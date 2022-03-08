@@ -218,7 +218,11 @@ def estimation_table(
         else:
             out = params
     else:
-        raise TypeError("Invalid return type")
+        raise ValueError(
+            f"""Value of return type can be either of
+            ['data_frame', 'render_inputs','latex' ,'html']
+            or a path ending with '.html' or '.tex'. Not: {return_type}."""
+        )
     if not str(return_type).endswith((".html", ".tex")):
         return out
     else:
@@ -297,7 +301,7 @@ def render_latex(
             warn(
                 """Set the value of padding to 3 or higher to avoid overlay
                     of columns. To turn this warning off set value of
-                    alignment_warning = False"""
+                    alignment_warning = False."""
             )
     params = params.copy(deep=True)
     try:
@@ -452,16 +456,30 @@ def _process_model(model):
         model: Estimation result. See docstring of estimation_table for more info.
     Returns:
         processed_model: A namedtuple with attributes params, info and name.
+
     """
 
     ProcessedModel = namedtuple("ProcessedModel", "params info name")
     if hasattr(model, "params") and hasattr(model, "info"):
-        assert isinstance(model.info, dict)
-        assert isinstance(model.params, pd.DataFrame)
+        if not isinstance(model.info, dict):
+            raise ValueError(
+                f"""model.info should be of type dict.
+                The type of info attribute of model {model} is {type(model.info)}."""
+            )
+        if not isinstance(model.params, pd.DataFrame):
+            raise ValueError(
+                f"""model.params should be of type pd.DataFrame.
+                The type of params attribute of model {model} is {type(model.params)}.
+                """
+            )
         info = model.info
         params = model.params.copy(deep=True)
         if hasattr(model, "name"):
-            assert isinstance(model.name, str)
+            if not isinstance(model.name, str):
+                raise ValueError(
+                    f"""model.name should be of type str. The type of name attribute
+                of model {model} is {type(model.name)}."""
+                )
             name = model.name
         else:
             name = None
@@ -483,7 +501,10 @@ def _process_model(model):
             except (KeyboardInterrupt, SystemExit):
                 raise
             except BaseException:
-                raise TypeError("Model {} does not have valid format".format(model))
+                raise TypeError(
+                    f"""Model can  be of type namedtuple, dict,  pd.DataFrame
+                    or a statsmodels result. Model {model} is of type {type(model)}."""
+                )
     if "pvalue" in params.columns:
         params = params.rename(columns={"pvalue": "p_value"})
     processed_model = ProcessedModel(params=params, info=info, name=name)
@@ -547,6 +568,7 @@ def _get_estimation_table_body_and_footer(
         max_trail (int): Integer that shows the maximum number of digits after a decimal
             point in the parameters DataFrame. Is passed to render_latex for formatting
             tables in siunitx package.
+
     """
     params, max_trail = _build_estimation_table_body(
         models,
@@ -630,6 +652,7 @@ def _build_estimation_table_body(
             `_build_estimation_table_footer` to get same number of trailing zeros as in
             parameters DataFrame and torender_latex for formatting tables in siunitx
             package.
+
     """
     dfs, max_trail = _reindex_and_float_format_params(
         models, show_inference, confidence_intervals, number_format, add_trailing_zeros
@@ -698,6 +721,7 @@ def _build_estimation_table_footer(
     Returns:
         stats (DataFrame): DataFrame with formatted strings of summary statistics to
             display at the bottom of estimation table.
+
     """
     to_concat = [
         _create_statistics_sr(
@@ -895,11 +919,12 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
     """
     if custom_col_groups:
         if not default_col_groups:
-            assert isinstance(
-                custom_col_groups, list
-            ), """With unique model names, multiple models can't be grouped under
-            common group name. Provide list of unique group names instead, if you
-            wish to add column level."""
+            if not isinstance(custom_col_groups, list):
+                raise ValueError(
+                    """With unique model names, multiple models can't be grouped
+                under common group name. Provide list of unique group names instead,
+                if you wish to add column level."""
+                )
             col_groups = custom_col_groups
         else:
             if isinstance(custom_col_groups, list):
@@ -910,8 +935,8 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
                 )
             else:
                 raise TypeError(
-                    """Invalid type for custom_col_groups. Can be either list
-                    or dictionary, or NoneType"""
+                    f"""Invalid type for custom_col_groups. Can be either list
+                    or dictionary, or NoneType. Not: {type(col_groups)}."""
                 )
     else:
         col_groups = default_col_groups
@@ -929,6 +954,7 @@ def _customize_col_names(default_col_names, custom_col_names):
 
     Returns:
         column_names (list): The column names to display in the estimatino table.
+
     """
     if not custom_col_names:
         col_names = default_col_names
@@ -938,8 +964,8 @@ def _customize_col_names(default_col_names, custom_col_names):
         col_names = custom_col_names
     else:
         raise TypeError(
-            """Invalid type for custom_col_names.
-            Can be either list or dictionary, or NoneType"""
+            f"""Invalid type for custom_col_names.
+            Can be either list or dictionary, or NoneType. Not: {col_names}."""
         )
     return col_names
 
@@ -1180,8 +1206,8 @@ def _process_frame_indices(
             df.rename_axis(index=custom_index_names, inplace=True)
         else:
             TypeError(
-                """Invalid custom_index_names types.
-                Can either be list or dict, or NoneType"""
+                f"""Invalid custom_index_names can be of type either list or dict,
+                or NoneType. Not: {type(custom_index_names)}."""
             )
     if custom_param_names:
         ind = df.index.to_frame()
@@ -1226,8 +1252,10 @@ def _generate_notes_latex(
                 if not all(isinstance(n, str) for n in custom_notes):
                     raise ValueError(
                         f"""Each custom note can only be of string type.
-                        The followin notes are not strings:
-                        {[n for n in custom_notes if not type(n)==str]}"""
+                        The following notes:
+                        {[n for n in custom_notes if not type(n)==str]} are of types
+                        {[type(n) for n in custom_notes if not type(n)==str]}
+                        respectively."""
                     )
                 for n in custom_notes:
                     notes_text += """
@@ -1240,7 +1268,8 @@ def _generate_notes_latex(
                 )
             else:
                 raise ValueError(
-                    "Custom notes can be either a string or a list of strings"
+                    f"""Custom notes can be either a string or a list of strings.
+                    Not: {type(custom_notes)}."""
                 )
     return notes_text
 
@@ -1280,9 +1309,14 @@ def _generate_notes_html(
         notes_text += """<sup>*</sup>p&lt;{} </td>""".format(significance_levels[-1])
         if custom_notes:
             if isinstance(custom_notes, list):
-                assert all(
-                    isinstance(n, str) for n in custom_notes
-                ), "Data type of custom notes can only be string"
+                if not all(isinstance(n, str) for n in custom_notes):
+                    raise ValueError(
+                        f"""Each custom note can only be of string type.
+                        The following notes:
+                        {[n for n in custom_notes if not type(n)==str]} are of types
+                        {[type(n) for n in custom_notes if not type(n)==str]}
+                        respectively."""
+                    )
                 notes_text += """
                     <tr><td></td><td colspan="{}"style="text-align: right">{}</td></tr>
                     """.format(
@@ -1304,7 +1338,8 @@ def _generate_notes_html(
                 )
             else:
                 raise ValueError(
-                    "Custom notes can be either a string or a list of strings"
+                    f"""Custom notes can be either a string or a list of strings,
+                    not {type(custom_notes)}."""
                 )
 
     return notes_text
@@ -1351,7 +1386,6 @@ def _apply_number_format(df, number_format):
 
     Returns:
         df_formatted (DataFrame): Formatted DataFrame.
-
     """
     processed_format = _process_number_format(number_format)
     if isinstance(processed_format, (list, tuple)):
@@ -1392,7 +1426,10 @@ def _process_number_format(raw_format):
     elif callable(raw_format) or isinstance(raw_format, (list, tuple)):
         processed_format = raw_format
     else:
-        raise TypeError("Invalid number format")
+        raise TypeError(
+            f"""Number format can be either of [str, int, tuple, list, callable] types.
+           Not: {type(raw_format)}."""
+        )
     return processed_format
 
 
@@ -1435,6 +1472,7 @@ def _add_latex_syntax_around_scientfic_number_string(string):
 
 
 def _add_multicolumn_left_format(obs_array):
+    """Align oservation numbers at the center of model column."""
     out = []
     for i in obs_array.flatten():
         out.append(f"\\multicolumn{{1}}{{l}}{{{i}}}")
