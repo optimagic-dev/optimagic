@@ -1223,9 +1223,12 @@ def _generate_notes_latex(
         if custom_notes:
             amp_n = "&" * n_levels
             if isinstance(custom_notes, list):
-                assert all(
-                    isinstance(n, str) for n in custom_notes
-                ), "Data type of custom notes can only be string"
+                if not all(isinstance(n, str) for n in custom_notes):
+                    raise ValueError(
+                        f"""Each custom note can only be of string type.
+                        The followin notes are not strings:
+                        {[n for n in custom_notes if not type(n)==str]}"""
+                    )
                 for n in custom_notes:
                     notes_text += """
                     {}\\multicolumn{{{}}}{{r}}\\textit{{{}}}\\\\\n""".format(
