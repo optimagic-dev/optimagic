@@ -838,7 +838,7 @@ def _set_default_stats_options(stats_options):
             "fvalue": "F Statistic",
         }
     else:
-        if not stats_options(dict):
+        if not isinstance(stats_options, dict):
             raise TypeError(
                 f"""stats_options can be of types dict or NoneType.
             Not: {type(stats_options)}."""
