@@ -35,10 +35,22 @@ def estimation_table(
     siunitx_warning=True,
     alignment_warning=True,
 ):
-    r"""Generate html and LaTex tables provided (lists of) of models.
+    r"""Generate html or LaTex tables provided (lists of) of models.
 
-    Can return strings of LaTex/html scripts or dictionaries with processed dataframes
-    to be passed to tabular functions, or save tables to path.
+    The function can create publication quality tables in various formats from
+    statsmodels or estimagic results.
+
+    It allows for extensive customization via optional arguments and almost limitless
+    flexibility when using a two-stage approach where the ``return_type`` is set to
+    ``"render_inputs"``, the resulting dictionary representation of the table is
+    modified and that modified version is then passed to ``render_latex`` or
+    ``render_html``.
+
+    The formatting of the numbers in the table is completely configurable via the
+    ``number_format`` argument. By default we round to three significant digits (i.e.
+    the three leftmost non-zero digits are displayed). This is very different from
+    other table packages and motivated by the fact that most estimation tables give
+    a wrong feeling of precision by showing too many decimal points.
 
     Args:
         models (list): list of estimation results. The models can come from
@@ -52,25 +64,33 @@ def estimation_table(
             If a models is a statsmodels result, model.endog_names is used as name and
             the rest is extracted from corresponding statsmodels attributes. The model
             names do not have to be unique but if they are not, models with the same
-            name dneed to be grouped together.
+            name need to be grouped together.
         return_type (str): Can be "dataframe", "latex", "html", "render_inputs" or a
             file path with the extension .tex or .html. If "render_inputs" is passed,
             a dictionary with the entries "body", "footer" and other
             information is returned. The entries can be modified by the user (
-            e.g. formatting changes, renaming of columns index, ...) and then passed
+            e.g. change formatting, renameof columns or index, ...) and then passed
             to `render_latex` or render_html`. Default "dataframe".
         render_options (dict): a dictionary with keyword arguments that are passed to
             df.to_latex or df.to_html, depending on the return_type.
-            The default None.
-        show_col_names (bool): If True, the column names are displayed. Default True.
-        show_col_groups (bool): If True, the column groups are displayed. Default None.
+            The default is None.
+        show_col_names (bool): If True, the column names are displayed. The default
+            column names are the model names if the model names are unique, otherwise
+            (1), (2), etc.. Default True.
+        show_col_groups (bool): If True, the column groups are displayed. The default
+            column groups are the model names if the model names are not unique and
+            undefined otherwise. Default None. None means that the column groups are
+            displayed if they are defined.
         show_index_names (bool): If True, the index names are displayed. Default False.
+            This is mostly relevant when working with estimagic style params DataFrames
+            with a MultiIndex.
         show_inference(bool): If True, inference (standard errors or confidence
-            intervals) below param values. Default True.
-        show_stars (bool): a boolean variable for printing significance stars.
+            intervals) are displayed below parameter values. Default True.
+        show_stars (bool): a boolean variable for displaying significance stars.
             Default is True.
         show_footer (bool): a boolean variable for displaying statistics, e.g. R2,
-            Obs numbers. Default is True.
+            Obs numbers. Default is True. Which statistics are displayed and how they
+            are labeled can be determined via ``stat_keys``.
         custom_param_names (dict): Dictionary that is used to rename parameters. The
             keys are the old parameter names or index entries. The values are
             the new names. Default None.
@@ -81,13 +101,15 @@ def estimation_table(
             the default column groups. The default column groups are the model names
             if the model names are not unique and undefined otherwise.
         custom_index_names (dict or list): Dictionary or list to set the names of the
-            index levels of the parameters. Only used if "index_names" is set to
-            True in the render_options. Default None.
+            index levels of the parameters. This is mostly relevant when working with
+            estimagic style params DataFrames with a MultiIndex and only used if
+            "index_names" is set to True in the render_options. Default None.
         custom_notes (list): A list of strings for additional notes. Default is None.
         confidence_intervals (bool): If True, display confidence intervals as inference
             values. Display standard errors otherwise. Default False.
-        significance_levels (list): a list of floats for p value's significance cutt-off
-            values. Default is [0.1,0.05,0.01].
+        significance_levels (list): a list of floats for p value's significance cut-off
+            values.This is used to generate the significance stars. Default is
+            [0.1,0.05,0.01].
         append_notes (bool): A boolean variable for printing p value cutoff explanation
             and additional notes, if applicable. Default is True.
         notes_label (str): A sting to print as the title of the notes section, if
@@ -99,7 +121,7 @@ def estimation_table(
         number_format (int, str, iterable or callable): A callable, iterable, integer
             or callable that is used to apply string formatter(s) to floats in the
             table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
-        add_trailing_zeros (bool): If True, format floats such that they haave same
+        add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point. Default True.
         padding (int): an integer used for aligning LaTex columns. Affects the
             alignment of the columns to the left of the decimal point of numerical
@@ -110,18 +132,16 @@ def estimation_table(
         alignment_warning (bool): If True, print warning about siunitx table formatting,
             to avoid column overlays. Default True.
 
-
-
     Returns:
         res_table (data frame, str or dictionary): depending on the rerturn type,
             data frame with formatted strings, a string for html or latex tables,
             or a dictionary with statistics and parameters dataframes, and strings
             for footers is returned. If the return type is a path, the function saves
             the resulting table at the given path.
+
     """
-    # Check models are passed as a a list or tuple.
     if not isinstance(models, (tuple, list)):
-        raise TypeError("Please, provide models as a iterables.")
+        raise TypeError(f"models must be a list or tuple. Not: {type(models)}")
     models = [_process_model(model) for model in models]
     model_names = _get_model_names(models)
     default_col_names, default_col_groups = _get_default_column_names_and_groups(
@@ -723,8 +743,10 @@ def _get_common_index(dfs):
 
 def _get_cols_to_format(show_inference, confidence_intervals):
     """Get the list of names of columns that need to be formatted.
+
     By default, formatting is applied to  parameter values. If inference values
     need to displayed, adds confidence intervals or standard erros to the list.
+
     """
     cols = ["value"]
     if show_inference:
@@ -749,8 +771,10 @@ def _apply_number_formatting_frames(dfs, columns, number_format, add_trailing_ze
 
 def _update_show_col_groups(show_col_groups, column_groups):
     """Set the value of show_col_groups to False or True given column_groups.
+
     Updates the default None to True if column_groups is not None. Sets to False
     otherwise.
+
     """
     if show_col_groups is None:
         if column_groups is not None:
@@ -793,8 +817,10 @@ def _set_default_stat_keys(stat_keys):
 
 def _get_model_names(processed_models):
     """Get names of model names if defined, set based on position otherwise.
+
     Args:
         processed_models (list): List of estimation results processed to namedtuples.
+
     Returns:
         names (list): List of model names given either by name attribute of each model
             if defined or the position (counting from 1) of each model in parentheses.
@@ -812,10 +838,13 @@ def _get_model_names(processed_models):
 
 def _check_order_of_model_names(model_names):
     """Check identically named models are adjacent.
+
     Args:
         model_names (list): List of model names.
-    Returns:
-        raises ValueError if models that share a name are not next to each other.
+
+    Raises:
+        ValueError: if models that share a name are not next to each other.
+
     """
     group_to_col_index = _create_group_to_col_position(model_names)
     for positions in group_to_col_index.values():
@@ -828,8 +857,10 @@ def _check_order_of_model_names(model_names):
 
 def _get_default_column_names_and_groups(model_names):
     """Get column names and groups to display in the estimation table.
+
     Args:
         model_names (list): List of model names.
+
     Returns:
         col_names (list): List of estimation column names to display in estimation
             table. Same as model_names if model_names are unique. Given by column
@@ -850,13 +881,16 @@ def _get_default_column_names_and_groups(model_names):
 
 def _customize_col_groups(default_col_groups, custom_col_groups):
     """Change default (inferred) column group titles using custom column groups.
+
     Args:
         default_col_groups (list or NoneType): The inferred column groups.
         custom_col_groups (list or dict): Dictionary mapping defautl column group
             titles to custom column group titles, if the defautl column groups are
             defined. Must be a list of the same lenght as models otherwise.
+
     Returns:
         col_groups (list): Column groups to display in estimation table.
+
     """
     if custom_col_groups:
         if not default_col_groups:
@@ -885,11 +919,13 @@ def _customize_col_groups(default_col_groups, custom_col_groups):
 
 def _customize_col_names(default_col_names, custom_col_names):
     """Change default (inferred) column names using custom column names.
+
     Args:
         deafult_col_names (list): The default (inferred) column names.
         custom_col_names (list or dict): Dictionary mapping default column names
             to custom column names, or list to display as the name of each
             model column.
+
     Returns:
         column_names (list): The column names to display in the estimatino table.
     """
@@ -909,11 +945,14 @@ def _customize_col_names(default_col_names, custom_col_names):
 
 def _create_group_to_col_position(column_groups):
     """Get mapping from column groups to column positions.
+
     Args:
         column_names (list): The column groups to display in the estimatino table.
+
     Returns:
         group_to_col_index(dict): The mapping from column group titles to column
             positions.
+
     """
     if column_groups is not None:
         group_to_col_index = {group: [] for group in list(set(column_groups))}
@@ -930,6 +969,7 @@ def _convert_frame_to_string_series(
     show_stars,
 ):
     """Return processed value series with significance stars and inference information.
+
     Args:
 
         df (DataFrame): params DataFrame of the model
@@ -941,6 +981,7 @@ def _convert_frame_to_string_series(
 
     Returns:
         sr (pd.Series): string series with values and inferences.
+
     """
     value_sr = df["value"]
     if show_stars:
@@ -982,15 +1023,18 @@ def _convert_frame_to_string_series(
 
 
 def _combine_series(value_sr, inference_sr):
-    """Merge value and inference series. Return string series
-    with parameter values and precision values below respective param
-    values.
+    """Merge value and inference series.
+
+    Return string series with parameter values and precision values below respective
+    param values.
 
     Args:
         values_sr (Series): string series of estimated parameter values
         inference_sr (Series): string series of inference values
+
     Returns:
         series: combined string series of param and inference values
+
     """
 
     value_df = value_sr.to_frame(name="")
@@ -1293,12 +1337,15 @@ def _extract_info_from_sm(model):
 
 def _apply_number_format(df, number_format):
     """Apply string format to DataFrame cells.
+
     Args:
         df (DataFrame): The DataFrame with float values to format.
         number_format(str, list, tuple, callable or int): User defined number format
             to apply to the DataFrame.
+
     Returns:
         df_formatted (DataFrame): Formatted DataFrame.
+
     """
     processed_format = _process_number_format(number_format)
     if isinstance(processed_format, (list, tuple)):
@@ -1328,7 +1375,9 @@ def _format_non_scientific_numbers(number_string, format_string):
 
 def _process_number_format(raw_format):
     """Process the user define formatter.
+
     Reduces cases for number format in apply_number_format.
+
     """
     if isinstance(raw_format, str):
         processed_format = [raw_format]
@@ -1366,7 +1415,9 @@ def _get_digits_after_decimal(df):
 
 def _add_latex_syntax_around_scientfic_number_string(string):
     """Add curly braces around scientific numbers.
+
     Otherwise, siuntix will raise an error.
+
     """
     if "e" not in string:
         out = string
