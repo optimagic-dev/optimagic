@@ -1,4 +1,4 @@
-"""Implementation of the Steihaug-Toint conjugate Gradient algorithm."""
+"""Implementation of the Steihaug-Toint Conjugate Gradient algorithm."""
 from math import sqrt
 
 import numpy as np
@@ -73,7 +73,7 @@ def _update_vectors_for_next_iteration(
         residual (np.ndarray): Array of residuals of shape (n,). The residual vector
             is defined as `r = Ax - b`, where `A` denotes the hessian matrix and `b` the
             gradient vector of the quadratic trust-region subproblem.
-            It is equivalent to the first derivative of the quadratic subproblem.
+            `r` is equivalent to the first derivative of the quadratic subproblem.
         direction (np.ndarray): Direction vector of shape (n,).
 
     Returns:
