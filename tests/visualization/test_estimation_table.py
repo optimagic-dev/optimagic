@@ -11,6 +11,7 @@ from estimagic.visualization.estimation_table import _convert_frame_to_string_se
 from estimagic.visualization.estimation_table import _create_group_to_col_position
 from estimagic.visualization.estimation_table import _create_statistics_sr
 from estimagic.visualization.estimation_table import _customize_col_groups
+from estimagic.visualization.estimation_table import _customize_col_names
 from estimagic.visualization.estimation_table import (
     _get_default_column_names_and_groups,
 )
@@ -400,11 +401,19 @@ def test_get_default_column_names_and_groups_undefined_groups():
     assert pd.isna(res_groups)
 
 
-def test_customize_col_groups_default():
+def test_customize_col_groups():
     default = ["a_name", "a_name", "(3)", "(4)", "third_name"]
     mapping = {"a_name": "first_name", "third_name": "fifth_name"}
     exp = ["first_name", "first_name", "(3)", "(4)", "fifth_name"]
     res = _customize_col_groups(default, mapping)
+    assert exp == res
+
+
+def test_customize_col_names():
+    default = list("abcde")
+    custom = {"a": "1", "c": "3", "e": "5"}
+    res = _customize_col_names(default_col_names=default, custom_col_names=custom)
+    exp = ["1", "b", "3", "d", "5"]
     assert exp == res
 
 

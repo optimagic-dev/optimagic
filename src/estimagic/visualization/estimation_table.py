@@ -965,8 +965,16 @@ def _customize_col_names(default_col_names, custom_col_names):
     if not custom_col_names:
         col_names = default_col_names
     elif isinstance(custom_col_names, dict):
-        col_names = list(pd.Series(custom_col_names).replace(custom_col_names))
+        col_names = list(pd.Series(default_col_names).replace(custom_col_names))
     elif isinstance(custom_col_names, list):
+        if not len(custom_col_names == default_col_names):
+            raise ValueError(
+                f"""If provided as a list, custom_col_names should have same length as
+                default_col_names. Lenght of custom_col_names {len(custom_col_names)}
+                !=length of default_col_names {len(default_col_names)}"""
+            )
+        elif any(isinstance(i, list) for i in custom_col_names):
+            raise ValueError("Custom_col_names cannot be a nested list")
         col_names = custom_col_names
     else:
         raise TypeError(
@@ -1241,13 +1249,14 @@ def _generate_notes_latex(
     n_levels = df.index.nlevels
     n_columns = len(df.columns)
     significance_levels = sorted(significance_levels)
-    notes_text = "\\midrule\n"
+    notes_text = ""
     if append_notes:
+        notes_text += "\\midrule\n"
         notes_text += "\\textit{{{}}} & \\multicolumn{{{}}}{{r}}{{".format(
             notes_label, str(n_columns + n_levels - 1)
         )
-        # iterate over penultimate sig_level since last item of legend is not
-        # followed by a semi column
+        # iterate over penultimate significance_lelvels since last item of legend
+        # is not followed by a semi column
         for i in range(len(significance_levels) - 1):
             star = "*" * (len(significance_levels) - i)
             notes_text += "$^{{{}}}$p$<${};".format(star, str(significance_levels[i]))
