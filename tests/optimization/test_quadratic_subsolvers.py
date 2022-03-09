@@ -6,6 +6,7 @@ import pytest
 from estimagic.optimization.quadratic_subsolvers import (
     solve_trustregion_subproblem,
 )
+from estimagic.optimization.trustregion_conjugate_gradient import minimize_trust_cg
 from numpy.testing import assert_array_almost_equal as aaae
 
 linear_terms = np.array([-0.0005429824695352, -0.1032556117176, -0.06816855282091])
@@ -75,3 +76,22 @@ def test_trustregion_subsolver(expected_inputs):
 
     aaae(result["p_solution"], p_expected)
     aaae(result["q_min"], q_min_expected)
+
+
+def test_trustregion_conjugate_gradient():
+    model_gradient = np.array([0.00028774, 0.00763968, 0.01217268])
+    model_hessian = np.array(
+        [
+            [4.00803604e00, 1.65790911e02, 1.73222977e02],
+            [1.65790911e02, 1.60880163e04, 1.10414034e04],
+            [1.73222977e02, 1.10414034e04, 9.29926257e03],
+        ]
+    )
+
+    trustregion_radius = 9.5367431640625e-05
+
+    x_expected = np.array([9.50204689e-05, 3.56030822e-06, -7.30627902e-06])
+
+    x_out = minimize_trust_cg(model_gradient, model_hessian, trustregion_radius)
+
+    aaae(x_out, x_expected)
