@@ -134,7 +134,7 @@ def first_derivative(
     # convert params to numpy
     registry = get_registry(extended=True)
     x, params_tree_def = tree_flatten(params, registry=registry)
-    x = np.atleast_1d(x).astype(np.float64)
+    x = np.array(x, dtype=np.float64)
 
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
@@ -196,10 +196,17 @@ def first_derivative(
         f0 = raw_evals[-1]
         raw_evals = raw_evals[:-1]
     func_value = f0
-    f0_tree = f0[key] if isinstance(f0, dict) else f0
+
+    if key is not None:
+        if isinstance(f0, dict):
+            f0_tree = f0[key]
+        else:
+            raise ValueError("key argument is set, but function output is not a dict.")
+    else:
+        f0_tree = f0
 
     f0 = tree_leaves(f0_tree, registry=registry)
-    f0 = np.atleast_1d(f0)
+    f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals = _convert_evals_to_numpy(raw_evals, key, registry)
@@ -240,11 +247,11 @@ def first_derivative(
     result = {"derivative": derivative}
     if return_func_value:
         result["func_value"] = func_value
-
-    info = _collect_additional_info(
-        return_info, steps, evals, updated_candidates, target="first_derivative"
-    )
-    result = {**result, **info}
+    if return_info:
+        info = _collect_additional_info(
+            steps, evals, updated_candidates, target="first_derivative"
+        )
+        result = {**result, **info}
     return result
 
 
@@ -475,11 +482,18 @@ def second_derivative(
         f0 = raw_evals["one_step"][-1]
         raw_evals["one_step"] = raw_evals["one_step"][:-1]
     func_value = f0
-    f0_tree = f0[key] if isinstance(f0, dict) else f0
+
+    if key is not None:
+        if isinstance(f0, dict):
+            f0_tree = f0[key]
+        else:
+            raise ValueError("key argument is set, but function output is not a dict.")
+    else:
+        f0_tree = f0
 
     f0 = tree_leaves(f0_tree, registry=registry)
     f_was_scalar = len(f0) == 1
-    f0 = np.atleast_1d(f0)
+    f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals = {
@@ -533,10 +547,11 @@ def second_derivative(
     result = {"derivative": derivative}
     if return_func_value:
         result["func_value"] = func_value
-    info = _collect_additional_info(
-        return_info, steps, evals, updated_candidates, target="second_derivative"
-    )
-    result = {**result, **info}
+    if return_info:
+        info = _collect_additional_info(
+            steps, evals, updated_candidates, target="second_derivative"
+        )
+        result = {**result, **info}
     return result
 
 
@@ -936,26 +951,25 @@ def _split_into_str_and_int(s):
     return str_part, int(int_part)
 
 
-def _collect_additional_info(return_info, steps, evals, updated_candidates, target):
+def _collect_additional_info(steps, evals, updated_candidates, target):
     """Combine additional information in dict if return_info is True."""
     info = {}
-    if return_info:
-        # save function evaluations to accessible data frame
-        if target == "first_derivative":
-            func_evals = _convert_evaluation_data_to_frame(steps, evals)
-            info["func_evals"] = func_evals
-        else:
-            one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
-            info["func_evals_one_step"] = one_step
-            info["func_evals_two_step"] = None
-            info["func_evals_cross_step"] = None
+    # save function evaluations to accessible data frame
+    if target == "first_derivative":
+        func_evals = _convert_evaluation_data_to_frame(steps, evals)
+        info["func_evals"] = func_evals
+    else:
+        one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
+        info["func_evals_one_step"] = one_step
+        info["func_evals_two_step"] = None
+        info["func_evals_cross_step"] = None
 
-        if updated_candidates is not None:
-            # combine derivative candidates in accessible data frame
-            derivative_candidates = _convert_richardson_candidates_to_frame(
-                *updated_candidates
-            )
-            info["derivative_candidates"] = derivative_candidates
+    if updated_candidates is not None:
+        # combine derivative candidates in accessible data frame
+        derivative_candidates = _convert_richardson_candidates_to_frame(
+            *updated_candidates
+        )
+        info["derivative_candidates"] = derivative_candidates
 
     return info
 

@@ -12,12 +12,13 @@ def get_registry(extended=False, data_col=None):
 
     Special Rules
     -------------
-    If extended is True the registry contains pd.DataFrame. In estimagic sometimes a
-    data frame represents a 2d object, but sometimes only a 1d object with extra
-    information. In the latter case one has to specify which column contains the data
-    source using the data_col argument. If the default (None) is used, the function
-    looks for a 'value' column. If that is not found the whole data frame is used as a
-    source.
+    If extended is True the registry contains pd.DataFrame. In estimagic a data frame
+    can represent a 1d object with extra information, instead of a 2d object. This is
+    only allowed for params data frames, in which case they contain a 'value' column.
+    The extra information of such an object can be accessed using the data_col argument.
+    If data_col is None the 'value' column is used as the data source. If data_col is
+    not None but also not a column, a list of np.nan is returned. If no 'value' column
+    is found the whole data frame is treated as the data source.
 
     Args:
         extended (bool): If True appends types 'numpy.ndarray', 'pandas.Series' and
@@ -42,27 +43,23 @@ def get_registry(extended=False, data_col=None):
 
 
 def _flatten_df(df, data_col):
-    data_col = "value" if data_col is None and "value" in df else data_col
-
-    is_data_col_df = data_col in df
-    if is_data_col_df and data_col is not None:
-        flat = df[data_col].tolist()
-    elif data_col is not None:
-        flat = [np.nan] * len(df)
+    is_value_df = "value" in df
+    if is_value_df:
+        data_col = "value" if data_col is None else data_col
+        flat = df.get(data_col, default=np.full(len(df), np.nan)).tolist()
     else:
         flat = df.to_numpy().flatten().tolist()
 
     aux_data = {
-        f"is_{data_col}_df": is_data_col_df,
+        "is_value_df": is_value_df,
         "df": df,
     }
     return flat, aux_data
 
 
 def _unflatten_df(aux_data, leaves, data_col):
-    data_col = "value" if data_col is None and "value" in aux_data["df"] else data_col
-
-    if aux_data[f"is_{data_col}_df"]:
+    if aux_data["is_value_df"]:
+        data_col = "value" if data_col is None else data_col
         out = aux_data["df"].assign(**{data_col: leaves})
     else:
         out = pd.DataFrame(
