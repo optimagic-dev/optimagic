@@ -115,7 +115,7 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
     sp = np.dot(candidate, direction)
     pp = np.dot(direction, direction)
 
-    sigma = -sp + sqrt(sp * sp + pp * (radius ** 2 - ss))
+    sigma = -sp + sqrt(sp * sp + pp * (radius**2 - ss))
     sigma /= pp
 
     return sigma

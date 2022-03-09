@@ -429,13 +429,13 @@ def check_for_interior_convergence_and_update(
     s_min, z_min = estimate_smallest_singular_value(model_hessian["upper_triangular"])
     step_len = 2
 
-    if step_len ** 2 * s_min ** 2 <= stopping_criteria["k_hard"] * lambdas["current"]:
+    if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas["current"]:
         p_candidate = step_len * z_min
         converged = True
 
     lambdas_updated["upper_bound"] = lambdas["current"]
     lambdas_updated["lower_bound"] = max(
-        lambdas["lower_bound"], lambdas["current"] - s_min ** 2
+        lambdas["lower_bound"], lambdas["current"] - s_min**2
     )
     lambdas_updated["current"] = _update_current_lambda(lambdas_updated)
 
@@ -495,7 +495,7 @@ def update_lambdas_when_factorization_unsuccessful(
     v_norm = norm(v)
 
     lambdas_updated["lower_bound"] = max(
-        lambdas["lower_bound"], lambdas["current"] + delta / v_norm ** 2
+        lambdas["lower_bound"], lambdas["current"] + delta / v_norm**2
     )
 
     lambdas_updated["current"] = _update_current_lambda(lambdas_updated)
@@ -668,7 +668,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
         p_candidate, np.dot(model_hessian["initial_plus_lambda"], p_candidate)
     )
 
-    relative_error = (step_len ** 2 * s_min ** 2) / (
+    relative_error = (step_len**2 * s_min**2) / (
         quadratic_term + lambdas["current"]
     )
     if relative_error <= stopping_criteria["k_hard"]:
@@ -676,7 +676,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
         converged = True
 
     lambdas_updated["lower_bound"] = max(
-        lambdas["lower_bound"], lambdas["current"] - s_min ** 2
+        lambdas["lower_bound"], lambdas["current"] - s_min**2
     )
     lambdas_updated["upper_bound"] = lambdas["current"]
 
