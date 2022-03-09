@@ -43,6 +43,7 @@ dependencies:
   - sphinx-panels
   - pygmo
   - chaospy
+  - nb_black
   - pybaum
 
   - pip:
