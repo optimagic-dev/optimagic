@@ -12,7 +12,7 @@ from estimagic.optimization.neldermead import neldermead_parallel
 # function to test
 def sphere(x, *args, **kwargs):
 
-    return (x ** 2).sum()
+    return (x**2).sum()
 
 
 # unit tests

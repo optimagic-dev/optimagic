@@ -75,6 +75,16 @@ Estimation
     .. autofunction:: estimation_table
 
 
+.. dropdown:: render_html
+
+    .. autofunction:: render_html
+
+
+.. dropdown:: render_latex
+
+    .. autofunction:: render_latex
+
+
 
 
 .. _bootstrap:

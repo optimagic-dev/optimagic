@@ -69,7 +69,7 @@ def derivative_plot(
 
     for ax, (row, col) in zip(axes.flatten(), itertools.product(dim_x, dim_f)):
         # labels and texts
-        ax.set_xlabel(fr"Value relative to $x_{{0, {row}}}$", fontsize=14)
+        ax.set_xlabel(rf"Value relative to $x_{{0, {row}}}$", fontsize=14)
         ax.text(
             0.35,
             1.02,
