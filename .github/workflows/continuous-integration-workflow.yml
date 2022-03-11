@@ -53,6 +53,32 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
 
+  run-jax-tests:
+
+    name: Run jax tests on Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.9
+
+      - name: Install core dependencies.
+        shell: bash -l {0}
+        run: conda install -c conda-forge tox-conda
+
+      - name: Run pytest.
+        shell: bash -l {0}
+        run: tox -e pytest-jax -- -m "not slow" --cov-report=xml --cov=./
+
+      - name: Upload coverage report.
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+
   docs:
 
     name: Run documentation.

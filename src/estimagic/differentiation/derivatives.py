@@ -197,14 +197,7 @@ def first_derivative(
         raw_evals = raw_evals[:-1]
     func_value = f0
 
-    if key is not None:
-        if isinstance(f0, dict):
-            f0_tree = f0[key]
-        else:
-            raise ValueError("key argument is set, but function output is not a dict.")
-    else:
-        f0_tree = f0
-
+    f0_tree = f0[key] if key is not None and isinstance(f0, dict) else f0
     f0 = tree_leaves(f0_tree, registry=registry)
     f0 = np.array(f0, dtype=np.float64)
 
@@ -445,7 +438,7 @@ def second_derivative(
 
     # convert the numpy arrays to whatever is needed by func
     evaluation_points = {
-        # entries are either a numpy.ndarray or np.nan
+        # entries are either a numpy.ndarray or np.nan, we unflatten only
         step_type: [_unflatten_if_ndarray(p, params_tree_def, registry) for p in points]
         for step_type, points in evaluation_points.items()
     }
@@ -483,14 +476,7 @@ def second_derivative(
         raw_evals["one_step"] = raw_evals["one_step"][:-1]
     func_value = f0
 
-    if key is not None:
-        if isinstance(f0, dict):
-            f0_tree = f0[key]
-        else:
-            raise ValueError("key argument is set, but function output is not a dict.")
-    else:
-        f0_tree = f0
-
+    f0_tree = f0[key] if key is not None and isinstance(f0, dict) else f0
     f0 = tree_leaves(f0_tree, registry=registry)
     f_was_scalar = len(f0) == 1
     f0 = np.array(f0, dtype=np.float64)

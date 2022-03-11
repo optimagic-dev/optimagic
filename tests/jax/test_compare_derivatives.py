@@ -1,4 +1,4 @@
-"""Compare first and second derivative behavior to that of jax
+"""Compare first and second derivative behavior to that of jax.
 
 This test module only runs if jax is installed.
 
