@@ -3,6 +3,7 @@ from functools import partial
 
 import numpy as np
 import pytest
+from estimagic.optimization.bounded_newton_trustregion import minimize_trust_bntr
 from estimagic.optimization.quadratic_subsolvers import (
     solve_trustregion_subproblem,
 )
@@ -76,6 +77,70 @@ def test_trustregion_subsolver(expected_inputs):
 
     aaae(result["p_solution"], p_expected)
     aaae(result["q_min"], q_min_expected)
+
+
+@pytest.mark.parametrize(
+    "x, model_gradient, model_hessian, lower_bound, upper_bound, expected",
+    [
+        (
+            np.zeros(3),
+            np.array([0.0002877431832243, 0.00763968126032, 0.01217268029151]),
+            np.array(
+                [
+                    [
+                        4.0080360351800763e00,
+                        1.6579091056425378e02,
+                        1.7322297746691254e02,
+                    ],
+                    [
+                        1.6579091056425378e02,
+                        1.6088016292793940e04,
+                        1.1041403355728811e04,
+                    ],
+                    [
+                        1.7322297746691254e02,
+                        1.1041403355728811e04,
+                        9.2992625728417297e03,
+                    ],
+                ]
+            ),
+            -np.ones(3),
+            np.ones(3),
+            (np.array([0.000122403, 3.92712e-06, -8.2519e-06]), 2),
+        ),
+        (
+            np.zeros(3),
+            np.array([7.898833044695e-06, 254.9676549378, 0.0002864050095122]),
+            np.array(
+                [
+                    [3.97435226e00, 1.29126446e02, 1.90424789e02],
+                    [1.29126446e02, 1.08362658e04, 9.05024598e03],
+                    [1.90424789e02, 9.05024598e03, 1.06395102e04],
+                ]
+            ),
+            np.array([-1.0, 0, -1.0]),
+            np.ones(3),
+            (np.array([-4.89762e-06, 0.0, 6.0738e-08]), 1),
+        ),
+    ],
+)
+def test_bounded_newton_trustregion(
+    x,
+    model_gradient,
+    model_hessian,
+    lower_bound,
+    upper_bound,
+    expected,
+):
+    options = {"gatol": 1e-8, "grtol": 1e-8}
+    x_expected, niter_expected = expected
+
+    x_out, niter_out = minimize_trust_bntr(
+        x, model_gradient, model_hessian, lower_bound, upper_bound, options
+    )
+
+    aaae(x_out, x_expected)
+    assert niter_out == niter_expected
 
 
 def test_trustregion_conjugate_gradient():
