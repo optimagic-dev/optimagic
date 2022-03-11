@@ -4,7 +4,7 @@ Bootstrap Confidence Intervals
 ********************************
 We use the notation and formulations provided in chapter 10 of :cite:`Hansen2020`.
 
-Bruce E. Hansen - Econometrics,  (https://press.princeton.edu/books/ebook/9780691236155/econometrics)
+Bruce E. Hansen - Econometrics,  (https://www.ssc.wisc.edu/~bhansen/econometrics/)
 
 The first supported confidence interval type is the **"percentile"** confidence
 interval, as discussed in section 10.10 of the Hansen textbook.

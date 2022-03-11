@@ -32,6 +32,34 @@ from numpy.testing import assert_array_almost_equal as aaae
             0.1,
             np.array([0.0, -5.31586927e-02, -8.47003742e-02]),
         ),
+        (
+            np.arange(5) * 0.1,
+            -np.ones(5),
+            np.ones(5),
+            0.1,
+            np.array([0.0, -0.01825742, -0.03651484, -0.05477226, -0.07302967]),
+        ),
+        (
+            np.arange(4, -1, -1) * 0.1,
+            -np.ones(5),
+            np.ones(5),
+            0.1,
+            np.array([-0.07302967, -0.05477226, -0.03651484, -0.01825742, 0]),
+        ),
+        (
+            np.arange(5) * 0.1,
+            np.array([-1, -1, 0, -1, -1]),
+            np.array([1, 1, 0.2, 0.2, 1]),
+            0.1,
+            np.array([0.0, -1.96116135e-02, 0.0, -5.88348405e-02, -7.84464541e-02]),
+        ),
+        (
+            np.arange(4, -1, -1) * 0.1,
+            np.array([-1, -1, -1, -1, 0]),
+            np.array([0.3, 0.3, 1, 1, 1]),
+            0.1,
+            np.array([-0.07302967, -0.05477226, -0.03651484, -0.01825742, 0.0]),
+        ),
     ],
 )
 def test_trsbox_linear(model_gradient, lower_bounds, upper_bounds, delta, expected):
