@@ -22,10 +22,6 @@ else:
 TOLERANCE = 1.5 * 10e-7
 
 
-def hessian(f):
-    return jax.jacfwd(jax.jacrev(f))
-
-
 def _convert_leaves_to_numpy(tree):
     tree = tree_map(lambda x: np.array(x), tree)
     return tree
@@ -52,7 +48,7 @@ def _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax=None)
     jax_jac = _convert_leaves_to_numpy(jax_jac)
 
     estimagic_hess = second_derivative(func, params)["derivative"]
-    jax_hess = hessian(func_jax)(params)
+    jax_hess = jax.hessian(func_jax)(params)
     jax_hess = _convert_leaves_to_numpy(jax_hess)
 
     out = {
@@ -120,13 +116,10 @@ def test_array_input_array_output():
 
     result = _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax)
     _tree_equal_numpy_leaves(result["jac"]["est"], result["jac"]["jax"])
-
-    # for the batch hessian case we return a different object than jax at the moment
-    res = np.array(list(result["hess"]["est"].values()))
-    _tree_equal_numpy_leaves(res, result["hess"]["jax"])
+    _tree_equal_numpy_leaves(result["hess"]["est"], result["hess"]["jax"])
 
 
-def test_array_dict_input_array_array_output():
+def test_array_dict_input_array_output():
     """
 
     Jax handles functions with multi-dimensional output different than estimagic. They
@@ -148,7 +141,7 @@ def test_array_dict_input_array_array_output():
 
     result = _compute_testable_estimagic_and_jax_derivatives(func, params, func_jax)
     _tree_equal_numpy_leaves(result["jac"]["est"], result["jac"]["jax"])
-    # comparison of hessians remains to be implemented
+    _tree_equal_numpy_leaves(result["hess"]["est"], result["hess"]["jax"])
 
 
 def test_array_dict_input_array_dict_output():

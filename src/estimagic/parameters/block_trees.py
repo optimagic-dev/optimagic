@@ -201,5 +201,11 @@ def _check_dimensions(matrix, tree1, tree2):
     flat1 = tree_leaves(tree1, registry=extended_registry)
     flat2 = tree_leaves(tree2, registry=extended_registry)
 
-    if matrix.shape != (len(flat1), len(flat2)):
-        raise ValueError("Shape of matrix does not match with shapes of input trees.")
+    error_message = "Shape of matrix does not match with shapes of input trees."
+    if matrix.ndim == 2 and matrix.shape != (len(flat1), len(flat2)):
+        raise ValueError(error_message)
+    if matrix.ndim == 3 and (
+        np.prod(matrix.shape[:2]) != len(flat1) or matrix.shape[2] != len(flat2)
+    ):
+        # batch hessian case
+        raise ValueError(error_message)

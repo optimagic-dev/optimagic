@@ -71,7 +71,7 @@ jobs:
 
       - name: Run pytest.
         shell: bash -l {0}
-        run: tox -e pytest-jax -- -m "not slow" --cov-report=xml --cov=./
+        run: tox -e pytest-jax
 
       - name: Upload coverage report.
         uses: codecov/codecov-action@v1

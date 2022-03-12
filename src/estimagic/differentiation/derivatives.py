@@ -14,7 +14,6 @@ from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import namedtuple_from_kwargs
-from pybaum import leaf_names
 from pybaum import tree_flatten
 from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_unflatten
@@ -38,7 +37,7 @@ def first_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_info=True,
+    return_info=False,
     key=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
@@ -99,7 +98,7 @@ def first_derivative(
         return_info (bool): If True, return additional information on function
             evaluations and internal derivative candidates, stored in output dict under
             "func_evals" and "derivative_candidates". Derivative candidates are only
-            returned if n_steps > 1. Default True.
+            returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
@@ -266,7 +265,7 @@ def second_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_info=True,
+    return_info=False,
     key=None,
 ):
     """Evaluate second derivative of func at params according to method and step options
@@ -340,7 +339,7 @@ def second_derivative(
         return_info (bool): If True, return additional information on function
             evaluations and internal derivative candidates, stored in output dict under
             "func_evals" and "derivative_candidates". Derivative candidates are only
-            returned if n_steps > 1. Default True.
+            returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
@@ -478,7 +477,6 @@ def second_derivative(
 
     f0_tree = f0[key] if key is not None and isinstance(f0, dict) else f0
     f0 = tree_leaves(f0_tree, registry=registry)
-    f_was_scalar = len(f0) == 1
     f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
@@ -523,12 +521,10 @@ def second_derivative(
         raise Exception(exc_info)
 
     # results processing
-    derivative = [matrix_to_block_tree(h, params, params) for h in list(hess)]
-    if f_was_scalar:
-        derivative = derivative[0]
-    else:
-        names = leaf_names(f0_tree, registry=registry)
-        derivative = dict(zip(names, derivative))
+    derivative = _hess_array_to_block_tree(
+        hess, tree_def_in=params, tree_def_out=f0_tree, dim_in=len(x), dim_out=len(f0)
+    )
+    return derivative, hess
 
     result = {"derivative": derivative}
     if return_func_value:
@@ -704,7 +700,10 @@ def _convert_evals_to_numpy(raw_evals, key, registry):
 
     """
     # get rid of dictionaries
-    evals = [val[key] if isinstance(val, dict) else val for val in raw_evals]
+    evals = [
+        val[key] if isinstance(val, dict) and key is not None else val
+        for val in raw_evals
+    ]
 
     # get rid of pandas objects
     evals = [
@@ -970,3 +969,12 @@ def _unflatten_if_ndarray(leaves, tree_def, registry):
     else:
         out = leaves
     return out
+
+
+def _hess_array_to_block_tree(hess, tree_def_in, tree_def_out, dim_in, dim_out):
+    jacobian_tree_def = matrix_to_block_tree(
+        np.zeros((dim_out, dim_in)), tree_def_out, tree_def_in
+    )
+    hess = np.concatenate(hess.T, axis=0)
+    derivative = matrix_to_block_tree(hess, jacobian_tree_def, tree_def_in)
+    return derivative
