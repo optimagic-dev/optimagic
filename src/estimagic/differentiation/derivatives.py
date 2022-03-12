@@ -524,7 +524,6 @@ def second_derivative(
     derivative = _hess_array_to_block_tree(
         hess, tree_def_in=params, tree_def_out=f0_tree, dim_in=len(x), dim_out=len(f0)
     )
-    return derivative, hess
 
     result = {"derivative": derivative}
     if return_func_value:
@@ -975,6 +974,6 @@ def _hess_array_to_block_tree(hess, tree_def_in, tree_def_out, dim_in, dim_out):
     jacobian_tree_def = matrix_to_block_tree(
         np.zeros((dim_out, dim_in)), tree_def_out, tree_def_in
     )
-    hess = np.concatenate(hess.T, axis=0)
+    hess = np.concatenate(hess, axis=0)
     derivative = matrix_to_block_tree(hess, jacobian_tree_def, tree_def_in)
     return derivative
