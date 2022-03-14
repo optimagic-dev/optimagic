@@ -133,7 +133,7 @@ def improve_geomtery_trsbox_linear(
         linear_terms=-linear_model.linear_terms
     )
 
-    # Minimize and maximize g' * (x - x_initial), respectively
+    # Minimize and maximize g' * (x - x_center), respectively
     x_candidate_min = minimize_trsbox_linear(
         linear_model_to_minimize,
         lower_bounds - x_center,
@@ -163,21 +163,21 @@ def improve_geomtery_trsbox_linear(
 
 def _find_next_active_bound(
     x_candidate_unconstr,
-    lower_bound,
-    upper_bound,
+    lower_bounds,
+    upper_bounds,
     set_active_directions,
 ):
     """Find the next active bound and return its index.
 
     A (lower or upper) bound is considered active if
-        x_candidate <= lower_bound
-        x_candidate >= upper_bound
+        x_candidate <= lower_bounds
+        x_candidate >= upper_bounds
 
     Args:
         x_candidate_unconstr (np.ndarray): Unconstrained candidate vector of shape (n,),
             which has been computed without taking bounds into account.
-        lower_bound (np.ndarray): Lower bounds for x. Array of shape (n,).
-        upper_bound (np.ndarray): Upper bounds for x. Array of shape (n,).
+        lower_bounds (np.ndarray): Lower bounds for x. Array of shape (n,).
+        upper_bounds (np.ndarray): Upper bounds for x. Array of shape (n,).
         set_active_directions (iterator): Iterator over the indices of active search
             directions, i.e. directions that are not zero.
 
@@ -192,12 +192,12 @@ def _find_next_active_bound(
     index_active = next(set_active_directions)
 
     while True:
-        if x_candidate_unconstr[index_active] >= upper_bound[index_active]:
-            active_bound = upper_bound[index_active]
+        if x_candidate_unconstr[index_active] >= upper_bounds[index_active]:
+            active_bound = upper_bounds[index_active]
             break
 
-        elif x_candidate_unconstr[index_active] <= lower_bound[index_active]:
-            active_bound = lower_bound[index_active]
+        elif x_candidate_unconstr[index_active] <= lower_bounds[index_active]:
+            active_bound = lower_bounds[index_active]
             break
 
         else:
@@ -218,8 +218,7 @@ def _take_constrained_step_up_to_boundary(
     Args:
         x_candidate (np.ndarray): Current candidate vector of shape (n,).
         direction (np.ndarray): Direction vector of shape (n,).
-        lower_bound (np.ndarray): Lower bounds for x. Array of shape (n,).
-        upper_bound (np.ndarray): Upper bounds for x. Array of shape (n,).
+        active_bound (float): The active - lower or upper - bound.
         index_bound_active (int): Index where an active lower or upper bound
             has been found.
 
@@ -229,6 +228,8 @@ def _take_constrained_step_up_to_boundary(
         - direction (np.ndarray): New direction vector of shape (n,), where the
             search direction of the currently active bound has been set to zero.
     """
+    direction_updated = np.copy(direction)
+
     step_size_constr = (active_bound - x_candidate[index_bound_active]) / direction[
         index_bound_active
     ]
@@ -237,9 +238,9 @@ def _take_constrained_step_up_to_boundary(
     x_candidate[index_bound_active] = active_bound
 
     # Do not search in this direction anymore
-    direction[index_bound_active] = 0.0
+    direction_updated[index_bound_active] = 0.0
 
-    return x_candidate, direction
+    return x_candidate, direction_updated
 
 
 def _take_unconstrained_step_up_to_boundary(
