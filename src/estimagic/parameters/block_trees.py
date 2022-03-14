@@ -140,7 +140,6 @@ def block_tree_to_matrix(block_tree, tree1, tree2):
 
     flat1 = tree_leaves(tree1)
     flat2 = tree_leaves(tree2)
-
     flat_block_tree = tree_leaves(block_tree)
 
     flat1_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat1]
@@ -160,7 +159,7 @@ def block_tree_to_matrix(block_tree, tree1, tree2):
     for s1, row in zip(size1, block_rows_raw):
         shapes = [(s1, s2) for s2 in size2]
         row_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in row]
-        row_reshaped = _reshape_list_to_2d(row_np, shapes)
+        row_reshaped = _reshape_list(row_np, shapes)
         row_concatenated = np.concatenate(row_reshaped, axis=1)
         block_rows.append(row_concatenated)
 
@@ -168,6 +167,55 @@ def block_tree_to_matrix(block_tree, tree1, tree2):
 
     _check_dimensions_matrix(matrix, tree1, tree2)
     return matrix
+
+
+def block_tree_to_hessian(block_hessian, f0, params):
+    """Convert a block tree to a Hessian array.
+
+    See :func:`hessian_to_block_tree` for a detailed description.
+
+    Args:
+        block_hessian: A (block) pytree, must match dimensions of f0 and params.
+        f0 (pytree): The function evaluated at params.
+        params (pytree): The params.
+
+    Returns:
+        matrix (np.ndarray): 2d array containing information stored in block_tree.
+
+    """
+    flat_f = tree_leaves(f0)
+    flat_p = tree_leaves(params)
+    flat_block_tree = tree_leaves(block_hessian)
+
+    flat_f_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_f]
+    flat_p_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_p]
+
+    size_f = [np.size(a) for a in flat_f_np]
+    size_p = [np.size(a) for a in flat_p_np]
+
+    n_blocks_f = len(size_f)
+    n_blocks_p = len(size_p)
+
+    block_rows_raw = [
+        flat_block_tree[(n_blocks_p**2) * i : (n_blocks_p**2) * (i + 1)]
+        for i in range(n_blocks_f)
+    ]
+
+    registry = get_registry(extended=True)
+    n_p = len(tree_leaves(params, registry=registry))
+    inner_treedef = matrix_to_block_tree(np.zeros((n_p, n_p)), params, params)
+
+    inner_block_trees = [
+        tree_unflatten(inner_treedef, block_row) for block_row in block_rows_raw
+    ]
+    inner_block_matrices = [
+        block_tree_to_matrix(block_tree, params, params)[np.newaxis]
+        for block_tree in inner_block_trees
+    ]
+    hessian = np.concatenate(inner_block_matrices, axis=0)
+
+    _check_dimensions_hessian(hessian, f0, params)
+    return hessian
 
 
 def _convert_pandas_objects_to_numpy(obj):
@@ -230,12 +278,12 @@ def _select_non_none(first, second):
     return out
 
 
-def _reshape_list_to_2d(list_to_reshape, shapes):
+def _reshape_list(list_to_reshape, shapes):
     """Reshape list of numpy.ndarray according to list of shapes.
 
     Args:
         list_to_reshape (list): List containing numpy.ndarray's.
-        shapes (list): List of 2-dimensional shape tuples.
+        shapes (list): List of shape tuples.
 
     Returns:
         reshaped (list): List containing the reshaped numpy.ndarray's.
