@@ -10,6 +10,7 @@ from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
+from estimagic.parameters.block_trees import hessian_to_block_tree
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
@@ -521,9 +522,7 @@ def second_derivative(
         raise Exception(exc_info)
 
     # results processing
-    derivative = _hess_array_to_block_tree(
-        hess, tree_def_in=params, tree_def_out=f0_tree, dim_in=len(x), dim_out=len(f0)
-    )
+    derivative = hessian_to_block_tree(hess, f0_tree, params)
 
     result = {"derivative": derivative}
     if return_func_value:
@@ -970,10 +969,10 @@ def _unflatten_if_ndarray(leaves, tree_def, registry):
     return out
 
 
-def _hess_array_to_block_tree(hess, tree_def_in, tree_def_out, dim_in, dim_out):
+def _hess_array_to_block_tree(hess, tree_def_in, tree_def_out):
+    dim_out, dim_in, _ = hess.shape
     jacobian_tree_def = matrix_to_block_tree(
         np.zeros((dim_out, dim_in)), tree_def_out, tree_def_in
     )
-    hess = np.concatenate(hess, axis=0)
     derivative = matrix_to_block_tree(hess, jacobian_tree_def, tree_def_in)
     return derivative
