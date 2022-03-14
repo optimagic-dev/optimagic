@@ -660,7 +660,7 @@ At the moment, estimagic only supports
 `TAO's <https://www.anl.gov/mcs/tao-toolkit-for-advanced-optimization>`_
 POUNDERs algorithm.
 
-The `POUNDERs algorithm <https://www.mcs.anl.gov/papers/P5120-0414.pdf>`_
+The `POUNDERs algorithm <https://doi.org/10.1137/1.9781611974683.ch40>`_
 by Stefan Wild is tailored to minimize a non-linear sum of squares
 objective function. Remember to cite :cite:`Wild2015` when using POUNDERs in
 addition to estimagic.
