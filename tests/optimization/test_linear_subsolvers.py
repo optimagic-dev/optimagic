@@ -1,10 +1,11 @@
 """Test suite for linear trust-region subsolvers."""
 import math
+from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization.linear_subsolvers import trsbox_geometry
-from estimagic.optimization.linear_subsolvers import trsbox_linear
+from estimagic.optimization.linear_subsolvers import improve_geomtery_trsbox_linear
+from estimagic.optimization.linear_subsolvers import minimize_trsbox_linear
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -63,91 +64,96 @@ from numpy.testing import assert_array_almost_equal as aaae
     ],
 )
 def test_trsbox_linear(model_gradient, lower_bounds, upper_bounds, delta, expected):
-    x_out = trsbox_linear(model_gradient, lower_bounds, upper_bounds, delta)
+    LinearModel = namedtuple("LinearModel", ["linear_terms"])
+    linear_model = LinearModel(linear_terms=model_gradient)
+
+    x_out = minimize_trsbox_linear(linear_model, lower_bounds, upper_bounds, delta)
     aaae(x_out, expected)
 
 
 @pytest.mark.parametrize(
-    "x_base, model_gradient, lower_bounds, upper_bounds, delta, c, expected",
+    "x_center, c_term, model_gradient, lower_bounds, upper_bounds, delta, expected",
     [
         (
             np.array([0.0, 0.0]),
+            -1.0,
             np.array([1.0, -1.0]),
             np.array([-2.0, -2.0]),
             np.array([1.0, 2.0]),
             2.0,
-            -1.0,
             np.array([-math.sqrt(2.0), math.sqrt(2.0)]),
         ),
         (
             np.array([0.0, 0.0]),
+            -1.0,
             np.array([1.0, -1.0]),
             np.array([-2.0, -2.0]),
             np.array([1.0, 2.0]),
             5.0,
-            -1.0,
             np.array([-2.0, 2.0]),
         ),
         (
             np.array([0.0, 0.0]) + 1,
+            3.0,
             np.array([1.0, -1.0]),
             np.array([-2.0, -2.0]) + 1,
             np.array([1.0, 2.0]) + 1,
             5.0,
-            3.0,
             np.array([1.0, -2.0]) + 1,
         ),
         (
             np.array([0.0, 0.0]),
+            -1.0,
             np.array([-1.0, -1.0]),
             np.array([-2.0, -2.0]),
             np.array([0.1, 0.9]),
             math.sqrt(2.0),
-            -1.0,
             np.array([0.1, 0.9]),
         ),
         (
             np.array([0.0, 0.0, 0.0]),
+            -1.0,
             np.array([-1.0, -1.0, -1.0]),
             np.array([-2.0, -2.0, -2.0]),
             np.array([0.9, 0.1, 5.0]),
             math.sqrt(3.0),
-            -1.0,
             np.array([0.9, 0.1, math.sqrt(3.0 - 0.81 - 0.01)]),
         ),
         (
             np.array([0.0, 0.0]),
+            0.0,
             np.array([1e-15, -1.0]),
             np.array([-2.0, -2.0]),
             np.array([1.0, 2.0]),
             5.0,
-            0.0,
             np.array([0.0, 2.0]),
         ),
         (
             np.array([0.0, 0.0]),
+            0.0,
             np.array([1e-15, 0.0]),
             np.array([-2.0, -2.0]),
             np.array([1.0, 2.0]),
             5.0,
-            0.0,
             np.array([0.0, 0.0]),
         ),
     ],
 )
 def test_trsbox_geometry(
-    x_base,
+    x_center,
+    c_term,
     model_gradient,
     lower_bounds,
     upper_bounds,
     delta,
-    c,
     expected,
 ):
-    x_out = trsbox_geometry(
-        x_base,
-        model_gradient,
-        c,
+    LinearModel = namedtuple("LinearModel", ["constant_term", "linear_terms"])
+    linear_model = LinearModel(constant_term=c_term, linear_terms=model_gradient)
+
+    x_out = improve_geomtery_trsbox_linear(
+        x_center,
+        linear_model,
         lower_bounds,
         upper_bounds,
         delta,

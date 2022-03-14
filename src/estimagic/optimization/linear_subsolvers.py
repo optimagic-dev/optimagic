@@ -3,10 +3,10 @@ import math
 
 import numpy as np
 
-ZERO_THRESH = 1e-14
 
-
-def trsbox_linear(model_gradient, lower_bound, upper_bound, trustregion_radius):
+def minimize_trsbox_linear(
+    linear_model, lower_bounds, upper_bounds, trustregion_radius, *, zero_treshold=1e-14
+):
     """Minimize a linear trust-region subproblem using the trsbox algorithm.
 
     Solve the linear subproblem:
@@ -18,49 +18,50 @@ def trsbox_linear(model_gradient, lower_bound, upper_bound, trustregion_radius):
     using an active-set approach.
 
     This algorithm is an implementation of the routine TRSBOX from
-        M. J. D. Powell (2009) "The BOBYQA algorithm for bound constrained
-        optimization without derivatives."
+    M. J. D. Powell (2009) "The BOBYQA algorithm for bound constrained
+    optimization without derivatives." (cite:`Powell2009`).
 
     Args:
-        model_gradient (np.ndarray): Gradient of the Lagrange polynomial.
-            Array of shape (n,).
+        linear_model (namedtuple): Named tuple containing the parameters of the
+            linear model, i.e. "linear_terms", which is a np.ndarray of shape (n,).
         lower_bound (np.ndarray): Lower bounds for x. Array of shape (n,).
         upper_bound (np.ndarray): Upper bounds for x. Array of shape (n,).
         trustregion_radius (float): Radius of the trust-region.
+        zero_treshold (float): Treshold for treating numerical values as zero.
+            Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
         (np.ndarray): Solution vector to the linear trust-region subproblem.
             Array of shape (n,).
     """
-    lower_bound = np.minimum(lower_bound, -ZERO_THRESH)
-    upper_bound = np.maximum(upper_bound, ZERO_THRESH)
+    lower_bounds_internal = np.minimum(lower_bounds, -zero_treshold)
+    upper_bounds_internal = np.maximum(upper_bounds, zero_treshold)
 
+    model_gradient = linear_model.linear_terms
     n = model_gradient.shape[0]
     x_candidate = np.zeros(n)
 
     direction = -model_gradient
 
-    constant_directions = np.where(np.abs(direction) < ZERO_THRESH)[0]
+    constant_directions = np.where(np.abs(direction) < zero_treshold)[0]
     direction[constant_directions] = 0.0
 
     active_directions = np.setdiff1d(np.arange(n), constant_directions)
     set_active_directions = iter(active_directions)
 
-    niter = 0
-    while niter < n:
-        niter += 1
+    for _ in range(n):
 
-        if np.linalg.norm(direction) < ZERO_THRESH:
+        if np.linalg.norm(direction) < zero_treshold:
             break
 
         x_candidate_unconstr = _take_unconstrained_step_up_to_boundary(
-            x_candidate, direction, trustregion_radius
+            x_candidate, direction, trustregion_radius, zero_treshold=zero_treshold
         )
 
         active_bound, index_active_bound = _find_next_active_bound(
             x_candidate_unconstr,
-            lower_bound,
-            upper_bound,
+            lower_bounds_internal,
+            upper_bounds_internal,
             set_active_directions,
         )
 
@@ -79,71 +80,85 @@ def trsbox_linear(model_gradient, lower_bound, upper_bound, trustregion_radius):
     return x_candidate
 
 
-def trsbox_geometry(
-    x_initial,
-    model_gradient,
-    constant_term,
-    lower_bound,
-    upper_bound,
+def improve_geomtery_trsbox_linear(
+    x_center,
+    linear_model,
+    lower_bounds,
+    upper_bounds,
     trustregion_radius,
+    *,
+    zero_treshold=1e-14
 ):
-    """Maximize a Lagrange polynomial of degree one.
+    """Maximize a Lagrange polynomial of degree one to improve geometry of the model.
 
-    Given a Lagrange polynomial defined by
-        L(x) = c + g' * (x - x_initial)
+    Let a Lagrange polynomial of degree one be defined by:
+        L(x) = c + g' * (x - x_center),
 
-    maximize abs(L(x)) in a trust region setting, i.e. solve:
-        max_x  abs(c + g' * (x - x_initial))
+    where c and g denote the constant term and the linear terms (gradient)
+    of the linear model, respectively.
+
+    In order to maximize L(x), we maximize the absolute value of L(x) in a
+    trust-region setting. I.e. we solve:
+        max_x  abs(c + g' * (x - x_center))
             s.t. lower_bound <= x <= upper_bound
-                 ||x - x_initial|| <= delta
+                 ||x - x_center|| <= delta
 
-
-    To find the solution, g' * (x - x_initial) is both minimized and maximized.
+    In order to find x*, we both minimize and maximize g' * (x - center), respectively.
     The resulting candidate vectors are then plugged into the objective function L(x)
-    to see which one yields the largest absolute value.
+    to see which one yields the largest absolute value of the Lagrange polynomial.
 
     Args:
-        x_initial (np.ndarray): Initial candidate vector x of shape (n,).
-            The solution to L(x) is defined as  the step x* = x_accepted - x_base.
-        model_gradient (np.ndarray): Gradient of the Lagrange polynomial.
-            Array of shape (n,).
-        constant_term (float): Constant term of the Lagrange polynomial.
-        lower_bound (np.ndarray): Lower bounds for x. Array of shape (n,).
-        upper_bound (np.ndarray): Upper bounds for x. Array of shape (n,).
+        x_center (np.ndarray): Center for the candidate vector x of shape (n,).
+        linear_model (namedtuple): Named tuple containing the parameters of the
+            linear model that form the Lagrange polynomial, including:
+            - "constant_term", which is a floating point number, and
+            - "linear_terms", which is a np.ndarray of shape (n,).
+        lower_bounds (np.ndarray): Lower bounds for x. Array of shape (n,).
+        upper_bounds (np.ndarray): Upper bounds for x. Array of shape (n,).
         trustregion_radius (float): Radius of the trust-region.
+        zero_treshold (float): Treshold for treating numerical values as zero.
+            Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
-        (np.ndarray): Solution vector of shape (n,) that maximizes the Lagrange
-            polynomial.
+        (np.ndarray): Vector of shape (n,) that maximizes the Lagrange polynomial.
     """
     # Check if bounds valid
-    if np.any(lower_bound > x_initial + ZERO_THRESH):
+    if np.any(lower_bounds > x_center + zero_treshold):
         raise ValueError("x_base violates lower bound.")
-    if np.any(x_initial - ZERO_THRESH > upper_bound):
+    if np.any(x_center - zero_treshold > upper_bounds):
         raise ValueError("x_base violates upper bound.")
 
-    # Minimize and maximize g' * (x - x_initial), respectively
-    x_candidate_min = trsbox_linear(
-        model_gradient,
-        lower_bound - x_initial,
-        upper_bound - x_initial,
-        trustregion_radius,
-    )
-    x_candidate_max = trsbox_linear(
-        -model_gradient,
-        lower_bound - x_initial,
-        upper_bound - x_initial,
-        trustregion_radius,
+    linear_model_to_minimize = linear_model
+    linear_model_to_maximize = linear_model._replace(
+        linear_terms=-linear_model.linear_terms
     )
 
-    lagrange_polynomial = lambda x: abs(constant_term + np.dot(model_gradient, x))
+    # Minimize and maximize g' * (x - x_initial), respectively
+    x_candidate_min = minimize_trsbox_linear(
+        linear_model_to_minimize,
+        lower_bounds - x_center,
+        upper_bounds - x_center,
+        trustregion_radius,
+        zero_treshold=zero_treshold,
+    )
+    x_candidate_max = minimize_trsbox_linear(
+        linear_model_to_maximize,
+        lower_bounds - x_center,
+        upper_bounds - x_center,
+        trustregion_radius,
+        zero_treshold=zero_treshold,
+    )
+
+    lagrange_polynomial = lambda x: abs(
+        linear_model.constant_term + np.dot(linear_model.linear_terms, x)
+    )
 
     if lagrange_polynomial(x_candidate_min) >= lagrange_polynomial(x_candidate_max):
-        x_accepted = x_candidate_min + x_initial
+        x_lagrange = x_candidate_min + x_center
     else:
-        x_accepted = x_candidate_max + x_initial
+        x_lagrange = x_candidate_max + x_center
 
-    return x_accepted
+    return x_lagrange
 
 
 def _find_next_active_bound(
@@ -207,8 +222,6 @@ def _take_constrained_step_up_to_boundary(
         upper_bound (np.ndarray): Upper bounds for x. Array of shape (n,).
         index_bound_active (int): Index where an active lower or upper bound
             has been found.
-        upper_bound_hit (bool): True, if the active bound detected is an
-            upper bound. False, if the active bound is a lower bound.
 
     Returns:
         (tuple):
@@ -229,26 +242,30 @@ def _take_constrained_step_up_to_boundary(
     return x_candidate, direction
 
 
-def _take_unconstrained_step_up_to_boundary(x_candidate, direction, trustregion_radius):
+def _take_unconstrained_step_up_to_boundary(
+    x_candidate, direction, trustregion_radius, zero_treshold
+):
     """Take largest unconstrained step possible until trust-region boundary is hit.
 
     Args:
         x_candidate (np.ndarray): Current candidate vector of shape (n,).
         direction (np.ndarray): Direction vector of shape (n,).
         trustregion_radius (float): Radius of the trust-region.
+        zero_treshold (float): Treshold for treating numerical values as zero.
+            Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
         (np.ndarray): New unconstrained candidate vector shape (n,).
     """
     step_size_unconstr = _get_distance_to_trustregion_boundary(
-        x_candidate, direction, trustregion_radius
+        x_candidate, direction, trustregion_radius, zero_treshold
     )
     x_candidate_unconstr = x_candidate + step_size_unconstr * direction
 
     return x_candidate_unconstr
 
 
-def _get_distance_to_trustregion_boundary(x0, direction, radius):
+def _get_distance_to_trustregion_boundary(x0, direction, radius, zero_treshold):
     """Compute the candidate vector's distance to the trustregion boundary.
 
     Given the candidate vector, find the largest step `alpha` in direction `g`
@@ -268,6 +285,8 @@ def _get_distance_to_trustregion_boundary(x0, direction, radius):
         x0 (np.ndarray): Candidate vector of shape (n,).
         direction (np.ndarray): Direction vector of shape (n,).
         radius (float): Radius of the trust-region.
+        zero_treshold (float): Treshold for treating numerical values as zero.
+            Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
         (float) Distance of the candidate vector to the trustregion
@@ -277,7 +296,7 @@ def _get_distance_to_trustregion_boundary(x0, direction, radius):
     g_sumsq = np.dot(direction, direction)
     x0_sumsq = np.dot(x0, x0)
 
-    if math.sqrt(g_sumsq) < ZERO_THRESH:
+    if math.sqrt(g_sumsq) < zero_treshold:
         alpha = 0
     else:
         alpha = (
