@@ -43,71 +43,76 @@ def solve_trustregion_subproblem(main_model, *, maxiter=200):
     See pp. 194-197 in :cite:`Conn2000` for a more detailed description.
 
     Args:
-        fun (callable): Criterion function to be minimized.
-        trustregion_radius (float): Trustregion radius, often referred to as "delta".
+        main_model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e.:
+            - "linear_terms", a np.ndarray of shape (n,) and
+            - "square_terms", a np.ndarray of shape (n,n).
+        trustregion_radius (float): Trustregion radius, often referred to as delta.
+        maxiter (int): Maximum number of iterations to perform. If reached,
+            terminate.
 
     Returns:
         result (dict): Result dictionary containing the following keys:
             - "x_solution" (np.ndarray): Solution vector of the subproblem of shape (n,)
             - "q_min" (float): Minimum function value associated with the solution.
     """
-    model_gradient = main_model["linear_terms"]
-    model_hessian = {
-        "initial": main_model["square_terms"],
-        "info_already_factorized": False,
-    }
-
-    n = model_gradient.shape[0]
-
     # Small floating point number signaling that for vectors smaller
     # than that backward substituition is not reliable.
     # See Golub, G. H., Van Loan, C. F. (2013), "Matrix computations", p.165.
-    zero_thresh = n * np.finfo(float).eps * norm(model_hessian["initial"], np.Inf)
+    zero_thresh = (
+        main_model.square_terms.shape[0]
+        * np.finfo(float).eps
+        * norm(main_model.square_terms, np.Inf)
+    )
+
+    HessianInfo = namedtuple(
+        "HessianInfo", ["hessian_plus_lambda", "upper_triangular", "already_factorized"]
+    )
+    hessian_info = HessianInfo(
+        hessian_plus_lambda=main_model.square_terms,
+        upper_triangular=main_model.square_terms,
+        already_factorized=False,
+    )
 
     stopping_criteria = {
         "k_easy": 0.1,
         "k_hard": 0.2,
     }
 
-    gnorm = norm(model_gradient)
-
-    lambdas = get_initial_guess_for_lambdas(
-        gnorm,
-        model_hessian["initial"],
-    )
+    gradient_norm = norm(main_model.linear_terms)
+    lambdas = get_initial_guess_for_lambdas(main_model)
 
     converged = False
 
     for niter in range(maxiter):
 
-        if model_hessian["info_already_factorized"]:
-            model_hessian["info_already_factorized"] = False
+        if hessian_info.already_factorized is True:
+            hessian_info = hessian_info._replace(already_factorized=False)
         else:
-            model_hessian, factorization_info = add_lambda_and_factorize_hessian(
-                model_hessian, lambdas
+            hessian_info, factorization_info = add_lambda_and_factorize_hessian(
+                main_model, hessian_info, lambdas
             )
 
         niter += 1
 
-        if factorization_info == 0 and gnorm > zero_thresh:
-            # Factorization successful
+        if factorization_info == 0 and gradient_norm > zero_thresh:
             (
                 x_candidate,
-                model_hessian,
+                hessian_info,
                 lambdas,
                 converged,
             ) = find_new_candidate_and_update_parameters(
-                model_gradient,
-                model_hessian,
+                main_model,
+                hessian_info,
                 lambdas,
                 stopping_criteria,
                 converged,
             )
 
-        elif factorization_info == 0 and gnorm <= zero_thresh:
+        elif factorization_info == 0 and gradient_norm <= zero_thresh:
             x_candidate, lambdas, converged = check_for_interior_convergence_and_update(
                 x_candidate,
-                model_hessian,
+                hessian_info,
                 lambdas,
                 stopping_criteria,
                 converged,
@@ -115,7 +120,7 @@ def solve_trustregion_subproblem(main_model, *, maxiter=200):
 
         else:
             lambdas = update_lambdas_when_factorization_unsuccessful(
-                model_hessian,
+                hessian_info,
                 lambdas,
                 factorization_info,
             )
@@ -131,8 +136,7 @@ def solve_trustregion_subproblem(main_model, *, maxiter=200):
 
 
 def get_initial_guess_for_lambdas(
-    gnorm,
-    hessian,
+    main_model,
 ):
     """Return good initial guesses for lambda, its lower and upper bound.
 
@@ -140,11 +144,14 @@ def get_initial_guess_for_lambdas(
     along with its lower bound and upper bound, are computed.
 
     The values are chosen accordingly to the guidelines on
-    section 7.3.8 (p. 192) from Conn et al. (2000).
+    section 7.3.8 (p. 192) from :cite:`Conn2000`.
 
     Args:
         gnorm (float): Gradient norm.
-        hessian (np.ndarray): Square hessian matrix.
+        main_model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e.:
+            - "linear_terms", a np.ndarray of shape (n,) and
+            - "square_terms", a np.ndarray of shape (n,n).
 
     Returns:
         dict: Dictionary containing the initial guess for the damping
@@ -158,22 +165,25 @@ def get_initial_guess_for_lambdas(
         "DampingFactors", ["candidate", "lower_bound", "upper_bound"]
     )
 
-    hessian_infinity_norm = norm(hessian, np.Inf)
-    hessian_frobenius_norm = norm(hessian, "fro")
+    gradient_norm = np.linalg.norm(main_model.linear_terms)
+    model_hessian = main_model.square_terms
+
+    hessian_infinity_norm = norm(model_hessian, np.Inf)
+    hessian_frobenius_norm = norm(model_hessian, "fro")
 
     hessian_gershgorin_lower, hessian_gershgorin_upper = _compute_gershgorin_bounds(
-        hessian
+        main_model
     )
 
     lambda_lower_bound = max(
         0,
-        -min(hessian.diagonal()),
-        gnorm
+        -min(model_hessian.diagonal()),
+        gradient_norm
         - min(hessian_gershgorin_upper, hessian_frobenius_norm, hessian_infinity_norm),
     )
     lambda_upper_bound = max(
         0,
-        gnorm
+        gradient_norm
         + min(-hessian_gershgorin_lower, hessian_frobenius_norm, hessian_infinity_norm),
     )
 
@@ -193,139 +203,69 @@ def get_initial_guess_for_lambdas(
     return lambdas
 
 
-def add_lambda_and_factorize_hessian(model_hessian, lambdas):
-    """Add lambda to hessian matrix and factorize into its upper triangular.
+def add_lambda_and_factorize_hessian(main_model, hessian_info, lambdas):
+    """Add lambda to hessian and factorize it into its upper triangular matrix.
 
     Args:
-        model_hessian (dict): Dictionary of the hessian matrix containing the
-            following keys:
-            - "initial" (np.ndarray): The initial square hessian matrix supplied
-                as input to the subproblem.
+        main_model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e.:
+            - "linear_terms", a np.ndarray of shape (n,) and
+            - "square_terms", a np.ndarray of shape (n,n).
+        hessian_info (namedtuple): Named tuple containing transformations
+            of the hessian, i.e. square_terms, from the main model. The keys are:
+            - "hessian_plus_lambda" (np.ndarray): The square terms of the main model
+                plus the identity matrix times lambda.
+            - "upper_triangular" (np.ndarray): Factorization of the hessian from the
+                main model into its upper triangular matrix.
             - "info_already_factorized" (bool): Boolean indicating whether the hessian
                 has already been factorized for the current iteration.
 
     Returns:
         Tuple:
-        - model_hessian_updated (dict): Dictionary of the hessian matrix and its
-            transformations containing the following keys:
-            - "initial" (np.ndarray): The initial square hessian matrix supplied
-                as input to the subproblem.
-            - "initial_plus_lambda" (np.ndarray): The initial hessian matrix
-                plus lambda times the identity matrix, computed as
-
-                    H + lambda * I(n),
-
-                where `H` denotes the initial hessian, `I` the identity matrix,
-                and `n` the number of rows/columns.
-            - "upper_triangular" (np.ndarray): Factorization of the initial hessian
-                into its upper triangular matrix.
-            - "info_already_factorized" (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-
-        - lambdas (dict): Dictionary containing the current damping factor lambda,
-            its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
+        - hessian_info (dict): Named tuple containing the updated transformations
+            of the hessian, i.e. square_terms, from the main model. See above.
+        - factorization_info (int): Non-negative integer k indicating whether the
+            factorization of the hessian into its upper triangular matrix has been
+            successful.
+            If k = 0, the factorization has been successful.
+            A value k > 0 means that the leading k by k submatrix constitues the
+            first non-positive definite leading submatrix of the hessian.
     """
-    model_hessian_updated = model_hessian.copy()
-    n = model_hessian["initial"].shape[0]
+    n = main_model.square_terms.shape[0]
 
-    model_hessian_updated["initial_plus_lambda"] = model_hessian[
-        "initial"
-    ] + lambdas.candidate * np.eye(n)
-    (
-        model_hessian_updated["upper_triangular"],
-        factorization_info,
-    ) = compute_cholesky_factorization(
-        model_hessian_updated["initial_plus_lambda"],
+    hessian_plus_lambda = main_model.square_terms + lambdas.candidate * np.eye(n)
+    hessian_upper_triangular, factorization_info = compute_cholesky_factorization(
+        hessian_plus_lambda,
         lower=False,
         overwrite_a=False,
         clean=True,
     )
 
-    return model_hessian_updated, factorization_info
+    hessian_info_new = hessian_info._replace(
+        hessian_plus_lambda=hessian_plus_lambda,
+        upper_triangular=hessian_upper_triangular,
+    )
+
+    return hessian_info_new, factorization_info
 
 
 def find_new_candidate_and_update_parameters(
-    model_gradient,
-    model_hessian,
+    main_model,
+    hessian_info,
     lambdas,
     stopping_criteria,
     converged,
 ):
-    """Find new candidate vector and update transformed hessian and lambdas.
-
-    Args:
-        model_gradient (np.ndarray): Gradient.
-        model_hessian (dict): Dictionary of the hessian matrix and its
-            transformations containing the following keys:
-            - "initial" (np.ndarray): The initial square hessian matrix supplied
-                as input to the subproblem.
-            - "initial_plus_lambda" (np.ndarray): The initial hessian matrix
-                plus lambda times the identity matrix, computed as
-
-                    H + lambda * I(n),
-
-                where `H` denotes the initial hessian, `I` the identity matrix,
-                and `n` the number of rows/columns.
-            - "upper_triangular" (np.ndarray): Factorization of the initial hessian
-                into its upper triangular matrix.
-            - "info_already_factorized" (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-        lambdas (dict): Dictionary containing the current damping
-            factor, lambda, as well as its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        stopping_criteria (dict): Dictionary of the two stopping criteria
-            containing the following keys:
-            - "k_easy" (float): Stopping criterion in the "easy" case.
-            - "k_hard" (float): Stopping criterion in the "hard" case.
-            See pp. 194-197 from reference _[1] for more details.
-        converged (bool): Boolean indicating whether the subproblem has converged
-            If True, the iteration will be stopped and the solution vector returned.
-
-    Returns:
-        Tuple:
-        - x_candidate (np.ndarray): Current candidate vector.
-        - model_hessian_updated (dict): Dictionary of the hessian matrix and its
-            updated transformations containing the following keys:
-            - "initial" (np.ndarray): The initial square hessian matrix supplied
-                as input to the subproblem.
-            - "initial_plus_lambda" (np.ndarray): The initial hessian matrix
-                plus lambda times the identity matrix, computed as
-
-                    H + lambda * I(n),
-
-                where `H` denotes the initial hessian, `I` the identity matrix,
-                and `n` the number of rows/columns.
-            - "upper_triangular" (np.ndarray): Factorization of the initial hessian
-                into its upper triangular matrix.
-            - "info_already_factorized" (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-        - lambdas_updated (dict): Updated dictionary containing the current damping
-            factor, lambda, as well as its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        - converged (bool): Boolean indicating whether the subproblem has converged
-            If True, the iteration will be stopped and the solution vector returned.
-    """
-    model_hessian_updated = model_hessian.copy()
-
-    # Solve `U.T U x = -g`
-    x_candidate = cho_solve((model_hessian["upper_triangular"], False), -model_gradient)
+    """Find new candidate vector and update transformed hessian and lambdas."""
+    x_candidate = cho_solve(
+        (hessian_info.upper_triangular, False), -main_model.linear_terms
+    )
     x_norm = norm(x_candidate)
 
     if x_norm <= 1 and lambdas.candidate == 0:
         converged = True
 
-    # Solve `U.T w = x`
-    w = solve_triangular(model_hessian["upper_triangular"], x_candidate, trans="T")
+    w = solve_triangular(hessian_info.upper_triangular, x_candidate, trans="T")
     w_norm = norm(w)
 
     newton_step = _compute_newton_step(lambdas, x_norm, w_norm)
@@ -333,12 +273,13 @@ def find_new_candidate_and_update_parameters(
     if x_norm < 1:
         (
             x_candidate,
-            model_hessian_updated,
-            lambdas_updated,
+            hessian_info,
+            lambdas_new,
             converged,
         ) = _update_candidate_and_parameters_when_candidate_within_trustregion(
             x_candidate,
-            model_hessian,
+            main_model,
+            hessian_info,
             lambdas,
             newton_step,
             stopping_criteria,
@@ -346,7 +287,7 @@ def find_new_candidate_and_update_parameters(
         )
 
     else:
-        lambdas_updated, converged = _update_lambdas_when_candidate_outside_trustregion(
+        lambdas_new, converged = _update_lambdas_when_candidate_outside_trustregion(
             lambdas,
             newton_step,
             x_norm,
@@ -356,8 +297,8 @@ def find_new_candidate_and_update_parameters(
 
     return (
         x_candidate,
-        model_hessian_updated,
-        lambdas_updated,
+        hessian_info,
+        lambdas_new,
         converged,
     )
 
@@ -369,54 +310,7 @@ def check_for_interior_convergence_and_update(
     stopping_criteria,
     converged,
 ):
-    """Check for interior convergence, update candidate vector and lambdas.
-
-
-    Args:
-        x_candidate (np.ndarray): Current candidate vector of shape (n,).
-        model_hessian (dict): Dictionary of the hessian matrix and its
-            transformations containing the following keys:
-            - "initial" (np.ndarray): The initial square hessian matrix supplied
-                as input to the subproblem.
-            - "initial_plus_lambda" (np.ndarray): The initial hessian matrix
-                plus lambda times the identity matrix, computed as
-
-                    H + lambda * I(n),
-
-                where `H` denotes the initial hessian, `I` the identity matrix,
-                and `n` the number of rows/columns.
-            - "upper_triangular" (np.ndarray): Factorization of the initial hessian
-                into its upper triangular matrix.
-            - "info_already_factorized" (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-        lambdas (dict): Dictionary containing the current damping
-            factor, lambda, as well as its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        stopping_criteria (dict): Dictionary of the two stopping criteria
-            containing the following keys:
-            - "k_easy" (float): Stopping criterion in the "easy" case.
-            - "k_hard" (float): Stopping criterion in the "hard" case.
-            See pp. 194-197 from reference _[1] for more details.
-        converged (bool): Boolean indicating whether the subproblem has converged
-            If True, the iteration will be stopped and the solution vector returned.
-
-
-    Returns:
-        Tuple:
-        - x_candidate (np.ndarray): Current, potentially updated, candidate vector.
-            of shape (n,).
-        - lambdas_updated (dict): Updated dictionary containing the current damping
-            factor lambda, its lower and upper bound, which are all floating point
-            numbers. The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        - converged (bool): Boolean indicating whether the subproblem has converged
-            If True, the iteration will be stopped and the solution vector returned.
-    """
+    """Check for interior convergence, update candidate vector and lambdas."""
     n = x_candidate.shape[0]
 
     if lambdas.candidate == 0:
@@ -445,51 +339,11 @@ def check_for_interior_convergence_and_update(
 
 
 def update_lambdas_when_factorization_unsuccessful(
-    model_hessian, lambdas, factorization_info
+    hessian_info, lambdas, factorization_info
 ):
-    """Update lambdas in the case that factorization of hessian not successful.
-
-    Args:
-        model_hessian (dict): Dictionary of the hessian matrix and its
-            transformations containing the following keys:
-            - "initial" (np.ndarray): The initial square hessian matrix supplied
-                as input to the subproblem.
-            - "initial_plus_lambda" (np.ndarray): The initial hessian matrix
-                plus lambda times the identity matrix, computed as
-
-                    H + lambda * I(n),
-
-                where `H` denotes the initial hessian, `I` the identity matrix,
-                and `n` the number of rows/columns.
-            - "upper_triangular" (np.ndarray): Factorization of the initial hessian
-                into its upper triangular matrix.
-            - "info_already_factorized" (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-        lambdas (dict): Dictionary containing the current damping
-            factor, lambda, as well as its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        factorization_info (int): Integer denoting the success of the cholesky
-            factorization of H + lambda * I(n)
-            (see ``model_hessian["initial_plus_lambda"]``).
-            If == 0, the factorization was successful. Otherwise, it was not
-            successful and factorization_info represents a positive integer
-            such that the leading k by k submatrix of H + lambda * I(n)
-            is the first non-positive definite leading submatrix.
-
-    Returns:
-        lambdas_updated (dict): Updated dictionary containing the current damping
-            factor lambda, its lower and upper bound, which are all floating point
-            numbers. The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-    """
+    """Update lambdas in the case that factorization of hessian not successful."""
     delta, v = _compute_terms_to_make_leading_submatrix_singular(
-        model_hessian["initial_plus_lambda"],
-        model_hessian["upper_triangular"],
+        hessian_info,
         factorization_info,
     )
     v_norm = norm(v)
@@ -514,14 +368,16 @@ def compute_criterion_main_model(x, main_model):
 
     Args:
         x (np.ndarray): Parameter vector of shape (n,).
-        model_gradient (np.ndarray): Gradient of the main model of shape (n,).
-        model_hessian (np.ndarray): Hessian of the main model of shape (n, n).
+        main_model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e.:
+            - "linear_terms", a np.ndarray of shape (n,) and
+            - "square_terms", a np.ndarray of shape (n,n).
 
     Returns:
         (float): Criterion value of the main model.
     """
-    return np.dot(main_model["linear_terms"], x) + 0.5 * np.dot(
-        np.dot(x, main_model["square_terms"]), x
+    return np.dot(main_model.linear_terms, x) + 0.5 * np.dot(
+        np.dot(x, main_model.square_terms), x
     )
 
 
@@ -529,20 +385,12 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
     """Update current lambda so that it lies within its bounds.
 
     Args:
-        lambdas (dict): Dictionary containing the current damping
-            factor, lambda, as well as its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
+        lambdas_new (namedtuple): Named tuple containing the current candidate
+            value for the damping factor lambda, its lower bound and upper bound.
 
     Returns:
-        lambdas_updated (dict): Updated dictionary containing the current damping
-            factor lambda, its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
+        lambda_new_candidate (float): New candidate for the damping factor
+            lambda.
     """
     lambda_new_candidate = max(
         math.sqrt(lower_bound * upper_bound),
@@ -552,29 +400,29 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
     return lambda_new_candidate
 
 
-def _compute_gershgorin_bounds(hessian):
+def _compute_gershgorin_bounds(main_model):
     """Compute upper and lower Gregoshgorin bounds for a square matrix.
 
     The Gregoshgorin bounds are the upper and lower bounds for the
-    eigenvalues of the square matrix ``hessian``.
-    See ref. [1].
-
-    References:
-
-    .. [1] Conn, A. R., Gould, N. I., & Toint, P. L.
-           trust-region methods. 2000. Siam. pp. 19.
+    eigenvalues of the square hessian matrix (i.e. the square terms of
+    the main model). See :cite:`Conn2000`.
 
     Args:
-        hessian (np.ndarray): Square hessian matrix.
+        main_model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e.:
+            - "linear_terms", a np.ndarray of shape (n,) and
+            - "square_terms", a np.ndarray of shape (n,n).
 
     Returns:
         Tuple:
         - lower_bound (float): Lower Gregoshgorin bound.
         - upper_bound (float): Upper Gregoshgorin bound.
     """
-    hessian_diag = np.diag(hessian)
+    model_hessian = main_model.square_terms
+
+    hessian_diag = np.diag(model_hessian)
     hessian_diag_abs = np.abs(hessian_diag)
-    hessian_row_sums = np.sum(np.abs(hessian), axis=1)
+    hessian_row_sums = np.sum(np.abs(model_hessian), axis=1)
 
     lower_gershgorin = np.min(hessian_diag + hessian_diag_abs - hessian_row_sums)
     upper_gershgorin = np.max(hessian_diag - hessian_diag_abs + hessian_row_sums)
@@ -586,12 +434,8 @@ def _compute_newton_step(lambdas, p_norm, w_norm):
     """Compute the Newton step.
 
     Args:
-        lambdas (dict): Dictionary containing the current damping
-            factor, lambda, as well as its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
+        lambdas (namedtuple): Named tuple containing the current candidate
+            value for the damping factor lambda, its lower bound and upper bound.
         p_norm (float): Frobenius (i.e. L2-norm) of the candidate vector.
         w_norm (float): Frobenius (i.e. L2-norm) of vector w, which is the solution
             to the following triangular system: U.T w = p.
@@ -604,110 +448,53 @@ def _compute_newton_step(lambdas, p_norm, w_norm):
 
 
 def _update_candidate_and_parameters_when_candidate_within_trustregion(
-    p_candidate,
-    model_hessian,
+    x_candidate,
+    main_model,
+    hessian_info,
     lambdas,
     newton_step,
     stopping_criteria,
     converged,
 ):
-    """Update candidate vector, hessian, and lambdas when p outside trust-region.
+    """Update candidate vector, hessian, and lambdas when x outside trust-region."""
+    n = main_model.square_terms.shape[0]
 
-    Args:
-        p_candidate (np.ndarray): Current candidate vector.
-        model_hessian (dict): Dictionary of the hessian matrix and its
-            transformations containing the following keys:
-            - "initial" (np.ndarray): The initial square hessian matrix supplied
-                as input to the subproblem.
-            - "initial_plus_lambda" (np.ndarray): The initial hessian matrix
-                plus lambda times the identity matrix, computed as
-
-                    H + lambda * I(n),
-
-                where `H` denotes the initial hessian, `I` the identity matrix,
-                and `n` the number of rows/columns.
-            - "upper_triangular" (np.ndarray): Factorization of the initial hessian
-                into its upper triangular matrix.
-            - "info_already_factorized" (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-        lambdas (dict): Dictionary containing the current damping
-            factor, lambda, as well as its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        newton_step (float): Newton step computed according to formula (4.44)
-            p.87 from Nocedal and Wright (2006).
-        stopping_criteria (dict): Dictionary of the two stopping criteria
-            containing the following keys:
-            - "k_easy" (float): Stopping criterion in the "easy" case.
-            - "k_hard" (float): Stopping criterion in the "hard" case.
-            See pp. 194-197 from reference _[1] for more details.
-        converged (bool): Boolean indicating whether the subproblem has converged
-            If True, the iteration will be stopped and the solution vector returned.
-
-    Returns:
-        Tuple:
-        - p_candidate (np.ndarray): Current candidate vector.
-        - model_hessian_updated (dict): Dictionary of the hessian matrix and its
-            updated transformations containing the following keys:
-            - "initial" (np.ndarray): The initial square hessian matrix supplied
-                as input to the subproblem.
-            - "initial_plus_lambda" (np.ndarray): The initial hessian matrix
-                plus lambda times the identity matrix, computed as
-
-                    H + lambda * I(n),
-
-                where `H` denotes the initial hessian, `I` the identity matrix,
-                and `n` the number of rows/columns.
-            - "upper_triangular" (np.ndarray): Factorization of the initial hessian
-                into its upper triangular matrix.
-            - "info_already_factorized" (bool): Boolean indicating whether the hessian
-                has already been factorized for the current iteration.
-        - lambdas_updated (dict): Updated dictionary containing the current damping
-            factor lambda, its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        - converged (bool): Boolean indicating whether the subproblem has converged
-            If True, the iteration will be stopped and the solution vector returned.
-    """
-    model_hessian_updated = model_hessian.copy()
-    n = model_hessian["initial"].shape[0]
-
-    s_min, z_min = estimate_smallest_singular_value(model_hessian["upper_triangular"])
-    step_len = _compute_smallest_step_len_for_candidate_vector(p_candidate, z_min)
+    s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
+    step_len = _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min)
 
     quadratic_term = np.dot(
-        p_candidate, np.dot(model_hessian["initial_plus_lambda"], p_candidate)
+        x_candidate, np.dot(hessian_info.hessian_plus_lambda, x_candidate)
     )
 
     relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambdas.candidate)
     if relative_error <= stopping_criteria["k_hard"]:
-        p_candidate = p_candidate + step_len * z_min
+        x_candidate = x_candidate + step_len * z_min
         converged = True
 
     lambda_new_lower_bound = max(lambdas.lower_bound, lambdas.candidate - s_min**2)
 
-    model_hessian_updated["initial_plus_lambda"] = model_hessian[
-        "initial"
-    ] + newton_step * np.eye(n)
+    hessian_plus_lambda = main_model.square_terms + newton_step * np.eye(n)
     _, factorization_unsuccessful = compute_cholesky_factorization(
-        model_hessian_updated["initial_plus_lambda"],
+        hessian_plus_lambda,
         lower=False,
         overwrite_a=False,
         clean=True,
     )
 
     if factorization_unsuccessful == 0:
+        hessian_already_factorized = True
         lambda_new_candidate = newton_step
-        model_hessian_updated["info_already_factorized"] = True
     else:
+        hessian_already_factorized = hessian_info.already_factorized
         lambda_new_lower_bound = max(lambda_new_lower_bound, newton_step)
         lambda_new_candidate = _get_new_lambda_candidate(
             lower_bound=lambda_new_lower_bound, upper_bound=lambdas.candidate
         )
+
+    hessian_info_new = hessian_info._replace(
+        hessian_plus_lambda=hessian_plus_lambda,
+        already_factorized=hessian_already_factorized,
+    )
 
     lambdas_new = lambdas._replace(
         candidate=lambda_new_candidate,
@@ -715,43 +502,13 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
         upper_bound=lambdas.candidate,
     )
 
-    return p_candidate, model_hessian_updated, lambdas_new, converged
+    return x_candidate, hessian_info_new, lambdas_new, converged
 
 
 def _update_lambdas_when_candidate_outside_trustregion(
     lambdas, newton_step, p_norm, stopping_criteria, converged
 ):
-    """Update lambas in the case that candidate vector lies outside trust-region.
-
-    Args:
-        lambdas (dict): Dictionary containing the current damping
-            factor, lambda, as well as its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        newton_step (float): Newton step computed according to formula (4.44)
-            p.87 from Nocedal and Wright (2006).
-        p_norm (float): Frobenius (i.e. L2-norm) of the candidate vector.
-        stopping_criteria (dict): Dictionary of the two stopping criteria
-            containing the following keys:
-            - "k_easy" (float): Stopping criterion in the "easy" case.
-            - "k_hard" (float): Stopping criterion in the "hard" case.
-            See pp. 194-197 from reference _[1] for more details.
-        converged (bool): Boolean indicating whether the subproblem has converged
-            If True, the iteration will be stopped and the solution vector returned.
-
-    Returns:
-        Tuple:
-        - lambdas_updated (dict): Updated dictionary containing the current damping
-            factor lambda, its lower and upper bound.
-            The respective keys are:
-            - "current"
-            - "upper"
-            - "lower"
-        - converged (bool): Boolean indicating whether the subproblem has converged
-            If True, the iteration will be stopped and the solution vector returned.
-    """
+    """Update lambas in the case that candidate vector lies outside trust-region."""
     relative_error = abs(p_norm - 1)
 
     if relative_error <= stopping_criteria["k_easy"]:
@@ -762,21 +519,21 @@ def _update_lambdas_when_candidate_outside_trustregion(
     return lambdas_new, converged
 
 
-def _compute_smallest_step_len_for_candidate_vector(p_candidate, z_min):
+def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
     """Compute the smallest step length for the candidate vector.
 
-    Choose ``step_len`` with the smallest magnitude.
-    The reason for this choice is explained at p. 6 in More and D.C. Sorensen (1983),
-    just before the formula for `tau`.
+    Choose step_length with the smallest magnitude.
+    The reason for this choice is explained at p. 6 in :cite:`More1983`,
+    just before the formula for tau.
 
     Args:
-        p_candidate (np.ndarray): Candidate vector for the direction p.
+        x_candidate (np.ndarray): Candidate vector of shape (n,).
         z_min (float): Smallest singular value of the hessian matrix.
 
     Returns:
         (float) Step length with the smallest magnitude.
     """
-    ta, tb = _solve_scalar_quadratic_equation(p_candidate, z_min)
+    ta, tb = _solve_scalar_quadratic_equation(x_candidate, z_min)
     step_len = min([ta, tb], key=abs)
 
     return step_len
@@ -820,7 +577,7 @@ def _solve_scalar_quadratic_equation(z, d):
     return sorted([ta, tb])
 
 
-def _compute_terms_to_make_leading_submatrix_singular(hessian, upper_triangular, k):
+def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
     """Compute terms that make the leading submatrix of the hessian singular.
 
     The "hessian" here refers to the matrix
@@ -840,15 +597,20 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian, upper_triangular,
             hessian is the first non-positive definite leading submatrix.
 
     Returns:
-        Tuple:
+        tuple:
         - delta(float): Amount that should be added to the element (k, k) of
             the leading k by k submatrix of the hessian to make it singular.
         - v (np.ndarray): A vector such that ``v.T B v = 0``. Where B is the
             hessian after ``delta`` is added to its element (k, k).
     """
-    n = len(hessian)
+    hessian_plus_lambda = hessian_info.hessian_plus_lambda
+    upper_triangular = hessian_info.upper_triangular
+    n = len(hessian_plus_lambda)
 
-    delta = np.sum(upper_triangular[: k - 1, k - 1] ** 2) - hessian[k - 1, k - 1]
+    delta = (
+        np.sum(upper_triangular[: k - 1, k - 1] ** 2)
+        - hessian_plus_lambda[k - 1, k - 1]
+    )
 
     v = np.zeros(n)
     v[k - 1] = 1

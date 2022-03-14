@@ -1,4 +1,6 @@
 """Test various solvers for quadratic trust-region subproblems."""
+from collections import namedtuple
+
 import numpy as np
 import pytest
 from estimagic.optimization.bounded_newton_trustregion import minimize_trust_bntr
@@ -33,7 +35,8 @@ from numpy.testing import assert_array_almost_equal as aaae
     ],
 )
 def test_trustregion_subsolver(linear_terms, square_terms, x_expected, q_min_expected):
-    main_model = {"linear_terms": linear_terms, "square_terms": square_terms}
+    MainModel = namedtuple("LinearModel", ["linear_terms", "square_terms"])
+    main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
     result = solve_trustregion_subproblem(main_model)
 
