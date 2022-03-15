@@ -7,79 +7,85 @@ from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_unflatten
 
 
-def matrix_to_block_tree(matrix, tree1, tree2):
+def matrix_to_block_tree(matrix, tree_outer, tree_inner):
     """Convert a matrix (2-dimensional array) to block-tree.
 
     A block tree most often arises when one applies an operation to a function that maps
     between two trees. For certain functions this results in a 2-dimensional data array.
-    Two main examples are the Jacobian of the function f : tree2 -> tree1, which results
-    in a block tree structure, or the covariance matrix of a tree, in which case tree1 =
-    tree2.
+    Two main examples are the Jacobian of the function f : tree_inner -> tree_outer,
+    which results in a block tree structure, or the covariance matrix of a tree, in
+    which case tree_outer = tree_inner.
 
     Args:
         matrix (numpy.ndarray): 2d representation of the block tree. Has shape (m, n).
-        tree1: A pytree. If flattened to scalars has length m.
-        tree2: A pytree. If flattened to scalars has length n.
+        tree_outer: A pytree. If flattened to scalars has length m.
+        tree_inner: A pytree. If flattened to scalars has length n.
 
     Returns:
         block_tree: A (block) pytree.
 
     """
-    _check_dimensions_matrix(matrix, tree1, tree2)
+    _check_dimensions_matrix(matrix, tree_outer, tree_inner)
 
-    flat1, treedef1 = tree_flatten(tree1)
-    flat2, treedef2 = tree_flatten(tree2)
+    flat_outer, treedef_outer = tree_flatten(tree_outer)
+    flat_inner, treedef_inner = tree_flatten(tree_inner)
 
-    flat1_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat1]
-    flat2_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat2]
+    flat_outer_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_outer]
+    flat_inner_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_inner]
 
-    shapes1 = [np.shape(a) for a in flat1_np]
-    shapes2 = [np.shape(a) for a in flat2_np]
+    shapes_outer = [np.shape(a) for a in flat_outer_np]
+    shapes_inner = [np.shape(a) for a in flat_inner_np]
 
-    block_bounds1 = np.cumsum([int(np.product(s)) for s in shapes1[:-1]])
-    block_bounds2 = np.cumsum([int(np.product(s)) for s in shapes2[:-1]])
+    block_bounds_outer = np.cumsum([int(np.product(s)) for s in shapes_outer[:-1]])
+    block_bounds_inner = np.cumsum([int(np.product(s)) for s in shapes_inner[:-1]])
 
     blocks = []
-    for leaf1, s1, submat in zip(
-        flat1, shapes1, np.split(matrix, block_bounds1, axis=0)
+    for leaf_outer, s1, submat in zip(
+        flat_outer, shapes_outer, np.split(matrix, block_bounds_outer, axis=0)
     ):
         row = []
-        for leaf2, s2, block_values in zip(
-            flat2, shapes2, np.split(submat, block_bounds2, axis=1)
+        for leaf_inner, s2, block_values in zip(
+            flat_inner, shapes_inner, np.split(submat, block_bounds_inner, axis=1)
         ):
             raw_block = block_values.reshape((*s1, *s2))
-            block = _convert_raw_block_to_pandas(raw_block, leaf1, leaf2)
+            block = _convert_raw_block_to_pandas(raw_block, leaf_outer, leaf_inner)
             row.append(block)
 
         blocks.append(row)
 
     block_tree = tree_unflatten(
-        treedef1, [tree_unflatten(treedef2, row) for row in blocks]
+        treedef_outer, [tree_unflatten(treedef_inner, row) for row in blocks]
     )
 
     return block_tree
 
 
-def hessian_to_block_tree(hessian, f0, params):
+def hessian_to_block_tree(hessian, f_tree, params_tree):
     """Convert a Hessian array to block-tree format.
+
+    Remark: In comparison to Jax we need this formatting function because we calculate
+    the second derivative using second-order finite differences. Jax computes the
+    second derivative by applying their jacobian function twice, which produces the
+    desired block-tree shape of the Hessian automatically. If we apply our first
+    derivative function twice we get the same block-tree shape.
 
     Args:
         hessian (np.ndarray): The Hessian, 2- or 3-dimensional array representation of
             the resulting block-tree.
-        f0 (pytree): The function evaluated at params.
-        params (pytree): The params.
+        f_tree (pytree): The function evaluated at params_tree.
+        params_tree (pytree): The params_tree.
 
     Returns:
         hessian_block_tree (pytree): The pytree
 
     """
-    _check_dimensions_hessian(hessian, f0, params)
+    _check_dimensions_hessian(hessian, f_tree, params_tree)
 
     if hessian.ndim == 2:
         hessian = hessian[np.newaxis]
 
-    flat_f, treedef_f = tree_flatten(f0)
-    flat_p, treedef_p = tree_flatten(params)
+    flat_f, treedef_f = tree_flatten(f_tree)
+    flat_p, treedef_p = tree_flatten(params_tree)
 
     flat_f_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_f]
     flat_p_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_p]
@@ -93,16 +99,16 @@ def hessian_to_block_tree(hessian, f0, params):
     sub_block_trees = []
     for s0, subarr in zip(shapes_f, np.split(hessian, block_bounds_f, axis=0)):
         blocks = []
-        for leaf1, s1, submat in zip(
+        for leaf_outer, s1, submat in zip(
             flat_p, shapes_p, np.split(subarr, block_bounds_p, axis=1)
         ):
             row = []
-            for leaf2, s2, block_values in zip(
+            for leaf_inner, s2, block_values in zip(
                 flat_p, shapes_p, np.split(submat, block_bounds_p, axis=2)
             ):
                 raw_block = block_values.reshape(((*s0, *s1, *s2)))
                 raw_block = np.squeeze(raw_block)
-                block = _convert_raw_block_to_pandas(raw_block, leaf1, leaf2)
+                block = _convert_raw_block_to_pandas(raw_block, leaf_outer, leaf_inner)
                 row.append(block)
             blocks.append(row)
         block_tree = tree_unflatten(
@@ -114,50 +120,55 @@ def hessian_to_block_tree(hessian, f0, params):
     return hessian_block_tree
 
 
-def block_tree_to_matrix(block_tree, tree1, tree2):
+def block_tree_to_matrix(block_tree, tree_outer, tree_inner):
     """Convert a block tree to a matrix.
 
     A block tree most often arises when one applies an operation to a function that maps
-    between two trees. Two main examples are the Jacobian of the function
-    f : tree2 -> tree1, which results in a block tree structure, or the covariance
-    matrix of a tree, in which case tree1 = tree2.
+    between two trees. Two main examples are the Jacobian of the function f : tree_inner
+    -> tree_outer, which results in a block tree structure, or the covariance matrix of
+    a tree, in which case tree_outer = tree_inner.
 
     Args:
-        block_tree: A (block) pytree, must match dimensions of tree1 and tree2.
-        tree1: A pytree.
-        tree2: A pytree.
+        block_tree: A (block) pytree, must match dimensions of tree_outer and tree_inner
+        tree_outer: A pytree.
+        tree_inner: A pytree.
 
     Returns:
         matrix (np.ndarray): 2d array containing information stored in block_tree.
 
     """
-    if len(block_tree) != len(tree1):
-        raise ValueError("First dimension of block_tree does not match that of tree1.")
+    if len(block_tree) != len(tree_outer):
+        raise ValueError(
+            "First dimension of block_tree does not match that of tree_outer."
+        )
 
     selector_first_element = list(block_tree)[0] if isinstance(block_tree, dict) else 0
-    if len(block_tree[selector_first_element]) != len(tree2):
-        raise ValueError("Second dimension of block_tree does not match that of tree2.")
+    if len(block_tree[selector_first_element]) != len(tree_inner):
+        raise ValueError(
+            "Second dimension of block_tree does not match that of tree_inner."
+        )
 
-    flat1 = tree_leaves(tree1)
-    flat2 = tree_leaves(tree2)
+    flat_outer = tree_leaves(tree_outer)
+    flat_inner = tree_leaves(tree_inner)
     flat_block_tree = tree_leaves(block_tree)
 
-    flat1_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat1]
-    flat2_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat2]
+    flat_outer_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_outer]
+    flat_inner_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_inner]
 
-    size1 = [np.size(a) for a in flat1_np]
-    size2 = [np.size(a) for a in flat2_np]
+    size_outer = [np.size(a) for a in flat_outer_np]
+    size_inner = [np.size(a) for a in flat_inner_np]
 
-    n_blocks1 = len(size1)
-    n_blocks2 = len(size2)
+    n_blocks_outer = len(size_outer)
+    n_blocks_inner = len(size_inner)
 
     block_rows_raw = [
-        flat_block_tree[n_blocks2 * i : n_blocks2 * (i + 1)] for i in range(n_blocks1)
+        flat_block_tree[n_blocks_inner * i : n_blocks_inner * (i + 1)]
+        for i in range(n_blocks_outer)
     ]
 
     block_rows = []
-    for s1, row in zip(size1, block_rows_raw):
-        shapes = [(s1, s2) for s2 in size2]
+    for s1, row in zip(size_outer, block_rows_raw):
+        shapes = [(s1, s2) for s2 in size_inner]
         row_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in row]
         row_reshaped = _reshape_list(row_np, shapes)
         row_concatenated = np.concatenate(row_reshaped, axis=1)
@@ -165,26 +176,26 @@ def block_tree_to_matrix(block_tree, tree1, tree2):
 
     matrix = np.concatenate(block_rows, axis=0)
 
-    _check_dimensions_matrix(matrix, tree1, tree2)
+    _check_dimensions_matrix(matrix, tree_outer, tree_inner)
     return matrix
 
 
-def block_tree_to_hessian(block_hessian, f0, params):
+def block_tree_to_hessian(block_hessian, f_tree, params_tree):
     """Convert a block tree to a Hessian array.
 
     See :func:`hessian_to_block_tree` for a detailed description.
 
     Args:
-        block_hessian: A (block) pytree, must match dimensions of f0 and params.
-        f0 (pytree): The function evaluated at params.
-        params (pytree): The params.
+        block_hessian: A (block) pytree, must match dimensions of f_tree and params_tree
+        f_tree (pytree): The function evaluated at params_tree.
+        params_tree (pytree): The params_tree.
 
     Returns:
         matrix (np.ndarray): 2d array containing information stored in block_tree.
 
     """
-    flat_f = tree_leaves(f0)
-    flat_p = tree_leaves(params)
+    flat_f = tree_leaves(f_tree)
+    flat_p = tree_leaves(params_tree)
     flat_block_tree = tree_leaves(block_hessian)
 
     flat_f_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_f]
@@ -202,19 +213,19 @@ def block_tree_to_hessian(block_hessian, f0, params):
     ]
 
     registry = get_registry(extended=True)
-    n_p = len(tree_leaves(params, registry=registry))
-    inner_treedef = matrix_to_block_tree(np.zeros((n_p, n_p)), params, params)
+    n_p = len(tree_leaves(params_tree, registry=registry))
+    inner_treedef = matrix_to_block_tree(np.zeros((n_p, n_p)), params_tree, params_tree)
 
     inner_block_trees = [
         tree_unflatten(inner_treedef, block_row) for block_row in block_rows_raw
     ]
     inner_block_matrices = [
-        block_tree_to_matrix(block_tree, params, params)[np.newaxis]
+        block_tree_to_matrix(block_tree, params_tree, params_tree)[np.newaxis]
         for block_tree in inner_block_trees
     ]
     hessian = np.concatenate(inner_block_matrices, axis=0)
 
-    _check_dimensions_hessian(hessian, f0, params)
+    _check_dimensions_hessian(hessian, f_tree, params_tree)
     return hessian
 
 
@@ -230,15 +241,15 @@ def _convert_pandas_objects_to_numpy(obj):
     return out
 
 
-def _convert_raw_block_to_pandas(raw_block, leaf1, leaf2):
+def _convert_raw_block_to_pandas(raw_block, leaf_outer, leaf_inner):
     if np.ndim(raw_block) not in (1, 2):
         return raw_block
 
-    if not _is_pd_object(leaf1) and not _is_pd_object(leaf2):
+    if not _is_pd_object(leaf_outer) and not _is_pd_object(leaf_inner):
         return raw_block
 
-    index1 = None if not _is_pd_object(leaf1) else leaf1.index
-    index2 = None if not _is_pd_object(leaf2) else leaf2.index
+    index1 = None if not _is_pd_object(leaf_outer) else leaf_outer.index
+    index2 = None if not _is_pd_object(leaf_inner) else leaf_inner.index
 
     # can only happen if one leaf is a scalar and the other a pandas
     # object that is interpreted as one-dimensional. We want to convert
@@ -251,11 +262,11 @@ def _convert_raw_block_to_pandas(raw_block, leaf1, leaf2):
         # case 1: one leaf is scalar and the other is a DataFrame
         # without value column. We want to convert the block to a DataFrame
         # with same index and columns as original DataFrame
-        if np.isscalar(leaf1) or np.isscalar(leaf2):
-            if np.isscalar(leaf1):
-                index, columns = leaf2.index, leaf2.columns
-            elif np.isscalar(leaf2):
-                index, columns = leaf1.index, leaf1.columns
+        if np.isscalar(leaf_outer) or np.isscalar(leaf_inner):
+            if np.isscalar(leaf_outer):
+                index, columns = leaf_inner.index, leaf_inner.columns
+            elif np.isscalar(leaf_inner):
+                index, columns = leaf_outer.index, leaf_outer.columns
             out = pd.DataFrame(raw_block, index=index, columns=columns)
         # case 2: both 1d Data structures and at least one of them is
         # a pandas object. We want to convert the result to a DataFrame
@@ -299,37 +310,39 @@ def _is_pd_object(obj):
     return isinstance(obj, (pd.Series, pd.DataFrame))
 
 
-def _check_dimensions_matrix(matrix, tree1, tree2):
+def _check_dimensions_matrix(matrix, tree_outer, tree_inner):
     extended_registry = get_registry(extended=True)
-    flat1 = tree_leaves(tree1, registry=extended_registry)
-    flat2 = tree_leaves(tree2, registry=extended_registry)
+    flat_outer = tree_leaves(tree_outer, registry=extended_registry)
+    flat_inner = tree_leaves(tree_inner, registry=extended_registry)
 
-    if matrix.shape[0] != len(flat1):
-        raise ValueError("First dimension of matrix does not match that of tree1.")
-    if matrix.shape[1] != len(flat2):
-        raise ValueError("Second dimension of matrix does not match that of tree2.")
+    if matrix.shape[0] != len(flat_outer):
+        raise ValueError("First dimension of matrix does not match that of tree_outer.")
+    if matrix.shape[1] != len(flat_inner):
+        raise ValueError(
+            "Second dimension of matrix does not match that of tree_inner."
+        )
 
 
-def _check_dimensions_hessian(hessian, f0, params):
+def _check_dimensions_hessian(hessian, f_tree, params_tree):
     extended_registry = get_registry(extended=True)
-    flat_f = tree_leaves(f0, registry=extended_registry)
-    flat_p = tree_leaves(params, registry=extended_registry)
+    flat_f = tree_leaves(f_tree, registry=extended_registry)
+    flat_p = tree_leaves(params_tree, registry=extended_registry)
 
     if len(flat_f) == 1:
         if np.squeeze(hessian).ndim == 0:
             if len(flat_p) != 1:
                 raise ValueError("Hessian dimension does not match those of params.")
         elif np.squeeze(hessian).ndim == 2:
-            if np.squeeze(hessian).shape != 2 * (len(flat_p),):
+            if np.squeeze(hessian).shape != (len(flat_p), len(flat_p)):
                 raise ValueError("Hessian dimension does not match those of params.")
         else:
-            raise ValueError("Hessian must be 0- or 2-d if f0 is scalar-valued.")
+            raise ValueError("Hessian must be 0- or 2-d if f is scalar-valued.")
     else:
         if hessian.ndim != 3:
-            raise ValueError("Hessian must be 3d if f0 is multidimensional.")
+            raise ValueError("Hessian must be 3d if f is multidimensional.")
         if hessian.shape[0] != len(flat_f):
-            raise ValueError("First Hessian dimension does not match that of f0.")
-        if hessian.shape[1:] != 2 * (len(flat_p),):
+            raise ValueError("First Hessian dimension does not match that of f.")
+        if hessian.shape[1:] != (len(flat_p), len(flat_p)):
             raise ValueError(
                 "Last two Hessian dimensions do not match those of params."
             )
