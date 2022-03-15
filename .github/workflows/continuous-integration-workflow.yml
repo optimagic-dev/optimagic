@@ -66,7 +66,7 @@ jobs:
 
       - name: Run pytest.
         shell: bash -l {0}
-        run: tox -e pytest --sitepackages -- -m "jax"
+        run: tox -e jax -- -m "jax"
 
 
   docs:
