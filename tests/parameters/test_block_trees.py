@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 from estimagic import second_derivative
 from estimagic.parameters.block_trees import block_tree_to_hessian
 from estimagic.parameters.block_trees import block_tree_to_matrix
@@ -145,6 +146,15 @@ def test_hessian_to_block_tree_bijection():
     hessian = block_tree_to_hessian(expected, func(params), params)
     got = hessian_to_block_tree(hessian, func(params), params)
     _tree_equal_up_to_dtype(expected, got)
+
+
+def test_block_tree_to_matrix_valueerror():
+    # test that value error is raised when dimensions don't match
+    with pytest.raises(ValueError):
+        block_tree_to_matrix({"a": [1], "b": [2]}, {"a": 1}, (1, 2))
+
+    with pytest.raises(ValueError):
+        block_tree_to_matrix({"a": [1], "b": [2]}, {"a": 1}, (1, 2))
 
 
 def _tree_equal_up_to_dtype(left, right):

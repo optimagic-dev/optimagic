@@ -55,11 +55,18 @@ def test_get_bounds_with_upper_bounds(params):
 
 
 def test_get_bounds_valueerror(params):
+    # we let the specified bounds have one less item than the params data frame
     upper_bounds = {
         "utility": pd.DataFrame([[1]] * 2, index=["a", "b"], columns=["upper_bound"]),
     }
     with pytest.raises(ValueError):
         get_bounds(params, upper_bounds=upper_bounds)
+
+    lower_bounds = {
+        "utility": pd.DataFrame([[1]] * 2, index=["a", "b"], columns=["lower_bound"]),
+    }
+    with pytest.raises(ValueError):
+        get_bounds(params, lower_bounds=lower_bounds)
 
 
 def test_get_bounds_numpy():

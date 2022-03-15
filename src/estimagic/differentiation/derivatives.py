@@ -967,12 +967,3 @@ def _unflatten_if_ndarray(leaves, tree_def, registry):
     else:
         out = leaves
     return out
-
-
-def _hess_array_to_block_tree(hess, tree_def_in, tree_def_out):
-    dim_out, dim_in, _ = hess.shape
-    jacobian_tree_def = matrix_to_block_tree(
-        np.zeros((dim_out, dim_in)), tree_def_out, tree_def_in
-    )
-    derivative = matrix_to_block_tree(hess, jacobian_tree_def, tree_def_in)
-    return derivative
