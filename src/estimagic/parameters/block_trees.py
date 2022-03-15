@@ -183,7 +183,11 @@ def block_tree_to_matrix(block_tree, tree_outer, tree_inner):
 def block_tree_to_hessian(block_hessian, f_tree, params_tree):
     """Convert a block tree to a Hessian array.
 
-    See :func:`hessian_to_block_tree` for a detailed description.
+    Remark: In comparison to Jax we need this formatting function because we calculate
+    the second derivative using second-order finite differences. Jax computes the
+    second derivative by applying their jacobian function twice, which produces the
+    desired block-tree shape of the Hessian automatically. If we apply our first
+    derivative function twice we get the same block-tree shape.
 
     Args:
         block_hessian: A (block) pytree, must match dimensions of f_tree and params_tree
@@ -207,24 +211,31 @@ def block_tree_to_hessian(block_hessian, f_tree, params_tree):
     n_blocks_f = len(size_f)
     n_blocks_p = len(size_p)
 
-    block_rows_raw = [
+    outer_blocks = [
         flat_block_tree[(n_blocks_p**2) * i : (n_blocks_p**2) * (i + 1)]
         for i in range(n_blocks_f)
     ]
 
-    registry = get_registry(extended=True)
-    n_p = len(tree_leaves(params_tree, registry=registry))
-    inner_treedef = matrix_to_block_tree(np.zeros((n_p, n_p)), params_tree, params_tree)
+    inner_matrices = []
+    for outer_block_dim, list_inner_blocks in zip(size_f, outer_blocks):
 
-    inner_block_trees = [
-        tree_unflatten(inner_treedef, block_row) for block_row in block_rows_raw
-    ]
-    inner_block_matrices = [
-        block_tree_to_matrix(block_tree, params_tree, params_tree)[np.newaxis]
-        for block_tree in inner_block_trees
-    ]
-    hessian = np.concatenate(inner_block_matrices, axis=0)
+        block_rows_raw = [
+            list_inner_blocks[n_blocks_p * i : n_blocks_p * (i + 1)]
+            for i in range(n_blocks_p)
+        ]
+        block_rows = []
+        for s1, row in zip(size_p, block_rows_raw):
+            shapes = [(outer_block_dim, s1, s2) for s2 in size_p]
+            row_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in row]
+            row_np_3d = [leaf[np.newaxis] if leaf.ndim < 3 else leaf for leaf in row_np]
+            row_reshaped = _reshape_list(row_np_3d, shapes)
+            row_concatenated = np.concatenate(row_reshaped, axis=2)
+            block_rows.append(row_concatenated)
 
+        inner_matrix = np.concatenate(block_rows, axis=1)
+        inner_matrices.append(inner_matrix)
+
+    hessian = np.concatenate(inner_matrices, axis=0)
     _check_dimensions_hessian(hessian, f_tree, params_tree)
     return hessian
 

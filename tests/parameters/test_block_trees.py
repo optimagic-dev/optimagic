@@ -1,9 +1,14 @@
 import numpy as np
 import pandas as pd
+from estimagic import second_derivative
+from estimagic.parameters.block_trees import block_tree_to_hessian
 from estimagic.parameters.block_trees import block_tree_to_matrix
+from estimagic.parameters.block_trees import hessian_to_block_tree
 from estimagic.parameters.block_trees import matrix_to_block_tree
+from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_equal
 from pybaum import tree_equal
+from pybaum import tree_just_flatten as tree_leaves
 
 
 def test_matrix_to_block_tree_array_and_scalar():
@@ -114,6 +119,32 @@ def test_block_tree_to_matrix_only_params_dfs():
 
     calculated = block_tree_to_matrix(block_tree, tree, tree)
     assert_array_equal(expected, calculated)
+
+
+def test_block_tree_to_hessian_bijection():
+    params = {"a": np.arange(4), "b": [{"c": (1, 2), "d": np.array([5, 6])}]}
+    f_tree = {"e": np.arange(3), "f": (5, 6, [7, 8, {"g": 1.0}])}
+
+    registry = get_registry(extended=True)
+    n_p = len(tree_leaves(params, registry=registry))
+    n_f = len(tree_leaves(f_tree, registry=registry))
+
+    expected = np.arange(n_f * n_p**2).reshape(n_f, n_p, n_p)
+    block_hessian = hessian_to_block_tree(expected, f_tree, params)
+    got = block_tree_to_hessian(block_hessian, f_tree, params)
+    assert_array_equal(expected, got)
+
+
+def test_hessian_to_block_tree_bijection():
+    params = {"a": np.arange(4), "b": [{"c": (1, 2), "d": np.array([5, 6])}]}
+
+    def func(params):
+        return {"e": params["a"] ** 3, "f": (params["b"][0]["c"][1] / 0.5)}
+
+    expected = second_derivative(func, params)["derivative"]
+    hessian = block_tree_to_hessian(expected, func(params), params)
+    got = hessian_to_block_tree(hessian, func(params), params)
+    _tree_equal_up_to_dtype(expected, got)
 
 
 def _tree_equal_up_to_dtype(left, right):
