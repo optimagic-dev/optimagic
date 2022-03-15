@@ -1,45 +1,57 @@
 """Auxiliary functions for the pounders algorithm."""
-from functools import partial
+from collections import namedtuple
 
 import numpy as np
+from estimagic.optimization.bounded_newton_trustregion import minimize_bntr_quadratic
+from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
 from scipy.linalg import qr_multiply
-from scipy.optimize import Bounds
-from scipy.optimize import minimize
 
 
-def update_initial_residual_model(
-    initial_residual_model, x_candidate, residuals_candidate
-):
+def create_initial_residual_model(history, accepted_index, delta):
     """Update linear and square terms of the initial residual model.
 
     Args:
-        initial_residual_model (dict): Dictionary containing the parameters
-            of the initial residual model, including "intercepts",
-            "linear_terms", and "square terms".
-        x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
-        residuals_candidate (np.ndarray): Array of the corresponding centered
-            residuals of shape (n, nobs).
 
     Returns:
-        residual_model_updated (dict): Dictionary containing the parameters of
+        residual_model (namedtuple): Named tuple containing the parameters of
             the residual model with update "linear_terms" and "square_terms".
     """
-    residual_model_updated = initial_residual_model.copy()
-    n, n_obs = x_candidate.shape[0], residuals_candidate.shape[1]
-
-    residual_model_updated["linear_terms"] = np.linalg.solve(
-        x_candidate, residuals_candidate
+    ResidualModel = namedtuple(
+        "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
     )
-    residual_model_updated["square_terms"] = np.zeros((n_obs, n, n))
 
-    return residual_model_updated
+    center_info = {
+        "x": history.get_best_x(),
+        "residuals": history.get_best_residuals(),
+        "radius": delta,
+    }
+    n = center_info["x"].shape[0]
+    n_obs = center_info["residuals"].shape[0]
+
+    indices_not_min = [i for i in range(n + 1) if i != accepted_index]
+
+    x_candidate, residuals_candidate, _ = history.get_centered_entries(
+        center_info=center_info,
+        index=indices_not_min,
+    )
+
+    linear_terms = np.linalg.solve(x_candidate, residuals_candidate)
+    square_terms = np.zeros((n_obs, n, n))
+
+    residual_model = ResidualModel(
+        intercepts=history.get_best_residuals(),
+        linear_terms=linear_terms,
+        square_terms=square_terms,
+    )
+
+    return residual_model
 
 
 def update_residual_model(residual_model, coefficients_to_add, delta, delta_old):
     """Update linear and square terms of the residual model.
 
     Args:
-        residual_model (dict): Dictionary containing the parameters of the
+        residual_model (namedtuple): Named tuple containing the parameters of
             residual model, i.e. "intercepts", "linear_terms", and "square terms".
         coefficients_to_add (dict): Coefficients used for updating the
             parameters of the residual model.
@@ -47,68 +59,66 @@ def update_residual_model(residual_model, coefficients_to_add, delta, delta_old)
         delta_old (float): Trust region radius of the previous iteration.
 
     Returns:
-        residual_model_updated (dict): Dictionary containing the parameters of
+        residual_model_updated (namedtuple): Named tuple containing the parameters of
             the residual model with update "linear_terms" and "square_terms".
     """
-    residual_model_updated = residual_model.copy()
-
-    residual_model_updated["linear_terms"] = (
+    linear_terms_new = (
         coefficients_to_add["linear_terms"]
-        + (delta / delta_old) * residual_model["linear_terms"]
+        + (delta / delta_old) * residual_model.linear_terms
     )
 
-    residual_model_updated["square_terms"] = (
+    square_terms_new = (
         coefficients_to_add["square_terms"]
-        + (delta / delta_old) ** 2 * residual_model["square_terms"]
+        + (delta / delta_old) ** 2 * residual_model.square_terms
+    )
+
+    residual_model_updated = residual_model._replace(
+        linear_terms=linear_terms_new, square_terms=square_terms_new
     )
 
     return residual_model_updated
 
 
-def update_main_from_residual_model(
+def create_main_from_residual_model(
     residual_model, multiply_square_terms_with_residuals=True
 ):
     """Update linear and square terms of the main model via the residual model.
 
     Args:
-        residual_model (dict): Dictionary containing the parameters of the
+        residual_model (namedtuple): Named tuple containing the parameters of
             residual model, i.e. "intercepts", "linear_terms", and "square terms".
         multiply_square_terms_with_residuals (bool): Indicator whether we
             multiply the main model's "square terms" with residuals, i.e.
             the intercepts of the residual model.
 
     Returns:
-        main_model (dict): Dictionary containing the updated parameters of the
-        main model, i.e. "linear_terms" and "square terms".
+        (namedtuple): Named tuple containing the updated parameters of the
+            main model, i.e. "linear_terms" and "square terms".
     """
-    intercepts_residual_model = residual_model["intercepts"]
-    linear_terms_residual_model = residual_model["linear_terms"]
+    MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
 
     linear_terms_main_model = np.dot(
-        linear_terms_residual_model, intercepts_residual_model
+        residual_model.linear_terms, residual_model.intercepts
     )
     square_terms_main_model = np.dot(
-        linear_terms_residual_model, linear_terms_residual_model.T
+        residual_model.linear_terms, residual_model.linear_terms.T
     )
 
     if multiply_square_terms_with_residuals is True:
         # Multiply 3d array *square_terms_residual_model* with
         # 1d array *intercepts_residual_model* along axis 0 of the former.
-        square_terms_residual_model = residual_model["square_terms"]
-
-        dim_array = np.ones((1, square_terms_residual_model.ndim), int).ravel()
+        dim_array = np.ones((1, residual_model.square_terms.ndim), int).ravel()
         dim_array[0] = -1
 
-        intercepts_reshaped = intercepts_residual_model.reshape(dim_array)
+        intercepts_reshaped = residual_model.intercepts.reshape(dim_array)
 
         square_terms_main_model = square_terms_main_model + np.sum(
-            intercepts_reshaped * square_terms_residual_model, axis=0
+            intercepts_reshaped * residual_model.square_terms, axis=0
         )
 
-    main_model = {
-        "linear_terms": linear_terms_main_model,
-        "square_terms": square_terms_main_model,
-    }
+    main_model = MainModel(
+        linear_terms=linear_terms_main_model, square_terms=square_terms_main_model
+    )
 
     return main_model
 
@@ -117,19 +127,18 @@ def update_main_model_with_new_accepted_x(main_model, x_candidate):
     """Use accepted candidate to update the linear terms of the residual model.
 
     Args:
-        main_model (dict): Dictionary containing the parameters of the
+         main_model (namedtuple): Named tuple containing the parameters of the
             main model, i.e. "linear_terms" and "square terms".
         x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
 
     Returns:
-        main_model_updated (dict): Dictionary containing the parameters of the
+        main_model_updated (namedtuple): Named tuple containing the parameters of the
             main model with updated "linear_terms".
     """
-    main_model_updated = main_model.copy()
-
-    main_model_updated["linear_terms"] = main_model["linear_terms"] + np.dot(
-        main_model["square_terms"], x_candidate
+    linear_terms_new = main_model.linear_terms + np.dot(
+        main_model.square_terms, x_candidate
     )
+    main_model_updated = main_model._replace(linear_terms=linear_terms_new)
 
     return main_model_updated
 
@@ -138,27 +147,27 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
     """Use accepted candidate to update residual model.
 
     Args:
-        residual_model (dict): Dictionary containing the parameters of
-            the residual model, i.e. <"intercepts", "linear_terms", and
+        residual_model (namedtuple): Named tuple containing the parameters of
+            the residual model, i.e. "intercepts", "linear_terms", and
             "square terms".
         x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
 
     Returns:
-        residual_model (dict): Dictionary containing the parameters of the
-            residual model with updated "intercepts" and "linear_terms".
+        (namedtuple): Named tuple containing the parameters of the residual model
+            with updated  "intercepts" and "linear_terms".
     """
-    residual_model_updated = residual_model.copy()
-
-    residual_model_updated["intercepts"] = (
-        residual_model["intercepts"]
-        + np.dot(x_candidate, residual_model["linear_terms"])
-        + 0.5 * np.dot(np.dot(x_candidate, residual_model["square_terms"]), x_candidate)
+    intercepts_new = (
+        residual_model.intercepts
+        + np.dot(x_candidate, residual_model.linear_terms)
+        + 0.5 * np.dot(np.dot(x_candidate, residual_model.square_terms), x_candidate)
     )
-    residual_model_updated["linear_terms"] = (
-        residual_model["linear_terms"]
-        + np.dot(residual_model["square_terms"], x_candidate).T
+    linear_terms_new = (
+        residual_model.linear_terms + np.dot(residual_model.square_terms, x_candidate).T
     )
 
+    residual_model_updated = residual_model._replace(
+        intercepts=intercepts_new, linear_terms=linear_terms_new
+    )
     return residual_model_updated
 
 
@@ -166,26 +175,29 @@ def solve_subproblem(
     solution,
     delta,
     main_model,
+    solver,
     ftol,
     xtol,
     gtol,
-    solver,
+    maxiter,
     lower_bounds,
     upper_bounds,
 ):
-    """Solve the subproblem.
+    """Solve the quadratic subproblem.
 
     Args:
         solution (np.ndarray): Current solution vector.
         delta (float): Current trust region radius.
-        main_model (dict): Dictionary containing the parameters of the
-            main model including "linear_terms" and "square terms".
-        gtol (float): Gradient tolerance. Stopping criterion.
-        solver (str): Minimizer used to solve the bound-constraint subproblem.
-            Currently, three solvers from the scipy library are supported.
-            - "trust-constr"
-            - "L-BFGS-B"
-            - "SLSQP"
+        main_model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e. "linear_terms" and "square terms".
+        ftol (float): Stopping criterion.
+        xtol (float): Stopping criterion.
+        gtol (float): Stopping criterion.
+        solver (str): Minimizer that will be used to solve the quadratic subproblem.
+            Currently, two interal solvers are supported
+            - "bntr" (Bounded Newton Trust-Region), which supports bound constraints
+            - "gqtpar" (Nearly exact trust-region solver using an iterative method),
+                which does not support bound constraints.
         lower_bounds (np.ndarray): Lower bounds for the subproblem.
             Must have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
@@ -194,13 +206,17 @@ def solve_subproblem(
             parameter vector. Equal to 1 if not provided by the user.
 
     Returns:
-        Dict[str, np.ndarray]: Result dictionary.
+        (dict): Result dictionary with the followng keys
+            - "x" (np.ndarray): The solution vector of shape (n,)
+            - "criterion": The value of the criterion functions associated
+                with the solution
+            - "n_iterations": Number of iterations performed.
     """
     # Initial guess
     n = solution.shape[0]
     x0 = np.zeros(n)
 
-    # Normalize bounds. If not specified, use unit cube [-1, 1]
+    # Normalize bounds. If none provided, use unit cube [-1, 1]
     if lower_bounds is not None:
         lower_bounds = (lower_bounds - solution) / delta
         lower_bounds[lower_bounds < -1] = -1
@@ -221,42 +237,35 @@ def solve_subproblem(
     if np.max(x0 - upper_bounds) > 1e-10:
         raise ValueError("Initial guess > upper bounds in subproblem.")
 
-    bounds = Bounds(lower_bounds, upper_bounds)
+    if solver == "bntr":
+        options = {
+            "ftol": ftol,
+            "xtol": xtol,
+            "gtol_abs": gtol,
+            "gtol_scaled": gtol,
+            "maxiter": maxiter,
+        }
 
-    if solver == "trust-constr":
-        solver_args = {"hess": "2-point"}
-        options = {"xtol": xtol, "gtol": gtol}
-    elif solver == "L-BFGS-B":
-        solver_args = {}
-        options = {"ftol": ftol, "gtol": gtol}
-    elif solver == "SLSQP":
-        solver_args = {}
-        options = {"ftol": ftol}
+        result = minimize_bntr_quadratic(
+            x0,
+            main_model.linear_terms,
+            main_model.square_terms,
+            lower_bounds,
+            upper_bounds,
+            options,
+        )
+    elif solver == "gqtpar":
+        result = minimize_gqtpar_quadratic(main_model, maxiter=maxiter)
     else:
         raise ValueError("Subproblem solver is not supported.")
 
-    evaluate_main_model = partial(
-        _evaluate_main_model,
-        **main_model,
-    )
-
-    rslt = minimize(
-        evaluate_main_model,
-        x0,
-        method=solver,
-        jac=True,
-        bounds=bounds,
-        **solver_args,
-        options=options,
-    )
-
     # Test bounds post-solution
-    if np.max(lower_bounds - rslt.x) > 1e-5:
+    if np.max(lower_bounds - result["x"]) > 1e-5:
         raise ValueError("Subproblem solution < lower bounds.")
-    if np.max(rslt.x - upper_bounds) > 1e-5:
+    if np.max(result["x"] - upper_bounds) > 1e-5:
         raise ValueError("Subproblem solution > upper bounds.")
 
-    return rslt
+    return result
 
 
 def find_affine_points(
@@ -329,7 +338,7 @@ def find_affine_points(
     return model_improving_points, model_indices, n_modelpoints, project_x_onto_null
 
 
-def add_points_to_make_main_model_fully_linear(
+def add_geomtery_points_to_make_main_model_fully_linear(
     history,
     main_model,
     model_improving_points,
@@ -347,8 +356,8 @@ def add_points_to_make_main_model_fully_linear(
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
-        main_model (dict): Dictionary containing the parameters of the main model,
-            i.e. "linear_terms" and "square terms".
+        main_model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e. "linear_terms" and "square terms".
         model_improving_points (np.ndarray): Array of shape (n, n) including
             points to improve the main model.
         model_indices (np.ndarray): Indices of the candidates of x that are
@@ -379,7 +388,6 @@ def add_points_to_make_main_model_fully_linear(
     n = x_accepted.shape[0]
 
     current_history = history.get_n_fun()
-    linear_terms = main_model["linear_terms"]
 
     x_candidate = np.zeros(n)
     x_candidates_list = []
@@ -388,7 +396,7 @@ def add_points_to_make_main_model_fully_linear(
     model_improving_points, _ = qr_multiply(model_improving_points, np.eye(3))
 
     for i in range(n_modelpoints, n):
-        change_direction = np.dot(model_improving_points[:, i], linear_terms)
+        change_direction = np.dot(model_improving_points[:, i], main_model.linear_terms)
 
         if change_direction > 0:
             model_improving_points[:, i] *= -1
@@ -543,7 +551,7 @@ def interpolate_f(
     n_modelpoints,
     n_maxinterp,
 ):
-    """Interpolate f via the quadratic residual model.
+    """Interpolate the residual function via the quadratic residual model.
 
     If the point x_k belongs to the interpolation set, one can show that
     c = f (x_k).
@@ -552,7 +560,7 @@ def interpolate_f(
         history (class): Class storing history of xs, residuals, and critvals.
         x_sample (np.ndarray): Vector of centered x sample that makes up the
             interpolation set. Shape (maxinterp, n).
-        residual_model (dict): Dictionary containing the parameters of the
+        residual_model (namedtuple): Named tuple containing the parameters of
             residual model, i.e. "intercepts", "linear_terms", and "square terms".
         model_indices (np.ndarray): Indices of the candidates of x that are
             currently in the model. Shape (2 *n* + 1,).
@@ -560,26 +568,26 @@ def interpolate_f(
         n_maxinterp (int): Maximum number of interpolation points.
 
     Returns:
-        (np.ndarray): Interpolated function f. Array of shape (n_obs,).
+        (np.ndarray): Interpolated residual function. Array of shape (n_obs,).
     """
     n_obs = history.get_residuals(index=-1).shape[0]
     f_interpolated = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
 
     for j in range(n_obs):
-        x_square_terms = np.dot(
-            interpolation_set, residual_model["square_terms"][j, :, :]
+        x_dot_square_terms = np.dot(
+            interpolation_set, residual_model.square_terms[j, :, :]
         )
 
         for i in range(n_modelpoints):
-            center_info = {"residuals": residual_model["intercepts"]}
+            center_info = {"residuals": residual_model.intercepts}
             residuals = history.get_centered_residuals(
                 center_info, index=model_indices[i]
             )
 
             f_interpolated[i, j] = (
                 residuals[j]
-                - np.dot(residual_model["linear_terms"][:, j], interpolation_set[i, :])
-                - 0.5 * np.dot(x_square_terms[i, :], interpolation_set[i, :])
+                - np.dot(residual_model.linear_terms[:, j], interpolation_set[i, :])
+                - 0.5 * np.dot(x_dot_square_terms[i, :], interpolation_set[i, :])
             )
 
     return f_interpolated

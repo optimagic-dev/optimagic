@@ -40,26 +40,6 @@ def criterion():
     return partial(func, exog=exog, endog=endog)
 
 
-start_params = [
-    np.array([0.15, 0.008, 0.01]),
-    np.array([1e-6, 1e-2, 1e-6]),
-]
-
-TEST_CASES = []
-for subsolver in ["L-BFGS-B", "trust-constr"]:
-    for x0 in start_params:
-        for gtol in [1e-8]:
-            for subtol in [1e-8, 1e-9]:
-                TEST_CASES.append(
-                    (
-                        x0,
-                        gtol,
-                        subsolver,
-                        {"ftol": subtol, "xtol": subtol, "gtol": subtol},
-                    )
-                )
-
-
 @pytest.fixture()
 def options():
     out = {
@@ -76,31 +56,88 @@ def options():
         "c2": 10,
         "lower_bounds": None,
         "upper_bounds": None,
+        "maxiter": 200,
     }
     return out
 
 
+start_params = [
+    np.array([0.15, 0.008, 0.01]),
+    np.array([1e-6, 1e-2, 1e-6]),
+]
+
+TEST_CASES = []
+for subsolver in ["bntr", "gqtpar"]:
+    for x0 in start_params:
+        for gtol in [1e-8]:
+            for subtol in [1e-8, 1e-9]:
+                TEST_CASES.append(
+                    (
+                        x0,
+                        gtol,
+                        subsolver,
+                        {"ftol": subtol, "xtol": subtol, "gtol": subtol},
+                    )
+                )
+
+
 @pytest.mark.parametrize(
-    "start_vec, gtol, solver_sub, trustregion_subproblem_options", TEST_CASES
+    "start_vec", [(np.array([0.15, 0.008, 0.01])), (np.array([1e-3, 1e-3, 1e-3]))]
 )
-def test_solution(
-    start_vec, gtol, solver_sub, trustregion_subproblem_options, criterion, options
-):
+def test_bntr(start_vec, criterion, options):
+    solver_sub = "bntr"
 
-    maxiter = 200
+    trustregion_subproblem_options = {
+        "ftol": 1e-8,
+        "xtol": 1e-8,
+        "gtol": 1e-8,
+        "maxiter": 20,
+    }
 
-    rslt = internal_solve_pounders(
+    result = internal_solve_pounders(
         x0=start_vec,
         criterion=criterion,
-        maxiter=maxiter,
         gtol=gtol,
         ftol_sub=trustregion_subproblem_options["ftol"],
         xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_sub=trustregion_subproblem_options["gtol"],
+        maxiter_sub=trustregion_subproblem_options["maxiter"],
         solver_sub=solver_sub,
         n_cores=1,
         batch_evaluator=joblib_batch_evaluator,
         **options,
     )
 
-    aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]), decimal=5)
+    x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
+    aaae(result["solution_x"], x_expected, decimal=5)
+
+
+@pytest.mark.parametrize(
+    "start_vec", [(np.array([0.15, 0.008, 0.01])), (np.array([1e-6, 1e-6, 1e-6]))]
+)
+def test_gqtpar(start_vec, criterion, options):
+    solver_sub = "gqtpar"
+
+    trustregion_subproblem_options = {
+        "ftol": 1e-8,
+        "xtol": 1e-8,
+        "gtol": 1e-8,
+        "maxiter": 20,
+    }
+
+    result = internal_solve_pounders(
+        x0=start_vec,
+        criterion=criterion,
+        gtol=gtol,
+        ftol_sub=trustregion_subproblem_options["ftol"],
+        xtol_sub=trustregion_subproblem_options["xtol"],
+        gtol_sub=trustregion_subproblem_options["gtol"],
+        maxiter_sub=trustregion_subproblem_options["maxiter"],
+        solver_sub=solver_sub,
+        n_cores=1,
+        batch_evaluator=joblib_batch_evaluator,
+        **options,
+    )
+
+    x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
+    aaae(result["solution_x"], x_expected, decimal=6)

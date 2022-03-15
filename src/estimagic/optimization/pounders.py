@@ -6,8 +6,10 @@ import numpy as np
 from estimagic.config import DEFAULT_N_CORES
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
-    add_points_to_make_main_model_fully_linear,
+    add_geomtery_points_to_make_main_model_fully_linear,
 )
+from estimagic.optimization.pounders_auxiliary import create_initial_residual_model
+from estimagic.optimization.pounders_auxiliary import create_main_from_residual_model
 from estimagic.optimization.pounders_auxiliary import find_affine_points
 from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_model
 from estimagic.optimization.pounders_auxiliary import (
@@ -15,8 +17,6 @@ from estimagic.optimization.pounders_auxiliary import (
 )
 from estimagic.optimization.pounders_auxiliary import interpolate_f
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
-from estimagic.optimization.pounders_auxiliary import update_initial_residual_model
-from estimagic.optimization.pounders_auxiliary import update_main_from_residual_model
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
 )
@@ -44,7 +44,7 @@ def pounders(
     trustregion_threshold_very_successful=0.1,
     c1=None,
     c2=10,
-    trustregion_subproblem_solver="trust-constr",
+    trustregion_subproblem_solver="bntr",
     trustregion_subproblem_options=None,
     batch_evaluator="joblib",
     n_cores=DEFAULT_N_CORES,
@@ -72,13 +72,13 @@ def pounders(
     if trustregion_subproblem_options is None:
         trustregion_subproblem_options = {}
 
-    default_options = {"ftol": 1e-6, "xtol": 1e-6, "gtol": 1e-6}
+    default_options = {"ftol": 1e-6, "xtol": 1e-6, "gtol": 1e-6, "maxiter": 20}
     trustregion_subproblem_options = {
         **default_options,
         **trustregion_subproblem_options,
     }
 
-    result_sub = internal_solve_pounders(
+    result = internal_solve_pounders(
         criterion=criterion,
         x0=x,
         lower_bounds=lower_bounds,
@@ -100,11 +100,12 @@ def pounders(
         ftol_sub=trustregion_subproblem_options["ftol"],
         xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_sub=trustregion_subproblem_options["gtol"],
+        maxiter_sub=trustregion_subproblem_options["maxiter"],
         batch_evaluator=batch_evaluator,
         n_cores=n_cores,
     )
 
-    return result_sub
+    return result
 
 
 def internal_solve_pounders(
@@ -129,6 +130,7 @@ def internal_solve_pounders(
     ftol_sub,
     xtol_sub,
     gtol_sub,
+    maxiter_sub,
     batch_evaluator,
     n_cores,
 ):
@@ -206,7 +208,6 @@ def internal_solve_pounders(
     model_indices = np.zeros(n_maxinterp, dtype=int)
 
     last_n_modelpoints = 0
-    niter = 0
 
     if lower_bounds is not None and upper_bounds is not None:
         if np.max(x0 + delta - upper_bounds) > 1e-10:
@@ -223,62 +224,48 @@ def internal_solve_pounders(
     history.add_entries(xs, residuals)
     accepted_index = history.get_best_index()
 
-    # Center around new trust-region and normalize to [-1, 1]
-    indices_not_min = [i for i in range(n + 1) if i != accepted_index]
-
-    center_info = {
-        "x": history.get_best_x(),
-        "residuals": history.get_best_residuals(),
-        "radius": delta,
-    }
-    x_candidate, residuals_candidate, _ = history.get_centered_entries(
-        center_info=center_info,
-        index=indices_not_min,
+    residual_model = create_initial_residual_model(
+        history=history, accepted_index=accepted_index, delta=delta
     )
-
-    initial_residual_model = {"intercepts": history.get_best_residuals()}
-    residual_model = update_initial_residual_model(
-        initial_residual_model, x_candidate, residuals_candidate
-    )
-    main_model = update_main_from_residual_model(
-        residual_model, multiply_square_terms_with_residuals=False
+    main_model = create_main_from_residual_model(
+        residual_model=residual_model, multiply_square_terms_with_residuals=False
     )
 
     x_accepted = history.get_best_x()
-    gradient_norm = np.linalg.norm(main_model["linear_terms"])
+    gradient_norm = np.linalg.norm(main_model.linear_terms)
     gradient_norm *= delta
 
     valid = True
-    reason = True
+    converged = False
     n_modelpoints = n + 1
 
     last_model_indices = np.zeros(n_maxinterp, dtype=int)
 
-    while reason is True:
-        niter += 1
-
-        # Solve the subproblem min{Q(s): ||s|| <= 1.0}
+    for niter in range(maxiter):
         result_sub = solve_subproblem(
             solution=x_accepted,
             delta=delta,
             main_model=main_model,
+            solver=solver_sub,
             ftol=ftol_sub,
             xtol=xtol_sub,
             gtol=gtol_sub,
-            solver=solver_sub,
+            maxiter=maxiter_sub,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
         )
 
-        qmin = -result_sub.fun
-        x_candidate = x_accepted + result_sub.x * delta
+        q_min = -result_sub["criterion"]
+        x_candidate = x_accepted + result_sub["x"] * delta
         residuals_candidate = criterion(x_candidate)
         history.add_entries(x_candidate, residuals_candidate)
 
-        rho = (history.get_critvals(accepted_index) - history.get_critvals(-1)) / qmin
+        rho = (history.get_critvals(accepted_index) - history.get_critvals(-1)) / q_min
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
-            residual_model["intercepts"] = history.get_residuals(index=accepted_index)
+            residual_model = residual_model._replace(
+                intercepts=history.get_residuals(index=accepted_index)
+            )
             center_info = {"x": history.get_best_x(), "radius": delta}
             x_candidate = history.get_centered_xs(center_info, index=-1)
 
@@ -314,7 +301,10 @@ def internal_solve_pounders(
             )
 
             if n_modelpoints < n:
-                history, model_indices = add_points_to_make_main_model_fully_linear(
+                (
+                    history,
+                    model_indices,
+                ) = add_geomtery_points_to_make_main_model_fully_linear(
                     history=history,
                     main_model=main_model,
                     model_improving_points=model_improving_points,
@@ -332,14 +322,13 @@ def internal_solve_pounders(
 
         # Update the trust region radius
         delta_old = delta
-        norm_x_sub = np.sqrt(np.sum(result_sub.x**2))
+        norm_x_sub = np.sqrt(np.sum(result_sub["x"] ** 2))
 
         if rho >= eta1 and norm_x_sub > 0.5 * delta:
             delta = min(delta * gamma1, delta_max)
         elif valid is True:
             delta = max(delta * gamma0, delta_min)
 
-        # Compute the next interpolation set
         (
             model_improving_points,
             model_indices,
@@ -379,12 +368,11 @@ def internal_solve_pounders(
             )
 
             if n_modelpoints < n:
-                # Model not valid. Add geometry points
                 (
                     history,
                     model_indices,
                     n_modelpoints,
-                ) = add_points_to_make_main_model_fully_linear(
+                ) = add_geomtery_points_to_make_main_model_fully_linear(
                     history=history,
                     main_model=main_model,
                     model_improving_points=model_improving_points,
@@ -443,7 +431,9 @@ def internal_solve_pounders(
             n_modelpoints=n_modelpoints,
         )
 
-        residual_model["intercepts"] = history.get_residuals(index=accepted_index)
+        residual_model = residual_model._replace(
+            intercepts=history.get_residuals(index=accepted_index)
+        )
         residual_model = update_residual_model(
             residual_model=residual_model,
             coefficients_to_add=coefficients_residual_model,
@@ -451,16 +441,18 @@ def internal_solve_pounders(
             delta_old=delta_old,
         )
 
-        main_model = update_main_from_residual_model(residual_model)
+        main_model = create_main_from_residual_model(residual_model)
 
-        gradient_norm = np.linalg.norm(main_model["linear_terms"])
+        gradient_norm = np.linalg.norm(main_model.linear_terms)
         gradient_norm *= delta
 
         if gradient_norm < gtol:
-            reason = False
+            converged = True
+            break
 
         if niter > maxiter:
-            reason = False
+            converged = True
+            break
 
         # Test for repeated model
         if n_modelpoints == last_n_modelpoints:
@@ -479,7 +471,8 @@ def internal_solve_pounders(
         last_n_modelpoints = n_modelpoints
         if (same is True) and (delta == delta_old):
             # Identical model used in successive iterations
-            reason = False
+            converged = True
+            break
 
     result_dict = {
         "solution_x": history.get_best_x(),
@@ -487,7 +480,7 @@ def internal_solve_pounders(
         "history_x": history.get_xs(),
         "history_criterion": history.get_residuals(),
         "n_iterations": niter,
-        "message": "Under development.",
+        "success": converged,
     }
 
     return result_dict

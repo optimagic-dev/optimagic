@@ -10,7 +10,7 @@ from scipy.linalg.lapack import dpotrf as compute_cholesky_factorization
 from scipy.optimize._trustregion_exact import estimate_smallest_singular_value
 
 
-def solve_trustregion_subproblem(main_model, *, maxiter=200):
+def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     """Solve the quadratic trust-region subproblem via nearly exact iterative method.
 
     This subproblem solver is mainly based on Conn et al. (2000) "Trust region methods"
@@ -59,28 +59,27 @@ def solve_trustregion_subproblem(main_model, *, maxiter=200):
     # Small floating point number signaling that for vectors smaller
     # than that backward substituition is not reliable.
     # See Golub, G. H., Van Loan, C. F. (2013), "Matrix computations", p.165.
-    zero_thresh = (
-        main_model.square_terms.shape[0]
+    zero_threshold = (
+        model.square_terms.shape[0]
         * np.finfo(float).eps
-        * norm(main_model.square_terms, np.Inf)
+        * norm(model.square_terms, np.Inf)
     )
+    stopping_criteria = {
+        "k_easy": k_easy,
+        "k_hard": k_hard,
+    }
 
     HessianInfo = namedtuple(
         "HessianInfo", ["hessian_plus_lambda", "upper_triangular", "already_factorized"]
     )
     hessian_info = HessianInfo(
-        hessian_plus_lambda=main_model.square_terms,
-        upper_triangular=main_model.square_terms,
+        hessian_plus_lambda=None,
+        upper_triangular=None,
         already_factorized=False,
     )
 
-    stopping_criteria = {
-        "k_easy": 0.1,
-        "k_hard": 0.2,
-    }
-
-    gradient_norm = norm(main_model.linear_terms)
-    lambdas = get_initial_guess_for_lambdas(main_model)
+    gradient_norm = norm(model.linear_terms)
+    lambdas = get_initial_guess_for_lambdas(model)
 
     converged = False
 
@@ -90,26 +89,26 @@ def solve_trustregion_subproblem(main_model, *, maxiter=200):
             hessian_info = hessian_info._replace(already_factorized=False)
         else:
             hessian_info, factorization_info = add_lambda_and_factorize_hessian(
-                main_model, hessian_info, lambdas
+                model, hessian_info, lambdas
             )
 
         niter += 1
 
-        if factorization_info == 0 and gradient_norm > zero_thresh:
+        if factorization_info == 0 and gradient_norm > zero_threshold:
             (
                 x_candidate,
                 hessian_info,
                 lambdas,
                 converged,
             ) = find_new_candidate_and_update_parameters(
-                main_model,
+                model,
                 hessian_info,
                 lambdas,
                 stopping_criteria,
                 converged,
             )
 
-        elif factorization_info == 0 and gradient_norm <= zero_thresh:
+        elif factorization_info == 0 and gradient_norm <= zero_threshold:
             x_candidate, lambdas, converged = check_for_interior_convergence_and_update(
                 x_candidate,
                 hessian_info,
@@ -128,9 +127,14 @@ def solve_trustregion_subproblem(main_model, *, maxiter=200):
         if converged is True:
             break
 
-    f_min = compute_criterion_main_model(x_candidate, main_model)
+    f_min = evaluate_model(x_candidate, model)
 
-    result = {"x_solution": x_candidate, "q_min": f_min}
+    result = {
+        "x": x_candidate,
+        "criterion": f_min,
+        "n_iterations": niter,
+        "success": converged,
+    }
 
     return result
 
@@ -363,7 +367,7 @@ def update_lambdas_when_factorization_unsuccessful(
     return lambdas_new
 
 
-def compute_criterion_main_model(x, main_model):
+def evaluate_model(x, main_model):
     """Evaluate the criterion function value of the main model.
 
     Args:

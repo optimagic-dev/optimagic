@@ -7,7 +7,7 @@ from estimagic.optimization.trustregion_conjugate_gradient import minimize_trust
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
 
-def minimize_trust_bntr(
+def minimize_bntr_quadratic(
     x_candidate,
     linear_terms,
     square_terms,
@@ -15,12 +15,20 @@ def minimize_trust_bntr(
     upper_bound,
     options,
 ):
-    """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient."""
+    """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient.
+
+    https://petsc.org/release/docs/manual/manual.pdf 150, 157, 162
+    """
     if "gatol" not in options.keys():
         options["gatol"] = 1e-8
     if "grtol" not in options.keys():
         options["grtol"] = 1e-8
-
+    if "gttol" not in options.keys():
+        options["gttol"] = 1e-8
+    if "ftol" not in options.keys():
+        options["ftol"] = 1e-8
+    if "xtol" not in options.keys():
+        options["xtol"] = 1e-8
     (
         x_candidate,
         f_candidate,
@@ -66,7 +74,7 @@ def minimize_trust_bntr(
             x_candidate = apply_bounds_to_x_candidate(
                 x_candidate, lower_bound, upper_bound
             )
-            f_candidate = _compute_criterion_main_model(
+            f_candidate = _evaluate_model_criterion(
                 x_candidate, model_gradient["initial"], model_hessian["initial"]
             )
 
@@ -106,10 +114,12 @@ def minimize_trust_bntr(
                 if trustregion_radius_old == trustregion_radius:
                     break
 
-            converged = _check_for_convergence(
+            converged = _check_for_convergence_bntr(
                 x_candidate,
-                model_gradient,
                 f_candidate,
+                x_old,
+                f_old,
+                model_gradient,
                 lower_bound,
                 upper_bound,
                 options,
@@ -118,7 +128,14 @@ def minimize_trust_bntr(
         if converged is True:
             break
 
-    return x_candidate, niter
+    result = {
+        "x": x_candidate,
+        "criterion": f_candidate,
+        "n_iterations": niter,
+        "success": converged,
+    }
+
+    return result
 
 
 def compute_predicted_reduction(
@@ -136,13 +153,13 @@ def compute_predicted_reduction(
         direction_inactive = conjugate_gradient_step[inactive_bounds]
         gradient_inactive = model_gradient["candidate"][inactive_bounds]
 
-        predicted_reduction = _compute_criterion_main_model(
+        predicted_reduction = _evaluate_model_criterion(
             direction_inactive, gradient_inactive, model_hessian["bounds_inactive"]
         )
     else:
         # Step did not change, so we can just recover the
         # pre-computed prediction
-        predicted_reduction = _compute_criterion_main_model(
+        predicted_reduction = _evaluate_model_criterion(
             direction_inactive,
             model_gradient["bounds_inactive"],
             model_hessian["bounds_inactive"],
@@ -302,11 +319,13 @@ def take_preliminary_steepest_descent_step_and_check_for_solution(
         options["gatol"] = 1e-8
     if "grtol" not in options.keys():
         options["grtol"] = 1e-8
+    if "gtol" not in options.keys():
+        options["gtol"] = 1e-8
 
     model_gradient = {"initial": linear_terms}
     model_hessian = {"initial": square_terms}
 
-    f_candidate = _compute_criterion_main_model(
+    f_candidate = _evaluate_model_criterion(
         x_candidate, model_gradient["initial"], model_hessian["initial"]
     )
 
@@ -321,10 +340,10 @@ def take_preliminary_steepest_descent_step_and_check_for_solution(
         x_candidate, model_gradient, model_hessian, active_bounds["all"]
     )
 
-    converged = _check_for_convergence(
+    converged = _check_for_convergence_steepest_descent(
         x_candidate,
-        model_gradient,
         f_candidate,
+        model_gradient,
         lower_bound,
         upper_bound,
         options,
@@ -463,7 +482,7 @@ def compute_steepest_descent_and_update_trustregion_radius(
         step_size_trial = trustregion_radius / gradient_norm
         x_trial = x_trial - step_size_trial * model_gradient["bounds_inactive"]
         x_trial = apply_bounds_to_x_candidate(x_trial, lower_bound, upper_bound)
-        f_trial = _compute_criterion_main_model(
+        f_trial = _evaluate_model_criterion(
             x_trial, model_gradient["initial"], model_hessian["initial"]
         )
 
@@ -523,7 +542,7 @@ def accept_candidate_from_steepest_descent_as_solution(
         x_candidate_steepest_descent,
         lower_bound,
         upper_bound,
-        model_gradient,
+        model_gradient["candidate"],
         newton_step,
     )
 
@@ -534,9 +553,10 @@ def accept_candidate_from_steepest_descent_as_solution(
         active_bounds["all"],
     )
 
-    converged = _check_for_convergence(
+    converged = _check_for_convergence_steepest_descent(
         x_candidate_steepest_descent,
         f_min_steepest_descent,
+        model_gradient,
         lower_bound,
         upper_bound,
         options,
@@ -629,7 +649,7 @@ def find_gradient_subvector_where_bounds_inactive(
     """Find the subvector of the initial gradient where bounds are inactive."""
     model_gradient_updated = model_gradient.copy()
 
-    model_gradient_updated["candidate"] = _compute_derivative_main_model(
+    model_gradient_updated["candidate"] = _evaluate_model_gradient(
         x_candidate, model_gradient["initial"], model_hessian["initial"]
     )
 
@@ -652,18 +672,59 @@ def find_hessian_submatrix_where_bounds_inactive(model_hessian, inactive_bounds)
     return model_hessian_updated
 
 
-def _check_for_convergence(
-    x_candidate, model_gradient, f_candidate, lower_bound, upper_bound, options
+def _check_for_convergence_bntr(
+    x_candidate,
+    f_candidate,
+    x_old,
+    f_old,
+    model_gradient,
+    lower_bound,
+    upper_bound,
+    options,
 ):
     """Check if we have found a solution."""
     direction_fischer_burmeister = get_fischer_burmeister_direction_vector(
         x_candidate, model_gradient["candidate"], lower_bound, upper_bound
     )
-    gnorm_fischer = np.linalg.norm(direction_fischer_burmeister)
+    gradient_norm = np.linalg.norm(direction_fischer_burmeister)
 
-    if gnorm_fischer < options["gatol"] or (
-        f_candidate != 0 and abs(gnorm_fischer / f_candidate) < options["grtol"]
-    ):
+    if abs(f_old - f_candidate) < options["ftol"]:
+        converged = True
+    elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < options["ftol"]:
+        converged = True
+    elif gradient_norm < options["gtol"]:
+        converged = True
+    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < options["gtol"]:
+        converged = True
+    elif gradient_norm / np.linalg.norm(model_gradient["initial"]) < options["gtol"]:
+        converged = True
+    elif np.max(np.abs(x_old - x_candidate)) < options["xtol"]:
+        converged = True
+    else:
+        converged = False
+
+    return converged
+
+
+def _check_for_convergence_steepest_descent(
+    x_candidate,
+    f_candidate,
+    model_gradient,
+    lower_bound,
+    upper_bound,
+    options,
+):
+    """Check if we have found a solution."""
+    direction_fischer_burmeister = get_fischer_burmeister_direction_vector(
+        x_candidate, model_gradient["candidate"], lower_bound, upper_bound
+    )
+    gradient_norm = np.linalg.norm(direction_fischer_burmeister)
+
+    if gradient_norm < options["gtol"]:
+        converged = True
+    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < options["gtol"]:
+        converged = True
+    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < options["gtol"]:
         converged = True
     else:
         converged = False
@@ -693,7 +754,7 @@ def get_fischer_burmeister_direction_vector(x, gradient, lower_bound, upper_boun
     return direction
 
 
-def _compute_criterion_main_model(
+def _evaluate_model_criterion(
     x,
     gradient,
     hessian,
@@ -711,7 +772,7 @@ def _compute_criterion_main_model(
     return np.dot(gradient, x) + 0.5 * np.dot(np.dot(x, hessian), x)
 
 
-def _compute_derivative_main_model(x, model_gradient, model_hessian):
+def _evaluate_model_gradient(x, model_gradient, model_hessian):
     """Evaluate the derivative of the main model.
 
     Args:

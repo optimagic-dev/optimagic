@@ -3,16 +3,16 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization.bounded_newton_trustregion import minimize_trust_bntr
+from estimagic.optimization.bounded_newton_trustregion import minimize_bntr_quadratic
 from estimagic.optimization.quadratic_subsolvers import (
-    solve_trustregion_subproblem,
+    minimize_gqtpar_quadratic,
 )
 from estimagic.optimization.trustregion_conjugate_gradient import minimize_trust_cg
 from numpy.testing import assert_array_almost_equal as aaae
 
 
 @pytest.mark.parametrize(
-    "linear_terms, square_terms, x_expected, q_min_expected",
+    "linear_terms, square_terms, x_expected, criterion_expected",
     [
         (
             np.array([-0.0005429824695352, -0.1032556117176, -0.06816855282091]),
@@ -34,14 +34,14 @@ from numpy.testing import assert_array_almost_equal as aaae
         )
     ],
 )
-def test_trustregion_subsolver(linear_terms, square_terms, x_expected, q_min_expected):
+def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
     MainModel = namedtuple("LinearModel", ["linear_terms", "square_terms"])
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
-    result = solve_trustregion_subproblem(main_model)
+    result = minimize_gqtpar_quadratic(main_model)
 
-    aaae(result["x_solution"], x_expected)
-    aaae(result["q_min"], q_min_expected)
+    aaae(result["x"], x_expected)
+    aaae(result["criterion"], criterion_expected)
 
 
 @pytest.mark.parametrize(
@@ -97,15 +97,21 @@ def test_bounded_newton_trustregion(
     upper_bound,
     expected,
 ):
-    options = {"gatol": 1e-8, "grtol": 1e-8}
+    options = {
+        "ftol": 1e-8,
+        "xtol": 1e-8,
+        "gtol_abs": 1e-8,
+        "gtol_scaled": 1e-8,
+        "maxiter": 20,
+    }
     x_expected, niter_expected = expected
 
-    x_out, niter_out = minimize_trust_bntr(
+    result = minimize_bntr_quadratic(
         x, model_gradient, model_hessian, lower_bound, upper_bound, options
     )
 
-    aaae(x_out, x_expected)
-    assert niter_out == niter_expected
+    aaae(result["x"], x_expected)
+    assert result["n_iterations"] == niter_expected
 
 
 def test_trustregion_conjugate_gradient():
