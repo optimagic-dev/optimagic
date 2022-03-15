@@ -113,7 +113,7 @@ def test_bntr(start_vec, criterion, options):
 
 
 @pytest.mark.parametrize(
-    "start_vec", [(np.array([0.15, 0.008, 0.01])), (np.array([1e-6, 1e-6, 1e-6]))]
+    "start_vec", [(np.array([0.15, 0.008, 0.01])), (np.array([1e-3, 1e-3, 1e-3]))]
 )
 def test_gqtpar(start_vec, criterion, options):
     solver_sub = "gqtpar"
