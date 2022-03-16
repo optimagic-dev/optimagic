@@ -81,11 +81,6 @@ def generate_steps(
             that steps.neg[i, j] = - steps.pos[i, j] unless one of them is NaN.
 
     """
-    if lower_bounds is None:
-        lower_bounds = np.full(x.shape, -np.inf)
-    if upper_bounds is None:
-        upper_bounds = np.full(x.shape, np.inf)
-
     base_steps = _calculate_or_validate_base_steps(
         base_steps, x, target, min_steps, scaling_factor
     )

@@ -9,6 +9,7 @@ from estimagic.differentiation.derivatives import _convert_evaluation_data_to_fr
 from estimagic.differentiation.derivatives import (
     _convert_richardson_candidates_to_frame,
 )
+from estimagic.differentiation.derivatives import _is_scalar_nan
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
 from estimagic.differentiation.derivatives import _reshape_cross_step_evals
 from estimagic.differentiation.derivatives import _reshape_one_step_evals
@@ -354,3 +355,9 @@ def test_reshape_cross_step_evals():
     got = _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0)
     assert np.all(got.pos == expected_pos)
     assert np.all(got.neg == expected_neg)
+
+
+def test_is_scalar_nan():
+    assert _is_scalar_nan(np.nan)
+    assert not _is_scalar_nan(1.0)
+    assert not _is_scalar_nan(np.array([np.nan]))
