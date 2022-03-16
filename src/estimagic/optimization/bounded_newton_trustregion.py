@@ -30,7 +30,7 @@ def minimize_bntr_quadratic(
     if "xtol" not in options.keys():
         options["xtol"] = 1e-8
     if "steptol" not in options.keys():
-        options["steptol"] = 1e-8
+        options["steptol"] = 1e-10
     if "maxiter" not in options.keys():
         options["maxiter"] = 20
     (

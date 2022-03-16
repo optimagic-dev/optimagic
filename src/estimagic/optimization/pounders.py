@@ -451,7 +451,7 @@ def internal_solve_pounders(
             break
 
         if niter > maxiter:
-            converged = True
+            converged = False
             break
 
         # Test for repeated model

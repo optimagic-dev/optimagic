@@ -83,7 +83,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
 
     converged = False
 
-    for niter in range(maxiter):
+    for _niter in range(maxiter):
 
         if hessian_info.already_factorized is True:
             hessian_info = hessian_info._replace(already_factorized=False)
@@ -91,8 +91,6 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
             hessian_info, factorization_info = add_lambda_and_factorize_hessian(
                 model, hessian_info, lambdas
             )
-
-        niter += 1
 
         if factorization_info == 0 and gradient_norm > zero_threshold:
             (
@@ -132,7 +130,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     result = {
         "x": x_candidate,
         "criterion": f_min,
-        "n_iterations": niter,
+        "n_iterations": _niter,
         "success": converged,
     }
 
