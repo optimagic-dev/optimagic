@@ -17,8 +17,8 @@ else:
     import jax
     import jax.numpy as jnp
 
+    jax.config.update("jax_enable_x64", True)
 
-jax.config.update("jax_enable_x64", True)
 
 # arrays have to be equal up to 5 decimals
 DECIMALS = 5
