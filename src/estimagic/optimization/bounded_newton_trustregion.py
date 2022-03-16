@@ -29,6 +29,10 @@ def minimize_bntr_quadratic(
         options["ftol"] = 1e-8
     if "xtol" not in options.keys():
         options["xtol"] = 1e-8
+    if "steptol" not in options.keys():
+        options["steptol"] = 1e-8
+    if "maxiter" not in options.keys():
+        options["maxiter"] = 20
     (
         x_candidate,
         f_candidate,
@@ -42,11 +46,7 @@ def minimize_bntr_quadratic(
         x_candidate, linear_terms, square_terms, lower_bound, upper_bound, options
     )
 
-    niter = 0
-
-    while converged is False:
-        niter += 1
-
+    for _niter in range(options["maxiter"]):
         x_old = np.copy(x_candidate)
         f_old = copy(f_candidate)
 
@@ -122,6 +122,7 @@ def minimize_bntr_quadratic(
                 model_gradient,
                 lower_bound,
                 upper_bound,
+                trustregion_radius,
                 options,
             )
 
@@ -131,7 +132,7 @@ def minimize_bntr_quadratic(
     result = {
         "x": x_candidate,
         "criterion": f_candidate,
-        "n_iterations": niter,
+        "n_iterations": _niter,
         "success": converged,
     }
 
@@ -680,6 +681,7 @@ def _check_for_convergence_bntr(
     model_gradient,
     lower_bound,
     upper_bound,
+    trustregion_radius,
     options,
 ):
     """Check if we have found a solution."""
@@ -688,7 +690,9 @@ def _check_for_convergence_bntr(
     )
     gradient_norm = np.linalg.norm(direction_fischer_burmeister)
 
-    if abs(f_old - f_candidate) < options["ftol"]:
+    if trustregion_radius < options["steptol"]:
+        converged = True
+    elif abs(f_old - f_candidate) < options["ftol"]:
         converged = True
     elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < options["ftol"]:
         converged = True

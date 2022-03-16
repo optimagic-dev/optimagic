@@ -45,7 +45,7 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
 
 
 @pytest.mark.parametrize(
-    "x, model_gradient, model_hessian, lower_bound, upper_bound, expected",
+    "x, model_gradient, model_hessian, lower_bound, upper_bound, x_expected",
     [
         (
             np.zeros(3),
@@ -71,7 +71,7 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
             ),
             -np.ones(3),
             np.ones(3),
-            (np.array([0.000122403, 3.92712e-06, -8.2519e-06]), 2),
+            np.array([0.000122403, 3.92712e-06, -8.2519e-06]),
         ),
         (
             np.zeros(3),
@@ -85,7 +85,7 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
             ),
             np.array([-1.0, 0, -1.0]),
             np.ones(3),
-            (np.array([-4.89762e-06, 0.0, 6.0738e-08]), 1),
+            np.array([-4.89762e-06, 0.0, 6.0738e-08]),
         ),
     ],
 )
@@ -95,7 +95,7 @@ def test_bounded_newton_trustregion(
     model_hessian,
     lower_bound,
     upper_bound,
-    expected,
+    x_expected,
 ):
     options = {
         "ftol": 1e-8,
@@ -104,14 +104,12 @@ def test_bounded_newton_trustregion(
         "gtol_scaled": 1e-8,
         "maxiter": 20,
     }
-    x_expected, niter_expected = expected
 
     result = minimize_bntr_quadratic(
         x, model_gradient, model_hessian, lower_bound, upper_bound, options
     )
 
     aaae(result["x"], x_expected)
-    assert result["n_iterations"] == niter_expected
 
 
 def test_trustregion_conjugate_gradient():
