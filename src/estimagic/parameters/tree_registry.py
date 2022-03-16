@@ -7,7 +7,7 @@ import pandas as pd
 from pybaum import get_registry as get_pybaum_registry
 
 
-def get_registry(extended=False, data_col=None):
+def get_registry(extended=False, data_col="value"):
     """Return pytree registry.
 
     Special Rules
@@ -16,16 +16,15 @@ def get_registry(extended=False, data_col=None):
     can represent a 1d object with extra information, instead of a 2d object. This is
     only allowed for params data frames, in which case they contain a 'value' column.
     The extra information of such an object can be accessed using the data_col argument.
-    If data_col is None the 'value' column is used as the data source. If data_col is
-    not None but also not a column, a list of np.nan is returned. If no 'value' column
-    is found the whole data frame is treated as the data source.
+    By default the 'value' column is extracted. If data_col is not 'value' but the data
+    frame contains a 'value' column, a list of np.nan is returned.
 
     Args:
         extended (bool): If True appends types 'numpy.ndarray', 'pandas.Series' and
             'pandas.DataFrame' to the registry.
         data_col (str): This column is used as the data source in a data frame when
-            flattening and unflattening a pytree. Defaults to None; see special rules
-            above for default behavior.
+            flattening and unflattening a pytree. Defaults to 'value'; see special rules
+            above for behavior with non-default values.
 
     Returns:
         dict: The pytree registry.
@@ -45,7 +44,6 @@ def get_registry(extended=False, data_col=None):
 def _flatten_df(df, data_col):
     is_value_df = "value" in df
     if is_value_df:
-        data_col = "value" if data_col is None else data_col
         flat = df.get(data_col, default=np.full(len(df), np.nan)).tolist()
     else:
         flat = df.to_numpy().flatten().tolist()
@@ -59,7 +57,6 @@ def _flatten_df(df, data_col):
 
 def _unflatten_df(aux_data, leaves, data_col):
     if aux_data["is_value_df"]:
-        data_col = "value" if data_col is None else data_col
         out = aux_data["df"].assign(**{data_col: leaves})
     else:
         out = pd.DataFrame(

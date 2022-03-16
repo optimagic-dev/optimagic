@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_map
@@ -27,12 +26,9 @@ def get_bounds(params, lower_bounds=None, upper_bounds=None):
     registry = get_registry(extended=True)
     n_params = len(tree_leaves(params, registry=registry))
 
-    registry.pop(pd.DataFrame)
-    bounds_tree = tree_map(
-        lambda leaf: leaf if isinstance(leaf, pd.DataFrame) else np.nan,
-        params,
-        registry=registry,
-    )
+    # Fill leaves with np.nan. If params contains a data frame with bounds column, that
+    # column is not overwritten.
+    bounds_tree = tree_map(lambda leaf: np.nan, params, registry=registry)
 
     lower_flat = _update_bounds_and_flatten(
         bounds_tree, lower_bounds, direction="lower_bound"

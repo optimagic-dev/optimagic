@@ -7,28 +7,28 @@ from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_unflatten
 
 
-def matrix_to_block_tree(matrix, tree_outer, tree_inner):
+def matrix_to_block_tree(matrix, outer_tree, inner_tree):
     """Convert a matrix (2-dimensional array) to block-tree.
 
     A block tree most often arises when one applies an operation to a function that maps
     between two trees. For certain functions this results in a 2-dimensional data array.
-    Two main examples are the Jacobian of the function f : tree_inner -> tree_outer,
+    Two main examples are the Jacobian of the function f : inner_tree -> outer_tree,
     which results in a block tree structure, or the covariance matrix of a tree, in
-    which case tree_outer = tree_inner.
+    which case outer_tree = inner_tree.
 
     Args:
         matrix (numpy.ndarray): 2d representation of the block tree. Has shape (m, n).
-        tree_outer: A pytree. If flattened to scalars has length m.
-        tree_inner: A pytree. If flattened to scalars has length n.
+        outer_tree: A pytree. If flattened to scalars has length m.
+        inner_tree: A pytree. If flattened to scalars has length n.
 
     Returns:
         block_tree: A (block) pytree.
 
     """
-    _check_dimensions_matrix(matrix, tree_outer, tree_inner)
+    _check_dimensions_matrix(matrix, outer_tree, inner_tree)
 
-    flat_outer, treedef_outer = tree_flatten(tree_outer)
-    flat_inner, treedef_inner = tree_flatten(tree_inner)
+    flat_outer, treedef_outer = tree_flatten(outer_tree)
+    flat_inner, treedef_inner = tree_flatten(inner_tree)
 
     flat_outer_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_outer]
     flat_inner_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_inner]
@@ -120,36 +120,36 @@ def hessian_to_block_tree(hessian, f_tree, params_tree):
     return hessian_block_tree
 
 
-def block_tree_to_matrix(block_tree, tree_outer, tree_inner):
+def block_tree_to_matrix(block_tree, outer_tree, inner_tree):
     """Convert a block tree to a matrix.
 
     A block tree most often arises when one applies an operation to a function that maps
-    between two trees. Two main examples are the Jacobian of the function f : tree_inner
-    -> tree_outer, which results in a block tree structure, or the covariance matrix of
-    a tree, in which case tree_outer = tree_inner.
+    between two trees. Two main examples are the Jacobian of the function f : inner_tree
+    -> outer_tree, which results in a block tree structure, or the covariance matrix of
+    a tree, in which case outer_tree = inner_tree.
 
     Args:
-        block_tree: A (block) pytree, must match dimensions of tree_outer and tree_inner
-        tree_outer: A pytree.
-        tree_inner: A pytree.
+        block_tree: A (block) pytree, must match dimensions of outer_tree and inner_tree
+        outer_tree: A pytree.
+        inner_tree: A pytree.
 
     Returns:
         matrix (np.ndarray): 2d array containing information stored in block_tree.
 
     """
-    if len(block_tree) != len(tree_outer):
+    if len(block_tree) != len(outer_tree):
         raise ValueError(
-            "First dimension of block_tree does not match that of tree_outer."
+            "First dimension of block_tree does not match that of outer_tree."
         )
 
     selector_first_element = list(block_tree)[0] if isinstance(block_tree, dict) else 0
-    if len(block_tree[selector_first_element]) != len(tree_inner):
+    if len(block_tree[selector_first_element]) != len(inner_tree):
         raise ValueError(
-            "Second dimension of block_tree does not match that of tree_inner."
+            "Second dimension of block_tree does not match that of inner_tree."
         )
 
-    flat_outer = tree_leaves(tree_outer)
-    flat_inner = tree_leaves(tree_inner)
+    flat_outer = tree_leaves(outer_tree)
+    flat_inner = tree_leaves(inner_tree)
     flat_block_tree = tree_leaves(block_tree)
 
     flat_outer_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_outer]
@@ -176,7 +176,7 @@ def block_tree_to_matrix(block_tree, tree_outer, tree_inner):
 
     matrix = np.concatenate(block_rows, axis=0)
 
-    _check_dimensions_matrix(matrix, tree_outer, tree_inner)
+    _check_dimensions_matrix(matrix, outer_tree, inner_tree)
     return matrix
 
 
@@ -321,16 +321,16 @@ def _is_pd_object(obj):
     return isinstance(obj, (pd.Series, pd.DataFrame))
 
 
-def _check_dimensions_matrix(matrix, tree_outer, tree_inner):
+def _check_dimensions_matrix(matrix, outer_tree, inner_tree):
     extended_registry = get_registry(extended=True)
-    flat_outer = tree_leaves(tree_outer, registry=extended_registry)
-    flat_inner = tree_leaves(tree_inner, registry=extended_registry)
+    flat_outer = tree_leaves(outer_tree, registry=extended_registry)
+    flat_inner = tree_leaves(inner_tree, registry=extended_registry)
 
     if matrix.shape[0] != len(flat_outer):
-        raise ValueError("First dimension of matrix does not match that of tree_outer.")
+        raise ValueError("First dimension of matrix does not match that of outer_tree.")
     if matrix.shape[1] != len(flat_inner):
         raise ValueError(
-            "Second dimension of matrix does not match that of tree_inner."
+            "Second dimension of matrix does not match that of inner_tree."
         )
 
 

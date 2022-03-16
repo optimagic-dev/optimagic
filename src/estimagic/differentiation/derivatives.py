@@ -46,8 +46,9 @@ def first_derivative(
     Internally, the function is converted such that it maps from a 1d array to a 1d
     array. Then the Jacobian of that function is calculated.
 
-    The parameters and the function output can be general pytrees. By default the
-    resulting Jacobian will be returned as a block-pytree.
+    The parameters and the function output can be estimagic-pytrees; for more details on
+    estimagi-pytrees see :ref:`EEP`. By default the resulting Jacobian will be returned
+    as a block-pytree.
 
     For a detailed description of all options that influence the step size as well as an
     explanation of how steps are adjusted to bounds in case of a conflict, see
@@ -133,7 +134,7 @@ def first_derivative(
 
     # convert params to numpy
     registry = get_registry(extended=True)
-    x, params_tree_def = tree_flatten(params, registry=registry)
+    x, params_treedef = tree_flatten(params, registry=registry)
     x = np.array(x, dtype=np.float64)
 
     if np.isnan(x).any():
@@ -167,7 +168,7 @@ def first_derivative(
     # convert the numpy arrays to whatever is needed by func
     evaluation_points = [
         # entries are either a numpy.ndarray or np.nan
-        _unflatten_if_ndarray(p, params_tree_def, registry)
+        _unflatten_if_not_nan(p, params_treedef, registry)
         for p in evaluation_points
     ]
 
@@ -383,7 +384,7 @@ def second_derivative(
 
     # convert params to numpy
     registry = get_registry(extended=True)
-    x, params_tree_def = tree_flatten(params, registry=registry)
+    x, params_treedef = tree_flatten(params, registry=registry)
     x = np.atleast_1d(x).astype(np.float64)
 
     if np.isnan(x).any():
@@ -439,7 +440,7 @@ def second_derivative(
     # convert the numpy arrays to whatever is needed by func
     evaluation_points = {
         # entries are either a numpy.ndarray or np.nan, we unflatten only
-        step_type: [_unflatten_if_ndarray(p, params_tree_def, registry) for p in points]
+        step_type: [_unflatten_if_not_nan(p, params_treedef, registry) for p in points]
         for step_type, points in evaluation_points.items()
     }
 
@@ -706,7 +707,7 @@ def _convert_evals_to_numpy(raw_evals, key, registry):
     # get rid of pandas objects
     evals = [
         np.array(tree_leaves(val, registry=registry), dtype=np.float64)
-        if not _is_exactly_nan(val)
+        if not _is_scalar_nan(val)
         else val
         for val in evals
     ]
@@ -957,13 +958,13 @@ def _collect_additional_info(steps, evals, updated_candidates, target):
     return info
 
 
-def _is_exactly_nan(value):
+def _is_scalar_nan(value):
     return isinstance(value, float) and np.isnan(value)
 
 
-def _unflatten_if_ndarray(leaves, tree_def, registry):
+def _unflatten_if_not_nan(leaves, treedef, registry):
     if isinstance(leaves, np.ndarray):
-        out = tree_unflatten(tree_def, leaves, registry=registry)
+        out = tree_unflatten(treedef, leaves, registry=registry)
     else:
         out = leaves
     return out
