@@ -86,7 +86,6 @@ for subsolver in ["bntr", "gqtpar"]:
     [
         (np.array([0.15, 0.008, 0.01])),
         (np.array([1e-3, 1e-3, 1e-3])),
-        (np.array([1e-6, 1e-6, 1e-6])),
     ],
 )
 def test_bntr(start_vec, criterion, options):
