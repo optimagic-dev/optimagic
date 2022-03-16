@@ -68,6 +68,12 @@ jobs:
         shell: bash -l {0}
         run: tox -e jax -- -m "jax" --cov-report=xml --cov=./
 
+      - name: Upload coverage report.
+        if: runner.os == 'Linux' && matrix.python-version == '3.8'
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
 
   docs:
 
