@@ -58,7 +58,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          python-version: 3.9
+          python-version: 3.8
 
       - name: Install core dependencies.
         shell: bash -l {0}
@@ -69,7 +69,6 @@ jobs:
         run: tox -e jax -- -m "jax" --cov-report=xml --cov=./
 
       - name: Upload coverage report.
-        if: runner.os == 'Linux' && matrix.python-version == '3.8'
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
