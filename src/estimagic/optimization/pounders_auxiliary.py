@@ -245,11 +245,9 @@ def solve_subproblem(
             "gtol_scaled": gtol,
             "maxiter": maxiter,
         }
-
         result = minimize_bntr_quadratic(
             x0,
-            main_model.linear_terms,
-            main_model.square_terms,
+            main_model,
             lower_bounds,
             upper_bounds,
             options,

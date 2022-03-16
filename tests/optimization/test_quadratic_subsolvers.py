@@ -35,7 +35,7 @@ from numpy.testing import assert_array_almost_equal as aaae
     ],
 )
 def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
-    MainModel = namedtuple("LinearModel", ["linear_terms", "square_terms"])
+    MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
     result = minimize_gqtpar_quadratic(main_model)
@@ -45,7 +45,7 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
 
 
 @pytest.mark.parametrize(
-    "x, model_gradient, model_hessian, lower_bound, upper_bound, x_expected",
+    "x, linear_terms, square_terms, lower_bound, upper_bound, x_expected",
     [
         (
             np.zeros(3),
@@ -91,12 +91,15 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
 )
 def test_bounded_newton_trustregion(
     x,
-    model_gradient,
-    model_hessian,
+    linear_terms,
+    square_terms,
     lower_bound,
     upper_bound,
     x_expected,
 ):
+    MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
+    main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
+
     options = {
         "ftol": 1e-8,
         "xtol": 1e-8,
@@ -105,9 +108,7 @@ def test_bounded_newton_trustregion(
         "maxiter": 20,
     }
 
-    result = minimize_bntr_quadratic(
-        x, model_gradient, model_hessian, lower_bound, upper_bound, options
-    )
+    result = minimize_bntr_quadratic(x, main_model, lower_bound, upper_bound, options)
 
     aaae(result["x"], x_expected)
 

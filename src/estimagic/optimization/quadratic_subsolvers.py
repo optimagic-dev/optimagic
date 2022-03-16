@@ -125,7 +125,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
         if converged is True:
             break
 
-    f_min = evaluate_model(x_candidate, model)
+    f_min = evaluate_model_criterion(x_candidate, model)
 
     result = {
         "x": x_candidate,
@@ -365,7 +365,7 @@ def update_lambdas_when_factorization_unsuccessful(
     return lambdas_new
 
 
-def evaluate_model(x, main_model):
+def evaluate_model_criterion(x, main_model):
     """Evaluate the criterion function value of the main model.
 
     Args:

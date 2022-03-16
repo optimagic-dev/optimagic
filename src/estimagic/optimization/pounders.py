@@ -254,7 +254,6 @@ def internal_solve_pounders(
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
         )
-
         q_min = -result_sub["criterion"]
         x_candidate = x_accepted + result_sub["x"] * delta
         residuals_candidate = criterion(x_candidate)
