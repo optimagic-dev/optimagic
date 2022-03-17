@@ -13,26 +13,22 @@ def minimize_bntr_quadratic(
     model,
     lower_bound,
     upper_bound,
-    options,
+    *,
+    maxiter,
+    maxiter_steepest_descent,
+    step_size_newton,
+    ftol_abs,
+    ftol_scaled,
+    xtol,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
+    steptol
 ):
     """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient.
 
     https://petsc.org/release/docs/manual/manual.pdf 150, 157, 162
     """
-    if "gatol" not in options.keys():
-        options["gatol"] = 1e-8
-    if "grtol" not in options.keys():
-        options["grtol"] = 1e-8
-    if "gttol" not in options.keys():
-        options["gttol"] = 1e-8
-    if "ftol" not in options.keys():
-        options["ftol"] = 1e-8
-    if "xtol" not in options.keys():
-        options["xtol"] = 1e-8
-    if "steptol" not in options.keys():
-        options["steptol"] = 1e-8
-    if "maxiter" not in options.keys():
-        options["maxiter"] = 20
     (
         x_candidate,
         f_candidate,
@@ -42,10 +38,18 @@ def minimize_bntr_quadratic(
         active_bounds_info,
         converged,
     ) = take_preliminary_steepest_descent_step_and_check_for_solution(
-        x_candidate, model, lower_bound, upper_bound, options
+        x_candidate,
+        model,
+        lower_bound,
+        upper_bound,
+        maxiter_steepest_descent,
+        step_size_newton,
+        gtol_abs,
+        gtol_rel,
+        gtol_scaled,
     )
 
-    for _niter in range(options["maxiter"]):
+    for _niter in range(maxiter):
         x_old = np.copy(x_candidate)
         f_old = copy(f_candidate)
 
@@ -121,7 +125,13 @@ def minimize_bntr_quadratic(
                 lower_bound,
                 upper_bound,
                 trustregion_radius,
-                options,
+                ftol_abs,
+                ftol_scaled,
+                xtol,
+                gtol_abs,
+                gtol_rel,
+                gtol_scaled,
+                steptol,
             )
 
         if converged is True:
@@ -142,24 +152,20 @@ def take_preliminary_steepest_descent_step_and_check_for_solution(
     model,
     lower_bound,
     upper_bound,
-    options,
+    maxiter_steepest_descent,
+    step_size_newton,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
 ):
     """Take a preliminary steepest descent step and check if it finds a solution."""
-    if "gatol" not in options.keys():
-        options["gatol"] = 1e-8
-    if "grtol" not in options.keys():
-        options["grtol"] = 1e-8
-    if "gtol" not in options.keys():
-        options["gtol"] = 1e-8
-
     f_candidate = evaluate_model_criterion(
         x_candidate, model.linear_terms, model.square_terms
     )
 
     newton_step = compute_newton_step(model)
-
     active_bounds_info = get_information_on_active_bounds(
-        x_candidate, lower_bound, upper_bound, model, newton_step
+        x_candidate, lower_bound, upper_bound, model, newton_step, step_size_newton
     )
 
     gradient_candidate = evaluate_model_gradient(x_candidate, model)
@@ -171,9 +177,12 @@ def take_preliminary_steepest_descent_step_and_check_for_solution(
         x_candidate,
         f_candidate,
         gradient_candidate,
+        model,
         lower_bound,
         upper_bound,
-        options,
+        gtol_abs,
+        gtol_rel,
+        gtol_scaled,
     )
 
     if converged is True:
@@ -201,6 +210,7 @@ def take_preliminary_steepest_descent_step_and_check_for_solution(
             lower_bound,
             upper_bound,
             active_bounds_info,
+            maxiter_steepest_descent,
         )
 
         if f_min_steepest_descent < f_candidate:
@@ -215,9 +225,12 @@ def take_preliminary_steepest_descent_step_and_check_for_solution(
                 x_candidate_steepest_descent,
                 f_min_steepest_descent,
                 gradient_candidate_steepest_descent,
+                model,
                 lower_bound,
                 upper_bound,
-                options,
+                gtol_abs,
+                gtol_rel,
+                gtol_scaled,
             )
         else:
             x_accepted = x_candidate
@@ -315,6 +328,7 @@ def perform_steepest_descent_and_update_trustregion_radius(
     lower_bound,
     upper_bound,
     active_bounds_info,
+    maxiter_steepest_descent,
 ):
     """Perform steepest descent step and update trust-region radius."""
     x_trial = np.copy(x_candidate)
@@ -326,10 +340,9 @@ def perform_steepest_descent_and_update_trustregion_radius(
 
     gradient_norm = np.linalg.norm(gradient_projected)
 
-    for _ in range(5):
+    for _ in range(maxiter_steepest_descent):
         x_old = np.copy(x_trial)
 
-        # Steepest descent step
         step_size_trial = trustregion_radius / gradient_norm
         x_trial = x_trial - step_size_trial * gradient_projected
         x_trial = apply_bounds_to_x_candidate(x_trial, lower_bound, upper_bound)
@@ -448,15 +461,16 @@ def update_trustregion_radius_conjugate_gradient(
     return tr_radius, accept_step
 
 
-def get_information_on_active_bounds(x, lower_bound, upper_bound, model, newton_step):
+def get_information_on_active_bounds(
+    x, lower_bound, upper_bound, model, newton_step, step_size_newton
+):
     """Return the index set of active bounds."""
     ActiveBounds = namedtuple(
         "ActiveBounds", ["lower", "upper", "fixed", "all", "inactive"]
     )
-    step_length = 1e-3
 
     x_candidate = np.copy(x)
-    x_candidate = x_candidate - step_length * newton_step
+    x_candidate = x_candidate - step_size_newton * newton_step
     x_candidate_bounded = apply_bounds_to_x_candidate(
         x_candidate, lower_bound, upper_bound
     )
@@ -499,7 +513,13 @@ def check_for_convergence_conjugate_gradient(
     lower_bound,
     upper_bound,
     trustregion_radius,
-    options,
+    ftol_abs,
+    ftol_scaled,
+    xtol,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
+    steptol,
 ):
     """Check if we have found a solution."""
     direction_fischer_burmeister = _get_fischer_burmeister_direction_vector(
@@ -507,19 +527,19 @@ def check_for_convergence_conjugate_gradient(
     )
     gradient_norm = np.linalg.norm(direction_fischer_burmeister)
 
-    if trustregion_radius < options["steptol"]:
+    if trustregion_radius < steptol:
         converged = True
-    elif abs(f_old - f_candidate) < options["ftol"]:
+    elif abs(f_old - f_candidate) < ftol_abs:
         converged = True
-    elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < options["ftol"]:
+    elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < ftol_scaled:
         converged = True
-    elif gradient_norm < options["gtol"]:
+    elif np.max(np.abs(x_old - x_candidate)) < xtol:
         converged = True
-    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < options["gtol"]:
+    elif gradient_norm < gtol_abs:
         converged = True
-    elif gradient_norm / np.linalg.norm(model.linear_terms) < options["gtol"]:
+    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < gtol_rel:
         converged = True
-    elif np.max(np.abs(x_old - x_candidate)) < options["xtol"]:
+    elif gradient_norm / np.linalg.norm(model.linear_terms) < gtol_scaled:
         converged = True
     else:
         converged = False
@@ -531,9 +551,12 @@ def check_for_convergence_steepest_descent(
     x_candidate,
     f_candidate,
     gradient_candidate,
+    model,
     lower_bound,
     upper_bound,
-    options,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
 ):
     """Check if we have found a solution."""
     direction_fischer_burmeister = _get_fischer_burmeister_direction_vector(
@@ -541,11 +564,11 @@ def check_for_convergence_steepest_descent(
     )
     gradient_norm = np.linalg.norm(direction_fischer_burmeister)
 
-    if gradient_norm < options["gtol"]:
+    if gradient_norm < gtol_abs:
         converged = True
-    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < options["gtol"]:
+    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < gtol_rel:
         converged = True
-    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < options["gtol"]:
+    elif gradient_norm / np.linalg.norm(model.linear_terms) < gtol_scaled:
         converged = True
     else:
         converged = False

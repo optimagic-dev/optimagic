@@ -173,15 +173,22 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
 
 def solve_subproblem(
     solution,
-    delta,
     main_model,
-    solver,
-    ftol,
-    xtol,
-    gtol,
-    maxiter,
     lower_bounds,
     upper_bounds,
+    delta,
+    solver,
+    *,
+    maxiter,
+    maxiter_steepest_descent,
+    step_size_newton,
+    ftol_abs,
+    ftol_scaled,
+    xtol,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
+    steptol
 ):
     """Solve the quadratic subproblem.
 
@@ -239,18 +246,19 @@ def solve_subproblem(
 
     if solver == "bntr":
         options = {
-            "ftol": ftol,
-            "xtol": xtol,
-            "gtol_abs": gtol,
-            "gtol_scaled": gtol,
             "maxiter": maxiter,
+            "maxiter_steepest_descent": maxiter_steepest_descent,
+            "step_size_newton": step_size_newton,
+            "ftol_abs": ftol_abs,
+            "ftol_scaled": ftol_scaled,
+            "xtol": xtol,
+            "gtol_abs": gtol_abs,
+            "gtol_rel": gtol_rel,
+            "gtol_scaled": gtol_scaled,
+            "steptol": steptol,
         }
         result = minimize_bntr_quadratic(
-            x0,
-            main_model,
-            lower_bounds,
-            upper_bounds,
-            options,
+            x0, main_model, lower_bounds, upper_bounds, **options
         )
     elif solver == "gqtpar":
         result = minimize_gqtpar_quadratic(main_model, maxiter=maxiter)

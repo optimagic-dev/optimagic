@@ -101,14 +101,19 @@ def test_bounded_newton_trustregion(
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
     options = {
-        "ftol": 1e-8,
+        "maxiter": 20,
+        "maxiter_steepest_descent": 5,
+        "step_size_newton": 1e-3,
+        "ftol_abs": 1e-8,
+        "ftol_scaled": 1e-8,
         "xtol": 1e-8,
         "gtol_abs": 1e-8,
+        "gtol_rel": 1e-8,
         "gtol_scaled": 1e-8,
-        "maxiter": 20,
+        "steptol": 1e-8,
     }
 
-    result = minimize_bntr_quadratic(x, main_model, lower_bound, upper_bound, options)
+    result = minimize_bntr_quadratic(x, main_model, lower_bound, upper_bound, **options)
 
     aaae(result["x"], x_expected)
 

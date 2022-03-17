@@ -72,7 +72,18 @@ def pounders(
     if trustregion_subproblem_options is None:
         trustregion_subproblem_options = {}
 
-    default_options = {"ftol": 1e-6, "xtol": 1e-6, "gtol": 1e-6, "maxiter": 20}
+    default_options = {
+        "maxiter": 20,
+        "maxiter_steepest_descent": 5,
+        "step_size_newton": 1e-3,
+        "ftol_abs": 1e-6,
+        "ftol_scaled": 1e-6,
+        "xtol": 1e-6,
+        "gtol_abs": 1e-6,
+        "gtol_rel": 1e-6,
+        "gtol_scaled": 1e-6,
+        "steptol": 1e-8,
+    }
     trustregion_subproblem_options = {
         **default_options,
         **trustregion_subproblem_options,
@@ -97,10 +108,18 @@ def pounders(
         c1=c1,
         c2=c2,
         solver_sub=trustregion_subproblem_solver,
-        ftol_sub=trustregion_subproblem_options["ftol"],
-        xtol_sub=trustregion_subproblem_options["xtol"],
-        gtol_sub=trustregion_subproblem_options["gtol"],
         maxiter_sub=trustregion_subproblem_options["maxiter"],
+        maxiter_steepest_descent_sub=trustregion_subproblem_options[
+            "maxiter_steepest_descent"
+        ],
+        step_size_newton_sub=trustregion_subproblem_options["step_size_newton"],
+        ftol_abs_sub=trustregion_subproblem_options["ftol_abs"],
+        ftol_scaled_sub=trustregion_subproblem_options["ftol_scaled"],
+        xtol_sub=trustregion_subproblem_options["xtol"],
+        gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
+        gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
+        gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
+        steptol_sub=trustregion_subproblem_options["steptol"],
         batch_evaluator=batch_evaluator,
         n_cores=n_cores,
     )
@@ -127,10 +146,16 @@ def internal_solve_pounders(
     c1,
     c2,
     solver_sub,
-    ftol_sub,
-    xtol_sub,
-    gtol_sub,
     maxiter_sub,
+    maxiter_steepest_descent_sub,
+    step_size_newton_sub,
+    ftol_abs_sub,
+    ftol_scaled_sub,
+    xtol_sub,
+    gtol_abs_sub,
+    gtol_rel_sub,
+    gtol_scaled_sub,
+    steptol_sub,
     batch_evaluator,
     n_cores,
 ):
@@ -244,15 +269,21 @@ def internal_solve_pounders(
     for niter in range(maxiter):
         result_sub = solve_subproblem(
             solution=x_accepted,
-            delta=delta,
             main_model=main_model,
-            solver=solver_sub,
-            ftol=ftol_sub,
-            xtol=xtol_sub,
-            gtol=gtol_sub,
-            maxiter=maxiter_sub,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
+            delta=delta,
+            solver=solver_sub,
+            maxiter=maxiter_sub,
+            maxiter_steepest_descent=maxiter_steepest_descent_sub,
+            step_size_newton=step_size_newton_sub,
+            ftol_abs=ftol_abs_sub,
+            ftol_scaled=ftol_scaled_sub,
+            xtol=xtol_sub,
+            gtol_abs=gtol_abs_sub,
+            gtol_rel=gtol_rel_sub,
+            gtol_scaled=gtol_scaled_sub,
+            steptol=steptol_sub,
         )
         q_min = -result_sub["criterion"]
         x_candidate = x_accepted + result_sub["x"] * delta
