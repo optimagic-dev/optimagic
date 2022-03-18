@@ -19,7 +19,7 @@ from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_
 from estimagic.optimization.pounders_auxiliary import (
     get_interpolation_matrices_residual_model,
 )
-from estimagic.optimization.pounders_auxiliary import interpolate_f
+from estimagic.optimization.pounders_auxiliary import interpolate_residual_model
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
 )
@@ -317,7 +317,7 @@ def data_get_interpolation_matrices_residual_model():
 
 
 @pytest.fixture(params=["4", "7"])
-def data_interpolate_f(request):
+def data_interpolate_residual_model(request):
     test_data = read_yaml(
         TEST_FIXTURES_DIR / f"interpolate_f_iter_{request.param}.yaml"
     )
@@ -359,7 +359,7 @@ def data_interpolate_f(request):
 
     expected_dict = {
         "interpolation_set_expected": test_data["interpolation_set_expected"],
-        "f_interpolated_expected": test_data["f_interpolated_expected"],
+        "residual_model_interpolated_expected": test_data["f_interpolated_expected"],
     }
 
     return inputs_dict, expected_dict
@@ -374,7 +374,7 @@ def data_get_coefficients_residual_model():
         "monomial_basis": np.array(test_data["monomial_basis"]),
         "basis_null_space": np.array(test_data["basis_null_space"]),
         "lower_triangular": np.array(test_data["lower_triangular"]),
-        "f_interpolated": np.array(test_data["f_interpolated"]),
+        "residual_model_interpolated": np.array(test_data["f_interpolated"]),
         "n_modelpoints": test_data["n_modelpoints"],
     }
 
@@ -521,11 +521,11 @@ def test_get_interpolation_matrices_residual_model(
     assert np.allclose(n_modelpoints, expected["n_modelpoints_expected"])
 
 
-def test_interpolate_f(data_interpolate_f):
-    inputs, expected = data_interpolate_f
-    f_interpolated = interpolate_f(**inputs)
+def test_interpolate_residual_model(data_interpolate_residual_model):
+    inputs, expected = data_interpolate_residual_model
+    residual_model_interpolated = interpolate_residual_model(**inputs)
 
-    aaae(f_interpolated, expected["f_interpolated_expected"])
+    aaae(residual_model_interpolated, expected["residual_model_interpolated_expected"])
 
 
 def test_get_coefficients_residual_model(data_get_coefficients_residual_model):

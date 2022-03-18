@@ -528,17 +528,17 @@ def check_for_convergence_conjugate_gradient(
     )
     gradient_norm = np.linalg.norm(direction_fischer_burmeister)
 
-    if abs(f_old - f_candidate) < ftol_abs:
-        converged = True
-    elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < ftol_scaled:
-        converged = True
-    elif np.max(np.abs(x_old - x_candidate)) < xtol:
-        converged = True
-    elif gradient_norm < gtol_abs:
+    if gradient_norm < gtol_abs:
         converged = True
     elif f_candidate != 0 and abs(gradient_norm / f_candidate) < gtol_rel:
         converged = True
     elif gradient_norm / np.linalg.norm(model.linear_terms) < gtol_scaled:
+        converged = True
+    elif abs(f_old - f_candidate) < ftol_abs:
+        converged = True
+    elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < ftol_scaled:
+        converged = True
+    elif np.max(np.abs(x_old - x_candidate)) < xtol:
         converged = True
     elif trustregion_radius < steptol:
         converged = True

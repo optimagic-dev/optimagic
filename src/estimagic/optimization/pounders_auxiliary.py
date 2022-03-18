@@ -1,5 +1,6 @@
 """Auxiliary functions for the pounders algorithm."""
 from collections import namedtuple
+from copy import copy
 
 import numpy as np
 from estimagic.optimization.bounded_newton_trustregion import minimize_bntr_quadratic
@@ -426,6 +427,29 @@ def add_geomtery_points_to_make_main_model_fully_linear(
     return history, model_indices
 
 
+def update_trustregion_radius(
+    result_subproblem,
+    rho,
+    model_is_valid,
+    delta,
+    delta_old,
+    delta_min,
+    delta_max,
+    eta1,
+    gamma0,
+    gamma1,
+):
+    """Update the trust-region radius."""
+    norm_x_sub = np.sqrt(np.sum(result_subproblem["x"] ** 2))
+
+    if rho >= eta1 and norm_x_sub > 0.5 * delta:
+        delta = min(delta * gamma1, delta_max)
+    elif model_is_valid is True:
+        delta = max(delta * gamma0, delta_min)
+
+    return delta
+
+
 def get_interpolation_matrices_residual_model(
     history,
     x_accepted,
@@ -552,7 +576,7 @@ def get_interpolation_matrices_residual_model(
     )
 
 
-def interpolate_f(
+def interpolate_residual_model(
     history,
     interpolation_set,
     residual_model,
@@ -560,7 +584,14 @@ def interpolate_f(
     n_modelpoints,
     n_maxinterp,
 ):
-    """Interpolate the residual function via the quadratic residual model.
+    """Interpolate the quadratic residual model.
+
+    The residual model:
+
+        Q(x) = c + g'x + 0.5 x G x'
+
+    satisfies the interpolation conditions Q(X[:,j]) = f(j)
+    for j= 1,..., m with a Hessian matrix of least Frobenius norm.
 
     If the point x_k belongs to the interpolation set, one can show that
     c = f (x_k).
@@ -574,13 +605,13 @@ def interpolate_f(
         model_indices (np.ndarray): Indices of the candidates of x that are
             currently in the model. Shape (2 *n* + 1,).
         n_modelpoints (int): Current number of model points.
-        n_maxinterp (int): Maximum number of interpolation points.
 
     Returns:
-        (np.ndarray): Interpolated residual function. Array of shape (n_obs,).
+        (np.ndarray): Interpolated residual model.
+            Array of shape (n_maxinterp, n_obs).
     """
     n_obs = history.get_residuals(index=-1).shape[0]
-    f_interpolated = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
+    residual_model_interpolated = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
 
     for j in range(n_obs):
         x_dot_square_terms = np.dot(
@@ -593,13 +624,13 @@ def interpolate_f(
                 center_info, index=model_indices[i]
             )
 
-            f_interpolated[i, j] = (
+            residual_model_interpolated[i, j] = (
                 residuals[j]
                 - np.dot(residual_model.linear_terms[:, j], interpolation_set[i, :])
                 - 0.5 * np.dot(x_dot_square_terms[i, :], interpolation_set[i, :])
             )
 
-    return f_interpolated
+    return residual_model_interpolated
 
 
 def get_coefficients_residual_model(
@@ -607,17 +638,10 @@ def get_coefficients_residual_model(
     basis_null_space,
     monomial_basis,
     x_sample_monomial_basis,
-    f_interpolated,
+    residual_model_interpolated,
     n_modelpoints,
 ):
     """Computes the coefficients of the quadratic residual model.
-
-    The residual model:
-
-        Q(x) = c + g'x + 0.5 x G x'
-
-    satisfies the interpolation conditions Q(X[:,j]) = f(j)
-    for j= 1,..., m and with a Hessian matrix of least Frobenius norm.
 
     Args:
         x_sample_monomial_basis (np.ndarray): Sample of xs used for
@@ -640,7 +664,7 @@ def get_coefficients_residual_model(
             of the residual model.
     """
     n = x_sample_monomial_basis.shape[1] - 1
-    n_obs = f_interpolated.shape[1]
+    n_obs = residual_model_interpolated.shape[1]
 
     params_gradient = np.zeros((n_obs, n))
     params_hessian = np.zeros((n_obs, n, n))
@@ -656,7 +680,7 @@ def get_coefficients_residual_model(
         if n_modelpoints != (n + 1):
             lower_triangular_omega = np.dot(
                 basis_null_space[:n_modelpoints, :].T,
-                f_interpolated[:n_modelpoints, k],
+                residual_model_interpolated[:n_modelpoints, k],
             )
             omega = np.linalg.solve(
                 np.atleast_2d(lower_triangular_square),
@@ -665,7 +689,7 @@ def get_coefficients_residual_model(
 
             beta = np.dot(np.atleast_2d(lower_triangular), omega)
 
-        rhs = f_interpolated[:n_modelpoints, k] - np.dot(
+        rhs = residual_model_interpolated[:n_modelpoints, k] - np.dot(
             monomial_basis[:n_modelpoints, :], beta
         )
 
@@ -689,27 +713,26 @@ def get_coefficients_residual_model(
     return coefficients_to_add
 
 
-def _evaluate_main_model(
-    x,
-    linear_terms,
-    square_terms,
+def get_last_model_indices_and_check_for_repeated_model(
+    model_indices, last_model_indices, n_modelpoints, n_last_modelpoints
 ):
-    """Evaluate the criterion and derivative of the main model.
+    """Get the last model_indices and check if we have reused the same model."""
+    if n_modelpoints == n_last_modelpoints:
+        same_model_used = True
+    else:
+        same_model_used = False
 
-    Args:
-        x (np.ndarray): Parameter vector of zeros.
-        linear_terms (np.ndarray): Linear terms of the main model of shape (n,).
-        square_terms (np.ndarray): Square terms of the main model of shape (n, n).
+    for i in range(n_modelpoints):
+        if same_model_used:
+            if model_indices[i] == last_model_indices[i]:
+                same_model_used = True
+            else:
+                same_model_used = False
+        last_model_indices[i] = model_indices[i]
 
-    Returns:
-        Tuple:
-        - criterion (float): Criterion value of the main model.
-        - derivative (np.ndarray): Derivative of the main model of shape (n,).
-    """
-    criterion = np.dot(linear_terms, x) + 0.5 * np.dot(np.dot(x, square_terms), x)
-    derivative = linear_terms + np.dot(square_terms, x)
+    n_last_modelpoints = copy(n_modelpoints)
 
-    return criterion, derivative
+    return last_model_indices, n_last_modelpoints, same_model_used
 
 
 def _get_monomial_basis(x):

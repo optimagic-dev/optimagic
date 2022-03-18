@@ -1,4 +1,5 @@
 """Implement the POUNDERS algorithm"""
+from copy import copy
 from functools import partial
 
 import estimagic.batch_evaluators as be
@@ -15,7 +16,10 @@ from estimagic.optimization.pounders_auxiliary import get_coefficients_residual_
 from estimagic.optimization.pounders_auxiliary import (
     get_interpolation_matrices_residual_model,
 )
-from estimagic.optimization.pounders_auxiliary import interpolate_f
+from estimagic.optimization.pounders_auxiliary import (
+    get_last_model_indices_and_check_for_repeated_model,
+)
+from estimagic.optimization.pounders_auxiliary import interpolate_residual_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
@@ -24,6 +28,7 @@ from estimagic.optimization.pounders_auxiliary import update_residual_model
 from estimagic.optimization.pounders_auxiliary import (
     update_residual_model_with_new_accepted_x,
 )
+from estimagic.optimization.pounders_auxiliary import update_trustregion_radius
 
 
 def pounders(
@@ -82,13 +87,13 @@ def pounders(
         "maxiter": 20,
         "maxiter_steepest_descent": 5,
         "step_size_newton": 1e-3,
-        "ftol_abs": 1e-6,
-        "ftol_scaled": 1e-6,
-        "xtol": 1e-6,
-        "gtol_abs": 1e-6,
-        "gtol_rel": 1e-6,
-        "gtol_scaled": 1e-6,
-        "steptol": 1e-8,
+        "ftol_abs": 1e-12,
+        "ftol_scaled": 1e-12,
+        "xtol": 1e-12,
+        "gtol_abs": 1e-8,
+        "gtol_rel": 1e-8,
+        "gtol_scaled": 1e-8,
+        "steptol": 1e-12,
     }
     trustregion_subproblem_options = {
         **default_options,
@@ -247,7 +252,7 @@ def internal_solve_pounders(
     n = x0.shape[0]
     model_indices = np.zeros(n_maxinterp, dtype=int)
 
-    last_n_modelpoints = 0
+    n_last_modelpoints = 0
 
     if lower_bounds is not None and upper_bounds is not None:
         if np.max(x0 + delta - upper_bounds) > 1e-10:
@@ -369,14 +374,19 @@ def internal_solve_pounders(
                 )
                 n_modelpoints = n
 
-        # Update the trust region radius
-        delta_old = delta
-        norm_x_sub = np.sqrt(np.sum(result_sub["x"] ** 2))
-
-        if rho >= eta1 and norm_x_sub > 0.5 * delta:
-            delta = min(delta * gamma1, delta_max)
-        elif valid is True:
-            delta = max(delta * gamma0, delta_min)
+        delta_old = copy(delta)
+        delta = update_trustregion_radius(
+            result_subproblem=result_sub,
+            rho=rho,
+            model_is_valid=valid,
+            delta=delta,
+            delta_old=delta_old,
+            delta_min=delta_min,
+            delta_max=delta_max,
+            eta1=eta1,
+            gamma0=gamma0,
+            gamma1=gamma1,
+        )
 
         (
             model_improving_points,
@@ -461,7 +471,7 @@ def internal_solve_pounders(
             center_info, index=model_indices[:n_modelpoints]
         )
 
-        f_interpolated = interpolate_f(
+        residual_model_interpolated = interpolate_residual_model(
             history=history,
             interpolation_set=interpolation_set,
             residual_model=residual_model,
@@ -475,7 +485,7 @@ def internal_solve_pounders(
             monomial_basis=monomial_basis,
             basis_null_space=basis_null_space,
             lower_triangular=lower_triangular,
-            f_interpolated=f_interpolated,
+            residual_model_interpolated=residual_model_interpolated,
             n_modelpoints=n_modelpoints,
         )
 
@@ -491,7 +501,7 @@ def internal_solve_pounders(
 
         main_model = create_main_from_residual_model(residual_model)
 
-        criterion_candidate = history.get_best_critvals()
+        criterion_candidate = history.get_best_critval()
 
         gradient_norm = np.linalg.norm(main_model.linear_terms)
         gradient_norm *= delta
@@ -513,23 +523,18 @@ def internal_solve_pounders(
             converged = False
             break
 
-        # Test for repeated model
-        if n_modelpoints == last_n_modelpoints:
-            same = True
-        else:
-            same = False
+        (
+            last_model_indices,
+            n_last_modelpoints,
+            same_model_used,
+        ) = get_last_model_indices_and_check_for_repeated_model(
+            model_indices=model_indices,
+            last_model_indices=last_model_indices,
+            n_modelpoints=n_modelpoints,
+            n_last_modelpoints=n_last_modelpoints,
+        )
 
-        for i in range(n_modelpoints):
-            if same:
-                if model_indices[i] == last_model_indices[i]:
-                    same = True
-                else:
-                    same = False
-            last_model_indices[i] = model_indices[i]
-
-        last_n_modelpoints = n_modelpoints
-        if (same is True) and (delta == delta_old):
-            # Identical model used in successive iterations
+        if (same_model_used is True) and (delta == delta_old):
             converged = True
             break
 
