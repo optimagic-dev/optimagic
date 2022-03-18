@@ -31,7 +31,10 @@ def pounders(
     x,
     lower_bounds,
     upper_bounds,
-    convergence_absolute_gradient_tolerance=1e-4,
+    convergence_absolute_gradient_tolerance=1e-8,
+    convergence_relative_gradient_tolerance=1e-8,
+    convergence_scaled_gradient_tolerance=1e-8,
+    max_interpolation_points=None,
     stopping_max_iterations=200,
     trustregion_initial_radius=0.1,
     trustregion_minimal_radius=1e-6,
@@ -66,6 +69,9 @@ def pounders(
         criterion_and_derivative, algorithm_info=algorithm_info, task="criterion"
     )
 
+    if max_interpolation_points is None:
+        max_interpolation_points = 2 * x.shape[0] + 1
+
     if c1 is None:
         c1 = np.sqrt(x.shape[0])
 
@@ -94,7 +100,10 @@ def pounders(
         x0=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        gtol=convergence_absolute_gradient_tolerance,
+        gtol_abs=convergence_absolute_gradient_tolerance,
+        gtol_rel=convergence_relative_gradient_tolerance,
+        gtol_scaled=convergence_scaled_gradient_tolerance,
+        n_maxinterp=max_interpolation_points,
         maxiter=stopping_max_iterations,
         delta=trustregion_initial_radius,
         delta_min=trustregion_minimal_radius,
@@ -132,7 +141,10 @@ def internal_solve_pounders(
     x0,
     lower_bounds,
     upper_bounds,
-    gtol,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
+    n_maxinterp,
     maxiter,
     delta,
     delta_min,
@@ -171,8 +183,12 @@ def internal_solve_pounders(
         upper_bounds (np.ndarray): Upper bounds.
             Must have same length as the initial guess of the
             parameter vector. Equal to 1 if not provided by the user.
-        gtol (float): Convergence criterion of the absolute gradient norm.
-            Default is 1e-4.
+        gtol_abs (float): Convergence tolerance for the absolute gradient norm.
+        gtol_rel (float): Convergence tolerance for the relative gradient norm.
+        gtol_scaled (float): Convergence tolerance for the scaled gradient norm.
+        max_interpolation_points (int). Maximum number of interpolation points.
+            If None, the default value 2 * n + 1 is used, where n is the length
+            of the parameter vector.
         maxiter (int): Maximum number of iterations. If reached, terminate.
         delta (float): Delta, initial trust-region radius.
         delta_min (float): Minimal trust-region radius.
@@ -229,7 +245,6 @@ def internal_solve_pounders(
     history = LeastSquaresHistory()
 
     n = x0.shape[0]
-    n_maxinterp = 2 * n + 1
     model_indices = np.zeros(n_maxinterp, dtype=int)
 
     last_n_modelpoints = 0
@@ -257,8 +272,8 @@ def internal_solve_pounders(
     )
 
     x_accepted = history.get_best_x()
-    gradient_norm = np.linalg.norm(main_model.linear_terms)
-    gradient_norm *= delta
+    gradient_norm_initial = np.linalg.norm(main_model.linear_terms)
+    gradient_norm_initial *= delta
 
     valid = True
     converged = False
@@ -285,7 +300,11 @@ def internal_solve_pounders(
             gtol_scaled=gtol_scaled_sub,
             steptol=steptol_sub,
         )
-        q_min = -result_sub["criterion"]
+        if abs(result_sub["criterion"]) < np.finfo(float).eps:
+            q_min = -np.finfo(float).eps
+        else:
+            q_min = -result_sub["criterion"]
+
         x_candidate = x_accepted + result_sub["x"] * delta
         residuals_candidate = criterion(x_candidate)
         history.add_entries(x_candidate, residuals_candidate)
@@ -401,7 +420,6 @@ def internal_solve_pounders(
                 (
                     history,
                     model_indices,
-                    n_modelpoints,
                 ) = add_geomtery_points_to_make_main_model_fully_linear(
                     history=history,
                     main_model=main_model,
@@ -473,10 +491,21 @@ def internal_solve_pounders(
 
         main_model = create_main_from_residual_model(residual_model)
 
+        criterion_candidate = history.get_best_critvals()
+
         gradient_norm = np.linalg.norm(main_model.linear_terms)
         gradient_norm *= delta
 
-        if gradient_norm < gtol:
+        if gradient_norm < gtol_abs:
+            converged = True
+            break
+        elif (
+            criterion_candidate != 0
+            and abs(gradient_norm / criterion_candidate) < gtol_rel
+        ):
+            converged = True
+            break
+        elif gradient_norm / gradient_norm_initial < gtol_scaled:
             converged = True
             break
 

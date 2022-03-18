@@ -108,10 +108,17 @@ for subsolver in ["bntr", "gqtpar"]:
 def test_bntr(start_vec, criterion, options, trustregion_subproblem_options):
     solver_sub = "bntr"
 
+    gtol_abs = 1e-8
+    gtol_rel = 1e-8
+    gtol_scaled = 1e-12
+
     result = internal_solve_pounders(
         x0=start_vec,
         criterion=criterion,
-        gtol=gtol,
+        gtol_abs=gtol_abs,
+        gtol_rel=gtol_rel,
+        gtol_scaled=gtol_scaled,
+        n_maxinterp=7,
         solver_sub=solver_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_steepest_descent_sub=trustregion_subproblem_options[
@@ -131,17 +138,24 @@ def test_bntr(start_vec, criterion, options, trustregion_subproblem_options):
     )
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
-    aaae(result["solution_x"], x_expected, decimal=5)
+    aaae(result["solution_x"], x_expected, decimal=4)
 
 
 @pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])
 def test_gqtpar(start_vec, criterion, options, trustregion_subproblem_options):
     solver_sub = "gqtpar"
 
+    gtol_abs = 1e-8
+    gtol_rel = 1e-8
+    gtol_scaled = 1e-8
+
     result = internal_solve_pounders(
         x0=start_vec,
         criterion=criterion,
-        gtol=gtol,
+        gtol_abs=gtol_abs,
+        gtol_rel=gtol_rel,
+        gtol_scaled=gtol_scaled,
+        n_maxinterp=7,
         solver_sub=solver_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_steepest_descent_sub=trustregion_subproblem_options[
@@ -161,4 +175,4 @@ def test_gqtpar(start_vec, criterion, options, trustregion_subproblem_options):
     )
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
-    aaae(result["solution_x"], x_expected, decimal=5)
+    aaae(result["solution_x"], x_expected, decimal=4)

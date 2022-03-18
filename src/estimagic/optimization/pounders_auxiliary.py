@@ -399,7 +399,7 @@ def add_geomtery_points_to_make_main_model_fully_linear(
     x_candidates_list = []
     criterion_candidates_list = []
 
-    model_improving_points, _ = qr_multiply(model_improving_points, np.eye(3))
+    model_improving_points, _ = qr_multiply(model_improving_points, np.eye(n))
 
     for i in range(n_modelpoints, n):
         change_direction = np.dot(model_improving_points[:, i], main_model.linear_terms)
@@ -470,6 +470,9 @@ def get_interpolation_matrices_residual_model(
 
     x_sample_monomial_basis = np.zeros((n_maxinterp, n + 1))
     x_sample_monomial_basis[:, 0] = 1
+    x_sample_full_with_zeros = np.zeros((n_maxinterp, n_maxinterp))
+    x_sample_full_with_zeros[:n_maxinterp, : n + 1] = x_sample_monomial_basis
+
     monomial_basis = np.zeros((n_maxinterp, int(n * (n + 1) / 2)))
 
     center_info = {"x": x_accepted, "radius": delta}
@@ -636,7 +639,7 @@ def get_coefficients_residual_model(
         (dict): Coefficients for updating the "linear_terms" and "square_terms"
             of the residual model.
     """
-    n = int((f_interpolated.shape[0] - 1) / 2)
+    n = x_sample_monomial_basis.shape[1] - 1
     n_obs = f_interpolated.shape[1]
 
     params_gradient = np.zeros((n_obs, n))

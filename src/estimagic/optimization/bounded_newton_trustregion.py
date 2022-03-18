@@ -23,7 +23,7 @@ def minimize_bntr_quadratic(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
-    steptol
+    steptol,
 ):
     """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient.
 
@@ -125,13 +125,13 @@ def minimize_bntr_quadratic(
                 lower_bound,
                 upper_bound,
                 trustregion_radius,
-                ftol_abs,
-                ftol_scaled,
-                xtol,
-                gtol_abs,
-                gtol_rel,
-                gtol_scaled,
-                steptol,
+                ftol_abs=ftol_abs,
+                ftol_scaled=ftol_scaled,
+                xtol=xtol,
+                gtol_abs=gtol_abs,
+                gtol_rel=gtol_rel,
+                gtol_scaled=gtol_scaled,
+                steptol=steptol,
             )
 
         if converged is True:
@@ -513,6 +513,7 @@ def check_for_convergence_conjugate_gradient(
     lower_bound,
     upper_bound,
     trustregion_radius,
+    *,
     ftol_abs,
     ftol_scaled,
     xtol,
@@ -527,9 +528,7 @@ def check_for_convergence_conjugate_gradient(
     )
     gradient_norm = np.linalg.norm(direction_fischer_burmeister)
 
-    if trustregion_radius < steptol:
-        converged = True
-    elif abs(f_old - f_candidate) < ftol_abs:
+    if abs(f_old - f_candidate) < ftol_abs:
         converged = True
     elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < ftol_scaled:
         converged = True
@@ -540,6 +539,8 @@ def check_for_convergence_conjugate_gradient(
     elif f_candidate != 0 and abs(gradient_norm / f_candidate) < gtol_rel:
         converged = True
     elif gradient_norm / np.linalg.norm(model.linear_terms) < gtol_scaled:
+        converged = True
+    elif trustregion_radius < steptol:
         converged = True
     else:
         converged = False
