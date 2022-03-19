@@ -6,9 +6,9 @@ def fit_ols(centered_x, centered_f, *, fit_intercept=True, interaction_terms=Tru
     """Fit a quadratic surrogate model with ols.
 
     Args:
-        centered_x (np.ndarray): Array of shape (n_sample, n_params) of x-values,
+        centered_x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
             rescaled such that the trust region becomes a hypercube from -1 to 1.
-        centered_f (np.ndarray): Array of shape (n_sample, n_residuals) with function
+        centered_f (np.ndarray): Array of shape (n_samples, n_residuals) with function
             evaluations that have been centered around the function value at the
             trust region center.
         fit_intercept (bool): Whether to calculate the intercept for this model. If set
@@ -19,9 +19,13 @@ def fit_ols(centered_x, centered_f, *, fit_intercept=True, interaction_terms=Tru
 
     Returns:
         dict: Dictionary containing the parameters of the residual model with keys
-            "linear_terms" and "square_terms". The linear terms are returned as a
-            1d array. If interaction_terms is False the squared terms are also returned
-            as a 1d array, otherwise as a lower triangular matrix.
+        - "linear_terms" np.ndarray of shape (n_params, n_residuals)
+        - "square_terms" np.ndarray of shape (n_params, n_residuals) if
+        interaction_terms is False, otherwise (k, k, n_residuals) where k denotes the
+        number of squared and interaction terms. In the second case it the matrix is
+        lower triangular in the first two dimensions
+        - "residuals" np.ndarray of shape (n_samples, n_residuals), the residuals of the
+        fitted linear model
 
     """
     n_params = centered_x.shape[1]
@@ -29,17 +33,11 @@ def fit_ols(centered_x, centered_f, *, fit_intercept=True, interaction_terms=Tru
 
     x = _build_quadratic_feature_matrix(centered_x, fit_intercept, interaction_terms)
 
-    # compute coefficients
-    xtx = x.T @ x
-    xtx_inv = np.linalg.pinv(xtx)
+    coef, residuals, *_ = np.linalg.lstsq(x, centered_f, rcond=None)
 
-    coef = xtx_inv @ x.T @ centered_f
+    intercept, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=0)
 
-    # extract terms
-    _, linear_terms, square_terms = np.split(coef, (1, n_params + 1), axis=0)
-
-    out = {"linear_terms": linear_terms}
-
+    out = {"linear_terms": linear_terms, "residuals": residuals}
     if interaction_terms:
         out["square_terms"] = _reshape_square_terms_to_tril(
             square_terms, n_params, n_residuals
