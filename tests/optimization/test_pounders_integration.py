@@ -73,7 +73,6 @@ def trustregion_subproblem_options():
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 1e-8,
-        "steptol": 1e-12,
         "k_easy": 0.1,
         "k_hard": 0.2,
     }
@@ -113,7 +112,6 @@ def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_opt
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
-        steptol_sub=trustregion_subproblem_options["steptol"],
         k_easy_sub=trustregion_subproblem_options["k_easy"],
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
@@ -152,7 +150,6 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
-        steptol_sub=trustregion_subproblem_options["steptol"],
         k_easy_sub=trustregion_subproblem_options["k_easy"],
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,

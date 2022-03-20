@@ -7,13 +7,6 @@ import numpy as np
 def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
     """Minimize the quadratic trust-region subproblem using Conjugate Gradient method.
 
-    This algorithm is an implementation of the Steihaug-Toint truncated
-    Conjugate Gradient algorithm as described in
-
-        T. Steihaug (1983), "The conjugate gradient method and trust regions in large
-            scale optimization", SIAM Journal on Numerical Analysis 20 (3),
-            pp. 626-637
-
     Args:
         model_gradient (np.ndarray): Gradient of the quadratic model. Shape (n,).
         model_hessian (np.ndarray): Hessian of the quadratic model. Shape (n, n).

@@ -107,7 +107,6 @@ def test_bounded_newton_trustregion(
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 1e-8,
-        "steptol": 1e-8,
     }
 
     result = minimize_bntr_quadratic(main_model, lower_bounds, upper_bounds, **options)
