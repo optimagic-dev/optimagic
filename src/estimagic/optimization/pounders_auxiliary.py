@@ -3,7 +3,7 @@ from collections import namedtuple
 from copy import copy
 
 import numpy as np
-from estimagic.optimization.bounded_newton_trustregion import minimize_bntr_quadratic
+from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
 from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
 from scipy.linalg import qr_multiply
 
@@ -189,7 +189,9 @@ def solve_subproblem(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
-    steptol
+    steptol,
+    k_easy,
+    k_hard
 ):
     """Solve the quadratic subproblem.
 
@@ -198,27 +200,55 @@ def solve_subproblem(
         delta (float): Current trust region radius.
         main_model (namedtuple): Named tuple containing the parameters of the
             main model, i.e. "linear_terms" and "square terms".
-        ftol (float): Stopping criterion.
-        xtol (float): Stopping criterion.
-        gtol (float): Stopping criterion.
-        solver (str): Minimizer that will be used to solve the quadratic subproblem.
-            Currently, two interal solvers are supported
-            - "bntr" (Bounded Newton Trust-Region), which supports bound constraints
-            - "gqtpar" (Nearly exact trust-region solver using an iterative method),
-                which does not support bound constraints.
         lower_bounds (np.ndarray): Lower bounds for the subproblem.
             Must have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
         upper_bounds (np.ndarray): Upper bounds for the subproblem.
             Must have same length as the initial guess of the
             parameter vector. Equal to 1 if not provided by the user.
+        delta (float) Current trust-region radius
+        solver (str): Minimizer that will be used to solve the quadratic subproblem.
+            Currently, two interal solvers are supported
+            - "bntr" (Bounded Newton Trust-Region), which supports bound constraints
+            - "gqtpar" (Nearly exact trust-region solver using an iterative method),
+                which does not support bound constraints.
+        solver_sub (str): Trust-region subsolver to use. Currently, two solvers
+            are supported:
+            - "BNTR" (default, supports bound constraints)
+            - "GQTPAR (does not support bound constraints)
+        maxiter_sub (int): Maximum number of iterations to perform when solving the
+            trust-region subproblem.
+        maxiter_steepest_descent (int): Maximum number of steepest descent iterations
+            to perform when the trust-region subsolver BNTR is used.
+        step_size_newton (float): Parameter to scale the size of the newton step
+            when the trust-region subsolver BNTR is used.
+        ftol_abs_sub (float): Convergence tolerance for the absolute difference
+            between f(k+1) - f(k) in trust-region subproblem ("BNTR").
+        ftol_scaled_sub (float): Convergence tolerance for the scaled difference
+            between f(k+1) - f(k) in trust-region subproblem ("BNTR").
+        xtol_sub (float): Convergence tolerance for the absolute difference
+            between max(x(k+1) - x(k)) in trust-region subproblem ("BNTR").
+        gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
+            in the trust-region subproblem ("BNTR").
+        gtol_rel_sub (float): Convergence tolerance for the relative gradient norm
+            in the trust-region subproblem ("BNTR").
+        gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm
+            in the trust-region subproblem ("BNTR").
+        steptol (float): Convergence tolerance for the size of the trust-region radius
+            in the trust-region subproblem ("BNTR").
+        k_easy (float): topping criterion for the "easy" case in the trust-region
+            subproblem ("GQTPAR").
+        k_hard (float): Stopping criterion for the "hard" case in the trust-region
+            subproblem ("GQTPAR").
 
     Returns:
         (dict): Result dictionary with the followng keys
             - "x" (np.ndarray): The solution vector of shape (n,)
             - "criterion": The value of the criterion functions associated
                 with the solution
-            - "n_iterations": Number of iterations performed.
+            - "n_iterations": Number of iterations performed before termination.
+            - "success" (bool): Boolean indicating whether a solution has been found
+                before reaching maxiter.
     """
     # Initial guess
     n = solution.shape[0]
@@ -259,10 +289,15 @@ def solve_subproblem(
             "steptol": steptol,
         }
         result = minimize_bntr_quadratic(
-            x0, main_model, lower_bounds, upper_bounds, **options
+            main_model, lower_bounds, upper_bounds, **options
         )
     elif solver == "gqtpar":
-        result = minimize_gqtpar_quadratic(main_model, maxiter=maxiter)
+        result = minimize_gqtpar_quadratic(
+            main_model,
+            k_easy=k_easy,
+            k_hard=k_hard,
+            maxiter=maxiter,
+        )
     else:
         raise ValueError("Subproblem solver is not supported.")
 

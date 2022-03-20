@@ -3,11 +3,11 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization.bounded_newton_trustregion import minimize_bntr_quadratic
-from estimagic.optimization.quadratic_subsolvers import (
-    minimize_gqtpar_quadratic,
+from estimagic.optimization._trustregion_conjugate_gradient_quadratic import (
+    minimize_trust_cg,
 )
-from estimagic.optimization.trustregion_conjugate_gradient import minimize_trust_cg
+from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
+from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -45,10 +45,9 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
 
 
 @pytest.mark.parametrize(
-    "x, linear_terms, square_terms, lower_bound, upper_bound, x_expected",
+    "linear_terms, square_terms, lower_bound, upper_bound, x_expected",
     [
         (
-            np.zeros(3),
             np.array([0.0002877431832243, 0.00763968126032, 0.01217268029151]),
             np.array(
                 [
@@ -74,7 +73,6 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
             np.array([0.000122403, 3.92712e-06, -8.2519e-06]),
         ),
         (
-            np.zeros(3),
             np.array([7.898833044695e-06, 254.9676549378, 0.0002864050095122]),
             np.array(
                 [
@@ -90,7 +88,6 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
     ],
 )
 def test_bounded_newton_trustregion(
-    x,
     linear_terms,
     square_terms,
     lower_bound,
@@ -113,7 +110,7 @@ def test_bounded_newton_trustregion(
         "steptol": 1e-8,
     }
 
-    result = minimize_bntr_quadratic(x, main_model, lower_bound, upper_bound, **options)
+    result = minimize_bntr_quadratic(main_model, lower_bound, upper_bound, **options)
 
     aaae(result["x"], x_expected)
 

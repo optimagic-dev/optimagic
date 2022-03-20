@@ -58,7 +58,6 @@ def pounders(
     n_cores=DEFAULT_N_CORES,
 ):
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
-
     For details, see :ref:`_own_algorithms`.
     """
     if isinstance(batch_evaluator, str):
@@ -93,7 +92,9 @@ def pounders(
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 1e-8,
-        "steptol": 1e-12,
+        "steptol": 1e-8,
+        "k_easy": 0.1,
+        "k_hard": 0.2,
     }
     trustregion_subproblem_options = {
         **default_options,
@@ -134,6 +135,8 @@ def pounders(
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
         steptol_sub=trustregion_subproblem_options["steptol"],
+        k_easy_sub=trustregion_subproblem_options["k_easy"],
+        k_hard_sub=trustregion_subproblem_options["k_hard"],
         batch_evaluator=batch_evaluator,
         n_cores=n_cores,
     )
@@ -173,6 +176,8 @@ def internal_solve_pounders(
     gtol_rel_sub,
     gtol_scaled_sub,
     steptol_sub,
+    k_easy_sub,
+    k_hard_sub,
     batch_evaluator,
     n_cores,
 ):
@@ -191,9 +196,6 @@ def internal_solve_pounders(
         gtol_abs (float): Convergence tolerance for the absolute gradient norm.
         gtol_rel (float): Convergence tolerance for the relative gradient norm.
         gtol_scaled (float): Convergence tolerance for the scaled gradient norm.
-        max_interpolation_points (int). Maximum number of interpolation points.
-            If None, the default value 2 * n + 1 is used, where n is the length
-            of the parameter vector.
         maxiter (int): Maximum number of iterations. If reached, terminate.
         delta (float): Delta, initial trust-region radius.
         delta_min (float): Minimal trust-region radius.
@@ -217,17 +219,34 @@ def internal_solve_pounders(
         c2 (int)): Treshold for accepting the norm of our current x candidate.
             Equal to 10 by default. Argument to find_affine_points() in case
             the input array *model_improving_points* is not zero.
-        solver_sub (str): Bound-constraint minimizer for the subproblem.
-            Currently, three solvers from the scipy library are supported.
-            - "trust-constr" (default)
-            - "L-BFGS-B"
-            - "SLSQP"
-        ftol_sub (float): Tolerance for f, the criterion function value.
-            Stopping criterion for the subproblem.
+        solver_sub (str): Trust-region subsolver to use. Currently, two solvers
+            are supported:
+            - "BNTR" (default, supports bound constraints)
+            - "GQTPAR (does not support bound constraints)
+        maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
+        maxiter_steepest_descent (int): Maximum number of steepest descent iterations
+            to perform when the trust-region subsolver BNTR is used.
+        step_size_newton (float): Parameter to scale the size of the newton step
+            when the trust-region subsolver BNTR is used.
+        ftol_abs_sub (float): Convergence tolerance for the absolute difference
+            between f(k+1) - f(k) in trust-region subproblem ("BNTR").
+        ftol_scaled_sub (float): Convergence tolerance for the scaled difference
+            between f(k+1) - f(k) in trust-region subproblem ("BNTR").
         xtol_sub (float): Tolerance for solution vector x.
-            Stopping criterion for the subproblem.
-        gtol_sub (float): Tolerance for the absolute gradient norm.
-            Stopping criterion for the subproblem.
+        xtol_sub (float): Convergence tolerance for the absolute difference
+            between max(x(k+1) - x(k)) in trust-region subproblem ("BNTR").
+        gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
+            in the trust-region subproblem ("BNTR").
+        gtol_rel_sub (float): Convergence tolerance for the relative gradient norm
+            in the trust-region subproblem ("BNTR").
+        gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm
+            in the trust-region subproblem ("BNTR").
+        steptol (float): Convergence tolerance for the size of the trust-region radius
+            in the trust-region subproblem ("BNTR").
+        k_easy_sub (float): topping criterion for the "easy" case in the trust-region
+            subproblem ("GQTPAR").
+        k_hard_sub (float): Stopping criterion for the "hard" case in the trust-region
+            subproblem ("GQTPAR").
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or callable with the same interface
             as the estimagic batch_evaluators.
@@ -236,7 +255,6 @@ def internal_solve_pounders(
 
     Returns:
         (dict) Result dictionary containing:
-
         - solution_x (np.ndarray): Solution vector of shape (n,).
         - solution_criterion (np.ndarray): Values of the criterion function at the
             solution vector. Shape (n_obs,).
@@ -245,7 +263,8 @@ def internal_solve_pounders(
             evaluations. Shape (history.get_n_fun(), n_obs)
         - n_iterations (int): Number of iterations the algorithm ran before finding a
             solution vector or reaching maxiter.
-        - message (str): Message to the user. Currently it says: "Under development."
+        - "success" (bool): Boolean indicating whether a solution has been found
+            before reaching maxiter.
     """
     history = LeastSquaresHistory()
 
@@ -304,6 +323,8 @@ def internal_solve_pounders(
             gtol_rel=gtol_rel_sub,
             gtol_scaled=gtol_scaled_sub,
             steptol=steptol_sub,
+            k_easy=k_easy_sub,
+            k_hard=k_hard_sub,
         )
         if abs(result_sub["criterion"]) < np.finfo(float).eps:
             q_min = -np.finfo(float).eps

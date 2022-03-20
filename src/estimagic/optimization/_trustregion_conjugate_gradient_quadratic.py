@@ -26,8 +26,8 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
     n = model_gradient.shape[0]
     maxiter = 2 * n
 
-    abstol = 1.0e-8
-    reltol = 1.0e-6
+    gtol_abs = 1.0e-8
+    gtol_rel = 1.0e-6
 
     residual = np.copy(model_gradient)
     x_candidate = np.zeros(n)
@@ -35,12 +35,13 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
     # Use steepest descent direction at initial point
     direction = -residual
 
-    gnorm = np.linalg.norm(residual)
-    stop_tol = max(abstol, reltol * gnorm)
+    gradient_norm = np.linalg.norm(residual)
+    stop_tol = max(gtol_abs, gtol_rel * gradient_norm)
 
-    niter = 0
-    while gnorm > stop_tol and niter < maxiter:
-        niter += 1
+    for _niter in range(maxiter):
+
+        if gradient_norm <= stop_tol:
+            break
 
         square_term = np.dot(np.dot(direction, model_hessian), direction)
 
@@ -58,7 +59,7 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
         x_candidate, residual, direction = _update_vectors_for_next_iteration(
             x_candidate, residual, direction, model_hessian, alpha
         )
-        gnorm = np.linalg.norm(residual)
+        gradient_norm = np.linalg.norm(residual)
 
     return x_candidate
 

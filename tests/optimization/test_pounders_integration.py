@@ -74,28 +74,10 @@ def trustregion_subproblem_options():
         "gtol_rel": 1e-8,
         "gtol_scaled": 1e-8,
         "steptol": 1e-8,
+        "k_easy": 0.1,
+        "k_hard": 0.2,
     }
     return out
-
-
-start_params = [
-    np.array([0.15, 0.008, 0.01]),
-    np.array([1e-6, 1e-2, 1e-6]),
-]
-
-TEST_CASES = []
-for subsolver in ["bntr", "gqtpar"]:
-    for x0 in start_params:
-        for gtol in [1e-8]:
-            for subtol in [1e-8, 1e-9]:
-                TEST_CASES.append(
-                    (
-                        x0,
-                        gtol,
-                        subsolver,
-                        {"ftol": subtol, "xtol": subtol, "gtol": subtol},
-                    )
-                )
 
 
 @pytest.mark.parametrize(
@@ -110,7 +92,7 @@ def test_bntr(start_vec, criterion, options, trustregion_subproblem_options):
 
     gtol_abs = 1e-8
     gtol_rel = 1e-8
-    gtol_scaled = 1e-12
+    gtol_scaled = 1e-8
 
     result = internal_solve_pounders(
         x0=start_vec,
@@ -132,6 +114,8 @@ def test_bntr(start_vec, criterion, options, trustregion_subproblem_options):
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
         steptol_sub=trustregion_subproblem_options["steptol"],
+        k_easy_sub=trustregion_subproblem_options["k_easy"],
+        k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
         batch_evaluator=joblib_batch_evaluator,
         **options,
@@ -169,6 +153,8 @@ def test_gqtpar(start_vec, criterion, options, trustregion_subproblem_options):
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
         steptol_sub=trustregion_subproblem_options["steptol"],
+        k_easy_sub=trustregion_subproblem_options["k_easy"],
+        k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
         batch_evaluator=joblib_batch_evaluator,
         **options,
