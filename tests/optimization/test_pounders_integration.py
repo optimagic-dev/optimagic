@@ -73,7 +73,7 @@ def trustregion_subproblem_options():
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 1e-8,
-        "steptol": 1e-8,
+        "steptol": 1e-12,
         "k_easy": 0.1,
         "k_hard": 0.2,
     }
