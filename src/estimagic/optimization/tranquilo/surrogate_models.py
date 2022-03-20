@@ -22,8 +22,8 @@ def fit_ols(centered_x, centered_f, *, fit_intercept=True, interaction_terms=Tru
         - "linear_terms" np.ndarray of shape (n_params, n_residuals)
         - "square_terms" np.ndarray of shape (n_params, n_residuals) if
         interaction_terms is False, otherwise (k, k, n_residuals) where k denotes the
-        number of squared and interaction terms. In the second case it the matrix is
-        lower triangular in the first two dimensions
+        number of squared and interaction terms. In the second case the matrix is lower
+        triangular in the first two dimensions
         - "residuals" np.ndarray of shape (n_samples, n_residuals), the residuals of the
         fitted linear model
 
