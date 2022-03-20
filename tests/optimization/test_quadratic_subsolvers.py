@@ -45,7 +45,7 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
 
 
 @pytest.mark.parametrize(
-    "linear_terms, square_terms, lower_bound, upper_bound, x_expected",
+    "linear_terms, square_terms, lower_bounds, upper_bounds, x_expected",
     [
         (
             np.array([0.0002877431832243, 0.00763968126032, 0.01217268029151]),
@@ -90,8 +90,8 @@ def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expe
 def test_bounded_newton_trustregion(
     linear_terms,
     square_terms,
-    lower_bound,
-    upper_bound,
+    lower_bounds,
+    upper_bounds,
     x_expected,
 ):
     MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
@@ -110,7 +110,7 @@ def test_bounded_newton_trustregion(
         "steptol": 1e-8,
     }
 
-    result = minimize_bntr_quadratic(main_model, lower_bound, upper_bound, **options)
+    result = minimize_bntr_quadratic(main_model, lower_bounds, upper_bounds, **options)
 
     aaae(result["x"], x_expected)
 

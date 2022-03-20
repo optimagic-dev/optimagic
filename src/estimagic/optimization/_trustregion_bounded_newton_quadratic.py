@@ -22,7 +22,7 @@ def take_preliminary_steepest_descent_step_and_check_for_solution(
     gtol_rel,
     gtol_scaled,
 ):
-    """Take a preliminary steepest descent step and check if it finds a solution."""
+    """Take a preliminary steepest descent step and check if we find a solution."""
     f_candidate = evaluate_model_criterion(
         x_candidate, model.linear_terms, model.square_terms
     )

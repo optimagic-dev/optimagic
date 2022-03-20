@@ -212,27 +212,27 @@ def solve_subproblem(
             - "bntr" (Bounded Newton Trust-Region), which supports bound constraints
             - "gqtpar" (Nearly exact trust-region solver using an iterative method),
                 which does not support bound constraints.
-        solver_sub (str): Trust-region subsolver to use. Currently, two solvers
+        solver (str): Trust-region subsolver to use. Currently, two solvers
             are supported:
             - "BNTR" (default, supports bound constraints)
             - "GQTPAR (does not support bound constraints)
-        maxiter_sub (int): Maximum number of iterations to perform when solving the
+        maxiter (int): Maximum number of iterations to perform when solving the
             trust-region subproblem.
         maxiter_steepest_descent (int): Maximum number of steepest descent iterations
             to perform when the trust-region subsolver BNTR is used.
         step_size_newton (float): Parameter to scale the size of the newton step
             when the trust-region subsolver BNTR is used.
-        ftol_abs_sub (float): Convergence tolerance for the absolute difference
+        ftol_abs (float): Convergence tolerance for the absolute difference
             between f(k+1) - f(k) in trust-region subproblem ("BNTR").
-        ftol_scaled_sub (float): Convergence tolerance for the scaled difference
+        ftol_scaled (float): Convergence tolerance for the scaled difference
             between f(k+1) - f(k) in trust-region subproblem ("BNTR").
-        xtol_sub (float): Convergence tolerance for the absolute difference
+        xtol (float): Convergence tolerance for the absolute difference
             between max(x(k+1) - x(k)) in trust-region subproblem ("BNTR").
-        gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
+        gtol_abs (float): Convergence tolerance for the absolute gradient norm
             in the trust-region subproblem ("BNTR").
-        gtol_rel_sub (float): Convergence tolerance for the relative gradient norm
+        gtol_rel (float): Convergence tolerance for the relative gradient norm
             in the trust-region subproblem ("BNTR").
-        gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm
+        gtol_scaled (float): Convergence tolerance for the scaled gradient norm
             in the trust-region subproblem ("BNTR").
         steptol (float): Convergence tolerance for the size of the trust-region radius
             in the trust-region subproblem ("BNTR").
@@ -242,11 +242,11 @@ def solve_subproblem(
             subproblem ("GQTPAR").
 
     Returns:
-        (dict): Result dictionary with the followng keys
+        (dict): Result dictionary containing the followng keys:
             - "x" (np.ndarray): The solution vector of shape (n,)
-            - "criterion": The value of the criterion functions associated
+            - "criterion" (float): The value of the criterion functions associated
                 with the solution
-            - "n_iterations": Number of iterations performed before termination.
+            - "n_iterations" (int): Number of iterations performed before termination.
             - "success" (bool): Boolean indicating whether a solution has been found
                 before reaching maxiter.
     """

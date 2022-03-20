@@ -56,29 +56,29 @@ def minimize_bntr_quadratic(
 ):
     """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient method.
 
-    BNTR (Bounded Newton Trust Rregion) belongs to the bounded Newton-Krylov class of
-    algorithms. It uses an active-set approach to solve the symmetric system of
-    equations:
+    The BNTR (Bounded Newton Trust Rregion) algorithm uses an active-set approach
+    to solve the symmetric system of equations:
 
         Hessian @ x = - gradient
 
-    only for inactive parameters of x in the interior of the bounds.
-    The active-set estimation is based on Bertsekas (:cite:`Bertsekas1982`).
+    only for the inactive parameters of x that lie within the bounds. The active-set
+    estimation employed here is based on Bertsekas (:cite:`Bertsekas1982`).
 
-    BNTR globalizes the Newton step using a trust-region method based on the
-    predicted versus actual reduction in the criterion function. The trust-region
-    radius is increased only if the accepted step is at the trust-region boundary.
+    In the main loop, BNTR globalizes the Newton step using a trust-region method
+    based on the predicted versus actual reduction in the criterion function.
+    The trust-region radius is increased only if the accepted step is at the
+    trust-region boundary.
 
 
     Args:
+        model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e.:
+            - "linear_terms", a np.ndarray of shape (n,) and
+            - "square_terms", a np.ndarray of shape (n,n).
         lower_bounds (np.ndarray): Lower bound on parameter vector x.
             Must have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
         upper_bounds (np.ndarray): Upper bounds on parameter vector x.
-        main_model (namedtuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
         maxiter (int): Maximum number of iterations. If reached, terminate.
         maxiter_steepest_descent (int): Maximum number of steepest descent iterations
             to perform when the trust-region subsolver BNTR is used.

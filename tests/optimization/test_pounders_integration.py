@@ -41,7 +41,7 @@ def criterion():
 
 
 @pytest.fixture()
-def options():
+def pounders_options():
     out = {
         "delta": 0.1,
         "delta_min": 1e-6,
@@ -87,7 +87,7 @@ def trustregion_subproblem_options():
         (np.array([1e-3, 1e-3, 1e-3])),
     ],
 )
-def test_bntr(start_vec, criterion, options, trustregion_subproblem_options):
+def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_options):
     solver_sub = "bntr"
 
     gtol_abs = 1e-8
@@ -118,7 +118,7 @@ def test_bntr(start_vec, criterion, options, trustregion_subproblem_options):
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
         batch_evaluator=joblib_batch_evaluator,
-        **options,
+        **pounders_options,
     )
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
@@ -126,7 +126,7 @@ def test_bntr(start_vec, criterion, options, trustregion_subproblem_options):
 
 
 @pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])
-def test_gqtpar(start_vec, criterion, options, trustregion_subproblem_options):
+def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_options):
     solver_sub = "gqtpar"
 
     gtol_abs = 1e-8
@@ -157,7 +157,7 @@ def test_gqtpar(start_vec, criterion, options, trustregion_subproblem_options):
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
         batch_evaluator=joblib_batch_evaluator,
-        **options,
+        **pounders_options,
     )
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
