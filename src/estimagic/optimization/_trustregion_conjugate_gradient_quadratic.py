@@ -18,8 +18,8 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
     n = model_gradient.shape[0]
     maxiter = 2 * n
 
-    gtol_abs = 1.0e-8
-    gtol_rel = 1.0e-6
+    gtol_abs = 1e-8
+    gtol_rel = 1e-6
 
     residual = np.copy(model_gradient)
     x_candidate = np.zeros(n)

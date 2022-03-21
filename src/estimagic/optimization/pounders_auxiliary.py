@@ -189,6 +189,7 @@ def solve_subproblem(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
+    steptol,
     k_easy,
     k_hard
 ):
@@ -283,6 +284,7 @@ def solve_subproblem(
             "gtol_abs": gtol_abs,
             "gtol_rel": gtol_rel,
             "gtol_scaled": gtol_scaled,
+            "steptol": steptol,
         }
         result = minimize_bntr_quadratic(
             main_model, lower_bounds, upper_bounds, **options

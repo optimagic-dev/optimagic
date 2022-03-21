@@ -52,6 +52,7 @@ def minimize_bntr_quadratic(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
+    steptol
 ):
     """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient method.
 
@@ -207,6 +208,7 @@ def minimize_bntr_quadratic(
                 gtol_abs=gtol_abs,
                 gtol_rel=gtol_rel,
                 gtol_scaled=gtol_scaled,
+                steptol=steptol,
             )
 
         if converged is True:
