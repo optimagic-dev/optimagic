@@ -38,7 +38,7 @@ def pounders(
     upper_bounds,
     convergence_absolute_gradient_tolerance=1e-8,
     convergence_relative_gradient_tolerance=1e-8,
-    convergence_scaled_gradient_tolerance=1e-8,
+    convergence_scaled_gradient_tolerance=0,
     max_interpolation_points=None,
     stopping_max_iterations=200,
     trustregion_initial_radius=0.1,
