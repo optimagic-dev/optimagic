@@ -7,21 +7,13 @@ import numpy as np
 def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
     """Minimize the quadratic trust-region subproblem using Conjugate Gradient method.
 
-    This algorithm is an implementation of the Steihaug-Toint truncated
-    Conjugate Gradient algorithm as described in
-
-        T. Steihaug (1983), "The conjugate gradient method and trust regions in large
-            scale optimization", SIAM Journal on Numerical Analysis 20 (3),
-            pp. 626-637
-
     Args:
         model_gradient (np.ndarray): Gradient of the quadratic model. Shape (n,).
         model_hessian (np.ndarray): Hessian of the quadratic model. Shape (n, n).
         trustregion_radius (float): Radius of the trust-region.
 
     Returns:
-        (np.ndarray): Solution vector to the quadratic trust-region subproblem
-            with shape (n,).
+        (np.ndarray): Solution vector of shape (n,).
     """
     n = model_gradient.shape[0]
     maxiter = 2 * n
@@ -43,16 +35,16 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
         if gradient_norm <= stop_tol:
             break
 
-        square_term = np.dot(np.dot(direction, model_hessian), direction)
+        square_terms = np.dot(np.dot(direction, model_hessian), direction)
 
         distance_to_boundary = _get_distance_to_trustregion_boundary(
             x_candidate, direction, trustregion_radius
         )
 
         # Length of the Conjugate Gradient step
-        alpha = np.dot(residual, residual) / square_term
+        alpha = np.dot(residual, residual) / square_terms
 
-        if square_term <= 0 or alpha > distance_to_boundary:
+        if square_terms <= 0 or alpha > distance_to_boundary:
             x_candidate = x_candidate + distance_to_boundary * direction
             break
 

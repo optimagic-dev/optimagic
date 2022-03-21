@@ -92,7 +92,6 @@ def pounders(
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 1e-8,
-        "steptol": 1e-12,
         "k_easy": 0.1,
         "k_hard": 0.2,
     }
@@ -134,7 +133,6 @@ def pounders(
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
-        steptol_sub=trustregion_subproblem_options["steptol"],
         k_easy_sub=trustregion_subproblem_options["k_easy"],
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         batch_evaluator=batch_evaluator,
@@ -175,7 +173,6 @@ def internal_solve_pounders(
     gtol_abs_sub,
     gtol_rel_sub,
     gtol_scaled_sub,
-    steptol_sub,
     k_easy_sub,
     k_hard_sub,
     batch_evaluator,
@@ -240,8 +237,6 @@ def internal_solve_pounders(
         gtol_rel_sub (float): Convergence tolerance for the relative gradient norm
             in the trust-region subproblem ("BNTR").
         gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm
-            in the trust-region subproblem ("BNTR").
-        steptol (float): Convergence tolerance for the size of the trust-region radius
             in the trust-region subproblem ("BNTR").
         k_easy_sub (float): topping criterion for the "easy" case in the trust-region
             subproblem ("GQTPAR").
@@ -322,20 +317,19 @@ def internal_solve_pounders(
             gtol_abs=gtol_abs_sub,
             gtol_rel=gtol_rel_sub,
             gtol_scaled=gtol_scaled_sub,
-            steptol=steptol_sub,
             k_easy=k_easy_sub,
             k_hard=k_hard_sub,
         )
-        if abs(result_sub["criterion"]) < np.finfo(float).eps:
-            q_min = -np.finfo(float).eps
-        else:
-            q_min = -result_sub["criterion"]
 
         x_candidate = x_accepted + result_sub["x"] * delta
         residuals_candidate = criterion(x_candidate)
         history.add_entries(x_candidate, residuals_candidate)
 
-        rho = (history.get_critvals(accepted_index) - history.get_critvals(-1)) / q_min
+        predicted_reduction = history.get_critvals(
+            accepted_index
+        ) - history.get_critvals(-1)
+        actual_reduction = -result_sub["criterion"]
+        rho = np.divide(predicted_reduction, actual_reduction)
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
             residual_model = residual_model._replace(

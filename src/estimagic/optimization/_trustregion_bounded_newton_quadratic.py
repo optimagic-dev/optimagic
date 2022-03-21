@@ -22,7 +22,7 @@ def take_preliminary_steepest_descent_step_and_check_for_solution(
     gtol_rel,
     gtol_scaled,
 ):
-    """Take a preliminary steepest descent step and check if it finds a solution."""
+    """Take a preliminary steepest descent step and check if we find a solution."""
     f_candidate = evaluate_model_criterion(
         x_candidate, model.linear_terms, model.square_terms
     )
@@ -384,7 +384,6 @@ def check_for_convergence_conjugate_gradient(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
-    steptol,
 ):
     """Check if we have found a solution."""
     direction_fischer_burmeister = _get_fischer_burmeister_direction_vector(
@@ -403,8 +402,6 @@ def check_for_convergence_conjugate_gradient(
     elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < ftol_scaled:
         converged = True
     elif np.max(np.abs(x_old - x_candidate)) < xtol:
-        converged = True
-    elif trustregion_radius < steptol:
         converged = True
     else:
         converged = False

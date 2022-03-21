@@ -21,14 +21,13 @@ def get_initial_guess_for_lambdas(
     section 7.3.8 (p. 192) from :cite:`Conn2000`.
 
     Args:
-        gnorm (float): Gradient norm.
         main_model (namedtuple): Named tuple containing the parameters of the
             main model, i.e.:
             - "linear_terms", a np.ndarray of shape (n,) and
             - "square_terms", a np.ndarray of shape (n,n).
 
     Returns:
-        dict: Dictionary containing the initial guess for the damping
+        (dict): Dictionary containing the initial guess for the damping
             factor lambda, along with its lower and upper bound.
             The respective keys are:
             - "candidate"
