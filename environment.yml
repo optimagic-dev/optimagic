@@ -45,6 +45,7 @@ dependencies:
   - chaospy
   - nb_black
   - pybaum
+  - numba
 
   - pip:
       - black
