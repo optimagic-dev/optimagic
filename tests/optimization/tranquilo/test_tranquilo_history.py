@@ -1,4 +1,6 @@
 """Test the history class for least-squares optimizers."""
+from collections import namedtuple
+
 import numpy as np
 import pytest
 from estimagic.optimization.tranquilo.tranquilo_history import History
@@ -92,3 +94,19 @@ def test_add_entries_initialized_extension_needed():
         assert isinstance(entry, np.ndarray)
 
     assert history.get_n_fun() == 8
+
+
+def test_get_indices_in_trustregion():
+    history = History(functype="least_squares")
+    xs = [[1, 1], [1.1, 1.2], [1.5, 1], [0.9, 0.9]]
+    fvecs = np.zeros((4, 3))
+    history.add_entries(xs, fvecs)
+
+    trustregion = namedtuple("TrustRegion", ["center", "radius"])(
+        center=np.ones(2),
+        radius=0.3,
+    )
+
+    indices = history.get_indices_in_trustregion(trustregion)
+
+    aaae(indices, np.array([0, 1, 3]))

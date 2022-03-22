@@ -124,12 +124,14 @@ class History:
     def get_n_fun(self):
         return self.n_fun
 
-    def get_indices_in_trustregion(self, center, radius, norm="infinity"):
+    def get_indices_in_trustregion(self, trustregion, norm="infinity"):
         if norm not in ("infinity", "euclidean"):
             raise ValueError("norm must be 'infinity' or 'euclidean'")
 
         xs = self.get_xs()
-        out = _find_indices_in_trust_region(xs, center=center, radius=radius)
+        out = _find_indices_in_trust_region(
+            xs, center=trustregion.center, radius=trustregion.radius
+        )
 
         if norm != "infinity":
             # Important: Only screen the indices that are in the trustregion according
