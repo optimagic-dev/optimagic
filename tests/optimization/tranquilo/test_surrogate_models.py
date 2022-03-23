@@ -2,12 +2,12 @@ import numpy as np
 import pytest
 from estimagic import first_derivative
 from estimagic import second_derivative
-from estimagic.optimization.tranquilo.surrogate_models import fit_ols
+from estimagic.optimization.tranquilo.surrogate_models import get_fitter
 from numpy.testing import assert_array_almost_equal
 
 
 def aaae(x, y):
-    assert_array_almost_equal(x, y, decimal=3)
+    assert_array_almost_equal(x, y, decimal=2)
 
 
 @pytest.fixture
@@ -40,6 +40,7 @@ def quadratic_case():
     square_terms = np.array(
         [[-1, 0, 0, 0], [20, -2, 0, 0], [35, 25, -3, 0], [45, 40, 30, -4]]
     )
+    square_terms += square_terms.T
 
     # random data
     x = np.array([x0 + np.random.uniform(-0.01 * x0, 0.01 * x0) for _ in range(10_000)])
@@ -56,29 +57,31 @@ def quadratic_case():
     return out
 
 
-def test_fit_ols_against_truth(quadratic_case):
+def test_fit_ols_agfainst_truth(quadratic_case):
+    fit_ols = get_fitter("ols")
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
-
     aaae(got["linear_terms"].squeeze(), quadratic_case["linear_terms_expected"])
     aaae(got["square_terms"].squeeze(), quadratic_case["square_terms_expected"])
 
 
-def test_fit_ols_against_gradient(quadratic_case):
+@pytest.mark.parametrize("model", ["ols", "ridge"])
+def test_fit_ols_against_gradient(model, quadratic_case):
+    fit_ols = get_fitter(model, {"l2_penalty_square": 0})
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
 
     a = got["linear_terms"].squeeze()
-    b = (got["square_terms"] + got["square_terms"].transpose(1, 0, 2)).squeeze()
-    grad = a + b @ quadratic_case["x0"]
+    grad = a + got["square_terms"].squeeze() @ quadratic_case["x0"]
 
     gradient = first_derivative(quadratic_case["func"], quadratic_case["x0"])
     aaae(gradient["derivative"], grad)
 
 
-def test_fit_ols_against_hessian(quadratic_case):
+@pytest.mark.parametrize(
+    "model, options",
+    [("ols", None), ("ridge", {"l2_penalty_linear": 0, "l2_penalty_square": 0})],
+)
+def test_fit_ols_against_hessian(model, options, quadratic_case):
+    fit_ols = get_fitter(model, options)
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
-
     hessian = second_derivative(quadratic_case["func"], quadratic_case["x0"])
-
-    tril = got["square_terms"]
-    hess = tril + tril.transpose(1, 0, 2)
-    aaae(hessian["derivative"], hess.squeeze())
+    aaae(hessian["derivative"], got["square_terms"].squeeze())

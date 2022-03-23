@@ -6,32 +6,30 @@ import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 
 
-def get_fitter(fitter, fitter_options=None, data_options=None):
+def get_fitter(fitter, user_options=None):
     """Get a fit-function with partialled options.
 
     Args:
         fitter (str or callable): Name of a fit method or a fit method. The first
             argument of any fit method needs to be ``x``, the second ``y``.
 
-        fitter_options (dict): Options for the fit method. The following are supported:
-            - l2_penalty (float): Value to be used for the l2 penalty.
-
-        data_options (dict): Options for the creation of the feature matrix. The
-            following are supported:
+        user_options (dict): Options for the fit method. The following are supported:
+            - l2_penalty_linear (float): Penalty that is applied to all linear terms.
+            - l2_penalty_square (float): Penalty that is applied to all square terms,
+            that is the quadratic and interaction terms.
             - fit_intercept (bool): Whether to calculate the intercept for this model.
             If set to False, no intercept will be used in calculations (i.e. data is
             expected to be centered).
-            - quadratic_terms (bool): Whether to use quadratic terms as features in the
+            - include_squares (bool): Whether to use quadratic terms as features in the
             regression.
-            - interaction_terms (bool): Whether to use interaction terms as features in
-            the regression.
+            - include_interaction (bool): Whether to use interaction terms as features
+            in the regression.
 
     Returns:
         callable: The fit method.
 
     """
-    fitter_options = fitter_options or {}
-    data_options = data_options or {}
+    user_options = user_options or {}
 
     built_in_fitters = {"ols": fit_ols, "ridge": fit_ridge}
 
@@ -43,21 +41,29 @@ def get_fitter(fitter, fitter_options=None, data_options=None):
         _fitter_name = getattr(fitter, "__name__", "your solver")
     else:
         raise ValueError(
-            "Invalid fitter: {fitter}. Must be one of "
-            f"{list(built_in_fitters)} or a callable."
+            f"Invalid fitter: {fitter}. Must be one of {list(built_in_fitters)} or a "
+            "callable."
         )
 
-    # consolidate fitter options
-    default_fitter_options = {"l2_penalty": 0.1}
+    default_options = {
+        "fit_intercept": True,
+        "include_squares": True,
+        "include_interaction": True,
+        "l2_penalty_linear": 0,
+        "l2_penalty_square": 0.1,
+    }
 
-    all_options = {**default_fitter_options, **fitter_options}
+    all_options = {**default_options, **user_options}
 
     args = set(inspect.signature(_fitter).parameters)
 
-    if not {"x", "y"}.issubset(args):
-        raise ValueError("fit method needs to take 'x','y' as the first two arguments.")
+    if not {"centered_x", "centered_f"}.issubset(args):
+        raise ValueError(
+            "fit method needs to take 'centered_x' and 'centered_f' as the first two "
+            "arguments."
+        )
 
-    not_options = {"x", "y"}
+    not_options = {"centered_x", "centered_f"}
     if isinstance(_fitter, partial):
         partialed_in = set(_fitter.args).union(set(_fitter.keywords))
         not_options = not_options | partialed_in
@@ -67,7 +73,7 @@ def get_fitter(fitter, fitter_options=None, data_options=None):
     reduced = {key: val for key, val in all_options.items() if key in valid_options}
 
     ignored = {
-        key: val for key, val in fitter_options.items() if key not in valid_options
+        key: val for key, val in user_options.items() if key not in valid_options
     }
 
     if ignored:
@@ -76,30 +82,7 @@ def get_fitter(fitter, fitter_options=None, data_options=None):
             f"with {_fitter_name}:\n\n {ignored}"
         )
 
-    # consolidate data options
-    default_data_options = {
-        "fit_intercept": True,
-        "quadratic_terms": True,
-        "interaction_terms": True,
-    }
-    all_options = {**default_data_options, **data_options}
-    valid_options = set(default_data_options.keys())
-
-    data_options = {
-        key: val for key, val in all_options.items() if key in valid_options
-    }
-
-    ignored = {key: val for key, val in all_options.items() if key not in valid_options}
-
-    if ignored:
-        warnings.warn(
-            "The following options were ignored because they are not compatible "
-            f"with the data options:\n\n {ignored}"
-        )
-
-    out = partial(
-        _fitter_template, fitter=_fitter, fitter_options=reduced, **data_options
-    )
+    out = partial(_fitter_template, fitter=_fitter, options=reduced)
     return out
 
 
@@ -107,25 +90,22 @@ def _fitter_template(
     centered_x,
     centered_f,
     fitter,
-    fitter_options,
-    fit_intercept,
-    quadratic_terms,
-    interaction_terms,
+    options,
 ):
     """Fit a model to the data.
 
     Args:
         fitter (str or callable): Name of a fit method or a fit method. The first
             argument of any fit method needs to be ``x``, the second ``f``.
-        fitter_options (dict): Options for the fit method. The following are supported:
-            - l2_penalty (float or np.ndarray): Value to be used for the l2 penalty.
-        fit_intercept (bool): Whether to calculate the intercept for this model. If set
-            to False, no intercept will be used in calculations (i.e. data is expected
-            to be centered).
-        quadratic_terms (bool): Whether to use quadratic terms as features in the
+        user_options (dict): Options for the fit method. The following are supported:
+            - l2_penalty (float): Value to be used for the l2 penalty.
+            - fit_intercept (bool): Whether to calculate the intercept for this model.
+            If set to False, no intercept will be used in calculations (i.e. data is
+            expected to be centered).
+            - include_squares (bool): Whether to use quadratic terms as features in the
             regression.
-        interaction_terms (bool): Whether to use interaction terms as features in the
-            regression.
+            - include_interaction (bool): Whether to use interaction terms as features
+            in the regression.
 
     Returns:
         (dict): Result dictionary containing the following entries:
@@ -134,16 +114,12 @@ def _fitter_template(
             - "square_terms" np.ndarray of shape (n_residuals, n_params, n_params)
 
     """
+    coef = fitter(centered_x, centered_f, **options)
+
     n_params = centered_x.shape[1]
     n_residuals = centered_f.shape[1]
 
-    x = _build_feature_matrix(
-        centered_x, fit_intercept, quadratic_terms, interaction_terms
-    )
-
-    fitter_options = _update_penalty_args(fitter_options, x, fit_intercept)
-
-    coef = fitter(x, centered_f, **fitter_options)
+    fit_intercept, include_squares, include_interaction = _get_data_options(options)
 
     if fit_intercept:
         intercepts, linear_terms, square_terms = np.split(
@@ -156,12 +132,12 @@ def _fitter_template(
     # results processing
     out = {"intercepts": intercepts, "linear_terms": linear_terms}
 
-    if interaction_terms:
+    if include_interaction:
         triu = _reshape_square_terms_to_triu(
-            square_terms, n_params, n_residuals, quadratic_terms
+            square_terms, n_params, n_residuals, include_squares
         )
         out["square_terms"] = triu + triu.transpose(0, 2, 1)
-    elif quadratic_terms:
+    elif include_squares:
         out["square_terms"] = np.concatenate(
             [np.diag(2 * a)[np.newaxis] for a in list(square_terms)], axis=0
         )
@@ -171,7 +147,37 @@ def _fitter_template(
     return out
 
 
-def fit_ols(x, y):
+def fit_ols(
+    centered_x, centered_f, fit_intercept, include_squares, include_interaction
+):
+    """Fit a linear model using ordinary least squares.
+
+    Args:
+        centered_x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
+            rescaled such that the trust region becomes a hypercube from -1 to 1.
+        centered_f (np.ndarray): Array of shape (n_samples, n_residuals) with function
+            evaluations that have been centered around the function value at the
+            trust region center.
+        fit_intercept (bool): Whether to calculate the intercept for this model. If set
+            to False, no intercept will be used in calculations (i.e. data is expected
+            to be centered).
+        include_squares (bool): Whether to use squared terms as features in the
+            regression.
+        include_interaction (bool): Whether to use interaction terms as features in the
+            regression.
+
+    Returns:
+        np.ndarray: The model coefficients.
+
+    """
+    x = _build_feature_matrix(
+        centered_x, fit_intercept, include_squares, include_interaction
+    )
+    coef = _fit_ols(x, centered_f)
+    return coef
+
+
+def _fit_ols(x, y):
     """Fit a linear model using least-squares.
 
     Args:
@@ -187,55 +193,97 @@ def fit_ols(x, y):
     return coef
 
 
-def fit_ridge(x, y, l2_penalty):
+def fit_ridge(
+    centered_x,
+    centered_f,
+    fit_intercept,
+    include_squares,
+    include_interaction,
+    l2_penalty_linear,
+    l2_penalty_square,
+):
+    """Fit a linear model using Ridge regression.
+
+    Args:
+        centered_x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
+            rescaled such that the trust region becomes a hypercube from -1 to 1.
+        centered_f (np.ndarray): Array of shape (n_samples, n_residuals) with function
+            evaluations that have been centered around the function value at the
+            trust region center.
+        fit_intercept (bool): Whether to calculate the intercept for this model. If set
+            to False, no intercept will be used in calculations (i.e. data is expected
+            to be centered).
+        include_squares (bool): Whether to use squared terms as features in the
+            regression.
+        include_interaction (bool): Whether to use interaction terms as features in the
+            regression.
+        l2_penalty_linear (float): Penalty that is applied to all linear terms.
+        l2_penalty_square (float): Penalty that is applied to all square terms, that is
+            the quadratic and interaction terms.
+
+    Returns:
+        np.ndarray: The model coefficients.
+
+    """
+    x = _build_feature_matrix(
+        centered_x, fit_intercept, include_squares, include_interaction
+    )
+
+    # create penalty array
+    n_params = centered_x.shape[1]
+    cutoffs = (1, n_params + 1) if fit_intercept else (0, n_params)
+
+    penalty = np.zeros(x.shape[1])
+    penalty[: cutoffs[0]] = 0
+    penalty[cutoffs[0] : cutoffs[1]] = l2_penalty_linear
+    penalty[cutoffs[1] :] = l2_penalty_square
+
+    coef = _fit_ridge(x, centered_f, penalty)
+    return coef
+
+
+def _fit_ridge(x, y, penalty):
     """Fit a linear model using ridge regression.
 
     Args:
         x (np.ndarray): Array of shape (n, p) of x-values.
         y (np.ndarray): Array of shape (n, k) of y-values.
-        l2_penalty (np.ndarray): Array of shape (p, ) of penalty values.
+        penalty (np.ndarray): Array of shape (p, ) of penalty values.
 
     Returns:
         coef (np.ndarray): Array of shape (p, k) of coefficients.
 
     """
     a = x.T @ x
-    a = np.fill_diagonal(a, a.diagonal() + l2_penalty)
     b = x.T @ y
 
-    coef, *_ = np.linalg.lstsq(a, b, rcond=None)
+    coef, *_ = np.linalg.lstsq(a + np.diag(penalty), b, rcond=None)
     coef = coef.T
     return coef
 
 
-def _build_feature_matrix(x, fit_intercept, quadratic_terms, interaction_terms):
-    if interaction_terms:
+def _build_feature_matrix(x, fit_intercept, include_squares, include_interaction):
+    if include_interaction:
         poly = PolynomialFeatures(
-            degree=2, include_bias=fit_intercept, interaction_only=not quadratic_terms
+            degree=2, include_bias=fit_intercept, interaction_only=not include_squares
         )
         features = poly.fit_transform(x)
     else:
         data = (np.ones(len(x)), x) if fit_intercept else (x,)
-        data = (*data, x**2) if quadratic_terms else data
+        data = (*data, x**2) if include_squares else data
         features = np.column_stack(data)
     return features
 
 
-def _reshape_square_terms_to_triu(square_terms, n_params, n_residuals, quadratic_terms):
-    offset = 0 if quadratic_terms else 1
+def _reshape_square_terms_to_triu(square_terms, n_params, n_residuals, include_squares):
+    offset = 0 if include_squares else 1
     idx1, idx2 = np.triu_indices(n_params, k=offset)
     triu = np.zeros((n_residuals, n_params, n_params), dtype=np.float64)
     triu[:, idx1, idx2] = square_terms
     return triu
 
 
-def _update_penalty_args(fitter_options, features, fit_intercept):
-    options = fitter_options.copy()
-    penalty_args = {"l2_penalty"}
-    for arg in penalty_args.intersection(options.keys()):
-        penalty = options[arg]
-        penalty = penalty * np.ones(features.shape[1])
-        if fit_intercept:
-            penalty[0] = 0
-        options[arg] = penalty
-    return options
+def _get_data_options(options):
+    data_options = ["fit_intercept", "include_squares", "include_interaction"]
+    out = tuple(options[key] for key in data_options)
+    return out
