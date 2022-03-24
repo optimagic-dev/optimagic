@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 
 
-def get_fitter(fitter, user_options=None):
+def get_fitter(fitter, user_options=None, return_options=False):
     """Get a fit-function with partialled options.
 
     Args:
@@ -27,6 +27,7 @@ def get_fitter(fitter, user_options=None):
 
     Returns:
         callable: The fit method.
+        dict: The options passed to fitter, is returned if return_options is True.
 
     """
     user_options = user_options or {}
@@ -82,6 +83,8 @@ def get_fitter(fitter, user_options=None):
         )
 
     out = partial(_fitter_template, fitter=_fitter, options=reduced)
+    if return_options:
+        out = (out, reduced)
     return out
 
 
