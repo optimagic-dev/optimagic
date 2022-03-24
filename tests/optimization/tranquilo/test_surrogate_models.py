@@ -6,8 +6,13 @@ from estimagic.optimization.tranquilo.surrogate_models import get_fitter
 from numpy.testing import assert_array_almost_equal
 
 
-def aaae(x, y):
-    assert_array_almost_equal(x, y, decimal=2)
+def aaae(x, y, case=None):
+    tolerance = {
+        None: 3,
+        "hessian": 2,
+        "gradient": 3,
+    }
+    assert_array_almost_equal(x, y, decimal=tolerance[case])
 
 
 @pytest.fixture
@@ -57,7 +62,7 @@ def quadratic_case():
     return out
 
 
-def test_fit_ols_agfainst_truth(quadratic_case):
+def test_fit_ols_against_truth(quadratic_case):
     fit_ols = get_fitter("ols")
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
     aaae(got["linear_terms"].squeeze(), quadratic_case["linear_terms_expected"])
@@ -73,7 +78,7 @@ def test_fit_ols_against_gradient(model, quadratic_case):
     grad = a + got["square_terms"].squeeze() @ quadratic_case["x0"]
 
     gradient = first_derivative(quadratic_case["func"], quadratic_case["x0"])
-    aaae(gradient["derivative"], grad)
+    aaae(gradient["derivative"], grad, case="gradient")
 
 
 @pytest.mark.parametrize(
@@ -84,4 +89,4 @@ def test_fit_ols_against_hessian(model, options, quadratic_case):
     fit_ols = get_fitter(model, options)
     got = fit_ols(quadratic_case["x"], quadratic_case["y"])
     hessian = second_derivative(quadratic_case["func"], quadratic_case["x0"])
-    aaae(hessian["derivative"], got["square_terms"].squeeze())
+    aaae(hessian["derivative"], got["square_terms"].squeeze(), case="hessian")

@@ -57,13 +57,12 @@ def get_fitter(fitter, user_options=None):
 
     args = set(inspect.signature(_fitter).parameters)
 
-    if not {"centered_x", "centered_f"}.issubset(args):
+    if not {"x", "y"}.issubset(args):
         raise ValueError(
-            "fit method needs to take 'centered_x' and 'centered_f' as the first two "
-            "arguments."
+            "fit method needs to take 'x' and 'y' as the first two arguments."
         )
 
-    not_options = {"centered_x", "centered_f"}
+    not_options = {"x", "y"}
     if isinstance(_fitter, partial):
         partialed_in = set(_fitter.args).union(set(_fitter.keywords))
         not_options = not_options | partialed_in
@@ -87,17 +86,17 @@ def get_fitter(fitter, user_options=None):
 
 
 def _fitter_template(
-    centered_x,
-    centered_f,
+    x,
+    y,
     fitter,
     options,
 ):
-    """Fit a model to the data.
+    """Fit a model to data.
 
     Args:
         fitter (str or callable): Name of a fit method or a fit method. The first
             argument of any fit method needs to be ``x``, the second ``f``.
-        user_options (dict): Options for the fit method. The following are supported:
+        options (dict): Options for the fit method. The following are supported:
             - l2_penalty (float): Value to be used for the l2 penalty.
             - fit_intercept (bool): Whether to calculate the intercept for this model.
             If set to False, no intercept will be used in calculations (i.e. data is
@@ -114,10 +113,10 @@ def _fitter_template(
             - "square_terms" np.ndarray of shape (n_residuals, n_params, n_params)
 
     """
-    coef = fitter(centered_x, centered_f, **options)
+    coef = fitter(x, y, **options)
 
-    n_params = centered_x.shape[1]
-    n_residuals = centered_f.shape[1]
+    n_params = x.shape[1]
+    n_residuals = y.shape[1]
 
     fit_intercept, include_squares, include_interaction = _get_data_options(options)
 
@@ -147,15 +146,13 @@ def _fitter_template(
     return out
 
 
-def fit_ols(
-    centered_x, centered_f, fit_intercept, include_squares, include_interaction
-):
+def fit_ols(x, y, fit_intercept, include_squares, include_interaction):
     """Fit a linear model using ordinary least squares.
 
     Args:
-        centered_x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
+        x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
             rescaled such that the trust region becomes a hypercube from -1 to 1.
-        centered_f (np.ndarray): Array of shape (n_samples, n_residuals) with function
+        y (np.ndarray): Array of shape (n_samples, n_residuals) with function
             evaluations that have been centered around the function value at the
             trust region center.
         fit_intercept (bool): Whether to calculate the intercept for this model. If set
@@ -170,10 +167,10 @@ def fit_ols(
         np.ndarray: The model coefficients.
 
     """
-    x = _build_feature_matrix(
-        centered_x, fit_intercept, include_squares, include_interaction
+    features = _build_feature_matrix(
+        x, fit_intercept, include_squares, include_interaction
     )
-    coef = _fit_ols(x, centered_f)
+    coef = _fit_ols(features, y)
     return coef
 
 
@@ -194,8 +191,8 @@ def _fit_ols(x, y):
 
 
 def fit_ridge(
-    centered_x,
-    centered_f,
+    x,
+    y,
     fit_intercept,
     include_squares,
     include_interaction,
@@ -205,11 +202,11 @@ def fit_ridge(
     """Fit a linear model using Ridge regression.
 
     Args:
-        centered_x (np.ndarray): Array of shape (n_samples, n_params) of x-values,
-            rescaled such that the trust region becomes a hypercube from -1 to 1.
-        centered_f (np.ndarray): Array of shape (n_samples, n_residuals) with function
-            evaluations that have been centered around the function value at the
-            trust region center.
+        x (np.ndarray): Array of shape (n_samples, n_params) of x-values, rescaled such
+            that the trust region becomes a hypercube from -1 to 1.
+        y (np.ndarray): Array of shape (n_samples, n_residuals) with function
+            evaluations that have been centered around the function value at the trust
+            region center.
         fit_intercept (bool): Whether to calculate the intercept for this model. If set
             to False, no intercept will be used in calculations (i.e. data is expected
             to be centered).
@@ -225,20 +222,20 @@ def fit_ridge(
         np.ndarray: The model coefficients.
 
     """
-    x = _build_feature_matrix(
-        centered_x, fit_intercept, include_squares, include_interaction
+    features = _build_feature_matrix(
+        x, fit_intercept, include_squares, include_interaction
     )
 
     # create penalty array
-    n_params = centered_x.shape[1]
+    n_params = x.shape[1]
     cutoffs = (1, n_params + 1) if fit_intercept else (0, n_params)
 
-    penalty = np.zeros(x.shape[1])
+    penalty = np.zeros(features.shape[1])
     penalty[: cutoffs[0]] = 0
     penalty[cutoffs[0] : cutoffs[1]] = l2_penalty_linear
     penalty[cutoffs[1] :] = l2_penalty_square
 
-    coef = _fit_ridge(x, centered_f, penalty)
+    coef = _fit_ridge(features, y, penalty)
     return coef
 
 
