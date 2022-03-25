@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from estimagic import first_derivative
 from estimagic import second_derivative
-from estimagic.optimization.tranquilo.surrogate_models import get_fitter
+from estimagic.optimization.tranquilo.fit_models import get_fitter
 from numpy.testing import assert_array_almost_equal
 
 

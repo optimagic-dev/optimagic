@@ -1,6 +1,53 @@
 import numpy as np
 
 
+def get_aggregator(aggregator, functype, model_info):
+    """Get a function that aggregates a VectorModel into a ScalarModel.
+
+    Args:
+        aggregator (str or callable): Name of an aggregator or aggregator function.
+            The function must take vector_model, residuals and model_info.
+        functype (str): One of "scalar", "least_squares" and "likelihood".
+        model_info (ModelInfo): Information that describes the functional form of
+            the model.
+
+    Returns:
+        callable: The partialled aggregator that only depends on vector_model and
+            residuals
+
+    """
+    # determine if aggregator is compatible with functype and model_info
+    # load aggregator
+    # partial stuff
+    pass
+
+
+def _aggregate_models_template(vector_model, residuals, aggregator, model_info):
+    """Aggregate a VectorModel into a ScalarModel.
+
+    Notes:
+
+    - If some aggregators have special options, we need to add a user_options argument.
+    - I still don't get why we need the residuals here, but it's not a problem. Just
+      make sure I described them correctly.
+
+    Args:
+        vector_model (VectorModel): The VectorModel to aggregate.
+        residuals (np.ndarray): The residuals on which the vector model was fit. A 1d
+            array of length n_residuals.
+        aggregator (callable): The function that does the actual aggregation.
+        model_info (ModelInfo): Information that describes the functional form of
+            the model.
+
+    Returns:
+        ScalarModel: The aggregated model
+
+    """
+    # call the aggregator with suitable arguments
+    # stick the results into a ScalarModel
+    pass
+
+
 def aggregate_residual_models(model, residuals, options, functype):
     """Aggregate residual models to main model.
 
