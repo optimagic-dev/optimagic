@@ -25,5 +25,31 @@ class ModelInfo(NamedTuple):
 
 
 def evaluate_model(scalar_model, centered_x):
-    """Evaluate a ScalarModel at centered_x."""
-    pass
+    """Evaluate a ScalarModel at centered_x.
+
+    We utilize that a quadratic model can be written in the form:
+
+    Equation 1:     f(x) = a + x.T @ b + x.T @ C @ x ,
+
+    where C is lower-triangular. Note the connection of b and C to the gradient:
+    f'(x) = b + (C + C.T) @ x, and the Hessian: f''(x) = C + C.T.
+
+    Args:
+        scalar_model (ScalarModel): The aggregated model. Has entries:
+            - 'intercept': corresponds to 'a' in the above equation
+            - 'linear_terms': corresponds to 'b' in the above equation
+            - 'square_terms': corresponds to 'C' in the above equation
+        centered_x (np.ndarray): New data. Has shape (n_samples, n_params)
+
+    Returns:
+        np.ndarray: Model evaluations, has shape (n_samples,)
+
+    """
+    y = centered_x @ scalar_model.linear_terms
+    if scalar_model.square_terms is not None:
+        for i in range(len(centered_x)):
+            x = centered_x[i]
+            y[i] += x.T @ scalar_model.square_terms @ x
+    if scalar_model.intercept is not None:
+        y += scalar_model.intercept
+    return y
