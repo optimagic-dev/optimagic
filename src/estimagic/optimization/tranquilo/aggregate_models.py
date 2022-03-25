@@ -36,6 +36,7 @@ def get_aggregator(aggregator, functype, model_info):
     elif callable(aggregator):
         _aggregator = aggregator
         _aggregator_name = getattr(aggregator, "__name__", "your aggregator")
+        _using_built_in_aggregator = False
     else:
         raise ValueError(
             "Invalid aggregator: {aggregator}. Must be one of "
@@ -53,10 +54,9 @@ def get_aggregator(aggregator, functype, model_info):
         ),
     }
 
-    def _has_squares_or_interactions(model_info):
-        return model_info.has_squares or model_info.has_interactions
-
     aggregator_compatible_with_model_info = {
+        # keys are names of aggregators and values are functions of model_info that
+        # return False in case of incompatibility
         "identity": _has_squares_or_interactions,
         "sum": _has_squares_or_interactions,
         "information_equality_linear": lambda model_info: True,  # all models allowed
@@ -72,11 +72,9 @@ def get_aggregator(aggregator, functype, model_info):
                 f"Aggregator {_aggregator_name} is not compatible with functype "
                 f"{functype}. It would not produce a quadratic main model."
             )
-        if functype == "scalar" and (
-            not model_info.has_squares and not model_info.has_interactions
-        ):
+        if functype == "scalar" and _has_squares_or_interactions(model_info):
             ValueError(
-                f"ModelInfo {model_info} is not compatible with functype {functype}. "
+                f"ModelInfo {model_info} is not compatible with functype scalar. "
                 "It would not produce a quadratic main model."
             )
         if not aggregator_compatible_with_model_info[_aggregator_name](model_info):
@@ -267,3 +265,7 @@ def aggregator_least_squares_quadratic(vector_model, residuals, model_info):
     )
 
     return intercept, linear_terms, square_terms
+
+
+def _has_squares_or_interactions(model_info):
+    return model_info.has_squares or model_info.has_interactions
