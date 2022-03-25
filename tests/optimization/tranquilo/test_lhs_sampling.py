@@ -2,14 +2,14 @@ from itertools import product
 
 import numpy as np
 import pytest
-from estimagic.optimization.trust_region_sampling import _create_upscaled_lhs_sample
-from estimagic.optimization.trust_region_sampling import _extend_upscaled_lhs_sample
-from estimagic.optimization.trust_region_sampling import _get_empty_bin_info
-from estimagic.optimization.trust_region_sampling import _scale_down_points
-from estimagic.optimization.trust_region_sampling import _scale_up_points
-from estimagic.optimization.trust_region_sampling import compute_optimality_criterion
-from estimagic.optimization.trust_region_sampling import get_existing_points
-from estimagic.optimization.trust_region_sampling import (
+from estimagic.optimization.tranquilo.lhs_sampling import _create_upscaled_lhs_sample
+from estimagic.optimization.tranquilo.lhs_sampling import _extend_upscaled_lhs_sample
+from estimagic.optimization.tranquilo.lhs_sampling import _get_empty_bin_info
+from estimagic.optimization.tranquilo.lhs_sampling import _scale_down_points
+from estimagic.optimization.tranquilo.lhs_sampling import _scale_up_points
+from estimagic.optimization.tranquilo.lhs_sampling import compute_optimality_criterion
+from estimagic.optimization.tranquilo.lhs_sampling import get_existing_points
+from estimagic.optimization.tranquilo.lhs_sampling import (
     get_next_trust_region_points_latin_hypercube,
 )
 from numpy.testing import assert_array_almost_equal as aaae
