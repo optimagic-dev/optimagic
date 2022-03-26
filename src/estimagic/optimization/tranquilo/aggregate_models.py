@@ -59,7 +59,9 @@ def get_aggregator(aggregator, functype, model_info):
         # return False in case of incompatibility
         "identity": _is_second_order_model,
         "sum": _is_second_order_model,
-        "information_equality_linear": lambda model_info: not _is_second_order_model,
+        "information_equality_linear": lambda model_info: not _is_second_order_model(
+            model_info
+        ),
         "least_squares_linear": lambda model_info: model_info.has_intercepts
         and not _is_second_order_model(model_info),
     }
@@ -67,19 +69,21 @@ def get_aggregator(aggregator, functype, model_info):
     if _using_built_in_aggregator:
         # compatibility errors
         if _aggregator_name not in aggregator_compatible_with_functype[functype]:
-            ValueError(
+            raise ValueError(
                 f"Aggregator {_aggregator_name} is not compatible with functype "
                 f"{functype}. It would not produce a quadratic main model."
             )
         if functype == "scalar" and not _is_second_order_model(model_info):
-            ValueError(
+            raise ValueError(
                 f"ModelInfo {model_info} is not compatible with functype scalar. "
                 "It would not produce a quadratic main model."
             )
         if not aggregator_compatible_with_model_info[_aggregator_name](model_info):
-            ValueError(
+            raise ValueError(
                 f"ModelInfo {model_info} is not compatible with aggregator "
-                f"{_aggregator_name}. It would not produce a quadratic main model."
+                f"{_aggregator_name}. Depending on the aggregator this may be because "
+                "it would not produce a quadratic main model or that the aggregator "
+                "requires a different residual model for theoretical reasons."
             )
 
     # create aggregator
@@ -204,11 +208,11 @@ def aggregator_information_equality_linear(vector_model, fvec_center, model_info
     """
     vm_linear_terms = vector_model.linear_terms
 
-    fisher_information = (vm_linear_terms.T @ vm_linear_terms) / len(vm_linear_terms)
+    fisher_information = vm_linear_terms.T @ vm_linear_terms
 
     intercept = fvec_center.sum(axis=0)
-    linear_terms = vm_linear_terms.mean(axis=0)
-    square_terms = np.tril(fisher_information)
+    linear_terms = vm_linear_terms.sum(axis=0)
+    square_terms = -np.tril(fisher_information)
     square_terms[np.diag_indices(len(square_terms))] = np.diag(square_terms) / 2
 
     return intercept, linear_terms, square_terms
