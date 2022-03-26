@@ -45,11 +45,17 @@ def evaluate_model(scalar_model, centered_x):
         np.ndarray: Model evaluations, has shape (n_samples,)
 
     """
-    y = centered_x @ scalar_model.linear_terms
+    _centered_x = np.atleast_2d(centered_x)
+
+    y = _centered_x @ scalar_model.linear_terms
     if scalar_model.square_terms is not None:
-        for i in range(len(centered_x)):
-            x = centered_x[i]
+        for i in range(len(_centered_x)):
+            x = _centered_x[i]
             y[i] += x.T @ scalar_model.square_terms @ x
     if scalar_model.intercept is not None:
         y += scalar_model.intercept
+
+    if centered_x.ndim == 1:
+        y = y[0]
+
     return y

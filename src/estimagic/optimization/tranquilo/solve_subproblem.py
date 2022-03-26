@@ -5,6 +5,7 @@ from functools import partial
 import numpy as np
 from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
 from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
+from estimagic.optimization.tranquilo.models import evaluate_model
 
 
 def get_subsolver(solver, user_options=None, bounds=None):
@@ -178,9 +179,15 @@ def _solve_subproblem_template(
     if "upper_bounds" in bounds:
         x = np.clip(x, -np.inf, bounds["upper_bounds"])
 
+    # make sure expected improvement is calculated accurately in case of clipping and
+    # does not depend on whether the subsolver ignores intercepts or not.
+
+    fval_at_center = evaluate_model(model, np.zeros_like(x))
+    fval_candidate = evaluate_model(model, x)
+
     result = {
         "x": x,
-        "expected_improvement": -raw_result["criterion"],
+        "expected_improvement": -(fval_at_center - fval_candidate),
         "n_iterations": raw_result["n_iterations"],
         "success": raw_result["success"],
     }

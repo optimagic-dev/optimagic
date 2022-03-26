@@ -2,6 +2,7 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
+from estimagic.optimization.tranquilo.models import ScalarModel
 from estimagic.optimization.tranquilo.solve_subproblem import get_subsolver
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -28,11 +29,7 @@ def test_without_bounds(solver_name):
         ]
     )
 
-    expected_expected_improvement = 0.001340933981148
-
-    model = namedtuple("Model", ["linear_terms", "square_terms"])(
-        linear_terms=linear_terms, square_terms=quadratic_terms
-    )
+    model = ScalarModel(linear_terms=linear_terms, square_terms=quadratic_terms)
 
     trustregion = namedtuple("Trustregion", ["center", "radius"])(
         center=np.zeros(3),
@@ -48,4 +45,3 @@ def test_without_bounds(solver_name):
 
     if solver_name == "gqtpar":
         aaae(calculated["x"], expected_x)
-        aaae(calculated["expected_improvement"], expected_expected_improvement)

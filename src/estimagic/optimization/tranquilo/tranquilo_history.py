@@ -41,7 +41,10 @@ class History:
                 least square fvecs.
         """
         xs = np.atleast_2d(xs)
-        fvecs = np.atleast_2d(fvecs)
+        if self.functype == "scalar":
+            fvecs = np.reshape(fvecs, (-1, 1))
+        else:
+            fvecs = np.atleast_2d(fvecs)
         fvals = np.atleast_1d(self.aggregate(fvecs))
 
         if len(xs) != len(fvecs):
@@ -128,17 +131,25 @@ class History:
         if norm not in ("infinity", "euclidean"):
             raise ValueError("norm must be 'infinity' or 'euclidean'")
 
-        xs = self.get_xs()
-        out = _find_indices_in_trust_region(
-            xs, center=trustregion.center, radius=trustregion.radius
-        )
+        if self.get_n_fun() != 0:
+            xs = self.get_xs()
 
-        if norm != "infinity":
-            # Important: Only screen the indices that are in the trustregion according
-            # to infinity norm! Otherwise this would be very expensive!
-            raise NotImplementedError
+            out = _find_indices_in_trust_region(
+                xs, center=trustregion.center, radius=trustregion.radius
+            )
+
+            if norm != "infinity":
+                # Important: Only screen the indices that are in the trustregion
+                # according to infinity norm! Otherwise this would be very expensive!
+                raise NotImplementedError
+
+        else:
+            out = np.array([])
 
         return out
+
+    def __repr__(self):
+        return f"History for {self.functype} function with {self.n_fun} entries."
 
 
 def _add_entries_to_array(arr, new, position):

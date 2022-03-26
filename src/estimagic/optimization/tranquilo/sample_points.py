@@ -20,6 +20,10 @@ def get_sampler(sampler, bounds, user_options=None):
         user_options (dict): Additional keyword arguments for the sampler. Options that
             are not used by the sampler are ignored with a warning.
 
+    Returns:
+        callable: Function that depends on trustregion, target_size, existing_xs and
+            existing_fvals and returns a new sample.
+
     """
     user_options = {} if user_options is None else user_options
 
@@ -88,9 +92,15 @@ def _sample_points_template(
     bounds=None,
     options=None,
 ):
-    # Question: Can this ever produce invalid bounds?
-    lower_bounds = np.maximum(trustregion.center - trustregion.radius, bounds.lower)
-    upper_bounds = np.minimum(trustregion.center + trustregion.radius, bounds.upper)
+
+    lower_bounds = trustregion.center - trustregion.radius
+    upper_bounds = trustregion.center + trustregion.radius
+
+    if bounds.lower is not None:
+        lower_bounds = np.clip(lower_bounds, bounds.lower, np.inf)
+
+    if bounds.upper is not None:
+        upper_bounds = np.clip(upper_bounds, -np.inf, bounds.upper)
 
     res = sampler(
         lower_bounds=lower_bounds,
