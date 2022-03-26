@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 
 import numpy as np
@@ -27,6 +26,8 @@ def get_aggregator(aggregator, functype, model_info):
     built_in_aggregators = {
         "identity": aggregator_identity,
         "sum": aggregator_sum,
+        "information_equality_linear": aggregator_information_equality_linear,
+        "least_squares_linear": aggregator_least_squares_linear,
     }
 
     if isinstance(aggregator, str) and aggregator in built_in_aggregators:
@@ -46,16 +47,10 @@ def get_aggregator(aggregator, functype, model_info):
     # determine if aggregator is compatible with functype and model_info
     aggregator_compatible_with_functype = {
         "scalar": ("identity", "sum"),
-        "least_squares": (
-            "least_squares_linear",
-            "least_squares_linear_taylor",
-            "least_squares_quadratic",
-        ),
+        "least_squares": ("least_squares_linear",),
         "likelihood": (
             "sum",
-            "sum_taylor",
             "information_equality_linear",
-            "information_equality_quadratic",
         ),
     }
 
@@ -64,12 +59,9 @@ def get_aggregator(aggregator, functype, model_info):
         # return False in case of incompatibility
         "identity": _is_second_order_model,
         "sum": _is_second_order_model,
-        "sum_taylor": _is_second_order_model,
-        "information_equality_linear": lambda model_info: True,  # all models allowed
-        "information_equality_quadratic": _is_second_order_model,
-        "least_squares_linear": lambda model_info: True,  # all models allowed
-        "least_squares_linear_taylor": lambda model_info: True,  # all models allowed
-        "least_squares_quadratic": _is_second_order_model,
+        "information_equality_linear": lambda model_info: not _is_second_order_model,
+        "least_squares_linear": lambda model_info: model_info.has_intercepts
+        and not _is_second_order_model(model_info),
     }
 
     if _using_built_in_aggregator:
@@ -88,18 +80,6 @@ def get_aggregator(aggregator, functype, model_info):
             ValueError(
                 f"ModelInfo {model_info} is not compatible with aggregator "
                 f"{_aggregator_name}. It would not produce a quadratic main model."
-            )
-        # inefficiency warnings
-        if _is_second_order_model(model_info) and "linear" in _aggregator_name:
-            suggestions = [
-                aggregator_name
-                for aggregator_name in aggregator_compatible_with_functype[functype]
-                if "quadratic" in aggregator_name
-            ]
-            warnings.warn(
-                "The residual model is calculating second-order information, "
-                f"but the aggregator {_aggregator_name} is not using it. Consider "
-                f"switching to {suggestions}."
             )
 
     # create aggregator
@@ -145,15 +125,17 @@ def aggregator_identity(vector_model, fvec_center, model_info):
     """Aggregate quadratic VectorModel using identity function.
 
     This aggregation is useful if the underlying maximization problem is a scalar
-    problem.
+    problem. To get a second-order main model vector_model must be second-order model.
+
+    Assumptions
+    -----------
+    1. functype: scalar
+    2. ModelInfo: has squares or interactions
 
     """
     intercept = float(fvec_center)
     linear_terms = np.squeeze(vector_model.linear_terms)
-    if _is_second_order_model(model_info):
-        square_terms = np.squeeze(vector_model.square_terms)
-    else:
-        square_terms = None
+    square_terms = np.squeeze(vector_model.square_terms)
     return intercept, linear_terms, square_terms
 
 
@@ -161,17 +143,74 @@ def aggregator_sum(vector_model, fvec_center, model_info):
     """Aggregate quadratic VectorModel using sum function.
 
     This aggregation is useful if the underlying maximization problem is a likelihood
-    problem. That is, the criterion is tje sum of residuals, which allows us to sum
-    up the coefficients of the residual model to get a main model. The main model will
+    problem. That is, the criterion is the sum of residuals, which allows us to sum
+    up the coefficients of the residual model to get the main model. The main model will
     only be a second-order model if the residual model is a second-order model.
+
+    Assumptions
+    -----------
+    1. functype: likelihood
+    2. ModelInfo: has squares or interactions
 
     """
     intercept = fvec_center.sum()
     linear_terms = vector_model.linear_terms.sum(axis=0)
-    if _is_second_order_model(model_info):
-        square_terms = vector_model.square_terms.sum(axis=0)
-    else:
-        square_terms = None
+    square_terms = vector_model.square_terms.sum(axis=0)
+    return intercept, linear_terms, square_terms
+
+
+def aggregator_least_squares_linear(vector_model, fvec_center, model_info):
+    """Aggregate linear VectorModel assuming a least_squares functype.
+
+    This aggregation is useful if the underlying maximization problem is a least-squares
+    problem. We can then simply plug-in a linear model for the residuals into the
+    least-squares formulae to get a second-order main model.
+
+    Assumptions
+    -----------
+    1. functype: least_squares
+    2. ModelInfo: has intercept but no squares and no interaction
+
+    References
+    ----------
+    See section 2.1 of :cite:`Cartis2018` for further information.
+
+    """
+    vm_linear_terms = vector_model.linear_terms
+    vm_intercepts = vector_model.intercepts
+
+    intercept = vm_intercepts @ vm_intercepts
+    linear_terms = 2 * np.sum(vm_linear_terms * vm_intercepts.reshape(-1, 1), axis=0)
+    square_terms = 2 * np.tril(vm_linear_terms.T @ vm_linear_terms)
+    square_terms[np.diag_indices(len(square_terms))] = np.diag(square_terms) / 2
+
+    return intercept, linear_terms, square_terms
+
+
+def aggregator_information_equality_linear(vector_model, fvec_center, model_info):
+    """Aggregate linear VectorModel using the Fisher information equality.
+
+    This aggregation is useful if the underlying maximization problem is a likelihood
+    problem. Given a linear model for the likelihood contributions we get an estimate of
+    the scores. Using the Fisher-Information-Equality we estimate the average Hessian
+    using the scores. We then construct the main model using a second-degree Taylor
+    approximation.
+
+    Assumptions
+    -----------
+    1. functype: likelihood
+    2. ModelInfo: has no squares and no interaction
+
+    """
+    vm_linear_terms = vector_model.linear_terms
+
+    fisher_information = (vm_linear_terms.T @ vm_linear_terms) / len(vm_linear_terms)
+
+    intercept = fvec_center.sum(axis=0)
+    linear_terms = vm_linear_terms.mean(axis=0)
+    square_terms = np.tril(fisher_information)
+    square_terms[np.diag_indices(len(square_terms))] = np.diag(square_terms) / 2
+
     return intercept, linear_terms, square_terms
 
 
