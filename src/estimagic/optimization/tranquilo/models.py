@@ -14,7 +14,7 @@ class VectorModel(NamedTuple):
 
 class ScalarModel(NamedTuple):
     intercept: Union[float, None] = None
-    linear_terms: Union[np.ndarray, None] = None  # shape (n_params)
+    linear_terms: Union[np.ndarray, None] = None  # shape (n_params,)
     square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
 

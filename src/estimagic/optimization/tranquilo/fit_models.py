@@ -23,7 +23,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
 
         model_info (ModelInfo): Information that describes the functional form of
             the model. Has entries:
-            - has_intercept (bool): Whether to calculate the intercept for this model.
+            - has_intercepts (bool): Whether to calculate the intercept for this model.
             If set to False, no intercept will be used in calculations (i.e. data is
             expected to be centered).
             - has_squares (bool): Whether to use quadratic terms as features in the
@@ -32,7 +32,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
             in the regression.
 
     Returns:
-        callable: The fit method.
+        callable: The partialled fit method that only depends on x and y.
 
     """
     user_options = user_options or {}
@@ -123,10 +123,11 @@ def _fitter_template(
     coef = fitter(x, y, model_info, **options)
 
     # results processing
-    if model_info.has_intercept:
+    if model_info.has_intercepts:
         intercepts, linear_terms, square_terms = np.split(
             coef, (1, n_params + 1), axis=1
         )
+        intercepts = intercepts.flatten()
     else:
         intercepts = None
         linear_terms, square_terms = np.split(coef, (n_params,), axis=1)
@@ -211,7 +212,7 @@ def fit_ridge(
 
     # create penalty array
     n_params = x.shape[1]
-    cutoffs = (1, n_params + 1) if model_info.has_intercept else (0, n_params)
+    cutoffs = (1, n_params + 1) if model_info.has_intercepts else (0, n_params)
 
     penalty = np.zeros(features.shape[1])
     penalty[: cutoffs[0]] = 0
@@ -246,12 +247,12 @@ def _build_feature_matrix(x, model_info):
     if model_info.has_interactions:
         poly = PolynomialFeatures(
             degree=2,
-            include_bias=model_info.has_intercept,
+            include_bias=model_info.has_intercepts,
             interaction_only=not model_info.has_squares,
         )
         features = poly.fit_transform(x)
     else:
-        data = (np.ones(len(x)), x) if model_info.has_intercept else (x,)
+        data = (np.ones(len(x)), x) if model_info.has_intercepts else (x,)
         data = (*data, x**2) if model_info.has_squares else data
         features = np.column_stack(data)
     return features
