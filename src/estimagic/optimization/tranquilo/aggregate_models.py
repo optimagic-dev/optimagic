@@ -27,12 +27,6 @@ def get_aggregator(aggregator, functype, model_info):
     built_in_aggregators = {
         "identity": aggregator_identity,
         "sum": aggregator_sum,
-        "sum_taylor": aggregator_sum_taylor,
-        "information_equality_linear": aggregator_information_equality_linear,
-        "information_equality_quadratic": aggregator_information_equality_quadratic,
-        "least_squares_linear": aggregator_least_squares_linear,
-        "least_squares_linear_taylor": aggregator_least_squares_linear_taylor,
-        "least_squares_quadratic": aggregator_least_squares_quadratic,
     }
 
     if isinstance(aggregator, str) and aggregator in built_in_aggregators:
@@ -79,9 +73,6 @@ def get_aggregator(aggregator, functype, model_info):
     }
 
     if _using_built_in_aggregator:
-        if _aggregator_name not in ("idenitity", "sum"):
-            raise NotImplementedError
-
         # compatibility errors
         if _aggregator_name not in aggregator_compatible_with_functype[functype]:
             ValueError(
@@ -181,156 +172,6 @@ def aggregator_sum(vector_model, fvec_center, model_info):
         square_terms = vector_model.square_terms.sum(axis=0)
     else:
         square_terms = None
-    return intercept, linear_terms, square_terms
-
-
-def aggregator_sum_taylor(vector_model, fvec_center, model_info):
-    """Aggregate quadratic VectorModel using Taylor approximation.
-
-    Here we assume that vector_model is a quadratic model, which allows us to simply
-    sum the coefficients over the residuals. If vector_model is linear the resulting
-    main model will be linear.
-
-    """
-    vm_linear_terms = vector_model.linear_terms
-    vm_square_terms = vector_model.square_terms
-
-    residual_hessians = vm_square_terms + vm_square_terms.transpose(0, 2, 1)
-    residual_gradients = (
-        vm_linear_terms + residual_hessians.transpose(2, 1, 0) @ fvec_center
-    )
-
-    intercept = fvec_center.sum()
-    linear_terms = residual_gradients.sum(axis=0)
-    square_terms = residual_hessians.sum(axis=0)
-
-    return intercept, linear_terms, square_terms
-
-
-def aggregator_information_equality_linear(vector_model, fvec_center, model_info):
-    """Aggregate linear VectorModel using the Fisher information equality.
-
-    Here we assume that vector_model is a linear model. This implies that the estimated
-    linear_terms correspond to a gradient estimate of the full model. By the information
-    equality we can estimate the Hessian of the full model using the gradient. To get
-    the coefficients for the quadratic main model we transform the gradient and Hessian.
-
-    """
-    intercept = fvec_center.sum(axis=0)
-
-    vm_linear_terms = vector_model.linear_terms
-
-    gradient = np.sum(vm_linear_terms, axis=0)
-    hessian = -(vm_linear_terms.T @ vm_linear_terms) / len(vm_linear_terms)
-
-    square_terms = hessian / 2
-    linear_terms = gradient - hessian @ fvec_center
-
-    return intercept, linear_terms, square_terms
-
-
-def aggregator_information_equality_quadratic(vector_model, fvec_center, model_info):
-    """Aggregate quadratic VectorModel using the Fisher information equality.
-
-    Here we assume that vector_model is a quadratic model, that is, both square and
-    interaction terms were fitted. To utilize the Fisher information equality we
-    transform the coefficients to gradient and Hessian. We then get a second Hessian
-    estimate using the Fisher inequality. The final Hessian estimate is an average
-    of the two. Lastly we retransform gradient and Hessian to coefficients for the
-    quadratic main model.
-
-    """
-    vm_linear_terms = vector_model.linear_terms
-    vm_square_terms = vector_model.square_terms
-
-    residual_gradients = (
-        vm_linear_terms
-        + (vm_square_terms + vm_square_terms.tranpose(0, 2, 1)) @ fvec_center
-    )
-
-    gradient = np.sum(vm_linear_terms, axis=0)
-
-    hessian_one = -(residual_gradients.T @ residual_gradients) / len(vm_linear_terms)
-    hessian_two = np.sum(vm_square_terms + vm_square_terms.transpose(0, 2, 1), axis=0)
-
-    hessian = (hessian_one + hessian_two) / 2
-
-    # correct averaging if terms in hessian_two are missing
-    diag_mask = np.eye(len(hessian), dtype=bool)
-    if not model_info.has_squares:
-        hessian[diag_mask] *= 2
-    if not model_info.has_interactions:
-        hessian[~diag_mask] *= 2
-
-    intercept = fvec_center.sum(axis=0)
-    square_terms = hessian / 2
-    linear_terms = gradient - hessian @ fvec_center
-
-    return intercept, linear_terms, square_terms
-
-
-def aggregator_least_squares_linear(vector_model, fvec_center, model_info):
-    """Aggregate linear VectorModel assuming a least_squares functype.
-
-    Here we assume that vector_model is a linear model. We further assume that the
-    underlying functype is least_squares. This allows us to build a quadratic main model
-    by simply pluggin the linear model into the main equation.
-
-    """
-    vm_linear_terms = vector_model.linear_terms
-
-    if model_info.has_intercepts:
-        vm_intercepts = vector_model.intercepts.flatten()
-        intercept = vm_intercepts @ vm_intercepts
-        linear_terms = 2 * np.sum(intercept * vm_linear_terms, axis=0)
-    else:
-        intercept = None
-        linear_terms = np.zeros(vm_linear_terms.shape[1])
-
-    square_terms = vm_linear_terms.T @ vm_linear_terms
-
-    return intercept, linear_terms, square_terms
-
-
-def aggregator_least_squares_linear_taylor(vector_model, fvec_center, model_info):
-    """Aggregate linear VectorModel assuming a least_squares functype using Taylor.
-
-    Here we assume that vector_model is a linear model. We further assume that the
-    underlying functype is least_squares. The main model is build using a second-degree
-    Taylor approximation, where the gradient and Hessian are derived from the gradients
-    of the residual models.
-
-    """
-    vm_linear_terms = vector_model.linear_terms
-
-    intercept = fvec_center @ fvec_center
-    linear_terms = 2 * vm_linear_terms.T @ fvec_center
-    square_terms = 2 * vm_linear_terms.T @ vm_linear_terms
-
-    return intercept, linear_terms, square_terms
-
-
-def aggregator_least_squares_quadratic(vector_model, fvec_center, model_info):
-    """Aggregate quadratic VectorModel using a Taylor approximation.
-
-    We assume that vector_model is a quadratic model. We further assume that the
-    underlying functype is least_squares. This allows us to build a quadratic main model
-    using a second-degree Taylor approximation.
-
-    """
-    vm_linear_terms = vector_model.linear_terms
-    vm_square_terms = vector_model.square_terms
-
-    intercept = fvec_center @ fvec_center
-
-    residual_hessians = vm_square_terms + vm_square_terms.tranpose(0, 2, 1)
-    residual_gradients = vm_linear_terms + residual_hessians @ fvec_center
-
-    linear_terms = residual_gradients @ fvec_center
-    square_terms = (
-        residual_gradients.T @ residual_gradients + residual_hessians @ fvec_center
-    )
-
     return intercept, linear_terms, square_terms
 
 
