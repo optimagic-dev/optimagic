@@ -74,7 +74,5 @@ def test_aggregator_information_equality_linear():
     )
 
     assert got[0] == 3.0
-    assert_array_equal(got[1], np.array([1.5, 2.5, 3.5]))
-    assert_array_equal(
-        got[2], np.array([[2.25, 0.0, 0.0], [6.0, 4.25, 0.0], [7.5, 11.0, 7.25]])
-    )
+    assert_array_equal(got[1], np.array([3, 5, 7]))
+    assert_array_equal(got[2], np.array([[-4, 0, 0], [-12, -8, 0], [-15, -22, -14]]))
