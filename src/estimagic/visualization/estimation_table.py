@@ -967,7 +967,7 @@ def _customize_col_names(default_col_names, custom_col_names):
     elif isinstance(custom_col_names, dict):
         col_names = list(pd.Series(default_col_names).replace(custom_col_names))
     elif isinstance(custom_col_names, list):
-        if not len(custom_col_names == default_col_names):
+        if not len(custom_col_names) == len(default_col_names):
             raise ValueError(
                 f"""If provided as a list, custom_col_names should have same length as
                 default_col_names. Lenght of custom_col_names {len(custom_col_names)}
