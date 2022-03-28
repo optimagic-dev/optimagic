@@ -409,11 +409,18 @@ def test_customize_col_groups():
     assert exp == res
 
 
-def test_customize_col_names():
+def test_customize_col_names_dict():
     default = list("abcde")
     custom = {"a": "1", "c": "3", "e": "5"}
     res = _customize_col_names(default_col_names=default, custom_col_names=custom)
     exp = ["1", "b", "3", "d", "5"]
+    assert exp == res
+
+def test_customize_col_names_list():
+    default = list("abcde")
+    custom = list('12345')
+    res = _customize_col_names(default_col_names=default, custom_col_names=custom)
+    exp = ["1", "2", "3", "4", "5"]
     assert exp == res
 
 
