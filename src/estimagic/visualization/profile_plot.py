@@ -20,8 +20,9 @@ plt.rcParams.update(
 
 
 def profile_plot(
-    problems=None,
-    results=None,
+    problems,
+    results,
+    *,
     runtime_measure="n_evaluations",
     normalize_runtime=False,
     stopping_criterion="y",

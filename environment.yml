@@ -44,6 +44,7 @@ dependencies:
   - pygmo
   - chaospy
   - plotly>=5.5.0
+  - pybaum
 
   - pip:
       - black

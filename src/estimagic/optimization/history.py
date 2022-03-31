@@ -42,7 +42,7 @@ class LeastSquaresHistory:
         """
         xs = np.atleast_2d(xs)
         residuals = np.atleast_2d(residuals)
-        critvals = np.atleast_1d((residuals ** 2).sum(axis=-1))
+        critvals = np.atleast_1d((residuals**2).sum(axis=-1))
 
         argmin_candidate = critvals.argmin()
         min_candidate = critvals[argmin_candidate]
@@ -166,7 +166,7 @@ class LeastSquaresHistory:
         xs_unc, residuals_unc, _ = self.get_entries(index=index)
         xs = (xs_unc - center_info["x"]) / center_info["radius"]
         residuals = residuals_unc - center_info["residuals"]
-        critvals = (residuals ** 2).sum(axis=-1)
+        critvals = (residuals**2).sum(axis=-1)
 
         return xs, residuals, critvals
 
@@ -218,7 +218,7 @@ class LeastSquaresHistory:
         """
         residuals_unc = self.get_residuals(index=index)
         residuals = residuals_unc - center_info["residuals"]
-        critvals = (residuals ** 2).sum(axis=-1)
+        critvals = (residuals**2).sum(axis=-1)
 
         return critvals
 
