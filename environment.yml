@@ -44,6 +44,7 @@ dependencies:
   - pygmo
   - chaospy
   - plotly>=5.5.0
+  - nb_black
   - pybaum
 
   - pip:
@@ -53,6 +54,6 @@ dependencies:
       - pre-commit
       - Py-BOBYQA
       - DFO-LS
-      - fides>=0.7.4
+      - fides==0.7.4
       - gif
       - gif[matplotlib]

@@ -513,6 +513,73 @@ optimizers that exploit a nonlinear least-squares structure and can deal with
 noisy criterion functions.
 
 
+.. dropdown:: bhhh
+
+    Minimize a likelihood function using the BHHH algorithm.
+
+    BHHH (:cite:`Berndt1974`) can - and should ONLY - be used for minimizing
+    (or maximizing) a likelihood. It is similar to the Newton-Raphson
+    algorithm, but replaces the Hessian matrix with the outer product of the
+    gradient. This approximation is based on the information matrix equality
+    (:cite:`Halbert1982`) and is thus only vaid when minimizing (or maximizing)
+    a likelihood.
+
+    The criterion function :func:`func` should return a dictionary with the following
+    fields:
+
+    1. ``"value"``: The sum of the likelihood contributions.
+    2. ``"contributions"``: An array containing the (weighted) contributions of
+      the likelihood function.
+
+    It may additionally return the field:
+
+    3. ``"derivative"``: An array containing the gradient of the likelihood
+      function for each observation.
+
+
+    bhhh supports the following options:
+
+    - **convergence_absolute_gradient_tolerance** (float): Stopping criterion for the
+      gradient tolerance. Default is 1e-8.
+    - **stopping_max_iterations** (int): Maximum number of iterations.
+      If reached, terminate. Default is 200.
+
+
+.. dropdown:: neldermead_parallel
+
+    Minimize a function using the neldermead_parallel algorithm.
+
+    This is a parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
+    implementation of the simplex function minimization routine,
+    Computational Economics, 2007.
+
+    The algorithm was implemented by Jacek Barszczewski
+
+    The algorithm supports the following options:
+
+    - **init_simplex_method** (string or callable): Name of the method to create initial
+      simplex or callable which takes as an argument initial value of parameters
+      and returns initial simplex as j+1 x j array, where j is length of x.
+      The default is "gao_han".
+    - **n_cores** (int): Degree of parallization. The default is 1 (no parallelization).
+
+    - **adaptive** (bool): Adjust parameters of Nelder-Mead algorithm to account
+      for simplex size. The default is True.
+
+    - **stopping.max_iterations** (int): Maximum number of algorithm iterations.
+      The default is STOPPING_MAX_ITERATIONS.
+
+    - **convergence.absolute_criterion_tolerance** (float): maximal difference between
+      function value evaluated on simplex points.
+      The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE.
+
+    - **convergence.absolute_params_tolerance** (float): maximal distance between points
+      in the simplex. The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
+
+    - **batch_evaluator** (string or callable): See :ref:`batch_evaluators` for
+        details. Default "joblib".
+
+
 .. dropdown:: pounders
 
     Minimize a function using the POUNDERS algorithm.
@@ -584,42 +651,6 @@ noisy criterion functions.
       evaluations. Default is 1.
 
 
-.. dropdown:: neldermead_parallel
-
-    Minimize a function using the neldermead_parallel algorithm.
-
-    This is a parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
-    implementation of the simplex function minimization routine,
-    Computational Economics, 2007.
-
-    The algorithm was implemented by Jacek Barszczewski
-
-    The algorithm supports the following options:
-
-    - **init_simplex_method** (string or callable): Name of the method to create initial
-      simplex or callable which takes as an argument initial value of parameters
-      and returns initial simplex as j+1 x j array, where j is length of x.
-      The default is "gao_han".
-    - **n_cores** (int): Degree of parallization. The default is 1 (no parallelization).
-
-    - **adaptive** (bool): Adjust parameters of Nelder-Mead algorithm to account
-      for simplex size. The default is True.
-
-    - **stopping.max_iterations** (int): Maximum number of algorithm iterations.
-      The default is STOPPING_MAX_ITERATIONS.
-
-    - **convergence.absolute_criterion_tolerance** (float): maximal difference between
-      function value evaluated on simplex points.
-      The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE.
-
-    - **convergence.absolute_params_tolerance** (float): maximal distance between points
-      in the simplex. The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
-
-    - **batch_evaluator** (string or callable): See :ref:`batch_evaluators` for
-        details. Default "joblib".
-
-
-
 .. _tao_algorithms:
 
 Optimizers from the Toolkit for Advanced Optimization (TAO)
@@ -629,7 +660,7 @@ At the moment, estimagic only supports
 `TAO's <https://www.anl.gov/mcs/tao-toolkit-for-advanced-optimization>`_
 POUNDERs algorithm.
 
-The `POUNDERs algorithm <https://www.mcs.anl.gov/papers/P5120-0414.pdf>`_
+The `POUNDERs algorithm <https://doi.org/10.1137/1.9781611974683.ch40>`_
 by Stefan Wild is tailored to minimize a non-linear sum of squares
 objective function. Remember to cite :cite:`Wild2015` when using POUNDERs in
 addition to estimagic.
