@@ -1,8 +1,5 @@
-try:
-    from better_exceptions import format_exception
-except ImportError:
-    from traceback import format_exception
 import sys
+from traceback import format_exception
 
 
 class TableExistsError(Exception):
