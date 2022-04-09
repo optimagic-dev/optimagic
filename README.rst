@@ -157,9 +157,9 @@ If you use Estimagic for your research, please do not forget to cite it.
 
 .. code-block::
 
-    @Unpublished{Gabler2021,
-      Title  = {A Python Tool for the Estimation of (Structural) Econometric Models.},
+    @Unpublished{Gabler2022,
+      Title  = {A Python Tool for the Estimation of large scale scientific models.},
       Author = {Janos Gabler},
-      Year   = {2021},
+      Year   = {2022},
       Url    = {https://github.com/OpenSourceEconomics/estimagic}
     }
