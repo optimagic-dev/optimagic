@@ -29,6 +29,7 @@ from estimagic.parameters.parameter_conversion import get_reparametrize_function
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.parameters.process_constraints import process_constraints
+from estimagic.process_user_function import process_func_of_params
 from estimagic.utilities import hash_array
 
 
@@ -476,12 +477,20 @@ def _optimize(
         }
 
     # partial the kwargs into corresponding functions
-    criterion = functools.partial(criterion, **criterion_kwargs)
+    criterion = process_func_of_params(
+        func=criterion,
+        kwargs=criterion_kwargs,
+        name="criterion",
+    )
     if derivative is not None:
-        derivative = functools.partial(derivative, **derivative_kwargs)
+        derivative = process_func_of_params(
+            func=derivative, kwargs=derivative_kwargs, name="derivative"
+        )
     if criterion_and_derivative is not None:
-        criterion_and_derivative = functools.partial(
-            criterion_and_derivative, **criterion_and_derivative_kwargs
+        criterion_and_derivative = process_func_of_params(
+            func=criterion_and_derivative,
+            kwargs=criterion_and_derivative_kwargs,
+            name="criterion_and_derivative",
         )
 
     # process params and constraints

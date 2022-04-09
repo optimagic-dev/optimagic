@@ -2,11 +2,36 @@ import sys
 from traceback import format_exception
 
 
-class TableExistsError(Exception):
-    pass
+class EstimagicError(Exception):
+    """Base exception for estimagic which should be inherited by all exceptions."""
 
 
-class StopOptimizationError(Exception):
+class TableExistsError(EstimagicError):
+    """Exception for database tables that should not exist but do."""
+
+
+class InvalidFunctionError(EstimagicError):
+    """Exception for invalid user provided functions.
+
+    This includes user functions that do not comply with interfaces, raise errors or
+    produce NaNs.
+
+    """
+
+
+class InvalidKwargsError(EstimagicError):
+    """Exception for invalid user provided keyword arguments."""
+
+
+class InvalidParamsError(EstimagicError):
+    """Exception for invalid user provided parameters."""
+
+
+class InvalidConstraintsError(EstimagicError):
+    """Exception for invalid user provided constraints."""
+
+
+class StopOptimizationError(EstimagicError):
     def __init__(self, message, current_status):
         super().__init__(message)
         self.message = message
