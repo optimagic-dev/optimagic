@@ -1,10 +1,10 @@
 """Process user provided functions."""
 import inspect
-import warnings
 from functools import partial
 
 from estimagic.exceptions import InvalidFunctionError
 from estimagic.exceptions import InvalidKwargsError
+from estimagic.utilities import propose_alternatives
 
 
 def process_func_of_params(func, kwargs, name="your function"):
@@ -12,10 +12,17 @@ def process_func_of_params(func, kwargs, name="your function"):
     kept, ignored = filter_kwargs(func, kwargs)
 
     if ignored:
-        warnings.warn(
-            f"The following user provided keyword arguments for {name} were ignored "
-            " because they are not valid function arguments."
+        possibilities = [p for p in inspect.signature(func).parameters if p != "params"]
+        proposals = [propose_alternatives(arg, possibilities, 1)[0] for arg in ignored]
+
+        msg = (
+            "The following user provided keyword arguments are not compatible with "
+            f"{name}:\n\n"
         )
+        for arg, prop in zip(ignored, proposals):
+            msg += f"{arg}: Did you mean {prop}?"
+
+        raise InvalidKwargsError(msg)
 
     out = partial(func, **kept)
 

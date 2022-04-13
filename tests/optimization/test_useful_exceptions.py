@@ -51,6 +51,17 @@ def test_missing_criterion_and_derivative_kwargs():
         )
 
 
+def test_typo_in_criterion_kwarg():
+    def f(params, bla, foo):
+        return (params["value"].to_numpy() ** 2).sum()
+
+    params = pd.DataFrame(np.ones((3, 1)), columns=["value"])
+
+    snippet = "Did you mean"
+    with pytest.raises(InvalidKwargsError, match=snippet):
+        minimize(f, params, "scipy_lbfgsb", criterion_kwargs={"bla": 3, "foa": 4})
+
+
 def test_criterion_with_runtime_error_derivative_free():
     def f(params):
         x = params["value"].to_numpy()
