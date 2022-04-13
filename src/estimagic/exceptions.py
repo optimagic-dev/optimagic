@@ -19,6 +19,10 @@ class InvalidFunctionError(EstimagicError):
     """
 
 
+class UserFunctionRuntimeError(EstimagicError):
+    """Exception that is raised when user provided functions raise errors."""
+
+
 class InvalidKwargsError(EstimagicError):
     """Exception for invalid user provided keyword arguments."""
 
