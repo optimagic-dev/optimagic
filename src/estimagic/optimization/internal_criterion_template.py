@@ -512,15 +512,23 @@ def _get_output_for_optimizer(
     if "criterion" in task:
         if primary != "dict":
             crit = new_criterion[primary]
-            crit = crit if np.isscalar(crit) else np.array(crit)
+            crit = float(crit) if np.isscalar(crit) else np.array(crit).astype(float)
             crit = crit if direction == "minimize" else -crit
         else:
-            crit = new_criterion
+            crit = new_criterion.copy()
+            if "value" in crit:
+                crit["value"] = float(crit["value"])
+            if "contributions" in crit:
+                crit["contributions"] = np.array(crit["contributions"]).astype(float)
+            if "root_contributions" in crit:
+                crit["root_contributions"] = np.array(
+                    crit["root_contributions"]
+                ).astype(float)
             if direction == "maximize":
                 crit = switch_sign(crit)
 
     if "derivative" in task:
-        deriv = np.array(new_derivative[primary])
+        deriv = np.array(new_derivative[primary]).astype(float)
         deriv = deriv if direction == "minimize" else -deriv
 
     if task == "criterion_and_derivative":
