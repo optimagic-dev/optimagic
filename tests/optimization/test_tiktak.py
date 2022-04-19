@@ -85,7 +85,7 @@ def test_run_explorations():
     def _dummy(x, **kwargs):
         assert set(kwargs) == {
             "task",
-            "algorithm_info",
+            "algo_info",
             "error_handling",
             "error_penalty",
             "fixed_log_data",

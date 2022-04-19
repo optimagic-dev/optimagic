@@ -6,16 +6,14 @@ Internal optimizers for estimagic
 
 estimagic provides a large collection of optimization algorithm that can be
 used by passing the algorithm name as ``algorithm`` into ``maximize`` or ``minimize``.
-However, advanced users can also use estimagic with their own algorithm, as long as it
+Advanced users can also use estimagic with their own algorithm, as long as it
 conforms with the internal optimizer interface.
 
 The advantages of using the algorithm with estimagic over using it directly are:
 
-- estimagic turns an unconstrained optimizer into one that can deal efficiently with a
-  wide range of constraints
-  (see .. _link: how_to_guides/how_to_use_constranits.ipynb).
-- You can use estimagic's logging capabilities.
-- You get a beautiful real time dashboard to monitor your optimization.
+- estimagic turns an unconstrained optimizer into constrained ones.
+- You can use logging.
+- You get a real time dashboard to monitor your optimization.
 - You get great error handling for exceptions in the criterion function or gradient.
 - You get a parallelized and customizable numerical gradient if the user did not provide
   a closed form gradient.
@@ -30,45 +28,27 @@ transformed problem.
 The internal optimizer interface
 --------------------------------
 
-An internal optimizer is a function that minimizes an objective function it has two
-mandatory arguments:
+An internal optimizer is a a function that minimizes a criterion function and fulfills
+a few conditions. In our experience, it is not hard to wrap any optimizer into
+this interface. The mandatory conditions for an internal optimizer function are:
 
-1. ``criterion_and_derivative`` (described below)
-2. ``x``: One dimensional numpy array with start parameters.
+1. It is decorated with the ``mark_minimizer`` decorator and thus carries
+   information that tells estimagic how to use the internal optimizer.
+2. It uses the standard names for the arguments that describe the optimization problem:
 
-Followed by two strongly encouraged but not absolutely mandatory arguments:
+   - criterion: for the criterion function
+   - x: for the start parameters in form of a 1d numpy array
+   - derivative: for the first derivative of the criterion function
+   - criterion_and_derivative: for a function that evaluates the criterion and its
+     first derivative jointly
+   - lower_bounds: for lower bounds in form of a 1d numpy array
+   - upper_bounds: for upper bounds in form of a 1d numpy array
 
-1. lower_bounds: 1d numpy array with the same length as x with lower
-    bounds for the parameters. Can be -np.inf for unbound parameters.
-2. upper_bounds: 1d numpy array with the same length as x with upper
-    bounds for the parameters. Can be -np.inf for unbound parameters.
+   Of course, algorithms that do not need a certain argument (e.g. unbounded or
+   derivative free ones) do not need those arguments at all.
 
-Moreover, it can accept any number of additional arguments that are used by the
-optimizer. Neither the mandatory arguments, nor the bounds should have a default value.
+3. All other arguments have default values.
 
-The only non-trivial argument is ``criterion_and_derivative``. This is a callable that
-accepts three arguments and returns the output of the user provided criterion function
-(float or dict), the output of a user provided or numerical derivative (np.ndarray) or
-both. For more details on valid outputs of the criterion function see
-:ref:`maximize_and_minimize`.
-
-The arguments  of criterion_and_derivative are:
-
-- x (np.ndarray): A one dimensional vector with free parameters
-- task (str): One of "criterion", "derivative" and "criterion_and_derivative"
-- algorithm_info (dict): Dict with the following entries:
-    - "primary_criterion_entry": For optimizers that minimize a scalar function this has
-      to be "value". For optimizers that optimize a sum it has to be "contributions".
-      For optimizers that optimize a sum of squares it has to be "root_contributions".
-    - "parallelizes": Bool that indicates if the algorithm calls the internal
-      criterion function in parallel. If so, caching is disabled.
-    - "needs_scaling": Bool. True if the algorithm is not scale invariant. In that case
-      we can issue a warning if the user did not scale his problem with estimagic.
-    - "name": The name of the algorithm that can be displayed in error messages
-
-``criterion_and_derivative`` is the centerpiece of how estimagic achieves its magic.
-It does logging, converts the internal parameters into a DataFrame for the user provided
-criterion function, handles errors and more.
 
 .. _internal_optimizer_output:
 
@@ -98,8 +78,8 @@ possible.
 
 .. _naming_conventions:
 
-Naming conventions for optional arguments
------------------------------------------
+Naming conventions for algorithm specific arguments
+---------------------------------------------------
 
 Many optimizers have similar but slightly different names for arguments that configure
 the convergence criteria, other stopping conditions, and so on. We try to harmonize
@@ -129,11 +109,7 @@ Other conventions
   separated by underscores). For optimizers that are implemented in many packages
   (e.g. Nelder Mead or BFGS), the name of the original package in which it was
   implemented has to be part of the name.
-- All arguments except ``criterion_and_derivative`` and ``x`` should be keyword only
-  and have default values that are set to the preferred defaults documented above
-  unless there is a good reason to deviate.
-- There should only be arguments used by the optimizer, i.e. only the
-  convergence criteria that are actually supported by an optimizer should be part of
-  its interface. The signature should also not contain ``*args`` or ``**kwargs``.
-- In particular, if an optimizer does not support bounds, it should not have the bounds
-  as arguments.
+- All arguments of an internal optimizer should actually be used. In particular, if an
+  optimizer does not support bounds it should not have ``lower_bounds`` and
+  ``upper_bounds`` as arguments; derivative free optimizers should not have
+  ``derivative`` or ``criterion_and_derivative`` as arguments, etc.

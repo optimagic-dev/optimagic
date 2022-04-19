@@ -17,6 +17,7 @@ import numpy as np
 from chaospy.distributions import Triangle
 from chaospy.distributions import Uniform
 from estimagic import batch_evaluators as be
+from estimagic.decorators import AlgoInfo
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
 from estimagic.parameters.parameter_conversion import get_internal_bounds
@@ -24,7 +25,7 @@ from estimagic.parameters.parameter_conversion import get_internal_bounds
 
 def run_multistart_optimization(
     local_algorithm,
-    criterion_and_derivative,
+    problem_functions,
     x,
     lower_bounds,
     upper_bounds,
@@ -62,8 +63,13 @@ def run_multistart_optimization(
             db_kwargs=db_kwargs,
         )
 
+    if "criterion" in problem_functions:
+        criterion = problem_functions["criterion"]
+    else:
+        criterion = partial(list(problem_functions.values())[0], task="criterion")
+
     exploration_res = run_explorations(
-        criterion_and_derivative,
+        criterion,
         sample=sample,
         batch_evaluator=options["batch_evaluator"],
         n_cores=options["n_cores"],
@@ -124,11 +130,10 @@ def run_multistart_optimization(
         "max_discoveries": options["convergence_max_discoveries"],
     }
 
-    criterion_and_derivative = partial(
-        criterion_and_derivative,
-        error_handling=error_handling,
-        error_penalty=error_penalty,
-    )
+    problem_functions = {
+        name: partial(func, error_handling=error_handling, error_penalty=error_penalty)
+        for name, func in problem_functions.items()
+    }
 
     batch_evaluator = options["batch_evaluator"]
 
@@ -145,14 +150,14 @@ def run_multistart_optimization(
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
         arguments = [
-            (criterion_and_derivative, x, step)
+            {**problem_functions, "x": x, "step_id": step}
             for x, step in zip(starts, scheduled_steps)
         ]
 
         batch_results = batch_evaluator(
             func=local_algorithm,
             arguments=arguments,
-            unpack_symbol="*",
+            unpack_symbol="**",
             n_cores=options["n_cores"],
             error_handling=options["optimization_error_handling"],
         )
@@ -330,7 +335,7 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
     Args:
         func (callable): An already partialled version of
             ``internal_criterion_and_derivative_template`` where the following arguments
-            are still free: ``x``, ``task``, ``algorithm_info``, ``error_handling``,
+            are still free: ``x``, ``task``, ``algo_info``, ``error_handling``,
             ``error_penalty``, ``fixed_log_data``.
         sample (numpy.ndarray): 2d numpy array where each row is a sampled internal
             parameter vector.
@@ -351,17 +356,19 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
                 entries of the function evaluations.
 
     """
-    algo_info = {
-        "primary_criterion_entry": "dict",
-        "parallelizes": True,
-        "needs_scaling": False,
-        "name": "tiktak_explorer",
-    }
+    algo_info = AlgoInfo(
+        primary_criterion_entry="dict",
+        parallelizes=True,
+        needs_scaling=False,
+        name="tiktak_explorer",
+        disable_cache=True,
+        is_available=True,
+    )
 
     _func = partial(
         func,
         task="criterion",
-        algorithm_info=algo_info,
+        algo_info=algo_info,
         error_handling=error_handling,
         error_penalty={"constant": np.nan, "slope": np.nan},
     )

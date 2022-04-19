@@ -1,4 +1,5 @@
 import functools
+import inspect
 import warnings
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from estimagic.logging.database_utilities import make_optimization_iteration_tab
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_steps_table
 from estimagic.optimization.check_arguments import check_optimize_kwargs
-from estimagic.optimization.get_algorithm import get_algorithm
+from estimagic.optimization.get_algorithm import get_algorithm_and_algo_info
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
@@ -588,7 +589,7 @@ def _optimize(
         db_kwargs = {"database": None, "path": None, "fast_logging": False}
 
     # get the algorithm
-    internal_algorithm = get_algorithm(
+    internal_algorithm, algo_info = get_algorithm_and_algo_info(
         algorithm=algorithm,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -607,7 +608,7 @@ def _optimize(
     cache = {x_hash: {"criterion": first_eval["output"]}}
 
     # partial the internal_criterion_and_derivative_template
-    always_partialled = {
+    to_partial = {
         "direction": direction,
         "criterion": criterion,
         "params": params,
@@ -621,12 +622,27 @@ def _optimize(
         "first_criterion_evaluation": first_eval,
         "cache": cache,
         "cache_size": cache_size,
+        "algo_info": algo_info,
     }
+
+    if not multistart:
+        to_partial["error_handling"] = error_handling
+        to_partial["error_penalty"] = error_penalty
 
     internal_criterion_and_derivative = functools.partial(
         internal_criterion_and_derivative_template,
-        **always_partialled,
+        **to_partial,
     )
+
+    algo_args = set(inspect.signature(internal_algorithm).parameters)
+
+    problem_functions = {}
+    for task in ["criterion", "derivative", "criterion_and_derivative"]:
+        if task in algo_args:
+            problem_functions[task] = functools.partial(
+                internal_criterion_and_derivative,
+                task=task,
+            )
 
     # do actual optimizations
     if not multistart:
@@ -638,12 +654,8 @@ def _optimize(
             logging=logging,
             db_kwargs=db_kwargs,
         )
-        internal_criterion_and_derivative = functools.partial(
-            internal_criterion_and_derivative,
-            error_handling=error_handling,
-            error_penalty=error_penalty,
-        )
-        raw_res = internal_algorithm(internal_criterion_and_derivative, x, step_ids[0])
+
+        raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
 
         lower, upper = get_internal_sampling_bounds(params, constraints)
@@ -657,7 +669,7 @@ def _optimize(
 
         raw_res = run_multistart_optimization(
             local_algorithm=internal_algorithm,
-            criterion_and_derivative=internal_criterion_and_derivative,
+            problem_functions=problem_functions,
             x=x,
             lower_bounds=lower,
             upper_bounds=upper,
