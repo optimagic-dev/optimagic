@@ -7,6 +7,7 @@ from estimagic.optimization.optimize import process_multistart_sample
 from estimagic.optimization.tiktak import _linear_weights
 from estimagic.optimization.tiktak import _tiktak_weights
 from estimagic.optimization.tiktak import draw_exploration_sample
+from estimagic.optimization.tiktak import draw_exploration_sample_scipy
 from estimagic.optimization.tiktak import get_batched_optimization_sample
 from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_explorations
@@ -39,35 +40,44 @@ def test_process_multistart_sample(sample, params):
     aaae(calculated, expeceted)
 
 
-distributions = ["triangle", "uniform"]
-rules = [
-    "random",
-    "sobol",
-    "halton",
-    "hammersley",
-    "korobov",
-    "latin_hypercube",
-    # chebyshev generated samples of the wrong size!
-]
-test_cases = list(product(distributions, rules))
+dim = 2
+distributions = ["uniform"]
+rules = ["sobol"]
+lower = [np.zeros(dim), np.ones(dim) * 0.5]
+upper = [np.ones(dim), np.ones(dim) * 0.75]
+test_cases = list(product(distributions, rules, lower, upper))
 
 
-@pytest.mark.parametrize("dist, rule", test_cases)
-def test_draw_exploration_sample(dist, rule):
+@pytest.mark.parametrize("dist, rule, lower, upper", test_cases)
+def test_draw_exploration_sample(dist, rule, lower, upper):
 
     results = []
+    results_scipy = []
     for _ in range(2):
         results.append(
             draw_exploration_sample(
-                x=np.array([0.5, 0.5]),
-                lower=np.zeros(2),
-                upper=np.ones(2),
+                x=np.ones_like(lower) * 0.5,
+                lower=lower,
+                upper=upper,
                 n_samples=3,
                 sampling_distribution=dist,
                 sampling_method=rule,
                 seed=1234,
             )
         )
+
+        results_scipy.append(
+            draw_exploration_sample_scipy(
+                x=np.ones_like(lower) * 0.5,
+                lower=lower,
+                upper=upper,
+                n_samples=3,
+                sampling_distribution=dist,
+                sampling_method=rule,
+                seed=1234,
+            )
+        )
+        aaae(results[_], results_scipy[_])
 
     aaae(results[0], results[1])
     calculated = results[0]

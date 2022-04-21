@@ -20,6 +20,7 @@ from estimagic import batch_evaluators as be
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
 from estimagic.parameters.parameter_conversion import get_internal_bounds
+from scipy.stats import qmc
 
 
 def run_multistart_optimization(
@@ -240,7 +241,7 @@ def draw_exploration_sample(
         n_samples (int): Number of sampled points on
             which to do one function evaluation. Default is 10 * n_params.
         sampling_distribution (str): One of "uniform", "triangle". Default is
-            "uniform"  as in the original tiktak algorithm.
+            "uniform" as in the original tiktak algorithm.
         sampling_method (str): One of "random", "sobol", "halton",
             "hammersley", "korobov", "latin_hypercube" and "chebyshev" or a numpy array
             or DataFrame with custom points. Default is sobol for problems with up to 30
@@ -282,6 +283,44 @@ def draw_exploration_sample(
         rule=sampling_method,
     ).T
     return sample
+
+
+def draw_exploration_sample_scipy(
+    x,
+    lower,
+    upper,
+    n_samples,
+    sampling_distribution,
+    sampling_method,
+    seed,
+):
+    """Get a sample of parameter values for the first stage of the tiktak algorithm.
+
+    The sample is created randomly or using low a low discrepancy sequence. Different
+    distributions are available.
+    """
+    valid_rules = ["sobol"]
+
+    if sampling_method not in valid_rules:
+        raise ValueError(
+            f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
+        )
+
+    if sampling_distribution == "uniform":
+        pass
+    else:
+        raise ValueError(f"Unsupported distribution: {sampling_distribution}")
+
+    sampler = qmc.Sobol(d=len(lower), scramble=False, seed=seed)
+
+    # Draw points from open interval (lower, upper)^d. By default, scipy
+    # uses the half-open interval [lower, upper]^d.
+    _ = sampler.fast_forward(1)
+
+    sample_unscaled = sampler.random(n=n_samples)
+    sample_scaled = qmc.scale(sample_unscaled, lower, upper)
+
+    return sample_scaled
 
 
 def get_internal_sampling_bounds(params, constraints):
