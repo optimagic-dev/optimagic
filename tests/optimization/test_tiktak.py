@@ -41,18 +41,18 @@ def test_process_multistart_sample(sample, params):
 
 
 dim = 2
-distributions = ["uniform"]
+distributions = ["uniform", "triangle"]
 rules = ["sobol"]
-lower = [np.zeros(dim), np.ones(dim) * 0.5]
-upper = [np.ones(dim), np.ones(dim) * 0.75]
+lower = [np.zeros(dim), np.ones(dim) * 0.5, -np.ones(dim)]
+upper = [np.ones(dim), np.ones(dim) * 0.75, np.ones(dim) * 2]
 test_cases = list(product(distributions, rules, lower, upper))
 
 
 @pytest.mark.parametrize("dist, rule, lower, upper", test_cases)
 def test_draw_exploration_sample(dist, rule, lower, upper):
-
     results = []
     results_scipy = []
+
     for _ in range(2):
         results.append(
             draw_exploration_sample(

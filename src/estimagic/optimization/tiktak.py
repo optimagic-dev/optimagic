@@ -300,25 +300,37 @@ def draw_exploration_sample_scipy(
     distributions are available.
     """
     valid_rules = ["sobol"]
+    valid_distributions = ["uniform", "triangle"]
 
     if sampling_method not in valid_rules:
         raise ValueError(
             f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
         )
 
-    if sampling_distribution == "uniform":
-        pass
-    else:
+    if sampling_distribution not in valid_distributions:
         raise ValueError(f"Unsupported distribution: {sampling_distribution}")
 
     sampler = qmc.Sobol(d=len(lower), scramble=False, seed=seed)
 
-    # Draw points from open interval (lower, upper)^d. By default, scipy
-    # uses the half-open interval [lower, upper]^d.
+    # Draw `n` points from the open interval (lower, upper)^d.
+    # Since scipy uses the half-open interval [lower, upper)^d internally,
+    # we need to skip the first point in the sequence, i.e. the lower bound.
     _ = sampler.fast_forward(1)
 
     sample_unscaled = sampler.random(n=n_samples)
-    sample_scaled = qmc.scale(sample_unscaled, lower, upper)
+
+    if sampling_distribution == "uniform":
+        sample_scaled = qmc.scale(sample_unscaled, lower, upper)
+
+    elif sampling_distribution == "triangle":
+        # https://en.wikipedia.org/wiki/Triangular_distribution
+        treshold = (x - lower) / (upper - lower)
+
+        sample_scaled = np.where(
+            sample_unscaled < treshold,
+            lower + np.sqrt(sample_unscaled * (upper - lower) * (x - lower)),
+            upper - np.sqrt((1 - sample_unscaled) * (upper - lower) * (upper - x)),
+        )
 
     return sample_scaled
 
