@@ -40,7 +40,7 @@ def test_process_multistart_sample(sample, params):
 
 
 dim = 2
-distributions = ["uniform", "triangle"]
+distributions = ["uniform", "triangular"]
 rules = ["sobol", "halton", "latin_hypercube", "random"]
 lower = [np.zeros(dim), np.ones(dim) * 0.5, -np.ones(dim)]
 upper = [np.ones(dim), np.ones(dim) * 0.75, np.ones(dim) * 2]

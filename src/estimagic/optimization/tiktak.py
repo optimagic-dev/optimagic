@@ -236,7 +236,7 @@ def draw_exploration_sample(
         upper (np.ndarray): Vector of internal upper bounds.
         n_samples (int): Number of sample points on which to perform the
              function evaluation. Default is 10 * n_params.
-        sampling_distribution (str): One of "uniform", "triangle". Default is
+        sampling_distribution (str): One of "uniform", "triangular". Default is
             "uniform", as in the original tiktak algorithm.
         sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
             "random". Default is sobol for problems with up to 30 parameters
@@ -248,7 +248,7 @@ def draw_exploration_sample(
             Each row is a vector of parameter values.
     """
     valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
-    valid_distributions = ["uniform", "triangle"]
+    valid_distributions = ["uniform", "triangular"]
 
     if sampling_method not in valid_rules:
         raise ValueError(
@@ -281,7 +281,7 @@ def draw_exploration_sample(
 
     if sampling_distribution == "uniform":
         sample_scaled = qmc.scale(sample_unscaled, lower, upper)
-    elif sampling_distribution == "triangle":
+    elif sampling_distribution == "triangular":
         sample_scaled = triang.ppf(
             sample_unscaled,
             c=(x - lower) / (upper - lower),
