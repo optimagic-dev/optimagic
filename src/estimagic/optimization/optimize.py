@@ -838,7 +838,7 @@ def _fill_multistart_options_with_defaults(options, params, x, params_to_interna
         "n_samples": 10 * len(x),
         "share_optimizations": 0.1,
         "sampling_distribution": "uniform",
-        "sampling_method": "sobol" if len(x) <= 30 else "random",
+        "sampling_method": "sobol" if len(x) <= 200 else "random",
         "mixing_weight_method": "tiktak",
         "mixing_weight_bounds": (0.1, 0.995),
         "convergence_relative_params_tolerance": 0.01,

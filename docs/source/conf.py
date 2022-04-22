@@ -70,7 +70,6 @@ autodoc_mock_imports = [
     "tornado",
     "petsc4py",
     "statsmodels",
-    "chaospy",
 ]
 
 extlinks = {
