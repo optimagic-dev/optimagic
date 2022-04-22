@@ -197,7 +197,6 @@ def determine_steps(n_samples, n_optimizations):
 
     Returns:
         list: List of dictionaries with information on each step.
-
     """
     exploration_step = {
         "type": "exploration",
@@ -236,7 +235,7 @@ def draw_exploration_sample(
         lower (np.ndarray): Vector of internal lower bounds.
         upper (np.ndarray): Vector of internal upper bounds.
         n_samples (int): Number of sample points on which to perform the
-             function evaluation.
+             function evaluation. Default is 10 * n_params.
         sampling_distribution (str): One of "uniform", "triangle". Default is
             "uniform", as in the original tiktak algorithm.
         sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
@@ -245,7 +244,7 @@ def draw_exploration_sample(
         seed (int): Random seed.
 
     Returns:
-        (np.ndarray): Numpy array of shape (n_samples, len(params)).
+        np.ndarray: Numpy array of shape (n_samples, len(params)).
             Each row is a vector of parameter values.
     """
     valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
