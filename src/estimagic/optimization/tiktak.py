@@ -7,7 +7,6 @@ searches from a set of carefully-selected points in the parameter space.
 
 First implemented in Python by Alisdair McKay
 (`GitHub Repository <https://github.com/amckay/TikTak>`_)
-
 """
 import warnings
 from functools import partial
@@ -220,7 +219,7 @@ def determine_steps(n_samples, n_optimizations):
     return steps
 
 
-def draw_exploration_sample(
+def draw_exploration_sample_chaospy(
     x,
     lower,
     upper,
@@ -233,25 +232,6 @@ def draw_exploration_sample(
 
     The sample is created randomly or using low a low discrepancy sequence. Different
     distributions are available.
-
-    Args:
-        x (np.ndarray): Internal parameter vector,
-        lower (np.ndarray): Vector of internal lower bounds.
-        upper (np.ndarray): Vector of internal upper bounts.
-        n_samples (int): Number of sampled points on
-            which to do one function evaluation. Default is 10 * n_params.
-        sampling_distribution (str): One of "uniform", "triangle". Default is
-            "uniform" as in the original tiktak algorithm.
-        sampling_method (str): One of "random", "sobol", "halton",
-            "hammersley", "korobov", "latin_hypercube" and "chebyshev" or a numpy array
-            or DataFrame with custom points. Default is sobol for problems with up to 30
-            parameters and random for problems with more than 30 parameters.
-        seed (int): Random seed.
-
-    Returns:
-        np.ndarray: Numpy array of shape n_samples, len(params). Each row is a vector
-            of parameter values.
-
     """
     valid_rules = [
         "random",
@@ -285,7 +265,7 @@ def draw_exploration_sample(
     return sample
 
 
-def draw_exploration_sample_scipy(
+def draw_exploration_sample(
     x,
     lower,
     upper,
@@ -296,10 +276,27 @@ def draw_exploration_sample_scipy(
 ):
     """Get a sample of parameter values for the first stage of the tiktak algorithm.
 
-    The sample is created randomly or using low a low discrepancy sequence. Different
+    The sample is created randomly or using a low discrepancy sequence. Different
     distributions are available.
+
+    Args:
+        x (np.ndarray): Internal parameter vector,
+        lower (np.ndarray): Vector of internal lower bounds.
+        upper (np.ndarray): Vector of internal upper bounds.
+        n_samples (int): Number of sampled points on
+            which to do one function evaluation. Default is 10 * n_params.
+        sampling_distribution (str): One of "uniform", "triangle". Default is
+            "uniform", as in the original tiktak algorithm.
+        sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
+            "random". Default is sobol for problems with up to 30 parameters
+            and random for problems with more than 30 parameters.
+        seed (int): Random seed.
+
+    Returns:
+        (np.ndarray): Numpy array of shape (n_samples, len(params)).
+            Each row is a vector of parameter values.
     """
-    valid_rules = ["sobol"]
+    valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
     valid_distributions = ["uniform", "triangle"]
 
     if sampling_method not in valid_rules:
@@ -310,24 +307,34 @@ def draw_exploration_sample_scipy(
     if sampling_distribution not in valid_distributions:
         raise ValueError(f"Unsupported distribution: {sampling_distribution}")
 
-    sampler = qmc.Sobol(d=len(lower), scramble=False, seed=seed)
+    if sampling_method == "sobol":
+        # Draw `n` points from the open interval (lower, upper)^d.
+        # Note that scipy uses the half-open interval [lower, upper)^d internally.
+        # We apply a burn-in phase of 1, i.e. we skip the first point in the sequence
+        # and thus exclude the lower bound.
+        sampler = qmc.Sobol(d=len(lower), scramble=False, seed=seed)
+        _ = sampler.fast_forward(1)
+        sample_unscaled = sampler.random(n=n_samples)
 
-    # Draw `n` points from the open interval (lower, upper)^d.
-    # Since scipy uses the half-open interval [lower, upper)^d internally,
-    # we need to skip the first point in the sequence, i.e. the lower bound.
-    _ = sampler.fast_forward(1)
+    elif sampling_method == "halton":
+        sampler = qmc.Halton(d=len(lower), scramble=False, seed=seed)
+        sample_unscaled = sampler.random(n=n_samples)
 
-    sample_unscaled = sampler.random(n=n_samples)
+    elif sampling_method == "latin_hypercube":
+        sampler = qmc.LatinHypercube(d=len(lower), strength=1, seed=seed)
+        sample_unscaled = sampler.random(n=n_samples)
+
+    elif sampling_method == "random":
+        np.random.seed(seed)
+        sample_unscaled = np.random.sample(size=(n_samples, len(lower)))
 
     if sampling_distribution == "uniform":
         sample_scaled = qmc.scale(sample_unscaled, lower, upper)
-
     elif sampling_distribution == "triangle":
+        # Apply inverse transform sampling to get the desired target distribution
         # https://en.wikipedia.org/wiki/Triangular_distribution
-        treshold = (x - lower) / (upper - lower)
-
         sample_scaled = np.where(
-            sample_unscaled < treshold,
+            sample_unscaled < (x - lower) / (upper - lower),
             lower + np.sqrt(sample_unscaled * (upper - lower) * (x - lower)),
             upper - np.sqrt((1 - sample_unscaled) * (upper - lower) * (upper - x)),
         )
