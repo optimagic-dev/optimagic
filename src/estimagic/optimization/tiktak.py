@@ -11,15 +11,13 @@ First implemented in Python by Alisdair McKay
 import warnings
 from functools import partial
 
-import chaospy
 import numpy as np
-from chaospy.distributions import Triangle
-from chaospy.distributions import Uniform
 from estimagic import batch_evaluators as be
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
 from estimagic.parameters.parameter_conversion import get_internal_bounds
 from scipy.stats import qmc
+from scipy.stats import triang
 
 
 def run_multistart_optimization(
@@ -219,52 +217,6 @@ def determine_steps(n_samples, n_optimizations):
     return steps
 
 
-def draw_exploration_sample_chaospy(
-    x,
-    lower,
-    upper,
-    n_samples,
-    sampling_distribution,
-    sampling_method,
-    seed,
-):
-    """Get a sample of parameter values for the first stage of the tiktak algorithm.
-
-    The sample is created randomly or using low a low discrepancy sequence. Different
-    distributions are available.
-    """
-    valid_rules = [
-        "random",
-        "sobol",
-        "halton",
-        "hammersley",
-        "korobov",
-        "latin_hypercube",
-    ]
-
-    if sampling_method not in valid_rules:
-        raise ValueError(
-            f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
-        )
-
-    if sampling_distribution == "uniform":
-        dist_list = [Uniform(lb, ub) for lb, ub in zip(lower, upper)]
-    elif sampling_distribution == "triangle":
-        dist_list = [Triangle(lb, mp, ub) for lb, mp, ub in zip(lower, x, upper)]
-    else:
-        raise ValueError(f"Unsupported distribution: {sampling_distribution}")
-
-    joint_distribution = chaospy.J(*dist_list)
-
-    np.random.seed(seed)
-
-    sample = joint_distribution.sample(
-        size=n_samples,
-        rule=sampling_method,
-    ).T
-    return sample
-
-
 def draw_exploration_sample(
     x,
     lower,
@@ -283,8 +235,8 @@ def draw_exploration_sample(
         x (np.ndarray): Internal parameter vector,
         lower (np.ndarray): Vector of internal lower bounds.
         upper (np.ndarray): Vector of internal upper bounds.
-        n_samples (int): Number of sampled points on
-            which to do one function evaluation. Default is 10 * n_params.
+        n_samples (int): Number of sample points on which to perform the
+             function evaluation.
         sampling_distribution (str): One of "uniform", "triangle". Default is
             "uniform", as in the original tiktak algorithm.
         sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
@@ -331,12 +283,11 @@ def draw_exploration_sample(
     if sampling_distribution == "uniform":
         sample_scaled = qmc.scale(sample_unscaled, lower, upper)
     elif sampling_distribution == "triangle":
-        # Apply inverse transform sampling to get the desired target distribution
-        # https://en.wikipedia.org/wiki/Triangular_distribution
-        sample_scaled = np.where(
-            sample_unscaled < (x - lower) / (upper - lower),
-            lower + np.sqrt(sample_unscaled * (upper - lower) * (x - lower)),
-            upper - np.sqrt((1 - sample_unscaled) * (upper - lower) * (upper - x)),
+        sample_scaled = triang.ppf(
+            sample_unscaled,
+            c=(x - lower) / (upper - lower),
+            loc=lower,
+            scale=upper - lower,
         )
 
     return sample_scaled

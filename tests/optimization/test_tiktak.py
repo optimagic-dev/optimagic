@@ -7,7 +7,6 @@ from estimagic.optimization.optimize import process_multistart_sample
 from estimagic.optimization.tiktak import _linear_weights
 from estimagic.optimization.tiktak import _tiktak_weights
 from estimagic.optimization.tiktak import draw_exploration_sample
-from estimagic.optimization.tiktak import draw_exploration_sample_chaospy
 from estimagic.optimization.tiktak import get_batched_optimization_sample
 from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_explorations
@@ -50,22 +49,9 @@ test_cases = list(product(distributions, rules, lower, upper))
 
 @pytest.mark.parametrize("dist, rule, lower, upper", test_cases)
 def test_draw_exploration_sample(dist, rule, lower, upper):
-    results_chaospy = []
     results = []
 
     for _ in range(2):
-        results_chaospy.append(
-            draw_exploration_sample_chaospy(
-                x=np.ones_like(lower) * 0.5,
-                lower=lower,
-                upper=upper,
-                n_samples=3,
-                sampling_distribution=dist,
-                sampling_method=rule,
-                seed=1234,
-            )
-        )
-
         results.append(
             draw_exploration_sample(
                 x=np.ones_like(lower) * 0.5,
