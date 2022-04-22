@@ -231,21 +231,21 @@ def draw_exploration_sample(
     distributions are available.
 
     Args:
-        x (np.ndarray): Internal parameter vector,
-        lower (np.ndarray): Vector of internal lower bounds.
-        upper (np.ndarray): Vector of internal upper bounds.
-        n_samples (int): Number of sample points on which to perform the
-             function evaluation. Default is 10 * n_params.
+        x (np.ndarray): Internal parameter vector of shape (n_params,).
+        lower (np.ndarray): Vector of internal lower bounds of shape (n_params,).
+        upper (np.ndarray): Vector of internal upper bounds of shape (n_params,).
+        n_samples (int): Number of sample points on which one function evaluation
+            shall be performed. Default is 10 * n_params.
         sampling_distribution (str): One of "uniform", "triangular". Default is
             "uniform", as in the original tiktak algorithm.
         sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
-            "random". Default is sobol for problems with up to 30 parameters
-            and random for problems with more than 30 parameters.
+            "random". Default is sobol for problems with up to 200 parameters
+            and random for problems with more than 200 parameters.
         seed (int): Random seed.
 
     Returns:
-        np.ndarray: Numpy array of shape (n_samples, len(params)).
-            Each row is a vector of parameter values.
+        np.ndarray: Numpy array of shape (n_samples, n_params).
+            Each row represents a vector of parameter values.
     """
     valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
     valid_distributions = ["uniform", "triangular"]
