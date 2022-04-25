@@ -35,6 +35,10 @@ class InvalidConstraintsError(EstimagicError):
     """Exception for invalid user provided constraints."""
 
 
+class NotInstalledError(EstimagicError):
+    """Exception when optional dependencies are needed but not installed."""
+
+
 class StopOptimizationError(EstimagicError):
     def __init__(self, message, current_status):
         super().__init__(message)

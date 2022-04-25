@@ -470,6 +470,9 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
 
     valid_indices = [i for i, res in enumerate(results) if not isinstance(res, str)]
 
+    if not valid_indices:
+        return current_state, False
+
     valid_results = [results[i] for i in valid_indices]
     valid_starts = [starts[i] for i in valid_indices]
 
