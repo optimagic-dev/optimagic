@@ -121,6 +121,4 @@ Styleguide for the documentation
 
 - Format.
     The code formatting in .rst files is ensured by blacken-docs. For Jupyter
-    notebooks, use the
-    `jupyterlab-code-formatter <https://jupyterlab-code-formatter.readthedocs.io/en/latest/>`_
-    with the black formatter.
+    notebooks, use the jupyterlab-code-formatter with the black formatter.

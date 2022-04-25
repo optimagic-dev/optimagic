@@ -6,6 +6,11 @@ chronological order. We follow `semantic versioning <https://semver.org/>`_ and 
 releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
+0.2.4
+-----
+
+- :gh:`304` Removes the chaospy dependency (:ghuser:`segsell`).
+
 0.2.3
 -----
 
