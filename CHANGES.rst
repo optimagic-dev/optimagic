@@ -6,6 +6,12 @@ chronological order. We follow `semantic versioning <https://semver.org/>`_ and 
 releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
+
+0.2.5
+-----
+
+- :gh:`302` Drastically improves error handling during optimization (:ghuser:`janosg`).
+
 0.2.4
 -----
 
