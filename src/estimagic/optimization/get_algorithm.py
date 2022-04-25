@@ -5,7 +5,7 @@ from functools import partial
 
 import numpy as np
 from estimagic.logging.database_utilities import update_row
-from estimagic.optimization import AVAILABLE_ALGORITHMS
+from estimagic.optimization import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
 
 
@@ -76,9 +76,12 @@ def _process_user_algorithm(algorithm):
 
     if isinstance(algorithm, str):
         try:
-            algorithm = AVAILABLE_ALGORITHMS[algorithm]
+            # Use ALL_ALGORITHMS and not just AVAILABLE_ALGORITHMS such that the
+            # algorithm specific error message with installation instruction will be
+            # reached if an optional dependency is not installed.
+            algorithm = ALL_ALGORITHMS[algorithm]
         except KeyError:
-            proposed = propose_alternatives(algorithm, list(AVAILABLE_ALGORITHMS))
+            proposed = propose_alternatives(algorithm, list(ALL_ALGORITHMS))
             raise ValueError(
                 f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
             ) from None
@@ -128,56 +131,6 @@ def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
         return decorator_add_logging_to_algorithm(algorithm)
     else:
         return decorator_add_logging_to_algorithm
-
-
-def _algorithm_with_logging_template(
-    criterion_and_derivative,
-    x,
-    step_id,
-    algorithm,
-    logging,
-    db_kwargs,
-):
-    """Wrapped algorithm that logs its status.
-
-    Args:
-        criterion_and_derivative (callable): Version of the
-            ``internal_criterion_and_derivative_template`` all arguments except for
-            ``x``, ``task`` and ``fixed_log_data`` have been partialled in.
-        x (np.ndarray): Parameter vector.
-        step_id (int): Internal id of the optimization step.
-        logging (bool): Whether logging is used.
-        algorithm (callable): The internal algorithm where all argument except for
-            ``x`` and ``criterion_and_derivative`` are already partialled in.
-        db_kwargs (dict): Dict with the entries "database", "path" and "fast_logging"
-
-
-    Returns:
-        dict: Same result as internal algorithm.
-
-    """
-
-    if logging:
-        step_id = int(step_id)
-        update_row(
-            data={"status": "running"},
-            rowid=step_id,
-            table_name="steps",
-            **db_kwargs,
-        )
-
-    func = partial(criterion_and_derivative, fixed_log_data={"step": step_id})
-    res = algorithm(func, x)
-
-    if logging:
-        update_row(
-            data={"status": "complete"},
-            rowid=step_id,
-            table_name="steps",
-            **db_kwargs,
-        )
-
-    return res
 
 
 def _adjust_options_to_algorithm(
