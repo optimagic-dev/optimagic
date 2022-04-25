@@ -8,6 +8,7 @@ import pandas as pd
 from estimagic import batch_evaluators as be
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
+from estimagic.exceptions import InvalidFunctionError
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
@@ -30,6 +31,7 @@ from estimagic.parameters.parameter_conversion import get_reparametrize_function
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.parameters.process_constraints import process_constraints
+from estimagic.process_user_function import process_func_of_params
 from estimagic.utilities import hash_array
 
 
@@ -147,7 +149,7 @@ def maximize(
             are not used.
             - share_optimizations (float): Share of sampled points that is used to
             construct a starting point for a local optimization. Default 0.1.
-            - sampling_distribution (str): One of "uniform", "triangle". Default is
+            - sampling_distribution (str): One rof "uniform", "triangle". Default is
             "uniform" as in the original tiktak algorithm.
             - sampling_method (str): One of "random", "sobol", "halton", "hammersley",
             "korobov", "latin_hypercube" or a numpy array or DataFrame with custom
@@ -477,12 +479,20 @@ def _optimize(
         }
 
     # partial the kwargs into corresponding functions
-    criterion = functools.partial(criterion, **criterion_kwargs)
+    criterion = process_func_of_params(
+        func=criterion,
+        kwargs=criterion_kwargs,
+        name="criterion",
+    )
     if derivative is not None:
-        derivative = functools.partial(derivative, **derivative_kwargs)
+        derivative = process_func_of_params(
+            func=derivative, kwargs=derivative_kwargs, name="derivative"
+        )
     if criterion_and_derivative is not None:
-        criterion_and_derivative = functools.partial(
-            criterion_and_derivative, **criterion_and_derivative_kwargs
+        criterion_and_derivative = process_func_of_params(
+            func=criterion_and_derivative,
+            kwargs=criterion_and_derivative_kwargs,
+            name="criterion_and_derivative",
         )
 
     # process params and constraints
@@ -564,11 +574,37 @@ def _optimize(
     )
 
     # do first function evaluation
+    try:
+        first_raw_eval = criterion(params)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        msg = "Error while evaluating criterion at start params."
+        raise InvalidFunctionError(msg) from e
+
     first_eval = {
         "internal_params": x,
         "external_params": params,
-        "output": criterion(params),
+        "output": first_raw_eval,
     }
+    # do first derivative evaluation (if given)
+    if derivative is not None:
+        try:
+            derivative(params)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = "Error while evaluating derivative at start params."
+            raise InvalidFunctionError(msg) from e
+
+    if criterion_and_derivative is not None:
+        try:
+            criterion_and_derivative(params)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = "Error while evaluating criterion_and_derivative at start params."
+            raise InvalidFunctionError(msg) from e
 
     # fill numdiff_options with defaults
     numdiff_options = _fill_numdiff_options_with_defaults(
@@ -850,7 +886,7 @@ def _fill_multistart_options_with_defaults(options, params, x, params_to_interna
         "n_samples": 10 * len(x),
         "share_optimizations": 0.1,
         "sampling_distribution": "uniform",
-        "sampling_method": "sobol" if len(x) <= 30 else "random",
+        "sampling_method": "sobol" if len(x) <= 200 else "random",
         "mixing_weight_method": "tiktak",
         "mixing_weight_bounds": (0.1, 0.995),
         "convergence_relative_params_tolerance": 0.01,

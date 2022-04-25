@@ -105,8 +105,8 @@ def dimension_to_number_of_triangular_elements(dim):
     return int(dim * (dim + 1) / 2)
 
 
-def propose_alternatives(requested_algo, possibilities, number=3):
-    """Propose a a number of algorithms based on similarity to the requested algorithm.
+def propose_alternatives(requested, possibilities, number=3):
+    """Propose possible alternatives based on similarity to requested.
 
     Args:
         requested_algo (str): From the user requested algorithm.
@@ -125,7 +125,8 @@ def propose_alternatives(requested_algo, possibilities, number=3):
         ['scipy_lbfgsb', 'nlopt_lbfgsb']
 
     """
-    proposals_w_probs = fw_process.extract(requested_algo, possibilities, limit=number)
+    number = min(number, len(possibilities))
+    proposals_w_probs = fw_process.extract(requested, possibilities, limit=number)
     proposals = [proposal[0] for proposal in proposals_w_probs]
 
     return proposals

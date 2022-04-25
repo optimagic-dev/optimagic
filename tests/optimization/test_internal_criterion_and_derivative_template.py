@@ -156,7 +156,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
         direction=direction,
     )
 
-    with pytest.warns(None):
+    with pytest.warns():
         calc_criterion, calc_derivative = internal_criterion_and_derivative_template(
             task="criterion_and_derivative", **inputs
         )

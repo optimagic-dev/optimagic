@@ -7,20 +7,18 @@ searches from a set of carefully-selected points in the parameter space.
 
 First implemented in Python by Alisdair McKay
 (`GitHub Repository <https://github.com/amckay/TikTak>`_)
-
 """
 import warnings
 from functools import partial
 
-import chaospy
 import numpy as np
-from chaospy.distributions import Triangle
-from chaospy.distributions import Uniform
 from estimagic import batch_evaluators as be
 from estimagic.decorators import AlgoInfo
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
 from estimagic.parameters.parameter_conversion import get_internal_bounds
+from scipy.stats import qmc
+from scipy.stats import triang
 
 
 def run_multistart_optimization(
@@ -204,7 +202,6 @@ def determine_steps(n_samples, n_optimizations):
 
     Returns:
         list: List of dictionaries with information on each step.
-
     """
     exploration_step = {
         "type": "exploration",
@@ -235,58 +232,69 @@ def draw_exploration_sample(
 ):
     """Get a sample of parameter values for the first stage of the tiktak algorithm.
 
-    The sample is created randomly or using low a low discrepancy sequence. Different
+    The sample is created randomly or using a low discrepancy sequence. Different
     distributions are available.
 
     Args:
-        x (np.ndarray): Internal parameter vector,
-        lower (np.ndarray): Vector of internal lower bounds.
-        upper (np.ndarray): Vector of internal upper bounts.
-        n_samples (int): Number of sampled points on
-            which to do one function evaluation. Default is 10 * n_params.
-        sampling_distribution (str): One of "uniform", "triangle". Default is
-            "uniform"  as in the original tiktak algorithm.
-        sampling_method (str): One of "random", "sobol", "halton",
-            "hammersley", "korobov", "latin_hypercube" and "chebyshev" or a numpy array
-            or DataFrame with custom points. Default is sobol for problems with up to 30
-            parameters and random for problems with more than 30 parameters.
+        x (np.ndarray): Internal parameter vector of shape (n_params,).
+        lower (np.ndarray): Vector of internal lower bounds of shape (n_params,).
+        upper (np.ndarray): Vector of internal upper bounds of shape (n_params,).
+        n_samples (int): Number of sample points on which one function evaluation
+            shall be performed. Default is 10 * n_params.
+        sampling_distribution (str): One of "uniform", "triangular". Default is
+            "uniform", as in the original tiktak algorithm.
+        sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
+            "random". Default is sobol for problems with up to 200 parameters
+            and random for problems with more than 200 parameters.
         seed (int): Random seed.
 
     Returns:
-        np.ndarray: Numpy array of shape n_samples, len(params). Each row is a vector
-            of parameter values.
-
+        np.ndarray: Numpy array of shape (n_samples, n_params).
+            Each row represents a vector of parameter values.
     """
-    valid_rules = [
-        "random",
-        "sobol",
-        "halton",
-        "hammersley",
-        "korobov",
-        "latin_hypercube",
-    ]
+    valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
+    valid_distributions = ["uniform", "triangular"]
 
     if sampling_method not in valid_rules:
         raise ValueError(
             f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
         )
 
-    if sampling_distribution == "uniform":
-        dist_list = [Uniform(lb, ub) for lb, ub in zip(lower, upper)]
-    elif sampling_distribution == "triangle":
-        dist_list = [Triangle(lb, mp, ub) for lb, mp, ub in zip(lower, x, upper)]
-    else:
+    if sampling_distribution not in valid_distributions:
         raise ValueError(f"Unsupported distribution: {sampling_distribution}")
 
-    joint_distribution = chaospy.J(*dist_list)
+    if sampling_method == "sobol":
+        # Draw `n` points from the open interval (lower, upper)^d.
+        # Note that scipy uses the half-open interval [lower, upper)^d internally.
+        # We apply a burn-in phase of 1, i.e. we skip the first point in the sequence
+        # and thus exclude the lower bound.
+        sampler = qmc.Sobol(d=len(lower), scramble=False, seed=seed)
+        _ = sampler.fast_forward(1)
+        sample_unscaled = sampler.random(n=n_samples)
 
-    np.random.seed(seed)
+    elif sampling_method == "halton":
+        sampler = qmc.Halton(d=len(lower), scramble=False, seed=seed)
+        sample_unscaled = sampler.random(n=n_samples)
 
-    sample = joint_distribution.sample(
-        size=n_samples,
-        rule=sampling_method,
-    ).T
-    return sample
+    elif sampling_method == "latin_hypercube":
+        sampler = qmc.LatinHypercube(d=len(lower), strength=1, seed=seed)
+        sample_unscaled = sampler.random(n=n_samples)
+
+    elif sampling_method == "random":
+        np.random.seed(seed)
+        sample_unscaled = np.random.sample(size=(n_samples, len(lower)))
+
+    if sampling_distribution == "uniform":
+        sample_scaled = qmc.scale(sample_unscaled, lower, upper)
+    elif sampling_distribution == "triangular":
+        sample_scaled = triang.ppf(
+            sample_unscaled,
+            c=(x - lower) / (upper - lower),
+            loc=lower,
+            scale=upper - lower,
+        )
+
+    return sample_scaled
 
 
 def get_internal_sampling_bounds(params, constraints):
@@ -476,6 +484,9 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     best_res = current_state["best_res"]
 
     valid_indices = [i for i, res in enumerate(results) if not isinstance(res, str)]
+
+    if not valid_indices:
+        return current_state, False
 
     valid_results = [results[i] for i in valid_indices]
     valid_starts = [starts[i] for i in valid_indices]
