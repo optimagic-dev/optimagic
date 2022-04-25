@@ -4,6 +4,7 @@ from functools import partial
 
 import numpy as np
 from estimagic.config import IS_FIDES_INSTALLED
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
@@ -45,9 +46,9 @@ def fides(
 
     """
     if not IS_FIDES_INSTALLED:
-        raise NotImplementedError(
-            "The fides package is not installed. You can install it with "
-            "`pip install fides>=0.7.4`."
+        raise NotInstalledError(
+            "The 'fides' algorithm requires the fides package to be installed. "
+            "You can install it with `pip install fides>=0.7.4`."
         )
 
     fides_options = {

@@ -2,6 +2,7 @@
 import functools
 
 from estimagic.config import IS_CYIPOPT_INSTALLED
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.optimization.scipy_optimizers import get_scipy_bounds
@@ -209,9 +210,9 @@ def ipopt(
 
     """
     if not IS_CYIPOPT_INSTALLED:
-        raise NotImplementedError(
-            "The cyipopt package is not installed and required for 'ipopt'. You can "
-            "install the package with: `conda install -c conda-forge cyipopt`"
+        raise NotInstalledError(
+            "The 'ipopt' algorithm requires the cyipopt package to be installed. "
+            "You can it with: `conda install -c conda-forge cyipopt`."
         )
     if acceptable_tol <= convergence_relative_criterion_tolerance:
         raise ValueError(

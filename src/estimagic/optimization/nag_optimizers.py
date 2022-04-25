@@ -15,6 +15,7 @@ import numpy as np
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
 from estimagic.decorators import mark_minimizer
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CLIP_CRITERION_IF_OVERFLOWING
 from estimagic.optimization.algo_options import (
     CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
@@ -102,8 +103,8 @@ def nag_dfols(
 
     """
     if not IS_DFOLS_INSTALLED:
-        raise NotImplementedError(
-            "The dfols package is not installed and required for 'nag_dfols'. "
+        raise NotInstalledError(
+            "The 'nag_dfols' algorithm requires the DFO-LS package to be installed."
             "You can install it with 'pip install DFO-LS'. "
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
@@ -294,9 +295,9 @@ def nag_pybobyqa(
 
     """
     if not IS_PYBOBYQA_INSTALLED:
-        raise NotImplementedError(
-            "The pybobyqa package is not installed and required for 'nag_pybobyqa'. "
-            "You can install it with 'pip install Py-BOBYQA'. "
+        raise NotInstalledError(
+            "The 'nag_pybobyqa' algorithm requires the Py-BOBYQA package to be "
+            "installed. You can install it with 'pip install Py-BOBYQA'. "
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/"
             "install.html",

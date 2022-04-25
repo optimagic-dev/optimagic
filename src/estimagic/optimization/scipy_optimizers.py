@@ -61,12 +61,6 @@ from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIO
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.utilities import calculate_trustregion_initial_radius
 
-DEFAULT_ALGO_INFO = {
-    "primary_criterion_entry": "value",
-    "parallelizes": False,
-    "needs_scaling": False,
-}
-
 
 @mark_minimizer(name="scipy_lbfgsb")
 def scipy_lbfgsb(

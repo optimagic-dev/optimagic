@@ -4,6 +4,7 @@ import functools
 import numpy as np
 from estimagic.config import IS_PETSC4PY_INSTALLED
 from estimagic.decorators import mark_minimizer
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
@@ -39,10 +40,11 @@ def tao_pounders(
     For details see :ref:`tao_algorithm`.
     """
     if not IS_PETSC4PY_INSTALLED:
-        raise NotImplementedError(
-            "The petsc4py package is not installed and required for 'tao_pounders'. If "
-            "you are using Linux or MacOS, install the package with 'conda install -c "
-            "conda-forge petsc4py. The package is not available on Windows."
+        raise NotInstalledError(
+            "The 'tao_pounders' algorithm requires the petsc4py package to be "
+            "installed. If you are using Linux or MacOS, install the package with "
+            "'conda install -c conda-forge petsc4py. The package is not available on "
+            "Windows. Windows users can use estimagics 'pounders' algorithm instead."
         )
 
     x = _initialise_petsc_array(x)

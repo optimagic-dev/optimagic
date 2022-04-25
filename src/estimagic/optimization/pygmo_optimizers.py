@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 from estimagic import batch_evaluators
 from estimagic.config import IS_PYGMO_INSTALLED
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
@@ -1143,8 +1144,11 @@ def _minimize_pygmo(
 
     """
     if not IS_PYGMO_INSTALLED:
-        raise NotImplementedError(
-            f"The pygmo package is not installed and required for '{method}'."
+        raise NotInstalledError(
+            f"The {method} algorithm requires the pygmo package to be installed. "
+            "You can install it with 'conda install -c conda-forge pygmo'. Visit "
+            "https://esa.github.io/pygmo2/install.html for more detailed installation "
+            "instructions."
         )
 
     algo_options = {} if algo_options is None else algo_options.copy()
