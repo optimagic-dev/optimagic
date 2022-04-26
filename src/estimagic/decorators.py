@@ -58,7 +58,7 @@ def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=Fa
                     internal=x,
                     fixed_values=fixed_values,
                     pre_replacements=pre_replacements,
-                    processed_constraints=transformations,
+                    transformations=transformations,
                     post_replacements=post_replacements,
                     params=params,
                     return_numpy=False,

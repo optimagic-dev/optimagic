@@ -82,7 +82,7 @@ def get_reparametrize_functions(
         partialed_to_internal = functools.partial(
             reparametrize_to_internal,
             internal_free=internal_free,
-            processed_constraints=transformations,
+            transformations=transformations,
             scaling_factor=scaling_factor,
             scaling_offset=scaling_offset,
         )
@@ -91,7 +91,7 @@ def get_reparametrize_functions(
             reparametrize_from_internal,
             fixed_values=fixed_values,
             pre_replacements=pre_replacements,
-            processed_constraints=transformations,
+            transformations=transformations,
             post_replacements=post_replacements,
             params=params,
             scaling_factor=scaling_factor,
@@ -106,8 +106,8 @@ def get_derivative_conversion_function(
     constraints,
     scaling_factor=None,
     scaling_offset=None,
-    processed_params=None,
-    processed_constraints=None,
+    constr_info=None,
+    transformations=None,
 ):
     """Construct functions to map between internal and external derivatives.
 
@@ -118,9 +118,8 @@ def get_derivative_conversion_function(
         constraints (list): List of constraint dictionaries.
         scaling_factor (np.ndarray or None): If None, no scaling factor is used.
         scaling_offset (np.ndarray or None): If None, no scaling offset is used.
-        processed_params (pandas.DataFrame): Processed parameters.
-        processed_constraints (list): Processed constraints.
-
+        constr_info (dict): Dict of 1d numpy arrays with info about constraints.
+        transformations (list): Processed transforming constraints.
 
     Returns:
         func: Function that converts an external derivative to an internal one
@@ -133,21 +132,21 @@ def get_derivative_conversion_function(
         )
 
     else:
-        if processed_params is None or processed_constraints is None:
+        if constr_info is None or transformations is None:
             params = add_default_bounds_to_params(params)
             check_params_are_valid(params)
-            processed_constraints, processed_params = process_constraints(
+            transformations, constr_info = process_constraints(
                 constraints=constraints,
                 parvec=params,
                 scaling_factor=scaling_factor,
                 scaling_offset=scaling_offset,
             )
 
-        pre_replacements = processed_params["_pre_replacements"]
-        post_replacements = processed_params["_post_replacements"]
-        fixed_values = processed_params["_internal_fixed_value"]
+        pre_replacements = constr_info["_pre_replacements"]
+        post_replacements = constr_info["_post_replacements"]
+        fixed_values = constr_info["_internal_fixed_value"]
 
-        dim_internal = int(processed_params["_internal_free"].sum())
+        dim_internal = int(constr_info["_internal_free"].sum())
 
         pre_replace_jac = pre_replace_jacobian(
             pre_replacements=pre_replacements, dim_in=dim_internal
@@ -158,7 +157,7 @@ def get_derivative_conversion_function(
             convert_external_derivative_to_internal,
             fixed_values=fixed_values,
             pre_replacements=pre_replacements,
-            processed_constraints=processed_constraints,
+            transformations=transformations,
             pre_replace_jac=pre_replace_jac,
             post_replace_jac=post_replace_jac,
             scaling_factor=scaling_factor,

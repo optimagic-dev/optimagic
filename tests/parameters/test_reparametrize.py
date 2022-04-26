@@ -269,7 +269,7 @@ def back_and_forth_transformation_and_assert(params, constraints):
         pre_replacements=pp["_pre_replacements"],
         params=params,
         return_numpy=True,
-        processed_constraints=pc,
+        transformations=pc,
         post_replacements=pp["_post_replacements"],
     )
 

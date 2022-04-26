@@ -568,8 +568,8 @@ def _optimize(
         constraints=constraints,
         scaling_factor=scaling_factor,
         scaling_offset=scaling_offset,
-        processed_params=pp,
-        processed_constraints=pc,
+        constr_info=pp,
+        transformations=pc,
     )
 
     # do first function evaluation
