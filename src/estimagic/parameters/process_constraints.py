@@ -120,14 +120,14 @@ def process_constraints(
                 scaling_factor=scaling_factor,
                 scaling_offset=scaling_offset,
             )
-        constr_info["_pre_replacements"] = _create_pre_replacements(
-            constr_info._internal_free
-        )
         # ==============================================================================
         constr_info = {
             name: constr_info[name].to_numpy() for name in constr_info.columns
         }  # xxxx
         # ==============================================================================
+        constr_info["_pre_replacements"] = _create_pre_replacements(
+            constr_info["_internal_free"]
+        )
 
         constr_info["_internal_fixed_value"] = _create_internal_fixed_value(
             constr_info["_fixed_value"], transformations
@@ -380,9 +380,8 @@ def _create_pre_replacements(internal_free):
         internal_free (pd.Series): The _internal_free column of the processed params.
 
     """
-    pre_replacements = (
-        internal_free.replace(False, np.nan).cumsum().subtract(1).fillna(-1).astype(int)
-    )
+    pre_replacements = np.full(len(internal_free), -1)
+    pre_replacements[internal_free] = np.arange(internal_free.sum())
 
     return pre_replacements
 
