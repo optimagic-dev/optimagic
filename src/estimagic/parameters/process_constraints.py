@@ -101,12 +101,12 @@ def process_constraints(
         constraints = _replace_increasing_and_decreasing_by_linear(constraints)
         constraints = _process_linear_weights(constraints, parvec)
         transformations, constr_info = consolidate_constraints(constraints, parvec)
-        check_for_incompatible_overlaps(constr_info, transformations)
         # ==============================================================================
         constr_info = {
             name: constr_info[name].to_numpy() for name in constr_info.columns
         }  # xxxx
         # ==============================================================================
+        check_for_incompatible_overlaps(constr_info, transformations, parnames)
         check_fixes_and_bounds(constr_info, transformations, parnames)
 
         int_lower, int_upper = _create_unscaled_internal_bounds(

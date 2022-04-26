@@ -110,7 +110,7 @@ def check_types(constraints):
             raise TypeError("Invalid constraint_type: {}".format(constr["type"]))
 
 
-def check_for_incompatible_overlaps(params, pc):
+def check_for_incompatible_overlaps(constr_info, transformations, parnames):
     """Check that there are no overlaps between constraints that transform parameters.
 
     Since the constraints are already consolidated such that only those that transform
@@ -118,13 +118,14 @@ def check_for_incompatible_overlaps(params, pc):
     boils down to checking that no parameter appears more than once.
 
     Args:
-        params (pd.DataFrame): see :ref:`params`. Only used for error messages.
-        pc (list): List with consolidated constraint dictionaries.
+        constr_info (dict): Dict of 1d numpy arrays with info about constraints.
+        transformations (list): Processed transforming constraints.
+        parnames (list): List of parameter names.
 
     """
-    all_ilocs = []
-    for constr in pc:
-        all_ilocs += constr["index"]
+    all_indices = []
+    for constr in transformations:
+        all_indices += constr["index"]
 
     msg = (
         "Transforming constraints such as 'covariance', 'sdcorr', 'probability' "
@@ -132,10 +133,10 @@ def check_for_incompatible_overlaps(params, pc):
         "constraints. This was violated for the following parameters:\n{}"
     )
 
-    if len(set(all_ilocs)) < len(all_ilocs):
-        unique, counts = np.unique(all_ilocs, return_counts=True)
+    if len(set(all_indices)) < len(all_indices):
+        unique, counts = np.unique(all_indices, return_counts=True)
         invalid_indices = unique[counts >= 2]
-        invalid_names = params.iloc[invalid_indices].index
+        invalid_names = parnames[invalid_indices]
 
         raise ValueError(msg.format(invalid_names))
 
@@ -151,6 +152,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
     Args:
         constr_info (dict): Dict of 1d numpy arrays with info about constraints.
         transformations (list): Processed transforming constraints.
+        parnames (list): List of parameter names.
 
     """
     df = pd.DataFrame(constr_info, index=parnames)
