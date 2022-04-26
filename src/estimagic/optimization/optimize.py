@@ -543,8 +543,8 @@ def _optimize(
         constraints=constraints,
         scaling_factor=scaling_factor,
         scaling_offset=scaling_offset,
-        processed_params=pp,
-        processed_constraints=pc,
+        constr_info=pp,
+        transformations=pc,
     )
     # get internal parameters and bounds
     x = params_to_internal(params["value"].to_numpy())

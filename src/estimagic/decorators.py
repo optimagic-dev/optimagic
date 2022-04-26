@@ -42,11 +42,11 @@ def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=Fa
     """
     constraints = [] if constraints is None else constraints
 
-    pc, pp = process_constraints(constraints, params)
+    transformations, constr_info = process_constraints(constraints, params)
 
-    fixed_values = pp["_internal_fixed_value"]
-    pre_replacements = pp["_pre_replacements"]
-    post_replacements = pp["_post_replacements"]
+    fixed_values = constr_info["_internal_fixed_value"]
+    pre_replacements = constr_info["_pre_replacements"]
+    post_replacements = constr_info["_post_replacements"]
 
     def decorator_numpy_interface(func):
         @functools.wraps(func)
@@ -58,7 +58,7 @@ def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=Fa
                     internal=x,
                     fixed_values=fixed_values,
                     pre_replacements=pre_replacements,
-                    processed_constraints=pc,
+                    processed_constraints=transformations,
                     post_replacements=post_replacements,
                     params=params,
                     return_numpy=False,

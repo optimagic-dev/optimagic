@@ -30,8 +30,8 @@ def calculate_scaling_factor_and_offset(
     to_internal, from_internal = get_reparametrize_functions(
         params=params,
         constraints=constraints,
-        processed_params=processed_params,
-        processed_constraints=processed_constraints,
+        constr_info=processed_params,
+        transformations=processed_constraints,
     )
 
     x = to_internal(params["value"].to_numpy())
