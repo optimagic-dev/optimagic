@@ -107,17 +107,17 @@ def process_constraints(
         )
         constr_info["_internal_lower"] = int_lower
         constr_info["_internal_upper"] = int_upper
-        constr_info["_internal_free"] = _create_internal_free(
-            constr_info._is_fixed_to_value,
-            constr_info._is_fixed_to_other,
-            transformations,
-        )
-
         # ==============================================================================
         constr_info = {
             name: constr_info[name].to_numpy() for name in constr_info.columns
         }  # xxxx
         # ==============================================================================
+        constr_info["_internal_free"] = _create_internal_free(
+            constr_info["_is_fixed_to_value"],
+            constr_info["_is_fixed_to_other"],
+            transformations,
+        )
+
         for col in ["_internal_lower", "_internal_upper"]:
             constr_info[col] = _scale_bound_to_internal(
                 constr_info[col],
@@ -304,13 +304,13 @@ def _create_unscaled_internal_bounds(lower, upper, constraints):
     The columns have the length of the external params and will be reduced later.
 
     Args:
-        lower (pd.Series): Processed and consolidated external lower bounds.
-        upper (pd.Series): Processed and consolidated external upper bounds.
+        lower (np.ndarray): Processed and consolidated external lower bounds.
+        upper (np.ndarray): Processed and consolidated external upper bounds.
         pc (pd.DataFrame): Processed and consolidated constraints.
 
     Returns:
-        int_lower (pd.Series): Lower bound of internal parameters.
-        int_upper (pd.Series): Upper bound of internal parameters.
+        int_lower (np.ndarray): Lower bound of internal parameters.
+        int_upper (np.ndarray): Upper bound of internal parameters.
 
     """
     int_lower, int_upper = lower.copy(), upper.copy()
@@ -343,22 +343,21 @@ def _create_internal_free(is_fixed_to_value, is_fixed_to_other, constraints):
     """Boolean Series that is true for parameters over which the optimizer optimizes.
 
     Args:
-        is_fixed_to_value (pd.Series): The _is_fixed_to_value column of pp.
-        is_fixed_to_other (pd.Series): The _is_fixed_to_other column of pp.
+        is_fixed_to_value (np.ndarray): The _is_fixed_to_value column of pp.
+        is_fixed_to_other (np.ndarray): The _is_fixed_to_other column of pp.
 
     Returns:
-        int_free (pd.Series)
+        int_free (np.ndarray)
     """
     int_fixed = is_fixed_to_value | is_fixed_to_other
 
     for constr in constraints:
         if constr["type"] == "probability":
-            int_fixed.iloc[constr["index"][-1]] = True
+            int_fixed[constr["index"][-1]] = True
         elif constr["type"] == "linear":
-            int_fixed.iloc[constr["index"]] = False
-            int_fixed.update(constr["right_hand_side"]["value"].notnull())
-            # dtype gets messed up by update
-            int_fixed = int_fixed.astype(bool)
+            int_fixed[constr["index"]] = False
+            relevant_index = constr["index"][-len(constr["right_hand_side"]) :]
+            int_fixed[relevant_index] = np.isfinite(constr["right_hand_side"]["value"])
 
     int_free = ~int_fixed
 
@@ -377,7 +376,7 @@ def _create_pre_replacements(internal_free):
     that has the same length as all params.
 
     Args:
-        internal_free (pd.Series): The _internal_free column of the processed params.
+        internal_free (np.ndarray): The _internal_free column of the processed params.
 
     """
     pre_replacements = np.full(len(internal_free), -1)
@@ -393,8 +392,8 @@ def _create_internal_fixed_value(fixed_value, constraints):
     transformed) user specified fixed values.
 
     Args:
-        fixed_value (pd.Series): The (external) _fixed_value column of pp.
-        pc (list): Processed and consolidated params.
+        fixed_value (np.ndarray): The (external) _fixed_value column of pp.
+        constraints (list): Processed and consolidated params.
 
     """
     int_fix = fixed_value.copy()
