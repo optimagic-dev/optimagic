@@ -525,7 +525,7 @@ def _optimize(
         )
         pc, pp = process_constraints(
             constraints=constraints,
-            params=params,
+            parvec=params,
             scaling_factor=scaling_factor,
             scaling_offset=scaling_offset,
         )

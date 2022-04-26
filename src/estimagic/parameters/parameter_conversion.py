@@ -66,7 +66,7 @@ def get_reparametrize_functions(
 
             processed_constraints, processed_params = process_constraints(
                 constraints=constraints,
-                params=params,
+                parvec=params,
                 scaling_factor=scaling_factor,
                 scaling_offset=scaling_offset,
             )
@@ -138,7 +138,7 @@ def get_derivative_conversion_function(
             check_params_are_valid(params)
             processed_constraints, processed_params = process_constraints(
                 constraints=constraints,
-                params=params,
+                parvec=params,
                 scaling_factor=scaling_factor,
                 scaling_offset=scaling_offset,
             )
@@ -182,7 +182,7 @@ def get_internal_bounds(
 
             _, processed_params = process_constraints(
                 constraints=constraints,
-                params=params,
+                parvec=params,
                 scaling_factor=scaling_factor,
                 scaling_offset=scaling_offset,
             )

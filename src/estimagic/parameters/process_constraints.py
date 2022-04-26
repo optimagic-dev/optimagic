@@ -42,20 +42,26 @@ from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_p
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
-def process_constraints(constraints, params, scaling_factor=None, scaling_offset=None):
+def process_constraints(
+    constraints,
+    parvec,
+    scaling_factor=None,
+    scaling_offset=None,
+):
     """Process, consolidate and check constraints.
 
     Args:
         constraints (list): List of dictionaries where each dictionary is a constraint.
-        params (pd.DataFrame): see :ref:`params`.
+        parvec (np.ndarray): 1d numpy array with flattened params.
         scaling_factor (np.ndarray or None): If None, no scaling factor is used.
         scaling_offset (np.ndarray or None): If None, no scaling offset is used.
 
     Returns:
 
-        pc (list): A processed version of those constraints
+        transformations (list): A processed version of those constraints
             that entail actual transformations and not just fixing parameters.
-        pp (pd.DataFrame): Processed params. A copy of params with additional columns:
+        constr_info (dict): Dict of 1d numpy arrays of length n_params (or None) with
+            information that is needed for the reparametrizations.
             - _internal_lower:
               Lower bounds for the internal parameter vector. Those are derived from
               the original lower bounds and additional bounds implied by other
@@ -77,45 +83,51 @@ def process_constraints(constraints, params, scaling_factor=None, scaling_offset
               parameter
 
     """
-    params = add_default_bounds_to_params(params)
+    parvec = add_default_bounds_to_params(parvec)
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
         )
-        params = params.copy()
+        parvec = parvec.copy()
         check_types(constraints)
         # selectors have to be processed before anything else happens to the params
-        pc = _process_selectors(constraints, params)
+        transformations = _process_selectors(constraints, parvec)
 
-        pc = _replace_pairwise_equality_by_equality(pc)
-        pc = _process_linear_weights(pc, params)
-        check_constraints_are_satisfied(pc, params)
-        pc = _replace_increasing_and_decreasing_by_linear(pc)
-        pc = _process_linear_weights(pc, params)
-        pc, pp = consolidate_constraints(pc, params)
-        check_for_incompatible_overlaps(pp, pc)
-        check_fixes_and_bounds(pp, pc)
+        transformations = _replace_pairwise_equality_by_equality(transformations)
+        transformations = _process_linear_weights(transformations, parvec)
+        check_constraints_are_satisfied(transformations, parvec)
+        transformations = _replace_increasing_and_decreasing_by_linear(transformations)
+        transformations = _process_linear_weights(transformations, parvec)
+        transformations, constr_info = consolidate_constraints(transformations, parvec)
+        check_for_incompatible_overlaps(constr_info, transformations)
+        check_fixes_and_bounds(constr_info, transformations)
 
         int_lower, int_upper = _create_unscaled_internal_bounds(
-            pp.lower_bound, pp.upper_bound, pc
+            constr_info.lower_bound, constr_info.upper_bound, transformations
         )
-        pp["_internal_lower"] = int_lower
-        pp["_internal_upper"] = int_upper
-        pp["_internal_free"] = _create_internal_free(
-            pp._is_fixed_to_value, pp._is_fixed_to_other, pc
+        constr_info["_internal_lower"] = int_lower
+        constr_info["_internal_upper"] = int_upper
+        constr_info["_internal_free"] = _create_internal_free(
+            constr_info._is_fixed_to_value,
+            constr_info._is_fixed_to_other,
+            transformations,
         )
 
         for col in ["_internal_lower", "_internal_upper"]:
-            pp[col] = _scale_bound_to_internal(
-                pp[col],
-                pp._internal_free,
+            constr_info[col] = _scale_bound_to_internal(
+                constr_info[col],
+                constr_info._internal_free,
                 scaling_factor=scaling_factor,
                 scaling_offset=scaling_offset,
             )
-        pp["_pre_replacements"] = _create_pre_replacements(pp._internal_free)
-        pp["_internal_fixed_value"] = _create_internal_fixed_value(pp._fixed_value, pc)
+        constr_info["_pre_replacements"] = _create_pre_replacements(
+            constr_info._internal_free
+        )
+        constr_info["_internal_fixed_value"] = _create_internal_fixed_value(
+            constr_info._fixed_value, transformations
+        )
 
-        return pc, pp
+        return transformations, constr_info
 
 
 def _process_selectors(constraints, params):
@@ -126,13 +138,13 @@ def _process_selectors(constraints, params):
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
-        pc (list): The resulting constraint dictionaries contain a new entry
+        list: The resulting constraint dictionaries contain a new entry
             called 'index' that consists of the positions of the selected parameters.
             If the selected parameters are consecutive entries, the value corresponding
             to 'index' is a list of positions.
 
     """
-    pc = []
+    out = []
 
     for constr in constraints:
         new_constr = constr.copy()
@@ -179,12 +191,12 @@ def _process_selectors(constraints, params):
                 new_constr["indices"] = indices
             else:
                 new_constr["index"] = indices[0]
-            pc.append(new_constr)
+            out.append(new_constr)
 
-    return pc
+    return out
 
 
-def _replace_pairwise_equality_by_equality(pc):
+def _replace_pairwise_equality_by_equality(constraints):
     """Rewrite pairwise equality constraints to equality constraints.
 
     Args:
@@ -192,21 +204,21 @@ def _replace_pairwise_equality_by_equality(pc):
             It is assumed that the selectors in constraints were already processed.
 
     Returns:
-        pc (list): List of processed constraints.
+        list: List of processed constraints.
 
     """
-    pairwise_constraints = [c for c in pc if c["type"] == "pairwise_equality"]
-    pc = [c for c in pc if c["type"] != "pairwise_equality"]
+    pairwise_constraints = [c for c in constraints if c["type"] == "pairwise_equality"]
+    constraints = [c for c in constraints if c["type"] != "pairwise_equality"]
     for constr in pairwise_constraints:
         equality_constraints = []
         for elements in zip(*constr["indices"]):
             equality_constraints.append({"index": list(elements), "type": "equality"})
-        pc += equality_constraints
+        constraints += equality_constraints
 
-    return pc
+    return constraints
 
 
-def _process_linear_weights(pc, params):
+def _process_linear_weights(constraints, params):
     """Harmonize the weights of linear constraints.
 
     Args:
@@ -218,7 +230,7 @@ def _process_linear_weights(pc, params):
 
     """
     processed = []
-    for constr in pc:
+    for constr in constraints:
         if constr["type"] == "linear":
             raw_weights = constr["weights"]
             params_subset = params.iloc[constr["index"]]
@@ -245,7 +257,7 @@ def _process_linear_weights(pc, params):
     return processed
 
 
-def _replace_increasing_and_decreasing_by_linear(pc):
+def _replace_increasing_and_decreasing_by_linear(constraints):
     """Write increasing and decreasing constraints as linear constraints.
 
     Args:
@@ -257,7 +269,7 @@ def _replace_increasing_and_decreasing_by_linear(pc):
     """
     increasing_ilocs, other_constraints = [], []
 
-    for constr in pc:
+    for constr in constraints:
         if constr["type"] == "increasing":
             increasing_ilocs.append(constr["index"])
         elif constr["type"] == "decreasing":
@@ -280,7 +292,7 @@ def _replace_increasing_and_decreasing_by_linear(pc):
     return processed
 
 
-def _create_unscaled_internal_bounds(lower, upper, pc):
+def _create_unscaled_internal_bounds(lower, upper, constraints):
     """Create columns with bounds for the internal parameter vector.
 
     The columns have the length of the external params and will be reduced later.
@@ -297,7 +309,7 @@ def _create_unscaled_internal_bounds(lower, upper, pc):
     """
     int_lower, int_upper = lower.copy(), upper.copy()
 
-    for constr in pc:
+    for constr in constraints:
         if constr["type"] in ["covariance", "sdcorr"]:
             # Note that the diagonal positions are the same for covariance and sdcorr
             # because the internal params contains the Cholesky factor of the implied
@@ -321,7 +333,7 @@ def _create_unscaled_internal_bounds(lower, upper, pc):
     return int_lower, int_upper
 
 
-def _create_internal_free(is_fixed_to_value, is_fixed_to_other, pc):
+def _create_internal_free(is_fixed_to_value, is_fixed_to_other, constraints):
     """Boolean Series that is true for parameters over which the optimizer optimizes.
 
     Args:
@@ -333,7 +345,7 @@ def _create_internal_free(is_fixed_to_value, is_fixed_to_other, pc):
     """
     int_fixed = is_fixed_to_value | is_fixed_to_other
 
-    for constr in pc:
+    for constr in constraints:
         if constr["type"] == "probability":
             int_fixed.iloc[constr["index"][-1]] = True
         elif constr["type"] == "linear":
@@ -369,7 +381,7 @@ def _create_pre_replacements(internal_free):
     return pre_replacements
 
 
-def _create_internal_fixed_value(fixed_value, pc):
+def _create_internal_fixed_value(fixed_value, constraints):
     """Pandas Series containing the values to which internal parameters are fixe.
 
     This contains additional fixes used to enforce other constraints and (potentially
@@ -381,7 +393,7 @@ def _create_internal_fixed_value(fixed_value, pc):
 
     """
     int_fix = fixed_value.copy()
-    for constr in pc:
+    for constr in constraints:
         if constr["type"] == "probability":
             int_fix.iloc[constr["index"][-1]] = 1
         elif constr["type"] in ["covariance", "sdcorr"]:
