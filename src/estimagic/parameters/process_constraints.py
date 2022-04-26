@@ -113,18 +113,18 @@ def process_constraints(
             transformations,
         )
 
-        for col in ["_internal_lower", "_internal_upper"]:
-            constr_info[col] = _scale_bound_to_internal(
-                constr_info[col],
-                constr_info._internal_free,
-                scaling_factor=scaling_factor,
-                scaling_offset=scaling_offset,
-            )
         # ==============================================================================
         constr_info = {
             name: constr_info[name].to_numpy() for name in constr_info.columns
         }  # xxxx
         # ==============================================================================
+        for col in ["_internal_lower", "_internal_upper"]:
+            constr_info[col] = _scale_bound_to_internal(
+                constr_info[col],
+                constr_info["_internal_free"],
+                scaling_factor=scaling_factor,
+                scaling_offset=scaling_offset,
+            )
         constr_info["_pre_replacements"] = _create_pre_replacements(
             constr_info["_internal_free"]
         )
@@ -411,11 +411,11 @@ def _create_internal_fixed_value(fixed_value, constraints):
     return int_fix
 
 
-def _scale_bound_to_internal(bound_sr, internal_free, scaling_factor, scaling_offset):
-    sr = bound_sr.copy(deep=True)
-    free_bounds = bound_sr[internal_free].to_numpy()
+def _scale_bound_to_internal(bounds, internal_free, scaling_factor, scaling_offset):
+    _bounds = bounds.copy()
+    free_bounds = bounds[internal_free]
 
     scaled = scale_to_internal(free_bounds, scaling_factor, scaling_offset)
 
-    sr[internal_free] = scaled
-    return sr
+    _bounds[internal_free] = scaled
+    return _bounds
