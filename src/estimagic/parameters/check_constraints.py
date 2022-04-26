@@ -139,7 +139,7 @@ def check_for_incompatible_overlaps(params, pc):
         raise ValueError(msg.format(invalid_names))
 
 
-def check_fixes_and_bounds(pp, pc):
+def check_fixes_and_bounds(constr_info, transformations):
     """Check fixes.
 
     Warn the user if he fixes a parameter to a value even though that parameter has
@@ -148,11 +148,12 @@ def check_fixes_and_bounds(pp, pc):
     check that fixes are compatible with other constraints.
 
     Args:
-        pp (pd.DataFrame): see :ref:`params`.
-        pc (list): Processed and consolidated constraints.
+        constr_info (dict): Dict of 1d numpy arrays with info about constraints.
+        transformations (list): Processed transforming constraints.
+
     """
     # warn about fixes to a different value that what is in the "value" column
-    problematic_fixes = pp.query(
+    problematic_fixes = constr_info.query(
         "value != _fixed_value & _fixed_value.notnull() & value.notnull()",
         engine="python",
     )
@@ -177,9 +178,9 @@ def check_fixes_and_bounds(pp, pc):
         "parameter. This is violated for:\n{}"
     )
 
-    for constr in pc:
+    for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = pp.iloc[constr["index"][1:]]
+            subset = constr_info.iloc[constr["index"][1:]]
             if subset["_is_fixed_to_value"].any():
                 problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(cov_msg.format(constr["type"], problematic))
@@ -189,7 +190,7 @@ def check_fixes_and_bounds(pp, pc):
                 )
                 raise ValueError(cov_msg.format(constr["type"], problematic))
         elif constr["type"] == "probability":
-            subset = pp.iloc[constr["index"]]
+            subset = constr_info.iloc[constr["index"]]
             if subset["_is_fixed_to_value"].any():
                 problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(prob_msg.format(constr["type"], problematic))
@@ -199,7 +200,9 @@ def check_fixes_and_bounds(pp, pc):
                 )
                 raise ValueError(prob_msg.format(constr["type"], problematic))
 
-    invalid = pp.query("lower_bound >= upper_bound")[["lower_bound", "upper_bound"]]
+    invalid = constr_info.query("lower_bound >= upper_bound")[
+        ["lower_bound", "upper_bound"]
+    ]
     msg = (
         "lower_bound must be strictly smaller than upper_bound. "
         + f"This is violated for:\n{invalid}"
