@@ -91,27 +91,27 @@ def process_constraints(
         parvec = parvec.copy()
         check_types(constraints)
         # selectors have to be processed before anything else happens to the params
-        transformations = _process_selectors(constraints, parvec)
+        constraints = _process_selectors(constraints, parvec)
 
-        transformations = _replace_pairwise_equality_by_equality(transformations)
-        transformations = _process_linear_weights(transformations, parvec)
-        check_constraints_are_satisfied(transformations, parvec)
-        transformations = _replace_increasing_and_decreasing_by_linear(transformations)
-        transformations = _process_linear_weights(transformations, parvec)
-        transformations, constr_info = consolidate_constraints(transformations, parvec)
+        constraints = _replace_pairwise_equality_by_equality(constraints)
+        constraints = _process_linear_weights(constraints, parvec)
+        check_constraints_are_satisfied(constraints, parvec)
+        constraints = _replace_increasing_and_decreasing_by_linear(constraints)
+        constraints = _process_linear_weights(constraints, parvec)
+        transformations, constr_info = consolidate_constraints(constraints, parvec)
         check_for_incompatible_overlaps(constr_info, transformations)
         check_fixes_and_bounds(constr_info, transformations)
 
-        int_lower, int_upper = _create_unscaled_internal_bounds(
-            constr_info.lower_bound, constr_info.upper_bound, transformations
-        )
-        constr_info["_internal_lower"] = int_lower
-        constr_info["_internal_upper"] = int_upper
         # ==============================================================================
         constr_info = {
             name: constr_info[name].to_numpy() for name in constr_info.columns
         }  # xxxx
         # ==============================================================================
+        int_lower, int_upper = _create_unscaled_internal_bounds(
+            constr_info["lower_bound"], constr_info["upper_bound"], transformations
+        )
+        constr_info["_internal_lower"] = int_lower
+        constr_info["_internal_upper"] = int_upper
         constr_info["_internal_free"] = _create_internal_free(
             constr_info["_is_fixed_to_value"],
             constr_info["_is_fixed_to_other"],
@@ -325,14 +325,15 @@ def _create_unscaled_internal_bounds(lower, upper, constraints):
             diag_indices = np.array(constr["index"])[diag_positions].tolist()
             bd = constr.get("bounds_distance", 0)
             bd = np.sqrt(bd) if constr["type"] == "covariance" else bd
-            int_lower.iloc[diag_indices] = np.maximum(int_lower.iloc[diag_indices], bd)
+            int_lower[diag_indices] = np.maximum(int_lower[diag_indices], bd)
         elif constr["type"] == "probability":
-            int_lower.iloc[constr["index"]] = 0
+            int_lower[constr["index"]] = 0
         elif constr["type"] == "linear":
-            int_lower.iloc[constr["index"]] = -np.inf
-            int_upper.iloc[constr["index"]] = np.inf
-            int_lower.update(constr["right_hand_side"]["lower_bound"])
-            int_upper.update(constr["right_hand_side"]["upper_bound"])
+            int_lower[constr["index"]] = -np.inf
+            int_upper[constr["index"]] = np.inf
+            relevant_index = constr["index"][-len(constr["right_hand_side"]) :]
+            int_lower[relevant_index] = constr["right_hand_side"]["lower_bound"]
+            int_upper[relevant_index] = constr["right_hand_side"]["upper_bound"]
         else:
             raise TypeError("Invalid constraint type {}".format(constr["type"]))
 
