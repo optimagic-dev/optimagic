@@ -63,8 +63,7 @@ def check_constraints_are_satisfied(pc, params):
                 if np.any(np.diff(subset) > 0):
                     raise ValueError(msg.format("Decreasing constraint violated"))
             elif typ == "linear":
-                # using sr.dot is important in case weights are a series in wrong order
-                wsum = subset.dot(constr["weights"])
+                wsum = subset.to_numpy().dot(constr["weights"])
                 if "lower_bound" in constr and wsum < constr["lower_bound"]:
                     raise ValueError(
                         msg.format("Lower bound of linear constraint is violated")

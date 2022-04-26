@@ -86,6 +86,8 @@ def process_constraints(
     """
     parnames = list(range(len(parvec))) if parnames is None else parnames  # xxxx
     parvec = add_default_bounds_to_params(parvec)
+    lower_bounds = parvec["lower_bound"].to_numpy()  # xxxx
+    upper_bounds = parvec["upper_bound"].to_numpy()  # xxxx
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", message="indexing past lexsort depth may impact performance."
@@ -96,16 +98,17 @@ def process_constraints(
         constraints = _process_selectors(constraints, parvec)
 
         constraints = _replace_pairwise_equality_by_equality(constraints)
-        constraints = _process_linear_weights(constraints, parvec)
+        constraints = _process_linear_weights(constraints)
         check_constraints_are_satisfied(constraints, parvec)
         constraints = _replace_increasing_and_decreasing_by_linear(constraints)
-        constraints = _process_linear_weights(constraints, parvec)
-        transformations, constr_info = consolidate_constraints(constraints, parvec)
-        # ==============================================================================
-        constr_info = {
-            name: constr_info[name].to_numpy() for name in constr_info.columns
-        }  # xxxx
-        # ==============================================================================
+        constraints = _process_linear_weights(constraints)
+
+        transformations, constr_info = consolidate_constraints(
+            constraints=constraints,
+            parvec=parvec["value"].to_numpy(),  # xxxx
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
+        )
         check_for_incompatible_overlaps(constr_info, transformations, parnames)
         check_fixes_and_bounds(constr_info, transformations, parnames)
 
@@ -226,7 +229,7 @@ def _replace_pairwise_equality_by_equality(constraints):
     return constraints
 
 
-def _process_linear_weights(constraints, params):
+def _process_linear_weights(constraints):
     """Harmonize the weights of linear constraints.
 
     Args:
@@ -240,23 +243,24 @@ def _process_linear_weights(constraints, params):
     processed = []
     for constr in constraints:
         if constr["type"] == "linear":
-            raw_weights = constr["weights"]
-            params_subset = params.iloc[constr["index"]]
 
-            msg = f"Weights must be same length as selected parameters: {params_subset}"
-            if isinstance(raw_weights, pd.Series):
-                weights = raw_weights.loc[params_subset.index].to_numpy()
-            elif isinstance(raw_weights, (np.ndarray, list, tuple)):
-                if len(raw_weights) != len(params_subset):
+            raw_weights = constr["weights"]
+
+            if isinstance(raw_weights, (np.ndarray, list, tuple, pd.Series)):
+                if len(raw_weights) != len(constr["index"]):
+                    msg = (
+                        f"weights of length {len(raw_weights)} could not be aligned "
+                        f"with selected parameters of length {len(constr['index'])}."
+                    )
                     raise ValueError(msg)
                 weights = np.asarray(raw_weights)
             elif isinstance(raw_weights, (float, int)):
-                weights = np.full(len(params_subset), float(raw_weights))
+                weights = np.full(len(constr["index"]), float(raw_weights))
             else:
                 raise TypeError(f"Invalid type for linear weights {type(raw_weights)}.")
 
             new_constr = constr.copy()
-            weights_sr = pd.Series(weights, index=params_subset.index)
+            weights_sr = pd.Series(weights, index=constr["index"])
             new_constr["weights"] = weights_sr
             processed.append(new_constr)
         else:
