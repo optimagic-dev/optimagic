@@ -187,9 +187,9 @@ def get_internal_bounds(
                 scaling_offset=scaling_offset,
             )
 
-        free = processed_params[processed_params["_internal_free"]]
-        lower_bounds = free["_internal_lower"].to_numpy()
-        upper_bounds = free["_internal_upper"].to_numpy()
+        _is_free = processed_params["_internal_free"]
+        lower_bounds = processed_params["_internal_lower"][_is_free].to_numpy()
+        upper_bounds = processed_params["_internal_upper"][_is_free].to_numpy()
     return lower_bounds, upper_bounds
 
 

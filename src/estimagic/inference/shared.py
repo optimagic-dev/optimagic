@@ -44,19 +44,19 @@ def transform_covariance(
             index.
 
     """
-    processed_constraints, processed_params = process_constraints(constraints, params)
-    free_index = processed_params.query("_internal_free").index
+    transformations, constr_info = process_constraints(constraints, params)
+    free_index = params[constr_info["_internal_free"]].index
 
     if isinstance(internal_cov, pd.DataFrame):
         internal_cov = internal_cov.to_numpy()
 
-    if processed_constraints:
+    if transformations:
         _to_internal, _from_internal = get_reparametrize_functions(
             params=params, constraints=constraints
         )
 
-        free = processed_params.loc[free_index]
-        is_free = processed_params["_internal_free"].to_numpy()
+        free = constr_info.loc[free_index]
+        is_free = constr_info["_internal_free"].to_numpy()
         lower_bounds = free["_internal_lower"]
         upper_bounds = free["_internal_upper"]
 

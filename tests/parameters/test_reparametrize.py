@@ -135,7 +135,7 @@ def test_reparametrize_from_internal_jacobian(
 
     _, pp = process_constraints(constraints, params)
 
-    n_free = int(pp._internal_free.sum())
+    n_free = int(pp["_internal_free"].sum())
     scaling_factor = np.ones(n_free) * 2  # np.arange(n_free) + 1
     scaling_offset = np.arange(n_free) - 1
 

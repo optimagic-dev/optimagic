@@ -127,6 +127,7 @@ def process_constraints(
             constr_info._fixed_value, transformations
         )
 
+        constr_info = {name: constr_info[name] for name in constr_info.columns}  # xxxx
         return transformations, constr_info
 
 

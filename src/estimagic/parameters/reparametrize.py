@@ -66,6 +66,8 @@ def reparametrize_to_internal(
     """
     if isinstance(external, pd.DataFrame):
         external = external["value"].to_numpy()
+    elif isinstance(external, dict):  # xxxx
+        external = np.array(external["value"])
 
     with_internal_values = external.copy()
 
