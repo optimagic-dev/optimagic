@@ -45,6 +45,7 @@ from estimagic.utilities import number_of_triangular_elements_to_dimension
 def process_constraints(
     constraints,
     parvec,
+    parnames=None,
     scaling_factor=None,
     scaling_offset=None,
 ):
@@ -83,6 +84,7 @@ def process_constraints(
               parameter
 
     """
+    parnames = list(range(len(parvec))) if parnames is None else parnames  # xxxx
     parvec = add_default_bounds_to_params(parvec)
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -100,12 +102,12 @@ def process_constraints(
         constraints = _process_linear_weights(constraints, parvec)
         transformations, constr_info = consolidate_constraints(constraints, parvec)
         check_for_incompatible_overlaps(constr_info, transformations)
-        check_fixes_and_bounds(constr_info, transformations)
         # ==============================================================================
         constr_info = {
             name: constr_info[name].to_numpy() for name in constr_info.columns
         }  # xxxx
         # ==============================================================================
+        check_fixes_and_bounds(constr_info, transformations, parnames)
 
         int_lower, int_upper = _create_unscaled_internal_bounds(
             constr_info["lower_bound"], constr_info["upper_bound"], transformations

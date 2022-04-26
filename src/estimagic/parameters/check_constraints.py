@@ -5,6 +5,7 @@ See the module docstring of process_constraints for naming conventions.
 import warnings
 
 import numpy as np
+import pandas as pd
 from estimagic.utilities import cov_params_to_matrix
 from estimagic.utilities import sdcorr_params_to_matrix
 
@@ -139,7 +140,7 @@ def check_for_incompatible_overlaps(params, pc):
         raise ValueError(msg.format(invalid_names))
 
 
-def check_fixes_and_bounds(constr_info, transformations):
+def check_fixes_and_bounds(constr_info, transformations, parnames):
     """Check fixes.
 
     Warn the user if he fixes a parameter to a value even though that parameter has
@@ -152,8 +153,9 @@ def check_fixes_and_bounds(constr_info, transformations):
         transformations (list): Processed transforming constraints.
 
     """
+    df = pd.DataFrame(constr_info, index=parnames)
     # warn about fixes to a different value that what is in the "value" column
-    problematic_fixes = constr_info.query(
+    problematic_fixes = df.query(
         "value != _fixed_value & _fixed_value.notnull() & value.notnull()",
         engine="python",
     )
@@ -180,7 +182,7 @@ def check_fixes_and_bounds(constr_info, transformations):
 
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
-            subset = constr_info.iloc[constr["index"][1:]]
+            subset = df.iloc[constr["index"][1:]]
             if subset["_is_fixed_to_value"].any():
                 problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(cov_msg.format(constr["type"], problematic))
@@ -190,7 +192,7 @@ def check_fixes_and_bounds(constr_info, transformations):
                 )
                 raise ValueError(cov_msg.format(constr["type"], problematic))
         elif constr["type"] == "probability":
-            subset = constr_info.iloc[constr["index"]]
+            subset = df.iloc[constr["index"]]
             if subset["_is_fixed_to_value"].any():
                 problematic = subset[subset["_is_fixed_to_value"]].index
                 raise ValueError(prob_msg.format(constr["type"], problematic))
@@ -200,9 +202,7 @@ def check_fixes_and_bounds(constr_info, transformations):
                 )
                 raise ValueError(prob_msg.format(constr["type"], problematic))
 
-    invalid = constr_info.query("lower_bound >= upper_bound")[
-        ["lower_bound", "upper_bound"]
-    ]
+    invalid = df.query("lower_bound >= upper_bound")[["lower_bound", "upper_bound"]]
     msg = (
         "lower_bound must be strictly smaller than upper_bound. "
         + f"This is violated for:\n{invalid}"
