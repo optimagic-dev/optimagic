@@ -15,17 +15,17 @@ def consolidate_constraints(constraints, params):
     """Consolidate constraints with each other and remove redundant ones.
 
     Args:
-        pc (list): List with constraint dictionaries. It is assumed that
+        constraints (list): List with constraint dictionaries. It is assumed that
             the selectors are already processed, increasing and decreasing
             constraints have been rewritten as linear constraints and
             pairwise_equality constraints have been rewritten as equality constraints.
         params (pd.DataFrame): see :ref:`params`.
 
     Returns:
-        pc (list): This contains processed version of all
+        list: This contains processed version of all
             constraints that require an actual kernel transformation. The information
             on all other constraints is subsumed in pp.
-        pp (pd.DataFrame): Processed params.
+        pd.DataFrame: Processed params.
 
     """
     raw_eq, other_pc = _split_constraints(constraints, "equality")

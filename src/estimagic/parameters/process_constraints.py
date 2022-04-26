@@ -123,13 +123,16 @@ def process_constraints(
         constr_info["_pre_replacements"] = _create_pre_replacements(
             constr_info._internal_free
         )
-        constr_info["_internal_fixed_value"] = _create_internal_fixed_value(
-            constr_info._fixed_value, transformations
-        )
-
+        # ==============================================================================
         constr_info = {
             name: constr_info[name].to_numpy() for name in constr_info.columns
         }  # xxxx
+        # ==============================================================================
+
+        constr_info["_internal_fixed_value"] = _create_internal_fixed_value(
+            constr_info["_fixed_value"], transformations
+        )
+
         return transformations, constr_info
 
 
@@ -398,12 +401,13 @@ def _create_internal_fixed_value(fixed_value, constraints):
     int_fix = fixed_value.copy()
     for constr in constraints:
         if constr["type"] == "probability":
-            int_fix.iloc[constr["index"][-1]] = 1
+            int_fix[constr["index"][-1]] = 1
         elif constr["type"] in ["covariance", "sdcorr"]:
-            int_fix.iloc[constr["index"][0]] = np.sqrt(int_fix.iloc[constr["index"][0]])
+            int_fix[constr["index"][0]] = np.sqrt(int_fix[constr["index"][0]])
         elif constr["type"] == "linear":
-            int_fix.iloc[constr["index"]] = np.nan
-            int_fix.update(constr["right_hand_side"]["value"])
+            int_fix[constr["index"]] = np.nan
+            relevant_index = constr["index"][-len(constr["right_hand_side"]) :]
+            int_fix[relevant_index] = constr["right_hand_side"]["value"].to_numpy()
 
     return int_fix
 
