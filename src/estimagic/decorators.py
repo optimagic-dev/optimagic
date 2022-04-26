@@ -44,9 +44,9 @@ def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=Fa
 
     pc, pp = process_constraints(constraints, params)
 
-    fixed_values = pp["_internal_fixed_value"].to_numpy()
-    pre_replacements = pp["_pre_replacements"].to_numpy().astype(int)
-    post_replacements = pp["_post_replacements"].to_numpy().astype(int)
+    fixed_values = pp["_internal_fixed_value"]
+    pre_replacements = pp["_pre_replacements"]
+    post_replacements = pp["_post_replacements"]
 
     def decorator_numpy_interface(func):
         @functools.wraps(func)

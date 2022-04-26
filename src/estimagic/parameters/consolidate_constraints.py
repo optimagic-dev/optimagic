@@ -273,7 +273,7 @@ def _plug_equality_constraints_into_selectors(equality_pc, other_pc, params):
     is_equal_to = pd.Series(index=params.index, data=-1, dtype=int)
     for eq in equality_pc:
         is_equal_to.iloc[sorted(eq["index"])[1:]] = sorted(eq["index"])[0]
-    pp["_post_replacements"] = is_equal_to
+    pp["_post_replacements"] = is_equal_to.astype(int)
     pp["_is_fixed_to_other"] = is_equal_to >= 0
     helper = pp["_post_replacements"].reset_index(drop=True)
     replace_dict = helper[helper >= 0].to_dict()

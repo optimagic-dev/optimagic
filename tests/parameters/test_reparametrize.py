@@ -72,7 +72,7 @@ def test_reparametrize_to_internal(example_params, all_constraints, case, number
 
     _, pp = process_constraints(constraints, params)
 
-    calculated_internal_values_np = to_internal(pp["value"].to_numpy())
+    calculated_internal_values_np = to_internal(pp["value"])
     calculated_internal_values_pd = to_internal(pp)
 
     calculated_internal_lower = pp["_internal_lower"]
@@ -178,8 +178,8 @@ def test_pre_replace_jacobian(example_params, all_constraints, case, number):
     pc, pp = process_constraints(constraints, params)
 
     internal_p = params[f"internal_value{number}"][keep].to_numpy()
-    fixed_val = pp["_internal_fixed_value"].to_numpy()
-    pre_repl = pp["_pre_replacements"].to_numpy()
+    fixed_val = pp["_internal_fixed_value"]
+    pre_repl = pp["_pre_replacements"]
 
     func = partial(
         pre_replace, **{"fixed_values": fixed_val, "pre_replacements": pre_repl}
@@ -203,9 +203,9 @@ def test_post_replace_jacobian(example_params, all_constraints, case, number):
     pc, pp = process_constraints(constraints, params)
 
     internal_p = params[f"internal_value{number}"][keep].to_numpy()
-    fixed_val = pp["_internal_fixed_value"].to_numpy()
-    pre_repl = pp["_pre_replacements"].to_numpy()
-    post_repl = pp["_post_replacements"].to_numpy()
+    fixed_val = pp["_internal_fixed_value"]
+    pre_repl = pp["_pre_replacements"]
+    post_repl = pp["_post_replacements"]
 
     external = pre_replace(internal_p, fixed_val, pre_repl)
     external[np.isnan(external)] = 0  # if not set to zero the numerical differentiation
@@ -261,18 +261,16 @@ def test_covariance_is_inherited_from_pairwise_equality(example_params):
 def back_and_forth_transformation_and_assert(params, constraints):
     pc, pp = process_constraints(constraints, params)
 
-    internal = reparametrize_to_internal(
-        pp["value"].to_numpy(), pp["_internal_free"].to_numpy(), pc
-    )
+    internal = reparametrize_to_internal(pp["value"], pp["_internal_free"], pc)
 
     external = reparametrize_from_internal(
         internal=internal,
-        fixed_values=pp["_internal_fixed_value"].to_numpy(),
-        pre_replacements=pp["_pre_replacements"].to_numpy(),
+        fixed_values=pp["_internal_fixed_value"],
+        pre_replacements=pp["_pre_replacements"],
         params=params,
         return_numpy=True,
         processed_constraints=pc,
-        post_replacements=pp["_post_replacements"].to_numpy(),
+        post_replacements=pp["_post_replacements"],
     )
 
     aaae(external, params["value"].to_numpy())

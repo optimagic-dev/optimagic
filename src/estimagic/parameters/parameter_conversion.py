@@ -72,12 +72,12 @@ def get_reparametrize_functions(
             )
 
         # get partialed reparametrize from internal
-        pre_replacements = processed_params["_pre_replacements"].to_numpy()
-        post_replacements = processed_params["_post_replacements"].to_numpy()
-        fixed_values = processed_params["_internal_fixed_value"].to_numpy()
+        pre_replacements = processed_params["_pre_replacements"]
+        post_replacements = processed_params["_post_replacements"]
+        fixed_values = processed_params["_internal_fixed_value"]
 
         # get partialed reparametrize to internal
-        internal_free = processed_params["_internal_free"].to_numpy()
+        internal_free = processed_params["_internal_free"]
 
         partialed_to_internal = functools.partial(
             reparametrize_to_internal,
@@ -143,9 +143,9 @@ def get_derivative_conversion_function(
                 scaling_offset=scaling_offset,
             )
 
-        pre_replacements = processed_params["_pre_replacements"].to_numpy()
-        post_replacements = processed_params["_post_replacements"].to_numpy()
-        fixed_values = processed_params["_internal_fixed_value"].to_numpy()
+        pre_replacements = processed_params["_pre_replacements"]
+        post_replacements = processed_params["_post_replacements"]
+        fixed_values = processed_params["_internal_fixed_value"]
 
         dim_internal = int(processed_params["_internal_free"].sum())
 
@@ -188,8 +188,8 @@ def get_internal_bounds(
             )
 
         _is_free = processed_params["_internal_free"]
-        lower_bounds = processed_params["_internal_lower"][_is_free].to_numpy()
-        upper_bounds = processed_params["_internal_upper"][_is_free].to_numpy()
+        lower_bounds = processed_params["_internal_lower"][_is_free]
+        upper_bounds = processed_params["_internal_upper"][_is_free]
     return lower_bounds, upper_bounds
 
 
