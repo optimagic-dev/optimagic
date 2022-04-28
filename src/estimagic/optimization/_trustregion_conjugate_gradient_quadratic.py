@@ -7,7 +7,7 @@ import numpy as np
 def minimize_trust_conjugate_gradient(
     model_gradient, model_hessian, trustregion_radius
 ):
-    """Minimize the quadratic trust-region subproblem using Conjugate Gradient method.
+    """Minimize the quadratic trust-region subproblem via Conjugate Gradient.
 
     Args:
         model_gradient (np.ndarray): Gradient of the quadratic model. Shape (n,).
@@ -26,7 +26,6 @@ def minimize_trust_conjugate_gradient(
     residual = np.copy(model_gradient)
     x_candidate = np.zeros(n)
 
-    # Use steepest descent direction at initial point
     direction = np.copy(-residual)
 
     gradient_norm = np.linalg.norm(residual)
@@ -92,9 +91,9 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
 
     The positive distance sigma is defined in Eculidean norm, as follows:
 
-        `|| s + sigma * p || = radius`
+        `|| c + sigma * d || = radius`
 
-    where `s` denotes the candidate vector, and `p` the direction vector.
+    where `c` denotes the candidate vector, and `d` the direction vector.
 
     Args:
         candidate(np.ndarray): Candidate vector of shape (n,).
@@ -105,11 +104,11 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
         (float) Distance of the candidate vector to the trustregion
             boundary.
     """
-    ss = np.dot(candidate, candidate)
-    sp = np.dot(candidate, direction)
-    pp = np.dot(direction, direction)
+    cc = np.dot(candidate, candidate)
+    cd = np.dot(candidate, direction)
+    dd = np.dot(direction, direction)
 
-    sigma = -sp + sqrt(sp * sp + pp * (radius**2 - ss))
-    sigma /= pp
+    sigma = -cd + sqrt(cd * cd + dd * (radius**2 - cc))
+    sigma /= dd
 
     return sigma

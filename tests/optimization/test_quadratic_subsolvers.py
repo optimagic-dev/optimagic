@@ -447,7 +447,7 @@ def test_bounded_newton_trustregion(
 
     options = {
         "maxiter": 50,
-        "maxiter_steepest_descent": 5,
+        "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 0,

@@ -181,7 +181,7 @@ def solve_subproblem(
     solver,
     *,
     maxiter,
-    maxiter_steepest_descent,
+    maxiter_gradient_descent,
     gtol_abs,
     gtol_rel,
     gtol_scaled,
@@ -207,13 +207,13 @@ def solve_subproblem(
             - "bntr" (Bounded Newton Trust-Region), which supports bound constraints
             - "gqtpar" (Nearly exact trust-region solver using an iterative method),
                 which does not support bound constraints.
-        solver (str): Trust-region subsolver to use. Currently, two solvers
+        solver (str): Trust-region subsolver to use. Currently, two internal solvers
             are supported:
             - "BNTR" (default, supports bound constraints)
             - "GQTPAR (does not support bound constraints)
         maxiter (int): Maximum number of iterations to perform when solving the
             trust-region subproblem.
-        maxiter_steepest_descent (int): Maximum number of steepest descent iterations
+        maxiter_gradient_descent (int): Maximum number of gradient descent iterations
             to perform when the trust-region subsolver BNTR is used.
         gtol_abs (float): Convergence tolerance for the absolute gradient norm
             in the trust-region subproblem ("BNTR").
@@ -262,7 +262,7 @@ def solve_subproblem(
     if solver == "bntr":
         options = {
             "maxiter": maxiter,
-            "maxiter_steepest_descent": maxiter_steepest_descent,
+            "maxiter_gradient_descent": maxiter_gradient_descent,
             "gtol_abs": gtol_abs,
             "gtol_rel": gtol_rel,
             "gtol_scaled": gtol_scaled,

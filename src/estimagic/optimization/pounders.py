@@ -85,7 +85,7 @@ def pounders(
 
     default_options = {
         "maxiter": 50,
-        "maxiter_steepest_descent": 5,
+        "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 0,
@@ -120,8 +120,8 @@ def pounders(
         c2=c2,
         solver_sub=trustregion_subproblem_solver,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
-        maxiter_steepest_descent_sub=trustregion_subproblem_options[
-            "maxiter_steepest_descent"
+        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+            "maxiter_gradient_descent"
         ],
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
@@ -158,7 +158,7 @@ def internal_solve_pounders(
     c2,
     solver_sub,
     maxiter_sub,
-    maxiter_steepest_descent_sub,
+    maxiter_gradient_descent_sub,
     gtol_abs_sub,
     gtol_rel_sub,
     gtol_scaled_sub,
@@ -210,7 +210,7 @@ def internal_solve_pounders(
             - "BNTR" (default, supports bound constraints)
             - "GQTPAR (does not support bound constraints)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
-        maxiter_steepest_descent (int): Maximum number of steepest descent iterations
+        maxiter_gradient_descent (int): Maximum number of gradient descent iterations
             to perform when the trust-region subsolver BNTR is used.
         gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
             in the trust-region subproblem ("BNTR").
@@ -243,7 +243,7 @@ def internal_solve_pounders(
     """
     history = LeastSquaresHistory()
 
-    n = x0.shape[0]
+    n = len(x0)
     model_indices = np.zeros(n_maxinterp, dtype=int)
 
     n_last_modelpoints = 0
@@ -290,7 +290,7 @@ def internal_solve_pounders(
             delta=delta,
             solver=solver_sub,
             maxiter=maxiter_sub,
-            maxiter_steepest_descent=maxiter_steepest_descent_sub,
+            maxiter_gradient_descent=maxiter_gradient_descent_sub,
             gtol_abs=gtol_abs_sub,
             gtol_rel=gtol_rel_sub,
             gtol_scaled=gtol_scaled_sub,

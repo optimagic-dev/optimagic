@@ -50,7 +50,7 @@ def minimize_bntr_quadratic(
     upper_bounds,
     *,
     maxiter,
-    maxiter_steepest_descent,
+    maxiter_gradient_descent,
     gtol_abs,
     gtol_rel,
     gtol_scaled,
@@ -81,7 +81,7 @@ def minimize_bntr_quadratic(
             parameter vector. Equal to -1 if not provided by the user.
         upper_bounds (np.ndarray): Upper bounds on parameter vector x.
         maxiter (int): Maximum number of iterations. If reached, terminate.
-        maxiter_steepest_descent (int): Maximum number of steepest descent iterations
+        maxiter_gradient_descent (int): Maximum number of steepest descent iterations
             to perform when the trust-region subsolver BNTR is used.
         gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm.
         gtol_rel_sub (float): Convergence tolerance for the relative gradient norm.
@@ -128,7 +128,7 @@ def minimize_bntr_quadratic(
         model,
         lower_bounds,
         upper_bounds,
-        maxiter_steepest_descent,
+        maxiter_gradient_descent,
         gtol_abs,
         gtol_rel,
         gtol_scaled,

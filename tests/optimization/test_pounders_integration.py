@@ -65,7 +65,7 @@ def pounders_options():
 def trustregion_subproblem_options():
     out = {
         "maxiter": 50,
-        "maxiter_steepest_descent": 5,
+        "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 0,
@@ -99,8 +99,8 @@ def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_opt
         n_maxinterp=2 * len(start_vec) + 1,
         solver_sub=solver_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
-        maxiter_steepest_descent_sub=trustregion_subproblem_options[
-            "maxiter_steepest_descent"
+        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+            "maxiter_gradient_descent"
         ],
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
@@ -133,8 +133,8 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
         n_maxinterp=7,
         solver_sub=solver_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
-        maxiter_steepest_descent_sub=trustregion_subproblem_options[
-            "maxiter_steepest_descent"
+        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+            "maxiter_gradient_descent"
         ],
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],

@@ -16,7 +16,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
     model,
     lower_bounds,
     upper_bounds,
-    maxiter_steepest_descent,
+    maxiter_gradient_descent,
     gtol_abs,
     gtol_rel,
     gtol_scaled,
@@ -72,7 +72,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
 
     if converged is True:
         hessian_inactive = np.copy(model.square_terms)
-        trustregion_radius = 100
+        trustregion_radius = options_update_radius["default_radius"]
     else:
         hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
             model, active_bounds_info
@@ -93,7 +93,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
             lower_bounds,
             upper_bounds,
             active_bounds_info,
-            maxiter_steepest_descent,
+            maxiter_gradient_descent,
             options_update_radius,
         )
 
@@ -310,7 +310,7 @@ def perform_gradient_descent_and_update_trustregion_radius(
         (
             trustregion_radius,
             radius_upper_bound,
-        ) = _update_trustregion_radius_and_upper_bound_steepest_descent(
+        ) = _update_trustregion_radius_and_gradient_descent(
             trustregion_radius,
             radius_upper_bound,
             predicted_reduction,
@@ -563,7 +563,7 @@ def _apply_bounds_to_conjugate_gradient_step(
     return cg_step_direction
 
 
-def _update_trustregion_radius_and_upper_bound_steepest_descent(
+def _update_trustregion_radius_and_gradient_descent(
     trustregion_radius,
     radius_upper,
     predicted_reduction,
