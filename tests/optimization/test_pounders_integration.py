@@ -56,7 +56,7 @@ def pounders_options():
         "c2": 10,
         "lower_bounds": None,
         "upper_bounds": None,
-        "maxiter": 2_000,
+        "maxiter": 200,
     }
     return out
 
@@ -113,7 +113,7 @@ def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_opt
     )
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
-    aaae(result["solution_x"], x_expected, decimal=4)
+    aaae(result["solution_x"], x_expected, decimal=3)
 
 
 @pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])
