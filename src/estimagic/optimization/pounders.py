@@ -1,4 +1,5 @@
 """Implement the POUNDERS algorithm"""
+import warnings
 from copy import copy
 from functools import partial
 
@@ -305,7 +306,10 @@ def internal_solve_pounders(
             accepted_index
         ) - history.get_critvals(-1)
         actual_reduction = -result_sub["criterion"]
-        rho = np.divide(predicted_reduction, actual_reduction)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            rho = np.divide(predicted_reduction, actual_reduction)
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
             residual_model = residual_model._replace(
