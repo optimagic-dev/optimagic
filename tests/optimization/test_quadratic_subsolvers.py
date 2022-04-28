@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy as np
 import pytest
 from estimagic.optimization._trustregion_conjugate_gradient_quadratic import (
-    minimize_trust_cg,
+    minimize_trust_conjugate_gradient,
 )
 from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
 from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
@@ -639,7 +639,7 @@ def test_bounded_newton_trustregion(
 def test_trustregion_conjugate_gradient(
     gradient, hessian, trustregion_radius, x_expected
 ):
-    x_out = minimize_trust_cg(gradient, hessian, trustregion_radius)
+    x_out = minimize_trust_conjugate_gradient(gradient, hessian, trustregion_radius)
     aaae(x_out, x_expected)
 
 

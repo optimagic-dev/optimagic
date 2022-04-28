@@ -173,7 +173,7 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
 
 
 def solve_subproblem(
-    x_candidate,
+    x_accepted,
     main_model,
     lower_bounds,
     upper_bounds,
@@ -191,7 +191,7 @@ def solve_subproblem(
     """Solve the quadratic subproblem.
 
     Args:
-        x_candidate (np.ndarray): Current candidate vector of shape (n,).
+        x_accepted (np.ndarray): Currently accepted candidate vector of shape (n,).
         delta (float): Current trust region radius.
         main_model (namedtuple): Named tuple containing the parameters of the
             main model, i.e. "linear_terms" and "square terms".
@@ -236,20 +236,20 @@ def solve_subproblem(
                 before reaching maxiter.
     """
     # Initial guess
-    x0 = np.zeros_like(x_candidate)
+    x0 = np.zeros_like(x_accepted)
 
     # Normalize bounds. If none provided, use unit cube [-1, 1]
     if lower_bounds is not None:
-        lower_bounds = (lower_bounds - x_candidate) / delta
+        lower_bounds = (lower_bounds - x_accepted) / delta
         lower_bounds[lower_bounds < -1] = -1
     else:
-        lower_bounds = -np.ones_like(x_candidate)
+        lower_bounds = -np.ones_like(x_accepted)
 
     if upper_bounds is not None:
-        upper_bounds = (upper_bounds - x_candidate) / delta
+        upper_bounds = (upper_bounds - x_accepted) / delta
         upper_bounds[upper_bounds > 1] = 1
     else:
-        upper_bounds = np.ones_like(x_candidate)
+        upper_bounds = np.ones_like(x_accepted)
 
     # Check if bounds valid
     if np.max(lower_bounds - upper_bounds) > 1e-10:

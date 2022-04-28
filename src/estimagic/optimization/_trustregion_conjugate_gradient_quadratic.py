@@ -4,7 +4,9 @@ from math import sqrt
 import numpy as np
 
 
-def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
+def minimize_trust_conjugate_gradient(
+    model_gradient, model_hessian, trustregion_radius
+):
     """Minimize the quadratic trust-region subproblem using Conjugate Gradient method.
 
     Args:

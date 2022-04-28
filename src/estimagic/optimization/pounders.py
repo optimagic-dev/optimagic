@@ -75,7 +75,7 @@ def pounders(
     )
 
     if max_interpolation_points is None:
-        max_interpolation_points = 2 * x.shape[0] + 1
+        max_interpolation_points = 2 * len(x) + 1
 
     if c1 is None:
         c1 = np.sqrt(x.shape[0])
@@ -283,7 +283,7 @@ def internal_solve_pounders(
 
     for niter in range(maxiter + 1):
         result_sub = solve_subproblem(
-            x_candidate=x_accepted,
+            x_accepted=x_accepted,
             main_model=main_model,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
@@ -539,9 +539,6 @@ def internal_solve_pounders(
         "message": convergence_reason,
     }
 
-    print(f"niter: {niter}")
-    print(f"gradient norm: {gradient_norm}")
-    print(f"reason: {convergence_reason}")
     return result_dict
 
 

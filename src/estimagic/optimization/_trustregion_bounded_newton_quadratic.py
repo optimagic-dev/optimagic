@@ -5,7 +5,7 @@ from functools import reduce
 
 import numpy as np
 from estimagic.optimization._trustregion_conjugate_gradient_quadratic import (
-    minimize_trust_cg,
+    minimize_trust_conjugate_gradient,
 )
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
@@ -187,7 +187,7 @@ def compute_conjugate_gradient_step(
         )
 
     else:
-        step_inactive = minimize_trust_cg(
+        step_inactive = minimize_trust_conjugate_gradient(
             gradient_inactive, hessian_inactive, trustregion_radius
         )
         step_norm = np.linalg.norm(step_inactive)
@@ -205,7 +205,7 @@ def compute_conjugate_gradient_step(
                 trustregion_radius = max(trustregion_radius, options["min_radius"])
                 trustregion_radius = min(trustregion_radius, options["max_radius"])
 
-                step_inactive = minimize_trust_cg(
+                step_inactive = minimize_trust_conjugate_gradient(
                     gradient_inactive, hessian_inactive, trustregion_radius
                 )
                 step_norm = np.linalg.norm(step_inactive)
