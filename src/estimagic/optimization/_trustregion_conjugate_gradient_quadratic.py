@@ -16,7 +16,7 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
         (np.ndarray): Solution vector of shape (n,).
     """
     n = model_gradient.shape[0]
-    maxiter = min(n, 10_000)
+    maxiter = 2 * n
 
     gtol_abs = 1e-8
     gtol_rel = 1e-6
