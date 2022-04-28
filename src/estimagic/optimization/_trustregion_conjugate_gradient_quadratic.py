@@ -1,4 +1,4 @@
-"""Implementation of the Steihaug-Toint Conjugate Gradient algorithm."""
+"""Implementation of the Conjugate Gradient algorithm."""
 from math import sqrt
 
 import numpy as np
@@ -16,7 +16,7 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
         (np.ndarray): Solution vector of shape (n,).
     """
     n = model_gradient.shape[0]
-    maxiter = 2 * n
+    maxiter = min(n, 10_000)
 
     gtol_abs = 1e-8
     gtol_rel = 1e-6
@@ -25,7 +25,7 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
     x_candidate = np.zeros(n)
 
     # Use steepest descent direction at initial point
-    direction = -residual
+    direction = np.copy(-residual)
 
     gradient_norm = np.linalg.norm(residual)
     stop_tol = max(gtol_abs, gtol_rel * gradient_norm)
@@ -41,15 +41,14 @@ def minimize_trust_cg(model_gradient, model_hessian, trustregion_radius):
             x_candidate, direction, trustregion_radius
         )
 
-        # Length of the Conjugate Gradient step
-        alpha = np.dot(residual, residual) / square_terms
+        step_size = np.dot(residual, residual) / square_terms
 
-        if square_terms <= 0 or alpha > distance_to_boundary:
+        if square_terms <= 0 or step_size > distance_to_boundary:
             x_candidate = x_candidate + distance_to_boundary * direction
             break
 
         x_candidate, residual, direction = _update_vectors_for_next_iteration(
-            x_candidate, residual, direction, model_hessian, alpha
+            x_candidate, residual, direction, model_hessian, step_size
         )
         gradient_norm = np.linalg.norm(residual)
 

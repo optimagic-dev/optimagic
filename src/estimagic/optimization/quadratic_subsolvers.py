@@ -7,7 +7,7 @@ from estimagic.optimization._trustregion_bounded_newton_quadratic import (
     apply_bounds_to_x_candidate,
 )
 from estimagic.optimization._trustregion_bounded_newton_quadratic import (
-    check_for_convergence_conjugate_gradient,
+    check_for_convergence,
 )
 from estimagic.optimization._trustregion_bounded_newton_quadratic import (
     compute_conjugate_gradient_step,
@@ -16,7 +16,13 @@ from estimagic.optimization._trustregion_bounded_newton_quadratic import (
     compute_predicted_reduction_from_conjugate_gradient_step,
 )
 from estimagic.optimization._trustregion_bounded_newton_quadratic import (
-    take_preliminary_steepest_descent_step_and_check_for_solution,
+    find_hessian_submatrix_where_bounds_inactive,
+)
+from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+    get_information_on_active_bounds,
+)
+from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+    take_preliminary_gradient_descent_step_and_check_for_solution,
 )
 from estimagic.optimization._trustregion_bounded_newton_quadratic import (
     update_trustregion_radius_conjugate_gradient,
@@ -45,14 +51,9 @@ def minimize_bntr_quadratic(
     *,
     maxiter,
     maxiter_steepest_descent,
-    step_size_newton,
-    ftol_abs,
-    ftol_scaled,
-    xtol,
     gtol_abs,
     gtol_rel,
     gtol_scaled,
-    steptol
 ):
     """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient method.
 
@@ -82,14 +83,6 @@ def minimize_bntr_quadratic(
         maxiter (int): Maximum number of iterations. If reached, terminate.
         maxiter_steepest_descent (int): Maximum number of steepest descent iterations
             to perform when the trust-region subsolver BNTR is used.
-        step_size_newton (float): Parameter to scale the size of the newton step
-            before the preliminary steepest descent step is taken.
-        ftol_abs (float): Convergence tolerance for the absolute difference
-            between f(k+1) - f(k).
-        ftol_scaled (float): Convergence tolerance for the scaled difference
-            between f(k+1) - f(k).
-        xtol_sub (float): Convergence tolerance for the absolute difference
-            between max(x(k+1) - x(k)).
         gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm.
         gtol_rel_sub (float): Convergence tolerance for the relative gradient norm.
         gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm.
@@ -104,70 +97,95 @@ def minimize_bntr_quadratic(
             - "success" (bool): Boolean indicating whether a solution has been found
                 before reaching maxiter.
     """
-    x_candidate = np.zeros(model.linear_terms.shape[0])
+    options_update_radius = {
+        "eta1": 1.0e-4,
+        "eta2": 0.25,
+        "eta3": 0.50,
+        "eta4": 0.90,
+        "alpha1": 0.25,
+        "alpha2": 0.50,
+        "alpha3": 1.00,
+        "alpha4": 2.00,
+        "alpha5": 4.00,
+        "min_radius": 1e-10,
+        "max_radius": 1e10,
+        "default_radius": 100,
+    }
+
+    x_candidate = np.zeros_like(model.linear_terms)
 
     (
         x_candidate,
         f_candidate,
-        gradient_candidate,
-        hessian_inactive,
+        gradient_unprojected,
+        hessian_inactive_bounds,
         trustregion_radius,
         active_bounds_info,
         converged,
-    ) = take_preliminary_steepest_descent_step_and_check_for_solution(
+        convergence_reason,
+    ) = take_preliminary_gradient_descent_step_and_check_for_solution(
         x_candidate,
         model,
         lower_bounds,
         upper_bounds,
         maxiter_steepest_descent,
-        step_size_newton,
         gtol_abs,
         gtol_rel,
         gtol_scaled,
     )
 
-    for _niter in range(maxiter):
+    for niter in range(maxiter + 1):
+        if converged is True:
+            break
+
         x_old = np.copy(x_candidate)
         f_old = copy(f_candidate)
 
         accept_step = False
 
         while accept_step is False and converged is False:
+            gradient_inactive_bounds = np.copy(
+                gradient_unprojected[active_bounds_info.inactive]
+            )
+
+            hessian_inactive_bounds = find_hessian_submatrix_where_bounds_inactive(
+                model, active_bounds_info
+            )
+
             (
-                x_inactive_conjugate_gradient,
-                gradient_inactive_conjugate_gradient,
-                x_norm_conjugate_gradient,
                 conjugate_gradient_step,
+                conjugate_gradient_step_inactive_bounds,
+                cg_step_norm,
             ) = compute_conjugate_gradient_step(
                 x_candidate,
-                gradient_candidate,
-                hessian_inactive,
+                gradient_inactive_bounds,
+                hessian_inactive_bounds,
                 lower_bounds,
                 upper_bounds,
                 active_bounds_info,
                 trustregion_radius,
+                options_update_radius,
             )
 
-            # Temporarily accept the step and project it into the bounds
-            x_candidate = x_candidate - conjugate_gradient_step
+            x_unbounded = x_candidate + conjugate_gradient_step
             x_candidate = apply_bounds_to_x_candidate(
-                x_candidate, lower_bounds, upper_bounds
-            )
-            f_candidate = evaluate_model_criterion(
-                x_candidate, model.linear_terms, model.square_terms
+                x_unbounded, lower_bounds, upper_bounds
             )
 
             predicted_reduction = (
                 compute_predicted_reduction_from_conjugate_gradient_step(
-                    x_inactive_conjugate_gradient,
-                    gradient_inactive_conjugate_gradient,
                     conjugate_gradient_step,
-                    gradient_candidate,
-                    hessian_inactive,
+                    conjugate_gradient_step_inactive_bounds,
+                    gradient_unprojected,
+                    gradient_inactive_bounds,
+                    hessian_inactive_bounds,
                     active_bounds_info,
                 )
             )
 
+            f_candidate = evaluate_model_criterion(
+                x_candidate, model.linear_terms, model.square_terms
+            )
             actual_reduction = f_old - f_candidate
 
             trustregion_radius_old = copy(trustregion_radius)
@@ -179,46 +197,50 @@ def minimize_bntr_quadratic(
                 f_candidate,
                 predicted_reduction,
                 actual_reduction,
-                x_norm_conjugate_gradient,
+                cg_step_norm,
                 trustregion_radius,
+                options_update_radius,
             )
 
             if accept_step:
-                gradient_candidate = evaluate_model_gradient(x_candidate, model)
+                gradient_unprojected = evaluate_model_gradient(x_candidate, model)
+
+                active_bounds_info = get_information_on_active_bounds(
+                    x_candidate,
+                    gradient_unprojected,
+                    lower_bounds,
+                    upper_bounds,
+                )
             else:
                 x_candidate = np.copy(x_old)
                 f_candidate = np.copy(f_old)
 
-                if trustregion_radius_old == trustregion_radius:
+                if trustregion_radius == trustregion_radius_old:
+                    converged = True
                     break
 
-            converged = check_for_convergence_conjugate_gradient(
+            converged, convergence_reason = check_for_convergence(
                 x_candidate,
                 f_candidate,
-                x_old,
-                f_old,
-                gradient_candidate,
+                gradient_unprojected,
                 model,
                 lower_bounds,
                 upper_bounds,
-                trustregion_radius,
-                ftol_abs=ftol_abs,
-                ftol_scaled=ftol_scaled,
-                xtol=xtol,
+                converged,
+                convergence_reason,
+                niter,
+                maxiter=maxiter,
                 gtol_abs=gtol_abs,
                 gtol_rel=gtol_rel,
                 gtol_scaled=gtol_scaled,
-                steptol=steptol,
             )
-
-        if converged is True:
-            break
 
     result = {
         "x": x_candidate,
         "criterion": f_candidate,
-        "n_iterations": _niter,
+        "n_iterations": niter,
         "success": converged,
+        "message": convergence_reason,
     }
 
     return result
