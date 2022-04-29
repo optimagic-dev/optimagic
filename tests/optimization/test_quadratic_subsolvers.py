@@ -451,6 +451,8 @@ def test_bounded_newton_trustregion(
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 0,
+        "gtol_abs_conjugate_gradient": 1e-8,
+        "gtol_rel_conjugate_gradient": 1e-6,
     }
 
     result = minimize_bntr_quadratic(main_model, lower_bounds, upper_bounds, **options)
@@ -651,7 +653,9 @@ TEST_CASES_CG = [
 def test_trustregion_conjugate_gradient(
     gradient, hessian, trustregion_radius, x_expected
 ):
-    x_out = minimize_trust_conjugate_gradient(gradient, hessian, trustregion_radius)
+    x_out = minimize_trust_conjugate_gradient(
+        gradient, hessian, trustregion_radius, gtol_abs=1e-8, gtol_rel=1e-6
+    )
     aaae(x_out, x_expected)
 
 

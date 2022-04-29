@@ -54,6 +54,8 @@ def minimize_bntr_quadratic(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
+    gtol_abs_conjugate_gradient,
+    gtol_rel_conjugate_gradient
 ):
     """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient method.
 
@@ -83,9 +85,15 @@ def minimize_bntr_quadratic(
         maxiter (int): Maximum number of iterations. If reached, terminate.
         maxiter_gradient_descent (int): Maximum number of steepest descent iterations
             to perform when the trust-region subsolver BNTR is used.
-        gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm.
-        gtol_rel_sub (float): Convergence tolerance for the relative gradient norm.
-        gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm.
+        gtol_abs (float): Convergence tolerance for the absolute gradient norm.
+        gtol_rel (float): Convergence tolerance for the relative gradient norm.
+        gtol_scaled (float): Convergence tolerance for the scaled gradient norm.
+        gtol_abs_conjugate_gradient (float): Convergence tolerance for the absolute
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
+        gtol_rel_conjugate_gradient (float): Convergence tolerance for the relative
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
 
     Returns:
         (dict): Result dictionary containing the following keys:
@@ -138,15 +146,15 @@ def minimize_bntr_quadratic(
         if converged is True:
             break
 
-        x_old = np.copy(x_candidate)
+        x_old = x_candidate.copy()
         f_old = copy(f_candidate)
 
         accept_step = False
 
         while accept_step is False and converged is False:
-            gradient_inactive_bounds = np.copy(
-                gradient_unprojected[active_bounds_info.inactive]
-            )
+            gradient_inactive_bounds = gradient_unprojected[
+                active_bounds_info.inactive
+            ].copy()
 
             hessian_inactive_bounds = find_hessian_submatrix_where_bounds_inactive(
                 model, active_bounds_info
@@ -164,7 +172,9 @@ def minimize_bntr_quadratic(
                 upper_bounds,
                 active_bounds_info,
                 trustregion_radius,
-                options_update_radius,
+                gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient,
+                gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient,
+                options_update_radius=options_update_radius,
             )
 
             x_unbounded = x_candidate + conjugate_gradient_step

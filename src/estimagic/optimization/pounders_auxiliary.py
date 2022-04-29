@@ -185,6 +185,8 @@ def solve_subproblem(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
+    gtol_abs_conjugate_gradient,
+    gtol_rel_conjugate_gradient,
     k_easy,
     k_hard
 ):
@@ -221,6 +223,12 @@ def solve_subproblem(
             in the trust-region subproblem ("BNTR").
         gtol_scaled (float): Convergence tolerance for the scaled gradient norm
             in the trust-region subproblem ("BNTR").
+        gtol_abs_conjugate_gradient (float): Convergence tolerance for the absolute
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
+        gtol_rel_conjugate_gradient (float): Convergence tolerance for the relative
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
         k_easy (float): topping criterion for the "easy" case in the trust-region
             subproblem ("GQTPAR").
         k_hard (float): Stopping criterion for the "hard" case in the trust-region
@@ -266,6 +274,8 @@ def solve_subproblem(
             "gtol_abs": gtol_abs,
             "gtol_rel": gtol_rel,
             "gtol_scaled": gtol_scaled,
+            "gtol_abs_conjugate_gradient": gtol_abs_conjugate_gradient,
+            "gtol_rel_conjugate_gradient": gtol_rel_conjugate_gradient,
         }
         result = minimize_bntr_quadratic(
             main_model, lower_bounds, upper_bounds, **options

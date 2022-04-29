@@ -1,6 +1,5 @@
 """Auxiliary functions for the quadratic BNTR trust-region subsolver."""
 from collections import namedtuple
-from copy import copy
 from functools import reduce
 
 import numpy as np
@@ -70,8 +69,8 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
         gtol_scaled=gtol_scaled,
     )
 
-    if converged is True:
-        hessian_inactive = np.copy(model.square_terms)
+    if converged:
+        hessian_inactive = model.square_terms
         trustregion_radius = options_update_radius["default_radius"]
     else:
         hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
@@ -139,10 +138,11 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
                 gtol_scaled=gtol_scaled,
             )
 
-        if converged is not True:
+        if not converged:
             trustregion_radius = max(trustregion_radius, radius_upper_bound)
-            trustregion_radius = min(
-                max(trustregion_radius, options_update_radius["min_radius"]),
+            trustregion_radius = np.clip(
+                trustregion_radius,
+                options_update_radius["min_radius"],
                 options_update_radius["max_radius"],
             )
 
@@ -166,7 +166,10 @@ def compute_conjugate_gradient_step(
     upper_bounds,
     active_bounds_info,
     trustregion_radius,
-    options,
+    *,
+    gtol_abs_conjugate_gradient,
+    gtol_rel_conjugate_gradient,
+    options_update_radius,
 ):
     """Compute the bounded Conjugate Gradient trust-region step."""
     conjugate_gradient_step = np.zeros_like(x_candidate)
@@ -179,7 +182,7 @@ def compute_conjugate_gradient_step(
         step_norm = np.linalg.norm(step_inactive)
 
         conjugate_gradient_step = _apply_bounds_to_conjugate_gradient_step(
-            conjugate_gradient_step,
+            step_inactive,
             x_candidate,
             lower_bounds,
             upper_bounds,
@@ -188,34 +191,45 @@ def compute_conjugate_gradient_step(
 
     else:
         step_inactive = minimize_trust_conjugate_gradient(
-            gradient_inactive, hessian_inactive, trustregion_radius
+            gradient_inactive,
+            hessian_inactive,
+            trustregion_radius,
+            gtol_abs=gtol_abs_conjugate_gradient,
+            gtol_rel=gtol_rel_conjugate_gradient,
         )
         step_norm = np.linalg.norm(step_inactive)
 
         if trustregion_radius == 0:
             if step_norm > 0:
                 # Accept
-                trustregion_radius = copy(step_norm)
-                trustregion_radius = max(trustregion_radius, options["min_radius"])
-                trustregion_radius = min(trustregion_radius, options["max_radius"])
+                trustregion_radius = np.clip(
+                    step_norm,
+                    options_update_radius["min_radius"],
+                    options_update_radius["max_radius"],
+                )
+
             else:
                 # Re-solve
-                trustregion_radius = options["default_radius"]
-
-                trustregion_radius = max(trustregion_radius, options["min_radius"])
-                trustregion_radius = min(trustregion_radius, options["max_radius"])
+                trustregion_radius = np.clip(
+                    options_update_radius["default_radius"],
+                    options_update_radius["min_radius"],
+                    options_update_radius["max_radius"],
+                )
 
                 step_inactive = minimize_trust_conjugate_gradient(
-                    gradient_inactive, hessian_inactive, trustregion_radius
+                    gradient_inactive,
+                    hessian_inactive,
+                    trustregion_radius,
+                    gtol_abs=gtol_abs_conjugate_gradient,
+                    gtol_rel=gtol_rel_conjugate_gradient,
                 )
                 step_norm = np.linalg.norm(step_inactive)
 
                 if step_norm == 0:
                     raise ValueError("Initial direction is zero.")
 
-        conjugate_gradient_step[active_bounds_info.inactive] = np.copy(step_inactive)
         conjugate_gradient_step = _apply_bounds_to_conjugate_gradient_step(
-            conjugate_gradient_step,
+            step_inactive,
             x_candidate,
             lower_bounds,
             upper_bounds,
@@ -272,7 +286,7 @@ def perform_gradient_descent_and_update_trustregion_radius(
     options_update_radius,
 ):
     """Perform steepest descent step and update trust-region radius."""
-    f_min = copy(f_candidate_initial)
+    f_min = f_candidate_initial
     gradient_norm = np.linalg.norm(gradient_projected)
 
     trustregion_radius = options_update_radius["default_radius"]
@@ -280,7 +294,7 @@ def perform_gradient_descent_and_update_trustregion_radius(
     step_size_accepted = 0
 
     for _ in range(maxiter_steepest_descent):
-        x_old = np.copy(x_candidate)
+        x_old = x_candidate.copy()
 
         step_size_candidate = trustregion_radius / gradient_norm
         x_candidate = x_old - step_size_candidate * gradient_projected
@@ -339,12 +353,12 @@ def update_trustregion_radius_conjugate_gradient(
     """Update the trust-region radius based on predicted and actual reduction."""
     accept_step = False
 
-    if predicted_reduction < 0 or np.isfinite(predicted_reduction) is False:
+    if predicted_reduction < 0 or ~np.isfinite(predicted_reduction):
         # Reject and start over
         trustregion_radius = options["alpha1"] * min(trustregion_radius, x_norm_cg)
 
     else:
-        if np.isfinite(actual_reduction) is False:
+        if ~np.isfinite(actual_reduction):
             trustregion_radius = options["alpha1"] * min(trustregion_radius, x_norm_cg)
         else:
             if abs(actual_reduction) <= max(1, abs(f_candidate) * EPSILON) and abs(
@@ -363,7 +377,7 @@ def update_trustregion_radius_conjugate_gradient(
                 accept_step = True
 
                 # Update the trust-region radius only if the computed step is at the
-                # trust radius boundary
+                # trust-radius boundary
                 if x_norm_cg == trustregion_radius:
                     if kappa < options["eta2"]:
                         # Marginal bad step
@@ -377,8 +391,8 @@ def update_trustregion_radius_conjugate_gradient(
                         # Very good step
                         trustregion_radius = options["alpha5"] * trustregion_radius
 
-    trustregion_radius = max(
-        min(trustregion_radius, options["max_radius"]), options["min_radius"]
+    trustregion_radius = np.clip(
+        trustregion_radius, options["min_radius"], options["max_radius"]
     )
 
     return trustregion_radius, accept_step
@@ -531,36 +545,32 @@ def evaluate_model_gradient(x, model):
 
 
 def _apply_bounds_to_conjugate_gradient_step(
-    cg_step_direction,
+    step_inactive,
     x_candidate,
     lower_bounds,
     upper_bounds,
     active_bounds_info,
 ):
     """Apply lower and upper bounds to the Conjugate Gradient step."""
-    if cg_step_direction is None:
-        cg_step_direction = np.zeros_like(x_candidate)
+    cg_step = np.zeros_like(x_candidate)
+    cg_step[active_bounds_info.inactive] = step_inactive
 
     if active_bounds_info.lower.size > 0:
         x_active_lower = x_candidate[active_bounds_info.lower]
         lower_bound_active = lower_bounds[active_bounds_info.lower]
 
-        cg_step_direction[active_bounds_info.lower] = (
-            lower_bound_active - x_active_lower
-        )
+        cg_step[active_bounds_info.lower] = lower_bound_active - x_active_lower
 
     if active_bounds_info.upper.size > 0:
         x_active_upper = x_candidate[active_bounds_info.upper]
         upper_bound_active = upper_bounds[active_bounds_info.upper]
 
-        cg_step_direction[active_bounds_info.upper] = (
-            upper_bound_active - x_active_upper
-        )
+        cg_step[active_bounds_info.upper] = upper_bound_active - x_active_upper
 
     if active_bounds_info.fixed.size > 0:
-        cg_step_direction[active_bounds_info.fixed] = 0
+        cg_step[active_bounds_info.fixed] = 0
 
-    return cg_step_direction
+    return cg_step
 
 
 def _update_trustregion_radius_and_gradient_descent(
@@ -646,7 +656,7 @@ def _update_trustregion_radius_and_gradient_descent(
         else:
             tau = tau_max
 
-    trustregion_radius *= tau
+    trustregion_radius = trustregion_radius * tau
 
     return trustregion_radius, radius_upper
 

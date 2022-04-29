@@ -1,11 +1,9 @@
 """Implementation of the Conjugate Gradient algorithm."""
-from math import sqrt
-
 import numpy as np
 
 
 def minimize_trust_conjugate_gradient(
-    model_gradient, model_hessian, trustregion_radius
+    model_gradient, model_hessian, trustregion_radius, *, gtol_abs=1e-8, gtol_rel=1e-6
 ):
     """Minimize the quadratic trust-region subproblem via Conjugate Gradient.
 
@@ -13,20 +11,19 @@ def minimize_trust_conjugate_gradient(
         model_gradient (np.ndarray): Gradient of the quadratic model. Shape (n,).
         model_hessian (np.ndarray): Hessian of the quadratic model. Shape (n, n).
         trustregion_radius (float): Radius of the trust-region.
+        gtol_abs (float): Convergence tolerance for the absolute gradient norm.
+        gtol_rel (float): Convergence tolerance for the relative gradient norm.
 
     Returns:
         (np.ndarray): Solution vector of shape (n,).
     """
-    n = model_gradient.shape[0]
-    maxiter = 2 * n
+    n = len(model_gradient)
+    maxiter = n * 2
 
-    gtol_abs = 1e-8
-    gtol_rel = 1e-6
-
-    residual = np.copy(model_gradient)
     x_candidate = np.zeros(n)
 
-    direction = np.copy(-residual)
+    residual = model_gradient
+    direction = -residual.copy()
 
     gradient_norm = np.linalg.norm(residual)
     stop_tol = max(gtol_abs, gtol_rel * gradient_norm)
@@ -75,7 +72,7 @@ def _update_vectors_for_next_iteration(
             - residual (np.ndarray): Updated array of residuals of shape (n,).
             - direction (np.darray): Updated direction vector of shape (n,).
     """
-    residual_old = np.copy(residual)
+    residual_old = residual.copy()
 
     x_candidate = x_candidate + alpha * direction
     residual = residual + alpha * np.dot(hessian, direction)
@@ -108,7 +105,7 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
     cd = np.dot(candidate, direction)
     dd = np.dot(direction, direction)
 
-    sigma = -cd + sqrt(cd * cd + dd * (radius**2 - cc))
+    sigma = -cd + np.sqrt(cd * cd + dd * (radius**2 - cc))
     sigma /= dd
 
     return sigma
