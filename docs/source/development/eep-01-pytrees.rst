@@ -332,7 +332,7 @@ in terms of pytrees and look at a JAX calculated jacobian in both cases:
 .. code-block:: python
 
     def square(x):
-        return x ** 2
+        return x**2
 
 
     x = jnp.array([1, 2, 3, 4, 5, 6.0])
