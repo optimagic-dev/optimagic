@@ -544,11 +544,10 @@ def nlopt_slsqp(
 
 
 @mark_minimizer(
-    ### klingt gradienten frei
     name="nlopt_direct",
     primary_criterion_entry="value",
     parallelizes=False,
-    needs_scaling=True,  ### vielleicht auch nicht
+    needs_scaling=True,
     disable_cache=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -605,8 +604,8 @@ def nlopt_direct(
 @mark_minimizer(
     name="nlopt_esch",
     primary_criterion_entry="value",
-    parallelizes=True,  ### because genetic
-    needs_scaling=True,  ### unclear to me if needed
+    parallelizes=False,
+    needs_scaling=True,
     disable_cache=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -648,8 +647,8 @@ def nlopt_esch(
 @mark_minimizer(
     name="nlopt_isres",
     primary_criterion_entry="value",
-    parallelizes=True,  ### because this has a population
-    needs_scaling=True,  ### unclear to me if needed
+    parallelizes=False,
+    needs_scaling=True,
     disable_cache=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -691,8 +690,8 @@ def nlopt_isres(
 @mark_minimizer(
     name="nlopt_crs2_lm",
     primary_criterion_entry="value",
-    parallelizes=True,  ### because this has a population
-    needs_scaling=True,  ### unclear to me if needed
+    parallelizes=False,
+    needs_scaling=True,
     disable_cache=False,
     is_available=IS_NLOPT_INSTALLED,
 )
