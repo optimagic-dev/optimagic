@@ -5,6 +5,7 @@ The documentation is heavily based on (nlopt documentation)[nlopt.readthedocs.io
 """
 import numpy as np
 from estimagic.config import IS_NLOPT_INSTALLED
+from estimagic.decorators import mark_minimizer
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
@@ -14,20 +15,20 @@ from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
 )
 
-
 if IS_NLOPT_INSTALLED:
     import nlopt
 
 
-DEFAULT_ALGO_INFO = {
-    "primary_criterion_entry": "value",
-    "parallelizes": False,
-    "needs_scaling": False,
-}
-
-
+@mark_minimizer(
+    name="nlopt_bobyqa",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_bobyqa(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -45,12 +46,12 @@ def nlopt_bobyqa(
 
     """
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
+        derivative=None,
         algorithm=nlopt.LN_BOBYQA,
-        algorithm_name="nlopt_bobyqa",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -61,8 +62,16 @@ def nlopt_bobyqa(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_neldermead",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_neldermead(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -80,12 +89,12 @@ def nlopt_neldermead(
     """
 
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LN_NELDERMEAD,
-        algorithm_name="nlopt_neldermead",
+        derivative=None,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -96,8 +105,16 @@ def nlopt_neldermead(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_praxis",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_praxis(
-    criterion_and_derivative,
+    criterion,
     x,
     *,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
@@ -111,28 +128,33 @@ def nlopt_praxis(
     For details see :ref:`list_of_nlopt_algorithms`.
 
     """
-    algo_info = DEFAULT_ALGO_INFO.copy()
-    algo_info.update({"needs_scaling": True})
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds=None,
         upper_bounds=None,
         algorithm=nlopt.LN_PRAXIS,
-        algorithm_name="nlopt_praxis",
+        derivative=None,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
         convergence_ftol_abs=convergence_absolute_criterion_tolerance,
         stopping_max_eval=stopping_max_criterion_evaluations,
-        algo_info=algo_info,
     )
 
     return out
 
 
+@mark_minimizer(
+    name="nlopt_cobyla",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_cobyla(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -150,12 +172,12 @@ def nlopt_cobyla(
     """
 
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LN_COBYLA,
-        algorithm_name="nlopt_cobyla",
+        derivative=None,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -166,8 +188,16 @@ def nlopt_cobyla(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_sbplx",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_sbplx(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -185,12 +215,11 @@ def nlopt_sbplx(
     """
 
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LN_SBPLX,
-        algorithm_name="nlopt_sbplx",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -201,8 +230,16 @@ def nlopt_sbplx(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_newuoa",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_newuoa(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -224,12 +261,11 @@ def nlopt_newuoa(
         algo = nlopt.LN_NEWUOA
 
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=algo,
-        algorithm_name="nlopt_newuoa",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -240,8 +276,17 @@ def nlopt_newuoa(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_tnewton",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_tnewton(
-    criterion_and_derivative,
+    criterion,
+    derivative,
     x,
     lower_bounds,
     upper_bounds,
@@ -259,12 +304,12 @@ def nlopt_tnewton(
     """
 
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LD_TNEWTON,
-        algorithm_name="nlopt_tnewton",
+        derivative=derivative,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -275,8 +320,17 @@ def nlopt_tnewton(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_lbfgsb",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_lbfgs(
-    criterion_and_derivative,
+    criterion,
+    derivative,
     x,
     lower_bounds,
     upper_bounds,
@@ -294,12 +348,12 @@ def nlopt_lbfgs(
     """
 
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LD_TNEWTON,
-        algorithm_name="nlopt_tnewton",
+        derivative=derivative,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -310,8 +364,17 @@ def nlopt_lbfgs(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_ccsaq",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_ccsaq(
-    criterion_and_derivative,
+    criterion,
+    derivative,
     x,
     lower_bounds,
     upper_bounds,
@@ -329,12 +392,12 @@ def nlopt_ccsaq(
 
     """
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LD_CCSAQ,
-        algorithm_name="nlopt_ccsaq",
+        derivative=derivative,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -345,8 +408,17 @@ def nlopt_ccsaq(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_mma",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_mma(
-    criterion_and_derivative,
+    criterion,
+    derivative,
     x,
     lower_bounds,
     upper_bounds,
@@ -364,12 +436,12 @@ def nlopt_mma(
 
     """
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LD_MMA,
-        algorithm_name="nlopt_mma",
+        derivative=derivative,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -380,8 +452,17 @@ def nlopt_mma(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_var",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_var(
-    criterion_and_derivative,
+    criterion,
+    derivative,
     x,
     lower_bounds,
     upper_bounds,
@@ -404,12 +485,12 @@ def nlopt_var(
     else:
         algo = nlopt.LD_VAR2
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=algo,
-        algorithm_name="nlopt_var",
+        derivative=derivative,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -420,8 +501,17 @@ def nlopt_var(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_slsqp",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_slsqp(
-    criterion_and_derivative,
+    criterion,
+    derivative,
     x,
     lower_bounds,
     upper_bounds,
@@ -438,12 +528,12 @@ def nlopt_slsqp(
 
     """
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.LD_SLSQP,
-        algorithm_name="nlopt_slsqp",
+        derivative=derivative,
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -453,8 +543,17 @@ def nlopt_slsqp(
     return out
 
 
+@mark_minimizer(
+    ### klingt gradienten frei
+    name="nlopt_direct",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=True,  ### vielleicht auch nicht
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_direct(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -486,12 +585,11 @@ def nlopt_direct(
     elif not locally_biased and not random_search and unscaled_bounds:
         algo = nlopt.GN_DIRECT_NOSCAL
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=algo,
-        algorithm_name="nlopt_direct",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -504,8 +602,16 @@ def nlopt_direct(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_esch",
+    primary_criterion_entry="value",
+    parallelizes=True,  ### because genetic
+    needs_scaling=True,  ### unclear to me if needed
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_esch(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -522,12 +628,11 @@ def nlopt_esch(
 
     """
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.GN_ESCH,
-        algorithm_name="nlopt_esch",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -540,8 +645,16 @@ def nlopt_esch(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_isres",
+    primary_criterion_entry="value",
+    parallelizes=True,  ### because this has a population
+    needs_scaling=True,  ### unclear to me if needed
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_isres(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -558,12 +671,11 @@ def nlopt_isres(
 
     """
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.GN_ISRES,
-        algorithm_name="nlopt_isres",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -576,8 +688,16 @@ def nlopt_isres(
     return out
 
 
+@mark_minimizer(
+    name="nlopt_crs2_lm",
+    primary_criterion_entry="value",
+    parallelizes=True,  ### because this has a population
+    needs_scaling=True,  ### unclear to me if needed
+    disable_cache=False,
+    is_available=IS_NLOPT_INSTALLED,
+)
 def nlopt_crs2_lm(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -597,12 +717,11 @@ def nlopt_crs2_lm(
     if population_size is None:
         population_size = 10 * (len(x) + 1)
     out = _minimize_nlopt(
-        criterion_and_derivative,
+        criterion,
         x,
         lower_bounds,
         upper_bounds,
         algorithm=nlopt.GN_CRS2_LM,
-        algorithm_name="nlopt_crs2_lm",
         convergence_xtol_rel=convergence_relative_params_tolerance,
         convergence_xtol_abs=convergence_absolute_params_tolerance,
         convergence_ftol_rel=convergence_relative_criterion_tolerance,
@@ -617,43 +736,29 @@ def nlopt_crs2_lm(
 
 
 def _minimize_nlopt(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
     algorithm,
-    algorithm_name,
     *,
+    derivative=None,
     convergence_xtol_rel=None,
     convergence_xtol_abs=None,
     convergence_ftol_rel=None,
     convergence_ftol_abs=None,
     stopping_max_eval=None,
     population_size=None,
-    algo_info=None,
 ):
     """Run actual nlopt optimization argument, set relevant attributes."""
-    if algo_info is None:
-        algo_info = DEFAULT_ALGO_INFO.copy()
-    else:
-        algo_info = algo_info.copy()
-    algo_info["name"] = algorithm_name
 
     def func(x, grad):
         if grad.size > 0:
-            criterion, derivative = criterion_and_derivative(
-                x,
-                task="criterion_and_derivative",
-                algorithm_info=algo_info,
-            )
-            grad[:] = derivative
+            criterion_value = criterion(x)
+            grad[:] = derivative(x)
         else:
-            criterion = criterion_and_derivative(
-                x,
-                task="criterion",
-                algorithm_info=algo_info,
-            )
-        return criterion
+            criterion_value = criterion(x)
+        return criterion_value
 
     opt = nlopt.opt(algorithm, x.shape[0])
     if convergence_ftol_rel is not None:
