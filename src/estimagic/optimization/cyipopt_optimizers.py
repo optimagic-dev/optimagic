@@ -1,7 +1,6 @@
 """Implement cyipopt's Interior Point Optimizer."""
-import functools
-
 from estimagic.config import IS_CYIPOPT_INSTALLED
+from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
@@ -12,8 +11,17 @@ if IS_CYIPOPT_INSTALLED:
     import cyipopt
 
 
+@mark_minimizer(
+    name="ipopt",
+    primary_criterion_entry="value",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=IS_CYIPOPT_INSTALLED,
+)
 def ipopt(
-    criterion_and_derivative,
+    criterion,
+    derivative,
     x,
     lower_bounds,
     upper_bounds,
@@ -312,23 +320,6 @@ def ipopt(
         for key, val in convert_bool_to_str_options.items()
     }
 
-    algo_info = {
-        "primary_criterion_entry": "value",
-        "parallelizes": False,
-        "needs_scaling": False,
-        "name": "ipopt",
-    }
-
-    gradient = functools.partial(
-        criterion_and_derivative, task="derivative", algorithm_info=algo_info
-    )
-
-    func = functools.partial(
-        criterion_and_derivative,
-        task="criterion",
-        algorithm_info=algo_info,
-    )
-
     options = {
         # disable verbosity
         "print_level": 0,
@@ -501,10 +492,10 @@ def ipopt(
     }
 
     raw_res = cyipopt.minimize_ipopt(
-        fun=func,
+        fun=criterion,
         x0=x,
         bounds=get_scipy_bounds(lower_bounds, upper_bounds),
-        jac=gradient,
+        jac=derivative,
         constraints=(),
         tol=convergence_relative_criterion_tolerance,
         options=options,
