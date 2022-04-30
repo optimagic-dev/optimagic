@@ -95,7 +95,7 @@ def test_optimality_criterion(
         target_size=10,
         centered=True,
         criterion=criterion,
-        target="linear",
+        quadratic_target=False,
         n_iter=1,
         return_crit_vals=True,
     )
@@ -106,13 +106,13 @@ def test_optimality_criterion(
         target_size=10,
         centered=True,
         criterion=criterion,
-        target="linear",
+        quadratic_target=False,
         n_iter=50_000,  # random search through 50_000 examples
         return_crit_vals=True,
     )
 
     crit_val_optimized_sample = calculate_criterion(
-        optimized_sample["points"], criterion, target="linear"
+        optimized_sample["points"], criterion, quadratic_target=False
     )
 
     if criterion != "maximin":
