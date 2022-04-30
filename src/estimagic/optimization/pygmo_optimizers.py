@@ -1297,7 +1297,6 @@ def _minimize_pygmo(
     prob = _create_problem(
         func=criterion,
         bounds=bounds,
-        gradient_=derivative,
         dim=len(x),
         batch_evaluator=batch_evaluator,
         n_cores=n_cores,
@@ -1312,7 +1311,7 @@ def _minimize_pygmo(
     return result
 
 
-def _create_problem(func, bounds, gradient_, dim, batch_evaluator, n_cores):
+def _create_problem(func, bounds, dim, batch_evaluator, n_cores):
     class Problem:
         def fitness(self, x):
             return [func(x)]
@@ -1321,10 +1320,7 @@ def _create_problem(func, bounds, gradient_, dim, batch_evaluator, n_cores):
             return bounds
 
         def gradient(self, dv):
-            if gradient_ is not None:
-                return gradient_(dv)
-            else:
-                return None
+            raise ValueError("No pygmo optimizer should use a gradient.")
 
         def batch_fitness(self, dvs):
             dv_list = dvs.reshape(-1, dim)
