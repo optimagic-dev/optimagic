@@ -5,7 +5,7 @@ from estimagic.decorators import mark_minimizer
 
 @mark_minimizer(
     name="bhhh",
-    primary_criterion_entry="root_contributions",
+    primary_criterion_entry="contributions",
     parallelizes=False,
     needs_scaling=False,
     disable_cache=False,
