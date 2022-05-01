@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 from estimagic.optimization.tranquilo.models import ModelInfo
 from estimagic.optimization.tranquilo.models import VectorModel
-from sklearn.preprocessing import PolynomialFeatures
+from numba import njit
 
 
 def get_fitter(fitter, user_options=None, model_info=None):
@@ -36,7 +36,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
 
     """
     user_options = user_options or {}
-    model_info = model_info or ModelInfo
+    model_info = model_info or ModelInfo()
 
     built_in_fitters = {"ols": fit_ols, "ridge": fit_ridge}
 
@@ -245,12 +245,9 @@ def _fit_ridge(x, y, penalty):
 
 def _build_feature_matrix(x, model_info):
     if model_info.has_interactions:
-        poly = PolynomialFeatures(
-            degree=2,
-            include_bias=model_info.has_intercepts,
-            interaction_only=not model_info.has_squares,
+        features = _polynomial_features(
+            x, model_info.has_intercepts, model_info.has_squares
         )
-        features = poly.fit_transform(x)
     else:
         data = (np.ones(len(x)), x) if model_info.has_intercepts else (x,)
         data = (*data, x**2) if model_info.has_squares else data
@@ -265,3 +262,31 @@ def _reshape_square_terms_to_tril(square_terms, n_params, n_residuals, has_squar
     triu[:, idx1, idx2] = square_terms
     tril = triu.transpose(0, 2, 1)
     return tril
+
+
+@njit
+def _polynomial_features(x, has_intercepts, has_squares):
+    n_samples, n_params = x.shape
+
+    if has_squares:
+        n_poly_terms = n_params * (n_params + 1) // 2
+    else:
+        n_poly_terms = n_params * (n_params - 1) // 2
+
+    poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
+    xt = x.T
+
+    idx = 0
+    for i in range(n_params):
+        j_start = i if has_squares else i + 1
+        for j in range(j_start, n_params):
+            poly_terms[idx] = xt[i] * xt[j]
+            idx += 1
+
+    if has_intercepts:
+        intercept = np.ones((1, n_samples), x.dtype)
+        out = np.concatenate((intercept, xt, poly_terms), axis=0)
+    else:
+        out = np.concatenate((xt, poly_terms), axis=0)
+
+    return out.T
