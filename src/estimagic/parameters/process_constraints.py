@@ -33,6 +33,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from estimagic.parameters.check_constraints import check_constraints_are_satisfied
+from estimagic.parameters.check_constraints import check_constraints_are_satisfied_old
 from estimagic.parameters.check_constraints import check_fixes_and_bounds
 from estimagic.parameters.check_constraints import check_for_incompatible_overlaps
 from estimagic.parameters.check_constraints import check_types
@@ -44,7 +45,6 @@ from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 def process_constraints(
     constraints,
-    params,
     params_vec,
     lower_bounds,
     upper_bounds,
@@ -84,12 +84,12 @@ def process_constraints(
     """
     params_vec = params_vec.copy()
     check_types(constraints)
-    # selectors have to be processed before anything else happens to the params
-    constraints = _process_selectors(constraints, params, params_vec)
 
     constraints = _replace_pairwise_equality_by_equality(constraints)
     constraints = _process_linear_weights(constraints)
-    check_constraints_are_satisfied(constraints, params)  # xxxx rewrite for params_vec
+    check_constraints_are_satisfied(
+        constraints, params_vec, param_names
+    )  # xxxx rewrite for params_vec
     constraints = _replace_increasing_and_decreasing_by_linear(constraints)
     constraints = _process_linear_weights(constraints)
 
@@ -148,7 +148,7 @@ def process_constraints_old(
 
         constraints = _replace_pairwise_equality_by_equality(constraints)
         constraints = _process_linear_weights(constraints)
-        check_constraints_are_satisfied(constraints, parvec)
+        check_constraints_are_satisfied_old(constraints, parvec)
         constraints = _replace_increasing_and_decreasing_by_linear(constraints)
         constraints = _process_linear_weights(constraints)
 

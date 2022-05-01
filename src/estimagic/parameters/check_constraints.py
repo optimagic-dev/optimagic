@@ -6,11 +6,98 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from estimagic.exceptions import InvalidParamsError
 from estimagic.utilities import cov_params_to_matrix
 from estimagic.utilities import sdcorr_params_to_matrix
 
 
-def check_constraints_are_satisfied(pc, params):
+def check_constraints_are_satisfied(flat_constraints, param_values, param_names):
+    """Check that params satisfies all constraints.
+
+    This should be called before the more specialized constraints are rewritten to
+    linear constraints in order to get better error messages!
+
+    We let the checks pass if all "values" are np.nan. This way `process_constraints`
+    can be used on empty params DataFrames which is useful to construct templates for
+    start parameters that can be filled out by the user.
+
+    Args:
+        pc (list): List of constraints with processed selectors.
+        params (pd.DataFrame): See :ref:`params`
+
+    Raises:
+        ValueError if constraints are not satisfied.
+
+    """
+    # skip check if all parameters are NaN
+    if not np.isfinite(param_values).any():
+        return
+
+    for constr in flat_constraints:
+        typ = constr["type"]
+        subset = param_values[constr["index"]]
+
+        base_msg = _get_message(constr, param_names)
+
+        if typ == "covariance":
+            cov = cov_params_to_matrix(subset)
+            e, _ = np.linalg.eigh(cov)
+            if not np.all(e > -1e-8):
+                raise InvalidParamsError(base_msg.format(""))
+        elif typ == "sdcorr":
+            cov = sdcorr_params_to_matrix(subset)
+            e, _ = np.linalg.eigh(cov)
+            if not np.all(e > -1e-8):
+                raise InvalidParamsError(base_msg.format(""))
+        elif typ == "probability":
+            if not np.isclose(subset.sum(), 1, rtol=0.01):
+                explanation = "Probabilities do not sum to 1."
+                raise InvalidParamsError(base_msg.format(explanation))
+            if np.any(subset < 0):
+                explanation = "There are negative Probabilities."
+                raise InvalidParamsError(base_msg.format(explanation))
+            if np.any(subset > 1):
+                explanation = "There are probabilities larger than 1."
+                raise InvalidParamsError(base_msg.format(explanation))
+        elif typ == "increasing":
+            if np.any(np.diff(subset) < 0):
+                raise InvalidParamsError(base_msg.format(""))
+        elif typ == "decreasing":
+            if np.any(np.diff(subset) > 0):
+                InvalidParamsError(base_msg.format(""))
+        elif typ == "linear":
+            wsum = subset.to_numpy().dot(constr["weights"])
+            if "lower_bound" in constr and wsum < constr["lower_bound"]:
+                explanation = "Lower bound of linear constraint is violated."
+                raise InvalidParamsError(base_msg.format(explanation))
+            elif "upper_bound" in constr and wsum > constr["upper_bound"]:
+                explanation = "Upper bound of linear constraint violated"
+                raise InvalidParamsError(base_msg.format(explanation))
+            elif "value" in constr and not np.isclose(wsum, constr["value"]):
+                explanation = "Equality condition of linear constraint violated"
+                raise InvalidParamsError(base_msg.format(explanation))
+        elif typ == "equality":
+            if len(subset.unique()) != 1:
+                raise InvalidParamsError(base_msg.format(""))
+
+
+def _get_message(constraint, param_names):
+    start = f"{constraint['type']} is not fulfilled in params."
+
+    explanation = "{}"
+
+    end = (
+        "The names of the involved "
+        f"parameters is:\n{param_names[constraint['index']]}\n"
+        "The relevant constraint (with processed selector fields) is:\n"
+        f"{constraint}."
+    )
+
+    msg = start + explanation + end
+    return msg
+
+
+def check_constraints_are_satisfied_old(pc, params):
     """Check that params satisfies all constraints.
 
     This should be called before the more specialized constraints are rewritten to
