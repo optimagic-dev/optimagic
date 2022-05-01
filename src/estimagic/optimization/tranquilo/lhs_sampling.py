@@ -1,101 +1,106 @@
 import itertools
-from itertools import combinations
 
 import numpy as np
+from numba import njit
 
 
-def get_next_trust_region_points_latin_hypercube(
-    center,
-    radius,
-    n_points,
-    existing_points=None,
-    optimality_criterion="maximin",
-    lhs_design="centered",
-    target="linear",
-    n_iter=10_000,
+def lhs_sampler(
+    lower_bounds,
+    upper_bounds,
+    target_size,
+    existing_xs=None,
+    existing_fvals=None,  # noqa: U100
+    centered=False,
+    criterion="maximin",
+    quadratic_target=False,
+    n_iter=1_000,
+    seed=1234,
+    return_crit_vals=False,
 ):
-    """Generate new points at which the criterion should be evaluated.
-
-    Important note
-    --------------
-    If existing points are passed the returned sample of points may exceed the number
-    of requested points, and the sample is will not be a valid Latin-Hypercube. The
-    sample will, however, include a subset of points that constitutes a valid
-    Latin-Hyercube.
-
-    Description
-    -----------
-    Generates an (optimal) Latin hypercube sample taking into account already existing
-    points. Optimality is defined via different criteria, see
-    :func:`compute_optimality_criterion`. The best sample is chosen via random search.
+    """Latin-Hypercube generation of trustregion sampling.
 
     Args:
-        center (np.ndarray): Center of the current trust region.
-        radius (float): Radius of the current trust region.
-        n_points (int): Number of points in the trust region at which criterion values
-            are known. The actual number can be larger than this if the existing points
-            are badly spaced.
-        existing_points (np.ndarray): 2d Array where each row is a parameter vector at
-            which the criterion has already been evaluated.
-        optimality_criterion (str): One of "a-optimal", "d-optimal", "e-optimal",
-            "g-optimal" or "maximin". Default "maximin".
-        lhs_design (str): One of "random", "centered". Determines how sample points are
-            spaced inside bins. Default 'centered'.
-        target (str): One of "linear" or "quadratic". Determines in which space the
-            criterion is evaluated. For "quadratic" the Latin-Hypercube sample X is
-            mapped onto Y(X) = [X, X ** 2] and the criterion value for X is computed
-            using Y(X).  This can be useful if one chooses an optimality criterion that
-            minimizes e.g.  the variance of the least-squares estimator, while using a
-            quadratic or polynomial model. Default is "linear".
+        lower_bounds (np.ndarray): 1d array with lower bounds for the sampled points.
+        upper_bounds (pn.ndarray): 1d sample with upper bounds for the sampled points.
+        target_size (int): Target number of points in the combined sample of existing_xs
+            and newly sampled points. The sampler does not have to guarantee that this
+            number will actually be reached.
+        existing_xs (np.ndarray or None): 2d numpy array in which each row is an
+            x vector at which the criterion function has already been evaluated, that
+            satisfies lower_bounds <= existing_xs <= upper_bounds.
+        existing_fvals (np.ndarray): 1d numpy array with same length as existing_xs
+            that contains the corresponding function evaluations.
+        centered (bool): Center the point within the multi-dimensional grid. Default is
+            False. If True, used random permutations of coordinates to lower the
+            centered discrepancy.
+        criterion (str): Must be in {"a-optimal", "d-optimal", "e-optimal", "g-optimal",
+            "maximin"}. Default "maximin".
+        quadratic_target (bool): Determines in which space the criterion is evaluated.
+            If True the Latin-Hypercube sample X is mapped onto Y(X) = [X, X ** 2] and
+            the criterion value for X is computed using Y(X). This can be useful if one
+            chooses an optimality criterion that minimizes e.g. the variance of the
+            least-squares estimator, while using a quadratic model. Default False.
         n_iter (int): Iterations considered in random search.
+        seed (int): Seed for a random number generator.
+        return_crit_vals (bool): Return values of the criterion. Default False. Mainly
+            useful for testing.
 
     Returns:
-        out (dict): Dictionary with entries:
-        - 'points' (np.ndarray): The (optimal) Latin hypercube sample. Has shape
-        (n_points, len(center)).
-        - 'crit_vals' (np.ndarray): 1d array of length n_iter, containing the criterion
-        values assigned to each candidate sample. Mainly used for debugging.
+        dict: A dictionary containing "points" (a numpy array where each row is a
+            newly sampled point) and potentially other information about the sampling.
 
     """
-    if lhs_design not in {"centered", "random"}:
-        raise ValueError(
-            "Invalid Latin hypercube design. Must be in {'random', 'centered'}"
-        )
+    np.random.seed(seed)
 
-    n_dim = len(center)
-    dtype = np.uint8 if n_points < 256 else np.uint16
-
-    if existing_points is None:
-        candidates = _create_upscaled_lhs_sample(n_dim, n_points, n_iter, dtype)
-        n_new_points = n_points
+    if existing_xs is not None:
+        n_points = max(0, target_size - len(existing_xs))
     else:
-        existing_upscaled = _scale_up_points(existing_points, center, radius, n_points)
-        empty_bins = _get_empty_bin_info(existing_upscaled, n_points)
-        candidates = _extend_upscaled_lhs_sample(empty_bins, n_points, n_iter, dtype)
-        existing_upscaled = np.tile(existing_upscaled, (n_iter, 1, 1))
-        candidates = np.concatenate((existing_upscaled, candidates), axis=1)
-        n_new_points = n_points - len(existing_points)
+        n_points = target_size
 
-    candidates = candidates.astype(float)
-    if lhs_design == "centered" and n_new_points > 0:
-        candidates[:, -n_new_points:, :] += 0.5
-    elif lhs_design == "random" and n_new_points > 0:
-        candidates[:, -n_new_points:, :] += np.random.uniform(
-            size=(n_new_points, n_dim)
+    n_params = len(lower_bounds)
+    dtype = np.min_scalar_type(target_size)
+
+    # create sample on grid [0, 1, ..., target_size] ** n_params
+    if existing_xs is None:
+        candidates = _create_upscaled_sample(n_params, n_points, n_iter, seed, dtype)
+    else:
+        existing_upscaled = _scale_up_points(
+            existing_xs, target_size, lower_bounds, upper_bounds
+        )
+        empty_bins = _get_empty_bin_info(existing_upscaled, target_size, dtype)
+        new_points = _extend_upscaled_sample(
+            empty_bins, target_size, n_iter, seed, dtype
+        )
+        existing_upscaled = np.tile(existing_upscaled, (n_iter, 1, 1))
+        candidates = np.concatenate((existing_upscaled, new_points), axis=1)
+
+    if n_points > 0:
+        # perturb sample
+        candidates = candidates.astype(np.float64)
+        perturbation = 0.5 if centered else np.random.uniform(size=(n_points, n_params))
+        candidates[:, -n_points:, :] += perturbation
+
+        # map sample into cube [lower_bounds, upper_bounds]
+        candidates = _scale_down_points(
+            candidates, target_size, lower_bounds, upper_bounds
         )
 
-    candidates = _scale_down_points(candidates, center, radius, n_points)
+        crit_vals = calculate_criterion(candidates, criterion, quadratic_target)
+        argmin_id = np.argmin(crit_vals)
 
-    crit_vals = compute_optimality_criterion(
-        candidates, criterion=optimality_criterion, target=target
-    )
-    points = candidates[np.argmin(crit_vals)]
+        # we return only newly sampled points
+        points = candidates[argmin_id, -n_points:, :]
+    else:
+        points = np.array([]).reshape(0, n_params)
+        crit_vals = None
 
-    out = {"points": points, "crit_vals": crit_vals}
+    out = {"points": points}
+    if return_crit_vals:
+        out["crit_vals"] = crit_vals
     return out
 
 
-def compute_optimality_criterion(x, criterion, target):
+def calculate_criterion(x, criterion, quadratic_target):
     """Compute optimality criterion of data matrix along axis.
 
     Implements criteria that measure the dispersion of sample points in a space.
@@ -116,126 +121,70 @@ def compute_optimality_criterion(x, criterion, target):
             dimension.
         criterion (str): Criterion type, must be in {'a-optimal', 'd-optimal',
             'e-optimal', 'g-optimal', 'maximin'}.
-        target (str): One of "linear", "quadratic" or "polynomial". Determines in which
-            space the criterion is evaluated. For "quadratic" the Latin-Hypercube sample
-            X is mapped onto Y(X) = [X, X ** 2] and the criterion value for X is
-            computed using Y(X). For "polynomial" Y(X) will also include all cross
-            terms. This can be useful if one chooses an optimality criterion that
-            minimizes e.g. the variance of the least-squares estimator, while using a
-            quadratic or polynomial model.
+        quadratic_target (bool): Determines in which space the criterion is evaluated.
+            If True the Latin-Hypercube sample X is mapped onto Y(X) = [X, X ** 2] and
+            the criterion value for X is computed using Y(X). This can be useful if one
+            chooses an optimality criterion that minimizes e.g. the variance of the
+            least-squares estimator, while using a quadratic model.
 
     Returns:
         crit_vals (np.ndarray): Criterion values.
 
     """
-    implemented_criteria = {
-        "a-optimal",
-        "d-optimal",
-        "e-optimal",
-        "g-optimal",
-        "maximin",
+    built_in_criteria = {
+        "a-optimal": _a_optimal_criterion,
+        "d-optimal": _d_optimal_criterion,
+        "e-optimal": _e_optimal_criterion,
+        "g-optimal": _g_optimal_criterion,
+        "maximin": _maximin_criterion,
     }
-    if criterion not in implemented_criteria:
-        raise ValueError(f"Invalid criterion. Must be in {implemented_criteria}.")
-
-    implemented_targets = {"linear", "quadratic"}
-    if target not in implemented_targets:
-        raise ValueError(f"Invalid target. Must be in {implemented_targets}.")
+    if criterion not in built_in_criteria.keys():
+        raise ValueError(f"Invalid criterion. Must be in {built_in_criteria.keys()}.")
 
     # pre-processing
     if x.ndim == 2:
         x = np.expand_dims(x, axis=0)
 
-    if target == "quadratic":
+    if quadratic_target:
         x = np.concatenate((x, x**2), axis=2)
 
-    # common computations
-    prod = np.matmul(x.transpose(0, 2, 1), x)
-
-    if criterion in {"a-optimal", "g-optimal"}:
-        if x.shape[1] < x.shape[2]:
-            inv = np.linalg.inv(prod + 0.01 * np.eye(x.shape[2]))
-        else:
-            is_invertible = np.linalg.cond(prod) < 1 / np.finfo(float).eps
-            inv = np.linalg.inv(prod[is_invertible])
-            crit_vals = np.tile(np.inf, x.shape[0])
-
-    # compute criteria
-    if criterion == "a-optimal":
-        crit_vals[is_invertible] = inv.trace(axis1=1, axis2=2)
-    elif criterion == "g-optimal":
-        hat_mat = np.matmul(
-            np.matmul(x[is_invertible], inv), x[is_invertible].transpose(0, 2, 1)
-        )
-        crit_vals[is_invertible] = np.max(np.diagonal(hat_mat.T), axis=1)
-    elif criterion == "d-optimal":
-        crit_vals = -np.linalg.det(prod)  # minus because we maximize
-    elif criterion == "e-optimal":
-        eig_vals = np.linalg.eig(prod)[0]
-        crit_vals = -np.min(eig_vals, axis=1)  # minus because we maximize
-    elif criterion == "maximin":
-        distances = []
-        for row1, row2 in list(combinations(range(x.shape[1]), 2)):
-            dist = np.linalg.norm(x[:, row1, :] - x[:, row2, :], axis=1, ord=np.inf)
-            distances.append(dist)
-        crit_vals = -np.vstack(distances).min(axis=0)  # minus because we maximize
-
+    crit_vals = built_in_criteria[criterion](x)
     return crit_vals
 
 
-def get_existing_points(old_sample, new_center, new_radius):
-    """Locate subset of points in new region.
+@njit
+def _create_upscaled_sample(n_params, n_points, n_designs, seed, dtype):
+    """Create an upscaled Latin-Hypercube sample.
 
     Args:
-        old_sample (np.ndarray): Previously sampled Latin Hypercube.
-        new_center (np.ndarray): Center of the new trust region. Must
-            fufill len(new_center) == old_sample.shape[1].
-        new_radius (float): Radius of the new trust region.
-
-    Returns:
-        existing (np.ndarray): Points in old_sample that fall into
-            the new region. If there are no points, returns None.
-
-    """
-    lower = new_center - new_radius
-    upper = new_center + new_radius
-
-    existing = []
-    for row in old_sample:
-        if (lower <= row).all() and (upper >= row).all():
-            existing.append(row)
-
-    existing = np.array(existing) if len(existing) > 0 else None
-    return existing
-
-
-def _create_upscaled_lhs_sample(n_dim, n_points, n_designs, dtype=np.uint8):
-    """Create an upscaled Latin hypercube sample (LHS).
-
-    Args:
-        n_dim (int): Dimensionality of the problem.
-        n_points (int): Number of sample points.
+        n_params (int): Number of parameters (dimensions).
+        n_points (int): Number of points to sample.
         n_designs (int): Number of different hypercubes to sample.
-        dtype (np.uint8 or np.unt16): Data type of arrays. Default np.unint8.
+        seed (int): Seed for a random number generator. Default 0.
+        dtype (type): Data type of arrays. Default np.unint8.
 
     Returns:
-        sample (np.ndarray): Latin Hypercube sample of shape (n_designs, n_samples,
+        sample (np.ndarray): Latin-Hypercube sample of shape (n_designs, n_samples,
             n_dim)
 
     """
+    np.random.seed(seed)
+
     index = np.arange(n_points, dtype=dtype)
-    sample = np.empty((n_designs, n_dim, n_points), dtype=dtype)
+    sample = np.empty((n_designs, n_params, n_points), dtype=dtype)
 
-    for i, j in itertools.product(range(n_designs), range(n_dim)):
-        np.random.shuffle(index)
-        sample[i, j] = index
+    for i in range(n_designs):
+        for j in range(n_params):
+            np.random.shuffle(index)
+            sample[i, j] = index
 
-    sample = np.swapaxes(sample, 1, 2)
+    sample = np.transpose(sample, (0, 2, 1))
     return sample
 
 
-def _scale_up_points(points, center, radius, n_points):
-    """Scale Latin Hypercube sample up.
+@njit
+def _scale_up_points(points, n_points, lower_bounds, upper_bounds):
+    """Scale Latin-Hypercube sample up.
 
     Latin hypercubes are sampled using index arrays, which distributes the array entries
     over range(n_points). To get a sample from a specific region, e.g. [0, 1] ** 2, the
@@ -243,22 +192,22 @@ def _scale_up_points(points, center, radius, n_points):
     the down-scaling operation see :func:`_scale_down_points`.
 
     Args:
-        points (np.ndarray): Previously sampled Latin Hypercube, 2d.
-        center (np.ndarray): Center of the new trust region, 1d.
-            Must fufill len(center) == points.shape[1].
-        radius (float): Radius of the new trust region.
+        points (np.ndarray): Latin-Hypercube sample or subset thereof.
+        n_points (int): Number of points of the originally sampled Latin-Hypercube.
+        lower_bounds (np.ndarray): 1d array with lower bounds for the sampled points.
+        upper_bounds (pn.ndarray): 1d sample with upper bounds for the sampled points.
 
     Returns:
         scaled (np.ndarray): The scaled-up version of points.
 
     """
-    lower = center - radius
-    scaled = (points - lower) * n_points / (2 * radius)
+    scaled = ((points - lower_bounds) * n_points) / (upper_bounds - lower_bounds)
     return scaled
 
 
-def _scale_down_points(points, center, radius, n_points):
-    """Scale Latin Hypercube sample up.
+@njit
+def _scale_down_points(points, n_points, lower_bounds, upper_bounds):
+    """Scale Latin-Hypercube sample down.
 
     Latin hypercubes are sampled using index arrays, which distributes the array entries
     over range(n_points). To get a sample from a specific region, e.g. [0, 1] ** 2, the
@@ -266,27 +215,27 @@ def _scale_down_points(points, center, radius, n_points):
     :func:`_scale_up_points`.
 
     Args:
-        points (np.ndarray): Previously sampled Latin Hypercube. If 3d the scaling will
-            be performed along the last 2 dimenions.
-        center (np.ndarray): Center of the new trust region, 1d.
-            Must fufill len(center) == points.shape[1].
-        radius (float): Radius of the new trust region.
+        points (np.ndarray): Latin-Hypercube sample or subset thereof.
+        n_points (int): Number of points of the originally sampled Latin-Hypercube.
+        lower_bounds (np.ndarray): 1d array with lower bounds for the sampled points.
+        upper_bounds (pn.ndarray): 1d sample with upper bounds for the sampled points.
 
     Returns:
-        scaled (np.ndarray): The scaled-up version of points.
+        scaled (np.ndarray): The scaled-down version of points.
 
     """
-    lower = center - radius
-    scaled = points / n_points * (2 * radius) + lower
+    scaled = lower_bounds + (points / n_points) * (upper_bounds - lower_bounds)
     return scaled
 
 
-def _get_empty_bin_info(existing_upscaled, n_points):
+@njit
+def _get_empty_bin_info(existing_upscaled, n_points, dtype):
     """Find empty bins in space populated by existing points.
 
     Args:
         existing_upscaled (np.ndarray): Upscaled points.
         n_points (int): Number of points originally sampled.
+        dtype (type): Data type of arrays.
 
     Returns:
         out (np.ndarray): Empty bins for each dimension. Has shape
@@ -294,12 +243,13 @@ def _get_empty_bin_info(existing_upscaled, n_points):
             and occur since not all dimensions must have the same number of empty bins.
 
     """
+    existing_upscaled = existing_upscaled.astype(dtype)
     n_dim = existing_upscaled.shape[1]
-    empty_bins = []
-    all_bins = set(range(n_points))
+    all_bins = set(np.arange(n_points, dtype=dtype))
 
+    empty_bins = []
     for j in range(n_dim):
-        filled_bins = set(np.floor(existing_upscaled[:, j].astype(int)))
+        filled_bins = set(existing_upscaled[:, j])
         empty_bins.append(sorted(all_bins - filled_bins))
 
     max_empty = max(map(len, empty_bins))
@@ -311,20 +261,24 @@ def _get_empty_bin_info(existing_upscaled, n_points):
     return out
 
 
-def _extend_upscaled_lhs_sample(empty_bins, n_points, n_designs, dtype=np.uint8):
-    """Extend a sample to a full Latin hypercube sample (LHS).
+@njit
+def _extend_upscaled_sample(empty_bins, n_points, n_designs, seed, dtype):
+    """Extend a subset of sample to a full Latin-Hypercube sample.
 
     Args:
         empty_bins (np.ndarray): Dimensionality of the problem.
         n_points (int): Number of (total) sample points.
-        n_designs (int): Number of different hypercubes to sample.
-        dtype (np.uint8 or np.unt16): Data type of arrays. Default np.unint8.
+        n_designs (int): Number of different Latin-Hypercubes to sample.
+        seed (int): Seed for a random number generator.
+        dtype (type): Data type of arrays.
 
     Returns:
         sample (np.ndarray): Latin Hypercube sample of shape (n_designs, n_samples,
             n_dim)
 
     """
+    np.random.seed(seed)
+
     mask = empty_bins == -1
     n_new_points, n_dim = empty_bins.shape
 
@@ -338,5 +292,57 @@ def _extend_upscaled_lhs_sample(empty_bins, n_points, n_designs, dtype=np.uint8)
             np.random.shuffle(empty)
             sample[k, j] = empty
 
-    sample = sample.swapaxes(1, 2)
+    sample = np.transpose(sample, (0, 2, 1))
     return sample
+
+
+def _maximin_criterion(x):
+    distances = []
+    for row1, row2 in list(itertools.combinations(range(x.shape[1]), 2)):
+        dist = np.linalg.norm(x[:, row1, :] - x[:, row2, :], axis=1, ord=np.inf)
+        distances.append(dist)
+    crit_vals = -np.vstack(distances).min(axis=0)
+    return crit_vals
+
+
+def _d_optimal_criterion(x):
+    prod = np.matmul(x.transpose(0, 2, 1), x)
+    crit_vals = -np.linalg.det(prod)
+    return crit_vals
+
+
+def _e_optimal_criterion(x):
+    prod = np.matmul(x.transpose(0, 2, 1), x)
+    eig_vals = np.linalg.eig(prod)[0]
+    crit_vals = -np.min(eig_vals, axis=1)
+    return crit_vals
+
+
+def _a_optimal_criterion(x):
+    prod = np.matmul(x.transpose(0, 2, 1), x)
+    if x.shape[1] < x.shape[2]:
+        inv = np.linalg.inv(prod + 0.01 * np.eye(x.shape[2]))
+        crit_vals = inv.trace(axis1=1, axis2=2)
+    else:
+        is_invertible = np.linalg.cond(prod) < 1 / np.finfo(float).eps
+        inv = np.linalg.inv(prod[is_invertible])
+        crit_vals = np.tile(np.inf, x.shape[0])
+        crit_vals[is_invertible] = inv.trace(axis1=1, axis2=2)
+    return crit_vals
+
+
+def _g_optimal_criterion(x):
+    prod = np.matmul(x.transpose(0, 2, 1), x)
+    if x.shape[1] < x.shape[2]:
+        inv = np.linalg.inv(prod + 0.01 * np.eye(x.shape[2]))
+        hat_mat = np.matmul(np.matmul(x, inv), x.transpose(0, 2, 1))
+        crit_vals = np.max(np.diagonal(hat_mat.T), axis=1)
+    else:
+        is_invertible = np.linalg.cond(prod) < 1 / np.finfo(float).eps
+        inv = np.linalg.inv(prod[is_invertible])
+        crit_vals = np.tile(np.inf, x.shape[0])
+        hat_mat = np.matmul(
+            np.matmul(x[is_invertible], inv), x[is_invertible].transpose(0, 2, 1)
+        )
+        crit_vals[is_invertible] = np.max(np.diagonal(hat_mat.T), axis=1)
+    return crit_vals

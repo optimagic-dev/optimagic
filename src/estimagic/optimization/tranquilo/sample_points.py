@@ -3,7 +3,7 @@ import warnings
 from functools import partial
 
 import numpy as np
-from estimagic.optimization.tranquilo.reference_sampling import reference_sampler
+from estimagic.optimization.tranquilo.lhs_sampling import lhs_sampler
 
 
 def get_sampler(sampler, bounds, user_options=None):
@@ -28,8 +28,8 @@ def get_sampler(sampler, bounds, user_options=None):
     user_options = {} if user_options is None else user_options
 
     built_in_samplers = {
-        "naive": reference_sampler,
-        # "lhs" ...
+        "naive": _reference_sampler,
+        "lhs": lhs_sampler,
     }
 
     if isinstance(sampler, str) and sampler in built_in_samplers:
@@ -63,8 +63,10 @@ def get_sampler(sampler, bounds, user_options=None):
 
     valid_options = args - mandatory_args
 
-    reduced = {key: val for key, val in user_options if key in valid_options}
-    ignored = {key: val for key, val in user_options if key not in valid_options}
+    reduced = {key: val for key, val in user_options.items() if key in valid_options}
+    ignored = {
+        key: val for key, val in user_options.items() if key not in valid_options
+    }
 
     if ignored:
         warnings.warn(
@@ -116,4 +118,60 @@ def _sample_points_template(
     elif isinstance(res, dict):
         out = (res["points"], res.pop("points"))
 
+    return out
+
+
+def _reference_sampler(
+    lower_bounds,
+    upper_bounds,
+    target_size,
+    existing_xs=None,
+    existing_fvals=None,  # noqa: U100
+    seed=1234,
+):
+    """Naive random generation of trustregion sampling.
+
+    This is just a reference implementation to illustrate the interface of trustregion
+    samplers.
+
+    All arguments but seed are mandatory, even if not used.
+
+    Samplers should not make unnecessary checks on input compatibility (e.g. that the
+    shapes of existing_xs and existing_fvals match). This will be done automatically
+    outside of the sampler.
+
+    Args:
+        lower_bounds (np.ndarray): 1d array with lower bounds for the sampled points.
+            These must be respected!
+        upper_bounds (pn.ndarray): 1d sample with upper bounds for the sampled points.
+            These must be respected!
+        target_size (int): Target number of points in the combined sample of existing_xs
+            and newly sampled points. The sampler does not have to guarantee that this
+            number will actually be reached.
+        existing_xs (np.ndarray or None): 2d numpy array in which each row is an
+            x vector at which the criterion function has already been evaluated, that
+            satisfies lower_bounds <= existing_xs <= upper_bounds.
+        existing_fvals (np.ndarray): 1d numpy array with same length as existing_xs
+            that contains the corresponding function evaluations.
+        seed (int): Seed for a random number generator.
+
+    Returns:
+        dict: A dictionary containing "points" (a numpy array where each row is a
+            newly sampled point) and potentially other information about the sampling.
+
+    """
+
+    if existing_xs is not None:
+        n_points = max(0, target_size - len(existing_xs))
+    else:
+        n_points = target_size
+
+    n_params = len(lower_bounds)
+
+    np.random.seed(seed)
+    points = np.random.uniform(
+        low=lower_bounds, high=upper_bounds, size=(n_points, n_params)
+    )
+
+    out = {"points": points, "message": "Everything is great!"}
     return out
