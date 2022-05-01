@@ -36,7 +36,7 @@ def get_fitter(fitter, user_options=None, model_info=None):
 
     """
     user_options = user_options or {}
-    model_info = model_info or ModelInfo
+    model_info = model_info or ModelInfo()
 
     built_in_fitters = {"ols": fit_ols, "ridge": fit_ridge}
 
@@ -265,15 +265,15 @@ def _reshape_square_terms_to_tril(square_terms, n_params, n_residuals, has_squar
 
 
 @njit
-def _polynomial_features(x, fit_intercept, has_squares):
-    n_points, n_params = x.shape
+def _polynomial_features(x, has_intercepts, has_squares):
+    n_samples, n_params = x.shape
 
     if has_squares:
         n_poly_terms = n_params * (n_params + 1) // 2
     else:
         n_poly_terms = n_params * (n_params - 1) // 2
 
-    poly_terms = np.empty((n_poly_terms, n_points), dtype=x.dtype)
+    poly_terms = np.empty((n_poly_terms, n_samples), x.dtype)
     xt = x.T
 
     idx = 0
@@ -283,8 +283,8 @@ def _polynomial_features(x, fit_intercept, has_squares):
             poly_terms[idx] = xt[i] * xt[j]
             idx += 1
 
-    if fit_intercept:
-        intercept = np.ones((1, n_points))
+    if has_intercepts:
+        intercept = np.ones((1, n_samples), x.dtype)
         out = np.concatenate((intercept, xt, poly_terms), axis=0)
     else:
         out = np.concatenate((xt, poly_terms), axis=0)
