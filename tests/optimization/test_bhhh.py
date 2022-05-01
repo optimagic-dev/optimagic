@@ -61,71 +61,39 @@ def get_score_probit(endog, exog, x):
     return derivative_loglikelihood[:, None] * exog
 
 
-def criterion_and_derivative_logit(x, task="criterion_and_derivative"):
+def criterion_and_derivative_logit(x):
     """Return Logit criterion and derivative.
 
     Args:
         x (np.ndarray): Parameter vector of shape (n_obs,).
-        task (str): If task=="criterion", compute log-likelihood.
-            If task=="derivative", compute derivative.
-            If task="criterion_and_derivative", compute both.
 
     Returns:
-        (np.ndarray or tuple): If task=="criterion" it returns the output of
-            criterion, which is a 1d numpy array.
-            If task=="derivative" it returns the first derivative of criterion,
-            which is a numpy array.
-            If task=="criterion_and_derivative" it returns both as a tuple.
+        tuple: first entry is the criterion, second entry is the score
+
     """
     endog, exog = generate_test_data()
     score = partial(get_score_logit, endog, exog)
     loglike = partial(get_loglikelihood_logit, endog, exog)
 
-    result = ()
-
-    if "criterion" in task:
-        result += (-loglike(x),)
-    if "derivative" in task:
-        result += (score(x),)
-
-    if len(result) == 1:
-        (result,) = result
-
-    return result
+    return -loglike(x), score(x)
 
 
-def criterion_and_derivative_probit(x, task="criterion_and_derivative"):
+def criterion_and_derivative_probit(x):
     """Return Probit criterion and derivative.
 
     Args:
         x (np.ndarray): Parameter vector of shape (n_obs,).
-        task (str): If task=="criterion", compute log-likelihood.
-            If task=="derivative", compute derivative.
-            If task="criterion_and_derivative", compute both.
 
     Returns:
-        (np.ndarray or tuple): If task=="criterion" it returns the output of
-            criterion, which is a 1d numpy array.
-            If task=="derivative" it returns the first derivative of criterion,
-            which is a numpy array.
-            If task=="criterion_and_derivative" it returns both as a tuple.
+        tuple: first entry is the criterion, second entry is the score
+
     """
     endog, exog = generate_test_data()
 
     score = partial(get_score_probit, endog, exog)
     loglike = partial(get_loglikelihood_probit, endog, exog)
 
-    result = ()
-
-    if "criterion" in task:
-        result += (-loglike(x),)
-    if "derivative" in task:
-        result += (score(x),)
-
-    if len(result) == 1:
-        (result,) = result
-
-    return result
+    return -loglike(x), score(x)
 
 
 @pytest.fixture
@@ -157,7 +125,7 @@ def test_maximum_likelihood(criterion_and_derivative, result_statsmodels, reques
     x = np.zeros(3)
 
     result_bhhh = bhhh_internal(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion_and_derivative,
         x=x,
         convergence_absolute_gradient_tolerance=1e-8,
         stopping_max_iterations=200,
