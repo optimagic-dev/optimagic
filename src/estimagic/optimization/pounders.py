@@ -47,7 +47,7 @@ def pounders(
     upper_bounds,
     convergence_absolute_gradient_tolerance=1e-8,
     convergence_relative_gradient_tolerance=1e-8,
-    convergence_scaled_gradient_tolerance=0,
+    convergence_scaled_gradient_tolerance=False,
     max_interpolation_points=None,
     stopping_max_iterations=2_000,
     trustregion_initial_radius=0.1,
@@ -106,7 +106,7 @@ def pounders(
         gtol_abs=convergence_absolute_gradient_tolerance,
         gtol_rel=convergence_relative_gradient_tolerance,
         gtol_scaled=convergence_scaled_gradient_tolerance,
-        n_maxinterp=max_interpolation_points,
+        maxinterp=max_interpolation_points,
         maxiter=stopping_max_iterations,
         delta=trustregion_initial_radius,
         delta_min=trustregion_minimal_radius,
@@ -146,7 +146,7 @@ def internal_solve_pounders(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
-    n_maxinterp,
+    maxinterp,
     maxiter,
     delta,
     delta_min,
@@ -185,8 +185,15 @@ def internal_solve_pounders(
             Must have same length as the initial guess of the
             parameter vector. Equal to 1 if not provided by the user.
         gtol_abs (float): Convergence tolerance for the absolute gradient norm.
+            Stop if norm of the gradient is less than this.
         gtol_rel (float): Convergence tolerance for the relative gradient norm.
+            Stop if norm of the gradient relative to the criterion value is less
+            than this.
         gtol_scaled (float): Convergence tolerance for the scaled gradient norm.
+            Stop if norm of the gradient divided by norm of the gradient at the
+            initial parameters is less than this.
+        maxinterp (int): Maximum number of interpolation points.
+            Default is `2 * n + 1`, where `n` is the length of the parameter vector.
         maxiter (int): Maximum number of iterations. If reached, terminate.
         delta (float): Delta, initial trust-region radius.
         delta_min (float): Minimal trust-region radius.
@@ -210,13 +217,13 @@ def internal_solve_pounders(
         c2 (int)): Treshold for accepting the norm of our current candidate vector.
             Equal to 10 by default. Argument to find_affine_points() in case
             the input array *model_improving_points* is not zero.
-        solver_sub (str): Trust-region subsolver to use. Currently, two solvers
-            are supported:
-            - "BNTR" (default, supports bound constraints)
-            - "GQTPAR (does not support bound constraints)
+        solver_sub (str): Solver to use for the trust-region subproblem.
+            Two internal solvers are supported:
+            - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
+            - "gqtpar": (does not support bound constraints)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
-        maxiter_gradient_descent (int): Maximum number of gradient descent iterations
-            to perform when the trust-region subsolver BNTR is used.
+        maxiter_gradient_descent_sub (int): Maximum number of gradient descent
+            iterations to perform when the trust-region subsolver BNTR is used.
         gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
             in the trust-region subproblem ("BNTR").
         gtol_rel_sub (float): Convergence tolerance for the relative gradient norm
@@ -255,7 +262,7 @@ def internal_solve_pounders(
     history = LeastSquaresHistory()
 
     n = len(x0)
-    model_indices = np.zeros(n_maxinterp, dtype=int)
+    model_indices = np.zeros(maxinterp, dtype=int)
 
     n_last_modelpoints = 0
 
@@ -287,7 +294,7 @@ def internal_solve_pounders(
 
     valid = True
     n_modelpoints = n + 1
-    last_model_indices = np.zeros(n_maxinterp, dtype=int)
+    last_model_indices = np.zeros(maxinterp, dtype=int)
 
     converged = False
     convergence_reason = "Continue iterating."
@@ -472,7 +479,7 @@ def internal_solve_pounders(
             delta=delta,
             c2=c2,
             theta2=theta2,
-            n_maxinterp=n_maxinterp,
+            n_maxinterp=maxinterp,
             n_modelpoints=n_modelpoints,
         )
 
@@ -487,7 +494,7 @@ def internal_solve_pounders(
             residual_model=residual_model,
             model_indices=model_indices,
             n_modelpoints=n_modelpoints,
-            n_maxinterp=n_maxinterp,
+            n_maxinterp=maxinterp,
         )
         coefficients_residual_model = get_coefficients_residual_model(
             x_sample_monomial_basis=x_sample_monomial_basis,
@@ -552,7 +559,6 @@ def internal_solve_pounders(
         "message": convergence_reason,
     }
 
-    print(f"n_iterations: {niter}")
     return result_dict
 
 

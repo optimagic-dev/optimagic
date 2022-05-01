@@ -98,7 +98,7 @@ def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_opt
         gtol_abs=gtol_abs,
         gtol_rel=gtol_rel,
         gtol_scaled=gtol_scaled,
-        n_maxinterp=2 * len(start_vec) + 1,
+        maxinterp=2 * len(start_vec) + 1,
         solver_sub=solver_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_gradient_descent_sub=trustregion_subproblem_options[
@@ -134,7 +134,7 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
         gtol_abs=gtol_abs,
         gtol_rel=gtol_rel,
         gtol_scaled=gtol_scaled,
-        n_maxinterp=7,
+        maxinterp=7,
         solver_sub=solver_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_gradient_descent_sub=trustregion_subproblem_options[

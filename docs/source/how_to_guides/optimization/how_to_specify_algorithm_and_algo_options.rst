@@ -648,14 +648,27 @@ noisy criterion functions.
 
     pounders supports the following options:
 
+
+    - **convergence_absolute_gradient_tolerance**: Convergence tolerance for the
+      absolute gradient norm. Stop if norm of the gradient is less than this.
+      Default is 1e-8.
+    - **convergence_relative_gradient_tolerance**: Convergence tolerance for the
+      relative gradient norm. Stop if norm of the gradient relative to the criterion
+      value is less than this. Default is 1-8.
+    - **convergence_scaled_gradient_tolerance**: Convergence tolerance for the
+      scaled gradient norm. Stop if norm of the gradient divided by norm of the
+      gradient at the initial parameters is less than this.
+      Disabled, i.e. set to False, by default.
+    - **max_interpolation_points** (int): Maximum number of interpolation points.
+      Default is `2 * n + 1`, where `n` is the length of the parameter vector.
     - **stopping_max_iterations** (int): Maximum number of iterations.
-      If reached, terminate. Default is 200.
+      If reached, terminate. Default is 2000.
     - **trustregion_initial_radius (float)**: Delta, initial trust-region radius.
       0.1 by default.
     - **trustregion_minimal_radius** (float): Minimal trust-region radius.
       1e-6 by default.
     - **trustregion_maximal_radius** (float): Maximal trust-region radius.
-        1e6 by default.
+      1e6 by default.
     - **trustregion_shrinking_factor_not_successful** (float): Shrinking factor of
       the trust-region radius in case the solution vector of the suproblem
       is not accepted, but the model is fully linear (i.e. "valid").
@@ -668,20 +681,19 @@ noisy criterion functions.
     - **theta2** (float): Threshold for adding the current x candidate to the model.
       Argument to get_interpolation_matrices_residual_model(). Default is 1e-4.
     - **trustregion_threshold_successful** (float): First threshold for accepting the
-        solution vector of the subproblem as the best x candidate. Default is 0.
+      solution vector of the subproblem as the best x candidate. Default is 0.
     - **trustregion_threshold_very_successful** (float): Second threshold for accepting
-        the solution vector of the subproblem as the best x candidate. Default is 0.1.
+      the solution vector of the subproblem as the best x candidate. Default is 0.1.
     - **c1** (float): Treshold for accepting the norm of our current x candidate.
       Function argument to find_affine_points() for the case where input array
       *model_improving_points* is zero.
     - **c2** (int): Treshold for accepting the norm of our current x candidate.
       Equal to 10 by default. Argument to find_affine_points() in case
       the input array *model_improving_points* is not zero.
-    - **trustregion_subproblem_solver** (str): Scipy minimizer employed to solve
-        the subproblem. Currently, three bound-constraint minimizers are supported:
-        - "trust-constr" (default)
-        - "L-BFGS-B"
-        - "SLSQP"
+    - **trustregion_subproblem_solver** (str): Solver to use for the trust-region
+      subproblem. Two internal solvers are supported:
+        - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
+        - "gqtpar": (does not support bound constraints)
     - **trustregion_subproblem_options** (dict): Options dictionary containing
       stopping criteria for the subproblem. These are the tolerance levels:
       "ftol", "xtol", and "gtol". None of them have to be specified by default,
