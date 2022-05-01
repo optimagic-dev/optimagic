@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 from estimagic.parameters.tree_conversion import get_tree_converter
 from numpy.testing import assert_array_equal as aae
-from pybaum import tree_equal
 
 
 @pytest.fixture
@@ -41,7 +40,9 @@ def test_tree_converter_no_constraints_scalar_func(params, upper_bounds):
     assert flat_params.names == expected_names
 
     aae(converter.params_flatten(params), np.arange(7))
-    assert tree_equal(converter.params_unflatten(np.arange(7)), params)
+    unflat = converter.params_unflatten(np.arange(7))
+    assert unflat[0][0] == params[0][0]
+    aae(unflat[0][1], params[0][1])
 
     assert converter.func_flatten(3) == 3
     assert isinstance(converter.func_flatten(3), float)
