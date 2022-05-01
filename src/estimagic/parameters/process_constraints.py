@@ -105,13 +105,13 @@ def process_constraints(
     int_lower, int_upper = _create_unscaled_internal_bounds(
         constr_info["lower_bound"], constr_info["upper_bound"], transformations
     )
-    constr_info["_internal_lower"] = int_lower
-    constr_info["_internal_upper"] = int_upper
     constr_info["_internal_free"] = _create_internal_free(
         constr_info["_is_fixed_to_value"],
         constr_info["_is_fixed_to_other"],
         transformations,
     )
+    constr_info["_internal_lower"] = int_lower[constr_info["_internal_free"]]
+    constr_info["_internal_upper"] = int_upper[constr_info["_internal_free"]]
 
     constr_info["_pre_replacements"] = _create_pre_replacements(
         constr_info["_internal_free"]

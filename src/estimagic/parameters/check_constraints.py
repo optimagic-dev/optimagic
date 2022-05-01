@@ -86,9 +86,10 @@ def _get_message(constraint, param_names):
 
     explanation = "{}"
 
+    names = [param_names[i] for i in constraint["index"]]
+
     end = (
-        "The names of the involved "
-        f"parameters is:\n{param_names[constraint['index']]}\n"
+        f"The names of the involved parameters is:\n{names}\n"
         "The relevant constraint (with processed selector fields) is:\n"
         f"{constraint}."
     )
