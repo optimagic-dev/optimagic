@@ -692,8 +692,8 @@ noisy criterion functions.
       the input array *model_improving_points* is not zero.
     - **trustregion_subproblem_solver** (str): Solver to use for the trust-region
       subproblem. Two internal solvers are supported:
-        - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
-        - "gqtpar": (does not support bound constraints)
+      - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
+      - "gqtpar": (does not support bound constraints)
     - **trustregion_subproblem_options** (dict): Options dictionary containing
       stopping criteria for the subproblem. These are the tolerance levels:
       "ftol", "xtol", and "gtol". None of them have to be specified by default,

@@ -1,6 +1,5 @@
 """Implement the POUNDERS algorithm"""
 import warnings
-from copy import copy
 
 import estimagic.batch_evaluators as be
 import numpy as np
@@ -24,6 +23,9 @@ from estimagic.optimization.pounders_auxiliary import interpolate_residual_model
 from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
+)
+from estimagic.optimization.pounders_auxiliary import (
+    update_model_indices_residual_model,
 )
 from estimagic.optimization.pounders_auxiliary import update_residual_model
 from estimagic.optimization.pounders_auxiliary import (
@@ -391,13 +393,12 @@ def internal_solve_pounders(
                 )
                 n_modelpoints = n
 
-        delta_old = copy(delta)
+        delta_old = delta
         delta = update_trustregion_radius(
             result_subproblem=result_sub,
             rho=rho,
             model_is_valid=valid,
             delta=delta,
-            delta_old=delta_old,
             delta_min=delta_min,
             delta_max=delta_max,
             eta1=eta1,
@@ -462,9 +463,9 @@ def internal_solve_pounders(
                     n_cores=n_cores,
                 )
 
-        model_indices[1 : n_modelpoints + 1] = model_indices[:n_modelpoints]
-        n_modelpoints += 1
-        model_indices[0] = accepted_index
+        model_indices, n_model_points = update_model_indices_residual_model(
+            model_indices, accepted_index, n_modelpoints
+        )
 
         (
             x_sample_monomial_basis,

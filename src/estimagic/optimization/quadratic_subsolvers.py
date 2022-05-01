@@ -1,6 +1,5 @@
 """Collection of solvers for a quadratic trust-region subproblem."""
 from collections import namedtuple
-from copy import copy
 
 import numpy as np
 from estimagic.optimization._trustregion_bounded_newton_quadratic import (
@@ -126,7 +125,7 @@ def minimize_bntr_quadratic(
         x_candidate,
         f_candidate,
         gradient_unprojected,
-        hessian_inactive_bounds,
+        hessian_bounds_inactive,
         trustregion_radius,
         active_bounds_info,
         converged,
@@ -146,17 +145,13 @@ def minimize_bntr_quadratic(
         if converged is True:
             break
 
-        x_old = x_candidate.copy()
-        f_old = copy(f_candidate)
-
+        x_old = x_candidate
+        f_old = f_candidate
         accept_step = False
 
-        while accept_step is False and converged is False:
-            gradient_inactive_bounds = gradient_unprojected[
-                active_bounds_info.inactive
-            ].copy()
-
-            hessian_inactive_bounds = find_hessian_submatrix_where_bounds_inactive(
+        while not accept_step and not converged:
+            gradient_bounds_inactive = gradient_unprojected[active_bounds_info.inactive]
+            hessian_bounds_inactive = find_hessian_submatrix_where_bounds_inactive(
                 model, active_bounds_info
             )
 
@@ -166,8 +161,8 @@ def minimize_bntr_quadratic(
                 cg_step_norm,
             ) = compute_conjugate_gradient_step(
                 x_candidate,
-                gradient_inactive_bounds,
-                hessian_inactive_bounds,
+                gradient_bounds_inactive,
+                hessian_bounds_inactive,
                 lower_bounds,
                 upper_bounds,
                 active_bounds_info,
@@ -187,8 +182,8 @@ def minimize_bntr_quadratic(
                     conjugate_gradient_step,
                     conjugate_gradient_step_inactive_bounds,
                     gradient_unprojected,
-                    gradient_inactive_bounds,
-                    hessian_inactive_bounds,
+                    gradient_bounds_inactive,
+                    hessian_bounds_inactive,
                     active_bounds_info,
                 )
             )
@@ -198,8 +193,7 @@ def minimize_bntr_quadratic(
             )
             actual_reduction = f_old - f_candidate
 
-            trustregion_radius_old = copy(trustregion_radius)
-
+            trustregion_radius_old = trustregion_radius
             (
                 trustregion_radius,
                 accept_step,
@@ -222,8 +216,8 @@ def minimize_bntr_quadratic(
                     upper_bounds,
                 )
             else:
-                x_candidate = np.copy(x_old)
-                f_candidate = np.copy(f_old)
+                x_candidate = x_old
+                f_candidate = f_old
 
                 if trustregion_radius == trustregion_radius_old:
                     converged = True
@@ -269,17 +263,17 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     The original algorithm was developed by More and Sorensen (1983) (:cite:`More1983`)
     and is known as "GQTPAR".
 
-    The direction vector ``p*`` is a global solution to the quadratic subproblem:
+    The vector ``x*`` is a global solution to the quadratic subproblem:
 
-        min f + g p + 0.5 * p H p,
+        min f + g @ x + 0.5 * x.T @ H @ x,
 
-        s.t. norm(p) <= trustregion_radius
+        s.t. norm(x) <= trustregion_radius
 
-        if and only if norm(``p*``) <= trustregion radius and there is a scalar
+        if and only if norm(``x*``) <= trustregion radius and there is a scalar
         lambda >= 0, such that:
 
-    1) (H + lambda * I(n)) p* = -g
-    2) lambda (trustregion_radius - norm(p*)) = 0
+    1) (H + lambda * I(n)) x* = -g
+    2) lambda (trustregion_radius - norm(x*)) = 0
     3) H + lambda * I is positive definite
 
     where g denotes the gradient vector and H the hessian matrix of the main model,

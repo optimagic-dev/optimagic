@@ -37,7 +37,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
     converged = False
     convergence_reason = "Continue iterating."
 
-    f_candidate = evaluate_model_criterion(
+    criterion_candidate = evaluate_model_criterion(
         x_candidate, model.linear_terms, model.square_terms
     )
 
@@ -55,7 +55,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
 
     converged, convergence_reason = check_for_convergence(
         x_candidate,
-        f_candidate,
+        criterion_candidate,
         gradient_unprojected,
         model,
         lower_bounds,
@@ -83,9 +83,9 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
             step_size_gradient_descent,
             trustregion_radius,
             radius_upper_bound,
-        ) = perform_gradient_descent_and_update_trustregion_radius(
+        ) = perform_gradient_descent(
             x_candidate,
-            f_candidate,
+            criterion_candidate,
             gradient_projected,
             hessian_inactive,
             model,
@@ -96,8 +96,8 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
             options_update_radius,
         )
 
-        if f_min_gradient_descent < f_candidate:
-            f_candidate = f_min_gradient_descent
+        if f_min_gradient_descent < criterion_candidate:
+            criterion_candidate = f_min_gradient_descent
 
             x_unbounded = (
                 x_candidate_gradient_descent
@@ -124,7 +124,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
 
             converged, convergence_reason = check_for_convergence(
                 x_candidate,
-                f_candidate,
+                criterion_candidate,
                 gradient_projected,
                 model,
                 lower_bounds,
@@ -148,7 +148,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
 
     return (
         x_candidate,
-        f_candidate,
+        criterion_candidate,
         gradient_unprojected,
         hessian_inactive,
         trustregion_radius,
@@ -273,7 +273,7 @@ def compute_predicted_reduction_from_conjugate_gradient_step(
     return -predicted_reduction
 
 
-def perform_gradient_descent_and_update_trustregion_radius(
+def perform_gradient_descent(
     x_candidate,
     f_candidate_initial,
     gradient_projected,
@@ -285,7 +285,7 @@ def perform_gradient_descent_and_update_trustregion_radius(
     maxiter_steepest_descent,
     options_update_radius,
 ):
-    """Perform steepest descent step and update trust-region radius."""
+    """Perform gradient descent step and update trust-region radius."""
     f_min = f_candidate_initial
     gradient_norm = np.linalg.norm(gradient_projected)
 
@@ -294,7 +294,7 @@ def perform_gradient_descent_and_update_trustregion_radius(
     step_size_accepted = 0
 
     for _ in range(maxiter_steepest_descent):
-        x_old = x_candidate.copy()
+        x_old = x_candidate
 
         step_size_candidate = trustregion_radius / gradient_norm
         x_candidate = x_old - step_size_candidate * gradient_projected

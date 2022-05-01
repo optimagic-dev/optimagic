@@ -456,7 +456,6 @@ def update_trustregion_radius(
     rho,
     model_is_valid,
     delta,
-    delta_old,
     delta_min,
     delta_max,
     eta1,
@@ -757,6 +756,15 @@ def get_last_model_indices_and_check_for_repeated_model(
     n_last_modelpoints = copy(n_modelpoints)
 
     return last_model_indices, n_last_modelpoints, same_model_used
+
+
+def update_model_indices_residual_model(model_indices, accepted_index, n_modelpoints):
+    """Update model indices and number of points in the residual model."""
+    model_indices[1 : n_modelpoints + 1] = model_indices[:n_modelpoints]
+    n_modelpoints += 1
+    model_indices[0] = accepted_index
+
+    return model_indices, n_modelpoints
 
 
 def _get_monomial_basis(x):

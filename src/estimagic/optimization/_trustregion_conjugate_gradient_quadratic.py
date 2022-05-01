@@ -19,11 +19,10 @@ def minimize_trust_conjugate_gradient(
     """
     n = len(model_gradient)
     maxiter = n * 2
-
     x_candidate = np.zeros(n)
 
     residual = model_gradient
-    direction = -residual.copy()
+    direction = -model_gradient
 
     gradient_norm = np.linalg.norm(residual)
     stop_tol = max(gtol_abs, gtol_rel * gradient_norm)
@@ -72,10 +71,10 @@ def _update_vectors_for_next_iteration(
             - residual (np.ndarray): Updated array of residuals of shape (n,).
             - direction (np.darray): Updated direction vector of shape (n,).
     """
-    residual_old = residual.copy()
+    residual_old = residual
 
     x_candidate = x_candidate + alpha * direction
-    residual = residual + alpha * np.dot(hessian, direction)
+    residual = residual_old + alpha * np.dot(hessian, direction)
 
     beta = np.dot(residual, residual) / np.dot(residual_old, residual_old)
     direction = -residual + beta * direction
