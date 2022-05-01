@@ -16,7 +16,7 @@ import warnings
 import numpy as np
 import pandas as pd
 from estimagic.exceptions import get_traceback
-from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.process_constraints import process_constraints_old
 from estimagic.parameters.reparametrize import reparametrize_from_internal
 
 
@@ -42,7 +42,7 @@ def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=Fa
     """
     constraints = [] if constraints is None else constraints
 
-    transformations, constr_info = process_constraints(constraints, params)
+    transformations, constr_info = process_constraints_old(constraints, params)
 
     fixed_values = constr_info["_internal_fixed_value"]
     pre_replacements = constr_info["_pre_replacements"]

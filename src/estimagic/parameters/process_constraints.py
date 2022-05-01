@@ -44,18 +44,16 @@ from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 def process_constraints(
     constraints,
-    parvec,
-    parnames=None,
-    scaling_factor=None,
-    scaling_offset=None,
+    params,
+    params_vec,
+    lower_bounds,
+    upper_bounds,
+    param_names,
 ):
     """Process, consolidate and check constraints.
 
     Args:
-        constraints (list): List of dictionaries where each dictionary is a constraint.
-        parvec (np.ndarray): 1d numpy array with flattened params.
-        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+
 
     Returns:
 
@@ -84,6 +82,57 @@ def process_constraints(
               parameter
 
     """
+    params_vec = params_vec.copy()
+    check_types(constraints)
+    # selectors have to be processed before anything else happens to the params
+    constraints = _process_selectors(constraints, params, params_vec)
+
+    constraints = _replace_pairwise_equality_by_equality(constraints)
+    constraints = _process_linear_weights(constraints)
+    check_constraints_are_satisfied(constraints, params)  # xxxx rewrite for params_vec
+    constraints = _replace_increasing_and_decreasing_by_linear(constraints)
+    constraints = _process_linear_weights(constraints)
+
+    transformations, constr_info = consolidate_constraints(
+        constraints=constraints,
+        parvec=params_vec,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
+    check_for_incompatible_overlaps(constr_info, transformations, param_names)
+    check_fixes_and_bounds(constr_info, transformations, param_names)
+
+    int_lower, int_upper = _create_unscaled_internal_bounds(
+        constr_info["lower_bound"], constr_info["upper_bound"], transformations
+    )
+    constr_info["_internal_lower"] = int_lower
+    constr_info["_internal_upper"] = int_upper
+    constr_info["_internal_free"] = _create_internal_free(
+        constr_info["_is_fixed_to_value"],
+        constr_info["_is_fixed_to_other"],
+        transformations,
+    )
+
+    constr_info["_pre_replacements"] = _create_pre_replacements(
+        constr_info["_internal_free"]
+    )
+
+    constr_info["_internal_fixed_value"] = _create_internal_fixed_value(
+        constr_info["_fixed_value"], transformations
+    )
+
+    return transformations, constr_info
+
+
+def process_constraints_old(
+    constraints,
+    parvec,
+    parnames=None,
+    scaling_factor=None,
+    scaling_offset=None,
+):
+    """"""
+    warnings.warn(category=FutureWarning, message="This functions is deprecated.")
     parnames = list(range(len(parvec))) if parnames is None else parnames  # xxxx
     parvec = add_default_bounds_to_params(parvec)
     lower_bounds = parvec["lower_bound"].to_numpy()  # xxxx
@@ -95,7 +144,7 @@ def process_constraints(
         parvec = parvec.copy()
         check_types(constraints)
         # selectors have to be processed before anything else happens to the params
-        constraints = _process_selectors(constraints, parvec)
+        constraints = _process_selectors_old(constraints, parvec)
 
         constraints = _replace_pairwise_equality_by_equality(constraints)
         constraints = _process_linear_weights(constraints)
@@ -141,7 +190,73 @@ def process_constraints(
         return transformations, constr_info
 
 
-def _process_selectors(constraints, params):
+def _process_selectors(constraints, params, params_vec):
+    """Convert the query and loc field of the constraint into position based indices.
+
+    Args:
+        constraints (list): List of dictionaries where each dictionary is a constraint.
+        params (pd.DataFrame): see :ref:`params`.
+
+    Returns:
+        list: The resulting constraint dictionaries contain a new entry
+            called 'index' that consists of the positions of the selected parameters.
+            If the selected parameters are consecutive entries, the value corresponding
+            to 'index' is a list of positions.
+
+    """
+    out = []
+
+    for constr in constraints:
+        new_constr = constr.copy()
+
+        if constr["type"] != "pairwise_equality":
+            locs = [constr["loc"]] if "loc" in constr else []
+            queries = [constr["query"]] if "query" in constr else []
+        else:
+            locs = new_constr.pop("locs", [])
+            queries = new_constr.pop("queries", [])
+
+        positions = pd.Series(data=np.arange(len(params)), index=params.index)
+
+        indices = []
+        for loc in locs:
+            index = positions.loc[loc].astype(int).tolist()
+            index = [index] if not isinstance(index, list) else index
+            assert len(set(index)) == len(index), "Duplicates in loc are not allowed."
+            indices.append(index)
+        for query in queries:
+            loc = params.query(query).index
+            index = positions.loc[loc].astype(int).tolist()
+            index = [index] if not isinstance(index, list) else index
+            indices.append(index)
+
+        if constr["type"] == "pairwise_equality":
+            assert (
+                len(indices) >= 2
+            ), "Select at least 2 sets of parameters for pairwise equality constraint!"
+            length = len(indices[0])
+            for index in indices:
+                assert len(index) == length, (
+                    "All sets of parameters in pairwise_equality pc must have "
+                    "the same length."
+                )
+        else:
+            assert (
+                len(indices) == 1
+            ), "Either loc or query can be in constraint but not both."
+
+        n_selected = len(indices[0])
+        if n_selected >= 1:
+            if constr["type"] == "pairwise_equality":
+                new_constr["indices"] = indices
+            else:
+                new_constr["index"] = indices[0]
+            out.append(new_constr)
+
+    return out
+
+
+def _process_selectors_old(constraints, params):
     """Convert the query and loc field of the constraint into position based indices.
 
     Args:

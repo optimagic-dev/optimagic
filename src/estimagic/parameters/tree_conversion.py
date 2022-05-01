@@ -1,0 +1,174 @@
+from typing import NamedTuple
+
+import numpy as np
+from estimagic.exceptions import InvalidFunctionError
+from estimagic.parameters.block_trees import block_tree_to_matrix
+from estimagic.parameters.parameter_bounds import get_bounds
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import leaf_names
+from pybaum import tree_flatten
+from pybaum import tree_just_flatten
+from pybaum import tree_unflatten
+
+
+def get_tree_converter(
+    params,
+    lower_bounds,
+    upper_bounds,
+    func_eval,
+    derivative_eval,
+    primary_key,
+):
+    """Get flatten and unflatten functions and constraints with processed selectors.
+
+
+    Returns:
+        TreeConverter: NamedTuple with flatten and unflatten methods.
+        FlatParams: NamedTuple of 1d arrays with flattened bounds and param names.
+
+    """
+    _registry = get_registry(extended=True)
+    _params_vec, _params_treedef = tree_flatten(params, registry=_registry)
+    _params_vec = np.array(_params_vec)
+    _lower, _upper = get_bounds(
+        params=params,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        registry=_registry,
+    )
+
+    _param_names = leaf_names(params, registry=_registry)
+
+    flat_params = FlatParams(
+        values=_params_vec,
+        lower_bounds=_lower,
+        upper_bounds=_upper,
+        names=_param_names,
+    )
+
+    _params_flatten = _get_params_flatten(registry=_registry)
+    _params_unflatten = _get_params_unflatten(
+        registry=_registry, treedef=_params_treedef
+    )
+    _func_flatten = _get_func_flatten(
+        registry=_registry,
+        func_eval=func_eval,
+        primary_key=primary_key,
+    )
+    _derivative_flatten = _get_derivative_flatten(
+        registry=_registry,
+        primary_key=primary_key,
+        params=params,
+        func_eval=func_eval,
+        derivative_eval=derivative_eval,
+    )
+
+    converter = TreeConverter(
+        params_flatten=_params_flatten,
+        params_unflatten=_params_unflatten,
+        func_flatten=_func_flatten,
+        derivative_flatten=_derivative_flatten,
+    )
+
+    return converter, flat_params
+
+
+def _get_params_flatten(registry):
+    def params_flatten(params):
+        return np.array(tree_just_flatten(params, registry=registry))
+
+    return params_flatten
+
+
+def _get_params_unflatten(registry, treedef):
+    def params_unflatten(x):
+        return tree_unflatten(treedef=treedef, leaves=list(x), registry=registry)
+
+    return params_unflatten
+
+
+def _get_func_flatten(registry, func_eval, primary_key):
+
+    if np.isscalar(func_eval):
+        if primary_key == "value":
+            func_flatten = lambda func_eval: float(func_eval)
+        else:
+            raise ValueError()  # xxxx
+    elif not isinstance(func_eval, dict):
+        raise ValueError()  # xxxx
+    else:
+        key, aggregate = _get_best_key_and_aggregator(primary_key, func_eval)
+
+        def func_flatten(func_eval):
+            return aggregate(tree_just_flatten(func_eval[key], registry=registry))
+
+    return func_flatten
+
+
+def _get_best_key_and_aggregator(needed_key, available_keys):
+    if needed_key in available_keys:
+        key = needed_key
+        if needed_key == "value":
+            aggregate = lambda x: float(x)
+        else:
+            aggregate = lambda x: np.array(x).astype(float)
+    elif needed_key == "contributions" and "root_contributions" in available_keys:
+        key = "root_contributions"
+        aggregate = lambda x: np.array(x).astype(float) ** 2
+    elif needed_key == "value" and "contributions" in available_keys:
+        key = "contributions"
+        aggregate = lambda x: float(np.sum(x))
+    elif needed_key == "value" and "root_contributions" in available_keys:
+        key = "root_contributions"
+        aggregate = lambda x: float((np.array(x) ** 2).sum())
+    else:
+        raise ValueError()  # xxxx
+
+    return key, aggregate
+
+
+def _get_derivative_flatten(registry, primary_key, params, func_eval, derivative_eval):
+    # gradient case
+    if primary_key == "value":
+
+        def derivative_flatten(derivative_eval):
+            flat = np.array(
+                tree_just_flatten(derivative_eval, registry=registry)
+            ).astype(float)
+            return flat
+
+    # jacobian case
+    else:
+        key, _ = _get_best_key_and_aggregator(primary_key, func_eval)
+
+        def derivative_flatten(derivative_eval):
+            flat = block_tree_to_matrix(
+                derivative_eval,
+                outer_tree=func_eval[key],
+                inner_tree=params,
+            )
+            return flat
+
+    try:
+        derivative_flatten(derivative_eval)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        msg = "The output of derivative and criterion cannot be aligned."
+        raise InvalidFunctionError(msg) from e
+
+    return derivative_flatten
+
+
+class TreeConverter(NamedTuple):
+    params_flatten: callable
+    params_unflatten: callable
+    func_flatten: callable
+    derivative_flatten: callable
+
+
+class FlatParams(NamedTuple):
+    values: np.ndarray
+    lower_bounds: np.ndarray
+    upper_bounds: np.ndarray
+    names: list

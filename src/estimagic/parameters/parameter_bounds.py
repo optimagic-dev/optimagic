@@ -5,7 +5,7 @@ from pybaum import tree_map
 from pybaum import tree_update
 
 
-def get_bounds(params, lower_bounds=None, upper_bounds=None):
+def get_bounds(params, lower_bounds=None, upper_bounds=None, registry=None):
     """Consolidate lower/upper bounds with bounds available in params.
 
     Updates bounds defined in params. If no bounds are available the entry is set to
@@ -23,7 +23,7 @@ def get_bounds(params, lower_bounds=None, upper_bounds=None):
         np.ndarray: Consolidated and flattened upper_bounds.
 
     """
-    registry = get_registry(extended=True)
+    registry = get_registry(extended=True) if registry is None else registry
     n_params = len(tree_leaves(params, registry=registry))
 
     # Fill leaves with np.nan. If params contains a data frame with bounds column, that

@@ -10,7 +10,7 @@ from estimagic.inference.shared import get_internal_first_derivative
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import maximize
 from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
-from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.process_constraints import process_constraints_old
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
 
@@ -170,7 +170,7 @@ def estimate_ml(
 
     constraints = [] if constraints is None else constraints
 
-    processed_constraints, _ = process_constraints(constraints, params)
+    processed_constraints, _ = process_constraints_old(constraints, params)
 
     # ==================================================================================
     # Calculate estimates via maximization (if necessary)

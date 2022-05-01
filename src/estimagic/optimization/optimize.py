@@ -29,7 +29,7 @@ from estimagic.parameters.parameter_conversion import get_internal_bounds
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
-from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.process_constraints import process_constraints_old
 from estimagic.process_user_function import process_func_of_params
 from estimagic.utilities import hash_array
 
@@ -502,7 +502,7 @@ def _optimize(
 
     # get processed params and constraints
     if constraints:
-        pc, pp = process_constraints(constraints, params)
+        pc, pp = process_constraints_old(constraints, params)
     else:
         pc, pp = None, None
 
@@ -523,7 +523,7 @@ def _optimize(
             processed_params=pp,
             processed_constraints=pc,
         )
-        pc, pp = process_constraints(
+        pc, pp = process_constraints_old(
             constraints=constraints,
             parvec=params,
             scaling_factor=scaling_factor,

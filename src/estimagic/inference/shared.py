@@ -8,7 +8,7 @@ from estimagic.decorators import numpy_interface
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.parameters.parameter_conversion import get_internal_bounds
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
-from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.process_constraints import process_constraints_old
 
 
 def transform_covariance(
@@ -44,7 +44,7 @@ def transform_covariance(
             index.
 
     """
-    transformations, constr_info = process_constraints(constraints, params)
+    transformations, constr_info = process_constraints_old(constraints, params)
     free_index = params[constr_info["_internal_free"]].index
 
     if isinstance(internal_cov, pd.DataFrame):

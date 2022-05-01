@@ -14,7 +14,7 @@ from estimagic.parameters.kernel_transformations import scale_from_internal
 from estimagic.parameters.kernel_transformations import scale_to_internal
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
-from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.process_constraints import process_constraints_old
 from estimagic.parameters.reparametrize import convert_external_derivative_to_internal
 from estimagic.parameters.reparametrize import post_replace_jacobian
 from estimagic.parameters.reparametrize import pre_replace_jacobian
@@ -64,7 +64,7 @@ def get_reparametrize_functions(
             params = add_default_bounds_to_params(params)
             check_params_are_valid(params)
 
-            transformations, constr_info = process_constraints(
+            transformations, constr_info = process_constraints_old(
                 constraints=constraints,
                 parvec=params,
                 scaling_factor=scaling_factor,
@@ -135,7 +135,7 @@ def get_derivative_conversion_function(
         if constr_info is None or transformations is None:
             params = add_default_bounds_to_params(params)
             check_params_are_valid(params)
-            transformations, constr_info = process_constraints(
+            transformations, constr_info = process_constraints_old(
                 constraints=constraints,
                 parvec=params,
                 scaling_factor=scaling_factor,
@@ -179,7 +179,7 @@ def get_internal_bounds(
             params = add_default_bounds_to_params(params)
             check_params_are_valid(params)
 
-            _, processed_params = process_constraints(
+            _, processed_params = process_constraints_old(
                 constraints=constraints,
                 parvec=params,
                 scaling_factor=scaling_factor,

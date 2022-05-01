@@ -7,7 +7,7 @@ import pytest
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
 from estimagic.parameters.parameter_conversion import get_reparametrize_functions
-from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.process_constraints import process_constraints_old
 from estimagic.parameters.reparametrize import _multiply_from_left
 from estimagic.parameters.reparametrize import _multiply_from_right
 from estimagic.parameters.reparametrize import post_replace
@@ -70,7 +70,7 @@ def test_reparametrize_to_internal(example_params, all_constraints, case, number
         scaling_offset=None,
     )
 
-    _, pp = process_constraints(constraints, params)
+    _, pp = process_constraints_old(constraints, params)
 
     calculated_internal_values_np = to_internal(pp["value"])
     calculated_internal_values_pd = to_internal(pp)
@@ -133,7 +133,7 @@ def test_reparametrize_from_internal_jacobian(
     params = reduce_params(example_params, constraints)
     params["value"] = params[f"value{number}"]
 
-    _, pp = process_constraints(constraints, params)
+    _, pp = process_constraints_old(constraints, params)
 
     n_free = int(pp["_internal_free"].sum())
     scaling_factor = np.ones(n_free) * 2  # np.arange(n_free) + 1
@@ -175,7 +175,7 @@ def test_pre_replace_jacobian(example_params, all_constraints, case, number):
 
     keep = params[f"internal_value{number}"].notnull()
 
-    pc, pp = process_constraints(constraints, params)
+    pc, pp = process_constraints_old(constraints, params)
 
     internal_p = params[f"internal_value{number}"][keep].to_numpy()
     fixed_val = pp["_internal_fixed_value"]
@@ -200,7 +200,7 @@ def test_post_replace_jacobian(example_params, all_constraints, case, number):
 
     keep = params[f"internal_value{number}"].notnull()
 
-    pc, pp = process_constraints(constraints, params)
+    pc, pp = process_constraints_old(constraints, params)
 
     internal_p = params[f"internal_value{number}"][keep].to_numpy()
     fixed_val = pp["_internal_fixed_value"]
@@ -259,7 +259,7 @@ def test_covariance_is_inherited_from_pairwise_equality(example_params):
 
 
 def back_and_forth_transformation_and_assert(params, constraints):
-    pc, pp = process_constraints(constraints, params)
+    pc, pp = process_constraints_old(constraints, params)
 
     internal = reparametrize_to_internal(pp["value"], pp["_internal_free"], pc)
 

@@ -6,7 +6,7 @@ from estimagic.parameters.process_constraints import _process_selectors
 from estimagic.parameters.process_constraints import (
     _replace_pairwise_equality_by_equality,
 )
-from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.process_constraints import process_constraints_old
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -53,11 +53,13 @@ def test_process_selectors(constraint, expected):
     ]
     params_df = pd.DataFrame(
         index=pd.MultiIndex.from_tuples(ind_tups),
-        columns=["bla", "blubb"],
+        columns=["value", "blubb"],
         data=np.ones((9, 2)),
     )
 
-    calculated = _process_selectors([constraint], params_df)[0]
+    calculated = _process_selectors(
+        [constraint], params_df, params_df["value"].to_numpy()
+    )[0]
 
     if constraint["type"] != "pairwise_equality":
         indices = [calculated["index"]]
@@ -105,7 +107,7 @@ def test_valuep_error_if_constraints_are_violated(
         params["value"] = params[val]
 
         with pytest.raises(ValueError):
-            process_constraints(constraints, params)
+            process_constraints_old(constraints, params)
 
 
 def test_invalid_bound_for_increasing():
@@ -116,7 +118,7 @@ def test_invalid_bound_for_increasing():
     constraints = [{"loc": params.index, "type": "increasing"}]
 
     with pytest.raises(ValueError):
-        process_constraints(constraints, params)
+        process_constraints_old(constraints, params)
 
 
 def test_one_bound_is_allowed_for_increasing():
@@ -126,7 +128,7 @@ def test_one_bound_is_allowed_for_increasing():
 
     constraints = [{"loc": params.index, "type": "increasing"}]
 
-    process_constraints(constraints, params)
+    process_constraints_old(constraints, params)
 
 
 EMPTY_CONSTRAINTS = [
@@ -140,7 +142,7 @@ EMPTY_CONSTRAINTS = [
 @pytest.mark.parametrize("constraints", EMPTY_CONSTRAINTS)
 def test_empty_constraint_is_dropped(constraints):
     params = pd.DataFrame(np.ones((5, 1)), columns=["value"])
-    pc, pp = process_constraints(constraints, params)
+    pc, pp = process_constraints_old(constraints, params)
     # no transforming constraints
     assert pc == []
     # pre-replacements are just copying the parameter vector
