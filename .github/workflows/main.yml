@@ -1,4 +1,4 @@
-name: Continuous Integration Workflow
+name: main
 
 # Automatically cancel a previous run.
 concurrency:
@@ -24,7 +24,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: ['3.8', '3.9']
+        python-version: ['3.8', '3.9', '3.10']
 
     steps:
       - uses: actions/checkout@v2

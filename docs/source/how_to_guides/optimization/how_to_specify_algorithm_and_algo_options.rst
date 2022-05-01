@@ -437,6 +437,9 @@ dependencies to use them:
 
     Minimize a nonlinear least squares problem using a rectangular trust region method.
 
+    Typical use case is small problems with bounds. Not recommended for problems with
+    rank-deficient Jacobian.
+
     The algorithm supports the following options:
 
     - **convergence.relative_criterion_tolerance** (float): Stop when the relative
@@ -469,6 +472,45 @@ dependencies to use them:
 .. dropdown::  scipy_ls_trf
 
     Minimize a nonlinear least squares problem using a trustregion reflective method.
+
+    Trust Region Reflective algorithm, particularly suitable for large sparse problems
+    with bounds. Generally robust method.
+
+    The algorithm supports the following options:
+
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
+      improvement between two iterations is below this.
+    - **convergence.relative_gradient_tolerance** (float): Stop when the gradient,
+      divided by the absolute value of the criterion function is smaller than this.
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this as
+      convergence.
+    - **tr_solver** (str): Method for solving trust-region subproblems, relevant only
+      for 'trf' and 'dogbox' methods.
+
+      - 'exact' is suitable for not very large problems with dense
+        Jacobian matrices. The computational complexity per iteration is
+        comparable to a singular value decomposition of the Jacobian
+        matrix.
+      - 'lsmr' is suitable for problems with sparse and large Jacobian
+        matrices. It uses the iterative procedure
+        `scipy.sparse.linalg.lsmr` for finding a solution of a linear
+        least-squares problem and only requires matrix-vector product
+        evaluations.
+        If None (default), the solver is chosen based on the type of Jacobian
+        returned on the first iteration.
+    - **tr_solver_options** (dict):  Keyword options passed to trust-region solver.
+
+      - ``tr_solver='exact'``: `tr_options` are ignored.
+      - ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+
+
+.. dropdown::  scipy_ls_lm
+
+    Minimize a nonlinear least squares problem using a Levenberg-Marquardt method.
+
+    Does not handle bounds and sparse Jacobians. Usually the most efficient method for
+    small unconstrained problems.
 
     The algorithm supports the following options:
 

@@ -39,29 +39,24 @@ def test_process_multistart_sample(sample, params):
     aaae(calculated, expeceted)
 
 
-distributions = ["triangle", "uniform"]
-rules = [
-    "random",
-    "sobol",
-    "halton",
-    "hammersley",
-    "korobov",
-    "latin_hypercube",
-    # chebyshev generated samples of the wrong size!
-]
-test_cases = list(product(distributions, rules))
+dim = 2
+distributions = ["uniform", "triangular"]
+rules = ["sobol", "halton", "latin_hypercube", "random"]
+lower = [np.zeros(dim), np.ones(dim) * 0.5, -np.ones(dim)]
+upper = [np.ones(dim), np.ones(dim) * 0.75, np.ones(dim) * 2]
+test_cases = list(product(distributions, rules, lower, upper))
 
 
-@pytest.mark.parametrize("dist, rule", test_cases)
-def test_draw_exploration_sample(dist, rule):
-
+@pytest.mark.parametrize("dist, rule, lower, upper", test_cases)
+def test_draw_exploration_sample(dist, rule, lower, upper):
     results = []
+
     for _ in range(2):
         results.append(
             draw_exploration_sample(
-                x=np.array([0.5, 0.5]),
-                lower=np.zeros(2),
-                upper=np.ones(2),
+                x=np.ones_like(lower) * 0.5,
+                lower=lower,
+                upper=upper,
                 n_samples=3,
                 sampling_distribution=dist,
                 sampling_method=rule,
@@ -85,7 +80,7 @@ def test_run_explorations():
     def _dummy(x, **kwargs):
         assert set(kwargs) == {
             "task",
-            "algorithm_info",
+            "algo_info",
             "error_handling",
             "error_penalty",
             "fixed_log_data",

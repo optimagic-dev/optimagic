@@ -1,10 +1,9 @@
 """
 Implementation of parallelosation of Nelder-Mead algorithm
 """
-from functools import partial
-
 import numpy as np
 from estimagic import batch_evaluators
+from estimagic.decorators import mark_minimizer
 from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
 )
@@ -14,8 +13,16 @@ from estimagic.optimization.algo_options import (
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 
 
+@mark_minimizer(
+    name="parallel_neldermead",
+    primary_criterion_entry="value",
+    disable_cache=False,
+    parallelizes=True,
+    needs_scaling=True,
+    is_available=True,
+)
 def neldermead_parallel(
-    criterion_and_derivative,
+    criterion,
     x,
     *,
     init_simplex_method="gao_han",
@@ -33,8 +40,8 @@ def neldermead_parallel(
 
     Parameters
     ----------
-    criterion_and_derivative (callable): A function that takes a Numpy array_like as
-        an argument and return scalar floating point or a :class:`numpy.ndarray`
+    criterion (callable): A function that takes a Numpy array_like as
+        an argument and return scalar floating point.
 
     x (array_like): 1-D array of initial value of parameters
 
@@ -68,18 +75,6 @@ def neldermead_parallel(
         DESCRIPTION.
 
     """
-    algo_info = {
-        "primary_criterion_entry": "value",
-        "parallelizes": True,
-        "needs_scaling": True,
-        "name": "parallel_neldermead",
-    }
-    criterion = partial(
-        criterion_and_derivative,
-        task="criterion",
-        algorithm_info=algo_info,
-    )
-
     if x.ndim >= 1:
         x = x.ravel()  # check if the vector of initial values is one-dimensional
 

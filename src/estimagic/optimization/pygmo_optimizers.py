@@ -1,10 +1,11 @@
 """Implement pygmo optimizers."""
-import functools
 import warnings
 
 import numpy as np
 from estimagic import batch_evaluators
 from estimagic.config import IS_PYGMO_INSTALLED
+from estimagic.decorators import mark_minimizer
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_PARAMS_TOLERANCE
 from estimagic.optimization.algo_options import (
     STOPPING_MAX_CRITERION_EVALUATIONS_GLOBAL,
@@ -18,8 +19,16 @@ except ImportError:
     pass
 
 
+@mark_minimizer(
+    name="pygmo_gaco",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_gaco(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -83,7 +92,7 @@ def pygmo_gaco(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -93,8 +102,16 @@ def pygmo_gaco(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_bee_colony",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_bee_colony(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -128,7 +145,7 @@ def pygmo_bee_colony(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -138,8 +155,16 @@ def pygmo_bee_colony(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_de",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_de(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -200,7 +225,7 @@ def pygmo_de(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -210,8 +235,16 @@ def pygmo_de(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_sea",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_sea(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -243,7 +276,7 @@ def pygmo_sea(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -253,8 +286,16 @@ def pygmo_sea(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_sga",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_sga(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -356,7 +397,7 @@ def pygmo_sga(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -366,8 +407,16 @@ def pygmo_sga(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_sade",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_sade(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -436,7 +485,7 @@ def pygmo_sade(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -446,8 +495,16 @@ def pygmo_sade(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_cmaes",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_cmaes(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -501,7 +558,7 @@ def pygmo_cmaes(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -511,8 +568,16 @@ def pygmo_cmaes(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_simulated_annealing",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_simulated_annealing(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -559,7 +624,7 @@ def pygmo_simulated_annealing(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -569,8 +634,16 @@ def pygmo_simulated_annealing(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_pso",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_pso(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -647,7 +720,7 @@ def pygmo_pso(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -657,8 +730,16 @@ def pygmo_pso(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_pso_gen",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_pso_gen(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -734,7 +815,7 @@ def pygmo_pso_gen(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -744,8 +825,16 @@ def pygmo_pso_gen(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_mbh",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_mbh(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -787,7 +876,7 @@ def pygmo_mbh(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -797,8 +886,16 @@ def pygmo_mbh(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_xnes",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_xnes(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -850,7 +947,7 @@ def pygmo_xnes(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -860,8 +957,16 @@ def pygmo_xnes(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_gwo",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_gwo(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -873,7 +978,7 @@ def pygmo_gwo(
     discard_start_params=False,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS_GENETIC,
 ):
-    """Minimize a scalar function usinng the Grey Wolf Optimizer.
+    """Minimize a scalar function using the Grey Wolf Optimizer.
 
     For details see :ref:`list_of_pygmo_algorithms`.
 
@@ -893,7 +998,7 @@ def pygmo_gwo(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -903,8 +1008,16 @@ def pygmo_gwo(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_compass_search",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_compass_search(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -951,7 +1064,7 @@ def pygmo_compass_search(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -961,8 +1074,16 @@ def pygmo_compass_search(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_ihs",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_ihs(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -1012,7 +1133,7 @@ def pygmo_ihs(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -1022,8 +1143,16 @@ def pygmo_ihs(
     return res
 
 
+@mark_minimizer(
+    name="pygmo_de1220",
+    primary_criterion_entry="value",
+    parallelizes=True,
+    needs_scaling=True,
+    disable_cache=False,
+    is_available=IS_PYGMO_INSTALLED,
+)
 def pygmo_de1220(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -1099,7 +1228,7 @@ def pygmo_de1220(
     )
 
     res = _minimize_pygmo(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
         x=x,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -1113,12 +1242,18 @@ def pygmo_de1220(
 
 
 def _minimize_pygmo(
-    criterion_and_derivative, x, lower_bounds, upper_bounds, method, algo_options=None
+    criterion,
+    x,
+    lower_bounds,
+    upper_bounds,
+    method,
+    algo_options,
+    derivative=None,
 ):
     """Minimize a function with pygmo.
 
     Args:
-        criterion_and_derivative (callable):
+        criterion (callable):
         x (np.ndarray): Starting values of the parameters.
         lower_bounds (np.ndarray):
         upper_bounds (np.ndarray):
@@ -1143,13 +1278,14 @@ def _minimize_pygmo(
 
     """
     if not IS_PYGMO_INSTALLED:
-        raise NotImplementedError(
-            f"The pygmo package is not installed and required for '{method}'."
+        raise NotInstalledError(
+            f"The {method} algorithm requires the pygmo package to be installed. "
+            "You can install it with 'conda install -c conda-forge pygmo'. Visit "
+            "https://esa.github.io/pygmo2/install.html for more detailed installation "
+            "instructions."
         )
 
-    algo_options = {} if algo_options is None else algo_options.copy()
     population_size = algo_options.pop("population_size", 1)
-
     batch_evaluator = algo_options.pop("batch_evaluator", "joblib_batch_evaluator")
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(batch_evaluators, batch_evaluator)
@@ -1157,24 +1293,10 @@ def _minimize_pygmo(
     seed = algo_options.pop("seed", None)
     discard_start_params = algo_options.pop("discard_start_params", False)
 
-    algo_info = {
-        "parallelizes": n_cores != 1,
-        "name": f"pygmo_{method}",
-        "needs_scaling": True,
-        "primary_criterion_entry": "value",
-    }
-    func = functools.partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info
-    )
-    gradient = functools.partial(
-        criterion_and_derivative, task="derivative", algorithm_info=algo_info
-    )
-
     bounds = (lower_bounds, upper_bounds)
     prob = _create_problem(
-        func=func,
+        func=criterion,
         bounds=bounds,
-        gradient_=gradient,
         dim=len(x),
         batch_evaluator=batch_evaluator,
         n_cores=n_cores,
@@ -1189,7 +1311,7 @@ def _minimize_pygmo(
     return result
 
 
-def _create_problem(func, bounds, gradient_, dim, batch_evaluator, n_cores):
+def _create_problem(func, bounds, dim, batch_evaluator, n_cores):
     class Problem:
         def fitness(self, x):
             return [func(x)]
@@ -1198,7 +1320,7 @@ def _create_problem(func, bounds, gradient_, dim, batch_evaluator, n_cores):
             return bounds
 
         def gradient(self, dv):
-            return gradient_(dv)
+            raise ValueError("No pygmo optimizer should use a gradient.")
 
         def batch_fitness(self, dvs):
             dv_list = dvs.reshape(-1, dim)

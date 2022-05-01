@@ -2,28 +2,44 @@
 estimagic
 =========
 
-.. image:: https://anaconda.org/OpenSourceEconomics/estimagic/badges/version.svg
-   :target: https://anaconda.org/OpenSourceEconomics/estimagic
+.. start-badges
 
-.. image:: https://anaconda.org/OpenSourceEconomics/estimagic/badges/platforms.svg
-   :target: https://anaconda.org/OpenSourceEconomics/estimagic
+.. image:: https://img.shields.io/pypi/v/estimagic?color=blue
+    :alt: PyPI
+    :target: https://pypi.org/project/estimagic
 
-.. image:: https://img.shields.io/badge/License-BSD%203--Clause-orange.svg
-    :target: https://opensource.org/licenses/BSD-3-Clause
-    :alt: License
+.. image:: https://img.shields.io/pypi/pyversions/estimagic
+    :alt: PyPI - Python Version
+    :target: https://pypi.org/project/estimagic
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/estimagic.svg
+    :target: https://anaconda.org/conda-forge/estimagic
+
+.. image:: https://img.shields.io/conda/pn/conda-forge/estimagic.svg
+    :target: https://anaconda.org/conda-forge/estimagic
+
+.. image:: https://img.shields.io/pypi/l/estimagic
+    :alt: PyPI - License
+    :target: https://pypi.org/project/estimagic
 
 .. image:: https://readthedocs.org/projects/estimagic/badge/?version=latest
-    :target: https://estimagic.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
+    :target: https://estimagic.readthedocs.io/en/latest
 
-.. image:: https://github.com/OpenSourceEconomics/estimagic/workflows/Continuous%20Integration%20Workflow/badge.svg?branch=main
-    :target: https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain
+.. image:: https://img.shields.io/github/workflow/status/OpenSourceEconomics/estimagic/main/main
+   :target: https://github.com/OpenSourceEconomics/estimagic/actions?query=branch%3Amain
 
 .. image:: https://codecov.io/gh/OpenSourceEconomics/estimagic/branch/main/graph/badge.svg
-  :target: https://codecov.io/gh/OpenSourceEconomics/estimagic
+    :target: https://codecov.io/gh/OpenSourceEconomics/estimagic
+
+.. image:: https://results.pre-commit.ci/badge/github/OpenSourceEconomics/estimagic/main.svg
+    :target: https://results.pre-commit.ci/latest/github/OpenSourceEconomics/estimagic/main
+    :alt: pre-commit.ci status
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
+
+.. end-badges
+
 
 Introduction
 ============
@@ -141,9 +157,9 @@ If you use Estimagic for your research, please do not forget to cite it.
 
 .. code-block::
 
-    @Unpublished{Gabler2021,
-      Title  = {A Python Tool for the Estimation of (Structural) Econometric Models.},
+    @Unpublished{Gabler2022,
+      Title  = {A Python Tool for the Estimation of large scale scientific models.},
       Author = {Janos Gabler},
-      Year   = {2021},
+      Year   = {2022},
       Url    = {https://github.com/OpenSourceEconomics/estimagic}
     }

@@ -1,10 +1,11 @@
 """Implement the POUNDERS algorithm"""
+import warnings
 from copy import copy
-from functools import partial
 
 import estimagic.batch_evaluators as be
 import numpy as np
 from estimagic.config import DEFAULT_N_CORES
+from estimagic.decorators import mark_minimizer
 from estimagic.optimization.history import LeastSquaresHistory
 from estimagic.optimization.pounders_auxiliary import (
     add_geomtery_points_to_make_main_model_fully_linear,
@@ -31,8 +32,16 @@ from estimagic.optimization.pounders_auxiliary import (
 from estimagic.optimization.pounders_auxiliary import update_trustregion_radius
 
 
+@mark_minimizer(
+    name="pounders",
+    primary_criterion_entry="root_contributions",
+    needs_scaling=True,
+    parallelizes=True,
+    disable_cache=False,
+    is_available=True,
+)
 def pounders(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -59,19 +68,10 @@ def pounders(
 ):
     """Find the local minimum to a non-linear least-squares problem using POUNDERS.
     For details, see :ref:`_own_algorithms`.
+
     """
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
-
-    algorithm_info = {
-        "primary_criterion_entry": "root_contributions",
-        "parallelizes": False,
-        "needs_scaling": True,
-        "name": "pounders",
-    }
-    criterion = partial(
-        criterion_and_derivative, algorithm_info=algorithm_info, task="criterion"
-    )
 
     if max_interpolation_points is None:
         max_interpolation_points = 2 * x.shape[0] + 1
@@ -333,7 +333,10 @@ def internal_solve_pounders(
             accepted_index
         ) - history.get_critvals(-1)
         actual_reduction = -result_sub["criterion"]
-        rho = np.divide(predicted_reduction, actual_reduction)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            rho = np.divide(predicted_reduction, actual_reduction)
 
         if (rho >= eta1) or (rho > eta0 and valid is True):
             residual_model = residual_model._replace(

@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
+from estimagic.exceptions import UserFunctionRuntimeError
 from estimagic.logging.database_utilities import append_row
 from estimagic.optimization.process_results import switch_sign
 from estimagic.utilities import hash_array
@@ -38,7 +39,7 @@ def internal_criterion_and_derivative_template(
     params,
     reparametrize_from_internal,
     convert_derivative,
-    algorithm_info,
+    algo_info,
     derivative,
     criterion_and_derivative,
     numdiff_options,
@@ -54,8 +55,8 @@ def internal_criterion_and_derivative_template(
     """Template for the internal criterion and derivative function.
 
     The internal criterion and derivative function only has the arguments x and task
-    and algorithm_info. The other arguments will be partialed in by estimagic at some
-    point. Algorithm_info and possibly even task will be partialed in by the algorithm.
+    and algo_info. The other arguments will be partialed in by estimagic at some
+    point. algo_info and possibly even task will be partialed in by the algorithm.
 
     That is the reason why this function is called a template.
 
@@ -72,13 +73,13 @@ def internal_criterion_and_derivative_template(
         convert_derivative (callable): Function that takes the derivative of criterion
             at the external version of x and x and returns the derivative
             of the internal criterion.
-        algorithm_info (dict): Dict with the following entries:
-            "primary_criterion_entry": One of "value", "contributions" and
-                "root_contributions" or "dict".
-            "parallelizes": Bool that indicates if the algorithm calls the internal
-                criterion function in parallel. If so, caching is disabled.
-            "needs_scaling": bool
-            "name": string
+        algo_info (AlgoInfo): NamedTuple with attributes
+            - primary_criterion_entry
+            - name
+            - parallelizes
+            - disable_cache
+            - needs_scaling
+            - is_available
         derivative (callable, optional): (partialed) user provided function that
             calculates the first derivative of criterion. For most algorithm, this is
             the gradient of the scalar output (or "value" entry of the dict). However
@@ -121,13 +122,13 @@ def internal_criterion_and_derivative_template(
             If task=="criterion_and_derivative" it returns both as a tuple.
 
     """
-    if algorithm_info["primary_criterion_entry"] == "root_contributions":
+    if algo_info.primary_criterion_entry == "root_contributions":
         if direction == "maximize":
             msg = (
                 "Optimizers that exploit a least squares structure like {} can only be "
                 "used for minimization."
             )
-            raise ValueError(msg.format(algorithm_info["name"]))
+            raise ValueError(msg.format(algo_info.name))
 
     x_hash = hash_array(x)
     cache_entry = cache.get(x_hash, {})
@@ -151,22 +152,34 @@ def internal_criterion_and_derivative_template(
             return criterion(p)
 
         options = numdiff_options.copy()
-        options["key"] = algorithm_info["primary_criterion_entry"]
+        options["key"] = algo_info.primary_criterion_entry
         options["f0"] = cache_entry.get("criterion", None)
         options["return_func_value"] = True
 
         try:
             derivative_dict = first_derivative(func, x, **options)
             new_derivative = {
-                algorithm_info["primary_criterion_entry"]: derivative_dict["derivative"]
+                algo_info.primary_criterion_entry: derivative_dict["derivative"]
             }
             new_criterion = derivative_dict["func_value"]
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
-            caught_exceptions.append(get_traceback())
-            if "criterion" in cache_entry:
-                raise Exception(DERIVATIVE_ERROR_MESSAGE) from e
+            tb = get_traceback()
+            caught_exceptions.append(tb)
+            if "criterion" in cache_entry or error_handling == "raise":
+                msg = (
+                    "An error occurred when evaluating criterion to calculate a "
+                    "numerical derivative during optimization."
+                )
+                raise UserFunctionRuntimeError(msg) from e
+            else:
+
+                msg = (
+                    "The following exception was caught when evaluating criterion to "
+                    f"calculate a numerical derivative during optimization:\n\n{tb}"
+                )
+                warnings.warn(msg)
 
     elif "criterion_and_derivative" in to_dos:
         try:
@@ -176,9 +189,21 @@ def internal_criterion_and_derivative_template(
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
-            caught_exceptions.append(get_traceback())
-            if "criterion" in cache_entry:
-                raise Exception(DERIVATIVE_ERROR_MESSAGE) from e
+            tb = get_traceback()
+            caught_exceptions.append(tb)
+            if "criterion" in cache_entry or error_handling == "raise":
+                msg = (
+                    "An error ocurred when evaluating criterion_and_derivative "
+                    "during optimization."
+                )
+                raise UserFunctionRuntimeError(msg) from e
+            else:
+
+                msg = (
+                    "The following exception was caught when evaluating "
+                    f"criterion_and_derivative during optimization:\n\n{tb}"
+                )
+                warnings.warn(msg)
 
     else:
         if "criterion" in to_dos:
@@ -187,9 +212,21 @@ def internal_criterion_and_derivative_template(
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
-                caught_exceptions.append(get_traceback())
-                if "derivative" in cache_entry:
-                    raise Exception(CRITERION_ERROR_MESSAGE) from e
+                tb = get_traceback()
+                caught_exceptions.append(tb)
+                if "derivative" in cache_entry or error_handling == "raise":
+                    msg = (
+                        "An error ocurred when evaluating criterion during "
+                        "optimization."
+                    )
+                    raise UserFunctionRuntimeError(msg) from e
+                else:
+
+                    msg = (
+                        "The following exception was caught when evaluating "
+                        f"criterion during optimization:\n\n{tb}"
+                    )
+                    warnings.warn(msg)
 
         if "derivative" in to_dos:
             try:
@@ -197,14 +234,26 @@ def internal_criterion_and_derivative_template(
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
-                caught_exceptions.append(get_traceback())
-                if "criterion" in cache_entry:
-                    raise Exception(DERIVATIVE_ERROR_MESSAGE) from e
+                tb = get_traceback()
+                caught_exceptions.append(tb)
+                if "criterion" in cache_entry or error_handling == "raise":
+                    msg = (
+                        "An error ocurred when evaluating derivative during "
+                        "optimization"
+                    )
+                    raise UserFunctionRuntimeError(msg) from e
+                else:
+
+                    msg = (
+                        "The following exception was caught when evaluating "
+                        f"derivative during optimization:\n\n{tb}"
+                    )
+                    warnings.warn(msg)
 
     if new_derivative is None and new_external_derivative is not None:
         if not isinstance(new_external_derivative, dict):
             new_external_derivative = {
-                algorithm_info["primary_criterion_entry"]: new_external_derivative
+                algo_info.primary_criterion_entry: new_external_derivative
             }
 
         new_derivative = {
@@ -213,23 +262,19 @@ def internal_criterion_and_derivative_template(
         }
 
     if caught_exceptions:
-        if error_handling == "continue":
-            new_criterion, new_derivative = _penalty_and_derivative(
-                x, first_criterion_evaluation, error_penalty, algorithm_info
-            )
-            warnings.warn("\n\n".join(caught_exceptions))
-        else:
-            raise Exception("\n\n".join(caught_exceptions))
+        new_criterion, new_derivative = _penalty_and_derivative(
+            x, first_criterion_evaluation, error_penalty, algo_info
+        )
 
-    if not algorithm_info["parallelizes"] and cache_size >= 1:
+    if not (algo_info.parallelizes or algo_info.disable_cache) and cache_size >= 1:
         _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_size)
 
     new_criterion = _check_and_harmonize_criterion_output(
-        cache_entry.get("criterion", new_criterion), algorithm_info
+        cache_entry.get("criterion", new_criterion), algo_info
     )
 
     new_derivative = _check_and_harmonize_derivative(
-        cache_entry.get("derivative", new_derivative), algorithm_info
+        cache_entry.get("derivative", new_derivative), algo_info
     )
 
     if (new_criterion is not None or new_derivative is not None) and logging:
@@ -243,7 +288,7 @@ def internal_criterion_and_derivative_template(
         )
 
     res = _get_output_for_optimizer(
-        new_criterion, new_derivative, task, algorithm_info, direction
+        new_criterion, new_derivative, task, algo_info, direction
     )
     return res
 
@@ -291,12 +336,12 @@ def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
     return to_dos
 
 
-def _penalty_and_derivative(x, first_eval, error_penalty, algorithm_info):
+def _penalty_and_derivative(x, first_eval, error_penalty, algo_info):
     constant = error_penalty["constant"]
     slope = error_penalty["slope"]
     x0 = first_eval["internal_params"]
 
-    primary = algorithm_info["primary_criterion_entry"]
+    primary = algo_info.primary_criterion_entry
 
     if primary == "value":
         penalty = _penalty_value(x, constant, slope, x0)
@@ -360,10 +405,10 @@ def _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_s
     cache[x_hash] = cache_entry
 
 
-def _check_and_harmonize_criterion_output(output, algorithm_info):
+def _check_and_harmonize_criterion_output(output, algo_info):
 
-    algo_name = algorithm_info.get("name", "your algorithm")
-    primary = algorithm_info["primary_criterion_entry"]
+    algo_name = getattr(algo_info, "name", "your algorithm")
+    primary = algo_info.primary_criterion_entry
 
     if output is not None:
         if np.isscalar(output):
@@ -385,8 +430,8 @@ def _check_and_harmonize_criterion_output(output, algorithm_info):
     return output
 
 
-def _check_and_harmonize_derivative(derivative, algorithm_info):
-    primary = algorithm_info["primary_criterion_entry"]
+def _check_and_harmonize_derivative(derivative, algo_info):
+    primary = algo_info.primary_criterion_entry
 
     if not isinstance(derivative, dict) and derivative is not None:
         derivative = {primary: derivative}
@@ -460,22 +505,30 @@ def _log_new_evaluations(
 
 
 def _get_output_for_optimizer(
-    new_criterion, new_derivative, task, algorithm_info, direction
+    new_criterion, new_derivative, task, algo_info, direction
 ):
-    primary = algorithm_info["primary_criterion_entry"]
+    primary = algo_info.primary_criterion_entry
 
     if "criterion" in task:
         if primary != "dict":
             crit = new_criterion[primary]
-            crit = crit if np.isscalar(crit) else np.array(crit)
+            crit = float(crit) if np.isscalar(crit) else np.array(crit).astype(float)
             crit = crit if direction == "minimize" else -crit
         else:
-            crit = new_criterion
+            crit = new_criterion.copy()
+            if "value" in crit:
+                crit["value"] = float(crit["value"])
+            if "contributions" in crit:
+                crit["contributions"] = np.array(crit["contributions"]).astype(float)
+            if "root_contributions" in crit:
+                crit["root_contributions"] = np.array(
+                    crit["root_contributions"]
+                ).astype(float)
             if direction == "maximize":
                 crit = switch_sign(crit)
 
     if "derivative" in task:
-        deriv = np.array(new_derivative[primary])
+        deriv = np.array(new_derivative[primary]).astype(float)
         deriv = deriv if direction == "minimize" else -deriv
 
     if task == "criterion_and_derivative":
