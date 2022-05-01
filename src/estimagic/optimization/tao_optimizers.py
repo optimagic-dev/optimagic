@@ -3,6 +3,8 @@ import functools
 
 import numpy as np
 from estimagic.config import IS_PETSC4PY_INSTALLED
+from estimagic.decorators import mark_minimizer
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_SCALED_GRADIENT_TOLERANCE
@@ -14,16 +16,15 @@ try:
 except ImportError:
     pass
 
-POUNDERS_ALGO_INFO = {
-    "primary_criterion_entry": "root_contributions",
-    "parallelizes": False,
-    "needs_scaling": True,
-    "name": "tao_pounders",
-}
 
-
+@mark_minimizer(
+    name="tao_pounders",
+    primary_criterion_entry="root_contributions",
+    is_available=IS_PETSC4PY_INSTALLED,
+    needs_scaling=True,
+)
 def tao_pounders(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -39,25 +40,18 @@ def tao_pounders(
     For details see :ref:`tao_algorithm`.
     """
     if not IS_PETSC4PY_INSTALLED:
-        raise NotImplementedError(
-            "The petsc4py package is not installed and required for 'tao_pounders'. If "
-            "you are using Linux or MacOS, install the package with 'conda install -c "
-            "conda-forge petsc4py. The package is not available on Windows."
+        raise NotInstalledError(
+            "The 'tao_pounders' algorithm requires the petsc4py package to be "
+            "installed. If you are using Linux or MacOS, install the package with "
+            "'conda install -c conda-forge petsc4py. The package is not available on "
+            "Windows. Windows users can use estimagics 'pounders' algorithm instead."
         )
-
-    func = functools.partial(
-        criterion_and_derivative,
-        task="criterion",
-        algorithm_info=POUNDERS_ALGO_INFO,
-    )
 
     x = _initialise_petsc_array(x)
     # We need to know the number of contributions of the criterion value to allocate the
     # array.
     n_errors = len(
-        criterion_and_derivative.keywords["first_criterion_evaluation"]["output"][
-            "root_contributions"
-        ]
+        criterion.keywords["first_criterion_evaluation"]["output"]["root_contributions"]
     )
     residuals_out = _initialise_petsc_array(n_errors)
 
@@ -80,7 +74,7 @@ def tao_pounders(
              f: Petsc object in which we save the current function value.
 
         """
-        resid_out.array = func(x.array)
+        resid_out.array = criterion(x.array)
 
     # Set the procedure for calculating the objective. This part has to be changed if we
     # want more than pounders.

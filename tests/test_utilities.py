@@ -1,13 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import IS_CYIPOPT_INSTALLED
-from estimagic.config import IS_DFOLS_INSTALLED
-from estimagic.config import IS_FIDES_INSTALLED
-from estimagic.config import IS_PETSC4PY_INSTALLED
-from estimagic.config import IS_PYBOBYQA_INSTALLED
-from estimagic.config import IS_PYGMO_INSTALLED
-from estimagic.optimization import AVAILABLE_ALGORITHMS
 from estimagic.utilities import calculate_trustregion_initial_radius
 from estimagic.utilities import chol_params_to_lower_triangular_matrix
 from estimagic.utilities import cov_matrix_to_params
@@ -173,15 +166,3 @@ def test_initial_trust_radius_large_x():
     expected = 2.05
     res = calculate_trustregion_initial_radius(x)
     assert expected == pytest.approx(res, abs=1e-8)
-
-
-def test_available_algorithms():
-    present_algo_names = AVAILABLE_ALGORITHMS.keys()
-    assert "scipy_lbfgsb" in present_algo_names
-    assert ("nag_dfols" in present_algo_names) is IS_DFOLS_INSTALLED
-    assert ("tao_pounders" in present_algo_names) is IS_PETSC4PY_INSTALLED
-    assert ("nag_pybobyqa" in present_algo_names) is IS_PYBOBYQA_INSTALLED
-    assert ("pygmo_gaco" in present_algo_names) is IS_PYGMO_INSTALLED
-    assert ("ipopt" in present_algo_names) is IS_CYIPOPT_INSTALLED
-    assert ("fides" in present_algo_names) is IS_FIDES_INSTALLED
-    assert "get_scipy_bounds" not in present_algo_names

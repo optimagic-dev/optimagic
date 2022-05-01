@@ -1,14 +1,15 @@
+import functools
 import inspect
 import warnings
 from functools import partial
 
 import numpy as np
 from estimagic.logging.database_utilities import update_row
-from estimagic.optimization import AVAILABLE_ALGORITHMS
+from estimagic.optimization import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
 
 
-def get_algorithm(
+def get_algorithm_and_algo_info(
     algorithm,
     lower_bounds,
     upper_bounds,
@@ -36,7 +37,7 @@ def get_algorithm(
         callable: The algorithm.
 
     """
-    internal_algorithm, algo_name = _process_user_algorithm(algorithm)
+    internal_algorithm, algo_name, algo_info = _process_user_algorithm(algorithm)
 
     internal_options = _adjust_options_to_algorithm(
         algo_options=algo_options,
@@ -48,14 +49,13 @@ def get_algorithm(
 
     partialled_algorithm = partial(internal_algorithm, **internal_options)
 
-    algorithm = partial(
-        _algorithm_with_logging_template,
-        algorithm=partialled_algorithm,
+    algorithm = _add_logging_to_algorithm(
+        partialled_algorithm,
         logging=logging,
         db_kwargs=db_kwargs,
     )
 
-    return algorithm
+    return algorithm, algo_info
 
 
 def _process_user_algorithm(algorithm):
@@ -72,68 +72,65 @@ def _process_user_algorithm(algorithm):
     if isinstance(algorithm, str):
         algo_name = algorithm
     else:
-        algo_name = getattr(algorithm, "name", "your algorithm")
+        algo_name = getattr(algorithm, "__name__", "your algorithm")
 
     if isinstance(algorithm, str):
         try:
-            algorithm = AVAILABLE_ALGORITHMS[algorithm]
+            # Use ALL_ALGORITHMS and not just AVAILABLE_ALGORITHMS such that the
+            # algorithm specific error message with installation instruction will be
+            # reached if an optional dependency is not installed.
+            algorithm = ALL_ALGORITHMS[algorithm]
         except KeyError:
-            proposed = propose_alternatives(algorithm, list(AVAILABLE_ALGORITHMS))
+            proposed = propose_alternatives(algorithm, list(ALL_ALGORITHMS))
             raise ValueError(
                 f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
             ) from None
 
-    return algorithm, algo_name
+    algo_info = algorithm._algorithm_info
+
+    return algorithm, algo_name, algo_info
 
 
-def _algorithm_with_logging_template(
-    criterion_and_derivative,
-    x,
-    step_id,
-    algorithm,
-    logging,
-    db_kwargs,
-):
-    """Wrapped algorithm that logs its status.
+def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
+    def decorator_add_logging_to_algorithm(algorithm):
+        @functools.wraps(algorithm)
+        def wrapper_add_logging_algorithm(**kwargs):
+            step_id = int(kwargs["step_id"])
 
-    Args:
-        criterion_and_derivative (callable): Version of the
-            ``internal_criterion_and_derivative_template`` all arguments except for
-            ``x``, ``task`` and ``fixed_log_data`` have been partialled in.
-        x (np.ndarray): Parameter vector.
-        step_id (int): Internal id of the optimization step.
-        logging (bool): Whether logging is used.
-        algorithm (callable): The internal algorithm where all argument except for
-            ``x`` and ``criterion_and_derivative`` are already partialled in.
-        db_kwargs (dict): Dict with the entries "database", "path" and "fast_logging"
+            _kwargs = {k: v for k, v in kwargs.items() if k != "step_id"}
 
+            if logging:
+                update_row(
+                    data={"status": "running"},
+                    rowid=step_id,
+                    table_name="steps",
+                    **db_kwargs,
+                )
 
-    Returns:
-        dict: Same result as internal algorithm.
+            for task in ["criterion", "derivative", "criterion_and_derivative"]:
+                if task in _kwargs:
+                    _kwargs[task] = partial(
+                        _kwargs[task], fixed_log_data={"step": step_id}
+                    )
 
-    """
+            res = algorithm(**_kwargs)
 
-    if logging:
-        step_id = int(step_id)
-        update_row(
-            data={"status": "running"},
-            rowid=step_id,
-            table_name="steps",
-            **db_kwargs,
-        )
+            if logging:
+                update_row(
+                    data={"status": "complete"},
+                    rowid=step_id,
+                    table_name="steps",
+                    **db_kwargs,
+                )
 
-    func = partial(criterion_and_derivative, fixed_log_data={"step": step_id})
-    res = algorithm(func, x)
+            return res
 
-    if logging:
-        update_row(
-            data={"status": "complete"},
-            rowid=step_id,
-            table_name="steps",
-            **db_kwargs,
-        )
+        return wrapper_add_logging_algorithm
 
-    return res
+    if callable(algorithm):
+        return decorator_add_logging_to_algorithm(algorithm)
+    else:
+        return decorator_add_logging_to_algorithm
 
 
 def _adjust_options_to_algorithm(

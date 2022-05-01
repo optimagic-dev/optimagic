@@ -1,4 +1,4 @@
-name: Continuous Integration Workflow
+name: main
 
 # Automatically cancel a previous run.
 concurrency:
