@@ -12,6 +12,9 @@ from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from estimagic.visualization.convergence_plot import convergence_plot
 from estimagic.visualization.derivative_plot import derivative_plot
+from estimagic.visualization.estimation_table import estimation_table
+from estimagic.visualization.estimation_table import render_html
+from estimagic.visualization.estimation_table import render_latex
 from estimagic.visualization.lollipop_plot import lollipop_plot
 from estimagic.visualization.profile_plot import profile_plot
 from estimagic.visualization.slice_plot import slice_plot
@@ -42,5 +45,8 @@ __all__ = [
     "lollipop_plot",
     "derivative_plot",
     "slice_plot",
+    "estimation_table",
+    "render_html",
+    "render_latex",
     "__version__",
 ]

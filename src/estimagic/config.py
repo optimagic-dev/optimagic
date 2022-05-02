@@ -81,6 +81,14 @@ else:
     IS_FIDES_INSTALLED = True
 
 
+try:
+    import jax  # noqa: F401
+except ImportError:
+    IS_JAX_INSTALLED = False
+else:
+    IS_JAX_INSTALLED = True
+
+
 # =================================================================================
 # Dashboard Defaults
 # =================================================================================

@@ -9,8 +9,7 @@ from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.visualization.plot_help import create_grid_plot
 from estimagic.visualization.plot_help import create_ind_dict
 
-
-warnings.filterwarnings("ignore")
+import pandas as pd
 
 
 def derivative_plot(
@@ -240,5 +239,6 @@ def _select_eval_with_lowest_and_highest_step(df_evals, sign, dim_x, dim_f):
     """
     df = df_evals.loc[(sign, slice(None), dim_x, dim_f), ["step", "eval"]]
     df = df.dropna().sort_index()
-    out = df.head(1).append(df.tail(1)).values.copy()
+    out = pd.concat([df.head(1), df.tail(1)]).to_numpy()
+
     return out

@@ -101,6 +101,7 @@ def f3(x):
 example_functions = [(f1, np.ones(3)), (f2, np.ones(2)), (f3, np.ones(1))]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("func_and_params", example_functions)
 @pytest.mark.parametrize("n_steps", range(2, 5))
 def test_derivative_plot(func_and_params, n_steps):

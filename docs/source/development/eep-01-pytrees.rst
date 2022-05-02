@@ -332,7 +332,7 @@ in terms of pytrees and look at a JAX calculated jacobian in both cases:
 .. code-block:: python
 
     def square(x):
-        return x ** 2
+        return x**2
 
 
     x = jnp.array([1, 2, 3, 4, 5, 6.0])
@@ -832,17 +832,17 @@ We suggest the following work packages and tentative order in which we tackle th
 +----------------------------------------------------+------------------------+--------+
 | Basic tree functions in pybaum                     | :ghuser:`janosg`       | ✅     |
 +----------------------------------------------------+------------------------+--------+
-| Conversion functions between flat and nested 2d    | :ghuser:`janosg`       | ❌     |
-| representations of jacobians, covariance matrices, |                        |        |
-| etc. (mostly in pybaum)                            |                        |        |
+| Conversion functions between flat and nested 2d    | :ghuser:`janosg`       | ✅     |
+| representations of jacobians, covariance matrices, | :ghuser:`timmens`      |        |
+| etc.                                               |                        |        |
 +----------------------------------------------------+------------------------+--------+
 | Better name and group functions for dashboard      |                        | ❌     |
 +----------------------------------------------------+------------------------+--------+
 | Pytree support for optimization                    | :ghuser:`janosg`       | ❌     |
 +----------------------------------------------------+------------------------+--------+
-| Pytree support for first_derivative                | :ghuser:`timmens`      | ❌     |
+| Pytree support for first_derivative                | :ghuser:`timmens`      | ✅     |
 +----------------------------------------------------+------------------------+--------+
-| Pytree support for second_derivative               | :ghuser:`timmens`      | ❌     |
+| Pytree support for second_derivative               | :ghuser:`timmens`      | ✅     |
 +----------------------------------------------------+------------------------+--------+
 | Pytree support in ML estimation                    |                        | ❌     |
 +----------------------------------------------------+------------------------+--------+

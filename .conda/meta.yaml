@@ -37,7 +37,6 @@ requirements:
     - seaborn
     - plotly
     - dill
-    - chaospy
     - pybaum
 
 test:

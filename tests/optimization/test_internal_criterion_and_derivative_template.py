@@ -4,6 +4,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.decorators import AlgoInfo
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.examples.criterion_functions import sos_criterion_and_gradient
 from estimagic.examples.criterion_functions import sos_dict_criterion
@@ -66,12 +67,14 @@ def base_inputs():
         "params": params,
         "reparametrize_from_internal": reparametrize_from_internal,
         "convert_derivative": convert_derivative,
-        "algorithm_info": {
-            "primary_criterion_entry": "value",
-            "parallelizes": False,
-            "needs_scaling": False,
-            "name": "my_algorithm",
-        },
+        "algo_info": AlgoInfo(
+            name="my_algorithm",
+            primary_criterion_entry="value",
+            parallelizes=False,
+            needs_scaling=False,
+            disable_cache=False,
+            is_available=True,
+        ),
         "numdiff_options": {},
         "logging": False,
         "db_kwargs": {"database": False, "fast_logging": False, "path": "logging.db"},
@@ -153,7 +156,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
         direction=direction,
     )
 
-    with pytest.warns(None):
+    with pytest.warns():
         calc_criterion, calc_derivative = internal_criterion_and_derivative_template(
             task="criterion_and_derivative", **inputs
         )

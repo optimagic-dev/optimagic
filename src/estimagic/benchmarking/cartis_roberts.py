@@ -17,6 +17,8 @@ from functools import partial
 
 import numpy as np
 from estimagic.benchmarking.more_wild import brown_almost_linear
+from estimagic.benchmarking.more_wild import linear_full_rank
+from estimagic.benchmarking.more_wild import linear_rank_one
 from estimagic.benchmarking.more_wild import watson
 
 
@@ -717,5 +719,21 @@ CARTIS_ROBERTS_PROBLEMS = {
         "solution_x": None,
         "start_criterion": 1.831687e5,
         "solution_criterion": 0,
+    },
+    "arglale": {
+        # arglale is the same as linear_full_rank with specific settings
+        "criterion": partial(linear_full_rank, dim_out=400),
+        "start_x": np.ones(100),
+        "solution_x": None,
+        "start_criterion": 700,
+        "solution_criterion": 300,
+    },
+    "arglble": {
+        # arglble is the same as linear_rank_one with specific settings
+        "criterion": partial(linear_rank_one, dim_out=400),
+        "start_x": np.ones(100),
+        "solution_x": None,
+        "start_criterion": 5.460944e14,
+        "solution_criterion": 99.62547,
     },
 }

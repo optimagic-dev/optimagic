@@ -237,7 +237,7 @@ class LeastSquaresHistory:
     def get_best_residuals(self):
         return self.get_residuals(index=self.best_index)
 
-    def get_best_critvals(self):
+    def get_best_critval(self):
         return self.get_critvals(index=self.best_index)
 
     def get_best_centered_entries(self, center_info):
