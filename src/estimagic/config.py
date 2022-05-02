@@ -1,5 +1,8 @@
 from pathlib import Path
 
+import plotly.express as px
+
+
 DEFAULT_SEED = 5471
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
@@ -12,6 +15,7 @@ TEST_FIXTURES_DIR = (
 
 
 PLOTLY_TEMPLATE = "plotly_white"
+PLOTLY_PALETTE = px.colors.qualitative.Set2
 
 DEFAULT_N_CORES = 1
 

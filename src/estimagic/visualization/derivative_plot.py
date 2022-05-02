@@ -3,8 +3,8 @@ import itertools
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
+from estimagic.config import PLOTLY_PALETTE
 from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.visualization.plotting_utilities import create_grid_plot
 from estimagic.visualization.plotting_utilities import create_ind_dict
@@ -14,7 +14,7 @@ def derivative_plot(
     derivative_result,
     combine_plots_in_grid=True,
     template=PLOTLY_TEMPLATE,
-    palette=px.colors.qualitative.Plotly,
+    palette=PLOTLY_PALETTE,
 ):
     """Plot evaluations and derivative estimates.
 
@@ -97,7 +97,7 @@ def derivative_plot(
             mode="markers",
             name="Function Evaluation",
             legendgroup=1,
-            marker={"color": palette[0]},
+            marker={"color": "black"},
         )
         g_ind.append(trace_func_evals)
 
@@ -111,12 +111,12 @@ def derivative_plot(
                 mode="lines",
                 name=method,
                 legendgroup=2 + i,
-                line={"color": palette[2 + i], "width": 3},
+                line={"color": palette[i], "width": 5},
             )
             g_ind.append(trace_method)
 
         # fill area
-        for sign, cmap_id in zip([1, -1], [2, 4]):  # cmap_id of ['forward', 'backward']
+        for sign, cmap_id in zip([1, -1], [0, 2]):  # cmap_id of ['forward', 'backward']
             _x_y = _select_eval_with_lowest_and_highest_step(func_evals, sign, row, col)
             diff = _x_y - np.array([0, y0])
             slope = diff[:, 1] / diff[:, 0]
@@ -148,7 +148,7 @@ def derivative_plot(
             mode="lines",
             name="Best Estimate",
             legendgroup=2,
-            line={"dash": "dash", "color": palette[1], "width": 4},
+            line={"color": "black", "width": 2},
         )
         g_ind.append(trace_best_estimate)
 

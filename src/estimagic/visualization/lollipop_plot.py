@@ -2,8 +2,8 @@ import math
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
+from estimagic.config import PLOTLY_PALETTE
 from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.visualization.plotting_utilities import create_grid_plot
 from estimagic.visualization.plotting_utilities import create_ind_dict
@@ -19,7 +19,7 @@ def lollipop_plot(
     barplot_kws=None,
     combine_plots_in_grid=True,
     template=PLOTLY_TEMPLATE,
-    palette=px.colors.qualitative.Plotly,
+    palette=PLOTLY_PALETTE,
 ):
     """Make a lollipop plot.
 
