@@ -1,11 +1,18 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from estimagic.visualization.colors import get_colors
+import plotly.express as px
+from estimagic.config import PLOTLY_TEMPLATE
 
 
-def plot_univariate_effects(
-    criterion, params, *, n_gridpoints=21, n_random_values=2, plots_per_row=2, seed=5471
+def slice_plot(
+    criterion,
+    params,
+    n_gridpoints=21,
+    n_random_values=2,
+    plots_per_row=2,
+    combine_plots_in_grid=True,
+    seed=5471,
+    template=PLOTLY_TEMPLATE,
 ):
     """Plot criterion along coordinates at given and random values.
 
@@ -19,9 +26,17 @@ def plot_univariate_effects(
         n_random_values (int): Number of random parameter vectors that
             are used as center of the plots.
         plots_per_row (int): How many plots are plotted per row.
+        combine_plots_in_grid (bool): decide whether to return a one
+        figure containing subplots for each factor pair or a dictionary
+        of individual plots. Default True.
+        template (str): The template for the figure. Default is "plotly_white".
+
+    Returns:
+        plotly.Figure: The grid plot or dict of individual plots
 
 
     """
+
     np.random.seed(seed)
     if (
         "lower_bound" not in params.columns
@@ -70,19 +85,47 @@ def plot_univariate_effects(
 
     plot_data["Criterion Value"] = function_values
 
-    colors = get_colors("categorical", 1 + n_random_values)
-    g = sns.FacetGrid(
-        plot_data,
-        col="name",
-        hue="value_identifier",
-        col_wrap=plots_per_row,
-        palette=colors,
-        aspect=1.5,
-        sharex=False,
-    )
-    g.map(sns.lineplot, "Parameter Value", "Criterion Value", linewidth=2)
+    # common plotting parameters
+    kws = {"x": "Parameter Value", "y": "Criterion Value", "color": "value_identifier"}
 
-    return g
+    # Plot with subplots
+    if combine_plots_in_grid:
+
+        g = px.line(
+            plot_data,
+            **kws,
+            facet_col="name",
+            facet_col_wrap=plots_per_row,
+            width=400 * plots_per_row,
+            height=200 * len(plot_data["name"].unique()) / plots_per_row,
+        )
+        g.update_layout(showlegend=False, template=template)
+
+        out = g
+
+    # Dictionary for individual plots
+    if not combine_plots_in_grid:
+        ind_dict = {}
+        for i in plot_data["name"].unique():
+            ind = px.line(
+                plot_data[plot_data["name"] == i],
+                **kws,
+            )
+            ind.update_layout(
+                showlegend=False,
+                title="name=" + str(i),
+                height=300,
+                width=500,
+                title_x=0.5,
+                template=template,
+            )
+            # adding to dictionary
+            key = "name=" + str(i)
+            ind_dict[key] = ind
+
+        out = ind_dict
+
+    return out
 
 
 def _get_plot_data(params, use_random_value, value_identifier, n_gridpoints):

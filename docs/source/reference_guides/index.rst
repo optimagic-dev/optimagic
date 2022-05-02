@@ -18,9 +18,9 @@ Optimization
     .. autofunction:: minimize
 
 
-.. dropdown:: plot_univariate_effects
+.. dropdown:: slice_plot
 
-    .. autofunction:: plot_univariate_effects
+    .. autofunction:: slice_plot
 
 
 

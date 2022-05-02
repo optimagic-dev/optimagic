@@ -60,7 +60,9 @@ def bootstrap(
         batch_evaluator=batch_evaluator,
     )
 
-    out = bootstrap_from_outcomes(data, outcome, estimates, ci_method, alpha, n_cores)
+    out = bootstrap_from_outcomes(
+        data, outcome, estimates, ci_method=ci_method, alpha=alpha, n_cores=n_cores
+    )
 
     return out
 
