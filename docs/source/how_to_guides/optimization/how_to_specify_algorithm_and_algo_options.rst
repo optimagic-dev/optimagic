@@ -3056,6 +3056,7 @@ fides>=0.7.4``, make sure you have at least 0.7.1).
     gradient should be added to the set of possible stepback proposals. Default is
     False.
 
+
 The NLOPT Optimizers (nlopt)
 -----------------------------
 
