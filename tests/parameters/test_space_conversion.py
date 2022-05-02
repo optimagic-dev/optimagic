@@ -4,7 +4,6 @@ from estimagic import first_derivative
 from estimagic.parameters.space_conversion import get_space_converter
 from estimagic.parameters.tree_conversion import FlatParams
 from numpy.testing import assert_array_almost_equal as aaae
-from numpy.testing import assert_array_equal as aae
 
 
 def _get_test_case_no_constraint():
@@ -42,10 +41,222 @@ def _get_test_case_fixed(with_value):
     return constraints, fp, internal
 
 
+def _get_test_case_increasing(as_one):
+    fp = FlatParams(
+        values=np.array([0.1, 2.2, 2.3, 10.1, -1]),
+        lower_bounds=np.full(5, -np.inf),
+        upper_bounds=np.full(5, np.inf),
+        names=list("abcde"),
+    )
+
+    internal = FlatParams(
+        values=np.array([0.1, -2.1, -0.1, -7.8, -1]),
+        lower_bounds=np.full(5, -np.inf),
+        upper_bounds=np.array([np.inf, 0, 0, 0, np.inf]),
+        names=None,
+    )
+
+    if as_one:
+        constraints = [{"type": "increasing", "index": [0, 1, 2, 3]}]
+    else:
+        constraints = [
+            {"type": "increasing", "index": [0, 1, 2]},
+            {"type": "increasing", "index": [2, 3]},
+        ]
+
+    return constraints, fp, internal
+
+
+def _get_test_case_decreasing(as_one):
+    fp = FlatParams(
+        values=np.array([0.1, 2.2, 2.3, 10.1, -1]),
+        lower_bounds=np.full(5, -np.inf),
+        upper_bounds=np.full(5, np.inf),
+        names=list("abcde"),
+    )
+
+    internal = FlatParams(
+        values=np.array([0.1, -2.1, -0.1, -7.8, -1]),
+        lower_bounds=np.full(5, -np.inf),
+        upper_bounds=np.array([np.inf, 0, 0, 0, np.inf]),
+        names=None,
+    )
+
+    if as_one:
+        constraints = [{"type": "decreasing", "index": [3, 2, 1, 0]}]
+    else:
+        constraints = [
+            {"type": "decreasing", "index": [2, 1, 0]},
+            {"type": "decreasing", "index": [3, 2]},
+        ]
+
+    return constraints, fp, internal
+
+
+def _get_test_case_equality(as_one):
+    fp = FlatParams(
+        values=np.array([0, 1.5, 1.5, 0, 1.5, 1]),
+        lower_bounds=np.array([-10, 1, 0.9, -np.inf, -np.inf, -10]),
+        upper_bounds=np.full(6, np.inf),
+        names=list("abcdef"),
+    )
+
+    internal = FlatParams(
+        values=np.array([0, 1.5, 0, 1]),
+        lower_bounds=np.array([-10, 1, -np.inf, -10]),
+        upper_bounds=np.full(4, np.inf),
+        names=None,
+    )
+
+    if as_one:
+        constraints = [{"type": "equality", "index": [1, 2, 4]}]
+    else:
+        constraints = [
+            {"type": "equality", "index": [1, 2]},
+            {"type": "equality", "index": [1, 4]},
+        ]
+
+    return constraints, fp, internal
+
+
+def _get_test_case_probability():
+    fp = FlatParams(
+        values=np.array([0.1, 0.2, 0.2, 0.5, 10]),
+        lower_bounds=np.full(5, -np.inf),
+        upper_bounds=np.full(5, np.inf),
+        names=list("abcde"),
+    )
+
+    internal = FlatParams(
+        values=np.array([0.2, 0.4, 0.4, 10]),
+        lower_bounds=np.array([0, 0, 0, -np.inf]),
+        upper_bounds=np.full(4, np.inf),
+        names=None,
+    )
+
+    constraints = [{"type": "probability", "index": [0, 1, 2, 3]}]
+
+    return constraints, fp, internal
+
+
+def _get_test_case_uncorrelated_covariance():
+    fp = FlatParams(
+        values=np.array([1, 0, 4, 0, 0, 9, 10]),
+        lower_bounds=np.full(7, -np.inf),
+        upper_bounds=np.full(7, np.inf),
+        names=list("abcdefg"),
+    )
+
+    internal = FlatParams(
+        values=np.array([1, 4, 9, 10]),
+        lower_bounds=np.array([0, 0, 0, -np.inf]),
+        upper_bounds=np.full(4, np.inf),
+        names=None,
+    )
+
+    constraints = [
+        {"type": "covariance", "index": [0, 1, 2, 3, 4, 5]},
+        {"type": "fixed", "index": [1, 3, 4], "value": 0},
+    ]
+
+    return constraints, fp, internal
+
+
+def _get_test_case_covariance():
+    fp = FlatParams(
+        values=np.array([1, -0.2, 1.2, -0.2, 0.1, 1.3, 0.1, -0.05, 0.2, 1, 10]),
+        lower_bounds=np.full(11, -np.inf),
+        upper_bounds=np.full(11, np.inf),
+        names=list("abcdefghijk"),
+    )
+
+    internal = FlatParams(
+        values=np.array(
+            [
+                1,
+                -0.2,
+                1.07703296,
+                -0.2,
+                0.0557086,
+                1.12111398,
+                0.1,
+                -0.0278543,
+                0.19761748,
+                0.97476739,
+                10,
+            ]
+        ),
+        lower_bounds=np.array(
+            [0, -np.inf, 0, -np.inf, -np.inf, 0, -np.inf, -np.inf, -np.inf, 0, -np.inf]
+        ),
+        upper_bounds=np.full(11, np.inf),
+        names=None,
+    )
+
+    constraints = [{"type": "covariance", "index": np.arange(10)}]
+
+    return constraints, fp, internal
+
+
+def _get_test_case_normalized_covariance():
+    fp = FlatParams(
+        values=np.array([4, 0.1, 2, 0.2, 0.3, 3, 10]),
+        lower_bounds=np.full(7, -np.inf),
+        upper_bounds=np.full(7, np.inf),
+        names=list("abcdefg"),
+    )
+
+    internal = FlatParams(
+        values=np.array([0.05, 1.4133294025, 0.1, 0.2087269956, 1.7165177078, 10]),
+        lower_bounds=[-np.inf, 0, -np.inf, -np.inf, 0, -np.inf],
+        upper_bounds=np.full(6, np.inf),
+        names=None,
+    )
+
+    constraints = [
+        {"type": "covariance", "index": np.arange(6)},
+        {"type": "fixed", "index": [0], "value": 4},
+    ]
+
+    return constraints, fp, internal
+
+
+def _get_test_case_sdcorr():
+    fp = FlatParams(
+        values=np.array([2, 1.5, 3, 0.2, 0.15, 0.33, 10]),
+        lower_bounds=np.full(7, -np.inf),
+        upper_bounds=np.full(7, np.inf),
+        names=list("abcdefg"),
+    )
+
+    internal = FlatParams(
+        values=np.array([2, 0.3, 1.46969385, 0.45, 0.91855865, 2.82023935, 10]),
+        lower_bounds=np.array([0, -np.inf, 0, -np.inf, -np.inf, 0, -np.inf]),
+        upper_bounds=np.full(7, np.inf),
+        names=None,
+    )
+
+    constraints = [{"type": "sdcorr", "index": np.arange(6)}]
+
+    return constraints, fp, internal
+
+
 TEST_CASES = {
     "no_constraints": _get_test_case_no_constraint(),
     "fixed_at_start": _get_test_case_fixed(with_value=False),
     "fixed_at_value": _get_test_case_fixed(with_value=True),
+    "one_increasing": _get_test_case_increasing(as_one=True),
+    "overlapping_increasing": _get_test_case_increasing(as_one=False),
+    "one_decreasing": _get_test_case_decreasing(as_one=True),
+    "overlapping_decreasing": _get_test_case_decreasing(as_one=False),
+    "one_equality": _get_test_case_equality(as_one=True),
+    "everlapping_equality": _get_test_case_equality(as_one=False),
+    "probability": _get_test_case_probability(),
+    "uncorrelated_covariance": _get_test_case_uncorrelated_covariance(),
+    "covariance": _get_test_case_covariance(),
+    "normalized_covariance": _get_test_case_normalized_covariance(),
+    "sdcorr": _get_test_case_sdcorr(),
+    # xxxx need more test for sdcorr (normalized, uncorrelated, ...)
 }
 
 
@@ -62,12 +273,12 @@ def test_space_converter_with_params(constraints, params, expected_internal):
         flat_constraints=constraints,
     )
 
-    aae(internal.values, expected_internal.values)
-    aae(internal.lower_bounds, expected_internal.lower_bounds)
-    aae(internal.upper_bounds, expected_internal.upper_bounds)
+    aaae(internal.values, expected_internal.values)
+    aaae(internal.lower_bounds, expected_internal.lower_bounds)
+    aaae(internal.upper_bounds, expected_internal.upper_bounds)
 
-    aae(converter.params_to_internal(params.values), expected_internal.values)
-    aae(converter.params_from_internal(expected_internal.values), params.values)
+    aaae(converter.params_to_internal(params.values), expected_internal.values)
+    aaae(converter.params_from_internal(expected_internal.values), params.values)
 
     numerical_jacobian = first_derivative(
         converter.params_from_internal, expected_internal.values
