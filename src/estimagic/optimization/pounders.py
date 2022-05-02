@@ -1,6 +1,5 @@
 """Implement the POUNDERS algorithm"""
 import warnings
-from copy import copy
 
 import estimagic.batch_evaluators as be
 import numpy as np
@@ -25,6 +24,9 @@ from estimagic.optimization.pounders_auxiliary import solve_subproblem
 from estimagic.optimization.pounders_auxiliary import (
     update_main_model_with_new_accepted_x,
 )
+from estimagic.optimization.pounders_auxiliary import (
+    update_model_indices_residual_model,
+)
 from estimagic.optimization.pounders_auxiliary import update_residual_model
 from estimagic.optimization.pounders_auxiliary import (
     update_residual_model_with_new_accepted_x,
@@ -47,9 +49,9 @@ def pounders(
     upper_bounds,
     convergence_absolute_gradient_tolerance=1e-8,
     convergence_relative_gradient_tolerance=1e-8,
-    convergence_scaled_gradient_tolerance=0,
+    convergence_scaled_gradient_tolerance=False,
     max_interpolation_points=None,
-    stopping_max_iterations=200,
+    stopping_max_iterations=2_000,
     trustregion_initial_radius=0.1,
     trustregion_minimal_radius=1e-6,
     trustregion_maximal_radius=1e6,
@@ -57,8 +59,8 @@ def pounders(
     trustregion_expansion_factor_successful=2,
     theta1=1e-5,
     theta2=1e-4,
-    trustregion_threshold_successful=0,
-    trustregion_threshold_very_successful=0.1,
+    trustregion_threshold_acceptance=0,
+    trustregion_threshold_successful=0.1,
     c1=None,
     c2=10,
     trustregion_subproblem_solver="bntr",
@@ -74,7 +76,7 @@ def pounders(
         batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
 
     if max_interpolation_points is None:
-        max_interpolation_points = 2 * x.shape[0] + 1
+        max_interpolation_points = 2 * len(x) + 1
 
     if c1 is None:
         c1 = np.sqrt(x.shape[0])
@@ -83,16 +85,13 @@ def pounders(
         trustregion_subproblem_options = {}
 
     default_options = {
-        "maxiter": 20,
-        "maxiter_steepest_descent": 5,
-        "step_size_newton": 1e-3,
-        "ftol_abs": 1e-8,
-        "ftol_scaled": 1e-8,
-        "xtol": 1e-8,
+        "maxiter": 50,
+        "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
-        "gtol_scaled": 1e-8,
-        "steptol": 1e-12,
+        "gtol_scaled": 0,
+        "gtol_abs_cg": 1e-8,
+        "gtol_rel_cg": 1e-6,
         "k_easy": 0.1,
         "k_hard": 0.2,
     }
@@ -109,7 +108,7 @@ def pounders(
         gtol_abs=convergence_absolute_gradient_tolerance,
         gtol_rel=convergence_relative_gradient_tolerance,
         gtol_scaled=convergence_scaled_gradient_tolerance,
-        n_maxinterp=max_interpolation_points,
+        maxinterp=max_interpolation_points,
         maxiter=stopping_max_iterations,
         delta=trustregion_initial_radius,
         delta_min=trustregion_minimal_radius,
@@ -118,23 +117,20 @@ def pounders(
         gamma1=trustregion_expansion_factor_successful,
         theta1=theta1,
         theta2=theta2,
-        eta0=trustregion_threshold_successful,
-        eta1=trustregion_threshold_very_successful,
+        eta0=trustregion_threshold_acceptance,
+        eta1=trustregion_threshold_successful,
         c1=c1,
         c2=c2,
         solver_sub=trustregion_subproblem_solver,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
-        maxiter_steepest_descent_sub=trustregion_subproblem_options[
-            "maxiter_steepest_descent"
+        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+            "maxiter_gradient_descent"
         ],
-        step_size_newton_sub=trustregion_subproblem_options["step_size_newton"],
-        ftol_abs_sub=trustregion_subproblem_options["ftol_abs"],
-        ftol_scaled_sub=trustregion_subproblem_options["ftol_scaled"],
-        xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
-        steptol_sub=trustregion_subproblem_options["steptol"],
+        gtol_abs_conjugate_gradient_sub=trustregion_subproblem_options["gtol_abs_cg"],
+        gtol_rel_conjugate_gradient_sub=trustregion_subproblem_options["gtol_rel_cg"],
         k_easy_sub=trustregion_subproblem_options["k_easy"],
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         batch_evaluator=batch_evaluator,
@@ -152,7 +148,7 @@ def internal_solve_pounders(
     gtol_abs,
     gtol_rel,
     gtol_scaled,
-    n_maxinterp,
+    maxinterp,
     maxiter,
     delta,
     delta_min,
@@ -167,15 +163,12 @@ def internal_solve_pounders(
     c2,
     solver_sub,
     maxiter_sub,
-    maxiter_steepest_descent_sub,
-    step_size_newton_sub,
-    ftol_abs_sub,
-    ftol_scaled_sub,
-    xtol_sub,
+    maxiter_gradient_descent_sub,
     gtol_abs_sub,
     gtol_rel_sub,
     gtol_scaled_sub,
-    steptol_sub,
+    gtol_abs_conjugate_gradient_sub,
+    gtol_rel_conjugate_gradient_sub,
     k_easy_sub,
     k_hard_sub,
     batch_evaluator,
@@ -186,7 +179,7 @@ def internal_solve_pounders(
     Args:
         criterion_and_derivative (callable): Function that returns criterion
             and derivative as a tuple.
-        x0 (np.ndarray): Initial guess of the parameter vector (starting points).
+        x0 (np.ndarray): Initial guess for the parameter vector (starting points).
         lower_bounds (np.ndarray): Lower bounds.
             Must have same length as the initial guess of the
             parameter vector. Equal to -1 if not provided by the user.
@@ -194,8 +187,15 @@ def internal_solve_pounders(
             Must have same length as the initial guess of the
             parameter vector. Equal to 1 if not provided by the user.
         gtol_abs (float): Convergence tolerance for the absolute gradient norm.
+            Stop if norm of the gradient is less than this.
         gtol_rel (float): Convergence tolerance for the relative gradient norm.
+            Stop if norm of the gradient relative to the criterion value is less
+            than this.
         gtol_scaled (float): Convergence tolerance for the scaled gradient norm.
+            Stop if norm of the gradient divided by norm of the gradient at the
+            initial parameters is less than this.
+        maxinterp (int): Maximum number of interpolation points.
+            Default is `2 * n + 1`, where `n` is the length of the parameter vector.
         maxiter (int): Maximum number of iterations. If reached, terminate.
         delta (float): Delta, initial trust-region radius.
         delta_min (float): Minimal trust-region radius.
@@ -205,42 +205,39 @@ def internal_solve_pounders(
             linar (i.e. "valid").
         gamma1 (float): Expansion factor of the trust-region radius in case the
             solution vector of the suproblem is accepted.
-        theta1 (float): Threshold for adding the current x candidate
+        theta1 (float): Threshold for adding the current candidate vector
             to the model. Function argument to find_affine_points().
-        theta2 (float): Threshold for adding the current x candidate
+        theta2 (float): Threshold for adding the current candidate vector
             to the model. Argument to get_interpolation_matrices_residual_model().
-        eta0 (float): First threshold for accepting the solution vector of the
-            subproblem as the best x candidate.
-        eta1 (float): Second threshold for accepting the solution vector of the
-            subproblem as the best x candidate.
+        eta0 (float): Threshold for accepting the solution vector of the trust-region
+            subproblem as the best candidate.
+        eta1 (float): Threshold for successfully accepting the solution vector of the
+            trust-region subproblem as the best candidate.
         c1 (float): Treshold for accepting the norm of our current x candidate.
             Equal to sqrt(n) by default. Argument to find_affine_points() in case
             the input array *model_improving_points* is zero.
-        c2 (int)): Treshold for accepting the norm of our current x candidate.
+        c2 (int)): Treshold for accepting the norm of our current candidate vector.
             Equal to 10 by default. Argument to find_affine_points() in case
             the input array *model_improving_points* is not zero.
-        solver_sub (str): Trust-region subsolver to use. Currently, two solvers
-            are supported:
-            - "BNTR" (default, supports bound constraints)
-            - "GQTPAR (does not support bound constraints)
+        solver_sub (str): Solver to use for the trust-region subproblem.
+            Two internal solvers are supported:
+            - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
+            - "gqtpar": (does not support bound constraints)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
-        maxiter_steepest_descent (int): Maximum number of steepest descent iterations
-            to perform when the trust-region subsolver BNTR is used.
-        step_size_newton (float): Parameter to scale the size of the newton step
-            when the trust-region subsolver BNTR is used.
-        ftol_abs_sub (float): Convergence tolerance for the absolute difference
-            between f(k+1) - f(k) in trust-region subproblem ("BNTR").
-        ftol_scaled_sub (float): Convergence tolerance for the scaled difference
-            between f(k+1) - f(k) in trust-region subproblem ("BNTR").
-        xtol_sub (float): Tolerance for solution vector x.
-        xtol_sub (float): Convergence tolerance for the absolute difference
-            between max(x(k+1) - x(k)) in trust-region subproblem ("BNTR").
+        maxiter_gradient_descent_sub (int): Maximum number of gradient descent
+            iterations to perform when the trust-region subsolver BNTR is used.
         gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
             in the trust-region subproblem ("BNTR").
         gtol_rel_sub (float): Convergence tolerance for the relative gradient norm
             in the trust-region subproblem ("BNTR").
         gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm
             in the trust-region subproblem ("BNTR").
+        gtol_abs_conjugate_gradient_sub (float): Convergence tolerance for the
+            absolute gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
+        gtol_rel_conjugate_gradient_sub (float): Convergence tolerance for the
+            relative gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
         k_easy_sub (float): topping criterion for the "easy" case in the trust-region
             subproblem ("GQTPAR").
         k_hard_sub (float): Stopping criterion for the "hard" case in the trust-region
@@ -266,8 +263,8 @@ def internal_solve_pounders(
     """
     history = LeastSquaresHistory()
 
-    n = x0.shape[0]
-    model_indices = np.zeros(n_maxinterp, dtype=int)
+    n = len(x0)
+    model_indices = np.zeros(maxinterp, dtype=int)
 
     n_last_modelpoints = 0
 
@@ -277,7 +274,7 @@ def internal_solve_pounders(
 
     xs = [x0]
     for i in range(n):
-        x1 = np.copy(x0)
+        x1 = x0.copy()
         x1[i] += delta
         xs.append(x1)
 
@@ -298,29 +295,27 @@ def internal_solve_pounders(
     gradient_norm_initial *= delta
 
     valid = True
-    converged = False
     n_modelpoints = n + 1
+    last_model_indices = np.zeros(maxinterp, dtype=int)
 
-    last_model_indices = np.zeros(n_maxinterp, dtype=int)
+    converged = False
+    convergence_reason = "Continue iterating."
 
-    for niter in range(maxiter):
+    for niter in range(maxiter + 1):
         result_sub = solve_subproblem(
-            solution=x_accepted,
+            x_accepted=x_accepted,
             main_model=main_model,
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
             delta=delta,
             solver=solver_sub,
             maxiter=maxiter_sub,
-            maxiter_steepest_descent=maxiter_steepest_descent_sub,
-            step_size_newton=step_size_newton_sub,
-            ftol_abs=ftol_abs_sub,
-            ftol_scaled=ftol_scaled_sub,
-            xtol=xtol_sub,
+            maxiter_gradient_descent=maxiter_gradient_descent_sub,
             gtol_abs=gtol_abs_sub,
             gtol_rel=gtol_rel_sub,
             gtol_scaled=gtol_scaled_sub,
-            steptol=steptol_sub,
+            gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient_sub,
+            gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient_sub,
             k_easy=k_easy_sub,
             k_hard=k_hard_sub,
         )
@@ -354,11 +349,13 @@ def internal_solve_pounders(
             x_accepted = history.get_best_x()
             accepted_index = history.get_best_index()
 
+        critval_accepted = history.get_critvals(index=accepted_index)
+
         # The model is deemend "not valid" if it has less than n model points.
-        # Otherwise, if the model has n points it is considered "valid" or
+        # Otherwise, if the model has n points, it is considered "valid" or
         # "fully linear".
-        # Note: valid is True in first iteration
-        if valid is False:
+        # Note: valid is True in the first iteration
+        if not valid:
             (
                 model_improving_points,
                 model_indices,
@@ -396,13 +393,12 @@ def internal_solve_pounders(
                 )
                 n_modelpoints = n
 
-        delta_old = copy(delta)
+        delta_old = delta
         delta = update_trustregion_radius(
             result_subproblem=result_sub,
             rho=rho,
             model_is_valid=valid,
             delta=delta,
-            delta_old=delta_old,
             delta_min=delta_min,
             delta_max=delta_max,
             eta1=eta1,
@@ -467,9 +463,9 @@ def internal_solve_pounders(
                     n_cores=n_cores,
                 )
 
-        model_indices[1 : n_modelpoints + 1] = model_indices[:n_modelpoints]
-        n_modelpoints += 1
-        model_indices[0] = accepted_index
+        model_indices, n_model_points = update_model_indices_residual_model(
+            model_indices, accepted_index, n_modelpoints
+        )
 
         (
             x_sample_monomial_basis,
@@ -484,7 +480,7 @@ def internal_solve_pounders(
             delta=delta,
             c2=c2,
             theta2=theta2,
-            n_maxinterp=n_maxinterp,
+            n_maxinterp=maxinterp,
             n_modelpoints=n_modelpoints,
         )
 
@@ -499,9 +495,8 @@ def internal_solve_pounders(
             residual_model=residual_model,
             model_indices=model_indices,
             n_modelpoints=n_modelpoints,
-            n_maxinterp=n_maxinterp,
+            n_maxinterp=maxinterp,
         )
-
         coefficients_residual_model = get_coefficients_residual_model(
             x_sample_monomial_basis=x_sample_monomial_basis,
             monomial_basis=monomial_basis,
@@ -520,30 +515,10 @@ def internal_solve_pounders(
             delta=delta,
             delta_old=delta_old,
         )
-
         main_model = create_main_from_residual_model(residual_model)
-
-        criterion_candidate = history.get_best_critval()
 
         gradient_norm = np.linalg.norm(main_model.linear_terms)
         gradient_norm *= delta
-
-        if gradient_norm < gtol_abs:
-            converged = True
-            break
-        elif (
-            criterion_candidate != 0
-            and abs(gradient_norm / criterion_candidate) < gtol_rel
-        ):
-            converged = True
-            break
-        elif gradient_norm / gradient_norm_initial < gtol_scaled:
-            converged = True
-            break
-
-        if niter > maxiter:
-            converged = False
-            break
 
         (
             last_model_indices,
@@ -556,17 +531,86 @@ def internal_solve_pounders(
             n_last_modelpoints=n_last_modelpoints,
         )
 
-        if (same_model_used is True) and (delta == delta_old):
-            converged = True
+        converged, convergence_reason = _check_for_convergence(
+            gradient_norm=gradient_norm,
+            gradient_norm_initial=gradient_norm_initial,
+            critval=critval_accepted,
+            delta=delta,
+            delta_old=delta_old,
+            same_model_used=same_model_used,
+            converged=converged,
+            reason=convergence_reason,
+            niter=niter,
+            gtol_abs=gtol_abs,
+            gtol_rel=gtol_rel,
+            gtol_scaled=gtol_scaled,
+            maxiter=maxiter,
+        )
+
+        if converged:
             break
 
     result_dict = {
-        "solution_x": history.get_best_x(),
+        "solution_x": history.get_xs(index=accepted_index),
         "solution_criterion": history.get_best_residuals(),
         "history_x": history.get_xs(),
         "history_criterion": history.get_residuals(),
         "n_iterations": niter,
         "success": converged,
+        "message": convergence_reason,
     }
 
     return result_dict
+
+
+def _check_for_convergence(
+    gradient_norm,
+    gradient_norm_initial,
+    critval,
+    delta,
+    delta_old,
+    same_model_used,
+    converged,
+    reason,
+    niter,
+    *,
+    gtol_abs,
+    gtol_rel,
+    gtol_scaled,
+    maxiter,
+):
+    """Check for convergence."""
+    if same_model_used and delta == delta_old:
+        converged = True
+        reason = "Identical model used in successive iterations."
+    elif gradient_norm < gtol_abs:
+        converged = True
+        reason = "Norm of the gradient is less than absolute_gradient_tolerance."
+    elif critval != 0 and abs(gradient_norm / critval) < gtol_rel:
+        converged = True
+        reason = (
+            "Norm of the gradient relative to the criterion value is less than "
+            "relative_gradient_tolerance."
+        )
+    elif (
+        gradient_norm_initial != 0
+        and gradient_norm / gradient_norm_initial < gtol_scaled
+    ):
+        converged = True
+        reason = (
+            "Norm of the gradient divided by norm of the gradient at the "
+            "initial parameters is less than scaled_gradient_tolerance."
+        )
+    elif gradient_norm_initial != 0 and gradient_norm == 0 and gtol_scaled == 0:
+        converged = True
+        reason = (
+            "Norm of the gradient divided by norm of the gradient at the "
+            "initial parameters is less than scaled_gradient_tolerance."
+        )
+    elif critval <= -np.inf:
+        converged = True
+        reason = "Criterion value is negative infinity."
+    elif niter == maxiter:
+        reason = "Maximum number of iterations reached."
+
+    return converged, reason
