@@ -1,6 +1,5 @@
 import warnings
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -8,14 +7,6 @@ from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
 from estimagic.config import PLOTLY_TEMPLATE
-
-plt.rcParams.update(
-    {
-        "axes.spines.right": False,
-        "axes.spines.top": False,
-        "legend.frameon": False,
-    }
-)
 
 
 def profile_plot(

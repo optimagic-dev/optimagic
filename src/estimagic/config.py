@@ -37,13 +37,6 @@ else:
     IS_NLOPT_INSTALLED = True
 
 try:
-    import matplotlib  # noqa: F401
-except ImportError:
-    IS_MATPLOTLIB_INSTALLED = False
-else:
-    IS_MATPLOTLIB_INSTALLED = True
-
-try:
     import pybobyqa  # noqa: F401
 except ImportError:
     IS_PYBOBYQA_INSTALLED = False
@@ -64,14 +57,12 @@ except ImportError:
 else:
     IS_PYGMO_INSTALLED = True
 
-
 try:
     import cyipopt  # noqa: F401
 except ImportError:
     IS_CYIPOPT_INSTALLED = False
 else:
     IS_CYIPOPT_INSTALLED = True
-
 
 try:
     import fides  # noqa: F401
@@ -80,13 +71,19 @@ except ImportError:
 else:
     IS_FIDES_INSTALLED = True
 
-
 try:
     import jax  # noqa: F401
 except ImportError:
     IS_JAX_INSTALLED = False
 else:
     IS_JAX_INSTALLED = True
+
+try:
+    import seaborn  # noqa: F401
+except ImportError:
+    IS_SEABORN_INSTALLED = False
+else:
+    IS_SEABORN_INSTALLED = True
 
 
 # =================================================================================

@@ -1,4 +1,11 @@
-import seaborn as sns
+from estimagic.config import IS_SEABORN_INSTALLED
+
+
+if IS_SEABORN_INSTALLED:
+    import seaborn as sns
+else:
+    message = "seaborn is not installed. Please install seaborn before continuing."
+    raise ImportError(message)
 
 
 def get_colors(palette, number):
