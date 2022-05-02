@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import pytest
 from estimagic import get_benchmark_problems
 from estimagic.benchmarking.run_benchmark import run_benchmark
@@ -21,8 +20,8 @@ profile_options = [
 ]
 
 
-@pytest.mark.parametrize("options", profile_options)
-def test_convergence_plot_options(options):
+@pytest.mark.parametrize("options, grid", zip(profile_options, [True, False]))
+def test_convergence_plot_options(options, grid):
     problems = get_benchmark_problems("example")
     stop_after_10 = {
         "stopping_max_criterion_evaluations": 10,
@@ -39,16 +38,13 @@ def test_convergence_plot_options(options):
         logging_directory="logging",
     )
 
-    for grid in [True, False]:
-
-        convergence_plot(
-            problems=problems,
-            results=results,
-            problem_subset=["bard_good_start"],
-            combine_plots_in_grid=grid,
-            **options
-        )
-        plt.close()
+    convergence_plot(
+        problems=problems,
+        results=results,
+        problem_subset=["bard_good_start"],
+        combine_plots_in_grid=grid,
+        **options
+    )
 
 
 def test_check_only_allowed_subset_provided_none():

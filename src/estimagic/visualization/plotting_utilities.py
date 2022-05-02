@@ -66,7 +66,7 @@ def create_grid_plot(
 
     # deleting duplicates in legend
     if clean_legend:
-        fig = clean_legend_duplicates(fig)
+        fig = _clean_legend_duplicates(fig)
 
     # scientific notations for axis ticks
     if scientific_notation:
@@ -139,7 +139,7 @@ def create_ind_dict(
             fig.update_xaxes(tickformat=".2e")
         # deleting duplicates in legend
         if clean_legend:
-            fig = clean_legend_duplicates(fig)
+            fig = _clean_legend_duplicates(fig)
         if share_xax:
             fig.update_xaxes(range=[x_min, x_max])
         # adding to dictionary
@@ -149,11 +149,15 @@ def create_ind_dict(
     return fig_dict
 
 
-def clean_legend_duplicates(fig):
-    names = set()
-    fig.for_each_trace(
-        lambda trace: trace.update(showlegend=False)
-        if (trace.name in names)
-        else names.add(trace.name)
-    )
+def _clean_legend_duplicates(fig):
+    trace_names = set()
+
+    def disable_legend_if_duplicate(trace):
+        if trace.name in trace_names:
+            # in this case the legend is a duplicate
+            trace.update(showlegend=False)
+        else:
+            trace_names.add(trace.name)
+
+    fig.for_each_trace(disable_legend_if_duplicate)
     return fig

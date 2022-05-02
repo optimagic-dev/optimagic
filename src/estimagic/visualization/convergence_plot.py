@@ -6,8 +6,8 @@ from estimagic.benchmarking.process_benchmark_results import (
 )
 from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.utilities import propose_alternatives
-from estimagic.visualization.plot_help import create_grid_plot
-from estimagic.visualization.plot_help import create_ind_dict
+from estimagic.visualization.plotting_utilities import create_grid_plot
+from estimagic.visualization.plotting_utilities import create_ind_dict
 
 
 def convergence_plot(

@@ -1,6 +1,11 @@
 """This only tests that we get the right number of colors, not the exact colors."""
 import pytest
-from estimagic.visualization.colors import get_colors
+from estimagic.config import IS_SEABORN_INSTALLED
+
+if not IS_SEABORN_INSTALLED:
+    pytestmark = pytest.mark.skip(reason="seaborn is not installed.")
+else:
+    from estimagic.visualization.colors import get_colors
 
 
 def test_correct_number_categorical():
