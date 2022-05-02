@@ -1,161 +1,253 @@
-"""Auxiliary functions for the quadratic BNTR algorithm."""
+"""Auxiliary functions for the quadratic BNTR trust-region subsolver."""
 from collections import namedtuple
-from copy import copy
 from functools import reduce
 
 import numpy as np
 from estimagic.optimization._trustregion_conjugate_gradient_quadratic import (
-    minimize_trust_cg,
+    minimize_trust_conjugate_gradient,
 )
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
 
-def take_preliminary_steepest_descent_step_and_check_for_solution(
+def take_preliminary_gradient_descent_step_and_check_for_solution(
     x_candidate,
     model,
     lower_bounds,
     upper_bounds,
-    maxiter_steepest_descent,
-    step_size_newton,
+    maxiter_gradient_descent,
     gtol_abs,
     gtol_rel,
     gtol_scaled,
 ):
-    """Take a preliminary steepest descent step and check if we find a solution."""
-    f_candidate = evaluate_model_criterion(
+    """Take a preliminary gradient descent step and check if we found a solution."""
+    options_update_radius = {
+        "mu1": 0.35,
+        "mu2": 0.50,
+        "gamma1": 0.0625,
+        "gamma2": 0.5,
+        "gamma3": 2.0,
+        "gamma4": 5.0,
+        "theta": 0.25,
+        "min_radius": 1e-10,
+        "max_radius": 1e10,
+        "default_radius": 100,
+    }
+
+    converged = False
+    convergence_reason = "Continue iterating."
+
+    criterion_candidate = evaluate_model_criterion(
         x_candidate, model.linear_terms, model.square_terms
     )
 
-    newton_step = compute_newton_step(model)
     active_bounds_info = get_information_on_active_bounds(
-        x_candidate, lower_bounds, upper_bounds, model, newton_step, step_size_newton
-    )
-
-    gradient_candidate = evaluate_model_gradient(x_candidate, model)
-    gradient_projected = np.where(
-        np.arange(x_candidate.shape[0]) == active_bounds_info.all, 0, gradient_candidate
-    )
-
-    converged = check_for_convergence_steepest_descent(
         x_candidate,
-        f_candidate,
-        gradient_candidate,
+        model.linear_terms,
+        lower_bounds,
+        upper_bounds,
+    )
+
+    gradient_unprojected = evaluate_model_gradient(x_candidate, model)
+    gradient_projected = project_gradient_onto_feasible_set(
+        gradient_unprojected, active_bounds_info
+    )
+
+    converged, convergence_reason = check_for_convergence(
+        x_candidate,
+        criterion_candidate,
+        gradient_unprojected,
         model,
         lower_bounds,
         upper_bounds,
-        gtol_abs,
-        gtol_rel,
-        gtol_scaled,
+        converged,
+        convergence_reason,
+        niter=None,
+        maxiter=None,
+        gtol_abs=gtol_abs,
+        gtol_rel=gtol_rel,
+        gtol_scaled=gtol_scaled,
     )
 
-    if converged is True:
-        x_accepted = x_candidate
-        f_accepted = f_candidate
-
-        hessian_inactive = np.copy(model.square_terms)
-        trustregion_radius = 100
+    if converged:
+        hessian_inactive = model.square_terms
+        trustregion_radius = options_update_radius["default_radius"]
     else:
         hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
             model, active_bounds_info
         )
 
         (
-            x_candidate_steepest_descent,
-            f_min_steepest_descent,
+            x_candidate_gradient_descent,
+            f_min_gradient_descent,
+            step_size_gradient_descent,
             trustregion_radius,
-            max_trustregion_radius,
-        ) = perform_steepest_descent_and_update_trustregion_radius(
+            radius_upper_bound,
+        ) = perform_gradient_descent(
             x_candidate,
-            f_candidate,
+            criterion_candidate,
             gradient_projected,
             hessian_inactive,
             model,
             lower_bounds,
             upper_bounds,
             active_bounds_info,
-            maxiter_steepest_descent,
+            maxiter_gradient_descent,
+            options_update_radius,
         )
 
-        if f_min_steepest_descent < f_candidate:
-            x_accepted = x_candidate_steepest_descent
-            f_accepted = f_min_steepest_descent
+        if f_min_gradient_descent < criterion_candidate:
+            criterion_candidate = f_min_gradient_descent
 
-            gradient_candidate_steepest_descent = evaluate_model_gradient(
-                x_candidate_steepest_descent, model
+            x_unbounded = (
+                x_candidate_gradient_descent
+                - step_size_gradient_descent * gradient_projected
+            )
+            x_candidate = apply_bounds_to_x_candidate(
+                x_unbounded, lower_bounds, upper_bounds
             )
 
-            converged = check_for_convergence_steepest_descent(
-                x_candidate_steepest_descent,
-                f_min_steepest_descent,
-                gradient_candidate_steepest_descent,
+            gradient_unprojected = evaluate_model_gradient(x_candidate, model)
+            active_bounds_info = get_information_on_active_bounds(
+                x_candidate,
+                gradient_unprojected,
+                lower_bounds,
+                upper_bounds,
+            )
+
+            gradient_projected = project_gradient_onto_feasible_set(
+                gradient_unprojected, active_bounds_info
+            )
+            hessian_inactive = find_hessian_submatrix_where_bounds_inactive(
+                model, active_bounds_info
+            )
+
+            converged, convergence_reason = check_for_convergence(
+                x_candidate,
+                criterion_candidate,
+                gradient_projected,
                 model,
                 lower_bounds,
                 upper_bounds,
-                gtol_abs,
-                gtol_rel,
-                gtol_scaled,
+                converged,
+                convergence_reason,
+                niter=None,
+                maxiter=None,
+                gtol_abs=gtol_abs,
+                gtol_rel=gtol_rel,
+                gtol_scaled=gtol_scaled,
             )
-        else:
-            x_accepted = x_candidate
-            f_accepted = f_candidate
 
-        trustregion_radius = max(trustregion_radius, max_trustregion_radius)
-        trustregion_radius = min(max(trustregion_radius, 1e-10), 1e10)
+        if not converged:
+            trustregion_radius = max(trustregion_radius, radius_upper_bound)
+            trustregion_radius = np.clip(
+                trustregion_radius,
+                options_update_radius["min_radius"],
+                options_update_radius["max_radius"],
+            )
 
     return (
-        x_accepted,
-        f_accepted,
-        gradient_candidate,
+        x_candidate,
+        criterion_candidate,
+        gradient_unprojected,
         hessian_inactive,
         trustregion_radius,
         active_bounds_info,
         converged,
+        convergence_reason,
     )
 
 
 def compute_conjugate_gradient_step(
-    x,
-    gradient_candidate,
+    x_candidate,
+    gradient_inactive,
     hessian_inactive,
     lower_bounds,
     upper_bounds,
     active_bounds_info,
     trustregion_radius,
+    *,
+    gtol_abs_conjugate_gradient,
+    gtol_rel_conjugate_gradient,
+    options_update_radius,
 ):
     """Compute the bounded Conjugate Gradient trust-region step."""
-    conjugate_gradient_step = np.zeros(x.shape[0])
-    gradient_inactive_cg = np.copy(gradient_candidate[active_bounds_info.inactive])
+    conjugate_gradient_step = np.zeros_like(x_candidate)
 
-    x_inactive_cg = minimize_trust_cg(
-        gradient_inactive_cg,
-        hessian_inactive,
-        trustregion_radius,
-    )
-    gradient_norm_cg = np.linalg.norm(x_inactive_cg)
+    if active_bounds_info.inactive.size == 0:
+        # Save some computation and return an adjusted zero step
+        step_inactive = apply_bounds_to_x_candidate(
+            x_candidate, lower_bounds, upper_bounds
+        )
+        step_norm = np.linalg.norm(step_inactive)
 
-    conjugate_gradient_step[active_bounds_info.inactive] = -np.copy(x_inactive_cg)
-    conjugate_gradient_step = _apply_bounds_to_conjugate_gradient_step(
-        x,
-        lower_bounds,
-        upper_bounds,
-        active_bounds_info,
-        conjugate_gradient_step,
-    )
+        conjugate_gradient_step = _apply_bounds_to_conjugate_gradient_step(
+            step_inactive,
+            x_candidate,
+            lower_bounds,
+            upper_bounds,
+            active_bounds_info,
+        )
+
+    else:
+        step_inactive = minimize_trust_conjugate_gradient(
+            gradient_inactive,
+            hessian_inactive,
+            trustregion_radius,
+            gtol_abs=gtol_abs_conjugate_gradient,
+            gtol_rel=gtol_rel_conjugate_gradient,
+        )
+        step_norm = np.linalg.norm(step_inactive)
+
+        if trustregion_radius == 0:
+            if step_norm > 0:
+                # Accept
+                trustregion_radius = np.clip(
+                    step_norm,
+                    options_update_radius["min_radius"],
+                    options_update_radius["max_radius"],
+                )
+
+            else:
+                # Re-solve
+                trustregion_radius = np.clip(
+                    options_update_radius["default_radius"],
+                    options_update_radius["min_radius"],
+                    options_update_radius["max_radius"],
+                )
+
+                step_inactive = minimize_trust_conjugate_gradient(
+                    gradient_inactive,
+                    hessian_inactive,
+                    trustregion_radius,
+                    gtol_abs=gtol_abs_conjugate_gradient,
+                    gtol_rel=gtol_rel_conjugate_gradient,
+                )
+                step_norm = np.linalg.norm(step_inactive)
+
+                if step_norm == 0:
+                    raise ValueError("Initial direction is zero.")
+
+        conjugate_gradient_step = _apply_bounds_to_conjugate_gradient_step(
+            step_inactive,
+            x_candidate,
+            lower_bounds,
+            upper_bounds,
+            active_bounds_info,
+        )
 
     return (
-        x_inactive_cg,
-        gradient_inactive_cg,
-        gradient_norm_cg,
         conjugate_gradient_step,
+        step_inactive,
+        step_norm,
     )
 
 
 def compute_predicted_reduction_from_conjugate_gradient_step(
-    x_inactive_cg,
-    gradient_inactive_cg,
     conjugate_gradient_step,
-    gradient_candidate,
+    conjugate_gradient_step_inactive,
+    gradient_unprojected,
+    gradient_inactive,
     hessian_inactive,
     active_bounds_info,
 ):
@@ -163,29 +255,27 @@ def compute_predicted_reduction_from_conjugate_gradient_step(
     if active_bounds_info.all.size > 0:
         # Projection changed the step, so we have to recompute the step
         # and the predicted reduction. Leave the rust radius unchanged.
-        x_inactive_recomp = conjugate_gradient_step[active_bounds_info.inactive]
-        gradient_inactive_recomp = gradient_candidate[active_bounds_info.inactive]
+        cg_step_recomp = conjugate_gradient_step[active_bounds_info.inactive]
+        gradient_inactive_recomp = gradient_unprojected[active_bounds_info.inactive]
 
         predicted_reduction = evaluate_model_criterion(
-            x_inactive_recomp, gradient_inactive_recomp, hessian_inactive
+            cg_step_recomp, gradient_inactive_recomp, hessian_inactive
         )
     else:
         # Step did not change, so we can just recover the
         # pre-computed prediction
         predicted_reduction = evaluate_model_criterion(
-            x_inactive_cg,
-            gradient_inactive_cg,
+            conjugate_gradient_step_inactive,
+            gradient_inactive,
             hessian_inactive,
         )
 
-        predicted_reduction = -predicted_reduction
-
-    return predicted_reduction
+    return -predicted_reduction
 
 
-def perform_steepest_descent_and_update_trustregion_radius(
+def perform_gradient_descent(
     x_candidate,
-    f_candidate,
+    f_candidate_initial,
     gradient_projected,
     hessian_inactive,
     model,
@@ -193,105 +283,83 @@ def perform_steepest_descent_and_update_trustregion_radius(
     upper_bounds,
     active_bounds_info,
     maxiter_steepest_descent,
+    options_update_radius,
 ):
-    """Perform steepest descent step and update trust-region radius."""
-    x_trial = np.copy(x_candidate)
-    f_min = np.copy(f_candidate)
-
-    step_size_accepted = 0
-    trustregion_radius = 100
-    max_trustregion_radius = 0
-
+    """Perform gradient descent step and update trust-region radius."""
+    f_min = f_candidate_initial
     gradient_norm = np.linalg.norm(gradient_projected)
 
-    for _ in range(maxiter_steepest_descent):
-        x_old = np.copy(x_trial)
+    trustregion_radius = options_update_radius["default_radius"]
+    radius_upper_bound = 0
+    step_size_accepted = 0
 
-        step_size_trial = trustregion_radius / gradient_norm
-        x_trial = x_trial - step_size_trial * gradient_projected
-        x_trial = apply_bounds_to_x_candidate(x_trial, lower_bounds, upper_bounds)
-        f_trial = evaluate_model_criterion(
-            x_trial, model.linear_terms, model.square_terms
+    for _ in range(maxiter_steepest_descent):
+        x_old = x_candidate
+
+        step_size_candidate = trustregion_radius / gradient_norm
+        x_candidate = x_old - step_size_candidate * gradient_projected
+
+        x_candidate = apply_bounds_to_x_candidate(
+            x_candidate, lower_bounds, upper_bounds
+        )
+        f_candidate = evaluate_model_criterion(
+            x_candidate, model.linear_terms, model.square_terms
         )
 
-        x_accepted = x_trial - x_old
+        x_diff = x_candidate - x_old
 
-        if f_trial < f_min:
-            f_min = copy(f_trial)
-            step_size_accepted = trustregion_radius / gradient_norm
+        if f_candidate < f_min:
+            f_min = f_candidate
+            step_size_accepted = step_size_candidate
 
-        x_inactive = np.copy(x_accepted[active_bounds_info.inactive])
-
+        x_inactive = x_diff[active_bounds_info.inactive]
         square_terms = np.dot(np.dot(x_inactive, hessian_inactive), x_inactive)
 
         predicted_reduction = trustregion_radius * (
             gradient_norm
             - 0.5 * trustregion_radius * square_terms / (gradient_norm**2)
         )
-        actual_reduction = f_candidate - f_trial
+        actual_reduction = f_candidate_initial - f_candidate
 
         (
-            tau,
-            max_trustregion_radius,
-        ) = _update_tau_and_max_trustregion_radius_steepest_descent(
             trustregion_radius,
+            radius_upper_bound,
+        ) = _update_trustregion_radius_and_gradient_descent(
+            trustregion_radius,
+            radius_upper_bound,
             predicted_reduction,
             actual_reduction,
             gradient_norm,
-            max_trustregion_radius,
+            options_update_radius,
         )
-
-        trustregion_radius = tau * trustregion_radius
-
-    x_candidate = x_candidate - step_size_accepted * gradient_projected
-    x_candidate = apply_bounds_to_x_candidate(x_candidate, lower_bounds, upper_bounds)
 
     return (
         x_candidate,
         f_min,
+        step_size_accepted,
         trustregion_radius,
-        max_trustregion_radius,
+        radius_upper_bound,
     )
 
 
-def compute_newton_step(model):
-    """Compute the newton step."""
-    n = model.linear_terms.shape[0]
-    diag_min = np.ones(n) * 1e-6
-    diag_max = np.ones(n) * 1e6
-
-    diag = np.abs(np.diag(model.square_terms))
-    diag_bounded = np.median(np.stack([diag_min, diag, diag_max]), axis=0)
-
-    newton_step = model.linear_terms / diag_bounded
-
-    return newton_step
-
-
 def update_trustregion_radius_conjugate_gradient(
-    f_candidate, predicted_reduction, actual_reduction, x_norm_cg, tr_radius
+    f_candidate,
+    predicted_reduction,
+    actual_reduction,
+    x_norm_cg,
+    trustregion_radius,
+    options,
 ):
     """Update the trust-region radius based on predicted and actual reduction."""
-    eta1 = 1.0e-4
-    eta2 = 0.25
-    eta3 = 0.50
-    eta4 = 0.90
-
-    alpha1 = 0.25
-    alpha2 = 0.50
-    alpha3 = 1.00
-    alpha4 = 2.00
-    alpha5 = 4.00
-
     accept_step = False
 
-    if predicted_reduction < 0 or np.isfinite(predicted_reduction) is False:
-        # The predicted reduction has the wrong sign.
-        # Reject the just peformed Conjuate Gradient step and start over.
-        tr_radius = alpha1 * min(tr_radius, x_norm_cg)
+    if predicted_reduction < 0 or ~np.isfinite(predicted_reduction):
+        # Reject and start over
+        trustregion_radius = options["alpha1"] * min(trustregion_radius, x_norm_cg)
+
     else:
-        if np.isfinite(actual_reduction) is False:
-            tr_radius = alpha1 * min(tr_radius, x_norm_cg)
+        if ~np.isfinite(actual_reduction):
+            trustregion_radius = options["alpha1"] * min(trustregion_radius, x_norm_cg)
         else:
             if abs(actual_reduction) <= max(1, abs(f_candidate) * EPSILON) and abs(
                 predicted_reduction
@@ -300,50 +368,50 @@ def update_trustregion_radius_conjugate_gradient(
             else:
                 kappa = actual_reduction / predicted_reduction
 
-            if kappa < eta1:
-                tr_radius = alpha1 * min(tr_radius, x_norm_cg)
+            if kappa < options["eta1"]:
+                # Reject the step
+                trustregion_radius = options["alpha1"] * min(
+                    trustregion_radius, x_norm_cg
+                )
             else:
                 accept_step = True
 
                 # Update the trust-region radius only if the computed step is at the
-                # trust radius boundary
-                if np.allclose(x_norm_cg, tr_radius):
-                    if kappa < eta2:
+                # trust-radius boundary
+                if x_norm_cg == trustregion_radius:
+                    if kappa < options["eta2"]:
                         # Marginal bad step
-                        tr_radius = alpha2 * tr_radius
-                    elif kappa < eta3:
+                        trustregion_radius = options["alpha2"] * trustregion_radius
+                    elif kappa < options["eta3"]:
                         # Reasonable step
-                        tr_radius = alpha3 * tr_radius
-                    elif kappa < eta4:
-                        tr_radius = alpha4 * tr_radius
+                        trustregion_radius = options["alpha3"] * trustregion_radius
+                    elif kappa < options["eta4"]:
+                        trustregion_radius = options["alpha4"] * trustregion_radius
                     else:
                         # Very good step
-                        tr_radius = alpha5 * tr_radius
+                        trustregion_radius = options["alpha5"] * trustregion_radius
 
-    tr_radius = max(min(tr_radius, 1e10), 1e-10)
+    trustregion_radius = np.clip(
+        trustregion_radius, options["min_radius"], options["max_radius"]
+    )
 
-    return tr_radius, accept_step
+    return trustregion_radius, accept_step
 
 
 def get_information_on_active_bounds(
-    x, lower_bounds, upper_bounds, model, newton_step, step_size_newton
+    x,
+    gradient_unprojected,
+    lower_bounds,
+    upper_bounds,
 ):
     """Return the index set of active bounds."""
     ActiveBounds = namedtuple(
         "ActiveBounds", ["lower", "upper", "fixed", "all", "inactive"]
     )
 
-    x_candidate = np.copy(x)
-    x_candidate = x_candidate - step_size_newton * newton_step
-    x_candidate_bounded = apply_bounds_to_x_candidate(
-        x_candidate, lower_bounds, upper_bounds
-    )
-
-    centered_x = x - x_candidate_bounded
-
-    active_lower = np.where((centered_x <= lower_bounds) & (model.linear_terms > 0))[0]
-    active_upper = np.where((centered_x >= upper_bounds) & (model.linear_terms < 0))[0]
-    active_fixed = np.where(lower_bounds == upper_bounds)[0]
+    active_lower = np.where((x <= lower_bounds) & (gradient_unprojected > 0))[0]
+    active_upper = np.where((x >= upper_bounds) & (gradient_unprojected < 0))[0]
+    active_fixed = np.where((lower_bounds == upper_bounds))[0]
     active_all = reduce(np.union1d, (active_fixed, active_lower, active_upper))
     inactive = np.setdiff1d(np.arange(x.shape[0]), active_all)
 
@@ -367,58 +435,18 @@ def find_hessian_submatrix_where_bounds_inactive(model, active_bounds_info):
     return hessian_inactive
 
 
-def check_for_convergence_conjugate_gradient(
+def check_for_convergence(
     x_candidate,
     f_candidate,
-    x_old,
-    f_old,
     gradient_candidate,
     model,
     lower_bounds,
     upper_bounds,
-    trustregion_radius,
+    converged,
+    reason,
+    niter,
     *,
-    ftol_abs,
-    ftol_scaled,
-    xtol,
-    gtol_abs,
-    gtol_rel,
-    gtol_scaled,
-    steptol,
-):
-    """Check if we have found a solution."""
-    direction_fischer_burmeister = _get_fischer_burmeister_direction_vector(
-        x_candidate, gradient_candidate, lower_bounds, upper_bounds
-    )
-    gradient_norm = np.linalg.norm(direction_fischer_burmeister)
-
-    if gradient_norm < gtol_abs:
-        converged = True
-    elif f_candidate != 0 and abs(gradient_norm / f_candidate) < gtol_rel:
-        converged = True
-    elif gradient_norm / np.linalg.norm(model.linear_terms) < gtol_scaled:
-        converged = True
-    elif abs(f_old - f_candidate) < ftol_abs:
-        converged = True
-    elif (f_old - f_candidate) / max(abs(f_old), abs(f_candidate), 1) < ftol_scaled:
-        converged = True
-    elif np.max(np.abs(x_old - x_candidate)) < xtol:
-        converged = True
-    elif trustregion_radius < steptol:
-        converged = True
-    else:
-        converged = False
-
-    return converged
-
-
-def check_for_convergence_steepest_descent(
-    x_candidate,
-    f_candidate,
-    gradient_candidate,
-    model,
-    lower_bounds,
-    upper_bounds,
+    maxiter,
     gtol_abs,
     gtol_rel,
     gtol_scaled,
@@ -428,17 +456,39 @@ def check_for_convergence_steepest_descent(
         x_candidate, gradient_candidate, lower_bounds, upper_bounds
     )
     gradient_norm = np.linalg.norm(direction_fischer_burmeister)
+    gradient_norm_initial = np.linalg.norm(model.linear_terms)
 
     if gradient_norm < gtol_abs:
         converged = True
+        reason = "Norm of the gradient is less than absolute_gradient_tolerance."
     elif f_candidate != 0 and abs(gradient_norm / f_candidate) < gtol_rel:
         converged = True
-    elif gradient_norm / np.linalg.norm(model.linear_terms) < gtol_scaled:
+        reason = (
+            "Norm of the gradient relative to the criterion value is less than "
+            "relative_gradient_tolerance."
+        )
+    elif (
+        gradient_norm_initial != 0
+        and gradient_norm / gradient_norm_initial < gtol_scaled
+    ):
         converged = True
-    else:
-        converged = False
+        reason = (
+            "Norm of the gradient divided by norm of the gradient at the "
+            "initial parameters is less than scaled_gradient_tolerance."
+        )
+    elif gradient_norm_initial != 0 and gradient_norm == 0 and gtol_scaled == 0:
+        converged = True
+        reason = (
+            "Norm of the gradient divided by norm of the gradient at the "
+            "initial parameters is less than scaled_gradient_tolerance."
+        )
+    elif f_candidate <= -np.inf:
+        converged = True
+        reason = "Criterion value is negative infinity."
+    elif niter is not None and niter == maxiter:
+        reason = "Maximum number of iterations reached."
 
-    return converged
+    return converged, reason
 
 
 def apply_bounds_to_x_candidate(x, lower_bounds, upper_bounds, bound_tol=0):
@@ -447,6 +497,16 @@ def apply_bounds_to_x_candidate(x, lower_bounds, upper_bounds, bound_tol=0):
     x = np.where(x >= upper_bounds - bound_tol, upper_bounds, x)
 
     return x
+
+
+def project_gradient_onto_feasible_set(gradient_unprojected, active_bounds_info):
+    """Project gradient onto feasible set, where search directions unconstrained."""
+    gradient_projected = np.zeros_like(gradient_unprojected)
+    gradient_projected[active_bounds_info.inactive] = gradient_unprojected[
+        active_bounds_info.inactive
+    ]
+
+    return gradient_projected
 
 
 def evaluate_model_criterion(
@@ -485,116 +545,120 @@ def evaluate_model_gradient(x, model):
 
 
 def _apply_bounds_to_conjugate_gradient_step(
-    x,
+    step_inactive,
+    x_candidate,
     lower_bounds,
     upper_bounds,
     active_bounds_info,
-    cg_step_direction=None,
 ):
-    """Apply lower and upper bounds to the Conjugate Gradient step direction."""
-    n = x.shape[0]
-
-    if cg_step_direction is None:
-        cg_step_direction = np.zeros(n)
+    """Apply lower and upper bounds to the Conjugate Gradient step."""
+    cg_step = np.zeros_like(x_candidate)
+    cg_step[active_bounds_info.inactive] = step_inactive
 
     if active_bounds_info.lower.size > 0:
-        x_active_lower = x[active_bounds_info.lower]
+        x_active_lower = x_candidate[active_bounds_info.lower]
         lower_bound_active = lower_bounds[active_bounds_info.lower]
 
-        cg_step_direction[active_bounds_info.lower] = (
-            lower_bound_active - x_active_lower
-        )
+        cg_step[active_bounds_info.lower] = lower_bound_active - x_active_lower
 
     if active_bounds_info.upper.size > 0:
-        x_active_upper = x[active_bounds_info.upper]
+        x_active_upper = x_candidate[active_bounds_info.upper]
         upper_bound_active = upper_bounds[active_bounds_info.upper]
 
-        cg_step_direction[active_bounds_info.upper] = (
-            upper_bound_active - x_active_upper
-        )
+        cg_step[active_bounds_info.upper] = upper_bound_active - x_active_upper
 
     if active_bounds_info.fixed.size > 0:
-        cg_step_direction[active_bounds_info.fixed] = 0
+        cg_step[active_bounds_info.fixed] = 0
 
-    return cg_step_direction
+    return cg_step
 
 
-def _update_tau_and_max_trustregion_radius_steepest_descent(
-    trustregion_radius, prered, actred, gradient_norm, max_radius
+def _update_trustregion_radius_and_gradient_descent(
+    trustregion_radius,
+    radius_upper,
+    predicted_reduction,
+    actual_reduction,
+    gradient_norm,
+    options,
 ):
-    """Update tau and the new maximum for the trust-region radius."""
-    mu1 = 0.35
-    mu2 = 0.50
-    gamma1 = 0.0625
-    gamma2 = 0.5
-    gamma3 = 2.0
-    gamma4 = 5.0
-    theta = 0
-    epsilon = np.finfo(float).eps ** (2 / 3)
-
-    if abs(actred) <= epsilon and abs(prered) <= epsilon:
+    """Update the trust-region radius and its upper bound."""
+    if abs(actual_reduction) <= EPSILON and abs(predicted_reduction) <= EPSILON:
         kappa = 1
     else:
-        kappa = actred / prered
+        kappa = actual_reduction / predicted_reduction
 
     tau_1 = (
-        theta
+        options["theta"]
         * gradient_norm
         * trustregion_radius
-        / (theta * gradient_norm * trustregion_radius + (1 - theta) * prered - actred)
+        / (
+            options["theta"] * gradient_norm * trustregion_radius
+            + (1 - options["theta"]) * predicted_reduction
+            - actual_reduction
+        )
     )
     tau_2 = (
-        theta
+        options["theta"]
         * gradient_norm
         * trustregion_radius
-        / (theta * gradient_norm * trustregion_radius - (1 + theta) * prered + actred)
+        / (
+            options["theta"] * gradient_norm * trustregion_radius
+            - (1 + options["theta"]) * predicted_reduction
+            + actual_reduction
+        )
     )
 
     tau_min = min(tau_1, tau_2)
     tau_max = max(tau_1, tau_2)
 
-    if abs(kappa - 1) <= mu1:
+    if abs(kappa - 1) <= options["mu1"]:
         # Great agreement
-        max_radius = max(max_radius, trustregion_radius)
+        radius_upper = max(radius_upper, trustregion_radius)
 
         if tau_max < 1:
-            tau = gamma3
-        elif tau_max > gamma4:
-            tau = gamma4
+            tau = options["gamma3"]
+        elif tau_max > options["gamma4"]:
+            tau = options["gamma4"]
         else:
             tau = tau_max
 
-    elif abs(kappa - 1) <= mu2:
+    elif abs(kappa - 1) <= options["mu2"]:
         # Good agreement
-        max_radius = max(max_radius, trustregion_radius)
+        radius_upper = max(radius_upper, trustregion_radius)
 
-        if tau_max < gamma2:
-            tau = gamma2
-        elif tau_max > gamma3:
-            tau = gamma3
+        if tau_max < options["gamma2"]:
+            tau = options["gamma2"]
+        elif tau_max > options["gamma3"]:
+            tau = options["gamma3"]
         else:
             tau = tau_max
 
     else:
         # Not good agreement
         if tau_min > 1:
-            tau = gamma2
-        elif tau_max < gamma1:
-            tau = gamma1
-        elif (tau_min < gamma1) and (tau_max >= 1):
-            tau = gamma1
+            tau = options["gamma2"]
+        elif tau_max < options["gamma1"]:
+            tau = options["gamma1"]
+        elif (tau_min < options["gamma1"]) and (tau_max >= 1):
+            tau = options["gamma1"]
         elif (
-            (tau_1 >= gamma1) and (tau_1 < 1.0) and ((tau_2 < gamma1) or (tau_2 >= 1.0))
+            (tau_1 >= options["gamma1"])
+            and (tau_1 < 1.0)
+            and ((tau_2 < options["gamma1"]) or (tau_2 >= 1.0))
         ):
             tau = tau_1
         elif (
-            (tau_2 >= gamma1) and (tau_2 < 1.0) and ((tau_1 < gamma1) or (tau_2 >= 1.0))
+            (tau_2 >= options["gamma1"])
+            and (tau_2 < 1.0)
+            and ((tau_1 < options["gamma1"]) or (tau_2 >= 1.0))
         ):
             tau = tau_2
         else:
             tau = tau_max
 
-    return tau, max_radius
+    trustregion_radius = trustregion_radius * tau
+
+    return trustregion_radius, radius_upper
 
 
 def _get_fischer_burmeister_direction_vector(x, gradient, lower_bounds, upper_bounds):
