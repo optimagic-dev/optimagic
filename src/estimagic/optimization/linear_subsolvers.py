@@ -1,6 +1,4 @@
 """Collection of linear trust-region subsolvers."""
-import math
-
 import numpy as np
 
 
@@ -11,7 +9,7 @@ def minimize_trsbox_linear(
 
     Solve the linear subproblem:
 
-      min_x   g' * x
+      min_x   g.T @ x
         s.t.   lower_bound <= x <= upper_bound
               ||x||^2 <= delta^2
 
@@ -92,27 +90,28 @@ def improve_geomtery_trsbox_linear(
     """Maximize a Lagrange polynomial of degree one to improve geometry of the model.
 
     Let a Lagrange polynomial of degree one be defined by:
-        L(x) = c + g' * (x - x_center),
+        L(x) = c + g.T @ (x - x_center),
 
     where c and g denote the constant term and the linear terms (gradient)
     of the linear model, respectively.
 
     In order to maximize L(x), we maximize the absolute value of L(x) in a
     trust-region setting. I.e. we solve:
-        max_x  abs(c + g' * (x - x_center))
+
+        max_x  abs(c + g.T @ (x - x_center))
             s.t. lower_bound <= x <= upper_bound
                  ||x - x_center|| <= delta
 
-    In order to find x*, we both minimize and maximize g' * (x - center), respectively.
+    In order to find x*, we first minimize and then maximize g.T @ (x - center).
     The resulting candidate vectors are then plugged into the objective function L(x)
     to see which one yields the largest absolute value of the Lagrange polynomial.
 
     Args:
-        x_center (np.ndarray): Center for the candidate vector x of shape (n,).
+        x_center (np.ndarray): Center of the candidate vector x. Array of shape (n,).
         linear_model (namedtuple): Named tuple containing the parameters of the
             linear model that form the Lagrange polynomial, including:
-            - "constant_term", which is a floating point number, and
-            - "linear_terms", which is a np.ndarray of shape (n,).
+            - "constant_term" (float)
+            - "linear_terms" (np.ndarray), array of shape (n,).
         lower_bounds (np.ndarray): Lower bounds for x. Array of shape (n,).
         upper_bounds (np.ndarray): Upper bounds for x. Array of shape (n,).
         trustregion_radius (float): Radius of the trust-region.
@@ -120,20 +119,20 @@ def improve_geomtery_trsbox_linear(
             Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
-        (np.ndarray): Vector of shape (n,) that maximizes the Lagrange polynomial.
+        (np.ndarray): Solution vector of shape (n,) that maximizes the Lagrange
+            polynomial.
     """
-    # Check if bounds valid
     if np.any(lower_bounds > x_center + zero_treshold):
-        raise ValueError("x_base violates lower bound.")
+        raise ValueError("x_center violates lower bound.")
     if np.any(x_center - zero_treshold > upper_bounds):
-        raise ValueError("x_base violates upper bound.")
+        raise ValueError("x_center violates upper bound.")
 
+    # Minimize and maximize g.T @ (x - x_center), respectively
     linear_model_to_minimize = linear_model
     linear_model_to_maximize = linear_model._replace(
         linear_terms=-linear_model.linear_terms
     )
 
-    # Minimize and maximize g' * (x - x_center), respectively
     x_candidate_min = minimize_trsbox_linear(
         linear_model_to_minimize,
         lower_bounds - x_center,
@@ -218,7 +217,7 @@ def _take_constrained_step_up_to_boundary(
     Args:
         x_candidate (np.ndarray): Current candidate vector of shape (n,).
         direction (np.ndarray): Direction vector of shape (n,).
-        active_bound (float): The active - lower or upper - bound.
+        active_bound (float): The active (lower or upper) bound.
         index_bound_active (int): Index where an active lower or upper bound
             has been found.
 
@@ -226,10 +225,8 @@ def _take_constrained_step_up_to_boundary(
         (tuple):
         - x_candidate (np.ndarray): New candidate vector of shape (n,).
         - direction (np.ndarray): New direction vector of shape (n,), where the
-            search direction of the currently active bound has been set to zero.
+            search direction of the active_bound has been set to zero.
     """
-    direction_updated = np.copy(direction)
-
     step_size_constr = (active_bound - x_candidate[index_bound_active]) / direction[
         index_bound_active
     ]
@@ -238,9 +235,9 @@ def _take_constrained_step_up_to_boundary(
     x_candidate[index_bound_active] = active_bound
 
     # Do not search in this direction anymore
-    direction_updated[index_bound_active] = 0.0
+    direction[index_bound_active] = 0.0
 
-    return x_candidate, direction_updated
+    return x_candidate, direction
 
 
 def _take_unconstrained_step_up_to_boundary(
@@ -297,11 +294,11 @@ def _get_distance_to_trustregion_boundary(x0, direction, radius, zero_treshold):
     g_sumsq = np.dot(direction, direction)
     x0_sumsq = np.dot(x0, x0)
 
-    if math.sqrt(g_sumsq) < zero_treshold:
+    if np.sqrt(g_sumsq) < zero_treshold:
         alpha = 0
     else:
         alpha = (
-            math.sqrt(np.maximum(0, g_dot_x0**2 + g_sumsq * (radius**2 - x0_sumsq)))
+            np.sqrt(np.maximum(0, g_dot_x0**2 + g_sumsq * (radius**2 - x0_sumsq)))
             - g_dot_x0
         ) / g_sumsq
 
