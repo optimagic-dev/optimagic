@@ -1,3 +1,39 @@
+"""Handle constraints by reparametrizations.
+
+The functions in this module allow to convert between internal and external parameter
+vectors.
+
+
+An external parameter vector is the parameter vector as it was specified by the user.
+This external parameter vector might be subject to constraints, such as the condition
+that the first two parameters are equal.
+
+
+An internal parameter vector is an internal representation of the parameters in a
+different space. The internal parameters are meaningless and have no direct
+interpretation. However, the internal parameter vector has two important properties:
+1. It is only subject to box constraints
+2. `reparametrize_from_internal(internal_parameter)` always produces a valid external
+parameter vector (i.e. one that fulfills all constraints.
+
+For more background see :ref:`implementation_of_constraints`.
+
+The reparametrization from internal can be broken down into three separate steps:
+
+- Writing values from the internal parameter vector into an array that is as long as the
+  external parameters and contains NaNs or values to which parameters have been fixed.
+  We call this step `pre_replace`.
+- Transforming slices of the resulting vector with kernel transformations. Note that
+  this step does not change the length. All kernel transformations have as many input
+  as output parameters and are invertible. We call this step `transformation`. The
+  resulting vector might still contrain NaNs.
+- Fill the NaNs by duplicating values of the transformed parameter vector. We call this
+  step `post_replace`
+
+In the following, let n_external be the length of th external parameter vector and
+n_internal the length of the internal parameter vector.
+
+"""
 from functools import partial
 from typing import NamedTuple
 
