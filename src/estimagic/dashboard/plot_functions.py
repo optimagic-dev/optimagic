@@ -18,7 +18,7 @@ from estimagic.config import PLOT_WIDTH
 from estimagic.config import TOOLBAR_LOCATION
 from estimagic.config import Y_RANGE_PADDING
 from estimagic.config import Y_RANGE_PADDING_UNITS
-from estimagic.visualization.colors import get_colors
+from estimagic.dashboard.colors import get_colors
 
 
 def plot_time_series(
