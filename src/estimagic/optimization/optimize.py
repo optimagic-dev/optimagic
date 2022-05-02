@@ -25,9 +25,11 @@ from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
 from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
-from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
-from estimagic.parameters.parameter_conversion import get_internal_bounds
-from estimagic.parameters.parameter_conversion import get_reparametrize_functions
+from estimagic.parameters.parameter_conversion_old import (
+    get_derivative_conversion_function,
+)
+from estimagic.parameters.parameter_conversion_old import get_internal_bounds
+from estimagic.parameters.parameter_conversion_old import get_reparametrize_functions
 from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.parameters.parameter_preprocessing import check_params_are_valid
 from estimagic.parameters.process_constraints import process_constraints_old

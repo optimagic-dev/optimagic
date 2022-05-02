@@ -16,7 +16,7 @@ from estimagic import batch_evaluators as be
 from estimagic.decorators import AlgoInfo
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
-from estimagic.parameters.parameter_conversion import get_internal_bounds
+from estimagic.parameters.parameter_conversion_old import get_internal_bounds
 from scipy.stats import qmc
 from scipy.stats import triang
 

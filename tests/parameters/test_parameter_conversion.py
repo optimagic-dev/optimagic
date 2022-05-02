@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
-from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
-from estimagic.parameters.parameter_conversion import get_reparametrize_functions
+from estimagic.parameters.parameter_conversion_old import (
+    get_derivative_conversion_function,
+)
+from estimagic.parameters.parameter_conversion_old import get_reparametrize_functions
 from numpy.testing import assert_array_almost_equal as aaae
 
 

@@ -5,8 +5,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.differentiation.derivatives import first_derivative
-from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
-from estimagic.parameters.parameter_conversion import get_reparametrize_functions
+from estimagic.parameters.parameter_conversion_old import (
+    get_derivative_conversion_function,
+)
+from estimagic.parameters.parameter_conversion_old import get_reparametrize_functions
 from estimagic.parameters.process_constraints import process_constraints_old
 from estimagic.parameters.reparametrize import _multiply_from_left
 from estimagic.parameters.reparametrize import _multiply_from_right
