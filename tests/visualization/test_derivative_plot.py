@@ -104,7 +104,8 @@ example_functions = [(f1, np.ones(3)), (f2, np.ones(2)), (f3, np.ones(1))]
 @pytest.mark.slow
 @pytest.mark.parametrize("func_and_params", example_functions)
 @pytest.mark.parametrize("n_steps", range(2, 5))
-def test_derivative_plot(func_and_params, n_steps):
+@pytest.mark.parametrize("grid", [True, False])
+def test_derivative_plot(func_and_params, n_steps, grid):
     func, params = func_and_params
     derivative = first_derivative(
         func,
@@ -113,5 +114,5 @@ def test_derivative_plot(func_and_params, n_steps):
         return_func_value=True,
         return_info=True,
     )
-    fig = derivative_plot(derivative)
-    fig.clf()
+
+    derivative_plot(derivative, combine_plots_in_grid=grid)
