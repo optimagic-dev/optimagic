@@ -1,6 +1,5 @@
 """Visualize and compare derivative estimates."""
 import itertools
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -63,8 +62,8 @@ def derivative_plot(
     func_value = np.atleast_1d(func_value)
     max_steps = df.groupby("dim_x")["step"].max()
 
-    # dimensions of problem. dimensions of params vector span the vertical axis while
-    # dimensions of output span the horizontal axis of produced figure
+    # dimensions of params vector (dim_x) span the vertical axis while dimensions of
+    # output (dim_f) span the horizontal axis of produced figure
     dim_x = range(df["dim_x"].max() + 1)
     dim_f = range(df["dim_f"].max() + 1)
 
@@ -92,7 +91,7 @@ def derivative_plot(
         # function evaluations scatter points
         _scatter_data = func_evals.query("dim_x == @row & dim_f == @col")
 
-        trace_1 = go.Scatter(
+        trace_func_evals = go.Scatter(
             x=_scatter_data["step"],
             y=_scatter_data["eval"],
             mode="markers",
@@ -100,61 +99,58 @@ def derivative_plot(
             legendgroup=1,
             marker={"color": palette[0]},
         )
-        g_ind.append(trace_1)
-
-        # overall best derivative estimate
-        _y = y0 + x_grid * df_der.loc[row, col]
-        trace_2 = go.Scatter(
-            x=x_grid,
-            y=_y,
-            mode="lines",
-            name="Best Estimate",
-            legendgroup=2,
-            line={"dash": "dash", "color": palette[1]},
-        )
-        g_ind.append(trace_2)
+        g_ind.append(trace_func_evals)
 
         # best derivative estimate given each method
         for i, method in enumerate(["forward", "central", "backward"]):
             _y = y0 + x_grid * df_der_method.loc[method, row, col]
 
-            trace_3 = go.Scatter(
+            trace_method = go.Scatter(
                 x=x_grid,
                 y=_y,
                 mode="lines",
                 name=method,
                 legendgroup=2 + i,
-                line={"color": palette[2 + i]},
+                line={"color": palette[2 + i], "width": 3},
             )
-            g_ind.append(trace_3)
+            g_ind.append(trace_method)
 
         # fill area
-        for sign in [1, -1]:
+        for sign, cmap_id in zip([1, -1], [2, 4]):  # cmap_id of ['forward', 'backward']
             _x_y = _select_eval_with_lowest_and_highest_step(func_evals, sign, row, col)
             diff = _x_y - np.array([0, y0])
             slope = diff[:, 1] / diff[:, 0]
             _y = y0 + x_grid * slope.reshape(-1, 1)
 
-            trace_4 = go.Scatter(
+            trace_fill_lines = go.Scatter(
                 x=x_grid,
                 y=_y[0, :],
                 mode="lines",
-                legendgroup=6,
-                line={"color": palette[6]},
+                line={"color": palette[cmap_id], "width": 1},
                 showlegend=False,
             )
-            g_ind.append(trace_4)
+            g_ind.append(trace_fill_lines)
 
-            trace_5 = go.Scatter(
+            trace_fill_area = go.Scatter(
                 x=x_grid,
                 y=_y[1, :],
                 mode="lines",
-                name="",
-                legendgroup=6,
-                line={"color": palette[6]},
+                line={"color": palette[cmap_id], "width": 1},
                 fill="tonexty",
             )
-            g_ind.append(trace_5)
+            g_ind.append(trace_fill_area)
+
+        # overall best derivative estimate
+        _y = y0 + x_grid * df_der.loc[row, col]
+        trace_best_estimate = go.Scatter(
+            x=x_grid,
+            y=_y,
+            mode="lines",
+            name="Best Estimate",
+            legendgroup=2,
+            line={"dash": "dash", "color": palette[1], "width": 4},
+        )
+        g_ind.append(trace_best_estimate)
 
         # subplot x titles
         x_axis.append(rf"Value relative to x<sub>{0, row}</sub>")
