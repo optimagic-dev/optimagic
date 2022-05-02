@@ -11,40 +11,42 @@ def minimize_trsbox_linear(
 
       min_x   g.T @ x
         s.t.   lower_bound <= x <= upper_bound
-              ||x||^2 <= delta^2
+              ||x||**2 <= trustregion_radius**2
 
     using an active-set approach.
 
-    This algorithm is an implementation of the routine TRSBOX from
+    This algorithm is an implementation of the TRSBOX routine from
     M. J. D. Powell (2009) "The BOBYQA algorithm for bound constrained
     optimization without derivatives." (cite:`Powell2009`).
 
     Args:
         linear_model (namedtuple): Named tuple containing the parameters of the
-            linear model, i.e. "linear_terms", which is a np.ndarray of shape (n,).
-        lower_bound (np.ndarray): Lower bounds for x. Array of shape (n,).
-        upper_bound (np.ndarray): Upper bounds for x. Array of shape (n,).
+            linear model, i.e. ``linear_terms``, which is a np.ndarray of shape (n,).
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
         trustregion_radius (float): Radius of the trust-region.
         zero_treshold (float): Treshold for treating numerical values as zero.
             Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
-        (np.ndarray): Solution vector to the linear trust-region subproblem.
+        (np.ndarray): Solution vector for the linear trust-region subproblem.
             Array of shape (n,).
     """
     lower_bounds_internal = np.minimum(lower_bounds, -zero_treshold)
     upper_bounds_internal = np.maximum(upper_bounds, zero_treshold)
 
     model_gradient = linear_model.linear_terms
-    n = model_gradient.shape[0]
+    n = len(model_gradient)
     x_candidate = np.zeros(n)
 
     direction = -model_gradient
 
-    constant_directions = np.where(np.abs(direction) < zero_treshold)[0]
-    direction[constant_directions] = 0.0
+    indices_inactive_directions = np.where(np.abs(direction) < zero_treshold)[0]
+    direction[indices_inactive_directions] = 0.0
 
-    active_directions = np.setdiff1d(np.arange(n), constant_directions)
+    active_directions = np.setdiff1d(np.arange(n), indices_inactive_directions)
     set_active_directions = iter(active_directions)
 
     for _ in range(n):
@@ -100,20 +102,25 @@ def improve_geomtery_trsbox_linear(
 
         max_x  abs(c + g.T @ (x - x_center))
             s.t. lower_bound <= x <= upper_bound
-                 ||x - x_center|| <= delta
+                 ||x - x_center|| <= trustregion_radius
 
-    In order to find x*, we first minimize and then maximize g.T @ (x - center).
+    In order to find the solution x*, we first minimize and then maximize
+    g.T @ (x - center).
     The resulting candidate vectors are then plugged into the objective function L(x)
-    to see which one yields the largest absolute value of the Lagrange polynomial.
+    to check which one yields the largest absolute value of the Lagrange polynomial.
 
     Args:
-        x_center (np.ndarray): Center of the candidate vector x. Array of shape (n,).
+        x_center (np.ndarray): 1d array of shape (n,) containing the center of the
+            parameter vector.
         linear_model (namedtuple): Named tuple containing the parameters of the
             linear model that form the Lagrange polynomial, including:
-            - "constant_term" (float)
-            - "linear_terms" (np.ndarray), array of shape (n,).
-        lower_bounds (np.ndarray): Lower bounds for x. Array of shape (n,).
-        upper_bounds (np.ndarray): Upper bounds for x. Array of shape (n,).
+            - ``constant_term`` (float): Constant term of the linear model.
+            - ``linear_terms`` (np.ndarray): 1d array of shape (n,) with the linear
+            terms of the mdoel.
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
         trustregion_radius (float): Radius of the trust-region.
         zero_treshold (float): Treshold for treating numerical values as zero.
             Numbers smaller than this are considered zero up to machine precision.
@@ -174,9 +181,11 @@ def _find_next_active_bound(
 
     Args:
         x_candidate_unconstr (np.ndarray): Unconstrained candidate vector of shape (n,),
-            which has been computed without taking bounds into account.
-        lower_bounds (np.ndarray): Lower bounds for x. Array of shape (n,).
-        upper_bounds (np.ndarray): Upper bounds for x. Array of shape (n,).
+            which ignores bound constraints.
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
         set_active_directions (iterator): Iterator over the indices of active search
             directions, i.e. directions that are not zero.
 
@@ -253,7 +262,7 @@ def _take_unconstrained_step_up_to_boundary(
             Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
-        (np.ndarray): New unconstrained candidate vector shape (n,).
+        (np.ndarray): Updated, unconstrained candidate vector of shape (n,).
     """
     step_size_unconstr = _get_distance_to_trustregion_boundary(
         x_candidate, direction, trustregion_radius, zero_treshold
@@ -263,43 +272,50 @@ def _take_unconstrained_step_up_to_boundary(
     return x_candidate_unconstr
 
 
-def _get_distance_to_trustregion_boundary(x0, direction, radius, zero_treshold):
+def _get_distance_to_trustregion_boundary(
+    x, direction, trustregion_radius, zero_treshold
+):
     """Compute the candidate vector's distance to the trustregion boundary.
 
-    Given the candidate vector, find the largest step `alpha` in direction `g`
-    that satisfies ||x|| <= delta,
+    Given the candidate vector, find the largest step alpha in direction g
+    that satisfies ||x|| <= trustregion_radius,
 
-    where `g` denotes the direction vector and `delta` the trust-region radius.
+    where g denotes the direction vector.
 
-    To find `alpha`, i.e. the candidate's distance to the trust-region boundary, solve
-      ||x0 + alpha * g||^2 = delta^2
+    To find alpha, i.e. the candidate's distance to the trust-region boundary, solve
+      ||x + alpha * g||**2 = trustregion_radius**2
          s.t. alpha >= 0
 
-    Using this method, the solution exists whenever ||x0|| <= delta^2.
+    Using this method, the solution exists whenever ||x|| <= trustregion_radius**2.
 
     Choose alpha = 0, if the direction vector is zero everywhere.
 
     Args:
-        x0 (np.ndarray): Candidate vector of shape (n,).
+        x (np.ndarray): Candidate vector of shape (n,).
         direction (np.ndarray): Direction vector of shape (n,).
-        radius (float): Radius of the trust-region.
+        trustregion_radius (float): Radius of the trust-region.
         zero_treshold (float): Treshold for treating numerical values as zero.
             Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
-        (float) Distance of the candidate vector to the trustregion
-            boundary.
+        (float) Distance between the candidate vector and the trust-region boundary.
     """
-    g_dot_x0 = np.dot(direction, x0)
+    g_dot_x = np.dot(direction, x)
     g_sumsq = np.dot(direction, direction)
-    x0_sumsq = np.dot(x0, x0)
+    x_sumsq = np.dot(x, x)
 
-    if np.sqrt(g_sumsq) < zero_treshold:
-        alpha = 0
+    l2_norm = np.sqrt(g_sumsq)
+
+    if l2_norm < zero_treshold:
+        distance_to_boundary = 0
     else:
-        alpha = (
-            np.sqrt(np.maximum(0, g_dot_x0**2 + g_sumsq * (radius**2 - x0_sumsq)))
-            - g_dot_x0
+        distance_to_boundary = (
+            np.sqrt(
+                np.maximum(
+                    0, g_dot_x**2 + g_sumsq * (trustregion_radius**2 - x_sumsq)
+                )
+            )
+            - g_dot_x
         ) / g_sumsq
 
-    return alpha
+    return distance_to_boundary
