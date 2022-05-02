@@ -10,4 +10,5 @@ def test_lollipop_plot_runs():
         columns=["a", "b", "c"],
     )
 
-    lollipop_plot(df)
+    for grid in [True, False]:
+        lollipop_plot(df, combine_plots_in_grid=grid)

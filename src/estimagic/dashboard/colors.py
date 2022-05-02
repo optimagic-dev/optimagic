@@ -1,6 +1,3 @@
-import seaborn as sns
-
-
 def get_colors(palette, number):
     """Return a list with hex codes representing a color palette.
 
@@ -35,11 +32,8 @@ def get_colors(palette, number):
         )
     colors = palette_to_colors[palette]
 
-    # if many ordered colors are requested switch to using the nipy_spectral color map
-    if palette == "ordered" and number > len(colors):
-        res = sns.color_palette("nipy_spectral", number)
-    else:
-        n_full_repetitions = number // len(colors)
-        modulus = number % len(colors)
-        res = n_full_repetitions * colors + colors[:modulus]
+    n_full_repetitions = number // len(colors)
+    modulus = number % len(colors)
+    res = n_full_repetitions * colors + colors[:modulus]
+
     return res

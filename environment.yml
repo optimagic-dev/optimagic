@@ -31,6 +31,7 @@ dependencies:
   - pytest-xdist
   - scipy>=1.2.1
   - seaborn
+  - plotly
   - sphinx=2.4.4
   - pydata-sphinx-theme>=0.3.0
   - sphinxcontrib-bibtex
@@ -55,3 +56,4 @@ dependencies:
       - fides==0.7.4
       - gif
       - gif[matplotlib]
+      - kaleido
