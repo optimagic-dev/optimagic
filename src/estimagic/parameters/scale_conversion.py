@@ -1,14 +1,17 @@
+from functools import partial
 from typing import NamedTuple
+
+import numpy as np
+from estimagic.differentiation.derivatives import first_derivative
+from estimagic.parameters.tree_conversion import FlatParams
 
 
 def get_scale_converter(
-    internal_params,
-    tree_converter,
-    params_converter,
-    criterion,
+    flat_params,
+    func,
     scaling_options,
 ):
-    """Get parameter and derivative converter.
+    """Get scale converter.
 
 
     Returns:
@@ -18,9 +21,128 @@ def get_scale_converter(
             parameters and bounds.
 
     """
+    factor, offset = calculate_scaling_factor_and_offset(
+        flat_params=flat_params, func=func, **scaling_options
+    )
+
+    _params_to_internal = partial(
+        scale_to_internal,
+        scaling_factor=factor,
+        scaling_offset=offset,
+    )
+
+    _params_from_internal = partial(
+        scale_from_internal,
+        scaling_factor=factor,
+        scaling_offset=offset,
+    )
+
+    def _derivative_to_internal(derivative):
+        return derivative * factor
+
+    def _derivative_from_internal(derivative):
+        return derivative / factor
+
+    converter = ScaleConverter(
+        params_to_internal=_params_to_internal,
+        params_from_internal=_params_from_internal,
+        derivative_to_internal=_derivative_to_internal,
+        derivative_from_internal=_derivative_from_internal,
+    )
+
+    params = FlatParams(
+        values=converter.params_to_internal(flat_params.values),
+        lower_bounds=converter.params_to_internal(flat_params.lower_bounds),
+        upper_bounds=converter.params_to_internal(flat_params.upper_bounds),
+        names=flat_params.names,
+    )
+
+    return converter, params
 
 
 class ScaleConverter(NamedTuple):
     params_to_internal: callable
     params_from_internal: callable
     derivative_to_internal: callable
+    derivative_from_internal: callable
+
+
+def calculate_scaling_factor_and_offset(
+    flat_params,
+    func,
+    method="start_values",
+    clipping_value=0.1,
+    magnitude=1,
+    numdiff_options=None,
+):
+    x = flat_params.values
+    lower_bounds = flat_params.lower_bounds
+    upper_bounds = flat_params.upper_bounds
+
+    if method == "start_values":
+        raw_factor = np.clip(np.abs(x), clipping_value, np.inf)
+        scaling_offset = None
+    elif method == "bounds":
+        raw_factor = upper_bounds - lower_bounds
+        scaling_offset = lower_bounds
+    elif method == "gradient":
+        numdiff_options = {} if numdiff_options is None else numdiff_options
+        default_numdiff_options = {
+            "scaling_factor": 100,
+            "lower_bounds": lower_bounds,
+            "upper_bounds": upper_bounds,
+            "error_handling": "raise",
+        }
+
+        numdiff_options = {**default_numdiff_options, **numdiff_options}
+
+        gradient = first_derivative(func, x, **numdiff_options)["derivative"]
+
+        raw_factor = np.clip(np.abs(gradient), clipping_value, np.inf)
+        scaling_offset = None
+
+    scaling_factor = raw_factor / magnitude
+
+    return scaling_factor, scaling_offset
+
+
+def scale_to_internal(vec, scaling_factor, scaling_offset):
+    """Scale a parameter vector from external scale to internal one.
+
+    Args:
+        vec (np.ndarray): Internal parameter vector with external scale.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+
+    Returns:
+        np.ndarray: vec with internal scale
+
+    """
+    if scaling_offset is not None:
+        vec = vec - scaling_offset
+
+    if scaling_factor is not None:
+        vec = vec / scaling_factor
+
+    return vec
+
+
+def scale_from_internal(vec, scaling_factor, scaling_offset):
+    """Scale a parameter vector from internal scale to external one.
+
+    Args:
+        vec (np.ndarray): Internal parameter vector with external scale.
+        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
+        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+
+    Returns:
+        np.ndarray: vec with external scale
+
+    """
+    if scaling_factor is not None:
+        vec = vec * scaling_factor
+
+    if scaling_offset is not None:
+        vec = vec + scaling_offset
+
+    return vec
