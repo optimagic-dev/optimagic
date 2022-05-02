@@ -113,5 +113,6 @@ def test_derivative_plot(func_and_params, n_steps):
         return_func_value=True,
         return_info=True,
     )
-    fig = derivative_plot(derivative)
-    fig.clf()
+    for grid in [True, False]:
+        fig = derivative_plot(derivative, combine_plots_in_grid=grid)
+        del fig

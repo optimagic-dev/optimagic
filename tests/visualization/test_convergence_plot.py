@@ -39,13 +39,16 @@ def test_convergence_plot_options(options):
         logging_directory="logging",
     )
 
-    convergence_plot(
-        problems=problems,
-        results=results,
-        problem_subset=["bard_good_start"],
-        **options
-    )
-    plt.close()
+    for grid in [True, False]:
+
+        convergence_plot(
+            problems=problems,
+            results=results,
+            problem_subset=["bard_good_start"],
+            combine_plots_in_grid=grid,
+            **options
+        )
+        plt.close()
 
 
 def test_check_only_allowed_subset_provided_none():

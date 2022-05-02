@@ -1,13 +1,21 @@
 """Visualize and compare derivative estimates."""
 import itertools
+import warnings
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from estimagic.config import PLOTLY_TEMPLATE
+from estimagic.visualization.plot_help import create_grid_plot
+from estimagic.visualization.plot_help import create_ind_dict
 
 
 def derivative_plot(
     derivative_result,
+    combine_plots_in_grid=True,
+    template=PLOTLY_TEMPLATE,
+    palette=px.colors.qualitative.Plotly,
 ):
     """Plot evaluations and derivative estimates.
 
@@ -24,11 +32,17 @@ def derivative_plot(
         derivative_result (dict): The result dictionary of call to
             :func:`~estimagic.differentiation.derivatives.first_derivative` with
             return_info and return_func_value set to True.
+        combine_plots_in_grid (bool): decide whether to return a one
+            figure containing subplots for each factor pair or a dictionary
+            of individual plots. Default True.
+        template (str): The template for the figure. Default is "plotly_white".
+        palette: The coloring palette for traces. Default is "qualitative.Plotly".
 
     Returns:
-        fig (matplotlib.pyplot.figure): The figure.
+        plotly.Figure: The grid plot or dict of individual plots
 
     """
+
     func_value = derivative_result["func_value"]
     func_evals = derivative_result["func_evals"]
     derivative_candidates = derivative_result["derivative_candidates"]
@@ -48,70 +62,71 @@ def derivative_plot(
     grid_points = 2  # we do not need more than 2 grid points since all lines are affine
     func_value = np.atleast_1d(func_value)
     max_steps = df.groupby("dim_x")["step"].max()
-    palette = {
-        "forward": "tab:green",
-        "central": "tab:blue",
-        "backward": "tab:orange",
-        1: "green",
-        -1: "orange",
-    }
 
     # dimensions of problem. dimensions of params vector span the vertical axis while
     # dimensions of output span the horizontal axis of produced figure
     dim_x = range(df["dim_x"].max() + 1)
     dim_f = range(df["dim_f"].max() + 1)
 
-    # plot
-    width = 10 * len(dim_f)
-    height = 11 * len(dim_x)
+    # plotting
 
-    fig, axes = plt.subplots(len(dim_x), len(dim_f), figsize=(width, height))
-    axes = np.atleast_2d(axes)
+    # container for titles
+    titles = []
+    # container for x-axis titles
+    x_axis = []
+    # container for individual plots
+    g_list = []
 
-    for ax, (row, col) in zip(axes.flatten(), itertools.product(dim_x, dim_f)):
-        # labels and texts
-        ax.set_xlabel(rf"Value relative to $x_{{0, {row}}}$", fontsize=14)
-        ax.text(
-            0.35,
-            1.02,
-            f"dim_x, dim_f = {row, col}",
-            transform=ax.transAxes,
-            color="grey",
-            fontsize=14,
-        )
+    # creating data traces for plotting faceted/individual plots
+    for (row, col) in itertools.product(dim_x, dim_f):
+        g_ind = []  # container for data for traces in individual plot
 
         # initial values and x grid
         y0 = func_value[col]
         x_grid = np.linspace(-max_steps[row], max_steps[row], grid_points)
 
-        # plot function evaluations scatter points
+        # initial values and x grid
+        y0 = func_value[col]
+        x_grid = np.linspace(-max_steps[row], max_steps[row], grid_points)
+
+        # function evaluations scatter points
         _scatter_data = func_evals.query("dim_x == @row & dim_f == @col")
-        ax.scatter(
-            _scatter_data["step"],
-            _scatter_data["eval"],
-            color="gray",
-            label="Function Evaluation",
-            edgecolor="black",
-        )
 
-        # draw overall best derivative estimate
+        trace_1 = go.Scatter(
+            x=_scatter_data["step"],
+            y=_scatter_data["eval"],
+            mode="markers",
+            name="Function Evaluation",
+            legendgroup=1,
+            marker={"color": palette[0]},
+        )
+        g_ind.append(trace_1)
+
+        # overall best derivative estimate
         _y = y0 + x_grid * df_der.loc[row, col]
-        ax.plot(
-            x_grid,
-            _y,
-            color="black",
-            label="Best Estimate",
-            zorder=2,
-            linewidth=1.5,
-            linestyle="dashdot",
+        trace_2 = go.Scatter(
+            x=x_grid,
+            y=_y,
+            mode="lines",
+            name="Best Estimate",
+            legendgroup=2,
+            line={"dash": "dash", "color": palette[1]},
         )
+        g_ind.append(trace_2)
 
-        # draw best derivative estimate given each method
-        for method in ["forward", "central", "backward"]:
+        # best derivative estimate given each method
+        for i, method in enumerate(["forward", "central", "backward"]):
             _y = y0 + x_grid * df_der_method.loc[method, row, col]
-            ax.plot(
-                x_grid, _y, color=palette[method], label=method, zorder=1, linewidth=2
+
+            trace_3 = go.Scatter(
+                x=x_grid,
+                y=_y,
+                mode="lines",
+                name=method,
+                legendgroup=2 + i,
+                line={"color": palette[2 + i]},
             )
+            g_ind.append(trace_3)
 
         # fill area
         for sign in [1, -1]:
@@ -119,18 +134,71 @@ def derivative_plot(
             diff = _x_y - np.array([0, y0])
             slope = diff[:, 1] / diff[:, 0]
             _y = y0 + x_grid * slope.reshape(-1, 1)
-            ax.plot(x_grid, _y.T, "--", color=palette[sign], linewidth=0.5)
-            ax.fill_between(x_grid, _y[0, :], _y[1, :], alpha=0.15, color=palette[sign])
 
-    # legend
-    ncol = 5 if len(dim_f) > 1 else 3
-    axes[0, 0].legend(
-        loc="upper center",
-        bbox_to_anchor=(len(dim_f) / 2 + 0.05 * len(dim_f), 1.15),
-        ncol=ncol,
-        fontsize=14,
-    )
-    return fig
+            trace_4 = go.Scatter(
+                x=x_grid,
+                y=_y[0, :],
+                mode="lines",
+                legendgroup=6,
+                line={"color": palette[6]},
+                showlegend=False,
+            )
+            g_ind.append(trace_4)
+
+            trace_5 = go.Scatter(
+                x=x_grid,
+                y=_y[1, :],
+                mode="lines",
+                name="",
+                legendgroup=6,
+                line={"color": palette[6]},
+                fill="tonexty",
+            )
+            g_ind.append(trace_5)
+
+        # subplot x titles
+        x_axis.append(rf"Value relative to x<sub>{0, row}</sub>")
+        # subplot titles
+        titles.append(f"dim_x, dim_f = {row, col}")
+        # list of traces for individual plots
+        g_list.append(g_ind)
+
+    common_dependencies = {
+        "ind_list": g_list,
+        "names": titles,
+        "clean_legend": True,
+        "scientific_notation": True,
+        "x_title": x_axis,
+    }
+    common_layout = {
+        "template": template,
+        "margin": {"l": 10, "r": 10, "t": 30, "b": 10},
+    }
+
+    # Plot with subplots
+    if combine_plots_in_grid:
+        g = create_grid_plot(
+            rows=len(dim_x),
+            cols=len(dim_f),
+            **common_dependencies,
+            kws={
+                "height": 300 * len(dim_x),
+                "width": 500 * len(dim_f),
+                **common_layout,
+            },
+        )
+        out = g
+
+    # Dictionary for individual plots
+    else:
+        ind_dict = create_ind_dict(
+            **common_dependencies,
+            kws={"height": 300, "width": 500, "title_x": 0.5, **common_layout},
+        )
+
+        out = ind_dict
+
+    return out
 
 
 def _select_derivative_with_minimal_error(df_jac_cand, given_method=False):
