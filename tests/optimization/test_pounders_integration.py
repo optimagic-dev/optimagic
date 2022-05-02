@@ -64,16 +64,13 @@ def pounders_options():
 @pytest.fixture()
 def trustregion_subproblem_options():
     out = {
-        "maxiter": 20,
-        "maxiter_steepest_descent": 5,
-        "step_size_newton": 1e-3,
-        "ftol_abs": 1e-8,
-        "ftol_scaled": 1e-8,
-        "xtol": 1e-8,
+        "maxiter": 50,
+        "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
-        "gtol_scaled": 1e-8,
-        "steptol": 1e-8,
+        "gtol_scaled": 0,
+        "gtol_abs_cg": 1e-8,
+        "gtol_rel_cg": 1e-6,
         "k_easy": 0.1,
         "k_hard": 0.2,
     }
@@ -85,6 +82,7 @@ def trustregion_subproblem_options():
     [
         (np.array([0.15, 0.008, 0.01])),
         (np.array([1e-3, 1e-3, 1e-3])),
+        (np.array([1e-6, 1e-6, 1e-6])),
     ],
 )
 def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_options):
@@ -92,7 +90,7 @@ def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_opt
 
     gtol_abs = 1e-8
     gtol_rel = 1e-8
-    gtol_scaled = 1e-12
+    gtol_scaled = 0
 
     result = internal_solve_pounders(
         x0=start_vec,
@@ -100,20 +98,17 @@ def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_opt
         gtol_abs=gtol_abs,
         gtol_rel=gtol_rel,
         gtol_scaled=gtol_scaled,
-        n_maxinterp=7,
+        maxinterp=2 * len(start_vec) + 1,
         solver_sub=solver_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
-        maxiter_steepest_descent_sub=trustregion_subproblem_options[
-            "maxiter_steepest_descent"
+        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+            "maxiter_gradient_descent"
         ],
-        step_size_newton_sub=trustregion_subproblem_options["step_size_newton"],
-        ftol_abs_sub=trustregion_subproblem_options["ftol_abs"],
-        ftol_scaled_sub=trustregion_subproblem_options["ftol_scaled"],
-        xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
-        steptol_sub=trustregion_subproblem_options["steptol"],
+        gtol_abs_conjugate_gradient_sub=trustregion_subproblem_options["gtol_abs_cg"],
+        gtol_rel_conjugate_gradient_sub=trustregion_subproblem_options["gtol_rel_cg"],
         k_easy_sub=trustregion_subproblem_options["k_easy"],
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
@@ -122,7 +117,7 @@ def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_opt
     )
 
     x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
-    aaae(result["solution_x"], x_expected, decimal=4)
+    aaae(result["solution_x"], x_expected, decimal=3)
 
 
 @pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])
@@ -131,7 +126,7 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
 
     gtol_abs = 1e-8
     gtol_rel = 1e-8
-    gtol_scaled = 1e-12
+    gtol_scaled = 0
 
     result = internal_solve_pounders(
         x0=start_vec,
@@ -139,20 +134,17 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
         gtol_abs=gtol_abs,
         gtol_rel=gtol_rel,
         gtol_scaled=gtol_scaled,
-        n_maxinterp=7,
+        maxinterp=7,
         solver_sub=solver_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
-        maxiter_steepest_descent_sub=trustregion_subproblem_options[
-            "maxiter_steepest_descent"
+        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+            "maxiter_gradient_descent"
         ],
-        step_size_newton_sub=trustregion_subproblem_options["step_size_newton"],
-        ftol_abs_sub=trustregion_subproblem_options["ftol_abs"],
-        ftol_scaled_sub=trustregion_subproblem_options["ftol_scaled"],
-        xtol_sub=trustregion_subproblem_options["xtol"],
         gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
         gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
         gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
-        steptol_sub=trustregion_subproblem_options["steptol"],
+        gtol_abs_conjugate_gradient_sub=trustregion_subproblem_options["gtol_abs_cg"],
+        gtol_rel_conjugate_gradient_sub=trustregion_subproblem_options["gtol_rel_cg"],
         k_easy_sub=trustregion_subproblem_options["k_easy"],
         k_hard_sub=trustregion_subproblem_options["k_hard"],
         n_cores=1,
