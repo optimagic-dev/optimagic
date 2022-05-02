@@ -12,6 +12,7 @@ provides a comprehensive overview.
 """
 import functools
 import warnings
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -203,3 +204,92 @@ def switch_sign(func):
         return switched
 
     return wrapper
+
+
+class AlgoInfo(NamedTuple):
+    primary_criterion_entry: str
+    name: str
+    parallelizes: bool
+    disable_cache: bool
+    needs_scaling: bool
+    is_available: bool
+
+
+def mark_minimizer(
+    func=None,
+    *,
+    primary_criterion_entry="value",
+    name=None,
+    parallelizes=False,
+    disable_cache=False,
+    needs_scaling=False,
+    is_available=True,
+):
+    """Decorator to mark a function as internal estimagic minimizer and add information.
+
+    Args:
+        func (callable): The function to be decorated
+        primary_criterion_entry (str): One of "value", "contributions",
+            "root_contributions" or "dict". Default: "value". This decides
+            which part of the output of the user provided criterion function
+            is needed by the internal optimizer.
+        name (str): The name of the internal algorithm.
+        parallelizes (bool): Must be True if an algorithm evaluates the criterion,
+            derivative or criterion_and_derivative in parallel.
+        disable_cache (bool): If True, no caching for the criterion function
+            or its derivatives are used.
+        needs_scaling (bool): Must be True if the algorithm is not reasonable
+            independent of the scaling of the parameters.
+        is_available (bool): Whether the algorithm is available. This is needed for
+            algorithms that require optional dependencies.
+
+    """
+    if name is None:
+        raise TypeError(
+            "mark_minimizer() missing 1 required keyword-only argument: 'name'"
+        )
+    elif not isinstance(name, str):
+        raise TypeError("name must be a string.")
+
+    valid_entries = ["value", "dict", "contributions", "root_contributions"]
+    if primary_criterion_entry not in valid_entries:
+        raise ValueError(
+            f"primary_criterion_entry must be one of {valid_entries} not "
+            f"{primary_criterion_entry}."
+        )
+
+    if not isinstance(parallelizes, bool):
+        raise TypeError("parallelizes must be a bool.")
+
+    if not isinstance(disable_cache, bool):
+        raise TypeError("disable_cache must be a bool.")
+
+    if not isinstance(needs_scaling, bool):
+        raise TypeError("needs_scaling must be a bool.")
+
+    if not isinstance(is_available, bool):
+        raise TypeError("is_available must be a bool.")
+
+    algo_info = AlgoInfo(
+        primary_criterion_entry=primary_criterion_entry,
+        name=name,
+        parallelizes=parallelizes,
+        disable_cache=disable_cache,
+        needs_scaling=needs_scaling,
+        is_available=is_available,
+    )
+
+    def decorator_mark_minimizer(func):
+        @functools.wraps(func)
+        def wrapper_mark_minimizer(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        wrapper_mark_minimizer._algorithm_info = algo_info
+
+        return wrapper_mark_minimizer
+
+    if callable(func):
+        return decorator_mark_minimizer(func)
+
+    else:
+        return decorator_mark_minimizer

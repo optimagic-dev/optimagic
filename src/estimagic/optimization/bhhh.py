@@ -1,12 +1,20 @@
 """Implement Berndt-Hall-Hall-Hausman (BHHH) algorithm."""
-from functools import partial
-
 import numpy as np
+from estimagic.decorators import mark_minimizer
 
 
+@mark_minimizer(
+    name="bhhh",
+    primary_criterion_entry="contributions",
+    parallelizes=False,
+    needs_scaling=False,
+    disable_cache=False,
+    is_available=True,
+)
 def bhhh(
     criterion_and_derivative,
     x,
+    *,
     convergence_absolute_gradient_tolerance=1e-8,
     stopping_max_iterations=200,
 ):
@@ -14,18 +22,8 @@ def bhhh(
 
     For details, see :ref:`_own_algorithms`.
     """
-    algorithm_info = {
-        "primary_criterion_entry": "root_contributions",
-        "parallelizes": False,
-        "needs_scaling": False,
-        "name": "bhhh",
-    }
-    _criterion_and_derivative = partial(
-        criterion_and_derivative, algorithm_info=algorithm_info
-    )
-
     result_dict = bhhh_internal(
-        criterion_and_derivative=_criterion_and_derivative,
+        criterion_and_derivative,
         x=x,
         convergence_absolute_gradient_tolerance=convergence_absolute_gradient_tolerance,
         stopping_max_iterations=stopping_max_iterations,
@@ -59,9 +57,7 @@ def bhhh_internal(
             solution vector or reaching stopping_max_iterations.
         - message (str): Message to the user. Currently it says: "Under development."
     """
-    criterion_accepted, gradient = criterion_and_derivative(
-        x, task="criterion_and_derivative"
-    )
+    criterion_accepted, gradient = criterion_and_derivative(x)
     x_accepted = x
 
     hessian_approx = np.dot(gradient.T, gradient)
@@ -77,17 +73,14 @@ def bhhh_internal(
         niter += 1
 
         x_candidate = x_accepted + step_size * direction
-        criterion_candidate = criterion_and_derivative(x_candidate, task="criterion")
+        criterion_candidate, gradient = criterion_and_derivative(x_candidate)
 
         # If previous step was accepted
         if step_size == initial_step_size:
-            gradient = criterion_and_derivative(x_candidate, task="derivative")
             hessian_approx = np.dot(gradient.T, gradient)
 
         else:
-            criterion_candidate, gradient = criterion_and_derivative(
-                x_candidate, task="criterion_and_derivative"
-            )
+            criterion_candidate, gradient = criterion_and_derivative(x_candidate)
 
         # Line search
         if np.sum(criterion_candidate) > np.sum(criterion_accepted):
