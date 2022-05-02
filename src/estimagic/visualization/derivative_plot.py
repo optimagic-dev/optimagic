@@ -3,13 +3,12 @@ import itertools
 import warnings
 
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.visualization.plot_help import create_grid_plot
 from estimagic.visualization.plot_help import create_ind_dict
-
-import pandas as pd
 
 
 def derivative_plot(
