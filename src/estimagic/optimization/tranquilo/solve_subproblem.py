@@ -9,7 +9,7 @@ from estimagic.optimization.tranquilo.models import evaluate_model
 
 
 def get_subsolver(solver, user_options=None, bounds=None):
-    """Get a algorithm-function with partialled options.
+    """Get an algorithm-function with partialled options.
 
     Args:
         solver (str or callable): Name of a subproblem solver or subproblem solver. The
@@ -20,23 +20,19 @@ def get_subsolver(solver, user_options=None, bounds=None):
         user_options (dict):
             Options for the subproblem solver. The following are supported:
             - maxiter (int): Maximum number of iterations to perform when solving the
-                trust-region subproblem (bntr and gqtpar)
-            - maxiter_steepest_descent (int): Maximum number of steepest descent
-                iterations to perform. (bntr).
-            - step_size_newton (float): Parameter to scale the size of the newton step
-                (bntr).
-            - ftol_abs (float): Convergence tolerance for the absolute difference
-                between f(k+1) - f(k) in trust-region subproblem ("bntr").
-            - ftol_scaled (float): Convergence tolerance for the scaled difference
-                between f(k+1) - f(k) in trust-region subproblem ("bntr").
-            - xtol (float): Convergence tolerance for the absolute difference
-                between max(x(k+1) - x(k)) in trust-region subproblem ("bntr").
+                trust-region subproblem ("bntr" and "gqtpar").
+            - maxiter_gradient_descent (int): Maximum number of gradient descent
+                iterations to perform ("bntr").
             - gtol_abs (float): Convergence tolerance for the absolute gradient norm
                 in the trust-region subproblem ("bntr").
             - gtol_rel (float): Convergence tolerance for the relative gradient norm
                 in the trust-region subproblem ("bntr").
             - gtol_scaled (float): Convergence tolerance for the scaled gradient norm
                 in the trust-region subproblem ("bntr").
+            - gtol_abs_conjugate_gradient (float): Convergence tolerance for the
+                absolute gradient norm in the conjugate gradient step ("bntr").
+            - gtol_rel_conjugate_gradient (float): Convergence tolerance for the
+                relative gradient norm in the conjugate gradient step ("bntr").
             - k_easy (float): topping criterion for the "easy" case in the trust-region
                 subproblem ("gqtpar").
             - k_hard (float): Stopping criterion for the "hard" case in the trust-region
@@ -44,7 +40,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
         bounds (NamedTuple or None):
 
     Returns:
-        callable: The subsolver
+        callable: The subsolver.
 
     """
     user_options = {} if user_options is None else user_options
@@ -68,15 +64,12 @@ def get_subsolver(solver, user_options=None, bounds=None):
 
     default_options = {
         "maxiter": 20,
-        "maxiter_steepest_descent": 5,
-        "step_size_newton": 1e-3,
-        "ftol_abs": 1e-8,
-        "ftol_scaled": 1e-8,
-        "xtol": 1e-8,
+        "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
-        "gtol_scaled": 1e-8,
-        "steptol": 1e-12,
+        "gtol_scaled": 0,
+        "gtol_abs_conjugate_gradient": 1e-8,
+        "gtol_rel_conjugate_gradient": 1e-6,
         "k_easy": 0.1,
         "k_hard": 0.2,
     }
