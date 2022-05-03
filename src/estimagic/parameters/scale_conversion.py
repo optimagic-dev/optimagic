@@ -9,6 +9,7 @@ from estimagic.parameters.tree_conversion import FlatParams
 def get_scale_converter(
     flat_params,
     func,
+    scaling,
     scaling_options,
 ):
     """Get scale converter.
@@ -21,6 +22,11 @@ def get_scale_converter(
             parameters and bounds.
 
     """
+    # fast path
+    if not scaling:
+        return _fast_path_scale_converter(), flat_params
+
+    scaling_options = {} if scaling_options is None else scaling_options
     factor, offset = calculate_scaling_factor_and_offset(
         flat_params=flat_params, func=func, **scaling_options
     )
@@ -65,6 +71,16 @@ class ScaleConverter(NamedTuple):
     params_from_internal: callable
     derivative_to_internal: callable
     derivative_from_internal: callable
+
+
+def _fast_path_scale_converter():
+    converter = ScaleConverter(
+        params_to_internal=lambda x: x,
+        params_from_internal=lambda x: x,
+        derivative_to_internal=lambda x: x,
+        derivative_from_internal=lambda x: x,
+    )
+    return converter
 
 
 def calculate_scaling_factor_and_offset(

@@ -4,6 +4,7 @@ from estimagic import first_derivative
 from estimagic.parameters.scale_conversion import get_scale_converter
 from estimagic.parameters.tree_conversion import FlatParams
 from numpy.testing import assert_array_almost_equal as aaae
+from numpy.testing import assert_array_equal as aae
 
 
 def func_scalar(x):
@@ -40,7 +41,7 @@ PARAMETRIZATION = list(TEST_CASES.items())
 
 
 @pytest.mark.parametrize("method, expected", PARAMETRIZATION, ids=IDS)
-def test_get_scale_converter_scalar_start_values(method, expected):
+def test_get_scale_converter_active(method, expected):
     params = FlatParams(
         values=np.arange(6),
         lower_bounds=np.arange(6) - 1,
@@ -54,7 +55,10 @@ def test_get_scale_converter_scalar_start_values(method, expected):
     }
 
     converter, scaled = get_scale_converter(
-        flat_params=params, func=func_scalar, scaling_options=scaling_options
+        flat_params=params,
+        func=func_scalar,
+        scaling=True,
+        scaling_options=scaling_options,
     )
 
     aaae(scaled.values, expected.values)
@@ -71,3 +75,27 @@ def test_get_scale_converter_scalar_start_values(method, expected):
     )["derivative"]
 
     aaae(calculated_jacobian, numerical_jacobian)
+
+
+def test_scale_conversion_fast_path():
+    params = FlatParams(
+        values=np.arange(6),
+        lower_bounds=np.arange(6) - 1,
+        upper_bounds=np.arange(6) + 1,
+        names=list("abcdef"),
+    )
+
+    converter, scaled = get_scale_converter(
+        flat_params=params,
+        func=func_scalar,
+        scaling=False,
+        scaling_options=None,
+    )
+
+    aae(params.values, scaled.values)
+    aae(params.lower_bounds, scaled.lower_bounds)
+    aae(params.upper_bounds, scaled.upper_bounds)
+
+    aae(converter.params_to_internal(params.values), params.values)
+    aae(converter.params_from_internal(params.values), params.values)
+    aae(converter.derivative_to_internal(np.ones(3)), np.ones(3))
