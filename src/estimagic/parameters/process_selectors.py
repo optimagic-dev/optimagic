@@ -41,9 +41,12 @@ def process_selectors(constraints, params, tree_converter):
             raise InvalidConstraintError(msg) from e
 
         if selector_case == "one selector":
+            if np.isscalar(selected):
+                selected = [selected]
             _fail_if_duplicates(selected, constr)
             selected = np.array(selected).astype(int)
         else:
+            selected = [[sel] if np.isscalar(sel) else sel for sel in selected]
             _fail_if_selections_are_incompatible(selected, constr)
             for sel in selected:
                 _fail_if_duplicates(sel, constr)
