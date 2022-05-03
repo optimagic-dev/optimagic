@@ -52,8 +52,10 @@ def get_converter(
     def _helper(x):
         x_external = space_converter.params_from_internal(x)
         x_tree = tree_converter.params_unflatten(x_external)
-        crit = func(x_tree)
-        return crit
+        f_raw = func(x_tree)
+        f_flat = tree_converter.func_flatten(f_raw)
+        f_agg = aggregate_func_output_to_value(f_flat, primary_key)
+        return f_agg
 
     scale_converter, scaled_params = get_scale_converter(
         flat_params=internal_params,
@@ -101,3 +103,12 @@ class Converter(NamedTuple):
     params_from_internal: callable
     derivative_to_internal: callable
     func_to_internal: callable
+
+
+def aggregate_func_output_to_value(f_eval, primary_key):
+    if primary_key == "value":
+        return f_eval
+    elif primary_key == "contributions":
+        return f_eval.sum()
+    elif primary_key == "root_contributions":
+        return f_eval @ f_eval

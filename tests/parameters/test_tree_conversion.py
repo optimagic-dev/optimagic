@@ -19,12 +19,24 @@ def upper_bounds():
     return upper
 
 
-def test_tree_converter_no_constraints_scalar_func(params, upper_bounds):
+FUNC_EVALS = [
+    5.0,
+    np.float32(5),
+    {"contributions": np.ones(5)},
+    {"contributions": {"a": 1, "b": 2, "c": [np.full(4, 0.5)]}},
+    {"contributions": pd.Series(1, index=list("abcde"))},
+    {"root_contributions": np.ones(5)},
+    {"root_contributions": {"a": 1, "b": 2}},
+]
+
+
+@pytest.mark.parametrize("func_eval", FUNC_EVALS)
+def test_tree_converter_primary_key_is_value(params, upper_bounds, func_eval):
     converter, flat_params = get_tree_converter(
         params=params,
         lower_bounds=None,
         upper_bounds=upper_bounds,
-        func_eval=5,
+        func_eval=func_eval,
         derivative_eval=params,
         primary_key="value",
     )
@@ -44,9 +56,36 @@ def test_tree_converter_no_constraints_scalar_func(params, upper_bounds):
     assert unflat[0][0] == params[0][0]
     aae(unflat[0][1], params[0][1])
 
-    assert converter.func_flatten(3) == 3
-    assert isinstance(converter.func_flatten(3), float)
+    assert converter.func_flatten(func_eval) == 5
+    assert isinstance(converter.func_flatten(func_eval), float)
 
 
-# dict func with tree key
-# dict func with dict key
+PRIMARY_ENTRIES = ["value", "contributions", "root_contributions"]
+
+
+@pytest.mark.parametrize("primary_entry", PRIMARY_ENTRIES)
+def test_tree_conversion_fast_path(primary_entry):
+    if primary_entry == "value":
+        derivative_eval = np.arange(3) * 2
+        func_eval = 3
+    else:
+        derivative_eval = np.arange(6).reshape(2, 3)
+        func_eval = {primary_entry: np.ones(2)}
+
+    converter, flat_params = get_tree_converter(
+        params=np.arange(3),
+        lower_bounds=None,
+        upper_bounds=None,
+        func_eval=func_eval,
+        derivative_eval=derivative_eval,
+        primary_key=primary_entry,
+    )
+
+    aae(flat_params.values, np.arange(3))
+    aae(flat_params.lower_bounds, np.full(3, -np.inf))
+    aae(flat_params.upper_bounds, np.full(3, np.inf))
+    assert flat_params.names == list(map(str, range(3)))
+
+    aae(converter.params_flatten(np.arange(3)), np.arange(3))
+    aae(converter.params_unflatten(np.arange(3)), np.arange(3))
+    aae(converter.derivative_flatten(derivative_eval), derivative_eval)
