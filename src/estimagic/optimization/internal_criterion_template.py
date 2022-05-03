@@ -480,10 +480,15 @@ def _log_new_evaluations(
     types.
 
     """
+    if new_criterion is not None:
+        value = float(new_criterion["value"])
+
     data = {
         "params": external_x,
         "timestamp": datetime.datetime.now(),
         "valid": True,
+        "criterion_eval": new_criterion,
+        "value": value,
         **fixed_log_data,
     }
 
@@ -494,10 +499,6 @@ def _log_new_evaluations(
         separator = "\n" + "=" * 80 + "\n"
         data["exceptions"] = separator.join(caught_exceptions)
         data["valid"] = False
-
-    if new_criterion is not None:
-        data = {**data, **new_criterion}
-        data["value"] = float(data["value"])
 
     name = "optimization_iterations"
 

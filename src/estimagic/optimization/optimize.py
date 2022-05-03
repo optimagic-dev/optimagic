@@ -615,9 +615,7 @@ def _optimize(
 
     # create and initialize the database
     if logging:
-        database = _create_and_initialize_database(
-            logging, log_options, first_eval, problem_data
-        )
+        database = _create_and_initialize_database(logging, log_options, problem_data)
         db_kwargs = {
             "database": database,
             "path": logging,
@@ -749,7 +747,7 @@ def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
     return error_penalty
 
 
-def _create_and_initialize_database(logging, log_options, first_eval, problem_data):
+def _create_and_initialize_database(logging, log_options, problem_data):
     # extract information
     path = Path(logging)
     fast_logging = log_options.get("fast_logging", False)
@@ -773,7 +771,6 @@ def _create_and_initialize_database(logging, log_options, first_eval, problem_da
     # create the optimization_iterations table
     make_optimization_iteration_table(
         database=database,
-        first_eval=first_eval,
         if_exists=if_table_exists,
     )
 
