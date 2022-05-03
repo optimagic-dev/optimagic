@@ -15,7 +15,8 @@ from estimagic.logging.database_utilities import make_optimization_iteration_tab
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_steps_table
 from estimagic.optimization.check_arguments import check_optimize_kwargs
-from estimagic.optimization.get_algorithm import get_algorithm_and_algo_info
+from estimagic.optimization.get_algorithm import get_algo_info
+from estimagic.optimization.get_algorithm import get_algorithm
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
@@ -25,6 +26,7 @@ from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
 from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
+from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.parameter_conversion_old import (
     get_derivative_conversion_function,
 )
@@ -42,6 +44,10 @@ def maximize(
     params,
     algorithm,
     *,
+    lower_bounds=None,
+    upper_bounds=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
     criterion_kwargs=None,
     constraints=None,
     algo_options=None,
@@ -195,6 +201,10 @@ def maximize(
         criterion=criterion,
         params=params,
         algorithm=algorithm,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
         algo_options=algo_options,
@@ -220,6 +230,10 @@ def minimize(
     params,
     algorithm,
     *,
+    lower_bounds=None,
+    upper_bounds=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
     criterion_kwargs=None,
     constraints=None,
     algo_options=None,
@@ -371,6 +385,10 @@ def minimize(
         criterion=criterion,
         params=params,
         algorithm=algorithm,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
         criterion_kwargs=criterion_kwargs,
         constraints=constraints,
         algo_options=algo_options,
@@ -397,6 +415,10 @@ def _optimize(
     params,
     algorithm,
     *,
+    lower_bounds=None,
+    upper_bounds=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
     criterion_kwargs,
     constraints,
     algo_options,
@@ -423,6 +445,9 @@ def _optimize(
     Returns are the same as in maximize and minimize.
 
     """
+    # ==================================================================================
+    # Set default values and check options
+    # ==================================================================================
     criterion_kwargs = _setdefault(criterion_kwargs, {})
     constraints = _setdefault(constraints, [])
     algo_options = _setdefault(algo_options, {})
@@ -459,8 +484,14 @@ def _optimize(
         multistart=multistart,
         multistart_options=multistart_options,
     )
+    # ==================================================================================
+    # Get the algorithm info
+    # ==================================================================================
+    algo_info = get_algo_info(algorithm)
 
+    # ==================================================================================
     # store some arguments in a dictionary to save them in the database later
+    # ==================================================================================
     if logging:
         problem_data = {
             "direction": direction,
@@ -480,22 +511,84 @@ def _optimize(
             "cache_size": int(cache_size),
         }
 
+    # ==================================================================================
     # partial the kwargs into corresponding functions
+    # ==================================================================================
     criterion = process_func_of_params(
         func=criterion,
         kwargs=criterion_kwargs,
         name="criterion",
     )
+    if isinstance(derivative, dict):
+        derivative = derivative.get(algo_info.primary_criterion_entry)
     if derivative is not None:
         derivative = process_func_of_params(
             func=derivative, kwargs=derivative_kwargs, name="derivative"
         )
+    if isinstance(criterion_and_derivative, dict):
+        criterion_and_derivative = criterion_and_derivative.get(
+            algo_info.primary_criterion_entry
+        )
+
     if criterion_and_derivative is not None:
         criterion_and_derivative = process_func_of_params(
             func=criterion_and_derivative,
             kwargs=criterion_and_derivative_kwargs,
             name="criterion_and_derivative",
         )
+
+    # ==================================================================================
+    # Do first evaluation of user provided functions
+    # ==================================================================================
+    try:
+        first_crit_eval = criterion(params)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        msg = "Error while evaluating criterion at start params."
+        raise InvalidFunctionError(msg) from e
+
+    # do first derivative evaluation (if given)
+    if derivative is not None:
+        try:
+            first_deriv_eval = derivative(params)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = "Error while evaluating derivative at start params."
+            raise InvalidFunctionError(msg) from e
+
+    if criterion_and_derivative is not None:
+        try:
+            first_crit_and_deriv_eval = criterion_and_derivative(params)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = "Error while evaluating criterion_and_derivative at start params."
+            raise InvalidFunctionError(msg) from e
+
+    if derivative is not None:
+        used_deriv = first_deriv_eval
+    elif criterion_and_derivative is not None:
+        used_deriv = first_crit_and_deriv_eval[1]
+    else:
+        used_deriv = None
+
+    # ==================================================================================
+    # Get the converter (for tree flattening, constraints and scaling)
+    # ==================================================================================
+    converter, internal_params = get_converter(
+        func=criterion,
+        params=params,
+        constraints=constraints,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        func_eval=first_crit_eval,
+        primary_key=algo_info.primary_criterion_entry,
+        scaling=scaling,
+        scaling_options=scaling_options,
+        derivative_eval=used_deriv,
+    )
 
     # process params and constraints
     params = add_default_bounds_to_params(params)
@@ -552,6 +645,12 @@ def _optimize(
     # get internal parameters and bounds
     x = params_to_internal(params["value"].to_numpy())
 
+    first_eval = {
+        "internal_params": x,
+        "external_params": params,
+        "output": first_crit_eval,
+    }
+
     # this if condition reduces overhead in the no-constraints case
     if constraints in [None, []]:
         lower_bounds = params["lower_bound"].to_numpy()
@@ -575,39 +674,6 @@ def _optimize(
         transformations=pc,
     )
 
-    # do first function evaluation
-    try:
-        first_raw_eval = criterion(params)
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except Exception as e:
-        msg = "Error while evaluating criterion at start params."
-        raise InvalidFunctionError(msg) from e
-
-    first_eval = {
-        "internal_params": x,
-        "external_params": params,
-        "output": first_raw_eval,
-    }
-    # do first derivative evaluation (if given)
-    if derivative is not None:
-        try:
-            derivative(params)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as e:
-            msg = "Error while evaluating derivative at start params."
-            raise InvalidFunctionError(msg) from e
-
-    if criterion_and_derivative is not None:
-        try:
-            criterion_and_derivative(params)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as e:
-            msg = "Error while evaluating criterion_and_derivative at start params."
-            raise InvalidFunctionError(msg) from e
-
     # fill numdiff_options with defaults
     numdiff_options = _fill_numdiff_options_with_defaults(
         numdiff_options, lower_bounds, upper_bounds
@@ -625,7 +691,7 @@ def _optimize(
         db_kwargs = {"database": None, "path": None, "fast_logging": False}
 
     # get the algorithm
-    internal_algorithm, algo_info = get_algorithm_and_algo_info(
+    internal_algorithm = get_algorithm(
         algorithm=algorithm,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
@@ -633,6 +699,14 @@ def _optimize(
         logging=logging,
         db_kwargs=db_kwargs,
     )
+
+    if algo_info.primary_criterion_entry == "root_contributions":
+        if direction == "maximize":
+            msg = (
+                "Optimizers that exploit a least squares structure like {} can only be "
+                "used for minimization."
+            )
+            raise ValueError(msg.format(algo_info.name))
 
     # set default error penalty
     error_penalty = _fill_error_penalty_with_defaults(

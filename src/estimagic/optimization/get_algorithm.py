@@ -9,7 +9,21 @@ from estimagic.optimization import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
 
 
-def get_algorithm_and_algo_info(
+def get_algo_info(algorithm):
+    """Get algorithm info
+
+    Args:
+        algorithm (str or callable): String with the name of an algorithm or internal
+            algorithm function.
+
+    Returns:
+        AlgoInfo: NamedTuple with information about the algorithm.
+
+    """
+    return _process_user_algorithm(algorithm)[2]
+
+
+def get_algorithm(
     algorithm,
     lower_bounds,
     upper_bounds,
@@ -37,7 +51,7 @@ def get_algorithm_and_algo_info(
         callable: The algorithm.
 
     """
-    internal_algorithm, algo_name, algo_info = _process_user_algorithm(algorithm)
+    internal_algorithm, algo_name, _ = _process_user_algorithm(algorithm)
 
     internal_options = _adjust_options_to_algorithm(
         algo_options=algo_options,
@@ -55,7 +69,7 @@ def get_algorithm_and_algo_info(
         db_kwargs=db_kwargs,
     )
 
-    return algorithm, algo_info
+    return algorithm
 
 
 def _process_user_algorithm(algorithm):

@@ -14,11 +14,6 @@ from estimagic.decorators import switch_sign
 from estimagic.examples.criterion_functions import sos_criterion_and_gradient
 from estimagic.examples.criterion_functions import sos_criterion_and_jacobian
 from estimagic.examples.criterion_functions import sos_dict_criterion
-from estimagic.examples.criterion_functions import sos_dict_derivative
-from estimagic.examples.criterion_functions import sos_dict_derivative_with_pd_objects
-from estimagic.examples.criterion_functions import (
-    sos_double_dict_criterion_and_derivative_with_pd_objects,
-)
 from estimagic.examples.criterion_functions import sos_gradient
 from estimagic.examples.criterion_functions import sos_jacobian
 from estimagic.examples.criterion_functions import sos_pandas_gradient
@@ -41,11 +36,10 @@ ls_derivatives = [None, sos_jacobian, sos_pandas_jacobian]
 
 ls_criterion_and_derivatives = [sos_criterion_and_jacobian]
 
-dict_derivatives = [sos_dict_derivative, None, sos_dict_derivative_with_pd_objects]
+dict_derivatives = [None]
 
 dict_criterion_and_derivatives = [
     None,
-    sos_double_dict_criterion_and_derivative_with_pd_objects,
 ]
 
 

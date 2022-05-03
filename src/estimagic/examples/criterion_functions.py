@@ -333,31 +333,11 @@ def sos_criterion_and_jacobian(params):
     return {"contributions": x**2, "value": (x**2).sum()}, np.diag(2 * x)
 
 
-def sos_dict_derivative(params):
-    x = params["value"].to_numpy()
-
-    out = {
-        "value": 2 * x,
-        "contributions": np.diag(2 * x),
-        "root_contributions": np.eye(len(x)),
-    }
-    return out
-
-
-def sos_dict_derivative_with_pd_objects(params):
-    dict_np = sos_dict_derivative(params)
-    out = {
-        "value": pd.Series(dict_np["value"]),
-        "contributions": pd.DataFrame(dict_np["contributions"]),
-        "root_contributions": pd.DataFrame(dict_np["root_contributions"]),
-    }
-    return out
-
-
-def sos_double_dict_criterion_and_derivative_with_pd_objects(params):
-    val = sos_dict_criterion_with_pd_objects(params)
-    deriv = sos_dict_derivative_with_pd_objects(params)
-    return val, deriv
+sos_dict_derivative = {
+    "value": sos_gradient,
+    "contributions": sos_jacobian,
+    "root_contributions": sos_ls_jacobian,
+}
 
 
 def _out_dict_from_root_contribs(root_contribs):

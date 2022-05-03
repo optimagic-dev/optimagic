@@ -15,7 +15,7 @@ def check_optimize_kwargs(**kwargs):
         "criterion_kwargs": dict,
         "constraints": list,
         "algo_options": dict,
-        "derivative": (type(None), typing.Callable),
+        "derivative": (type(None), typing.Callable, dict),
         "derivative_kwargs": dict,
         "criterion_and_derivative": (type(None), typing.Callable),
         "criterion_and_derivative_kwargs": dict,

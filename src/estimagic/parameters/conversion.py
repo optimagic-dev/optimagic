@@ -14,10 +14,10 @@ def get_converter(
     lower_bounds,
     upper_bounds,
     func_eval,
-    derivative_eval,
     primary_key,
     scaling,
     scaling_options,
+    derivative_eval=None,
 ):
     """Get a converter between external and internal params and internal params.
 

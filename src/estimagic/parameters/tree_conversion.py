@@ -16,8 +16,8 @@ def get_tree_converter(
     lower_bounds,
     upper_bounds,
     func_eval,
-    derivative_eval,
     primary_key,
+    derivative_eval=None,
 ):
     """Get flatten and unflatten functions and constraints with processed selectors.
 
@@ -149,13 +149,14 @@ def _get_derivative_flatten(registry, primary_key, params, func_eval, derivative
             )
             return flat
 
-    try:
-        derivative_flatten(derivative_eval)
-    except (KeyboardInterrupt, SystemExit):
-        raise
-    except Exception as e:
-        msg = "The output of derivative and criterion cannot be aligned."
-        raise InvalidFunctionError(msg) from e
+    if derivative_eval is not None:
+        try:
+            derivative_flatten(derivative_eval)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = "The output of derivative and criterion cannot be aligned."
+            raise InvalidFunctionError(msg) from e
 
     return derivative_flatten
 

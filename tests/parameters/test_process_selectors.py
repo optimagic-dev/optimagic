@@ -97,8 +97,8 @@ def test_process_selectors_tree_selectors(tree_params, tree_params_converter):
         params=tree_params,
         tree_converter=tree_params_converter,
     )
-    aae(calculated[0]["index"][0], np.array([6]))
-    aae(calculated[0]["index"][1], np.array([1]))
+    aae(calculated[0]["indices"][0], np.array([6]))
+    aae(calculated[0]["indices"][1], np.array([1]))
 
 
 def test_process_selectors_numpy_array_loc(np_params_converter):
@@ -124,8 +124,8 @@ def test_process_selectors_numpy_array_locs(np_params_converter):
         tree_converter=np_params_converter,
     )
 
-    aae(calculated[0]["index"][0], np.array([1, 4]))
-    aae(calculated[0]["index"][1], np.array([0, 3]))
+    aae(calculated[0]["indices"][0], np.array([1, 4]))
+    aae(calculated[0]["indices"][1], np.array([0, 3]))
 
 
 def test_process_selectors_dataframe_loc(df_params, df_params_converter):
@@ -162,8 +162,8 @@ def test_process_selectors_dataframe_locs(df_params, df_params_converter):
         tree_converter=df_params_converter,
     )
 
-    aae(calculated[0]["index"][0], np.array([1, 4]))
-    aae(calculated[0]["index"][1], np.array([0, 3]))
+    aae(calculated[0]["indices"][0], np.array([1, 4]))
+    aae(calculated[0]["indices"][1], np.array([0, 3]))
 
 
 def test_process_selectors_dataframe_queries(df_params, df_params_converter):
@@ -176,8 +176,8 @@ def test_process_selectors_dataframe_queries(df_params, df_params_converter):
         tree_converter=df_params_converter,
     )
 
-    aae(calculated[0]["index"][0], np.array([1, 4]))
-    aae(calculated[0]["index"][1], np.array([0, 3]))
+    aae(calculated[0]["indices"][0], np.array([1, 4]))
+    aae(calculated[0]["indices"][1], np.array([0, 3]))
 
 
 @pytest.mark.parametrize("field", ["selectors", "queries", "query", "locs"])

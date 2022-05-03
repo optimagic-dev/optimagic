@@ -52,8 +52,11 @@ def process_selectors(constraints, params, tree_converter):
                 _fail_if_duplicates(sel, constr)
             selected = [np.array(sel).astype(int) for sel in selected]
 
-        new_constr = {k: v for k, v in constr.items() if k != field}
-        new_constr["index"] = selected
+        new_constr = constr.copy()
+        if selector_case == "one selector":
+            new_constr["index"] = selected
+        else:
+            new_constr["indices"] = selected
         flat_constraints.append(new_constr)
     return flat_constraints
 

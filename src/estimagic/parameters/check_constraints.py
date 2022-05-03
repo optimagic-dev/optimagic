@@ -66,7 +66,7 @@ def check_constraints_are_satisfied(flat_constraints, param_values, param_names)
             if np.any(np.diff(subset) > 0):
                 InvalidParamsError(base_msg.format(""))
         elif typ == "linear":
-            wsum = subset.to_numpy().dot(constr["weights"])
+            wsum = subset.dot(constr["weights"])
             if "lower_bound" in constr and wsum < constr["lower_bound"]:
                 explanation = "Lower bound of linear constraint is violated."
                 raise InvalidParamsError(base_msg.format(explanation))

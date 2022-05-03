@@ -122,13 +122,6 @@ def internal_criterion_and_derivative_template(
             If task=="criterion_and_derivative" it returns both as a tuple.
 
     """
-    if algo_info.primary_criterion_entry == "root_contributions":
-        if direction == "maximize":
-            msg = (
-                "Optimizers that exploit a least squares structure like {} can only be "
-                "used for minimization."
-            )
-            raise ValueError(msg.format(algo_info.name))
 
     x_hash = hash_array(x)
     cache_entry = cache.get(x_hash, {})
