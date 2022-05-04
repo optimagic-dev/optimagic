@@ -22,19 +22,10 @@ from estimagic.optimization.internal_criterion_template import (
 )
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.process_results import process_internal_optimizer_result
-from estimagic.optimization.scaling import calculate_scaling_factor_and_offset
 from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import get_converter
-from estimagic.parameters.parameter_conversion_old import (
-    get_derivative_conversion_function,
-)
-from estimagic.parameters.parameter_conversion_old import get_internal_bounds
-from estimagic.parameters.parameter_conversion_old import get_reparametrize_functions
-from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
-from estimagic.parameters.parameter_preprocessing import check_params_are_valid
-from estimagic.parameters.process_constraints import process_constraints_old
 from estimagic.process_user_function import process_func_of_params
 from estimagic.utilities import hash_array
 
@@ -489,8 +480,16 @@ def _optimize(
     # ==================================================================================
     algo_info = get_algo_info(algorithm)
 
+    if algo_info.primary_criterion_entry == "root_contributions":
+        if direction == "maximize":
+            msg = (
+                "Optimizers that exploit a least squares structure like {} can only be "
+                "used for minimization."
+            )
+            raise ValueError(msg.format(algo_info.name))
+
     # ==================================================================================
-    # store some arguments in a dictionary to save them in the database later
+    # prepare logging
     # ==================================================================================
     if logging:
         problem_data = {
@@ -510,6 +509,16 @@ def _optimize(
             "error_penalty": error_penalty,
             "cache_size": int(cache_size),
         }
+        params_with_name_and_group = _add_name_and_group_columns_to_params(params)
+        problem_data["params"] = params_with_name_and_group
+        database = _create_and_initialize_database(logging, log_options, problem_data)
+        db_kwargs = {
+            "database": database,
+            "path": logging,
+            "fast_logging": log_options.get("fast_logging", False),
+        }
+    else:
+        db_kwargs = {"database": None, "path": None, "fast_logging": False}
 
     # ==================================================================================
     # partial the kwargs into corresponding functions
@@ -589,141 +598,54 @@ def _optimize(
         scaling_options=scaling_options,
         derivative_eval=used_deriv,
     )
+    # ==================================================================================
+    # Do some things that require internal parameters or bounds
+    # ==================================================================================
 
-    # process params and constraints
-    params = add_default_bounds_to_params(params)
-    for col in ["value", "lower_bound", "upper_bound"]:
-        params[col] = params[col].astype(float)
-    check_params_are_valid(params)
-
-    # get processed params and constraints
-    if constraints:
-        pc, pp = process_constraints_old(constraints, params)
-    else:
-        pc, pp = None, None
-
-    if pc and multistart:
-        types = {constr["type"] for constr in pc}
+    if converter.has_transforming_constraints and multistart:
         raise NotImplementedError(
             "multistart optimizations are not yet compatible with transforming "
-            f"constraints. Your transforming constraints are of type {types}."
+            "constraints."
         )
-
-    # calculate scaling factor and offset and redo params and constraint processing
-    if scaling:
-        scaling_factor, scaling_offset = calculate_scaling_factor_and_offset(
-            params=params,
-            constraints=constraints,
-            criterion=criterion,
-            **scaling_options,
-            processed_params=pp,
-            processed_constraints=pc,
-        )
-        pc, pp = process_constraints_old(
-            constraints=constraints,
-            parvec=params,
-            scaling_factor=scaling_factor,
-            scaling_offset=scaling_offset,
-        )
-    else:
-        scaling_factor, scaling_offset = None, None
-
-    if logging:
-        # name and group column are needed in the dashboard but could lead to problems
-        # if present anywhere else
-        params_with_name_and_group = _add_name_and_group_columns_to_params(params)
-        problem_data["params"] = params_with_name_and_group
-
-    params_to_internal, params_from_internal = get_reparametrize_functions(
-        params=params,
-        constraints=constraints,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-        constr_info=pp,
-        transformations=pc,
-    )
-    # get internal parameters and bounds
-    x = params_to_internal(params["value"].to_numpy())
 
     first_eval = {
-        "internal_params": x,
+        "internal_params": internal_params.values,
         "external_params": params,
         "output": first_crit_eval,
     }
 
-    # this if condition reduces overhead in the no-constraints case
-    if constraints in [None, []]:
-        lower_bounds = params["lower_bound"].to_numpy()
-        upper_bounds = params["upper_bound"].to_numpy()
-    else:
-        lower_bounds, upper_bounds = get_internal_bounds(
-            params=params,
-            constraints=constraints,
-            scaling_factor=scaling_factor,
-            scaling_offset=scaling_offset,
-            processed_params=pp,
-        )
-
-    # get convert derivative
-    convert_derivative = get_derivative_conversion_function(
-        params=params,
-        constraints=constraints,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-        constr_info=pp,
-        transformations=pc,
-    )
-
-    # fill numdiff_options with defaults
     numdiff_options = _fill_numdiff_options_with_defaults(
-        numdiff_options, lower_bounds, upper_bounds
+        numdiff_options=numdiff_options,
+        lower_bounds=internal_params.lower_bounds,
+        upper_bounds=internal_params.upper_bounds,
     )
-
-    # create and initialize the database
-    if logging:
-        database = _create_and_initialize_database(logging, log_options, problem_data)
-        db_kwargs = {
-            "database": database,
-            "path": logging,
-            "fast_logging": log_options.get("fast_logging", False),
-        }
-    else:
-        db_kwargs = {"database": None, "path": None, "fast_logging": False}
-
-    # get the algorithm
-    internal_algorithm = get_algorithm(
-        algorithm=algorithm,
-        lower_bounds=lower_bounds,
-        upper_bounds=upper_bounds,
-        algo_options=algo_options,
-        logging=logging,
-        db_kwargs=db_kwargs,
-    )
-
-    if algo_info.primary_criterion_entry == "root_contributions":
-        if direction == "maximize":
-            msg = (
-                "Optimizers that exploit a least squares structure like {} can only be "
-                "used for minimization."
-            )
-            raise ValueError(msg.format(algo_info.name))
 
     # set default error penalty
     error_penalty = _fill_error_penalty_with_defaults(
         error_penalty, first_eval, direction
     )
-
     # create cache
+    x = internal_params.values
     x_hash = hash_array(x)
-    cache = {x_hash: {"criterion": first_eval["output"]}}
+    cache = {x_hash: {"criterion": converter.func_to_internal(first_eval["output"])}}
+    # ==================================================================================
+    # get the internal algorithm
+    # ==================================================================================
+    internal_algorithm = get_algorithm(
+        algorithm=algorithm,
+        lower_bounds=internal_params.lower_bounds,
+        upper_bounds=internal_params.upper_bounds,
+        algo_options=algo_options,
+        logging=logging,
+        db_kwargs=db_kwargs,
+    )
 
     # partial the internal_criterion_and_derivative_template
     to_partial = {
         "direction": direction,
         "criterion": criterion,
         "params": params,
-        "reparametrize_from_internal": params_from_internal,
-        "convert_derivative": convert_derivative,
+        "converter": converter,
         "derivative": derivative,
         "criterion_and_derivative": criterion_and_derivative,
         "numdiff_options": numdiff_options,
@@ -774,11 +696,12 @@ def _optimize(
             options=multistart_options,
             params=params,
             x=x,
-            params_to_internal=params_to_internal,
+            params_to_internal=converter.params_to_internal,
         )
 
         raw_res = run_multistart_optimization(
             local_algorithm=internal_algorithm,
+            primary_key=algo_info.primary_criterion_entry,
             problem_functions=problem_functions,
             x=x,
             lower_bounds=lower,
@@ -793,7 +716,7 @@ def _optimize(
     res = process_internal_optimizer_result(
         raw_res,
         direction=direction,
-        params_from_internal=params_from_internal,
+        params_from_internal=converter.params_from_internal,
     )
 
     return res

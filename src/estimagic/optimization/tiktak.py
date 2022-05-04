@@ -16,6 +16,7 @@ from estimagic import batch_evaluators as be
 from estimagic.decorators import AlgoInfo
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
+from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.parameter_conversion_old import get_internal_bounds
 from scipy.stats import qmc
 from scipy.stats import triang
@@ -23,6 +24,7 @@ from scipy.stats import triang
 
 def run_multistart_optimization(
     local_algorithm,
+    primary_key,
     problem_functions,
     x,
     lower_bounds,
@@ -68,6 +70,7 @@ def run_multistart_optimization(
 
     exploration_res = run_explorations(
         criterion,
+        primary_key=primary_key,
         sample=sample,
         batch_evaluator=options["batch_evaluator"],
         n_cores=options["n_cores"],
@@ -183,7 +186,7 @@ def run_multistart_optimization(
         "start_parameters": state["start_history"],
         "local_optima": state["result_history"],
         "exploration_sample": sorted_sample,
-        "exploration_results": exploration_res["sorted_criterion_outputs"],
+        "exploration_results": exploration_res["sorted_values"],
     }
 
     return raw_res
@@ -337,7 +340,9 @@ def _extract_external_sampling_bound(params, bounds_type):
     return bounds
 
 
-def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_handling):
+def run_explorations(
+    func, primary_key, sample, batch_evaluator, n_cores, step_id, error_handling
+):
     """Do the function evaluations for the exploration phase.
 
     Args:
@@ -345,6 +350,8 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
             ``internal_criterion_and_derivative_template`` where the following arguments
             are still free: ``x``, ``task``, ``algo_info``, ``error_handling``,
             ``error_penalty``, ``fixed_log_data``.
+        primary_key: The primary criterion entry of the local optimizer. Needed to
+            interpret the output of the internal criterion function.
         sample (numpy.ndarray): 2d numpy array where each row is a sampled internal
             parameter vector.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
@@ -365,7 +372,7 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
 
     """
     algo_info = AlgoInfo(
-        primary_criterion_entry="dict",
+        primary_criterion_entry=primary_key,
         parallelizes=True,
         needs_scaling=False,
         name="tiktak_explorer",
@@ -397,7 +404,9 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
         error_handling="raise",
     )
 
-    raw_values = np.array([critval["value"] for critval in criterion_outputs])
+    values = [aggregate_func_output_to_value(c, primary_key) for c in criterion_outputs]
+
+    raw_values = np.array(values)
 
     is_valid = np.isfinite(raw_values)
 
@@ -413,12 +422,10 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
     # this sorts from low to high values; internal criterion and derivative took care
     # of the sign switch.
     sorting_indices = np.argsort(valid_values)
-    sorted_criterion_outputs = [criterion_outputs[i] for i in sorting_indices]
 
     out = {
         "sorted_values": valid_values[sorting_indices],
         "sorted_sample": valid_sample[sorting_indices],
-        "sorted_criterion_outputs": sorted_criterion_outputs,
     }
 
     return out

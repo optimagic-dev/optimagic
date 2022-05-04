@@ -29,7 +29,7 @@ def get_tree_converter(
     """
     _registry = get_registry(extended=True)
     _params_vec, _params_treedef = tree_flatten(params, registry=_registry)
-    _params_vec = np.array(_params_vec)
+    _params_vec = np.array(_params_vec).astype(float)
     _lower, _upper = get_bounds(
         params=params,
         lower_bounds=lower_bounds,
@@ -75,7 +75,7 @@ def get_tree_converter(
 
 def _get_params_flatten(registry):
     def params_flatten(params):
-        return np.array(tree_just_flatten(params, registry=registry))
+        return np.array(tree_just_flatten(params, registry=registry)).astype(float)
 
     return params_flatten
 
@@ -100,7 +100,13 @@ def _get_func_flatten(registry, func_eval, primary_key):
         key, aggregate = _get_best_key_and_aggregator(primary_key, func_eval)
 
         def func_flatten(func_eval):
-            return aggregate(tree_just_flatten(func_eval[key], registry=registry))
+            # the if condition is necessary, such that we can also accept func_evals
+            # where the primary entry has already been extracted. This is for example
+            # necessary if the criterion_and_derivative returns only the relevant
+            # entry of criterion, whereas criterion returns a dict.
+            if isinstance(func_eval, dict) and key in func_eval:
+                func_eval = func_eval[key]
+            return aggregate(tree_just_flatten(func_eval, registry=registry))
 
     return func_flatten
 
@@ -109,7 +115,7 @@ def _get_best_key_and_aggregator(needed_key, available_keys):
     if needed_key in available_keys:
         key = needed_key
         if needed_key == "value":
-            aggregate = lambda x: float(x)
+            aggregate = lambda x: float(x[0])
         else:
             aggregate = lambda x: np.array(x).astype(float)
     elif needed_key == "contributions" and "root_contributions" in available_keys:

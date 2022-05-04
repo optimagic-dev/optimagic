@@ -6,7 +6,7 @@ from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
 from estimagic.exceptions import UserFunctionRuntimeError
 from estimagic.logging.database_utilities import append_row
-from estimagic.optimization.process_results import switch_sign
+from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.utilities import hash_array
 
 
@@ -37,8 +37,7 @@ def internal_criterion_and_derivative_template(
     direction,
     criterion,
     params,
-    reparametrize_from_internal,
-    convert_derivative,
+    converter,
     algo_info,
     derivative,
     criterion_and_derivative,
@@ -68,11 +67,8 @@ def internal_criterion_and_derivative_template(
             parameter dataframe as only argument and returns a scalar, an array like
             object or a dictionary. See :ref:`criterion`.
         params (pd.DataFrame): see :ref:`params`
-        reparametrize_from_internal (callable): Function that takes x and returns a
-            numpy array with the values of the external parameters.
-        convert_derivative (callable): Function that takes the derivative of criterion
-            at the external version of x and x and returns the derivative
-            of the internal criterion.
+        converter (Converter): NamedTuple with methods to convert between internal
+            and external derivatives, parameters and criterion outputs.
         algo_info (AlgoInfo): NamedTuple with attributes
             - primary_criterion_entry
             - name
@@ -122,39 +118,41 @@ def internal_criterion_and_derivative_template(
             If task=="criterion_and_derivative" it returns both as a tuple.
 
     """
-
     x_hash = hash_array(x)
     cache_entry = cache.get(x_hash, {})
 
     to_dos = _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative)
 
     caught_exceptions = []
-    new_criterion, new_derivative, new_external_derivative = None, None, None
-    current_params = params.copy()
-    external_x = reparametrize_from_internal(x)
-    current_params["value"] = external_x
-
+    new_criterion, new_external_criterion = None, None
+    new_derivative, new_external_derivative = None, None
+    current_params, external_x = converter.params_from_internal(
+        x,
+        return_type="tree_and_flat",
+    )
     if to_dos == []:
         pass
     elif "numerical_criterion_and_derivative" in to_dos:
 
         def func(x):
-            external_x = reparametrize_from_internal(x)
-            p = params.copy()
-            p["value"] = external_x
-            return criterion(p)
+            p = converter.params_from_internal(x, "tree")
+            crit_full = criterion(p)
+            crit_relevant = converter.func_to_internal(crit_full)
+            out = {"full": crit_full, "relevant": crit_relevant}
+            return out
 
         options = numdiff_options.copy()
-        options["key"] = algo_info.primary_criterion_entry
-        options["f0"] = cache_entry.get("criterion", None)
+        f0 = cache_entry.get("criterion", None)
+        if f0 is not None:
+            options["f0"] = {"relevant": f0, "full": None}
+        options["key"] = "relevant"
         options["return_func_value"] = True
 
         try:
             derivative_dict = first_derivative(func, x, **options)
-            new_derivative = {
-                algo_info.primary_criterion_entry: derivative_dict["derivative"]
-            }
-            new_criterion = derivative_dict["func_value"]
+            new_derivative = derivative_dict["derivative"]
+            new_criterion = derivative_dict["func_value"]["relevant"]
+            new_external_criterion = derivative_dict["func_value"]["full"]
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -176,7 +174,7 @@ def internal_criterion_and_derivative_template(
 
     elif "criterion_and_derivative" in to_dos:
         try:
-            new_criterion, new_external_derivative = criterion_and_derivative(
+            new_external_criterion, new_external_derivative = criterion_and_derivative(
                 current_params
             )
         except (KeyboardInterrupt, SystemExit):
@@ -201,7 +199,7 @@ def internal_criterion_and_derivative_template(
     else:
         if "criterion" in to_dos:
             try:
-                new_criterion = criterion(current_params)
+                new_external_criterion = criterion(current_params)
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
@@ -243,16 +241,11 @@ def internal_criterion_and_derivative_template(
                     )
                     warnings.warn(msg)
 
-    if new_derivative is None and new_external_derivative is not None:
-        if not isinstance(new_external_derivative, dict):
-            new_external_derivative = {
-                algo_info.primary_criterion_entry: new_external_derivative
-            }
+    if new_external_criterion is not None and new_criterion is None:
+        new_criterion = converter.func_to_internal(new_external_criterion)
 
-        new_derivative = {
-            k: convert_derivative(v, internal_values=x)
-            for k, v in new_external_derivative.items()
-        }
+    if new_external_derivative is not None and new_derivative is None:
+        new_derivative = converter.derivative_to_internal(new_external_derivative, x)
 
     if caught_exceptions:
         new_criterion, new_derivative = _penalty_and_derivative(
@@ -262,26 +255,32 @@ def internal_criterion_and_derivative_template(
     if not (algo_info.parallelizes or algo_info.disable_cache) and cache_size >= 1:
         _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_size)
 
-    new_criterion = _check_and_harmonize_criterion_output(
-        cache_entry.get("criterion", new_criterion), algo_info
-    )
-
-    new_derivative = _check_and_harmonize_derivative(
-        cache_entry.get("derivative", new_derivative), algo_info
-    )
-
     if (new_criterion is not None or new_derivative is not None) and logging:
+        if new_criterion is not None:
+            scalar_critval = aggregate_func_output_to_value(
+                f_eval=new_criterion,
+                primary_key=algo_info.primary_criterion_entry,
+            )
+        else:
+            scalar_critval = None
+
         _log_new_evaluations(
-            new_criterion=new_criterion,
+            new_criterion=new_external_criterion,
             new_derivative=new_derivative,
             external_x=external_x,
             caught_exceptions=caught_exceptions,
             db_kwargs=db_kwargs,
             fixed_log_data=fixed_log_data,
+            scalar_value=scalar_critval,
         )
 
     res = _get_output_for_optimizer(
-        new_criterion, new_derivative, task, algo_info, direction
+        new_criterion=new_criterion,
+        new_derivative=new_derivative,
+        task=task,
+        direction=direction,
+        cache=cache,
+        x_hash=x_hash,
     )
     return res
 
@@ -398,66 +397,6 @@ def _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_s
     cache[x_hash] = cache_entry
 
 
-def _check_and_harmonize_criterion_output(output, algo_info):
-
-    algo_name = getattr(algo_info, "name", "your algorithm")
-    primary = algo_info.primary_criterion_entry
-
-    if output is not None:
-        if np.isscalar(output):
-            output = {"value": float(output)}
-
-        if not isinstance(output, dict):
-            raise ValueError("The output of criterion must be a scalar or dict.")
-
-        if "contributions" not in output and "root_contributions" in output:
-            output["contributions"] = output["root_contributions"] ** 2
-
-        if "value" not in output and "contributions" in output:
-            output["value"] = output["contributions"].sum()
-
-        if primary not in output and primary != "dict":
-            raise ValueError(
-                NO_PRIMARY_MESSAGE.format(algo_name, primary, list(output))
-            )
-    return output
-
-
-def _check_and_harmonize_derivative(derivative, algo_info):
-    primary = algo_info.primary_criterion_entry
-
-    if not isinstance(derivative, dict) and derivative is not None:
-        derivative = {primary: derivative}
-
-    if derivative is None:
-        pass
-    else:
-
-        if primary not in derivative:
-            raise ValueError(
-                "If derivative returns a dict and you use an optimizer that works with "
-                f"{primary}, the derivative dictionary also must contain {primary} "
-                "as a key."
-            )
-
-        if "value" in derivative and np.atleast_2d(derivative["value"]).shape[0] != 1:
-            raise ValueError("The derivative of a scalar optimizer must be a 1d array.")
-        if "contributions" in derivative:
-            if len(derivative["contributions"].shape) != 2:
-                raise ValueError(
-                    "The derivative of an optimizer that exploits a sum "
-                    "structure must be a 2d array."
-                )
-        if "root_contributions" in derivative:
-            if len(derivative["root_contributions"].shape) != 2:
-                raise ValueError(
-                    "The derivative of an optimizer that exploits a least squares "
-                    "structure must be a 2d array."
-                )
-
-    return derivative
-
-
 def _log_new_evaluations(
     new_criterion,
     new_derivative,
@@ -465,6 +404,7 @@ def _log_new_evaluations(
     caught_exceptions,
     db_kwargs,
     fixed_log_data,
+    scalar_value,
 ):
     """Write the new evaluations and additional information into the database.
 
@@ -473,15 +413,12 @@ def _log_new_evaluations(
     types.
 
     """
-    if new_criterion is not None:
-        value = float(new_criterion["value"])
-
     data = {
         "params": external_x,
         "timestamp": datetime.datetime.now(),
         "valid": True,
         "criterion_eval": new_criterion,
-        "value": value,
+        "value": scalar_value,
         **fixed_log_data,
     }
 
@@ -499,39 +436,29 @@ def _log_new_evaluations(
 
 
 def _get_output_for_optimizer(
-    new_criterion, new_derivative, task, algo_info, direction
+    new_criterion,
+    new_derivative,
+    task,
+    direction,
+    cache,
+    x_hash,
 ):
-    primary = algo_info.primary_criterion_entry
+    if "criterion" in task and new_criterion is None:
+        new_criterion = cache[x_hash]["criterion"]
+    if "criterion" in task and direction == "maximize":
+        new_criterion = -new_criterion
 
-    if "criterion" in task:
-        if primary != "dict":
-            crit = new_criterion[primary]
-            crit = float(crit) if np.isscalar(crit) else np.array(crit).astype(float)
-            crit = crit if direction == "minimize" else -crit
-        else:
-            crit = new_criterion.copy()
-            if "value" in crit:
-                crit["value"] = float(crit["value"])
-            if "contributions" in crit:
-                crit["contributions"] = np.array(crit["contributions"]).astype(float)
-            if "root_contributions" in crit:
-                crit["root_contributions"] = np.array(
-                    crit["root_contributions"]
-                ).astype(float)
-            if direction == "maximize":
-                crit = switch_sign(crit)
+    if "derivative" in task and new_derivative is None:
+        new_derivative = cache[x_hash]["derivative"]
+    if "derivative" in task and direction == "maximize":
+        new_derivative = -new_derivative
 
-    if "derivative" in task:
-        deriv = np.array(new_derivative[primary]).astype(float)
-        deriv = deriv if direction == "minimize" else -deriv
-
-    if task == "criterion_and_derivative":
-        res = (crit, deriv)
-    elif task == "criterion":
-        res = crit
+    if task == "criterion":
+        out = new_criterion
     elif task == "derivative":
-        res = deriv
+        out = new_derivative
+    elif task == "criterion_and_derivative":
+        out = (new_criterion, new_derivative)
     else:
-        raise ValueError()
-
-    return res
+        raise ValueError()  # xxxx
+    return out

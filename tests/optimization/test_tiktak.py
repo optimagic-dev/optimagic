@@ -86,13 +86,14 @@ def test_run_explorations():
             "fixed_log_data",
         }
         if x.sum() == 5:
-            out = {"value": np.nan}
+            out = np.nan
         else:
-            out = {"value": -x.sum()}
+            out = -x.sum()
         return out
 
     calculated = run_explorations(
         func=_dummy,
+        primary_key="value",
         sample=np.arange(6).reshape(3, 2),
         batch_evaluator="joblib",
         n_cores=1,

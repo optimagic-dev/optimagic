@@ -22,7 +22,7 @@ from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
-algorithms = ["scipy_lbfgsb", "scipy_ls_dogbox", "scipy_neldermead"]
+algorithms = ["scipy_lbfgsb", "scipy_neldermead", "scipy_ls_dogbox"]
 
 ls_algorithms = {"scipy_ls_dogbox"}
 
@@ -42,7 +42,6 @@ dict_criterion_and_derivatives = [
     None,
 ]
 
-
 valid_cases = []
 invalid_cases = []
 for algo in algorithms:
@@ -54,7 +53,7 @@ for algo in algorithms:
     else:
         for deriv in scalar_derivatives:
             for crit_and_deriv in scalar_criterion_and_derivtives:
-                for direction in ["maximize", "minimize"]:
+                for direction in ["minimize"]:  # , "maximize"]: # xxxx
                     valid_cases.append((direction, algo, deriv, crit_and_deriv))
 
     for deriv in dict_derivatives:
@@ -64,6 +63,12 @@ for algo in algorithms:
             else:
                 for direction in ["maximize", "minimize"]:
                     valid_cases.append((direction, algo, deriv, crit_and_deriv))
+
+
+# =================================================================================================
+valid_cases = [("maximize", "scipy_lbfgsb", None, None)]
+invalid_cases = []
+# =================================================================================================
 
 
 @pytest.mark.parametrize(

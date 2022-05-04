@@ -89,7 +89,6 @@ def scipy_lbfgsb(
         "maxiter": stopping_max_iterations,
         "maxls": max_line_search_steps,
     }
-
     res = scipy.optimize.minimize(
         fun=criterion_and_derivative,
         x0=x,

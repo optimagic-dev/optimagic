@@ -29,7 +29,7 @@ def process_internal_optimizer_result(
 
 def _process_one_result(res, direction, params_from_internal):
     res = res.copy()
-    p = params_from_internal(res["solution_x"], return_numpy=False)
+    p = params_from_internal(res["solution_x"])
     res["solution_params"] = p
 
     if direction == "maximize" and "solution_criterion" in res:
@@ -57,7 +57,7 @@ def _process_multistart_info(info, direction, params_from_internal):
 
     starts = []
     for x in info["start_parameters"]:
-        starts.append(params_from_internal(x, return_numpy=False))
+        starts.append(params_from_internal(x))
 
     optima = []
     for res in info["local_optima"]:
@@ -70,7 +70,7 @@ def _process_multistart_info(info, direction, params_from_internal):
 
     sample = []
     for x in info["exploration_sample"]:
-        sample.append(params_from_internal(x, return_numpy=False))
+        sample.append(params_from_internal(x))
 
     if direction == "minimize":
         exploration_res = info["exploration_results"]

@@ -16,7 +16,6 @@ from estimagic.optimization import GLOBAL_ALGORITHMS
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
-
 LOCAL_ALGORITHMS = {
     key: value
     for key, value in AVAILABLE_ALGORITHMS.items()

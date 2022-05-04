@@ -70,20 +70,31 @@ def get_converter(
         x_scaled = scale_converter.params_to_internal(x_internal)
         return x_scaled
 
-    def _params_from_internal(x):
+    def _params_from_internal(x, return_type="tree"):
         x_unscaled = scale_converter.params_from_internal(x)
         x_external = space_converter.params_from_internal(x_unscaled)
+
         x_tree = tree_converter.params_unflatten(x_external)
-        return x_tree
+        if return_type == "tree":
+            out = x_tree
+        elif return_type == "tree_and_flat":
+            out = x_tree, x_external
+        elif return_type == "flat":
+            out = x_external
+        else:
+            raise ValueError()  # xxxx
+        return out
 
     def _derivative_to_internal(derivative_eval, x):
         jacobian = tree_converter.derivative_flatten(derivative_eval)
-        jac_with_unscaling = scale_converter.derivative_to_internal(jacobian)
         x_unscaled = scale_converter.params_from_internal(x)
         jac_with_space_conversion = space_converter.derivative_to_internal(
-            jac_with_unscaling, x_unscaled
+            jacobian, x_unscaled
         )
-        return jac_with_space_conversion
+        jac_with_unscaling = scale_converter.derivative_to_internal(
+            jac_with_space_conversion
+        )
+        return jac_with_unscaling
 
     def _func_to_internal(func_eval):
         return tree_converter.func_flatten(func_eval)
@@ -93,6 +104,7 @@ def get_converter(
         params_from_internal=_params_from_internal,
         derivative_to_internal=_derivative_to_internal,
         func_to_internal=_func_to_internal,
+        has_transforming_constraints=space_converter.has_transforming_constraints,
     )
 
     return converter, scaled_params
@@ -103,6 +115,7 @@ class Converter(NamedTuple):
     params_from_internal: callable
     derivative_to_internal: callable
     func_to_internal: callable
+    has_transforming_constraints: bool
 
 
 def aggregate_func_output_to_value(f_eval, primary_key):
