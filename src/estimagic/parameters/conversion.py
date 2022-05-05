@@ -18,6 +18,9 @@ def get_converter(
     scaling,
     scaling_options,
     derivative_eval=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
+    add_soft_bounds=False,
 ):
     """Get a converter between external and internal params and internal params.
 
@@ -37,6 +40,9 @@ def get_converter(
         func_eval=func_eval,
         derivative_eval=derivative_eval,
         primary_key=primary_key,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
+        add_soft_bounds=add_soft_bounds,
     )
 
     flat_constraints = process_selectors(

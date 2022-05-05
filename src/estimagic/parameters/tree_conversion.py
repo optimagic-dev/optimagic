@@ -18,6 +18,9 @@ def get_tree_converter(
     func_eval,
     primary_key,
     derivative_eval=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
+    add_soft_bounds=False,
 ):
     """Get flatten and unflatten functions and constraints with processed selectors.
 
@@ -37,6 +40,19 @@ def get_tree_converter(
         registry=_registry,
     )
 
+    if add_soft_bounds:
+        _soft_lower, _soft_upper = get_bounds(
+            params=params,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
+            registry=_registry,
+            soft_lower_bounds=soft_lower_bounds,
+            soft_upper_bounds=soft_upper_bounds,
+            add_soft_bounds=add_soft_bounds,
+        )
+    else:
+        _soft_lower, _soft_upper = None, None
+
     _param_names = leaf_names(params, registry=_registry)
 
     flat_params = FlatParams(
@@ -44,6 +60,8 @@ def get_tree_converter(
         lower_bounds=_lower,
         upper_bounds=_upper,
         names=_param_names,
+        soft_lower_bounds=_soft_lower,
+        soft_upper_bounds=_soft_upper,
     )
 
     _params_flatten = _get_params_flatten(registry=_registry)
@@ -178,5 +196,7 @@ class FlatParams(NamedTuple):
     values: np.ndarray
     lower_bounds: np.ndarray
     upper_bounds: np.ndarray
+    soft_lower_bounds: np.ndarray = None
+    soft_upper_bounds: np.ndarray = None
     names: list = None
     free_mask: np.ndarray = None

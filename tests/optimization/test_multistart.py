@@ -32,7 +32,6 @@ test_cases = product(criteria, ["maximize", "minimize"])
 def test_multistart_minimize_with_sum_of_squares_at_defaults(
     criterion, direction, params
 ):
-
     if direction == "minimize":
         res = minimize(
             criterion=criterion,

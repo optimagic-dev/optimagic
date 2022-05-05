@@ -17,7 +17,6 @@ from estimagic.decorators import AlgoInfo
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
 from estimagic.parameters.conversion import aggregate_func_output_to_value
-from estimagic.parameters.parameter_conversion_old import get_internal_bounds
 from scipy.stats import qmc
 from scipy.stats import triang
 
@@ -27,8 +26,8 @@ def run_multistart_optimization(
     primary_key,
     problem_functions,
     x,
-    lower_bounds,
-    upper_bounds,
+    lower_sampling_bounds,
+    upper_sampling_bounds,
     options,
     logging,
     db_kwargs,
@@ -48,8 +47,8 @@ def run_multistart_optimization(
     else:
         sample = draw_exploration_sample(
             x=x,
-            lower=lower_bounds,
-            upper=upper_bounds,
+            lower=lower_sampling_bounds,
+            upper=upper_sampling_bounds,
             n_samples=options["n_samples"],
             sampling_distribution=options["sampling_distribution"],
             sampling_method=options["sampling_method"],
@@ -298,46 +297,6 @@ def draw_exploration_sample(
         )
 
     return sample_scaled
-
-
-def get_internal_sampling_bounds(params, constraints):
-    params = params.copy(deep=True)
-    params["lower_bound"] = _extract_external_sampling_bound(params, "lower")
-    params["upper_bound"] = _extract_external_sampling_bound(params, "upper")
-
-    problematic = params.query("lower_bound >= upper_bound")
-
-    if len(problematic):
-        raise ValueError(
-            "Lower bound must be smaller than upper bound for all parameters. "
-            f"This is violated for:\n\n{problematic.to_string()}\n\n"
-        )
-
-    lower, upper = get_internal_bounds(params=params, constraints=constraints)
-
-    for b in lower, upper:
-        if not np.isfinite(b).all():
-            raise ValueError(
-                "Sampling bounds of all free parameters must be finite to create a "
-                "parameter sample for multistart optimization."
-            )
-
-    return lower, upper
-
-
-def _extract_external_sampling_bound(params, bounds_type):
-    soft_name = f"soft_{bounds_type}_bound"
-    hard_name = f"{bounds_type}_bound"
-    if soft_name in params:
-        bounds = params[soft_name]
-    elif hard_name in params:
-        bounds = params[hard_name]
-    else:
-        raise ValueError(
-            f"{soft_name} or {hard_name} must be in params to sample start values."
-        )
-
-    return bounds
 
 
 def run_explorations(

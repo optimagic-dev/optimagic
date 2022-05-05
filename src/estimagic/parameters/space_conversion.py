@@ -110,12 +110,25 @@ def get_space_converter(
         has_transforming_constraints=_has_transforming_constraints,
     )
 
+    free_mask = constr_info["_internal_free"]
+    if flat_params.soft_lower_bounds is not None and not _has_transforming_constraints:
+        _soft_lower = flat_params.soft_lower_bounds[free_mask]
+    else:
+        _soft_lower = None
+
+    if flat_params.soft_upper_bounds is not None and not _has_transforming_constraints:
+        _soft_upper = flat_params.soft_upper_bounds[free_mask]
+    else:
+        _soft_upper = None
+
     internal_params = FlatParams(
         values=converter.params_to_internal(flat_params.values),
         lower_bounds=constr_info["_internal_lower"],
         upper_bounds=constr_info["_internal_upper"],
         names=None,
-        free_mask=constr_info["_internal_free"],
+        free_mask=free_mask,
+        soft_lower_bounds=_soft_lower,
+        soft_upper_bounds=_soft_upper,
     )
 
     return converter, internal_params

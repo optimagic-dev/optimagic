@@ -8,7 +8,6 @@ from estimagic.optimization.tiktak import _linear_weights
 from estimagic.optimization.tiktak import _tiktak_weights
 from estimagic.optimization.tiktak import draw_exploration_sample
 from estimagic.optimization.tiktak import get_batched_optimization_sample
-from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_explorations
 from estimagic.optimization.tiktak import update_convergence_state
 from numpy.testing import assert_array_almost_equal as aaae
@@ -67,13 +66,6 @@ def test_draw_exploration_sample(dist, rule, lower, upper):
     aaae(results[0], results[1])
     calculated = results[0]
     assert calculated.shape == (3, 2)
-
-
-def test_get_internal_sampling_bounds(params, constraints):
-    calculated = get_internal_sampling_bounds(params, constraints)
-    expeceted = [np.array([-1, 0]), np.array([2, 2])]
-    for calc, exp in zip(calculated, expeceted):
-        aaae(calc, exp)
 
 
 def test_run_explorations():

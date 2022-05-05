@@ -22,7 +22,6 @@ from estimagic.optimization.internal_criterion_template import (
 )
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.process_results import process_internal_optimizer_result
-from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import get_converter
@@ -597,6 +596,9 @@ def _optimize(
         scaling=scaling,
         scaling_options=scaling_options,
         derivative_eval=used_deriv,
+        soft_lower_bounds=soft_lower_bounds,
+        soft_upper_bounds=soft_upper_bounds,
+        add_soft_bounds=multistart,
     )
     # ==================================================================================
     # Do some things that require internal parameters or bounds
@@ -690,8 +692,6 @@ def _optimize(
         raw_res = internal_algorithm(**problem_functions, x=x, step_id=step_ids[0])
     else:
 
-        lower, upper = get_internal_sampling_bounds(params, constraints)
-
         multistart_options = _fill_multistart_options_with_defaults(
             options=multistart_options,
             params=params,
@@ -704,8 +704,8 @@ def _optimize(
             primary_key=algo_info.primary_criterion_entry,
             problem_functions=problem_functions,
             x=x,
-            lower_bounds=lower,
-            upper_bounds=upper,
+            lower_sampling_bounds=internal_params.soft_lower_bounds,
+            upper_sampling_bounds=internal_params.soft_upper_bounds,
             options=multistart_options,
             logging=logging,
             db_kwargs=db_kwargs,

@@ -56,11 +56,23 @@ def get_scale_converter(
         derivative_from_internal=_derivative_from_internal,
     )
 
+    if flat_params.soft_lower_bounds is not None:
+        _soft_lower = converter.params_to_internal(flat_params.soft_lower_bounds)
+    else:
+        _soft_lower = None
+
+    if flat_params.soft_upper_bounds is not None:
+        _soft_upper = converter.params_to_internal(flat_params.soft_upper_bounds)
+    else:
+        _soft_upper = None
+
     params = FlatParams(
         values=converter.params_to_internal(flat_params.values),
         lower_bounds=converter.params_to_internal(flat_params.lower_bounds),
         upper_bounds=converter.params_to_internal(flat_params.upper_bounds),
         names=flat_params.names,
+        soft_lower_bounds=_soft_lower,
+        soft_upper_bounds=_soft_upper,
     )
 
     return converter, params

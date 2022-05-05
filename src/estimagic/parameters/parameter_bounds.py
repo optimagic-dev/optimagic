@@ -5,7 +5,15 @@ from pybaum import tree_map
 from pybaum import tree_update
 
 
-def get_bounds(params, lower_bounds=None, upper_bounds=None, registry=None):
+def get_bounds(
+    params,
+    lower_bounds=None,
+    upper_bounds=None,
+    soft_lower_bounds=None,
+    soft_upper_bounds=None,
+    registry=None,
+    add_soft_bounds=False,
+):
     """Consolidate lower/upper bounds with bounds available in params.
 
     Updates bounds defined in params. If no bounds are available the entry is set to
@@ -17,6 +25,7 @@ def get_bounds(params, lower_bounds=None, upper_bounds=None, registry=None):
         params (pytree): The parameter pytree.
         lower_bounds (pytree): Must be a subtree of params.
         upper_bounds (pytree): Must be a subtree of params.
+        registry (dict): pybaum registry.
 
     Returns:
         np.ndarray: Consolidated and flattened lower_bounds.
@@ -36,7 +45,6 @@ def get_bounds(params, lower_bounds=None, upper_bounds=None, registry=None):
     upper_flat = _update_bounds_and_flatten(
         bounds_tree, upper_bounds, direction="upper_bound"
     )
-
     if len(lower_flat) != n_params:
         raise ValueError("lower_bounds do not match dimension of params.")
     if len(upper_flat) != n_params:
@@ -44,6 +52,19 @@ def get_bounds(params, lower_bounds=None, upper_bounds=None, registry=None):
 
     lower_flat[np.isnan(lower_flat)] = -np.inf
     upper_flat[np.isnan(upper_flat)] = np.inf
+
+    if add_soft_bounds:
+        lower_flat_soft = _update_bounds_and_flatten(
+            bounds_tree, soft_lower_bounds, direction="soft_lower_bound"
+        )
+        lower_flat_soft[np.isnan(lower_flat_soft)] = -np.inf
+        lower_flat = np.maximum(lower_flat, lower_flat_soft)
+
+        upper_flat_soft = _update_bounds_and_flatten(
+            bounds_tree, soft_upper_bounds, direction="soft_upper_bound"
+        )
+        upper_flat_soft[np.isnan(upper_flat_soft)] = np.inf
+        upper_flat = np.minimum(upper_flat, upper_flat_soft)
 
     return lower_flat, upper_flat
 
