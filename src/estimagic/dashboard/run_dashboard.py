@@ -98,9 +98,9 @@ def _start_server(apps, port, no_browser):
 
         address_string = server.address if server.address else "localhost"
 
-        print(
+        print(  # noqa: T201
             "Bokeh app running at:",
             f"http://{address_string}:{server.port}{server.prefix}/",
-        )  # noqa: T201
+        )
         server._loop.start()
         server.start()
