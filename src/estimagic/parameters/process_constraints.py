@@ -35,7 +35,6 @@ from estimagic.parameters.check_constraints import check_fixes_and_bounds
 from estimagic.parameters.check_constraints import check_for_incompatible_overlaps
 from estimagic.parameters.check_constraints import check_types
 from estimagic.parameters.consolidate_constraints import consolidate_constraints
-from estimagic.parameters.kernel_transformations import scale_to_internal
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
@@ -328,13 +327,3 @@ def _create_internal_fixed_value(fixed_value, constraints):
             int_fix[relevant_index] = constr["right_hand_side"]["value"].to_numpy()
 
     return int_fix
-
-
-def _scale_bound_to_internal(bounds, internal_free, scaling_factor, scaling_offset):
-    _bounds = bounds.copy()
-    free_bounds = bounds[internal_free]
-
-    scaled = scale_to_internal(free_bounds, scaling_factor, scaling_offset)
-
-    _bounds[internal_free] = scaled
-    return _bounds
