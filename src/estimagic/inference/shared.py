@@ -13,6 +13,82 @@ from estimagic.parameters.process_constraints import process_constraints_old
 
 def transform_covariance(
     params,
+    flat_params,
+    internal_cov,
+    converter,
+    n_samples,
+    bounds_handling,
+):
+    """Transform the internal covariance matrix to an external one, given constraints.
+
+    Args:
+        params (pd.DataFrame): DataFrame where the "value" column contains estimated
+            parameters of a likelihood model. See :ref:`params` for details.
+        internal_cov (np.ndarray or pandas.DataFrame) with a covariance matrix of the
+            internal parameter vector. For background information about internal and
+            external params see :ref:`implementation_of_constraints`.
+        constraints (list): List with constraint dictionaries.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+        n_samples (int): Number of samples used to transform the covariance matrix of
+            the internal parameter vector into the covariance matrix of the external
+            parameters.
+        bounds_handling (str): One of "clip", "raise", "ignore". Determines how bounds
+            are handled. If "clip", confidence intervals are clipped at the bounds.
+            Standard errors are only adjusted if a sampling step is necessary due to
+            additional constraints. If "raise" and any lower or upper bound is binding,
+            we raise an error. If "ignore", boundary problems are simply ignored.
+
+    Returns:
+        pd.DataFrame: Quadratic DataFrame containing the covariance matrix of the free
+            parameters. If parameters were fixed (explicitly or by other constraints),
+            the index is a subset of params.index. The columns are the same as the
+            index.
+
+    """
+    free_index = params[flat_params.free_mask].index
+
+    if isinstance(internal_cov, pd.DataFrame):
+        internal_cov = internal_cov.to_numpy()
+
+    if converter.has_transforming_constraints:
+        _from_internal = converter.params_from_internal
+
+        is_free = flat_params.free_mask
+        lower_bounds = flat_params.lower_bounds
+        upper_bounds = flat_params.upper_bounds
+
+        sample = np.random.multivariate_normal(
+            mean=flat_params.values,
+            cov=internal_cov,
+            size=n_samples,
+        )
+        transformed_free = []
+        for params_vec in sample:
+            if bounds_handling == "clip":
+                params_vec = np.clip(params_vec, a_min=lower_bounds, a_max=upper_bounds)
+            elif bounds_handling == "raise":
+                if (params_vec < lower_bounds).any() or (
+                    params_vec > upper_bounds
+                ).any():
+                    raise ValueError()
+
+            transformed = _from_internal(internal=params_vec, return_type="flat")
+            transformed_free.append(transformed[is_free])
+
+        free_cov = np.cov(
+            np.array(transformed_free),
+            rowvar=False,
+        )
+
+    else:
+        free_cov = internal_cov
+
+    res = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
+    return res
+
+
+def transform_covariance_old(
+    params,
     internal_cov,
     constraints,
     n_samples,

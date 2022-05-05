@@ -178,4 +178,5 @@ class FlatParams(NamedTuple):
     values: np.ndarray
     lower_bounds: np.ndarray
     upper_bounds: np.ndarray
-    names: list
+    names: list = None
+    free_mask: np.ndarray = None

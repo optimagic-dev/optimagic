@@ -99,6 +99,8 @@ def get_converter(
     def _func_to_internal(func_eval):
         return tree_converter.func_flatten(func_eval)
 
+    flat_params = scaled_params._replace(free_mask=internal_params.free_mask)
+
     converter = Converter(
         params_to_internal=_params_to_internal,
         params_from_internal=_params_from_internal,
@@ -107,7 +109,7 @@ def get_converter(
         has_transforming_constraints=space_converter.has_transforming_constraints,
     )
 
-    return converter, scaled_params
+    return converter, flat_params
 
 
 class Converter(NamedTuple):

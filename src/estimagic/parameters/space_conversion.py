@@ -115,6 +115,7 @@ def get_space_converter(
         lower_bounds=constr_info["_internal_lower"],
         upper_bounds=constr_info["_internal_upper"],
         names=None,
+        free_mask=constr_info["_internal_free"],
     )
 
     return converter, internal_params

@@ -11,7 +11,7 @@ from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import get_internal_first_derivative
-from estimagic.inference.shared import transform_covariance
+from estimagic.inference.shared import transform_covariance_old
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.parameter_conversion_old import (
     get_derivative_conversion_function,
@@ -236,7 +236,7 @@ def estimate_msm(
     # Calculate external cov and summary
     # ==================================================================================
 
-    cov = transform_covariance(
+    cov = transform_covariance_old(
         params=estimates,
         internal_cov=cov,
         constraints=constraints,
