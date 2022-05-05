@@ -1,14 +1,6 @@
-import functools
-from collections.abc import Callable
-
 import numpy as np
 import pandas as pd
 import scipy
-from estimagic.decorators import numpy_interface
-from estimagic.differentiation.derivatives import first_derivative
-from estimagic.parameters.parameter_conversion_old import get_internal_bounds
-from estimagic.parameters.parameter_conversion_old import get_reparametrize_functions
-from estimagic.parameters.process_constraints import process_constraints_old
 
 
 def transform_covariance(
@@ -87,87 +79,6 @@ def transform_covariance(
     return res
 
 
-def transform_covariance_old(
-    params,
-    internal_cov,
-    constraints,
-    n_samples,
-    bounds_handling,
-):
-    """Transform the internal covariance matrix to an external one, given constraints.
-
-    Args:
-        params (pd.DataFrame): DataFrame where the "value" column contains estimated
-            parameters of a likelihood model. See :ref:`params` for details.
-        internal_cov (np.ndarray or pandas.DataFrame) with a covariance matrix of the
-            internal parameter vector. For background information about internal and
-            external params see :ref:`implementation_of_constraints`.
-        constraints (list): List with constraint dictionaries.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
-        n_samples (int): Number of samples used to transform the covariance matrix of
-            the internal parameter vector into the covariance matrix of the external
-            parameters.
-        bounds_handling (str): One of "clip", "raise", "ignore". Determines how bounds
-            are handled. If "clip", confidence intervals are clipped at the bounds.
-            Standard errors are only adjusted if a sampling step is necessary due to
-            additional constraints. If "raise" and any lower or upper bound is binding,
-            we raise an error. If "ignore", boundary problems are simply ignored.
-
-    Returns:
-        pd.DataFrame: Quadratic DataFrame containing the covariance matrix of the free
-            parameters. If parameters were fixed (explicitly or by other constraints),
-            the index is a subset of params.index. The columns are the same as the
-            index.
-
-    """
-    transformations, constr_info = process_constraints_old(constraints, params)
-    free_index = params[constr_info["_internal_free"]].index
-
-    if isinstance(internal_cov, pd.DataFrame):
-        internal_cov = internal_cov.to_numpy()
-
-    if transformations:
-        _to_internal, _from_internal = get_reparametrize_functions(
-            params=params, constraints=constraints
-        )
-
-        free = constr_info.loc[free_index]
-        is_free = constr_info["_internal_free"].to_numpy()
-        lower_bounds = free["_internal_lower"]
-        upper_bounds = free["_internal_upper"]
-
-        internal_mean = _to_internal(params)
-
-        sample = np.random.multivariate_normal(
-            mean=internal_mean,
-            cov=internal_cov,
-            size=n_samples,
-        )
-        transformed_free = []
-        for params_vec in sample:
-            if bounds_handling == "clip":
-                params_vec = np.clip(params_vec, a_min=lower_bounds, a_max=upper_bounds)
-            elif bounds_handling == "raise":
-                if (params_vec < lower_bounds).any() or (
-                    params_vec > upper_bounds
-                ).any():
-                    raise ValueError()
-
-            transformed = _from_internal(internal=params_vec)
-            transformed_free.append(transformed[is_free])
-
-        free_cov = np.cov(
-            np.array(transformed_free),
-            rowvar=False,
-        )
-
-    else:
-        free_cov = internal_cov
-
-    res = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
-    return res
-
-
 def calculate_inference_quantities(params, free_cov, ci_level):
     """Add standard errors, pvalues and confidence intervals to params.
 
@@ -205,64 +116,6 @@ def calculate_inference_quantities(params, free_cov, ci_level):
     res = free.reindex(params.index)
     res["value"] = params["value"]
     return res
-
-
-def get_internal_first_derivative(
-    func, params, constraints=None, func_kwargs=None, numdiff_options=None
-):
-    """Get the first_derivative of func with respect to internal parameters.
-
-    If there are no constraints, we simply call the first_derivative function.
-
-    Args:
-        func (callable): Function to take the derivative of.
-        params (pandas.DataFrame): Data frame with external parameters. See
-            :ref:`params`.
-        constraints (list): Constraints that define how to convert between internal
-            and external parameters.
-        func_kwargs (dict): Additional keyword arguments for func.
-        numdiff_options (dict): Additional options for first_derivative.
-
-    Returns:
-        dict: See ``first_derivative`` for details. The only difference is that the
-            the "derivative" entry is always a numpy array instead of a DataFrame
-
-    """
-    numdiff_options = {} if numdiff_options is None else numdiff_options
-    func_kwargs = {} if func_kwargs is None else func_kwargs
-    _func = functools.partial(func, **func_kwargs)
-
-    if constraints is None:
-        out = first_derivative(
-            func=_func,
-            params=params,
-            **numdiff_options,
-        )
-        out["has_transforming_constraints"] = False
-    else:
-
-        lower_bounds, upper_bounds = get_internal_bounds(params, constraints)
-
-        _internal_func = numpy_interface(
-            func=_func, params=params, constraints=constraints
-        )
-
-        _to_internal, _ = get_reparametrize_functions(params, constraints)
-
-        _x = _to_internal(params)
-
-        out = first_derivative(
-            _internal_func,
-            _x,
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
-            **numdiff_options,
-        )
-
-        if isinstance(out["derivative"], (pd.DataFrame, pd.Series)):
-            out["derivative"] = out["derivative"].to_numpy()
-
-    return out
 
 
 def process_pandas_arguments(**kwargs):
@@ -341,7 +194,7 @@ def get_derivative_case(derivative):
     """Determine which kind of derivative should be used."""
     if isinstance(derivative, (pd.DataFrame, np.ndarray)):
         case = "pre-calculated"
-    elif isinstance(derivative, Callable):
+    elif callable(derivative):
         case = "closed-form"
     elif derivative is False:
         case = "skip"

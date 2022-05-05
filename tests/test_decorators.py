@@ -1,51 +1,7 @@
-import numpy as np
-import pandas as pd
 import pytest
 from estimagic.decorators import catch
 from estimagic.decorators import mark_minimizer
-from estimagic.decorators import numpy_interface
 from estimagic.decorators import unpack
-from numpy.testing import assert_array_almost_equal as aaae
-from pandas.testing import assert_frame_equal
-
-
-def test_numpy_interface():
-    params = pd.DataFrame()
-    params["value"] = np.arange(5)
-    params["lower_bound"] = -1
-    params = params.astype(float)
-    constraints = [{"loc": np.arange(3), "type": "fixed"}]
-
-    x = np.array([10, 11])
-
-    @numpy_interface(params=params, constraints=constraints, numpy_output=True)
-    def f(params):
-        return params
-
-    calculated = f(x)
-
-    excepected = np.array([[0.0, -1.0], [1, -1], [2, -1], [10, -1], [11, -1]])
-    aaae(calculated, excepected)
-
-
-def test_numpy_interface_without_constraints():
-    params = pd.DataFrame()
-    x = np.arange(5)
-    params["value"] = x
-    params["lower_bound"] = -1
-    params = params.astype(float)
-
-    @numpy_interface(params=params)
-    def f(params):
-        return params
-
-    calculated = f(x)
-
-    expected = pd.DataFrame(
-        data=[[0.0, -1.0], [1, -1], [2, -1], [3, -1], [4, -1]],
-        columns=["value", "lower_bound"],
-    )
-    assert_frame_equal(calculated, expected)
 
 
 def test_catch_at_defaults():
