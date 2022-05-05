@@ -66,6 +66,10 @@ def get_bounds(
         upper_flat_soft[np.isnan(upper_flat_soft)] = np.inf
         upper_flat = np.minimum(upper_flat, upper_flat_soft)
 
+    if (lower_flat > upper_flat).any():
+        msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
+        raise ValueError(msg)  # xxxx
+
     return lower_flat, upper_flat
 
 

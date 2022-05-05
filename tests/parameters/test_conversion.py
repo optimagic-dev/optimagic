@@ -1,4 +1,8 @@
 import numpy as np
+import pytest
+from estimagic.parameters.conversion import _is_fast_deriv_eval
+from estimagic.parameters.conversion import _is_fast_func_eval
+from estimagic.parameters.conversion import _is_fast_path
 from estimagic.parameters.conversion import get_converter
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -112,3 +116,109 @@ def test_get_converter_with_trees():
         np.arange(3),
     )
     aaae(converter.func_to_internal({"contributions": {"d": 1, "e": 2}}), 3)
+
+
+@pytest.fixture
+def fast_kwargs():
+    kwargs = {
+        "params": np.arange(3),
+        "constraints": None,
+        "func_eval": 3,
+        "primary_key": "value",
+        "scaling": False,
+        "derivative_eval": np.arange(3),
+        "add_soft_bounds": False,
+    }
+    return kwargs
+
+
+STILL_FAST = [
+    ("params", np.arange(3)),
+    ("constraints", []),
+    ("func_eval", {"value": 3}),
+    ("derivative_eval", {"value": np.arange(3)}),
+]
+
+
+@pytest.mark.parametrize("name, value", STILL_FAST)
+def test_is_fast_path_when_true(fast_kwargs, name, value):
+    kwargs = fast_kwargs.copy()
+    kwargs[name] = value
+    assert _is_fast_path(**kwargs)
+
+
+SLOW = [
+    ("params", {"a": 1}),
+    ("params", np.arange(4).reshape(2, 2)),
+    ("constraints", [{}]),
+    ("func_eval", np.array([1])),
+    ("func_eval", {"a": 1}),
+    ("scaling", True),
+    ("derivative_eval", {"bla": 3}),
+    ("derivative_eval", np.arange(3).reshape(1, 3)),
+    ("add_soft_bounds", True),
+]
+
+
+@pytest.mark.parametrize("name, value", SLOW)
+def test_is_fast_path_when_false(fast_kwargs, name, value):
+    kwargs = fast_kwargs.copy()
+    kwargs[name] = value
+    assert not _is_fast_path(**kwargs)
+
+
+FAST_EVAL_CASES = [
+    ("contributions", np.arange(3)),
+    ("contributions", {"contributions": np.arange(3)}),
+    ("root_contributions", np.arange(3)),
+    ("root_contributions", {"root_contributions": np.arange(3)}),
+]
+
+
+@pytest.mark.parametrize("key, f", FAST_EVAL_CASES)
+def test_is_fast_func_eval_true(key, f):
+    assert _is_fast_func_eval(f, key)
+
+
+helper = np.arange(6).reshape(3, 2)
+
+FAST_DERIV_CASES = [
+    ("contributions", helper),
+    ("contributions", {"contributions": helper}),
+    ("root_contributions", helper),
+    ("root_contributions", {"root_contributions": helper}),
+]
+
+
+@pytest.mark.parametrize("key, f", FAST_DERIV_CASES)
+def test_is_fast_deriv_eval_true(key, f):
+    assert _is_fast_deriv_eval(f, key)
+
+
+SLOW_EVAL_CASES = [
+    ("contributions", {"a": 1, "b": 2, "c": 3}),
+    ("contributions", {"contributions": {"a": 1, "b": 2, "c": 3}}),
+    ("root_contributions", {"a": 1, "b": 2, "c": 3}),
+    ("root_contributions", {"root_contributions": {"a": 1, "b": 2, "c": 3}}),
+]
+
+
+@pytest.mark.parametrize("key, f", SLOW_EVAL_CASES)
+def test_is_fast_func_eval_false(key, f):
+    assert not _is_fast_func_eval(f, key)
+
+
+SLOW_DERIV_CASES = [
+    ("contributions", np.arange(8).reshape(2, 2, 2)),
+    ("contributions", {"contributions": np.arange(8).reshape(2, 2, 2)}),
+    ("root_contributions", np.arange(8).reshape(2, 2, 2)),
+    ("root_contributions", {"root_contributions": np.arange(8).reshape(2, 2, 2)}),
+    ("value", None),
+    ("contributions", None),
+    ("root_contributions", None),
+]
+
+
+@pytest.mark.parametrize("key, f", SLOW_DERIV_CASES)
+def test_is_fast_deriv_eval_false(key, f):
+    assert not _is_fast_deriv_eval(f, key)

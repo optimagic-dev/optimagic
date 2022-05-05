@@ -2,8 +2,6 @@
 
 See the module docstring of process_constraints for naming conventions.
 """
-import warnings
-
 import numpy as np
 import pandas as pd
 from estimagic.exceptions import InvalidParamsError
@@ -172,20 +170,6 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
 
     """
     df = pd.DataFrame(constr_info, index=parnames)
-    # warn about fixes to a different value that what is in the "value" column
-    problematic_fixes = df.query(
-        "value != _fixed_value & _fixed_value.notnull() & value.notnull()",
-        engine="python",
-    )
-
-    warn_msg = (
-        "The following parameters were fixed to a different value than their start "
-        "value. The start values are overwritten with the fixed values. "
-        "You can ignore this message if you did this on purpose. :\n\n {}."
-    )
-
-    if len(problematic_fixes) > 0:
-        warnings.warn(warn_msg.format(problematic_fixes[["value", "_fixed_value"]]))
 
     # Check fixes and bounds are compatible with other constraints
     prob_msg = (

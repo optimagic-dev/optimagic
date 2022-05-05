@@ -1,5 +1,4 @@
 import pytest
-from estimagic.exceptions import InvalidFunctionError
 from estimagic.exceptions import InvalidKwargsError
 from estimagic.process_user_function import process_func_of_params
 
@@ -27,11 +26,3 @@ def test_process_func_of_params_too_few_kwargs():
 
     with pytest.raises(InvalidKwargsError):
         process_func_of_params(f, {"c": 3})
-
-
-def test_process_func_of_params_no_arguments():
-    def f():
-        pass
-
-    with pytest.raises(InvalidFunctionError):
-        process_func_of_params(f, {})
