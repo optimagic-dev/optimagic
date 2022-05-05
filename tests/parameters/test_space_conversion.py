@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 from estimagic import first_derivative
+from estimagic.parameters.space_conversion import _multiply_from_left
+from estimagic.parameters.space_conversion import _multiply_from_right
 from estimagic.parameters.space_conversion import get_space_converter
 from estimagic.parameters.tree_conversion import FlatParams
 from numpy.testing import assert_array_almost_equal as aaae
@@ -290,3 +292,18 @@ def test_space_converter_with_params(constraints, params, expected_internal):
     )
 
     aaae(calculated_jacobian, numerical_jacobian)
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_multiply_from_left_and_right(seed):
+    np.random.seed(seed)
+    mat_list = [np.random.uniform(size=(10, 10)) for i in range(5)]
+    a, b, c, d, e = mat_list
+
+    expected = a @ b @ c @ d @ e
+
+    calc_from_left = _multiply_from_left(mat_list)
+    calc_from_right = _multiply_from_right(mat_list)
+
+    aaae(calc_from_left, expected)
+    aaae(calc_from_right, expected)
