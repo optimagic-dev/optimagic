@@ -211,7 +211,7 @@ def estimate_ml(
 
     if callable(jacobian):
         try:
-            jacobian_eval = derivative(params, **jacobian_kwargs)
+            jacobian_eval = jacobian(params, **jacobian_kwargs)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:

@@ -4,19 +4,18 @@ from collections.abc import Callable
 
 import numpy as np
 import pandas as pd
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
+from estimagic.exceptions import InvalidFunctionError
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import get_derivative_case
-from estimagic.inference.shared import get_internal_first_derivative
-from estimagic.inference.shared import transform_covariance_old
+from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import minimize
-from estimagic.parameters.parameter_conversion_old import (
-    get_derivative_conversion_function,
-)
-from estimagic.parameters.process_constraints import process_constraints_old
+from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_measures
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
@@ -28,6 +27,8 @@ def estimate_msm(
     moments_cov,
     params,
     optimize_options,
+    lower_bounds=None,
+    upper_bounds=None,
     *,
     constraints=None,
     logging=False,
@@ -158,7 +159,6 @@ def estimate_msm(
     check_numdiff_options(numdiff_options, "estimate_msm")
 
     numdiff_options = {} if numdiff_options in (None, False) else numdiff_options.copy()
-    numdiff_options["key"] = "simulated_moments"
     if "scaling_factor" not in numdiff_options:
         numdiff_options["scaling_factor"] = 2
 
@@ -166,9 +166,12 @@ def estimate_msm(
         weights = get_weighting_matrix(moments_cov, weights)
 
     constraints = [] if constraints is None else constraints
+    jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
+    simulate_moments_kwargs = {} if simulate_moments_kwargs is None else {}
+    if simulate_moments_and_jacobian_kwargs is None:
+        simulate_moments_and_jacobian_kwargs = {}
 
-    processed_constraints, _ = process_constraints_old(constraints, params)
-
+    numdiff_options["key"] = "simulated_moments"  # xxxx
     # ==================================================================================
     # Calculate estimates via minimization (if necessary)
     # ==================================================================================
@@ -199,27 +202,90 @@ def estimate_msm(
     estimates = opt_res["solution_params"]
 
     # ==================================================================================
-    # Calculate internal jacobian
+    # do first function evaluations
     # ==================================================================================
-    deriv_to_internal = get_derivative_conversion_function(
-        params=params, constraints=constraints
+
+    try:
+        sim_mom_eval = simulate_moments(estimates, **simulate_moments_kwargs)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        msg = "Error while evaluating simulate_moments at estimated params."
+        raise InvalidFunctionError(msg) from e
+
+    if callable(jacobian):
+        try:
+            jacobian_eval = jacobian(params, **jacobian_kwargs)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = "Error while evaluating derivative at estimated params."
+            raise InvalidFunctionError(msg) from e
+
+    else:
+        jacobian_eval = None
+
+    # ==================================================================================
+    # get converter for params and function outputs
+    # ==================================================================================
+
+    lower_bounds, upper_bounds = get_bounds(
+        params,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
     )
 
+    def helper(params):
+        raw = simulate_moments(params, **simulate_moments_kwargs)
+        if isinstance(raw, dict) and "simulated_moments" in raw:
+            out = {"contributions": raw["simulated_moments"]}
+        else:
+            out = {"contributions": raw}
+        return out
+
+    if isinstance(sim_mom_eval, dict) and "simulated_moments" in sim_mom_eval:
+        func_eval = {"contributions": sim_mom_eval["simulated_moments"]}
+    else:
+        func_eval = {"contributions": sim_mom_eval}
+
+    converter, flat_estimates = get_converter(
+        func=helper,
+        params=estimates,
+        constraints=constraints,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        func_eval=func_eval,
+        primary_key="contributions",
+        scaling=False,
+        scaling_options=None,
+        derivative_eval=jacobian_eval,
+    )
+
+    # ==================================================================================
+    # Calculate internal jacobian
+    # ==================================================================================
+
     if jac_case == "pre-calculated":
-        int_jac = deriv_to_internal(jacobian)
+        int_jac = converter.derivative_to_internal(jacobian)
     elif jac_case == "closed-form":
-        jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
-        _jac = jacobian(estimates, **jacobian_kwargs)
-        int_jac = deriv_to_internal(_jac)
+        int_jac = converter.derivative_to_internal(jacobian_eval)
     # switch to "numerical" even if jac_case == "skip" because jac is required for msm.
     else:
-        deriv_res = get_internal_first_derivative(
-            func=simulate_moments,
-            params=estimates,
-            constraints=constraints,
-            func_kwargs=simulate_moments_kwargs,
-            numdiff_options=numdiff_options,
+
+        def func(x):
+            p = converter.params_from_internal(x)
+            sim_mom_eval = helper(p)
+            out = converter.func_to_internal(sim_mom_eval)
+            return out
+
+        deriv_res = first_derivative(
+            func=func,
+            params=flat_estimates.values,
+            lower_bounds=flat_estimates.lower_bounds,
+            upper_bounds=flat_estimates.upper_bounds,
+            **numdiff_options,
         )
+
         int_jac = deriv_res["derivative"]
         numdiff_info = {k: v for k, v in deriv_res.items() if k != "derivative"}
 
@@ -236,10 +302,11 @@ def estimate_msm(
     # Calculate external cov and summary
     # ==================================================================================
 
-    cov = transform_covariance_old(
+    cov = transform_covariance(
         params=estimates,
+        flat_params=flat_estimates,
         internal_cov=cov,
-        constraints=constraints,
+        converter=converter,
         n_samples=n_samples,
         bounds_handling=bounds_handling,
     )
@@ -253,7 +320,7 @@ def estimate_msm(
     # Calculate external jac (if no transforming constraints)
     # ==================================================================================
 
-    if not processed_constraints:
+    if not converter.has_transforming_constraints:
         if isinstance(moments_cov, pd.DataFrame):
             moments_names = moments_cov.index
         else:
@@ -266,7 +333,7 @@ def estimate_msm(
     # Calculate sensitivity measures (if no transforming constraints)
     # ==================================================================================
 
-    if not processed_constraints:
+    if not converter.has_transforming_constraints:
         sensitivities = calculate_sensitivity_measures(
             jac=int_jac,
             weights=weights,
