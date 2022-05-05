@@ -28,18 +28,14 @@ If only few columns of processed params are used in a function, it is better to
 pass them as Series, to make the flow of information more explicit.
 
 """
-import warnings
-
 import numpy as np
 import pandas as pd
 from estimagic.parameters.check_constraints import check_constraints_are_satisfied
-from estimagic.parameters.check_constraints import check_constraints_are_satisfied_old
 from estimagic.parameters.check_constraints import check_fixes_and_bounds
 from estimagic.parameters.check_constraints import check_for_incompatible_overlaps
 from estimagic.parameters.check_constraints import check_types
 from estimagic.parameters.consolidate_constraints import consolidate_constraints
 from estimagic.parameters.kernel_transformations import scale_to_internal
-from estimagic.parameters.parameter_preprocessing import add_default_bounds_to_params
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
@@ -102,7 +98,7 @@ def process_constraints(
     check_for_incompatible_overlaps(constr_info, transformations, param_names)
     check_fixes_and_bounds(constr_info, transformations, param_names)
 
-    int_lower, int_upper = _create_unscaled_internal_bounds(
+    int_lower, int_upper = _create_internal_bounds(
         constr_info["lower_bound"], constr_info["upper_bound"], transformations
     )
     constr_info["_internal_free"] = _create_internal_free(
@@ -122,204 +118,6 @@ def process_constraints(
     )
 
     return transformations, constr_info
-
-
-def process_constraints_old(
-    constraints,
-    parvec,
-    parnames=None,
-    scaling_factor=None,
-    scaling_offset=None,
-):
-    """"""
-    warnings.warn(category=FutureWarning, message="This functions is deprecated.")
-    parnames = list(range(len(parvec))) if parnames is None else parnames  # xxxx
-    parvec = add_default_bounds_to_params(parvec)
-    lower_bounds = parvec["lower_bound"].to_numpy()  # xxxx
-    upper_bounds = parvec["upper_bound"].to_numpy()  # xxxx
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", message="indexing past lexsort depth may impact performance."
-        )
-        parvec = parvec.copy()
-        check_types(constraints)
-        # selectors have to be processed before anything else happens to the params
-        constraints = _process_selectors_old(constraints, parvec)
-
-        constraints = _replace_pairwise_equality_by_equality(constraints)
-        constraints = _process_linear_weights(constraints)
-        check_constraints_are_satisfied_old(constraints, parvec)
-        constraints = _replace_increasing_and_decreasing_by_linear(constraints)
-        constraints = _process_linear_weights(constraints)
-
-        transformations, constr_info = consolidate_constraints(
-            constraints=constraints,
-            parvec=parvec["value"].to_numpy(),  # xxxx
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
-        )
-        check_for_incompatible_overlaps(constr_info, transformations, parnames)
-        check_fixes_and_bounds(constr_info, transformations, parnames)
-
-        int_lower, int_upper = _create_unscaled_internal_bounds(
-            constr_info["lower_bound"], constr_info["upper_bound"], transformations
-        )
-        constr_info["_internal_lower"] = int_lower
-        constr_info["_internal_upper"] = int_upper
-        constr_info["_internal_free"] = _create_internal_free(
-            constr_info["_is_fixed_to_value"],
-            constr_info["_is_fixed_to_other"],
-            transformations,
-        )
-
-        for col in ["_internal_lower", "_internal_upper"]:
-            constr_info[col] = _scale_bound_to_internal(
-                constr_info[col],
-                constr_info["_internal_free"],
-                scaling_factor=scaling_factor,
-                scaling_offset=scaling_offset,
-            )
-        constr_info["_pre_replacements"] = _create_pre_replacements(
-            constr_info["_internal_free"]
-        )
-
-        constr_info["_internal_fixed_value"] = _create_internal_fixed_value(
-            constr_info["_fixed_value"], transformations
-        )
-
-        return transformations, constr_info
-
-
-def _process_selectors(constraints, params, params_vec):
-    """Convert the query and loc field of the constraint into position based indices.
-
-    Args:
-        constraints (list): List of dictionaries where each dictionary is a constraint.
-        params (pd.DataFrame): see :ref:`params`.
-
-    Returns:
-        list: The resulting constraint dictionaries contain a new entry
-            called 'index' that consists of the positions of the selected parameters.
-            If the selected parameters are consecutive entries, the value corresponding
-            to 'index' is a list of positions.
-
-    """
-    out = []
-
-    for constr in constraints:
-        new_constr = constr.copy()
-
-        if constr["type"] != "pairwise_equality":
-            locs = [constr["loc"]] if "loc" in constr else []
-            queries = [constr["query"]] if "query" in constr else []
-        else:
-            locs = new_constr.pop("locs", [])
-            queries = new_constr.pop("queries", [])
-
-        positions = pd.Series(data=np.arange(len(params)), index=params.index)
-
-        indices = []
-        for loc in locs:
-            index = positions.loc[loc].astype(int).tolist()
-            index = [index] if not isinstance(index, list) else index
-            assert len(set(index)) == len(index), "Duplicates in loc are not allowed."
-            indices.append(index)
-        for query in queries:
-            loc = params.query(query).index
-            index = positions.loc[loc].astype(int).tolist()
-            index = [index] if not isinstance(index, list) else index
-            indices.append(index)
-
-        if constr["type"] == "pairwise_equality":
-            assert (
-                len(indices) >= 2
-            ), "Select at least 2 sets of parameters for pairwise equality constraint!"
-            length = len(indices[0])
-            for index in indices:
-                assert len(index) == length, (
-                    "All sets of parameters in pairwise_equality pc must have "
-                    "the same length."
-                )
-        else:
-            assert (
-                len(indices) == 1
-            ), "Either loc or query can be in constraint but not both."
-
-        n_selected = len(indices[0])
-        if n_selected >= 1:
-            if constr["type"] == "pairwise_equality":
-                new_constr["indices"] = indices
-            else:
-                new_constr["index"] = indices[0]
-            out.append(new_constr)
-
-    return out
-
-
-def _process_selectors_old(constraints, params):
-    """Convert the query and loc field of the constraint into position based indices.
-
-    Args:
-        constraints (list): List of dictionaries where each dictionary is a constraint.
-        params (pd.DataFrame): see :ref:`params`.
-
-    Returns:
-        list: The resulting constraint dictionaries contain a new entry
-            called 'index' that consists of the positions of the selected parameters.
-            If the selected parameters are consecutive entries, the value corresponding
-            to 'index' is a list of positions.
-
-    """
-    out = []
-
-    for constr in constraints:
-        new_constr = constr.copy()
-
-        if constr["type"] != "pairwise_equality":
-            locs = [constr["loc"]] if "loc" in constr else []
-            queries = [constr["query"]] if "query" in constr else []
-        else:
-            locs = new_constr.pop("locs", [])
-            queries = new_constr.pop("queries", [])
-
-        positions = pd.Series(data=np.arange(len(params)), index=params.index)
-
-        indices = []
-        for loc in locs:
-            index = positions.loc[loc].astype(int).tolist()
-            index = [index] if not isinstance(index, list) else index
-            assert len(set(index)) == len(index), "Duplicates in loc are not allowed."
-            indices.append(index)
-        for query in queries:
-            loc = params.query(query).index
-            index = positions.loc[loc].astype(int).tolist()
-            index = [index] if not isinstance(index, list) else index
-            indices.append(index)
-
-        if constr["type"] == "pairwise_equality":
-            assert (
-                len(indices) >= 2
-            ), "Select at least 2 sets of parameters for pairwise equality constraint!"
-            length = len(indices[0])
-            for index in indices:
-                assert len(index) == length, (
-                    "All sets of parameters in pairwise_equality pc must have "
-                    "the same length."
-                )
-        else:
-            assert (
-                len(indices) == 1
-            ), "Either loc or query can be in constraint but not both."
-
-        n_selected = len(indices[0])
-        if n_selected >= 1:
-            if constr["type"] == "pairwise_equality":
-                new_constr["indices"] = indices
-            else:
-                new_constr["index"] = indices[0]
-            out.append(new_constr)
-
-    return out
 
 
 def _replace_pairwise_equality_by_equality(constraints):
@@ -419,7 +217,7 @@ def _replace_increasing_and_decreasing_by_linear(constraints):
     return processed
 
 
-def _create_unscaled_internal_bounds(lower, upper, constraints):
+def _create_internal_bounds(lower, upper, constraints):
     """Create columns with bounds for the internal parameter vector.
 
     The columns have the length of the external params and will be reduced later.
