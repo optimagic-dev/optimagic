@@ -8,10 +8,6 @@ from estimagic.utilities import propose_alternatives
 
 
 def process_func_of_params(func, kwargs, name="your function"):
-    # fast path
-    if kwargs is None or kwargs == {}:
-        return func
-
     kept, ignored = filter_kwargs(func, kwargs)
 
     if ignored:
