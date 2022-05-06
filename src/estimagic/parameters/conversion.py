@@ -210,6 +210,7 @@ def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         free_mask=np.full(len(params), True),
+        names=[str(i) for i in range(len(params))],
     )
     return converter, flat_params
 

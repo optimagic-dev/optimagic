@@ -25,6 +25,7 @@ from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
 from estimagic.utilities import hash_array
 
@@ -506,18 +507,8 @@ def _optimize(
             "log_options": log_options,
             "error_handling": error_handling,
             "error_penalty": error_penalty,
-            "cache_size": int(cache_size),
+            "params": params,
         }
-        params_with_name_and_group = _add_name_and_group_columns_to_params(params)
-        problem_data["params"] = params_with_name_and_group
-        database = _create_and_initialize_database(logging, log_options, problem_data)
-        db_kwargs = {
-            "database": database,
-            "path": logging,
-            "fast_logging": log_options.get("fast_logging", False),
-        }
-    else:
-        db_kwargs = {"database": None, "path": None, "fast_logging": False}
 
     # ==================================================================================
     # partial the kwargs into corresponding functions
@@ -605,6 +596,21 @@ def _optimize(
         converter.func_to_internal(first_crit_eval),
         algo_info.primary_criterion_entry,
     )
+    # ==================================================================================
+    # initialize the log database
+    # ==================================================================================
+    if logging:
+        problem_data["flat_params_names"] = (internal_params.names,)
+        problem_data["flat_params_groups"] = get_params_groups(internal_params)
+
+        database = _create_and_initialize_database(logging, log_options, problem_data)
+        db_kwargs = {
+            "database": database,
+            "path": logging,
+            "fast_logging": log_options.get("fast_logging", False),
+        }
+    else:
+        db_kwargs = {"database": None, "path": None, "fast_logging": False}
 
     # ==================================================================================
     # Do some things that require internal parameters or bounds
@@ -839,39 +845,6 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
 
     numdiff_options = {**default_numdiff_options, **numdiff_options}
     return numdiff_options
-
-
-def _add_name_and_group_columns_to_params(params):
-    """Add a group and name column to the params.
-
-    Args:
-        params (pd.DataFrame): See :ref:`params`.
-
-    Returns:
-        params (pd.DataFrame): With defaults expanded params DataFrame.
-
-    """
-    params = params.copy()
-
-    if "group" not in params.columns:
-        params["group"] = "All Parameters"
-
-    if "name" not in params.columns:
-        names = [_index_element_to_string(tup) for tup in params.index]
-        params["name"] = names
-    else:
-        params["name"] = params["name"].str.replace("-", "_")
-
-    return params
-
-
-def _index_element_to_string(element, separator="_"):
-    if isinstance(element, (tuple, list)):
-        as_strings = [str(entry).replace("-", "_") for entry in element]
-        res_string = separator.join(as_strings)
-    else:
-        res_string = str(element)
-    return res_string
 
 
 def _setdefault(candidate, default):

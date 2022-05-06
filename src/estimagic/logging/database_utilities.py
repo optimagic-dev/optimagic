@@ -149,8 +149,9 @@ def make_optimization_problem_table(database, if_exists="extend"):
         Column("log_options", PickleType(pickler=RobustPickler)),
         Column("error_handling", String),
         Column("error_penalty", PickleType(pickler=RobustPickler)),
-        Column("cache_size", Integer),
         Column("constraints", PickleType(pickler=RobustPickler)),
+        Column("flat_params_groups", PickleType(pickler=RobustPickler)),
+        Column("flat_params_names", PickleType(pickler=RobustPickler)),
     ]
 
     Table(
