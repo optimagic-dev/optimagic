@@ -179,7 +179,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
     inputs["error_handling"] = "continue"
     inputs["error_penalty"] = _fill_error_penalty_with_defaults(
         error_penalty={},
-        first_eval=inputs["first_criterion_evaluation"],
+        first_value=scaling * 30,
         direction=direction,
     )
 

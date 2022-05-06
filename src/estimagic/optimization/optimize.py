@@ -23,6 +23,7 @@ from estimagic.optimization.optimization_logging import log_scheduled_steps_and_
 from estimagic.optimization.process_results import process_internal_optimizer_result
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
+from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
 from estimagic.process_user_function import process_func_of_params
 from estimagic.utilities import hash_array
@@ -599,6 +600,12 @@ def _optimize(
         soft_upper_bounds=soft_upper_bounds,
         add_soft_bounds=multistart,
     )
+
+    first_crit_eval_scalar = aggregate_func_output_to_value(
+        converter.func_to_internal(first_crit_eval),
+        algo_info.primary_criterion_entry,
+    )
+
     # ==================================================================================
     # Do some things that require internal parameters or bounds
     # ==================================================================================
@@ -623,7 +630,7 @@ def _optimize(
 
     # set default error penalty
     error_penalty = _fill_error_penalty_with_defaults(
-        error_penalty, first_eval, direction
+        error_penalty, first_crit_eval_scalar, direction
     )
     # create cache
     x = internal_params.values
@@ -720,10 +727,8 @@ def _optimize(
     return res
 
 
-def _fill_error_penalty_with_defaults(error_penalty, first_eval, direction):
+def _fill_error_penalty_with_defaults(error_penalty, first_value, direction):
     error_penalty = error_penalty.copy()
-    first_value = first_eval["output"]
-    first_value = first_value if np.isscalar(first_value) else first_value["value"]
 
     if direction == "minimize":
         default_constant = (
