@@ -5,6 +5,7 @@ from estimagic.optimization.optimize import minimize
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
 from pybaum import tree_just_flatten
+from pybaum import tree_map
 
 
 REGISTRY = get_registry(extended=True)
@@ -13,6 +14,10 @@ REGISTRY = get_registry(extended=True)
 def flexible_sos_scalar(params):
     flat = np.array(tree_just_flatten(params, registry=REGISTRY))
     return flat @ flat
+
+
+def flexible_sos_scalar_derivative(params):
+    return tree_map(lambda x: 2.0 * x, params)
 
 
 def flexible_sos_ls(params):
@@ -38,6 +43,21 @@ def test_tree_params_numerical_derivative_scalar_criterion(params):
 
     res = minimize(
         criterion=flexible_sos_scalar,
+        params=params,
+        algorithm="scipy_lbfgsb",
+    )
+    calculated = np.array(tree_just_flatten(res["solution_params"], registry=REGISTRY))
+    aaae(calculated, expected)
+
+
+@pytest.mark.parametrize("params", PARAMS + SCALAR_PARAMS)
+def test_tree_params_scalar_criterion(params):
+    flat = np.array(tree_just_flatten(params, registry=REGISTRY))
+    expected = np.zeros_like(flat)
+
+    res = minimize(
+        criterion=flexible_sos_scalar,
+        derivative=flexible_sos_scalar_derivative,
         params=params,
         algorithm="scipy_lbfgsb",
     )
