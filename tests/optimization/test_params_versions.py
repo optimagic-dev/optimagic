@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.differentiation.derivatives import first_derivative
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
@@ -22,6 +23,16 @@ def flexible_sos_scalar_derivative(params):
 
 def flexible_sos_ls(params):
     return {"root_contributions": params}
+
+
+def flexible_sos_ls_derivative(params):
+    deriv_dict = first_derivative(
+        flexible_sos_ls,
+        params,
+        key="root_contributions",
+    )
+
+    return deriv_dict["derivative"]
 
 
 PARAMS = [
@@ -78,6 +89,26 @@ def test_tree_params_numerical_derivative_sos_ls(params, algorithm):
 
     res = minimize(
         criterion=flexible_sos_ls,
+        params=params,
+        algorithm=algorithm,
+    )
+    calculated = np.array(tree_just_flatten(res["solution_params"], registry=REGISTRY))
+    aaae(calculated, expected)
+
+
+@pytest.mark.parametrize("params, algorithm", TEST_CASES_SOS_LS)
+def test_tree_params_sos_ls(params, algorithm):
+    flat = np.array(tree_just_flatten(params, registry=REGISTRY))
+    expected = np.zeros_like(flat)
+
+    derivatives = {
+        "value": flexible_sos_scalar_derivative,
+        "root_contributions": flexible_sos_ls_derivative,
+    }
+
+    res = minimize(
+        criterion=flexible_sos_ls,
+        derivative=derivatives,
         params=params,
         algorithm=algorithm,
     )
