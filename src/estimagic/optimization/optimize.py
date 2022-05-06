@@ -647,7 +647,6 @@ def _optimize(
     to_partial = {
         "direction": direction,
         "criterion": criterion,
-        "params": params,
         "converter": converter,
         "derivative": derivative,
         "criterion_and_derivative": criterion_and_derivative,

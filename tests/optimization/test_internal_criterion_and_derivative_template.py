@@ -111,10 +111,10 @@ def test_criterion_and_derivative_template(
         scaling_options=None,
         derivative_eval=None,
     )
-    inputs = base_inputs.copy()
+    inputs = {k: v for k, v in base_inputs.items() if k != "params"}
     inputs["converter"] = converter
 
-    inputs["first_criterion_evaluation"]["output"] = crit(inputs["params"])
+    inputs["first_criterion_evaluation"]["output"] = crit(base_inputs["params"])
     crit = crit if (deriv, crit_and_deriv) == (None, None) else no_second_call(crit)
 
     inputs["criterion"] = crit
@@ -162,7 +162,8 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
         scaling_options=None,
         derivative_eval=None,
     )
-    inputs = base_inputs.copy()
+    inputs = {k: v for k, v in base_inputs.items() if k != "params"}
+
     inputs["converter"] = converter
     scaling = 1 if direction == "minimize" else -1
     inputs["first_criterion_evaluation"]["output"] = scaling * 30

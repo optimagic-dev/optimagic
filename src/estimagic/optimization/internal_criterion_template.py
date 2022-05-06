@@ -36,7 +36,6 @@ def internal_criterion_and_derivative_template(
     task,
     direction,
     criterion,
-    params,
     converter,
     algo_info,
     derivative,
