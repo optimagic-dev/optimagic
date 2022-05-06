@@ -1,5 +1,4 @@
 import functools
-import inspect
 import warnings
 from pathlib import Path
 
@@ -15,8 +14,8 @@ from estimagic.logging.database_utilities import make_optimization_iteration_tab
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_steps_table
 from estimagic.optimization.check_arguments import check_optimize_kwargs
-from estimagic.optimization.get_algorithm import get_algo_info
-from estimagic.optimization.get_algorithm import get_algorithm
+from estimagic.optimization.get_algorithm import get_final_algorithm
+from estimagic.optimization.get_algorithm import process_user_algorithm
 from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
@@ -477,7 +476,7 @@ def _optimize(
     # ==================================================================================
     # Get the algorithm info
     # ==================================================================================
-    algo_info = get_algo_info(algorithm)
+    raw_algo, algo_info, algo_kwargs = process_user_algorithm(algorithm)
 
     if algo_info.primary_criterion_entry == "root_contributions":
         if direction == "maximize":
@@ -633,8 +632,10 @@ def _optimize(
     # ==================================================================================
     # get the internal algorithm
     # ==================================================================================
-    internal_algorithm = get_algorithm(
-        algorithm=algorithm,
+    internal_algorithm = get_final_algorithm(
+        raw_algorithm=raw_algo,
+        algo_info=algo_info,
+        valid_kwargs=algo_kwargs,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
         algo_options=algo_options,
@@ -668,11 +669,9 @@ def _optimize(
         **to_partial,
     )
 
-    algo_args = set(inspect.signature(internal_algorithm).parameters)
-
     problem_functions = {}
     for task in ["criterion", "derivative", "criterion_and_derivative"]:
-        if task in algo_args:
+        if task in algo_kwargs:
             problem_functions[task] = functools.partial(
                 internal_criterion_and_derivative,
                 task=task,
