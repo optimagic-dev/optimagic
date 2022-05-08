@@ -171,7 +171,6 @@ def estimate_msm(
     if simulate_moments_and_jacobian_kwargs is None:
         simulate_moments_and_jacobian_kwargs = {}
 
-    numdiff_options["key"] = "simulated_moments"  # xxxx
     # ==================================================================================
     # Calculate estimates via minimization (if necessary)
     # ==================================================================================

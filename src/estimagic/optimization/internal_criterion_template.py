@@ -459,5 +459,5 @@ def _get_output_for_optimizer(
     elif task == "criterion_and_derivative":
         out = (new_criterion, new_derivative)
     else:
-        raise ValueError()  # xxxx
+        raise ValueError(f"Invalid task: {task}")
     return out

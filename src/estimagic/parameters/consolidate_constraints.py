@@ -11,7 +11,9 @@ import pandas as pd
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
-def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
+def consolidate_constraints(
+    constraints, parvec, lower_bounds, upper_bounds, param_names
+):
     """Consolidate constraints with each other and remove redundant ones.
 
     Args:
@@ -70,8 +72,8 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
         upper_bounds=upper_bounds,
     )
 
-    constr_info["lower_bounds"] = lower_bounds  # xxxx
-    constr_info["upper_bounds"] = upper_bounds  # xxxx
+    constr_info["lower_bounds"] = lower_bounds
+    constr_info["upper_bounds"] = upper_bounds
 
     (
         other_constraints,
@@ -93,6 +95,7 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
             params_vec=parvec,
             linear_constraints=linear_constraints,
             constr_info=constr_info,
+            param_names=param_names,
         )
 
     constraints = other_constraints + linear_constraints
@@ -341,7 +344,9 @@ def _plug_equality_constraints_into_selectors(
     return pc, post_replacements, is_fixed_to_other
 
 
-def _consolidate_linear_constraints(params_vec, linear_constraints, constr_info):
+def _consolidate_linear_constraints(
+    params_vec, linear_constraints, constr_info, param_names
+):
     """Consolidate linear constraints.
 
     Consolidation entails the following steps:
@@ -394,7 +399,7 @@ def _consolidate_linear_constraints(params_vec, linear_constraints, constr_info)
         )
         w, rhs = _rescale_linear_constraints(w, rhs)
         w, rhs = _drop_redundant_linear_constraints(w, rhs)
-        _check_consolidated_weights(w)
+        _check_consolidated_weights(w, param_names=param_names)
         to_internal, from_internal = _get_kernel_transformation_matrices(w)
         constr = {
             "index": list(w.columns),
@@ -613,7 +618,7 @@ def _drop_redundant_linear_constraints(weights, rhs):
     return new_weights, new_rhs
 
 
-def _check_consolidated_weights(weights):
+def _check_consolidated_weights(weights, param_names):
     """Check the rank condition on the linear weights."""
     n_constraints, n_params = weights.shape
 
@@ -630,14 +635,13 @@ def _check_consolidated_weights(weights):
         "constraints as linear constraints but as bounds, fixes, increasing or "
         "decreasing constraints."
     )
-    # xxxx add parnames
-    ind = weights.columns
+    relevant_names = [param_names[i] for i in weights.columns]
 
     if n_constraints > n_params:
-        raise ValueError(msg_too_many + msg_general.format(ind, weights))
+        raise ValueError(msg_too_many + msg_general.format(relevant_names, weights))
 
     if np.linalg.matrix_rank(weights) < n_constraints:
-        raise ValueError(msg_rank + msg_general.format(ind, weights))
+        raise ValueError(msg_rank + msg_general.format(relevant_names, weights))
 
 
 def _get_kernel_transformation_matrices(weights):

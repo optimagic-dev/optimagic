@@ -75,6 +75,7 @@ def process_constraints(
         parvec=params_vec,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        param_names=param_names,
     )
 
     check_for_incompatible_overlaps(constr_info, transformations, param_names)
