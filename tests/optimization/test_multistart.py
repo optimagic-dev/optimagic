@@ -59,7 +59,11 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
 
 
 def test_multistart_with_existing_sample(params):
-    options = {"sample": np.arange(20).reshape(5, 4) / 10}
+    sample = pd.DataFrame(
+        np.arange(20).reshape(5, 4) / 10,
+        columns=params.index,
+    )
+    options = {"sample": sample}
 
     res = minimize(
         criterion=sos_dict_criterion,
