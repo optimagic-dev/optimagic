@@ -14,6 +14,7 @@ from estimagic.decorators import switch_sign
 from estimagic.examples.criterion_functions import sos_criterion_and_gradient
 from estimagic.examples.criterion_functions import sos_criterion_and_jacobian
 from estimagic.examples.criterion_functions import sos_dict_criterion
+from estimagic.examples.criterion_functions import sos_dict_derivative
 from estimagic.examples.criterion_functions import sos_gradient
 from estimagic.examples.criterion_functions import sos_jacobian
 from estimagic.examples.criterion_functions import sos_pandas_gradient
@@ -36,8 +37,6 @@ ls_derivatives = [None, sos_jacobian, sos_pandas_jacobian]
 
 ls_criterion_and_derivatives = [sos_criterion_and_jacobian]
 
-dict_derivatives = [None]
-
 dict_criterion_and_derivatives = [
     None,
 ]
@@ -53,22 +52,8 @@ for algo in algorithms:
     else:
         for deriv in scalar_derivatives:
             for crit_and_deriv in scalar_criterion_and_derivtives:
-                for direction in ["minimize"]:  # , "maximize"]: # xxxx
+                for direction in ["minimize", "maximize"]:
                     valid_cases.append((direction, algo, deriv, crit_and_deriv))
-
-    for deriv in dict_derivatives:
-        for crit_and_deriv in dict_criterion_and_derivatives:
-            if algo in ls_algorithms:
-                valid_cases.append(("minimize", algo, deriv, crit_and_deriv))
-            else:
-                for direction in ["maximize", "minimize"]:
-                    valid_cases.append((direction, algo, deriv, crit_and_deriv))
-
-
-# =================================================================================================
-valid_cases = [("maximize", "scipy_lbfgsb", None, None)]
-invalid_cases = []
-# =================================================================================================
 
 
 @pytest.mark.parametrize(
@@ -141,3 +126,17 @@ def test_invalid_derivative_versions(
                 derivative=deriv,
                 criterion_and_derivative=crit_and_deriv,
             )
+
+
+def test_dict_derivative():
+    start_params = pd.DataFrame()
+    start_params["value"] = [1, 2, 3]
+
+    res = minimize(
+        criterion=sos_dict_criterion,
+        params=start_params,
+        algorithm="scipy_lbfgsb",
+        derivative=sos_dict_derivative,
+    )
+
+    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(3))

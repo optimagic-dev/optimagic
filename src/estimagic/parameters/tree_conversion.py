@@ -111,7 +111,12 @@ def _get_func_flatten(registry, func_eval, primary_key):
         if primary_key == "value":
             func_flatten = lambda func_eval: float(func_eval)
         else:
-            raise ValueError()  # xxxx
+            msg = (
+                "criterion returns a scalar value but the requested optimizer "
+                "requires a vector or pytree output. criterion can either return this "
+                f"output alone or inside a dictionary with the key {primary_key}."
+            )
+            raise InvalidFunctionError(msg)
     elif not isinstance(func_eval, dict):
         raise ValueError()  # xxxx
     else:

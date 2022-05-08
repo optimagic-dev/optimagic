@@ -258,7 +258,6 @@ TEST_CASES = {
     "covariance": _get_test_case_covariance(),
     "normalized_covariance": _get_test_case_normalized_covariance(),
     "sdcorr": _get_test_case_sdcorr(),
-    # xxxx need more test for sdcorr (normalized, uncorrelated, ...)
 }
 
 
