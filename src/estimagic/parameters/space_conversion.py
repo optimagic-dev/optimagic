@@ -79,7 +79,7 @@ def get_space_converter(
         fixed_values=constr_info["_internal_fixed_value"],
         pre_replacements=constr_info["_pre_replacements"],
         transformations=transformations,
-        post_replacements=constr_info["_post_replacements"],
+        post_replacements=constr_info["post_replacements"],
     )
 
     _dim_internal = int(constr_info["_internal_free"].sum())
@@ -89,7 +89,7 @@ def get_space_converter(
     )
 
     _post_replace_jac = post_replace_jacobian(
-        post_replacements=constr_info["_post_replacements"]
+        post_replacements=constr_info["post_replacements"]
     )
 
     _derivative_to_internal = partial(
@@ -124,7 +124,7 @@ def get_space_converter(
     internal_params = FlatParams(
         values=converter.params_to_internal(flat_params.values),
         lower_bounds=constr_info["lower_bounds"],
-        upper_bounds=constr_info["_internal_upper"],
+        upper_bounds=constr_info["upper_bounds"],
         names=flat_params.names,
         free_mask=free_mask,
         soft_lower_bounds=_soft_lower,

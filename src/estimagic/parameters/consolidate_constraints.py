@@ -81,7 +81,7 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
         equality_constraints, other_constraints, n_params=len(parvec)
     )
 
-    constr_info["_post_replacements"] = post_replacements
+    constr_info["post_replacements"] = post_replacements
     constr_info["is_fixed_to_other"] = is_fixed_to_other
 
     linear_constraints, other_constraints = _split_constraints(
@@ -368,7 +368,7 @@ def _consolidate_linear_constraints(params_vec, linear_constraints, constr_info)
     )
 
     weights = _plug_equality_constraints_into_linear_weights(
-        weights, constr_info["_post_replacements"]
+        weights, constr_info["post_replacements"]
     )
     weights, right_hand_side = _plug_fixes_into_linear_weights_and_rhs(
         weights,

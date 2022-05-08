@@ -91,7 +91,7 @@ def process_constraints(
         constraints=transformations,
     )
     constr_info["lower_bounds"] = int_lower[constr_info["_internal_free"]]
-    constr_info["_internal_upper"] = int_upper[constr_info["_internal_free"]]
+    constr_info["upper_bounds"] = int_upper[constr_info["_internal_free"]]
 
     constr_info["_pre_replacements"] = _create_pre_replacements(
         constr_info["_internal_free"]
