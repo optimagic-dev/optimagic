@@ -6,6 +6,7 @@ from functools import partial
 
 import numpy as np
 import pandas as pd
+from estimagic.exceptions import InvalidConstraintError
 from estimagic.exceptions import InvalidParamsError
 from estimagic.utilities import cov_params_to_matrix
 from estimagic.utilities import sdcorr_params_to_matrix
@@ -132,7 +133,9 @@ def check_types(constraints):
     }
     for constr in constraints:
         if constr["type"] not in valid_types:
-            raise TypeError("Invalid constraint_type: {}".format(constr["type"]))
+            raise InvalidConstraintError(
+                "Invalid constraint_type: {}".format(constr["type"]),
+            )
 
 
 def check_for_incompatible_overlaps(constr_info, transformations, parnames):
@@ -161,9 +164,9 @@ def check_for_incompatible_overlaps(constr_info, transformations, parnames):
     if len(set(all_indices)) < len(all_indices):
         unique, counts = np.unique(all_indices, return_counts=True)
         invalid_indices = unique[counts >= 2]
-        invalid_names = parnames[invalid_indices]
+        invalid_names = [parnames[i] for i in invalid_indices]
 
-        raise ValueError(msg.format(invalid_names))
+        raise InvalidConstraintError(msg.format(invalid_names))
 
 
 def check_fixes_and_bounds(constr_info, transformations, parnames):
@@ -198,22 +201,30 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
             subset = df.iloc[constr["index"][1:]]
             if subset["is_fixed_to_value"].any():
                 problematic = subset[subset["is_fixed_to_value"]].index
-                raise ValueError(cov_msg.format(constr["type"], problematic))
+                raise InvalidConstraintError(
+                    cov_msg.format(constr["type"], problematic)
+                )
             if np.isfinite(subset[["lower_bounds", "upper_bounds"]]).any(axis=None):
                 problematic = (
                     subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
-                raise ValueError(cov_msg.format(constr["type"], problematic))
+                raise InvalidConstraintError(
+                    cov_msg.format(constr["type"], problematic)
+                )
         elif constr["type"] == "probability":
             subset = df.iloc[constr["index"]]
             if subset["is_fixed_to_value"].any():
                 problematic = subset[subset["is_fixed_to_value"]].index
-                raise ValueError(prob_msg.format(constr["type"], problematic))
+                raise InvalidConstraintError(
+                    prob_msg.format(constr["type"], problematic)
+                )
             if np.isfinite(subset[["lower_bounds", "upper_bounds"]]).any(axis=None):
                 problematic = (
                     subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
-                raise ValueError(prob_msg.format(constr["type"], problematic))
+                raise InvalidConstraintError(
+                    prob_msg.format(constr["type"], problematic)
+                )
 
     invalid = df.query("lower_bounds >= upper_bounds")[["lower_bounds", "upper_bounds"]]
     msg = (
@@ -221,4 +232,4 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
         + f"This is violated for:\n{invalid}"
     )
     if len(invalid) > 0:
-        raise ValueError(msg)
+        raise InvalidConstraintError(msg)

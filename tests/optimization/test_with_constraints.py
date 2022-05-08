@@ -21,6 +21,7 @@ from estimagic.examples.criterion_functions import sos_jacobian
 from estimagic.examples.criterion_functions import sos_ls_jacobian
 from estimagic.examples.criterion_functions import trid_gradient
 from estimagic.examples.criterion_functions import trid_scalar_criterion
+from estimagic.exceptions import InvalidConstraintError
 from estimagic.exceptions import InvalidParamsError
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
@@ -167,4 +168,48 @@ def test_fix_that_differs_from_start_value_raises_an_error():
             params=np.arange(3),
             algorithm="scipy_lbfgsb",
             constraints=[{"loc": [1], "type": "fixed", "value": 10}],
+        )
+
+
+def test_three_independent_constraints():
+    params = np.arange(10)
+    params[0] = 2
+
+    constraints = [
+        {"loc": [0, 1, 2], "type": "covariance"},
+        {"loc": [4, 5], "type": "fixed"},
+        {"loc": [7, 8], "type": "linear", "value": 15, "weights": 1},
+    ]
+
+    res = minimize(
+        criterion=lambda x: x @ x,
+        params=params,
+        algorithm="scipy_lbfgsb",
+        constraints=constraints,
+    )
+
+    expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
+
+    aaae(res["solution_params"], expected, decimal=5)
+
+
+INVALID_CONSTRAINT_COMBIS = [
+    [{"loc": [1, 0, 2], "type": "covariance"}, {"loc": [0, 1], "type": "probability"}],
+    [
+        {"loc": [6, 3, 5, 2, 1, 4], "type": "covariance"},
+        {"loc": [0, 1, 2], "type": "increasing"},
+    ],
+]
+
+
+@pytest.mark.parametrize("constraints", INVALID_CONSTRAINT_COMBIS)
+def test_incompatible_constraints_raise_errors(constraints):
+    params = np.arange(10)
+
+    with pytest.raises(InvalidConstraintError):
+        minimize(
+            criterion=lambda x: x @ x,
+            params=params,
+            algorithm="scipy_lbfgsb",
+            constraints=constraints,
         )
