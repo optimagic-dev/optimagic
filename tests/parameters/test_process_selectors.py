@@ -17,6 +17,7 @@ def test_process_selectors_no_constraint(constraints):
         constraints=constraints,
         params=np.arange(5),
         tree_converter=None,
+        param_names=list("abcde"),
     )
 
     assert calculated == []
@@ -81,6 +82,7 @@ def test_process_selectors_tree_selector(tree_params, tree_params_converter):
         constraints=[{"type": "equality", "selector": lambda x: x[1]}],
         params=tree_params,
         tree_converter=tree_params_converter,
+        param_names=list("abcdefg"),
     )
     aae(calculated[0]["index"], np.array([6]))
 
@@ -96,6 +98,7 @@ def test_process_selectors_tree_selectors(tree_params, tree_params_converter):
         constraints=constraints,
         params=tree_params,
         tree_converter=tree_params_converter,
+        param_names=list("abcdefg"),
     )
     aae(calculated[0]["indices"][0], np.array([6]))
     aae(calculated[0]["indices"][1], np.array([1]))
@@ -106,6 +109,7 @@ def test_process_selectors_numpy_array_loc(np_params_converter):
         constraints=[{"type": "equality", "loc": [1, 4]}],
         params=np.arange(6) + 10,
         tree_converter=np_params_converter,
+        param_names=list("abcdefg"),
     )
 
     aae(calculated[0]["index"], np.array([1, 4]))
@@ -122,6 +126,7 @@ def test_process_selectors_numpy_array_locs(np_params_converter):
         constraints=constraints,
         params=np.arange(6) + 10,
         tree_converter=np_params_converter,
+        param_names=list("abcdefg"),
     )
 
     aae(calculated[0]["indices"][0], np.array([1, 4]))
@@ -135,6 +140,7 @@ def test_process_selectors_dataframe_loc(df_params, df_params_converter):
         constraints=constraints,
         params=df_params,
         tree_converter=df_params_converter,
+        param_names=list("abcdefg"),
     )
 
     aae(calculated[0]["index"], np.array([1, 4]))
@@ -148,6 +154,7 @@ def test_process_selectors_dataframe_query(df_params, df_params_converter):
         constraints=constraints,
         params=df_params,
         tree_converter=df_params_converter,
+        param_names=list("abcdefg"),
     )
 
     aae(calculated[0]["index"], np.array([1, 4]))
@@ -160,6 +167,7 @@ def test_process_selectors_dataframe_locs(df_params, df_params_converter):
         constraints=constraints,
         params=df_params,
         tree_converter=df_params_converter,
+        param_names=list("abcdefg"),
     )
 
     aae(calculated[0]["indices"][0], np.array([1, 4]))
@@ -174,6 +182,7 @@ def test_process_selectors_dataframe_queries(df_params, df_params_converter):
         constraints=constraints,
         params=df_params,
         tree_converter=df_params_converter,
+        param_names=list("abcdefg"),
     )
 
     aae(calculated[0]["indices"][0], np.array([1, 4]))
@@ -188,6 +197,7 @@ def test_process_selectors_numpy_array_invalid_fields(field, np_params_converter
             constraints=[{"type": "equality", field: None}],
             params=np.arange(6),
             tree_converter=np_params_converter,
+            param_names=list("abcdefg"),
         )
 
 
@@ -200,6 +210,7 @@ def test_process_selectors_dataframe_invalid_fields(
             constraints=[{"type": "equality", field: None}],
             params=df_params,
             tree_converter=df_params_converter,
+            param_names=list("abcdefg"),
         )
 
 
@@ -212,6 +223,7 @@ def test_process_selectors_tree_invalid_fields(
             constraints=[{"type": "equality", field: None}],
             params=tree_params,
             tree_converter=tree_params_converter,
+            param_names=list("abcdefg"),
         )
 
 
@@ -227,6 +239,7 @@ def test_process_selectors_duplicates(np_params_converter):
             constraints=constraints,
             params=np.arange(6) + 10,
             tree_converter=np_params_converter,
+            param_names=list("abcdefg"),
         )
 
 
@@ -242,4 +255,5 @@ def test_process_selectors_differen_length_in_multiple_selectors(np_params_conve
             constraints=constraints,
             params=np.arange(6) + 10,
             tree_converter=np_params_converter,
+            param_names=list("abcdefg"),
         )

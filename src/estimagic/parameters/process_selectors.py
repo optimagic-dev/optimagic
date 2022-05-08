@@ -1,3 +1,5 @@
+from collections import Counter
+
 import numpy as np
 import pandas as pd
 from estimagic.exceptions import InvalidConstraintError
@@ -5,7 +7,7 @@ from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 
 
-def process_selectors(constraints, params, tree_converter):
+def process_selectors(constraints, params, tree_converter, param_names):
     # fast path
     if constraints in (None, []):
         return []
@@ -14,7 +16,6 @@ def process_selectors(constraints, params, tree_converter):
     n_params = len(tree_converter.params_flatten(params))
     helper = tree_converter.params_unflatten(np.arange(n_params))
     params_case = _get_params_case(params)
-
     flat_constraints = []
     for constr in constraints:
         selector_case = _get_selector_case(constr)
@@ -43,13 +44,13 @@ def process_selectors(constraints, params, tree_converter):
         if selector_case == "one selector":
             if np.isscalar(selected):
                 selected = [selected]
-            _fail_if_duplicates(selected, constr)
+            _fail_if_duplicates(selected, constr, param_names)
             selected = np.array(selected).astype(int)
         else:
             selected = [[sel] if np.isscalar(sel) else sel for sel in selected]
             _fail_if_selections_are_incompatible(selected, constr)
             for sel in selected:
-                _fail_if_duplicates(sel, constr)
+                _fail_if_duplicates(sel, constr, param_names)
             selected = [np.array(sel).astype(int) for sel in selected]
 
         new_constr = constr.copy()
@@ -172,11 +173,14 @@ def _get_selector_case(constraint):
     return selector_case
 
 
-def _fail_if_duplicates(selected, constraint):
-    if len(selected) != len(set(selected)):
+def _fail_if_duplicates(selected, constraint, param_names):
+    duplicates = _find_duplicates(selected)
+    if duplicates:
+        names = [param_names[i] for i in duplicates]
         msg = (
-            "Duplicates in selected parameters for the following constraint:\n"
-            f"{constraint}"
+            "Error while processing constraints. There are duplicates in selected "
+            "parameters. The parameters that were selected more than once are "
+            f"{names}. The problematic constraint is:\n{constraint}"
         )
         raise InvalidConstraintError(msg)
 
@@ -197,3 +201,7 @@ def _fail_if_selections_are_incompatible(selected, constraint):
             f"{constraint}"
         )
         raise InvalidConstraintError(msg)
+
+
+def _find_duplicates(list_):
+    return [item for item, count in Counter(list_).items() if count > 1]

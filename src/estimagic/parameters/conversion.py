@@ -68,6 +68,7 @@ def get_converter(
         constraints=constraints,
         params=params,
         tree_converter=tree_converter,
+        param_names=flat_params.names,
     )
 
     space_converter, internal_params = get_space_converter(
