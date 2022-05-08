@@ -151,7 +151,12 @@ def _get_best_key_and_aggregator(needed_key, available_keys):
         key = "root_contributions"
         aggregate = lambda x: float((np.array(x) ** 2).sum())
     else:
-        raise ValueError()  # xxxx
+        msg = (
+            "The optimizer you requested requires a criterion function that returns "
+            f"a dictionary with the entry '{needed_key}'. Your function returns a "
+            f"dictionary that only contains the entries {available_keys}."
+        )
+        raise InvalidFunctionError(msg)
 
     return key, aggregate
 
