@@ -112,7 +112,7 @@ for crit_name in FUNC_INFO:
                 test_cases.append((crit_name, "scipy_lbfgsb", deriv, constr_name))
 
             if "root_contributions" in FUNC_INFO[crit_name]["entries"]:
-                for deriv in list({FUNC_INFO[crit_name].get("ls_jacobian"), None}):
+                for deriv in [FUNC_INFO[crit_name].get("ls_jacobian"), None]:
                     test_cases.append(
                         (crit_name, "scipy_ls_dogbox", deriv, constr_name)
                     )
