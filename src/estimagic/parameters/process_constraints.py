@@ -56,11 +56,11 @@ def process_constraints(
             that entail actual transformations and not just fixing parameters.
         constr_info (dict): Dict of 1d numpy arrays of length n_params (or None) with
             information that is needed for the reparametrizations.
-            - _internal_lower:
+            - lower_bounds:
               Lower bounds for the internal parameter vector. Those are derived from
               the original lower bounds and additional bounds implied by other
               constraints.
-            - _internal_upper: As _internal_lower but for upper bounds.
+            - _internal_upper: As lower_bounds but for upper bounds.
             - _internal_free: Boolean column that is true for those parameters over
               which the optimizer will actually optimize.
             - _pre_replacements: The j_th element indicates the position of the internal
@@ -72,8 +72,6 @@ def process_constraints(
             - _internal_fixed_value: Contains transformed versions of the fixed values
               that will become equal to the external fixed values after the
               kernel transformations are applied.
-            - _is_fixed_to_value: True for parameters that are fixed to a value
-            - _is_fixed_to_other: True for parameters that are fixed to another
               parameter
 
     """
@@ -82,9 +80,7 @@ def process_constraints(
 
     constraints = _replace_pairwise_equality_by_equality(constraints)
     constraints = _process_linear_weights(constraints)
-    check_constraints_are_satisfied(
-        constraints, params_vec, param_names
-    )  # xxxx rewrite for params_vec
+    check_constraints_are_satisfied(constraints, params_vec, param_names)
     constraints = _replace_increasing_and_decreasing_by_linear(constraints)
     constraints = _process_linear_weights(constraints)
 
@@ -94,18 +90,21 @@ def process_constraints(
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
     )
+
     check_for_incompatible_overlaps(constr_info, transformations, param_names)
     check_fixes_and_bounds(constr_info, transformations, param_names)
 
+    is_fixed_to_value = constr_info.pop("is_fixed_to_value")
+    is_fixed_to_other = constr_info.pop("is_fixed_to_other")
     int_lower, int_upper = _create_internal_bounds(
         constr_info["lower_bound"], constr_info["upper_bound"], transformations
     )
     constr_info["_internal_free"] = _create_internal_free(
-        constr_info["_is_fixed_to_value"],
-        constr_info["_is_fixed_to_other"],
-        transformations,
+        is_fixed_to_value=is_fixed_to_value,
+        is_fixed_to_other=is_fixed_to_other,
+        constraints=transformations,
     )
-    constr_info["_internal_lower"] = int_lower[constr_info["_internal_free"]]
+    constr_info["lower_bounds"] = int_lower[constr_info["_internal_free"]]
     constr_info["_internal_upper"] = int_upper[constr_info["_internal_free"]]
 
     constr_info["_pre_replacements"] = _create_pre_replacements(
@@ -262,8 +261,8 @@ def _create_internal_free(is_fixed_to_value, is_fixed_to_other, constraints):
     """Boolean Series that is true for parameters over which the optimizer optimizes.
 
     Args:
-        is_fixed_to_value (np.ndarray): The _is_fixed_to_value column of pp.
-        is_fixed_to_other (np.ndarray): The _is_fixed_to_other column of pp.
+        is_fixed_to_value (np.ndarray): boolean array
+        is_fixed_to_other (np.ndarray): boolean array
 
     Returns:
         int_free (np.ndarray)

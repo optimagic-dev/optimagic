@@ -185,8 +185,8 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
     for constr in transformations:
         if constr["type"] in ["covariance", "sdcorr"]:
             subset = df.iloc[constr["index"][1:]]
-            if subset["_is_fixed_to_value"].any():
-                problematic = subset[subset["_is_fixed_to_value"]].index
+            if subset["is_fixed_to_value"].any():
+                problematic = subset[subset["is_fixed_to_value"]].index
                 raise ValueError(cov_msg.format(constr["type"], problematic))
             if np.isfinite(subset[["lower_bound", "upper_bound"]]).any(axis=None):
                 problematic = (
@@ -195,8 +195,8 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
                 raise ValueError(cov_msg.format(constr["type"], problematic))
         elif constr["type"] == "probability":
             subset = df.iloc[constr["index"]]
-            if subset["_is_fixed_to_value"].any():
-                problematic = subset[subset["_is_fixed_to_value"]].index
+            if subset["is_fixed_to_value"].any():
+                problematic = subset[subset["is_fixed_to_value"]].index
                 raise ValueError(prob_msg.format(constr["type"], problematic))
             if np.isfinite(subset[["lower_bound", "upper_bound"]]).any(axis=None):
                 problematic = (

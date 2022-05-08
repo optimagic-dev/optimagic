@@ -45,12 +45,12 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
         "value": parvec.copy(),
     }
     constr_info["_fixed_value"] = fixed_value
-    constr_info["_is_fixed_to_value"] = np.isfinite(constr_info["_fixed_value"])
+    constr_info["is_fixed_to_value"] = np.isfinite(constr_info["_fixed_value"])
 
     other_constraints = [
         c
         for c in other_constraints
-        if not constr_info["_is_fixed_to_value"][c["index"]].all()
+        if not constr_info["is_fixed_to_value"][c["index"]].all()
     ]
 
     (
@@ -61,7 +61,7 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
         constraints=other_constraints,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        is_fixed_to_value=constr_info["_is_fixed_to_value"],
+        is_fixed_to_value=constr_info["is_fixed_to_value"],
         fixed_value=constr_info["_fixed_value"],
     )
 
@@ -83,7 +83,7 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
     )
 
     constr_info["_post_replacements"] = post_replacements
-    constr_info["_is_fixed_to_other"] = is_fixed_to_other
+    constr_info["is_fixed_to_other"] = is_fixed_to_other
 
     linear_constraints, other_constraints = _split_constraints(
         other_constraints, "linear"
@@ -371,7 +371,7 @@ def _consolidate_linear_constraints(linear_constraints, constr_info):
     weights, right_hand_side = _plug_fixes_into_linear_weights_and_rhs(
         weights,
         right_hand_side,
-        constr_info["_is_fixed_to_value"],
+        constr_info["is_fixed_to_value"],
         constr_info["_fixed_value"],
     )
 

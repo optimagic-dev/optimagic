@@ -123,7 +123,7 @@ def get_space_converter(
 
     internal_params = FlatParams(
         values=converter.params_to_internal(flat_params.values),
-        lower_bounds=constr_info["_internal_lower"],
+        lower_bounds=constr_info["lower_bounds"],
         upper_bounds=constr_info["_internal_upper"],
         names=flat_params.names,
         free_mask=free_mask,
