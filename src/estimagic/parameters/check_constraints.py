@@ -2,6 +2,8 @@
 
 See the module docstring of process_constraints for naming conventions.
 """
+from functools import partial
+
 import numpy as np
 import pandas as pd
 from estimagic.exceptions import InvalidParamsError
@@ -35,60 +37,69 @@ def check_constraints_are_satisfied(flat_constraints, param_values, param_names)
         typ = constr["type"]
         subset = param_values[constr["index"]]
 
-        base_msg = _get_message(constr, param_names)
+        _msg = partial(_get_message, constr, param_names)
 
         if typ == "covariance":
             cov = cov_params_to_matrix(subset)
             e, _ = np.linalg.eigh(cov)
             if not np.all(e > -1e-8):
-                raise InvalidParamsError(base_msg.format(""))
+                raise InvalidParamsError(_msg())
         elif typ == "sdcorr":
             cov = sdcorr_params_to_matrix(subset)
             e, _ = np.linalg.eigh(cov)
             if not np.all(e > -1e-8):
-                raise InvalidParamsError(base_msg.format(""))
+                raise InvalidParamsError(_msg())
         elif typ == "probability":
             if not np.isclose(subset.sum(), 1, rtol=0.01):
                 explanation = "Probabilities do not sum to 1."
-                raise InvalidParamsError(base_msg.format(explanation))
+                raise InvalidParamsError(_msg(explanation))
             if np.any(subset < 0):
                 explanation = "There are negative Probabilities."
-                raise InvalidParamsError(base_msg.format(explanation))
+                raise InvalidParamsError(_msg(explanation))
             if np.any(subset > 1):
                 explanation = "There are probabilities larger than 1."
-                raise InvalidParamsError(base_msg.format(explanation))
+                raise InvalidParamsError(_msg(explanation))
+        elif typ == "fixed":
+            if "value" in constr and not np.allclose(subset, constr["value"]):
+                explanation = (
+                    "Fixing parameters to different values than their start values "
+                    "was allowed in earlier versions of estimagic but is "
+                    "forbidden now. "
+                )
+                raise InvalidParamsError(_msg(explanation))
         elif typ == "increasing":
             if np.any(np.diff(subset) < 0):
-                raise InvalidParamsError(base_msg.format(""))
+                raise InvalidParamsError(_msg())
         elif typ == "decreasing":
             if np.any(np.diff(subset) > 0):
-                InvalidParamsError(base_msg.format(""))
+                InvalidParamsError(_msg())
         elif typ == "linear":
             wsum = subset.dot(constr["weights"])
             if "lower_bound" in constr and wsum < constr["lower_bound"]:
                 explanation = "Lower bound of linear constraint is violated."
-                raise InvalidParamsError(base_msg.format(explanation))
+                raise InvalidParamsError(_msg(explanation))
             elif "upper_bound" in constr and wsum > constr["upper_bound"]:
                 explanation = "Upper bound of linear constraint violated"
-                raise InvalidParamsError(base_msg.format(explanation))
+                raise InvalidParamsError(_msg(explanation))
             elif "value" in constr and not np.isclose(wsum, constr["value"]):
                 explanation = "Equality condition of linear constraint violated"
-                raise InvalidParamsError(base_msg.format(explanation))
+                raise InvalidParamsError(_msg(explanation))
         elif typ == "equality":
             if len(set(subset.tolist())) != 1:
-                raise InvalidParamsError(base_msg.format(""))
+                raise InvalidParamsError(_msg())
 
 
-def _get_message(constraint, param_names):
-    start = f"{constraint['type']} is not fulfilled in params."
+def _get_message(constraint, param_names, explanation=""):
+    start = f"A constraint of type '{constraint['type']}' is not fulfilled in params."
 
-    explanation = "{}"
+    if explanation:
+        explanation = f" {explanation.rstrip('. ')}. "
 
     names = [param_names[i] for i in constraint["index"]]
 
     end = (
-        f"The names of the involved parameters is:\n{names}\n"
-        "The relevant constraint (with processed selector fields) is:\n"
+        f"The names of the involved parameters are:\n{names}\n"
+        "The relevant constraint is:\n"
         f"{constraint}."
     )
 

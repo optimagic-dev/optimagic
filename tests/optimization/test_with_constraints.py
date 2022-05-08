@@ -21,6 +21,7 @@ from estimagic.examples.criterion_functions import sos_jacobian
 from estimagic.examples.criterion_functions import sos_ls_jacobian
 from estimagic.examples.criterion_functions import trid_gradient
 from estimagic.examples.criterion_functions import trid_scalar_criterion
+from estimagic.exceptions import InvalidParamsError
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -156,3 +157,14 @@ def test_constrained_minimization(
     )
 
     aaae(calculated, expected, decimal=4)
+
+
+def test_fix_that_differs_from_start_value_raises_an_error():
+
+    with pytest.raises(InvalidParamsError):
+        minimize(
+            criterion=lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            constraints=[{"loc": [1], "type": "fixed", "value": 10}],
+        )
