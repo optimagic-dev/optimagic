@@ -68,7 +68,7 @@ def get_bounds(
 
     if (lower_flat > upper_flat).any():
         msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
-        raise ValueError(msg)  # xxxx
+        raise ValueError(msg)
 
     return lower_flat, upper_flat
 

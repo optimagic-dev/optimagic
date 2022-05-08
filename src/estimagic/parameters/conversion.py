@@ -108,7 +108,11 @@ def get_converter(
         elif return_type == "flat":
             out = x_external
         else:
-            raise ValueError()  # xxxx
+            msg = (
+                "Invalid return type: {return_type}. Must be one of 'tree', 'flat', "
+                "'tree_and_flat'"
+            )
+            raise ValueError(msg)
         return out
 
     def _derivative_to_internal(derivative_eval, x):
