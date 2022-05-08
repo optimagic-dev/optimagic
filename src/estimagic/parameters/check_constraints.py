@@ -188,7 +188,7 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
             if subset["is_fixed_to_value"].any():
                 problematic = subset[subset["is_fixed_to_value"]].index
                 raise ValueError(cov_msg.format(constr["type"], problematic))
-            if np.isfinite(subset[["lower_bound", "upper_bound"]]).any(axis=None):
+            if np.isfinite(subset[["lower_bounds", "upper_bounds"]]).any(axis=None):
                 problematic = (
                     subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
@@ -198,13 +198,13 @@ def check_fixes_and_bounds(constr_info, transformations, parnames):
             if subset["is_fixed_to_value"].any():
                 problematic = subset[subset["is_fixed_to_value"]].index
                 raise ValueError(prob_msg.format(constr["type"], problematic))
-            if np.isfinite(subset[["lower_bound", "upper_bound"]]).any(axis=None):
+            if np.isfinite(subset[["lower_bounds", "upper_bounds"]]).any(axis=None):
                 problematic = (
                     subset.replace([-np.inf, np.inf], np.nan).dropna(how="all").index
                 )
                 raise ValueError(prob_msg.format(constr["type"], problematic))
 
-    invalid = df.query("lower_bound >= upper_bound")[["lower_bound", "upper_bound"]]
+    invalid = df.query("lower_bounds >= upper_bounds")[["lower_bounds", "upper_bounds"]]
     msg = (
         "lower_bound must be strictly smaller than upper_bound. "
         + f"This is violated for:\n{invalid}"

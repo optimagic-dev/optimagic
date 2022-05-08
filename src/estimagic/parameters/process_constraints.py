@@ -43,20 +43,19 @@ def process_constraints(
             that entail actual transformations and not just fixing parameters.
         constr_info (dict): Dict of 1d numpy arrays of length n_params (or None) with
             information that is needed for the reparametrizations.
-            - lower_bounds:
-              Lower bounds for the internal parameter vector. Those are derived from
-              the original lower bounds and additional bounds implied by other
-              constraints.
-            - _internal_upper: As lower_bounds but for upper bounds.
-            - _internal_free: Boolean column that is true for those parameters over
+            - lower_bounds: Lower bounds for the internal parameter vector. Those are
+              derived from the original lower bounds and additional bounds implied by
+              other constraints.
+            - upper_bounds: As lower_bounds but for upper bounds.
+            - internal_free: Boolean column that is true for those parameters over
               which the optimizer will actually optimize.
-            - _pre_replacements: The j_th element indicates the position of the internal
+            - pre_replacements: The j_th element indicates the position of the internal
               parameter that has to be copied into the j_th position of the external
               parameter vector when reparametrizing from_internal, before any
               transformations are applied. Negative if no element has to be copied.
-            - _post_replacements: As pre_replacements, but applied after the
+            - post_replacements: As pre_replacements, but applied after the
               transformations are done.
-            - _internal_fixed_value: Contains transformed versions of the fixed values
+            - internal_fixed_value: Contains transformed versions of the fixed values
               that will become equal to the external fixed values after the
               kernel transformations are applied.
               parameter
@@ -84,7 +83,7 @@ def process_constraints(
     is_fixed_to_value = constr_info.pop("is_fixed_to_value")
     is_fixed_to_other = constr_info.pop("is_fixed_to_other")
     int_lower, int_upper = _create_internal_bounds(
-        constr_info["lower_bound"], constr_info["upper_bound"], transformations
+        constr_info["lower_bounds"], constr_info["upper_bounds"], transformations
     )
     constr_info["_internal_free"] = _create_internal_free(
         is_fixed_to_value=is_fixed_to_value,
@@ -99,7 +98,7 @@ def process_constraints(
     )
 
     constr_info["_internal_fixed_value"] = _create_internal_fixed_value(
-        constr_info["_fixed_value"], transformations
+        constr_info["fixed_values"], transformations
     )
 
     return transformations, constr_info

@@ -42,7 +42,7 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
     )
 
     constr_info = {
-        "_fixed_value": fixed_value,
+        "fixed_values": fixed_value,
         "is_fixed_to_value": np.isfinite(fixed_value),
     }
 
@@ -61,7 +61,7 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         is_fixed_to_value=constr_info["is_fixed_to_value"],
-        fixed_value=constr_info["_fixed_value"],
+        fixed_value=constr_info["fixed_values"],
     )
 
     lower_bounds, upper_bounds = _consolidate_bounds_with_equality_constraints(
@@ -70,8 +70,8 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
         upper_bounds=upper_bounds,
     )
 
-    constr_info["lower_bound"] = lower_bounds  # xxxx
-    constr_info["upper_bound"] = upper_bounds  # xxxx
+    constr_info["lower_bounds"] = lower_bounds  # xxxx
+    constr_info["upper_bounds"] = upper_bounds  # xxxx
 
     (
         other_constraints,
@@ -374,7 +374,7 @@ def _consolidate_linear_constraints(params_vec, linear_constraints, constr_info)
         weights,
         right_hand_side,
         constr_info["is_fixed_to_value"],
-        constr_info["_fixed_value"],
+        constr_info["fixed_values"],
     )
 
     involved_parameters = []
@@ -390,7 +390,7 @@ def _consolidate_linear_constraints(params_vec, linear_constraints, constr_info)
         ].copy(deep=True)
         rhs = right_hand_side.loc[w.index].copy(deep=True)
         w, rhs = _express_bounds_as_linear_constraints(
-            w, rhs, constr_info["lower_bound"], constr_info["upper_bound"]
+            w, rhs, constr_info["lower_bounds"], constr_info["upper_bounds"]
         )
         w, rhs = _rescale_linear_constraints(w, rhs)
         w, rhs = _drop_redundant_linear_constraints(w, rhs)
