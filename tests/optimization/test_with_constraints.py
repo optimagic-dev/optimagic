@@ -102,32 +102,41 @@ KNOWN_FAILURES = {
     ("rosenbrock", "decreasing"),  # imprecise
 }
 
+PARAMS_TYPES = ["numpy", "pandas"]
+
 test_cases = []
 for crit_name in FUNC_INFO:
     for constr_name in CONSTR_INFO:
-        unknown_res = FUNC_INFO[crit_name].get(f"{constr_name}_result") == "unknown"
-        known_failure = (crit_name, constr_name) in KNOWN_FAILURES
-        if not any([unknown_res, known_failure]):
-            for deriv in None, FUNC_INFO[crit_name]["gradient"]:
-                test_cases.append((crit_name, "scipy_lbfgsb", deriv, constr_name))
-
-            if "root_contributions" in FUNC_INFO[crit_name]["entries"]:
-                for deriv in [FUNC_INFO[crit_name].get("ls_jacobian"), None]:
+        for ptype in PARAMS_TYPES:
+            unknown_res = FUNC_INFO[crit_name].get(f"{constr_name}_result") == "unknown"
+            known_failure = (crit_name, constr_name) in KNOWN_FAILURES
+            if not any([unknown_res, known_failure]):
+                for deriv in None, FUNC_INFO[crit_name]["gradient"]:
                     test_cases.append(
-                        (crit_name, "scipy_ls_dogbox", deriv, constr_name)
+                        (crit_name, "scipy_lbfgsb", deriv, constr_name, ptype)
                     )
+
+                if "root_contributions" in FUNC_INFO[crit_name]["entries"]:
+                    for deriv in [FUNC_INFO[crit_name].get("ls_jacobian"), None]:
+                        test_cases.append(
+                            (crit_name, "scipy_ls_dogbox", deriv, constr_name, ptype)
+                        )
 
 
 @pytest.mark.parametrize(
-    "criterion_name, algorithm, derivative, constraint_name", test_cases
+    "criterion_name, algorithm, derivative, constraint_name, params_type",
+    test_cases,
 )
 def test_constrained_minimization(
-    criterion_name, algorithm, derivative, constraint_name
+    criterion_name, algorithm, derivative, constraint_name, params_type
 ):
 
     constraints = CONSTR_INFO[constraint_name]
     criterion = FUNC_INFO[criterion_name]["criterion"]
-    params = pd.Series(START_INFO[constraint_name], name="value").to_frame()
+    if params_type == "pandas":
+        params = pd.Series(START_INFO[constraint_name], name="value").to_frame()
+    else:
+        params = np.array(START_INFO[constraint_name])
 
     res = minimize(
         criterion=criterion,
@@ -137,7 +146,10 @@ def test_constrained_minimization(
         constraints=constraints,
     )
 
-    calculated = res["solution_params"]["value"].to_numpy()
+    if params_type == "pandas":
+        calculated = res["solution_params"]["value"].to_numpy()
+    else:
+        calculated = res["solution_params"]
 
     expected = FUNC_INFO[criterion_name].get(
         f"{constraint_name}_result", FUNC_INFO[criterion_name]["default_result"]
