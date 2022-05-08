@@ -71,3 +71,32 @@ def test_mark_minimizer_direct_call():
 
     assert first._algorithm_info.name == "bla"
     assert second._algorithm_info.name == "blubb"
+
+
+INVALID_TYPES = [
+    {"name": None},
+    {"name": [1, 2, 3]},
+    {"parallelizes": 15},
+    {"disable_cache": 20},
+    {"needs_scaling": 25},
+    {"is_available": 30},
+]
+
+
+@pytest.mark.parametrize("kwargs", INVALID_TYPES)
+def test_mark_minimizer_invalid_argument_types(kwargs):
+    kwargs = {"name": "bla", **kwargs}
+    with pytest.raises(TypeError):
+
+        @mark_minimizer(**kwargs)
+        def minimize_stupid():
+            pass
+
+
+def test_mark_minimizer_invalid_argument_primary_criterion_entry():
+    kwargs = {"name": "bla", "primary_criterion_entry": "bla"}
+    with pytest.raises(ValueError):
+
+        @mark_minimizer(**kwargs)
+        def minimize_stupid():
+            pass

@@ -184,7 +184,7 @@ def mark_minimizer(
     elif not isinstance(name, str):
         raise TypeError("name must be a string.")
 
-    valid_entries = ["value", "dict", "contributions", "root_contributions"]
+    valid_entries = ["value", "contributions", "root_contributions"]
     if primary_criterion_entry not in valid_entries:
         raise ValueError(
             f"primary_criterion_entry must be one of {valid_entries} not "
