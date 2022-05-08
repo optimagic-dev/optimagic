@@ -14,19 +14,6 @@ errors to be raised at a point where constraints still look similar to
 what users wrote. However, some checks can only be done
 after consolidation.
 
-The challenge in making this module readable is that after each function is applied
-the list of constraints and the params dataframe will be slightly different, but it
-is not possible to reflect all of the changes in meaningful names because thy would
-get way too long. We chose the following conventions:
-
-As soon as a list of constraints or a params DataFrame is different from what the
-user provided they are called pc (for processed constraints) and pp (for processed
-params) respectively. If all constraints of a certain type, say linear, are collected
-this collection is called pc_linear.
-
-If only few columns of processed params are used in a function, it is better to
-pass them as Series, to make the flow of information more explicit.
-
 """
 import numpy as np
 import pandas as pd

@@ -42,10 +42,9 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
     )
 
     constr_info = {
-        "value": parvec.copy(),
+        "_fixed_value": fixed_value,
+        "is_fixed_to_value": np.isfinite(fixed_value),
     }
-    constr_info["_fixed_value"] = fixed_value
-    constr_info["is_fixed_to_value"] = np.isfinite(constr_info["_fixed_value"])
 
     other_constraints = [
         c
@@ -91,7 +90,9 @@ def consolidate_constraints(constraints, parvec, lower_bounds, upper_bounds):
 
     if len(linear_constraints) > 0:
         linear_constraints = _consolidate_linear_constraints(
-            linear_constraints, constr_info
+            params_vec=parvec,
+            linear_constraints=linear_constraints,
+            constr_info=constr_info,
         )
 
     constraints = other_constraints + linear_constraints
@@ -222,7 +223,8 @@ def _consolidate_bounds_with_equality_constraints(
         params (pd.DataFrame): see :ref:`param`.
 
     Returns:
-        pp (pd.DataFrame): Copy of params with stricter bounds.
+        np.ndarray: 1d array with lower bounds
+        np.ndarray: 1d array with upper bounds
 
     """
     lower = lower_bounds.copy()
@@ -339,7 +341,7 @@ def _plug_equality_constraints_into_selectors(
     return pc, post_replacements, is_fixed_to_other
 
 
-def _consolidate_linear_constraints(linear_constraints, constr_info):
+def _consolidate_linear_constraints(params_vec, linear_constraints, constr_info):
     """Consolidate linear constraints.
 
     Consolidation entails the following steps:
@@ -362,7 +364,7 @@ def _consolidate_linear_constraints(linear_constraints, constr_info):
 
     """
     weights, right_hand_side = _transform_linear_constraints_to_pandas_objects(
-        linear_constraints, n_params=len(constr_info["value"])
+        linear_constraints, n_params=len(params_vec)
     )
 
     weights = _plug_equality_constraints_into_linear_weights(
