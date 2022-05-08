@@ -67,25 +67,24 @@ def get_space_converter(
         upper_bounds=flat_params.upper_bounds,
         param_names=flat_params.names,
     )
-
     _params_to_internal = partial(
         reparametrize_to_internal,
-        internal_free=constr_info["_internal_free"],
+        internal_free=constr_info["internal_free"],
         transformations=transformations,
     )
 
     _params_from_internal = partial(
         reparametrize_from_internal,
-        fixed_values=constr_info["_internal_fixed_value"],
-        pre_replacements=constr_info["_pre_replacements"],
+        fixed_values=constr_info["internal_fixed_values"],
+        pre_replacements=constr_info["pre_replacements"],
         transformations=transformations,
         post_replacements=constr_info["post_replacements"],
     )
 
-    _dim_internal = int(constr_info["_internal_free"].sum())
+    _dim_internal = int(constr_info["internal_free"].sum())
 
     _pre_replace_jac = pre_replace_jacobian(
-        pre_replacements=constr_info["_pre_replacements"], dim_in=_dim_internal
+        pre_replacements=constr_info["pre_replacements"], dim_in=_dim_internal
     )
 
     _post_replace_jac = post_replace_jacobian(
@@ -94,8 +93,8 @@ def get_space_converter(
 
     _derivative_to_internal = partial(
         convert_external_derivative_to_internal,
-        fixed_values=constr_info["_internal_fixed_value"],
-        pre_replacements=constr_info["_pre_replacements"],
+        fixed_values=constr_info["internal_fixed_values"],
+        pre_replacements=constr_info["pre_replacements"],
         transformations=transformations,
         pre_replace_jac=_pre_replace_jac,
         post_replace_jac=_post_replace_jac,
@@ -110,7 +109,7 @@ def get_space_converter(
         has_transforming_constraints=_has_transforming_constraints,
     )
 
-    free_mask = constr_info["_internal_free"]
+    free_mask = constr_info["internal_free"]
     if flat_params.soft_lower_bounds is not None and not _has_transforming_constraints:
         _soft_lower = flat_params.soft_lower_bounds[free_mask]
     else:

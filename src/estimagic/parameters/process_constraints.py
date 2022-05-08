@@ -55,7 +55,7 @@ def process_constraints(
               transformations are applied. Negative if no element has to be copied.
             - post_replacements: As pre_replacements, but applied after the
               transformations are done.
-            - internal_fixed_value: Contains transformed versions of the fixed values
+            - internal_fixed_values: Contains transformed versions of the fixed values
               that will become equal to the external fixed values after the
               kernel transformations are applied.
               parameter
@@ -85,21 +85,23 @@ def process_constraints(
     int_lower, int_upper = _create_internal_bounds(
         constr_info["lower_bounds"], constr_info["upper_bounds"], transformations
     )
-    constr_info["_internal_free"] = _create_internal_free(
+    constr_info["internal_free"] = _create_internal_free(
         is_fixed_to_value=is_fixed_to_value,
         is_fixed_to_other=is_fixed_to_other,
         constraints=transformations,
     )
-    constr_info["lower_bounds"] = int_lower[constr_info["_internal_free"]]
-    constr_info["upper_bounds"] = int_upper[constr_info["_internal_free"]]
+    constr_info["lower_bounds"] = int_lower[constr_info["internal_free"]]
+    constr_info["upper_bounds"] = int_upper[constr_info["internal_free"]]
 
-    constr_info["_pre_replacements"] = _create_pre_replacements(
-        constr_info["_internal_free"]
+    constr_info["pre_replacements"] = _create_pre_replacements(
+        constr_info["internal_free"]
     )
 
-    constr_info["_internal_fixed_value"] = _create_internal_fixed_value(
+    constr_info["internal_fixed_values"] = _create_internal_fixed_value(
         constr_info["fixed_values"], transformations
     )
+
+    del constr_info["fixed_values"]
 
     return transformations, constr_info
 
