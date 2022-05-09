@@ -10,26 +10,6 @@ from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.utilities import hash_array
 
 
-DERIVATIVE_ERROR_MESSAGE = (
-    "Error during derivative evaluation at parameters at which the criterion has "
-    "already been evaluated and used by the optimizer before. Thus it is not possible "
-    "to simply replace the criterion function by a penalty function."
-)
-
-
-CRITERION_ERROR_MESSAGE = (
-    "Error during criterion evaluation at parameters at which the derivative has "
-    "already been evaluated and used by the optimizer before. Thus it is not possible "
-    "to simply replace the criterion function by a penalty function."
-)
-
-
-NO_PRIMARY_MESSAGE = (
-    "The primary criterion entry of the {} algorithm is {} but the output of your "
-    "criterion function only contains the entries:\n{}"
-)
-
-
 def internal_criterion_and_derivative_template(
     x,
     *,
@@ -52,9 +32,12 @@ def internal_criterion_and_derivative_template(
 ):
     """Template for the internal criterion and derivative function.
 
-    The internal criterion and derivative function only has the arguments x and task
-    and algo_info. The other arguments will be partialed in by estimagic at some
-    point. algo_info and possibly even task will be partialed in by the algorithm.
+    This function forms the basis of all functions that define the optimization problem
+    and are passed to the internal optimizers in estimagic. I.e. the criterion,
+    derivative and criterion_and_derivative functions.
+
+    Most of the arguments of this function will be partialled in before the functions
+    are passed to internal optimizers.
 
     That is the reason why this function is called a template.
 

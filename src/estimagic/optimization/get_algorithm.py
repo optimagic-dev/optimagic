@@ -12,6 +12,10 @@ from estimagic.utilities import propose_alternatives
 def process_user_algorithm(algorithm):
     """Process the user specfied algorithm.
 
+    If the algorithm is a callable, this function just reads out the algorithm_info
+    and available options. If algorithm is a string it loads the algorithm function
+    from the available algorithms.
+
     Args:
         algorithm (str or callable): The user specified algorithm.
 
@@ -54,10 +58,10 @@ def get_final_algorithm(
     logging,
     db_kwargs,
 ):
-    """Get algorithm-function with partialled optionts
+    """Get algorithm-function with partialled options.
 
-    The resulting function only depends on ``x``,  ``criterion_and_derivative``
-    and ``step_id``.
+    The resulting function only depends on ``x``,  the relevant criterion functions
+    and derivatives and ``step_id``.
 
     Args:
         algorithm (str or callable): String with the name of an algorithm or internal
@@ -96,6 +100,8 @@ def get_final_algorithm(
 
 
 def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
+    """Add logging of status to the algorithm."""
+
     def decorator_add_logging_to_algorithm(algorithm):
         @functools.wraps(algorithm)
         def wrapper_add_logging_algorithm(**kwargs):
