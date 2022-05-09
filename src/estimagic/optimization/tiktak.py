@@ -12,7 +12,7 @@ import warnings
 from functools import partial
 
 import numpy as np
-from estimagic import batch_evaluators as be
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import AlgoInfo
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
@@ -351,8 +351,7 @@ def run_explorations(
     for x in sample:
         arguments.append({"x": x, "fixed_log_data": {"step": int(step_id)}})
 
-    if isinstance(batch_evaluator, str):
-        batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     criterion_outputs = batch_evaluator(
         _func,

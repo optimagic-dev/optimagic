@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-from estimagic import batch_evaluators as be
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
 from estimagic.exceptions import InvalidFunctionError
@@ -910,10 +910,7 @@ def _fill_multistart_options_with_defaults(options, params, x, params_to_interna
         if out["batch_size"] < out["n_cores"]:
             raise ValueError("batch_size must be at least as large as n_cores.")
 
-    if isinstance(out["batch_evaluator"], str):
-        out["batch_evaluator"] = getattr(
-            be, f"{out['batch_evaluator']}_batch_evaluator"
-        )
+    out["batch_evaluator"] = process_batch_evaluator(out["batch_evaluator"])
 
     if isinstance(out["mixing_weight_method"], str):
         out["mixing_weight_method"] = WEIGHT_FUNCTIONS[out["mixing_weight_method"]]
