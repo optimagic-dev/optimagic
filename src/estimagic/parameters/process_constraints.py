@@ -35,7 +35,14 @@ def process_constraints(
     """Process, consolidate and check constraints.
 
     Args:
-
+        constraints (list): List of constraints where the fields that select parameters
+            have already been consolidated into an ``"index"`` field that selects
+            the same parameters from the flattened_parameter vector.
+        params_vec (np.ndarray): Flattened version of params.
+        lower_bounds (np.ndarray): Lower bounds for params_vec.
+        upper_bounds (np.ndarray): Upper bounds for params_vec.
+        param_names (list): Names of the flattened parameters. Only used to produce
+            good error messages.
 
     Returns:
 
@@ -78,7 +85,7 @@ def process_constraints(
         param_names=param_names,
     )
 
-    check_for_incompatible_overlaps(constr_info, transformations, param_names)
+    check_for_incompatible_overlaps(transformations, param_names)
     check_fixes_and_bounds(constr_info, transformations, param_names)
 
     is_fixed_to_value = constr_info.pop("is_fixed_to_value")
@@ -111,7 +118,7 @@ def _replace_pairwise_equality_by_equality(constraints):
     """Rewrite pairwise equality constraints to equality constraints.
 
     Args:
-        pc (list): List of dictionaries where each dictionary is a constraint.
+        constraints (list): List of dictionaries where each dictionary is a constraint.
             It is assumed that the selectors in constraints were already processed.
 
     Returns:
@@ -133,11 +140,10 @@ def _process_linear_weights(constraints):
     """Harmonize the weights of linear constraints.
 
     Args:
-        pc (list): Constraints where the selector have already been processed.
-        params (pd.DataFrame): see :ref:`params`.
+        pc (list): Constraints where the selectors have already been processed.
 
     Returns:
-        processed (list): Constraints where all weights are Series.
+        list: Constraints where all weights are Series.
 
     """
     processed = []
@@ -173,10 +179,10 @@ def _replace_increasing_and_decreasing_by_linear(constraints):
     """Write increasing and decreasing constraints as linear constraints.
 
     Args:
-        pc (list): Constraints where the selectors have already been processed.
+        constraints (list): Constraints where the selectors have already been processed.
 
     Returns:
-        processed (list)
+        list: Processed constraints.
 
     """
     increasing_ilocs, other_constraints = [], []
@@ -205,14 +211,15 @@ def _replace_increasing_and_decreasing_by_linear(constraints):
 
 
 def _create_internal_bounds(lower, upper, constraints):
-    """Create columns with bounds for the internal parameter vector.
+    """Create bounds for the internal parameter vector.
 
-    The columns have the length of the external params and will be reduced later.
+    The resulting arrays have the length of the flat external params and will be reduced
+    later.
 
     Args:
         lower (np.ndarray): Processed and consolidated external lower bounds.
         upper (np.ndarray): Processed and consolidated external upper bounds.
-        pc (pd.DataFrame): Processed and consolidated constraints.
+        constraints (pd.DataFrame): Processed and consolidated constraints.
 
     Returns:
         int_lower (np.ndarray): Lower bound of internal parameters.
@@ -247,14 +254,14 @@ def _create_internal_bounds(lower, upper, constraints):
 
 
 def _create_internal_free(is_fixed_to_value, is_fixed_to_other, constraints):
-    """Boolean Series that is true for parameters over which the optimizer optimizes.
+    """Boolean array that is True for parameters over which the optimizer optimizes.
 
     Args:
         is_fixed_to_value (np.ndarray): boolean array
         is_fixed_to_other (np.ndarray): boolean array
 
     Returns:
-        int_free (np.ndarray)
+        np.ndarray
     """
     int_fixed = is_fixed_to_value | is_fixed_to_other
 
@@ -272,7 +279,7 @@ def _create_internal_free(is_fixed_to_value, is_fixed_to_other, constraints):
 
 
 def _create_pre_replacements(internal_free):
-    """Series with internal position of parameters.
+    """Create an array with internal position of parameters.
 
     The j_th element indicates the position of the internal parameter that has to be
     copied into the j_th position of the external parameter vector when reparametrizing
@@ -292,8 +299,8 @@ def _create_pre_replacements(internal_free):
     return pre_replacements
 
 
-def _create_internal_fixed_value(fixed_value, constraints):
-    """Pandas Series containing the values to which internal parameters are fixe.
+def _create_internal_fixed_value(fixed_values, constraints):
+    """Create and array with the values to which internal parameters are fixed.
 
     This contains additional fixes used to enforce other constraints and (potentially
     transformed) user specified fixed values.
@@ -303,7 +310,7 @@ def _create_internal_fixed_value(fixed_value, constraints):
         constraints (list): Processed and consolidated params.
 
     """
-    int_fix = fixed_value.copy()
+    int_fix = fixed_values.copy()
     for constr in constraints:
         if constr["type"] == "probability":
             int_fix[constr["index"][-1]] = 1

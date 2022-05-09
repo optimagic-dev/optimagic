@@ -138,7 +138,7 @@ def check_types(constraints):
             )
 
 
-def check_for_incompatible_overlaps(constr_info, transformations, parnames):
+def check_for_incompatible_overlaps(transformations, parnames):
     """Check that there are no overlaps between constraints that transform parameters.
 
     Since the constraints are already consolidated such that only those that transform
