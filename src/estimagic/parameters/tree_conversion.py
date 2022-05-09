@@ -22,8 +22,31 @@ def get_tree_converter(
     soft_upper_bounds=None,
     add_soft_bounds=False,
 ):
-    """Get flatten and unflatten functions and constraints with processed selectors.
+    """Get flatten and unflatten functions for criterion and its derivative.
 
+    The function creates a converter with methods to convert parameters, derivatives
+    and the output of the criterion function between the user provided pytree structure
+    and flat representations.
+
+    The main motivation for bundling all of this together (as opposed to handling
+    parameters, derivatives and function outputs separately) is that the derivative
+    conversion needs to know about the structure of params and the criterion output.
+
+    Args:
+        params (pytree): The user provided parameters.
+        lower_bounds (pytree): The user provided lower_bounds
+        upper_bounds (pytree): The user provided upper bounds
+        func_eval (float, dict or pytree): An evaluation of ``func`` at ``params``.
+            Used to deterimine how the function output has to be transformed for the
+            optimizer.
+        primary_key (str): One of "value", "contributions" and "root_contributions".
+            Used to determine how the function and derivative output has to be
+            transformed for the optimzer.
+        derivative_eval (dict, pytree or None): Evaluation of the derivative of
+            func at params. Used for consistency checks.
+        soft_lower_bounds (pytree): As lower_bounds
+        soft_upper_bounds (pytree): As upper_bounds
+        add_soft_bounds (bool): Whether soft bounds should be added to the flat_params
 
     Returns:
         TreeConverter: NamedTuple with flatten and unflatten methods.
