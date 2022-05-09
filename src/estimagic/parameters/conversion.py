@@ -26,7 +26,35 @@ def get_converter(
 ):
     """Get a converter between external and internal params and internal params.
 
+    This combines the following conversions:
+    - Flattening parameters provided as pytrees (tree_conversion)
+    - Enforcing constraints via reparametrizations (space_conversion)
+    - Scaling of the parameter space (scale_conversion)
 
+    The resulting converter can transform parameters, function outputs and derivatives.
+
+    If possible, fast paths for some or all transformations are chosen.
+
+    Args:
+        func (callable): The criterion function. Only used to calculate a scaling
+            factor.
+        params (pytree): The user provided parameters.
+        constraints (list): The user provided constraints.
+        lower_bounds (pytree): The user provided lower_bounds
+        upper_bounds (pytree): The user provided upper bounds
+        func_eval (float, dict or pytree): An evaluation of ``func`` at ``params``.
+            Used to deterimine how the function output has to be transformed for the
+            optimizer.
+        primary_key (str): One of "value", "contributions" and "root_contributions".
+            Used to determine how the function and derivative output has to be
+            transformed for the optimzer.
+        scaling (bool): Whether scaling should be performed.
+        scaling_options (dict): User provided scaling options.
+        derivative_eval (dict, pytree or None): Evaluation of the derivative of
+            func at params. Used for consistency checks.
+        soft_lower_bounds (pytree): As lower_bounds
+        soft_upper_bounds (pytree): As upper_bounds
+        add_soft_bounds (bool): Whether soft bounds should be added to the flat_params
 
     Returns:
         Converter: NamedTuple with methods to convert between internal and external
