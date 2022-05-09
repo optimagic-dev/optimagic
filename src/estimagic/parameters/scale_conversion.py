@@ -12,8 +12,15 @@ def get_scale_converter(
     scaling,
     scaling_options,
 ):
-    """Get scale converter.
+    """Get a converter between scaled and unscaled parameters.
 
+    Args:
+        flat_params (FlatParams): NamedTuple of flattened and possibly reparametrized
+            but not yet scaled parameter values and bounds.
+        func (callable): The criterion function. Possibly used to calculate a scaling
+            factor.
+        scaling (bool): Whether scaling should be done.
+        scaling_options (dict): User provided scaling options.
 
     Returns:
         ScaleConverter: NamedTuple with methods to convert between scaled and unscaled

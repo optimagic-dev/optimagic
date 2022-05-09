@@ -8,6 +8,25 @@ from pybaum import tree_just_flatten
 
 
 def process_selectors(constraints, params, tree_converter, param_names):
+    """Process and harmonize the selector fields of constraints.
+
+    By selector fields we mean loc, locs, query, queries, selector and selectors
+    entries in constraints.
+
+    The processed selector fields are called "index" and are integer numpy arrays with
+    positions of parameters in a flattened parameter vector.
+
+    Args:
+        constraints (list): User provided constraints.
+        params (pytree): User provided params.
+        tree_converter (TreeConverter): NamedTuple with methods to convert between
+            flattend and unflattend parameters.
+        param_names (list): Names of flattened parameters. Used for error messages.
+
+    Returns:
+        list: List of constraints with additional "index" entry.
+
+    """
     # fast path
     if constraints in (None, []):
         return []
