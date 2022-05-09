@@ -3,11 +3,9 @@
 The functions in this module allow to convert between internal and external parameter
 vectors.
 
-
-An external parameter vector is the parameter vector as it was specified by the user.
-This external parameter vector might be subject to constraints, such as the condition
-that the first two parameters are equal.
-
+An external parameter vector is a possibly flattened version of the parameter vector as
+it was specified by the user. This external parameter vector might be subject to
+constraints, such as the condition that the first two parameters are equal.
 
 An internal parameter vector is an internal representation of the parameters in a
 different space. The internal parameters are meaningless and have no direct
@@ -49,10 +47,12 @@ def get_space_converter(
 ):
     """Get functions to convert between in-/external space of params and derivatives.
 
+    In the internal parameter space the optimization problem is unconstrained except
+    for bounds.
 
     Args:
-        params ()
-
+        flat_params (FlatParams): NamedTuple with flattened parameter values and bounds.
+        flat_constraints (list): List of constraints with processed selector fields.
 
     Returns:
         SpaceConverter
