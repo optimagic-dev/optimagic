@@ -17,30 +17,13 @@ and drawbacks of each of them.
 Again, we use the simple ``sphere`` function you know from other tutorials as example.
 
 
-.. tabbed:: Scalar
-
-    If you have a one-dimensional optimization problem, the natural way to represent
-    your params is a float:
-
-    .. code-block:: python
-
-        def sphere(params):
-            return params**2
-
-
-        minimize(
-            criterion=sphere,
-            params=3,
-            algorithm="scipy_lbfgsb",
-        )
-
 .. tabbed:: Array
 
-    Another frequent choice of ``params`` is a one-dimensional numpy array. This is
-    because one-dimensional numpy arrays are all that is supported by standard optimizer
+    A frequent choice of ``params`` is a one-dimensional numpy array. This is
+    because one-dimensional numpy arrays are all that is supported by most optimizer
     libraries.
 
-    In our opinion, it is rarely a good choice to represent parameters as one numpy
+    In our opinion, it is rarely a good choice to represent parameters as flat numpy
     and then access individual parameters or sclices by positions. The only exception
     are simple optimization problems with very fast criterion function where
     any overhead must be avoided.
@@ -99,6 +82,9 @@ Again, we use the simple ``sphere`` function you know from other tutorials as ex
     Check out our `Ordered Logit Example`_,
     so you see one small params DataFrame in action.
 
+    If you are sure you won't have bounds on your parameter, you can also use a
+    pandas.Series instead of a DataFrame.
+
     A drawback of DataFrames is that they are not JAX compatible. Another one is that
     they are a bit slower than numpy arrays.
 
@@ -127,3 +113,21 @@ Again, we use the simple ``sphere`` function you know from other tutorials as ex
     While estimagic won't stop you, don't go too far! Having parameters in very deeply
     nested dictionaries makes it hard to visualize results and or even to compare two
     estimation results.
+
+
+.. tabbed:: Scalar
+
+    If you have a one-dimensional optimization problem, the natural way to represent
+    your params is a float:
+
+    .. code-block:: python
+
+        def sphere(params):
+            return params**2
+
+
+        minimize(
+            criterion=sphere,
+            params=3,
+            algorithm="scipy_lbfgsb",
+        )
