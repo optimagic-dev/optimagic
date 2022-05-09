@@ -3,7 +3,6 @@ import warnings
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 from estimagic import batch_evaluators as be
 from estimagic.config import CRITERION_PENALTY_CONSTANT
 from estimagic.config import CRITERION_PENALTY_SLOPE
@@ -20,6 +19,7 @@ from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
+from estimagic.optimization.process_multistart_sample import process_multistart_sample
 from estimagic.optimization.process_results import process_internal_optimizer_result
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
@@ -28,6 +28,12 @@ from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
 from estimagic.utilities import hash_array
+
+
+BASE_DOCSTRING = """
+
+
+"""
 
 
 def maximize(
@@ -60,28 +66,35 @@ def maximize(
     """Maximize criterion using algorithm subject to constraints.
 
     Args:
-        criterion (callable): A function that takes a pandas DataFrame (see
-            :ref:`params`) as first argument and returns one of the following:
-
-            - scalar floating point or a :class:`numpy.ndarray` (depending on the
-              algorithm)
-            - a dictionary that contains at the entries "value" (a scalar float),
-              "contributions" or "root_contributions" (depending on the algortihm) and
-              any number of additional entries. The additional dict entries will be
-              logged and (if supported) displayed in the dashboard. Check the
-              documentation of your algorithm to see which entries or output type are
-              required.
-        params (pandas.DataFrame): A DataFrame with a column called "value" and optional
-            additional columns. See :ref:`params` for detail.
-        algorithm (str or callable): Specifies the optimization algorithm. For supported
+        criterion (callable): A function that takes a params as first argument and
+            returns a scalar (if only scalar algorithms will be used) or a dictionary
+            that contains at the entries "value" (a scalar float), "contributions" (a
+            pytree containing the summands that make up the criterion value) or
+            "root_contributions" (a pytree containing the residuals of a least-squares
+            problem) and any number of additional entries. The additional dict entries
+            will be stored in a database if logging is used.
+        params (pandas): A pytree containing the parameters with respect to which the
+            criterion is optimized. Examples are a numpy array, a pandas Series,
+            a DataFrame with "value" column, a float and any kind of (nested) dictionary
+            or list containing these elements. See :ref:`params` for examples.
+        algorithm (str or callable): Specifies the optimization algorithm. For built-in
             algorithms this is a string with the name of the algorithm. Otherwise it can
             be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+        lower_bounds (pytree): A pytree with the same structure as params with lower
+            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
+            bound.
+        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
+            no upper bound.
+        soft_lower_bounds (pytree): As lower bounds but the bounds are not imposed
+            during optimization and just used to sample start values if multistart
+            optimization is performed.
+        soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
         constraints (list): List with constraint dictionaries.
             See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
-        derivative (callable, optional): Function that calculates the first derivative
+        derivative (callable): Function that calculates the first derivative
             of criterion. For most algorithm, this is the gradient of the scalar
             output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
             require the jacobian of the "contributions" entry of the dict. You will get
@@ -246,26 +259,35 @@ def minimize(
     """Minimize criterion using algorithm subject to constraints.
 
     Args:
-        criterion (Callable): A function that takes a pandas DataFrame (see
-            :ref:`params`) as first argument and returns one of the following:
-            - scalar floating point or a numpy array (depending on the algorithm)
-            - a dictionary that contains at the entries "value" (a scalar float),
-            "contributions" or "root_contributions" (depending on the algortihm) and
-            any number of additional entries. The additional dict entries will be
-            logged and (if supported) displayed in the dashboard. Check the
-            documentation of your algorithm to see which entries or output type
-            are required.
-        params (pandas.DataFrame): A DataFrame with a column called "value" and optional
-            additional columns. See :ref:`params` for detail.
-        algorithm (str or callable): Specifies the optimization algorithm. For supported
+        criterion (callable): A function that takes a params as first argument and
+            returns a scalar (if only scalar algorithms will be used) or a dictionary
+            that contains at the entries "value" (a scalar float), "contributions" (a
+            pytree containing the summands that make up the criterion value) or
+            "root_contributions" (a pytree containing the residuals of a least-squares
+            problem) and any number of additional entries. The additional dict entries
+            will be stored in a database if logging is used.
+        params (pandas): A pytree containing the parameters with respect to which the
+            criterion is optimized. Examples are a numpy array, a pandas Series,
+            a DataFrame with "value" column, a float and any kind of (nested) dictionary
+            or list containing these elements. See :ref:`params` for examples.
+        algorithm (str or callable): Specifies the optimization algorithm. For built-in
             algorithms this is a string with the name of the algorithm. Otherwise it can
             be a callable with the estimagic algorithm interface. See :ref:`algorithms`.
+        lower_bounds (pytree): A pytree with the same structure as params with lower
+            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
+            bound.
+        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
+            no upper bound.
+        soft_lower_bounds (pytree): As lower bounds but the bounds are not imposed
+            during optimization and just used to sample start values if multistart
+            optimization is performed.
+        soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
         constraints (list): List with constraint dictionaries.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constranits.ipynb
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
-        derivative (callable, optional): Function that calculates the first derivative
+        derivative (callable): Function that calculates the first derivative
             of criterion. For most algorithm, this is the gradient of the scalar
             output (or "value" entry of the dict). However some algorithms (e.g. bhhh)
             require the jacobian of the "contributions" entry of the dict. You will get
@@ -332,7 +354,7 @@ def minimize(
             are not used.
             - share_optimizations (float): Share of sampled points that is used to
             construct a starting point for a local optimization. Default 0.1.
-            - sampling_distribution (str): One of "uniform", "triangle". Default is
+            - sampling_distribution (str): One rof "uniform", "triangle". Default is
             "uniform" as in the original tiktak algorithm.
             - sampling_method (str): One of "random", "sobol", "halton", "hammersley",
             "korobov", "latin_hypercube" or a numpy array or DataFrame with custom
@@ -355,7 +377,7 @@ def minimize(
             - n_cores (int): Number cores used to evaluate the criterion function in
             parallel during exploration stages and number of parallel local
             optimization in optimization stages. Default 1.
-            - batch_evaluator (str or callaber): See :ref:`batch_evaluators` for
+            - batch_evaluator (str or callable): See :ref:`batch_evaluators` for
             details. Default "joblib".
             - batch_size (int): If n_cores is larger than one, several starting points
             for local optimizations are created with the same weight and from the same
@@ -655,8 +677,9 @@ def _optimize(
         logging=logging,
         db_kwargs=db_kwargs,
     )
-
-    # partial the internal_criterion_and_derivative_template
+    # ==================================================================================
+    # partial arguments into the internal_criterion_and_derivative_template
+    # ==================================================================================
     to_partial = {
         "direction": direction,
         "criterion": criterion,
@@ -671,7 +694,6 @@ def _optimize(
         "cache_size": cache_size,
         "algo_info": algo_info,
     }
-
     if not multistart:
         to_partial["error_handling"] = error_handling
         to_partial["error_penalty"] = error_penalty
@@ -689,7 +711,9 @@ def _optimize(
                 task=task,
             )
 
-    # do actual optimizations
+    # ==================================================================================
+    # Do actual optimization
+    # ==================================================================================
     if not multistart:
 
         steps = [{"type": "optimization", "name": "optimization"}]
@@ -724,6 +748,10 @@ def _optimize(
             error_penalty=error_penalty,
         )
 
+    # ==================================================================================
+    # Process the result
+    # ==================================================================================
+
     res = process_internal_optimizer_result(
         raw_res,
         direction=direction,
@@ -734,6 +762,7 @@ def _optimize(
 
 
 def _fill_error_penalty_with_defaults(error_penalty, first_value, direction):
+    """Add default options to error_penalty options."""
     error_penalty = error_penalty.copy()
 
     if direction == "minimize":
@@ -754,7 +783,7 @@ def _fill_error_penalty_with_defaults(error_penalty, first_value, direction):
 
 
 def _create_and_initialize_database(logging, log_options, problem_data):
-    # extract information
+    """Create and initialize to sqlite database for logging."""
     path = Path(logging)
     fast_logging = log_options.get("fast_logging", False)
     if_table_exists = log_options.get("if_table_exists", "extend")
@@ -805,6 +834,7 @@ def _create_and_initialize_database(logging, log_options, problem_data):
 
 
 def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bounds):
+    """Fill options for numerical derivatives during optimization with defaults."""
     method = numdiff_options.get("method", "forward")
     default_error_handling = "raise" if method == "central" else "raise_strict"
 
@@ -853,6 +883,7 @@ def _setdefault(candidate, default):
 
 
 def _fill_multistart_options_with_defaults(options, params, x, params_to_internal):
+    """Fill options for multistart optimization with defaults."""
     defaults = {
         "sample": None,
         "n_samples": 10 * len(x),
@@ -897,72 +928,3 @@ def _fill_multistart_options_with_defaults(options, params, x, params_to_interna
     del out["share_optimizations"]
 
     return out
-
-
-def process_multistart_sample(raw_sample, params, params_to_internal):
-    """Process a user provided multistart sample.
-
-    Args:
-        raw_sample (list, pd.DataFrame or np.ndarray): A user provided sample of
-            external start parameters.
-        params (pytree): User provided start parameters.
-        params_to_internal (callable): A function that converts external parameters
-            to internal ones.
-
-
-    """
-    is_df_params = isinstance(params, pd.DataFrame) and "value" in params
-    is_np_params = isinstance(params, np.ndarray) and params.ndim == 1
-
-    if isinstance(raw_sample, pd.DataFrame):
-        if not is_df_params:
-            msg = (
-                "User provided multistart samples can only be a DataFrame if "
-                "params is a DataFrame with 'value' column."
-            )
-            raise ValueError(msg)
-        elif not raw_sample.columns.equals(params.index):
-            msg = (
-                "If you provide a custom sample as DataFrame the columns of that "
-                "DataFrame and the index of params must be equal."
-            )
-            raise ValueError(msg)
-
-        list_sample = []
-        for _, row in raw_sample.iterrows():
-            list_sample.append(params.assign(value=row))
-
-    elif isinstance(raw_sample, np.ndarray):
-        if not is_np_params:
-            msg = (
-                "User provided multistart samples can only be a numpy array if params "
-                "is a 1d numpy array."
-            )
-            raise ValueError(msg)
-        elif raw_sample.ndim != 2:
-            msg = (
-                "If user provided multistart samples are a numpy array, the array "
-                "must be two dimensional."
-            )
-            raise ValueError(msg)
-        elif raw_sample.shape[1] != len(params):
-            msg = (
-                "If user provided multistart samples are a numpy array, the number of "
-                "columns must be equal to the number of parameters."
-            )
-            raise ValueError(msg)
-
-        list_sample = list(raw_sample)
-
-    elif not isinstance(raw_sample, (list, tuple)):
-        msg = (
-            "User provided multistart samples must be a list, tuple, numpy array or "
-            "DataFrame."
-        )
-        raise ValueError(msg)
-    else:
-        list_sample = list(raw_sample)
-
-    sample = np.array([params_to_internal(x) for x in list_sample])
-
-    return sample
