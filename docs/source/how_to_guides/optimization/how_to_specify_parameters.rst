@@ -1,102 +1,129 @@
 .. _params:
 
-===============================
-How to specify start parameters
-===============================
-
-The ``params`` DataFrame is an important concept in estimagic. It collects
-information on the dimensionality of the optimization problem, lower and upper
-bounds, categories of parameters and valid ranges for randomly sampled parameter
-vectors. Moreover, it is the mandatory first argument of any criterion function
-optimized with estimagic.
+=========================
+How to specify ``params``
+=========================
 
 
-If you haven't done so yet, you should check out our `Ordered Logit Example`_,
-so you see one small params DataFrame in action.
+``params`` is the first argument of any criterion function in estimagic. It collects
+all the parameters to estimate, optimize or differentiate over. In many optimization
+libraries, ``params`` must be a one-dimensional numpy array. In estimagic, it can be an
+arbitrary pytree (think nested dictionary) containing numbers, arrays,
+pandas.Series and pandas.DataFrames.
 
-.. _Ordered Logit Example: ../../getting_started/first_likelihood_estimation_with_estimagic.ipynb
+Below we show a few examples of what is possible in estimagic and discuss the advantages
+and drawbacks of each of them.
 
-
-The Index
-=========
-
-If you are not familiar with a pandas ``MultiIndex`` we strongly suggest
-to read up on this and get some practice before you continue. Good resourses are
-the `documentation <https://tinyurl.com/yxhr362e>`_ or Wes McKinney's
-`book <https://tinyurl.com/cfvqsy5>`_.
-
-The choice of a good index is very important to reap all benefits estimagic
-offers. If you choose a good one, you can easily select parameters you need
-to select and express constraints on the parameters in just one line.
-
-Since this is a very project specific choice, estimagic makes absolutely no
-assumptions on your index, so you are completely free to choose whatever you
-want. Below we have a few tips to help you in that choice:
-
-1. **Choose as many levels as you need to select your parameters in all
-partitions you ever need.** In the ordered logit example this was achieved by
-two levels, where the first distinguished cutoffs vs utility parameters and the
-second was the parameter name. In dynamic models with time varying parameters,
-you often need another level for the period. But, of course, your index should
-also be as parsimonious as possible. In practice, we always use between 2 and
-4 levels.
-
-2. To decide what your levels should be, it is often helpful to make a list of the
-quantities into which you have to parse your parameters. Then make a list of all
-constraints you want to express. Build an index that makes those two steps easiest.
-
-The ``"value"`` column
-======================
+Again, we use the simple ``sphere`` function you know from other tutorials as example.
 
 
-The ``"value"`` column is the only mandatory column in ``params``. It contains
-what most other optimization libraries call ``x``, i.e. the start parameters
-for the optimization.
+.. tabbed:: Scalar
 
-The result of the optimization will contain a copy of ``params`` where the
-original ``"value"`` column has been replaced by the optimal parameters.
+    If you have a one-dimensional optimization problem, the natural way to represent
+    your params is a float:
 
-The ``"lower_bound"`` and ``"upper_bound"`` columns
-====================================================
+    .. code-block:: python
 
-``"lower_bound"`` and ``"upper_bound"`` are optional columns with box constraints on the
-parameters. You can also provide just one of them. For parameters that don't
-have a bound, you can fill them with ``-np.inf`` and ``np.inf`` respectively.
-
-Note that all optimizers in estimagic can deal with box constraints. However,
-not all more complicated constraints (e.g. "covariance" constraints) are
-compatible with box constraints. If you select an invalid combination of box constraints
-and other constraints you will get an error.
+        def sphere(params):
+            return params**2
 
 
-The ``"draw_lower"`` and ``"draw_upper"`` columns
-==================================================
+        minimize(
+            criterion=sphere,
+            params=3,
+            algorithm="scipy_lbfgsb",
+        )
 
-``"draw_lower"`` and ``"draw_upper"`` are optional columns that are only used
-if random start values are drawn, for example in genetic algorithms or when
-starting a local optimization from several start values. We distinguish this
-from the box constraints because you might want to leave some parameters
-unconstrained but still generate random start values.
+.. tabbed:: Array
+
+    Another frequent choice of ``params`` is a one-dimensional numpy array. This is
+    because one-dimensional numpy arrays are all that is supported by standard optimizer
+    libraries.
+
+    In our opinion, it is rarely a good choice to represent parameters as one numpy
+    and then access individual parameters or sclices by positions. The only exception
+    are simple optimization problems with very fast criterion function where
+    any overhead must be avoided.
+
+    If you still want to do it, here is how:
+
+    .. code-block:: python
+
+        def sphere(params):
+            return params @ params
 
 
-
-The ``"group"`` column
-=======================
-
-``"group"`` is an optional column of strings that is only used for visualization
-purposes. It can be used to partition the parameter into groups that have
-similar magnitudes and/or are otherwise related. Those parameters will then
-be grouped in the same sub-plot in the dashboard or the convergence plot.
-
-Parameters whose ``"group"`` is ``None`` are typically not plotted. This can
-be used to save resources when using the dashboard on vary large optimizations.
+        minimize(
+            criterion=sphere,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+        )
 
 
-Invalid columns
-===============
+.. tabbed:: DataFrame
 
-Some names are reserved for internal use in estimagic. Currently those are:
+    Originally, pandas DataFrames were the mandatory format for ``params`` in estimagic.
+    They are still highly recommended and have a few special features. For example,
+    they allow to bundle information on start parameters and bounds together in one
+    data structure.
 
-``'_fixed_value'``, ``'_is_fixed_to_value'``, ``'_is_fixed_to_other'``,
-``'_pre_replacements'``, ``'_post_replacements'`` as well any name that starts with
-``_internal``.
+    Let's look at an example where we do that:
+
+    .. code-block:: python
+
+        def sphere(params):
+            return (params["value"] ** 2).sum()
+
+
+        params = pd.DataFrame(
+            data={"value": [1, 2, 3], "lower_bound": [-np.inf, 1.5, 0]},
+            index=["a", "b", "c"],
+        )
+
+        minimize(
+            criterion=sphere,
+            params=params,
+            algorithm="scipy_lbfgsb",
+        )
+
+    DataFrames have many advantages:
+
+    - It is easy to select single parameters or groups of parameters or work with
+      the entire parameter vector. Especially if you use a well designed MultiIndex.
+    - It is very easy to produce publication quality LaTeX tables from them.
+    - If you have nested models, you can easily update the parameter vector of a larger
+      model with the values from a smaller one (e.g. to get good start parameters)
+    - You can bundle information on bounds and values in one place.
+    - It is easy to compare two params vectors for equality
+
+    Check out our `Ordered Logit Example`_,
+    so you see one small params DataFrame in action.
+
+    A drawback of DataFrames is that they are not JAX compatible. Another one is that
+    they are a bit slower than numpy arrays.
+
+    .. _Ordered Logit Example: ../../getting_started/first_likelihood_estimation_with_estimagic.ipynb
+
+.. tabbed:: Dict
+
+    ``params`` can also be a (nested) dictionary containing all of the above and more.
+
+    .. code-block:: python
+
+        def sphere(params):
+            return params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
+
+
+        res = minimize(
+            criterion=sphere,
+            params={"a": 0, "b": 1, "c": pd.Series([2, 3, 4])},
+            algorithm="scipy_neldermead",
+        )
+
+    Dictionarys of arrays are ideal if you want to do vectorized computations with
+    groups of parameters. They are also a good choice if you calculate derivatives
+    with JAX.
+
+    While estimagic won't stop you, don't go too far! Having parameters in very deeply
+    nested dictionaries makes it hard to visualize results and or even to compare two
+    estimation results.
