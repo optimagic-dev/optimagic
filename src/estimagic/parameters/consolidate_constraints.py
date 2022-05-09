@@ -24,6 +24,7 @@ def consolidate_constraints(
         parvec (np.ndarray): 1d numpy array with parameters.
         lower_bounds (np.ndarray): 1d numpy array with lower_bounds
         upper_bounds (np.ndarray): 1d numpy array wtih upper_bounds
+        param_names (list): Names of parameters. Used for error messages.
 
     Returns:
         list: This contains processed version of all
@@ -121,9 +122,9 @@ def _consolidate_equality_constraints(equality_constraints):
             constraint. It is assumed that the selectors were already processed.
 
     Returns:
-        consolidated (list): List of consolidated equality constraints.
-    """
+        list: List of consolidated equality constraints.
 
+    """
     candidates = [constr["index"] for constr in equality_constraints]
     # drop constraints that just restrict one parameter to be equal to itself
     candidates = [c for c in candidates if len(c) >= 2]
@@ -223,7 +224,8 @@ def _consolidate_bounds_with_equality_constraints(
 
     Args:
         equality_constraints (list): List of constraints of type "equality".
-        params (pd.DataFrame): see :ref:`param`.
+        lower_bounds (np.ndarray): Lower bounds for parameters.
+        upper_bounds (np.ndarray): Upper bounds for parameters.
 
     Returns:
         np.ndarray: 1d array with lower bounds
@@ -362,7 +364,11 @@ def _consolidate_linear_constraints(
         all matrices needed for the kernel transformations.
 
     Args:
-        linear_constraints (list): Linear processed constraints.
+        params_vec (np.ndarray): 1d numpy array wtih parameters
+        linear_constraints (list): Linear constraints that already have processed
+            weights and selector fields.
+        constr_info (dict): Dict with information about constraints.
+        param_names (list): Parameter names. Used for error messages.
 
     Returns:
         list: Processed and consolidated linear constraints.
