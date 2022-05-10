@@ -359,26 +359,128 @@ parameters are a numpy array, DataFrame or general pytree.
 | Pytree        | ❌            | ❌             | ✅            |
 +---------------+---------------+----------------+---------------+
 
-Below we show how to use each of these selection models in simple examples. A criterion
-function we use the 6-dimensional ``shpere`` function and a constraint that fixes
-three of the parameters to their start value:
+Below we show how to use each of these selection methods in simple examples
 
 
-.. tabbed:: loc (array)
+.. tabbed:: loc
 
-    example here
+    You can look at any of the above examples to see constraints where params are
+    a numpy array and ``loc`` is used to select parameters. So now, we focus on
+    DataFrame params.
 
+    Let's assume our ``params`` are a DataFrame with a two level index. The names of
+    the index levels are ``category`` and ``name``. Something like this could for
+    example be the params of an Ordered Logit model.
 
-.. tabbed:: loc (DataFrame)
+    +----------------+---------------+----------------+
+    |                |               | **value**      |
+    +----------------+---------------+----------------+
+    | **category**   | **name**      |                |
+    +----------------+---------------+----------------+
+    | **betas**      | **a**         | 0.95           |
+    +----------------+---------------+----------------+
+    | **betas**      | **b**         | 0.9            |
+    +----------------+---------------+----------------+
+    | **cutoffs**    | **a**         | 0              |
+    +----------------+---------------+----------------+
+    | **cutoffs**    | **b**         | 0.4            |
+    +----------------+---------------+----------------+
 
-    example here
+    Now let's impose the constraint that the cutoffs (i.e. the last two parameters)
+    are increasing.
+
+    .. code-block:: python
+
+        res = minimize(
+            criterion=some_criterion,
+            params=params,
+            algorithm="scipy_lbfgsb",
+            constraints=[{"loc": "cutoffs", "type": "increasin"}],
+        )
+
+    The value corresponding to ``loc`` can be anything that you could pass into the
+    ``DataFrame.loc`` method. This can be extremely powerful if you have a well
+    designed MultiIndex, as you can easily select groups of parameters or single
+    paramaters.
 
 
 .. tabbed:: query
 
-    example here
+    Let's assume our ``params`` are a DataFrame with a two level index. The names of
+    the index levels are ``category`` and ``name``. Something like this could for
+    example be the params of an Ordered Logit model.
+
+    +----------------+---------------+----------------+
+    |                |               | **value**      |
+    +----------------+---------------+----------------+
+    | **category**   | **name**      |                |
+    +----------------+---------------+----------------+
+    | **betas**      | **a**         | 0.95           |
+    +----------------+---------------+----------------+
+    | **betas**      | **b**         | 0.9            |
+    +----------------+---------------+----------------+
+    | **cutoffs**    | **a**         | 0              |
+    +----------------+---------------+----------------+
+    | **cutoffs**    | **b**         | 0.4            |
+    +----------------+---------------+----------------+
+
+    This time we want to fix all betas as well as all parameters where the second index
+    level is equal to ``"a"``. If we wanted to do that using ``loc``, we would have to
+    type out three index tuples. So let's do it with query:
+
+    .. code-block:: python
+
+        res = minimize(
+            criterion=some_criterion,
+            params=params,
+            algorithm="scipy_lbfgsb",
+            constraints=[{"query": "category == 'betas' | name == 'a'", "type": "fixed"}],
+        )
+
+    The value corresponding to ``query`` can be anything you could pass to the
+    ``DataFrame.query`` method.
 
 
 .. tabbed:: selector
 
-    example here
+    Using ``selector`` to select the parameters is the most general way and works for
+    all params. Let's assume we have defined parameters in a nested dictionary:
+
+    .. code-block:: python
+
+        params = {"a": np.ones(2), "b": {"c": 3, "d": pd.Series([4, 5])}}
+
+    It is probably not a good idea to use a nested dictionary for so few parameters, but
+    let's ignore that.
+
+    Now assume, we want to fix the parameters in the pandas Series at their start
+    values. We can do so as follows:
+
+    .. code-block:: python
+
+        res = minimize(
+            criterion=some_criterion,
+            params=params,
+            algorithm="scipy_lbfgsb",
+            constraints=[{"selector": lambda params: params["b"]["d"], "type": "fixed"}],
+        )
+
+    I.e. the value corresponding to ``selector`` is a python function that takes the
+    full ``params`` and returns a subset. The selected subset does not have to be a
+    numpy array, it can be an arbitrary pytree.
+
+    Using lambda functions if often convenient, but we could have just as well defined
+    the selector function using def.
+
+    .. code-block:: python
+
+        def my_selector(params):
+            return params["b"]["d"]
+
+
+        res = minimize(
+            criterion=some_criterion,
+            params=params,
+            algorithm="scipy_lbfgsb",
+            constraints=[{"selector": my_selector, "type": "fixed"}],
+        )
