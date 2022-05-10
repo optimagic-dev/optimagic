@@ -9,6 +9,7 @@ as a reference for more experienced users.
 .. toctree::
    :maxdepth: 1
 
+
    installation
    first_optimization_with_estimagic.ipynb
    first_likelihood_estimation_with_estimagic.ipynb
