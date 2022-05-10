@@ -202,16 +202,116 @@ flat numpy array are explained in the next section.
 
 .. tabbed:: covariance
 
-    to be written
+    In many estimation problems, particularly when maximum likelihood estimation is
+    used, one has to estimate the covariance matrix of a random variable. The
+    ``covariance`` costraint ensures that such a covariance matrix is always valid,
+    i.e. positive semi-definite and symmetric. Due to the symmetry, only the lower
+    triangle of a covariance matrix actually has to be estimated.
+
+    Let's look at an example. We want to impose that the first three elements form the
+    lower triangle of a valid covariance matrix.
+
+    .. code-block:: python
+
+        res = minimize(
+            criterion=criterion,
+            params=np.ones(6),
+            algorithm="scipy_lbfgsb",
+            constraints=[{"loc": [0, 1, 2], "type": "covariance"}],
+        )
+
+    This yields the same solution as an unconstrained estimation because the constraint
+    is not binding:
+
+    >>> array([ 1. ,  0.8,  0.6,  0.4,  0.2, -0. ])
+
+    We can now use one of estimagic's utility functions to actually build the covariance
+    matrix out of the first three parameters:
+
+    .. code-block:: python
+
+        from estimagic.utilities import cov_params_to_matrix
+
+        cov_params_to_matrix(res.params[:3]).round(3)
+
+    This yields:
+
+    >>> array([[1. , 0.8], [0.8, 0.6]])
 
 
 .. tabbed:: sdcorr
 
-    to be written
+    ``sdcorr`` constraints are very similar to ``covariance`` constraints. The only
+    difference is that instead of estimating a covariance matrix, we estimate
+    standard deviations and the correlation matrix of a random variable.
+
+    Let's look at an example. We want to impose that the first three elements form valid
+    standard deviations and a correlation matrix.
+
+    .. code-block:: python
+
+        res = minimize(
+            criterion=criterion,
+            params=np.ones(6),
+            algorithm="scipy_lbfgsb",
+            constraints=[{"loc": [0, 1, 2], "type": "sdcorr"}],
+        )
+
+
+    This yields the same solution as an unconstrained estimation because the constraint
+    is not binding:
+
+    >>> array([ 1. ,  0.8,  0.6,  0.4,  0.2, -0. ])
+
+    We can now use one of estimagic's utility functions to actually build the standard
+    deviations and the correlation matrix:
+
+    .. code-block:: python
+
+        from estimagic.utilities import sdcorr_params_to_sds_and_corr
+
+        sdcorr_params_to_sds_and_corr(res.params[:3])
+
+    This yields:
+
+    >>> (array([1, 0.8]) array([[1. , 0.6], [0.6, 1]]))
+
 
 .. tabbed:: linear
 
-    to be written
+    Linear constraints are the most difficult but also most powerfull ones. They
+    can be used to express constraints of the form
+    ``lower_bound <= weights.dot(x) <= upper_bound`` or
+    ``weights.dot(x) = value`` where ``x`` are the selected parameters.
+
+    Linear constraints have many of the other constraint types as special cases, but
+    typically it is more convenient to use the special cases instead of expressing
+    them as a linear constraint. Internally, it will make no difference.
+
+    Let's impose the constraint that the sum of the average of the first four parameters
+    is at least 0.95.
+
+    .. code-block:: python
+
+        res = minimize(
+            criterion=criterion,
+            params=np.ones(6),
+            algorithm="scipy_lbfgsb",
+            constraints=[
+                {"loc": [0, 1, 2, 3], "type": "linear", "lower_bound": 0.95, "weights": 0.25}
+            ],
+        )
+
+    This yields:
+
+    >>> array([ 1.25,  1.05,  0.85,  0.65,  0.2 , -0.  ])
+
+    Where the first parameters have an average of 0.95.
+
+    In the above example, ``lower_bound`` and ``weights`` were scalars. Instead they
+    can also be arrays (or even pytrees) with bounds and weights for each selected
+    parameter.
+
 
 
 Imposing multiple constraints at once
@@ -240,9 +340,45 @@ There are limits regarding the compatibility of constraints that overlap. You wi
 get a descriptive error message if your constraints are not compatible.
 
 
+How to select the parameters?
+=============================
+
+All the above examples use a ``loc`` entry in the constraint dictionary to select
+the subset of ``params`` on which the constraint is imposed. This is just one out
+of several ways to do it. Which ways are available also depends on whether your
+parameters are a numpy array, DataFrame or general pytree.
 
 
-How to select the parameters on which the constraint is imposed?
-================================================================
++---------------+---------------+----------------+---------------+
+|               | loc           | query          | selector      |
++---------------+---------------+----------------+---------------+
+| 1d-array      | ✅ (positions)| ❌             | ✅            |
++---------------+---------------+----------------+---------------+
+| DataFrame     | ✅ (labels)   | ✅             | ✅            |
++---------------+---------------+----------------+---------------+
+| Pytree        | ❌            | ❌             | ✅            |
++---------------+---------------+----------------+---------------+
 
-to be written
+Below we show how to use each of these selection models in simple examples. A criterion
+function we use the 6-dimensional ``shpere`` function and a constraint that fixes
+three of the parameters to their start value:
+
+
+.. tabbed:: loc (array)
+
+    example here
+
+
+.. tabbed:: loc (DataFrame)
+
+    example here
+
+
+.. tabbed:: query
+
+    example here
+
+
+.. tabbed:: selector
+
+    example here
