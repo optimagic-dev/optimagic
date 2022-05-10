@@ -12,7 +12,7 @@ Optimization
    how_to_use_logging
    how_to_use_the_dashboard
    how_to_handle_errors_during_optimization
-   how_to_choose_optimizer
    how_to_scale_optimization_problems
    how_to_do_multistart_optimizations.ipynb
    how_to_benchmark_optimization_algorithms.ipynb
+   visualizing_an_optimization_problem.ipynb

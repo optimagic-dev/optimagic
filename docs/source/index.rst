@@ -24,8 +24,7 @@ Optimization
   See :ref:`list_of_algorithms`
 - estimagic implements constraints efficiently via reparametrization, so you can solve
   constrained problems with any optimzer that supports bounds. See :ref:`constraints`
-- estimagic encourages name-based parameters handling. Parameters are specified
-  as pandas DataFrames with any kind of single or MultiIndex. See :ref:`params`.
+- The parameters of an optimization problem can be arbitrary pytrees See :ref:`params`.
 - The complete history of parameters and function evaluations can be saved in a
   database for maximum reproducibility. See `How to use logging`_
 - Painless and efficient multistart optimization. See `How to do multistart`_
