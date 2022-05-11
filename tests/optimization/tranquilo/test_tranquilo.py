@@ -10,8 +10,8 @@ def _scalar_sphere(x):
 def test_internal_tranquilo_with_scalar_sphere():
     res = _tranquilo(
         criterion=_scalar_sphere,
-        x=np.ones(5),
+        x=np.arange(5) + 100,
         functype="scalar",
     )
 
-    aaae(res["solution_x"], np.zeros(5))
+    aaae(res["solution_x"], np.zeros(5), decimal=5)

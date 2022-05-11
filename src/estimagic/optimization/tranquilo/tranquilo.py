@@ -21,21 +21,20 @@ def _tranquilo(
     # ==================================================================================
     # hardcoded stuff that needs to be made flexibel
     # ==================================================================================
-
-    maxiter = 100
+    maxiter = 15
     functype = "scalar"
 
     sampler = "naive"
     sampler_options = {}
-    target_sample_size = len(x) ** 2
+    target_sample_size = 10 * len(x) ** 2
 
     radius_options = RadiusOptions()
 
     fitter = "ols"
     fit_options = {}
 
-    model_info = ModelInfo()
-    subsolver = "bntr"
+    model_info = ModelInfo(has_interactions=False)
+    subsolver = "thorough"
     solver_options = {}
 
     aggregator = "identity"

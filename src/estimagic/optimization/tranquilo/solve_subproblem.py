@@ -6,6 +6,7 @@ import numpy as np
 from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
 from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
 from estimagic.optimization.tranquilo.models import evaluate_model
+from estimagic.optimization.tranquilo.thourough_subsolver import solve_thorough
 
 
 def get_subsolver(solver, user_options=None, bounds=None):
@@ -48,6 +49,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
     built_in_solvers = {
         "bntr": minimize_bntr_quadratic,
         "gqtpar": minimize_gqtpar_quadratic,
+        "thorough": solve_thorough,
     }
 
     if isinstance(solver, str) and solver in built_in_solvers:
@@ -176,11 +178,11 @@ def _solve_subproblem_template(
     # does not depend on whether the subsolver ignores intercepts or not.
 
     fval_at_center = evaluate_model(model, np.zeros_like(x))
-    fval_candidate = evaluate_model(model, x)
+    fval_candidate = evaluate_model(model, raw_result["x"])
 
     result = {
         "x": x,
-        "expected_improvement": -(fval_at_center - fval_candidate),
+        "expected_improvement": -(fval_candidate - fval_at_center),
         "n_iterations": raw_result["n_iterations"],
         "success": raw_result["success"],
     }
