@@ -460,7 +460,7 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     valid_new_y = [res["solution_criterion"] for res in valid_results]
 
     best_index = np.argmin(valid_new_y)
-    if valid_new_y[best_index] < best_y:
+    if valid_new_y[best_index] <= best_y:
         best_x = valid_new_x[best_index]
         best_y = valid_new_y[best_index]
         best_res = valid_results[best_index]

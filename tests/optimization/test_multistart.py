@@ -165,3 +165,16 @@ def test_error_is_raised_with_transforming_constraints(params):
 def _params_list_to_aray(params_list):
     data = [params["value"].tolist() for params in params_list]
     return np.array(data)
+
+
+def test_multistart_with_numpy_params():
+    res = minimize(
+        criterion=lambda params: params @ params,
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+        soft_lower_bounds=np.full(5, -10),
+        soft_upper_bounds=np.full(5, 10),
+        multistart=True,
+    )
+
+    res["solution_params"]
