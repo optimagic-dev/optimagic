@@ -30,12 +30,6 @@ from estimagic.process_user_function import process_func_of_params
 from estimagic.utilities import hash_array
 
 
-BASE_DOCSTRING = """
-
-
-"""
-
-
 def maximize(
     criterion,
     params,
