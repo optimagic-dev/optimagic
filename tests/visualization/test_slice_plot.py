@@ -3,7 +3,8 @@ import itertools
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.visualization.slice_plot import slice_plot
+from estimagic.visualization.slice_plot import combine_plots
+from estimagic.visualization.slice_plot import get_slice_plots
 
 
 @pytest.fixture
@@ -30,11 +31,15 @@ def problem():
 def test_slice_plot(
     problem, n_gridpoints, n_random_values, plots_per_row, combine_plots_in_grid
 ):
-    slice_plot(
+
+    plots_dict = get_slice_plots(
         criterion=problem["criterion"],
         params=problem["params"],
         n_gridpoints=n_gridpoints,
         n_random_values=n_random_values,
-        plots_per_row=plots_per_row,
-        combine_plots_in_grid=combine_plots_in_grid,
     )
+    if combine_plots_in_grid:
+        combine_plots(
+            plots_dict=plots_dict,
+            plots_per_row=plots_per_row,
+        )
