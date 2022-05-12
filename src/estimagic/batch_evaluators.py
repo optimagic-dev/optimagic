@@ -152,3 +152,23 @@ def _check_inputs(func, arguments, n_cores, error_handling, unpack_symbol):
         raise ValueError(
             f"error_handling must be 'raise' or 'continue', not {error_handling}"
         )
+
+
+def process_batch_evaluator(batch_evaluator="joblib"):
+    batch_evaluator = "joblib" if batch_evaluator is None else batch_evaluator
+    if callable(batch_evaluator):
+        out = batch_evaluator
+    elif isinstance(batch_evaluator, str):
+        if batch_evaluator == "joblib":
+            out = joblib_batch_evaluator
+        elif batch_evaluator == "pathos":
+            out = pathos_mp_batch_evaluator
+        else:
+            raise ValueError(
+                "Invalid batch evaluator requested. Currently only 'pathos' and "
+                "'joblib' are supported."
+            )
+    else:
+        raise TypeError("batch_evaluator must be a callable or string.")
+
+    return out

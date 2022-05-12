@@ -9,18 +9,59 @@ from estimagic.optimization import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
 
 
-def get_algorithm_and_algo_info(
-    algorithm,
+def process_user_algorithm(algorithm):
+    """Process the user specfied algorithm.
+
+    If the algorithm is a callable, this function just reads out the algorithm_info
+    and available options. If algorithm is a string it loads the algorithm function
+    from the available algorithms.
+
+    Args:
+        algorithm (str or callable): The user specified algorithm.
+
+    Returns:
+        callable: the raw internal algorithm
+        AlgoInfo: Attributes of the algorithm
+        set: The free arguments of the algorithm.
+
+    """
+    if isinstance(algorithm, str):
+        try:
+            # Use ALL_ALGORITHMS and not just AVAILABLE_ALGORITHMS such that the
+            # algorithm specific error message with installation instruction will be
+            # reached if an optional dependency is not installed.
+            algorithm = ALL_ALGORITHMS[algorithm]
+        except KeyError:
+            proposed = propose_alternatives(algorithm, list(ALL_ALGORITHMS))
+            raise ValueError(
+                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
+            ) from None
+
+    algo_info = algorithm._algorithm_info
+
+    arguments = set(inspect.signature(algorithm).parameters)
+
+    if isinstance(algorithm, partial):
+        partialed_in = set(algorithm.args).union(set(algorithm.keywords))
+        arguments = arguments.difference(partialed_in)
+
+    return algorithm, algo_info, arguments
+
+
+def get_final_algorithm(
+    raw_algorithm,
+    algo_info,
+    valid_kwargs,
     lower_bounds,
     upper_bounds,
     algo_options,
     logging,
     db_kwargs,
 ):
-    """Get algorithm-function with partialled optionts
+    """Get algorithm-function with partialled options.
 
-    The resulting function only depends on ``x``,  ``criterion_and_derivative``
-    and ``step_id``.
+    The resulting function only depends on ``x``,  the relevant criterion functions
+    and derivatives and ``step_id``.
 
     Args:
         algorithm (str or callable): String with the name of an algorithm or internal
@@ -37,61 +78,30 @@ def get_algorithm_and_algo_info(
         callable: The algorithm.
 
     """
-    internal_algorithm, algo_name, algo_info = _process_user_algorithm(algorithm)
+    algo_name = algo_info.name
 
     internal_options = _adjust_options_to_algorithm(
         algo_options=algo_options,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        algorithm=internal_algorithm,
         algo_name=algo_name,
+        valid_kwargs=valid_kwargs,
     )
 
-    partialled_algorithm = partial(internal_algorithm, **internal_options)
+    partialled_algorithm = partial(raw_algorithm, **internal_options)
 
-    algorithm = _add_logging_to_algorithm(
+    raw_algorithm = _add_logging_to_algorithm(
         partialled_algorithm,
         logging=logging,
         db_kwargs=db_kwargs,
     )
 
-    return algorithm, algo_info
-
-
-def _process_user_algorithm(algorithm):
-    """Process the user specfied algorithm.
-
-    Args:
-        algorithm (str or callable): The user specified algorithm.
-
-    Returns:
-        callable: The internal algorithm.
-        str: The name of the algorithm.
-
-    """
-    if isinstance(algorithm, str):
-        algo_name = algorithm
-    else:
-        algo_name = getattr(algorithm, "__name__", "your algorithm")
-
-    if isinstance(algorithm, str):
-        try:
-            # Use ALL_ALGORITHMS and not just AVAILABLE_ALGORITHMS such that the
-            # algorithm specific error message with installation instruction will be
-            # reached if an optional dependency is not installed.
-            algorithm = ALL_ALGORITHMS[algorithm]
-        except KeyError:
-            proposed = propose_alternatives(algorithm, list(ALL_ALGORITHMS))
-            raise ValueError(
-                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
-            ) from None
-
-    algo_info = algorithm._algorithm_info
-
-    return algorithm, algo_name, algo_info
+    return raw_algorithm
 
 
 def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
+    """Add logging of status to the algorithm."""
+
     def decorator_add_logging_to_algorithm(algorithm):
         @functools.wraps(algorithm)
         def wrapper_add_logging_algorithm(**kwargs):
@@ -134,22 +144,20 @@ def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
 
 
 def _adjust_options_to_algorithm(
-    algo_options, lower_bounds, upper_bounds, algorithm, algo_name
+    algo_options,
+    lower_bounds,
+    upper_bounds,
+    algo_name,
+    valid_kwargs,
 ):
     """Reduce the algo_options and check if bounds are compatible with algorithm."""
 
     # convert algo option keys to valid Python arguments
     algo_options = {key.replace(".", "_"): val for key, val in algo_options.items()}
 
-    valid = set(inspect.signature(algorithm).parameters)
+    reduced = {key: val for key, val in algo_options.items() if key in valid_kwargs}
 
-    if isinstance(algorithm, partial):
-        partialed_in = set(algorithm.args).union(set(algorithm.keywords))
-        valid = valid.difference(partialed_in)
-
-    reduced = {key: val for key, val in algo_options.items() if key in valid}
-
-    ignored = {key: val for key, val in algo_options.items() if key not in valid}
+    ignored = {key: val for key, val in algo_options.items() if key not in valid_kwargs}
 
     if ignored:
         warnings.warn(
@@ -157,24 +165,24 @@ def _adjust_options_to_algorithm(
             f"with {algo_name}:\n\n {ignored}"
         )
 
-    if "lower_bounds" not in valid and not (lower_bounds == -np.inf).all():
+    if "lower_bounds" not in valid_kwargs and not (lower_bounds == -np.inf).all():
         raise ValueError(
             f"{algo_name} does not support lower bounds but your optimization "
             "problem has lower bounds (either because you specified them explicitly "
             "or because they were implied by other constraints)."
         )
 
-    if "upper_bounds" not in valid and not (upper_bounds == np.inf).all():
+    if "upper_bounds" not in valid_kwargs and not (upper_bounds == np.inf).all():
         raise ValueError(
             f"{algo_name} does not support upper bounds but your optimization "
             "problem has upper bounds (either because you specified them explicitly "
             "or because they were implied by other constraints)."
         )
 
-    if "lower_bounds" in valid:
+    if "lower_bounds" in valid_kwargs:
         reduced["lower_bounds"] = lower_bounds
 
-    if "upper_bounds" in valid:
+    if "upper_bounds" in valid_kwargs:
         reduced["upper_bounds"] = upper_bounds
 
     return reduced

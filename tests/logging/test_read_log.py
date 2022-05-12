@@ -24,7 +24,7 @@ def test_read_optimization_iteration(tmp_path):
     database = load_database(path=path)
 
     # add the optimization_iterations table
-    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    make_optimization_iteration_table(database)
     iteration_data = [
         {"params": np.array([0])},
         {"params": np.array([1])},

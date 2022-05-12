@@ -1,8 +1,8 @@
 """Implement the POUNDERS algorithm"""
 import warnings
 
-import estimagic.batch_evaluators as be
 import numpy as np
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.config import DEFAULT_N_CORES
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.history import LeastSquaresHistory
@@ -72,8 +72,7 @@ def pounders(
     For details, see :ref:`_own_algorithms`.
 
     """
-    if isinstance(batch_evaluator, str):
-        batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     if max_interpolation_points is None:
         max_interpolation_points = 2 * len(x) + 1

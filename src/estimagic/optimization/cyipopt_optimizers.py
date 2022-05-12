@@ -1,10 +1,10 @@
 """Implement cyipopt's Interior Point Optimizer."""
+import numpy as np
 from estimagic.config import IS_CYIPOPT_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
-from estimagic.optimization.scipy_optimizers import get_scipy_bounds
 from estimagic.optimization.scipy_optimizers import process_scipy_result
 
 if IS_CYIPOPT_INSTALLED:
@@ -494,7 +494,7 @@ def ipopt(
     raw_res = cyipopt.minimize_ipopt(
         fun=criterion,
         x0=x,
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         jac=derivative,
         constraints=(),
         tol=convergence_relative_criterion_tolerance,
@@ -532,3 +532,13 @@ def _convert_bool_to_str(var, name):
 def _convert_none_to_str(var):
     out = "none" if var is None else var
     return out
+
+
+def _get_scipy_bounds(lower_bounds, upper_bounds):
+    # Scipy works with `None` instead of infinite values for unconstrained parameters
+    # and requires a list of tuples for each parameter with lower and upper bound.
+    bounds = np.column_stack([lower_bounds, upper_bounds])
+    mask = ~np.isfinite(bounds)
+    bounds = bounds.astype("object")
+    bounds[mask] = None
+    return list(map(tuple, bounds))

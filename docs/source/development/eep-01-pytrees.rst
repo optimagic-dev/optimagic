@@ -1,4 +1,4 @@
-.. _eep-01:
+.. _eeppytrees:
 
 ===============
 EEP-01: Pytrees
@@ -838,7 +838,7 @@ We suggest the following work packages and tentative order in which we tackle th
 +----------------------------------------------------+------------------------+--------+
 | Better name and group functions for dashboard      |                        | ❌     |
 +----------------------------------------------------+------------------------+--------+
-| Pytree support for optimization                    | :ghuser:`janosg`       | ❌     |
+| Pytree support for optimization                    | :ghuser:`janosg`       | ✅     |
 +----------------------------------------------------+------------------------+--------+
 | Pytree support for first_derivative                | :ghuser:`timmens`      | ✅     |
 +----------------------------------------------------+------------------------+--------+

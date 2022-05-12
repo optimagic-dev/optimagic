@@ -15,10 +15,6 @@ from estimagic.examples.criterion_functions import sos_criterion_and_gradient
 from estimagic.examples.criterion_functions import sos_criterion_and_jacobian
 from estimagic.examples.criterion_functions import sos_dict_criterion
 from estimagic.examples.criterion_functions import sos_dict_derivative
-from estimagic.examples.criterion_functions import sos_dict_derivative_with_pd_objects
-from estimagic.examples.criterion_functions import (
-    sos_double_dict_criterion_and_derivative_with_pd_objects,
-)
 from estimagic.examples.criterion_functions import sos_gradient
 from estimagic.examples.criterion_functions import sos_jacobian
 from estimagic.examples.criterion_functions import sos_pandas_gradient
@@ -27,7 +23,7 @@ from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
-algorithms = ["scipy_lbfgsb", "scipy_ls_dogbox", "scipy_neldermead"]
+algorithms = ["scipy_lbfgsb", "scipy_neldermead", "scipy_ls_dogbox"]
 
 ls_algorithms = {"scipy_ls_dogbox"}
 
@@ -41,13 +37,9 @@ ls_derivatives = [None, sos_jacobian, sos_pandas_jacobian]
 
 ls_criterion_and_derivatives = [sos_criterion_and_jacobian]
 
-dict_derivatives = [sos_dict_derivative, None, sos_dict_derivative_with_pd_objects]
-
 dict_criterion_and_derivatives = [
     None,
-    sos_double_dict_criterion_and_derivative_with_pd_objects,
 ]
-
 
 valid_cases = []
 invalid_cases = []
@@ -60,15 +52,7 @@ for algo in algorithms:
     else:
         for deriv in scalar_derivatives:
             for crit_and_deriv in scalar_criterion_and_derivtives:
-                for direction in ["maximize", "minimize"]:
-                    valid_cases.append((direction, algo, deriv, crit_and_deriv))
-
-    for deriv in dict_derivatives:
-        for crit_and_deriv in dict_criterion_and_derivatives:
-            if algo in ls_algorithms:
-                valid_cases.append(("minimize", algo, deriv, crit_and_deriv))
-            else:
-                for direction in ["maximize", "minimize"]:
+                for direction in ["minimize", "maximize"]:
                     valid_cases.append((direction, algo, deriv, crit_and_deriv))
 
 
@@ -142,3 +126,17 @@ def test_invalid_derivative_versions(
                 derivative=deriv,
                 criterion_and_derivative=crit_and_deriv,
             )
+
+
+def test_dict_derivative():
+    start_params = pd.DataFrame()
+    start_params["value"] = [1, 2, 3]
+
+    res = minimize(
+        criterion=sos_dict_criterion,
+        params=start_params,
+        algorithm="scipy_lbfgsb",
+        derivative=sos_dict_derivative,
+    )
+
+    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(3))
