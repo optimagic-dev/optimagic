@@ -37,9 +37,10 @@ def base_inputs():
         "algo_info": AlgoInfo(
             name="my_algorithm",
             primary_criterion_entry="value",
-            parallelizes=False,
             needs_scaling=False,
             is_available=True,
+            parallelizes=False,
+            arguments=[],
         ),
         "error_handling": "raise",
         "numdiff_options": {},

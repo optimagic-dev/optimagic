@@ -21,7 +21,6 @@ if IS_FIDES_INSTALLED:
     name="fides",
     primary_criterion_entry="value",
     needs_scaling=False,
-    parallelizes=False,
     is_available=IS_FIDES_INSTALLED,
 )
 def fides(

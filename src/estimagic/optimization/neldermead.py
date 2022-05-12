@@ -16,7 +16,6 @@ from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 @mark_minimizer(
     name="parallel_neldermead",
     primary_criterion_entry="value",
-    parallelizes=True,
     needs_scaling=True,
     is_available=True,
 )

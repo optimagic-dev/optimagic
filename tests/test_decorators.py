@@ -76,7 +76,6 @@ def test_mark_minimizer_direct_call():
 INVALID_TYPES = [
     {"name": None},
     {"name": [1, 2, 3]},
-    {"parallelizes": 15},
     {"needs_scaling": 25},
     {"is_available": 30},
 ]

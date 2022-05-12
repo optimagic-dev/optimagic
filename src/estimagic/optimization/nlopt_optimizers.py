@@ -22,7 +22,6 @@ if IS_NLOPT_INSTALLED:
 @mark_minimizer(
     name="nlopt_bobyqa",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -64,7 +63,6 @@ def nlopt_bobyqa(
 @mark_minimizer(
     name="nlopt_neldermead",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -106,7 +104,6 @@ def nlopt_neldermead(
 @mark_minimizer(
     name="nlopt_praxis",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -145,7 +142,6 @@ def nlopt_praxis(
 @mark_minimizer(
     name="nlopt_cobyla",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -187,7 +183,6 @@ def nlopt_cobyla(
 @mark_minimizer(
     name="nlopt_sbplx",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -228,7 +223,6 @@ def nlopt_sbplx(
 @mark_minimizer(
     name="nlopt_newuoa",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -273,7 +267,6 @@ def nlopt_newuoa(
 @mark_minimizer(
     name="nlopt_tnewton",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -316,7 +309,6 @@ def nlopt_tnewton(
 @mark_minimizer(
     name="nlopt_lbfgsb",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -359,7 +351,6 @@ def nlopt_lbfgs(
 @mark_minimizer(
     name="nlopt_ccsaq",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -402,7 +393,6 @@ def nlopt_ccsaq(
 @mark_minimizer(
     name="nlopt_mma",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -445,7 +435,6 @@ def nlopt_mma(
 @mark_minimizer(
     name="nlopt_var",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -493,7 +482,6 @@ def nlopt_var(
 @mark_minimizer(
     name="nlopt_slsqp",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=False,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -534,9 +522,9 @@ def nlopt_slsqp(
 @mark_minimizer(
     name="nlopt_direct",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
+    is_global=True,
 )
 def nlopt_direct(
     criterion,
@@ -591,7 +579,7 @@ def nlopt_direct(
 @mark_minimizer(
     name="nlopt_esch",
     primary_criterion_entry="value",
-    parallelizes=False,
+    is_global=True,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -633,7 +621,7 @@ def nlopt_esch(
 @mark_minimizer(
     name="nlopt_isres",
     primary_criterion_entry="value",
-    parallelizes=False,
+    is_global=True,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
 )
@@ -675,7 +663,7 @@ def nlopt_isres(
 @mark_minimizer(
     name="nlopt_crs2_lm",
     primary_criterion_entry="value",
-    parallelizes=False,
+    is_global=True,
     needs_scaling=True,
     is_available=IS_NLOPT_INSTALLED,
 )

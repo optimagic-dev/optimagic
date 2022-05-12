@@ -480,7 +480,9 @@ def _optimize(
     # ==================================================================================
     # Get the algorithm info
     # ==================================================================================
-    raw_algo, algo_info, algo_kwargs = process_user_algorithm(algorithm)
+    raw_algo, algo_info = process_user_algorithm(algorithm)
+
+    algo_kwargs = set(algo_info.arguments)
 
     if algo_info.primary_criterion_entry == "root_contributions":
         if direction == "maximize":

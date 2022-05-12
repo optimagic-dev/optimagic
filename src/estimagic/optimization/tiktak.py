@@ -334,6 +334,7 @@ def run_explorations(
         needs_scaling=False,
         name="tiktak_explorer",
         is_available=True,
+        arguments=[],
     )
 
     _func = partial(

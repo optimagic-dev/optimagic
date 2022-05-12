@@ -1,5 +1,4 @@
 import functools
-import inspect
 import warnings
 from functools import partial
 
@@ -39,13 +38,7 @@ def process_user_algorithm(algorithm):
 
     algo_info = algorithm._algorithm_info
 
-    arguments = set(inspect.signature(algorithm).parameters)
-
-    if isinstance(algorithm, partial):
-        partialed_in = set(algorithm.args).union(set(algorithm.keywords))
-        arguments = arguments.difference(partialed_in)
-
-    return algorithm, algo_info, arguments
+    return algorithm, algo_info
 
 
 def get_final_algorithm(
