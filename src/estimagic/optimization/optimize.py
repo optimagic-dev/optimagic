@@ -24,7 +24,6 @@ from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
-from estimagic.utilities import hash_array
 
 
 def maximize(
@@ -48,7 +47,6 @@ def maximize(
     log_options=None,
     error_handling="raise",
     error_penalty=None,
-    cache_size=100,
     scaling=False,
     scaling_options=None,
     multistart=False,
@@ -132,8 +130,6 @@ def maximize(
             actually a bad function value. The default constant is f0 + abs(f0) + 100
             for minimizations and f0 - abs(f0) - 100 for maximizations, where
             f0 is the criterion value at start parameters. The default slope is 0.1.
-        cache_size (int): Number of criterion and derivative evaluations that are cached
-            in memory in case they are needed.
         scaling (bool): If True, the parameter vector is rescaled internally for
             better performance with scale sensitive optimizers.
         scaling_options (dict or None): Options to configure the internal scaling ot
@@ -212,7 +208,6 @@ def maximize(
         log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
-        cache_size=cache_size,
         scaling=scaling,
         scaling_options=scaling_options,
         multistart=multistart,
@@ -241,7 +236,6 @@ def minimize(
     log_options=None,
     error_handling="raise",
     error_penalty=None,
-    cache_size=100,
     scaling=False,
     scaling_options=None,
     multistart=False,
@@ -325,8 +319,6 @@ def minimize(
             actually a bad function value. The default constant is f0 + abs(f0) + 100
             for minimizations and f0 - abs(f0) - 100 for maximizations, where
             f0 is the criterion value at start parameters. The default slope is 0.1.
-        cache_size (int): Number of criterion and derivative evaluations that are cached
-            in memory in case they are needed.
         scaling (bool): If True, the parameter vector is rescaled internally for
             better performance with scale sensitive optimizers.
         scaling_options (dict or None): Options to configure the internal scaling ot
@@ -405,7 +397,6 @@ def minimize(
         log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
-        cache_size=cache_size,
         scaling=scaling,
         scaling_options=scaling_options,
         multistart=multistart,
@@ -435,7 +426,6 @@ def _optimize(
     log_options,
     error_handling,
     error_penalty,
-    cache_size,
     scaling,
     scaling_options,
     multistart,
@@ -482,7 +472,6 @@ def _optimize(
         log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
-        cache_size=cache_size,
         scaling=scaling,
         scaling_options=scaling_options,
         multistart=multistart,
@@ -646,10 +635,7 @@ def _optimize(
         direction=direction,
     )
 
-    # create cache
     x = internal_params.values
-    x_hash = hash_array(x)
-    cache = {x_hash: {"criterion": converter.func_to_internal(first_crit_eval)}}
     # ==================================================================================
     # get the internal algorithm
     # ==================================================================================
@@ -675,8 +661,6 @@ def _optimize(
         "numdiff_options": numdiff_options,
         "logging": logging,
         "db_kwargs": db_kwargs,
-        "cache": cache,
-        "cache_size": cache_size,
         "algo_info": algo_info,
         "error_handling": error_handling,
         "error_penalty_func": error_penalty_func,

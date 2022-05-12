@@ -6,7 +6,6 @@ from estimagic.exceptions import get_traceback
 from estimagic.exceptions import UserFunctionRuntimeError
 from estimagic.logging.database_utilities import append_row
 from estimagic.parameters.conversion import aggregate_func_output_to_value
-from estimagic.utilities import hash_array
 
 
 def internal_criterion_and_derivative_template(
@@ -24,8 +23,6 @@ def internal_criterion_and_derivative_template(
     db_kwargs,
     error_handling,
     error_penalty_func,
-    cache,
-    cache_size,
     fixed_log_data,
 ):
     """Template for the internal criterion and derivative function.
@@ -88,10 +85,7 @@ def internal_criterion_and_derivative_template(
             If task=="criterion_and_derivative" it returns both as a tuple.
 
     """
-    x_hash = hash_array(x)
-    cache_entry = cache.get(x_hash, {})
-
-    to_dos = _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative)
+    to_dos = _determine_to_dos(task, derivative, criterion_and_derivative)
 
     caught_exceptions = []
     new_criterion, new_external_criterion = None, None
@@ -112,9 +106,6 @@ def internal_criterion_and_derivative_template(
             return out
 
         options = numdiff_options.copy()
-        f0 = cache_entry.get("criterion", None)
-        if f0 is not None:
-            options["f0"] = {"relevant": f0, "full": None}
         options["key"] = "relevant"
         options["return_func_value"] = True
 
@@ -128,7 +119,7 @@ def internal_criterion_and_derivative_template(
         except Exception as e:
             tb = get_traceback()
             caught_exceptions.append(tb)
-            if "criterion" in cache_entry or error_handling == "raise":
+            if error_handling == "raise":
                 msg = (
                     "An error occurred when evaluating criterion to calculate a "
                     "numerical derivative during optimization."
@@ -152,7 +143,7 @@ def internal_criterion_and_derivative_template(
         except Exception as e:
             tb = get_traceback()
             caught_exceptions.append(tb)
-            if "criterion" in cache_entry or error_handling == "raise":
+            if error_handling == "raise":
                 msg = (
                     "An error ocurred when evaluating criterion_and_derivative "
                     "during optimization."
@@ -175,7 +166,7 @@ def internal_criterion_and_derivative_template(
             except Exception as e:
                 tb = get_traceback()
                 caught_exceptions.append(tb)
-                if "derivative" in cache_entry or error_handling == "raise":
+                if error_handling == "raise":
                     msg = (
                         "An error ocurred when evaluating criterion during "
                         "optimization."
@@ -197,7 +188,7 @@ def internal_criterion_and_derivative_template(
             except Exception as e:
                 tb = get_traceback()
                 caught_exceptions.append(tb)
-                if "criterion" in cache_entry or error_handling == "raise":
+                if error_handling == "raise":
                     msg = (
                         "An error ocurred when evaluating derivative during "
                         "optimization"
@@ -221,9 +212,6 @@ def internal_criterion_and_derivative_template(
         new_criterion, new_derivative = error_penalty_func(
             x, task="criterion_and_derivative"
         )
-
-    if not (algo_info.parallelizes or algo_info.disable_cache) and cache_size >= 1:
-        _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_size)
 
     if (new_criterion is not None or new_derivative is not None) and logging:
         if new_criterion is not None:
@@ -249,13 +237,11 @@ def internal_criterion_and_derivative_template(
         new_derivative=new_derivative,
         task=task,
         direction=direction,
-        cache=cache,
-        x_hash=x_hash,
     )
     return res
 
 
-def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
+def _determine_to_dos(task, derivative, criterion_and_derivative):
     """Determine which functions have to be evaluated at the new parameters.
 
     Args:
@@ -276,8 +262,8 @@ def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
             - ["derivative"]
 
     """
-    criterion_needed = "criterion" in task and "criterion" not in cache_entry
-    derivative_needed = "derivative" in task and "derivative" not in cache_entry
+    criterion_needed = "criterion" in task
+    derivative_needed = "derivative" in task
 
     to_dos = []
     if criterion_and_derivative is not None and criterion_needed and derivative_needed:
@@ -296,19 +282,6 @@ def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
         if criterion_needed:
             to_dos.append("criterion")
     return to_dos
-
-
-def _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_size):
-    cache_entry = cache.get(x_hash, {}).copy()
-    if len(cache) >= cache_size:
-        # list(dict) returns keys in insertion order: https://tinyurl.com/o464nrz
-        oldest_entry = list(cache)[0]
-        del cache[oldest_entry]
-    if new_criterion is not None:
-        cache_entry["criterion"] = new_criterion
-    if new_derivative is not None:
-        cache_entry["derivative"] = new_derivative
-    cache[x_hash] = cache_entry
 
 
 def _log_new_evaluations(
@@ -354,16 +327,11 @@ def _get_output_for_optimizer(
     new_derivative,
     task,
     direction,
-    cache,
-    x_hash,
 ):
-    if "criterion" in task and new_criterion is None:
-        new_criterion = cache[x_hash]["criterion"]
+
     if "criterion" in task and direction == "maximize":
         new_criterion = -new_criterion
 
-    if "derivative" in task and new_derivative is None:
-        new_derivative = cache[x_hash]["derivative"]
     if "derivative" in task and direction == "maximize":
         new_derivative = -new_derivative
 

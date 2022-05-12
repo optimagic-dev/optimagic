@@ -17,23 +17,6 @@ from estimagic.parameters.conversion import get_converter
 from numpy.testing import assert_array_almost_equal as aaae
 
 
-def no_second_call(func):
-    counter = np.array([0])
-
-    if func is None:
-        wrapper_func = None
-    else:
-
-        def wrapper_func(params, counter=counter, *args, **kwargs):
-            res = func(params, *args, **kwargs)
-            if counter[0] >= 1:
-                raise AssertionError("This was called twice.")
-            counter += 1
-            return res
-
-    return wrapper_func
-
-
 def reparametrize_from_internal(x):
     res = pd.DataFrame()
     res["value"] = x
@@ -64,8 +47,6 @@ def base_inputs():
         "logging": False,
         "db_kwargs": {"database": False, "fast_logging": False, "path": "logging.db"},
         "error_penalty_func": None,
-        "cache": {},
-        "cache_size": 10,
         "fixed_log_data": {"stage": "optimization", "substage": 0},
     }
     return inputs
@@ -98,11 +79,11 @@ def test_criterion_and_derivative_template(
     inputs = {k: v for k, v in base_inputs.items() if k != "params"}
     inputs["converter"] = converter
 
-    crit = crit if (deriv, crit_and_deriv) == (None, None) else no_second_call(crit)
+    crit = crit if (deriv, crit_and_deriv) == (None, None) else crit
 
     inputs["criterion"] = crit
-    inputs["derivative"] = no_second_call(deriv)
-    inputs["criterion_and_derivative"] = no_second_call(crit_and_deriv)
+    inputs["derivative"] = deriv
+    inputs["criterion_and_derivative"] = crit_and_deriv
     inputs["direction"] = direction
 
     calc_criterion, calc_derivative = internal_criterion_and_derivative_template(
@@ -165,27 +146,13 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
             task="criterion_and_derivative", **inputs
         )
 
-    calc_criterion2 = internal_criterion_and_derivative_template(
-        task="criterion", **inputs
-    )
-
-    calc_derivative2 = internal_criterion_and_derivative_template(
-        task="derivative", **inputs
-    )
-
     expected_crit = 42
     expected_grad = 52
 
     if direction == "minimize":
-        for c in calc_criterion, calc_criterion2:
-            assert c == expected_crit
-
-        for d in calc_derivative, calc_derivative2:
-            aaae(d, expected_grad)
+        assert calc_criterion == expected_crit
+        aaae(calc_derivative, expected_grad)
 
     else:
-        for c in calc_criterion, calc_criterion2:
-            assert c == -expected_crit
-
-        for d in calc_derivative, calc_derivative2:
-            aaae(d, -expected_grad)
+        assert calc_criterion == -expected_crit
+        aaae(calc_derivative, -expected_grad)
