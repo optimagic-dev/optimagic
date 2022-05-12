@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import stats
 from scipy.linalg import pinv
-from scipy.ndimage.filters import convolve1d
+from scipy.ndimage import convolve1d
 
 
 def richardson_extrapolation(sequence, steps, method="central", num_terms=None):

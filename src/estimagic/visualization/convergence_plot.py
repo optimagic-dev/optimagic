@@ -1,19 +1,13 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
 from estimagic.benchmarking.process_benchmark_results import (
     create_convergence_histories,
 )
+from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.utilities import propose_alternatives
-from estimagic.visualization.colors import get_colors
-
-plt.rcParams.update(
-    {
-        "axes.spines.right": False,
-        "axes.spines.top": False,
-        "legend.frameon": False,
-    }
-)
+from estimagic.visualization.plotting_utilities import create_grid_plot
+from estimagic.visualization.plotting_utilities import create_ind_dict
 
 
 def convergence_plot(
@@ -30,6 +24,9 @@ def convergence_plot(
     stopping_criterion="y",
     x_precision=1e-4,
     y_precision=1e-4,
+    combine_plots_in_grid=True,
+    template=PLOTLY_TEMPLATE,
+    palette=px.colors.qualitative.Plotly,
 ):
     """Plot convergence of optimizers for a set of problems.
 
@@ -78,11 +75,17 @@ def convergence_plot(
             true criterion values (as percent of the distance between start
             and solution criterion value) before the criterion for clipping and
             convergence is fulfilled.
+        combine_plots_in_grid (bool): decide whether to return a one
+            figure containing subplots for each factor pair or a dictionary
+            of individual plots. Default True.
+        template (str): The template for the figure. Default is "plotly_white".
+        palette: The coloring palette for traces. Default is "qualitative.Plotly".
 
     Returns:
-        fig
+        plotly.Figure: The grid plot or dict of individual plots
 
     """
+
     df, _ = create_convergence_histories(
         problems=problems,
         results=results,
@@ -112,67 +115,107 @@ def convergence_plot(
         + f"{'_normalized' if normalize_distance else ''}"
     )
 
-    # create plots
     remaining_problems = df["problem"].unique()
     n_rows = int(np.ceil(len(remaining_problems) / n_cols))
-    figsize = (n_cols * 6, n_rows * 4)
-    fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, figsize=figsize)
 
-    if algorithm_subset is None:
-        algorithms = {tup[1] for tup in results.keys()}
-    else:
-        algorithms = algorithm_subset
-    palette = get_colors("categorical", number=len(algorithms))
-
-    for ax, prob_name in zip(axes.flatten(), remaining_problems):
-        to_plot = df[df["problem"] == prob_name]
-        sns.lineplot(
-            data=to_plot,
-            x=runtime_measure,
-            y=outcome,
-            hue="algorithm",
-            lw=2.5,
-            alpha=1.0,
-            ax=ax,
-            palette=palette,
-        )
-        ax.set_title(prob_name.replace("_", " ").title())
-        if distance_measure == "criterion" and not normalize_distance:
-            f_opt = problems[prob_name]["solution"]["value"]
-            ax.axhline(f_opt, label="true solution", lw=2.5)
-
-    # style plots
+    # pre - style plots labels
     y_labels = {
         "criterion": "Current Function Value",
         "monotone_criterion": "Best Function Value Found So Far",
-        "criterion_normalized": "Share of Function Distance to Optimum\n"
+        "criterion_normalized": "Share of Function Distance to Optimum<br>"
         + "Missing From Current Criterion Value",
-        "monotone_criterion_normalized": "Share of Function Distance to Optimum\n"
+        "monotone_criterion_normalized": "Share of Function Distance to Optimum<br>"
         + "Missing From Best So Far",
         "parameter_distance": "Distance Between Current and Optimal Parameters",
-        "parameter_distance_normalized": "Share of the Parameter Distance to Optimum\n"
+        "parameter_distance_normalized": "Share of Parameter Distance to Optimum<br>"
         + "Missing From Current Parameters",
         "monotone_parameter_distance_normalized": "Share of the Parameter Distance "
-        + "to Optimum\n Missing From the Best Parameters So Far",
-        "monotone_parameter_distance": "Distance Between the Best Parameters So Far\n"
+        + "to Optimum<br> Missing From the Best Parameters So Far",
+        "monotone_parameter_distance": "Distance Between the Best Parameters So Far<br>"
         "and the Optimal Parameters",
     }
+
     x_labels = {
         "n_evaluations": "Number of Function Evaluations",
         "walltime": "Elapsed Time",
     }
-    for ax in axes.flatten():
-        ax.set_ylabel(y_labels[outcome])
-        ax.set_xlabel(x_labels[runtime_measure])
-        ax.legend(title=None)
 
-    # make empty plots invisible
-    n_empty_plots = len(axes.flatten()) - len(remaining_problems)
-    if n_empty_plots > 0:
-        for ax in axes.flatten()[-n_empty_plots:]:
-            ax.set_visible(False)
-    fig.tight_layout()
-    return fig
+    # container for individual plots
+    g_list = []
+    # container for titles
+    titles = []
+
+    # creating data traces for plotting faceted/individual plots
+    # dropping usage of palette for algoritms, but use the built in pallete
+    for prob_name in remaining_problems:
+
+        g_ind = []  # container for data for traces in individual plot
+        to_plot = df[df["problem"] == prob_name]
+
+        for i, alg in enumerate(to_plot["algorithm"].unique()):
+
+            temp = to_plot[to_plot["algorithm"] == alg]
+            trace_1 = go.Scatter(
+                x=temp[runtime_measure],
+                y=temp[outcome],
+                mode="lines",
+                legendgroup=i,
+                name=alg,
+                line={"color": palette[i]},
+            )
+            g_ind.append(trace_1)
+
+        if distance_measure == "criterion" and not normalize_distance:
+            f_opt = problems[prob_name]["solution"]["value"]
+            trace_2 = go.Scatter(
+                y=[f_opt for i in to_plot[runtime_measure]],
+                x=to_plot[runtime_measure],
+                mode="lines",
+                line={"color": palette[i + 1]},
+                name="true solution",
+                legendgroup=i + 1,
+            )
+            g_ind.append(trace_2)
+
+        g_list.append(g_ind)
+        titles.append(prob_name.replace("_", " ").title())
+
+    xaxis_title = [x_labels[runtime_measure] for ind in range(len(g_list))]
+    yaxis_title = [y_labels[outcome] for ind in range(len(g_list))]
+
+    common_dependencies = {
+        "ind_list": g_list,
+        "names": titles,
+        "clean_legend": True,
+        "x_title": xaxis_title,
+        "y_title": yaxis_title,
+    }
+    common_layout = {
+        "template": template,
+        "margin": {"l": 10, "r": 10, "t": 30, "b": 10},
+    }
+
+    # Plot with subplots
+    if combine_plots_in_grid:
+        g = create_grid_plot(
+            rows=n_rows,
+            cols=n_cols,
+            **common_dependencies,
+            kws={"height": 320 * n_rows, "width": 500 * n_cols, **common_layout},
+        )
+        out = g
+
+    # Dictionary for individual plots
+    else:
+
+        ind_dict = create_ind_dict(
+            **common_dependencies,
+            kws={"height": 320, "width": 500, "title_x": 0.5, **common_layout},
+        )
+
+        out = ind_dict
+
+    return out
 
 
 def _check_only_allowed_subset_provided(subset, allowed, name):

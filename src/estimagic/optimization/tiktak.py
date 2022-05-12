@@ -7,27 +7,27 @@ searches from a set of carefully-selected points in the parameter space.
 
 First implemented in Python by Alisdair McKay
 (`GitHub Repository <https://github.com/amckay/TikTak>`_)
-
 """
 import warnings
 from functools import partial
 
-import chaospy
 import numpy as np
-from chaospy.distributions import Triangle
-from chaospy.distributions import Uniform
-from estimagic import batch_evaluators as be
+from estimagic.batch_evaluators import process_batch_evaluator
+from estimagic.decorators import AlgoInfo
 from estimagic.optimization.optimization_logging import log_scheduled_steps_and_get_ids
 from estimagic.optimization.optimization_logging import update_step_status
-from estimagic.parameters.parameter_conversion import get_internal_bounds
+from estimagic.parameters.conversion import aggregate_func_output_to_value
+from scipy.stats import qmc
+from scipy.stats import triang
 
 
 def run_multistart_optimization(
     local_algorithm,
-    criterion_and_derivative,
+    primary_key,
+    problem_functions,
     x,
-    lower_bounds,
-    upper_bounds,
+    lower_sampling_bounds,
+    upper_sampling_bounds,
     options,
     logging,
     db_kwargs,
@@ -47,8 +47,8 @@ def run_multistart_optimization(
     else:
         sample = draw_exploration_sample(
             x=x,
-            lower=lower_bounds,
-            upper=upper_bounds,
+            lower=lower_sampling_bounds,
+            upper=upper_sampling_bounds,
             n_samples=options["n_samples"],
             sampling_distribution=options["sampling_distribution"],
             sampling_method=options["sampling_method"],
@@ -62,8 +62,14 @@ def run_multistart_optimization(
             db_kwargs=db_kwargs,
         )
 
+    if "criterion" in problem_functions:
+        criterion = problem_functions["criterion"]
+    else:
+        criterion = partial(list(problem_functions.values())[0], task="criterion")
+
     exploration_res = run_explorations(
-        criterion_and_derivative,
+        criterion,
+        primary_key=primary_key,
         sample=sample,
         batch_evaluator=options["batch_evaluator"],
         n_cores=options["n_cores"],
@@ -124,11 +130,10 @@ def run_multistart_optimization(
         "max_discoveries": options["convergence_max_discoveries"],
     }
 
-    criterion_and_derivative = partial(
-        criterion_and_derivative,
-        error_handling=error_handling,
-        error_penalty=error_penalty,
-    )
+    problem_functions = {
+        name: partial(func, error_handling=error_handling, error_penalty=error_penalty)
+        for name, func in problem_functions.items()
+    }
 
     batch_evaluator = options["batch_evaluator"]
 
@@ -145,14 +150,14 @@ def run_multistart_optimization(
         starts = [weight * state["best_x"] + (1 - weight) * x for x in batch]
 
         arguments = [
-            (criterion_and_derivative, x, step)
+            {**problem_functions, "x": x, "step_id": step}
             for x, step in zip(starts, scheduled_steps)
         ]
 
         batch_results = batch_evaluator(
             func=local_algorithm,
             arguments=arguments,
-            unpack_symbol="*",
+            unpack_symbol="**",
             n_cores=options["n_cores"],
             error_handling=options["optimization_error_handling"],
         )
@@ -180,7 +185,7 @@ def run_multistart_optimization(
         "start_parameters": state["start_history"],
         "local_optima": state["result_history"],
         "exploration_sample": sorted_sample,
-        "exploration_results": exploration_res["sorted_criterion_outputs"],
+        "exploration_results": exploration_res["sorted_values"],
     }
 
     return raw_res
@@ -199,7 +204,6 @@ def determine_steps(n_samples, n_optimizations):
 
     Returns:
         list: List of dictionaries with information on each step.
-
     """
     exploration_step = {
         "type": "exploration",
@@ -230,108 +234,83 @@ def draw_exploration_sample(
 ):
     """Get a sample of parameter values for the first stage of the tiktak algorithm.
 
-    The sample is created randomly or using low a low discrepancy sequence. Different
+    The sample is created randomly or using a low discrepancy sequence. Different
     distributions are available.
 
     Args:
-        x (np.ndarray): Internal parameter vector,
-        lower (np.ndarray): Vector of internal lower bounds.
-        upper (np.ndarray): Vector of internal upper bounts.
-        n_samples (int): Number of sampled points on
-            which to do one function evaluation. Default is 10 * n_params.
-        sampling_distribution (str): One of "uniform", "triangle". Default is
-            "uniform"  as in the original tiktak algorithm.
-        sampling_method (str): One of "random", "sobol", "halton",
-            "hammersley", "korobov", "latin_hypercube" and "chebyshev" or a numpy array
-            or DataFrame with custom points. Default is sobol for problems with up to 30
-            parameters and random for problems with more than 30 parameters.
+        x (np.ndarray): Internal parameter vector of shape (n_params,).
+        lower (np.ndarray): Vector of internal lower bounds of shape (n_params,).
+        upper (np.ndarray): Vector of internal upper bounds of shape (n_params,).
+        n_samples (int): Number of sample points on which one function evaluation
+            shall be performed. Default is 10 * n_params.
+        sampling_distribution (str): One of "uniform", "triangular". Default is
+            "uniform", as in the original tiktak algorithm.
+        sampling_method (str): One of "sobol", "halton", "latin_hypercube" or
+            "random". Default is sobol for problems with up to 200 parameters
+            and random for problems with more than 200 parameters.
         seed (int): Random seed.
 
     Returns:
-        np.ndarray: Numpy array of shape n_samples, len(params). Each row is a vector
-            of parameter values.
-
+        np.ndarray: Numpy array of shape (n_samples, n_params).
+            Each row represents a vector of parameter values.
     """
-    valid_rules = [
-        "random",
-        "sobol",
-        "halton",
-        "hammersley",
-        "korobov",
-        "latin_hypercube",
-    ]
+    valid_rules = ["sobol", "halton", "latin_hypercube", "random"]
+    valid_distributions = ["uniform", "triangular"]
 
     if sampling_method not in valid_rules:
         raise ValueError(
             f"Invalid rule: {sampling_method}. Must be one of\n\n{valid_rules}\n\n"
         )
 
-    if sampling_distribution == "uniform":
-        dist_list = [Uniform(lb, ub) for lb, ub in zip(lower, upper)]
-    elif sampling_distribution == "triangle":
-        dist_list = [Triangle(lb, mp, ub) for lb, mp, ub in zip(lower, x, upper)]
-    else:
+    if sampling_distribution not in valid_distributions:
         raise ValueError(f"Unsupported distribution: {sampling_distribution}")
 
-    joint_distribution = chaospy.J(*dist_list)
+    if sampling_method == "sobol":
+        # Draw `n` points from the open interval (lower, upper)^d.
+        # Note that scipy uses the half-open interval [lower, upper)^d internally.
+        # We apply a burn-in phase of 1, i.e. we skip the first point in the sequence
+        # and thus exclude the lower bound.
+        sampler = qmc.Sobol(d=len(lower), scramble=False, seed=seed)
+        _ = sampler.fast_forward(1)
+        sample_unscaled = sampler.random(n=n_samples)
 
-    np.random.seed(seed)
+    elif sampling_method == "halton":
+        sampler = qmc.Halton(d=len(lower), scramble=False, seed=seed)
+        sample_unscaled = sampler.random(n=n_samples)
 
-    sample = joint_distribution.sample(
-        size=n_samples,
-        rule=sampling_method,
-    ).T
-    return sample
+    elif sampling_method == "latin_hypercube":
+        sampler = qmc.LatinHypercube(d=len(lower), strength=1, seed=seed)
+        sample_unscaled = sampler.random(n=n_samples)
 
+    elif sampling_method == "random":
+        np.random.seed(seed)
+        sample_unscaled = np.random.sample(size=(n_samples, len(lower)))
 
-def get_internal_sampling_bounds(params, constraints):
-    params = params.copy(deep=True)
-    params["lower_bound"] = _extract_external_sampling_bound(params, "lower")
-    params["upper_bound"] = _extract_external_sampling_bound(params, "upper")
-
-    problematic = params.query("lower_bound >= upper_bound")
-
-    if len(problematic):
-        raise ValueError(
-            "Lower bound must be smaller than upper bound for all parameters. "
-            f"This is violated for:\n\n{problematic.to_string()}\n\n"
+    if sampling_distribution == "uniform":
+        sample_scaled = qmc.scale(sample_unscaled, lower, upper)
+    elif sampling_distribution == "triangular":
+        sample_scaled = triang.ppf(
+            sample_unscaled,
+            c=(x - lower) / (upper - lower),
+            loc=lower,
+            scale=upper - lower,
         )
 
-    lower, upper = get_internal_bounds(params=params, constraints=constraints)
-
-    for b in lower, upper:
-        if not np.isfinite(b).all():
-            raise ValueError(
-                "Sampling bounds of all free parameters must be finite to create a "
-                "parameter sample for multistart optimization."
-            )
-
-    return lower, upper
+    return sample_scaled
 
 
-def _extract_external_sampling_bound(params, bounds_type):
-    soft_name = f"soft_{bounds_type}_bound"
-    hard_name = f"{bounds_type}_bound"
-    if soft_name in params:
-        bounds = params[soft_name]
-    elif hard_name in params:
-        bounds = params[hard_name]
-    else:
-        raise ValueError(
-            f"{soft_name} or {hard_name} must be in params to sample start values."
-        )
-
-    return bounds
-
-
-def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_handling):
+def run_explorations(
+    func, primary_key, sample, batch_evaluator, n_cores, step_id, error_handling
+):
     """Do the function evaluations for the exploration phase.
 
     Args:
         func (callable): An already partialled version of
             ``internal_criterion_and_derivative_template`` where the following arguments
-            are still free: ``x``, ``task``, ``algorithm_info``, ``error_handling``,
+            are still free: ``x``, ``task``, ``algo_info``, ``error_handling``,
             ``error_penalty``, ``fixed_log_data``.
+        primary_key: The primary criterion entry of the local optimizer. Needed to
+            interpret the output of the internal criterion function.
         sample (numpy.ndarray): 2d numpy array where each row is a sampled internal
             parameter vector.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
@@ -351,17 +330,19 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
                 entries of the function evaluations.
 
     """
-    algo_info = {
-        "primary_criterion_entry": "dict",
-        "parallelizes": True,
-        "needs_scaling": False,
-        "name": "tiktak_explorer",
-    }
+    algo_info = AlgoInfo(
+        primary_criterion_entry=primary_key,
+        parallelizes=True,
+        needs_scaling=False,
+        name="tiktak_explorer",
+        disable_cache=True,
+        is_available=True,
+    )
 
     _func = partial(
         func,
         task="criterion",
-        algorithm_info=algo_info,
+        algo_info=algo_info,
         error_handling=error_handling,
         error_penalty={"constant": np.nan, "slope": np.nan},
     )
@@ -370,8 +351,7 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
     for x in sample:
         arguments.append({"x": x, "fixed_log_data": {"step": int(step_id)}})
 
-    if isinstance(batch_evaluator, str):
-        batch_evaluator = getattr(be, f"{batch_evaluator}_batch_evaluator")
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     criterion_outputs = batch_evaluator(
         _func,
@@ -382,7 +362,9 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
         error_handling="raise",
     )
 
-    raw_values = np.array([critval["value"] for critval in criterion_outputs])
+    values = [aggregate_func_output_to_value(c, primary_key) for c in criterion_outputs]
+
+    raw_values = np.array(values)
 
     is_valid = np.isfinite(raw_values)
 
@@ -398,12 +380,10 @@ def run_explorations(func, sample, batch_evaluator, n_cores, step_id, error_hand
     # this sorts from low to high values; internal criterion and derivative took care
     # of the sign switch.
     sorting_indices = np.argsort(valid_values)
-    sorted_criterion_outputs = [criterion_outputs[i] for i in sorting_indices]
 
     out = {
         "sorted_values": valid_values[sorting_indices],
         "sorted_sample": valid_sample[sorting_indices],
-        "sorted_criterion_outputs": sorted_criterion_outputs,
     }
 
     return out
@@ -470,6 +450,9 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
 
     valid_indices = [i for i, res in enumerate(results) if not isinstance(res, str)]
 
+    if not valid_indices:
+        return current_state, False
+
     valid_results = [results[i] for i in valid_indices]
     valid_starts = [starts[i] for i in valid_indices]
 
@@ -477,7 +460,7 @@ def update_convergence_state(current_state, starts, results, convergence_criteri
     valid_new_y = [res["solution_criterion"] for res in valid_results]
 
     best_index = np.argmin(valid_new_y)
-    if valid_new_y[best_index] < best_y:
+    if valid_new_y[best_index] <= best_y:
         best_x = valid_new_x[best_index]
         best_y = valid_new_y[best_index]
         best_res = valid_results[best_index]

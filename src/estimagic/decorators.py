@@ -12,75 +12,9 @@ provides a comprehensive overview.
 """
 import functools
 import warnings
+from typing import NamedTuple
 
-import numpy as np
-import pandas as pd
 from estimagic.exceptions import get_traceback
-from estimagic.parameters.process_constraints import process_constraints
-from estimagic.parameters.reparametrize import reparametrize_from_internal
-
-
-def numpy_interface(func=None, *, params=None, constraints=None, numpy_output=False):
-    """Convert x to params.
-
-    This decorated function receives a NumPy array of parameters and converts it to a
-    :class:`pandas.DataFrame` which can be handled by the user's criterion function.
-
-    For convenience, the decorated function can also be called directly with a
-    params DataFrame. In that case, the decorator does nothing.
-
-    Args:
-        func (callable): The function to which the decorator is applied.
-        params (pandas.DataFrame): See :ref:`params`.
-        constraints (list of dict): Contains constraints.
-        numpy_output (bool): Whether pandas objects in the output should also be
-            converted to numpy arrays.
-
-    Returns:
-        callable
-
-    """
-    constraints = [] if constraints is None else constraints
-
-    pc, pp = process_constraints(constraints, params)
-
-    fixed_values = pp["_internal_fixed_value"].to_numpy()
-    pre_replacements = pp["_pre_replacements"].to_numpy().astype(int)
-    post_replacements = pp["_post_replacements"].to_numpy().astype(int)
-
-    def decorator_numpy_interface(func):
-        @functools.wraps(func)
-        def wrapper_numpy_interface(x, *args, **kwargs):
-            if isinstance(x, pd.DataFrame):
-                p = x
-            elif isinstance(x, np.ndarray):
-                p = reparametrize_from_internal(
-                    internal=x,
-                    fixed_values=fixed_values,
-                    pre_replacements=pre_replacements,
-                    processed_constraints=pc,
-                    post_replacements=post_replacements,
-                    params=params,
-                    return_numpy=False,
-                )
-            else:
-                raise ValueError(
-                    "x must be a numpy array or DataFrame with 'value' column."
-                )
-
-            criterion_value = func(p, *args, **kwargs)
-
-            if isinstance(criterion_value, (pd.DataFrame, pd.Series)) and numpy_output:
-                criterion_value = criterion_value.to_numpy()
-
-            return criterion_value
-
-        return wrapper_numpy_interface
-
-    if callable(func):
-        return decorator_numpy_interface(func)
-    else:
-        return decorator_numpy_interface
 
 
 def catch(
@@ -203,3 +137,92 @@ def switch_sign(func):
         return switched
 
     return wrapper
+
+
+class AlgoInfo(NamedTuple):
+    primary_criterion_entry: str
+    name: str
+    parallelizes: bool
+    disable_cache: bool
+    needs_scaling: bool
+    is_available: bool
+
+
+def mark_minimizer(
+    func=None,
+    *,
+    primary_criterion_entry="value",
+    name=None,
+    parallelizes=False,
+    disable_cache=False,
+    needs_scaling=False,
+    is_available=True,
+):
+    """Decorator to mark a function as internal estimagic minimizer and add information.
+
+    Args:
+        func (callable): The function to be decorated
+        primary_criterion_entry (str): One of "value", "contributions",
+            "root_contributions" or "dict". Default: "value". This decides
+            which part of the output of the user provided criterion function
+            is needed by the internal optimizer.
+        name (str): The name of the internal algorithm.
+        parallelizes (bool): Must be True if an algorithm evaluates the criterion,
+            derivative or criterion_and_derivative in parallel.
+        disable_cache (bool): If True, no caching for the criterion function
+            or its derivatives are used.
+        needs_scaling (bool): Must be True if the algorithm is not reasonable
+            independent of the scaling of the parameters.
+        is_available (bool): Whether the algorithm is available. This is needed for
+            algorithms that require optional dependencies.
+
+    """
+    if name is None:
+        raise TypeError(
+            "mark_minimizer() missing 1 required keyword-only argument: 'name'"
+        )
+    elif not isinstance(name, str):
+        raise TypeError("name must be a string.")
+
+    valid_entries = ["value", "contributions", "root_contributions"]
+    if primary_criterion_entry not in valid_entries:
+        raise ValueError(
+            f"primary_criterion_entry must be one of {valid_entries} not "
+            f"{primary_criterion_entry}."
+        )
+
+    if not isinstance(parallelizes, bool):
+        raise TypeError("parallelizes must be a bool.")
+
+    if not isinstance(disable_cache, bool):
+        raise TypeError("disable_cache must be a bool.")
+
+    if not isinstance(needs_scaling, bool):
+        raise TypeError("needs_scaling must be a bool.")
+
+    if not isinstance(is_available, bool):
+        raise TypeError("is_available must be a bool.")
+
+    algo_info = AlgoInfo(
+        primary_criterion_entry=primary_criterion_entry,
+        name=name,
+        parallelizes=parallelizes,
+        disable_cache=disable_cache,
+        needs_scaling=needs_scaling,
+        is_available=is_available,
+    )
+
+    def decorator_mark_minimizer(func):
+        @functools.wraps(func)
+        def wrapper_mark_minimizer(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        wrapper_mark_minimizer._algorithm_info = algo_info
+
+        return wrapper_mark_minimizer
+
+    if callable(func):
+        return decorator_mark_minimizer(func)
+
+    else:
+        return decorator_mark_minimizer

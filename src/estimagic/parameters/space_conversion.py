@@ -3,11 +3,9 @@
 The functions in this module allow to convert between internal and external parameter
 vectors.
 
-
-An external parameter vector is the parameter vector as it was specified by the user.
-This external parameter vector might be subject to constraints, such as the condition
-that the first two parameters are equal.
-
+An external parameter vector is a possibly flattened version of the parameter vector as
+it was specified by the user. This external parameter vector might be subject to
+constraints, such as the condition that the first two parameters are equal.
 
 An internal parameter vector is an internal representation of the parameters in a
 different space. The internal parameters are meaningless and have no direct
@@ -34,17 +32,118 @@ In the following, let n_external be the length of th external parameter vector a
 n_internal the length of the internal parameter vector.
 
 """
+from functools import partial
+from typing import NamedTuple
+
 import estimagic.parameters.kernel_transformations as kt
 import numpy as np
-import pandas as pd
+from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.tree_conversion import FlatParams
+
+
+def get_space_converter(
+    flat_params,
+    flat_constraints,
+):
+    """Get functions to convert between in-/external space of params and derivatives.
+
+    In the internal parameter space the optimization problem is unconstrained except
+    for bounds.
+
+    Args:
+        flat_params (FlatParams): NamedTuple with flattened parameter values and bounds.
+        flat_constraints (list): List of constraints with processed selector fields.
+
+    Returns:
+        SpaceConverter
+        FlatParams: NamedTuple of 1d numpy array with flat and internal params and
+            bounds.
+
+    """
+    transformations, constr_info = process_constraints(
+        constraints=flat_constraints,
+        params_vec=flat_params.values,
+        lower_bounds=flat_params.lower_bounds,
+        upper_bounds=flat_params.upper_bounds,
+        param_names=flat_params.names,
+    )
+    _params_to_internal = partial(
+        reparametrize_to_internal,
+        internal_free=constr_info["internal_free"],
+        transformations=transformations,
+    )
+
+    _params_from_internal = partial(
+        reparametrize_from_internal,
+        fixed_values=constr_info["internal_fixed_values"],
+        pre_replacements=constr_info["pre_replacements"],
+        transformations=transformations,
+        post_replacements=constr_info["post_replacements"],
+    )
+
+    _dim_internal = int(constr_info["internal_free"].sum())
+
+    _pre_replace_jac = pre_replace_jacobian(
+        pre_replacements=constr_info["pre_replacements"], dim_in=_dim_internal
+    )
+
+    _post_replace_jac = post_replace_jacobian(
+        post_replacements=constr_info["post_replacements"]
+    )
+
+    _derivative_to_internal = partial(
+        convert_external_derivative_to_internal,
+        fixed_values=constr_info["internal_fixed_values"],
+        pre_replacements=constr_info["pre_replacements"],
+        transformations=transformations,
+        pre_replace_jac=_pre_replace_jac,
+        post_replace_jac=_post_replace_jac,
+    )
+
+    _has_transforming_constraints = bool(transformations)
+
+    converter = SpaceConverter(
+        params_to_internal=_params_to_internal,
+        params_from_internal=_params_from_internal,
+        derivative_to_internal=_derivative_to_internal,
+        has_transforming_constraints=_has_transforming_constraints,
+    )
+
+    free_mask = constr_info["internal_free"]
+    if flat_params.soft_lower_bounds is not None and not _has_transforming_constraints:
+        _soft_lower = flat_params.soft_lower_bounds[free_mask]
+    else:
+        _soft_lower = None
+
+    if flat_params.soft_upper_bounds is not None and not _has_transforming_constraints:
+        _soft_upper = flat_params.soft_upper_bounds[free_mask]
+    else:
+        _soft_upper = None
+
+    internal_params = FlatParams(
+        values=converter.params_to_internal(flat_params.values),
+        lower_bounds=constr_info["lower_bounds"],
+        upper_bounds=constr_info["upper_bounds"],
+        names=flat_params.names,
+        free_mask=free_mask,
+        soft_lower_bounds=_soft_lower,
+        soft_upper_bounds=_soft_upper,
+    )
+
+    return converter, internal_params
+
+
+class SpaceConverter(NamedTuple):
+    params_to_internal: callable
+    params_from_internal: callable
+    derivative_to_internal: callable
+    has_transforming_constraints: bool
 
 
 def reparametrize_to_internal(
     external,
     internal_free,
-    processed_constraints,
-    scaling_factor=None,
-    scaling_offset=None,
+    transformations,
 ):
     """Convert a params DataFrame into a numpy array of internal parameters.
 
@@ -53,46 +152,31 @@ def reparametrize_to_internal(
             values or params DataFrame.
         internal_free (np.ndarray): 1d array of lenth n_external that determines
             which parameters are free.
-        processed_constraints (list): Processed and consolidated constraints. The
-            processed constraints contain information on the transformations that have
-            to be done.
-        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
+        transformations (list): Processed transforming constraints.
 
     Returns:
         internal_params (numpy.ndarray): 1d numpy array of free reparametrized
             parameters.
 
     """
-    if isinstance(external, pd.DataFrame):
-        external = external["value"].to_numpy()
-
     with_internal_values = external.copy()
 
-    for constr in processed_constraints:
+    for constr in transformations:
         func = getattr(kt, f"{constr['type']}_to_internal")
 
         with_internal_values[constr["index"]] = func(external[constr["index"]], constr)
 
     internal = with_internal_values[internal_free]
 
-    scaled = kt.scale_to_internal(
-        internal, scaling_factor=scaling_factor, scaling_offset=scaling_offset
-    )
-
-    return scaled
+    return internal
 
 
 def reparametrize_from_internal(
     internal,
     fixed_values,
     pre_replacements,
-    processed_constraints,
+    transformations,
     post_replacements,
-    params,
-    return_numpy=True,
-    scaling_factor=None,
-    scaling_offset=None,
 ):
     """Convert a numpy array of internal parameters to a params DataFrame.
 
@@ -105,32 +189,21 @@ def reparametrize_from_internal(
             element in array contains the position of the internal parameter that has to
             be copied to the i_th position of the external parameter vector or -1 if no
             value has to be copied.
-        params (pandas.DataFrame): See :ref:`params`.
-        return_numpy (bool): If True, a 1d array with flattened parameters is returned.
-        processed_constraints (list): List of processed and consolidated constraint
-            dictionaries. Can have the types "linear", "probability", "covariance"
-            and "sdcorr".
+        transformations (list): Processed transforming constraints.
         post_replacements (numpy.ndarray): 1d numpy array of lenth n_external. The i_th
             element contains the position a parameter in the transformed parameter
             vector that has to be copied to duplicated and copied to the i_th position
             of the external parameter vector.
-        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no scaling offset is used.
 
     Returns:
         numpy.ndarray: Array with external parameters
 
     """
-    # undo scaling
-    internal = kt.scale_from_internal(
-        internal, scaling_factor=scaling_factor, scaling_offset=scaling_offset
-    )
-
     # do pre-replacements
     external_values = pre_replace(internal, fixed_values, pre_replacements)
 
     # do transformations
-    for constr in processed_constraints:
+    for constr in transformations:
         func = getattr(kt, f"{constr['type']}_from_internal")
         external_values[constr["index"]] = func(
             external_values[constr["index"]], constr
@@ -139,13 +212,7 @@ def reparametrize_from_internal(
     # do post-replacements
     external_values = post_replace(external_values, post_replacements)
 
-    if return_numpy:
-        out = external_values
-    else:
-        out = params.copy()
-        out["value"] = external_values
-
-    return out
+    return external_values
 
 
 def convert_external_derivative_to_internal(
@@ -153,12 +220,10 @@ def convert_external_derivative_to_internal(
     internal_values,
     fixed_values,
     pre_replacements,
-    processed_constraints,
+    transformations,
     post_replacements=None,
     pre_replace_jac=None,
     post_replace_jac=None,
-    scaling_factor=None,
-    scaling_offset=None,
 ):
     r"""Compute the derivative of the criterion utilizing an external derivative.
 
@@ -176,7 +241,7 @@ def convert_external_derivative_to_internal(
             \frac{\mathrm{d}g}{\mathrm{d}x}(x)
 
     We assume that the user provides the first part of the above product. The
-    second part denotes the derivative of the paramter transform from inner
+    second part denotes the derivative of the parameter transform from inner
     to external.
 
     Args:
@@ -190,31 +255,21 @@ def convert_external_derivative_to_internal(
             element in array contains the position of the internal parameter that has to
             be copied to the i_th position of the external parameter vector or -1 if no
             value has to be copied.
-        processed_constraints (list): List of processed and consolidated constraint
-            dictionaries. Can have the types "linear", "probability", "covariance"
-            and "sdcorr".
+        transformations (list): Processed transforming constraints.
         post_replacements (numpy.ndarray): 1d numpy array of lenth n_external. The i_th
             element contains the position a parameter in the transformed parameter
             vector that has to be copied to duplicated and copied to the i_th position
             of the external parameter vector.
         pre_replace_jac (np.ndarray): 2d Array with the jacobian of pre_replace
         post_replacment_jacobian (np.ndarray): 2d Array with the jacobian post_replace
-        scaling_factor (np.ndarray or None): If None, no scaling factor is used.
-        scaling_offset (np.ndarray or None): If None, no_scaling_factor is used.
-
 
     Returns:
         deriv (numpy.ndarray): The gradient or Jacobian.
 
     """
     dim_in = len(internal_values)
-    internal_unscaled_values = kt.scale_from_internal(
-        internal_values,
-        scaling_factor=scaling_factor,
-        scaling_offset=scaling_offset,
-    )
 
-    pre_replaced = pre_replace(internal_unscaled_values, fixed_values, pre_replacements)
+    pre_replaced = pre_replace(internal_values, fixed_values, pre_replacements)
 
     if post_replacements is None and post_replace_jac is None:
         raise ValueError(
@@ -227,7 +282,7 @@ def convert_external_derivative_to_internal(
     if post_replace_jac is None:
         post_replace_jac = post_replace_jacobian(post_replacements)
 
-    transform_jac = transformation_jacobian(processed_constraints, pre_replaced)
+    transform_jac = transformation_jacobian(transformations, pre_replaced)
 
     external_derivative = np.atleast_2d(external_derivative)
     tall_external = external_derivative.shape[0] > external_derivative.shape[1]
@@ -238,8 +293,6 @@ def convert_external_derivative_to_internal(
         transform_jac,
         pre_replace_jac,
     ]
-    if scaling_factor is not None:
-        mat_list.append(np.diag(scaling_factor))
 
     if tall_external:
         deriv = _multiply_from_right(mat_list)
@@ -351,7 +404,7 @@ def pre_replace_jacobian(pre_replacements, dim_in):
     return jacobian
 
 
-def transformation_jacobian(processed_constraints, pre_replaced):
+def transformation_jacobian(transformations, pre_replaced):
     """Return Jacobian of constraint transformation step.
 
     The Jacobian of the constraint transformation step is build as a block matrix
@@ -360,9 +413,7 @@ def transformation_jacobian(processed_constraints, pre_replaced):
     in case the external paramater is a transformed version of the internal.
 
     Args:
-        processed_constraints (list): List of processed and consolidated constraint
-            dictionaries. Can have the types "linear", "probability", "covariance"
-            and "sdcorr".
+        transformations (list): Processed transforming constraints.
         pre_replaced (numpy.ndarray): 1d numpy array with pre-replaced params.
         dim (int): The dimension of the external parameters.
 
@@ -373,7 +424,7 @@ def transformation_jacobian(processed_constraints, pre_replaced):
     dim = len(pre_replaced)
     jacobian = np.eye(dim)
 
-    for constr in processed_constraints:
+    for constr in transformations:
         block_indices = constr["index"]
         jacobian_func = getattr(kt, f"{constr['type']}_from_internal_jacobian")
         jac = jacobian_func(pre_replaced[block_indices], constr)

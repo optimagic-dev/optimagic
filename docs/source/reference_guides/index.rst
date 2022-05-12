@@ -18,9 +18,9 @@ Optimization
     .. autofunction:: minimize
 
 
-.. dropdown:: plot_univariate_effects
+.. dropdown:: slice_plot
 
-    .. autofunction:: plot_univariate_effects
+    .. autofunction:: slice_plot
 
 
 
@@ -73,6 +73,16 @@ Estimation
 .. dropdown:: estimation_table
 
     .. autofunction:: estimation_table
+
+
+.. dropdown:: render_html
+
+    .. autofunction:: render_html
+
+
+.. dropdown:: render_latex
+
+    .. autofunction:: render_latex
 
 
 

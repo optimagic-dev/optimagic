@@ -17,8 +17,8 @@ def trid_scalar_criterion(params):
     Returns:
         int: Trid function output.
     """
-    x = params["value"].to_numpy()
-    return ((params["value"] - 1) ** 2).sum() - (params["value"][1:] * x[:-1]).sum()
+    x = _get_x(params)
+    return ((x - 1) ** 2).sum() - (x[1:] * x[:-1]).sum()
 
 
 def trid_gradient(params):
@@ -31,7 +31,7 @@ def trid_gradient(params):
     Returns:
         np.ndarray: gradient of trid function.
     """
-    x = params["value"].to_numpy()
+    x = _get_x(params)
     l1 = np.insert(x, 0, 0)
     l1 = np.delete(l1, [-1])
     l2 = np.append(x, 0)
@@ -96,7 +96,7 @@ def rotated_hyper_ellipsoid_gradient(params):
     Returns:
         np.ndarray: gradient of rotated hyper ellipsoid function.
     """
-    x = params["value"].to_numpy()
+    x = _get_x(params)
     return np.arange(2 * len(x), 0, -2) * x
 
 
@@ -126,7 +126,7 @@ def rotated_hyper_ellipsoid_contributions(params):
     Returns:
         np.ndarray: array with contributions of function output as elements.
     """
-    x = params["value"].to_numpy()
+    x = _get_x(params)
     dim = len(params)
     out = np.zeros(dim)
     for i in range(dim):
@@ -179,7 +179,7 @@ def rosenbrock_gradient(params):
     Returns:
         np.ndarray: gradient of rosenbrock function.
     """
-    x = params["value"].to_numpy()
+    x = _get_x(params)
     l1 = np.delete(x, [-1])
     l1 = np.append(l1, 0)
     l2 = np.insert(x, 0, 0)
@@ -188,7 +188,7 @@ def rosenbrock_gradient(params):
     l3 = np.delete(l3, [-1])
     l4 = np.delete(x, [0])
     l4 = np.append(l4, 0)
-    l5 = np.full((len(params["value"]) - 1), 2)
+    l5 = np.full((len(x) - 1), 2)
     l5 = np.append(l5, 0)
     return 100 * (4 * (l1**3) + 2 * l2 - 2 * (l3**2) - 4 * (l4 * x)) + 2 * l1 - l5
 
@@ -217,7 +217,7 @@ def rosenbrock_contributions(params):
     Returns:
         np.ndarray: array with contributions of function output as elements.
     """
-    x = params["value"].to_numpy()
+    x = _get_x(params)
     dim = len(params)
     out = np.zeros(dim)
     for i in range(dim - 1):
@@ -263,7 +263,7 @@ def sos_dict_criterion(params):
         function output as elements.
 
     """
-    root_contribs = params["value"].to_numpy()
+    root_contribs = _get_x(params)
     out = _out_dict_from_root_contribs(root_contribs)
     return out
 
@@ -294,17 +294,17 @@ def sos_dict_criterion_with_pd_objects(params):
 
 def sos_scalar_criterion(params):
     """Calculate the sum of squares."""
-    return (params["value"].to_numpy() ** 2).sum()
+    return (_get_x(params) ** 2).sum()
 
 
 def sos_gradient(params):
     """Calculate the gradient of the sum of squares function."""
-    return 2 * params["value"].to_numpy()
+    return 2 * _get_x(params)
 
 
 def sos_jacobian(params):
     """Calculate the Jacobian of the sum of squares function."""
-    return np.diag(2 * params["value"])
+    return np.diag(2 * _get_x(params))
 
 
 def sos_ls_jacobian(params):
@@ -313,51 +313,31 @@ def sos_ls_jacobian(params):
 
 def sos_pandas_gradient(params):
     """Calculate the gradient of the sum of squares function."""
-    return 2 * params["value"]
+    return 2 * pd.Series(_get_x(params))
 
 
 def sos_pandas_jacobian(params):
     """Calculate the Jacobian of the sum of squares function."""
-    return pd.DataFrame(np.diag(2 * params["value"]))
+    return pd.DataFrame(np.diag(2 * _get_x(params)))
 
 
 def sos_criterion_and_gradient(params):
     """Calculate sum of squares criterion value and gradient."""
-    x = params["value"].to_numpy()
+    x = _get_x(params)
     return (x**2).sum(), 2 * x
 
 
 def sos_criterion_and_jacobian(params):
     """Calculate sum of squares criterion value and Jacobian."""
-    x = params["value"].to_numpy()
+    x = _get_x(params)
     return {"contributions": x**2, "value": (x**2).sum()}, np.diag(2 * x)
 
 
-def sos_dict_derivative(params):
-    x = params["value"].to_numpy()
-
-    out = {
-        "value": 2 * x,
-        "contributions": np.diag(2 * x),
-        "root_contributions": np.eye(len(x)),
-    }
-    return out
-
-
-def sos_dict_derivative_with_pd_objects(params):
-    dict_np = sos_dict_derivative(params)
-    out = {
-        "value": pd.Series(dict_np["value"]),
-        "contributions": pd.DataFrame(dict_np["contributions"]),
-        "root_contributions": pd.DataFrame(dict_np["root_contributions"]),
-    }
-    return out
-
-
-def sos_double_dict_criterion_and_derivative_with_pd_objects(params):
-    val = sos_dict_criterion_with_pd_objects(params)
-    deriv = sos_dict_derivative_with_pd_objects(params)
-    return val, deriv
+sos_dict_derivative = {
+    "value": sos_gradient,
+    "contributions": sos_jacobian,
+    "root_contributions": sos_ls_jacobian,
+}
 
 
 def _out_dict_from_root_contribs(root_contribs):
@@ -377,3 +357,11 @@ def _out_dict_from_contribs(contribs):
         "root_contributions": np.sqrt(contribs),
     }
     return out
+
+
+def _get_x(params):
+    if isinstance(params, pd.DataFrame) and "value" in params:
+        x = params["value"].to_numpy()
+    else:
+        x = params
+    return x
