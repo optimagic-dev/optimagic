@@ -140,6 +140,8 @@ def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
 
 
 def _add_history_collection(algorithm):
+    """Partial a history container into all functions that define the optimization."""
+
     @functools.wraps(algorithm)
     def wrapper_add_history_collection(**kwargs):
         func_names = {"criterion", "derivative", "criterion_and_derivative"}
