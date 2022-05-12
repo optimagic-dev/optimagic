@@ -11,7 +11,6 @@ from estimagic.optimization.neldermead import neldermead_parallel
 
 # function to test
 def sphere(x, *args, **kwargs):
-
     return (x**2).sum()
 
 
@@ -121,7 +120,7 @@ test_cases = [
 @pytest.mark.parametrize("algo_options", test_cases)
 def test_neldermead_correct_algo_options(algo_options):
     res = neldermead_parallel(
-        criterion_and_derivative=sphere,
+        criterion=sphere,
         x=np.array([1, -5, 3]),
         **algo_options,
     )
@@ -131,7 +130,7 @@ def test_neldermead_correct_algo_options(algo_options):
 # test if maximum number of iterations works
 def test_fides_stop_after_one_iteration():
     res = neldermead_parallel(
-        criterion_and_derivative=sphere,
+        criterion=sphere,
         x=np.array([1, -5, 3]),
         stopping_max_iterations=1,
     )

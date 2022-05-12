@@ -6,8 +6,6 @@
 - with and without derivatives
 
 """
-import itertools
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -15,24 +13,36 @@ from estimagic.examples.criterion_functions import sos_dict_criterion
 from estimagic.examples.criterion_functions import sos_dict_derivative
 from estimagic.exceptions import TableExistsError
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
+from pybaum import tree_just_flatten
+
+
+def flexible_sos_ls(params):
+    return {"root_contributions": params}
 
 
 algorithms = ["scipy_lbfgsb", "scipy_ls_dogbox"]
 derivatives = [None, sos_dict_derivative]
-test_cases = list(itertools.product(algorithms, derivatives))
+params = [pd.DataFrame({"value": np.arange(3)}), np.arange(3), {"a": 1, "b": 2, "c": 3}]
+
+test_cases = []
+for algo in algorithms:
+    for p in params:
+        test_cases.append((algo, p))
 
 
-@pytest.mark.parametrize("algorithm, derivative", test_cases)
-def test_optimization_with_valid_logging(algorithm, derivative):
+@pytest.mark.parametrize("algorithm, params", test_cases)
+def test_optimization_with_valid_logging(algorithm, params):
     res = minimize(
-        sos_dict_criterion,
-        pd.Series([1, 2, 3], name="value").to_frame(),
+        flexible_sos_ls,
+        params=params,
         algorithm=algorithm,
-        derivative=derivative,
         logging="logging.db",
     )
-    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(3))
+    registry = get_registry(extended=True)
+    flat = np.array(tree_just_flatten(res["solution_params"], registry=registry))
+    aaae(flat, np.zeros(3))
 
 
 def test_optimization_with_existing_exsting_database():

@@ -1,25 +1,67 @@
+import functools
 import inspect
 import warnings
 from functools import partial
 
 import numpy as np
 from estimagic.logging.database_utilities import update_row
-from estimagic.optimization import AVAILABLE_ALGORITHMS
+from estimagic.optimization import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
 
 
-def get_algorithm(
-    algorithm,
+def process_user_algorithm(algorithm):
+    """Process the user specfied algorithm.
+
+    If the algorithm is a callable, this function just reads out the algorithm_info
+    and available options. If algorithm is a string it loads the algorithm function
+    from the available algorithms.
+
+    Args:
+        algorithm (str or callable): The user specified algorithm.
+
+    Returns:
+        callable: the raw internal algorithm
+        AlgoInfo: Attributes of the algorithm
+        set: The free arguments of the algorithm.
+
+    """
+    if isinstance(algorithm, str):
+        try:
+            # Use ALL_ALGORITHMS and not just AVAILABLE_ALGORITHMS such that the
+            # algorithm specific error message with installation instruction will be
+            # reached if an optional dependency is not installed.
+            algorithm = ALL_ALGORITHMS[algorithm]
+        except KeyError:
+            proposed = propose_alternatives(algorithm, list(ALL_ALGORITHMS))
+            raise ValueError(
+                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
+            ) from None
+
+    algo_info = algorithm._algorithm_info
+
+    arguments = set(inspect.signature(algorithm).parameters)
+
+    if isinstance(algorithm, partial):
+        partialed_in = set(algorithm.args).union(set(algorithm.keywords))
+        arguments = arguments.difference(partialed_in)
+
+    return algorithm, algo_info, arguments
+
+
+def get_final_algorithm(
+    raw_algorithm,
+    algo_info,
+    valid_kwargs,
     lower_bounds,
     upper_bounds,
     algo_options,
     logging,
     db_kwargs,
 ):
-    """Get algorithm-function with partialled optionts
+    """Get algorithm-function with partialled options.
 
-    The resulting function only depends on ``x``,  ``criterion_and_derivative``
-    and ``step_id``.
+    The resulting function only depends on ``x``,  the relevant criterion functions
+    and derivatives and ``step_id``.
 
     Args:
         algorithm (str or callable): String with the name of an algorithm or internal
@@ -36,123 +78,86 @@ def get_algorithm(
         callable: The algorithm.
 
     """
-    internal_algorithm, algo_name = _process_user_algorithm(algorithm)
+    algo_name = algo_info.name
 
     internal_options = _adjust_options_to_algorithm(
         algo_options=algo_options,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
-        algorithm=internal_algorithm,
         algo_name=algo_name,
+        valid_kwargs=valid_kwargs,
     )
 
-    partialled_algorithm = partial(internal_algorithm, **internal_options)
+    partialled_algorithm = partial(raw_algorithm, **internal_options)
 
-    algorithm = partial(
-        _algorithm_with_logging_template,
-        algorithm=partialled_algorithm,
+    raw_algorithm = _add_logging_to_algorithm(
+        partialled_algorithm,
         logging=logging,
         db_kwargs=db_kwargs,
     )
 
-    return algorithm
+    return raw_algorithm
 
 
-def _process_user_algorithm(algorithm):
-    """Process the user specfied algorithm.
+def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
+    """Add logging of status to the algorithm."""
 
-    Args:
-        algorithm (str or callable): The user specified algorithm.
+    def decorator_add_logging_to_algorithm(algorithm):
+        @functools.wraps(algorithm)
+        def wrapper_add_logging_algorithm(**kwargs):
+            step_id = int(kwargs["step_id"])
 
-    Returns:
-        callable: The internal algorithm.
-        str: The name of the algorithm.
+            _kwargs = {k: v for k, v in kwargs.items() if k != "step_id"}
 
-    """
-    if isinstance(algorithm, str):
-        algo_name = algorithm
+            if logging:
+                update_row(
+                    data={"status": "running"},
+                    rowid=step_id,
+                    table_name="steps",
+                    **db_kwargs,
+                )
+
+            for task in ["criterion", "derivative", "criterion_and_derivative"]:
+                if task in _kwargs:
+                    _kwargs[task] = partial(
+                        _kwargs[task], fixed_log_data={"step": step_id}
+                    )
+
+            res = algorithm(**_kwargs)
+
+            if logging:
+                update_row(
+                    data={"status": "complete"},
+                    rowid=step_id,
+                    table_name="steps",
+                    **db_kwargs,
+                )
+
+            return res
+
+        return wrapper_add_logging_algorithm
+
+    if callable(algorithm):
+        return decorator_add_logging_to_algorithm(algorithm)
     else:
-        algo_name = getattr(algorithm, "name", "your algorithm")
-
-    if isinstance(algorithm, str):
-        try:
-            algorithm = AVAILABLE_ALGORITHMS[algorithm]
-        except KeyError:
-            proposed = propose_alternatives(algorithm, list(AVAILABLE_ALGORITHMS))
-            raise ValueError(
-                f"Invalid algorithm: {algorithm}. Did you mean {proposed}?"
-            ) from None
-
-    return algorithm, algo_name
-
-
-def _algorithm_with_logging_template(
-    criterion_and_derivative,
-    x,
-    step_id,
-    algorithm,
-    logging,
-    db_kwargs,
-):
-    """Wrapped algorithm that logs its status.
-
-    Args:
-        criterion_and_derivative (callable): Version of the
-            ``internal_criterion_and_derivative_template`` all arguments except for
-            ``x``, ``task`` and ``fixed_log_data`` have been partialled in.
-        x (np.ndarray): Parameter vector.
-        step_id (int): Internal id of the optimization step.
-        logging (bool): Whether logging is used.
-        algorithm (callable): The internal algorithm where all argument except for
-            ``x`` and ``criterion_and_derivative`` are already partialled in.
-        db_kwargs (dict): Dict with the entries "database", "path" and "fast_logging"
-
-
-    Returns:
-        dict: Same result as internal algorithm.
-
-    """
-
-    if logging:
-        step_id = int(step_id)
-        update_row(
-            data={"status": "running"},
-            rowid=step_id,
-            table_name="steps",
-            **db_kwargs,
-        )
-
-    func = partial(criterion_and_derivative, fixed_log_data={"step": step_id})
-    res = algorithm(func, x)
-
-    if logging:
-        update_row(
-            data={"status": "complete"},
-            rowid=step_id,
-            table_name="steps",
-            **db_kwargs,
-        )
-
-    return res
+        return decorator_add_logging_to_algorithm
 
 
 def _adjust_options_to_algorithm(
-    algo_options, lower_bounds, upper_bounds, algorithm, algo_name
+    algo_options,
+    lower_bounds,
+    upper_bounds,
+    algo_name,
+    valid_kwargs,
 ):
     """Reduce the algo_options and check if bounds are compatible with algorithm."""
 
     # convert algo option keys to valid Python arguments
     algo_options = {key.replace(".", "_"): val for key, val in algo_options.items()}
 
-    valid = set(inspect.signature(algorithm).parameters)
+    reduced = {key: val for key, val in algo_options.items() if key in valid_kwargs}
 
-    if isinstance(algorithm, partial):
-        partialed_in = set(algorithm.args).union(set(algorithm.keywords))
-        valid = valid.difference(partialed_in)
-
-    reduced = {key: val for key, val in algo_options.items() if key in valid}
-
-    ignored = {key: val for key, val in algo_options.items() if key not in valid}
+    ignored = {key: val for key, val in algo_options.items() if key not in valid_kwargs}
 
     if ignored:
         warnings.warn(
@@ -160,24 +165,24 @@ def _adjust_options_to_algorithm(
             f"with {algo_name}:\n\n {ignored}"
         )
 
-    if "lower_bounds" not in valid and not (lower_bounds == -np.inf).all():
+    if "lower_bounds" not in valid_kwargs and not (lower_bounds == -np.inf).all():
         raise ValueError(
             f"{algo_name} does not support lower bounds but your optimization "
             "problem has lower bounds (either because you specified them explicitly "
             "or because they were implied by other constraints)."
         )
 
-    if "upper_bounds" not in valid and not (upper_bounds == np.inf).all():
+    if "upper_bounds" not in valid_kwargs and not (upper_bounds == np.inf).all():
         raise ValueError(
             f"{algo_name} does not support upper bounds but your optimization "
             "problem has upper bounds (either because you specified them explicitly "
             "or because they were implied by other constraints)."
         )
 
-    if "lower_bounds" in valid:
+    if "lower_bounds" in valid_kwargs:
         reduced["lower_bounds"] = lower_bounds
 
-    if "upper_bounds" in valid:
+    if "upper_bounds" in valid_kwargs:
         reduced["upper_bounds"] = upper_bounds
 
     return reduced

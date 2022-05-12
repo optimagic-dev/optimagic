@@ -13,7 +13,7 @@ from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
-criteria = [sos_dict_criterion, sos_scalar_criterion]
+criteria = [sos_scalar_criterion, sos_dict_criterion]
 
 
 @pytest.fixture
@@ -32,7 +32,6 @@ test_cases = product(criteria, ["maximize", "minimize"])
 def test_multistart_minimize_with_sum_of_squares_at_defaults(
     criterion, direction, params
 ):
-
     if direction == "minimize":
         res = minimize(
             criterion=criterion,
@@ -52,7 +51,7 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
     ms_info = res["multistart_info"]
     assert len(ms_info["exploration_sample"]) == 40
     assert len(ms_info["exploration_results"]) == 40
-    assert all(isinstance(entry, dict) for entry in ms_info["exploration_results"])
+    assert all(isinstance(entry, float) for entry in ms_info["exploration_results"])
     assert all(isinstance(entry, dict) for entry in ms_info["local_optima"])
     assert all(isinstance(entry, pd.DataFrame) for entry in ms_info["start_parameters"])
     assert np.allclose(res["solution_criterion"], 0)
@@ -60,7 +59,11 @@ def test_multistart_minimize_with_sum_of_squares_at_defaults(
 
 
 def test_multistart_with_existing_sample(params):
-    options = {"sample": np.arange(20).reshape(5, 4) / 10}
+    sample = pd.DataFrame(
+        np.arange(20).reshape(5, 4) / 10,
+        columns=params.index,
+    )
+    options = {"sample": sample}
 
     res = minimize(
         criterion=sos_dict_criterion,
@@ -162,3 +165,16 @@ def test_error_is_raised_with_transforming_constraints(params):
 def _params_list_to_aray(params_list):
     data = [params["value"].tolist() for params in params_list]
     return np.array(data)
+
+
+def test_multistart_with_numpy_params():
+    res = minimize(
+        criterion=lambda params: params @ params,
+        params=np.arange(5),
+        algorithm="scipy_lbfgsb",
+        soft_lower_bounds=np.full(5, -10),
+        soft_upper_bounds=np.full(5, 10),
+        multistart=True,
+    )
+
+    res["solution_params"]

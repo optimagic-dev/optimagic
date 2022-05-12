@@ -1,9 +1,10 @@
 """Implement the fides optimizer."""
 import logging
-from functools import partial
 
 import numpy as np
 from estimagic.config import IS_FIDES_INSTALLED
+from estimagic.decorators import mark_minimizer
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_GRADIENT_TOLERANCE
 from estimagic.optimization.algo_options import CONVERGENCE_ABSOLUTE_PARAMS_TOLERANCE
@@ -16,6 +17,14 @@ if IS_FIDES_INSTALLED:
     from fides import Optimizer
 
 
+@mark_minimizer(
+    name="fides",
+    primary_criterion_entry="value",
+    disable_cache=False,
+    needs_scaling=False,
+    parallelizes=False,
+    is_available=IS_FIDES_INSTALLED,
+)
 def fides(
     criterion_and_derivative,
     x,
@@ -45,9 +54,9 @@ def fides(
 
     """
     if not IS_FIDES_INSTALLED:
-        raise NotImplementedError(
-            "The fides package is not installed. You can install it with "
-            "`pip install fides>=0.7.4`."
+        raise NotInstalledError(
+            "The 'fides' algorithm requires the fides package to be installed. "
+            "You can install it with `pip install fides>=0.7.4`."
         )
 
     fides_options = {
@@ -68,23 +77,10 @@ def fides(
         "xtol": convergence_absolute_params_tolerance,
     }
 
-    algo_info = {
-        "primary_criterion_entry": "value",
-        "parallelizes": False,
-        "needs_scaling": False,
-        "name": "fides",
-    }
-
-    fun = partial(
-        criterion_and_derivative,
-        task="criterion_and_derivative",
-        algorithm_info=algo_info,
-    )
-
     hessian_instance = _create_hessian_updater_from_user_input(hessian_update_strategy)
 
     opt = Optimizer(
-        fun=fun,
+        fun=criterion_and_derivative,
         lb=lower_bounds,
         ub=upper_bounds,
         verbose=logging.ERROR,

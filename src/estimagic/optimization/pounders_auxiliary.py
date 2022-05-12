@@ -173,7 +173,7 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
 
 
 def solve_subproblem(
-    solution,
+    x_accepted,
     main_model,
     lower_bounds,
     upper_bounds,
@@ -181,22 +181,19 @@ def solve_subproblem(
     solver,
     *,
     maxiter,
-    maxiter_steepest_descent,
-    step_size_newton,
-    ftol_abs,
-    ftol_scaled,
-    xtol,
+    maxiter_gradient_descent,
     gtol_abs,
     gtol_rel,
     gtol_scaled,
-    steptol,
+    gtol_abs_conjugate_gradient,
+    gtol_rel_conjugate_gradient,
     k_easy,
     k_hard
 ):
     """Solve the quadratic subproblem.
 
     Args:
-        solution (np.ndarray): Current solution vector.
+        x_accepted (np.ndarray): Currently accepted candidate vector of shape (n,).
         delta (float): Current trust region radius.
         main_model (namedtuple): Named tuple containing the parameters of the
             main model, i.e. "linear_terms" and "square terms".
@@ -212,28 +209,26 @@ def solve_subproblem(
             - "bntr" (Bounded Newton Trust-Region), which supports bound constraints
             - "gqtpar" (Nearly exact trust-region solver using an iterative method),
                 which does not support bound constraints.
-        solver (str): Trust-region subsolver to use. Currently, two solvers
+        solver (str): Trust-region subsolver to use. Currently, two internal solvers
             are supported:
             - "BNTR" (default, supports bound constraints)
             - "GQTPAR (does not support bound constraints)
         maxiter (int): Maximum number of iterations to perform when solving the
             trust-region subproblem.
-        maxiter_steepest_descent (int): Maximum number of steepest descent iterations
+        maxiter_gradient_descent (int): Maximum number of gradient descent iterations
             to perform when the trust-region subsolver BNTR is used.
-        step_size_newton (float): Parameter to scale the size of the newton step
-            when the trust-region subsolver BNTR is used.
-        ftol_abs (float): Convergence tolerance for the absolute difference
-            between f(k+1) - f(k) in trust-region subproblem ("BNTR").
-        ftol_scaled (float): Convergence tolerance for the scaled difference
-            between f(k+1) - f(k) in trust-region subproblem ("BNTR").
-        xtol (float): Convergence tolerance for the absolute difference
-            between max(x(k+1) - x(k)) in trust-region subproblem ("BNTR").
         gtol_abs (float): Convergence tolerance for the absolute gradient norm
             in the trust-region subproblem ("BNTR").
         gtol_rel (float): Convergence tolerance for the relative gradient norm
             in the trust-region subproblem ("BNTR").
         gtol_scaled (float): Convergence tolerance for the scaled gradient norm
             in the trust-region subproblem ("BNTR").
+        gtol_abs_conjugate_gradient (float): Convergence tolerance for the absolute
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
+        gtol_rel_conjugate_gradient (float): Convergence tolerance for the relative
+            gradient norm in the conjugate gradient step of the trust-region
+            subproblem ("BNTR").
         k_easy (float): topping criterion for the "easy" case in the trust-region
             subproblem ("GQTPAR").
         k_hard (float): Stopping criterion for the "hard" case in the trust-region
@@ -249,21 +244,20 @@ def solve_subproblem(
                 before reaching maxiter.
     """
     # Initial guess
-    n = solution.shape[0]
-    x0 = np.zeros(n)
+    x0 = np.zeros_like(x_accepted)
 
     # Normalize bounds. If none provided, use unit cube [-1, 1]
     if lower_bounds is not None:
-        lower_bounds = (lower_bounds - solution) / delta
+        lower_bounds = (lower_bounds - x_accepted) / delta
         lower_bounds[lower_bounds < -1] = -1
     else:
-        lower_bounds = -np.ones(n)
+        lower_bounds = -np.ones_like(x_accepted)
 
     if upper_bounds is not None:
-        upper_bounds = (upper_bounds - solution) / delta
+        upper_bounds = (upper_bounds - x_accepted) / delta
         upper_bounds[upper_bounds > 1] = 1
     else:
-        upper_bounds = np.ones(n)
+        upper_bounds = np.ones_like(x_accepted)
 
     # Check if bounds valid
     if np.max(lower_bounds - upper_bounds) > 1e-10:
@@ -276,15 +270,12 @@ def solve_subproblem(
     if solver == "bntr":
         options = {
             "maxiter": maxiter,
-            "maxiter_steepest_descent": maxiter_steepest_descent,
-            "step_size_newton": step_size_newton,
-            "ftol_abs": ftol_abs,
-            "ftol_scaled": ftol_scaled,
-            "xtol": xtol,
+            "maxiter_gradient_descent": maxiter_gradient_descent,
             "gtol_abs": gtol_abs,
             "gtol_rel": gtol_rel,
             "gtol_scaled": gtol_scaled,
-            "steptol": steptol,
+            "gtol_abs_conjugate_gradient": gtol_abs_conjugate_gradient,
+            "gtol_rel_conjugate_gradient": gtol_rel_conjugate_gradient,
         }
         result = minimize_bntr_quadratic(
             main_model, lower_bounds, upper_bounds, **options
@@ -350,7 +341,7 @@ def find_affine_points(
             with vector *x_projected*.
             Relevant for next call of *find_affine_points()*.
     """
-    n = x_accepted.shape[0]
+    n = len(x_accepted)
 
     for i in range(history.get_n_fun() - 1, -1, -1):
         center_info = {"x": x_accepted, "radius": delta}
@@ -425,11 +416,11 @@ def add_geomtery_points_to_make_main_model_fully_linear(
         - model_indices (np.ndarray): Indices of the candidates of x that are
             currently in the main model. Shape (2 * n + 1,).
     """
-    n = x_accepted.shape[0]
+    n = len(x_accepted)
 
     current_history = history.get_n_fun()
 
-    x_candidate = np.zeros(n)
+    x_candidate = np.zeros_like(x_accepted)
     x_candidates_list = []
     criterion_candidates_list = []
 
@@ -465,7 +456,6 @@ def update_trustregion_radius(
     rho,
     model_is_valid,
     delta,
-    delta_old,
     delta_min,
     delta_max,
     eta1,
@@ -523,7 +513,7 @@ def get_interpolation_matrices_residual_model(
             form the monomial basis. Shape(n_maxinterp, n * (n + 1) / 2).
         - n_modelpoints (int): Current number of model points.
     """
-    n = x_accepted.shape[0]
+    n = len(x_accepted)
 
     x_sample_monomial_basis = np.zeros((n_maxinterp, n + 1))
     x_sample_monomial_basis[:, 0] = 1
@@ -768,6 +758,15 @@ def get_last_model_indices_and_check_for_repeated_model(
     return last_model_indices, n_last_modelpoints, same_model_used
 
 
+def update_model_indices_residual_model(model_indices, accepted_index, n_modelpoints):
+    """Update model indices and number of points in the residual model."""
+    model_indices[1 : n_modelpoints + 1] = model_indices[:n_modelpoints]
+    n_modelpoints += 1
+    model_indices[0] = accepted_index
+
+    return model_indices, n_modelpoints
+
+
 def _get_monomial_basis(x):
     """Get the monomial basis (basis for quadratic functions) of x.
 
@@ -780,7 +779,7 @@ def _get_monomial_basis(x):
     Returns:
         (np.ndarray): Monomial basis of x wof shape (n * (n + 1) / 2,).
     """
-    n = x.shape[0]
+    n = len(x)
     monomial_basis = np.zeros(int(n * (n + 1) / 2))
 
     j = 0
