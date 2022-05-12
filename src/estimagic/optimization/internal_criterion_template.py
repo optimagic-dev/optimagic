@@ -1,7 +1,6 @@
 import datetime
 import warnings
 
-import numpy as np
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
 from estimagic.exceptions import UserFunctionRuntimeError
@@ -89,7 +88,6 @@ def internal_criterion_and_derivative_template(
             If task=="criterion_and_derivative" it returns both as a tuple.
 
     """
-    x = np.array(x)  # xxxx
     x_hash = hash_array(x)
     cache_entry = cache.get(x_hash, {})
 

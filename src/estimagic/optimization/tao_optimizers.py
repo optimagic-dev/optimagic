@@ -48,11 +48,11 @@ def tao_pounders(
             "Windows. Windows users can use estimagics 'pounders' algorithm instead."
         )
 
-    x = _initialise_petsc_array(x)
-    # We need to know the number of contributions of the criterion value to allocate the
-    # array.
     first_eval = criterion(x)
     n_errors = len(first_eval)
+    _x = _initialise_petsc_array(x)
+    # We need to know the number of contributions of the criterion value to allocate the
+    # array.
     residuals_out = _initialise_petsc_array(n_errors)
 
     # Create the solver object.
@@ -81,7 +81,7 @@ def tao_pounders(
     tao.setResidual(func_tao, residuals_out)
 
     if trustregion_initial_radius is None:
-        trustregion_initial_radius = calculate_trustregion_initial_radius(x)
+        trustregion_initial_radius = calculate_trustregion_initial_radius(_x)
     elif trustregion_initial_radius <= 0:
         raise ValueError("The initial trust region radius must be > 0.")
     tao.setInitialTrustRegionRadius(trustregion_initial_radius)
@@ -92,7 +92,7 @@ def tao_pounders(
     tao.setVariableBounds(lower_bounds, upper_bounds)
 
     # Put the starting values into the container and pass them to the optimizer.
-    tao.setInitial(x)
+    tao.setInitial(_x)
 
     # Obtain tolerances for the convergence criteria. Since we can not create
     # scaled_gradient_tolerance manually we manually set absolute_gradient_tolerance and
@@ -153,7 +153,7 @@ def tao_pounders(
     results = _process_pounders_results(residuals_out, tao)
 
     # Destroy petsc objects for memory reasons.
-    for obj in [tao, x, residuals_out, lower_bounds, upper_bounds]:
+    for obj in [tao, _x, residuals_out, lower_bounds, upper_bounds]:
         obj.destroy()
 
     return results
