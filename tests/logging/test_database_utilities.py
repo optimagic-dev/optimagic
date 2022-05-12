@@ -2,7 +2,6 @@ import pickle
 from datetime import datetime
 
 import numpy as np
-import pandas as pd
 import pytest
 import sqlalchemy
 from estimagic.logging.database_utilities import append_row
@@ -15,8 +14,6 @@ from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import read_table
 from estimagic.logging.database_utilities import update_row
 from numpy.testing import assert_array_equal
-from sqlalchemy import Float
-from sqlalchemy import PickleType
 
 
 @pytest.fixture
@@ -71,7 +68,7 @@ def test_load_database_with_bound_metadata(tmp_path):
 def test_optimization_iteration_table_scalar(tmp_path, iteration_data):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    make_optimization_iteration_table(database)
     append_row(iteration_data, "optimization_iterations", database, path, False)
     res = read_last_rows(database, "optimization_iterations", 1, "list_of_dicts")
     assert isinstance(res, list) and isinstance(res[0], dict)
@@ -81,34 +78,6 @@ def test_optimization_iteration_table_scalar(tmp_path, iteration_data):
 
     for key in ["value", "timestamp"]:
         assert res[key] == iteration_data[key]
-
-
-def test_optimization_iteration_table_vector_valued(tmp_path):
-    path = tmp_path / "test.db"
-    database = load_database(path=path)
-    make_optimization_iteration_table(
-        database, first_eval={"output": {"contributions": np.ones(3), "value": 0.5}}
-    )
-    assert isinstance(
-        database.tables["optimization_iterations"].columns["contributions"].type,
-        PickleType,
-    )
-
-
-def test_optimization_iteration_table_dict_valued(tmp_path):
-    path = tmp_path / "test.db"
-    database = load_database(path=path)
-    first_eval = {
-        "output": {"contributions": np.ones(3), "value": 5, "bla": pd.DataFrame()}
-    }
-    make_optimization_iteration_table(database, first_eval=first_eval)
-    for col in ["contributions", "bla"]:
-        assert isinstance(
-            database.tables["optimization_iterations"].columns[col].type, PickleType
-        )
-    assert isinstance(
-        database.tables["optimization_iterations"].columns["value"].type, Float
-    )
 
 
 def test_steps_table(tmp_path):
@@ -160,7 +129,7 @@ def test_optimization_problem_table(tmp_path, problem_data):
 def test_read_new_rows_stride(tmp_path, iteration_data):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         append_row(iteration_data, "optimization_iterations", database, path, False)
@@ -180,7 +149,7 @@ def test_read_new_rows_stride(tmp_path, iteration_data):
 def test_update_row(tmp_path, iteration_data):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         append_row(iteration_data, "optimization_iterations", database, path, False)
@@ -201,7 +170,7 @@ def test_update_row(tmp_path, iteration_data):
 def test_read_last_rows_stride(tmp_path, iteration_data):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         append_row(iteration_data, "optimization_iterations", database, path, False)
@@ -221,7 +190,7 @@ def test_read_last_rows_stride(tmp_path, iteration_data):
 def test_read_new_rows_with_step(tmp_path, iteration_data):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         iteration_data["step"] = i % 2
@@ -242,7 +211,7 @@ def test_read_new_rows_with_step(tmp_path, iteration_data):
 def test_read_last_rows_with_step(tmp_path, iteration_data):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         iteration_data["step"] = i % 2
@@ -263,7 +232,7 @@ def test_read_last_rows_with_step(tmp_path, iteration_data):
 def test_read_table(tmp_path, iteration_data):
     path = tmp_path / "test.db"
     database = load_database(path=path)
-    make_optimization_iteration_table(database, first_eval={"output": 0.5})
+    make_optimization_iteration_table(database)
     for i in range(1, 11):  # sqlalchemy starts counting at 1
         iteration_data["value"] = i
         iteration_data["step"] = i % 2

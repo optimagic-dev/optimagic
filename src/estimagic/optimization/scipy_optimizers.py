@@ -60,6 +60,7 @@ from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.utilities import calculate_trustregion_initial_radius
+from scipy.optimize import Bounds
 
 
 @mark_minimizer(name="scipy_lbfgsb")
@@ -89,13 +90,12 @@ def scipy_lbfgsb(
         "maxiter": stopping_max_iterations,
         "maxls": max_line_search_steps,
     }
-
     res = scipy.optimize.minimize(
         fun=criterion_and_derivative,
         x0=x,
         method="L-BFGS-B",
         jac=True,
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
@@ -130,7 +130,7 @@ def scipy_slsqp(
         x0=x,
         method="SLSQP",
         jac=derivative,
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
@@ -201,7 +201,7 @@ def scipy_powell(
         fun=criterion,
         x0=x,
         method="Powell",
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
@@ -377,7 +377,7 @@ def scipy_truncated_newton(
         method="TNC",
         jac=True,
         options=options,
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
     )
 
     return process_scipy_result(res)
@@ -415,7 +415,7 @@ def scipy_trust_constr(
         jac=True,
         x0=x,
         method="trust-constr",
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
@@ -440,14 +440,8 @@ def process_scipy_result(scipy_results_obj):
     return processed
 
 
-def get_scipy_bounds(lower_bounds, upper_bounds):
-    # Scipy works with `None` instead of infinite values for unconstrained parameters
-    # and requires a list of tuples for each parameter with lower and upper bound.
-    bounds = np.column_stack([lower_bounds, upper_bounds])
-    mask = ~np.isfinite(bounds)
-    bounds = bounds.astype("object")
-    bounds[mask] = None
-    return list(map(tuple, bounds))
+def _get_scipy_bounds(lower_bounds, upper_bounds):
+    return Bounds(lb=lower_bounds, ub=upper_bounds)
 
 
 def _scipy_least_squares(

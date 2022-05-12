@@ -11,56 +11,100 @@ import pandas as pd
 from estimagic.utilities import number_of_triangular_elements_to_dimension
 
 
-def consolidate_constraints(pc, params):
+def consolidate_constraints(
+    constraints, parvec, lower_bounds, upper_bounds, param_names
+):
     """Consolidate constraints with each other and remove redundant ones.
 
     Args:
-        pc (list): List with constraint dictionaries. It is assumed that
+        constraints (list): List with constraint dictionaries. It is assumed that
             the selectors are already processed, increasing and decreasing
             constraints have been rewritten as linear constraints and
             pairwise_equality constraints have been rewritten as equality constraints.
-        params (pd.DataFrame): see :ref:`params`.
+        parvec (np.ndarray): 1d numpy array with parameters.
+        lower_bounds (np.ndarray): 1d numpy array with lower_bounds
+        upper_bounds (np.ndarray): 1d numpy array wtih upper_bounds
+        param_names (list): Names of parameters. Used for error messages.
 
     Returns:
-        pc (list): This contains processed version of all
+        list: This contains processed version of all
             constraints that require an actual kernel transformation. The information
             on all other constraints is subsumed in pp.
-        pp (pd.DataFrame): Processed params.
+        dict: Dict of 1d numpy arrays with information about non-transforming
+            constraints.
 
     """
-    raw_eq, other_pc = _split_constraints(pc, "equality")
-    equality_pc = _consolidate_equality_constraints(raw_eq)
+    raw_eq, other_constraints = _split_constraints(constraints, "equality")
+    equality_constraints = _consolidate_equality_constraints(raw_eq)
 
-    fixed_pc, other_pc = _split_constraints(other_pc, "fixed")
+    fixed_constraints, other_constraints = _split_constraints(
+        other_constraints, "fixed"
+    )
     fixed_value = _consolidate_fixes_with_equality_constraints(
-        fixed_pc, equality_pc, params
+        fixed_constraints, equality_constraints, parvec
     )
 
-    pp = params.copy(deep=True)
-    pp["_fixed_value"] = fixed_value
-    pp["_is_fixed_to_value"] = pp["_fixed_value"].notnull()
+    constr_info = {
+        "fixed_values": fixed_value,
+        "is_fixed_to_value": np.isfinite(fixed_value),
+    }
 
-    other_pc = [
-        c for c in other_pc if not pp.iloc[c["index"]]["_is_fixed_to_value"].all()
+    other_constraints = [
+        c
+        for c in other_constraints
+        if not constr_info["is_fixed_to_value"][c["index"]].all()
     ]
 
-    other_pc, pp = simplify_covariance_and_sdcorr_constraints(other_pc, pp)
+    (
+        other_constraints,
+        lower_bounds,
+        upper_bounds,
+    ) = simplify_covariance_and_sdcorr_constraints(
+        constraints=other_constraints,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        is_fixed_to_value=constr_info["is_fixed_to_value"],
+        fixed_value=constr_info["fixed_values"],
+    )
 
-    pp = _consolidate_bounds_with_equality_constraints(equality_pc, pp)
+    lower_bounds, upper_bounds = _consolidate_bounds_with_equality_constraints(
+        equality_constraints,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
 
-    other_pc, pp = _plug_equality_constraints_into_selectors(equality_pc, other_pc, pp)
+    constr_info["lower_bounds"] = lower_bounds
+    constr_info["upper_bounds"] = upper_bounds
 
-    linear_constraints, other_pc = _split_constraints(other_pc, "linear")
+    (
+        other_constraints,
+        post_replacements,
+        is_fixed_to_other,
+    ) = _plug_equality_constraints_into_selectors(
+        equality_constraints, other_constraints, n_params=len(parvec)
+    )
+
+    constr_info["post_replacements"] = post_replacements
+    constr_info["is_fixed_to_other"] = is_fixed_to_other
+
+    linear_constraints, other_constraints = _split_constraints(
+        other_constraints, "linear"
+    )
 
     if len(linear_constraints) > 0:
-        linear_constraints = _consolidate_linear_constraints(linear_constraints, pp)
+        linear_constraints = _consolidate_linear_constraints(
+            params_vec=parvec,
+            linear_constraints=linear_constraints,
+            constr_info=constr_info,
+            param_names=param_names,
+        )
 
-    pc = other_pc + linear_constraints
+    constraints = other_constraints + linear_constraints
 
-    return pc, pp
+    return constraints, constr_info
 
 
-def _consolidate_equality_constraints(equality_pc):
+def _consolidate_equality_constraints(equality_constraints):
     """Consolidate equality constraints as far as possible.
 
     Since equality is a transitive conditions we can consolidate any two equality
@@ -74,14 +118,14 @@ def _consolidate_equality_constraints(equality_pc):
     equality constraints.
 
     Args:
-        equality_pc (list): List of dictionaries where each dictionary is a
+        equality_constraints (list): List of dictionaries where each dictionary is a
             constraint. It is assumed that the selectors were already processed.
 
     Returns:
-        consolidated (list): List of consolidated equality constraints.
-    """
+        list: List of consolidated equality constraints.
 
-    candidates = [constr["index"] for constr in equality_pc]
+    """
+    candidates = [constr["index"] for constr in equality_constraints]
     # drop constraints that just restrict one parameter to be equal to itself
     candidates = [c for c in candidates if len(c) >= 2]
     merged = _join_overlapping_lists(candidates)
@@ -133,41 +177,45 @@ def _unite_first_with_all_intersecting_elements(indices):
     return [new_first] + new_others
 
 
-def _consolidate_fixes_with_equality_constraints(fixed_pc, equality_pc, params):
+def _consolidate_fixes_with_equality_constraints(
+    fixed_constraints, equality_constraints, parvec
+):
     """Consolidate fixes with equality constraints.
 
     If any equality constrained parameter is fixed, all of the parameters that are
     equal to it have to be fixed to the same value.
 
     Args:
-        fixed_pc (list): List of constrains of type "fixed".
-        equality_pc (list): List of constraints of type "equality".
-        params (pd.DataFrame): see :ref:`params`
+        fixed_constraints (list): List of constrains of type "fixed".
+        equality_constraints (list): List of constraints of type "equality".
+        parvec (np.ndarray): 1d numpy array with parameters.
 
     Returns:
         fixed_value (pd.Series): Series with the fixed value for all parameters that
             are fixed and np.nan everywhere else. Has the same index as params.
 
     """
-    fixed_value = pd.Series(index=params.index, data=np.nan)
-    for fix in fixed_pc:
+    fixed_value = np.full(len(parvec), np.nan)
+    for fix in fixed_constraints:
         if "value" in fix:
-            fixed_value.iloc[fix["index"]] = fix["value"]
+            fixed_value[fix["index"]] = fix["value"]
         else:
-            fixed_value.iloc[fix["index"]] = params["value"].iloc[fix["index"]]
+            fixed_value[fix["index"]] = parvec[fix["index"]]
 
-    for eq in equality_pc:
-        if fixed_value.iloc[eq["index"]].notnull().any():
-            valcounts = fixed_value.iloc[eq["index"]].value_counts(dropna=True)
+    for eq in equality_constraints:
+        if np.isfinite(fixed_value[eq["index"]]).any():
+            valcounts = _unique_values(fixed_value[eq["index"]])
             assert (
                 len(valcounts) == 1
             ), "Equality constrained parameters cannot be fixed to different values."
-            fixed_value.iloc[eq["index"]] = valcounts.index[0]
+            fixed_value[eq["index"]] = valcounts.index[0]
 
     return fixed_value
 
 
-def _consolidate_bounds_with_equality_constraints(equality_pc, params):
+def _consolidate_bounds_with_equality_constraints(
+    equality_constraints, lower_bounds, upper_bounds
+):
     """consolidate bounds with equality constraints.
 
     Check that there are no incompatible bounds on equality constrained parameters and
@@ -175,24 +223,22 @@ def _consolidate_bounds_with_equality_constraints(equality_pc, params):
     them.
 
     Args:
-        equality_pc (list): List of constraints of type "equality".
-        params (pd.DataFrame): see :ref:`param`.
+        equality_constraints (list): List of constraints of type "equality".
+        lower_bounds (np.ndarray): Lower bounds for parameters.
+        upper_bounds (np.ndarray): Upper bounds for parameters.
 
     Returns:
-        pp (pd.DataFrame): Copy of params with stricter bounds.
+        np.ndarray: 1d array with lower bounds
+        np.ndarray: 1d array with upper bounds
 
     """
-    pp = params.copy()
-    lower = pp["lower_bound"].copy()
-    upper = pp["upper_bound"].copy()
-    for eq in equality_pc:
-        lower.iloc[eq["index"]] = lower.iloc[eq["index"]].max()
-        upper.iloc[eq["index"]] = upper.iloc[eq["index"]].min()
+    lower = lower_bounds.copy()
+    upper = upper_bounds.copy()
+    for eq in equality_constraints:
+        lower[eq["index"]] = lower[eq["index"]].max()
+        upper[eq["index"]] = upper[eq["index"]].min()
 
-    pp["lower_bound"] = lower
-    pp["upper_bound"] = upper
-
-    return pp
+    return lower, upper
 
 
 def _split_constraints(constraints, type_):
@@ -206,18 +252,23 @@ def _split_constraints(constraints, type_):
     return filtered, rest
 
 
-def simplify_covariance_and_sdcorr_constraints(pc, pp):
+def simplify_covariance_and_sdcorr_constraints(
+    constraints,
+    lower_bounds,
+    upper_bounds,
+    is_fixed_to_value,
+    fixed_value,
+):
     """Enforce covariance and sdcorr constraints by bounds if possible.
 
     This is possible if the dimension is <= 2 or all covariances are fexd to 0.
 
     """
-    cov_constraints, others = _split_constraints(pc, "covariance")
+    cov_constraints, others = _split_constraints(constraints, "covariance")
     sdcorr_constraints, others = _split_constraints(others, "sdcorr")
     to_simplify = cov_constraints + sdcorr_constraints
-    pp = pp.copy()
-    lower = pp["lower_bound"].copy()
-    upper = pp["upper_bound"].copy()
+    lower = lower_bounds.copy()
+    upper = upper_bounds.copy()
 
     not_simplifyable = []
     for constr in to_simplify:
@@ -231,26 +282,25 @@ def simplify_covariance_and_sdcorr_constraints(pc, pp):
             off_indices = constr["index"][dim:]
 
         uncorrelated = False
-        if pp.iloc[off_indices]["_is_fixed_to_value"].all():
-            if (pp.iloc[off_indices]["_fixed_value"] == 0).all():
+        if is_fixed_to_value[off_indices].all():
+            if (fixed_value[off_indices] == 0).all():
                 uncorrelated = True
 
         if uncorrelated:
-            lower.iloc[diag_indices] = np.maximum(0, lower.iloc[diag_indices])
+            lower[diag_indices] = np.maximum(0, lower[diag_indices])
         elif dim <= 2:
-            lower.iloc[diag_indices] = np.maximum(0, lower.iloc[diag_indices])
-            lower.iloc[off_indices] = -1
-            upper.iloc[off_indices] = 1
+            lower[diag_indices] = np.maximum(0, lower[diag_indices])
+            lower[off_indices] = -1
+            upper[off_indices] = 1
         else:
             not_simplifyable.append(constr)
 
-    pp["lower_bound"] = lower
-    pp["upper_bound"] = upper
-
-    return others + not_simplifyable, pp
+    return others + not_simplifyable, lower, upper
 
 
-def _plug_equality_constraints_into_selectors(equality_pc, other_pc, params):
+def _plug_equality_constraints_into_selectors(
+    equality_constraints, other_constraints, n_params
+):
     """Rewrite all constraint in terms of free parameters.
 
     Only one parameter from a set of equality constrained parameters will actually
@@ -260,26 +310,26 @@ def _plug_equality_constraints_into_selectors(equality_pc, other_pc, params):
     Once that is done, redundant constraints can be filtered out.
 
     Args:
-        equality_pc (list): List of constraints of type "equality".
-        other_pc (list): All other constraints.
-        params (pd.DataFrame): see :ref:`params`.
+        equality_constraints (list): List of constraints of type "equality".
+        other_constraints (list): All other constraints.
+        n_params (int): Number of parameters.
 
     Returns:
-        pc (list): List of processed non-equality constraints.
-        pp (pd.DataFrame):
+        list: List of processed non-equality constraints.
+        np.ndarray: post_replacements
+        np.ndarray: is_fixed_to_other
 
     """
-    pp = params.copy()
-    is_equal_to = pd.Series(index=params.index, data=-1, dtype=int)
-    for eq in equality_pc:
-        is_equal_to.iloc[sorted(eq["index"])[1:]] = sorted(eq["index"])[0]
-    pp["_post_replacements"] = is_equal_to
-    pp["_is_fixed_to_other"] = is_equal_to >= 0
-    helper = pp["_post_replacements"].reset_index(drop=True)
+    is_equal_to = np.full(n_params, -1)
+    for eq in equality_constraints:
+        is_equal_to[sorted(eq["index"])[1:]] = sorted(eq["index"])[0]
+    post_replacements = is_equal_to.astype(int)
+    is_fixed_to_other = is_equal_to >= 0
+    helper = pd.Series(post_replacements)
     replace_dict = helper[helper >= 0].to_dict()
 
     plugged_in = []
-    for constr in other_pc:
+    for constr in other_constraints:
         new = constr.copy()
         new["index"] = pd.Series(constr["index"]).replace(replace_dict).tolist()
         plugged_in.append(new)
@@ -293,10 +343,12 @@ def _plug_equality_constraints_into_selectors(equality_pc, other_pc, params):
 
     pc += linear_constraints
 
-    return pc, pp
+    return pc, post_replacements, is_fixed_to_other
 
 
-def _consolidate_linear_constraints(linear_pc, pp):
+def _consolidate_linear_constraints(
+    params_vec, linear_constraints, constr_info, param_names
+):
     """Consolidate linear constraints.
 
     Consolidation entails the following steps:
@@ -312,22 +364,28 @@ def _consolidate_linear_constraints(linear_pc, pp):
         all matrices needed for the kernel transformations.
 
     Args:
-        linear_pc (list): Linear processed constraints.
-        pp (pd.DataFrame): Processed params.
+        params_vec (np.ndarray): 1d numpy array wtih parameters
+        linear_constraints (list): Linear constraints that already have processed
+            weights and selector fields.
+        constr_info (dict): Dict with information about constraints.
+        param_names (list): Parameter names. Used for error messages.
 
     Returns:
-        pc (list): Processed and consolidated linear constraints.
+        list: Processed and consolidated linear constraints.
 
     """
     weights, right_hand_side = _transform_linear_constraints_to_pandas_objects(
-        linear_pc, pp
+        linear_constraints, n_params=len(params_vec)
     )
 
     weights = _plug_equality_constraints_into_linear_weights(
-        weights, pp._post_replacements
+        weights, constr_info["post_replacements"]
     )
     weights, right_hand_side = _plug_fixes_into_linear_weights_and_rhs(
-        weights, right_hand_side, pp._is_fixed_to_value, pp._fixed_value
+        weights,
+        right_hand_side,
+        constr_info["is_fixed_to_value"],
+        constr_info["fixed_values"],
     )
 
     involved_parameters = []
@@ -343,12 +401,11 @@ def _consolidate_linear_constraints(linear_pc, pp):
         ].copy(deep=True)
         rhs = right_hand_side.loc[w.index].copy(deep=True)
         w, rhs = _express_bounds_as_linear_constraints(
-            w, rhs, pp.lower_bound, pp.upper_bound
+            w, rhs, constr_info["lower_bounds"], constr_info["upper_bounds"]
         )
         w, rhs = _rescale_linear_constraints(w, rhs)
         w, rhs = _drop_redundant_linear_constraints(w, rhs)
-        _check_consolidated_weights(w, pp)
-        rhs = _set_rhs_index(w, rhs, pp)
+        _check_consolidated_weights(w, param_names=param_names)
         to_internal, from_internal = _get_kernel_transformation_matrices(w)
         constr = {
             "index": list(w.columns),
@@ -362,12 +419,12 @@ def _consolidate_linear_constraints(linear_pc, pp):
     return pc
 
 
-def _transform_linear_constraints_to_pandas_objects(linear_pc, pp):
+def _transform_linear_constraints_to_pandas_objects(linear_constranits, n_params):
     """Collect information from the linear constraint dictionaries into pandas objects.
 
     Args:
-        linear_pc (list): List of constraint of type "linear".
-        pp (pd.DataFrame): see :ref:`params`
+        linear_constraints (list): List of constraint of type "linear".
+        n_params (int): number of parameters.
 
     Returns:
         weights (pd.DataFrame): DataFrame with one row per constraint and one column
@@ -377,15 +434,14 @@ def _transform_linear_constraints_to_pandas_objects(linear_pc, pp):
 
     """
     all_weights, all_values, all_lbs, all_ubs = [], [], [], []
-    for constr in linear_pc:
+    for constr in linear_constranits:
         all_weights.append(constr["weights"])
         all_values.append(constr.get("value", np.nan))
         all_lbs.append(constr.get("lower_bound", -np.inf))
         all_ubs.append(constr.get("upper_bound", np.inf))
 
     weights = pd.concat(all_weights, axis=1).T.reset_index()
-    weights = weights.reindex(columns=pp.index).fillna(0)
-    weights.columns = np.arange(len(weights.columns))
+    weights = weights.reindex(columns=np.arange(n_params)).fillna(0)
     values = pd.Series(all_values, name="value")
     lbs = pd.Series(all_lbs, name="lower_bound")
     ubs = pd.Series(all_ubs, name="upper_bound")
@@ -409,7 +465,7 @@ def _plug_equality_constraints_into_linear_weights(weights, post_replacements):
 
     """
     w = weights.T
-    plugged_iloc = post_replacements.reset_index(drop=True)
+    plugged_iloc = pd.Series(post_replacements)
     plugged_iloc = plugged_iloc.where(plugged_iloc >= 0, np.arange(len(plugged_iloc)))
     w["plugged_iloc"] = plugged_iloc
 
@@ -431,16 +487,16 @@ def _plug_fixes_into_linear_weights_and_rhs(
         fixed_value (pd.Series): The _fixed_value column of pp.
 
     Returns:
-        new_weighs (pd.DataFrame)
+        new_weights (pd.DataFrame)
         new_rhs (pd.DataFrame)
     """
-    ilocs = pd.Series(data=range(len(fixed_value)), index=fixed_value.index)
+    ilocs = np.arange(len(fixed_value))
     fixed_ilocs = ilocs[is_fixed_to_value].tolist()
     new_rhs = rhs.copy()
     new_weights = weights.copy()
 
     if len(fixed_ilocs) > 0:
-        fixed_values = fixed_value.iloc[fixed_ilocs].to_numpy()
+        fixed_values = fixed_value[fixed_ilocs]
         fixed_contribution = weights[fixed_ilocs] @ fixed_values
         for column in ["lower_bound", "upper_bound", "value"]:
             new_rhs[column] = new_rhs[column] - fixed_contribution
@@ -461,8 +517,8 @@ def _express_bounds_as_linear_constraints(weights, rhs, lower, upper):
     Args:
         weights (pd.DataFrame): The weight matrix of the linear constraint.
         rhs (pd.DataFrame): The right hand side of the linear constraint.
-        lower (pd.Series): Lower bounds.
-        upper (pd.Series): Upper bounds.
+        lower (np.ndarray): Lower bounds.
+        upper (np.ndarray): Upper bounds.
 
     Returns:
         extended_weights (pd.DataFrame)
@@ -472,17 +528,17 @@ def _express_bounds_as_linear_constraints(weights, rhs, lower, upper):
     additional_pc = []
     for i in weights.columns:
         new = {}
-        if np.isfinite(lower.iloc[i]):
-            new["lower_bound"] = lower.iloc[i]
-        if np.isfinite(upper.iloc[i]):
-            new["upper_bound"] = upper.iloc[i]
+        if np.isfinite(lower[i]):
+            new["lower_bound"] = lower[i]
+        if np.isfinite(upper[i]):
+            new["upper_bound"] = upper[i]
         if new != {}:
-            new["weights"] = pd.Series([1], name="w", index=lower.iloc[[i]].index)
+            new["weights"] = pd.Series([1], name="w", index=[i])
             additional_pc.append(new)
 
     if len(additional_pc) > 0:
         new_weights, new_rhs = _transform_linear_constraints_to_pandas_objects(
-            additional_pc, lower
+            additional_pc, len(lower)
         )
         new_weights = new_weights[weights.columns]
 
@@ -568,7 +624,7 @@ def _drop_redundant_linear_constraints(weights, rhs):
     return new_weights, new_rhs
 
 
-def _check_consolidated_weights(weights, pp):
+def _check_consolidated_weights(weights, param_names):
     """Check the rank condition on the linear weights."""
     n_constraints, n_params = weights.shape
 
@@ -585,34 +641,13 @@ def _check_consolidated_weights(weights, pp):
         "constraints as linear constraints but as bounds, fixes, increasing or "
         "decreasing constraints."
     )
-
-    ind = pp.iloc[weights.columns].index
+    relevant_names = [param_names[i] for i in weights.columns]
 
     if n_constraints > n_params:
-        raise ValueError(msg_too_many + msg_general.format(ind, weights))
+        raise ValueError(msg_too_many + msg_general.format(relevant_names, weights))
 
     if np.linalg.matrix_rank(weights) < n_constraints:
-        raise ValueError(msg_rank + msg_general.format(ind, weights))
-
-
-def _set_rhs_index(weights, rhs, pp):
-    """Align index of rhs with the last n_constraints involved parameters.
-
-    This is useful to construct internal bounds and fixed values via updates.
-
-    Args:
-        weights (pd.DataFrame): The weight matrix of the linear constraint.
-        rhs (pd.DataFrame): The right hand side of the linear constraint.
-
-    Returns:
-        new_weights (pd.DataFrame)
-        new_rhs (pd.DataFrame)
-
-    """
-    ind = pp.iloc[weights.columns[-len(weights) :]].index
-    new_rhs = pd.DataFrame(rhs.to_numpy(), columns=rhs.columns, index=ind)
-
-    return new_rhs
+        raise ValueError(msg_rank + msg_general.format(relevant_names, weights))
 
 
 def _get_kernel_transformation_matrices(weights):
@@ -661,3 +696,9 @@ def _is_redundant(candidate, others):
         is_redundant = len(duplicates) > 0
 
     return is_redundant
+
+
+def _unique_values(arr, dropna=True):
+    if dropna:
+        arr = arr[np.isfinite(arr)]
+    return list(set(arr.tolist()))

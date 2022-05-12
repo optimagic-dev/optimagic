@@ -28,6 +28,7 @@ from estimagic.optimization.internal_criterion_template import (
     internal_criterion_and_derivative_template,
 )
 from estimagic.optimization.optimize import _fill_error_penalty_with_defaults
+from estimagic.parameters.conversion import get_converter
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -65,8 +66,6 @@ def base_inputs():
     inputs = {
         "x": x,
         "params": params,
-        "reparametrize_from_internal": reparametrize_from_internal,
-        "convert_derivative": convert_derivative,
         "algo_info": AlgoInfo(
             name="my_algorithm",
             primary_criterion_entry="value",
@@ -100,8 +99,22 @@ test_cases = list(itertools.product(directions, crits, derivs, crits_and_derivs)
 def test_criterion_and_derivative_template(
     base_inputs, direction, crit, deriv, crit_and_deriv
 ):
-    inputs = base_inputs.copy()
-    inputs["first_criterion_evaluation"]["output"] = crit(inputs["params"])
+    converter, _ = get_converter(
+        func=crit,
+        params=base_inputs["params"],
+        constraints=None,
+        lower_bounds=None,
+        upper_bounds=None,
+        func_eval=crit(base_inputs["params"]),
+        primary_key="value",
+        scaling=False,
+        scaling_options=None,
+        derivative_eval=None,
+    )
+    inputs = {k: v for k, v in base_inputs.items() if k != "params"}
+    inputs["converter"] = converter
+
+    inputs["first_criterion_evaluation"]["output"] = crit(base_inputs["params"])
     crit = crit if (deriv, crit_and_deriv) == (None, None) else no_second_call(crit)
 
     inputs["criterion"] = crit
@@ -137,7 +150,21 @@ def test_criterion_and_derivative_template(
 
 @pytest.mark.parametrize("direction", directions)
 def test_internal_criterion_with_penalty(base_inputs, direction):
-    inputs = base_inputs.copy()
+    converter, _ = get_converter(
+        func=sos_scalar_criterion,
+        params=base_inputs["params"],
+        constraints=None,
+        lower_bounds=None,
+        upper_bounds=None,
+        func_eval=sos_scalar_criterion(base_inputs["params"]),
+        primary_key="value",
+        scaling=False,
+        scaling_options=None,
+        derivative_eval=None,
+    )
+    inputs = {k: v for k, v in base_inputs.items() if k != "params"}
+
+    inputs["converter"] = converter
     scaling = 1 if direction == "minimize" else -1
     inputs["first_criterion_evaluation"]["output"] = scaling * 30
 
@@ -152,7 +179,7 @@ def test_internal_criterion_with_penalty(base_inputs, direction):
     inputs["error_handling"] = "continue"
     inputs["error_penalty"] = _fill_error_penalty_with_defaults(
         error_penalty={},
-        first_eval=inputs["first_criterion_evaluation"],
+        first_value=scaling * 30,
         direction=direction,
     )
 

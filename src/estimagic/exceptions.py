@@ -31,7 +31,7 @@ class InvalidParamsError(EstimagicError):
     """Exception for invalid user provided parameters."""
 
 
-class InvalidConstraintsError(EstimagicError):
+class InvalidConstraintError(EstimagicError):
     """Exception for invalid user provided constraints."""
 
 

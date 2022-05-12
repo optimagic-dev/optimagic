@@ -32,7 +32,7 @@ dependencies:
   - scipy>=1.2.1
   - seaborn
   - plotly
-  - sphinx=2.4.4
+  - sphinx
   - pydata-sphinx-theme>=0.3.0
   - sphinxcontrib-bibtex
   - sqlalchemy>=1.3

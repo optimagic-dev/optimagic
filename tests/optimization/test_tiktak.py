@@ -3,12 +3,10 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.optimization.optimize import process_multistart_sample
 from estimagic.optimization.tiktak import _linear_weights
 from estimagic.optimization.tiktak import _tiktak_weights
 from estimagic.optimization.tiktak import draw_exploration_sample
 from estimagic.optimization.tiktak import get_batched_optimization_sample
-from estimagic.optimization.tiktak import get_internal_sampling_bounds
 from estimagic.optimization.tiktak import run_explorations
 from estimagic.optimization.tiktak import update_convergence_state
 from numpy.testing import assert_array_almost_equal as aaae
@@ -26,17 +24,6 @@ def params():
 @pytest.fixture
 def constraints():
     return [{"type": "fixed", "loc": "c", "value": 2}]
-
-
-samples = [pd.DataFrame(np.ones((2, 3)), columns=["a", "b", "c"]), np.ones((2, 3))]
-
-
-@pytest.mark.parametrize("sample", samples)
-def test_process_multistart_sample(sample, params):
-
-    calculated = process_multistart_sample(sample, params, lambda x: x)
-    expeceted = np.ones((2, 3))
-    aaae(calculated, expeceted)
 
 
 dim = 2
@@ -69,13 +56,6 @@ def test_draw_exploration_sample(dist, rule, lower, upper):
     assert calculated.shape == (3, 2)
 
 
-def test_get_internal_sampling_bounds(params, constraints):
-    calculated = get_internal_sampling_bounds(params, constraints)
-    expeceted = [np.array([-1, 0]), np.array([2, 2])]
-    for calc, exp in zip(calculated, expeceted):
-        aaae(calc, exp)
-
-
 def test_run_explorations():
     def _dummy(x, **kwargs):
         assert set(kwargs) == {
@@ -86,13 +66,14 @@ def test_run_explorations():
             "fixed_log_data",
         }
         if x.sum() == 5:
-            out = {"value": np.nan}
+            out = np.nan
         else:
-            out = {"value": -x.sum()}
+            out = -x.sum()
         return out
 
     calculated = run_explorations(
         func=_dummy,
+        primary_key="value",
         sample=np.arange(6).reshape(3, 2),
         batch_evaluator="joblib",
         n_cores=1,

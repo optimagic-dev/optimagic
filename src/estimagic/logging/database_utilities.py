@@ -86,13 +86,11 @@ def load_database(metadata=None, path=None, fast_logging=False):
     return metadata
 
 
-def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
+def make_optimization_iteration_table(database, if_exists="extend"):
     """Generate a table for information that is generated with each function evaluation.
 
     Args:
         database (sqlalchemy.MetaData): Bound metadata object.
-        first_eval (dict): The inputs and output of the first criterion evaluation. Has
-            the entries "internal_params", "external_params" and "output".
 
     Returns:
         database (sqlalchemy.MetaData):Bound metadata object with added table.
@@ -111,15 +109,8 @@ def make_optimization_iteration_table(database, first_eval, if_exists="extend"):
         Column("hash", String),
         Column("value", Float),
         Column("step", Integer),
+        Column("criterion_eval", PickleType(pickler=RobustPickler)),
     ]
-
-    if isinstance(first_eval["output"], dict):
-        extra_columns = {x for x in first_eval["output"] if x != "value"}
-        if "root_contributions" in extra_columns:
-            extra_columns |= {"contributions"}
-        columns += [
-            Column(key, PickleType(pickler=RobustPickler)) for key in extra_columns
-        ]
 
     Table(
         table_name, database, *columns, sqlite_autoincrement=True, extend_existing=True
@@ -158,8 +149,9 @@ def make_optimization_problem_table(database, if_exists="extend"):
         Column("log_options", PickleType(pickler=RobustPickler)),
         Column("error_handling", String),
         Column("error_penalty", PickleType(pickler=RobustPickler)),
-        Column("cache_size", Integer),
         Column("constraints", PickleType(pickler=RobustPickler)),
+        Column("flat_params_groups", PickleType(pickler=RobustPickler)),
+        Column("flat_params_names", PickleType(pickler=RobustPickler)),
     ]
 
     Table(
