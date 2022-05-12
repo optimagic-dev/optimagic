@@ -41,7 +41,9 @@ def logit_derivative(params, y, x):
             The derivative of the loglikelihood for each observation evaluated
             at `params`.
     """
-    c = 1 / (1 + np.exp(-(np.dot(x, params["value"]))))
+    p = params["value"].to_numpy()
+    y = y.to_numpy()
+    c = 1 / (1 + np.exp(-(np.dot(x, p))))
     jac = (y - c)[:, None] * x
     grad = jac.sum(axis=0)
     out = {"value": grad, "contributions": jac}

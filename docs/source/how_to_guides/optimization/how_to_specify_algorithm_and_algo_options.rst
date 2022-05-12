@@ -433,6 +433,268 @@ dependencies to use them:
       process, with ``trustregion_initial_radius`` being its initial value.
 
 
+.. dropdown::  scipy_ls_dogbox
+
+    Minimize a nonlinear least squares problem using a rectangular trust region method.
+
+    Typical use case is small problems with bounds. Not recommended for problems with
+    rank-deficient Jacobian.
+
+    The algorithm supports the following options:
+
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
+      improvement between two iterations is below this.
+    - **convergence.relative_gradient_tolerance** (float): Stop when the gradient,
+      divided by the absolute value of the criterion function is smaller than this.
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this as
+      convergence.
+    - **tr_solver** (str): Method for solving trust-region subproblems, relevant only
+      for 'trf' and 'dogbox' methods.
+
+      - 'exact' is suitable for not very large problems with dense
+        Jacobian matrices. The computational complexity per iteration is
+        comparable to a singular value decomposition of the Jacobian
+        matrix.
+      - 'lsmr' is suitable for problems with sparse and large Jacobian
+        matrices. It uses the iterative procedure
+        `scipy.sparse.linalg.lsmr` for finding a solution of a linear
+        least-squares problem and only requires matrix-vector product
+        evaluations.
+        If None (default), the solver is chosen based on the type of Jacobian
+        returned on the first iteration.
+    - **tr_solver_options** (dict):  Keyword options passed to trust-region solver.
+
+      - ``tr_solver='exact'``: `tr_options` are ignored.
+      - ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+
+
+.. dropdown::  scipy_ls_trf
+
+    Minimize a nonlinear least squares problem using a trustregion reflective method.
+
+    Trust Region Reflective algorithm, particularly suitable for large sparse problems
+    with bounds. Generally robust method.
+
+    The algorithm supports the following options:
+
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
+      improvement between two iterations is below this.
+    - **convergence.relative_gradient_tolerance** (float): Stop when the gradient,
+      divided by the absolute value of the criterion function is smaller than this.
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this as
+      convergence.
+    - **tr_solver** (str): Method for solving trust-region subproblems, relevant only
+      for 'trf' and 'dogbox' methods.
+
+      - 'exact' is suitable for not very large problems with dense
+        Jacobian matrices. The computational complexity per iteration is
+        comparable to a singular value decomposition of the Jacobian
+        matrix.
+      - 'lsmr' is suitable for problems with sparse and large Jacobian
+        matrices. It uses the iterative procedure
+        `scipy.sparse.linalg.lsmr` for finding a solution of a linear
+        least-squares problem and only requires matrix-vector product
+        evaluations.
+        If None (default), the solver is chosen based on the type of Jacobian
+        returned on the first iteration.
+    - **tr_solver_options** (dict):  Keyword options passed to trust-region solver.
+
+      - ``tr_solver='exact'``: `tr_options` are ignored.
+      - ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+
+
+.. dropdown::  scipy_ls_lm
+
+    Minimize a nonlinear least squares problem using a Levenberg-Marquardt method.
+
+    Does not handle bounds and sparse Jacobians. Usually the most efficient method for
+    small unconstrained problems.
+
+    The algorithm supports the following options:
+
+    - **convergence.relative_criterion_tolerance** (float): Stop when the relative
+      improvement between two iterations is below this.
+    - **convergence.relative_gradient_tolerance** (float): Stop when the gradient,
+      divided by the absolute value of the criterion function is smaller than this.
+    - **stopping.max_criterion_evaluations** (int): If the maximum number of function
+      evaluation is reached, the optimization stops but we do not count this as
+      convergence.
+    - **tr_solver** (str): Method for solving trust-region subproblems, relevant only
+      for 'trf' and 'dogbox' methods.
+
+      - 'exact' is suitable for not very large problems with dense
+        Jacobian matrices. The computational complexity per iteration is
+        comparable to a singular value decomposition of the Jacobian
+        matrix.
+      - 'lsmr' is suitable for problems with sparse and large Jacobian
+        matrices. It uses the iterative procedure
+        `scipy.sparse.linalg.lsmr` for finding a solution of a linear
+        least-squares problem and only requires matrix-vector product
+        evaluations.
+        If None (default), the solver is chosen based on the type of Jacobian
+        returned on the first iteration.
+    - **tr_solver_options** (dict):  Keyword options passed to trust-region solver.
+
+      - ``tr_solver='exact'``: `tr_options` are ignored.
+      - ``tr_solver='lsmr'``: options for `scipy.sparse.linalg.lsmr`.
+
+
+.. _own_algorithms:
+
+Own optimizers
+--------------
+
+Estimagic's own algorithms are considered experimental and should not be used for
+publication yet.
+
+In the long run we plan to implement a few high quality optimizers that are specially
+suited for difficult optimizations that arise in estimation problems. Examples are
+optimizers that exploit a nonlinear least-squares structure and can deal with
+noisy criterion functions.
+
+
+.. dropdown:: bhhh
+
+    Minimize a likelihood function using the BHHH algorithm.
+
+    BHHH (:cite:`Berndt1974`) can - and should ONLY - be used for minimizing
+    (or maximizing) a likelihood. It is similar to the Newton-Raphson
+    algorithm, but replaces the Hessian matrix with the outer product of the
+    gradient. This approximation is based on the information matrix equality
+    (:cite:`Halbert1982`) and is thus only vaid when minimizing (or maximizing)
+    a likelihood.
+
+    The criterion function :func:`func` should return a dictionary with
+    at least the entry ``{"contributions": array_or_pytree}`` where ``array_or_pytree``
+    contains the likelihood contributions of each individual.
+
+    bhhh supports the following options:
+
+    - **convergence_absolute_gradient_tolerance** (float): Stopping criterion for the
+      gradient tolerance. Default is 1e-8.
+    - **stopping_max_iterations** (int): Maximum number of iterations.
+      If reached, terminate. Default is 200.
+
+
+.. dropdown:: neldermead_parallel
+
+    Minimize a function using the neldermead_parallel algorithm.
+
+    This is a parallel Nelder-Mead algorithm following Lee D., Wiswall M., A parallel
+    implementation of the simplex function minimization routine,
+    Computational Economics, 2007.
+
+    The algorithm was implemented by Jacek Barszczewski
+
+    The algorithm supports the following options:
+
+    - **init_simplex_method** (string or callable): Name of the method to create initial
+      simplex or callable which takes as an argument initial value of parameters
+      and returns initial simplex as j+1 x j array, where j is length of x.
+      The default is "gao_han".
+    - **n_cores** (int): Degree of parallization. The default is 1 (no parallelization).
+
+    - **adaptive** (bool): Adjust parameters of Nelder-Mead algorithm to account
+      for simplex size. The default is True.
+
+    - **stopping.max_iterations** (int): Maximum number of algorithm iterations.
+      The default is STOPPING_MAX_ITERATIONS.
+
+    - **convergence.absolute_criterion_tolerance** (float): maximal difference between
+      function value evaluated on simplex points.
+      The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE.
+
+    - **convergence.absolute_params_tolerance** (float): maximal distance between points
+      in the simplex. The default is CONVERGENCE_SECOND_BEST_ABSOLUTE_PARAMS_TOLERANCE.
+
+    - **batch_evaluator** (string or callable): See :ref:`batch_evaluators` for
+        details. Default "joblib".
+
+
+.. dropdown:: pounders
+
+    Minimize a function using the POUNDERS algorithm.
+
+    POUNDERs (:cite:`Benson2017`, :cite:`Wild2015`, `GitHub repository
+    <https://github.com/erdc/petsc4py>`_)
+
+    can be a useful tool for economists who estimate structural models using
+    indirect inference, because unlike commonly used algorithms such as Nelder-Mead,
+    POUNDERs is tailored for minimizing a non-linear sum of squares objective function,
+    and therefore may require fewer iterations to arrive at a local optimum than
+    Nelder-Mead.
+
+    The criterion function :func:`func` should return a dictionary with the following
+    fields:
+
+    1. ``"value"``: The sum of squared (potentially weighted) errors.
+    2. ``"root_contributions"``: An array containing the root (weighted) contributions.
+
+    Scaling the problem is necessary such that bounds correspond to the unit hypercube
+    :math:`[0, 1]^n`. For unconstrained problems, scale each parameter such that unit
+    changes in parameters result in similar order-of-magnitude changes in the criterion
+    value(s).
+
+    pounders supports the following options:
+
+
+    - **convergence_absolute_gradient_tolerance**: Convergence tolerance for the
+      absolute gradient norm. Stop if norm of the gradient is less than this.
+      Default is 1e-8.
+    - **convergence_relative_gradient_tolerance**: Convergence tolerance for the
+      relative gradient norm. Stop if norm of the gradient relative to the criterion
+      value is less than this. Default is 1-8.
+    - **convergence_scaled_gradient_tolerance**: Convergence tolerance for the
+      scaled gradient norm. Stop if norm of the gradient divided by norm of the
+      gradient at the initial parameters is less than this.
+      Disabled, i.e. set to False, by default.
+    - **max_interpolation_points** (int): Maximum number of interpolation points.
+      Default is `2 * n + 1`, where `n` is the length of the parameter vector.
+    - **stopping_max_iterations** (int): Maximum number of iterations.
+      If reached, terminate. Default is 2000.
+    - **trustregion_initial_radius (float)**: Delta, initial trust-region radius.
+      0.1 by default.
+    - **trustregion_minimal_radius** (float): Minimal trust-region radius.
+      1e-6 by default.
+    - **trustregion_maximal_radius** (float): Maximal trust-region radius.
+      1e6 by default.
+    - **trustregion_shrinking_factor_not_successful** (float): Shrinking factor of
+      the trust-region radius in case the solution vector of the suproblem
+      is not accepted, but the model is fully linear (i.e. "valid").
+      Defualt is 0.5.
+    - **trustregion_expansion_factor_successful** (float): Shrinking factor of
+      the trust-region radius in case the solution vector of the suproblem
+      is accepted. Default is 2.
+    - **theta1** (float): Threshold for adding the current x candidate to the
+      model. Function argument to find_affine_points(). Default is 1e-5.
+    - **theta2** (float): Threshold for adding the current x candidate to the model.
+      Argument to get_interpolation_matrices_residual_model(). Default is 1e-4.
+    - **trustregion_threshold_successful** (float): First threshold for accepting the
+      solution vector of the subproblem as the best x candidate. Default is 0.
+    - **trustregion_threshold_very_successful** (float): Second threshold for accepting
+      the solution vector of the subproblem as the best x candidate. Default is 0.1.
+    - **c1** (float): Treshold for accepting the norm of our current x candidate.
+      Function argument to find_affine_points() for the case where input array
+      *model_improving_points* is zero.
+    - **c2** (int): Treshold for accepting the norm of our current x candidate.
+      Equal to 10 by default. Argument to find_affine_points() in case
+      the input array *model_improving_points* is not zero.
+    - **trustregion_subproblem_solver** (str): Solver to use for the trust-region
+      subproblem. Two internal solvers are supported:
+      - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
+      - "gqtpar": (does not support bound constraints)
+    - **trustregion_subproblem_options** (dict): Options dictionary containing
+      stopping criteria for the subproblem. These are the tolerance levels:
+      "ftol", "xtol", and "gtol". None of them have to be specified by default,
+      but can be.
+    - **batch_evaluator** (str or callable): Name of a pre-implemented batch evaluator
+      (currently 'joblib' and 'pathos_mp') or callable with the same interface
+      as the estimagic batch_evaluators. Default is "joblib".
+    - **n_cores (int)**: Number of processes used to parallelize the function
+      evaluations. Default is 1.
+
 
 .. _tao_algorithms:
 
@@ -443,7 +705,7 @@ At the moment, estimagic only supports
 `TAO's <https://www.anl.gov/mcs/tao-toolkit-for-advanced-optimization>`_
 POUNDERs algorithm.
 
-The `POUNDERs algorithm <https://www.mcs.anl.gov/papers/P5120-0414.pdf>`_
+The `POUNDERs algorithm <https://doi.org/10.1137/1.9781611974683.ch40>`_
 by Stefan Wild is tailored to minimize a non-linear sum of squares
 objective function. Remember to cite :cite:`Wild2015` when using POUNDERs in
 addition to estimagic.
@@ -2784,6 +3046,7 @@ fides>=0.7.4``, make sure you have at least 0.7.1).
   - **trustregion.scaled_gradient_as_possible_stepback** (bool): whether the scaled
     gradient should be added to the set of possible stepback proposals. Default is
     False.
+
 
 The NLOPT Optimizers (nlopt)
 -----------------------------

@@ -196,20 +196,20 @@ test_cases = [
 ]
 
 
-def criterion_and_derivative(x, task, algorithm_info):
-    if task == "criterion":
-        return (x ** 2).sum()
-    elif task == "derivative":
-        return 2 * x
-    else:
-        raise ValueError(f"Unknown task: {task}")
+def criterion(x):
+    return (x**2).sum()
+
+
+def derivative(x):
+    return 2 * x
 
 
 @pytest.mark.skipif(not IS_CYIPOPT_INSTALLED, reason="cyipopt not installed.")
 @pytest.mark.parametrize("algo_options", test_cases)
 def test_ipopt_algo_options(algo_options):
     res = ipopt(
-        criterion_and_derivative=criterion_and_derivative,
+        criterion=criterion,
+        derivative=derivative,
         x=np.array([1, 2, 3]),
         lower_bounds=np.array([-np.inf, -np.inf, -np.inf]),
         upper_bounds=np.array([np.inf, np.inf, np.inf]),

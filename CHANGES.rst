@@ -7,6 +7,46 @@ releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
 
+0.2.5
+-----
+
+- :gh:`302` Drastically improves error handling during optimization (:ghuser:`janosg`).
+
+0.2.4
+-----
+
+- :gh:`304` Removes the chaospy dependency (:ghuser:`segsell`).
+
+0.2.3
+-----
+
+- :gh:`295` Fixes a small bug in estimation_table (:ghuser:`mpetrosian`).
+- :gh:`286` Adds pytree support for first and second derivative (:ghuser:`timmens`).
+- :gh:`285` Allows to use estimation functions with external optimization
+  (:ghuser:`janosg`).
+- :gh:`283` Adds fast solvers for quadratic trustregion subproblems (:ghuser:`segsell`).
+- :gh:`282` Vastly improves estimation tables (:ghuser:`mpetrosian`).
+- :gh:`281` Adds some tools to work with pytrees (:ghuser:`janosg`
+  and :ghuser:`timmens`).
+- :gh:`278` adds Estimagic Enhancement Proposal 1 for the use of Pytrees in Estimagic
+  (:ghuser:`janosg`)
+
+
+0.2.2
+-----
+
+- :gh:`276` Add parallel Nelder-Mead algorithm by :ghuser:`jacekb95`
+- :gh:`267` Update fides by :ghuser:`roecla`
+- :gh:`265` Refactor pounders algorithm by :ghuser:`segsell` and :ghuser:`janosg`.
+- :gh:`261` Add pure Python pounders algorithm by :ghuser:`segsell`.
+
+0.2.1
+-----
+
+- :gh:`260` Update MSM and ML notebooks by :ghuser:`timmens`.
+- :gh:`259` Several small fixes and improvements by :ghuser:`janosg` and
+  :ghuser:`roecla`.
+
 
 0.2.0
 -----

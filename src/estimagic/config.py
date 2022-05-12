@@ -1,5 +1,8 @@
 from pathlib import Path
 
+import plotly.express as px
+
+
 DEFAULT_SEED = 5471
 
 DOCS_DIR = Path(__file__).parent.parent / "docs"
@@ -10,6 +13,9 @@ TEST_FIXTURES_DIR = (
     Path(__file__).parent.parent.parent / "tests" / "optimization" / "fixtures"
 )
 
+
+PLOTLY_TEMPLATE = "plotly_white"
+PLOTLY_PALETTE = px.colors.qualitative.Set2
 
 DEFAULT_N_CORES = 1
 
@@ -35,13 +41,6 @@ else:
     IS_NLOPT_INSTALLED = True
 
 try:
-    import matplotlib  # noqa: F401
-except ImportError:
-    IS_MATPLOTLIB_INSTALLED = False
-else:
-    IS_MATPLOTLIB_INSTALLED = True
-
-try:
     import pybobyqa  # noqa: F401
 except ImportError:
     IS_PYBOBYQA_INSTALLED = False
@@ -62,7 +61,6 @@ except ImportError:
 else:
     IS_PYGMO_INSTALLED = True
 
-
 try:
     import cyipopt  # noqa: F401
 except ImportError:
@@ -70,13 +68,26 @@ except ImportError:
 else:
     IS_CYIPOPT_INSTALLED = True
 
-
 try:
     import fides  # noqa: F401
 except ImportError:
     IS_FIDES_INSTALLED = False
 else:
     IS_FIDES_INSTALLED = True
+
+try:
+    import jax  # noqa: F401
+except ImportError:
+    IS_JAX_INSTALLED = False
+else:
+    IS_JAX_INSTALLED = True
+
+try:
+    import seaborn  # noqa: F401
+except ImportError:
+    IS_SEABORN_INSTALLED = False
+else:
+    IS_SEABORN_INSTALLED = True
 
 
 # =================================================================================

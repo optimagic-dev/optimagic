@@ -8,6 +8,7 @@ from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 def bootstrap(
     data,
     outcome,
+    *,
     outcome_kwargs=None,
     n_draws=1_000,
     cluster_by=None,
@@ -59,13 +60,15 @@ def bootstrap(
         batch_evaluator=batch_evaluator,
     )
 
-    out = bootstrap_from_outcomes(data, outcome, estimates, ci_method, alpha, n_cores)
+    out = bootstrap_from_outcomes(
+        data, outcome, estimates, ci_method=ci_method, alpha=alpha, n_cores=n_cores
+    )
 
     return out
 
 
 def bootstrap_from_outcomes(
-    data, outcome, bootstrap_outcomes, ci_method="percentile", alpha=0.05, n_cores=1
+    data, outcome, bootstrap_outcomes, *, ci_method="percentile", alpha=0.05, n_cores=1
 ):
     """Set up results table containing mean, standard deviation and confidence interval
     for each estimated parameter.

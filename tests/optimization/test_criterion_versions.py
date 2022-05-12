@@ -13,6 +13,7 @@ from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.examples.criterion_functions import sos_dict_criterion
 from estimagic.examples.criterion_functions import sos_dict_criterion_with_pd_objects
 from estimagic.examples.criterion_functions import sos_scalar_criterion
+from estimagic.exceptions import InvalidFunctionError
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -58,7 +59,7 @@ def test_invalid_criterion_versions(criterion, algorithm):
     start_params = pd.DataFrame()
     start_params["value"] = [1, 2, 3]
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidFunctionError):
         minimize(
             criterion=criterion,
             params=start_params,

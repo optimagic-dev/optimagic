@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import stats
 from scipy.linalg import pinv
-from scipy.ndimage.filters import convolve1d
+from scipy.ndimage import convolve1d
 
 
 def richardson_extrapolation(sequence, steps, method="central", num_terms=None):
@@ -164,7 +164,7 @@ def _estimate_error(new_seq, old_seq, richardson_coef):
     t_quantile = stats.t(df=1).ppf(0.975)  # 12.7062047361747 in numdifftools
     new_seq_len = new_seq.shape[0]
 
-    unnormalized_covariance = np.sum(richardson_coef ** 2)
+    unnormalized_covariance = np.sum(richardson_coef**2)
     fact = np.maximum(t_quantile * np.sqrt(unnormalized_covariance), eps * 10.0)
 
     if new_seq_len <= 1:

@@ -10,12 +10,20 @@ from estimagic.config import DEFAULT_N_CORES
 from estimagic.differentiation import finite_differences
 from estimagic.differentiation.generate_steps import generate_steps
 from estimagic.differentiation.richardson_extrapolation import richardson_extrapolation
+from estimagic.parameters.block_trees import hessian_to_block_tree
+from estimagic.parameters.block_trees import matrix_to_block_tree
+from estimagic.parameters.parameter_bounds import get_bounds
+from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import namedtuple_from_kwargs
+from pybaum import tree_flatten
+from pybaum import tree_just_flatten as tree_leaves
+from pybaum import tree_unflatten
 
 
 def first_derivative(
     func,
     params,
+    *,
     func_kwargs=None,
     method="central",
     n_steps=1,
@@ -30,29 +38,25 @@ def first_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_info=True,
+    return_info=False,
     key=None,
 ):
     """Evaluate first derivative of func at params according to method and step options.
 
     Internally, the function is converted such that it maps from a 1d array to a 1d
-    array. Then the Jacobian of that function is calculated. The resulting derivative
-    estimate is always a :class:`numpy.ndarray`.
+    array. Then the Jacobian of that function is calculated.
 
-    The parameters and the function output can be pandas objects (Series or DataFrames
-    with value column). In that case the output of first_derivative is also a pandas
-    object and with appropriate index and columns.
+    The parameters and the function output can be estimagic-pytrees; for more details on
+    estimagi-pytrees see :ref:`eeppytrees`. By default the resulting Jacobian will be
+    returned as a block-pytree.
 
-    Detailed description of all options that influence the step size as well as an
-    explanation of how steps are adjusted to bounds in case of a conflict,
-    see :func:`~estimagic.differentiation.generate_steps.generate_steps`.
+    For a detailed description of all options that influence the step size as well as an
+    explanation of how steps are adjusted to bounds in case of a conflict, see
+    :func:`~estimagic.differentiation.generate_steps.generate_steps`.
 
     Args:
         func (callable): Function of which the derivative is calculated.
-        params (numpy.ndarray, pandas.Series or pandas.DataFrame): 1d numpy array or
-            :class:`pandas.DataFrame` with parameters at which the derivative is
-            calculated. If it is a DataFrame, it can contain the columns "lower_bound"
-            and "upper_bound" for bounds. See :ref:`params`.
+        params (pytree): A pytree. See :ref:`params`.
         func_kwargs (dict): Additional keyword arguments for func, optional.
         method (str): One of ["central", "forward", "backward"], default "central".
         n_steps (int): Number of steps needed. For central methods, this is
@@ -69,12 +73,8 @@ def first_derivative(
             scaling_factor is useful if you want to increase or decrease the base_step
             relative to the rule-of-thumb or user provided base_step, for example to
             benchmark the effect of the step size. Default 1.
-        lower_bounds (numpy.ndarray): 1d array with lower bounds for each parameter. If
-            params is a DataFrame and has the columns "lower_bound", this will be taken
-            as lower_bounds if now lower_bounds have been provided explicitly.
-        upper_bounds (numpy.ndarray): 1d array with upper bounds for each parameter. If
-            params is a DataFrame and has the columns "upper_bound", this will be taken
-            as upper_bounds if no upper_bounds have been provided explicitly.
+        lower_bounds (pytree): To be written.
+        upper_bounds (pytree): To be written.
         step_ratio (float, numpy.array): Ratio between two consecutive Richardson
             extrapolation steps in the same direction. default 2.0. Has to be larger
             than one. The step ratio is only used if n_steps > 1.
@@ -100,7 +100,7 @@ def first_derivative(
         return_info (bool): If True, return additional information on function
             evaluations and internal derivative candidates, stored in output dict under
             "func_evals" and "derivative_candidates". Derivative candidates are only
-            returned if n_steps > 1. Default True.
+            returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
@@ -126,19 +126,16 @@ def first_derivative(
                 1.
 
     """
-    lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
+    lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
-    # convert params to numpy, but keep label information
-    params_index = (
-        params.index if isinstance(params, (pd.DataFrame, pd.Series)) else None
-    )
-
-    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
-    x = np.atleast_1d(x).astype(float)
+    # convert params to numpy
+    registry = get_registry(extended=True)
+    x, params_treedef = tree_flatten(params, registry=registry)
+    x = np.array(x, dtype=np.float64)
 
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
@@ -169,9 +166,11 @@ def first_derivative(
                 evaluation_points.append(point)
 
     # convert the numpy arrays to whatever is needed by func
-    evaluation_points = _convert_evaluation_points_to_original(
-        evaluation_points, params
-    )
+    evaluation_points = [
+        # entries are either a numpy.ndarray or np.nan
+        _unflatten_if_not_nan(p, params_treedef, registry)
+        for p in evaluation_points
+    ]
 
     # we always evaluate f0, so we can fall back to one-sided derivatives if
     # two-sided derivatives fail. The extra cost is negligible in most cases.
@@ -198,13 +197,13 @@ def first_derivative(
         f0 = raw_evals[-1]
         raw_evals = raw_evals[:-1]
     func_value = f0
-    f0 = f0[key] if isinstance(f0, dict) else f0
-    f_was_scalar = np.isscalar(f0)
-    out_index = f0.index if isinstance(f0, pd.Series) else None
-    f0 = np.atleast_1d(f0)
+
+    f0_tree = f0[key] if key is not None and isinstance(f0, dict) else f0
+    f0 = tree_leaves(f0_tree, registry=registry)
+    f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
-    raw_evals = _convert_evals_to_numpy(raw_evals, key)
+    raw_evals = _convert_evals_to_numpy(raw_evals, key, registry)
 
     # apply finite difference formulae
     evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
@@ -237,23 +236,23 @@ def first_derivative(
         raise Exception(exc_info)
 
     # results processing
-    derivative = jac.flatten() if f_was_scalar else jac
-    derivative = _add_index_to_derivative(derivative, params_index, out_index)
+    derivative = matrix_to_block_tree(jac, f0_tree, params)
 
     result = {"derivative": derivative}
     if return_func_value:
         result["func_value"] = func_value
-
-    info = _collect_additional_info(
-        return_info, steps, evals, updated_candidates, target="first_derivative"
-    )
-    result = {**result, **info}
+    if return_info:
+        info = _collect_additional_info(
+            steps, evals, updated_candidates, target="first_derivative"
+        )
+        result = {**result, **info}
     return result
 
 
 def second_derivative(
     func,
     params,
+    *,
     func_kwargs=None,
     method="central_cross",
     n_steps=1,
@@ -268,7 +267,7 @@ def second_derivative(
     error_handling="continue",
     batch_evaluator="joblib",
     return_func_value=False,
-    return_info=True,
+    return_info=False,
     key=None,
 ):
     """Evaluate second derivative of func at params according to method and step options
@@ -342,7 +341,7 @@ def second_derivative(
         return_info (bool): If True, return additional information on function
             evaluations and internal derivative candidates, stored in output dict under
             "func_evals" and "derivative_candidates". Derivative candidates are only
-            returned if n_steps > 1. Default True.
+            returned if n_steps > 1. Default False.
         key (str): If func returns a dictionary, take the derivative of
             func(params)[key].
 
@@ -377,19 +376,16 @@ def second_derivative(
                 returned if return_info is True.
 
     """
-    lower_bounds, upper_bounds = _process_bounds(lower_bounds, upper_bounds, params)
+    lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
 
     # handle keyword arguments
     func_kwargs = {} if func_kwargs is None else func_kwargs
     partialed_func = functools.partial(func, **func_kwargs)
 
-    # convert params to numpy, but keep label information
-    params_index = (
-        params.index if isinstance(params, (pd.DataFrame, pd.Series)) else None
-    )
-
-    x = params["value"].to_numpy() if isinstance(params, pd.DataFrame) else params
-    x = np.atleast_1d(x).astype(float)
+    # convert params to numpy
+    registry = get_registry(extended=True)
+    x, params_treedef = tree_flatten(params, registry=registry)
+    x = np.atleast_1d(x).astype(np.float64)
 
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
@@ -443,7 +439,8 @@ def second_derivative(
 
     # convert the numpy arrays to whatever is needed by func
     evaluation_points = {
-        step_type: _convert_evaluation_points_to_original(points, params)
+        # entries are either a numpy.ndarray or np.nan, we unflatten only
+        step_type: [_unflatten_if_not_nan(p, params_treedef, registry) for p in points]
         for step_type, points in evaluation_points.items()
     }
 
@@ -478,13 +475,15 @@ def second_derivative(
     if f0 is None:
         f0 = raw_evals["one_step"][-1]
         raw_evals["one_step"] = raw_evals["one_step"][:-1]
-    f0 = f0[key] if isinstance(f0, dict) else f0
-    out_index = f0.index if isinstance(f0, pd.Series) else None
-    f0 = np.atleast_1d(f0)
+    func_value = f0
+
+    f0_tree = f0[key] if key is not None and isinstance(f0, dict) else f0
+    f0 = tree_leaves(f0_tree, registry=registry)
+    f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
     raw_evals = {
-        step_type: _convert_evals_to_numpy(evals, key)
+        step_type: _convert_evals_to_numpy(evals, key, registry)
         for step_type, evals in raw_evals.items()
     }
 
@@ -524,16 +523,16 @@ def second_derivative(
         raise Exception(exc_info)
 
     # results processing
-    derivative = np.squeeze(hess)
-    derivative = _add_index_to_second_derivative(derivative, params_index, out_index)
+    derivative = hessian_to_block_tree(hess, f0_tree, params)
 
     result = {"derivative": derivative}
     if return_func_value:
-        result["func_value"] = f0
-    info = _collect_additional_info(
-        return_info, steps, evals, updated_candidates, target="second_derivative"
-    )
-    result = {**result, **info}
+        result["func_value"] = func_value
+    if return_info:
+        info = _collect_additional_info(
+            steps, evals, updated_candidates, target="second_derivative"
+        )
+        result = {**result, **info}
     return result
 
 
@@ -614,39 +613,6 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     return evals
 
 
-def _process_bounds(lower_bounds, upper_bounds, params):
-    lower_bounds = np.atleast_1d(lower_bounds) if lower_bounds is not None else None
-    upper_bounds = np.atleast_1d(upper_bounds) if upper_bounds is not None else None
-    if isinstance(params, pd.DataFrame):
-        if lower_bounds is None and "lower_bound" in params.columns:
-            lower_bounds = params["lower_bound"].to_numpy()
-        if upper_bounds is None and "upper_bound" in params.columns:
-            upper_bounds = params["upper_bound"].to_numpy()
-    return lower_bounds, upper_bounds
-
-
-def _convert_evaluation_points_to_original(evaluation_points, params):
-    if np.isscalar(params):
-        res = [p[0] if isinstance(p, np.ndarray) else p for p in evaluation_points]
-    elif isinstance(params, pd.DataFrame):
-        res = []
-        for point in evaluation_points:
-            if isinstance(point, np.ndarray):
-                pandas_point = params.copy(deep=True)
-                pandas_point["value"] = point
-                res.append(pandas_point)
-            else:
-                res.append(point)
-    elif isinstance(params, pd.Series):
-        res = [
-            pd.Series(p, index=params.index) if isinstance(p, np.ndarray) else p
-            for p in evaluation_points
-        ]
-    else:
-        res = evaluation_points
-    return res
-
-
 def _convert_evaluation_data_to_frame(steps, evals):
     """Convert evaluation data to (tidy) data frame.
 
@@ -724,7 +690,7 @@ def _convert_richardson_candidates_to_frame(jac, err):
     return df
 
 
-def _convert_evals_to_numpy(raw_evals, key):
+def _convert_evals_to_numpy(raw_evals, key, registry):
     """harmonize the output of the function evaluations.
 
     The raw_evals might contain dictionaries of which we only need one entry, scalar
@@ -733,9 +699,18 @@ def _convert_evals_to_numpy(raw_evals, key):
 
     """
     # get rid of dictionaries
-    evals = [val[key] if isinstance(val, dict) else val for val in raw_evals]
+    evals = [
+        val[key] if isinstance(val, dict) and key is not None else val
+        for val in raw_evals
+    ]
+
     # get rid of pandas objects
-    evals = [np.array(val) if isinstance(val, pd.Series) else val for val in evals]
+    evals = [
+        np.array(tree_leaves(val, registry=registry), dtype=np.float64)
+        if not _is_scalar_nan(val)
+        else val
+        for val in evals
+    ]
 
     # find out the correct output shape
     try:
@@ -940,42 +915,6 @@ def _nan_skipping_batch_evaluator(
     return results
 
 
-def _add_index_to_derivative(derivative, params_index, out_index):
-    if len(derivative.shape) == 1 and params_index is not None:
-        derivative = pd.Series(derivative, index=params_index)
-    if len(derivative.shape) == 2 and (
-        params_index is not None or out_index is not None
-    ):
-        derivative = pd.DataFrame(derivative, columns=params_index, index=out_index)
-    return derivative
-
-
-def _add_index_to_second_derivative(derivative, params_index, out_index):
-    if len(derivative.shape) == 1:
-        if derivative.shape[0] == 1 and params_index is not None:
-            derivative = pd.Series(derivative, index=params_index)
-        if derivative.shape[0] > 1 and out_index is not None:
-            derivative = pd.Series(derivative, index=out_index)
-    if len(derivative.shape) == 2 and params_index is not None:
-        derivative = pd.DataFrame(derivative, columns=params_index, index=params_index)
-    if (
-        len(derivative.shape) == 3
-        and params_index is not None
-        and out_index is not None
-    ):
-        derivative = pd.concat(
-            (
-                pd.DataFrame(
-                    derivative[dim_f], columns=params_index, index=params_index
-                )
-                for dim_f in range(derivative.shape[0])
-            ),
-            axis=0,
-            keys=out_index,
-        )
-    return derivative
-
-
 def _split_into_str_and_int(s):
     """Splits string in str and int parts.
 
@@ -996,25 +935,36 @@ def _split_into_str_and_int(s):
     return str_part, int(int_part)
 
 
-def _collect_additional_info(return_info, steps, evals, updated_candidates, target):
+def _collect_additional_info(steps, evals, updated_candidates, target):
     """Combine additional information in dict if return_info is True."""
     info = {}
-    if return_info:
-        # save function evaluations to accessible data frame
-        if target == "first_derivative":
-            func_evals = _convert_evaluation_data_to_frame(steps, evals)
-            info["func_evals"] = func_evals
-        else:
-            one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
-            info["func_evals_one_step"] = one_step
-            info["func_evals_two_step"] = None
-            info["func_evals_cross_step"] = None
+    # save function evaluations to accessible data frame
+    if target == "first_derivative":
+        func_evals = _convert_evaluation_data_to_frame(steps, evals)
+        info["func_evals"] = func_evals
+    else:
+        one_step = _convert_evaluation_data_to_frame(steps, evals["one_step"])
+        info["func_evals_one_step"] = one_step
+        info["func_evals_two_step"] = None
+        info["func_evals_cross_step"] = None
 
-        if updated_candidates is not None:
-            # combine derivative candidates in accessible data frame
-            derivative_candidates = _convert_richardson_candidates_to_frame(
-                *updated_candidates
-            )
-            info["derivative_candidates"] = derivative_candidates
+    if updated_candidates is not None:
+        # combine derivative candidates in accessible data frame
+        derivative_candidates = _convert_richardson_candidates_to_frame(
+            *updated_candidates
+        )
+        info["derivative_candidates"] = derivative_candidates
 
     return info
+
+
+def _is_scalar_nan(value):
+    return isinstance(value, float) and np.isnan(value)
+
+
+def _unflatten_if_not_nan(leaves, treedef, registry):
+    if isinstance(leaves, np.ndarray):
+        out = tree_unflatten(treedef, leaves, registry=registry)
+    else:
+        out = leaves
+    return out

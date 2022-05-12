@@ -11,8 +11,6 @@ Styleguide for the codebase
 
 - Functions have no side effect.
     If you modify a mutable argument, make a copy at the beginning of the function.
-- Use immutable objects whenever you don't really need the mutability. Examples are
-    tuples instead of lists and namedtuples instead of dictionaries.
 - Deep modules.
     This is a term coined by
     `John Ousterhout <https://www.youtube.com/watch?v=bmSAYlu0NcY>`_. A deep module
@@ -122,7 +120,4 @@ Styleguide for the documentation
       - """
 
 - Format.
-    The code formatting in .rst files is ensured by blacken-docs. For Jupyter
-    notebooks, use the
-    `jupyterlab-code-formatter <https://jupyterlab-code-formatter.readthedocs.io/en/latest/>`_
-    with the black formatter.
+    The code formatting in .rst files is ensured by blacken-docs.

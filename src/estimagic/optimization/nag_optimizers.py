@@ -10,11 +10,12 @@ The following arguments are not supported as ``algo_options``:
 
 """
 import warnings
-from functools import partial
 
 import numpy as np
 from estimagic.config import IS_DFOLS_INSTALLED
 from estimagic.config import IS_PYBOBYQA_INSTALLED
+from estimagic.decorators import mark_minimizer
+from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CLIP_CRITERION_IF_OVERFLOWING
 from estimagic.optimization.algo_options import (
     CONVERGENCE_MINIMAL_TRUSTREGION_RADIUS_TOLERANCE,
@@ -55,8 +56,15 @@ if IS_DFOLS_INSTALLED:
     import dfols
 
 
+@mark_minimizer(
+    name="nag_dfols",
+    primary_criterion_entry="root_contributions",
+    disable_cache=True,
+    needs_scaling=True,
+    is_available=IS_DFOLS_INSTALLED,
+)
 def nag_dfols(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -95,8 +103,8 @@ def nag_dfols(
 
     """
     if not IS_DFOLS_INSTALLED:
-        raise NotImplementedError(
-            "The dfols package is not installed and required for 'nag_dfols'. "
+        raise NotInstalledError(
+            "The 'nag_dfols' algorithm requires the DFO-LS package to be installed."
             "You can install it with 'pip install DFO-LS'. "
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/dfols/build/html/install.html",
@@ -110,14 +118,6 @@ def nag_dfols(
             "trustregion_method_to_replace_extra_points must be "
             "'geometry_improving', 'momentum' or None."
         )
-
-    algo_info = {
-        "name": "nag_dfols",
-        "primary_criterion_entry": "root_contributions",
-        # does not really parallelize but we want to disable caching for noise averaging
-        "parallelizes": True,
-        "needs_scaling": False,
-    }
 
     advanced_options, trustregion_reset_options = _create_nag_advanced_options(
         x=x,
@@ -231,10 +231,6 @@ def nag_dfols(
 
     advanced_options.update(dfols_options)
 
-    criterion = partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info
-    )
-
     res = dfols.solve(
         criterion,
         x0=x,
@@ -254,8 +250,14 @@ def nag_dfols(
     return _process_nag_result(res, len(x))
 
 
+@mark_minimizer(
+    name="nag_dfols",
+    disable_cache=True,
+    needs_scaling=True,
+    is_available=IS_PYBOBYQA_INSTALLED,
+)
 def nag_pybobyqa(
-    criterion_and_derivative,
+    criterion,
     x,
     lower_bounds,
     upper_bounds,
@@ -293,9 +295,9 @@ def nag_pybobyqa(
 
     """
     if not IS_PYBOBYQA_INSTALLED:
-        raise NotImplementedError(
-            "The pybobyqa package is not installed and required for 'nag_pybobyqa'. "
-            "You can install it with 'pip install Py-BOBYQA'. "
+        raise NotInstalledError(
+            "The 'nag_pybobyqa' algorithm requires the Py-BOBYQA package to be "
+            "installed. You can install it with 'pip install Py-BOBYQA'. "
             "For additional installation instructions visit: ",
             r"https://numericalalgorithmsgroup.github.io/pybobyqa/build/html/"
             "install.html",
@@ -304,16 +306,6 @@ def nag_pybobyqa(
     if convergence_criterion_value is None:
         convergence_criterion_value = -np.inf
 
-    algo_info = {
-        "name": "nag_pybobyqa",
-        "primary_criterion_entry": "value",
-        # does not really parallelize but we want to disable caching for noise averaging
-        "parallelizes": True,
-        "needs_scaling": False,
-    }
-    criterion = partial(
-        criterion_and_derivative, task="criterion", algorithm_info=algo_info
-    )
     advanced_options, trustregion_reset_options = _create_nag_advanced_options(
         x=x,
         noise_multiplicative_level=noise_multiplicative_level,

@@ -7,5 +7,4 @@ Development
 
    how-to
    styleguide
-   roadmap
-   releases
+   eeps

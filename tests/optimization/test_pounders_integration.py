@@ -1,8 +1,10 @@
+"""Test the internal pounders interface."""
 from functools import partial
 
 import numpy as np
 import pandas as pd
 import pytest
+from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.config import TEST_FIXTURES_DIR
 from estimagic.optimization.pounders import internal_solve_pounders
 from numpy.testing import assert_array_almost_equal as aaae
@@ -38,31 +40,9 @@ def criterion():
     return partial(func, exog=exog, endog=endog)
 
 
-start_params = [
-    np.array([0.15, 0.008, 0.01]),
-    np.ones(3) * 0.25,
-    np.array([1e-6, 1e-2, 1e-6]),
-]
-
-TEST_CASES = []
-for subsolver in ["trust-constr", "L-BFGS-B"]:
-    for x0 in start_params:
-        for gtol in [1e-8]:
-            for subtol in [1e-8, 1e-9]:
-                TEST_CASES.append(
-                    (
-                        x0,
-                        gtol,
-                        subsolver,
-                        {"ftol": subtol, "xtol": subtol, "gtol": subtol},
-                    )
-                )
-
-
 @pytest.fixture()
-def options():
+def pounders_options():
     out = {
-        "n_obs": 214,
         "delta": 0.1,
         "delta_min": 1e-6,
         "delta_max": 1e6,
@@ -76,29 +56,101 @@ def options():
         "c2": 10,
         "lower_bounds": None,
         "upper_bounds": None,
+        "maxiter": 200,
+    }
+    return out
+
+
+@pytest.fixture()
+def trustregion_subproblem_options():
+    out = {
+        "maxiter": 50,
+        "maxiter_gradient_descent": 5,
+        "gtol_abs": 1e-8,
+        "gtol_rel": 1e-8,
+        "gtol_scaled": 0,
+        "gtol_abs_cg": 1e-8,
+        "gtol_rel_cg": 1e-6,
+        "k_easy": 0.1,
+        "k_hard": 0.2,
     }
     return out
 
 
 @pytest.mark.parametrize(
-    "start_vec, gtol, solver_sub, trustregion_subproblem_options", TEST_CASES
+    "start_vec",
+    [
+        (np.array([0.15, 0.008, 0.01])),
+        (np.array([1e-3, 1e-3, 1e-3])),
+        (np.array([1e-6, 1e-6, 1e-6])),
+    ],
 )
-def test_solution(
-    start_vec, gtol, solver_sub, trustregion_subproblem_options, criterion, options
-):
+def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_options):
+    solver_sub = "bntr"
 
-    maxiter = 200
+    gtol_abs = 1e-8
+    gtol_rel = 1e-8
+    gtol_scaled = 0
 
-    rslt = internal_solve_pounders(
+    result = internal_solve_pounders(
         x0=start_vec,
         criterion=criterion,
-        maxiter=maxiter,
-        gtol=gtol,
-        ftol_sub=trustregion_subproblem_options["ftol"],
-        xtol_sub=trustregion_subproblem_options["xtol"],
-        gtol_sub=trustregion_subproblem_options["gtol"],
+        gtol_abs=gtol_abs,
+        gtol_rel=gtol_rel,
+        gtol_scaled=gtol_scaled,
+        maxinterp=2 * len(start_vec) + 1,
         solver_sub=solver_sub,
-        **options,
+        maxiter_sub=trustregion_subproblem_options["maxiter"],
+        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+            "maxiter_gradient_descent"
+        ],
+        gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
+        gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
+        gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
+        gtol_abs_conjugate_gradient_sub=trustregion_subproblem_options["gtol_abs_cg"],
+        gtol_rel_conjugate_gradient_sub=trustregion_subproblem_options["gtol_rel_cg"],
+        k_easy_sub=trustregion_subproblem_options["k_easy"],
+        k_hard_sub=trustregion_subproblem_options["k_hard"],
+        n_cores=1,
+        batch_evaluator=joblib_batch_evaluator,
+        **pounders_options,
     )
 
-    aaae(rslt["solution_x"], np.array([0.190279, 0.00613141, 0.0105309]), decimal=5)
+    x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
+    aaae(result["solution_x"], x_expected, decimal=3)
+
+
+@pytest.mark.parametrize("start_vec", [(np.array([0.15, 0.008, 0.01]))])
+def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_options):
+    solver_sub = "gqtpar"
+
+    gtol_abs = 1e-8
+    gtol_rel = 1e-8
+    gtol_scaled = 0
+
+    result = internal_solve_pounders(
+        x0=start_vec,
+        criterion=criterion,
+        gtol_abs=gtol_abs,
+        gtol_rel=gtol_rel,
+        gtol_scaled=gtol_scaled,
+        maxinterp=7,
+        solver_sub=solver_sub,
+        maxiter_sub=trustregion_subproblem_options["maxiter"],
+        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+            "maxiter_gradient_descent"
+        ],
+        gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
+        gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
+        gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
+        gtol_abs_conjugate_gradient_sub=trustregion_subproblem_options["gtol_abs_cg"],
+        gtol_rel_conjugate_gradient_sub=trustregion_subproblem_options["gtol_rel_cg"],
+        k_easy_sub=trustregion_subproblem_options["k_easy"],
+        k_hard_sub=trustregion_subproblem_options["k_hard"],
+        n_cores=1,
+        batch_evaluator=joblib_batch_evaluator,
+        **pounders_options,
+    )
+
+    x_expected = np.array([0.1902789114691, 0.006131410288292, 0.01053088353832])
+    aaae(result["solution_x"], x_expected, decimal=4)

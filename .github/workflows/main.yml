@@ -1,0 +1,90 @@
+name: main
+
+# Automatically cancel a previous run.
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+
+  run-tests:
+
+    name: Run tests for ${{ matrix.os }} on ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: ['3.8', '3.9', '3.10']
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install core dependencies.
+        shell: bash -l {0}
+        run: conda install -c conda-forge tox-conda
+
+      - name: Run pytest.
+        shell: bash -l {0}
+        run: tox -e pytest -- -m "not slow and not jax" --cov-report=xml --cov=./
+
+      - name: Upload coverage report.
+        if: runner.os == 'Linux' && matrix.python-version == '3.8'
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+
+  run-jax-tests:
+
+    name: Run jax tests on Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.8
+
+      - name: Install core dependencies.
+        shell: bash -l {0}
+        run: conda install -c conda-forge tox-conda
+
+      - name: Run pytest on jax tests.
+        shell: bash -l {0}
+        run: tox -e jax -- -m "jax"
+
+
+  docs:
+
+    name: Run documentation.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: 3.8
+
+      - name: Install core dependencies.
+        shell: bash -l {0}
+        run: conda install -c conda-forge tox-conda
+
+      - name: Build docs
+        shell: bash -l {0}
+        run: tox -e sphinx

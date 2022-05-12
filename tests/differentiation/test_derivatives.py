@@ -9,6 +9,7 @@ from estimagic.differentiation.derivatives import _convert_evaluation_data_to_fr
 from estimagic.differentiation.derivatives import (
     _convert_richardson_candidates_to_frame,
 )
+from estimagic.differentiation.derivatives import _is_scalar_nan
 from estimagic.differentiation.derivatives import _nan_skipping_batch_evaluator
 from estimagic.differentiation.derivatives import _reshape_cross_step_evals
 from estimagic.differentiation.derivatives import _reshape_one_step_evals
@@ -112,7 +113,7 @@ def test_second_derivative_hessian(binary_choice_inputs, method):
 @pytest.mark.parametrize("method", methods)
 def test_first_derivative_scalar(method):
     def f(x):
-        return x ** 2
+        return x**2
 
     calculated = first_derivative(f, 3.0, n_cores=1)
     expected = 6.0
@@ -122,7 +123,7 @@ def test_first_derivative_scalar(method):
 @pytest.mark.parametrize("method", methods_second_derivative)
 def test_second_derivative_scalar(method):
     def f(x):
-        return x ** 2
+        return x**2
 
     calculated = second_derivative(f, 3.0, n_cores=1)
     expected = 2.0
@@ -133,7 +134,7 @@ def test_second_derivative_scalar(method):
 @pytest.mark.parametrize("method", methods)
 def test_first_derivative_scalar_with_return_func_value(method):
     def f(x):
-        return x ** 2
+        return x**2
 
     calculated = first_derivative(
         f, 3.0, return_func_value=True, return_info=False, n_cores=1
@@ -145,7 +146,7 @@ def test_first_derivative_scalar_with_return_func_value(method):
 @pytest.mark.parametrize("method", methods_second_derivative)
 def test_second_derivative_scalar_with_return_func_value(method):
     def f(x):
-        return x ** 3
+        return x**3
 
     calculated = second_derivative(
         f, 3.0, return_func_value=True, return_info=False, n_cores=1
@@ -166,7 +167,7 @@ def test_nan_skipping_batch_evaluator():
         np.array([1, 4]),
     ]
     calculated = _nan_skipping_batch_evaluator(
-        func=lambda x: x ** 2,
+        func=lambda x: x**2,
         arguments=arglist,
         n_cores=1,
         error_handling="continue",
@@ -354,3 +355,9 @@ def test_reshape_cross_step_evals():
     got = _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0)
     assert np.all(got.pos == expected_pos)
     assert np.all(got.neg == expected_neg)
+
+
+def test_is_scalar_nan():
+    assert _is_scalar_nan(np.nan)
+    assert not _is_scalar_nan(1.0)
+    assert not _is_scalar_nan(np.array([np.nan]))
