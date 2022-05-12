@@ -566,18 +566,9 @@ noisy criterion functions.
     (:cite:`Halbert1982`) and is thus only vaid when minimizing (or maximizing)
     a likelihood.
 
-    The criterion function :func:`func` should return a dictionary with the following
-    fields:
-
-    1. ``"value"``: The sum of the likelihood contributions.
-    2. ``"contributions"``: An array containing the (weighted) contributions of
-      the likelihood function.
-
-    It may additionally return the field:
-
-    3. ``"derivative"``: An array containing the gradient of the likelihood
-      function for each observation.
-
+    The criterion function :func:`func` should return a dictionary with
+    at least the entry ``{"contributions": array_or_pytree}`` where ``array_or_pytree``
+    contains the likelihood contributions of each individual.
 
     bhhh supports the following options:
 

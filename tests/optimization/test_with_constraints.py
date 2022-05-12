@@ -21,6 +21,8 @@ from estimagic.examples.criterion_functions import sos_jacobian
 from estimagic.examples.criterion_functions import sos_ls_jacobian
 from estimagic.examples.criterion_functions import trid_gradient
 from estimagic.examples.criterion_functions import trid_scalar_criterion
+from estimagic.exceptions import InvalidConstraintError
+from estimagic.exceptions import InvalidParamsError
 from estimagic.optimization.optimize import minimize
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -102,32 +104,41 @@ KNOWN_FAILURES = {
     ("rosenbrock", "decreasing"),  # imprecise
 }
 
+PARAMS_TYPES = ["numpy", "pandas"]
+
 test_cases = []
 for crit_name in FUNC_INFO:
     for constr_name in CONSTR_INFO:
-        unknown_res = FUNC_INFO[crit_name].get(f"{constr_name}_result") == "unknown"
-        known_failure = (crit_name, constr_name) in KNOWN_FAILURES
-        if not any([unknown_res, known_failure]):
-            for deriv in None, FUNC_INFO[crit_name]["gradient"]:
-                test_cases.append((crit_name, "scipy_lbfgsb", deriv, constr_name))
-
-            if "root_contributions" in FUNC_INFO[crit_name]["entries"]:
-                for deriv in list({FUNC_INFO[crit_name].get("ls_jacobian"), None}):
+        for ptype in PARAMS_TYPES:
+            unknown_res = FUNC_INFO[crit_name].get(f"{constr_name}_result") == "unknown"
+            known_failure = (crit_name, constr_name) in KNOWN_FAILURES
+            if not any([unknown_res, known_failure]):
+                for deriv in None, FUNC_INFO[crit_name]["gradient"]:
                     test_cases.append(
-                        (crit_name, "scipy_ls_dogbox", deriv, constr_name)
+                        (crit_name, "scipy_lbfgsb", deriv, constr_name, ptype)
                     )
+
+                if "root_contributions" in FUNC_INFO[crit_name]["entries"]:
+                    for deriv in [FUNC_INFO[crit_name].get("ls_jacobian"), None]:
+                        test_cases.append(
+                            (crit_name, "scipy_ls_dogbox", deriv, constr_name, ptype)
+                        )
 
 
 @pytest.mark.parametrize(
-    "criterion_name, algorithm, derivative, constraint_name", test_cases
+    "criterion_name, algorithm, derivative, constraint_name, params_type",
+    test_cases,
 )
 def test_constrained_minimization(
-    criterion_name, algorithm, derivative, constraint_name
+    criterion_name, algorithm, derivative, constraint_name, params_type
 ):
 
     constraints = CONSTR_INFO[constraint_name]
     criterion = FUNC_INFO[criterion_name]["criterion"]
-    params = pd.Series(START_INFO[constraint_name], name="value").to_frame()
+    if params_type == "pandas":
+        params = pd.Series(START_INFO[constraint_name], name="value").to_frame()
+    else:
+        params = np.array(START_INFO[constraint_name])
 
     res = minimize(
         criterion=criterion,
@@ -137,10 +148,68 @@ def test_constrained_minimization(
         constraints=constraints,
     )
 
-    calculated = res["solution_params"]["value"].to_numpy()
+    if params_type == "pandas":
+        calculated = res["solution_params"]["value"].to_numpy()
+    else:
+        calculated = res["solution_params"]
 
     expected = FUNC_INFO[criterion_name].get(
         f"{constraint_name}_result", FUNC_INFO[criterion_name]["default_result"]
     )
 
     aaae(calculated, expected, decimal=4)
+
+
+def test_fix_that_differs_from_start_value_raises_an_error():
+
+    with pytest.raises(InvalidParamsError):
+        minimize(
+            criterion=lambda x: x @ x,
+            params=np.arange(3),
+            algorithm="scipy_lbfgsb",
+            constraints=[{"loc": [1], "type": "fixed", "value": 10}],
+        )
+
+
+def test_three_independent_constraints():
+    params = np.arange(10)
+    params[0] = 2
+
+    constraints = [
+        {"loc": [0, 1, 2], "type": "covariance"},
+        {"loc": [4, 5], "type": "fixed"},
+        {"loc": [7, 8], "type": "linear", "value": 15, "weights": 1},
+    ]
+
+    res = minimize(
+        criterion=lambda x: x @ x,
+        params=params,
+        algorithm="scipy_lbfgsb",
+        constraints=constraints,
+    )
+
+    expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
+
+    aaae(res["solution_params"], expected, decimal=5)
+
+
+INVALID_CONSTRAINT_COMBIS = [
+    [{"loc": [1, 0, 2], "type": "covariance"}, {"loc": [0, 1], "type": "probability"}],
+    [
+        {"loc": [6, 3, 5, 2, 1, 4], "type": "covariance"},
+        {"loc": [0, 1, 2], "type": "increasing"},
+    ],
+]
+
+
+@pytest.mark.parametrize("constraints", INVALID_CONSTRAINT_COMBIS)
+def test_incompatible_constraints_raise_errors(constraints):
+    params = np.arange(10)
+
+    with pytest.raises(InvalidConstraintError):
+        minimize(
+            criterion=lambda x: x @ x,
+            params=params,
+            algorithm="scipy_lbfgsb",
+            constraints=constraints,
+        )

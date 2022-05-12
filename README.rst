@@ -63,8 +63,7 @@ Optimization
 - estimagic wraps algorithms from *scipy.optimize*, *nlopt*, *pygmo* and more.
 - estimagic implements constraints efficiently via reparametrization, so you can solve
   constrained problems with any optimzer that supports bounds.
-- estimagic encourages name-based parameters handling. Parameters are specified
-  as pandas DataFrames with any kind of single or MultiIndex.
+- The parameters of an optimization problem can be arbitrary pytrees
 - The complete history of parameters and function evaluations can be saved in a
   database for maximum reproducibility.
 - Painless and efficient multistart optimization.

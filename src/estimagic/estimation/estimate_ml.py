@@ -1,3 +1,5 @@
+from estimagic.differentiation.derivatives import first_derivative
+from estimagic.exceptions import InvalidFunctionError
 from estimagic.inference.ml_covs import cov_cluster_robust
 from estimagic.inference.ml_covs import cov_hessian
 from estimagic.inference.ml_covs import cov_jacobian
@@ -6,11 +8,10 @@ from estimagic.inference.ml_covs import cov_strata_robust
 from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import get_derivative_case
-from estimagic.inference.shared import get_internal_first_derivative
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import maximize
-from estimagic.parameters.parameter_conversion import get_derivative_conversion_function
-from estimagic.parameters.process_constraints import process_constraints
+from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
 
@@ -20,6 +21,8 @@ def estimate_ml(
     params,
     optimize_options,
     *,
+    lower_bounds=None,
+    upper_bounds=None,
     constraints=None,
     logging=False,
     log_options=None,
@@ -167,10 +170,10 @@ def estimate_ml(
 
     check_numdiff_options(numdiff_options, "estimate_ml")
     numdiff_options = {} if numdiff_options in (None, False) else numdiff_options
-
+    loglike_kwargs = {} if loglike_kwargs is None else loglike_kwargs
+    derivative_kwargs = {} if derivative_kwargs is None else derivative_kwargs
     constraints = [] if constraints is None else constraints
-
-    processed_constraints, _ = process_constraints(constraints, params)
+    jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
 
     # ==================================================================================
     # Calculate estimates via maximization (if necessary)
@@ -195,30 +198,78 @@ def estimate_ml(
         estimates = opt_res["solution_params"]
 
     # ==================================================================================
+    # Do first function evaluations at estimated parameters
+    # ==================================================================================
+
+    try:
+        loglike_eval = loglike(estimates, **loglike_kwargs)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        msg = "Error while evaluating loglike at estimated params."
+        raise InvalidFunctionError(msg) from e
+
+    if callable(jacobian):
+        try:
+            jacobian_eval = jacobian(params, **jacobian_kwargs)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            msg = "Error while evaluating derivative at estimated params."
+            raise InvalidFunctionError(msg) from e
+
+    else:
+        jacobian_eval = None
+
+    # ==================================================================================
+    # Get the converter for params and function outputs
+    # ==================================================================================
+
+    lower_bounds, upper_bounds = get_bounds(
+        params,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
+
+    converter, flat_estimates = get_converter(
+        func=loglike,
+        params=estimates,
+        constraints=constraints,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        func_eval=loglike_eval,
+        primary_key="contributions",
+        scaling=False,
+        scaling_options=None,
+        derivative_eval=jacobian_eval,
+    )
+
+    # ==================================================================================
     # Calculate internal jacobian
     # ==================================================================================
 
-    deriv_to_internal = get_derivative_conversion_function(
-        params=params, constraints=constraints
-    )
-
     if jac_case == "pre-calculated":
-        int_jac = deriv_to_internal(jacobian)
+        int_jac = converter.derivative_to_internal(jacobian)
     elif jac_case == "closed-form":
-        jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
-        _jac = jacobian(estimates, **jacobian_kwargs)
-        int_jac = deriv_to_internal(_jac)
+
+        int_jac = converter.derivative_to_internal(jacobian_eval)
     # switch to "numerical" even if jac_case == "skip" because jac is required for ml.
     elif jac_case == "numerical":
-        options = numdiff_options.copy()
-        options["key"] = "contributions"
-        deriv_res = get_internal_first_derivative(
-            func=loglike,
-            params=estimates,
-            constraints=constraints,
-            func_kwargs=loglike_kwargs,
-            numdiff_options=options,
+
+        def func(x):
+            p = converter.params_from_internal(x)
+            loglike_eval = loglike(p, **loglike_kwargs)
+            out = converter.func_to_internal(loglike_eval)
+            return out
+
+        deriv_res = first_derivative(
+            func=func,
+            params=flat_estimates.values,
+            lower_bounds=flat_estimates.lower_bounds,
+            upper_bounds=flat_estimates.upper_bounds,
+            **numdiff_options,
         )
+
         int_jac = deriv_res["derivative"]
         jac_numdiff_info = {k: v for k, v in deriv_res.items() if k != "derivative"}
     else:
@@ -270,8 +321,9 @@ def estimate_ml(
     for case in cov_cases:
         cov = transform_covariance(
             params=estimates,
+            flat_params=flat_estimates,
             internal_cov=int_covs[f"cov_{case}"],
-            constraints=constraints,
+            converter=converter,
             n_samples=n_samples,
             bounds_handling=bounds_handling,
         )
@@ -288,7 +340,7 @@ def estimate_ml(
     # Calculate external jac and hess (if no transforming constraints)
     # ==================================================================================
 
-    if not processed_constraints:
+    if not converter.has_transforming_constraints:
         ext_jac = int_jac
         ext_hess = int_hess
     else:

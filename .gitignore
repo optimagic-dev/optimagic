@@ -127,3 +127,5 @@ venv.bak/
 
 
 src/estimagic/_version.py
+
+*.~lock.*
