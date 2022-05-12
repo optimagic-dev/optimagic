@@ -39,7 +39,6 @@ def base_inputs():
             primary_criterion_entry="value",
             parallelizes=False,
             needs_scaling=False,
-            disable_cache=False,
             is_available=True,
         ),
         "error_handling": "raise",

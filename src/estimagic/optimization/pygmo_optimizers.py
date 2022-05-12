@@ -24,7 +24,6 @@ except ImportError:
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_gaco(
@@ -107,7 +106,6 @@ def pygmo_gaco(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_bee_colony(
@@ -160,7 +158,6 @@ def pygmo_bee_colony(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_de(
@@ -240,7 +237,6 @@ def pygmo_de(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_sea(
@@ -291,7 +287,6 @@ def pygmo_sea(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_sga(
@@ -412,7 +407,6 @@ def pygmo_sga(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_sade(
@@ -500,7 +494,6 @@ def pygmo_sade(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_cmaes(
@@ -573,7 +566,6 @@ def pygmo_cmaes(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_simulated_annealing(
@@ -639,7 +631,6 @@ def pygmo_simulated_annealing(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_pso(
@@ -735,7 +726,6 @@ def pygmo_pso(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_pso_gen(
@@ -830,7 +820,6 @@ def pygmo_pso_gen(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_mbh(
@@ -891,7 +880,6 @@ def pygmo_mbh(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_xnes(
@@ -962,7 +950,6 @@ def pygmo_xnes(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_gwo(
@@ -1013,7 +1000,6 @@ def pygmo_gwo(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_compass_search(
@@ -1079,7 +1065,6 @@ def pygmo_compass_search(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_ihs(
@@ -1148,7 +1133,6 @@ def pygmo_ihs(
     primary_criterion_entry="value",
     parallelizes=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_de1220(

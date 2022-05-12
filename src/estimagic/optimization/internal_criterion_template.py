@@ -50,7 +50,6 @@ def internal_criterion_and_derivative_template(
             - primary_criterion_entry
             - name
             - parallelizes
-            - disable_cache
             - needs_scaling
             - is_available
         derivative (callable, optional): (partialed) user provided function that

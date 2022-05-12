@@ -16,7 +16,6 @@ if IS_CYIPOPT_INSTALLED:
     primary_criterion_entry="value",
     parallelizes=False,
     needs_scaling=False,
-    disable_cache=False,
     is_available=IS_CYIPOPT_INSTALLED,
 )
 def ipopt(

@@ -333,7 +333,6 @@ def run_explorations(
         parallelizes=True,
         needs_scaling=False,
         name="tiktak_explorer",
-        disable_cache=True,
         is_available=True,
     )
 

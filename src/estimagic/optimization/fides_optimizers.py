@@ -20,7 +20,6 @@ if IS_FIDES_INSTALLED:
 @mark_minimizer(
     name="fides",
     primary_criterion_entry="value",
-    disable_cache=False,
     needs_scaling=False,
     parallelizes=False,
     is_available=IS_FIDES_INSTALLED,

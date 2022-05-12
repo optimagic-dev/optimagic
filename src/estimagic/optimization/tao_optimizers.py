@@ -22,7 +22,6 @@ except ImportError:
     primary_criterion_entry="root_contributions",
     is_available=IS_PETSC4PY_INSTALLED,
     needs_scaling=True,
-    disable_cache=True,
 )
 def tao_pounders(
     criterion,
