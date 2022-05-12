@@ -15,4 +15,4 @@ Optimization
    how_to_scale_optimization_problems
    how_to_do_multistart_optimizations.ipynb
    how_to_benchmark_optimization_algorithms.ipynb
-   visualizing_an_optimization_problem.ipynb
+   how_to_visualize_an_optimization_problem.ipynb

@@ -494,7 +494,7 @@ def ipopt(
     raw_res = cyipopt.minimize_ipopt(
         fun=criterion,
         x0=x,
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         jac=derivative,
         constraints=(),
         tol=convergence_relative_criterion_tolerance,
@@ -534,7 +534,7 @@ def _convert_none_to_str(var):
     return out
 
 
-def get_scipy_bounds(lower_bounds, upper_bounds):
+def _get_scipy_bounds(lower_bounds, upper_bounds):
     # Scipy works with `None` instead of infinite values for unconstrained parameters
     # and requires a list of tuples for each parameter with lower and upper bound.
     bounds = np.column_stack([lower_bounds, upper_bounds])

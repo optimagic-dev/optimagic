@@ -1,4 +1,4 @@
-.. _eep-01:
+.. _eeppytrees:
 
 ===============
 EEP-01: Pytrees

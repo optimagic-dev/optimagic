@@ -95,7 +95,7 @@ def scipy_lbfgsb(
         x0=x,
         method="L-BFGS-B",
         jac=True,
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
@@ -130,7 +130,7 @@ def scipy_slsqp(
         x0=x,
         method="SLSQP",
         jac=derivative,
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
@@ -201,7 +201,7 @@ def scipy_powell(
         fun=criterion,
         x0=x,
         method="Powell",
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
@@ -377,7 +377,7 @@ def scipy_truncated_newton(
         method="TNC",
         jac=True,
         options=options,
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
     )
 
     return process_scipy_result(res)
@@ -415,7 +415,7 @@ def scipy_trust_constr(
         jac=True,
         x0=x,
         method="trust-constr",
-        bounds=get_scipy_bounds(lower_bounds, upper_bounds),
+        bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
         options=options,
     )
 
@@ -440,7 +440,7 @@ def process_scipy_result(scipy_results_obj):
     return processed
 
 
-def get_scipy_bounds(lower_bounds, upper_bounds):
+def _get_scipy_bounds(lower_bounds, upper_bounds):
     return Bounds(lb=lower_bounds, ub=upper_bounds)
 
 
