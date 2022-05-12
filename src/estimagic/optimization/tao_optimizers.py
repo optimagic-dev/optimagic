@@ -22,6 +22,7 @@ except ImportError:
     primary_criterion_entry="root_contributions",
     is_available=IS_PETSC4PY_INSTALLED,
     needs_scaling=True,
+    disable_cache=True,
 )
 def tao_pounders(
     criterion,
@@ -50,9 +51,8 @@ def tao_pounders(
     x = _initialise_petsc_array(x)
     # We need to know the number of contributions of the criterion value to allocate the
     # array.
-    n_errors = len(
-        criterion.keywords["first_criterion_evaluation"]["output"]["root_contributions"]
-    )
+    first_eval = criterion(x)
+    n_errors = len(first_eval)
     residuals_out = _initialise_petsc_array(n_errors)
 
     # Create the solver object.

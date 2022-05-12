@@ -24,8 +24,7 @@ def internal_criterion_and_derivative_template(
     logging,
     db_kwargs,
     error_handling,
-    error_penalty,
-    first_criterion_evaluation,
+    error_penalty_func,
     cache,
     cache_size,
     fixed_log_data,
@@ -77,19 +76,9 @@ def internal_criterion_and_derivative_template(
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
-        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
-            (float). If the criterion or derivative raise an error and error_handling is
-            "continue", return ``constant + slope * norm(params - start_params)`` where
-            ``norm`` is the euclidean distance as criterion value and adjust the
-            derivative accordingly. This is meant to guide the optimizer back into a
-            valid region of parameter space (in direction of the start parameters).
-            Note that the constant has to be high enough to ensure that the penalty is
-            actually a bad function value. The default constant is 2 times the criterion
-            value at the start parameters. The default slope is 0.1.
-        first_criterion_evaluation (dict): Dictionary with entries "internal_params",
-            "external_params", "output".
-        cache (dict): Dictionary used as cache for criterion and derivative evaluations.
-        cache_size (int): Number of evaluations that are kept in cache. Default 10.
+        error_penalty_func (callable): Function that takes ``x`` and ``task`` and
+            returns a penalized criterion function, its derivative or both (depending)
+            on task.
         fixed_log_data (dict): Dictionary with fixed data to be saved in the database.
             Has the entries "stage" (str) and "substage" (int).
 
@@ -100,6 +89,7 @@ def internal_criterion_and_derivative_template(
             If task=="criterion_and_derivative" it returns both as a tuple.
 
     """
+    x = np.array(x)  # xxxx
     x_hash = hash_array(x)
     cache_entry = cache.get(x_hash, {})
 
@@ -230,8 +220,8 @@ def internal_criterion_and_derivative_template(
         new_derivative = converter.derivative_to_internal(new_external_derivative, x)
 
     if caught_exceptions:
-        new_criterion, new_derivative = _penalty_and_derivative(
-            x, first_criterion_evaluation, error_penalty, algo_info
+        new_criterion, new_derivative = error_penalty_func(
+            x, task="criterion_and_derivative"
         )
 
     if not (algo_info.parallelizes or algo_info.disable_cache) and cache_size >= 1:
@@ -308,62 +298,6 @@ def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
         if criterion_needed:
             to_dos.append("criterion")
     return to_dos
-
-
-def _penalty_and_derivative(x, first_eval, error_penalty, algo_info):
-    constant = error_penalty["constant"]
-    slope = error_penalty["slope"]
-    x0 = first_eval["internal_params"]
-
-    primary = algo_info.primary_criterion_entry
-
-    if primary == "value":
-        penalty = _penalty_value(x, constant, slope, x0)
-        derivative = _penalty_value_derivative(x, constant, slope, x0)
-    elif primary == "contributions":
-        dim_out = len(first_eval["output"][primary])
-        penalty = _penalty_contributions(x, constant, slope, x0, dim_out)
-        derivative = _penalty_contributions_derivative(x, constant, slope, x0, dim_out)
-    elif primary == "root_contributions":
-        dim_out = len(first_eval["output"][primary])
-        penalty = _penalty_root_contributions(x, constant, slope, x0, dim_out)
-        derivative = _penalty_root_contributions_derivative(
-            x, constant, slope, x0, dim_out
-        )
-    else:
-        raise ValueError()
-
-    return penalty, derivative
-
-
-def _penalty_value(x, constant, slope, x0, dim_out=None):
-    return constant + slope * np.linalg.norm(x - x0)
-
-
-def _penalty_contributions(x, constant, slope, x0, dim_out):
-    contrib = (constant + slope * np.linalg.norm(x - x0)) / dim_out
-    return np.ones(dim_out) * contrib
-
-
-def _penalty_root_contributions(x, constant, slope, x0, dim_out):
-    contrib = np.sqrt((constant + slope * np.linalg.norm(x - x0)) / dim_out)
-    return np.ones(dim_out) * contrib
-
-
-def _penalty_value_derivative(x, constant, slope, x0, dim_out=None):
-    return slope * (x - x0) / np.linalg.norm(x - x0)
-
-
-def _penalty_contributions_derivative(x, constant, slope, x0, dim_out):
-    row = slope * (x - x0) / (dim_out * np.linalg.norm(x - x0))
-    return np.full((dim_out, len(x)), row)
-
-
-def _penalty_root_contributions_derivative(x, constant, slope, x0, dim_out):
-    inner_deriv = slope * (x - x0) / np.linalg.norm(x - x0)
-    outer_deriv = 0.5 / np.sqrt(_penalty_value(x, constant, slope, x0) * dim_out)
-    row = outer_deriv * inner_deriv
-    return np.full((dim_out, len(x)), row)
 
 
 def _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_size):
