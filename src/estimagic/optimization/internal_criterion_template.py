@@ -24,6 +24,7 @@ def internal_criterion_and_derivative_template(
     error_handling,
     error_penalty_func,
     fixed_log_data,
+    history_container=None,
 ):
     """Template for the internal criterion and derivative function.
 
@@ -76,6 +77,9 @@ def internal_criterion_and_derivative_template(
             on task.
         fixed_log_data (dict): Dictionary with fixed data to be saved in the database.
             Has the entries "stage" (str) and "substage" (int).
+        history_container (list or None): List to which parameter, criterion and
+            derivative histories are appended. Should be set to None if an algorithm
+            parallelizes over criterion or derivative evaluations.
 
     Returns:
         float, np.ndarray or tuple: If task=="criterion" it returns the output of
@@ -212,14 +216,15 @@ def internal_criterion_and_derivative_template(
             x, task="criterion_and_derivative"
         )
 
+    if new_criterion is not None:
+        scalar_critval = aggregate_func_output_to_value(
+            f_eval=new_criterion,
+            primary_key=algo_info.primary_criterion_entry,
+        )
+    else:
+        scalar_critval = None
+
     if (new_criterion is not None or new_derivative is not None) and logging:
-        if new_criterion is not None:
-            scalar_critval = aggregate_func_output_to_value(
-                f_eval=new_criterion,
-                primary_key=algo_info.primary_criterion_entry,
-            )
-        else:
-            scalar_critval = None
 
         _log_new_evaluations(
             new_criterion=new_external_criterion,
@@ -237,6 +242,14 @@ def internal_criterion_and_derivative_template(
         task=task,
         direction=direction,
     )
+
+    if history_container is not None:
+        hist_entry = {
+            "params": current_params,
+            "criterion": new_criterion,
+            "scalar_criterion": scalar_critval,
+        }
+        history_container.append(hist_entry)
     return res
 
 

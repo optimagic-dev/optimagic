@@ -81,18 +81,21 @@ def get_final_algorithm(
         valid_kwargs=valid_kwargs,
     )
 
-    partialled_algorithm = partial(raw_algorithm, **internal_options)
+    algorithm = partial(raw_algorithm, **internal_options)
 
-    raw_algorithm = _add_logging_to_algorithm(
-        partialled_algorithm,
+    algorithm = _add_logging(
+        algorithm,
         logging=logging,
         db_kwargs=db_kwargs,
     )
 
-    return raw_algorithm
+    if internal_options.get("n_cores") in (None, 1):
+        algorithm = _add_history_collection(algorithm)
+
+    return algorithm
 
 
-def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
+def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
     """Add logging of status to the algorithm."""
 
     def decorator_add_logging_to_algorithm(algorithm):
@@ -134,6 +137,25 @@ def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
         return decorator_add_logging_to_algorithm(algorithm)
     else:
         return decorator_add_logging_to_algorithm
+
+
+def _add_history_collection(algorithm):
+    @functools.wraps(algorithm)
+    def wrapper_add_history_collection(**kwargs):
+        func_names = {"criterion", "derivative", "criterion_and_derivative"}
+
+        container = []
+
+        _kwargs = kwargs.copy()
+        for name in func_names:
+            if name in kwargs:
+                _kwargs[name] = partial(kwargs[name], history_container=container)
+
+        out = algorithm(**_kwargs)
+        out["history"] = container
+        return out
+
+    return wrapper_add_history_collection
 
 
 def _adjust_options_to_algorithm(
