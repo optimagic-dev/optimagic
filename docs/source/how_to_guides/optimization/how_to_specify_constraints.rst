@@ -395,7 +395,7 @@ Below we show how to use each of these selection methods in simple examples
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": "cutoffs", "type": "increasin"}],
+            constraints=[{"loc": "cutoffs", "type": "increasing"}],
         )
 
     The value corresponding to ``loc`` can be anything that you could pass into the

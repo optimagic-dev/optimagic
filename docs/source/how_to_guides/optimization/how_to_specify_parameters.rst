@@ -75,9 +75,9 @@ Again, we use the simple ``sphere`` function you know from other tutorials as ex
       the entire parameter vector. Especially if you use a well designed MultiIndex.
     - It is very easy to produce publication quality LaTeX tables from them.
     - If you have nested models, you can easily update the parameter vector of a larger
-      model with the values from a smaller one (e.g. to get good start parameters)
+      model with the values from a smaller one (e.g. to get good start parameters).
     - You can bundle information on bounds and values in one place.
-    - It is easy to compare two params vectors for equality
+    - It is easy to compare two params vectors for equality.
 
     Check out our `Ordered Logit Example`_,
     so you see one small params DataFrame in action.
