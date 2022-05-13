@@ -51,6 +51,8 @@ def maximize(
     scaling_options=None,
     multistart=False,
     multistart_options=None,
+    collect_history=None,
+    skip_checks=False,
 ):
     """Maximize criterion using algorithm subject to constraints.
 
@@ -185,6 +187,13 @@ def maximize(
             discarded from the sample.
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
+        collect_history (bool): Whether the history of parameters and criterion values
+            should be collected and returned as part of the result. Default None,
+            which means that the history is collected as long as optimizers do not
+            parallelize over criterion evaluations.
+        skip_checks (bool): Whether checks on the inputs are skipped. This makes the
+            optimization faster, especially for very fast criterion functions. Default
+            False.
 
     """
     return _optimize(
@@ -212,6 +221,8 @@ def maximize(
         scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
+        collect_history=collect_history,
+        skip_checks=skip_checks,
     )
 
 
@@ -240,6 +251,8 @@ def minimize(
     scaling_options=None,
     multistart=False,
     multistart_options=None,
+    collect_history=None,
+    skip_checks=False,
 ):
     """Minimize criterion using algorithm subject to constraints.
 
@@ -374,6 +387,13 @@ def minimize(
             discarded from the sample.
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
+        collect_history (bool): Whether the history of parameters and criterion values
+            should be collected and returned as part of the result. Default None,
+            which means that the history is collected as long as optimizers do not
+            parallelize over criterion evaluations.
+        skip_checks (bool): Whether checks on the inputs are skipped. This makes the
+            optimization faster, especially for very fast criterion functions. Default
+            False.
 
     """
     return _optimize(
@@ -401,6 +421,8 @@ def minimize(
         scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
+        collect_history=collect_history,
+        skip_checks=skip_checks,
     )
 
 
@@ -430,6 +452,8 @@ def _optimize(
     scaling_options,
     multistart,
     multistart_options,
+    collect_history,
+    skip_checks,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
@@ -455,28 +479,29 @@ def _optimize(
     if logging:
         logging = Path(logging)
 
-    check_optimize_kwargs(
-        direction=direction,
-        criterion=criterion,
-        criterion_kwargs=criterion_kwargs,
-        params=params,
-        algorithm=algorithm,
-        constraints=constraints,
-        algo_options=algo_options,
-        derivative=derivative,
-        derivative_kwargs=derivative_kwargs,
-        criterion_and_derivative=criterion_and_derivative,
-        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
-        numdiff_options=numdiff_options,
-        logging=logging,
-        log_options=log_options,
-        error_handling=error_handling,
-        error_penalty=error_penalty,
-        scaling=scaling,
-        scaling_options=scaling_options,
-        multistart=multistart,
-        multistart_options=multistart_options,
-    )
+    if not skip_checks:
+        check_optimize_kwargs(
+            direction=direction,
+            criterion=criterion,
+            criterion_kwargs=criterion_kwargs,
+            params=params,
+            algorithm=algorithm,
+            constraints=constraints,
+            algo_options=algo_options,
+            derivative=derivative,
+            derivative_kwargs=derivative_kwargs,
+            criterion_and_derivative=criterion_and_derivative,
+            criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+            numdiff_options=numdiff_options,
+            logging=logging,
+            log_options=log_options,
+            error_handling=error_handling,
+            error_penalty=error_penalty,
+            scaling=scaling,
+            scaling_options=scaling_options,
+            multistart=multistart,
+            multistart_options=multistart_options,
+        )
     # ==================================================================================
     # Get the algorithm info
     # ==================================================================================
@@ -521,12 +546,16 @@ def _optimize(
         func=criterion,
         kwargs=criterion_kwargs,
         name="criterion",
+        skip_checks=skip_checks,
     )
     if isinstance(derivative, dict):
         derivative = derivative.get(algo_info.primary_criterion_entry)
     if derivative is not None:
         derivative = process_func_of_params(
-            func=derivative, kwargs=derivative_kwargs, name="derivative"
+            func=derivative,
+            kwargs=derivative_kwargs,
+            name="derivative",
+            skip_checks=skip_checks,
         )
     if isinstance(criterion_and_derivative, dict):
         criterion_and_derivative = criterion_and_derivative.get(
@@ -538,6 +567,7 @@ def _optimize(
             func=criterion_and_derivative,
             kwargs=criterion_and_derivative_kwargs,
             name="criterion_and_derivative",
+            skip_checks=skip_checks,
         )
 
     # ==================================================================================
@@ -650,6 +680,7 @@ def _optimize(
         algo_options=algo_options,
         logging=logging,
         db_kwargs=db_kwargs,
+        collect_history=collect_history,
     )
     # ==================================================================================
     # partial arguments into the internal_criterion_and_derivative_template

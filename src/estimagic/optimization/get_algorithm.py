@@ -50,6 +50,7 @@ def get_final_algorithm(
     algo_options,
     logging,
     db_kwargs,
+    collect_history,
 ):
     """Get algorithm-function with partialled options.
 
@@ -89,7 +90,15 @@ def get_final_algorithm(
         db_kwargs=db_kwargs,
     )
 
-    if internal_options.get("n_cores") in (None, 1):
+    can_collect = internal_options.get("n_cores") in (None, 1)
+
+    if not can_collect and collect_history is True:
+        raise ValueError(
+            "Histories can only be collected with optimizers that do not evaluate "
+            "The criterion function or its derivatives in parallel."
+        )
+
+    if can_collect and collect_history is not False:
         algorithm = _add_history_collection(algorithm)
 
     return algorithm
