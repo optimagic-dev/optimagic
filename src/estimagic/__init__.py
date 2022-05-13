@@ -17,7 +17,7 @@ from estimagic.visualization.estimation_table import render_html
 from estimagic.visualization.estimation_table import render_latex
 from estimagic.visualization.lollipop_plot import lollipop_plot
 from estimagic.visualization.profile_plot import profile_plot
-from estimagic.visualization.slice_plot import get_slice_plots
+from estimagic.visualization.slice_plot import slice_plots
 
 try:
     from ._version import version as __version__
@@ -44,7 +44,7 @@ __all__ = [
     "convergence_plot",
     "lollipop_plot",
     "derivative_plot",
-    "get_slice_plots",
+    "slice_plots",
     "estimation_table",
     "render_html",
     "render_latex",
