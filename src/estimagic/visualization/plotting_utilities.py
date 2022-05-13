@@ -64,18 +64,6 @@ def combine_plots(
     layout_kwargs = get_layout_kwargs(
         layout_kwargs, legend_kwargs, title_kwargs, template, showlegend
     )
-    y_lower = min(
-        [f.full_figure_for_development().layout.yaxis.range[0] for f in plots]
-    )
-    y_upper = max(
-        [f.full_figure_for_development().layout.yaxis.range[1] for f in plots]
-    )
-    x_lower = min(
-        [f.full_figure_for_development().layout.xaxis.range[0] for f in plots]
-    )
-    x_upper = max(
-        [f.full_figure_for_development().layout.xaxis.range[1] for f in plots]
-    )
     for i, (row, col) in enumerate(
         itertools.product(np.arange(nrows), np.arange(plots_per_row))
     ):
@@ -106,8 +94,12 @@ def combine_plots(
 
     fig.update_layout(**layout_kwargs)
     if share_yrange_all:
+        y_lower = min([f.layout.yaxis.range[0] for f in plots])
+        y_upper = max([f.layout.yaxis.range[1] for f in plots])
         fig.update_yaxes(range=[y_lower, y_upper])
     if share_xrange_all:
+        x_lower = min([f.layout.xaxis.range[0] for f in plots])
+        x_upper = max([f.layout.xaxis.range[1] for f in plots])
         fig.update_xaxes(range=[x_lower, x_upper])
     if clean_legend:
         fig = _clean_legend_duplicates(fig)
