@@ -1,7 +1,12 @@
 import warnings
+from typing import NamedTuple
 
 import numpy as np
-from estimagic.utilities import namedtuple_from_kwargs
+
+
+class Steps(NamedTuple):
+    pos: np.ndarray
+    neg: np.ndarray
 
 
 def generate_steps(
@@ -110,7 +115,7 @@ def generate_steps(
         pos[pos > upper_step_bounds.reshape(-1, 1)] = np.nan
         neg[neg < lower_step_bounds.reshape(-1, 1)] = np.nan
 
-    steps = namedtuple_from_kwargs(pos=pos.T, neg=neg.T)
+    steps = Steps(pos=pos.T, neg=neg.T)
 
     return steps
 

@@ -124,7 +124,10 @@ def joblib_batch_evaluator(
     def internal_func(*args, **kwargs):
         return func(*args, **kwargs)
 
-    res = Parallel(n_jobs=n_cores)(delayed(internal_func)(arg) for arg in arguments)
+    if n_cores == 1:
+        res = [internal_func(arg) for arg in arguments]
+    else:
+        res = Parallel(n_jobs=n_cores)(delayed(internal_func)(arg) for arg in arguments)
 
     return res
 

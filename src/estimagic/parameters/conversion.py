@@ -234,12 +234,16 @@ def _get_fast_path_converter(params, lower_bounds, upper_bounds, primary_key):
 
     if lower_bounds is None:
         lower_bounds = np.full(len(params), -np.inf)
+    else:
+        lower_bounds = lower_bounds.astype(float)
 
     if upper_bounds is None:
         upper_bounds = np.full(len(params), np.inf)
+    else:
+        upper_bounds = upper_bounds.astype(float)
 
     flat_params = FlatParams(
-        values=params,
+        values=params.astype(float),
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         free_mask=np.full(len(params), True),
@@ -288,6 +292,10 @@ def _is_fast_func_eval(f, key):
 
 
 def _is_fast_deriv_eval(d, key):
+    # this is the case if no or closed form derivatives are used
+    if d is None:
+        return True
+
     if key == "value":
         if not (_is_1d_arr(d) or (_is_dict_with(d, key) and _is_1d_arr(d[key]))):
             return False
