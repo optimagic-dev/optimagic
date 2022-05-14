@@ -36,11 +36,7 @@ for module in MODULES:
                 AVAILABLE_ALGORITHMS[name] = func
 
 
-GLOBAL_ALGORITHMS = [
-    "nlopt_direct",
-    "nlopt_esch",
-    "nlopt_isres",
-    "nlopt_crs2_lm",
-]
-
-GLOBAL_ALGORITHMS += [name for name in AVAILABLE_ALGORITHMS if name.startswith("pygmo")]
+GLOBAL_ALGORITHMS = []
+for name, func in ALL_ALGORITHMS.items():
+    if func._algorithm_info.is_global:
+        GLOBAL_ALGORITHMS.append(name)

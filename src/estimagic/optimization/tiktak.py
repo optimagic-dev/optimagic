@@ -32,7 +32,6 @@ def run_multistart_optimization(
     logging,
     db_kwargs,
     error_handling,
-    error_penalty,
 ):
     steps = determine_steps(options["n_samples"], options["n_optimizations"])
 
@@ -131,7 +130,7 @@ def run_multistart_optimization(
     }
 
     problem_functions = {
-        name: partial(func, error_handling=error_handling, error_penalty=error_penalty)
+        name: partial(func, error_handling=error_handling)
         for name, func in problem_functions.items()
     }
 
@@ -307,8 +306,7 @@ def run_explorations(
     Args:
         func (callable): An already partialled version of
             ``internal_criterion_and_derivative_template`` where the following arguments
-            are still free: ``x``, ``task``, ``algo_info``, ``error_handling``,
-            ``error_penalty``, ``fixed_log_data``.
+            are still free: ``x``, ``task``, ``error_handling``, ``fixed_log_data``.
         primary_key: The primary criterion entry of the local optimizer. Needed to
             interpret the output of the internal criterion function.
         sample (numpy.ndarray): 2d numpy array where each row is a sampled internal
@@ -335,8 +333,8 @@ def run_explorations(
         parallelizes=True,
         needs_scaling=False,
         name="tiktak_explorer",
-        disable_cache=True,
         is_available=True,
+        arguments=[],
     )
 
     _func = partial(
@@ -344,7 +342,6 @@ def run_explorations(
         task="criterion",
         algo_info=algo_info,
         error_handling=error_handling,
-        error_penalty={"constant": np.nan, "slope": np.nan},
     )
 
     arguments = []
