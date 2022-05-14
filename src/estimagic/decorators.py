@@ -11,6 +11,7 @@ provides a comprehensive overview.
 
 """
 import functools
+import inspect
 import warnings
 from typing import NamedTuple
 
@@ -143,9 +144,10 @@ class AlgoInfo(NamedTuple):
     primary_criterion_entry: str
     name: str
     parallelizes: bool
-    disable_cache: bool
     needs_scaling: bool
     is_available: bool
+    arguments: list
+    is_global: bool = False
 
 
 def mark_minimizer(
@@ -153,10 +155,9 @@ def mark_minimizer(
     *,
     primary_criterion_entry="value",
     name=None,
-    parallelizes=False,
-    disable_cache=False,
     needs_scaling=False,
     is_available=True,
+    is_global=False,
 ):
     """Decorator to mark a function as internal estimagic minimizer and add information.
 
@@ -169,8 +170,6 @@ def mark_minimizer(
         name (str): The name of the internal algorithm.
         parallelizes (bool): Must be True if an algorithm evaluates the criterion,
             derivative or criterion_and_derivative in parallel.
-        disable_cache (bool): If True, no caching for the criterion function
-            or its derivatives are used.
         needs_scaling (bool): Must be True if the algorithm is not reasonable
             independent of the scaling of the parameters.
         is_available (bool): Whether the algorithm is available. This is needed for
@@ -191,28 +190,31 @@ def mark_minimizer(
             f"{primary_criterion_entry}."
         )
 
-    if not isinstance(parallelizes, bool):
-        raise TypeError("parallelizes must be a bool.")
-
-    if not isinstance(disable_cache, bool):
-        raise TypeError("disable_cache must be a bool.")
-
     if not isinstance(needs_scaling, bool):
         raise TypeError("needs_scaling must be a bool.")
 
     if not isinstance(is_available, bool):
         raise TypeError("is_available must be a bool.")
 
-    algo_info = AlgoInfo(
-        primary_criterion_entry=primary_criterion_entry,
-        name=name,
-        parallelizes=parallelizes,
-        disable_cache=disable_cache,
-        needs_scaling=needs_scaling,
-        is_available=is_available,
-    )
-
     def decorator_mark_minimizer(func):
+        arguments = list(inspect.signature(func).parameters)
+
+        if isinstance(func, functools.partial):
+            partialed_in = set(func.keywords)
+            arguments = [a for a in arguments if a not in partialed_in]
+
+        parallelizes = "n_cores" in arguments
+
+        algo_info = AlgoInfo(
+            primary_criterion_entry=primary_criterion_entry,
+            name=name,
+            parallelizes=parallelizes,
+            needs_scaling=needs_scaling,
+            is_available=is_available,
+            arguments=arguments,
+            is_global=is_global,
+        )
+
         @functools.wraps(func)
         def wrapper_mark_minimizer(*args, **kwargs):
             return func(*args, **kwargs)

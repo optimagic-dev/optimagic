@@ -59,7 +59,6 @@ if IS_DFOLS_INSTALLED:
 @mark_minimizer(
     name="nag_dfols",
     primary_criterion_entry="root_contributions",
-    disable_cache=True,
     needs_scaling=True,
     is_available=IS_DFOLS_INSTALLED,
 )
@@ -252,7 +251,6 @@ def nag_dfols(
 
 @mark_minimizer(
     name="nag_dfols",
-    disable_cache=True,
     needs_scaling=True,
     is_available=IS_PYBOBYQA_INSTALLED,
 )
