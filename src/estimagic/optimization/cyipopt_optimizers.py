@@ -14,9 +14,7 @@ if IS_CYIPOPT_INSTALLED:
 @mark_minimizer(
     name="ipopt",
     primary_criterion_entry="value",
-    parallelizes=False,
     needs_scaling=False,
-    disable_cache=False,
     is_available=IS_CYIPOPT_INSTALLED,
 )
 def ipopt(

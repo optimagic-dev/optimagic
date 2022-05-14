@@ -1,13 +1,11 @@
 import datetime
 import warnings
 
-import numpy as np
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.exceptions import get_traceback
 from estimagic.exceptions import UserFunctionRuntimeError
 from estimagic.logging.database_utilities import append_row
 from estimagic.parameters.conversion import aggregate_func_output_to_value
-from estimagic.utilities import hash_array
 
 
 def internal_criterion_and_derivative_template(
@@ -24,11 +22,9 @@ def internal_criterion_and_derivative_template(
     logging,
     db_kwargs,
     error_handling,
-    error_penalty,
-    first_criterion_evaluation,
-    cache,
-    cache_size,
+    error_penalty_func,
     fixed_log_data,
+    history_container=None,
 ):
     """Template for the internal criterion and derivative function.
 
@@ -55,7 +51,6 @@ def internal_criterion_and_derivative_template(
             - primary_criterion_entry
             - name
             - parallelizes
-            - disable_cache
             - needs_scaling
             - is_available
         derivative (callable, optional): (partialed) user provided function that
@@ -77,21 +72,14 @@ def internal_criterion_and_derivative_template(
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
             many errors as possible in that case without aborting the optimization.
-        error_penalty (dict): Dict with the entries "constant" (float) and "slope"
-            (float). If the criterion or derivative raise an error and error_handling is
-            "continue", return ``constant + slope * norm(params - start_params)`` where
-            ``norm`` is the euclidean distance as criterion value and adjust the
-            derivative accordingly. This is meant to guide the optimizer back into a
-            valid region of parameter space (in direction of the start parameters).
-            Note that the constant has to be high enough to ensure that the penalty is
-            actually a bad function value. The default constant is 2 times the criterion
-            value at the start parameters. The default slope is 0.1.
-        first_criterion_evaluation (dict): Dictionary with entries "internal_params",
-            "external_params", "output".
-        cache (dict): Dictionary used as cache for criterion and derivative evaluations.
-        cache_size (int): Number of evaluations that are kept in cache. Default 10.
+        error_penalty_func (callable): Function that takes ``x`` and ``task`` and
+            returns a penalized criterion function, its derivative or both (depending)
+            on task.
         fixed_log_data (dict): Dictionary with fixed data to be saved in the database.
             Has the entries "stage" (str) and "substage" (int).
+        history_container (list or None): List to which parameter, criterion and
+            derivative histories are appended. Should be set to None if an algorithm
+            parallelizes over criterion or derivative evaluations.
 
     Returns:
         float, np.ndarray or tuple: If task=="criterion" it returns the output of
@@ -100,10 +88,7 @@ def internal_criterion_and_derivative_template(
             If task=="criterion_and_derivative" it returns both as a tuple.
 
     """
-    x_hash = hash_array(x)
-    cache_entry = cache.get(x_hash, {})
-
-    to_dos = _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative)
+    to_dos = _determine_to_dos(task, derivative, criterion_and_derivative)
 
     caught_exceptions = []
     new_criterion, new_external_criterion = None, None
@@ -124,9 +109,6 @@ def internal_criterion_and_derivative_template(
             return out
 
         options = numdiff_options.copy()
-        f0 = cache_entry.get("criterion", None)
-        if f0 is not None:
-            options["f0"] = {"relevant": f0, "full": None}
         options["key"] = "relevant"
         options["return_func_value"] = True
 
@@ -140,7 +122,7 @@ def internal_criterion_and_derivative_template(
         except Exception as e:
             tb = get_traceback()
             caught_exceptions.append(tb)
-            if "criterion" in cache_entry or error_handling == "raise":
+            if error_handling == "raise":
                 msg = (
                     "An error occurred when evaluating criterion to calculate a "
                     "numerical derivative during optimization."
@@ -164,7 +146,7 @@ def internal_criterion_and_derivative_template(
         except Exception as e:
             tb = get_traceback()
             caught_exceptions.append(tb)
-            if "criterion" in cache_entry or error_handling == "raise":
+            if error_handling == "raise":
                 msg = (
                     "An error ocurred when evaluating criterion_and_derivative "
                     "during optimization."
@@ -187,7 +169,7 @@ def internal_criterion_and_derivative_template(
             except Exception as e:
                 tb = get_traceback()
                 caught_exceptions.append(tb)
-                if "derivative" in cache_entry or error_handling == "raise":
+                if error_handling == "raise":
                     msg = (
                         "An error ocurred when evaluating criterion during "
                         "optimization."
@@ -209,7 +191,7 @@ def internal_criterion_and_derivative_template(
             except Exception as e:
                 tb = get_traceback()
                 caught_exceptions.append(tb)
-                if "criterion" in cache_entry or error_handling == "raise":
+                if error_handling == "raise":
                     msg = (
                         "An error ocurred when evaluating derivative during "
                         "optimization"
@@ -230,21 +212,19 @@ def internal_criterion_and_derivative_template(
         new_derivative = converter.derivative_to_internal(new_external_derivative, x)
 
     if caught_exceptions:
-        new_criterion, new_derivative = _penalty_and_derivative(
-            x, first_criterion_evaluation, error_penalty, algo_info
+        new_criterion, new_derivative = error_penalty_func(
+            x, task="criterion_and_derivative"
         )
 
-    if not (algo_info.parallelizes or algo_info.disable_cache) and cache_size >= 1:
-        _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_size)
+    if new_criterion is not None:
+        scalar_critval = aggregate_func_output_to_value(
+            f_eval=new_criterion,
+            primary_key=algo_info.primary_criterion_entry,
+        )
+    else:
+        scalar_critval = None
 
     if (new_criterion is not None or new_derivative is not None) and logging:
-        if new_criterion is not None:
-            scalar_critval = aggregate_func_output_to_value(
-                f_eval=new_criterion,
-                primary_key=algo_info.primary_criterion_entry,
-            )
-        else:
-            scalar_critval = None
 
         _log_new_evaluations(
             new_criterion=new_external_criterion,
@@ -261,13 +241,19 @@ def internal_criterion_and_derivative_template(
         new_derivative=new_derivative,
         task=task,
         direction=direction,
-        cache=cache,
-        x_hash=x_hash,
     )
+
+    if history_container is not None:
+        hist_entry = {
+            "params": current_params,
+            "criterion": new_criterion,
+            "scalar_criterion": scalar_critval,
+        }
+        history_container.append(hist_entry)
     return res
 
 
-def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
+def _determine_to_dos(task, derivative, criterion_and_derivative):
     """Determine which functions have to be evaluated at the new parameters.
 
     Args:
@@ -288,8 +274,8 @@ def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
             - ["derivative"]
 
     """
-    criterion_needed = "criterion" in task and "criterion" not in cache_entry
-    derivative_needed = "derivative" in task and "derivative" not in cache_entry
+    criterion_needed = "criterion" in task
+    derivative_needed = "derivative" in task
 
     to_dos = []
     if criterion_and_derivative is not None and criterion_needed and derivative_needed:
@@ -308,75 +294,6 @@ def _determine_to_dos(task, cache_entry, derivative, criterion_and_derivative):
         if criterion_needed:
             to_dos.append("criterion")
     return to_dos
-
-
-def _penalty_and_derivative(x, first_eval, error_penalty, algo_info):
-    constant = error_penalty["constant"]
-    slope = error_penalty["slope"]
-    x0 = first_eval["internal_params"]
-
-    primary = algo_info.primary_criterion_entry
-
-    if primary == "value":
-        penalty = _penalty_value(x, constant, slope, x0)
-        derivative = _penalty_value_derivative(x, constant, slope, x0)
-    elif primary == "contributions":
-        dim_out = len(first_eval["output"][primary])
-        penalty = _penalty_contributions(x, constant, slope, x0, dim_out)
-        derivative = _penalty_contributions_derivative(x, constant, slope, x0, dim_out)
-    elif primary == "root_contributions":
-        dim_out = len(first_eval["output"][primary])
-        penalty = _penalty_root_contributions(x, constant, slope, x0, dim_out)
-        derivative = _penalty_root_contributions_derivative(
-            x, constant, slope, x0, dim_out
-        )
-    else:
-        raise ValueError()
-
-    return penalty, derivative
-
-
-def _penalty_value(x, constant, slope, x0, dim_out=None):
-    return constant + slope * np.linalg.norm(x - x0)
-
-
-def _penalty_contributions(x, constant, slope, x0, dim_out):
-    contrib = (constant + slope * np.linalg.norm(x - x0)) / dim_out
-    return np.ones(dim_out) * contrib
-
-
-def _penalty_root_contributions(x, constant, slope, x0, dim_out):
-    contrib = np.sqrt((constant + slope * np.linalg.norm(x - x0)) / dim_out)
-    return np.ones(dim_out) * contrib
-
-
-def _penalty_value_derivative(x, constant, slope, x0, dim_out=None):
-    return slope * (x - x0) / np.linalg.norm(x - x0)
-
-
-def _penalty_contributions_derivative(x, constant, slope, x0, dim_out):
-    row = slope * (x - x0) / (dim_out * np.linalg.norm(x - x0))
-    return np.full((dim_out, len(x)), row)
-
-
-def _penalty_root_contributions_derivative(x, constant, slope, x0, dim_out):
-    inner_deriv = slope * (x - x0) / np.linalg.norm(x - x0)
-    outer_deriv = 0.5 / np.sqrt(_penalty_value(x, constant, slope, x0) * dim_out)
-    row = outer_deriv * inner_deriv
-    return np.full((dim_out, len(x)), row)
-
-
-def _cache_new_evaluations(new_criterion, new_derivative, x_hash, cache, cache_size):
-    cache_entry = cache.get(x_hash, {}).copy()
-    if len(cache) >= cache_size:
-        # list(dict) returns keys in insertion order: https://tinyurl.com/o464nrz
-        oldest_entry = list(cache)[0]
-        del cache[oldest_entry]
-    if new_criterion is not None:
-        cache_entry["criterion"] = new_criterion
-    if new_derivative is not None:
-        cache_entry["derivative"] = new_derivative
-    cache[x_hash] = cache_entry
 
 
 def _log_new_evaluations(
@@ -422,16 +339,11 @@ def _get_output_for_optimizer(
     new_derivative,
     task,
     direction,
-    cache,
-    x_hash,
 ):
-    if "criterion" in task and new_criterion is None:
-        new_criterion = cache[x_hash]["criterion"]
+
     if "criterion" in task and direction == "maximize":
         new_criterion = -new_criterion
 
-    if "derivative" in task and new_derivative is None:
-        new_derivative = cache[x_hash]["derivative"]
     if "derivative" in task and direction == "maximize":
         new_derivative = -new_derivative
 

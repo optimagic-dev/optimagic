@@ -7,7 +7,11 @@ from estimagic.exceptions import InvalidKwargsError
 from estimagic.utilities import propose_alternatives
 
 
-def process_func_of_params(func, kwargs, name="your function"):
+def process_func_of_params(func, kwargs, name="your function", skip_checks=False):
+    # fast path
+    if skip_checks and kwargs in (None, {}):
+        return func
+
     kept, ignored = filter_kwargs(func, kwargs)
 
     if ignored:
@@ -25,28 +29,31 @@ def process_func_of_params(func, kwargs, name="your function"):
 
     out = partial(func, **kept)
 
-    unpartialled_args = get_unpartialled_arguments(out)
-    no_default_args = get_arguments_without_default(out)
+    if not skip_checks:
 
-    no_free_argument_left = len(unpartialled_args) < 1
+        unpartialled_args = get_unpartialled_arguments(out)
+        no_default_args = get_arguments_without_default(out)
 
-    if no_free_argument_left and kept:
-        raise InvalidKwargsError(
-            f"Too many keyword arguments for {name}. After applying all keyword "
-            "arguments there must be at least one free argument (the params) left."
-        )
-    elif no_free_argument_left:
-        raise InvalidFunctionError(f"{name} must have at least one free argument.")
+        no_free_argument_left = len(unpartialled_args) < 1
 
-    required_args = unpartialled_args.intersection(no_default_args)
-    too_many_required_arguments = len(required_args) > 1
+        if no_free_argument_left and kept:
+            raise InvalidKwargsError(
+                f"Too many keyword arguments for {name}. After applying all keyword "
+                "arguments there must be at least one free argument (the params) left."
+            )
+        elif no_free_argument_left:
+            raise InvalidFunctionError(f"{name} must have at least one free argument.")
 
-    if too_many_required_arguments:
-        raise InvalidKwargsError(
-            f"Too few keyword arguments for {name}. After applying all keyword "
-            "arguments at most one required argument (the params) should remain. "
-            f"in your case the following required arguments remain: {required_args}."
-        )
+        required_args = unpartialled_args.intersection(no_default_args)
+        too_many_required_arguments = len(required_args) > 1
+
+        if too_many_required_arguments:
+            raise InvalidKwargsError(
+                f"Too few keyword arguments for {name}. After applying all keyword "
+                "arguments at most one required argument (the params) should remain. "
+                "in your case the following required arguments remain: "
+                f"{required_args}."
+            )
 
     return out
 
