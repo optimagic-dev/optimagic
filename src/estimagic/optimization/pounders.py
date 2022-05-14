@@ -38,8 +38,6 @@ from estimagic.optimization.pounders_auxiliary import update_trustregion_radius
     name="pounders",
     primary_criterion_entry="root_contributions",
     needs_scaling=True,
-    parallelizes=True,
-    disable_cache=False,
     is_available=True,
 )
 def pounders(

@@ -187,6 +187,9 @@ FAST_DERIV_CASES = [
     ("contributions", {"contributions": helper}),
     ("root_contributions", helper),
     ("root_contributions", {"root_contributions": helper}),
+    ("value", None),
+    ("contributions", None),
+    ("root_contributions", None),
 ]
 
 
@@ -213,9 +216,6 @@ SLOW_DERIV_CASES = [
     ("contributions", {"contributions": np.arange(8).reshape(2, 2, 2)}),
     ("root_contributions", np.arange(8).reshape(2, 2, 2)),
     ("root_contributions", {"root_contributions": np.arange(8).reshape(2, 2, 2)}),
-    ("value", None),
-    ("contributions", None),
-    ("root_contributions", None),
 ]
 
 

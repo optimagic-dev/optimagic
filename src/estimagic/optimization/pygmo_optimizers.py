@@ -22,9 +22,8 @@ except ImportError:
 @mark_minimizer(
     name="pygmo_gaco",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_gaco(
@@ -105,9 +104,8 @@ def pygmo_gaco(
 @mark_minimizer(
     name="pygmo_bee_colony",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_bee_colony(
@@ -158,9 +156,8 @@ def pygmo_bee_colony(
 @mark_minimizer(
     name="pygmo_de",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_de(
@@ -238,9 +235,8 @@ def pygmo_de(
 @mark_minimizer(
     name="pygmo_sea",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_sea(
@@ -289,9 +285,8 @@ def pygmo_sea(
 @mark_minimizer(
     name="pygmo_sga",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_sga(
@@ -410,9 +405,8 @@ def pygmo_sga(
 @mark_minimizer(
     name="pygmo_sade",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_sade(
@@ -498,9 +492,8 @@ def pygmo_sade(
 @mark_minimizer(
     name="pygmo_cmaes",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_cmaes(
@@ -571,9 +564,8 @@ def pygmo_cmaes(
 @mark_minimizer(
     name="pygmo_simulated_annealing",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_simulated_annealing(
@@ -637,9 +629,8 @@ def pygmo_simulated_annealing(
 @mark_minimizer(
     name="pygmo_pso",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_pso(
@@ -733,9 +724,8 @@ def pygmo_pso(
 @mark_minimizer(
     name="pygmo_pso_gen",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_pso_gen(
@@ -828,9 +818,8 @@ def pygmo_pso_gen(
 @mark_minimizer(
     name="pygmo_mbh",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_mbh(
@@ -889,9 +878,8 @@ def pygmo_mbh(
 @mark_minimizer(
     name="pygmo_xnes",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_xnes(
@@ -960,9 +948,8 @@ def pygmo_xnes(
 @mark_minimizer(
     name="pygmo_gwo",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_gwo(
@@ -1011,9 +998,8 @@ def pygmo_gwo(
 @mark_minimizer(
     name="pygmo_compass_search",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_compass_search(
@@ -1077,9 +1063,8 @@ def pygmo_compass_search(
 @mark_minimizer(
     name="pygmo_ihs",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_ihs(
@@ -1146,9 +1131,8 @@ def pygmo_ihs(
 @mark_minimizer(
     name="pygmo_de1220",
     primary_criterion_entry="value",
-    parallelizes=True,
+    is_global=True,
     needs_scaling=True,
-    disable_cache=False,
     is_available=IS_PYGMO_INSTALLED,
 )
 def pygmo_de1220(
