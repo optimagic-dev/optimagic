@@ -14,4 +14,5 @@ as a reference for more experienced users.
    first_optimization_with_estimagic.ipynb
    first_likelihood_estimation_with_estimagic.ipynb
    first_msm_estimation_with_estimagic.ipynb
+   first_derivative_with_estimagic.ipynb
    which_optimizer_to_use.ipynb

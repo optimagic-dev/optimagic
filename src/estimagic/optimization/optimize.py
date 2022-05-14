@@ -2,10 +2,7 @@ import functools
 import warnings
 from pathlib import Path
 
-import numpy as np
 from estimagic.batch_evaluators import process_batch_evaluator
-from estimagic.config import CRITERION_PENALTY_CONSTANT
-from estimagic.config import CRITERION_PENALTY_SLOPE
 from estimagic.exceptions import InvalidFunctionError
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
@@ -13,6 +10,7 @@ from estimagic.logging.database_utilities import make_optimization_iteration_tab
 from estimagic.logging.database_utilities import make_optimization_problem_table
 from estimagic.logging.database_utilities import make_steps_table
 from estimagic.optimization.check_arguments import check_optimize_kwargs
+from estimagic.optimization.error_penalty import get_error_penalty_function
 from estimagic.optimization.get_algorithm import get_final_algorithm
 from estimagic.optimization.get_algorithm import process_user_algorithm
 from estimagic.optimization.internal_criterion_template import (
@@ -23,17 +21,9 @@ from estimagic.optimization.process_multistart_sample import process_multistart_
 from estimagic.optimization.process_results import process_internal_optimizer_result
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
-from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
-from estimagic.utilities import hash_array
-
-
-BASE_DOCSTRING = """
-
-
-"""
 
 
 def maximize(
@@ -57,11 +47,12 @@ def maximize(
     log_options=None,
     error_handling="raise",
     error_penalty=None,
-    cache_size=100,
     scaling=False,
     scaling_options=None,
     multistart=False,
     multistart_options=None,
+    collect_history=None,
+    skip_checks=False,
 ):
     """Maximize criterion using algorithm subject to constraints.
 
@@ -141,8 +132,6 @@ def maximize(
             actually a bad function value. The default constant is f0 + abs(f0) + 100
             for minimizations and f0 - abs(f0) - 100 for maximizations, where
             f0 is the criterion value at start parameters. The default slope is 0.1.
-        cache_size (int): Number of criterion and derivative evaluations that are cached
-            in memory in case they are needed.
         scaling (bool): If True, the parameter vector is rescaled internally for
             better performance with scale sensitive optimizers.
         scaling_options (dict or None): Options to configure the internal scaling ot
@@ -198,6 +187,13 @@ def maximize(
             discarded from the sample.
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
+        collect_history (bool): Whether the history of parameters and criterion values
+            should be collected and returned as part of the result. Default None,
+            which means that the history is collected as long as optimizers do not
+            parallelize over criterion evaluations.
+        skip_checks (bool): Whether checks on the inputs are skipped. This makes the
+            optimization faster, especially for very fast criterion functions. Default
+            False.
 
     """
     return _optimize(
@@ -221,11 +217,12 @@ def maximize(
         log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
-        cache_size=cache_size,
         scaling=scaling,
         scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
+        collect_history=collect_history,
+        skip_checks=skip_checks,
     )
 
 
@@ -250,11 +247,12 @@ def minimize(
     log_options=None,
     error_handling="raise",
     error_penalty=None,
-    cache_size=100,
     scaling=False,
     scaling_options=None,
     multistart=False,
     multistart_options=None,
+    collect_history=None,
+    skip_checks=False,
 ):
     """Minimize criterion using algorithm subject to constraints.
 
@@ -334,8 +332,6 @@ def minimize(
             actually a bad function value. The default constant is f0 + abs(f0) + 100
             for minimizations and f0 - abs(f0) - 100 for maximizations, where
             f0 is the criterion value at start parameters. The default slope is 0.1.
-        cache_size (int): Number of criterion and derivative evaluations that are cached
-            in memory in case they are needed.
         scaling (bool): If True, the parameter vector is rescaled internally for
             better performance with scale sensitive optimizers.
         scaling_options (dict or None): Options to configure the internal scaling ot
@@ -391,6 +387,13 @@ def minimize(
             discarded from the sample.
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
+        collect_history (bool): Whether the history of parameters and criterion values
+            should be collected and returned as part of the result. Default None,
+            which means that the history is collected as long as optimizers do not
+            parallelize over criterion evaluations.
+        skip_checks (bool): Whether checks on the inputs are skipped. This makes the
+            optimization faster, especially for very fast criterion functions. Default
+            False.
 
     """
     return _optimize(
@@ -414,11 +417,12 @@ def minimize(
         log_options=log_options,
         error_handling=error_handling,
         error_penalty=error_penalty,
-        cache_size=cache_size,
         scaling=scaling,
         scaling_options=scaling_options,
         multistart=multistart,
         multistart_options=multistart_options,
+        collect_history=collect_history,
+        skip_checks=skip_checks,
     )
 
 
@@ -444,11 +448,12 @@ def _optimize(
     log_options,
     error_handling,
     error_penalty,
-    cache_size,
     scaling,
     scaling_options,
     multistart,
     multistart_options,
+    collect_history,
+    skip_checks,
 ):
     """Minimize or maximize criterion using algorithm subject to constraints.
 
@@ -474,33 +479,35 @@ def _optimize(
     if logging:
         logging = Path(logging)
 
-    check_optimize_kwargs(
-        direction=direction,
-        criterion=criterion,
-        criterion_kwargs=criterion_kwargs,
-        params=params,
-        algorithm=algorithm,
-        constraints=constraints,
-        algo_options=algo_options,
-        derivative=derivative,
-        derivative_kwargs=derivative_kwargs,
-        criterion_and_derivative=criterion_and_derivative,
-        criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
-        numdiff_options=numdiff_options,
-        logging=logging,
-        log_options=log_options,
-        error_handling=error_handling,
-        error_penalty=error_penalty,
-        cache_size=cache_size,
-        scaling=scaling,
-        scaling_options=scaling_options,
-        multistart=multistart,
-        multistart_options=multistart_options,
-    )
+    if not skip_checks:
+        check_optimize_kwargs(
+            direction=direction,
+            criterion=criterion,
+            criterion_kwargs=criterion_kwargs,
+            params=params,
+            algorithm=algorithm,
+            constraints=constraints,
+            algo_options=algo_options,
+            derivative=derivative,
+            derivative_kwargs=derivative_kwargs,
+            criterion_and_derivative=criterion_and_derivative,
+            criterion_and_derivative_kwargs=criterion_and_derivative_kwargs,
+            numdiff_options=numdiff_options,
+            logging=logging,
+            log_options=log_options,
+            error_handling=error_handling,
+            error_penalty=error_penalty,
+            scaling=scaling,
+            scaling_options=scaling_options,
+            multistart=multistart,
+            multistart_options=multistart_options,
+        )
     # ==================================================================================
     # Get the algorithm info
     # ==================================================================================
-    raw_algo, algo_info, algo_kwargs = process_user_algorithm(algorithm)
+    raw_algo, algo_info = process_user_algorithm(algorithm)
+
+    algo_kwargs = set(algo_info.arguments)
 
     if algo_info.primary_criterion_entry == "root_contributions":
         if direction == "maximize":
@@ -539,12 +546,16 @@ def _optimize(
         func=criterion,
         kwargs=criterion_kwargs,
         name="criterion",
+        skip_checks=skip_checks,
     )
     if isinstance(derivative, dict):
         derivative = derivative.get(algo_info.primary_criterion_entry)
     if derivative is not None:
         derivative = process_func_of_params(
-            func=derivative, kwargs=derivative_kwargs, name="derivative"
+            func=derivative,
+            kwargs=derivative_kwargs,
+            name="derivative",
+            skip_checks=skip_checks,
         )
     if isinstance(criterion_and_derivative, dict):
         criterion_and_derivative = criterion_and_derivative.get(
@@ -556,6 +567,7 @@ def _optimize(
             func=criterion_and_derivative,
             kwargs=criterion_and_derivative_kwargs,
             name="criterion_and_derivative",
+            skip_checks=skip_checks,
         )
 
     # ==================================================================================
@@ -613,11 +625,6 @@ def _optimize(
         soft_upper_bounds=soft_upper_bounds,
         add_soft_bounds=multistart,
     )
-
-    first_crit_eval_scalar = aggregate_func_output_to_value(
-        converter.func_to_internal(first_crit_eval),
-        algo_info.primary_criterion_entry,
-    )
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
@@ -644,26 +651,23 @@ def _optimize(
             "constraints."
         )
 
-    first_eval = {
-        "internal_params": internal_params.values,
-        "external_params": params,
-        "output": first_crit_eval,
-    }
-
     numdiff_options = _fill_numdiff_options_with_defaults(
         numdiff_options=numdiff_options,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
     )
 
-    # set default error penalty
-    error_penalty = _fill_error_penalty_with_defaults(
-        error_penalty, first_crit_eval_scalar, direction
+    # get error penalty function
+    error_penalty_func = get_error_penalty_function(
+        error_handling=error_handling,
+        start_x=internal_params.values,
+        start_criterion=converter.func_to_internal(first_crit_eval),
+        error_penalty=error_penalty,
+        primary_key=algo_info.primary_criterion_entry,
+        direction=direction,
     )
-    # create cache
+
     x = internal_params.values
-    x_hash = hash_array(x)
-    cache = {x_hash: {"criterion": converter.func_to_internal(first_eval["output"])}}
     # ==================================================================================
     # get the internal algorithm
     # ==================================================================================
@@ -676,6 +680,7 @@ def _optimize(
         algo_options=algo_options,
         logging=logging,
         db_kwargs=db_kwargs,
+        collect_history=collect_history,
     )
     # ==================================================================================
     # partial arguments into the internal_criterion_and_derivative_template
@@ -689,14 +694,10 @@ def _optimize(
         "numdiff_options": numdiff_options,
         "logging": logging,
         "db_kwargs": db_kwargs,
-        "first_criterion_evaluation": first_eval,
-        "cache": cache,
-        "cache_size": cache_size,
         "algo_info": algo_info,
+        "error_handling": error_handling,
+        "error_penalty_func": error_penalty_func,
     }
-    if not multistart:
-        to_partial["error_handling"] = error_handling
-        to_partial["error_penalty"] = error_penalty
 
     internal_criterion_and_derivative = functools.partial(
         internal_criterion_and_derivative_template,
@@ -745,7 +746,6 @@ def _optimize(
             logging=logging,
             db_kwargs=db_kwargs,
             error_handling=error_handling,
-            error_penalty=error_penalty,
         )
 
     # ==================================================================================
@@ -759,27 +759,6 @@ def _optimize(
     )
 
     return res
-
-
-def _fill_error_penalty_with_defaults(error_penalty, first_value, direction):
-    """Add default options to error_penalty options."""
-    error_penalty = error_penalty.copy()
-
-    if direction == "minimize":
-        default_constant = (
-            first_value + np.abs(first_value) + CRITERION_PENALTY_CONSTANT
-        )
-        default_slope = CRITERION_PENALTY_SLOPE
-    else:
-        default_constant = (
-            first_value - np.abs(first_value) - CRITERION_PENALTY_CONSTANT
-        )
-        default_slope = -CRITERION_PENALTY_SLOPE
-
-    error_penalty["constant"] = error_penalty.get("constant", default_constant)
-    error_penalty["slope"] = error_penalty.get("slope", default_slope)
-
-    return error_penalty
 
 
 def _create_and_initialize_database(logging, log_options, problem_data):
