@@ -1,5 +1,6 @@
 """Test the internal pounders interface."""
 from functools import partial
+from itertools import product
 
 import numpy as np
 import pandas as pd
@@ -77,17 +78,20 @@ def trustregion_subproblem_options():
     return out
 
 
-@pytest.mark.parametrize(
-    "start_vec",
-    [
-        (np.array([0.15, 0.008, 0.01])),
-        (np.array([1e-3, 1e-3, 1e-3])),
-        (np.array([1e-6, 1e-6, 1e-6])),
-    ],
-)
-def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_options):
+start_vec = [np.array([0.15, 0.008, 0.01]), np.array([1e-6, 1e-6, 1e-6])]
+cg_routine = ["standard", "steihaug-toint", "trsbox"]
+TEST_CASES = list(product(start_vec, cg_routine))
+
+
+@pytest.mark.parametrize("start_vec, conjugate_gradient_routine_sub", TEST_CASES)
+def test_bntr(
+    start_vec,
+    conjugate_gradient_routine_sub,
+    criterion,
+    pounders_options,
+    trustregion_subproblem_options,
+):
     solver_sub = "bntr"
-    conjugate_gradient_routine_sub = "standard"
 
     gtol_abs = 1e-8
     gtol_rel = 1e-8
