@@ -12,7 +12,8 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     approximately, where g denotes the gradient and hess the hessian of the quadratic
     model (i.e. the linear terms and square_terms), respectively.
 
-    The Steihaug-Toint Conjugate Gradient method is based on Steihaug and Toint.
+    The Steihaug-Toint Conjugate Gradient method is based on Steihaug
+    (:cite:`Steihaug1983`) and Toint (:cite:`Toint1981`).
 
     Args:
         model_gradient (np.ndarray): 1d array of shape (n,) containing the
@@ -30,35 +31,23 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     divtol = 10_000
 
     n = len(model_gradient)
-    radius = trustregion_radius
     radius_sq = trustregion_radius**2
 
     residual = -model_gradient
-    qmat = model_hessian
     rr = residual.T @ residual
 
     x_candidate = np.zeros(n)
 
     max_iter = min(n, 10_000)
 
-    z = np.linalg.pinv(qmat) @ residual
+    z = np.linalg.pinv(model_hessian) @ residual
     rz = residual.T @ residual
 
     n_iter = 0
     diverged = False
     converged = False
 
-    if ~np.isfinite(rz) or rz < 0:
-        reason = "Diverged_NANORINF"
-
-        if radius != 0:
-            x_candidate, z, n_iter = _update_candidate_vector(
-                x_candidate, model_gradient, residual, rr, qmat, radius_sq, n_iter
-            )
-            diverged = True
-
     norm_r = np.sqrt(rr)
-
     norm_r0 = norm_r
     ttol = max(rtol * norm_r0, abstol)
 
@@ -66,20 +55,11 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
         norm_r, norm_r0, abstol, ttol, divtol, converged, diverged, reason
     )
 
-    p = qmat @ z
-    z = qmat @ p
+    p = model_hessian @ z
+    z = model_hessian @ p
     n_iter += 1
 
     kappa = p.T @ z
-
-    if ~np.isfinite(kappa):
-        reason = "Diverged_NANORINF"
-
-        if radius != 0:
-            x_candidate, z, n_iter = _update_candidate_vector(
-                x_candidate, model_gradient, residual, rr, qmat, radius_sq, n_iter
-            )
-            diverged = True
 
     dp = 0
     norm_d = 0
@@ -89,47 +69,41 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
         reason = "Converged_Neg_Curve"
         converged = True
 
-        if radius != 0 and norm_p > 0:
-            # Follow direction of negative curvature to the boundary
-            # of the trust-region
-            step = np.sqrt(radius_sq / norm_p)
-            x_candidate = x_candidate + step * p
+        x_candidate, z, n_iter = _update_candidate_vector_and_iteration_number(
+            x_candidate,
+            residual,
+            p,
+            z,
+            model_gradient,
+            model_hessian,
+            rr,
+            trustregion_radius,
+            norm_p,
+            n_iter,
+        )
 
-        elif radius != 0:
-            x_candidate, z, n_iter = _update_candidate_vector(
-                x_candidate, model_gradient, residual, rr, qmat, radius_sq, n_iter
-            )
-
-    # Run the conjugate gradient method until either the problem is solved,
-    # we encounter the boundary of the trust region, or the conjugate
-    # gradient method breaks down
     for _ in range(max_iter):
         alpha = rz / kappa
         norm_dp1 = norm_d + alpha * (2 * dp + alpha * norm_p)
 
-        if radius != 0 and norm_dp1 >= radius_sq:
+        if trustregion_radius != 0 and norm_dp1 >= radius_sq:
             reason = "Converged_CG_Constrained"
             converged = True
 
             if norm_p > 0:
-                step = (np.sqrt(dp * dp + norm_p * (radius_sq - norm_d)) - dp) / norm_p
-                x_candidate = x_candidate + step * p
+                x_candidate = _take_step_to_trustregion_boundary(
+                    x_candidate, p, dp, radius_sq, norm_d, norm_p
+                )
 
             break
 
         x_candidate = x_candidate + alpha * p
-        residual = residual - alpha * qmat @ p
-        z = residual
+        residual = residual - alpha * (model_hessian @ p)
 
         norm_d = x_candidate.T @ x_candidate
 
         rzm1 = rz
-        rz = residual.T @ z
-
-        if rz < 0:
-            reason = "Diverged_Indefinite_Mat"
-            diverged = True
-            break
+        rz = residual.T @ residual
 
         norm_r = np.linalg.norm(residual)
 
@@ -152,12 +126,12 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
             diverged = True
             break
 
-        p = z + beta * p
+        p = residual + beta * p
 
         dp = x_candidate.T @ p
         norm_p = p.T @ p
 
-        z = qmat @ p
+        z = model_hessian @ p
         kappa = p.T @ z
         n_iter += 1
 
@@ -165,31 +139,56 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
             reason = "Converged_CG_NEG_CURVE"
             converged = True
 
-            if radius != 0 and norm_p > 0:
-                # Follow direction of negative curvature to the boundary
-                # of the trust-region
-                step = (np.sqrt(dp * dp + norm_p * (radius_sq - norm_d)) - dp) / norm_p
-                x_candidate = x_candidate + step * p
+            if trustregion_radius != 0 and norm_p > 0:
+                x_candidate = _take_step_to_trustregion_boundary(
+                    x_candidate, p, dp, radius_sq, norm_d, norm_p
+                )
 
             break
 
     return x_candidate
 
 
-def _update_candidate_vector(
-    x_candidate, model_gradient, residual, rr, qmat, radius_sq, niter
+def _update_candidate_vector_and_iteration_number(
+    x_candidate,
+    residual,
+    p,
+    z,
+    model_gradient,
+    model_hessian,
+    rr,
+    radius,
+    norm_p,
+    n_iter,
 ):
     """Update candidate, z vector, and iteration number."""
-    if radius_sq >= rr:
-        alpha = 1.0
-    else:
-        alpha = np.sqrt(radius_sq / rr)
+    radius_sq = radius**2
 
-    x_candidate = x_candidate + alpha * residual
-    z = model_gradient - 0.5 * qmat @ x_candidate
-    niter += 1
+    if radius != 0 and norm_p > 0:
+        # Take step to boundary
+        step = np.sqrt(radius_sq / norm_p)
+        x_candidate = x_candidate + step * p
 
-    return x_candidate, z, niter
+    elif radius != 0:
+        if radius_sq >= rr:
+            alpha = 1.0
+        else:
+            alpha = np.sqrt(radius_sq / rr)
+
+        x_candidate = x_candidate + alpha * residual
+        z = model_gradient - 0.5 * (model_hessian @ x_candidate)
+
+        n_iter += 1
+
+    return x_candidate, z, n_iter
+
+
+def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, norm_p):
+    """Take step to trust-region boundary."""
+    step = (np.sqrt(dp * dp + norm_p * (radius_sq - norm_d)) - dp) / norm_p
+    x_candidate = x_candidate + step * p
+
+    return x_candidate
 
 
 def _check_convergence(
