@@ -3,13 +3,13 @@ from collections import namedtuple
 from functools import reduce
 
 import numpy as np
-from estimagic.optimization._trustregion_conjugate_gradient_quadratic import (
+from estimagic.optimization.trustregion._conjugate_gradient_quadratic import (
     minimize_trust_cg,
 )
-from estimagic.optimization._trustregion_steihaug_toint_quadratic import (
+from estimagic.optimization.trustregion._steihaug_toint_quadratic import (
     minimize_trust_stcg,
 )
-from estimagic.optimization._trustregion_trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.trustregion._trsbox_quadratic import minimize_trust_trsbox
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 

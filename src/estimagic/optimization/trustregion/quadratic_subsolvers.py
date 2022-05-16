@@ -2,43 +2,43 @@
 from collections import namedtuple
 
 import numpy as np
-from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+from estimagic.optimization.trustregion.bounded_newton_quadratic import (
     apply_bounds_to_x_candidate,
 )
-from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+from estimagic.optimization.trustregion.bounded_newton_quadratic import (
     check_for_convergence,
 )
-from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+from estimagic.optimization.trustregion.bounded_newton_quadratic import (
     compute_conjugate_gradient_step,
 )
-from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+from estimagic.optimization.trustregion.bounded_newton_quadratic import (
     compute_predicted_reduction_from_conjugate_gradient_step,
 )
-from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+from estimagic.optimization.trustregion.bounded_newton_quadratic import (
     find_hessian_submatrix_where_bounds_inactive,
 )
-from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+from estimagic.optimization.trustregion.bounded_newton_quadratic import (
     get_information_on_active_bounds,
 )
-from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+from estimagic.optimization.trustregion.bounded_newton_quadratic import (
     take_preliminary_gradient_descent_step_and_check_for_solution,
 )
-from estimagic.optimization._trustregion_bounded_newton_quadratic import (
+from estimagic.optimization.trustregion.bounded_newton_quadratic import (
     update_trustregion_radius_conjugate_gradient,
 )
-from estimagic.optimization._trustregion_gqtpar_quadratic import (
+from estimagic.optimization.trustregion.gqtpar_quadratic import (
     add_lambda_and_factorize_hessian,
 )
-from estimagic.optimization._trustregion_gqtpar_quadratic import (
+from estimagic.optimization.trustregion.gqtpar_quadratic import (
     check_for_interior_convergence_and_update,
 )
-from estimagic.optimization._trustregion_gqtpar_quadratic import (
+from estimagic.optimization.trustregion.gqtpar_quadratic import (
     find_new_candidate_and_update_parameters,
 )
-from estimagic.optimization._trustregion_gqtpar_quadratic import (
+from estimagic.optimization.trustregion.gqtpar_quadratic import (
     get_initial_guess_for_lambdas,
 )
-from estimagic.optimization._trustregion_gqtpar_quadratic import (
+from estimagic.optimization.trustregion.gqtpar_quadratic import (
     update_lambdas_when_factorization_unsuccessful,
 )
 

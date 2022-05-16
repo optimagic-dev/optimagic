@@ -3,15 +3,19 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization._trustregion_conjugate_gradient_quadratic import (
+from estimagic.optimization.trustregion._conjugate_gradient_quadratic import (
     minimize_trust_cg,
 )
-from estimagic.optimization._trustregion_steihaug_toint_quadratic import (
+from estimagic.optimization.trustregion._steihaug_toint_quadratic import (
     minimize_trust_stcg,
 )
-from estimagic.optimization._trustregion_trsbox_quadratic import minimize_trust_trsbox
-from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
-from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
+from estimagic.optimization.trustregion._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.trustregion.quadratic_subsolvers import (
+    minimize_bntr_quadratic,
+)
+from estimagic.optimization.trustregion.quadratic_subsolvers import (
+    minimize_gqtpar_quadratic,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 

@@ -1,4 +1,4 @@
-"""Test the internal pounders interface."""
+"""Test suite for the internal pounders interface."""
 from functools import partial
 from itertools import product
 

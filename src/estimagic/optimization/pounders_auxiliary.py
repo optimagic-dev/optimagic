@@ -3,8 +3,12 @@ from collections import namedtuple
 from copy import copy
 
 import numpy as np
-from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
-from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
+from estimagic.optimization.trustregion.quadratic_subsolvers import (
+    minimize_bntr_quadratic,
+)
+from estimagic.optimization.trustregion.quadratic_subsolvers import (
+    minimize_gqtpar_quadratic,
+)
 from scipy.linalg import qr_multiply
 
 
