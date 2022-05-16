@@ -1,5 +1,4 @@
 import functools
-import inspect
 import warnings
 from functools import partial
 
@@ -39,13 +38,7 @@ def process_user_algorithm(algorithm):
 
     algo_info = algorithm._algorithm_info
 
-    arguments = set(inspect.signature(algorithm).parameters)
-
-    if isinstance(algorithm, partial):
-        partialed_in = set(algorithm.args).union(set(algorithm.keywords))
-        arguments = arguments.difference(partialed_in)
-
-    return algorithm, algo_info, arguments
+    return algorithm, algo_info
 
 
 def get_final_algorithm(
@@ -57,6 +50,7 @@ def get_final_algorithm(
     algo_options,
     logging,
     db_kwargs,
+    collect_history,
 ):
     """Get algorithm-function with partialled options.
 
@@ -88,18 +82,29 @@ def get_final_algorithm(
         valid_kwargs=valid_kwargs,
     )
 
-    partialled_algorithm = partial(raw_algorithm, **internal_options)
+    algorithm = partial(raw_algorithm, **internal_options)
 
-    raw_algorithm = _add_logging_to_algorithm(
-        partialled_algorithm,
+    algorithm = _add_logging(
+        algorithm,
         logging=logging,
         db_kwargs=db_kwargs,
     )
 
-    return raw_algorithm
+    can_collect = internal_options.get("n_cores") in (None, 1)
+
+    if not can_collect and collect_history is True:
+        raise ValueError(
+            "Histories can only be collected with optimizers that do not evaluate "
+            "The criterion function or its derivatives in parallel."
+        )
+
+    if can_collect and collect_history is not False:
+        algorithm = _add_history_collection(algorithm)
+
+    return algorithm
 
 
-def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
+def _add_logging(algorithm=None, *, logging=None, db_kwargs=None):
     """Add logging of status to the algorithm."""
 
     def decorator_add_logging_to_algorithm(algorithm):
@@ -141,6 +146,27 @@ def _add_logging_to_algorithm(algorithm=None, *, logging=None, db_kwargs=None):
         return decorator_add_logging_to_algorithm(algorithm)
     else:
         return decorator_add_logging_to_algorithm
+
+
+def _add_history_collection(algorithm):
+    """Partial a history container into all functions that define the optimization."""
+
+    @functools.wraps(algorithm)
+    def wrapper_add_history_collection(**kwargs):
+        func_names = {"criterion", "derivative", "criterion_and_derivative"}
+
+        container = []
+
+        _kwargs = kwargs.copy()
+        for name in func_names:
+            if name in kwargs:
+                _kwargs[name] = partial(kwargs[name], history_container=container)
+
+        out = algorithm(**_kwargs)
+        out["history"] = container
+        return out
+
+    return wrapper_add_history_collection
 
 
 def _adjust_options_to_algorithm(

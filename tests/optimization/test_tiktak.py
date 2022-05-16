@@ -62,7 +62,6 @@ def test_run_explorations():
             "task",
             "algo_info",
             "error_handling",
-            "error_penalty",
             "fixed_log_data",
         }
         if x.sum() == 5:
