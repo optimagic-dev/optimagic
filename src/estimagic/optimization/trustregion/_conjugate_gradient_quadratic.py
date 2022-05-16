@@ -5,9 +5,9 @@ import numpy as np
 def minimize_trust_cg(
     model_gradient, model_hessian, trustregion_radius, *, gtol_abs=1e-8, gtol_rel=1e-6
 ):
-    """Minimize the quadratic trust-region subproblem via Conjugate Gradient.
+    """Minimize the quadratic subproblem via (standard) conjugate gradient.
 
-    Solve the quadratic subproblem:
+    Solve the trust-region quadratic subproblem:
       min_x   g.T @ x + 0.5 * x.T @ hess @ x
         s.t.   ||x|| <= trustregion_radius
 

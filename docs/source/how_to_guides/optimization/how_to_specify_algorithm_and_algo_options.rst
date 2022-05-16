@@ -679,18 +679,24 @@ noisy criterion functions.
       Function argument to find_affine_points() for the case where input array
       *model_improving_points* is zero.
     - **c2** (int): Treshold for accepting the norm of our current x candidate.
-      Equal to 10 by default. Argument to find_affine_points() in case
+      Equal to 10 by default. Argument to *find_affine_points()* in case
       the input array *model_improving_points* is not zero.
     - **trustregion_subproblem_solver** (str): Solver to use for the trust-region
       subproblem. Two internal solvers are supported:
       - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
       - "gqtpar": (does not support bound constraints)
+    - **trustregion_subproblem_conjugate_gradient_step** (str): Routine for computing
+      the conjugate gradient step, when the subsolver "bntr" is used.
+      Available conjugate gradient routines are:
+      - "standard"
+      - "steihaug-toint"
+      - "trsbox" (default)
     - **trustregion_subproblem_options** (dict): Options dictionary containing
       stopping criteria for the subproblem. These are the tolerance levels:
-      "ftol", "xtol", and "gtol". None of them have to be specified by default,
-      but can be.
+      "gtol_abs", "gtol_rel", "gtol_scaled", and "maxiter".
+      None of them have to be specified by default, but can be.
     - **batch_evaluator** (str or callable): Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or callable with the same interface
+      (currently "joblib" and "pathos_mp") or callable with the same interface
       as the estimagic batch_evaluators. Default is "joblib".
     - **n_cores (int)**: Number of processes used to parallelize the function
       evaluations. Default is 1.

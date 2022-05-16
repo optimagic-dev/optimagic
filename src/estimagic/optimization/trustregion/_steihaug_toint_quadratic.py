@@ -3,16 +3,16 @@ import numpy as np
 
 
 def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
-    """Minimize the quadratic subproblem via Steihaug-Toint Conjugate Gradient.
+    """Minimize the quadratic subproblem via Steihaug-Toint conjugate gradient.
 
-    Solve the quadratic subproblem:
+    Solve the quadratic trust-region subproblem:
       min_x   g.T @ x + 0.5 * x.T @ hess @ x
         s.t.   ||x|| <= trustregion_radius
 
     approximately, where g denotes the gradient and hess the hessian of the quadratic
     model (i.e. the linear terms and square_terms), respectively.
 
-    The Steihaug-Toint Conjugate Gradient method is based on Steihaug
+    The Steihaug-Toint conjugate gradient method is based on Steihaug
     (:cite:`Steihaug1983`) and Toint (:cite:`Toint1981`).
 
     Args:

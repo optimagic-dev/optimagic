@@ -144,8 +144,8 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
 
         if not converged:
             trustregion_radius = np.clip(
-                options_update_radius["min_radius"],
                 max(trustregion_radius, radius_lower_bound),
+                options_update_radius["min_radius"],
                 options_update_radius["max_radius"],
             )
 

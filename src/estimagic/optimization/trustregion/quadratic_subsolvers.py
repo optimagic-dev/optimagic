@@ -83,7 +83,7 @@ def minimize_bntr_quadratic(
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
         conjugate_gradient_routine (str): Routine for computing the conjugate gradient
-            step, when the subsolver "bntr" is used. Available conjugate gradient
+            step. Available conjugate gradient
             routines are:
                 - "standard"
                 - "steihaug-toint"

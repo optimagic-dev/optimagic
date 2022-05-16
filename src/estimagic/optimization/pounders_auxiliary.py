@@ -16,6 +16,10 @@ def create_initial_residual_model(history, accepted_index, delta):
     """Update linear and square terms of the initial residual model.
 
     Args:
+        history (class): Class storing history of xs, residuals, and critvals.
+        accepted_index (int): Index in history pointing to the currently
+            accepted candidate vector.
+        delta (float): Trust-region radius.
 
     Returns:
         residual_model (namedtuple): Named tuple containing the parameters of
@@ -212,7 +216,7 @@ def solve_subproblem(
             - "bntr" (default, supports bound constraints)
             - "gqtpar" (does not support bound constraints)
         conjugate_gradient_routine (str): Routine for computing the conjugate gradient
-            step, when the subsolver "bntr" is used. Available conjugate gradient
+            step. Available conjugate gradient
             routines are:
                 - "standard"
                 - "steihaug-toint"
@@ -285,20 +289,6 @@ def solve_subproblem(
         result = minimize_bntr_quadratic(
             main_model, lower_bounds, upper_bounds, **options
         )
-    elif solver == "bntr_trsbox":
-        options = {
-            "conjugate_gradient_routine": conjugate_gradient_routine,
-            "maxiter": maxiter,
-            "maxiter_gradient_descent": maxiter_gradient_descent,
-            "gtol_abs": gtol_abs,
-            "gtol_rel": gtol_rel,
-            "gtol_scaled": gtol_scaled,
-            "gtol_abs_conjugate_gradient": gtol_abs_conjugate_gradient,
-            "gtol_rel_conjugate_gradient": gtol_rel_conjugate_gradient,
-        }
-        result = minimize_bntr_quadratic(
-            main_model, lower_bounds, upper_bounds, **options
-        )
     elif solver == "gqtpar":
         result = minimize_gqtpar_quadratic(
             main_model,
@@ -307,7 +297,9 @@ def solve_subproblem(
             maxiter=maxiter,
         )
     else:
-        raise ValueError("Subproblem solver is not supported.")
+        raise ValueError(
+            "Invalid subproblem solver: {solver}. Must be one of bntr, gqtpar."
+        )
 
     # Test bounds post-solution
     if np.max(lower_bounds - result["x"]) > 1e-5:

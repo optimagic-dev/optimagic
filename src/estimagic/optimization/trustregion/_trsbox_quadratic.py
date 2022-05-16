@@ -12,20 +12,23 @@ def minimize_trust_trsbox(
 ):
     """Minimize a qaudratic trust-region subproblem using the trsbox algorithm.
 
-    Solve the quadratic subproblem:
+    Solve the quadratic trust-region subproblem:
       min_x   g.T @ x + 0.5 * x.T @ hess @ x
         s.t.   ||x|| <= trustregion_radius
                lower_bounds <= x <= upper_bounds
 
-    approximately, using an active-set approach.
-
+    approximately, using an active-set approach, where g denotes the gradient
+    and hess the hessian of the quadratic model (i.e. the linear terms and
+    square_terms), respectively.
     The subproblem is assumed to be centered, i.e. ``x_center`` is the zero vector.
 
-    This algorithm is an implementation of the quadratic TRSBOX routine from
+    The trsbox algorithm applies a conjugate gradient step in its main loop.
+
+    This algorithm is an implementation of the quadratic trsbox routine from
     M. J. D. Powell (2009) "The BOBYQA algorithm for bound constrained
     optimization without derivatives." (cite:`Powell2009`).
     Some modifications to the termination conditions are from the generalized
-    routine DFBOLS (Zhang et al, 2010).
+    routine DFBOLS by Zhang et al. (:cite:`Zhang2010`).
 
 
     Args:
