@@ -78,9 +78,15 @@ def trustregion_subproblem_options():
     return out
 
 
-start_vec = [np.array([0.15, 0.008, 0.01]), np.array([1e-6, 1e-6, 1e-6])]
+start_vec = [np.array([0.15, 0.008, 0.01])]
 cg_routine = ["standard", "steihaug-toint", "trsbox"]
-TEST_CASES = list(product(start_vec, cg_routine))
+universal_tests = list(product(start_vec, cg_routine))
+specific_tests = [
+    (np.array([1e-3, 1e-3, 1e-3]), "standard"),
+    (np.array([1e-6, 1e-6, 1e-6]), "standard"),
+    (np.array([1e-6, 1e-6, 1e-6]), "steihaug-toint"),
+]
+TEST_CASES = universal_tests + specific_tests
 
 
 @pytest.mark.parametrize("start_vec, conjugate_gradient_routine_sub", TEST_CASES)
