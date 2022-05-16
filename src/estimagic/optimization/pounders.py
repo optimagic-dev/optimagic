@@ -64,6 +64,7 @@ def pounders(
     c1=None,
     c2=10,
     trustregion_subproblem_solver="bntr",
+    trustregion_subproblem_conjugate_gradient_step="trsbox",
     trustregion_subproblem_options=None,
     batch_evaluator="joblib",
     n_cores=DEFAULT_N_CORES,
@@ -121,6 +122,7 @@ def pounders(
         c1=c1,
         c2=c2,
         solver_sub=trustregion_subproblem_solver,
+        conjugate_gradient_routine_sub=trustregion_subproblem_conjugate_gradient_step,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_gradient_descent_sub=trustregion_subproblem_options[
             "maxiter_gradient_descent"
@@ -161,6 +163,7 @@ def internal_solve_pounders(
     c1,
     c2,
     solver_sub,
+    conjugate_gradient_routine_sub,
     maxiter_sub,
     maxiter_gradient_descent_sub,
     gtol_abs_sub,
@@ -179,12 +182,10 @@ def internal_solve_pounders(
         criterion_and_derivative (callable): Function that returns criterion
             and derivative as a tuple.
         x0 (np.ndarray): Initial guess for the parameter vector (starting points).
-        lower_bounds (np.ndarray): Lower bounds.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to -1 if not provided by the user.
-        upper_bounds (np.ndarray): Upper bounds.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to 1 if not provided by the user.
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
         gtol_abs (float): Convergence tolerance for the absolute gradient norm.
             Stop if norm of the gradient is less than this.
         gtol_rel (float): Convergence tolerance for the relative gradient norm.
@@ -222,6 +223,12 @@ def internal_solve_pounders(
             Two internal solvers are supported:
             - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
             - "gqtpar": (does not support bound constraints)
+        conjugate_gradient_routine_sub (str): Routine for computing the conjugate
+            gradient step, when the subsolver "bntr" is used.
+            Available conjugate gradient routines are:
+                - "standard"
+                - "steihaug-toint"
+                - "trsbox" (default)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
         maxiter_gradient_descent_sub (int): Maximum number of gradient descent
             iterations to perform when the trust-region subsolver BNTR is used.
@@ -308,6 +315,7 @@ def internal_solve_pounders(
             upper_bounds=upper_bounds,
             delta=delta,
             solver=solver_sub,
+            conjugate_gradient_routine=conjugate_gradient_routine_sub,
             maxiter=maxiter_sub,
             maxiter_gradient_descent=maxiter_gradient_descent_sub,
             gtol_abs=gtol_abs_sub,

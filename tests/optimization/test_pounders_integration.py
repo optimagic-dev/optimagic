@@ -87,6 +87,7 @@ def trustregion_subproblem_options():
 )
 def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_options):
     solver_sub = "bntr"
+    conjugate_gradient_routine_sub = "standard"
 
     gtol_abs = 1e-8
     gtol_rel = 1e-8
@@ -100,6 +101,7 @@ def test_bntr(start_vec, criterion, pounders_options, trustregion_subproblem_opt
         gtol_scaled=gtol_scaled,
         maxinterp=2 * len(start_vec) + 1,
         solver_sub=solver_sub,
+        conjugate_gradient_routine_sub=conjugate_gradient_routine_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_gradient_descent_sub=trustregion_subproblem_options[
             "maxiter_gradient_descent"
@@ -136,6 +138,7 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
         gtol_scaled=gtol_scaled,
         maxinterp=7,
         solver_sub=solver_sub,
+        conjugate_gradient_routine_sub="trsbox",
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_gradient_descent_sub=trustregion_subproblem_options[
             "maxiter_gradient_descent"

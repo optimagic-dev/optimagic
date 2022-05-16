@@ -4,8 +4,12 @@ from functools import reduce
 
 import numpy as np
 from estimagic.optimization._trustregion_conjugate_gradient_quadratic import (
-    minimize_trust_conjugate_gradient,
+    minimize_trust_cg,
 )
+from estimagic.optimization._trustregion_steihaug_toint_quadratic import (
+    minimize_trust_stcg,
+)
+from estimagic.optimization._trustregion_trsbox_quadratic import minimize_trust_trsbox
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
@@ -37,7 +41,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
     converged = False
     convergence_reason = "Continue iterating."
 
-    criterion_candidate = evaluate_model_criterion(
+    criterion_candidate = _evaluate_model_criterion(
         x_candidate, model.linear_terms, model.square_terms
     )
 
@@ -48,7 +52,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
         upper_bounds,
     )
 
-    gradient_unprojected = evaluate_model_gradient(x_candidate, model)
+    gradient_unprojected = _evaluate_model_gradient(x_candidate, model)
     gradient_projected = project_gradient_onto_feasible_set(
         gradient_unprojected, active_bounds_info
     )
@@ -82,8 +86,8 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
             f_min_gradient_descent,
             step_size_gradient_descent,
             trustregion_radius,
-            radius_upper_bound,
-        ) = perform_gradient_descent(
+            radius_lower_bound,
+        ) = perform_gradient_descent_step(
             x_candidate,
             criterion_candidate,
             gradient_projected,
@@ -107,7 +111,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
                 x_unbounded, lower_bounds, upper_bounds
             )
 
-            gradient_unprojected = evaluate_model_gradient(x_candidate, model)
+            gradient_unprojected = _evaluate_model_gradient(x_candidate, model)
             active_bounds_info = get_information_on_active_bounds(
                 x_candidate,
                 gradient_unprojected,
@@ -139,7 +143,7 @@ def take_preliminary_gradient_descent_step_and_check_for_solution(
             )
 
         if not converged:
-            trustregion_radius = max(trustregion_radius, radius_upper_bound)
+            trustregion_radius = max(trustregion_radius, radius_lower_bound)
             trustregion_radius = np.clip(
                 trustregion_radius,
                 options_update_radius["min_radius"],
@@ -167,6 +171,7 @@ def compute_conjugate_gradient_step(
     active_bounds_info,
     trustregion_radius,
     *,
+    conjugate_gradient_routine,
     gtol_abs_conjugate_gradient,
     gtol_rel_conjugate_gradient,
     options_update_radius,
@@ -190,14 +195,36 @@ def compute_conjugate_gradient_step(
         )
 
     else:
-        step_inactive = minimize_trust_conjugate_gradient(
-            gradient_inactive,
-            hessian_inactive,
-            trustregion_radius,
-            gtol_abs=gtol_abs_conjugate_gradient,
-            gtol_rel=gtol_rel_conjugate_gradient,
-        )
-        step_norm = np.linalg.norm(step_inactive)
+        if conjugate_gradient_routine == "standard":
+            step_inactive = minimize_trust_cg(
+                gradient_inactive,
+                hessian_inactive,
+                trustregion_radius,
+                gtol_abs=gtol_abs_conjugate_gradient,
+                gtol_rel=gtol_rel_conjugate_gradient,
+            )
+            step_norm = np.linalg.norm(step_inactive)
+        elif conjugate_gradient_routine == "steihaug-toint":
+            step_inactive = minimize_trust_stcg(
+                gradient_inactive,
+                hessian_inactive,
+                trustregion_radius,
+            )
+            step_norm = np.linalg.norm(step_inactive)
+        elif conjugate_gradient_routine == "trsbox":
+            step_inactive = minimize_trust_trsbox(
+                gradient_inactive,
+                hessian_inactive,
+                trustregion_radius,
+                lower_bounds=lower_bounds[active_bounds_info.inactive],
+                upper_bounds=upper_bounds[active_bounds_info.inactive],
+            )
+            step_norm = np.linalg.norm(step_inactive)
+        else:
+            raise ValueError(
+                "Invalid routine: {conjugate_gradient_routine}. "
+                "Must be one of standard, steihaug-toint, trsbox."
+            )
 
         if trustregion_radius == 0:
             if step_norm > 0:
@@ -216,14 +243,31 @@ def compute_conjugate_gradient_step(
                     options_update_radius["max_radius"],
                 )
 
-                step_inactive = minimize_trust_conjugate_gradient(
-                    gradient_inactive,
-                    hessian_inactive,
-                    trustregion_radius,
-                    gtol_abs=gtol_abs_conjugate_gradient,
-                    gtol_rel=gtol_rel_conjugate_gradient,
-                )
-                step_norm = np.linalg.norm(step_inactive)
+                if conjugate_gradient_routine == "standard":
+                    step_inactive = minimize_trust_cg(
+                        gradient_inactive,
+                        hessian_inactive,
+                        trustregion_radius,
+                        gtol_abs=gtol_abs_conjugate_gradient,
+                        gtol_rel=gtol_rel_conjugate_gradient,
+                    )
+                    step_norm = np.linalg.norm(step_inactive)
+                elif conjugate_gradient_routine == "steihaug-toint":
+                    step_inactive = minimize_trust_stcg(
+                        gradient_inactive,
+                        hessian_inactive,
+                        trustregion_radius,
+                    )
+                    step_norm = np.linalg.norm(step_inactive)
+                elif conjugate_gradient_routine == "trsbox":
+                    step_inactive = minimize_trust_trsbox(
+                        gradient_inactive,
+                        hessian_inactive,
+                        trustregion_radius,
+                        lower_bounds=lower_bounds[active_bounds_info.inactive],
+                        upper_bounds=upper_bounds[active_bounds_info.inactive],
+                    )
+                    step_norm = np.linalg.norm(step_inactive)
 
                 if step_norm == 0:
                     raise ValueError("Initial direction is zero.")
@@ -258,13 +302,13 @@ def compute_predicted_reduction_from_conjugate_gradient_step(
         cg_step_recomp = conjugate_gradient_step[active_bounds_info.inactive]
         gradient_inactive_recomp = gradient_unprojected[active_bounds_info.inactive]
 
-        predicted_reduction = evaluate_model_criterion(
+        predicted_reduction = _evaluate_model_criterion(
             cg_step_recomp, gradient_inactive_recomp, hessian_inactive
         )
     else:
         # Step did not change, so we can just recover the
         # pre-computed prediction
-        predicted_reduction = evaluate_model_criterion(
+        predicted_reduction = _evaluate_model_criterion(
             conjugate_gradient_step_inactive,
             gradient_inactive,
             hessian_inactive,
@@ -273,7 +317,7 @@ def compute_predicted_reduction_from_conjugate_gradient_step(
     return -predicted_reduction
 
 
-def perform_gradient_descent(
+def perform_gradient_descent_step(
     x_candidate,
     f_candidate_initial,
     gradient_projected,
@@ -290,7 +334,7 @@ def perform_gradient_descent(
     gradient_norm = np.linalg.norm(gradient_projected)
 
     trustregion_radius = options_update_radius["default_radius"]
-    radius_upper_bound = 0
+    radius_lower_bound = 0
     step_size_accepted = 0
 
     for _ in range(maxiter_steepest_descent):
@@ -302,7 +346,7 @@ def perform_gradient_descent(
         x_candidate = apply_bounds_to_x_candidate(
             x_candidate, lower_bounds, upper_bounds
         )
-        f_candidate = evaluate_model_criterion(
+        f_candidate = _evaluate_model_criterion(
             x_candidate, model.linear_terms, model.square_terms
         )
 
@@ -323,10 +367,10 @@ def perform_gradient_descent(
 
         (
             trustregion_radius,
-            radius_upper_bound,
+            radius_lower_bound,
         ) = _update_trustregion_radius_and_gradient_descent(
             trustregion_radius,
-            radius_upper_bound,
+            radius_lower_bound,
             predicted_reduction,
             actual_reduction,
             gradient_norm,
@@ -338,7 +382,7 @@ def perform_gradient_descent(
         f_min,
         step_size_accepted,
         trustregion_radius,
-        radius_upper_bound,
+        radius_lower_bound,
     )
 
 
@@ -509,41 +553,6 @@ def project_gradient_onto_feasible_set(gradient_unprojected, active_bounds_info)
     return gradient_projected
 
 
-def evaluate_model_criterion(
-    x,
-    gradient,
-    hessian,
-):
-    """Evaluate the criterion function value of the main model.
-
-    Args:
-        x (np.ndarray): Parameter vector of shape (n,).
-        gradient (np.ndarray): Gradient of shape (n,) for which the main model
-            shall be evaluated.
-        hessian (np.ndarray): Hessian of shape (n, n) for which the main model
-            shall be evaulated.
-
-    Returns:
-        (float): Criterion value of the main model.
-    """
-    return np.dot(gradient, x) + 0.5 * np.dot(np.dot(x, hessian), x)
-
-
-def evaluate_model_gradient(x, model):
-    """Evaluate the derivative of the main model.
-
-    Args:
-       main_model (namedtuple): Named tuple containing the parameters of the
-            main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
-
-    Returns:
-        (np.ndarray): Derivative of the main model of shape (n,).
-    """
-    return model.linear_terms + np.dot(model.square_terms, x)
-
-
 def _apply_bounds_to_conjugate_gradient_step(
     step_inactive,
     x_candidate,
@@ -575,7 +584,7 @@ def _apply_bounds_to_conjugate_gradient_step(
 
 def _update_trustregion_radius_and_gradient_descent(
     trustregion_radius,
-    radius_upper,
+    radius_lower_bound,
     predicted_reduction,
     actual_reduction,
     gradient_norm,
@@ -613,7 +622,7 @@ def _update_trustregion_radius_and_gradient_descent(
 
     if abs(kappa - 1) <= options["mu1"]:
         # Great agreement
-        radius_upper = max(radius_upper, trustregion_radius)
+        radius_lower_bound = max(radius_lower_bound, trustregion_radius)
 
         if tau_max < 1:
             tau = options["gamma3"]
@@ -624,7 +633,7 @@ def _update_trustregion_radius_and_gradient_descent(
 
     elif abs(kappa - 1) <= options["mu2"]:
         # Good agreement
-        radius_upper = max(radius_upper, trustregion_radius)
+        radius_lower_bound = max(radius_lower_bound, trustregion_radius)
 
         if tau_max < options["gamma2"]:
             tau = options["gamma2"]
@@ -658,7 +667,7 @@ def _update_trustregion_radius_and_gradient_descent(
 
     trustregion_radius = trustregion_radius * tau
 
-    return trustregion_radius, radius_upper
+    return trustregion_radius, radius_lower_bound
 
 
 def _get_fischer_burmeister_direction_vector(x, gradient, lower_bounds, upper_bounds):
@@ -694,3 +703,38 @@ def _get_fischer_burmeister_scalar(a, b):
         fischer_burmeister = -2 * a * b / (np.sqrt(a**2 + b**2) + (a + b))
 
     return fischer_burmeister
+
+
+def _evaluate_model_criterion(
+    x,
+    gradient,
+    hessian,
+):
+    """Evaluate the criterion function value of the main model.
+
+    Args:
+        x (np.ndarray): Parameter vector of shape (n,).
+        gradient (np.ndarray): Gradient of shape (n,) for which the main model
+            shall be evaluated.
+        hessian (np.ndarray): Hessian of shape (n, n) for which the main model
+            shall be evaulated.
+
+    Returns:
+        (float): Criterion value of the main model.
+    """
+    return np.dot(gradient, x) + 0.5 * np.dot(np.dot(x, hessian), x)
+
+
+def _evaluate_model_gradient(x, model):
+    """Evaluate the derivative of the main model.
+
+    Args:
+       main_model (namedtuple): Named tuple containing the parameters of the
+            main model, i.e.:
+            - "linear_terms", a np.ndarray of shape (n,) and
+            - "square_terms", a np.ndarray of shape (n,n).
+
+    Returns:
+        (np.ndarray): Derivative of the main model of shape (n,).
+    """
+    return model.linear_terms + np.dot(model.square_terms, x)

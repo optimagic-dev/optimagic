@@ -180,6 +180,7 @@ def solve_subproblem(
     delta,
     solver,
     *,
+    conjugate_gradient_routine,
     maxiter,
     maxiter_gradient_descent,
     gtol_abs,
@@ -197,42 +198,41 @@ def solve_subproblem(
         delta (float): Current trust region radius.
         main_model (namedtuple): Named tuple containing the parameters of the
             main model, i.e. "linear_terms" and "square terms".
-        lower_bounds (np.ndarray): Lower bounds for the subproblem.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to -1 if not provided by the user.
-        upper_bounds (np.ndarray): Upper bounds for the subproblem.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to 1 if not provided by the user.
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
         delta (float) Current trust-region radius
-        solver (str): Minimizer that will be used to solve the quadratic subproblem.
-            Currently, two interal solvers are supported
-            - "bntr" (Bounded Newton Trust-Region), which supports bound constraints
-            - "gqtpar" (Nearly exact trust-region solver using an iterative method),
-                which does not support bound constraints.
         solver (str): Trust-region subsolver to use. Currently, two internal solvers
             are supported:
-            - "BNTR" (default, supports bound constraints)
-            - "GQTPAR (does not support bound constraints)
+            - "bntr" (default, supports bound constraints)
+            - "gqtpar" (does not support bound constraints)
+        conjugate_gradient_routine (str): Routine for computing the conjugate gradient
+            step, when the subsolver "bntr" is used. Available conjugate gradient
+            routines are:
+                - "standard"
+                - "steihaug-toint"
+                - "trsbox" (default)
         maxiter (int): Maximum number of iterations to perform when solving the
             trust-region subproblem.
         maxiter_gradient_descent (int): Maximum number of gradient descent iterations
-            to perform when the trust-region subsolver BNTR is used.
+            to perform when the trust-region subsolver "bntr" is used.
         gtol_abs (float): Convergence tolerance for the absolute gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_rel (float): Convergence tolerance for the relative gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_scaled (float): Convergence tolerance for the scaled gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_abs_conjugate_gradient (float): Convergence tolerance for the absolute
             gradient norm in the conjugate gradient step of the trust-region
-            subproblem ("BNTR").
+            subproblem ("bntr").
         gtol_rel_conjugate_gradient (float): Convergence tolerance for the relative
             gradient norm in the conjugate gradient step of the trust-region
-            subproblem ("BNTR").
+            subproblem ("bntr").
         k_easy (float): topping criterion for the "easy" case in the trust-region
-            subproblem ("GQTPAR").
+            subproblem ("gqtpar").
         k_hard (float): Stopping criterion for the "hard" case in the trust-region
-            subproblem ("GQTPAR").
+            subproblem ("gqtpar").
 
     Returns:
         (dict): Result dictionary containing the followng keys:
@@ -269,6 +269,21 @@ def solve_subproblem(
 
     if solver == "bntr":
         options = {
+            "conjugate_gradient_routine": conjugate_gradient_routine,
+            "maxiter": maxiter,
+            "maxiter_gradient_descent": maxiter_gradient_descent,
+            "gtol_abs": gtol_abs,
+            "gtol_rel": gtol_rel,
+            "gtol_scaled": gtol_scaled,
+            "gtol_abs_conjugate_gradient": gtol_abs_conjugate_gradient,
+            "gtol_rel_conjugate_gradient": gtol_rel_conjugate_gradient,
+        }
+        result = minimize_bntr_quadratic(
+            main_model, lower_bounds, upper_bounds, **options
+        )
+    elif solver == "bntr_trsbox":
+        options = {
+            "conjugate_gradient_routine": conjugate_gradient_routine,
             "maxiter": maxiter,
             "maxiter_gradient_descent": maxiter_gradient_descent,
             "gtol_abs": gtol_abs,

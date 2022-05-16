@@ -48,13 +48,14 @@ def minimize_bntr_quadratic(
     lower_bounds,
     upper_bounds,
     *,
+    conjugate_gradient_routine,
     maxiter,
     maxiter_gradient_descent,
     gtol_abs,
     gtol_rel,
     gtol_scaled,
     gtol_abs_conjugate_gradient,
-    gtol_rel_conjugate_gradient
+    gtol_rel_conjugate_gradient,
 ):
     """Minimize a bounded trust-region subproblem via Newton Conjugate Gradient method.
 
@@ -75,12 +76,18 @@ def minimize_bntr_quadratic(
     Args:
         model (namedtuple): Named tuple containing the parameters of the
             main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
-        lower_bounds (np.ndarray): Lower bound on parameter vector x.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to -1 if not provided by the user.
-        upper_bounds (np.ndarray): Upper bounds on parameter vector x.
+            - ``linear_terms`` (np.ndarray): 1d array of shape (n,)
+            - ``square_terms`` (np.ndarray): 2d array of shape (n,n).
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
+        conjugate_gradient_routine (str): Routine for computing the conjugate gradient
+            step, when the subsolver "bntr" is used. Available conjugate gradient
+            routines are:
+                - "standard"
+                - "steihaug-toint"
+                - "trsbox" (default)
         maxiter (int): Maximum number of iterations. If reached, terminate.
         maxiter_gradient_descent (int): Maximum number of steepest descent iterations
             to perform when the trust-region subsolver BNTR is used.
@@ -154,7 +161,6 @@ def minimize_bntr_quadratic(
             hessian_bounds_inactive = find_hessian_submatrix_where_bounds_inactive(
                 model, active_bounds_info
             )
-
             (
                 conjugate_gradient_step,
                 conjugate_gradient_step_inactive_bounds,
@@ -167,6 +173,7 @@ def minimize_bntr_quadratic(
                 upper_bounds,
                 active_bounds_info,
                 trustregion_radius,
+                conjugate_gradient_routine=conjugate_gradient_routine,
                 gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient,
                 gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient,
                 options_update_radius=options_update_radius,
