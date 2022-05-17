@@ -1,6 +1,7 @@
 """Auxiliary functions for the quadratic BNTR trust-region subsolver."""
-from collections import namedtuple
 from functools import reduce
+from typing import NamedTuple
+from typing import Union
 
 import numpy as np
 from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
@@ -12,6 +13,14 @@ from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
 from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
+
+
+class ActiveBounds(NamedTuple):
+    lower: Union[np.ndarray, None] = None
+    upper: Union[np.ndarray, None] = None
+    fixed: Union[np.ndarray, None] = None
+    active: Union[np.ndarray, None] = None
+    inactive: Union[np.ndarray, None] = None
 
 
 def take_preliminary_gradient_descent_step_and_check_for_solution(
@@ -203,7 +212,7 @@ def compute_conjugate_gradient_step(
                 gtol_rel=gtol_rel_conjugate_gradient,
             )
             step_norm = np.linalg.norm(step_inactive)
-        elif conjugate_gradient_method == "steihaug-toint":
+        elif conjugate_gradient_method == "steihaug_toint":
             step_inactive = minimize_trust_stcg(
                 gradient_inactive,
                 hessian_inactive,
@@ -222,7 +231,7 @@ def compute_conjugate_gradient_step(
         else:
             raise ValueError(
                 "Invalid routine: {conjugate_gradient_method}. "
-                "Must be one of standard, steihaug-toint, trsbox."
+                "Must be one of standard, steihaug_toint, trsbox."
             )
 
         if trustregion_radius == 0:
@@ -295,7 +304,7 @@ def compute_predicted_reduction_from_conjugate_gradient_step(
     active_bounds_info,
 ):
     """Compute predicted reduction induced by the Conjugate Gradient step."""
-    if active_bounds_info.all.size > 0:
+    if active_bounds_info.active.size > 0:
         # Projection changed the step, so we have to recompute the step
         # and the predicted reduction. Leave the rust radius unchanged.
         cg_step_recomp = conjugate_gradient_step[active_bounds_info.inactive]
@@ -448,21 +457,17 @@ def get_information_on_active_bounds(
     upper_bounds,
 ):
     """Return the index set of active bounds."""
-    ActiveBounds = namedtuple(
-        "ActiveBounds", ["lower", "upper", "fixed", "all", "inactive"]
-    )
-
     active_lower = np.where((x <= lower_bounds) & (gradient_unprojected > 0))[0]
     active_upper = np.where((x >= upper_bounds) & (gradient_unprojected < 0))[0]
     active_fixed = np.where((lower_bounds == upper_bounds))[0]
     active_all = reduce(np.union1d, (active_fixed, active_lower, active_upper))
-    inactive = np.setdiff1d(np.arange(x.shape[0]), active_all)
+    inactive = np.setdiff1d(np.arange(len(x)), active_all)
 
     active_bounds_info = ActiveBounds(
         lower=active_lower,
         upper=active_upper,
         fixed=active_fixed,
-        all=active_all,
+        active=active_all,
         inactive=inactive,
     )
 
@@ -719,7 +724,7 @@ def _evaluate_model_criterion(
             shall be evaulated.
 
     Returns:
-        (float): Criterion value of the main model.
+        float: Criterion value of the main model.
     """
     return np.dot(gradient, x) + 0.5 * np.dot(np.dot(x, hessian), x)
 
@@ -728,12 +733,12 @@ def _evaluate_model_gradient(x, model):
     """Evaluate the derivative of the main model.
 
     Args:
-       main_model (namedtuple): Named tuple containing the parameters of the
+       main_model (NamedTuple): Named tuple containing the parameters of the
             main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
+            - ``linear_terms``, a np.ndarray of shape (n,) and
+            - ``square_terms``, a np.ndarray of shape (n,n).
 
     Returns:
-        (np.ndarray): Derivative of the main model of shape (n,).
+        np.ndarray: Derivative of the main model of shape (n,).
     """
     return model.linear_terms + np.dot(model.square_terms, x)

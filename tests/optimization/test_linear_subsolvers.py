@@ -1,6 +1,7 @@
 """Test suite for linear trust-region subsolvers."""
 import math
-from collections import namedtuple
+from typing import NamedTuple
+from typing import Union
 
 import numpy as np
 import pytest
@@ -9,6 +10,11 @@ from estimagic.optimization.subsolvers.linear_subsolvers import (
 )
 from estimagic.optimization.subsolvers.linear_subsolvers import minimize_trsbox_linear
 from numpy.testing import assert_array_almost_equal as aaae
+
+
+class LinearModel(NamedTuple):
+    intercept: Union[float, None] = None
+    linear_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
 
 @pytest.mark.parametrize(
@@ -66,7 +72,6 @@ from numpy.testing import assert_array_almost_equal as aaae
     ],
 )
 def test_trsbox_linear(model_gradient, lower_bounds, upper_bounds, delta, expected):
-    LinearModel = namedtuple("LinearModel", ["linear_terms"])
     linear_model = LinearModel(linear_terms=model_gradient)
 
     x_out = minimize_trsbox_linear(linear_model, lower_bounds, upper_bounds, delta)
@@ -150,8 +155,7 @@ def test_trsbox_geometry(
     delta,
     expected,
 ):
-    LinearModel = namedtuple("LinearModel", ["constant_term", "linear_terms"])
-    linear_model = LinearModel(constant_term=c_term, linear_terms=model_gradient)
+    linear_model = LinearModel(intercept=c_term, linear_terms=model_gradient)
 
     x_out = improve_geomtery_trsbox_linear(
         x_center,

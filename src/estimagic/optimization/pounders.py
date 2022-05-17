@@ -225,7 +225,7 @@ def internal_solve_pounders(
             - "gqtpar": (does not support bound constraints)
         conjugate_gradient_method_sub (str): Method for computing the conjugate
             gradient step, when the subsolver "bntr" is used.
-            Available conjugate gradient routines are:
+            Available conjugate gradient methods are:
                 - "standard"
                 - "steihaug_toint"
                 - "trsbox" (default)
@@ -264,7 +264,7 @@ def internal_solve_pounders(
             evaluations. Shape (history.get_n_fun(), n_obs)
         - n_iterations (int): Number of iterations the algorithm ran before finding a
             solution vector or reaching maxiter.
-        - "success" (bool): Boolean indicating whether a solution has been found
+        - success (bool): Boolean indicating whether a solution has been found
             before reaching maxiter.
     """
     history = LeastSquaresHistory()

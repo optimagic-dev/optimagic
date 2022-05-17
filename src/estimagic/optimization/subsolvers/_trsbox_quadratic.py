@@ -168,7 +168,6 @@ def minimize_trust_trsbox(
         beta = gradient_sumsq / gradient_sumsq_old
         continue  # new CG iteration
 
-    # d, xbdi, xopt, gnew, H, sl, su, nact, qred
     if need_alt_trust_step:
         curve_min = 0.0
         x_candidate, gradient_candidate = _perform_alternative_trustregion_step(

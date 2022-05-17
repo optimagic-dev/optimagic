@@ -1,12 +1,25 @@
 """Auxiliary functions for the quadratic GQTPAR trust-region subsolver."""
 import math
-from collections import namedtuple
+from typing import NamedTuple
+from typing import Union
 
 import numpy as np
 from scipy.linalg import cho_solve
 from scipy.linalg import solve_triangular
 from scipy.linalg.lapack import dpotrf as compute_cholesky_factorization
 from scipy.optimize._trustregion_exact import estimate_smallest_singular_value
+
+
+class HessianInfo(NamedTuple):
+    hessian_plus_lambda: Union[np.ndarray, None] = None  # shape (n_params, n_params)
+    upper_triangular: Union[np.ndarray, None] = None  # shape (n_params, n_params)
+    already_factorized: bool = False
+
+
+class DampingFactors(NamedTuple):
+    candidate: Union[float, None] = None
+    lower_bound: Union[float, None] = None
+    upper_bound: Union[float, None] = None
 
 
 def get_initial_guess_for_lambdas(
@@ -21,10 +34,10 @@ def get_initial_guess_for_lambdas(
     section 7.3.8 (p. 192) from :cite:`Conn2000`.
 
     Args:
-        main_model (namedtuple): Named tuple containing the parameters of the
+        main_model (NamedTuple): Named tuple containing the parameters of the
             main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
+            - ``linear_terms``, a np.ndarray of shape (n,) and
+            - ``square_terms``, a np.ndarray of shape (n,n).
 
     Returns:
         (dict): Dictionary containing the initial guess for the damping
@@ -34,10 +47,6 @@ def get_initial_guess_for_lambdas(
             - "upper_bound"
             - "lower_bound"
     """
-    DampingFactors = namedtuple(
-        "DampingFactors", ["candidate", "lower_bound", "upper_bound"]
-    )
-
     gradient_norm = np.linalg.norm(main_model.linear_terms)
     model_hessian = main_model.square_terms
 
@@ -80,17 +89,20 @@ def add_lambda_and_factorize_hessian(main_model, hessian_info, lambdas):
     """Add lambda to hessian and factorize it into its upper triangular matrix.
 
     Args:
-        main_model (namedtuple): Named tuple containing the parameters of the
+        main_model (NamedTuple): Named tuple containing the parameters of the
             main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
-        hessian_info (namedtuple): Named tuple containing transformations
+            - ``linear_terms``, a np.ndarray of shape (n,) and
+            - ``square_terms``, a np.ndarray of shape (n,n).
+        hessian_info (NamedTuple): Named tuple containing transformations
             of the hessian, i.e. square_terms, from the main model. The keys are:
-            - "hessian_plus_lambda" (np.ndarray): The square terms of the main model
-                plus the identity matrix times lambda.
-            - "upper_triangular" (np.ndarray): Factorization of the hessian from the
-                main model into its upper triangular matrix.
-            - "info_already_factorized" (bool): Boolean indicating whether the hessian
+
+            - ``hessian_plus_lambda`` (np.ndarray): The square terms of the main model
+                plus the identity matrix times lambda. 2d array of shape (n, n).
+            - ``upper_triangular`` (np.ndarray): Factorization of the hessian from the
+                main model into its upper triangular matrix. The diagonal is filled
+                and the lower lower triangular contains zeros.
+                2d array of shape (n, n).
+            - ``info_already_factorized`` (bool): Boolean indicating whether the hessian
                 has already been factorized for the current iteration.
 
     Returns:
@@ -178,22 +190,20 @@ def find_new_candidate_and_update_parameters(
 
 def check_for_interior_convergence_and_update(
     x_candidate,
-    model_hessian,
+    hessian_info,
     lambdas,
     stopping_criteria,
     converged,
 ):
     """Check for interior convergence, update candidate vector and lambdas."""
-    n = x_candidate.shape[0]
-
     if lambdas.candidate == 0:
-        x_candidate = np.zeros(n)
+        x_candidate = np.zeros_like(x_candidate)
         converged = True
 
-    s_min, z_min = estimate_smallest_singular_value(model_hessian["upper_triangular"])
+    s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
     step_len = 2
 
-    if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas["current"]:
+    if step_len**2 * s_min**2 <= stopping_criteria["k_hard"] * lambdas.current:
         x_candidate = step_len * z_min
         converged = True
 
@@ -241,13 +251,13 @@ def evaluate_model_criterion(x, main_model):
 
     Args:
         x (np.ndarray): Parameter vector of shape (n,).
-        main_model (namedtuple): Named tuple containing the parameters of the
+        main_model (NamedTuple): Named tuple containing the parameters of the
             main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
+            - ``linear_terms``, a np.ndarray of shape (n,) and
+            - ``square_terms``, a np.ndarray of shape (n,n).
 
     Returns:
-        (float): Criterion value of the main model.
+        float: Criterion value of the main model.
     """
     return np.dot(main_model.linear_terms, x) + 0.5 * np.dot(
         np.dot(x, main_model.square_terms), x
@@ -258,12 +268,11 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
     """Update current lambda so that it lies within its bounds.
 
     Args:
-        lambdas_new (namedtuple): Named tuple containing the current candidate
+        lambdas_new (NamedTuple): Named tuple containing the current candidate
             value for the damping factor lambda, its lower bound and upper bound.
 
     Returns:
-        lambda_new_candidate (float): New candidate for the damping factor
-            lambda.
+        float: New candidate for the damping factor lambda.
     """
     lambda_new_candidate = max(
         math.sqrt(lower_bound * upper_bound),
@@ -281,10 +290,10 @@ def _compute_gershgorin_bounds(main_model):
     the main model). See :cite:`Conn2000`.
 
     Args:
-        main_model (namedtuple): Named tuple containing the parameters of the
+        main_model (NamedTuple): Named tuple containing the parameters of the
             main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
+            - ``linear_terms``, a np.ndarray of shape (n,) and
+            - ``square_terms``, a np.ndarray of shape (n,n).
 
     Returns:
         Tuple:
@@ -307,14 +316,14 @@ def _compute_newton_step(lambdas, p_norm, w_norm):
     """Compute the Newton step.
 
     Args:
-        lambdas (namedtuple): Named tuple containing the current candidate
+        lambdas (NamedTuple): Named tuple containing the current candidate
             value for the damping factor lambda, its lower bound and upper bound.
         p_norm (float): Frobenius (i.e. L2-norm) of the candidate vector.
         w_norm (float): Frobenius (i.e. L2-norm) of vector w, which is the solution
             to the following triangular system: U.T w = p.
 
     Returns:
-        (float): Newton step computed according to formula (4.44) p.87
+        float: Newton step computed according to formula (4.44) p.87
             from Nocedal and Wright (2006).
     """
     return lambdas.candidate + (p_norm / w_norm) ** 2 * (p_norm - 1)
@@ -330,7 +339,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
     converged,
 ):
     """Update candidate vector, hessian, and lambdas when x outside trust-region."""
-    n = main_model.square_terms.shape[0]
+    n = len(x_candidate)
 
     s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
     step_len = _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min)
@@ -404,7 +413,7 @@ def _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min):
         z_min (float): Smallest singular value of the hessian matrix.
 
     Returns:
-        (float) Step length with the smallest magnitude.
+        float: Step length with the smallest magnitude.
     """
     ta, tb = _solve_scalar_quadratic_equation(x_candidate, z_min)
     step_len = min([ta, tb], key=abs)
@@ -470,7 +479,7 @@ def _compute_terms_to_make_leading_submatrix_singular(hessian_info, k):
             hessian is the first non-positive definite leading submatrix.
 
     Returns:
-        tuple:
+        Tuple:
         - delta(float): Amount that should be added to the element (k, k) of
             the leading k by k submatrix of the hessian to make it singular.
         - v (np.ndarray): A vector such that ``v.T B v = 0``. Where B is the

@@ -1,6 +1,4 @@
 """Collection of solvers for a quadratic trust-region subproblem."""
-from collections import namedtuple
-
 import numpy as np
 from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     apply_bounds_to_x_candidate,
@@ -38,9 +36,14 @@ from estimagic.optimization.subsolvers.gqtpar_quadratic import (
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     get_initial_guess_for_lambdas,
 )
+from estimagic.optimization.subsolvers.gqtpar_quadratic import HessianInfo
 from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     update_lambdas_when_factorization_unsuccessful,
 )
+
+# ======================================================================================
+# Subsolver BNTR
+# ======================================================================================
 
 
 def minimize_bntr_quadratic(
@@ -74,7 +77,7 @@ def minimize_bntr_quadratic(
 
 
     Args:
-        model (namedtuple): Named tuple containing the parameters of the
+        model (NamedTuple): NamedTuple containing the parameters of the
             main model, i.e.:
             - ``linear_terms`` (np.ndarray): 1d array of shape (n,)
             - ``square_terms`` (np.ndarray): 2d array of shape (n,n).
@@ -83,10 +86,9 @@ def minimize_bntr_quadratic(
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
         conjugate_gradient_method (str): Method for computing the conjugate gradient
-            step. Available conjugate gradient
-            routines are:
+            step. Available conjugate gradient methods are:
                 - "standard"
-                - "steihaug-toint"
+                - "steihaug_toint"
                 - "trsbox" (default)
         maxiter (int): Maximum number of iterations. If reached, terminate.
         maxiter_gradient_descent (int): Maximum number of steepest descent iterations
@@ -103,12 +105,12 @@ def minimize_bntr_quadratic(
 
     Returns:
         (dict): Result dictionary containing the following keys:
-            - "x" (np.ndarray): Solution vector of the subproblem of shape (n,)
-            - "criterion" (float): Minimum function value associated with the
+            - ``x`` (np.ndarray): Solution vector of the subproblem of shape (n,)
+            - ``criterion`` (float): Minimum function value associated with the
                 solution.
-            - n_iterations (int): Number of iterations the algorithm ran before
+            - ``n_iterations`` (int): Number of iterations the algorithm ran before
                 termination.
-            - "success" (bool): Boolean indicating whether a solution has been found
+            - ``success`` (bool): Boolean indicating whether a solution has been found
                 before reaching maxiter.
     """
     options_update_radius = {
@@ -257,6 +259,11 @@ def minimize_bntr_quadratic(
     return result
 
 
+# ======================================================================================
+# Subsolver GQTPAR
+# ======================================================================================
+
+
 def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     """Solve the quadratic trust-region subproblem via nearly exact iterative method.
 
@@ -290,10 +297,10 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     See pp. 194-197 in :cite:`Conn2000` for a more detailed description.
 
     Args:
-        main_model (namedtuple): Named tuple containing the parameters of the
+        main_model (NamedTuple): NamedTuple containing the parameters of the
             main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
+            - ``linear_terms``, a np.ndarray of shape (n,) and
+            - ``square_terms``, a np.ndarray of shape (n,n).
         trustregion_radius (float): Trustregion radius, often referred to as delta.
         k_easy (float): topping criterion for the "easy" case.
         k_hard (float): Stopping criterion for the "hard" case.
@@ -302,10 +309,12 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
 
     Returns:
         (dict): Result dictionary containing the following keys:
-            - "x" (np.ndarray): Solution vector of the subproblem of shape (n,)
-            - "criterion" (float): Minimum function value associated with the
+            - ``x`` (np.ndarray): Solution vector of the subproblem of shape (n,)
+            - ``criterion`` (float): Minimum function value associated with the
                 solution.
     """
+    hessian_info = HessianInfo()
+
     # Small floating point number signaling that for vectors smaller
     # than that backward substituition is not reliable.
     # See Golub, G. H., Van Loan, C. F. (2013), "Matrix computations", p.165.
@@ -318,15 +327,6 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
         "k_easy": k_easy,
         "k_hard": k_hard,
     }
-
-    HessianInfo = namedtuple(
-        "HessianInfo", ["hessian_plus_lambda", "upper_triangular", "already_factorized"]
-    )
-    hessian_info = HessianInfo(
-        hessian_plus_lambda=None,
-        upper_triangular=None,
-        already_factorized=False,
-    )
 
     gradient_norm = np.linalg.norm(model.linear_terms)
     lambdas = get_initial_guess_for_lambdas(model)
@@ -397,14 +397,14 @@ def evaluate_model_criterion(
     """Evaluate the criterion function value of the main model.
 
     Args:
-        x (np.ndarray): Parameter vector of shape (n,).
+        x (np.ndarray): Candidate vector of shape (n,).
         gradient (np.ndarray): Gradient of shape (n,) for which the main model
             shall be evaluated.
         hessian (np.ndarray): Hessian of shape (n, n) for which the main model
             shall be evaulated.
 
     Returns:
-        (float): Criterion value of the main model.
+        float: Criterion value of the main model.
     """
     return np.dot(gradient, x) + 0.5 * np.dot(np.dot(x, hessian), x)
 
@@ -413,12 +413,13 @@ def evaluate_model_gradient(x, model):
     """Evaluate the derivative of the main model.
 
     Args:
-       main_model (namedtuple): Named tuple containing the parameters of the
+        x (np.ndarray): Candidate vector of shape (n,).
+        main_model (NamedTuple): NamedTuple containing the parameters of the
             main model, i.e.:
-            - "linear_terms", a np.ndarray of shape (n,) and
-            - "square_terms", a np.ndarray of shape (n,n).
+            - ``linear_terms``", a np.ndarray of shape (n,) and
+            - ``square_terms``, a np.ndarray of shape (n,n).
 
     Returns:
-        (np.ndarray): Derivative of the main model of shape (n,).
+        np.ndarray: Derivative of the main model of shape (n,).
     """
     return model.linear_terms + np.dot(model.square_terms, x)

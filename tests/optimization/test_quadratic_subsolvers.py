@@ -1,5 +1,6 @@
 """Test various solvers for quadratic trust-region subproblems."""
-from collections import namedtuple
+from typing import NamedTuple
+from typing import Union
 
 import numpy as np
 import pytest
@@ -17,6 +18,11 @@ from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_gqtpar_quadratic,
 )
 from numpy.testing import assert_array_almost_equal as aaae
+
+
+class MainModel(NamedTuple):
+    linear_terms: Union[np.ndarray, None] = None  # shape (n_params,)
+    square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
 
 # ======================================================================================
@@ -451,7 +457,6 @@ def test_bounded_newton_trustregion(
     upper_bounds,
     x_expected,
 ):
-    MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
     options = {
@@ -500,7 +505,6 @@ TEST_CASES_GQTPAR = [
     "linear_terms, square_terms, x_expected, criterion_expected", TEST_CASES_GQTPAR
 )
 def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
-    MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
     result = minimize_gqtpar_quadratic(main_model)

@@ -79,12 +79,12 @@ def trustregion_subproblem_options():
 
 
 start_vec = [np.array([0.15, 0.008, 0.01])]
-cg_routine = ["standard", "steihaug-toint", "trsbox"]
+cg_routine = ["standard", "steihaug_toint", "trsbox"]
 universal_tests = list(product(start_vec, cg_routine))
 specific_tests = [
     (np.array([1e-3, 1e-3, 1e-3]), "standard"),
     (np.array([1e-6, 1e-6, 1e-6]), "standard"),
-    (np.array([1e-6, 1e-6, 1e-6]), "steihaug-toint"),
+    (np.array([1e-6, 1e-6, 1e-6]), "steihaug_toint"),
 ]
 TEST_CASES = universal_tests + specific_tests
 
