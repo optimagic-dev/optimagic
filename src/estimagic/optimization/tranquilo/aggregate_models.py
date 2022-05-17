@@ -157,7 +157,12 @@ def aggregator_sum(vector_model, fvec_center, model_info):
     2. ModelInfo: has squares or interactions
 
     """
-    intercept = fvec_center.sum()
+    if model_info.has_intercepts:
+        vm_intercepts = vector_model.intercepts
+    else:
+        vm_intercepts = fvec_center
+
+    intercept = vm_intercepts.sum(axis=0)
     linear_terms = vector_model.linear_terms.sum(axis=0)
     square_terms = vector_model.square_terms.sum(axis=0)
     return intercept, linear_terms, square_terms
@@ -185,8 +190,7 @@ def aggregator_least_squares_linear(vector_model, fvec_center, model_info):
 
     intercept = vm_intercepts @ vm_intercepts
     linear_terms = 2 * np.sum(vm_linear_terms * vm_intercepts.reshape(-1, 1), axis=0)
-    square_terms = 2 * np.tril(vm_linear_terms.T @ vm_linear_terms)
-    square_terms[np.diag_indices(len(square_terms))] = np.diag(square_terms) / 2
+    square_terms = 2 * vm_linear_terms.T @ vm_linear_terms
 
     return intercept, linear_terms, square_terms
 
@@ -197,8 +201,7 @@ def aggregator_information_equality_linear(vector_model, fvec_center, model_info
     This aggregation is useful if the underlying maximization problem is a likelihood
     problem. Given a linear model for the likelihood contributions we get an estimate of
     the scores. Using the Fisher-Information-Equality we estimate the average Hessian
-    using the scores. We then construct the main model using a second-degree Taylor
-    approximation.
+    using the scores.
 
     Assumptions
     -----------
@@ -207,13 +210,16 @@ def aggregator_information_equality_linear(vector_model, fvec_center, model_info
 
     """
     vm_linear_terms = vector_model.linear_terms
+    if model_info.has_intercepts:
+        vm_intercepts = vector_model.intercepts
+    else:
+        vm_intercepts = fvec_center
 
     fisher_information = vm_linear_terms.T @ vm_linear_terms
 
-    intercept = fvec_center.sum(axis=0)
+    intercept = vm_intercepts.sum(axis=0)
     linear_terms = vm_linear_terms.sum(axis=0)
-    square_terms = -np.tril(fisher_information)
-    square_terms[np.diag_indices(len(square_terms))] = np.diag(square_terms) / 2
+    square_terms = -fisher_information / 2
 
     return intercept, linear_terms, square_terms
 

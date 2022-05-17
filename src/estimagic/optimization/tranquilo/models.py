@@ -29,16 +29,17 @@ def evaluate_model(scalar_model, centered_x):
 
     We utilize that a quadratic model can be written in the form:
 
-    Equation 1:     f(x) = a + x.T @ b + x.T @ C @ x ,
+    Equation 1:     f(x) = a + x.T @ g + 0.5 * x.T @ H @ x,
 
-    where C is lower-triangular. Note the connection of b and C to the gradient:
-    f'(x) = b + (C + C.T) @ x, and the Hessian: f''(x) = C + C.T.
+    with symmetric H. Note that H = f''(x), while g = f'(x) - H @ x. If we consider a
+    polynomial expansion around x = 0, we therefore get g = f'(x). Hence, g, H can be
+    though of as the gradient and Hessian.
 
     Args:
         scalar_model (ScalarModel): The aggregated model. Has entries:
             - 'intercept': corresponds to 'a' in the above equation
-            - 'linear_terms': corresponds to 'b' in the above equation
-            - 'square_terms': corresponds to 'C' in the above equation
+            - 'linear_terms': corresponds to 'g' in the above equation
+            - 'square_terms': corresponds to 'H' in the above equation
         centered_x (np.ndarray): New data. Has length n_params
 
     Returns:
@@ -49,7 +50,7 @@ def evaluate_model(scalar_model, centered_x):
 
     y = x @ scalar_model.linear_terms
     if scalar_model.square_terms is not None:
-        y += x.T @ scalar_model.square_terms @ x
+        y += x.T @ scalar_model.square_terms @ x / 2
     if scalar_model.intercept is not None:
         y += scalar_model.intercept
 

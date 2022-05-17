@@ -19,7 +19,7 @@ def _tranquilo(
     upper_bounds=None,
 ):
     # ==================================================================================
-    # hardcoded stuff that needs to be made flexibel
+    # hardcoded stuff that needs to be made flexible
     # ==================================================================================
     maxiter = 15
     functype = "scalar"
@@ -33,8 +33,8 @@ def _tranquilo(
     fitter = "ols"
     fit_options = {}
 
-    model_info = ModelInfo(has_interactions=False)
-    subsolver = "thorough"
+    model_info = ModelInfo()
+    subsolver = "bntr"
     solver_options = {}
 
     aggregator = "identity"
