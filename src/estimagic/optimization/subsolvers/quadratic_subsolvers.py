@@ -2,43 +2,43 @@
 from collections import namedtuple
 
 import numpy as np
-from estimagic.optimization.trustregion.bounded_newton_quadratic import (
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     apply_bounds_to_x_candidate,
 )
-from estimagic.optimization.trustregion.bounded_newton_quadratic import (
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     check_for_convergence,
 )
-from estimagic.optimization.trustregion.bounded_newton_quadratic import (
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     compute_conjugate_gradient_step,
 )
-from estimagic.optimization.trustregion.bounded_newton_quadratic import (
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     compute_predicted_reduction_from_conjugate_gradient_step,
 )
-from estimagic.optimization.trustregion.bounded_newton_quadratic import (
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     find_hessian_submatrix_where_bounds_inactive,
 )
-from estimagic.optimization.trustregion.bounded_newton_quadratic import (
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     get_information_on_active_bounds,
 )
-from estimagic.optimization.trustregion.bounded_newton_quadratic import (
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     take_preliminary_gradient_descent_step_and_check_for_solution,
 )
-from estimagic.optimization.trustregion.bounded_newton_quadratic import (
+from estimagic.optimization.subsolvers.bounded_newton_quadratic import (
     update_trustregion_radius_conjugate_gradient,
 )
-from estimagic.optimization.trustregion.gqtpar_quadratic import (
+from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     add_lambda_and_factorize_hessian,
 )
-from estimagic.optimization.trustregion.gqtpar_quadratic import (
+from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     check_for_interior_convergence_and_update,
 )
-from estimagic.optimization.trustregion.gqtpar_quadratic import (
+from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     find_new_candidate_and_update_parameters,
 )
-from estimagic.optimization.trustregion.gqtpar_quadratic import (
+from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     get_initial_guess_for_lambdas,
 )
-from estimagic.optimization.trustregion.gqtpar_quadratic import (
+from estimagic.optimization.subsolvers.gqtpar_quadratic import (
     update_lambdas_when_factorization_unsuccessful,
 )
 
@@ -48,7 +48,7 @@ def minimize_bntr_quadratic(
     lower_bounds,
     upper_bounds,
     *,
-    conjugate_gradient_routine,
+    conjugate_gradient_method,
     maxiter,
     maxiter_gradient_descent,
     gtol_abs,
@@ -82,7 +82,7 @@ def minimize_bntr_quadratic(
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
             for the parameter vector x.
-        conjugate_gradient_routine (str): Routine for computing the conjugate gradient
+        conjugate_gradient_method (str): Method for computing the conjugate gradient
             step. Available conjugate gradient
             routines are:
                 - "standard"
@@ -173,7 +173,7 @@ def minimize_bntr_quadratic(
                 upper_bounds,
                 active_bounds_info,
                 trustregion_radius,
-                conjugate_gradient_routine=conjugate_gradient_routine,
+                conjugate_gradient_method=conjugate_gradient_method,
                 gtol_abs_conjugate_gradient=gtol_abs_conjugate_gradient,
                 gtol_rel_conjugate_gradient=gtol_rel_conjugate_gradient,
                 options_update_radius=options_update_radius,
@@ -276,7 +276,7 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
 
         s.t. norm(x) <= trustregion_radius
 
-        if and only if norm(``x*``) <= trustregion radius and there is a scalar
+        if and only if norm(``x*``) <= subsolvers radius and there is a scalar
         lambda >= 0, such that:
 
     1) (H + lambda * I(n)) x* = -g

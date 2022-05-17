@@ -89,10 +89,10 @@ specific_tests = [
 TEST_CASES = universal_tests + specific_tests
 
 
-@pytest.mark.parametrize("start_vec, conjugate_gradient_routine_sub", TEST_CASES)
+@pytest.mark.parametrize("start_vec, conjugate_gradient_method_sub", TEST_CASES)
 def test_bntr(
     start_vec,
-    conjugate_gradient_routine_sub,
+    conjugate_gradient_method_sub,
     criterion,
     pounders_options,
     trustregion_subproblem_options,
@@ -111,7 +111,7 @@ def test_bntr(
         gtol_scaled=gtol_scaled,
         maxinterp=2 * len(start_vec) + 1,
         solver_sub=solver_sub,
-        conjugate_gradient_routine_sub=conjugate_gradient_routine_sub,
+        conjugate_gradient_method_sub=conjugate_gradient_method_sub,
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_gradient_descent_sub=trustregion_subproblem_options[
             "maxiter_gradient_descent"
@@ -148,7 +148,7 @@ def test_gqtpar(start_vec, criterion, pounders_options, trustregion_subproblem_o
         gtol_scaled=gtol_scaled,
         maxinterp=7,
         solver_sub=solver_sub,
-        conjugate_gradient_routine_sub="trsbox",
+        conjugate_gradient_method_sub="trsbox",
         maxiter_sub=trustregion_subproblem_options["maxiter"],
         maxiter_gradient_descent_sub=trustregion_subproblem_options[
             "maxiter_gradient_descent"

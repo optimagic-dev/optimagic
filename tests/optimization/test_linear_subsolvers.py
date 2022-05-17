@@ -4,10 +4,10 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization.trustregion.linear_subsolvers import (
+from estimagic.optimization.subsolvers.linear_subsolvers import (
     improve_geomtery_trsbox_linear,
 )
-from estimagic.optimization.trustregion.linear_subsolvers import minimize_trsbox_linear
+from estimagic.optimization.subsolvers.linear_subsolvers import minimize_trsbox_linear
 from numpy.testing import assert_array_almost_equal as aaae
 
 

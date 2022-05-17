@@ -3,10 +3,10 @@ from collections import namedtuple
 from copy import copy
 
 import numpy as np
-from estimagic.optimization.trustregion.quadratic_subsolvers import (
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_bntr_quadratic,
 )
-from estimagic.optimization.trustregion.quadratic_subsolvers import (
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_gqtpar_quadratic,
 )
 from scipy.linalg import qr_multiply
@@ -188,7 +188,7 @@ def solve_subproblem(
     delta,
     solver,
     *,
-    conjugate_gradient_routine,
+    conjugate_gradient_method,
     maxiter,
     maxiter_gradient_descent,
     gtol_abs,
@@ -215,11 +215,11 @@ def solve_subproblem(
             are supported:
             - "bntr" (default, supports bound constraints)
             - "gqtpar" (does not support bound constraints)
-        conjugate_gradient_routine (str): Routine for computing the conjugate gradient
+        conjugate_gradient_method (str): Method for computing the conjugate gradient
             step. Available conjugate gradient
             routines are:
                 - "standard"
-                - "steihaug-toint"
+                - "steihaug_toint"
                 - "trsbox" (default)
         maxiter (int): Maximum number of iterations to perform when solving the
             trust-region subproblem.
@@ -277,7 +277,7 @@ def solve_subproblem(
 
     if solver == "bntr":
         options = {
-            "conjugate_gradient_routine": conjugate_gradient_routine,
+            "conjugate_gradient_method": conjugate_gradient_method,
             "maxiter": maxiter,
             "maxiter_gradient_descent": maxiter_gradient_descent,
             "gtol_abs": gtol_abs,

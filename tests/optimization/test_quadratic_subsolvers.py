@@ -3,17 +3,17 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from estimagic.optimization.trustregion._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
     minimize_trust_cg,
 )
-from estimagic.optimization.trustregion._steihaug_toint_quadratic import (
+from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
     minimize_trust_stcg,
 )
-from estimagic.optimization.trustregion._trsbox_quadratic import minimize_trust_trsbox
-from estimagic.optimization.trustregion.quadratic_subsolvers import (
+from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_bntr_quadratic,
 )
-from estimagic.optimization.trustregion.quadratic_subsolvers import (
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_gqtpar_quadratic,
 )
 from numpy.testing import assert_array_almost_equal as aaae
@@ -455,7 +455,7 @@ def test_bounded_newton_trustregion(
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
     options = {
-        "conjugate_gradient_routine": "standard",
+        "conjugate_gradient_method": "standard",
         "maxiter": 50,
         "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,

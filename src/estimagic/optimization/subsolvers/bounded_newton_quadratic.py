@@ -3,13 +3,13 @@ from collections import namedtuple
 from functools import reduce
 
 import numpy as np
-from estimagic.optimization.trustregion._conjugate_gradient_quadratic import (
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
     minimize_trust_cg,
 )
-from estimagic.optimization.trustregion._steihaug_toint_quadratic import (
+from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
     minimize_trust_stcg,
 )
-from estimagic.optimization.trustregion._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
 
 EPSILON = np.finfo(float).eps ** (2 / 3)
 
@@ -170,7 +170,7 @@ def compute_conjugate_gradient_step(
     active_bounds_info,
     trustregion_radius,
     *,
-    conjugate_gradient_routine,
+    conjugate_gradient_method,
     gtol_abs_conjugate_gradient,
     gtol_rel_conjugate_gradient,
     options_update_radius,
@@ -194,7 +194,7 @@ def compute_conjugate_gradient_step(
         )
 
     else:
-        if conjugate_gradient_routine == "standard":
+        if conjugate_gradient_method == "standard":
             step_inactive = minimize_trust_cg(
                 gradient_inactive,
                 hessian_inactive,
@@ -203,14 +203,14 @@ def compute_conjugate_gradient_step(
                 gtol_rel=gtol_rel_conjugate_gradient,
             )
             step_norm = np.linalg.norm(step_inactive)
-        elif conjugate_gradient_routine == "steihaug-toint":
+        elif conjugate_gradient_method == "steihaug-toint":
             step_inactive = minimize_trust_stcg(
                 gradient_inactive,
                 hessian_inactive,
                 trustregion_radius,
             )
             step_norm = np.linalg.norm(step_inactive)
-        elif conjugate_gradient_routine == "trsbox":
+        elif conjugate_gradient_method == "trsbox":
             step_inactive = minimize_trust_trsbox(
                 gradient_inactive,
                 hessian_inactive,
@@ -221,7 +221,7 @@ def compute_conjugate_gradient_step(
             step_norm = np.linalg.norm(step_inactive)
         else:
             raise ValueError(
-                "Invalid routine: {conjugate_gradient_routine}. "
+                "Invalid routine: {conjugate_gradient_method}. "
                 "Must be one of standard, steihaug-toint, trsbox."
             )
 
@@ -242,7 +242,7 @@ def compute_conjugate_gradient_step(
                     options_update_radius["max_radius"],
                 )
 
-                if conjugate_gradient_routine == "standard":
+                if conjugate_gradient_method == "standard":
                     step_inactive = minimize_trust_cg(
                         gradient_inactive,
                         hessian_inactive,
@@ -251,14 +251,14 @@ def compute_conjugate_gradient_step(
                         gtol_rel=gtol_rel_conjugate_gradient,
                     )
                     step_norm = np.linalg.norm(step_inactive)
-                elif conjugate_gradient_routine == "steihaug-toint":
+                elif conjugate_gradient_method == "steihaug-toint":
                     step_inactive = minimize_trust_stcg(
                         gradient_inactive,
                         hessian_inactive,
                         trustregion_radius,
                     )
                     step_norm = np.linalg.norm(step_inactive)
-                elif conjugate_gradient_routine == "trsbox":
+                elif conjugate_gradient_method == "trsbox":
                     step_inactive = minimize_trust_trsbox(
                         gradient_inactive,
                         hessian_inactive,
