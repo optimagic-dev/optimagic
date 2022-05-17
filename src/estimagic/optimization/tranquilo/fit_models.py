@@ -107,7 +107,7 @@ def _fitter_template(
         y (np.ndarray): Array of shape (n_samples, n_residuals) with function
             evaluations that have been centered around the function value at the
             trust region center.
-        fitter (callable): Fit method. The first rgument of any fit method needs to be
+        fitter (callable): Fit method. The first argument of any fit method needs to be
             ``x``, second ``y`` and third ``model_info``.
         model_info (ModelInfo): Information that describes the functional form of
             the model.
@@ -134,11 +134,11 @@ def _fitter_template(
 
     # construct final square terms
     if model_info.has_interactions:
-        square_terms = _reshape_square_terms_to_tril(
+        square_terms = _reshape_square_terms_to_hess(
             square_terms, n_params, n_residuals, model_info.has_squares
         )
     elif model_info.has_squares:
-        square_terms = np.stack([np.diag(a) for a in square_terms])
+        square_terms = 2 * np.stack([np.diag(a) for a in square_terms])
     else:
         square_terms = None
 
@@ -255,13 +255,13 @@ def _build_feature_matrix(x, model_info):
     return features
 
 
-def _reshape_square_terms_to_tril(square_terms, n_params, n_residuals, has_squares):
+def _reshape_square_terms_to_hess(square_terms, n_params, n_residuals, has_squares):
     offset = 0 if has_squares else 1
     idx1, idx2 = np.triu_indices(n_params, k=offset)
-    triu = np.zeros((n_residuals, n_params, n_params), dtype=np.float64)
-    triu[:, idx1, idx2] = square_terms
-    tril = triu.transpose(0, 2, 1)
-    return tril
+    hess = np.zeros((n_residuals, n_params, n_params), dtype=np.float64)
+    hess[:, idx1, idx2] = square_terms
+    hess = hess + np.triu(hess).transpose(0, 2, 1)
+    return hess
 
 
 @njit
