@@ -13,6 +13,7 @@ def combine_plots(
     sharex=False,
     sharey=True,
     share_yrange_all=True,
+    y_expand=0.02,
     share_xrange_all=False,
     make_subplot_kwargs=None,
     showlegend=True,
@@ -36,6 +37,8 @@ def combine_plots(
             the sam column
         sharey (bool): If True, share the properties of y-axis across subplots in the
         share_yrange_all (bool): If True, set the same range of y axis for all plots.
+        y_expand (float): The ration by which to expand the range of the (shared) y
+            axis, such that the axis is not cropped at exactly max of y variable.
         share_xrange_all (bool): If True, set the same range of x axis for all plots.
         showlegend (bool): If True, show legend.
         template (str): Plotly layout template. Must be one of plotly.io.templates.
@@ -94,8 +97,17 @@ def combine_plots(
 
     fig.update_layout(**layout_kwargs, width=400 * plots_per_row, height=200 * nrows)
     if share_yrange_all:
-        y_lower = min([f.layout.yaxis.range[0] for f in plots])
-        y_upper = max([f.layout.yaxis.range[1] for f in plots])
+        lb = []
+        ub = []
+        for f in plots:
+            for d in f.data:
+                lb.append(d["y"].min())
+                ub.append(d["y"].max())
+        ub = np.max(ub)
+        lb = np.min(lb)
+        y_range = ub - lb
+        y_lower = lb - y_range * y_expand
+        y_upper = ub + y_range * y_expand
         fig.update_yaxes(range=[y_lower, y_upper])
     if share_xrange_all:
         x_lower = min([f.layout.xaxis.range[0] for f in plots])
