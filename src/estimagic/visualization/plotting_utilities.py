@@ -92,7 +92,7 @@ def combine_plots(
                 row=row + 1,
             )
 
-    fig.update_layout(**layout_kwargs)
+    fig.update_layout(**layout_kwargs, width=400 * plots_per_row, height=200 * nrows)
     if share_yrange_all:
         y_lower = min([f.layout.yaxis.range[0] for f in plots])
         y_upper = max([f.layout.yaxis.range[1] for f in plots])
@@ -275,10 +275,11 @@ def get_make_subplot_kwargs(sharex, sharey, kwrgs, plots_per_row, plots):
         "print_grid": False,
         "shared_yaxes": sharey,
         "shared_xaxes": sharex,
-        "vertical_spacing": 0.2,
+        "vertical_spacing": (1 / (nrows - 1)) / 2,
+        "horizontal_spacing": 1 / (plots_per_row * 4),
     }
     if not sharey:
-        default_kwargs["horizontal_spacing"] = 0.2
+        default_kwargs["horizontal_spacing"] = 2 * default_kwargs["horizontal_spacing"]
     if kwrgs:
         default_kwargs.update(kwrgs)
     return default_kwargs, nrows
