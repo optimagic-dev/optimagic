@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from estimagic.batch_evaluators import process_batch_evaluator
+from estimagic.config import DEFAULT_N_CORES
 from estimagic.config import PLOTLY_PALETTE
 from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.visualization.plotting_utilities import get_layout_kwargs
@@ -9,6 +11,8 @@ from estimagic.visualization.plotting_utilities import get_layout_kwargs
 def slice_plots(
     criterion,
     params,
+    batch_evaluator=None,
+    n_cores=DEFAULT_N_CORES,
     param_name_mapping=None,
     n_gridpoints=21,
     n_random_values=2,
@@ -29,6 +33,8 @@ def slice_plots(
             scalar value or dictionary with the entry "value".
         params (pandas.DataFrame): See :ref:`params`. Must contain finite lower and
             upper bounds for all parameters.
+        batch_evaluator (str or callable): See :ref:`batch_evaluators`.
+        n_cores (int): Number of cores.
         param_name_mapping (dict or NoneType): Dictionary mapping old parameter names
             to new ones.
         n_gridpoins (int): Number of gridpoints on which the criterion function is
@@ -51,6 +57,7 @@ def slice_plots(
         title_kwargs (dict or NoneType): Dictionary of key word arguments used to
             update properties of the figure title. Use {'text': '<desired title>'}
             to set figure title.
+
 
     Returns:
         plotly.Figure: The grid plot or dict of individual plots
@@ -102,8 +109,15 @@ def slice_plots(
         p = params.copy(deep=True)
         p["value"] = row[params.index].astype(float)
         arguments.append(p)
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
 
-    function_values = [criterion(arg) for arg in arguments]
+    function_values = batch_evaluator(
+        criterion,
+        arguments=arguments,
+        unpack_symbol=None,
+        error_handling="raise",
+        n_cores=n_cores,
+    )
     if isinstance(function_values[0], dict):
         function_values = [val["value"] for val in function_values]
 
