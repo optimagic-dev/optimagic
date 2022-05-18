@@ -8,7 +8,7 @@ from estimagic.config import PLOTLY_TEMPLATE
 from estimagic.visualization.plotting_utilities import get_layout_kwargs
 
 
-def slice_plots(
+def slice_plot(
     criterion,
     params,
     batch_evaluator=None,

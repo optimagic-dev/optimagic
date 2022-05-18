@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.visualization.plotting_utilities import combine_plots
-from estimagic.visualization.slice_plot import slice_plots
+from estimagic.visualization.slice_plot import slice_plot
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def test_slice_plot(
     problem, n_gridpoints, n_random_values, plots_per_row, combine_plots_in_grid
 ):
 
-    plots_dict = slice_plots(
+    plots_dict = slice_plot(
         criterion=problem["criterion"],
         params=problem["params"],
         n_gridpoints=n_gridpoints,
