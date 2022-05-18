@@ -98,7 +98,7 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
             break
 
         x_candidate = x_candidate + alpha * p
-        residual = residual - alpha * model_hessian @ p
+        residual = residual - alpha * (model_hessian @ p)
 
         norm_d = x_candidate.T @ x_candidate
 
@@ -176,7 +176,7 @@ def _update_candidate_vector_and_iteration_number(
             alpha = np.sqrt(radius_sq / rr)
 
         x_candidate = x_candidate + alpha * residual
-        z = model_gradient - 0.5 * model_hessian @ x_candidate
+        z = model_gradient - 0.5 * (model_hessian @ x_candidate)
 
         n_iter += 1
 

@@ -55,13 +55,12 @@ def minimize_trsbox_linear(
     direction = -model_gradient
 
     indices_inactive_directions = np.where(np.abs(direction) < zero_treshold)[0]
-    direction[indices_inactive_directions] = 0.0
+    direction[indices_inactive_directions] = 0
 
     active_directions = np.setdiff1d(np.arange(n), indices_inactive_directions)
     set_active_directions = iter(active_directions)
 
     for _ in range(n):
-
         if np.linalg.norm(direction) < zero_treshold:
             break
 
