@@ -621,4 +621,4 @@ def _update_tangent(
 
 def _calc_sum_sq(x):
     """Calculate the sum of squares of a vector."""
-    return np.dot(x, x)
+    return x.T @ x

@@ -8,10 +8,10 @@ def minimize_trust_cg(
     """Minimize the quadratic subproblem via (standard) conjugate gradient.
 
     Solve the trust-region quadratic subproblem:
-      min_x   g.T @ x + 0.5 * x.T @ hess @ x
+      min_x   g.T @ x + 0.5 * x.T @ H @ x
         s.t.   ||x|| <= trustregion_radius
 
-    approximately, where g denotes the gradient and hess the hessian of the quadratic
+    approximately, where g denotes the gradient and H the hessian of the quadratic
     model (i.e. the linear terms and square_terms), respectively.
 
     Args:
@@ -41,13 +41,13 @@ def minimize_trust_cg(
         if gradient_norm <= stop_tol:
             break
 
-        square_terms = np.dot(np.dot(direction, model_hessian), direction)
+        square_terms = direction.T @ model_hessian @ direction
 
         distance_to_boundary = _get_distance_to_trustregion_boundary(
             x_candidate, direction, trustregion_radius
         )
 
-        step_size = np.dot(residual, residual) / square_terms
+        step_size = (residual.T @ residual) / square_terms
 
         if square_terms <= 0 or step_size > distance_to_boundary:
             x_candidate = x_candidate + distance_to_boundary * direction
@@ -83,9 +83,9 @@ def _update_vectors_for_next_iteration(
     residual_old = residual
 
     x_candidate = x_candidate + alpha * direction
-    residual = residual_old + alpha * np.dot(hessian, direction)
+    residual = residual_old + alpha * (hessian @ direction)
 
-    beta = np.dot(residual, residual) / np.dot(residual_old, residual_old)
+    beta = (residual.T @ residual) / (residual_old.T @ residual_old)
     direction = -residual + beta * direction
 
     return x_candidate, residual, direction
@@ -109,9 +109,9 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
         float: The candidate vector's distance to the trustregion
             boundary.
     """
-    cc = np.dot(candidate, candidate)
-    cd = np.dot(candidate, direction)
-    dd = np.dot(direction, direction)
+    cc = candidate.T @ candidate
+    cd = candidate.T @ direction
+    dd = direction.T @ direction
 
     sigma = -cd + np.sqrt(cd * cd + dd * (radius**2 - cc))
     sigma /= dd

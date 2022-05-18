@@ -167,7 +167,7 @@ def improve_geomtery_trsbox_linear(
     )
 
     lagrange_polynomial = lambda x: abs(
-        linear_model.intercept + np.dot(linear_model.linear_terms, x)
+        linear_model.intercept + linear_model.linear_terms.T @ x
     )
 
     if lagrange_polynomial(x_candidate_min) >= lagrange_polynomial(x_candidate_max):
@@ -255,7 +255,7 @@ def _take_constrained_step_up_to_boundary(
     x_candidate[index_bound_active] = active_bound
 
     # Do not search in this direction anymore
-    direction[index_bound_active] = 0.0
+    direction[index_bound_active] = 0
 
     return x_candidate, direction
 
@@ -311,9 +311,9 @@ def _get_distance_to_trustregion_boundary(
     Returns:
         float: Distance between the candidate vector and the trust-region boundary.
     """
-    g_dot_x = np.dot(direction, x)
-    g_sumsq = np.dot(direction, direction)
-    x_sumsq = np.dot(x, x)
+    g_dot_x = direction.T @ x
+    g_sumsq = direction @ direction
+    x_sumsq = x @ x
 
     l2_norm = np.sqrt(g_sumsq)
 

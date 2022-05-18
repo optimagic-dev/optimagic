@@ -1,5 +1,4 @@
 """Auxiliary functions for the quadratic GQTPAR trust-region subsolver."""
-import math
 from typing import NamedTuple
 from typing import Union
 
@@ -259,9 +258,7 @@ def evaluate_model_criterion(x, main_model):
     Returns:
         float: Criterion value of the main model.
     """
-    return np.dot(main_model.linear_terms, x) + 0.5 * np.dot(
-        np.dot(x, main_model.square_terms), x
-    )
+    return main_model.linear_terms.T @ x + 0.5 * x.T @ main_model.square_terms @ x
 
 
 def _get_new_lambda_candidate(lower_bound, upper_bound):
@@ -275,7 +272,7 @@ def _get_new_lambda_candidate(lower_bound, upper_bound):
         float: New candidate for the damping factor lambda.
     """
     lambda_new_candidate = max(
-        math.sqrt(lower_bound * upper_bound),
+        np.sqrt(lower_bound * upper_bound),
         lower_bound + 0.01 * (upper_bound - lower_bound),
     )
 
@@ -344,9 +341,7 @@ def _update_candidate_and_parameters_when_candidate_within_trustregion(
     s_min, z_min = estimate_smallest_singular_value(hessian_info.upper_triangular)
     step_len = _compute_smallest_step_len_for_candidate_vector(x_candidate, z_min)
 
-    quadratic_term = np.dot(
-        x_candidate, np.dot(hessian_info.hessian_plus_lambda, x_candidate)
-    )
+    quadratic_term = x_candidate.T @ hessian_info.hessian_plus_lambda @ x_candidate
 
     relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambdas.candidate)
     if relative_error <= stopping_criteria["k_hard"]:
@@ -447,12 +442,12 @@ def _solve_scalar_quadratic_equation(z, d):
         - (float) Lower value of t.
         - (float) Higher value of t.
     """
-    a = np.dot(d, d)
-    b = 2 * np.dot(z, d)
-    c = np.dot(z, z) - 1
-    sqrt_discriminant = math.sqrt(b * b - 4 * a * c)
+    a = d.T @ d
+    b = 2 * z.T @ d
+    c = z.T @ z - 1
+    sqrt_discriminant = np.sqrt(b * b - 4 * a * c)
 
-    aux = b + math.copysign(sqrt_discriminant, b)
+    aux = b + np.copysign(sqrt_discriminant, b)
     ta = -aux / (2 * a)
     tb = -2 * c / aux
 

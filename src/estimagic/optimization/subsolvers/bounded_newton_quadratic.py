@@ -365,7 +365,7 @@ def perform_gradient_descent_step(
             step_size_accepted = step_size_candidate
 
         x_inactive = x_diff[active_bounds_info.inactive]
-        square_terms = np.dot(np.dot(x_inactive, hessian_inactive), x_inactive)
+        square_terms = x_inactive.T @ hessian_inactive @ x_inactive
 
         predicted_reduction = trustregion_radius * (
             gradient_norm
@@ -726,7 +726,7 @@ def _evaluate_model_criterion(
     Returns:
         float: Criterion value of the main model.
     """
-    return np.dot(gradient, x) + 0.5 * np.dot(np.dot(x, hessian), x)
+    return gradient.T @ x + 0.5 * x.T @ hessian @ x
 
 
 def _evaluate_model_gradient(x, model):
@@ -741,4 +741,4 @@ def _evaluate_model_gradient(x, model):
     Returns:
         np.ndarray: Derivative of the main model of shape (n,).
     """
-    return model.linear_terms + np.dot(model.square_terms, x)
+    return model.linear_terms + model.square_terms @ x

@@ -65,7 +65,7 @@ def minimize_bntr_quadratic(
     The BNTR (Bounded Newton Trust Rregion) algorithm uses an active-set approach
     to solve the symmetric system of equations:
 
-        Hessian @ x = - gradient
+        hessian @ x = - gradient
 
     only for the inactive parameters of x that lie within the bounds. The active-set
     estimation employed here is based on Bertsekas (:cite:`Bertsekas1982`).
@@ -277,20 +277,18 @@ def minimize_gqtpar_quadratic(model, *, k_easy=0.1, k_hard=0.2, maxiter=200):
     The original algorithm was developed by More and Sorensen (1983) (:cite:`More1983`)
     and is known as "GQTPAR".
 
-    The vector ``x*`` is a global solution to the quadratic subproblem:
+    The vector x* is a global solution to the quadratic subproblem:
 
-        min f + g @ x + 0.5 * x.T @ H @ x,
+        min_x f + g @ x + 0.5 * x.T @ H @ x,
 
-        s.t. norm(x) <= trustregion_radius
-
-        if and only if norm(``x*``) <= subsolvers radius and there is a scalar
-        lambda >= 0, such that:
+        if and only if ||x|| <= trustregion_radius
+        and if there is a scalar lambda >= 0, such that:
 
     1) (H + lambda * I(n)) x* = -g
-    2) lambda (trustregion_radius - norm(x*)) = 0
+    2) lambda (trustregion_radius - ||x*||) = 0
     3) H + lambda * I is positive definite
 
-    where g denotes the gradient vector and H the hessian matrix of the main model,
+    where g denotes the gradient and H the hessian of the quadratic model,
     respectively.
 
     k_easy and k_hard are stopping criteria for the iterative subproblem solver.
@@ -406,7 +404,7 @@ def evaluate_model_criterion(
     Returns:
         float: Criterion value of the main model.
     """
-    return np.dot(gradient, x) + 0.5 * np.dot(np.dot(x, hessian), x)
+    return gradient.T @ x + 0.5 * x.T @ hessian @ x
 
 
 def evaluate_model_gradient(x, model):
@@ -422,4 +420,4 @@ def evaluate_model_gradient(x, model):
     Returns:
         np.ndarray: Derivative of the main model of shape (n,).
     """
-    return model.linear_terms + np.dot(model.square_terms, x)
+    return model.linear_terms + model.square_terms @ x
