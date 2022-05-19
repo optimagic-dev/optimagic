@@ -4,24 +4,19 @@ import numpy as np
 
 def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     """Minimize the quadratic subproblem via Steihaug-Toint conjugate gradient.
-
     Solve the quadratic trust-region subproblem:
       min_x   g.T @ x + 0.5 * x.T @ hess @ x
         s.t.   ||x|| <= trustregion_radius
-
     approximately, where g denotes the gradient and hess the hessian of the quadratic
     model (i.e. the linear terms and square_terms), respectively.
-
     The Steihaug-Toint conjugate gradient method is based on Steihaug
     (:cite:`Steihaug1983`) and Toint (:cite:`Toint1981`).
-
     Args:
         model_gradient (np.ndarray): 1d array of shape (n,) containing the
             gradient (i.e. linear terms) of the quadratic model.
         model_hessian (np.ndarray): 2d array of shape (n, n) containing the
             hessian (i.e .square terms) of the quadratic model.
         trustregion_radius (float): Radius of the trust-region.
-
     Returns:
         np.ndarray: Solution vector of shape (n,).
     """
@@ -33,15 +28,16 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     radius_sq = trustregion_radius**2
 
     residual = -model_gradient
-    rr = residual @ residual
+    rr = residual.T @ residual
 
     x_candidate = np.zeros(n)
 
     max_iter = min(n, 10_000)
 
     z = np.linalg.pinv(model_hessian) @ residual
-    rz = residual.T @ residual
+    rz = residual @ residual
 
+    n_iter = 0
     diverged = False
     converged = False
 
@@ -50,11 +46,12 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     ttol = max(rtol * norm_r0, abstol)
 
     converged, diverged = _check_convergence(
-        norm_r, norm_r0, ttol, divtol, converged, diverged
+        norm_r, norm_r0, abstol, ttol, divtol, converged, diverged
     )
 
     p = model_hessian @ z
     z = model_hessian @ p
+    n_iter += 1
 
     kappa = p @ z
 
@@ -65,7 +62,7 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     if kappa <= 0:
         converged = True
 
-        x_candidate, z = _update_candidate_vector_and_iteration_number(
+        x_candidate, z, n_iter = _update_candidate_vector_and_iteration_number(
             x_candidate,
             residual,
             p,
@@ -75,6 +72,7 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
             rr,
             trustregion_radius,
             norm_p,
+            n_iter,
         )
 
     for _ in range(max_iter):
@@ -102,7 +100,7 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
         norm_r = np.linalg.norm(residual)
 
         converged, diverged = _check_convergence(
-            norm_r, norm_r0, ttol, divtol, converged, diverged
+            norm_r, norm_r0, abstol, ttol, divtol, converged, diverged
         )
 
         if converged or diverged:
@@ -114,6 +112,10 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
             diverged = True
             break
 
+        if n_iter >= max_iter:
+            diverged = True
+            break
+
         p = residual + beta * p
 
         dp = x_candidate @ p
@@ -121,6 +123,7 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
 
         z = model_hessian @ p
         kappa = p @ z
+        n_iter += 1
 
         if kappa <= 0:
             converged = True
@@ -145,6 +148,7 @@ def _update_candidate_vector_and_iteration_number(
     rr,
     radius,
     norm_p,
+    n_iter,
 ):
     """Update candidate, z vector, and iteration number."""
     radius_sq = radius**2
@@ -163,7 +167,9 @@ def _update_candidate_vector_and_iteration_number(
         x_candidate = x_candidate + alpha * residual
         z = model_gradient - 0.5 * (model_hessian @ x_candidate)
 
-    return x_candidate, z
+        n_iter += 1
+
+    return x_candidate, z, n_iter
 
 
 def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, norm_p):
@@ -174,7 +180,7 @@ def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, no
     return x_candidate
 
 
-def _check_convergence(rnorm, rnorm0, ttol, divtol, converged, diverged):
+def _check_convergence(rnorm, rnorm0, abstol, ttol, divtol, converged, diverged):
     """Check for convergence."""
     if rnorm <= ttol:
         converged = True
