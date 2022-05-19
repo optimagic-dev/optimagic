@@ -692,9 +692,19 @@ noisy criterion functions.
       - "steihaug-toint"
       - "trsbox" (default)
     - **trustregion_subproblem_options** (dict): Options dictionary containing
-      stopping criteria for the subproblem. These are the tolerance levels:
-      "gtol_abs", "gtol_rel", "gtol_scaled", and "maxiter".
-      None of them have to be specified by default, but can be.
+      the stopping criteria for the subproblem. It takes different keys depending
+      on the type of subproblem solver used. With the exception of the stopping criterion
+      "maxiter", which is always included.
+
+      If the subsolver "bntr" is used, the dictionary also contains the tolerance levels
+      "gtol_abs", "gtol_rel", "gtol_scaled". Moreover, the "conjugate_gradient_method"
+      can be provided. Available conjugate gradient methods are:
+      - "cg". In this case, two additional stopping criteria are "gtol_abs_cg" and "gtol_rel_cg"
+      - "steihaug-toint"
+      - "trsbox" (default)
+      If the subsolver "gqtpar" is employed, the two stopping criteria are
+      "k_easy" and "k_hard".
+      None of the dictionary keys need to be specified by default, but can be.
     - **batch_evaluator** (str or callable): Name of a pre-implemented batch evaluator
       (currently "joblib" and "pathos_mp") or callable with the same interface
       as the estimagic batch_evaluators. Default is "joblib".

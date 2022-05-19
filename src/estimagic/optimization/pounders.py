@@ -226,28 +226,28 @@ def internal_solve_pounders(
         conjugate_gradient_method_sub (str): Method for computing the conjugate
             gradient step, when the subsolver "bntr" is used.
             Available conjugate gradient methods are:
-                - "standard"
+                - "cg"
                 - "steihaug_toint"
                 - "trsbox" (default)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
         maxiter_gradient_descent_sub (int): Maximum number of gradient descent
             iterations to perform when the trust-region subsolver BNTR is used.
         gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_rel_sub (float): Convergence tolerance for the relative gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_abs_conjugate_gradient_sub (float): Convergence tolerance for the
             absolute gradient norm in the conjugate gradient step of the trust-region
-            subproblem ("BNTR").
+            subproblem if "cg" is used as ``conjugate_gradient_method_sub`` ("bntr").
         gtol_rel_conjugate_gradient_sub (float): Convergence tolerance for the
             relative gradient norm in the conjugate gradient step of the trust-region
-            subproblem ("BNTR").
+            subproblem if "cg" is used as ``conjugate_gradient_method_sub`` ("bntr").
         k_easy_sub (float): topping criterion for the "easy" case in the trust-region
-            subproblem ("GQTPAR").
+            subproblem ("gqtpar").
         k_hard_sub (float): Stopping criterion for the "hard" case in the trust-region
-            subproblem ("GQTPAR").
+            subproblem ("gqtpar").
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or callable with the same interface
             as the estimagic batch_evaluators.

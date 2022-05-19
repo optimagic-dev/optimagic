@@ -453,7 +453,7 @@ def test_bounded_newton_trustregion(
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
     options = {
-        "conjugate_gradient_method": "standard",
+        "conjugate_gradient_method": "cg",
         "maxiter": 50,
         "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,

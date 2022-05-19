@@ -47,7 +47,7 @@ def minimize_trust_cg(
             x_candidate, direction, trustregion_radius
         )
 
-        step_size = (residual.T @ residual) / square_terms
+        step_size = (residual @ residual) / square_terms
 
         if square_terms <= 0 or step_size > distance_to_boundary:
             x_candidate = x_candidate + distance_to_boundary * direction
@@ -85,7 +85,7 @@ def _update_vectors_for_next_iteration(
     x_candidate = x_candidate + alpha * direction
     residual = residual_old + alpha * (hessian @ direction)
 
-    beta = (residual.T @ residual) / (residual_old.T @ residual_old)
+    beta = (residual @ residual) / (residual_old @ residual_old)
     direction = -residual + beta * direction
 
     return x_candidate, residual, direction
@@ -109,9 +109,9 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
         float: The candidate vector's distance to the trustregion
             boundary.
     """
-    cc = candidate.T @ candidate
-    cd = candidate.T @ direction
-    dd = direction.T @ direction
+    cc = candidate @ candidate
+    cd = candidate @ direction
+    dd = direction @ direction
 
     sigma = -cd + np.sqrt(cd * cd + dd * (radius**2 - cc))
     sigma /= dd

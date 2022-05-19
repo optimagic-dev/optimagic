@@ -203,7 +203,7 @@ def compute_conjugate_gradient_step(
         )
 
     else:
-        if conjugate_gradient_method == "standard":
+        if conjugate_gradient_method == "cg":
             step_inactive = minimize_trust_cg(
                 gradient_inactive,
                 hessian_inactive,
@@ -230,8 +230,8 @@ def compute_conjugate_gradient_step(
             step_norm = np.linalg.norm(step_inactive)
         else:
             raise ValueError(
-                "Invalid routine: {conjugate_gradient_method}. "
-                "Must be one of standard, steihaug_toint, trsbox."
+                "Invalid method: {conjugate_gradient_method}. "
+                "Must be one of cg, steihaug_toint, trsbox."
             )
 
         if trustregion_radius == 0:
@@ -251,7 +251,7 @@ def compute_conjugate_gradient_step(
                     options_update_radius["max_radius"],
                 )
 
-                if conjugate_gradient_method == "standard":
+                if conjugate_gradient_method == "cg":
                     step_inactive = minimize_trust_cg(
                         gradient_inactive,
                         hessian_inactive,
@@ -260,7 +260,7 @@ def compute_conjugate_gradient_step(
                         gtol_rel=gtol_rel_conjugate_gradient,
                     )
                     step_norm = np.linalg.norm(step_inactive)
-                elif conjugate_gradient_method == "steihaug-toint":
+                elif conjugate_gradient_method == "steihaug_toint":
                     step_inactive = minimize_trust_stcg(
                         gradient_inactive,
                         hessian_inactive,

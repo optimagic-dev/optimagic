@@ -87,7 +87,7 @@ def minimize_bntr_quadratic(
             for the parameter vector x.
         conjugate_gradient_method (str): Method for computing the conjugate gradient
             step. Available conjugate gradient methods are:
-                - "standard"
+                - "cg"
                 - "steihaug_toint"
                 - "trsbox" (default)
         maxiter (int): Maximum number of iterations. If reached, terminate.

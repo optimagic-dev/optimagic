@@ -77,7 +77,7 @@ def minimize_trust_trsbox(
                 beta * gradient_projected[x_bounded == 0]
                 - gradient_candidate[x_bounded == 0]
             )
-        gradient_projected_sumsq = _calc_sum_sq(gradient_projected)
+        gradient_projected_sumsq = gradient_projected @ gradient_projected
 
         if gradient_projected_sumsq == 0:
             need_alt_trust_step = False
@@ -97,9 +97,11 @@ def minimize_trust_trsbox(
             break
 
         hess_g = model_hessian @ gradient_projected
-        g_x = gradient_projected[x_bounded == 0].T @ x_candidate[x_bounded == 0]
-        g_hess_g = gradient_projected[x_bounded == 0].T @ hess_g[x_bounded == 0]
-        raw_distance = delta_sq - _calc_sum_sq(x_candidate[x_bounded == 0])
+        g_x = gradient_projected[x_bounded == 0] @ x_candidate[x_bounded == 0]
+        g_hess_g = gradient_projected[x_bounded == 0] @ hess_g[x_bounded == 0]
+        raw_distance = (
+            delta_sq - x_candidate[x_bounded == 0] @ x_candidate[x_bounded == 0]
+        )
 
         if raw_distance <= 0:
             need_alt_trust_step = True
@@ -213,9 +215,11 @@ def _perform_alternative_trustregion_step(
         search_direction = np.zeros(n)
         search_direction[x_bounded == 0] = x_candidate[x_bounded == 0]
 
-        x_reduced = _calc_sum_sq(x_candidate[x_bounded == 0])
-        x_grad = x_candidate[x_bounded == 0].T @ gradient_candidate[x_bounded == 0]
-        gradient_reduced = _calc_sum_sq(gradient_candidate[x_bounded == 0])
+        x_reduced = x_candidate[x_bounded == 0] @ x_candidate[x_bounded == 0]
+        x_grad = x_candidate[x_bounded == 0] @ gradient_candidate[x_bounded == 0]
+        gradient_reduced = (
+            gradient_candidate[x_bounded == 0] @ gradient_candidate[x_bounded == 0]
+        )
         hess_s = model_hessian @ search_direction
         hessian_reduced = hess_s
 
@@ -405,7 +409,9 @@ def _update_candidate_vectors_and_reduction(
     gradient_candidate = gradient_candidate + step_len * hess_g
     x_candidate = x_candidate + step_len * gradient_projected
 
-    gradient_sumsq = _calc_sum_sq(gradient_candidate[x_bounded == 0])
+    gradient_sumsq = (
+        gradient_candidate[x_bounded == 0] @ gradient_candidate[x_bounded == 0]
+    )
 
     current_reduction = max(
         step_len * (gradient_sumsq_old - 0.5 * step_len * g_hess_g), 0
@@ -569,7 +575,9 @@ def _update_candidate_vectors_and_reduction_alt_step(
         cosine * x_candidate[x_bounded == 0] + sine * search_direction[x_bounded == 0]
     )
     x_grad = x_candidate[x_bounded == 0] @ gradient_candidate[x_bounded == 0]
-    gradient_reduced = _calc_sum_sq(gradient_candidate[x_bounded == 0])
+    gradient_reduced = (
+        gradient_candidate[x_bounded == 0] @ gradient_candidate[x_bounded == 0]
+    )
     hessian_reduced = cosine * hessian_reduced + sine * hess_s
 
     return x_candidate, gradient_candidate, x_grad, gradient_reduced, hessian_reduced
@@ -617,8 +625,3 @@ def _update_tangent(
         / n_angles
     )
     return tangent
-
-
-def _calc_sum_sq(x):
-    """Calculate the sum of squares of a vector."""
-    return x.T @ x
