@@ -4,7 +4,6 @@ import scipy
 
 
 def transform_covariance(
-    params,
     flat_params,
     internal_cov,
     converter,
@@ -14,8 +13,8 @@ def transform_covariance(
     """Transform the internal covariance matrix to an external one, given constraints.
 
     Args:
-        params (pd.DataFrame): DataFrame where the "value" column contains estimated
-            parameters of a likelihood model. See :ref:`params` for details.
+        flat_params (FlatParams): NamedTuple with internal parameter values and names,
+            lower_bounds and upper_bounds, and free_mask.
         internal_cov (np.ndarray or pandas.DataFrame) with a covariance matrix of the
             internal parameter vector. For background information about internal and
             external params see :ref:`implementation_of_constraints`.
@@ -37,8 +36,6 @@ def transform_covariance(
             index.
 
     """
-    free_index = params[flat_params.free_mask].index
-
     if isinstance(internal_cov, pd.DataFrame):
         internal_cov = internal_cov.to_numpy()
 
@@ -75,15 +72,17 @@ def transform_covariance(
     else:
         free_cov = internal_cov
 
+    free_index = np.array(flat_params.names)[flat_params.free_mask]
     res = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
     return res
 
 
-def calculate_inference_quantities(params, free_cov, ci_level):
+def calculate_inference_quantities(flat_params, free_cov, ci_level):
     """Add standard errors, pvalues and confidence intervals to params.
 
     Args
-        params (pd.DataFrame): See :ref:`params`.
+        flat_params (FlatParams): NamedTuple with internal parameter values and names,
+            lower_bounds and upper_bounds, and free_mask.
         free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
             of the free parameters. If parameters were fixed (explicitly or by other
             constraints) the index is a subset of params.index. The columns are the same
@@ -99,7 +98,7 @@ def calculate_inference_quantities(params, free_cov, ci_level):
 
     """
     free = pd.DataFrame(index=free_cov.index)
-    free["value"] = params.loc[free.index, "value"]
+    free["value"] = flat_params.values[flat_params.free_mask]
     free["standard_error"] = np.sqrt(np.diag(free_cov))
     tvalues = free["value"] / free["standard_error"]
     free["p_value"] = 1.96 * scipy.stats.norm.sf(np.abs(tvalues))
@@ -113,8 +112,8 @@ def calculate_inference_quantities(params, free_cov, ci_level):
         free["p_value"], bins=[-1, 0.01, 0.05, 0.1, 2], labels=["***", "**", "*", ""]
     )
 
-    res = free.reindex(params.index)
-    res["value"] = params["value"]
+    res = free.reindex(flat_params.names)
+    res["value"] = flat_params.values
     return res
 
 

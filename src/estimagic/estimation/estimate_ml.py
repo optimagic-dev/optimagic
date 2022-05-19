@@ -55,10 +55,10 @@ def estimate_ml(
     The docstring is aspirational and not all options are supported yet.
 
     Args:
-        loglike (callable): Likelihood function that takes a params DataFrame (and
-            potentially other keyword arguments) and returns a dictionary that has at
-            least the entries "value" (a scalar float) and "contributions" (a 1d numpy
-            array or pandas Series) with the log likelihood contribution per individual.
+        loglike (callable): Likelihood function that takes a params (and potentially
+            other keyword arguments) and returns a dictionary that has at least the
+            entries "value" (a scalar float) and "contributions" (a 1d numpy array or
+            pandas Series) with the log likelihood contribution per individual.
         params (pytree): A pytree containing the estimated or start parameters of the
             likelihood model. If the supplied parameters are estimated parameters, set
             optimize_options to False. Pytrees can be a numpy array, a pandas Series, a
@@ -181,6 +181,8 @@ def estimate_ml(
             criterion=loglike,
             criterion_kwargs=loglike_kwargs,
             params=params,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
             constraints=constraints,
             criterion_and_derivative=loglike_and_derivative,
             criterion_and_derivative_kwargs=loglike_and_derivative_kwargs,
@@ -323,7 +325,6 @@ def estimate_ml(
     summaries = {}
     for case in cov_cases:
         cov = transform_covariance(
-            params=estimates,
             flat_params=flat_estimates,
             internal_cov=int_covs[f"cov_{case}"],
             converter=converter,
@@ -331,7 +332,7 @@ def estimate_ml(
             bounds_handling=bounds_handling,
         )
         summary = calculate_inference_quantities(
-            params=estimates,
+            flat_params=flat_estimates,
             free_cov=cov,
             ci_level=ci_level,
         )

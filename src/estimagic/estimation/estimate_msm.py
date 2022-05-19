@@ -27,19 +27,19 @@ def estimate_msm(
     moments_cov,
     params,
     optimize_options,
+    *,
     lower_bounds=None,
     upper_bounds=None,
-    *,
     constraints=None,
     logging=False,
     log_options=None,
     simulate_moments_kwargs=None,
+    simulate_moments_and_jacobian=None,
+    simulate_moments_and_jacobian_kwargs=None,
     weights="diagonal",
     numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
-    simulate_moments_and_jacobian=None,
-    simulate_moments_and_jacobian_kwargs=None,
     ci_level=0.95,
     n_samples=10_000,
     bounds_handling="raise",
@@ -60,19 +60,39 @@ def estimate_msm(
 
     Args:
         simulate_moments (callable): Function that takes params and potentially other
-            keyworrd arguments and returns simulated moments as a pandas Series.
-            Alternatively, the function can return a dict with any number of entries
-            as long as one of those entries is "simulated_moments".
+            keyword arguments and returns simulated moments as a pandas Series.
+            Alternatively, the function can return a dict with any number of entries as
+            long as one of those entries is "simulated_moments".
         empirical_moments (pandas.Series): A pandas series with the empirical
             equivalents of the simulated moments.
         moments_cov (pandas.DataFrame): A quadratic pandas DataFrame with the covariance
             matrix of the empirical moments. This is typically calculated with
             our ``get_moments_cov`` function. The index and columns need to be the same
             as the index of ``empirical_moments``.
-        params (pandas.DataFrame): Start params for the optimization. See :ref:`params`
-            for details.
+        params (pytree): A pytree containing the estimated or start parameters of the
+            likelihood model. If the supplied parameters are estimated parameters, set
+            optimize_options to False. Pytrees can be a numpy array, a pandas Series, a
+            DataFrame with "value" column, a float and any kind of (nested) dictionary
+            or list containing these elements. See :ref:`params` for examples.
+        optimize_options (dict, str or False): Keyword arguments that govern the
+            numerical optimization. Valid entries are all arguments of
+            :func:`~estimagic.optimization.optimize.minimize` except for criterion,
+            criterion_and_derivative and params. If you pass False as
+            optimize_options you signal that ``params`` are already the optimal
+            parameters and no numerical optimization is needed. If you pass a str as
+            optimize_options it is used as the ``algorithm`` option.
+        lower_bounds (pytree): A pytree with the same structure as params with lower
+            bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
+            bound.
+        upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
+            no upper bound.
         simulate_moments_kwargs (dict): Additional keyword arguments for
             ``simulate_moments``.
+        simulate_moments_and_jacobian (callable): A function that takes params and
+            potentially other keyword arguments and returns a tuple with simulated
+            moments and the jacobian of simulated moments with respect to params.
+        simulate_moments_and_jacobian_kwargs (dict): Additional keyword arguments for
+            simulate_moments_and_jacobian.
         weights (str or pandas.DataFrame): Either a DataFrame with a positive
             semi-definite weighting matrix or a string that specifies one of the
             pre-implemented weighting matrices: "diagonal" (default), "identity" or
@@ -96,29 +116,17 @@ def estimate_msm(
             do if the tables we want to write to already exist. Default "extend".
             - "if_database_exists": (str): One of "extend", "replace", "raise". What to
             do if the database we want to write to already exists. Default "extend".
-        optimize_options (dict or False): Keyword arguments that govern the numerical
-            optimization. Valid entries are all arguments of
-            :func:`~estimagic.optimization.optimize.minimize` except for criterion,
-            derivative, criterion_and_derivative and params. If you pass False as
-            optimize_options you signal that ``params`` are already the optimal
-            parameters and no numerical optimization is needed.
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives for the calculation of standard errors. See
             :ref:`first_derivative` for details. Note that by default we increase the
             step_size by a factor of 2 compared to the rule of thumb for optimal
-            step sizes. This is because many msm criterion functions are slightly
-            noisy.
+            step sizes. This is because many msm criterion functions are slightly noisy.
         jacobian (callable or pandas.DataFrame): A function that take ``params`` and
             potentially other keyword arguments and returns the Jacobian of
             simulate_moments with respect to the params. Alternatively, you can pass
             a pandas.DataFrame with the Jacobian at the optimal parameters. This is
             only possible if you pass ``optimize_options=False``.
         jacobian_kwargs (dict): Additional keyword arguments for the Jacobian function.
-        simulate_moments_and_jacobian (callable): A function that takes params and
-            potentially other keyword arguments and returns a tuple with simulated
-            moments and the jacobian of simulated moments with respect to params.
-        simulate_moments_and_jacobian_kwargs (dict): Additional keyword arguments for
-            simulate_moments_and_jacobian.
         ci_level (float): Confidence level for the calculation of confidence intervals.
             The default is 0.95
         n_samples (int): Number of samples used to transform the covariance matrix of
@@ -140,9 +148,12 @@ def estimate_msm(
     # ==================================================================================
     # Check and process inputs
     # ==================================================================================
+
     is_optimized = optimize_options is False
 
     if not is_optimized:
+        if isinstance(optimize_options, str):
+            optimize_options = {"algorithm": optimize_options}
 
         check_optimization_options(
             optimize_options,
@@ -190,11 +201,13 @@ def estimate_msm(
         )
 
         opt_res = minimize(
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
             constraints=constraints,
             logging=logging,
             log_options=log_options,
             params=params,
-            **funcs,
+            **funcs,  # contains the criterion func and possibly more
             **optimize_options,
         )
 
@@ -214,7 +227,7 @@ def estimate_msm(
 
     if callable(jacobian):
         try:
-            jacobian_eval = jacobian(params, **jacobian_kwargs)
+            jacobian_eval = jacobian(estimates, **jacobian_kwargs)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
@@ -264,10 +277,9 @@ def estimate_msm(
     # Calculate internal jacobian
     # ==================================================================================
 
-    if jac_case == "pre-calculated":
-        int_jac = converter.derivative_to_internal(jacobian)
-    elif jac_case == "closed-form":
-        int_jac = converter.derivative_to_internal(jacobian_eval)
+    if jac_case == "closed-form":
+        x = converter.params_to_internal(estimates)
+        int_jac = converter.derivative_to_internal(jacobian, x)
     # switch to "numerical" even if jac_case == "skip" because jac is required for msm.
     else:
 
@@ -277,7 +289,7 @@ def estimate_msm(
             out = converter.func_to_internal(sim_mom_eval)
             return out
 
-        deriv_res = first_derivative(
+        jac_res = first_derivative(
             func=func,
             params=flat_estimates.values,
             lower_bounds=flat_estimates.lower_bounds,
@@ -285,8 +297,8 @@ def estimate_msm(
             **numdiff_options,
         )
 
-        int_jac = deriv_res["derivative"]
-        numdiff_info = {k: v for k, v in deriv_res.items() if k != "derivative"}
+        int_jac = jac_res["derivative"]
+        numdiff_info = {k: v for k, v in jac_res.items() if k != "derivative"}
 
     # ==================================================================================
     # Calculate internal cov
@@ -302,7 +314,6 @@ def estimate_msm(
     # ==================================================================================
 
     cov = transform_covariance(
-        params=estimates,
         flat_params=flat_estimates,
         internal_cov=cov,
         converter=converter,
@@ -311,7 +322,7 @@ def estimate_msm(
     )
 
     summary = calculate_inference_quantities(
-        params=estimates,
+        flat_params=flat_estimates,
         free_cov=cov,
         ci_level=ci_level,
     )
