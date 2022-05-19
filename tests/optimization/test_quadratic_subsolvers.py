@@ -1,9 +1,7 @@
 """Test various solvers for quadratic trust-region subproblems."""
-from typing import NamedTuple
-from typing import Union
-
 import numpy as np
 import pytest
+from estimagic.optimization.pounders_auxiliary import MainModel
 from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
     minimize_trust_cg,
 )
@@ -18,11 +16,6 @@ from estimagic.optimization.subsolvers.quadratic_subsolvers import (
     minimize_gqtpar_quadratic,
 )
 from numpy.testing import assert_array_almost_equal as aaae
-
-
-class MainModel(NamedTuple):
-    linear_terms: Union[np.ndarray, None] = None  # shape (n_params,)
-    square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
 
 # ======================================================================================

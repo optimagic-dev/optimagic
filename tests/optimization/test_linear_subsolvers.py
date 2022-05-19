@@ -1,20 +1,14 @@
 """Test suite for linear trust-region subsolvers."""
 import math
-from typing import NamedTuple
-from typing import Union
 
 import numpy as np
 import pytest
 from estimagic.optimization.subsolvers.linear_subsolvers import (
     improve_geomtery_trsbox_linear,
 )
+from estimagic.optimization.subsolvers.linear_subsolvers import LinearModel
 from estimagic.optimization.subsolvers.linear_subsolvers import minimize_trsbox_linear
 from numpy.testing import assert_array_almost_equal as aaae
-
-
-class LinearModel(NamedTuple):
-    intercept: Union[float, None] = None
-    linear_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
 
 @pytest.mark.parametrize(

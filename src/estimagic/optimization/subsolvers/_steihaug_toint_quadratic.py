@@ -25,7 +25,6 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     Returns:
         np.ndarray: Solution vector of shape (n,).
     """
-    reason = "Iterating"
     abstol = 1e-50
     rtol = 1e-5
     divtol = 10_000
@@ -34,7 +33,7 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     radius_sq = trustregion_radius**2
 
     residual = -model_gradient
-    rr = residual.T @ residual
+    rr = residual @ residual
 
     x_candidate = np.zeros(n)
 
@@ -43,7 +42,6 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     z = np.linalg.pinv(model_hessian) @ residual
     rz = residual.T @ residual
 
-    n_iter = 0
     diverged = False
     converged = False
 
@@ -51,25 +49,23 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
     norm_r0 = norm_r
     ttol = max(rtol * norm_r0, abstol)
 
-    converged, diverged, reason = _check_convergence(
-        norm_r, norm_r0, abstol, ttol, divtol, converged, diverged, reason
+    converged, diverged = _check_convergence(
+        norm_r, norm_r0, ttol, divtol, converged, diverged
     )
 
     p = model_hessian @ z
     z = model_hessian @ p
-    n_iter += 1
 
-    kappa = p.T @ z
+    kappa = p @ z
 
     dp = 0
     norm_d = 0
-    norm_p = p.T @ p
+    norm_p = p @ p
 
     if kappa <= 0:
-        reason = "Converged_Neg_Curve"
         converged = True
 
-        x_candidate, z, n_iter = _update_candidate_vector_and_iteration_number(
+        x_candidate, z = _update_candidate_vector_and_iteration_number(
             x_candidate,
             residual,
             p,
@@ -79,7 +75,6 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
             rr,
             trustregion_radius,
             norm_p,
-            n_iter,
         )
 
     for _ in range(max_iter):
@@ -87,7 +82,6 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
         norm_dp1 = norm_d + alpha * (2 * dp + alpha * norm_p)
 
         if trustregion_radius != 0 and norm_dp1 >= radius_sq:
-            reason = "Converged_CG_Constrained"
             converged = True
 
             if norm_p > 0:
@@ -100,15 +94,15 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
         x_candidate = x_candidate + alpha * p
         residual = residual - alpha * (model_hessian @ p)
 
-        norm_d = x_candidate.T @ x_candidate
+        norm_d = x_candidate @ x_candidate
 
         rzm1 = rz
-        rz = residual.T @ residual
+        rz = residual @ residual
 
         norm_r = np.linalg.norm(residual)
 
-        converged, diverged, reason = _check_convergence(
-            norm_r, norm_r0, abstol, ttol, divtol, converged, diverged, reason
+        converged, diverged = _check_convergence(
+            norm_r, norm_r0, ttol, divtol, converged, diverged
         )
 
         if converged or diverged:
@@ -117,26 +111,18 @@ def minimize_trust_stcg(model_gradient, model_hessian, trustregion_radius):
         beta = rz / rzm1
 
         if abs(beta) <= 0:
-            reason = "Diverged_Breakdown"
-            diverged = True
-            break
-
-        if n_iter >= max_iter:
-            reason = "Diverged_maxiter"
             diverged = True
             break
 
         p = residual + beta * p
 
-        dp = x_candidate.T @ p
-        norm_p = p.T @ p
+        dp = x_candidate @ p
+        norm_p = p @ p
 
         z = model_hessian @ p
-        kappa = p.T @ z
-        n_iter += 1
+        kappa = p @ z
 
         if kappa <= 0:
-            reason = "Converged_CG_NEG_CURVE"
             converged = True
 
             if trustregion_radius != 0 and norm_p > 0:
@@ -159,7 +145,6 @@ def _update_candidate_vector_and_iteration_number(
     rr,
     radius,
     norm_p,
-    n_iter,
 ):
     """Update candidate, z vector, and iteration number."""
     radius_sq = radius**2
@@ -178,9 +163,7 @@ def _update_candidate_vector_and_iteration_number(
         x_candidate = x_candidate + alpha * residual
         z = model_gradient - 0.5 * (model_hessian @ x_candidate)
 
-        n_iter += 1
-
-    return x_candidate, z, n_iter
+    return x_candidate, z
 
 
 def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, norm_p):
@@ -191,19 +174,11 @@ def _take_step_to_trustregion_boundary(x_candidate, p, dp, radius_sq, norm_d, no
     return x_candidate
 
 
-def _check_convergence(
-    rnorm, rnorm0, abstol, ttol, divtol, converged, diverged, message
-):
+def _check_convergence(rnorm, rnorm0, ttol, divtol, converged, diverged):
     """Check for convergence."""
     if rnorm <= ttol:
-        if rnorm < abstol:
-            message = "Residual norm less that absolute tolerance."
-            converged = True
-        else:
-            message = "rtol"
-            converged = True
+        converged = True
     elif rnorm >= divtol * rnorm0:
-        message = "Linear solver is diverging."
         diverged = True
 
-    return converged, diverged, message
+    return converged, diverged
