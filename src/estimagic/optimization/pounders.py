@@ -224,14 +224,14 @@ def internal_solve_pounders(
             - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
             - "gqtpar": (does not support bound constraints)
         conjugate_gradient_method_sub (str): Method for computing the conjugate
-            gradient step, when the subsolver "bntr" is used.
+            gradient step ("bntr").
             Available conjugate gradient methods are:
                 - "cg"
                 - "steihaug_toint"
                 - "trsbox" (default)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
         maxiter_gradient_descent_sub (int): Maximum number of gradient descent
-            iterations to perform when the trust-region subsolver BNTR is used.
+            iterations to perform ("bntr").
         gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
             in the trust-region subproblem ("bntr").
         gtol_rel_sub (float): Convergence tolerance for the relative gradient norm

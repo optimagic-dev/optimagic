@@ -691,13 +691,13 @@ noisy criterion functions.
       - "standard"
       - "steihaug-toint"
       - "trsbox" (default)
-    - **trustregion_subproblem_options** (dict): Options dictionary containing
+    - **trustregion_subsolver_options** (dict): Options dictionary containing
       the stopping criteria for the subproblem. It takes different keys depending
       on the type of subproblem solver used. With the exception of the stopping criterion
       "maxiter", which is always included.
 
       If the subsolver "bntr" is used, the dictionary also contains the tolerance levels
-      "gtol_abs", "gtol_rel", "gtol_scaled". Moreover, the "conjugate_gradient_method"
+      "gtol_abs", "gtol_rel", and "gtol_scaled". Moreover, the "conjugate_gradient_method"
       can be provided. Available conjugate gradient methods are:
       - "cg". In this case, two additional stopping criteria are "gtol_abs_cg" and "gtol_rel_cg"
       - "steihaug-toint"
