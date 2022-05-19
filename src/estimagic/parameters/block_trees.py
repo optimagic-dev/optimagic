@@ -137,17 +137,6 @@ def block_tree_to_matrix(block_tree, outer_tree, inner_tree):
         matrix (np.ndarray): 2d array containing information stored in block_tree.
 
     """
-    if len(block_tree) != len(outer_tree):
-        raise ValueError(
-            "First dimension of block_tree does not match that of outer_tree."
-        )
-
-    selector_first_element = list(block_tree)[0] if isinstance(block_tree, dict) else 0
-    if len(block_tree[selector_first_element]) != len(inner_tree):
-        raise ValueError(
-            "Second dimension of block_tree does not match that of inner_tree."
-        )
-
     flat_outer = tree_leaves(outer_tree)
     flat_inner = tree_leaves(inner_tree)
     flat_block_tree = tree_leaves(block_tree)
@@ -176,7 +165,7 @@ def block_tree_to_matrix(block_tree, outer_tree, inner_tree):
 
     matrix = np.concatenate(block_rows, axis=0)
 
-    _check_dimensions_matrix(matrix, outer_tree, inner_tree)
+    _check_dimensions_matrix(matrix, flat_outer, flat_inner)
     return matrix
 
 

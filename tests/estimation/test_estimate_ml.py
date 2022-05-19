@@ -19,29 +19,6 @@ def aaae(obj1, obj2, decimal=3):
 
 
 # ======================================================================================
-# (simple) normal case
-# ======================================================================================
-
-
-def normal_loglike(params, y):
-    contribs = sp.stats.norm.logpdf(y, loc=params["mean"], scale=params["sd"])
-    return {
-        "value": contribs.sum(),
-        "contributions": contribs,
-    }
-
-
-@pytest.fixture
-def normal_inputs():
-    true = {
-        "mean": 0.0,
-        "sd": 1.0,
-    }
-    y = np.random.normal(loc=true["mean"], scale=true["sd"], size=10_000)
-    return {"true": true, "y": y}
-
-
-# ======================================================================================
 # logit case
 # ======================================================================================
 
@@ -182,6 +159,29 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_inputs):
     aaae(got["cov_jacobian"], fitted_logit_model.covjac, decimal=4)
 
 
+# ======================================================================================
+# (simple) normal case using
+# ======================================================================================
+
+
+def normal_loglike(params, y):
+    contribs = sp.stats.norm.logpdf(y, loc=params["mean"], scale=params["sd"])
+    return {
+        "value": contribs.sum(),
+        "contributions": np.array(contribs),
+    }
+
+
+@pytest.fixture
+def normal_inputs():
+    true = {
+        "mean": 0.0,
+        "sd": 1.0,
+    }
+    y = np.random.normal(loc=true["mean"], scale=true["sd"], size=10_000)
+    return {"true": true, "y": y}
+
+
 def test_estimate_ml_general_pytree(normal_inputs):
 
     # ==================================================================================
@@ -198,6 +198,7 @@ def test_estimate_ml_general_pytree(normal_inputs):
         loglike_kwargs=kwargs,
         optimize_options="scipy_lbfgsb",
         lower_bounds={"sd": 0.0001},
+        jacobian_kwargs=kwargs,
         # ------------------------------------------------------------------------------
         # constraints are not working properly at the moment. needs to be checked.
         # constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],  # noqa: E800
@@ -210,5 +211,5 @@ def test_estimate_ml_general_pytree(normal_inputs):
 
     true = normal_inputs["true"]
 
-    assert np.abs(true["mean"] - got["summary_jacobian"].loc["mean", "value"]) < 1e-2
-    assert np.abs(true["sd"] - got["summary_jacobian"].loc["sd", "value"]) < 1e-2
+    assert np.abs(true["mean"] - got["summary_jacobian"].loc["mean", "value"]) < 1e-1
+    assert np.abs(true["sd"] - got["summary_jacobian"].loc["sd", "value"]) < 1e-1
