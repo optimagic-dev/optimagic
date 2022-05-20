@@ -685,12 +685,6 @@ noisy criterion functions.
       subproblem. Two internal solvers are supported:
       - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
       - "gqtpar": (does not support bound constraints)
-    - **trustregion_subproblem_conjugate_gradient_step** (str): Routine for computing
-      the conjugate gradient step, when the subsolver "bntr" is used.
-      Available conjugate gradient routines are:
-      - "standard"
-      - "steihaug-toint"
-      - "trsbox" (default)
     - **trustregion_subsolver_options** (dict): Options dictionary containing
       the stopping criteria for the subproblem. It takes different keys depending
       on the type of subproblem solver used. With the exception of the stopping criterion
@@ -702,8 +696,10 @@ noisy criterion functions.
       - "cg". In this case, two additional stopping criteria are "gtol_abs_cg" and "gtol_rel_cg"
       - "steihaug-toint"
       - "trsbox" (default)
+
       If the subsolver "gqtpar" is employed, the two stopping criteria are
       "k_easy" and "k_hard".
+
       None of the dictionary keys need to be specified by default, but can be.
     - **batch_evaluator** (str or callable): Name of a pre-implemented batch evaluator
       (currently "joblib" and "pathos_mp") or callable with the same interface
