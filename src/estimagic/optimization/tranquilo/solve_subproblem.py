@@ -3,8 +3,12 @@ import warnings
 from functools import partial
 
 import numpy as np
-from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
-from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    minimize_bntr_quadratic,
+)
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    minimize_gqtpar_quadratic,
+)
 from estimagic.optimization.tranquilo.models import evaluate_model
 from estimagic.optimization.tranquilo.thourough_subsolver import solve_thorough
 
@@ -24,6 +28,12 @@ def get_subsolver(solver, user_options=None, bounds=None):
                 trust-region subproblem ("bntr" and "gqtpar").
             - maxiter_gradient_descent (int): Maximum number of gradient descent
                 iterations to perform ("bntr").
+            - conjugate_gradient_method (str): Method for computing the conjugate
+                gradient step ("bntr").
+                Available conjugate gradient methods are:
+                - "cg"
+                - "steihaug_toint"
+                - "trsbox" (default)
             - gtol_abs (float): Convergence tolerance for the absolute gradient norm
                 in the trust-region subproblem ("bntr").
             - gtol_rel (float): Convergence tolerance for the relative gradient norm
@@ -67,6 +77,7 @@ def get_subsolver(solver, user_options=None, bounds=None):
     default_options = {
         "maxiter": 20,
         "maxiter_gradient_descent": 5,
+        "conjugate_gradient_method": "trsbox",
         "gtol_abs": 1e-8,
         "gtol_rel": 1e-8,
         "gtol_scaled": 0,
