@@ -6,7 +6,7 @@ channels:
   - opensourceeconomics
 
 dependencies:
-  - python=3.8
+  - python=3.9
   - pip
   - setuptools_scm
   - toml

@@ -679,18 +679,30 @@ noisy criterion functions.
       Function argument to find_affine_points() for the case where input array
       *model_improving_points* is zero.
     - **c2** (int): Treshold for accepting the norm of our current x candidate.
-      Equal to 10 by default. Argument to find_affine_points() in case
+      Equal to 10 by default. Argument to *find_affine_points()* in case
       the input array *model_improving_points* is not zero.
     - **trustregion_subproblem_solver** (str): Solver to use for the trust-region
       subproblem. Two internal solvers are supported:
       - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
       - "gqtpar": (does not support bound constraints)
-    - **trustregion_subproblem_options** (dict): Options dictionary containing
-      stopping criteria for the subproblem. These are the tolerance levels:
-      "ftol", "xtol", and "gtol". None of them have to be specified by default,
-      but can be.
+    - **trustregion_subsolver_options** (dict): Options dictionary containing
+      the stopping criteria for the subproblem. It takes different keys depending
+      on the type of subproblem solver used. With the exception of the stopping criterion
+      "maxiter", which is always included.
+
+      If the subsolver "bntr" is used, the dictionary also contains the tolerance levels
+      "gtol_abs", "gtol_rel", and "gtol_scaled". Moreover, the "conjugate_gradient_method"
+      can be provided. Available conjugate gradient methods are:
+      - "cg". In this case, two additional stopping criteria are "gtol_abs_cg" and "gtol_rel_cg"
+      - "steihaug-toint"
+      - "trsbox" (default)
+
+      If the subsolver "gqtpar" is employed, the two stopping criteria are
+      "k_easy" and "k_hard".
+
+      None of the dictionary keys need to be specified by default, but can be.
     - **batch_evaluator** (str or callable): Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or callable with the same interface
+      (currently "joblib" and "pathos_mp") or callable with the same interface
       as the estimagic batch_evaluators. Default is "joblib".
     - **n_cores (int)**: Number of processes used to parallelize the function
       evaluations. Default is 1.

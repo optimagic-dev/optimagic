@@ -62,7 +62,7 @@ def pounders(
     c1=None,
     c2=10,
     trustregion_subproblem_solver="bntr",
-    trustregion_subproblem_options=None,
+    trustregion_subsolver_options=None,
     batch_evaluator="joblib",
     n_cores=DEFAULT_N_CORES,
 ):
@@ -78,10 +78,11 @@ def pounders(
     if c1 is None:
         c1 = np.sqrt(x.shape[0])
 
-    if trustregion_subproblem_options is None:
-        trustregion_subproblem_options = {}
+    if trustregion_subsolver_options is None:
+        trustregion_subsolver_options = {}
 
     default_options = {
+        "conjugate_gradient_method": "trsbox",
         "maxiter": 50,
         "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,
@@ -92,9 +93,9 @@ def pounders(
         "k_easy": 0.1,
         "k_hard": 0.2,
     }
-    trustregion_subproblem_options = {
+    trustregion_subsolver_options = {
         **default_options,
-        **trustregion_subproblem_options,
+        **trustregion_subsolver_options,
     }
 
     result = internal_solve_pounders(
@@ -119,17 +120,20 @@ def pounders(
         c1=c1,
         c2=c2,
         solver_sub=trustregion_subproblem_solver,
-        maxiter_sub=trustregion_subproblem_options["maxiter"],
-        maxiter_gradient_descent_sub=trustregion_subproblem_options[
+        conjugate_gradient_method_sub=trustregion_subsolver_options[
+            "conjugate_gradient_method"
+        ],
+        maxiter_sub=trustregion_subsolver_options["maxiter"],
+        maxiter_gradient_descent_sub=trustregion_subsolver_options[
             "maxiter_gradient_descent"
         ],
-        gtol_abs_sub=trustregion_subproblem_options["gtol_abs"],
-        gtol_rel_sub=trustregion_subproblem_options["gtol_rel"],
-        gtol_scaled_sub=trustregion_subproblem_options["gtol_scaled"],
-        gtol_abs_conjugate_gradient_sub=trustregion_subproblem_options["gtol_abs_cg"],
-        gtol_rel_conjugate_gradient_sub=trustregion_subproblem_options["gtol_rel_cg"],
-        k_easy_sub=trustregion_subproblem_options["k_easy"],
-        k_hard_sub=trustregion_subproblem_options["k_hard"],
+        gtol_abs_sub=trustregion_subsolver_options["gtol_abs"],
+        gtol_rel_sub=trustregion_subsolver_options["gtol_rel"],
+        gtol_scaled_sub=trustregion_subsolver_options["gtol_scaled"],
+        gtol_abs_conjugate_gradient_sub=trustregion_subsolver_options["gtol_abs_cg"],
+        gtol_rel_conjugate_gradient_sub=trustregion_subsolver_options["gtol_rel_cg"],
+        k_easy_sub=trustregion_subsolver_options["k_easy"],
+        k_hard_sub=trustregion_subsolver_options["k_hard"],
         batch_evaluator=batch_evaluator,
         n_cores=n_cores,
     )
@@ -159,6 +163,7 @@ def internal_solve_pounders(
     c1,
     c2,
     solver_sub,
+    conjugate_gradient_method_sub,
     maxiter_sub,
     maxiter_gradient_descent_sub,
     gtol_abs_sub,
@@ -177,12 +182,10 @@ def internal_solve_pounders(
         criterion_and_derivative (callable): Function that returns criterion
             and derivative as a tuple.
         x0 (np.ndarray): Initial guess for the parameter vector (starting points).
-        lower_bounds (np.ndarray): Lower bounds.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to -1 if not provided by the user.
-        upper_bounds (np.ndarray): Upper bounds.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to 1 if not provided by the user.
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
         gtol_abs (float): Convergence tolerance for the absolute gradient norm.
             Stop if norm of the gradient is less than this.
         gtol_rel (float): Convergence tolerance for the relative gradient norm.
@@ -220,25 +223,31 @@ def internal_solve_pounders(
             Two internal solvers are supported:
             - "bntr": Bounded Newton Trust-Region (default, supports bound constraints)
             - "gqtpar": (does not support bound constraints)
+        conjugate_gradient_method_sub (str): Method for computing the conjugate
+            gradient step ("bntr").
+            Available conjugate gradient methods are:
+                - "cg"
+                - "steihaug_toint"
+                - "trsbox" (default)
         maxiter_sub (int): Maximum number of iterations in the trust-region subproblem.
         maxiter_gradient_descent_sub (int): Maximum number of gradient descent
-            iterations to perform when the trust-region subsolver BNTR is used.
+            iterations to perform ("bntr").
         gtol_abs_sub (float): Convergence tolerance for the absolute gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_rel_sub (float): Convergence tolerance for the relative gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_scaled_sub (float): Convergence tolerance for the scaled gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_abs_conjugate_gradient_sub (float): Convergence tolerance for the
             absolute gradient norm in the conjugate gradient step of the trust-region
-            subproblem ("BNTR").
+            subproblem if "cg" is used as ``conjugate_gradient_method_sub`` ("bntr").
         gtol_rel_conjugate_gradient_sub (float): Convergence tolerance for the
             relative gradient norm in the conjugate gradient step of the trust-region
-            subproblem ("BNTR").
+            subproblem if "cg" is used as ``conjugate_gradient_method_sub`` ("bntr").
         k_easy_sub (float): topping criterion for the "easy" case in the trust-region
-            subproblem ("GQTPAR").
+            subproblem ("gqtpar").
         k_hard_sub (float): Stopping criterion for the "hard" case in the trust-region
-            subproblem ("GQTPAR").
+            subproblem ("gqtpar").
         batch_evaluator (str or callable): Name of a pre-implemented batch evaluator
             (currently 'joblib' and 'pathos_mp') or callable with the same interface
             as the estimagic batch_evaluators.
@@ -255,7 +264,7 @@ def internal_solve_pounders(
             evaluations. Shape (history.get_n_fun(), n_obs)
         - n_iterations (int): Number of iterations the algorithm ran before finding a
             solution vector or reaching maxiter.
-        - "success" (bool): Boolean indicating whether a solution has been found
+        - success (bool): Boolean indicating whether a solution has been found
             before reaching maxiter.
     """
     history = LeastSquaresHistory()
@@ -306,6 +315,7 @@ def internal_solve_pounders(
             upper_bounds=upper_bounds,
             delta=delta,
             solver=solver_sub,
+            conjugate_gradient_method=conjugate_gradient_method_sub,
             maxiter=maxiter_sub,
             maxiter_gradient_descent=maxiter_gradient_descent_sub,
             gtol_abs=gtol_abs_sub,
@@ -460,7 +470,7 @@ def internal_solve_pounders(
                     n_cores=n_cores,
                 )
 
-        model_indices, n_model_points = update_model_indices_residual_model(
+        model_indices, n_modelpoints = update_model_indices_residual_model(
             model_indices, accepted_index, n_modelpoints
         )
 
