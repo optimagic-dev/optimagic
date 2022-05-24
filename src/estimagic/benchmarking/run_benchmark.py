@@ -5,7 +5,6 @@ TO-DO:
     - finish medium scale problems from https://arxiv.org/pdf/1710.11005.pdf, Page 34.
     - add scalar problems from https://github.com/AxelThevenot
 - Add option for deterministic noise or wiggle.
-
 """
 from pathlib import Path
 
@@ -43,9 +42,9 @@ def run_benchmark(
             Alternatively, the values can just be an algorithm which is then benchmarked
             at default settings.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
-        logging_directory (None or pathlib.Path): Directory in which the log databases
-            are saved. By default, this is set to None, which means logging is
-            switched off to save runtime.
+        logging_directory (None or str or pathlib.Path): Directory in which the log
+            databases are saved. By default, this is set to None, which means logging
+            is switched off to save runtime.
         n_cores (int): Number of optimizations that is run in parallel. Note that in
             addition to that an optimizer might parallelize.
         error_handling (str): One of "raise", "continue".
@@ -57,7 +56,6 @@ def run_benchmark(
             are tuples where the first entry is the name of the problem and the second
             the name of the optimize options. The values are dicts with the entries:
             "runtime", "params_history", "criterion_history", "solution"
-
     """
     np.random.seed(seed)
 
@@ -67,12 +65,12 @@ def run_benchmark(
         )
     opt_options = _process_optimize_options(optimize_options)
 
-    if isinstance(logging_directory, Path):
+    if logging_directory is None:
+        kwargs_list, names = _get_kwargs_list_and_names_history(problems, opt_options)
+    else:
         kwargs_list, names, log_paths = _get_kwargs_list_and_names_logging(
             problems, opt_options, logging_directory, fast_logging
         )
-    else:
-        kwargs_list, names = _get_kwargs_list_and_names_history(problems, opt_options)
 
     raw_results = batch_evaluator(
         func=minimize,
@@ -82,10 +80,10 @@ def run_benchmark(
         unpack_symbol="**",
     )
 
-    if isinstance(logging_directory, Path):
-        results = _get_results_logging(names, raw_results, log_paths)
+    if logging_directory is None:
+        results = _get_results_history(names, raw_results, kwargs_list)
     else:
-        results = _get_results_history(names, raw_results)
+        results = _get_results_logging(names, raw_results, log_paths)
 
     return results
 
@@ -154,10 +152,10 @@ def _get_kwargs_list_and_names_logging(
     return kwargs_list, names, log_paths
 
 
-def _get_results_history(names, raw_results):
+def _get_results_history(names, raw_results, kwargs_list):
     results = {}
 
-    for name, result in zip(names, raw_results):
+    for name, result, kwargs in zip(names, raw_results, kwargs_list):
 
         if isinstance(result, dict):
             params_history = pd.concat(
@@ -175,8 +173,8 @@ def _get_results_history(names, raw_results):
             runtime = (stop - start).total_seconds()
             time_history = timestamps - start
         else:
-            criterion_history = pd.Series(raw_results[0]["history"][0]["criterion"])
-            params_history = raw_results[0]["history"][0]["params"]
+            criterion_history = pd.Series(np.inf)
+            params_history = kwargs["params"]
 
             runtime = pd.Series([], dtype="datetime64[ns]")
             time_history = pd.Series([], dtype="datetime64[ns]")
