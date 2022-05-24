@@ -16,16 +16,16 @@ def test_run_benchmark_dict_options(tmpdir):
         },
     }
 
+    res_history = run_benchmark(
+        problems=first_two,
+        optimize_options=optimize_options,
+    )
+
     logging_directory = tmpdir / "benchmark_logs"
     res_logging = run_benchmark(
         problems=first_two,
         optimize_options=optimize_options,
         logging_directory=logging_directory,
-    )
-
-    res_history = run_benchmark(
-        problems=first_two,
-        optimize_options=optimize_options,
     )
 
     expected_keys = {
@@ -35,8 +35,8 @@ def test_run_benchmark_dict_options(tmpdir):
         ("linear_full_rank_bad_start", "tuned_lbfgsb"),
     }
 
-    assert set(res_logging) == expected_keys
     assert set(res_history) == expected_keys
+    assert set(res_logging) == expected_keys
 
 
 def test_run_benchmark_list_options(tmpdir):
@@ -46,16 +46,16 @@ def test_run_benchmark_list_options(tmpdir):
 
     optimize_options = ["scipy_lbfgsb", "scipy_neldermead"]
 
+    res_history = run_benchmark(
+        problems=first_two,
+        optimize_options=optimize_options,
+    )
+
     logging_directory = tmpdir / "benchmark_logs"
     res_logging = run_benchmark(
         problems=first_two,
         optimize_options=optimize_options,
         logging_directory=logging_directory,
-    )
-
-    res_history = run_benchmark(
-        problems=first_two,
-        optimize_options=optimize_options,
     )
 
     expected_keys = {
@@ -65,13 +65,13 @@ def test_run_benchmark_list_options(tmpdir):
         ("rosenbrock_good_start", "scipy_neldermead"),
     }
 
-    assert set(res_logging) == expected_keys
     assert set(res_history) == expected_keys
+    assert set(res_logging) == expected_keys
 
 
-@pytest.mark.parametrize("failing_name", [("jennrich_sampson"), ("osborne_one")])
-def test_run_benchmark_failing(failing_name, tmpdir):
+def test_run_benchmark_failing(tmpdir):
     all_problems = get_benchmark_problems("more_wild")
+    failing_name = "jennrich_sampson"
     failing = {failing_name: all_problems[failing_name]}
 
     optimize_options = ["scipy_lbfgsb"]

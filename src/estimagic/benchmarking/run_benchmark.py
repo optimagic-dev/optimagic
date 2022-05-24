@@ -155,7 +155,7 @@ def _get_kwargs_list_and_names_logging(
 def _get_results_history(names, raw_results, kwargs_list):
     results = {}
 
-    for name, result, kwargs in zip(names, raw_results, kwargs_list):
+    for name, result, inputs in zip(names, raw_results, kwargs_list):
 
         if isinstance(result, dict):
             params_history = pd.concat(
@@ -173,8 +173,10 @@ def _get_results_history(names, raw_results, kwargs_list):
             runtime = (stop - start).total_seconds()
             time_history = timestamps - start
         else:
-            criterion_history = pd.Series(np.inf)
-            params_history = kwargs["params"]
+            _criterion = inputs["criterion"]
+
+            params_history = inputs["params"]
+            criterion_history = pd.Series(_criterion(params_history)["value"])
 
             runtime = pd.Series([], dtype="datetime64[ns]")
             time_history = pd.Series([], dtype="datetime64[ns]")
