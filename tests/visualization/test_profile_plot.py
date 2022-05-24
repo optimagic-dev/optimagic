@@ -130,7 +130,6 @@ def test_profile_plot_options(options):
         problems,
         optimizers,
         n_cores=1,  # must be 1 for the test to work
-        logging_directory="logging",
     )
 
     profile_plot(problems=problems, results=results, **options)
