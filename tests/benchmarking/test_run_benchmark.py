@@ -16,11 +16,15 @@ def test_run_benchmark_dict_options(tmpdir):
     }
 
     logging_directory = tmpdir / "benchmark_logs"
-
-    res = run_benchmark(
+    res_logging = run_benchmark(
         problems=first_two,
         optimize_options=optimize_options,
         logging_directory=logging_directory,
+    )
+
+    res_history = run_benchmark(
+        problems=first_two,
+        optimize_options=optimize_options,
     )
 
     expected_keys = {
@@ -30,7 +34,8 @@ def test_run_benchmark_dict_options(tmpdir):
         ("linear_full_rank_bad_start", "tuned_lbfgsb"),
     }
 
-    assert set(res) == expected_keys
+    assert set(res_logging) == expected_keys
+    assert set(res_history) == expected_keys
 
 
 def test_run_benchmark_list_options(tmpdir):
@@ -41,11 +46,15 @@ def test_run_benchmark_list_options(tmpdir):
     optimize_options = ["scipy_lbfgsb", "scipy_neldermead"]
 
     logging_directory = tmpdir / "benchmark_logs"
-
-    res = run_benchmark(
+    res_logging = run_benchmark(
         problems=first_two,
         optimize_options=optimize_options,
         logging_directory=logging_directory,
+    )
+
+    res_history = run_benchmark(
+        problems=first_two,
+        optimize_options=optimize_options,
     )
 
     expected_keys = {
@@ -55,4 +64,5 @@ def test_run_benchmark_list_options(tmpdir):
         ("rosenbrock_good_start", "scipy_neldermead"),
     }
 
-    assert set(res) == expected_keys
+    assert set(res_logging) == expected_keys
+    assert set(res_history) == expected_keys
