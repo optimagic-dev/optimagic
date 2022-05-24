@@ -10,6 +10,7 @@ TO-DO:
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from estimagic import batch_evaluators
 from estimagic.logging.read_log import read_optimization_histories
 from estimagic.optimization.optimize import minimize
@@ -18,8 +19,8 @@ from estimagic.optimization.optimize import minimize
 def run_benchmark(
     problems,
     optimize_options,
-    logging_directory,
     *,
+    logging_directory=None,
     batch_evaluator="joblib",
     n_cores=1,
     error_handling="continue",
@@ -42,8 +43,9 @@ def run_benchmark(
             Alternatively, the values can just be an algorithm which is then benchmarked
             at default settings.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
-        logging_directory (pathlib.Path): Directory in which the log databases are
-            saved.
+        logging_directory (None or pathlib.Path): Directory in which the log databases
+            are saved. By default, this is set to None, which means logging is
+            switched off to save runtime.
         n_cores (int): Number of optimizations that is run in parallel. Note that in
             addition to that an optimizer might parallelize.
         error_handling (str): One of "raise", "continue".
@@ -58,32 +60,19 @@ def run_benchmark(
 
     """
     np.random.seed(seed)
-    logging_directory = Path(logging_directory)
-    logging_directory.mkdir(parents=True, exist_ok=True)
 
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(
             batch_evaluators, f"{batch_evaluator}_batch_evaluator"
         )
-
     opt_options = _process_optimize_options(optimize_options)
 
-    log_options = {"fast_logging": fast_logging, "if_table_exists": "replace"}
-
-    kwargs_list = []
-    names = []
-    for prob_name, problem in problems.items():
-        for option_name, options in opt_options.items():
-            kwargs = {
-                **options,
-                **problem["inputs"],
-                "logging": logging_directory / f"{prob_name}_{option_name}.db",
-                "log_options": log_options,
-            }
-            kwargs_list.append(kwargs)
-            names.append((prob_name, option_name))
-
-    log_paths = [kwargs["logging"] for kwargs in kwargs_list]
+    if isinstance(logging_directory, Path):
+        kwargs_list, names, log_paths = _get_kwargs_list_and_names_logging(
+            problems, opt_options, logging_directory, fast_logging
+        )
+    else:
+        kwargs_list, names = _get_kwargs_list_and_names_history(problems, opt_options)
 
     raw_results = batch_evaluator(
         func=minimize,
@@ -93,20 +82,10 @@ def run_benchmark(
         unpack_symbol="**",
     )
 
-    results = {}
-    for name, result, log_path in zip(names, raw_results, log_paths):
-        histories = read_optimization_histories(log_path)
-        stop = histories["metadata"]["timestamps"].max()
-        start = histories["metadata"]["timestamps"].min()
-        runtime = (stop - start).total_seconds()
-
-        results[name] = {
-            "params_history": histories["params"],
-            "criterion_history": histories["values"],
-            "time_history": histories["metadata"]["timestamps"] - start,
-            "solution": result,
-            "runtime": runtime,
-        }
+    if isinstance(logging_directory, Path):
+        results = _get_results_logging(names, raw_results, log_paths)
+    else:
+        results = _get_results_history(names, raw_results)
 
     return results
 
@@ -135,3 +114,99 @@ def _process_optimize_options(raw_options):
         out_options[name] = option
 
     return out_options
+
+
+def _get_kwargs_list_and_names_history(problems, opt_options):
+    kwargs_list = []
+    names = []
+
+    for prob_name, problem in problems.items():
+        for option_name, options in opt_options.items():
+            kwargs = {**options, **problem["inputs"]}
+            kwargs_list.append(kwargs)
+            names.append((prob_name, option_name))
+
+    return kwargs_list, names
+
+
+def _get_kwargs_list_and_names_logging(
+    problems, opt_options, logging_directory, fast_logging
+):
+    logging_directory = Path(logging_directory)
+    logging_directory.mkdir(parents=True, exist_ok=True)
+    log_options = {"fast_logging": fast_logging, "if_table_exists": "replace"}
+
+    kwargs_list = []
+    names = []
+    for prob_name, problem in problems.items():
+        for option_name, options in opt_options.items():
+            kwargs = {
+                **options,
+                **problem["inputs"],
+                "logging": logging_directory / f"{prob_name}_{option_name}.db",
+                "log_options": log_options,
+            }
+            kwargs_list.append(kwargs)
+            names.append((prob_name, option_name))
+
+    log_paths = [kwargs["logging"] for kwargs in kwargs_list]
+
+    return kwargs_list, names, log_paths
+
+
+def _get_results_history(names, raw_results):
+    results = {}
+
+    for name, result in zip(names, raw_results):
+
+        if isinstance(result, dict):
+            params_history = pd.concat(
+                [hist["params"] for hist in result["history"]],
+                axis=1,
+                ignore_index=True,
+            ).T
+            criterion_history = pd.Series(
+                [hist["scalar_criterion"] for hist in result["history"]]
+            )
+
+            timestamps = pd.Series([hist["timestamp"] for hist in result["history"]])
+            stop = timestamps.max()
+            start = timestamps.min()
+            runtime = (stop - start).total_seconds()
+            time_history = timestamps - start
+        else:
+            criterion_history = pd.Series(raw_results[0]["history"][0]["criterion"])
+            params_history = raw_results[0]["history"][0]["params"]
+
+            runtime = pd.Series([], dtype="datetime64[ns]")
+            time_history = pd.Series([], dtype="datetime64[ns]")
+
+        results[name] = {
+            "params_history": params_history,
+            "criterion_history": criterion_history,
+            "time_history": time_history,
+            "solution": result,
+            "runtime": runtime,
+        }
+
+    return results
+
+
+def _get_results_logging(names, raw_results, log_paths):
+    results = {}
+
+    for name, result, log_path in zip(names, raw_results, log_paths):
+        histories = read_optimization_histories(log_path)
+        stop = histories["metadata"]["timestamps"].max()
+        start = histories["metadata"]["timestamps"].min()
+        runtime = (stop - start).total_seconds()
+
+        results[name] = {
+            "params_history": histories["params"],
+            "criterion_history": histories["values"],
+            "time_history": histories["metadata"]["timestamps"] - start,
+            "solution": result,
+            "runtime": runtime,
+        }
+
+    return results
