@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 from estimagic import batch_evaluators
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_just_flatten
 
 
 def run_benchmark(
@@ -110,11 +112,9 @@ def _get_results(names, raw_results, kwargs_list):
     for name, result, inputs in zip(names, raw_results, kwargs_list):
 
         if isinstance(result, dict):
-            params_history = pd.concat(
-                [hist["params"]["value"] for hist in result["history"]],
-                axis=1,
-                ignore_index=True,
-            ).T
+            params_history = pd.DataFrame(
+                [hist["flat_params"] for hist in result["history"]]
+            )
             criterion_history = pd.Series(
                 [hist["scalar_criterion"] for hist in result["history"]]
             )
@@ -127,8 +127,11 @@ def _get_results(names, raw_results, kwargs_list):
         else:
             _criterion = inputs["criterion"]
 
-            params_history = inputs["params"]["value"]
-            criterion_history = pd.Series(_criterion(inputs["params"]))
+            registry = get_registry(extended=True)
+            params_history = pd.DataFrame(
+                tree_just_flatten(inputs["params"], registry=registry)
+            ).T
+            criterion_history = pd.Series(_criterion(inputs["params"])["value"])
 
             runtime = pd.Series([], dtype="datetime64[ns]")
             time_history = pd.Series([], dtype="datetime64[ns]")

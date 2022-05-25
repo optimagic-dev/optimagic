@@ -67,9 +67,7 @@ def profile_plot(
 
     Returns:
         plotly.Figure
-
     """
-
     if stopping_criterion is None:
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
