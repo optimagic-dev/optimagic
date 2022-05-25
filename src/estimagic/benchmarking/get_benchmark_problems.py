@@ -165,6 +165,7 @@ def _internal_criterion_template(
         }
     else:
         out = noisy_critval
+
     return out
 
 
