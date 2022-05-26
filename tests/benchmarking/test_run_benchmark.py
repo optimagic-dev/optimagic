@@ -133,7 +133,10 @@ def _internal_criterion_pandas(params, criterion):
 
 
 def _internal_criterion_dict(params, criterion):
-    x = params["value"]
+    if "b" in params:
+        x = np.array([params["a"]] + params["b"].flatten().tolist())
+    else:
+        x = params["a"]
     critval = criterion(x)
 
     out = {
@@ -165,15 +168,18 @@ problems_pandas_input = {
 prolems_dict_input = {
     "linear_full_rank_good_start": {
         "criterion": partial(linear_full_rank, dim_out=45),
-        "start_x": {"value": np.ones(9)},
-        "solution_x": {"value": linear_full_rank_solution_x},
+        "start_x": {"a": 1, "b": np.ones((2, 2, 2))},
+        "solution_x": {
+            "a": linear_full_rank_solution_x[0],
+            "b": linear_full_rank_solution_x[1:].reshape(2, 2, 2),
+        },
         "start_criterion": 72,
         "solution_criterion": 36,
     },
     "rosenbrock_good_start": {
         "criterion": rosenbrock,
-        "start_x": {"value": np.array([-1.2, 1])},
-        "solution_x": {"value": np.ones(2)},
+        "start_x": {"a": np.array([-1.2, 1])},
+        "solution_x": {"a": np.ones(2)},
         "start_criterion": 24.2,
         "solution_criterion": 0,
     },
