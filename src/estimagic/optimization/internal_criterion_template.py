@@ -1,4 +1,5 @@
 import datetime
+import time
 import warnings
 
 from estimagic.differentiation.derivatives import first_derivative
@@ -67,7 +68,7 @@ def internal_criterion_and_derivative_template(
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives. See :ref:`first_derivative` for details. Note that the default
             method is changed to "forward" for speed reasons.
-        logging (bool): Wether logging is used.
+        logging (bool): Whether logging is used.
         db_kwargs (dict): Dictionary with entries "database", "path" and "fast_logging".
         error_handling (str): Either "raise" or "continue". Note that "continue" does
             not absolutely guarantee that no error is raised but we try to handle as
@@ -248,8 +249,10 @@ def internal_criterion_and_derivative_template(
             "params": current_params,
             "criterion": new_criterion,
             "scalar_criterion": scalar_critval,
+            "timestamp": time.perf_counter(),
         }
         history_container.append(hist_entry)
+
     return res
 
 
@@ -310,7 +313,6 @@ def _log_new_evaluations(
     Note: There are some seemingly unnecessary type conversions because sqlalchemy
     can fail silently when called with numpy dtypes instead of the equivalent python
     types.
-
     """
     data = {
         "params": external_x,

@@ -35,7 +35,6 @@ def test_convergence_plot_options(options, grid):
         problems,
         optimizers,
         n_cores=1,  # must be 1 for the test to work
-        logging_directory="logging",
     )
 
     convergence_plot(

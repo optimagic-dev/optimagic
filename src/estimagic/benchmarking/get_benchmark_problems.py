@@ -2,7 +2,6 @@ import warnings
 from functools import partial
 
 import numpy as np
-import pandas as pd
 from estimagic.benchmarking.cartis_roberts import CARTIS_ROBERTS_PROBLEMS
 from estimagic.benchmarking.more_wild import MORE_WILD_PROBLEMS
 from estimagic.benchmarking.noise_distributions import NOISE_DISTRIBUTIONS
@@ -54,7 +53,7 @@ def get_benchmark_problems(
             {"name": {"inputs": {...}, "solution": {...}, "info": {...}}}
             where "inputs" are keyword arguments for ``minimize`` such as the criterion
             function and start parameters. "solution" contains the entries "params" and
-            "value" and "info" might  contain information about the test problem.
+            "value" and "info" might contain information about the test problem.
 
     """
     raw_problems = _get_raw_problems(name)
@@ -127,9 +126,7 @@ def _create_problem_inputs(specification, additive_options, multiplicative_optio
     )
     _x = specification["start_x"]
 
-    _params = pd.DataFrame(_x.reshape(-1, 1), columns=["value"])
-
-    inputs = {"criterion": _criterion, "params": _params}
+    inputs = {"criterion": _criterion, "params": _x}
     return inputs
 
 
@@ -138,7 +135,7 @@ def _create_problem_solution(specification):
     if _solution_x is None:
         _solution_x = specification["start_x"] * np.nan
 
-    _params = pd.DataFrame(_solution_x.reshape(-1, 1), columns=["value"])
+    _params = _solution_x
     _value = specification["solution_criterion"]
 
     solution = {
@@ -151,8 +148,7 @@ def _create_problem_solution(specification):
 def _internal_criterion_template(
     params, criterion, additive_options, multiplicative_options
 ):
-    x = params["value"].to_numpy()
-    critval = criterion(x)
+    critval = criterion(params)
 
     noise = _get_combined_noise(
         critval,
@@ -169,6 +165,7 @@ def _internal_criterion_template(
         }
     else:
         out = noisy_critval
+
     return out
 
 

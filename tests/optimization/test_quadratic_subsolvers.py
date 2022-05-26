@@ -1,13 +1,20 @@
 """Test various solvers for quadratic trust-region subproblems."""
-from collections import namedtuple
-
 import numpy as np
 import pytest
-from estimagic.optimization._trustregion_conjugate_gradient_quadratic import (
-    minimize_trust_conjugate_gradient,
+from estimagic.optimization.pounders_auxiliary import MainModel
+from estimagic.optimization.subsolvers._conjugate_gradient_quadratic import (
+    minimize_trust_cg,
 )
-from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
-from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
+from estimagic.optimization.subsolvers._steihaug_toint_quadratic import (
+    minimize_trust_stcg,
+)
+from estimagic.optimization.subsolvers._trsbox_quadratic import minimize_trust_trsbox
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    minimize_bntr_quadratic,
+)
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    minimize_gqtpar_quadratic,
+)
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -15,7 +22,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 # Subsolver BNTR
 # ======================================================================================
 
-TEST_CASES = [
+TEST_CASES_BNTR = [
     (
         np.array([0.0002877431832243, 0.00763968126032, 0.01217268029151]),
         np.array(
@@ -433,7 +440,8 @@ TEST_CASES = [
 
 
 @pytest.mark.parametrize(
-    "linear_terms, square_terms, lower_bounds, upper_bounds, x_expected", TEST_CASES
+    "linear_terms, square_terms, lower_bounds, upper_bounds, x_expected",
+    TEST_CASES_BNTR,
 )
 def test_bounded_newton_trustregion(
     linear_terms,
@@ -442,10 +450,10 @@ def test_bounded_newton_trustregion(
     upper_bounds,
     x_expected,
 ):
-    MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
     main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
 
     options = {
+        "conjugate_gradient_method": "cg",
         "maxiter": 50,
         "maxiter_gradient_descent": 5,
         "gtol_abs": 1e-8,
@@ -461,34 +469,48 @@ def test_bounded_newton_trustregion(
 
 
 # ======================================================================================
-# Algorithm Conjugate Gradient
+# Subsolver GQTPAR
+# ======================================================================================
+
+TEST_CASES_GQTPAR = [
+    (
+        np.array([-0.0005429824695352, -0.1032556117176, -0.06816855282091]),
+        np.array(
+            [
+                [2.05714077e-02, 7.58182390e-01, 9.00050279e-01],
+                [7.58182390e-01, 6.25867992e01, 4.20096648e01],
+                [9.00050279e-01, 4.20096648e01, 4.03810858e01],
+            ]
+        ),
+        np.array(
+            [
+                -0.9994584757179,
+                -0.007713730538474,
+                0.03198833730482,
+            ]
+        ),
+        -0.001340933981148,
+    )
+]
+
+
+@pytest.mark.parametrize(
+    "linear_terms, square_terms, x_expected, criterion_expected", TEST_CASES_GQTPAR
+)
+def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
+    main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
+
+    result = minimize_gqtpar_quadratic(main_model)
+
+    aaae(result["x"], x_expected)
+    aaae(result["criterion"], criterion_expected)
+
+
+# ======================================================================================
+# Conjugate Gradient Algorithms
 # ======================================================================================
 
 TEST_CASES_CG = [
-    (
-        np.array([27928, -13924.8, 17215.5]),
-        np.array(
-            [
-                [
-                    1.1012704153339069e07,
-                    4.9533363163771488e07,
-                    2.9628266883962810e07,
-                ],
-                [
-                    4.9533363163771488e07,
-                    2.2267942225630835e08,
-                    1.3303758212303287e08,
-                ],
-                [
-                    2.9628266883962810e07,
-                    1.3303758212303287e08,
-                    7.9554367206848219e07,
-                ],
-            ]
-        ),
-        0.01495824831974,
-        -np.array([0.0117213, -0.0058442, 0.00722531]),
-    ),
     (
         np.array([79579.8, 35973.7]),
         np.array(
@@ -646,6 +668,33 @@ TEST_CASES_CG = [
     ),
 ]
 
+TEST_CASES_TRSBOX = [
+    (
+        np.array([1.0, 0.0, 1.0]),
+        np.array([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 2.0]]),
+        2.0,
+        np.array([-1.0, 0.0, -0.5]),
+    ),
+    (
+        np.array([1.0, 0.0, 1.0]),
+        np.array([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 2.0]]),
+        5.0 / 12.0,
+        np.array([-1.0 / 3.0, 0.0, -0.25]),
+    ),
+    (
+        np.array([1.0, 0.0, 1.0]),
+        np.array([[-2.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]]),
+        5.0 / 12.0,
+        np.array([-1.0 / 3.0, 0.0, -0.25]),
+    ),
+    (
+        np.array([0.0, 0.0, 1.0]),
+        np.array([[-2.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]]),
+        0.5,
+        np.array([0.0, 0.0, -0.5]),
+    ),
+]
+
 
 @pytest.mark.parametrize(
     "gradient, hessian, trustregion_radius, x_expected", TEST_CASES_CG
@@ -653,46 +702,34 @@ TEST_CASES_CG = [
 def test_trustregion_conjugate_gradient(
     gradient, hessian, trustregion_radius, x_expected
 ):
-    x_out = minimize_trust_conjugate_gradient(
+    x_out = minimize_trust_cg(
         gradient, hessian, trustregion_radius, gtol_abs=1e-8, gtol_rel=1e-6
     )
     aaae(x_out, x_expected)
 
 
-# ======================================================================================
-# Subsolver GQTPAR
-# ======================================================================================
-
-TEST_CASES_GQTPAR = [
-    (
-        np.array([-0.0005429824695352, -0.1032556117176, -0.06816855282091]),
-        np.array(
-            [
-                [2.05714077e-02, 7.58182390e-01, 9.00050279e-01],
-                [7.58182390e-01, 6.25867992e01, 4.20096648e01],
-                [9.00050279e-01, 4.20096648e01, 4.03810858e01],
-            ]
-        ),
-        np.array(
-            [
-                -0.9994584757179,
-                -0.007713730538474,
-                0.03198833730482,
-            ]
-        ),
-        -0.001340933981148,
-    )
-]
+@pytest.mark.parametrize(
+    "gradient, hessian, trustregion_radius, x_expected", TEST_CASES_CG
+)
+def test_trustregion_steihaug_toint(gradient, hessian, trustregion_radius, x_expected):
+    x_out = minimize_trust_stcg(gradient, hessian, trustregion_radius)
+    aaae(x_out, x_expected)
 
 
 @pytest.mark.parametrize(
-    "linear_terms, square_terms, x_expected, criterion_expected", TEST_CASES_GQTPAR
+    "linear_terms, square_terms, trustregion_radius, x_expected",
+    TEST_CASES_CG + TEST_CASES_TRSBOX,
 )
-def test_gqtpar_quadratic(linear_terms, square_terms, x_expected, criterion_expected):
-    MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
-    main_model = MainModel(linear_terms=linear_terms, square_terms=square_terms)
+def test_trustregion_trsbox(linear_terms, square_terms, trustregion_radius, x_expected):
+    lower_bounds = -1e20 * np.ones_like(linear_terms)
+    upper_bounds = 1e20 * np.ones_like(linear_terms)
 
-    result = minimize_gqtpar_quadratic(main_model)
+    x_out = minimize_trust_trsbox(
+        linear_terms,
+        square_terms,
+        trustregion_radius,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+    )
 
-    aaae(result["x"], x_expected)
-    aaae(result["criterion"], criterion_expected)
+    aaae(x_out, x_expected, decimal=4)
