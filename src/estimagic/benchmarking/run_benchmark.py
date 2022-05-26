@@ -123,9 +123,9 @@ def _get_results(names, raw_results, kwargs_list):
                 [hist["scalar_criterion"] for hist in result["history"]]
             )
 
-            timestamps = pd.Series([hist["timestamp"] for hist in result["history"]])
-            start = timestamps.min()
-            time_history = timestamps - start
+            timestamps = np.array([hist["timestamp"] for hist in result["history"]])
+            start = timestamps[0]
+            time_history = pd.Series(timestamps - start)
         elif isinstance(result, str):
             _criterion = inputs["criterion"]
 
