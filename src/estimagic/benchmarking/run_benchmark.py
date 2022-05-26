@@ -47,7 +47,7 @@ def run_benchmark(
         dict: Nested Dictionary with information on the benchmark run. The outer keys
             are tuples where the first entry is the name of the problem and the second
             the name of the optimize options. The values are dicts with the entries:
-            "runtime", "params_history", "criterion_history", "solution".
+            "params_history", "criterion_history", "time_history" and "solution".
     """
     np.random.seed(seed)
 
@@ -124,9 +124,7 @@ def _get_results(names, raw_results, kwargs_list):
             )
 
             timestamps = pd.Series([hist["timestamp"] for hist in result["history"]])
-            stop = timestamps.max()
             start = timestamps.min()
-            runtime = stop - start
             time_history = timestamps - start
         elif isinstance(result, str):
             _criterion = inputs["criterion"]
@@ -136,7 +134,6 @@ def _get_results(names, raw_results, kwargs_list):
             ).T
             criterion_history = pd.Series(_criterion(inputs["params"])["value"])
 
-            runtime = pd.Series([np.inf])
             time_history = pd.Series([np.inf])
         else:
             raise ValueError(
@@ -148,7 +145,6 @@ def _get_results(names, raw_results, kwargs_list):
             "criterion_history": criterion_history,
             "time_history": time_history,
             "solution": result,
-            "runtime": runtime,
         }
 
     return results

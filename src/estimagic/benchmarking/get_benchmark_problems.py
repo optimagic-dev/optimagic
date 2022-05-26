@@ -135,7 +135,7 @@ def _create_problem_solution(specification):
     if _solution_x is None:
         _solution_x = specification["start_x"] * np.nan
 
-    _params = _solution_x.reshape(-1, 1)
+    _params = _solution_x
     _value = specification["solution_criterion"]
 
     solution = {
