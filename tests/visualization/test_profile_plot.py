@@ -73,16 +73,16 @@ def test_create_solution_times_walltime():
     df = pd.DataFrame(
         columns=["problem", "algorithm", "n_evaluations", "walltime"],
         data=[
-            ["prob1", "algo1", 0, pd.Timedelta(seconds=0)],
-            ["prob1", "algo1", 1, pd.Timedelta(seconds=1)],
+            ["prob1", "algo1", 0, 0],
+            ["prob1", "algo1", 1, 1],
             #
-            ["prob1", "algo2", 2, pd.Timedelta(seconds=2)],
-            ["prob1", "algo2", 3, pd.Timedelta(seconds=3)],
+            ["prob1", "algo2", 2, 2],
+            ["prob1", "algo2", 3, 3],
             #
-            ["prob2", "algo1", 5, pd.Timedelta(seconds=5)],
+            ["prob2", "algo1", 5, 5],
             #
-            ["prob2", "algo2", 0, pd.Timedelta(seconds=0)],
-            ["prob2", "algo2", 1, pd.Timedelta(seconds=1)],
+            ["prob2", "algo2", 0, 0],
+            ["prob2", "algo2", 1, 1],
         ],
     )
     info = pd.DataFrame(
@@ -94,8 +94,8 @@ def test_create_solution_times_walltime():
     )
     expected = pd.DataFrame(
         {
-            "algo1": [pd.Timedelta(seconds=1), pd.Timedelta(seconds=5)],
-            "algo2": [pd.Timedelta(seconds=3), pd.Timedelta(weeks=1000)],
+            "algo1": [1, 5],
+            "algo2": [3, np.inf],
         },
         index=pd.Index(["prob1", "prob2"], name="problem"),
     )

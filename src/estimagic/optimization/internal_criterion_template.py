@@ -1,4 +1,5 @@
 import datetime
+import time
 import warnings
 
 from estimagic.differentiation.derivatives import first_derivative
@@ -249,7 +250,7 @@ def internal_criterion_and_derivative_template(
             "flat_params": external_x,
             "criterion": new_criterion,
             "scalar_criterion": scalar_critval,
-            "timestamp": datetime.datetime.now(),
+            "timestamp": time.perf_counter(),
         }
         history_container.append(hist_entry)
 
@@ -313,7 +314,6 @@ def _log_new_evaluations(
     Note: There are some seemingly unnecessary type conversions because sqlalchemy
     can fail silently when called with numpy dtypes instead of the equivalent python
     types.
-
     """
     data = {
         "params": external_x,

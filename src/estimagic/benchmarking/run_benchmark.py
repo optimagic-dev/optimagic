@@ -122,7 +122,7 @@ def _get_results(names, raw_results, kwargs_list):
             timestamps = pd.Series([hist["timestamp"] for hist in result["history"]])
             stop = timestamps.max()
             start = timestamps.min()
-            runtime = (stop - start).total_seconds()
+            runtime = stop - start
             time_history = timestamps - start
         else:
             _criterion = inputs["criterion"]
@@ -133,8 +133,8 @@ def _get_results(names, raw_results, kwargs_list):
             ).T
             criterion_history = pd.Series(_criterion(inputs["params"])["value"])
 
-            runtime = pd.Series([], dtype="datetime64[ns]")
-            time_history = pd.Series([], dtype="datetime64[ns]")
+            runtime = pd.Series([np.inf])
+            time_history = pd.Series([np.inf])
 
         results[name] = {
             "params_history": params_history,

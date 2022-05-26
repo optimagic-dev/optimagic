@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -88,20 +86,8 @@ def profile_plot(
 
     if normalize_runtime:
         solution_times = solution_times.divide(solution_times.min(axis=1), axis=0)
-        # set again to inf because no inf Timedeltas were allowed.
         solution_times[~converged_info] = np.inf
-    else:
-        if (
-            runtime_measure == "walltime"
-            and (solution_times == pd.Timedelta(weeks=1000)).any().any()
-        ):
-            warnings.warn(
-                "Some algorithms did not converge. Their walltime has been "
-                "set to a very high value instead of infinity because Timedeltas do not"
-                "support infinite values."
-            )
 
-    # create performance profiles
     alphas = _determine_alpha_grid(solution_times)
     for_each_alpha = pd.concat(
         {alpha: solution_times <= alpha for alpha in alphas},
@@ -109,12 +95,8 @@ def profile_plot(
     )
     performance_profiles = for_each_alpha.groupby("alpha").mean().stack().reset_index()
 
-    # Build plot
-
     fig = px.line(performance_profiles, x="alpha", y=0, color="algorithm")
-    # dropped some styling parameters
 
-    # Plot Styling
     xlabels = {
         ("n_evaluations", True): "Multiple of Minimal Number of Function Evaluations\n"
         "Needed to Solve the Problem",
@@ -136,7 +118,7 @@ def profile_plot(
         template=template,
     )
 
-    fig.add_hline(y=1)  # dropped styling
+    fig.add_hline(y=1)
     return fig
 
 
@@ -162,25 +144,13 @@ def _create_solution_times(df, runtime_measure, converged_info):
     solution_times = df.groupby(["problem", "algorithm"])[runtime_measure].max()
     solution_times = solution_times.unstack()
 
-    # inf not allowed for timedeltas so put something very large
-    if runtime_measure == "walltime":
-        inf_value = pd.Timedelta(weeks=1000)
-    elif runtime_measure == "n_evaluations":
-        inf_value = np.inf
-    else:
-        raise ValueError(
-            "Only 'walltime' or 'n_evaluations' are allowed as "
-            f"runtime_measure. You specified {runtime_measure}."
-        )
-
-    solution_times[~converged_info] = inf_value
+    solution_times[~converged_info] = np.inf
     return solution_times
 
 
 def _determine_alpha_grid(solution_times):
     switch_points = _find_switch_points(solution_times=solution_times)
 
-    # add point to the right
     point_to_right = switch_points[-1] * 1.05
     extended_switch_points = np.append(switch_points, point_to_right)
     mid_points = (extended_switch_points[:-1] + extended_switch_points[1:]) / 2

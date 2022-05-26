@@ -121,7 +121,7 @@ def _create_problem_solution_custom(specification):
 
 
 def _internal_criterion_pandas(params, criterion):
-    x = pd.DataFrame(params["value"])
+    x = params["value"].to_numpy()
     critval = criterion(x)
 
     out = {
@@ -133,7 +133,7 @@ def _internal_criterion_pandas(params, criterion):
 
 
 def _internal_criterion_dict(params, criterion):
-    x = {"value": params["value"]}
+    x = params["value"]
     critval = criterion(x)
 
     out = {
@@ -144,40 +144,16 @@ def _internal_criterion_dict(params, criterion):
     return out
 
 
-def _linear_full_rank_pandas(x, dim_out):
-    _x = x["value"].to_numpy()
-    out = linear_full_rank(_x, dim_out)
-    return out
-
-
-def _linear_full_rank_dict(x, dim_out):
-    _x = x["value"]
-    out = linear_full_rank(_x, dim_out)
-    return out
-
-
-def _rosenbrock_pandas(x):
-    _x = x["value"].to_numpy()
-    fvec = rosenbrock(_x)
-    return fvec
-
-
-def _rosenbrock_dict(x):
-    _x = x["value"]
-    fvec = rosenbrock(_x)
-    return fvec
-
-
 problems_pandas_input = {
     "linear_full_rank_good_start": {
-        "criterion": partial(_linear_full_rank_pandas, dim_out=45),
+        "criterion": partial(linear_full_rank, dim_out=45),
         "start_x": pd.DataFrame(np.ones(9), columns=["value"]),
         "solution_x": pd.DataFrame(linear_full_rank_solution_x, columns=["value"]),
         "start_criterion": 72,
         "solution_criterion": 36,
     },
     "rosenbrock_good_start": {
-        "criterion": _rosenbrock_pandas,
+        "criterion": rosenbrock,
         "start_x": pd.DataFrame([-1.2, 1], columns=["value"]),
         "solution_x": pd.DataFrame(np.ones(2), columns=["value"]),
         "start_criterion": 24.2,
@@ -188,14 +164,14 @@ problems_pandas_input = {
 
 prolems_dict_input = {
     "linear_full_rank_good_start": {
-        "criterion": partial(_linear_full_rank_dict, dim_out=45),
+        "criterion": partial(linear_full_rank, dim_out=45),
         "start_x": {"value": np.ones(9)},
-        "solution_x": linear_full_rank_solution_x,
+        "solution_x": {"value": linear_full_rank_solution_x},
         "start_criterion": 72,
         "solution_criterion": 36,
     },
     "rosenbrock_good_start": {
-        "criterion": _rosenbrock_dict,
+        "criterion": rosenbrock,
         "start_x": {"value": np.array([-1.2, 1])},
         "solution_x": {"value": np.ones(2)},
         "start_criterion": 24.2,
