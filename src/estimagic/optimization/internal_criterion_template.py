@@ -247,7 +247,6 @@ def internal_criterion_and_derivative_template(
     if history_container is not None:
         hist_entry = {
             "params": current_params,
-            "flat_params": external_x,
             "criterion": new_criterion,
             "scalar_criterion": scalar_critval,
             "timestamp": time.perf_counter(),

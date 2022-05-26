@@ -70,6 +70,12 @@ def profile_plot(
         raise ValueError(
             "You must specify a stopping criterion for the performance plot. "
         )
+    if runtime_measure not in ["walltime", "n_evaluations"]:
+        raise ValueError(
+            "Only 'walltime' or 'n_evaluations' are allowed as "
+            f"runtime_measure. You specified {runtime_measure}."
+        )
+
     df, converged_info = create_convergence_histories(
         problems=problems,
         results=results,

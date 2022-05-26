@@ -107,13 +107,17 @@ def _get_kwargs_list_and_names(problems, opt_options):
 
 
 def _get_results(names, raw_results, kwargs_list):
+    registry = get_registry(extended=True)
     results = {}
 
     for name, result, inputs in zip(names, raw_results, kwargs_list):
 
         if isinstance(result, dict):
             params_history = pd.DataFrame(
-                [hist["flat_params"] for hist in result["history"]]
+                [
+                    tree_just_flatten(hist["params"], registry=registry)
+                    for hist in result["history"]
+                ]
             )
             criterion_history = pd.Series(
                 [hist["scalar_criterion"] for hist in result["history"]]
@@ -124,10 +128,9 @@ def _get_results(names, raw_results, kwargs_list):
             start = timestamps.min()
             runtime = stop - start
             time_history = timestamps - start
-        else:
+        elif isinstance(result, str):
             _criterion = inputs["criterion"]
 
-            registry = get_registry(extended=True)
             params_history = pd.DataFrame(
                 tree_just_flatten(inputs["params"], registry=registry)
             ).T
@@ -135,6 +138,10 @@ def _get_results(names, raw_results, kwargs_list):
 
             runtime = pd.Series([np.inf])
             time_history = pd.Series([np.inf])
+        else:
+            raise ValueError(
+                "'result' object is expected to be of type 'dict' or 'str'."
+            )
 
         results[name] = {
             "params_history": params_history,
