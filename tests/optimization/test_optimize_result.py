@@ -10,8 +10,8 @@ def convergence_report():
     conv_report = pd.DataFrame(
         index=[
             "relative_criterion_change",
-            "absolute_criterion_change",
             "relative_params_change",
+            "absolute_criterion_change",
             "absolute_params_change",
         ],
         columns=["one_step", "five_steps"],

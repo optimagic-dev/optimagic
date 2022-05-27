@@ -105,10 +105,8 @@ def _format_convergence_report(report, algorithm):
 
     explanation = (
         "(***: change <= 1e-10, **: change <= 1e-8, *: change <= 1e-5. "
-        "Change refers to a change between accepted steps. "
-        "The first column only considers the last accepted step and is "
-        "used to calculate the asterisks. The second column considers five "
-        "accepted steps.)"
+        "Change refers to a change between accepted steps. The first column only "
+        "considers the last step. The second column considers the last five steps.)"
     )
 
     out = "\n\n".join([introduction, table, explanation])
