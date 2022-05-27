@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Union
 
 import numpy as np
@@ -25,12 +24,11 @@ class OptimizeResult:
     n_derivative_evaluations: Union[int, None] = None
     n_iterations: Union[int, None] = None
 
-    criterion_history: Union[List, None] = None
-    params_history: Union[List, None] = None
-    runtime_history: Union[List, None] = None
+    history: Union[Dict, None] = None
 
     convergence_report: Union[pd.DataFrame, None] = None
 
+    multistart_info: Union[Dict, None] = None
     algorithm_output: Dict = field(default_factory=dict)
 
     def __repr__(self):

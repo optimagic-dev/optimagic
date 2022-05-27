@@ -29,7 +29,7 @@ def test_get_convergence_report_maximize():
     aaae(calculated.to_numpy(), expected)
 
 
-def test_if_history_is_too_short():
+def test_history_is_too_short():
     # first value is best, so history of accepted parameters has only one entry
     hist = {
         "criterion": [5, -4.1, -4.4, -4.0],

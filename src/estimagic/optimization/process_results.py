@@ -1,76 +1,116 @@
+import numpy as np
+from estimagic.optimization.convergence_report import get_convergence_report
+from estimagic.optimization.optimize_result import OptimizeResult
+from estimagic.parameters.conversion import aggregate_func_output_to_value
+
+
 def process_internal_optimizer_result(
     res,
-    direction,
-    params_from_internal,
+    converter,
+    primary_key,
+    fixed_kwargs,
 ):
     """Process results of internal optimizers.
 
     Args:
         res (dict): Results dictionary of an internal optimizer or multistart optimizer.
-        direction (str): One of "maximize" or "minimize". Used to switch sign of
-            criterion evaluations.
-        params_from_internal (callable): Function that converts internal parameters
-            to external ones.
+
 
     """
+    is_multistart = "multistart_info" in res
+    multistart_info = res.get("multistart_info")
+
     if isinstance(res, str):
         res = _dummy_result_from_traceback(res)
     else:
-        res = _process_one_result(res, direction, params_from_internal)
+        res = _process_one_result(res, converter, primary_key, fixed_kwargs)
 
-        if "multistart_info" in res:
-            res["multistart_info"] = _process_multistart_info(
-                res["multistart_info"],
-                direction,
-                params_from_internal,
+        if is_multistart:
+            res.multistart_info = _process_multistart_info(
+                multistart_info,
+                converter,
+                primary_key,
+                fixed_kwargs=fixed_kwargs,
             )
     return res
 
 
-def _process_one_result(res, direction, params_from_internal):
-    res = res.copy()
-    p = params_from_internal(res["solution_x"])
-    res["solution_params"] = p
+def _process_one_result(res, converter, primary_key, fixed_kwargs):
+    _params = converter.params_from_internal(res["solution_x"])
+    if np.isscalar(res["solution_criterion"]):
+        _criterion = float(res["solution_criterion"])
+    else:
+        _criterion = aggregate_func_output_to_value(
+            res["solution_criterion"], primary_key
+        )
 
-    if direction == "maximize" and "solution_criterion" in res:
-        res["solution_criterion"] = switch_sign(res["solution_criterion"])
+    if fixed_kwargs["direction"] == "maximize":
+        _criterion = -_criterion
 
-    # in the long run we can get some of those from the database if logging was used.
     optional_entries = [
-        "solution_criterion",
-        "solution_derivative",
-        "solution_hessian",
         "n_criterion_evaluations",
         "n_derivative_evaluations",
         "n_iterations",
         "success",
-        "reached_convergence_criterion",
         "message",
+        "history",
     ]
 
-    for entry in optional_entries:
-        res[entry] = res.get(entry)
-    return res
+    optional_kwargs = {}
+    for key in optional_entries:
+        if key in res:
+            optional_kwargs[key] = res[key]
+
+    algo_output = {}
+    for key in res:
+        if key not in optional_entries + ["solution_x", "solution_criterion"]:
+            algo_output[key] = res[key]
+
+    if "history" in res:
+        conv_report = get_convergence_report(
+            history=res["history"],
+            direction=fixed_kwargs["direction"],
+            converter=converter,
+        )
+
+    else:
+        conv_report = None
+
+    out = OptimizeResult(
+        params=_params,
+        criterion=_criterion,
+        **fixed_kwargs,
+        **optional_kwargs,
+        algorithm_output=algo_output,
+        convergence_report=conv_report,
+    )
+
+    return out
 
 
-def _process_multistart_info(info, direction, params_from_internal):
+def _process_multistart_info(info, converter, primary_key, fixed_kwargs):
+
+    direction = fixed_kwargs["direction"]
 
     starts = []
     for x in info["start_parameters"]:
-        starts.append(params_from_internal(x))
+        starts.append(converter.params_from_internal(x))
 
     optima = []
-    for res in info["local_optima"]:
+    for res, start in zip(info["local_optima"], starts):
+        kwargs = fixed_kwargs.copy()
+        kwargs["start_params"] = start
         processed = _process_one_result(
             res,
-            direction=direction,
-            params_from_internal=params_from_internal,
+            converter=converter,
+            primary_key=primary_key,
+            fixed_kwargs=kwargs,
         )
         optima.append(processed)
 
     sample = []
     for x in info["exploration_sample"]:
-        sample.append(params_from_internal(x))
+        sample.append(converter.params_from_internal(x))
 
     if direction == "minimize":
         exploration_res = info["exploration_results"]

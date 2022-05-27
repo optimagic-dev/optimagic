@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from estimagic import batch_evaluators
 from estimagic.optimization.optimize import minimize
+from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
 
@@ -112,8 +113,8 @@ def _get_results(names, raw_results, kwargs_list):
 
     for name, result, inputs in zip(names, raw_results, kwargs_list):
 
-        if isinstance(result, dict):
-            history = result["history"]
+        if isinstance(result, OptimizeResult):
+            history = result.history
             params_history = pd.DataFrame(
                 [tree_just_flatten(p, registry=registry) for p in history["params"]]
             )

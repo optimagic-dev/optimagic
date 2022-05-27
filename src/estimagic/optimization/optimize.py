@@ -21,6 +21,7 @@ from estimagic.optimization.process_multistart_sample import process_multistart_
 from estimagic.optimization.process_results import process_internal_optimizer_result
 from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
+from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
@@ -752,10 +753,24 @@ def _optimize(
     # Process the result
     # ==================================================================================
 
+    _scalar_start_criterion = aggregate_func_output_to_value(
+        converter.func_to_internal(first_crit_eval),
+        algo_info.primary_criterion_entry,
+    )
+
+    fixed_result_kwargs = {
+        "start_criterion": _scalar_start_criterion,
+        "start_params": params,
+        "algorithm": algo_info.name,
+        "direction": direction,
+        "n_free": internal_params.free_mask.sum(),
+    }
+
     res = process_internal_optimizer_result(
         raw_res,
-        direction=direction,
-        params_from_internal=converter.params_from_internal,
+        converter=converter,
+        primary_key=algo_info.primary_criterion_entry,
+        fixed_kwargs=fixed_result_kwargs,
     )
 
     return res

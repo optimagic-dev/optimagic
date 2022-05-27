@@ -195,7 +195,7 @@ def estimate_ml(
             log_options=log_options,
             **optimize_options,
         )
-        estimates = opt_res["solution_params"]
+        estimates = opt_res.params
 
     # ==================================================================================
     # Do first function evaluations at estimated parameters

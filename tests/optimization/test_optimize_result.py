@@ -41,7 +41,7 @@ def base_inputs():
         "n_criterion_evaluations": 100,
         "n_derivative_evaluations": 0,
         "n_iterations": 80,
-        "criterion_history": list(range(10)),
+        "history": {"criterion": list(range(10))},
         "algorithm": "scipy_lbfgsb",
         "n_free": 2,
     }

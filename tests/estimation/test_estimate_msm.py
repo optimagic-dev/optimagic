@@ -65,7 +65,7 @@ def test_estimate_msm(simulate_moments, moments_cov):
             optimize_options=optimize_options,
         )
 
-    calculated_params = calculated["optimize_res"]["solution_params"][["value"]]
+    calculated_params = calculated["optimize_res"].params[["value"]]
     # check that minimization works
     aaae(calculated_params["value"].to_numpy(), expected_params["value"].to_numpy())
 
