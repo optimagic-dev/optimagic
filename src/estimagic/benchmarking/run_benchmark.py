@@ -113,19 +113,12 @@ def _get_results(names, raw_results, kwargs_list):
     for name, result, inputs in zip(names, raw_results, kwargs_list):
 
         if isinstance(result, dict):
+            history = result["history"]
             params_history = pd.DataFrame(
-                [
-                    tree_just_flatten(hist["params"], registry=registry)
-                    for hist in result["history"]
-                ]
+                [tree_just_flatten(p, registry=registry) for p in history["params"]]
             )
-            criterion_history = pd.Series(
-                [hist["scalar_criterion"] for hist in result["history"]]
-            )
-
-            timestamps = np.array([hist["timestamp"] for hist in result["history"]])
-            start = timestamps[0]
-            time_history = pd.Series(timestamps - start)
+            criterion_history = pd.Series(history["criterion"])
+            time_history = pd.Series(history["runtime"])
         elif isinstance(result, str):
             _criterion = inputs["criterion"]
 
