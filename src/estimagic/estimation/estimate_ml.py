@@ -332,7 +332,8 @@ def estimate_ml(
             bounds_handling=bounds_handling,
         )
         summary = calculate_inference_quantities(
-            flat_params=flat_estimates,
+            estimates=estimates,
+            flat_estimates=flat_estimates,
             free_cov=cov,
             ci_level=ci_level,
         )

@@ -160,7 +160,7 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_inputs):
 
 
 # ======================================================================================
-# (simple) normal case using
+# (simple) normal case using dict params
 # ======================================================================================
 
 
@@ -175,7 +175,7 @@ def normal_loglike(params, y):
 @pytest.fixture
 def normal_inputs():
     true = {
-        "mean": 0.0,
+        "mean": 1.0,
         "sd": 1.0,
     }
     y = np.random.normal(loc=true["mean"], scale=true["sd"], size=10_000)
@@ -190,7 +190,7 @@ def test_estimate_ml_general_pytree(normal_inputs):
 
     kwargs = {"y": normal_inputs["y"]}
 
-    start_params = {"mean": 1, "sd": 1.0}
+    start_params = {"mean": 5, "sd": 3}
 
     got = estimate_ml(
         loglike=normal_loglike,
@@ -211,5 +211,5 @@ def test_estimate_ml_general_pytree(normal_inputs):
 
     true = normal_inputs["true"]
 
-    assert np.abs(true["mean"] - got["summary_jacobian"].loc["mean", "value"]) < 1e-1
-    assert np.abs(true["sd"] - got["summary_jacobian"].loc["sd", "value"]) < 1e-1
+    assert np.abs(true["mean"] - got["summary_jacobian"]["mean"]["value"][0]) < 1e-1
+    assert np.abs(true["sd"] - got["summary_jacobian"]["sd"]["value"][0]) < 1e-1
