@@ -13,7 +13,7 @@ def combine_plots(
     sharex=False,
     sharey=True,
     share_yrange_all=True,
-    y_expand=0.02,
+    expand_yrange=0.02,
     share_xrange_all=False,
     make_subplot_kwargs=None,
     showlegend=True,
@@ -106,12 +106,18 @@ def combine_plots(
         ub = np.max(ub)
         lb = np.min(lb)
         y_range = ub - lb
-        y_lower = lb - y_range * y_expand
-        y_upper = ub + y_range * y_expand
+        y_lower = lb - y_range * expand_yrange
+        y_upper = ub + y_range * expand_yrange
         fig.update_yaxes(range=[y_lower, y_upper])
     if share_xrange_all:
-        x_lower = min([f.layout.xaxis.range[0] for f in plots])
-        x_upper = max([f.layout.xaxis.range[1] for f in plots])
+        lb = []
+        ub = []
+        for f in plots:
+            for d in f.data:
+                lb.append(d["x"].min())
+                ub.append(d["x"].max())
+        x_upper = np.max(ub)
+        x_lower = np.min(lb)
         fig.update_xaxes(range=[x_lower, x_upper])
     if clean_legend:
         fig = _clean_legend_duplicates(fig)
@@ -287,7 +293,7 @@ def get_make_subplot_kwargs(sharex, sharey, kwrgs, plots_per_row, plots):
         "print_grid": False,
         "shared_yaxes": sharey,
         "shared_xaxes": sharex,
-        "vertical_spacing": (1 / (nrows - 1)) / 2,
+        "vertical_spacing": (1 / (nrows - 1)) / 3,
         "horizontal_spacing": 1 / (plots_per_row * 4),
     }
     if not sharey:
