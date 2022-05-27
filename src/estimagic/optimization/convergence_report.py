@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from estimagic.optimization.history_tools import get_history_arrays
 from scipy.spatial.distance import pdist as pairwise_distance
 
@@ -18,7 +17,7 @@ def get_convergence_report(history, direction, converter=None):
     if len(critvals) < 2:
         out = None
     else:
-        out = pd.DataFrame()
+        out = {}
         for name, n_entries in [("one_step", 2), ("five_steps", min(6, len(critvals)))]:
             relevant_critvals = critvals[-n_entries:]
             relevant_params = params[-n_entries:]
@@ -35,7 +34,7 @@ def get_convergence_report(history, direction, converter=None):
                 "absolute_params_change": max_x_abs,
             }
 
-            out[name] = pd.Series(col_dict)
+            out[name] = col_dict
 
     return out
 

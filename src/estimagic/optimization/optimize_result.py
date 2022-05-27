@@ -26,7 +26,7 @@ class OptimizeResult:
 
     history: Union[Dict, None] = None
 
-    convergence_report: Union[pd.DataFrame, None] = None
+    convergence_report: Union[Dict, None] = None
 
     multistart_info: Union[Dict, None] = None
     algorithm_output: Dict = field(default_factory=dict)
@@ -87,6 +87,8 @@ class OptimizeResult:
 
 
 def _format_convergence_report(report, algorithm):
+    if report is not None:
+        report = pd.DataFrame.from_dict(report)
     columns = ["one_step", "five_steps"]
 
     table = report[columns].applymap(_format_float).astype(str)

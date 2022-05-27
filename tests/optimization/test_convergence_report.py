@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from estimagic.optimization.convergence_report import get_convergence_report
 from numpy.testing import assert_array_almost_equal as aaae
 
@@ -10,7 +11,7 @@ def test_get_convergence_report_minimize():
         "runtime": [0, 1, 2, 3],
     }
 
-    calculated = get_convergence_report(hist, "minimize")
+    calculated = pd.DataFrame.from_dict(get_convergence_report(hist, "minimize"))
 
     expected = np.array([[0.025, 0.25], [0.05, 1.05], [0.1, 1], [0.1, 2.1]])
     aaae(calculated.to_numpy(), expected)
@@ -23,7 +24,7 @@ def test_get_convergence_report_maximize():
         "runtime": [0, 1, 2, 3],
     }
 
-    calculated = get_convergence_report(hist, "maximize")
+    calculated = pd.DataFrame.from_dict(get_convergence_report(hist, "maximize"))
 
     expected = np.array([[0.025, 0.25], [0.05, 1.05], [0.1, 1], [0.1, 2.1]])
     aaae(calculated.to_numpy(), expected)
