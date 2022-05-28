@@ -69,7 +69,7 @@ class OptimizeResult:
         if self.start_criterion is not None and self.criterion is not None:
             improvement = (
                 f"The value of criterion improved from {self.start_criterion} to "
-                "{self.criterion}."
+                f"{self.criterion}."
             )
         else:
             improvement = None

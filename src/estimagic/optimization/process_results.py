@@ -29,13 +29,40 @@ def process_internal_optimizer_result(
         )
 
         if is_multistart:
-            res.multistart_info = _process_multistart_info(
+            info = _process_multistart_info(
                 multistart_info,
                 converter,
                 primary_key,
                 fixed_kwargs=fixed_kwargs,
                 skip_checks=skip_checks,
             )
+
+            crit_hist = [opt.criterion for opt in info["local_optima"]]
+            params_hist = [opt.params for opt in info["local_optima"]]
+            time_hist = [np.nan for opt in info["local_optima"]]
+            hist = {"criterion": crit_hist, "params": params_hist, "runtime": time_hist}
+
+            conv_report = get_convergence_report(
+                history=hist,
+                direction=fixed_kwargs["direction"],
+                converter=converter,
+            )
+
+            res.convergence_report = conv_report
+
+            res.algorithm = f"multistart_{res.algorithm}"
+            res.n_iterations = res.n_iterations = _sum_or_none(
+                [opt.n_iterations for opt in info["local_optima"]]
+            )
+
+            res.n_criterion_evaluations = _sum_or_none(
+                [opt.n_criterion_evaluations for opt in info["local_optima"]]
+            )
+            res.n_derivative_evaluations = _sum_or_none(
+                [opt.n_derivative_evaluations for opt in info["local_optima"]]
+            )
+
+            res.multistart_info = info
     return res
 
 
@@ -104,6 +131,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
     for res, start in zip(info["local_optima"], starts):
         kwargs = fixed_kwargs.copy()
         kwargs["start_params"] = start
+        kwargs["start_criterion"] = None
         processed = _process_one_result(
             res,
             converter=converter,
@@ -151,4 +179,12 @@ def switch_sign(critval):
             out["contributions"] = -critval["contributions"]
     else:
         out = -critval
+    return out
+
+
+def _sum_or_none(summands):
+    if any([s is None for s in summands]):
+        out = None
+    else:
+        out = int(np.sum(summands))
     return out
