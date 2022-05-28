@@ -2,23 +2,32 @@
 import numpy as np
 
 
-def minimize_trust_conjugate_gradient(
+def minimize_trust_cg(
     model_gradient, model_hessian, trustregion_radius, *, gtol_abs=1e-8, gtol_rel=1e-6
 ):
-    """Minimize the quadratic trust-region subproblem via Conjugate Gradient.
+    """Minimize the quadratic subproblem via (standard) conjugate gradient.
+
+    Solve the trust-region quadratic subproblem:
+      min_x   g.T @ x + 0.5 * x.T @ H @ x
+        s.t.   ||x|| <= trustregion_radius
+
+    approximately, where g denotes the gradient and H the hessian of the quadratic
+    model (i.e. the linear terms and square_terms), respectively.
 
     Args:
-        model_gradient (np.ndarray): Gradient of the quadratic model. Shape (n,).
-        model_hessian (np.ndarray): Hessian of the quadratic model. Shape (n, n).
+        model_gradient (np.ndarray): 1d array of shape (n,) containing the
+            gradient (i.e. linear terms) of the quadratic model.
+        model_hessian (np.ndarray): 2d array of shape (n, n) containing the
+            hessian (i.e .square terms) of the quadratic model.
         trustregion_radius (float): Radius of the trust-region.
         gtol_abs (float): Convergence tolerance for the absolute gradient norm.
         gtol_rel (float): Convergence tolerance for the relative gradient norm.
 
     Returns:
-        (np.ndarray): Solution vector of shape (n,).
+        np.ndarray: Solution vector of shape (n,).
     """
     n = len(model_gradient)
-    maxiter = n * 2
+    max_iter = n * 2
     x_candidate = np.zeros(n)
 
     residual = model_gradient
@@ -27,18 +36,18 @@ def minimize_trust_conjugate_gradient(
     gradient_norm = np.linalg.norm(residual)
     stop_tol = max(gtol_abs, gtol_rel * gradient_norm)
 
-    for _niter in range(maxiter):
+    for _ in range(max_iter):
 
         if gradient_norm <= stop_tol:
             break
 
-        square_terms = np.dot(np.dot(direction, model_hessian), direction)
+        square_terms = direction.T @ model_hessian @ direction
 
         distance_to_boundary = _get_distance_to_trustregion_boundary(
             x_candidate, direction, trustregion_radius
         )
 
-        step_size = np.dot(residual, residual) / square_terms
+        step_size = (residual @ residual) / square_terms
 
         if square_terms <= 0 or step_size > distance_to_boundary:
             x_candidate = x_candidate + distance_to_boundary * direction
@@ -74,9 +83,9 @@ def _update_vectors_for_next_iteration(
     residual_old = residual
 
     x_candidate = x_candidate + alpha * direction
-    residual = residual_old + alpha * np.dot(hessian, direction)
+    residual = residual_old + alpha * (hessian @ direction)
 
-    beta = np.dot(residual, residual) / np.dot(residual_old, residual_old)
+    beta = (residual @ residual) / (residual_old @ residual_old)
     direction = -residual + beta * direction
 
     return x_candidate, residual, direction
@@ -87,9 +96,9 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
 
     The positive distance sigma is defined in Eculidean norm, as follows:
 
-        `|| c + sigma * d || = radius`
+        || x + sigma * d || = radius
 
-    where `c` denotes the candidate vector, and `d` the direction vector.
+    where x denotes the candidate vector, and d the direction vector.
 
     Args:
         candidate(np.ndarray): Candidate vector of shape (n,).
@@ -97,12 +106,12 @@ def _get_distance_to_trustregion_boundary(candidate, direction, radius):
         radius (floar): Radius of the trust-region
 
     Returns:
-        (float) Distance of the candidate vector to the trustregion
+        float: The candidate vector's distance to the trustregion
             boundary.
     """
-    cc = np.dot(candidate, candidate)
-    cd = np.dot(candidate, direction)
-    dd = np.dot(direction, direction)
+    cc = candidate @ candidate
+    cd = candidate @ direction
+    dd = direction @ direction
 
     sigma = -cd + np.sqrt(cd * cd + dd * (radius**2 - cc))
     sigma /= dd

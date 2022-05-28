@@ -1,32 +1,49 @@
 """Auxiliary functions for the pounders algorithm."""
-from collections import namedtuple
-from copy import copy
+from typing import NamedTuple
+from typing import Union
 
 import numpy as np
-from estimagic.optimization.quadratic_subsolvers import minimize_bntr_quadratic
-from estimagic.optimization.quadratic_subsolvers import minimize_gqtpar_quadratic
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    minimize_bntr_quadratic,
+)
+from estimagic.optimization.subsolvers.quadratic_subsolvers import (
+    minimize_gqtpar_quadratic,
+)
 from scipy.linalg import qr_multiply
+
+
+class ResidualModel(NamedTuple):
+    intercepts: Union[np.ndarray, None] = None  # shape (n_residuals,)
+    linear_terms: Union[np.ndarray, None] = None  # shape (n_residuals, n_params)
+    square_terms: Union[
+        np.ndarray, None
+    ] = None  # shape (n_residuals, n_params, n_params)
+
+
+class MainModel(NamedTuple):
+    linear_terms: Union[np.ndarray, None] = None  # shape (n_params,)
+    square_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
 
 def create_initial_residual_model(history, accepted_index, delta):
     """Update linear and square terms of the initial residual model.
 
     Args:
+        history (class): Class storing history of xs, residuals, and critvals.
+        accepted_index (int): Index in history pointing to the currently
+            accepted candidate vector.
+        delta (float): Trust-region radius.
 
     Returns:
-        residual_model (namedtuple): Named tuple containing the parameters of
-            the residual model with update "linear_terms" and "square_terms".
+        NamedTuple: NamedTuple containing the parameters of the residual model
+            with updated ``linear_terms`` and ``square_terms``.
     """
-    ResidualModel = namedtuple(
-        "ResidualModel", ["intercepts", "linear_terms", "square_terms"]
-    )
-
     center_info = {
         "x": history.get_best_x(),
         "residuals": history.get_best_residuals(),
         "radius": delta,
     }
-    n = center_info["x"].shape[0]
+    n = len(center_info["x"])
     n_obs = center_info["residuals"].shape[0]
 
     indices_not_min = [i for i in range(n + 1) if i != accepted_index]
@@ -52,16 +69,16 @@ def update_residual_model(residual_model, coefficients_to_add, delta, delta_old)
     """Update linear and square terms of the residual model.
 
     Args:
-        residual_model (namedtuple): Named tuple containing the parameters of
-            residual model, i.e. "intercepts", "linear_terms", and "square terms".
+        residual_model (NamedTuple): NamedTuple containing the parameters of
+            residual model, i.e. ``intercepts``, ``linear_terms``, and ``square terms``.
         coefficients_to_add (dict): Coefficients used for updating the
             parameters of the residual model.
         delta (float): Trust region radius of the current iteration.
         delta_old (float): Trust region radius of the previous iteration.
 
     Returns:
-        residual_model_updated (namedtuple): Named tuple containing the parameters of
-            the residual model with update "linear_terms" and "square_terms".
+        NamedTuple: NamedTuple containing the parameters of the residual model
+            with update ``linear_terms`` and ``square_terms``.
     """
     linear_terms_new = (
         coefficients_to_add["linear_terms"]
@@ -86,18 +103,16 @@ def create_main_from_residual_model(
     """Update linear and square terms of the main model via the residual model.
 
     Args:
-        residual_model (namedtuple): Named tuple containing the parameters of
-            residual model, i.e. "intercepts", "linear_terms", and "square terms".
+        residual_model (NamedTuple): NamedTuple containing the parameters of
+            residual model, i.e. "intercepts", ``linear_terms``, and "square terms".
         multiply_square_terms_with_residuals (bool): Indicator whether we
             multiply the main model's "square terms" with residuals, i.e.
             the intercepts of the residual model.
 
     Returns:
-        (namedtuple): Named tuple containing the updated parameters of the
-            main model, i.e. "linear_terms" and "square terms".
+        NamedTuple: NamedTuple containing the updated parameters of the
+            main model, i.e. ``linear_terms`` and ``square terms``.
     """
-    MainModel = namedtuple("MainModel", ["linear_terms", "square_terms"])
-
     linear_terms_main_model = np.dot(
         residual_model.linear_terms, residual_model.intercepts
     )
@@ -128,13 +143,13 @@ def update_main_model_with_new_accepted_x(main_model, x_candidate):
     """Use accepted candidate to update the linear terms of the residual model.
 
     Args:
-         main_model (namedtuple): Named tuple containing the parameters of the
-            main model, i.e. "linear_terms" and "square terms".
+         main_model (NamedTuple): NamedTuple containing the parameters of the
+            main model, i.e. ``linear_terms`` and ``square terms``.
         x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
 
     Returns:
-        main_model_updated (namedtuple): Named tuple containing the parameters of the
-            main model with updated "linear_terms".
+        NamedTuple: NamedTuple containing the parameters of the main model
+            with updated ``linear_terms``.
     """
     linear_terms_new = main_model.linear_terms + np.dot(
         main_model.square_terms, x_candidate
@@ -148,14 +163,14 @@ def update_residual_model_with_new_accepted_x(residual_model, x_candidate):
     """Use accepted candidate to update residual model.
 
     Args:
-        residual_model (namedtuple): Named tuple containing the parameters of
-            the residual model, i.e. "intercepts", "linear_terms", and
-            "square terms".
+        residual_model (NamedTuple): NamedTuple containing the parameters of
+            the residual model, i.e. ``intercepts``, ``linear_terms``, and
+            ``square terms``.
         x_candidate (np.ndarray): Vector of centered x candidates of shape (n,).
 
     Returns:
-        (namedtuple): Named tuple containing the parameters of the residual model
-            with updated  "intercepts" and "linear_terms".
+        NamedTuple: NamedTuple containing the parameters of the residual model
+            with updated ``intercepts`` and ``linear_terms``.
     """
     intercepts_new = (
         residual_model.intercepts
@@ -180,6 +195,7 @@ def solve_subproblem(
     delta,
     solver,
     *,
+    conjugate_gradient_method,
     maxiter,
     maxiter_gradient_descent,
     gtol_abs,
@@ -195,44 +211,42 @@ def solve_subproblem(
     Args:
         x_accepted (np.ndarray): Currently accepted candidate vector of shape (n,).
         delta (float): Current trust region radius.
-        main_model (namedtuple): Named tuple containing the parameters of the
-            main model, i.e. "linear_terms" and "square terms".
-        lower_bounds (np.ndarray): Lower bounds for the subproblem.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to -1 if not provided by the user.
-        upper_bounds (np.ndarray): Upper bounds for the subproblem.
-            Must have same length as the initial guess of the
-            parameter vector. Equal to 1 if not provided by the user.
+        main_model (NamedTuple): NamedTuple containing the parameters of the
+            main model, i.e. ``linear_terms`` and ``square terms``.
+        lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
+            for the parameter vector x.
+        upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
+            for the parameter vector x.
         delta (float) Current trust-region radius
-        solver (str): Minimizer that will be used to solve the quadratic subproblem.
-            Currently, two interal solvers are supported
-            - "bntr" (Bounded Newton Trust-Region), which supports bound constraints
-            - "gqtpar" (Nearly exact trust-region solver using an iterative method),
-                which does not support bound constraints.
         solver (str): Trust-region subsolver to use. Currently, two internal solvers
             are supported:
-            - "BNTR" (default, supports bound constraints)
-            - "GQTPAR (does not support bound constraints)
+            - "bntr" (default, supports bound constraints)
+            - "gqtpar" (does not support bound constraints)
+        conjugate_gradient_method (str): Method for computing the conjugate gradient
+            step. Available conjugate gradient methods are:
+                - "cg"
+                - "steihaug_toint"
+                - "trsbox" (default)
         maxiter (int): Maximum number of iterations to perform when solving the
             trust-region subproblem.
         maxiter_gradient_descent (int): Maximum number of gradient descent iterations
-            to perform when the trust-region subsolver BNTR is used.
+            to perform when the trust-region subsolver "bntr" is used.
         gtol_abs (float): Convergence tolerance for the absolute gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_rel (float): Convergence tolerance for the relative gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_scaled (float): Convergence tolerance for the scaled gradient norm
-            in the trust-region subproblem ("BNTR").
+            in the trust-region subproblem ("bntr").
         gtol_abs_conjugate_gradient (float): Convergence tolerance for the absolute
             gradient norm in the conjugate gradient step of the trust-region
-            subproblem ("BNTR").
+            subproblem ("bntr").
         gtol_rel_conjugate_gradient (float): Convergence tolerance for the relative
             gradient norm in the conjugate gradient step of the trust-region
-            subproblem ("BNTR").
+            subproblem ("bntr").
         k_easy (float): topping criterion for the "easy" case in the trust-region
-            subproblem ("GQTPAR").
+            subproblem ("gqtpar").
         k_hard (float): Stopping criterion for the "hard" case in the trust-region
-            subproblem ("GQTPAR").
+            subproblem ("gqtpar").
 
     Returns:
         (dict): Result dictionary containing the followng keys:
@@ -269,6 +283,7 @@ def solve_subproblem(
 
     if solver == "bntr":
         options = {
+            "conjugate_gradient_method": conjugate_gradient_method,
             "maxiter": maxiter,
             "maxiter_gradient_descent": maxiter_gradient_descent,
             "gtol_abs": gtol_abs,
@@ -288,7 +303,9 @@ def solve_subproblem(
             maxiter=maxiter,
         )
     else:
-        raise ValueError("Subproblem solver is not supported.")
+        raise ValueError(
+            "Invalid subproblem solver: {solver}. Must be one of bntr, gqtpar."
+        )
 
     # Test bounds post-solution
     if np.max(lower_bounds - result["x"]) > 1e-5:
@@ -387,8 +404,8 @@ def add_geomtery_points_to_make_main_model_fully_linear(
 
     Args:
         history (class): Class storing history of xs, residuals, and critvals.
-        main_model (namedtuple): Named tuple containing the parameters of the
-            main model, i.e. "linear_terms" and "square terms".
+        main_model (NamedTuple): NamedTuple containing the parameters of the
+            main model, i.e. ``linear_terms`` and "square terms".
         model_improving_points (np.ndarray): Array of shape (n, n) including
             points to improve the main model.
         model_indices (np.ndarray): Indices of the candidates of x that are
@@ -449,28 +466,6 @@ def add_geomtery_points_to_make_main_model_fully_linear(
     history.add_entries(x_candidates_list, criterion_candidates_list)
 
     return history, model_indices
-
-
-def update_trustregion_radius(
-    result_subproblem,
-    rho,
-    model_is_valid,
-    delta,
-    delta_min,
-    delta_max,
-    eta1,
-    gamma0,
-    gamma1,
-):
-    """Update the trust-region radius."""
-    norm_x_sub = np.sqrt(np.sum(result_subproblem["x"] ** 2))
-
-    if rho >= eta1 and norm_x_sub > 0.5 * delta:
-        delta = min(delta * gamma1, delta_max)
-    elif model_is_valid is True:
-        delta = max(delta * gamma0, delta_min)
-
-    return delta
 
 
 def get_interpolation_matrices_residual_model(
@@ -623,15 +618,15 @@ def interpolate_residual_model(
         history (class): Class storing history of xs, residuals, and critvals.
         x_sample (np.ndarray): Vector of centered x sample that makes up the
             interpolation set. Shape (maxinterp, n).
-        residual_model (namedtuple): Named tuple containing the parameters of
-            residual model, i.e. "intercepts", "linear_terms", and "square terms".
+        residual_model (NamedTuple): NamedTuple containing the parameters of
+            residual model, i.e. ``intercepts``, ``linear_terms``, and ``square terms``.
         model_indices (np.ndarray): Indices of the candidates of x that are
             currently in the model. Shape (2 *n* + 1,).
         n_modelpoints (int): Current number of model points.
 
     Returns:
-        (np.ndarray): Interpolated residual model.
-            Array of shape (n_maxinterp, n_obs).
+        np.ndarray: Interpolated residual model. Array of shape
+            (n_maxinterp, n_obs).
     """
     n_obs = history.get_residuals(index=-1).shape[0]
     residual_model_interpolated = np.zeros((n_maxinterp, n_obs), dtype=np.float64)
@@ -683,7 +678,7 @@ def get_coefficients_residual_model(
         n_modelpoints (int): Current number of model points.
 
     Returns:
-        (dict): Coefficients for updating the "linear_terms" and "square_terms"
+        dict: Coefficients for updating the ``linear_terms`` and "square_terms"
             of the residual model.
     """
     n = x_sample_monomial_basis.shape[1] - 1
@@ -736,6 +731,28 @@ def get_coefficients_residual_model(
     return coefficients_to_add
 
 
+def update_trustregion_radius(
+    result_subproblem,
+    rho,
+    model_is_valid,
+    delta,
+    delta_min,
+    delta_max,
+    eta1,
+    gamma0,
+    gamma1,
+):
+    """Update the trust-region radius."""
+    norm_x_sub = np.sqrt(np.sum(result_subproblem["x"] ** 2))
+
+    if rho >= eta1 and norm_x_sub > 0.5 * delta:
+        delta = min(delta * gamma1, delta_max)
+    elif model_is_valid is True:
+        delta = max(delta * gamma0, delta_min)
+
+    return delta
+
+
 def get_last_model_indices_and_check_for_repeated_model(
     model_indices, last_model_indices, n_modelpoints, n_last_modelpoints
 ):
@@ -753,7 +770,7 @@ def get_last_model_indices_and_check_for_repeated_model(
                 same_model_used = False
         last_model_indices[i] = model_indices[i]
 
-    n_last_modelpoints = copy(n_modelpoints)
+    n_last_modelpoints = n_modelpoints
 
     return last_model_indices, n_last_modelpoints, same_model_used
 
@@ -777,7 +794,7 @@ def _get_monomial_basis(x):
         x (np.ndarray): Parameter vector of shape (n,).
 
     Returns:
-        (np.ndarray): Monomial basis of x wof shape (n * (n + 1) / 2,).
+        np.ndarray: Monomial basis of x wof shape (n * (n + 1) / 2,).
     """
     n = len(x)
     monomial_basis = np.zeros(int(n * (n + 1) / 2))
