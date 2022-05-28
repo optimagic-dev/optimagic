@@ -48,11 +48,14 @@ def run_multistart_optimization(
             x=x,
             lower=lower_sampling_bounds,
             upper=upper_sampling_bounds,
-            n_samples=options["n_samples"],
+            # -1 because we add start parameters
+            n_samples=options["n_samples"] - 1,
             sampling_distribution=options["sampling_distribution"],
             sampling_method=options["sampling_method"],
             seed=options["seed"],
         )
+
+        sample = np.vstack([x.reshape(1, -1), sample])
 
     if logging:
         update_step_status(
