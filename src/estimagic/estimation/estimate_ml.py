@@ -28,8 +28,6 @@ def estimate_ml(
     logging=False,
     log_options=None,
     loglike_kwargs=None,
-    loglike_and_derivative=None,
-    loglike_and_derivative_kwargs=None,
     numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
@@ -66,11 +64,10 @@ def estimate_ml(
             or list containing these elements. See :ref:`params` for examples.
         optimize_options (dict, str or False): Keyword arguments that govern the
             numerical optimization. Valid entries are all arguments of
-            :func:`~estimagic.optimization.optimize.minimize` except for criterion,
-            criterion_and_derivative and params. If you pass False as
-            optimize_options you signal that ``params`` are already the optimal
-            parameters and no numerical optimization is needed. If you pass a str as
-            optimize_options it is used as the ``algorithm`` option.
+            :func:`~estimagic.optimization.optimize.minimize` except for criterion. If
+            you pass False as optimize_options you signal that ``params`` are already
+            the optimal parameters and no numerical optimization is needed. If you pass
+            a str as optimize_options it is used as the ``algorithm`` option.
         lower_bounds (pytree): A pytree with the same structure as params with lower
             bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
             bound.
@@ -94,11 +91,6 @@ def estimate_ml(
             - "if_database_exists": (str): One of "extend", "replace", "raise". What to
             do if the database we want to write to already exists. Default "extend".
         loglike_kwargs (dict): Additional keyword arguments for loglike.
-        loglike_and_derivative (callable): Return a tuple consisting of the result
-            of loglike and the result of derivative. Only use this if you can exploit
-            synergies in the calculation of loglike and derivative.
-        loglike_and_derivative_kwargs (dict): Additional keyword arguments for
-            loglike_and_derivative.
         numdiff_options (dict): Keyword arguments for the calculation of numerical
             derivatives for the calculation of standard errors. See
             :ref:`first_derivative` for details.
@@ -184,8 +176,6 @@ def estimate_ml(
             lower_bounds=lower_bounds,
             upper_bounds=upper_bounds,
             constraints=constraints,
-            criterion_and_derivative=loglike_and_derivative,
-            criterion_and_derivative_kwargs=loglike_and_derivative_kwargs,
             logging=logging,
             log_options=log_options,
             **optimize_options,

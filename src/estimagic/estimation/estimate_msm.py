@@ -34,8 +34,6 @@ def estimate_msm(
     logging=False,
     log_options=None,
     simulate_moments_kwargs=None,
-    simulate_moments_and_jacobian=None,
-    simulate_moments_and_jacobian_kwargs=None,
     weights="diagonal",
     numdiff_options=None,
     jacobian=None,
@@ -76,11 +74,10 @@ def estimate_msm(
             or list containing these elements. See :ref:`params` for examples.
         optimize_options (dict, str or False): Keyword arguments that govern the
             numerical optimization. Valid entries are all arguments of
-            :func:`~estimagic.optimization.optimize.minimize` except for criterion,
-            criterion_and_derivative and params. If you pass False as
-            optimize_options you signal that ``params`` are already the optimal
-            parameters and no numerical optimization is needed. If you pass a str as
-            optimize_options it is used as the ``algorithm`` option.
+            :func:`~estimagic.optimization.optimize.minimize` except for criterion.  If
+            you pass False as optimize_options you signal that ``params`` are already
+            the optimal parameters and no numerical optimization is needed. If you pass
+            a str as optimize_options it is used as the ``algorithm`` option.
         lower_bounds (pytree): A pytree with the same structure as params with lower
             bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
             bound.
@@ -88,11 +85,6 @@ def estimate_msm(
             no upper bound.
         simulate_moments_kwargs (dict): Additional keyword arguments for
             ``simulate_moments``.
-        simulate_moments_and_jacobian (callable): A function that takes params and
-            potentially other keyword arguments and returns a tuple with simulated
-            moments and the jacobian of simulated moments with respect to params.
-        simulate_moments_and_jacobian_kwargs (dict): Additional keyword arguments for
-            simulate_moments_and_jacobian.
         weights (str or pandas.DataFrame): Either a DataFrame with a positive
             semi-definite weighting matrix or a string that specifies one of the
             pre-implemented weighting matrices: "diagonal" (default), "identity" or
@@ -179,8 +171,6 @@ def estimate_msm(
     constraints = [] if constraints is None else constraints
     jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
     simulate_moments_kwargs = {} if simulate_moments_kwargs is None else {}
-    if simulate_moments_and_jacobian_kwargs is None:
-        simulate_moments_and_jacobian_kwargs = {}
 
     # ==================================================================================
     # Calculate estimates via minimization (if necessary)
@@ -196,8 +186,6 @@ def estimate_msm(
             simulate_moments_kwargs=simulate_moments_kwargs,
             jacobian=jacobian,
             jacobian_kwargs=jacobian_kwargs,
-            simulate_moments_and_jacobian=simulate_moments_and_jacobian,
-            simulate_moments_and_jacobian_kwargs=simulate_moments_and_jacobian_kwargs,
         )
 
         opt_res = minimize(
@@ -381,8 +369,6 @@ def get_msm_optimization_functions(
     simulate_moments_kwargs=None,
     jacobian=None,
     jacobian_kwargs=None,
-    simulate_moments_and_jacobian=None,
-    simulate_moments_and_jacobian_kwargs=None,
 ):
     """Construct criterion functions and their derivatives for msm estimation.
 
@@ -403,11 +389,6 @@ def get_msm_optimization_functions(
             a pandas.DataFrame with the jacobian at the optimal parameters. This is
             only possible if you pass ``optimize_options=False``.
         jacobian_kwargs (dict): Additional keyword arguments for jacobian.
-        simulate_moments_and_jacobian (callable): A function that takes params and
-            potentially other keyword arguments and returns a tuple with simulated
-            moments and the jacobian of simulated moments with respect to params.
-        simulate_moments_and_jacobian_kwargs (dict): Additional keyword arguments for
-            simulate_moments_and_jacobian.
 
     Returns:
         dict: Dictionary containing at least the entry "criterion". If enough inputs
@@ -418,9 +399,6 @@ def get_msm_optimization_functions(
     """
     _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
     _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
-    _simulate_moments_and_jacobian = _partial_kwargs(
-        simulate_moments_and_jacobian, simulate_moments_and_jacobian_kwargs
-    )
 
     criterion = functools.partial(
         _msm_criterion,
@@ -432,11 +410,6 @@ def get_msm_optimization_functions(
     out = {"criterion": criterion}
 
     if _jacobian is not None:
-        raise NotImplementedError(
-            "Closed form jacobians are not yet supported in estimate_msm"
-        )
-
-    if _simulate_moments_and_jacobian is not None:
         raise NotImplementedError(
             "Closed form jacobians are not yet supported in estimate_msm"
         )

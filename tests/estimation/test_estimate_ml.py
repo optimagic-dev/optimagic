@@ -45,21 +45,24 @@ def logit_loglike_and_derivative(params, y, x):
 
 
 test_cases = itertools.product(
-    [{"algorithm": "scipy_lbfgsb"}, "scipy_lbfgsb"],  # optimize_options
-    [None, logit_loglike_and_derivative],  # loglike_and_derivative
+    [
+        {"algorithm": "scipy_lbfgsb"},
+        "scipy_lbfgsb",
+        {
+            "algorithm": "scipy_lbfgsb",
+            "criterion_and_derivative": logit_loglike_and_derivative,
+        },
+    ],  # optimize_options
     [None, logit_jacobian, False],  # jacobian
     [None, logit_hessian, False],  # hessian
 )
 
 
-@pytest.mark.parametrize(
-    "optimize_options, loglike_and_derivative, jacobian, hessian", test_cases
-)
+@pytest.mark.parametrize("optimize_options, jacobian, hessian", test_cases)
 def test_estimate_ml_with_logit_no_constraints(
     fitted_logit_model,
     logit_inputs,
     optimize_options,
-    loglike_and_derivative,
     jacobian,
     hessian,
 ):
@@ -77,6 +80,9 @@ def test_estimate_ml_with_logit_no_constraints(
 
     kwargs = {"y": logit_inputs["y"], "x": logit_inputs["x"]}
 
+    if "criterion_and_derivative" in optimize_options:
+        optimize_options["criterion_and_derivative_kwargs"] = kwargs
+
     got = estimate_ml(
         loglike=logit_loglike,
         params=logit_inputs["params"],
@@ -86,8 +92,6 @@ def test_estimate_ml_with_logit_no_constraints(
         jacobian_kwargs=kwargs,
         hessian=hessian,
         hessian_kwargs=kwargs,
-        loglike_and_derivative=loglike_and_derivative,
-        loglike_and_derivative_kwargs=kwargs,
     )
 
     # ==================================================================================
