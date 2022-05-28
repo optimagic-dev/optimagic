@@ -14,8 +14,10 @@ from estimagic.dashboard.plot_functions import plot_time_series
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.read_log import read_start_params
+from estimagic.parameters.tree_registry import get_registry
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
+from pybaum import tree_just_flatten
 
 
 def dashboard_app(
@@ -46,7 +48,26 @@ def dashboard_app(
     database = load_database(path=session_data["database_path"])
     start_point = _calculate_start_point(database, updating_options)
     session_data["last_retrieved"] = start_point
-    start_params = read_start_params(path_or_database=database)
+
+    # build start_params DataFrame
+    registry = get_registry(extended=True)
+    start_param_values = read_start_params(path_or_database=database)
+    flat_param_values = tree_just_flatten(tree=start_param_values, registry=registry)
+
+    optimization_problem = read_last_rows(
+        database=database,
+        table_name="optimization_problem",
+        n_rows=1,
+        return_type="dict_of_lists",
+    )
+    start_params = pd.DataFrame(
+        {
+            "name": optimization_problem["flat_params_names"][0][0],
+            "group": optimization_problem["flat_params_groups"][0],
+            "value": flat_param_values,
+        }
+    )
+
     start_params["id"] = _create_id_column(start_params)
     group_to_param_ids = _map_group_to_other_column(start_params, "id")
     group_to_param_names = _map_group_to_other_column(start_params, "name")

@@ -79,13 +79,13 @@ def read_optimization_iteration(path_or_database, iteration, include_internals=F
 
 
 def read_start_params(path_or_database):
-    """Load the start parameters DataFrame.
+    """Load the start parameters.
 
     Args:
         path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
 
     Returns:
-        params (pd.DataFrame): see :ref:`params`.
+        params: see :ref:`params`.
 
     """
     database = load_database(**_process_path_or_database(path_or_database))
