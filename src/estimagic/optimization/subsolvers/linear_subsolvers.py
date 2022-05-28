@@ -1,5 +1,13 @@
 """Collection of linear trust-region subsolvers."""
+from typing import NamedTuple
+from typing import Union
+
 import numpy as np
+
+
+class LinearModel(NamedTuple):
+    intercept: Union[float, None] = None
+    linear_terms: Union[np.ndarray, None] = None  # shape (n_params, n_params)
 
 
 def minimize_trsbox_linear(
@@ -20,8 +28,11 @@ def minimize_trsbox_linear(
     optimization without derivatives." (cite:`Powell2009`).
 
     Args:
-        linear_model (namedtuple): Named tuple containing the parameters of the
-            linear model, i.e. ``linear_terms``, which is a np.ndarray of shape (n,).
+        linear_model (NamedTuple): Named tuple containing the parameters of the
+            linear model, i.e.:
+            - ``intercept`` (float): Intercept of the linear model.
+            - ``linear_terms`` (np.ndarray): 1d array of shape (n,) with the linear
+            terms of the mdoel.
         lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
             for the parameter vector x.
         upper_bounds (np.ndarray): 1d array of shape (n,) with upper bounds
@@ -44,13 +55,12 @@ def minimize_trsbox_linear(
     direction = -model_gradient
 
     indices_inactive_directions = np.where(np.abs(direction) < zero_treshold)[0]
-    direction[indices_inactive_directions] = 0.0
+    direction[indices_inactive_directions] = 0
 
     active_directions = np.setdiff1d(np.arange(n), indices_inactive_directions)
     set_active_directions = iter(active_directions)
 
     for _ in range(n):
-
         if np.linalg.norm(direction) < zero_treshold:
             break
 
@@ -112,9 +122,9 @@ def improve_geomtery_trsbox_linear(
     Args:
         x_center (np.ndarray): 1d array of shape (n,) containing the center of the
             parameter vector.
-        linear_model (namedtuple): Named tuple containing the parameters of the
+        linear_model (NamedTuple): Named tuple containing the parameters of the
             linear model that form the Lagrange polynomial, including:
-            - ``constant_term`` (float): Constant term of the linear model.
+            - ``intercept`` (float): Intercept of the linear model.
             - ``linear_terms`` (np.ndarray): 1d array of shape (n,) with the linear
             terms of the mdoel.
         lower_bounds (np.ndarray): 1d array of shape (n,) with lower bounds
@@ -126,7 +136,7 @@ def improve_geomtery_trsbox_linear(
             Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
-        (np.ndarray): Solution vector of shape (n,) that maximizes the Lagrange
+        np.ndarray: Solution vector of shape (n,) that maximizes the Lagrange
             polynomial.
     """
     if np.any(lower_bounds > x_center + zero_treshold):
@@ -156,7 +166,7 @@ def improve_geomtery_trsbox_linear(
     )
 
     lagrange_polynomial = lambda x: abs(
-        linear_model.constant_term + np.dot(linear_model.linear_terms, x)
+        linear_model.intercept + linear_model.linear_terms.T @ x
     )
 
     if lagrange_polynomial(x_candidate_min) >= lagrange_polynomial(x_candidate_max):
@@ -190,7 +200,7 @@ def _find_next_active_bound(
             directions, i.e. directions that are not zero.
 
     Returns:
-        (tuple):
+        Tuple:
             - active_bound (float or None): The next active bound. It can be a lower
                 or active bound. If None, there are no more active bounds left in the
                 set of active search directions.
@@ -231,7 +241,7 @@ def _take_constrained_step_up_to_boundary(
             has been found.
 
     Returns:
-        (tuple):
+        Tuple:
         - x_candidate (np.ndarray): New candidate vector of shape (n,).
         - direction (np.ndarray): New direction vector of shape (n,), where the
             search direction of the active_bound has been set to zero.
@@ -244,7 +254,7 @@ def _take_constrained_step_up_to_boundary(
     x_candidate[index_bound_active] = active_bound
 
     # Do not search in this direction anymore
-    direction[index_bound_active] = 0.0
+    direction[index_bound_active] = 0
 
     return x_candidate, direction
 
@@ -262,7 +272,7 @@ def _take_unconstrained_step_up_to_boundary(
             Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
-        (np.ndarray): Updated, unconstrained candidate vector of shape (n,).
+        np.ndarray: Updated, unconstrained candidate vector of shape (n,).
     """
     step_size_unconstr = _get_distance_to_trustregion_boundary(
         x_candidate, direction, trustregion_radius, zero_treshold
@@ -298,11 +308,11 @@ def _get_distance_to_trustregion_boundary(
             Numbers smaller than this are considered zero up to machine precision.
 
     Returns:
-        (float) Distance between the candidate vector and the trust-region boundary.
+        float: Distance between the candidate vector and the trust-region boundary.
     """
-    g_dot_x = np.dot(direction, x)
-    g_sumsq = np.dot(direction, direction)
-    x_sumsq = np.dot(x, x)
+    g_dot_x = direction.T @ x
+    g_sumsq = direction @ direction
+    x_sumsq = x @ x
 
     l2_norm = np.sqrt(g_sumsq)
 
