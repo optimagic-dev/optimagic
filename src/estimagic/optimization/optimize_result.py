@@ -66,10 +66,13 @@ class OptimizeResult:
         else:
             message = None
 
-        improvement = (
-            f"The value of criterion improved from {self.start_criterion} to "
-            "{self.criterion}."
-        )
+        if self.start_criterion is not None and self.criterion is not None:
+            improvement = (
+                f"The value of criterion improved from {self.start_criterion} to "
+                "{self.criterion}."
+            )
+        else:
+            improvement = None
 
         if self.convergence_report is not None:
             convergence = _format_convergence_report(

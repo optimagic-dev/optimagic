@@ -22,7 +22,7 @@ def process_internal_optimizer_result(
     multistart_info = res.get("multistart_info")
 
     if isinstance(res, str):
-        res = _dummy_result_from_traceback(res)
+        res = _dummy_result_from_traceback(res, fixed_kwargs)
     else:
         res = _process_one_result(
             res, converter, primary_key, fixed_kwargs, skip_checks
@@ -133,22 +133,12 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_ch
     return out
 
 
-def _dummy_result_from_traceback(candidate):
-    if isinstance(candidate, str):
-        out = {
-            "solution_params": None,
-            "solution_criterion": None,
-            "solution_derivative": None,
-            "solution_hessian": None,
-            "n_criterion_evaluations": None,
-            "n_derivative_evaluations": None,
-            "n_iterations": None,
-            "success": False,
-            "reached_convergence_criterion": None,
-            "message": candidate,
-        }
-    else:
-        out = candidate
+def _dummy_result_from_traceback(candidate, fixed_kwargs):
+    out = OptimizeResult(
+        params=None,
+        criterion=None,
+        **fixed_kwargs,
+    )
     return out
 
 
