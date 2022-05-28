@@ -13,7 +13,7 @@ def test_get_convergence_report_minimize():
 
     calculated = pd.DataFrame.from_dict(get_convergence_report(hist, "minimize"))
 
-    expected = np.array([[0.025, 0.25], [0.05, 1.05], [0.1, 1], [0.1, 2.1]])
+    expected = np.array([[0.025, 0.25], [0.05, 1.0], [0.1, 1], [0.1, 2.0]])
     aaae(calculated.to_numpy(), expected)
 
 
@@ -26,7 +26,7 @@ def test_get_convergence_report_maximize():
 
     calculated = pd.DataFrame.from_dict(get_convergence_report(hist, "maximize"))
 
-    expected = np.array([[0.025, 0.25], [0.05, 1.05], [0.1, 1], [0.1, 2.1]])
+    expected = np.array([[0.025, 0.25], [0.05, 1.0], [0.1, 1], [0.1, 2.0]])
     aaae(calculated.to_numpy(), expected)
 
 
