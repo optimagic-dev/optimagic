@@ -629,8 +629,11 @@ def _optimize(
     # initialize the log database
     # ==================================================================================
     if logging:
+        # @Janos: Is this a tuple on purpose?
         problem_data["flat_params_names"] = (internal_params.names,)
-        problem_data["flat_params_groups"] = get_params_groups(internal_params)
+        problem_data["flat_params_groups"] = get_params_groups(
+            params=params, flat_params=internal_params
+        )
 
         database = _create_and_initialize_database(logging, log_options, problem_data)
         db_kwargs = {
