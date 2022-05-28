@@ -771,6 +771,7 @@ def _optimize(
         converter=converter,
         primary_key=algo_info.primary_criterion_entry,
         fixed_kwargs=fixed_result_kwargs,
+        skip_checks=skip_checks,
     )
 
     return res

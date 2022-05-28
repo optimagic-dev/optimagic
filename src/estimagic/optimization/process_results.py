@@ -9,6 +9,7 @@ def process_internal_optimizer_result(
     converter,
     primary_key,
     fixed_kwargs,
+    skip_checks,
 ):
     """Process results of internal optimizers.
 
@@ -23,7 +24,9 @@ def process_internal_optimizer_result(
     if isinstance(res, str):
         res = _dummy_result_from_traceback(res)
     else:
-        res = _process_one_result(res, converter, primary_key, fixed_kwargs)
+        res = _process_one_result(
+            res, converter, primary_key, fixed_kwargs, skip_checks
+        )
 
         if is_multistart:
             res.multistart_info = _process_multistart_info(
@@ -31,11 +34,12 @@ def process_internal_optimizer_result(
                 converter,
                 primary_key,
                 fixed_kwargs=fixed_kwargs,
+                skip_checks=skip_checks,
             )
     return res
 
 
-def _process_one_result(res, converter, primary_key, fixed_kwargs):
+def _process_one_result(res, converter, primary_key, fixed_kwargs, skip_checks):
     _params = converter.params_from_internal(res["solution_x"])
     if np.isscalar(res["solution_criterion"]):
         _criterion = float(res["solution_criterion"])
@@ -66,7 +70,7 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs):
         if key not in optional_entries + ["solution_x", "solution_criterion"]:
             algo_output[key] = res[key]
 
-    if "history" in res:
+    if "history" in res and not skip_checks:
         conv_report = get_convergence_report(
             history=res["history"],
             direction=fixed_kwargs["direction"],
@@ -88,7 +92,7 @@ def _process_one_result(res, converter, primary_key, fixed_kwargs):
     return out
 
 
-def _process_multistart_info(info, converter, primary_key, fixed_kwargs):
+def _process_multistart_info(info, converter, primary_key, fixed_kwargs, skip_checks):
 
     direction = fixed_kwargs["direction"]
 
@@ -105,6 +109,7 @@ def _process_multistart_info(info, converter, primary_key, fixed_kwargs):
             converter=converter,
             primary_key=primary_key,
             fixed_kwargs=kwargs,
+            skip_checks=skip_checks,
         )
         optima.append(processed)
 
