@@ -177,7 +177,7 @@ def estimate_msm(
     # ==================================================================================
 
     if is_optimized:
-        opt_res = {"solution_params": params}
+        estimates = params
     else:
         funcs = get_msm_optimization_functions(
             simulate_moments=simulate_moments,
@@ -199,7 +199,7 @@ def estimate_msm(
             **optimize_options,
         )
 
-    estimates = opt_res["solution_params"]
+        estimates = opt_res.params
 
     # ==================================================================================
     # do first function evaluations

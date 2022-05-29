@@ -46,12 +46,12 @@ def test_algorithm_on_sum_of_squares(algorithm):
         criterion=sos,
         params=np.arange(3),
         algorithm=algorithm,
-        collect_history=False,
+        collect_history=True,
         skip_checks=True,
     )
 
-    assert res["success"] in [True, None]
-    aaae(res["solution_params"], np.zeros(3), decimal=4)
+    assert res.success in [True, None]
+    aaae(res.params, np.zeros(3), decimal=4)
 
 
 @pytest.mark.parametrize("algorithm", BOUNDED_ALGORITHMS)
@@ -71,8 +71,8 @@ def test_algorithm_on_sum_of_squares_with_binding_bounds(algorithm):
         skip_checks=True,
     )
 
-    assert res["success"] in [True, None]
-    aaae(res["solution_params"], np.array([1, 0, -1]), decimal=3)
+    assert res.success in [True, None]
+    aaae(res.params, np.array([1, 0, -1]), decimal=3)
 
 
 skip_msg = (
@@ -97,5 +97,5 @@ def test_global_algorithms_on_sum_of_squares(algorithm):
         collect_history=False,
         skip_checks=True,
     )
-    assert res["success"] in [True, None]
-    aaae(res["solution_params"], np.array([0.2, 0]), decimal=1)
+    assert res.success in [True, None]
+    aaae(res.params, np.array([0.2, 0]), decimal=1)

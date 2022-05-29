@@ -78,7 +78,7 @@ def test_with_covariance_constraint_bounds_distance(derivative, constr_name):
         constraints=CONSTR_INFO[constr_name],
     )
 
-    assert res["success"], "scipy_lbfgsb did not converge."
+    assert res.success, "scipy_lbfgsb did not converge."
 
     expected = np.array(RES_INFO[constr_name])
-    aaae(res["solution_params"]["value"].to_numpy(), expected, decimal=4)
+    aaae(res.params["value"].to_numpy(), expected, decimal=4)
