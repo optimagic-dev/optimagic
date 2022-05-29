@@ -57,7 +57,7 @@ def test_tree_params_numerical_derivative_scalar_criterion(params):
         params=params,
         algorithm="scipy_lbfgsb",
     )
-    calculated = np.array(tree_just_flatten(res["solution_params"], registry=REGISTRY))
+    calculated = np.array(tree_just_flatten(res.params, registry=REGISTRY))
     aaae(calculated, expected)
 
 
@@ -72,7 +72,7 @@ def test_tree_params_scalar_criterion(params):
         params=params,
         algorithm="scipy_lbfgsb",
     )
-    calculated = np.array(tree_just_flatten(res["solution_params"], registry=REGISTRY))
+    calculated = np.array(tree_just_flatten(res.params, registry=REGISTRY))
     aaae(calculated, expected)
 
 
@@ -92,7 +92,7 @@ def test_tree_params_numerical_derivative_sos_ls(params, algorithm):
         params=params,
         algorithm=algorithm,
     )
-    calculated = np.array(tree_just_flatten(res["solution_params"], registry=REGISTRY))
+    calculated = np.array(tree_just_flatten(res.params, registry=REGISTRY))
     aaae(calculated, expected)
 
 
@@ -112,5 +112,5 @@ def test_tree_params_sos_ls(params, algorithm):
         params=params,
         algorithm=algorithm,
     )
-    calculated = np.array(tree_just_flatten(res["solution_params"], registry=REGISTRY))
+    calculated = np.array(tree_just_flatten(res.params, registry=REGISTRY))
     aaae(calculated, expected)

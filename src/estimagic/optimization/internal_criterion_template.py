@@ -244,12 +244,11 @@ def internal_criterion_and_derivative_template(
         direction=direction,
     )
 
-    if history_container is not None:
+    if history_container is not None and new_criterion is not None:
         hist_entry = {
             "params": current_params,
-            "criterion": new_criterion,
-            "scalar_criterion": scalar_critval,
-            "timestamp": time.perf_counter(),
+            "criterion": scalar_critval,
+            "runtime": time.perf_counter(),
         }
         history_container.append(hist_entry)
 

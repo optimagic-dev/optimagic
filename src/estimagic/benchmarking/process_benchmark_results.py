@@ -161,7 +161,7 @@ def _make_history_monotone(df, target_col, direction="minimize"):
             monotonically decreasing, "maximize" means the history will be monotonically
             increasing.
 
-    Retruns:
+    Returns:
         pd.Series: target column where all values that are not weak improvements are
             replaced with the best value so far. Index is the same as that of df.
 
