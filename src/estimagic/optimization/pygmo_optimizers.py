@@ -2,7 +2,7 @@
 import warnings
 
 import numpy as np
-from estimagic import batch_evaluators
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.config import IS_PYGMO_INSTALLED
 from estimagic.decorators import mark_minimizer
 from estimagic.exceptions import NotInstalledError
@@ -1261,6 +1261,7 @@ def _minimize_pygmo(
         results (dict): Dictionary with optimization results.
 
     """
+    algo_options = algo_options.copy()
     if not IS_PYGMO_INSTALLED:
         raise NotInstalledError(
             f"The {method} algorithm requires the pygmo package to be installed. "
@@ -1270,9 +1271,8 @@ def _minimize_pygmo(
         )
 
     population_size = algo_options.pop("population_size", 1)
-    batch_evaluator = algo_options.pop("batch_evaluator", "joblib_batch_evaluator")
-    if isinstance(batch_evaluator, str):
-        batch_evaluator = getattr(batch_evaluators, batch_evaluator)
+    batch_evaluator = algo_options.pop("batch_evaluator", "joblib")
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
     n_cores = algo_options.pop("n_cores", 1)
     seed = algo_options.pop("seed", None)
     discard_start_params = algo_options.pop("discard_start_params", False)
