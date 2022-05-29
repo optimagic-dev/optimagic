@@ -1,57 +1,68 @@
 import numpy as np
 import pandas as pd
 import pytest
-from estimagic.config import EXAMPLE_DIR
-from estimagic.logging.database_utilities import append_row
-from estimagic.logging.database_utilities import load_database
-from estimagic.logging.database_utilities import make_optimization_iteration_table
-from estimagic.logging.database_utilities import make_optimization_problem_table
-from estimagic.logging.read_log import read_optimization_iteration
+from estimagic.logging.read_log import OptimizeLogReader
 from estimagic.logging.read_log import read_start_params
-from pandas.testing import assert_frame_equal
+from estimagic.logging.read_log import read_steps_table
+from estimagic.optimization.optimize import minimize
 
 
-def test_read_start_params():
-    db_path = EXAMPLE_DIR / "db1.db"
-    res = read_start_params(path_or_database=db_path)
-    assert isinstance(res, pd.DataFrame)
-    assert "value" in res.columns
-    assert "group" in res.columns
-
-
-def test_read_optimization_iteration(tmp_path):
+@pytest.fixture
+def example_db(tmp_path):
     path = tmp_path / "test.db"
-    database = load_database(path=path)
 
-    # add the optimization_iterations table
-    make_optimization_iteration_table(database)
-    iteration_data = [
-        {"params": np.array([0])},
-        {"params": np.array([1])},
-        {"params": np.array([2])},
-    ]
+    def _crit(params):
+        x = np.array(list(params.values()))
+        return x @ x
 
-    for data in iteration_data:
-        append_row(data, "optimization_iterations", database, path, False)
+    minimize(
+        criterion=_crit,
+        params={"a": 1, "b": 2, "c": 3},
+        algorithm="scipy_lbfgsb",
+        logging=path,
+    )
+    return path
 
-    # add the optimization_problem table
-    make_optimization_problem_table(database)
-    problem_data = {"params": pd.DataFrame(data=[10], columns=["value"])}
-    append_row(problem_data, "optimization_problem", database, path, False)
 
-    first_row_calc = read_optimization_iteration(path, 0)
-    assert first_row_calc["rowid"] == 1
-    calculated_params = first_row_calc["params"]
-    expected_params = pd.DataFrame(data=[0], columns=["value"])
-    assert_frame_equal(calculated_params, expected_params, check_dtype=False)
+def test_read_start_params(example_db):
+    res = read_start_params(example_db)
+    assert res == {"a": 1, "b": 2, "c": 3}
 
-    last_row_calc = read_optimization_iteration(path, -1)
-    assert last_row_calc["rowid"] == 3
-    calculated_params = last_row_calc["params"]
-    expected_params = pd.DataFrame(data=[2], columns=["value"])
-    assert_frame_equal(calculated_params, expected_params, check_dtype=False)
+
+def test_log_reader_read_start_params(example_db):
+    reader = OptimizeLogReader(example_db)
+    res = reader.read_start_params()
+    assert res == {"a": 1, "b": 2, "c": 3}
+
+
+def test_log_reader_read_iteration(example_db):
+    reader = OptimizeLogReader(example_db)
+    first_row = reader.read_iteration(0)
+    assert first_row["params"] == {"a": 1, "b": 2, "c": 3}
+    assert first_row["rowid"] == 1
+    assert first_row["value"] == 14
+
+    last_row = reader.read_iteration(-1)
+    assert list(last_row["params"]) == ["a", "b", "c"]
+    assert np.allclose(last_row["value"], 0)
+
+
+def test_log_reader_read_history(example_db):
+    reader = OptimizeLogReader(example_db)
+    res = reader.read_history()
+    assert res["runtime"][0] == 0
+    assert res["criterion"][0] == 14
+    assert res["params"][0] == {"a": 1, "b": 2, "c": 3}
+
+
+def test_read_steps_table(example_db):
+    res = read_steps_table(example_db)
+    assert isinstance(res, pd.DataFrame)
+    assert res.loc[0, "rowid"] == 1
+    assert res.loc[0, "type"] == "optimization"
+    assert res.loc[0, "status"] == "complete"
 
 
 def test_non_existing_database_raises_error():
     with pytest.raises(FileNotFoundError):
-        read_optimization_iteration("i_do_not_exist.db", -1)
+        read_start_params("i_do_not_exist.db")
