@@ -149,9 +149,9 @@ def test_constrained_minimization(
     )
 
     if params_type == "pandas":
-        calculated = res["solution_params"]["value"].to_numpy()
+        calculated = res.params["value"].to_numpy()
     else:
-        calculated = res["solution_params"]
+        calculated = res.params
 
     expected = FUNC_INFO[criterion_name].get(
         f"{constraint_name}_result", FUNC_INFO[criterion_name]["default_result"]
@@ -190,7 +190,7 @@ def test_three_independent_constraints():
 
     expected = np.array([0] * 4 + [4, 5] + [0] + [7.5] * 2 + [0])
 
-    aaae(res["solution_params"], expected, decimal=5)
+    aaae(res.params, expected, decimal=5)
 
 
 INVALID_CONSTRAINT_COMBIS = [

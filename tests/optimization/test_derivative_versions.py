@@ -90,7 +90,7 @@ def test_valid_derivative_versions(
             error_handling="raise",
         )
 
-    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(3), decimal=4)
+    aaae(res.params["value"].to_numpy(), np.zeros(3), decimal=4)
 
 
 @pytest.mark.parametrize(
@@ -139,4 +139,4 @@ def test_dict_derivative():
         derivative=sos_dict_derivative,
     )
 
-    aaae(res["solution_params"]["value"].to_numpy(), np.zeros(3))
+    aaae(res.params["value"].to_numpy(), np.zeros(3))

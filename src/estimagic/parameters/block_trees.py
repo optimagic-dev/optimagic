@@ -30,8 +30,8 @@ def matrix_to_block_tree(matrix, outer_tree, inner_tree):
     flat_outer, treedef_outer = tree_flatten(outer_tree)
     flat_inner, treedef_inner = tree_flatten(inner_tree)
 
-    flat_outer_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_outer]
-    flat_inner_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_inner]
+    flat_outer_np = [_convert_to_numpy(leaf, only_pandas=True) for leaf in flat_outer]
+    flat_inner_np = [_convert_to_numpy(leaf, only_pandas=True) for leaf in flat_inner]
 
     shapes_outer = [np.shape(a) for a in flat_outer_np]
     shapes_inner = [np.shape(a) for a in flat_inner_np]
@@ -87,8 +87,8 @@ def hessian_to_block_tree(hessian, f_tree, params_tree):
     flat_f, treedef_f = tree_flatten(f_tree)
     flat_p, treedef_p = tree_flatten(params_tree)
 
-    flat_f_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_f]
-    flat_p_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_p]
+    flat_f_np = [_convert_to_numpy(leaf, only_pandas=True) for leaf in flat_f]
+    flat_p_np = [_convert_to_numpy(leaf, only_pandas=True) for leaf in flat_p]
 
     shapes_f = [np.shape(a) for a in flat_f_np]
     shapes_p = [np.shape(a) for a in flat_p_np]
@@ -137,23 +137,12 @@ def block_tree_to_matrix(block_tree, outer_tree, inner_tree):
         matrix (np.ndarray): 2d array containing information stored in block_tree.
 
     """
-    if len(block_tree) != len(outer_tree):
-        raise ValueError(
-            "First dimension of block_tree does not match that of outer_tree."
-        )
-
-    selector_first_element = list(block_tree)[0] if isinstance(block_tree, dict) else 0
-    if len(block_tree[selector_first_element]) != len(inner_tree):
-        raise ValueError(
-            "Second dimension of block_tree does not match that of inner_tree."
-        )
-
     flat_outer = tree_leaves(outer_tree)
     flat_inner = tree_leaves(inner_tree)
     flat_block_tree = tree_leaves(block_tree)
 
-    flat_outer_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_outer]
-    flat_inner_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_inner]
+    flat_outer_np = [_convert_to_numpy(leaf, only_pandas=True) for leaf in flat_outer]
+    flat_inner_np = [_convert_to_numpy(leaf, only_pandas=True) for leaf in flat_inner]
 
     size_outer = [np.size(a) for a in flat_outer_np]
     size_inner = [np.size(a) for a in flat_inner_np]
@@ -169,14 +158,14 @@ def block_tree_to_matrix(block_tree, outer_tree, inner_tree):
     block_rows = []
     for s1, row in zip(size_outer, block_rows_raw):
         shapes = [(s1, s2) for s2 in size_inner]
-        row_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in row]
+        row_np = [_convert_to_numpy(leaf, only_pandas=False) for leaf in row]
         row_reshaped = _reshape_list(row_np, shapes)
         row_concatenated = np.concatenate(row_reshaped, axis=1)
         block_rows.append(row_concatenated)
 
     matrix = np.concatenate(block_rows, axis=0)
 
-    _check_dimensions_matrix(matrix, outer_tree, inner_tree)
+    _check_dimensions_matrix(matrix, flat_outer, flat_inner)
     return matrix
 
 
@@ -202,8 +191,8 @@ def block_tree_to_hessian(block_hessian, f_tree, params_tree):
     flat_p = tree_leaves(params_tree)
     flat_block_tree = tree_leaves(block_hessian)
 
-    flat_f_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_f]
-    flat_p_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in flat_p]
+    flat_f_np = [_convert_to_numpy(leaf, only_pandas=True) for leaf in flat_f]
+    flat_p_np = [_convert_to_numpy(leaf, only_pandas=True) for leaf in flat_p]
 
     size_f = [np.size(a) for a in flat_f_np]
     size_p = [np.size(a) for a in flat_p_np]
@@ -226,7 +215,7 @@ def block_tree_to_hessian(block_hessian, f_tree, params_tree):
         block_rows = []
         for s1, row in zip(size_p, block_rows_raw):
             shapes = [(outer_block_dim, s1, s2) for s2 in size_p]
-            row_np = [_convert_pandas_objects_to_numpy(leaf) for leaf in row]
+            row_np = [_convert_to_numpy(leaf, only_pandas=False) for leaf in row]
             row_np_3d = [leaf[np.newaxis] if leaf.ndim < 3 else leaf for leaf in row_np]
             row_reshaped = _reshape_list(row_np_3d, shapes)
             row_concatenated = np.concatenate(row_reshaped, axis=2)
@@ -238,6 +227,14 @@ def block_tree_to_hessian(block_hessian, f_tree, params_tree):
     hessian = np.concatenate(inner_matrices, axis=0)
     _check_dimensions_hessian(hessian, f_tree, params_tree)
     return hessian
+
+
+def _convert_to_numpy(obj, only_pandas=True):
+    if only_pandas:
+        out = _convert_pandas_objects_to_numpy(obj)
+    else:
+        out = np.asarray(obj)
+    return out
 
 
 def _convert_pandas_objects_to_numpy(obj):

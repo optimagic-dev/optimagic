@@ -15,6 +15,8 @@ from estimagic.visualization.derivative_plot import derivative_plot
 from estimagic.visualization.estimation_table import estimation_table
 from estimagic.visualization.estimation_table import render_html
 from estimagic.visualization.estimation_table import render_latex
+from estimagic.visualization.history_plots import criterion_plot
+from estimagic.visualization.history_plots import params_plot
 from estimagic.visualization.lollipop_plot import lollipop_plot
 from estimagic.visualization.profile_plot import profile_plot
 from estimagic.visualization.slice_plot import slice_plot
@@ -48,5 +50,7 @@ __all__ = [
     "estimation_table",
     "render_html",
     "render_latex",
+    "criterion_plot",
+    "params_plot",
     "__version__",
 ]

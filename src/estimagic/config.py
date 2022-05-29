@@ -14,7 +14,7 @@ TEST_FIXTURES_DIR = (
 )
 
 
-PLOTLY_TEMPLATE = "plotly_white"
+PLOTLY_TEMPLATE = "simple_white"
 PLOTLY_PALETTE = px.colors.qualitative.Set2
 
 DEFAULT_N_CORES = 1

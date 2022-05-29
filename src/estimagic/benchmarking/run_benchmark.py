@@ -5,25 +5,23 @@ TO-DO:
     - finish medium scale problems from https://arxiv.org/pdf/1710.11005.pdf, Page 34.
     - add scalar problems from https://github.com/AxelThevenot
 - Add option for deterministic noise or wiggle.
-
 """
-from pathlib import Path
-
 import numpy as np
+import pandas as pd
 from estimagic import batch_evaluators
-from estimagic.logging.read_log import read_optimization_histories
 from estimagic.optimization.optimize import minimize
+from estimagic.optimization.optimize_result import OptimizeResult
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_just_flatten
 
 
 def run_benchmark(
     problems,
     optimize_options,
-    logging_directory,
     *,
     batch_evaluator="joblib",
     n_cores=1,
     error_handling="continue",
-    fast_logging=True,
     seed=None,
 ):
     """Run problems with different optimize options.
@@ -42,48 +40,25 @@ def run_benchmark(
             Alternatively, the values can just be an algorithm which is then benchmarked
             at default settings.
         batch_evaluator (str or callable): See :ref:`batch_evaluators`.
-        logging_directory (pathlib.Path): Directory in which the log databases are
-            saved.
         n_cores (int): Number of optimizations that is run in parallel. Note that in
             addition to that an optimizer might parallelize.
         error_handling (str): One of "raise", "continue".
-        fast_logging (bool): Whether the slightly unsafe but much faster database
-            configuration is chosen.
 
     Returns:
         dict: Nested Dictionary with information on the benchmark run. The outer keys
             are tuples where the first entry is the name of the problem and the second
             the name of the optimize options. The values are dicts with the entries:
-            "runtime", "params_history", "criterion_history", "solution"
-
+            "params_history", "criterion_history", "time_history" and "solution".
     """
     np.random.seed(seed)
-    logging_directory = Path(logging_directory)
-    logging_directory.mkdir(parents=True, exist_ok=True)
 
     if isinstance(batch_evaluator, str):
         batch_evaluator = getattr(
             batch_evaluators, f"{batch_evaluator}_batch_evaluator"
         )
-
     opt_options = _process_optimize_options(optimize_options)
 
-    log_options = {"fast_logging": fast_logging, "if_table_exists": "replace"}
-
-    kwargs_list = []
-    names = []
-    for prob_name, problem in problems.items():
-        for option_name, options in opt_options.items():
-            kwargs = {
-                **options,
-                **problem["inputs"],
-                "logging": logging_directory / f"{prob_name}_{option_name}.db",
-                "log_options": log_options,
-            }
-            kwargs_list.append(kwargs)
-            names.append((prob_name, option_name))
-
-    log_paths = [kwargs["logging"] for kwargs in kwargs_list]
+    kwargs_list, names = _get_kwargs_list_and_names(problems, opt_options)
 
     raw_results = batch_evaluator(
         func=minimize,
@@ -93,20 +68,7 @@ def run_benchmark(
         unpack_symbol="**",
     )
 
-    results = {}
-    for name, result, log_path in zip(names, raw_results, log_paths):
-        histories = read_optimization_histories(log_path)
-        stop = histories["metadata"]["timestamps"].max()
-        start = histories["metadata"]["timestamps"].min()
-        runtime = (stop - start).total_seconds()
-
-        results[name] = {
-            "params_history": histories["params"],
-            "criterion_history": histories["values"],
-            "time_history": histories["metadata"]["timestamps"] - start,
-            "solution": result,
-            "runtime": runtime,
-        }
+    results = _get_results(names, raw_results, kwargs_list)
 
     return results
 
@@ -127,11 +89,56 @@ def _process_optimize_options(raw_options):
         if not isinstance(option, dict):
             option = {"algorithm": option}
 
-        if "log_options" in option:
-            raise ValueError(
-                "Log options cannot be specified as part of optimize_options. Logging "
-                "behavior is configured by the run_benchmark function."
-            )
         out_options[name] = option
 
     return out_options
+
+
+def _get_kwargs_list_and_names(problems, opt_options):
+    kwargs_list = []
+    names = []
+
+    for prob_name, problem in problems.items():
+        for option_name, options in opt_options.items():
+            kwargs = {**options, **problem["inputs"]}
+            kwargs_list.append(kwargs)
+            names.append((prob_name, option_name))
+
+    return kwargs_list, names
+
+
+def _get_results(names, raw_results, kwargs_list):
+    registry = get_registry(extended=True)
+    results = {}
+
+    for name, result, inputs in zip(names, raw_results, kwargs_list):
+
+        if isinstance(result, OptimizeResult):
+            history = result.history
+            params_history = pd.DataFrame(
+                [tree_just_flatten(p, registry=registry) for p in history["params"]]
+            )
+            criterion_history = pd.Series(history["criterion"])
+            time_history = pd.Series(history["runtime"])
+        elif isinstance(result, str):
+            _criterion = inputs["criterion"]
+
+            params_history = pd.DataFrame(
+                tree_just_flatten(inputs["params"], registry=registry)
+            ).T
+            criterion_history = pd.Series(_criterion(inputs["params"])["value"])
+
+            time_history = pd.Series([np.inf])
+        else:
+            raise ValueError(
+                "'result' object is expected to be of type 'dict' or 'str'."
+            )
+
+        results[name] = {
+            "params_history": params_history,
+            "criterion_history": criterion_history,
+            "time_history": time_history,
+            "solution": result,
+        }
+
+    return results
