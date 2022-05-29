@@ -136,7 +136,16 @@ Benchmarks
 
 
 
+.. _logreading:
 
+
+Log reading
+-----------
+
+
+.. dropdown:: OptimizeLogReader
+
+    .. autoclass:: OptimizeLogReader
 
 
 

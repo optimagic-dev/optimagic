@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.logging.read_log import OptimizeLogReader
+from estimagic.logging.read_log import read_optimization_problem_table
 from estimagic.logging.read_log import read_start_params
 from estimagic.logging.read_log import read_steps_table
 from estimagic.optimization.optimize import minimize
@@ -61,6 +62,11 @@ def test_read_steps_table(example_db):
     assert res.loc[0, "rowid"] == 1
     assert res.loc[0, "type"] == "optimization"
     assert res.loc[0, "status"] == "complete"
+
+
+def test_read_optimization_problem_table(example_db):
+    res = read_optimization_problem_table(example_db)
+    assert isinstance(res, pd.DataFrame)
 
 
 def test_non_existing_database_raises_error():

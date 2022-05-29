@@ -84,8 +84,32 @@ def read_steps_table(path_or_database):
     return steps_df
 
 
+def read_optimization_problem_table(path_or_database):
+    """Load the start parameters DataFrame.
+
+    Args:
+        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
+
+    Returns:
+        params (pd.DataFrame): see :ref:`params`.
+
+    """
+    database = _load_database(path_or_database)
+    steps_table, _ = read_new_rows(
+        database=database,
+        table_name="optimization_problem",
+        last_retrieved=0,
+        return_type="list_of_dicts",
+    )
+    steps_df = pd.DataFrame(steps_table)
+
+    return steps_df
+
+
 @dataclass
 class OptimizeLogReader:
+    """Read information about an optimization from a sqlite database."""
+
     path: Union[str, Path]
 
     def __post_init__(self):
