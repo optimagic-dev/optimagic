@@ -150,11 +150,11 @@ def test_hessian_to_block_tree_bijection():
 
 def test_block_tree_to_matrix_valueerror():
     # test that value error is raised when dimensions don't match
+    inner = {"a": 1, "b": 1}
+    outer = 1
+    block_tree = {"a": 1}  # should have same structure as inner
     with pytest.raises(ValueError):
-        block_tree_to_matrix({"a": [1], "b": [2]}, {"a": 1}, (1, 2))
-
-    with pytest.raises(ValueError):
-        block_tree_to_matrix({"a": [1], "b": [2]}, {"a": 1}, (1, 2))
+        block_tree_to_matrix(block_tree, inner, outer)
 
 
 def _tree_equal_up_to_dtype(left, right):

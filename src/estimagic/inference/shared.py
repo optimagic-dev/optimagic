@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 import scipy
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_just_flatten
+from pybaum import tree_unflatten
 
 
 def transform_covariance(
-    params,
     flat_params,
     internal_cov,
     converter,
@@ -14,8 +16,8 @@ def transform_covariance(
     """Transform the internal covariance matrix to an external one, given constraints.
 
     Args:
-        params (pd.DataFrame): DataFrame where the "value" column contains estimated
-            parameters of a likelihood model. See :ref:`params` for details.
+        flat_params (FlatParams): NamedTuple with internal parameter values and names,
+            lower_bounds and upper_bounds, and free_mask.
         internal_cov (np.ndarray or pandas.DataFrame) with a covariance matrix of the
             internal parameter vector. For background information about internal and
             external params see :ref:`implementation_of_constraints`.
@@ -37,8 +39,6 @@ def transform_covariance(
             index.
 
     """
-    free_index = params[flat_params.free_mask].index
-
     if isinstance(internal_cov, pd.DataFrame):
         internal_cov = internal_cov.to_numpy()
 
@@ -75,15 +75,18 @@ def transform_covariance(
     else:
         free_cov = internal_cov
 
+    free_index = np.array(flat_params.names)[flat_params.free_mask]
     res = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
     return res
 
 
-def calculate_inference_quantities(params, free_cov, ci_level):
+def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level):
     """Add standard errors, pvalues and confidence intervals to params.
 
     Args
-        params (pd.DataFrame): See :ref:`params`.
+        params (pytree): The input parameter pytree.
+        flat_estimates (FlatParams): NamedTuple with internal estimated parameter values
+            and names, lower_bounds and upper_bounds, and free_mask.
         free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
             of the free parameters. If parameters were fixed (explicitly or by other
             constraints) the index is a subset of params.index. The columns are the same
@@ -91,31 +94,86 @@ def calculate_inference_quantities(params, free_cov, ci_level):
         ci_level (float): Confidence level for the calculation of confidence intervals.
 
     Returns:
-        pd.DataFrame: DataFrame with same index as params, containing the columns
-            "value", "standard_error", "pvalue", "ci_lower" and "ci_upper".
-            Parameters that do not have a standard error (e.g. because they were fixed
-            during estimation) contain NaNs in all but the "value" column. The value
-            column is only reproduced for convenience.
+        pytree: A pytree with the same structure as params. Each leaf in the params
+            tree is replaced by a DataFrame containing columns "value",
+            "standard_error", "pvalue", "ci_lower" and "ci_upper".  Parameters that do
+            not have a standard error (e.g. because they were fixed during estimation)
+            contain NaNs in all but the "value" column. The value column is only
+            reproduced for convenience.
 
     """
-    free = pd.DataFrame(index=free_cov.index)
-    free["value"] = params.loc[free.index, "value"]
-    free["standard_error"] = np.sqrt(np.diag(free_cov))
-    tvalues = free["value"] / free["standard_error"]
-    free["p_value"] = 1.96 * scipy.stats.norm.sf(np.abs(tvalues))
+    ####################################################################################
+    # Construct summary data frame for flat estimates
+    ####################################################################################
+
+    df = pd.DataFrame(index=flat_estimates.names)
+    df["value"] = flat_estimates.values
+    df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
+    tvalues = df["value"] / df["standard_error"]
+    df["p_value"] = 2 * scipy.stats.norm.sf(np.abs(tvalues))
 
     alpha = 1 - ci_level
     scale = scipy.stats.norm.ppf(1 - alpha / 2)
-    free["ci_lower"] = free["value"] - scale * free["standard_error"]
-    free["ci_upper"] = free["value"] + scale * free["standard_error"]
+    df["ci_lower"] = df["value"] - scale * df["standard_error"]
+    df["ci_upper"] = df["value"] + scale * df["standard_error"]
 
-    free["stars"] = pd.cut(
-        free["p_value"], bins=[-1, 0.01, 0.05, 0.1, 2], labels=["***", "**", "*", ""]
+    df.loc[free_cov.index, "stars"] = pd.cut(
+        df.loc[free_cov.index, "p_value"],
+        bins=[-1, 0.01, 0.05, 0.1, 2],
+        labels=["***", "**", "*", ""],
     )
 
-    res = free.reindex(params.index)
-    res["value"] = params["value"]
-    return res
+    ####################################################################################
+    # Map summary data into params tree structure
+    ####################################################################################
+
+    registry = get_registry(extended=True)
+
+    # create tree with values corresponding to indices of df
+    indices = tree_unflatten(estimates, flat_estimates.names, registry=registry)
+
+    indices_flat = tree_just_flatten(indices)
+    estimates_flat = tree_just_flatten(estimates)
+
+    # use index chunks in indices_flat to access the corresponding sub data frame of df,
+    # and use the index information stored in estimates_flat to form the correct (multi)
+    # index for the resulting leaf.
+    summary_flat = []
+    for index_leaf, params_leaf in zip(indices_flat, estimates_flat):
+
+        if isinstance(params_leaf, np.ndarray):
+            loc = index_leaf.flatten()
+            # use location indices for np.ndarray
+            index = pd.MultiIndex.from_arrays(
+                np.unravel_index(np.arange(params_leaf.size), params_leaf.shape)
+            )
+        elif isinstance(params_leaf, pd.DataFrame) and "value" in params_leaf:
+            loc = index_leaf["value"].values.flatten()
+            index = params_leaf.index
+        elif isinstance(params_leaf, pd.DataFrame):
+            loc = index_leaf.values.flatten()
+            # use product of existing index and columns for regular pd.DataFrame
+            index = pd.MultiIndex.from_tuples(
+                [
+                    (*row, col)
+                    for row in params_leaf.index
+                    for col in params_leaf.columns
+                ]
+            )
+        elif isinstance(params_leaf, pd.Series):
+            loc = index_leaf.values.flatten()
+            index = params_leaf.index
+        else:
+            loc = [index_leaf]
+            index = [0]
+
+        df_chunk = df.loc[loc]
+        df_chunk.index = index
+
+        summary_flat.append(df_chunk)
+
+    summary = tree_unflatten(estimates, summary_flat)
+    return summary
 
 
 def process_pandas_arguments(**kwargs):
