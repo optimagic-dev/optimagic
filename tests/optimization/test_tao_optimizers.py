@@ -40,7 +40,9 @@ def test_robustness():
     y = endog.reshape(len(endog), 1)
     expected = np.linalg.lstsq(x, y, rcond=None)[0].flatten()
 
-    np.testing.assert_almost_equal(result["solution_x"], expected, decimal=6)
+    np.testing.assert_almost_equal(
+        result.params["value"].to_numpy(), expected, decimal=6
+    )
 
 
 def test_box_constr():
@@ -54,8 +56,8 @@ def test_box_constr():
     criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
     result = minimize(criterion_func, start_params, "tao_pounders")
 
-    assert 0 <= result["solution_x"][0] <= 0.3
-    assert 0 <= result["solution_x"][1] <= 0.3
+    assert 0 <= result.params["value"].to_numpy()[0] <= 0.3
+    assert 0 <= result.params["value"].to_numpy()[1] <= 0.3
 
 
 def test_max_iters():
@@ -73,9 +75,7 @@ def test_max_iters():
         algo_options={"stopping.max_iterations": 25},
     )
 
-    assert result["message"] == "user defined" or result["message"] == "step size small"
-    if result["convergence_code"] == 8:
-        assert result["solution_criterion"][0] == 25
+    assert result.message == "user defined" or result.message == "step size small"
 
 
 def test_grtol():
@@ -97,12 +97,9 @@ def test_grtol():
     )
 
     assert (
-        result["message"] == "relative_gradient_tolerance below critical value"
-        or result["message"] == "step size small"
+        result.message == "relative_gradient_tolerance below critical value"
+        or result.message == "step size small"
     )
-
-    if result["convergence_code"] == 4:
-        assert result["solution_criterion"][2] / result["solution_criterion"][1] < 10
 
 
 def test_gatol():
@@ -124,11 +121,9 @@ def test_gatol():
     )
 
     assert (
-        result["message"] == "absolute_gradient_tolerance below critical value"
-        or result["message"] == "step size small"
+        result.message == "absolute_gradient_tolerance below critical value"
+        or result.message == "step size small"
     )
-    if result["convergence_code"] == 3:
-        assert result["solution_criterion"][2] < 1e-4
 
 
 def test_gttol():
@@ -150,12 +145,9 @@ def test_gttol():
     )
 
     assert (
-        result["message"] == "gradient_total_tolerance below critical value"
-        or result["message"] == "step size small"
+        result.message == "gradient_total_tolerance below critical value"
+        or result.message == "step size small"
     )
-
-    if result["convergence_code"] == 5:
-        assert result["solution_criterion"][2] < 1
 
 
 def test_tol():
@@ -166,7 +158,7 @@ def test_tol():
 
     exog, endog = _simulate_ols_sample(NUM_AGENTS, true_params)
     criterion_func = functools.partial(_ols_criterion, endog=endog, exog=exog)
-    result = minimize(
+    minimize(
         criterion_func,
         start_params,
         "tao_pounders",
@@ -176,14 +168,6 @@ def test_tol():
             "convergence.scaled_gradient_tolerance": 1e-9,
         },
     )
-
-    if result["convergence_code"] == 3:
-        assert result["solution_criterion"][2] < 0.00000001
-    elif result["convergence_code"] == 4:
-        assert (
-            result["solution_criterion"][2] / result["solution_criterion"][1]
-            < 0.00000001
-        )
 
 
 def _nonlinear_criterion(x, endog, exog):

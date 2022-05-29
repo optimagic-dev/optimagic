@@ -41,7 +41,7 @@ def test_optimization_with_valid_logging(algorithm, params):
         logging="logging.db",
     )
     registry = get_registry(extended=True)
-    flat = np.array(tree_just_flatten(res["solution_params"], registry=registry))
+    flat = np.array(tree_just_flatten(res.params, registry=registry))
     aaae(flat, np.zeros(3))
 
 

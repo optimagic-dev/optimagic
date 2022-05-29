@@ -30,15 +30,15 @@ def _sim_dict_np(params):
 cov_np = np.diag([1, 2, 3.0])
 cov_pd = pd.DataFrame(cov_np)
 
-funcs = [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np]
-covs = [cov_np, cov_pd]
+test_cases = itertools.product(
+    [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
+    [cov_np, cov_pd],  # moments_cov
+    [{"algorithm": "scipy_lbfgsb"}, "scipy_lbfgsb"],  # optimize_options
+)
 
 
-test_cases = list(itertools.product(funcs, covs))
-
-
-@pytest.mark.parametrize("simulate_moments, moments_cov", test_cases)
-def test_estimate_msm(simulate_moments, moments_cov):
+@pytest.mark.parametrize("simulate_moments, moments_cov, optimize_options", test_cases)
+def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
     start_params = pd.DataFrame()
     start_params["value"] = [3, 2, 1]
 
@@ -49,8 +49,6 @@ def test_estimate_msm(simulate_moments, moments_cov):
     empirical_moments = simulate_moments(expected_params)
     if isinstance(empirical_moments, dict):
         empirical_moments = empirical_moments["simulated_moments"]
-
-    optimize_options = {"algorithm": "scipy_lbfgsb"}
 
     # catching warnings is necessary because the very special case with diagonal
     # weighting and diagonal jacobian leads to singular matrices while calculating
@@ -65,7 +63,7 @@ def test_estimate_msm(simulate_moments, moments_cov):
             optimize_options=optimize_options,
         )
 
-    calculated_params = calculated["optimize_res"]["solution_params"][["value"]]
+    calculated_params = calculated["optimize_res"].params[["value"]]
     # check that minimization works
     aaae(calculated_params["value"].to_numpy(), expected_params["value"].to_numpy())
 
