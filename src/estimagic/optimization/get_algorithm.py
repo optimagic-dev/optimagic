@@ -3,6 +3,7 @@ import warnings
 from functools import partial
 
 import numpy as np
+from estimagic.logging.database_utilities import list_of_dicts_to_dict_of_lists
 from estimagic.logging.database_utilities import update_row
 from estimagic.optimization import ALL_ALGORITHMS
 from estimagic.utilities import propose_alternatives
@@ -163,7 +164,12 @@ def _add_history_collection(algorithm):
                 _kwargs[name] = partial(kwargs[name], history_container=container)
 
         out = algorithm(**_kwargs)
-        out["history"] = container
+        history = list_of_dicts_to_dict_of_lists(container)
+        runtimes = np.array(history["runtime"])
+        runtimes -= runtimes[0]
+        history["runtime"] = runtimes.tolist()
+
+        out["history"] = history
         return out
 
     return wrapper_add_history_collection

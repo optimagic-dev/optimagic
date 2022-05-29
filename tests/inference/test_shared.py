@@ -5,6 +5,7 @@ from estimagic.inference.shared import calculate_inference_quantities
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.parameters.tree_conversion import FlatParams
 from estimagic.parameters.tree_registry import get_registry
+from pandas.testing import assert_frame_equal
 from pybaum import leaf_names
 from pybaum import tree_equal
 from pybaum import tree_just_flatten
@@ -96,7 +97,7 @@ def test_calculate_inference_quantities():
     df[["ci_lower", "ci_upper"]] = df[["ci_lower", "ci_upper"]].astype(float)
 
     df_c = df.loc[["1_c_0", "1_c_1"]]
-    df_c.index = pd.MultiIndex.from_tuples([(0,), (1,)])
+    df_c.index = pd.RangeIndex(stop=2)
 
     df_e = df.loc[
         [
@@ -143,5 +144,9 @@ def test_calculate_inference_quantities():
 
     # drop irrelevant columns
     got = tree_map(lambda df: df.drop(columns=["stars", "p_value"]), got)
+
+    # for debugging purposes we first compare each leaf
+    for got_leaf, exp_leaf in zip(tree_just_flatten(got), tree_just_flatten(expected)):
+        assert_frame_equal(got_leaf, exp_leaf)
 
     assert tree_equal(expected, got)

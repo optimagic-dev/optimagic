@@ -1,7 +1,7 @@
 from functools import partial
 
 import pandas as pd
-from estimagic.batch_evaluators import joblib_batch_evaluator
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
 
@@ -15,7 +15,7 @@ def get_bootstrap_outcomes(
     n_draws=1000,
     n_cores=1,
     error_handling="continue",
-    batch_evaluator=joblib_batch_evaluator,
+    batch_evaluator="joblib",
 ):
     """Draw bootstrap samples and calculate outcomes.
 
@@ -39,6 +39,7 @@ def get_bootstrap_outcomes(
             columns are the index of the result of ``outcome``.
 
     """
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     check_inputs(data=data, cluster_by=cluster_by)
 

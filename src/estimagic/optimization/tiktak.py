@@ -48,11 +48,14 @@ def run_multistart_optimization(
             x=x,
             lower=lower_sampling_bounds,
             upper=upper_sampling_bounds,
-            n_samples=options["n_samples"],
+            # -1 because we add start parameters
+            n_samples=options["n_samples"] - 1,
             sampling_distribution=options["sampling_distribution"],
             sampling_method=options["sampling_method"],
             seed=options["seed"],
         )
+
+        sample = np.vstack([x.reshape(1, -1), sample])
 
     if logging:
         update_step_status(
@@ -94,8 +97,8 @@ def run_multistart_optimization(
         n_optimizations = len(sorted_sample)
         warnings.warn(
             "There are less valid starting points than requested optimizations. "
-            f"The number of optimizations has been reduced from {n_optimizations} "
-            f"to {len(sorted_sample)}."
+            "The number of optimizations has been reduced from "
+            f"{options['n_optimizations']} to {len(sorted_sample)}."
         )
         skipped_steps = scheduled_steps[-n_skipped_steps:]
         scheduled_steps = scheduled_steps[:-n_skipped_steps]
@@ -263,6 +266,13 @@ def draw_exploration_sample(
 
     if sampling_distribution not in valid_distributions:
         raise ValueError(f"Unsupported distribution: {sampling_distribution}")
+
+    for name, bound in zip(["lower", "upper"], [lower, upper]):
+        if not np.isfinite(bound).all():
+            raise ValueError(
+                f"multistart optimization requires finite {name}_bounds or "
+                f"soft_{name}_bounds for all parameters."
+            )
 
     if sampling_method == "sobol":
         # Draw `n` points from the open interval (lower, upper)^d.

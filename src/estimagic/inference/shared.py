@@ -141,12 +141,9 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
     summary_flat = []
     for index_leaf, params_leaf in zip(indices_flat, estimates_flat):
 
-        if isinstance(params_leaf, np.ndarray):
-            loc = index_leaf.flatten()
-            # use location indices for np.ndarray
-            index = pd.MultiIndex.from_arrays(
-                np.unravel_index(np.arange(params_leaf.size), params_leaf.shape)
-            )
+        if np.isscalar(params_leaf):
+            loc = [index_leaf]
+            index = [0]
         elif isinstance(params_leaf, pd.DataFrame) and "value" in params_leaf:
             loc = index_leaf["value"].values.flatten()
             index = params_leaf.index
@@ -164,8 +161,14 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
             loc = index_leaf.values.flatten()
             index = params_leaf.index
         else:
-            loc = [index_leaf]
-            index = [0]
+            # array case (numpy or jax)
+            loc = index_leaf.flatten()
+            if params_leaf.ndim == 1:
+                index = pd.RangeIndex(stop=params_leaf.size)
+            else:
+                index = pd.MultiIndex.from_arrays(
+                    np.unravel_index(np.arange(params_leaf.size), params_leaf.shape)
+                )
 
         df_chunk = df.loc[loc]
         df_chunk.index = index

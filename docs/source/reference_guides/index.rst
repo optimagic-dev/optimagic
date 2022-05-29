@@ -23,6 +23,16 @@ Optimization
     .. autofunction:: slice_plot
 
 
+.. dropdown:: criterion_plot
+
+    .. autofunction:: criterion_plot
+
+
+.. dropdown:: params_plot
+
+    .. autofunction:: params_plot
+
+
 
 .. _first_derivative:
 
