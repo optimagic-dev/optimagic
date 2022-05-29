@@ -90,8 +90,7 @@ class OptimizeResult:
 
 
 def _format_convergence_report(report, algorithm):
-    if report is not None:
-        report = pd.DataFrame.from_dict(report)
+    report = pd.DataFrame.from_dict(report)
     columns = ["one_step", "five_steps"]
 
     table = report[columns].applymap(_format_float).astype(str)
@@ -128,7 +127,5 @@ def _create_stars(sr):
 
 
 def _format_float(number):
-    formatters = ("{0:.4g}", "{0:.4g}")
-    for formatter in formatters:
-        number = float(formatter.format(number))
-    return str(number)
+    """Round to four significant digits."""
+    return "{0:.4g}".format(number)
