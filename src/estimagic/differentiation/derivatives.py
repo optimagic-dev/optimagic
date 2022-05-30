@@ -2,6 +2,7 @@ import functools
 import itertools
 import re
 from itertools import product
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -14,10 +15,14 @@ from estimagic.parameters.block_trees import hessian_to_block_tree
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
-from estimagic.utilities import namedtuple_from_kwargs
 from pybaum import tree_flatten
 from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_unflatten
+
+
+class Evals(NamedTuple):
+    pos: np.ndarray
+    neg: np.ndarray
 
 
 def first_derivative(
@@ -208,7 +213,7 @@ def first_derivative(
     # apply finite difference formulae
     evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
     evals = np.transpose(evals, axes=(0, 1, 3, 2))
-    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    evals = Evals(pos=evals[0], neg=evals[1])
 
     jac_candidates = {}
     for m in ["forward", "backward", "central"]:
@@ -553,7 +558,7 @@ def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
     """
     evals = np.array(raw_evals_one_step).reshape(2, n_steps, dim_x, -1)
     evals = evals.swapaxes(2, 3)
-    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    evals = Evals(pos=evals[0], neg=evals[1])
     return evals
 
 
@@ -578,7 +583,7 @@ def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
     evals = np.array(raw_evals_two_step).reshape(2, n_steps, dim_x, dim_x, -1)
     evals = evals.transpose(0, 1, 4, 2, 3)
     evals[..., tril_idx[0], tril_idx[1]] = evals[..., tril_idx[1], tril_idx[0]]
-    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    evals = Evals(pos=evals[0], neg=evals[1])
     return evals
 
 
@@ -609,7 +614,7 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     evals = evals.transpose(0, 1, 4, 2, 3)
     evals[0][..., tril_idx[0], tril_idx[1]] = evals[1][..., tril_idx[1], tril_idx[0]]
     evals[0][..., diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[np.newaxis, ...]
-    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[0].swapaxes(2, 3))
+    evals = Evals(pos=evals[0], neg=evals[0].swapaxes(2, 3))
     return evals
 
 
