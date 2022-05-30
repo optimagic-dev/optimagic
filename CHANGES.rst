@@ -7,6 +7,53 @@ releases are available on `Anaconda.org
 <https://anaconda.org/OpenSourceEconomics/estimagic>`_.
 
 
+0.3.0
+-----
+
+Fist release with pytree support in optimization, estimation and differentiation.
+
+Breaking changes
+
+- New ``OptimizeResult`` object is returned by ``maximize`` and ``minimize``. This
+  breaks all code that expects the old result dictionary. Usage of the new result is
+  explained in the getting started tutorial on optimization.
+- New internal optimizer interface that can break optimization with custom optimizers
+- The inferface of ``process_constraints`` changed quite drastically. This breaks
+  code that used ``process_constraints`` to get the number of free parameters or check
+  if constraints are valid. There are new high level functions
+  ``estimagic.check_constraints`` and ``estimagic.count_free_params`` instead.
+- Some functions from ``estimagic.logging.read_log`` are removed and replaced by
+  ``estimagic.OptimizeLogReader``.
+- Convenience functions to create namedtuples are removed from ``estimagic.utilities``.
+
+
+- :gh:`339` Incorporates user feedback and polishes the documentation.
+- :gh:`338` Improves log reading functions (:ghuser:`janosg`)
+- :gh:`336` Adds pytree support to the dashboard (:ghuser:`roecla`).
+- :gh:`335` Introduces an ``OptimizeResult`` object and functionality for history
+  plotting (:ghuser:`janosg`).
+- :gh:`333` Uses new history collection feature to speed up benchmarking
+  (:ghuser:`segsell`).
+- :gh:`330` Is a major rewrite of the estimation code (:ghuser:`timmens`).
+- :gh:`328` Improves quadratic surrogate solvers used in pounders and tranquilo
+  (:ghuser:`segsell`).
+- :gh:`326` Improves documentation of numerical derivatives (:ghuser:`timmens`).
+- :gh:`325` Improves the slice_plot (:ghuser:`mpetrosian`)
+- :gh:`324` Adds ability to collect optimization histories without logging
+  (:ghuser:`janosg`).
+- :gh:`311` and :gh:`288` rewrite all plotting code in plotly (:ghuser:`timmens`
+  and :ghuser:`aidatak97`).
+- :gh:`306` improves quadratic surrogate solvers used in pounders and tranquilo
+  (:ghuser:`segsell`).
+- :gh:`305` allows pytrees during optimization and rewrites large parts of the
+  constraints processing (:ghuser:`janosg`).
+- :gh:`303` introduces a new optimizer interface that makes it easier to add optimizers
+  and makes it possible to access optimizer specific information outside of the
+  intrenal_criterion_and_derivative (:ghuser:`janosg` and :ghuser:`roecla`).
+
+
+
+
 0.2.5
 -----
 
