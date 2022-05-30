@@ -23,7 +23,6 @@ from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
-from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
 
 
@@ -630,12 +629,7 @@ def _optimize(
     # initialize the log database
     # ==================================================================================
     if logging:
-        # @Janos: Is this a tuple on purpose?
-        problem_data["flat_params_names"] = (internal_params.names,)
-        problem_data["flat_params_groups"] = get_params_groups(
-            params=params, flat_params=internal_params
-        )
-
+        problem_data["free_mask"] = internal_params.free_mask
         database = _create_and_initialize_database(logging, log_options, problem_data)
         db_kwargs = {
             "database": database,

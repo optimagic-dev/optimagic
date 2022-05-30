@@ -14,9 +14,11 @@ from estimagic.dashboard.plot_functions import plot_time_series
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.read_log import read_start_params
+from estimagic.parameters.parameter_groups import get_params_groups_and_short_names
 from estimagic.parameters.tree_registry import get_registry
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
+from pybaum import leaf_names
 from pybaum import tree_just_flatten
 
 
@@ -51,8 +53,9 @@ def dashboard_app(
 
     # build start_params DataFrame
     registry = get_registry(extended=True)
-    start_param_values = read_start_params(path_or_database=database)
-    flat_param_values = tree_just_flatten(tree=start_param_values, registry=registry)
+    start_params_tree = read_start_params(path_or_database=database)
+    internal_params = tree_just_flatten(tree=start_params_tree, registry=registry)
+    full_names = leaf_names(start_params_tree, registry=registry)
 
     optimization_problem = read_last_rows(
         database=database,
@@ -60,15 +63,20 @@ def dashboard_app(
         n_rows=1,
         return_type="dict_of_lists",
     )
+    free_mask = optimization_problem["free_mask"][0]
+    params_groups, short_names = get_params_groups_and_short_names(
+        params=start_params_tree, free_mask=free_mask
+    )
     start_params = pd.DataFrame(
         {
-            "name": optimization_problem["flat_params_names"][0][0],
-            "group": optimization_problem["flat_params_groups"][0],
-            "value": flat_param_values,
+            "full_name": full_names,
+            "name": short_names,
+            "group": params_groups,
+            "value": internal_params,
         }
     )
-
     start_params["id"] = _create_id_column(start_params)
+
     group_to_param_ids = _map_group_to_other_column(start_params, "id")
     group_to_param_names = _map_group_to_other_column(start_params, "name")
     criterion_history, params_history = _create_cds_for_dashboard(group_to_param_ids)
@@ -109,7 +117,6 @@ def dashboard_app(
     doc.add_root(grid)
 
     # start the convergence plot immediately
-    # this must happen here befo
     restart_button.active = True
 
 

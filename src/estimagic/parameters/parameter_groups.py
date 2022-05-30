@@ -4,12 +4,15 @@ from estimagic.parameters.tree_registry import get_registry
 from pybaum import leaf_names
 
 
-def get_params_groups(params, flat_params, max_group_size=8):
-    """Create parameter groups.
+def get_params_groups_and_short_names(params, free_mask, max_group_size=8):
+    """Create parameter groups and short names.
 
     Args:
         params (pytree): parameters as supplied by the user.
-        flat_params (FlatParams): processed parameters.
+        free_mask (np.array): 1d boolean array of same length as params, identifying
+            the free parameters.
+        max_group_size (int): maximal allowed size of a group. Groups that are larger
+            than this will be split.
 
     Returns:
         groups (list): list of strings and None. For each entry in flat params the key
@@ -22,14 +25,15 @@ def get_params_groups(params, flat_params, max_group_size=8):
     registry = get_registry(extended=True)
     paths = leaf_names(params, registry=registry, separator=sep)
     split_paths = [path.split(sep) for path in paths]
-    group_and_names = [
-        _get_group_and_name(path_list, is_free)
-        for path_list, is_free in zip(split_paths, flat_params.free_mask)
-    ]
-    groups = np.array([group for group, _ in group_and_names])
-    # !!! parameter names for the display in the dashboard are not used right now.
-    # instead the full names are shown in the legend
 
+    groups = []
+    names = []
+    for path_list, is_free in zip(split_paths, free_mask):
+        group, name = _get_group_and_name(path_list, is_free)
+        groups.append(group)
+        names.append(name)
+
+    groups = np.array(groups)
     counts = pd.value_counts(groups)
     to_be_split = counts[counts > max_group_size]
     for group_name, n_occurrences in to_be_split.items():
@@ -39,7 +43,8 @@ def get_params_groups(params, flat_params, max_group_size=8):
             max_group_size=max_group_size,
         )
         groups[groups == group_name] = split_group_names
-    return groups.tolist()
+
+    return groups.tolist(), names
 
 
 def _get_group_and_name(path_list, is_free):
@@ -53,7 +58,7 @@ def _get_group_and_name(path_list, is_free):
     Returns:
         out (tuple): Tuple of length 2. The 1st entry is the group name of the
             parameter, the 2nd entry is the "first" name of the parameter (i.e.
-            without its group).
+            its name without its group).
 
     """
     if is_free:

@@ -1,13 +1,10 @@
 import numpy as np
 from estimagic.parameters.parameter_groups import _get_group_and_name
 from estimagic.parameters.parameter_groups import _split_long_group
-from estimagic.parameters.parameter_groups import get_params_groups
-from estimagic.parameters.tree_conversion import FlatParams
-from pybaum import leaf_names
-from pybaum import tree_just_flatten
+from estimagic.parameters.parameter_groups import get_params_groups_and_short_names
 
 
-def test_get_params_groups():
+def test_get_params_groups_and_short_names():
     params = {
         "alone": 30,
         "list_of_2": [10, 11],
@@ -15,17 +12,11 @@ def test_get_params_groups():
         "nested": {"c": [20, 21], "d": [22, 23], "e": 26},
         "to_be_split": 40 + np.arange(15),
     }
-    param_values = tree_just_flatten(params)
-    flat_params = FlatParams(
-        values=param_values,
-        lower_bounds=[-np.inf] * len(param_values),
-        upper_bounds=[np.inf] * len(param_values),
-        names=leaf_names(params),
-        # adjust free_mask if the order in the definition of params changes
-        free_mask=[True, True, True, False, False] + [True] * (5 + 15),
+    free_mask = [True] * 3 + [False] * 2 + [True] * (5 + 15)
+    res_groups, res_names = get_params_groups_and_short_names(
+        params=params, free_mask=free_mask
     )
-    res = get_params_groups(params=params, flat_params=flat_params)
-    expected = (
+    expected_groups = (
         [
             "alone",
             "list_of_2",
@@ -41,8 +32,21 @@ def test_get_params_groups():
         + ["to_be_split, 1"] * 8
         + ["to_be_split, 2"] * 7
     )
+    expected_names = [
+        "alone",
+        "0",
+        "1",
+        "fixed_0",
+        "fixed_1",
+        "0",
+        "1",
+        "0",
+        "1",
+        "e",
+    ] + [str(i) for i in range(15)]
 
-    assert res == expected
+    assert res_groups == expected_groups
+    assert res_names == expected_names
 
 
 def test_get_group_and_name_not_free():
