@@ -8,6 +8,7 @@ from estimagic.estimation.estimate_msm import estimate_msm
 from estimagic.estimation.msm_weighting import get_moments_cov
 from estimagic.inference.bootstrap import bootstrap
 from estimagic.inference.bootstrap import bootstrap_from_outcomes
+from estimagic.logging.read_log import OptimizeLogReader
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from estimagic.parameters.constraint_tools import check_constraints
@@ -56,5 +57,6 @@ __all__ = [
     "params_plot",
     "count_free_params",
     "check_constraints",
+    "OptimizeLogReader",
     "__version__",
 ]
