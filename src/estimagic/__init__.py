@@ -8,6 +8,7 @@ from estimagic.estimation.estimate_msm import estimate_msm
 from estimagic.estimation.msm_weighting import get_moments_cov
 from estimagic.inference.bootstrap import bootstrap
 from estimagic.inference.bootstrap import bootstrap_from_outcomes
+from estimagic.logging.read_log import OptimizeLogReader
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
 from estimagic.visualization.convergence_plot import convergence_plot
@@ -52,5 +53,6 @@ __all__ = [
     "render_latex",
     "criterion_plot",
     "params_plot",
+    "OptimizeLogReader",
     "__version__",
 ]
