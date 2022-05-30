@@ -32,6 +32,19 @@ def get_bounds(
         np.ndarray: Consolidated and flattened upper_bounds.
 
     """
+    fast_path = _is_fast_path(
+        params=params,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
+        add_soft_bounds=add_soft_bounds,
+    )
+    if fast_path:
+        return _get_fast_path_bounds(
+            params=params,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
+        )
+
     registry = get_registry(extended=True) if registry is None else registry
     n_params = len(tree_leaves(params, registry=registry))
 
@@ -80,3 +93,41 @@ def _update_bounds_and_flatten(bounds_tree, bounds, direction):
     bounds_flat = tree_leaves(bounds_tree, registry=registry)
     bounds_flat = np.array(bounds_flat, dtype=np.float64)
     return bounds_flat
+
+
+def _is_fast_path(params, lower_bounds, upper_bounds, add_soft_bounds):
+    out = True
+    if add_soft_bounds:
+        out = False
+
+    if not _is_1d_array(params):
+        out = False
+
+    for bound in lower_bounds, upper_bounds:
+        if not (_is_1d_array(bound) or bound is None):
+            out = False
+    return out
+
+
+def _is_1d_array(candidate):
+    return isinstance(candidate, np.ndarray) and candidate.ndim == 1
+
+
+def _get_fast_path_bounds(params, lower_bounds, upper_bounds):
+    if lower_bounds is None:
+        # faster than np.full
+        lower_bounds = np.array([-np.inf] * len(params))
+    else:
+        lower_bounds = lower_bounds.astype(float)
+
+    if upper_bounds is None:
+        # faster than np.full
+        upper_bounds = np.array([np.inf] * len(params))
+    else:
+        upper_bounds = upper_bounds.astype(float)
+
+    if (lower_bounds > upper_bounds).any():
+        msg = "Invalid bounds. Some lower bounds are larger than upper bounds."
+        raise ValueError(msg)
+
+    return lower_bounds, upper_bounds
