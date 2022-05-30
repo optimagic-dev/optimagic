@@ -297,7 +297,7 @@ def get_make_subplot_kwargs(sharex, sharey, kwrgs, plots_per_row, plots):
     }
 
     if nrows > 1:
-        default_kwargs["vertical_spacing"] = ((1 / (nrows - 1)) / 3,)
+        default_kwargs["vertical_spacing"] = (1 / (nrows - 1)) / 3
 
     if not sharey:
         default_kwargs["horizontal_spacing"] = 2 * default_kwargs["horizontal_spacing"]
