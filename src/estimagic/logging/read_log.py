@@ -7,38 +7,144 @@ When using them internally (e.g. in the dashboard), make sure to supply a databa
 path_or_database. Otherwise, the functions may be very slow.
 
 """
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Union
 
+import numpy as np
 import pandas as pd
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import read_last_rows
 from estimagic.logging.database_utilities import read_new_rows
 from estimagic.logging.database_utilities import read_specific_row
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_flatten
+from pybaum import tree_unflatten
 from sqlalchemy import MetaData
 
 
-def read_optimization_iteration(path_or_database, iteration, include_internals=False):
-    """Get information about an optimization iteration.
+def read_start_params(path_or_database):
+    """Load the start parameters DataFrame.
 
     Args:
         path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
-        iteration (int): The index of the iteration that should be retrieved.
-            The row_id behaves as Python list indices, i.e. ``0`` identifies the
-            first iteration, ``-1`` the last one, etc.
-        include_internals (bool): Whether internally used quantities like the
-            internal parameter vector and the corresponding derivative etc. are included
-            in the result. Default False. This should only be used by advanced users.
 
     Returns:
-        dict: The logged information corresponding to the iteration. The keys correspond
-            to database columns.
-
-    Raises:
-        KeyError: if the iteration is out of bounds.
+        params (pd.DataFrame): see :ref:`params`.
 
     """
-    database = load_database(**_process_path_or_database(path_or_database))
-    start_params = read_start_params(database)
+    database = _load_database(path_or_database)
+    optimization_problem = read_last_rows(
+        database=database,
+        table_name="optimization_problem",
+        n_rows=1,
+        return_type="dict_of_lists",
+    )
+    start_params = optimization_problem["params"][0]
+    return start_params
+
+
+def _load_database(path_or_database):
+    """Get an sqlalchemy.MetaDate object from path or database."""
+
+    res = {"path": None, "metadata": None, "fast_logging": False}
+    if isinstance(path_or_database, MetaData):
+        res = path_or_database
+    elif isinstance(path_or_database, (Path, str)):
+        path = Path(path_or_database)
+        if not path.exists():
+            raise FileNotFoundError(f"No such database file: {path}")
+        res = load_database(path=path)
+    else:
+        raise ValueError(
+            "path_or_database must be a path or sqlalchemy.MetaData object"
+        )
+    return res
+
+
+def read_steps_table(path_or_database):
+    """Load the steps table.
+
+    Args:
+        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
+
+    Returns:
+        steps_df (pandas.DataFrame)
+
+    """
+    database = _load_database(path_or_database)
+    steps_table, _ = read_new_rows(
+        database=database,
+        table_name="steps",
+        last_retrieved=0,
+        return_type="list_of_dicts",
+    )
+    steps_df = pd.DataFrame(steps_table)
+
+    return steps_df
+
+
+def read_optimization_problem_table(path_or_database):
+    """Load the start parameters DataFrame.
+
+    Args:
+        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
+
+    Returns:
+        params (pd.DataFrame): see :ref:`params`.
+
+    """
+    database = _load_database(path_or_database)
+    steps_table, _ = read_new_rows(
+        database=database,
+        table_name="optimization_problem",
+        last_retrieved=0,
+        return_type="list_of_dicts",
+    )
+    steps_df = pd.DataFrame(steps_table)
+
+    return steps_df
+
+
+@dataclass
+class OptimizeLogReader:
+    """Read information about an optimization from a sqlite database."""
+
+    path: Union[str, Path]
+
+    def __post_init__(self):
+        _database = _load_database(self.path)
+        _start_params = read_start_params(_database)
+        _registry = get_registry(extended=True)
+        _, _treedef = tree_flatten(_start_params, registry=_registry)
+        self._database = _database
+        self._registry = _registry
+        self._treedef = _treedef
+        self._start_params = _start_params
+
+    def read_iteration(self, iteration):
+        out = _read_optimization_iteration(
+            database=self._database,
+            iteration=iteration,
+            params_treedef=self._treedef,
+            registry=self._registry,
+        )
+        return out
+
+    def read_history(self):
+        out = _read_optimization_history(
+            database=self._database,
+            params_treedef=self._treedef,
+            registry=self._registry,
+        )
+        return out
+
+    def read_start_params(self):
+        return self._start_params
+
+
+def _read_optimization_iteration(database, iteration, params_treedef, registry):
+    """Get information about an optimization iteration."""
     if iteration >= 0:
         rowid = iteration + 1
     else:
@@ -50,10 +156,11 @@ def read_optimization_iteration(path_or_database, iteration, include_internals=F
         )
         highest_rowid = last_iteration[0]["rowid"]
 
+        # iteration is negative here!
         rowid = highest_rowid + iteration + 1
 
     data = read_specific_row(
-        database=database,
+        database,
         table_name="optimization_iterations",
         rowid=rowid,
         return_type="list_of_dicts",
@@ -64,131 +171,32 @@ def read_optimization_iteration(path_or_database, iteration, include_internals=F
     else:
         data = data[0]
 
-    params = start_params.copy()
-    params["value"] = data.pop("params")
+    params = tree_unflatten(params_treedef, data["params"], registry=registry)
     data["params"] = params
-
-    to_remove = ["distance_origin", "distance_ones"]
-    if not include_internals:
-        to_remove += ["internal_params", "internal_derivative"]
-    for key in to_remove:
-        if key in data:
-            del data[key]
 
     return data
 
 
-def read_start_params(path_or_database):
-    """Load the start parameters.
-
-    Args:
-        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
-
-    Returns:
-        params: see :ref:`params`.
-
-    """
-    database = load_database(**_process_path_or_database(path_or_database))
-    optimization_problem = read_last_rows(
-        database=database,
-        table_name="optimization_problem",
-        n_rows=1,
-        return_type="dict_of_lists",
-    )
-    start_params = optimization_problem["params"][0]
-    return start_params
-
-
-def read_optimization_histories(path_or_database):
+def _read_optimization_history(database, params_treedef, registry):
     """Read a histories out values, parameters and other information."""
-    database = load_database(**_process_path_or_database(path_or_database))
-
-    start_params = read_start_params(path_or_database)
 
     raw_res, _ = read_new_rows(
         database=database,
         table_name="optimization_iterations",
         last_retrieved=0,
-        return_type="dict_of_lists",
-    )
-
-    params_history = pd.DataFrame(raw_res["params"], columns=start_params.index)
-    value_history = pd.Series(raw_res["value"])
-
-    metadata = pd.DataFrame()
-    metadata["timestamps"] = raw_res["timestamp"]
-    metadata["valid"] = raw_res["valid"]
-    metadata["has_value"] = value_history.notnull()
-    metadata["has_derivative"] = [d is not None for d in raw_res["internal_derivative"]]
-
-    histories = {
-        "values": value_history.dropna(),
-        "params": params_history,
-        "metadata": metadata,
-    }
-
-    if "contributions" in raw_res:
-        first_contrib = raw_res["contributions"][0]
-        if isinstance(first_contrib, pd.Series):
-            columns = first_contrib.index
-        else:
-            columns = None
-        contributions_history = pd.DataFrame(
-            raw_res["contributions"], columns=columns
-        ).dropna()
-        histories["contributions"] = contributions_history
-
-    return histories
-
-
-def _process_path_or_database(path_or_database):
-    """Make inputs for load_database out of path_or_database.
-
-    Args:
-        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
-
-    Returns:
-        dict: The keys are "path", "metadata" and "fast_logging"
-
-    Examples:
-
-    >>> from sqlalchemy import MetaData
-    >>> database = MetaData()
-    >>> _process_path_or_database(database)
-    {'path': None, 'metadata': MetaData(), 'fast_logging': False}
-
-    """
-    res = {"path": None, "metadata": None, "fast_logging": False}
-    if isinstance(path_or_database, MetaData):
-        res["metadata"] = path_or_database
-    elif isinstance(path_or_database, (Path, str)):
-        res["path"] = Path(path_or_database).resolve()
-        if not res["path"].exists():
-            raise FileNotFoundError(f"No such database file: {res['path']}")
-    else:
-        raise ValueError(
-            "path_or_database must be a path or sqlalchemy.MetaData object"
-        )
-    return res
-
-
-def read_steps_table(path_or_database):
-    """Load the start parameters DataFrame.
-
-    Args:
-        path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
-
-    Returns:
-        params (pd.DataFrame): see :ref:`params`.
-
-    """
-    database = load_database(**_process_path_or_database(path_or_database))
-    steps_table, _ = read_new_rows(
-        database=database,
-        table_name="steps",
-        last_retrieved=0,
         return_type="list_of_dicts",
     )
-    steps_df = pd.DataFrame(steps_table)
 
-    return steps_df
+    history = {"params": [], "criterion": [], "runtime": []}
+    for data in raw_res:
+        if data["value"] is not None:
+            params = tree_unflatten(params_treedef, data["params"], registry=registry)
+            history["params"].append(params)
+            history["criterion"].append(data["value"])
+            history["runtime"].append(data["timestamp"])
+
+    times = np.array(history["runtime"])
+    times -= times[0]
+    history["runtime"] = times
+
+    return history

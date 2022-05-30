@@ -31,7 +31,6 @@ from sqlalchemy import PickleType
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import update
-from sqlalchemy.dialects.sqlite import DATETIME
 
 
 def load_database(metadata=None, path=None, fast_logging=False):
@@ -103,7 +102,7 @@ def make_optimization_iteration_table(database, if_exists="extend"):
         Column("rowid", Integer, primary_key=True),
         Column("params", PickleType(pickler=RobustPickler)),
         Column("internal_derivative", PickleType(pickler=RobustPickler)),
-        Column("timestamp", DATETIME),
+        Column("timestamp", Float),
         Column("exceptions", String),
         Column("valid", Boolean),
         Column("hash", String),
