@@ -4,6 +4,7 @@ from pathlib import Path
 
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.exceptions import InvalidKwargsError
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
@@ -850,9 +851,8 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     ignored = [option for option in numdiff_options if option not in relevant]
 
     if ignored:
-        warnings.warn(
-            "The following numdiff options were ignored because they will be set "
-            f"internally during the optimization:\n\n{ignored}"
+        raise InvalidKwargsError(
+            f"The following numdiff_options are not allowed:\n\n{ignored}"
         )
 
     numdiff_options = {

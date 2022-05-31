@@ -11,6 +11,8 @@ from estimagic.inference.bootstrap import bootstrap_from_outcomes
 from estimagic.logging.read_log import OptimizeLogReader
 from estimagic.optimization.optimize import maximize
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.constraint_tools import check_constraints
+from estimagic.parameters.constraint_tools import count_free_params
 from estimagic.visualization.convergence_plot import convergence_plot
 from estimagic.visualization.derivative_plot import derivative_plot
 from estimagic.visualization.estimation_table import estimation_table
@@ -53,6 +55,8 @@ __all__ = [
     "render_latex",
     "criterion_plot",
     "params_plot",
+    "count_free_params",
+    "check_constraints",
     "OptimizeLogReader",
     "__version__",
 ]
