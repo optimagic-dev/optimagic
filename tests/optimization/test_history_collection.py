@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pytest
 from estimagic.logging.read_log import OptimizeLogReader
@@ -17,7 +19,7 @@ for name, algo in AVAILABLE_ALGORITHMS.items():
             BOUNDED.append(name)
 
 
-@pytest.mark.slow
+@pytest.mark.skipif(sys.platform != "linux", reason="Slow on other platforms.")
 @pytest.mark.parametrize("algorithm", OPTIMIZERS)
 def test_history_collection_with_parallelization(algorithm, tmp_path):
     lb = np.zeros(5) if algorithm in BOUNDED else None
