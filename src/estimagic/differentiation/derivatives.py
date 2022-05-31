@@ -2,6 +2,7 @@ import functools
 import itertools
 import re
 from itertools import product
+from typing import NamedTuple
 
 import numpy as np
 import pandas as pd
@@ -14,10 +15,14 @@ from estimagic.parameters.block_trees import hessian_to_block_tree
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.parameters.tree_registry import get_registry
-from estimagic.utilities import namedtuple_from_kwargs
 from pybaum import tree_flatten
 from pybaum import tree_just_flatten as tree_leaves
 from pybaum import tree_unflatten
+
+
+class Evals(NamedTuple):
+    pos: np.ndarray
+    neg: np.ndarray
 
 
 def first_derivative(
@@ -126,6 +131,9 @@ def first_derivative(
                 1.
 
     """
+    _is_fast_params = isinstance(params, np.ndarray) and params.ndim == 1
+    registry = get_registry(extended=True)
+
     lower_bounds, upper_bounds = get_bounds(params, lower_bounds, upper_bounds)
 
     # handle keyword arguments
@@ -133,9 +141,11 @@ def first_derivative(
     partialed_func = functools.partial(func, **func_kwargs)
 
     # convert params to numpy
-    registry = get_registry(extended=True)
-    x, params_treedef = tree_flatten(params, registry=registry)
-    x = np.array(x, dtype=np.float64)
+    if not _is_fast_params:
+        x, params_treedef = tree_flatten(params, registry=registry)
+        x = np.array(x, dtype=np.float64)
+    else:
+        x = params.astype(float)
 
     if np.isnan(x).any():
         raise ValueError("The parameter vector must not contain NaNs.")
@@ -166,11 +176,12 @@ def first_derivative(
                 evaluation_points.append(point)
 
     # convert the numpy arrays to whatever is needed by func
-    evaluation_points = [
-        # entries are either a numpy.ndarray or np.nan
-        _unflatten_if_not_nan(p, params_treedef, registry)
-        for p in evaluation_points
-    ]
+    if not _is_fast_params:
+        evaluation_points = [
+            # entries are either a numpy.ndarray or np.nan
+            _unflatten_if_not_nan(p, params_treedef, registry)
+            for p in evaluation_points
+        ]
 
     # we always evaluate f0, so we can fall back to one-sided derivatives if
     # two-sided derivatives fail. The extra cost is negligible in most cases.
@@ -198,17 +209,32 @@ def first_derivative(
         raw_evals = raw_evals[:-1]
     func_value = f0
 
-    f0_tree = f0[key] if key is not None and isinstance(f0, dict) else f0
-    f0 = tree_leaves(f0_tree, registry=registry)
-    f0 = np.array(f0, dtype=np.float64)
+    use_key = key is not None and isinstance(f0, dict)
+    f0_tree = f0[key] if use_key else f0
+    scalar_out = np.isscalar(f0_tree)
+    vector_out = isinstance(f0_tree, np.ndarray) and f0_tree.ndim == 1
+
+    if scalar_out:
+        f0 = np.array([f0_tree], dtype=float)
+    elif vector_out:
+        f0 = f0_tree.astype(float)
+    else:
+        f0 = tree_leaves(f0_tree, registry=registry)
+        f0 = np.array(f0, dtype=np.float64)
 
     # convert the raw evaluations to numpy arrays
-    raw_evals = _convert_evals_to_numpy(raw_evals, key, registry)
+    raw_evals = _convert_evals_to_numpy(
+        raw_evals=raw_evals,
+        key=key,
+        registry=registry,
+        is_scalar_out=scalar_out,
+        is_vector_out=vector_out,
+    )
 
     # apply finite difference formulae
     evals = np.array(raw_evals).reshape(2, n_steps, len(x), -1)
     evals = np.transpose(evals, axes=(0, 1, 3, 2))
-    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    evals = Evals(pos=evals[0], neg=evals[1])
 
     jac_candidates = {}
     for m in ["forward", "backward", "central"]:
@@ -236,7 +262,12 @@ def first_derivative(
         raise Exception(exc_info)
 
     # results processing
-    derivative = matrix_to_block_tree(jac, f0_tree, params)
+    if _is_fast_params and vector_out:
+        derivative = jac
+    elif _is_fast_params and scalar_out:
+        derivative = jac.flatten()
+    else:
+        derivative = matrix_to_block_tree(jac, f0_tree, params)
 
     result = {"derivative": derivative}
     if return_func_value:
@@ -553,7 +584,7 @@ def _reshape_one_step_evals(raw_evals_one_step, n_steps, dim_x):
     """
     evals = np.array(raw_evals_one_step).reshape(2, n_steps, dim_x, -1)
     evals = evals.swapaxes(2, 3)
-    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    evals = Evals(pos=evals[0], neg=evals[1])
     return evals
 
 
@@ -578,7 +609,7 @@ def _reshape_two_step_evals(raw_evals_two_step, n_steps, dim_x):
     evals = np.array(raw_evals_two_step).reshape(2, n_steps, dim_x, dim_x, -1)
     evals = evals.transpose(0, 1, 4, 2, 3)
     evals[..., tril_idx[0], tril_idx[1]] = evals[..., tril_idx[1], tril_idx[0]]
-    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[1])
+    evals = Evals(pos=evals[0], neg=evals[1])
     return evals
 
 
@@ -609,7 +640,7 @@ def _reshape_cross_step_evals(raw_evals_cross_step, n_steps, dim_x, f0):
     evals = evals.transpose(0, 1, 4, 2, 3)
     evals[0][..., tril_idx[0], tril_idx[1]] = evals[1][..., tril_idx[1], tril_idx[0]]
     evals[0][..., diag_idx[0], diag_idx[1]] = np.atleast_2d(f0).T[np.newaxis, ...]
-    evals = namedtuple_from_kwargs(pos=evals[0], neg=evals[0].swapaxes(2, 3))
+    evals = Evals(pos=evals[0], neg=evals[0].swapaxes(2, 3))
     return evals
 
 
@@ -690,7 +721,9 @@ def _convert_richardson_candidates_to_frame(jac, err):
     return df
 
 
-def _convert_evals_to_numpy(raw_evals, key, registry):
+def _convert_evals_to_numpy(
+    raw_evals, key, registry, is_scalar_out=False, is_vector_out=False
+):
     """harmonize the output of the function evaluations.
 
     The raw_evals might contain dictionaries of which we only need one entry, scalar
@@ -704,13 +737,22 @@ def _convert_evals_to_numpy(raw_evals, key, registry):
         for val in raw_evals
     ]
 
-    # get rid of pandas objects
-    evals = [
-        np.array(tree_leaves(val, registry=registry), dtype=np.float64)
-        if not _is_scalar_nan(val)
-        else val
-        for val in evals
-    ]
+    # convert pytrees to arrays
+    if is_scalar_out:
+        evals = [
+            np.array([val], dtype=float) if not _is_scalar_nan(val) else val
+            for val in evals
+        ]
+
+    elif is_vector_out:
+        evals = [val.astype(float) if not _is_scalar_nan(val) else val for val in evals]
+    else:
+        evals = [
+            np.array(tree_leaves(val, registry=registry), dtype=np.float64)
+            if not _is_scalar_nan(val)
+            else val
+            for val in evals
+        ]
 
     # find out the correct output shape
     try:

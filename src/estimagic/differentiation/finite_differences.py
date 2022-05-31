@@ -8,8 +8,14 @@ Since steps and evals contain NaNs, we have to make sure that the functions do n
 warnings or errors for that case.
 
 """
+from typing import NamedTuple
+
 import numpy as np
-from estimagic.utilities import namedtuple_from_kwargs
+
+
+class Evals(NamedTuple):
+    pos: np.ndarray
+    neg: np.ndarray
 
 
 def jacobian(evals, steps, f0, method):
@@ -100,7 +106,7 @@ def hessian(evals, steps, f0, method):
     f0 = f0.reshape(1, dim_f, 1, 1)
 
     # rename variables to increase readability in formulas
-    evals_one = namedtuple_from_kwargs(
+    evals_one = Evals(
         pos=np.expand_dims(evals["one_step"].pos, axis=3),
         neg=np.expand_dims(evals["one_step"].neg, axis=3),
     )
