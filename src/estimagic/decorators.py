@@ -148,7 +148,7 @@ class AlgoInfo(NamedTuple):
     is_available: bool
     arguments: list
     is_global: bool = False
-    disable_history: bool = (False,)
+    disable_history: bool = False
 
 
 def mark_minimizer(
