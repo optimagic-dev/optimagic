@@ -176,6 +176,9 @@ def mark_minimizer(
             independent of the scaling of the parameters.
         is_available (bool): Whether the algorithm is available. This is needed for
             algorithms that require optional dependencies.
+        disable_history (bool): Whether the automatic history collection should be
+            disabled, for example, because the algorithm does its own history
+            collection.
 
     """
     if name is None:

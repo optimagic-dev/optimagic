@@ -81,7 +81,7 @@ def internal_criterion_and_derivative_template(
         history_container (list or None): List to which parameter, criterion and
             derivative histories are appended. Should be set to None if an algorithm
             parallelizes over criterion or derivative evaluations.
-        return_history (bool): Whether the history container should be returned.
+        return_history_entry (bool): Whether the history container should be returned.
 
     Returns:
         float, np.ndarray or tuple: If task=="criterion" it returns the output of
