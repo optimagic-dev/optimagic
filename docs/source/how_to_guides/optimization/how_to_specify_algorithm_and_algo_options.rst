@@ -1140,10 +1140,6 @@ optimizers.
     spaces.
 
     - **stopping.max_iterations** (int): Number of generations to evolve.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch
-      evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
-      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed
       to be part of the initial population. This saves one criterion function
@@ -1164,10 +1160,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the
       number of parameters but at least 10.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch
-      evaluator (currently 'joblib' and 'pathos_mp') or Callable with the same
-      interface as the estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed
       to be part of the initial population. This saves one criterion function
@@ -1213,10 +1205,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 10.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1236,10 +1224,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1281,10 +1265,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1337,10 +1317,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1382,10 +1358,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1420,10 +1392,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 10.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1552,10 +1520,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 250.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1587,10 +1551,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1630,10 +1590,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1651,10 +1607,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. Even though the algorithm is not
       population based the population size does affect the results of the algorithm.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1673,10 +1625,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that
@@ -1702,10 +1650,6 @@ optimizers.
 
     - **population_size** (int): Size of the population. If None, it's twice the number of
       parameters but at least 64.
-    - **batch_evaluator (str or Callable)**: Name of a pre-implemented batch evaluator
-      (currently 'joblib' and 'pathos_mp') or Callable with the same interface as the
-      estimagic batch_evaluators. See :ref:`batch_evaluators`.
-    - **n_cores** (int): Number of cores to use.
     - **seed** (int): seed used by the internal random number generator.
     - **discard_start_params** (bool): If True, the start params are not guaranteed to be
       part of the initial population. This saves one criterion function evaluation that

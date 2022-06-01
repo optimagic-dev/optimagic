@@ -2,7 +2,7 @@
 Implementation of parallelosation of Nelder-Mead algorithm
 """
 import numpy as np
-from estimagic import batch_evaluators
+from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.decorators import mark_minimizer
 from estimagic.optimization.algo_options import (
     CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,
@@ -14,10 +14,11 @@ from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 
 
 @mark_minimizer(
-    name="parallel_neldermead",
+    name="neldermead_parallel",
     primary_criterion_entry="value",
     needs_scaling=True,
     is_available=True,
+    disable_history=True,
 )
 def neldermead_parallel(
     criterion,
@@ -103,11 +104,7 @@ def neldermead_parallel(
     else:
         s = init_simplex_method(x)
 
-    # check if batch is callable
-    if not callable(batch_evaluator):
-        batch_evaluator = getattr(
-            batch_evaluators, f"{batch_evaluator}_batch_evaluator"
-        )
+    batch_evaluator = process_batch_evaluator(batch_evaluator)
 
     # calculate criterion values for the initial simplex
     f_s = np.array(batch_evaluator(func=criterion, arguments=s, n_cores=n_cores))[

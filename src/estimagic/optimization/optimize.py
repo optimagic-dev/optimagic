@@ -52,7 +52,7 @@ def maximize(
     scaling_options=None,
     multistart=False,
     multistart_options=None,
-    collect_history=None,
+    collect_history=True,
     skip_checks=False,
 ):
     """Maximize criterion using algorithm subject to constraints.
@@ -189,9 +189,7 @@ def maximize(
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
         collect_history (bool): Whether the history of parameters and criterion values
-            should be collected and returned as part of the result. Default None,
-            which means that the history is collected as long as optimizers do not
-            parallelize over criterion evaluations.
+            should be collected and returned as part of the result. Default True.
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.
@@ -252,7 +250,7 @@ def minimize(
     scaling_options=None,
     multistart=False,
     multistart_options=None,
-    collect_history=None,
+    collect_history=True,
     skip_checks=False,
 ):
     """Minimize criterion using algorithm subject to constraints.
@@ -389,9 +387,7 @@ def minimize(
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
         collect_history (bool): Whether the history of parameters and criterion values
-            should be collected and returned as part of the result. Default None,
-            which means that the history is collected as long as optimizers do not
-            parallelize over criterion evaluations.
+            should be collected and returned as part of the result. Default True.
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.

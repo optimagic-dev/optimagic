@@ -23,6 +23,7 @@ from estimagic.decorators import unpack
 def pathos_mp_batch_evaluator(
     func,
     arguments,
+    *,
     n_cores=N_CORES,
     error_handling="continue",
     unpack_symbol=None,
@@ -86,6 +87,7 @@ def pathos_mp_batch_evaluator(
 def joblib_batch_evaluator(
     func,
     arguments,
+    *,
     n_cores=N_CORES,
     error_handling="continue",
     unpack_symbol=None,
