@@ -148,6 +148,7 @@ class AlgoInfo(NamedTuple):
     is_available: bool
     arguments: list
     is_global: bool = False
+    disable_history: bool = False
 
 
 def mark_minimizer(
@@ -158,6 +159,7 @@ def mark_minimizer(
     needs_scaling=False,
     is_available=True,
     is_global=False,
+    disable_history=False,
 ):
     """Decorator to mark a function as internal estimagic minimizer and add information.
 
@@ -174,6 +176,9 @@ def mark_minimizer(
             independent of the scaling of the parameters.
         is_available (bool): Whether the algorithm is available. This is needed for
             algorithms that require optional dependencies.
+        disable_history (bool): Whether the automatic history collection should be
+            disabled, for example, because the algorithm does its own history
+            collection.
 
     """
     if name is None:
@@ -196,6 +201,9 @@ def mark_minimizer(
     if not isinstance(is_available, bool):
         raise TypeError("is_available must be a bool.")
 
+    if not isinstance(disable_history, bool):
+        raise TypeError("disable_history must be a bool.")
+
     def decorator_mark_minimizer(func):
         arguments = list(inspect.signature(func).parameters)
 
@@ -213,6 +221,7 @@ def mark_minimizer(
             is_available=is_available,
             arguments=arguments,
             is_global=is_global,
+            disable_history=disable_history,
         )
 
         @functools.wraps(func)
