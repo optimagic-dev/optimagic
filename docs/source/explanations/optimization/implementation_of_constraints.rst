@@ -32,9 +32,9 @@ Possible approaches
 Reparametrizations
 ~~~~~~~~~~~~~~~~~~
 
-In the reparametrization approach need to find an invertible mapping :math:`g` such as
-well as two :math:`k'` dimensional vectors :math:`l` and :math:`u` such that:
-
+In the reparametrization approach we need to find an invertible mapping
+:math:`g : \mathbb{R}^{k'} \to \mathbb{R}^k`, and two new bounds :math:`l'` and
+:math:`u'` such that:
 
 .. math::
 
@@ -175,7 +175,7 @@ A suitable choice of :math:`\mathbf{\tilde{X}}` and :math:`\mathbf{M}` are:
 .. math::
 
     \mathbf{\tilde{X}} \equiv \{(\tilde{x}_1, \tilde{x}_2)^T \mid \mathbf{\tilde{x}}_1
-    \in \mathbb{R}^{k}$ \text{ and } \mathbf{l} \leq \mathbf{\tilde{x}}_2 \leq \mathbf{l}\}
+    \in \mathbb{R}^{k} \text{ and } \mathbf{l} \leq \mathbf{\tilde{x}}_2 \leq \mathbf{l}\}
 
     \mathbf{M} =
         \left[ {\begin{array}{cc}

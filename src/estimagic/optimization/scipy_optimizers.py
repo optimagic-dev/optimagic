@@ -102,7 +102,7 @@ def scipy_lbfgsb(
     return process_scipy_result(res)
 
 
-@mark_minimizer(name="scipy_lbfgsb")
+@mark_minimizer(name="scipy_slsqp")
 def scipy_slsqp(
     criterion,
     derivative,
@@ -110,6 +110,7 @@ def scipy_slsqp(
     lower_bounds,
     upper_bounds,
     *,
+    constraints=None,
     convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
 ):
@@ -125,12 +126,15 @@ def scipy_slsqp(
         "ftol": convergence_absolute_criterion_tolerance,
     }
 
+    constraints = _get_scipy_constraints(constraints, method="SLSQP")
+
     res = scipy.optimize.minimize(
         fun=criterion,
         x0=x,
         method="SLSQP",
         jac=derivative,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
+        constraints=constraints,
         options=options,
     )
 
@@ -304,6 +308,7 @@ def scipy_cobyla(
     criterion,
     x,
     *,
+    constraints,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     trustregion_initial_radius=None,
@@ -322,6 +327,7 @@ def scipy_cobyla(
         fun=criterion,
         x0=x,
         method="COBYLA",
+        constraints=constraints,
         options=options,
         tol=convergence_relative_params_tolerance,
     )
@@ -442,6 +448,13 @@ def process_scipy_result(scipy_results_obj):
 
 def _get_scipy_bounds(lower_bounds, upper_bounds):
     return Bounds(lb=lower_bounds, ub=upper_bounds)
+
+
+def _get_scipy_constraints(constraints, method):
+    if method == "trust-constr":
+        raise NotImplementedError
+    else:
+        return constraints
 
 
 def _scipy_least_squares(

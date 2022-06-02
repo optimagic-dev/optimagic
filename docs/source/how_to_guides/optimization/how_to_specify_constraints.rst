@@ -288,8 +288,8 @@ flat numpy array are explained in the next section.
     typically it is more convenient to use the special cases instead of expressing
     them as a linear constraint. Internally, it will make no difference.
 
-    Let's impose the constraint that the sum of the average of the first four parameters
-    is at least 0.95.
+    Let's impose the constraint that the average of the first four parameters is at
+    least 0.95.
 
     .. code-block:: python
 
