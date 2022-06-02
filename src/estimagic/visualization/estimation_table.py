@@ -31,7 +31,6 @@ def estimation_table(
     stats_options=None,
     number_format=("{0:.3g}", "{0:.5f}", "{0:.4g}"),
     add_trailing_zeros=True,
-    padding=1,
     siunitx_warning=True,
     alignment_warning=True,
 ):
@@ -125,10 +124,6 @@ def estimation_table(
             table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
         add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point. Default True.
-        padding (int): an integer used for aligning LaTex columns. Affects the
-            alignment of the columns to the left of the decimal point of numerical
-            entries. Default is 1. If the number of models is more than 2, set the
-            value of padding to 3 or more to avoid columns overlay in the tex output.
         siunitx_watning (bool): If True, print warning about LaTex preamble to add for
             proper compilation of  when working with siunitx package. Default True.
         alignment_warning (bool): If True, print warning about siunitx table formatting,
@@ -157,7 +152,7 @@ def estimation_table(
     )
     show_col_groups = _update_show_col_groups(show_col_groups, column_groups)
     stats_options = _set_default_stats_options(stats_options)
-    body, footer, max_trail = _get_estimation_table_body_and_footer(
+    body, footer = _get_estimation_table_body_and_footer(
         models,
         column_names,
         column_groups,
@@ -181,7 +176,6 @@ def estimation_table(
     render_inputs = {
         "body": body,
         "footer": footer,
-        "right_decimals": max_trail,
         "render_options": render_options,
     }
     if return_type == "render_inputs":
@@ -190,7 +184,6 @@ def estimation_table(
     elif str(return_type).endswith("tex"):
         out = render_latex(
             **render_inputs,
-            padding=padding,
             show_footer=show_footer,
             append_notes=append_notes,
             notes_label=notes_label,
@@ -233,8 +226,6 @@ def estimation_table(
 def render_latex(
     body,
     footer,
-    right_decimals,
-    padding=1,
     render_options=None,
     show_footer=True,
     append_notes=True,
@@ -252,17 +243,6 @@ def render_latex(
             applicable) and significance stars (if applicable).
         footer (pandas.DataFrame): DataFrame with formatted strings of summary
             statistics (such as number of observations, r-squared, etc.)
-        right_decimals (int): An integer passed to the `table-format` argument of
-            siuntix tabular controls the number of figures that is reserved to the
-            right of the decimal point. Impacts distancing between table columns and
-            the distance between digits and non numerical parts (e.g. stars (*)) of
-            cell strings. For detailed information and usage examples see:
-            https://texdoc.org/serve/siunitx/0 (page 41).
-        padding (int): Like right_decimals, is used for table alignment in siuntix
-            table. Controls the number of figures reserved to the left from decimal
-            points and thus the space to the left from each table column.
-            For detailed information and usage examples see:
-            https://texdoc.org/serve/siunitx/0 (page 41)
         render_options(dict): A dictionary with custom kwargs to pass to pd.to_latex(),
             to update the default options. An example is `{header: False}` that
             disables displaying column names.
@@ -290,7 +270,6 @@ def render_latex(
                    \sisetup{
                         group-digits             = false,
                         input-symbols            = (),
-                        table-align-text-pre     = false,
                         table-align-text-post    = false
                     }
                     to your main tex file. To turn
@@ -305,43 +284,39 @@ def render_latex(
             )
     body = body.copy(deep=True)
     try:
-        ci_in_params = body.loc[("",)][body.columns[0]].str.contains(";").any()
+        ci_in_body = body.loc[("",)][body.columns[0]].str.contains(";").any()
     except KeyError:
-        ci_in_params = False
+        ci_in_body = False
 
-    if ci_in_params:
+    if ci_in_body:
         body.loc[("",)] = body.loc[("",)].applymap("{{{}}}".format).values
     if body.columns.nlevels > 1:
         column_groups = body.columns.get_level_values(0)
     else:
         column_groups = None
     group_to_col_position = _create_group_to_col_position(column_groups)
-    for i in range(body.columns.nlevels):
-        body = body.rename(
-            {c: "{" + c + "}" for c in body.columns.get_level_values(i)},
-            axis=1,
-            level=i,
-        )
-    body = body.applymap(_add_latex_syntax_around_scientfic_number_string)
     n_levels = body.index.nlevels
     n_columns = len(body.columns)
     # here you add all arguments of df.to_latex for which you want to change the default
     default_options = {
         "index_names": False,
-        "escape": False,
         "na_rep": "",
-        "column_format": "l" * n_levels
-        + "S[table-format ={}.{},table-space-text-post={{-**}}]".format(
-            padding, right_decimals
-        )
-        * n_columns,
-        "multicolumn_format": "c",
+        "column_format": "l" * n_levels + "S" * n_columns,
+        "multicol_align": "c",
+        "hrules": True,
+        "siunitx": True,
     }
+    body_styler = body.style
     if render_options:
         default_options.update(render_options)
-    if not default_options["index_names"]:
-        body.index.names = [None] * body.index.nlevels
-    latex_str = body.to_latex(**default_options)
+    show_index_names = default_options.pop("index_names")
+    if not show_index_names:
+        body_styler = body_styler.hide(names=True)
+    na_rep = default_options.pop("na_rep")
+    body_styler = body_styler.format(na_rep=na_rep)
+    body_styler = body_styler.format_index(escape="latex")
+    body_styler = body_styler.format_index(escape="latex", axis=1)
+    latex_str = body_styler.to_latex(**default_options)
     # Get mapping from group name to column position
     if group_to_col_position:
         temp_str = "\n"
@@ -358,12 +333,12 @@ def render_latex(
         )
     latex_str = latex_str.split("\\bottomrule")[0]
     if show_footer:
-        if "Observations" in footer.index.get_level_values(0):
-            footer = footer.copy(deep=True)
-            footer.loc[("Observations",)] = _add_multicolumn_left_format(
-                footer.loc[("Observations",)].values
-            )
-        stats_str = footer.to_latex(**default_options)
+        footer = footer.copy(deep=True)
+        for _, r in footer.iterrows():
+            r = _center_align_integers(r)
+        footer_styler = footer.style
+        footer_styler = footer_styler.format(na_rep=na_rep)
+        stats_str = footer.style.to_latex(**default_options)
         if "\\midrule" in stats_str:
             stats_str = (
                 "\\midrule" + stats_str.split("\\midrule")[1].split("\\bottomrule")[0]
@@ -565,9 +540,7 @@ def _get_estimation_table_body_and_footer(
             and inference values and significance stars to display in estimation table.
         footer (DataFrame): DataFrame with formatted strings of summary statistics to
             display at the bottom of estimation table.
-        max_trail (int): Integer that shows the maximum number of digits after a decimal
-            point in the parameters DataFrame. Is passed to render_latex for formatting
-            tables in siunitx package.
+
 
     """
     body, max_trail = _build_estimation_table_body(
@@ -595,7 +568,7 @@ def _get_estimation_table_body_and_footer(
         max_trail,
     )
     footer.columns = body.columns
-    return body, footer, max_trail
+    return body, footer
 
 
 def _build_estimation_table_body(
@@ -1124,8 +1097,7 @@ def _create_statistics_sr(
     else:
         show_dof = None
     for k in stats_options:
-        if k not in ["n_obs", "nobs"]:
-            stats_values[stats_options[k]] = model.info.get(k, np.nan)
+        stats_values[stats_options[k]] = model.info.get(k, np.nan)
     raw_formatted = _apply_number_format(
         pd.DataFrame(pd.Series(stats_values)), number_format
     )
@@ -1134,16 +1106,6 @@ def _create_statistics_sr(
     else:
         formatted = raw_formatted
     stats_values = formatted.to_dict()[0]
-    if "n_obs" in stats_options:
-        n_obs = model.info.get("n_obs", np.nan)
-        if not np.isnan(n_obs):
-            n_obs = int(n_obs)
-        stats_values[stats_options["n_obs"]] = n_obs
-    elif "nobs" in stats_options:
-        n_obs = model.info.get("nobs", np.nan)
-        if not np.isnan(n_obs):
-            n_obs = int(n_obs)
-        stats_values[stats_options["nobs"]] = n_obs
     if "fvalue" in model.info and "F Statistic" in stats_values:
         if show_stars and "f_pvalue" in model.info:
             sig_bins = [-1] + sorted(significance_levels) + [2]
@@ -1471,24 +1433,13 @@ def _get_digits_after_decimal(df):
     return max_trail
 
 
-def _add_latex_syntax_around_scientfic_number_string(string):
-    """Add curly braces around scientific numbers.
-
-    Otherwise, siuntix will raise an error.
-
-    """
-    if "e" not in string:
-        out = string
-    else:
-        prefix, *num_parts, suffix = re.split(r"([+-.\d+])", string)
-        number = "".join(num_parts)
-        out = f"{prefix}{{{number}}}{suffix}"
-    return out
-
-
-def _add_multicolumn_left_format(obs_array):
-    """Align oservation numbers at the center of model column."""
-    out = []
-    for i in obs_array.flatten():
-        out.append(f"\\multicolumn{{1}}{{l}}{{{i}}}")
-    return np.array(out).reshape(obs_array.shape)
+def _center_align_integers(sr):
+    """Align integer numbers at the center of model column."""
+    for i in sr.index:
+        res = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i])
+        if res:
+            num = res[0]
+            char = sr[i].split(num)[1]
+            if int(float(num)) == float(num):
+                sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num)))+char}}}"
+    return sr
