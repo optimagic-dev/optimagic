@@ -3,6 +3,9 @@
 Available optimizers and their options
 ======================================
 
+Check out :ref:`algorithms` to see how to select an algorithm and specify
+``algo_options`` when using ``maximize`` or ``minimize``.
+
 
 Optimizers from scipy
 ---------------------
@@ -11,8 +14,9 @@ Optimizers from scipy
 .. _scipy_algorithms:
 
 
-estimagic supports most ``scipy`` algorithms. You do not need to install additional
-dependencies to use them:
+estimagic supports most ``scipy`` algorithms and scipy is automatically installed when
+you install estimagic.
+
 
 .. dropdown::  scipy_lbfgsb
 
@@ -494,13 +498,7 @@ dependencies to use them:
 Own optimizers
 --------------
 
-Estimagic's own algorithms are considered experimental and should not be used for
-publication yet.
-
-In the long run we plan to implement a few high quality optimizers that are specially
-suited for difficult optimizations that arise in estimation problems. Examples are
-optimizers that exploit a nonlinear least-squares structure and can deal with
-noisy criterion functions.
+We implement a few algorithms from scratch. They are currently considered experimental.
 
 
 .. dropdown:: bhhh
@@ -661,17 +659,8 @@ noisy criterion functions.
 Optimizers from the Toolkit for Advanced Optimization (TAO)
 -----------------------------------------------------------
 
-At the moment, estimagic only supports
-`TAO's <https://www.anl.gov/mcs/tao-toolkit-for-advanced-optimization>`_
-POUNDERs algorithm.
-
-The `POUNDERs algorithm <https://doi.org/10.1137/1.9781611974683.ch40>`_
-by Stefan Wild is tailored to minimize a non-linear sum of squares
-objective function. Remember to cite :cite:`Wild2015` when using POUNDERs in
-addition to estimagic.
-
-To use POUNDERs you need to have
-`petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
+We wrap the pounders algorithm from the Toolkit of Advanced optimization. To use it
+you need to have `petsc4py <https://pypi.org/project/petsc4py/>`_ installed.
 
 .. dropdown::  tao_pounders
 
@@ -746,16 +735,12 @@ To use POUNDERs you need to have
 Optimizers from the Numerical Algorithms Group (NAG)
 ----------------------------------------------------
 
-Currently, estimagic supports the
-`Derivative-Free Optimizer for Least-Squares Minimization (DF-OLS)
-<https://numericalalgorithmsgroup.github.io/dfols/>`_ and
-`BOBYQA <https://numericalalgorithmsgroup.github.io/pybobyqa/>`_
-by the `Numerical Algorithms Group <https://www.nag.com/>`_.
+We wrap two algorithms from the numerical algorithms group. To use them, you need to
+install each of them separately:
 
-To use DF-OLS you need to have `the dfols package
-<https://tinyurl.com/y5ztv4yc>`_ installed (``pip install DFO-LS``). BOBYQA
-requires `the pybobyqa package <https://tinyurl.com/y67foub7>`_ (``pip install
-Py-BOBYQA``).
+- ``pip install DFO-LS``
+- ``pip install Py-BOBYQA``
+
 
 .. dropdown::  nag_dfols
 
@@ -2848,12 +2833,6 @@ estimagic supports the `Fides Optimizer
 `the fides package <https://github.com/fides-dev/fides>`_ installed (``pip install
 fides>=0.7.4``, make sure you have at least 0.7.1).
 
-
-.. warning::
-
-  While the algorithm does work with boundaries, it requires that the optimum is away
-  from the boundary for theoretically guaranteed convergence. In practice parameters
-  at the boundary have also caused trouble.
 
 .. dropdown:: fides
 

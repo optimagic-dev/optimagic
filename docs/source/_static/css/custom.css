@@ -215,13 +215,3 @@ details.dropdown .summary-up, details.dropdown .summary-down {
 :root {
   --pst-color-inline-code: 160, 4, 4 !important;
 }
-
-
-.heading-style,
-h2,
-h3,
-h4,
-h5,
-h6 {
- margin:.75rem 0 1.05rem;
-}
