@@ -1,5 +1,4 @@
 import re
-from collections import namedtuple
 from copy import deepcopy
 from functools import partial
 from warnings import warn
@@ -31,8 +30,8 @@ def estimation_table(
     stats_options=None,
     number_format=("{0:.3g}", "{0:.5f}", "{0:.4g}"),
     add_trailing_zeros=True,
+    escape_special_chars_indices=True,
     siunitx_warning=True,
-    alignment_warning=True,
 ):
     r"""Generate html or LaTex tables provided (lists of) of models.
 
@@ -56,14 +55,14 @@ def estimation_table(
             statmodels or be constructed from the outputs of `estimagic.estimate_ml`
             or `estimagic.estimate_msm`. With a little bit of work it is also possible
             to construct them out of R or other results. If a model is not a
-            statsmodels results they must be dictionaries or namedtuples with the
-            following entries: "params" (a DataFrame with value column), "info"
-            (a dictionary with summary statistics such as "n_obs", "rsquared", ...)
-            and "name" (a string), or a DataFrame with value column.
-            If a models is a statsmodels result, model.endog_names is used as name and
-            the rest is extracted from corresponding statsmodels attributes. The model
-            names do not have to be unique but if they are not, models with the same
-            name need to be grouped together.
+            statsmodels results they must be dictionaries with the following entries:
+            "params" (a DataFrame with value column), "info" (a dictionary with summary
+            statistics such as "n_obs", "rsquared", ...) and "name" (a string), or a
+            DataFrame with value column. If a models is a statsmodels result,
+            model.endog_names is used as name and the rest is extracted from
+            corresponding statsmodels attributes. The model names do not have to be
+            unique but if they are not, models with the same name need to be grouped
+            together.
         return_type (str): Can be "dataframe", "latex", "html", "render_inputs" or a
             file path with the extension .tex or .html. If "render_inputs" is passed,
             a dictionary with the entries "body", "footer" and other
@@ -71,7 +70,7 @@ def estimation_table(
             e.g. change formatting, renameof columns or index, ...) and then passed
             to `render_latex` or render_html`. Default "dataframe".
         render_options (dict): a dictionary with keyword arguments that are passed to
-            df.to_latex or df.to_html, depending on the return_type.
+            df.style.to_latex or df.style.to_html, depending on the return_type.
             The default is None.
         show_col_names (bool): If True, the column names are displayed. The default
             column names are the model names if the model names are unique, otherwise
@@ -115,7 +114,7 @@ def estimation_table(
             applicable. Default is 'Notes'
         stats_options (dict): A dictionary that determines which statistics (e.g.
             R-Squared, No. of Observations) are displayed and how they are labeled.
-            The keys are the names of the statistics inside the model.info dictionary
+            The keys are the names of the statistics inside the model['info'] dictionary
             or attribute names of a statsmodels results object. The values are the new
             labels to be displayed for those statistics, i.e. the set of the values is
             used as row names in the table.
@@ -126,9 +125,10 @@ def estimation_table(
             number of digits after the decimal point. Default True.
         siunitx_watning (bool): If True, print warning about LaTex preamble to add for
             proper compilation of  when working with siunitx package. Default True.
-        alignment_warning (bool): If True, print warning about siunitx table formatting,
-            to avoid column overlays. Default True.
-
+        escape_special_chars_indices (bool): If True, replaces soecuak characters
+            in the index (both axes) cell display string with LaTeX or HTML safe
+            sequences.
+        siunitx (bool): If True,
     Returns:
         res_table (data frame, str or dictionary): depending on the rerturn type,
             data frame with formatted strings, a string for html or latex tables,
@@ -168,11 +168,7 @@ def estimation_table(
         number_format,
         add_trailing_zeros,
     )
-    # set kwarg 'header' for to_latex() and to_html() based on
-    # show_column_names, show_col_groups, and show_index_names.
-    render_options = _update_render_options(
-        render_options, show_col_names, show_col_groups, show_index_names
-    )
+
     render_inputs = {
         "body": body,
         "footer": footer,
@@ -180,7 +176,6 @@ def estimation_table(
     }
     if return_type == "render_inputs":
         out = render_inputs
-    # check return_type and get the output
     elif str(return_type).endswith("tex"):
         out = render_latex(
             **render_inputs,
@@ -190,7 +185,9 @@ def estimation_table(
             significance_levels=significance_levels,
             custom_notes=custom_notes,
             siunitx_warning=siunitx_warning,
-            alignment_warning=alignment_warning,
+            show_index_names=show_index_names,
+            show_col_names=show_col_names,
+            escape_special_chars_indices=escape_special_chars_indices,
         )
     elif str(return_type).endswith("html"):
         out = render_html(
@@ -200,6 +197,9 @@ def estimation_table(
             notes_label=notes_label,
             custom_notes=custom_notes,
             significance_levels=significance_levels,
+            show_index_names=show_index_names,
+            show_col_names=show_col_names,
+            escape_special_chars_indices=escape_special_chars_indices,
         )
 
     elif return_type == "dataframe":
@@ -233,7 +233,10 @@ def render_latex(
     significance_levels=(0.1, 0.05, 0.01),
     custom_notes=None,
     siunitx_warning=True,
-    alignment_warning=True,
+    show_index_names=False,
+    show_col_names=True,
+    show_col_groups=True,
+    escape_special_chars_indices=True,
 ):
     """Return estimation table in LaTeX format as string.
 
@@ -243,22 +246,29 @@ def render_latex(
             applicable) and significance stars (if applicable).
         footer (pandas.DataFrame): DataFrame with formatted strings of summary
             statistics (such as number of observations, r-squared, etc.)
-        render_options(dict): A dictionary with custom kwargs to pass to pd.to_latex(),
-            to update the default options. An example is `{header: False}` that
-            disables displaying column names.
-        col_groups (list): A list with column group titles if defined.
+        render_options(dict): A dictionary with custom kwargs to pass to
+            pd.Styler.to_latex(), to update the default options. An example keyword
+            argument is:
+                - siunitx (bool): If True, the table is structured to be compatible
+                    with siunitx package. Default is set to True internally.
+            For the list of all possible arguments, see documentation of
+            `pandas.io.formats.style.Styler.to_latex`.
         show_footer (bool): a boolean variable for displaying footer_df. Default True.
         append_notes (bool): A boolean variable for printing p value cutoff explanation
             and additional notes, if applicable. Default is True.
         notes_label (str): A sting to print as the title of the notes section, if
             applicable. Default is 'Notes'
-        significance_levels (list): a list of floats for p value's significance cutt-off
-            values. Default is [0.1,0.05,0.01].
+        significance_levels (list or tuple): a list of floats for p value's significance
+            cutt-off values. Default is [0.1,0.05,0.01].
         custom_notes (list): A list of strings for additional notes. Default is None.
         siunitx_watning (bool): If True, print warning about LaTex preamble to add for
             proper compilation of  when working with siunitx package. Default True.
-        alignment_warning (bool): If True, print warning about siunitx table formatting,
-            to avoid column overlays. Default True.
+        show_index_names (bool): If True, display index names in the table.
+        show_col_names (bool): If True, the column names are displayed.
+        show_col_groups (bool): If True, the column groups are displayed.
+        escape_special_char_indices (bool): If True, replaces the characters &, %,
+            $, #, _, {, }, ~, ^, and \ in the index (both axes) cell display string
+            with LaTeX-safe sequences.
 
     Returns:
         latex_str (str): The resulting string with Latex tabular code.
@@ -275,13 +285,6 @@ def render_latex(
                     to your main tex file. To turn
                     this warning off set value of siunitx_warning = False"""
         )
-    if len(body.columns) > 2:
-        if alignment_warning:
-            warn(
-                """Set the value of padding to 3 or higher to avoid overlay
-                    of columns. To turn this warning off set value of
-                    alignment_warning = False."""
-            )
     body = body.copy(deep=True)
     try:
         ci_in_body = body.loc[("",)][body.columns[0]].str.contains(";").any()
@@ -294,30 +297,29 @@ def render_latex(
         column_groups = body.columns.get_level_values(0)
     else:
         column_groups = None
+
     group_to_col_position = _create_group_to_col_position(column_groups)
     n_levels = body.index.nlevels
-    n_columns = len(body.columns)
-    # here you add all arguments of df.to_latex for which you want to change the default
+    if escape_special_chars_indices:
+        escape_special_chars_indices = "latex"
+    else:
+        escape_special_chars_indices = None
+    body_styler = _get_updated_styler(
+        body,
+        show_index_names=show_index_names,
+        show_col_names=show_col_names,
+        show_col_groups=show_col_groups,
+        escape_special_chars_indices=escape_special_chars_indices,
+    )
     default_options = {
-        "index_names": False,
-        "na_rep": "",
-        "column_format": "l" * n_levels + "S" * n_columns,
         "multicol_align": "c",
         "hrules": True,
         "siunitx": True,
     }
-    body_styler = body.style
     if render_options:
         default_options.update(render_options)
-    show_index_names = default_options.pop("index_names")
-    if not show_index_names:
-        body_styler = body_styler.hide(names=True)
-    na_rep = default_options.pop("na_rep")
-    body_styler = body_styler.format(na_rep=na_rep)
-    body_styler = body_styler.format_index(escape="latex")
-    body_styler = body_styler.format_index(escape="latex", axis=1)
     latex_str = body_styler.to_latex(**default_options)
-    # Get mapping from group name to column position
+
     if group_to_col_position:
         temp_str = "\n"
         for k in group_to_col_position:
@@ -337,8 +339,7 @@ def render_latex(
         for _, r in footer.iterrows():
             r = _center_align_integers(r)
         footer_styler = footer.style
-        footer_styler = footer_styler.format(na_rep=na_rep)
-        stats_str = footer.style.to_latex(**default_options)
+        stats_str = footer_styler.to_latex(**default_options)
         if "\\midrule" in stats_str:
             stats_str = (
                 "\\midrule" + stats_str.split("\\midrule")[1].split("\\bottomrule")[0]
@@ -367,6 +368,10 @@ def render_html(
     notes_label="Note:",
     custom_notes=None,
     significance_levels=(0.1, 0.05, 0.01),
+    show_index_names=False,
+    show_col_names=True,
+    show_col_groups=True,
+    escape_special_chars_indices=True,
     **kwargs,
 ):
     """Return estimation table in html format as string.
@@ -388,8 +393,13 @@ def render_html(
             and additional notes, if applicable. Default is True.
         notes_label (str): A sting to print as the title of the notes section, if
             applicable. Default is 'Notes'
-        significance_levels (list): a list of floats for p value's significance cutt-off
-            values. Default is [0.1,0.05,0.01].
+        significance_levels (list or tuple): a list of floats for p value's significance
+            cutt-off values. Default is [0.1,0.05,0.01].
+        show_index_names (bool): If True, display index names in the table.
+        show_col_names (bool): If True, the column names are displayed.
+        show_col_groups (bool): If True, the column groups are displayed.
+        escape_special_char_indices (bool): If True,  replace the characters &, <, >, ',
+            and " incell display string with HTML-safe sequences.
 
     Returns:
         latex_str (str): The resulting string with html tabular code.
@@ -397,21 +407,29 @@ def render_html(
     """
     n_levels = body.index.nlevels
     n_columns = len(body.columns)
-    default_options = {"index_names": False, "na_rep": "", "justify": "center"}
     html_str = ""
+    if escape_special_chars_indices:
+        escape_special_chars_indices = "html"
+    else:
+        escape_special_chars_indices = None
+    body_styler = _get_updated_styler(
+        body,
+        show_index_names=show_index_names,
+        show_col_names=show_col_names,
+        show_col_groups=show_col_groups,
+        escape_special_chars_indices=escape_special_chars_indices,
+    )
+    default_options = {"exclude_styles": True}
     if render_options:
         default_options.update(render_options)
-        if "caption" in default_options:
-            html_str += default_options["caption"] + "<br>"
-            default_options.pop("caption")
-    html_str += body.to_html(**default_options).split("</tbody>\n</table>")[0]
+    html_str = body_styler.to_html(**default_options).split("</tbody>\n</table>")[0]
     if show_footer:
         stats_str = """<tr><td colspan="{}" style="border-bottom: 1px solid black">
             </td></tr>""".format(
             n_levels + n_columns
         )
         stats_str += (
-            footer.to_html(**default_options)
+            footer.style.to_html(**default_options)
             .split("</thead>\n")[1]
             .split("</tbody>\n</table>")[0]
         )
@@ -426,63 +444,36 @@ def render_html(
 
 
 def _process_model(model):
-    """Check model validity, convert to namedtuple.
+    """Check model validity, convert to dictionary.
     Args
         model: Estimation result. See docstring of estimation_table for more info.
     Returns:
-        processed_model: A namedtuple with attributes params, info and name.
+        processed_model: A dictionary with keys params, info and name.
 
     """
-
-    ProcessedModel = namedtuple("ProcessedModel", "params info name")
-    if hasattr(model, "params") and hasattr(model, "info"):
-        if not isinstance(model.info, dict):
-            raise ValueError(
-                f"""model.info should be of type dict.
-                The type of info attribute of model {model} is {type(model.info)}."""
-            )
-        if not isinstance(model.params, pd.DataFrame):
-            raise ValueError(
-                f"""model.params should be of type pd.DataFrame.
-                The type of params attribute of model {model} is {type(model.params)}.
-                """
-            )
-        info = model.info
-        params = model.params.copy(deep=True)
-        if hasattr(model, "name"):
-            if not isinstance(model.name, str):
-                raise ValueError(
-                    f"""model.name should be of type str. The type of name attribute
-                of model {model} is {type(model.name)}."""
-                )
-            name = model.name
-        else:
-            name = None
-
+    if isinstance(model, dict):
+        params = model["params"].copy(deep=True)
+        info = model.get("info", {})
+        name = model.get("name", "")
+    elif isinstance(model, pd.DataFrame):
+        params = model.copy(deep=True)
+        info = {}
+        name = None
     else:
-        if isinstance(model, dict):
-            params = model["params"].copy(deep=True)
-            info = model.get("info", {})
-            name = model.get("name", "")
-        elif isinstance(model, pd.DataFrame):
-            params = model.copy(deep=True)
-            info = {}
-            name = None
-        else:
-            try:
-                params = _extract_params_from_sm(model)
-                info = {**_extract_info_from_sm(model)}
-                name = info.pop("name")
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except BaseException:
-                raise TypeError(
-                    f"""Model can  be of type namedtuple, dict,  pd.DataFrame
-                    or a statsmodels result. Model {model} is of type {type(model)}."""
-                )
+        try:
+            params = _extract_params_from_sm(model)
+            info = {**_extract_info_from_sm(model)}
+            name = info.pop("name")
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except BaseException:
+            raise TypeError(
+                f"""Model can  be of type dict,  pd.DataFrame
+                or a statsmodels result. Model {model} is of type {type(model)}."""
+            )
     if "pvalue" in params.columns:
         params = params.rename(columns={"pvalue": "p_value"})
-    processed_model = ProcessedModel(params=params, info=info, name=name)
+    processed_model = {"params": params, "info": info, "name": name}
     return processed_model
 
 
@@ -509,7 +500,7 @@ def _get_estimation_table_body_and_footer(
     Adds significance stars if applicable.
 
     Args:
-        models (list): List of named tuples with attributes 'params', 'info' and 'name'.
+        models (list): List of dictionaries with keys 'params', 'info' and 'name'.
         column_names (list): List of strigs to display as names of the model columns in
             estimation table.
         column_groups (list or NoneType): If defined, list of strings to display as
@@ -521,7 +512,7 @@ def _get_estimation_table_body_and_footer(
         significance_levels (list): a list of floats for p value's significance
             cutt-off values.
         stats_options (dict): A dictionary with displayed statistics names as keys,
-            and statistics names to be retrieved from model.info as values
+            and statistics names to be retrieved from model['info'] as values
         show_col_names (bool): If True, the column names are displayed.
         show_col_groups (bool): If True, the column groups are displayed.
         show_stars (bool): a boolean variable for printing significance stars.
@@ -593,7 +584,7 @@ def _build_estimation_table_body(
     to parameter values if applicable. Adds significance stars if applicable.
 
     Args:
-        models (list): List of named tuples with attributes 'params', 'info' and 'name'.
+        models (list): List of dictionaries with keys 'params', 'info' and 'name'.
         column_names (list): List of strigs to display as names of the model columns in
             estimation table.
         column_groups (list or NoneType): If defined, list of strings to display as
@@ -634,7 +625,7 @@ def _build_estimation_table_body(
     if show_stars:
         for df, mod in zip(dfs, models):
             to_convert.append(
-                pd.concat([df, mod.params.reindex(df.index)["p_value"]], axis=1)
+                pd.concat([df, mod["params"].reindex(df.index)["p_value"]], axis=1)
             )
     else:
         to_convert = dfs
@@ -677,9 +668,9 @@ def _build_estimation_table_footer(
     Adds significance stars if applicable.
 
     Args:
-        models (list): List of named tuples with attributes 'params', 'info' and 'name'.
+        models (list): List of dictionaries with keys 'params', 'info' and 'name'.
         stats_options (dict): A dictionary with displayed statistics names as keys,
-            and statistics names to be retrieved from model.info as values
+            and statistics names to be retrieved from model['info'] as values
         significance_levels (list): a list of floats for p value's significance cutt-off
             values.
         number_format (int, str, iterable or callable): A callable, iterable, integer
@@ -709,6 +700,8 @@ def _build_estimation_table_footer(
         for mod in models
     ]
     stats = pd.concat(to_concat, axis=1)
+    for _, r in stats.iterrows():
+        r = _unformat_integers(r)
     return stats
 
 
@@ -726,9 +719,9 @@ def _reindex_and_float_format_params(
 
 def _get_params_frames_with_common_index(models):
     """Get a list of params frames, reindexed with a common index."""
-    dfs = [model.params for model in models]
+    dfs = [model["params"] for model in models]
     common_index = _get_common_index(dfs)
-    out = [model.params.reindex(common_index) for model in models]
+    out = [model["params"].reindex(common_index) for model in models]
     return out
 
 
@@ -783,23 +776,6 @@ def _update_show_col_groups(show_col_groups, column_groups):
     return show_col_groups
 
 
-def _update_render_options(
-    render_options, show_col_names, show_col_groups, show_index_names
-):
-    """Update default render_options of df.to_html() and df.to_latex()"""
-    if not render_options:
-        if not (show_col_names or show_col_groups):
-            render_options = {"header": False}
-        if show_index_names:
-            render_options["index_names"] = True
-    else:
-        if not (show_col_names and show_col_groups):
-            render_options.update({"header": False})
-        if show_index_names:
-            render_options.update({"index_names": True})
-    return render_options
-
-
 def _set_default_stats_options(stats_options):
     """Define some default summary statistics to display in estimation table."""
     if stats_options is None:
@@ -823,7 +799,7 @@ def _get_model_names(processed_models):
     """Get names of model names if defined, set based on position otherwise.
 
     Args:
-        processed_models (list): List of estimation results processed to namedtuples.
+        processed_models (list): List of estimation results processed to dictionaries.
 
     Returns:
         names (list): List of model names given either by name attribute of each model
@@ -832,8 +808,8 @@ def _get_model_names(processed_models):
     """
     names = []
     for i, mod in enumerate(processed_models):
-        if mod.name:
-            names.append(mod.name)
+        if mod.get("name"):
+            names.append(mod["name"])
         else:
             names.append(f"({i + 1})")
     _check_order_of_model_names(names)
@@ -1097,7 +1073,7 @@ def _create_statistics_sr(
     else:
         show_dof = None
     for k in stats_options:
-        stats_values[stats_options[k]] = model.info.get(k, np.nan)
+        stats_values[stats_options[k]] = model["info"].get(k, np.nan)
     raw_formatted = _apply_number_format(
         pd.DataFrame(pd.Series(stats_values)), number_format
     )
@@ -1106,12 +1082,12 @@ def _create_statistics_sr(
     else:
         formatted = raw_formatted
     stats_values = formatted.to_dict()[0]
-    if "fvalue" in model.info and "F Statistic" in stats_values:
-        if show_stars and "f_pvalue" in model.info:
+    if "fvalue" in model["info"] and "F Statistic" in stats_values:
+        if show_stars and "f_pvalue" in model["info"]:
             sig_bins = [-1] + sorted(significance_levels) + [2]
             sig_icon_fstat = "*" * (
                 len(significance_levels)
-                - np.digitize(model.info["f_pvalue"], sig_bins)
+                - np.digitize(model["info"]["f_pvalue"], sig_bins)
                 + 1
             )
             stats_values["F Statistic"] = (
@@ -1121,19 +1097,19 @@ def _create_statistics_sr(
             fstat_str = "{{{}(df={};{})}}"
             stats_values["F Statistic"] = fstat_str.format(
                 stats_values["F Statistic"],
-                int(model.info["df_model"]),
-                int(model.info["df_resid"]),
+                int(model["info"]["df_model"]),
+                int(model["info"]["df_resid"]),
             )
-    if "resid_std_err" in model.info and "Residual Std. Error" in stats_values:
+    if "resid_std_err" in model["info"] and "Residual Std. Error" in stats_values:
         if show_dof:
             rse_str = "{{{}(df={})}}"
             stats_values["Residual Std. Error"] = rse_str.format(
-                stats_values["Residual Std. Error"], int(model.info["df_resid"])
+                stats_values["Residual Std. Error"], int(model["info"]["df_resid"])
             )
     stat_sr = pd.Series(stats_values)
     # the follwing is to make sure statistics dataframe has as many levels of
     # indices as the parameters dataframe.
-    stat_ind = np.empty((len(stat_sr), model.params.index.nlevels - 1), dtype=str)
+    stat_ind = np.empty((len(stat_sr), model["params"].index.nlevels - 1), dtype=str)
     stat_ind = np.concatenate(
         [stat_sr.index.values.reshape(len(stat_sr), 1), stat_ind], axis=1
     ).T
@@ -1436,10 +1412,42 @@ def _get_digits_after_decimal(df):
 def _center_align_integers(sr):
     """Align integer numbers at the center of model column."""
     for i in sr.index:
-        res = re.findall("[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i])
-        if res:
-            num = res[0]
+        res_numeric = re.findall(
+            "[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
+        )
+        if res_numeric:
+            num = res_numeric[0]
             char = sr[i].split(num)[1]
             if int(float(num)) == float(num):
                 sr[i] = f"\\multicolumn{{1}}{{c}}{{{str(int(float(num)))+char}}}"
     return sr
+
+
+def _unformat_integers(sr):
+    """Remove trailing zeros from integer numbers."""
+    for i in sr.index:
+        res_numeric = re.findall(
+            "[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
+        )
+        if res_numeric:
+            num = res_numeric[0]
+            char = sr[i].split(num)[1]
+            if int(float(num)) == float(num):
+                sr[i] = str(int(float(num))) + char
+    return sr
+
+
+def _get_updated_styler(
+    df, show_index_names, show_col_names, show_col_groups, escape_special_chars_indices
+):
+    """Return pandas.Styler object based ont the data and styling options"""
+    styler = df.style
+    if not show_index_names:
+        styler = styler.hide(names=True)
+    if not show_col_names:
+        styler = styler.hide(axis=1)
+    if not show_col_groups:
+        styler = styler.hide(axis=1, level=0)
+    for ax in [0, 1]:
+        styler = styler.format_index(escape=escape_special_chars_indices, axis=ax)
+    return styler
