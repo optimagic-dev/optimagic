@@ -2,17 +2,9 @@
 estimagic
 =========
 
-estimagic is a Python package to fit large scale empirical models to data and make
-inferences about the estimated model parameters. It is especially suited to solve
-difficult constrained optimization problems.
-
-estimagic provides several advantages over similar packages, including a unified
-interface that supports a large number of local and global optimization algorithms
-and the possibility of monitoring the optimization procedure via a beautiful
-interactive dashboard.
-
-estimagic provides tools for nonlinear optimization, numerical differentiation
-and statistical inference.
+estimagic is a Python package for nonlinear optimization with or without constraints.
+It is particularly suited to solve difficult nonlinear estimation problems. On top it
+provides functionality to perform statistical inference on estimated parameters.
 
 
 .. raw:: html
@@ -50,6 +42,37 @@ and statistical inference.
                 </a>
             </div>
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
+                <a href="getting_started/installation.html" id="index-link">
+                    <div class="card text-center intro-card shadow">
+                        <img src="_static/images/installation.svg" class="card-img-top"
+                             alt="installation icon" height="52"
+                        >
+                        <div class="card-body flex-fill">
+                            <h5 class="card-title">Installation</h5>
+                            <p class="card-text">
+                                Installation instructions for estimagic
+                                and optional dependencies.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
+                <a href="algorithms.html" id="index-link">
+                    <div class="card text-center intro-card shadow">
+                        <img src="_static/images/list.svg" class="card-img-top"
+                             alt="algos icon" height="52"
+                        >
+                        <div class="card-body flex-fill">
+                            <h5 class="card-title">Optimization Algorithms</h5>
+                            <p class="card-text">
+                                List of numerical optimizers and their optional parameters.
+                            </p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
                 <a href="explanations/index.html" id="index-link">
                     <div class="card text-center intro-card shadow">
                         <img src="_static/images/books.svg" class="card-img-top"
@@ -74,8 +97,7 @@ and statistical inference.
                         <div class="card-body flex-fill">
                             <h5 class="card-title">API Reference</h5>
                             <p class="card-text">
-                                Overview of functions and modules as well as
-                                implementation details.
+                                Detailed description of the estimagic API.
                             </p>
                         </div>
                     </div>
@@ -151,3 +173,4 @@ Numerical differentiation
   development/index
   changes
   credits
+  algorithms
