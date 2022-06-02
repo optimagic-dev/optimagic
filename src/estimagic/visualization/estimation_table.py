@@ -278,9 +278,9 @@ def render_latex(
         warn(
             r"""Proper LaTeX compilation requires the package siunitx and adding
                    \sisetup{
-                        group-digits             = false,
-                        input-symbols            = (),
-                        table-align-text-post    = false
+                       input-symbols            = (),
+                       table-align-text-post    = false
+                       group-digits             = false,
                     }
                     to your main tex file. To turn
                     this warning off set value of siunitx_warning = False"""
@@ -300,6 +300,8 @@ def render_latex(
 
     group_to_col_position = _create_group_to_col_position(column_groups)
     n_levels = body.index.nlevels
+    n_columns = len(body.columns)
+
     if escape_special_chars_indices:
         escape_special_chars_indices = "latex"
     else:
@@ -314,7 +316,7 @@ def render_latex(
     default_options = {
         "multicol_align": "c",
         "hrules": True,
-        "siunitx": True,
+        "column_format": "l" * n_levels + "S" * n_columns,
     }
     if render_options:
         default_options.update(render_options)
