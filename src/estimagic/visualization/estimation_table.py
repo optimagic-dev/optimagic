@@ -1413,7 +1413,7 @@ def _center_align_integers(sr):
     """Align integer numbers at the center of model column."""
     for i in sr.index:
         res_numeric = re.findall(
-            "[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
+            r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?", sr[i]
         )
         if res_numeric:
             num = res_numeric[0]
