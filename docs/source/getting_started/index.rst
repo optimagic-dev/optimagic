@@ -19,7 +19,7 @@ as a reference for more experienced users.
                              alt="optimization icon" height="100"
                         >
                         <div class="card-body flex-fill">
-                            <h5 class="card-title">Numerical Optimization</h5>
+                            <h5 class="card-title">Optimization</h5>
                             <p class="card-text">
                                 Learn numerical optimization with estimagic
                             </p>
@@ -34,7 +34,7 @@ as a reference for more experienced users.
                              alt="differentiation icon" height="100"
                         >
                         <div class="card-body flex-fill">
-                            <h5 class="card-title">Explanations</h5>
+                            <h5 class="card-title">Differentiation</h5>
                             <p class="card-text">
                                 Learn numerical differentiation with estimagic
                             </p>
