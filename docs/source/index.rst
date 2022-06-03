@@ -3,7 +3,7 @@ estimagic
 =========
 
 estimagic is a Python package for nonlinear optimization with or without constraints.
-It is particularly suited to solve difficult nonlinear estimation problems. On top it
+It is particularly suited to solve difficult nonlinear estimation problems. On top, it
 provides functionality to perform statistical inference on estimated parameters.
 
 
@@ -60,7 +60,7 @@ provides functionality to perform statistical inference on estimated parameters.
             <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
                 <a href="algorithms.html" id="index-link">
                     <div class="card text-center intro-card shadow">
-                        <img src="_static/images/list.svg" class="card-img-top"
+                        <img src="_static/images/optimization.svg" class="card-img-top"
                              alt="algos icon" height="52"
                         >
                         <div class="card-body flex-fill">
