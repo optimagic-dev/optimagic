@@ -153,7 +153,7 @@ Estimation and Inference
 - estimagic also provides bootstrap confidence intervals and standard errors.
   Of course the bootstrap procedures are parallelized.
 
-.. _MSM Tutorial: getting_started/first_msm_estimation_with_estimagic.ipynb
+.. _MSM Tutorial: getting_started/estimation/first_msm_estimation_with_estimagic.ipynb
 
 
 Numerical differentiation
