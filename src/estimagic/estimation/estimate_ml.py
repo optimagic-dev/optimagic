@@ -1,6 +1,14 @@
+from dataclasses import dataclass
+from typing import Any
+from typing import Dict
+from typing import Union
+
+import numpy as np
+import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.differentiation.derivatives import second_derivative
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.exceptions import NotAvailableError
 from estimagic.inference.ml_covs import cov_cluster_robust
 from estimagic.inference.ml_covs import cov_hessian
 from estimagic.inference.ml_covs import cov_jacobian
@@ -11,6 +19,8 @@ from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import maximize
+from estimagic.optimization.optimize_result import OptimizeResult
+from estimagic.parameters.conversion import Converter
 from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.shared.check_option_dicts import check_numdiff_options
@@ -97,10 +107,8 @@ def estimate_ml(
         jacobian (callable or None): A function that takes ``params`` and potentially
             other keyword arguments and returns the jacobian of loglike["contributions"]
             with respect to the params. Note that you only need to pass a Jacobian
-            function if you have a closed form Jacobian but decided not to return it as
-            part of ``derivative`` (e.g.  because you use a scalar optimizer and can
-            calculate a gradient in a way that is faster than calculating and summing
-            the Jacobian). If you pass None, a numerical Jacobian will be calculated.
+            function if you have a closed form Jacobian. If you pass None, a numerical
+            Jacobian will be calculated.
         jacobian_kwargs (dict): Additional keyword arguments for the Jacobian function.
         hessian (callable or None or False): A function that takes ``params`` and
             potentially other keyword arguments and returns the Hessian of
@@ -123,12 +131,11 @@ def estimate_ml(
             we raise an Error. If "ignore", boundary problems are simply ignored.
         design_info (pandas.DataFrame): DataFrame with one row per observation that
             contains some or all of the variables "psu" (primary sampling unit),
-            "stratum" and "fpc" (finite population corrector). See
+            "strata" and "fpc" (finite population corrector). See
             :ref:`robust_likelihood_inference` for details.
 
     Returns:
-        dict: The estimated parameters, standard errors and covariance matrix of the
-            parameters.
+        LikelihoodResult: A LikelihoodResult object.
 
     """
     # ==================================================================================
@@ -381,3 +388,204 @@ def _get_cov_cases(jac_case, hess_case, design_info):
                 cases.append("strata_robust")
 
     return cases
+
+
+@dataclass
+class LikelihoodResult:
+    params: Any
+    _converter: Converter
+    optimize_result: Union[OptimizeResult, None] = None
+    numdiff_result: Union[Dict, None] = None
+    _jacobian: Any = None
+    _no_jacobian_reason: Union[str, None] = None
+    _hessian: Any = None
+    _no_hessian_reason: Union[str, None] = None
+    _internal_jacobian: Union[np.ndarray, None] = None
+    _internal_hessian: Union[np.ndarray, None] = None
+    _design_info: Union[pd.DataFrame, None] = None
+
+    def __post_init__(self):
+        if self._jacobian is None and self._hessian is None:
+            raise ValueError(
+                "At least one of _internal_jacobian or _internal_hessian must be "
+                "not None."
+            )
+
+    @property
+    def jacobian(self):
+        if self._jacobian is None:
+            raise NotAvailableError(
+                f"No jacobian is available because {self._no_jacobian_reason}."
+            )
+
+        return self._jacobian
+
+    @property
+    def hessian(self):
+        if self._hessian is None:
+            raise NotAvailableError(
+                f"No hessian is available because {self._no_hessian_reason}."
+            )
+
+        return self._hessian
+
+    @property
+    def _se(self):
+        return self.se()
+
+    @property
+    def _cov(self):
+        return self.cov()
+
+    @property
+    def _summary(self):
+        return self.summary()
+
+    @property
+    def _ci(self):
+        return self.ci()
+
+    def se(
+        self,
+        method="jacobian",
+        n_samples=10_000,
+        bounds_handling="clip",
+    ):
+        """Calculate standard errors.
+
+        Args:
+            method (str): One of "jacobian", "hessian", "robust", "cluster_robust",
+                "strata_robust". Default "jacobian". "cluster_robust" is only available
+                if design_info containts a columns called "psu" that identifies the
+                primary sampling unit. "strata_robust" is only available if the columns
+                "strata", "fpc" and "psu" are in design_info.
+            n_samples (int): Number of samples used to transform the covariance matrix
+                of the internal parameter vector into the covariance matrix of the
+                external parameters. For background information about internal and
+                external params see :ref:`implementation_of_constraints`. This is only
+                used if you are using constraints.
+            bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+                bounds are handled. If "clip", confidence intervals are clipped at the
+                bounds. Standard errors are only adjusted if a sampling step is
+                necessary due to additional constraints. If "raise" and any lower or
+                upper bound is binding, we raise an Error. If "ignore", boundary
+                problems are simply ignored.
+
+        Returns:
+            Any: A pytree with the same structure as params containing standard errors
+            for the parameter estimates.
+
+        """
+        pass
+
+    def cov(
+        self,
+        method="jacobian",
+        n_samples=10_000,
+        bounds_handling="clip",
+        return_type="pytree",
+    ):
+        """Calculate the variance-covariance matrix of the estimated parameters.
+
+        Args:
+            method (str): One of "jacobian", "hessian", "robust", "cluster_robust",
+                "strata_robust". Default "jacobian". "cluster_robust" is only available
+                if design_info containts a columns called "psu" that identifies the
+                primary sampling unit. "strata_robust" is only available if the columns
+                "strata", "fpc" and "psu" are in design_info.
+            n_samples (int): Number of samples used to transform the covariance matrix
+                of the internal parameter vector into the covariance matrix of the
+                external parameters. For background information about internal and
+                external params see :ref:`implementation_of_constraints`. This is only
+                used if you are using constraints.
+            bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+                bounds are handled. If "clip", confidence intervals are clipped at the
+                bounds. Standard errors are only adjusted if a sampling step is
+                necessary due to additional constraints. If "raise" and any lower or
+                upper bound is binding, we raise an Error. If "ignore", boundary
+                problems are simply ignored.
+            return_type (str): One of "pytree", "array" or "dataframe". Default pytree.
+                If "array", a 2d numpy array with the covariance is returned. If
+                "dataframe", a pandas DataFrame with parameter names in the
+                index and columns are returned.
+
+        Returns:
+            Any: The covariance matrix of the estimated parameters as block-pytree or
+                numpy array.
+
+        """
+        pass
+
+    def summary(
+        self,
+        method="jacobian",
+        n_samples=10_000,
+        ci_level=0.95,
+        bounds_handling="clip",
+    ):
+        """Create a summary of estimation results.
+
+        Args:
+            method (str): One of "jacobian", "hessian", "robust", "cluster_robust",
+                "strata_robust". Default "jacobian". "cluster_robust" is only available
+                if design_info containts a columns called "psu" that identifies the
+                primary sampling unit. "strata_robust" is only available if the columns
+                "strata", "fpc" and "psu" are in design_info.
+            ci_level (float): Confidence level for the calculation of confidence
+                intervals. The default is 0.95.
+            n_samples (int): Number of samples used to transform the covariance matrix
+                of the internal parameter vector into the covariance matrix of the
+                external parameters. For background information about internal and
+                external params see :ref:`implementation_of_constraints`. This is only
+                used if you are using constraints.
+            bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+                bounds are handled. If "clip", confidence intervals are clipped at the
+                bounds. Standard errors are only adjusted if a sampling step is
+                necessary due to additional constraints. If "raise" and any lower or
+                upper bound is binding, we raise an Error. If "ignore", boundary
+                problems are simply ignored.
+
+
+        Returns:
+            Any: The estimation summary as pytree of DataFrames.
+
+        """
+        pass
+
+    def ci(
+        self,
+        method="jacobian",
+        n_samples=10_000,
+        ci_level=0.95,
+        bounds_handling="clip",
+    ):
+        """Calculate confidence intervals.
+
+        Args:
+            method (str): One of "jacobian", "hessian", "robust", "cluster_robust",
+                "strata_robust". Default "jacobian". "cluster_robust" is only available
+                if design_info containts a columns called "psu" that identifies the
+                primary sampling unit. "strata_robust" is only available if the columns
+                "strata", "fpc" and "psu" are in design_info.
+            ci_level (float): Confidence level for the calculation of confidence
+                intervals. The default is 0.95.
+            n_samples (int): Number of samples used to transform the covariance matrix
+                of the internal parameter vector into the covariance matrix of the
+                external parameters. For background information about internal and
+                external params see :ref:`implementation_of_constraints`. This is only
+                used if you are using constraints.
+            bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+                bounds are handled. If "clip", confidence intervals are clipped at the
+                bounds. Standard errors are only adjusted if a sampling step is
+                necessary due to additional constraints. If "raise" and any lower or
+                upper bound is binding, we raise an Error. If "ignore", boundary
+                problems are simply ignored.
+
+        Returns:
+            Any: Pytree with the same structure as params containing lower bounds of
+                confidence intervals.
+            Any: Pytree with the same structure as params containing upper bounds of
+                confidence intervals.
+
+        """
+        pass

@@ -1,12 +1,16 @@
 """Do a method of simlated moments estimation."""
 import functools
 from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+from typing import Union
 
 import numpy as np
 import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.exceptions import NotAvailableError
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import calculate_inference_quantities
@@ -14,6 +18,7 @@ from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.conversion import Converter
 from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.parameter_bounds import get_bounds
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_measures
@@ -447,3 +452,225 @@ def _partial_kwargs(func, kwargs):
 
 def _get_cov_case(weights):
     return weights == "optimal"
+
+
+@dataclass
+class MomentsResult:
+    params: Any
+    weights: Any
+    _converter: Converter
+    _internal_weights: np.ndarray
+    _internal_jacobian: np.ndarray
+    _jacobian: Any = None
+    _no_jacobian_reason: Union[str, None] = None
+    # might need more
+
+    @property
+    def jacobian(self):
+        if self._jacobian is None:
+            raise NotAvailableError(
+                f"No jacobian is available because {self._no_jacobian_reason}."
+            )
+
+        return self._jacobian
+
+    @property
+    def _se(self):
+        return self.se()
+
+    @property
+    def _cov(self):
+        return self.cov()
+
+    @property
+    def _summary(self):
+        return self.summary()
+
+    @property
+    def _ci(self):
+        return self.ci()
+
+    def se(
+        self,
+        method="robust",
+        n_samples=10_000,
+        bounds_handling="clip",
+    ):
+        """Calculate standard errors.
+
+        Args:
+            method (str): One of "robust", "optimal". Despite the name, "optimal" is
+                not recommended in finite samples and "optimal" standard errors are
+                only valid if the asymptotically optimal weighting matrix has been
+                used. It is only supported because it is needed to calculate
+                sensitivity measures.
+            n_samples (int): Number of samples used to transform the covariance matrix
+                of the internal parameter vector into the covariance matrix of the
+                external parameters. For background information about internal and
+                external params see :ref:`implementation_of_constraints`. This is only
+                used if you are using constraints.
+            bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+                bounds are handled. If "clip", confidence intervals are clipped at the
+                bounds. Standard errors are only adjusted if a sampling step is
+                necessary due to additional constraints. If "raise" and any lower or
+                upper bound is binding, we raise an Error. If "ignore", boundary
+                problems are simply ignored.
+
+        Returns:
+            Any: A pytree with the same structure as params containing standard errors
+            for the parameter estimates.
+
+        """
+        pass
+
+    def cov(
+        self,
+        method="robust",
+        n_samples=10_000,
+        bounds_handling="clip",
+        return_type="pytree",
+    ):
+        """Calculate the variance-covariance matrix of the estimated parameters.
+
+        Args:
+            method (str): One of "robust", "optimal". Despite the name, "optimal" is
+                not recommended in finite samples and "optimal" standard errors are
+                only valid if the asymptotically optimal weighting matrix has been
+                used. It is only supported because it is needed to calculate
+                sensitivity measures.
+            n_samples (int): Number of samples used to transform the covariance matrix
+                of the internal parameter vector into the covariance matrix of the
+                external parameters. For background information about internal and
+                external params see :ref:`implementation_of_constraints`. This is only
+                used if you are using constraints.
+            bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+                bounds are handled. If "clip", confidence intervals are clipped at the
+                bounds. Standard errors are only adjusted if a sampling step is
+                necessary due to additional constraints. If "raise" and any lower or
+                upper bound is binding, we raise an Error. If "ignore", boundary
+                problems are simply ignored.
+            return_type (str): One of "pytree", "array" or "dataframe". Default pytree.
+                If "array", a 2d numpy array with the covariance is returned. If
+                "dataframe", a pandas DataFrame with parameter names in the
+                index and columns are returned.
+
+        Returns:
+            Any: The covariance matrix of the estimated parameters as block-pytree or
+                numpy array.
+
+        """
+        pass
+
+    def summary(
+        self,
+        method="robust",
+        n_samples=10_000,
+        ci_level=0.95,
+        bounds_handling="clip",
+    ):
+        """Create a summary of estimation results.
+
+        Args:
+            method (str): One of "robust", "optimal". Despite the name, "optimal" is
+                not recommended in finite samples and "optimal" standard errors are
+                only valid if the asymptotically optimal weighting matrix has been
+                used. It is only supported because it is needed to calculate
+                sensitivity measures.
+            ci_level (float): Confidence level for the calculation of confidence
+                intervals. The default is 0.95.
+            n_samples (int): Number of samples used to transform the covariance matrix
+                of the internal parameter vector into the covariance matrix of the
+                external parameters. For background information about internal and
+                external params see :ref:`implementation_of_constraints`. This is only
+                used if you are using constraints.
+            bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+                bounds are handled. If "clip", confidence intervals are clipped at the
+                bounds. Standard errors are only adjusted if a sampling step is
+                necessary due to additional constraints. If "raise" and any lower or
+                upper bound is binding, we raise an Error. If "ignore", boundary
+                problems are simply ignored.
+
+
+        Returns:
+            Any: The estimation summary as pytree of DataFrames.
+
+        """
+        pass
+
+    def ci(
+        self,
+        method="robust",
+        n_samples=10_000,
+        ci_level=0.95,
+        bounds_handling="clip",
+    ):
+        """Calculate confidence intervals.
+
+        Args:
+            method (str): One of "robust", "optimal". Despite the name, "optimal" is
+                not recommended in finite samples and "optimal" standard errors are
+                only valid if the asymptotically optimal weighting matrix has been
+                used. It is only supported because it is needed to calculate
+                sensitivity measures.
+            ci_level (float): Confidence level for the calculation of confidence
+                intervals. The default is 0.95.
+            n_samples (int): Number of samples used to transform the covariance matrix
+                of the internal parameter vector into the covariance matrix of the
+                external parameters. For background information about internal and
+                external params see :ref:`implementation_of_constraints`. This is only
+                used if you are using constraints.
+            bounds_handling (str): One of "clip", "raise", "ignore". Determines how
+                bounds are handled. If "clip", confidence intervals are clipped at the
+                bounds. Standard errors are only adjusted if a sampling step is
+                necessary due to additional constraints. If "raise" and any lower or
+                upper bound is binding, we raise an Error. If "ignore", boundary
+                problems are simply ignored.
+
+        Returns:
+            Any: Pytree with the same structure as params containing lower bounds of
+                confidence intervals.
+            Any: Pytree with the same structure as params containing upper bounds of
+                confidence intervals.
+
+        """
+        pass
+
+    def sensitivity(self, kind="bias", return_type="pytree"):
+        """Calculate sensitivity measures for moments estimates.
+
+        The sensitivity measures are based on the following papers:
+
+        Andrews, Gentzkow & Shapiro
+        (https://academic.oup.com/qje/article/132/4/1553/3861634)
+
+        Honore, Jorgensen & de Paula (https://papers.srn.com/abstract=3518640)
+
+        In the papers the different kinds of sensitivity measures are just called
+        m1, e2, e3, e4, e5 and e6. We try to give them more informative names, but
+        list the original names for references.
+
+        Args:
+            kind (str): The following kinds are supported:
+                - "bias": Origally m1. How strongly would the parameter estimates be
+                   biased if the kth moment was misspecified, i.e not zero in
+                   expectation?
+                - "noise_fundamental": Originally e2. How much precision would be lost
+                   if the kth moment was subject to a little additional noise if the
+                   optimal weighting matrix was used?
+                - "noise": Originally e3. How much precision would be lost if the kth
+                  moment was subjet to a little additional noise?
+                - "removal": Originally e4. How much precision would be lost if the kth
+                  moment was excluded from the estimation?
+                - "removal_fundamental": Originally e5. How much precision would be lost
+                  if the kth moment was excluded from the estimation if the
+                  asymptotically optimal weighting matrix was used.
+                - "weighting": Originally e6. How would the precision change if the
+                  weight of the kth moment is increased a little?
+
+        Returns:
+            Any: The sensitivity measure as a pytree, numpy array or DataFrame.
+                In 2d formats, the sensitivity measures have one row per estimated
+                parameter and one column per moment.
+
+        """
+        pass
