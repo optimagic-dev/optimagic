@@ -102,6 +102,9 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
             reproduced for convenience.
 
     """
+    if not isinstance(free_cov, pd.DataFrame):
+        free_index = np.array(flat_estimates.names)[flat_estimates.free_mask]
+        free_cov = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
     ####################################################################################
     # Construct summary data frame for flat estimates
     ####################################################################################
@@ -109,13 +112,19 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
     df = pd.DataFrame(index=flat_estimates.names)
     df["value"] = flat_estimates.values
     df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
-    tvalues = df["value"] / df["standard_error"]
-    df["p_value"] = 2 * scipy.stats.norm.sf(np.abs(tvalues))
 
-    alpha = 1 - ci_level
-    scale = scipy.stats.norm.ppf(1 - alpha / 2)
-    df["ci_lower"] = df["value"] - scale * df["standard_error"]
-    df["ci_upper"] = df["value"] + scale * df["standard_error"]
+    df["p_value"] = calculate_p_values(
+        df["value"].to_numpy(),
+        df["standard_error"].to_numpy(),
+    )
+
+    lower, upper = calculate_ci(
+        df["value"].to_numpy(),
+        df["standard_error"].to_numpy(),
+        ci_level=ci_level,
+    )
+    df["ci_lower"] = lower
+    df["ci_upper"] = upper
 
     df.loc[free_cov.index, "stars"] = pd.cut(
         df.loc[free_cov.index, "p_value"],
@@ -271,3 +280,18 @@ def check_is_optimized_and_derivative_case(is_minimized, derivative_case):
             "optimization was done outside of the estimate_function, i.e. if "
             "optimize_options=False."
         )
+
+
+def calculate_ci(flat_values, flat_standard_errors, ci_level):
+
+    alpha = 1 - ci_level
+    scale = scipy.stats.norm.ppf(1 - alpha / 2)
+    lower = flat_values - scale * flat_standard_errors
+    upper = flat_values + scale * flat_standard_errors
+    return lower, upper
+
+
+def calculate_p_values(flat_values, flat_standard_error):
+    tvalues = flat_values / np.clip(flat_standard_error, 1e-300, np.inf)
+    pvalues = 2 * scipy.stats.norm.sf(np.abs(tvalues))
+    return pvalues
