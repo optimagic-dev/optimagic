@@ -43,7 +43,7 @@ def estimate_ml(
     numdiff_options=None,
     jacobian=None,
     jacobian_kwargs=None,
-    hessian=False,
+    hessian=None,
     hessian_kwargs=None,
     design_info=None,
 ):
@@ -677,7 +677,6 @@ class LikelihoodResult:
         self,
         method="jacobian",
         n_samples=10_000,
-        ci_level=0.95,
         bounds_handling="clip",
         seed=None,
     ):
