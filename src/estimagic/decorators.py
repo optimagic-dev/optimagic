@@ -149,7 +149,6 @@ class AlgoInfo(NamedTuple):
     arguments: list
     is_global: bool = False
     disable_history: bool = False
-    supports_nonlinear_constraints: bool = False
 
 
 def mark_minimizer(
@@ -161,7 +160,6 @@ def mark_minimizer(
     is_available=True,
     is_global=False,
     disable_history=False,
-    supports_nonlinear_constraints=False,
 ):
     """Decorator to mark a function as internal estimagic minimizer and add information.
 
@@ -181,8 +179,6 @@ def mark_minimizer(
         disable_history (bool): Whether the automatic history collection should be
             disabled, for example, because the algorithm does its own history
             collection.
-        supports_nonlinear_constraints (bool): Whether the algorithm supports nonlinear
-            constraints.
 
     """
     if name is None:
@@ -208,9 +204,6 @@ def mark_minimizer(
     if not isinstance(disable_history, bool):
         raise TypeError("disable_history must be a bool.")
 
-    if not isinstance(supports_nonlinear_constraints, bool):
-        raise TypeError("supports_nonlinear_constraints must be a bool.")
-
     def decorator_mark_minimizer(func):
         arguments = list(inspect.signature(func).parameters)
 
@@ -229,7 +222,6 @@ def mark_minimizer(
             arguments=arguments,
             is_global=is_global,
             disable_history=disable_history,
-            supports_nonlinear_constraints=supports_nonlinear_constraints,
         )
 
         @functools.wraps(func)

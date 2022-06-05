@@ -16,7 +16,6 @@ if IS_CYIPOPT_INSTALLED:
     primary_criterion_entry="value",
     needs_scaling=False,
     is_available=IS_CYIPOPT_INSTALLED,
-    supports_nonlinear_constraints=True,
 )
 def ipopt(
     criterion,

@@ -103,7 +103,7 @@ def scipy_lbfgsb(
     return process_scipy_result(res)
 
 
-@mark_minimizer(name="scipy_slsqp", supports_nonlinear_constraints=True)
+@mark_minimizer(name="scipy_slsqp")
 def scipy_slsqp(
     criterion,
     derivative,
@@ -302,9 +302,7 @@ def scipy_newton_cg(
     return process_scipy_result(res)
 
 
-@mark_minimizer(
-    name="scipy_cobyla", needs_scaling=True, supports_nonlinear_constraints=True
-)
+@mark_minimizer(name="scipy_cobyla", needs_scaling=True)
 def scipy_cobyla(
     criterion,
     x,
@@ -390,7 +388,7 @@ def scipy_truncated_newton(
     return process_scipy_result(res)
 
 
-@mark_minimizer(name="scipy_trust_constr", supports_nonlinear_constraints=True)
+@mark_minimizer(name="scipy_trust_constr")
 def scipy_trust_constr(
     criterion_and_derivative,
     x,
