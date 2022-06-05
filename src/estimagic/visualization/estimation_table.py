@@ -276,8 +276,10 @@ def render_latex(
     """
     if not pd.__version__ >= "1.4.0":
         raise ValueError(
-            r"""Need pandas version equal or above 1.4.0
-        for a proper call of pandas.io.formats.style.Styler.to_latex
+            r"""render_latex or estimation_table with return_type="latex" requires
+            pandas 1.4.0 or higher. Update to a newer version of pandas or use
+            estimation_table with return_type="render_inputs" and manually render those
+            results using the DataFrame.to_latex method.
         """
         )
     if siunitx_warning:
@@ -415,8 +417,10 @@ def render_html(
     """
     if not pd.__version__ >= "1.4.0":
         raise ValueError(
-            r"""Need pandas version equal or above 1.4.0
-        for a proper call of pandas.io.formats.style.Styler.to_html
+            r"""render_html or estimation_table with return_type="html" requires
+            pandas 1.4.0 or higher. Update to a newer version of pandas or use
+            estimation_table with return_type="render_inputs" and manually render those
+            results using the DataFrame.to_html method.
         """
         )
     n_levels = body.index.nlevels
