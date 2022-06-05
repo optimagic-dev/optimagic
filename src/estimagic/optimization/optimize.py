@@ -24,6 +24,7 @@ from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
 from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
 
@@ -606,12 +607,19 @@ def _optimize(
         used_deriv = None
 
     # ==================================================================================
+    # Split constraints into nonlinear and reparametrization parts
+    # ==================================================================================
+    nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
+    # the following constraints will be handled via reparametrization
+    reparametrize_constraints = [c for c in constraints if c["type"] != "nonlinear"]
+
+    # ==================================================================================
     # Get the converter (for tree flattening, constraints and scaling)
     # ==================================================================================
     converter, internal_params = get_converter(
         func=criterion,
         params=params,
-        constraints=constraints,
+        constraints=reparametrize_constraints,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         func_eval=first_crit_eval,
@@ -623,6 +631,12 @@ def _optimize(
         soft_upper_bounds=soft_upper_bounds,
         add_soft_bounds=multistart,
     )
+
+    # process nonlinear constraints:
+    internal_constraints = process_nonlinear_constraints(
+        nonlinear_constraints, params, converter
+    )
+
     # ==================================================================================
     # initialize the log database
     # ==================================================================================
@@ -675,6 +689,7 @@ def _optimize(
         valid_kwargs=algo_kwargs,
         lower_bounds=internal_params.lower_bounds,
         upper_bounds=internal_params.upper_bounds,
+        nonlinear_constraints=internal_constraints,
         algo_options=algo_options,
         logging=logging,
         db_kwargs=db_kwargs,
@@ -772,6 +787,13 @@ def _optimize(
     )
 
     return res
+
+
+def _get_internal_constraints(constraints, converter):
+    _constraints = []
+    for constr in constraints:
+        _constraints.append(constr)
+    return _constraints
 
 
 def _create_and_initialize_database(logging, log_options, problem_data):

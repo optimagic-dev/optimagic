@@ -59,6 +59,9 @@ from estimagic.optimization.algo_options import LIMITED_MEMORY_STORAGE_LENGTH
 from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.parameters.nonlinear_constraints import (
+    transform_bounds_to_positivity_constraint,
+)
 from estimagic.utilities import calculate_trustregion_initial_radius
 from scipy.optimize import Bounds
 from scipy.optimize import NonlinearConstraint
@@ -111,7 +114,7 @@ def scipy_slsqp(
     lower_bounds,
     upper_bounds,
     *,
-    constraints=(),
+    nonlinear_constraints=(),
     convergence_absolute_criterion_tolerance=CONVERGENCE_SECOND_BEST_ABSOLUTE_CRITERION_TOLERANCE,  # noqa: E501
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
 ):
@@ -127,13 +130,17 @@ def scipy_slsqp(
         "ftol": convergence_absolute_criterion_tolerance,
     }
 
+    nonlinear_constraints = transform_bounds_to_positivity_constraint(
+        nonlinear_constraints
+    )
+
     res = scipy.optimize.minimize(
         fun=criterion,
         x0=x,
         method="SLSQP",
         jac=derivative,
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
-        constraints=constraints,
+        constraints=nonlinear_constraints,
         options=options,
     )
 
@@ -307,7 +314,7 @@ def scipy_cobyla(
     criterion,
     x,
     *,
-    constraints=(),
+    nonlinear_constraints=(),
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     trustregion_initial_radius=None,
@@ -322,11 +329,15 @@ def scipy_cobyla(
 
     options = {"maxiter": stopping_max_iterations, "rhobeg": trustregion_initial_radius}
 
+    nonlinear_constraints = transform_bounds_to_positivity_constraint(
+        nonlinear_constraints
+    )
+
     res = scipy.optimize.minimize(
         fun=criterion,
         x0=x,
         method="COBYLA",
-        constraints=constraints,
+        constraints=nonlinear_constraints,
         options=options,
         tol=convergence_relative_params_tolerance,
     )
@@ -395,7 +406,7 @@ def scipy_trust_constr(
     lower_bounds,
     upper_bounds,
     *,
-    constraints=(),
+    nonlinear_constraints=(),
     convergence_absolute_gradient_tolerance=1e-08,
     convergence_relative_params_tolerance=CONVERGENCE_RELATIVE_PARAMS_TOLERANCE,
     stopping_max_iterations=STOPPING_MAX_ITERATIONS,
@@ -416,13 +427,15 @@ def scipy_trust_constr(
         "initial_tr_radius": trustregion_initial_radius,
     }
 
+    nonlinear_constraints = _get_scipy_constraints(nonlinear_constraints)
+
     res = scipy.optimize.minimize(
         fun=criterion_and_derivative,
         jac=True,
         x0=x,
         method="trust-constr",
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
-        constraints=_get_scipy_constraints(constraints),
+        constraints=nonlinear_constraints,
         options=options,
     )
 
@@ -453,24 +466,14 @@ def _get_scipy_bounds(lower_bounds, upper_bounds):
 
 def _get_scipy_constraints(constraints):
     _constraints = []
-    for constr in constraints:
-        n_constr = constr["n_constr"]
-        if constr["type"] == "eq":
-            nlc = NonlinearConstraint(
-                fun=constr["fun"],
-                lb=np.zeros(n_constr),
-                ub=np.zeros(n_constr),
-                jac=constr["jac"],
-                hess=constr["hess"],
-            )
-        elif constr["type"] == "ineq":
-            nlc = NonlinearConstraint(
-                fun=constr["fun"],
-                lb=np.zeros(n_constr),
-                ub=np.tile(np.inf, n_constr),
-                jac=constr["jac"],
-                hess=constr["hess"],
-            )
+    for c in constraints:
+        n_constr = c["n_constr"]
+        nlc = NonlinearConstraint(
+            fun=c["fun"],
+            lb=c.get("lower_bound", np.zeros(n_constr)),
+            ub=c.get("upper_bound", np.zeros(n_constr)),
+            jac=c["jac"],
+        )
         _constraints.append(nlc)
     return _constraints
 

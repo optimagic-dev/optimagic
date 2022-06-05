@@ -49,6 +49,7 @@ def get_final_algorithm(
     valid_kwargs,
     lower_bounds,
     upper_bounds,
+    nonlinear_constraints,
     algo_options,
     logging,
     db_kwargs,
@@ -64,6 +65,8 @@ def get_final_algorithm(
             algorithm function.
         lower_bounds (np.ndarray): 1d numpy array with lower bounds.
         upper_bounds (np.ndarray): 1d numpy array with upper bounds.
+        nonlinear_constraints (list[dict]): List of dictionaries, each containing the
+            specification of a nonlinear constraint.
         algo_options (dict): Dictionary with additional keyword arguments for the
             algorithm. Entries that are not used by the algorithm are ignored with a
             warning.
@@ -80,6 +83,7 @@ def get_final_algorithm(
         algo_options=algo_options,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
+        nonlinear_constraints=nonlinear_constraints,
         algo_name=algo_name,
         valid_kwargs=valid_kwargs,
     )
@@ -253,6 +257,7 @@ def _adjust_options_to_algorithm(
     algo_options,
     lower_bounds,
     upper_bounds,
+    nonlinear_constraints,
     algo_name,
     valid_kwargs,
 ):
@@ -269,6 +274,13 @@ def _adjust_options_to_algorithm(
         warnings.warn(
             "The following algo_options were ignored because they are not compatible "
             f"with {algo_name}:\n\n {ignored}"
+        )
+
+    if "nonlinear_constraints" not in valid_kwargs and not nonlinear_constraints:
+        raise ValueError(
+            f"{algo_name} does not support nonlinear constraints. If you want to use "
+            "nonlinear constraints choose one of {'ipopt', 'scipy_trust_constr', "
+            "'scipy_slsqp', 'scipy_cobyla'}."
         )
 
     if "lower_bounds" not in valid_kwargs and not (lower_bounds == -np.inf).all():
@@ -290,5 +302,8 @@ def _adjust_options_to_algorithm(
 
     if "upper_bounds" in valid_kwargs:
         reduced["upper_bounds"] = upper_bounds
+
+    if "nonlinear_constraints" in valid_kwargs:
+        reduced["nonlinear_constraints"] = nonlinear_constraints
 
     return reduced
