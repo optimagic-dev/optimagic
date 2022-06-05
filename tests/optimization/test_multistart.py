@@ -190,3 +190,20 @@ def test_with_invalid_bounds():
             algorithm="scipy_neldermead",
             multistart=True,
         )
+
+
+def test_with_scaling():
+    def _crit(params):
+        x = params - np.arange(len(params))
+        return x @ x
+
+    res = minimize(
+        criterion=_crit,
+        params=np.full(5, 10),
+        soft_lower_bounds=np.full(5, -1),
+        soft_upper_bounds=np.full(5, 11),
+        algorithm="scipy_lbfgsb",
+        multistart=True,
+    )
+
+    aaae(res.params, np.arange(5))

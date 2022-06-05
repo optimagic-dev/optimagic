@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 from estimagic.config import IS_FIDES_INSTALLED
 from numpy.testing import assert_allclose
+from numpy.testing import assert_array_almost_equal as aaae
 
 if IS_FIDES_INSTALLED:
     from estimagic.optimization.fides_optimizers import fides
@@ -23,8 +24,6 @@ test_cases_no_contribs_needed = [
     {"hessian_update_strategy": "sr1"},
     {"hessian_update_strategy": "DFP"},
     {"hessian_update_strategy": "bb"},
-    {"hessian_update_strategy": "bg"},
-    {"convergence_absolute_criterion_tolerance": 1e-6},
     {"convergence_relative_criterion_tolerance": 1e-6},
     {"convergence_absolute_params_tolerance": 1e-6},
     {"convergence_absolute_gradient_tolerance": 1e-6},
@@ -53,7 +52,7 @@ def test_fides_correct_algo_options(algo_options):
         upper_bounds=np.array([10, 10, 10]),
         **algo_options,
     )
-    assert_allclose(res["solution_x"], np.zeros(3), atol=5e-4)
+    aaae(res["solution_x"], np.zeros(3), decimal=4)
 
 
 test_cases_needing_contribs = [
@@ -91,7 +90,7 @@ def test_fides_with_super_high_convergence_criteria():
             convergence_absolute_gradient_tolerance=10,
             convergence_relative_gradient_tolerance=10,
         )
-        assert_allclose(res["solution_x"], np.zeros(3), atol=5e-4)
+        assert_allclose(res["solution_x"], np.zeros(3), atol=1e-4)
 
 
 @pytest.mark.skipif(not IS_FIDES_INSTALLED, reason="fides not installed.")

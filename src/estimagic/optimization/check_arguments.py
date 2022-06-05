@@ -10,7 +10,7 @@ def check_optimize_kwargs(**kwargs):
         "criterion": typing.Callable,
         "algorithm": (str, typing.Callable),
         "criterion_kwargs": dict,
-        "constraints": list,
+        "constraints": (list, dict),
         "algo_options": dict,
         "derivative": (type(None), typing.Callable, dict),
         "derivative_kwargs": dict,

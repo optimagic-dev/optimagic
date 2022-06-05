@@ -1,4 +1,3 @@
-import datetime
 import time
 import warnings
 
@@ -26,6 +25,7 @@ def internal_criterion_and_derivative_template(
     error_penalty_func,
     fixed_log_data,
     history_container=None,
+    return_history_entry=False,
 ):
     """Template for the internal criterion and derivative function.
 
@@ -81,6 +81,7 @@ def internal_criterion_and_derivative_template(
         history_container (list or None): List to which parameter, criterion and
             derivative histories are appended. Should be set to None if an algorithm
             parallelizes over criterion or derivative evaluations.
+        return_history_entry (bool): Whether the history container should be returned.
 
     Returns:
         float, np.ndarray or tuple: If task=="criterion" it returns the output of
@@ -89,6 +90,7 @@ def internal_criterion_and_derivative_template(
             If task=="criterion_and_derivative" it returns both as a tuple.
 
     """
+    now = time.perf_counter()
     to_dos = _determine_to_dos(task, derivative, criterion_and_derivative)
 
     caught_exceptions = []
@@ -235,6 +237,7 @@ def internal_criterion_and_derivative_template(
             db_kwargs=db_kwargs,
             fixed_log_data=fixed_log_data,
             scalar_value=scalar_critval,
+            now=now,
         )
 
     res = _get_output_for_optimizer(
@@ -244,13 +247,20 @@ def internal_criterion_and_derivative_template(
         direction=direction,
     )
 
-    if history_container is not None and new_criterion is not None:
+    if new_criterion is not None:
         hist_entry = {
             "params": current_params,
             "criterion": scalar_critval,
-            "runtime": time.perf_counter(),
+            "runtime": now,
         }
+    else:
+        hist_entry = None
+
+    if history_container is not None and new_criterion is not None:
         history_container.append(hist_entry)
+
+    if return_history_entry:
+        res = (res, hist_entry)
 
     return res
 
@@ -306,16 +316,18 @@ def _log_new_evaluations(
     db_kwargs,
     fixed_log_data,
     scalar_value,
+    now,
 ):
     """Write the new evaluations and additional information into the database.
 
     Note: There are some seemingly unnecessary type conversions because sqlalchemy
     can fail silently when called with numpy dtypes instead of the equivalent python
     types.
+
     """
     data = {
         "params": external_x,
-        "timestamp": datetime.datetime.now(),
+        "timestamp": now,
         "valid": True,
         "criterion_eval": new_criterion,
         "value": scalar_value,

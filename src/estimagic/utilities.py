@@ -1,5 +1,4 @@
 import warnings
-from collections import namedtuple
 from hashlib import sha1
 
 import numpy as np
@@ -255,39 +254,6 @@ def _make_cholesky_unique(chol):
     """
     sign_switcher = np.sign(np.diagonal(chol))
     return chol * sign_switcher
-
-
-def namedtuple_from_dict(field_dict):
-    """Filled namedtuple generated from a dictionary.
-
-    Example:
-        >>> namedtuple_from_dict({'a': 1, 'b': 2})
-        NamedTuple(a=1, b=2)
-
-    """
-    return namedtuple("NamedTuple", field_dict)(**field_dict)
-
-
-def namedtuple_from_kwargs(**kwargs):
-    """Filled namedtuple generated from keyword arguments.
-
-    Example:
-        >>> namedtuple_from_kwargs(a=1, b=2)
-        NamedTuple(a=1, b=2)
-
-    """
-    return namedtuple("NamedTuple", kwargs)(**kwargs)
-
-
-def namedtuple_from_iterables(field_names, field_entries):
-    """Filled namedtuple generated from field_names and field_entries.
-
-    Example:
-        >>> namedtuple_from_iterables(field_names=['a', 'b'], field_entries=[1, 2])
-        NamedTuple(a=1, b=2)
-
-    """
-    return namedtuple("NamedTuple", field_names)(*field_entries)
 
 
 def hash_array(arr):

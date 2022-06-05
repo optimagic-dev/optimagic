@@ -4,6 +4,7 @@ from pathlib import Path
 
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.exceptions import InvalidKwargsError
 from estimagic.logging.database_utilities import append_row
 from estimagic.logging.database_utilities import load_database
 from estimagic.logging.database_utilities import make_optimization_iteration_table
@@ -23,7 +24,6 @@ from estimagic.optimization.tiktak import run_multistart_optimization
 from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
-from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
 
 
@@ -52,7 +52,7 @@ def maximize(
     scaling_options=None,
     multistart=False,
     multistart_options=None,
-    collect_history=None,
+    collect_history=True,
     skip_checks=False,
 ):
     """Maximize criterion using algorithm subject to constraints.
@@ -82,7 +82,7 @@ def maximize(
             optimization is performed.
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries.
+        constraints (list, dict): List with constraint dictionaries or single dict.
             See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
@@ -189,9 +189,7 @@ def maximize(
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
         collect_history (bool): Whether the history of parameters and criterion values
-            should be collected and returned as part of the result. Default None,
-            which means that the history is collected as long as optimizers do not
-            parallelize over criterion evaluations.
+            should be collected and returned as part of the result. Default True.
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.
@@ -252,7 +250,7 @@ def minimize(
     scaling_options=None,
     multistart=False,
     multistart_options=None,
-    collect_history=None,
+    collect_history=True,
     skip_checks=False,
 ):
     """Minimize criterion using algorithm subject to constraints.
@@ -282,7 +280,7 @@ def minimize(
             optimization is performed.
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries.
+        constraints (list, dict): List with constraint dictionaries or single dict.
             See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
@@ -389,9 +387,7 @@ def minimize(
             - optimization_error_handling (str): One of "raise" or "continue". Default
             is continue, which means that failed optimizations are simply discarded.
         collect_history (bool): Whether the history of parameters and criterion values
-            should be collected and returned as part of the result. Default None,
-            which means that the history is collected as long as optimizers do not
-            parallelize over criterion evaluations.
+            should be collected and returned as part of the result. Default True.
         skip_checks (bool): Whether checks on the inputs are skipped. This makes the
             optimization faster, especially for very fast criterion functions. Default
             False.
@@ -630,9 +626,7 @@ def _optimize(
     # initialize the log database
     # ==================================================================================
     if logging:
-        problem_data["flat_params_names"] = (internal_params.names,)
-        problem_data["flat_params_groups"] = get_params_groups(internal_params)
-
+        problem_data["free_mask"] = internal_params.free_mask
         database = _create_and_initialize_database(logging, log_options, problem_data)
         db_kwargs = {
             "database": database,
@@ -850,9 +844,8 @@ def _fill_numdiff_options_with_defaults(numdiff_options, lower_bounds, upper_bou
     ignored = [option for option in numdiff_options if option not in relevant]
 
     if ignored:
-        warnings.warn(
-            "The following numdiff options were ignored because they will be set "
-            f"internally during the optimization:\n\n{ignored}"
+        raise InvalidKwargsError(
+            f"The following numdiff_options are not allowed:\n\n{ignored}"
         )
 
     numdiff_options = {

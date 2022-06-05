@@ -1,7 +1,12 @@
+from pathlib import Path
+
 import numpy as np
 import plotly.graph_objects as go
 from estimagic.config import PLOTLY_TEMPLATE
+from estimagic.logging.read_log import OptimizeLogReader
+from estimagic.logging.read_log import read_optimization_problem_table
 from estimagic.optimization.history_tools import get_history_arrays
+from estimagic.optimization.optimize_result import OptimizeResult
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import leaf_names
 from pybaum import tree_flatten
@@ -31,16 +36,28 @@ def criterion_plot(
             displayed.
 
     """
-    if res.history is None:
-        raise ValueError(
-            "Criterion_plot requires a optimize_result with history. "
-            "Enable history collection by setting collect_history=True "
-            "when calling maximize or minimize."
-        )
+    if isinstance(res, OptimizeResult):
+        if res.history is None:
+            raise ValueError(
+                "Criterion_plot requires a optimize_result with history. "
+                "Enable history collection by setting collect_history=True "
+                "when calling maximize or minimize."
+            )
+        is_multistart = res.multistart_info is not None
+        main_history = res.history
+        direction = res.direction
+
+    elif isinstance(res, (str, Path)):
+        reader = OptimizeLogReader(res)
+        main_history = reader.read_history()
+        _problem_table = read_optimization_problem_table(res)
+        direction = _problem_table["direction"].tolist()[-1]
+        # For now we ignore multistart when getting history from a log
+        is_multistart = False
+    else:
+        raise ValueError("res must be an OptimizeResult or a path to a log file.")
 
     key = "monotone_criterion" if monotone else "criterion"
-
-    is_multistart = res.multistart_info is not None
 
     fig = go.Figure()
 
@@ -56,7 +73,7 @@ def criterion_plot(
         }
         for i, opt in enumerate(res.multistart_info["local_optima"]):
 
-            history = get_history_arrays(opt.history, opt.direction)[key]
+            history = get_history_arrays(opt.history, direction)[key]
 
             if max_evaluations is not None and len(history) > max_evaluations:
                 history = history[:max_evaluations]
@@ -71,9 +88,9 @@ def criterion_plot(
             )
             fig.add_trace(trace)
 
-    history = get_history_arrays(res.history, res.direction)[key]
+    history = get_history_arrays(main_history, direction)[key]
 
-    if max_evaluations is not None and len(history) > max_evaluations:
+    if max_evaluations is not None and len(main_history) > max_evaluations:
         history = history[:max_evaluations]
 
     scatter_kws = {
@@ -120,23 +137,31 @@ def params_plot(
         template (str): A plotly template.
 
     """
-    if res.history is None:
-        raise ValueError(
-            "params_plot requires a optimize_result with history. "
-            "Enable history collection by setting collect_history=True "
-            "when calling maximize or minimize."
-        )
-    fig = go.Figure()
+    if isinstance(res, OptimizeResult):
+        if res.history is None:
+            raise ValueError(
+                "params_plot requires a optimize_result with history. "
+                "Enable history collection by setting collect_history=True "
+                "when calling maximize or minimize."
+            )
+        history = res.history["params"]
+        start_params = res.start_params
+    elif isinstance(res, (str, Path)):
+        reader = OptimizeLogReader(res)
+        start_params = reader.read_start_params()
+        history = reader.read_history()["params"]
+    else:
+        raise ValueError("res must be an OptimizeResult or a path to a log file.")
 
-    history = res.history["params"]
+    fig = go.Figure()
 
     registry = get_registry(extended=True)
 
     hist_arr = np.array([tree_just_flatten(p, registry=registry) for p in history]).T
-    names = leaf_names(res.params, registry=registry)
+    names = leaf_names(start_params, registry=registry)
 
     if selector is not None:
-        flat, treedef = tree_flatten(res.params, registry=registry)
+        flat, treedef = tree_flatten(start_params, registry=registry)
         helper = tree_unflatten(treedef, list(range(len(flat))), registry=registry)
         selected = np.array(tree_just_flatten(selector(helper), registry=registry))
         names = [names[i] for i in selected]
