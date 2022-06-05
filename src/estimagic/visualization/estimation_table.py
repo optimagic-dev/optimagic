@@ -119,7 +119,7 @@ def estimation_table(
             labels to be displayed for those statistics, i.e. the set of the values is
             used as row names in the table.
         number_format (int, str, iterable or callable): A callable, iterable, integer
-            or callable that is used to apply string formatter(s) to floats in the
+            or string that is used to apply string formatter(s) to floats in the
             table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
         add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point. Default True.
