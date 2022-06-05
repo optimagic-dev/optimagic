@@ -274,6 +274,12 @@ def render_latex(
         latex_str (str): The resulting string with Latex tabular code.
 
     """
+    if not pd.__version__ >= "1.4.0":
+        raise ValueError(
+            r"""Need pandas version equal or above 1.4.0
+        for a proper call of pandas.io.formats.style.Styler.to_latex
+        """
+        )
     if siunitx_warning:
         warn(
             r"""Proper LaTeX compilation requires the package siunitx and adding
@@ -404,9 +410,15 @@ def render_html(
             and " incell display string with HTML-safe sequences.
 
     Returns:
-        latex_str (str): The resulting string with html tabular code.
+        html_str (str): The resulting string with html tabular code.
 
     """
+    if not pd.__version__ >= "1.4.0":
+        raise ValueError(
+            r"""Need pandas version equal or above 1.4.0
+        for a proper call of pandas.io.formats.style.Styler.to_html
+        """
+        )
     n_levels = body.index.nlevels
     n_columns = len(body.columns)
     html_str = ""
