@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from estimagic.parameters.parameter_groups import _get_group_and_name
+from estimagic.parameters.parameter_groups import _replace_too_common_groups
 from estimagic.parameters.parameter_groups import _split_long_group
 from estimagic.parameters.parameter_groups import get_params_groups_and_short_names
 
@@ -52,7 +53,7 @@ def test_get_params_groups_and_short_names_dict():
 
 def test_get_params_groups_and_short_names_numpy():
     params = np.arange(15).reshape(5, 3)
-    expected_groups = ["all parameters, 1"] * 8 + ["all parameters, 2"] * 7
+    expected_groups = ["Parameters, 1"] * 8 + ["Parameters, 2"] * 7
     expected_names = [f"{j}_{i}" for j in range(5) for i in range(3)]
     res_groups, res_names = get_params_groups_and_short_names(
         params=params, free_mask=[True] * 15
@@ -63,7 +64,7 @@ def test_get_params_groups_and_short_names_numpy():
 
 def test_get_params_groups_and_short_names_dataframe():
     params = pd.DataFrame({"value": np.arange(15)})
-    expected_groups = ["all parameters, 1"] * 8 + ["all parameters, 2"] * 7
+    expected_groups = ["Parameters, 1"] * 8 + ["Parameters, 2"] * 7
     expected_names = [str(i) for i in range(15)]
     res_groups, res_names = get_params_groups_and_short_names(
         params=params, free_mask=[True] * 15
@@ -109,3 +110,10 @@ def test_split_long_group_23():
     res = _split_long_group("bla", 23)
     expected = np.array(["bla, 1"] * 8 + ["bla, 2"] * 8 + ["bla, 3"] * 7)
     assert (res == expected).all()
+
+
+def test_replace_too_common_groups():
+    groups = ["a", "b", "c", "b", "b"]
+    split_group_names = ["d", "e", "f"]
+    res = _replace_too_common_groups(groups, "b", split_group_names)
+    assert res == ["a", "d", "c", "e", "f"]

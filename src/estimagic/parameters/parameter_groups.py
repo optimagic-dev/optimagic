@@ -35,9 +35,9 @@ def get_params_groups_and_short_names(params, free_mask, max_group_size=8):
 
     # if every parameter has its own group, they should all actually be in one group
     if len(pd.unique(groups)) == len(groups):
-        groups = ["all parameters"] * len(groups)
+        groups = ["Parameters"] * len(groups)
 
-    groups = np.array(groups)
+    groups = groups
     counts = pd.value_counts(groups)
     to_be_split = counts[counts > max_group_size]
     for group_name, n_occurrences in to_be_split.items():
@@ -46,17 +46,9 @@ def get_params_groups_and_short_names(params, free_mask, max_group_size=8):
             n_occurrences=n_occurrences,
             max_group_size=max_group_size,
         )
-        mask = groups == group_name
-        if len(split_group_names) < len(groups):
-            groups[mask] = split_group_names
-        else:
-            groups = split_group_names
+        groups = _replace_too_common_groups(groups, group_name, split_group_names)
 
-        # !!! To be removed once problem is understood
-        if not (groups[mask] == split_group_names).all():
-            raise AssertionError("Groups were not changed")
-
-    return groups.tolist(), names
+    return groups, names
 
 
 def _get_group_and_name(path_list, is_free):
@@ -104,4 +96,28 @@ def _split_long_group(group_name, n_occurrences, max_group_size=8):
     new_names = []
     for i, arr in enumerate(split):
         new_names += [f"{group_name}, {i + 1}"] * len(arr)
-    return np.array(new_names)
+    return new_names
+
+
+def _replace_too_common_groups(groups, group_name, replacement_names):
+    """Create new groups replacing *group_name* with the replacement_names.
+
+    Args:
+        groups (list): the groups containing too common group names
+        group_name (str): the group name to be replaced
+        replacement_names (list): the new group names with which to replace group_name.
+            It must have at least as many entries as there are occurrences of group_name
+            in groups.
+
+    Returns:
+        new_groups (list): same as groups except that group name has been replaced
+            with the entries of replacement_names
+
+    """
+    new_groups = []
+    for group in groups:
+        if group != group_name:
+            new_groups.append(group)
+        else:
+            new_groups.append(replacement_names.pop(0))
+    return new_groups
