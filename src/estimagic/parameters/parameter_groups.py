@@ -33,6 +33,10 @@ def get_params_groups_and_short_names(params, free_mask, max_group_size=8):
         groups.append(group)
         names.append(name)
 
+    # if every parameter has its own group, they should all actually be in one group
+    if len(pd.unique(groups)) == len(groups):
+        groups = ["all parameters"] * len(groups)
+
     groups = np.array(groups)
     counts = pd.value_counts(groups)
     to_be_split = counts[counts > max_group_size]
@@ -42,7 +46,15 @@ def get_params_groups_and_short_names(params, free_mask, max_group_size=8):
             n_occurrences=n_occurrences,
             max_group_size=max_group_size,
         )
-        groups[groups == group_name] = split_group_names
+        mask = groups == group_name
+        if len(split_group_names) < len(groups):
+            groups[mask] = split_group_names
+        else:
+            groups = split_group_names
+
+        # !!! To be removed once problem is understood
+        if not (groups[mask] == split_group_names).all():
+            raise AssertionError("Groups were not changed")
 
     return groups.tolist(), names
 
@@ -92,4 +104,4 @@ def _split_long_group(group_name, n_occurrences, max_group_size=8):
     new_names = []
     for i, arr in enumerate(split):
         new_names += [f"{group_name}, {i + 1}"] * len(arr)
-    return new_names
+    return np.array(new_names)
