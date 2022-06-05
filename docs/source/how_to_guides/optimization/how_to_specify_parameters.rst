@@ -88,7 +88,7 @@ Again, we use the simple ``sphere`` function you know from other tutorials as ex
     A drawback of DataFrames is that they are not JAX compatible. Another one is that
     they are a bit slower than numpy arrays.
 
-    .. _Ordered Logit Example: ../../getting_started/first_likelihood_estimation_with_estimagic.ipynb
+    .. _Ordered Logit Example: ../../getting_started/estimation/first_likelihood_estimation_with_estimagic.ipynb
 
 .. tabbed:: Dict
 

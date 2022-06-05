@@ -6,13 +6,55 @@ import pandas.testing as pdt
 import pytest
 from bokeh.document import Document
 from bokeh.models import ColumnDataSource
-from estimagic.config import EXAMPLE_DIR
+from estimagic import minimize
 
 
-def test_dashboard_app():
+def pybaum_sphere(params):
+    """Sphere function expecting a dictionary with floats and a np.array.
+
+    Args:
+        params (dict): keys are "a", "b", "c". The first two values are floats, the
+            third is a np.array.
+
+    Returns:
+        float: criterion value.
+
+    """
+    return params["a"] ** 2 + params["b"] ** 2 + (params["c"] ** 2).sum()
+
+
+def pandas_sphere(params):
+    """Sphere function expecting a pandas DataFrame.
+
+    Args:
+        params (pd.DataFrame): expected to have a "value" column with float entries.
+
+    Returns:
+        float: criterion value.
+
+    """
+    return (params["value"] ** 2).sum()
+
+
+@pytest.mark.parametrize(
+    "criterion, start_params",
+    [
+        (pybaum_sphere, {"a": 2, "b": 4, "c": np.arange(4)}),
+        (pandas_sphere, pd.DataFrame({"value": np.ones(6)})),
+    ],
+)
+def test_dashboard_app(criterion, start_params, tmpdir):
     """Integration test that no Error is raised when calling the dashboard app."""
     doc = Document()
-    db_path = EXAMPLE_DIR / "db2.db"
+
+    # create database
+    db_path = tmpdir / "test_db.db"
+    minimize(
+        criterion=criterion,
+        params=start_params,
+        logging=db_path,
+        algorithm="scipy_lbfgsb",
+    )
 
     session_data = {
         "last_retrieved": 0,
