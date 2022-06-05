@@ -1,6 +1,5 @@
 """Most test exploit the special case where simulate_moments just returns parameters."""
 import itertools
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -48,18 +47,13 @@ def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
     if isinstance(empirical_moments, dict):
         empirical_moments = empirical_moments["simulated_moments"]
 
-    # catching warnings is necessary because the very special case with diagonal
-    # weighting and diagonal jacobian leads to singular matrices while calculating
-    # sensitivity to removal of moments.
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message="Standard matrix inversion failed")
-        calculated = estimate_msm(
-            simulate_moments=simulate_moments,
-            empirical_moments=empirical_moments,
-            moments_cov=moments_cov,
-            params=start_params,
-            optimize_options=optimize_options,
-        )
+    calculated = estimate_msm(
+        simulate_moments=simulate_moments,
+        empirical_moments=empirical_moments,
+        moments_cov=moments_cov,
+        params=start_params,
+        optimize_options=optimize_options,
+    )
 
     # check that minimization works
     aaae(calculated.params, expected_params)
@@ -73,6 +67,28 @@ def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
     # jac = identity matrix
     expected_cov = np.diag([1, 2, 3])
     aaae(calculated_cov, expected_cov)
+    aaae(calculated.se(), np.sqrt([1, 2, 3]))
+
+    # works only because parameter point estimates are exactly zero
+    aaae(calculated.p_values(), np.ones(3))
+
+    #
+    expected_ci_upper = np.array([1.95996398, 2.77180765, 3.3947572])
+    expected_ci_lower = -expected_ci_upper
+
+    lower, upper = calculated.ci()
+    aaae(lower, expected_ci_lower)
+    aaae(upper, expected_ci_upper)
+
+    aaae(calculated.ci(), calculated._ci)
+    aaae(calculated.p_values(), calculated._p_values)
+    aaae(calculated.se(), calculated._se)
+    aaae(calculated.cov(), calculated._cov)
+
+    summary = calculated.summary()
+    aaae(summary["value"], np.zeros(3))
+    aaae(summary["p_value"], np.ones(3))
+    assert summary["stars"].tolist() == [""] * 3
 
 
 def test_check_and_process_numdiff_options_with_invalid_entries():
