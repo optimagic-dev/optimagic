@@ -31,6 +31,9 @@ def process_selectors(constraints, params, tree_converter, param_names):
     if constraints in (None, []):
         return []
 
+    if isinstance(constraints, dict):
+        constraints = [constraints]
+
     registry = get_registry(extended=True)
     n_params = len(tree_converter.params_flatten(params))
     helper = tree_converter.params_unflatten(np.arange(n_params))

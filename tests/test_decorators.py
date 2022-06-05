@@ -77,6 +77,7 @@ INVALID_TYPES = [
     {"name": None},
     {"name": [1, 2, 3]},
     {"needs_scaling": 25},
+    {"disable_history": 28},
     {"is_available": 30},
 ]
 

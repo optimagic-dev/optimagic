@@ -44,18 +44,9 @@ estimagic
 Introduction
 ============
 
-estimagic is a Python package to fit large scale empirical models to data and make
-inferences about the estimated model parameters. It is especially suited to solve
-difficult constrained optimization problems.
-
-estimagic provides several advantages over similar packages, including a unified
-interface that supports a large number of local and global optimization algorithms
-and the possibility of monitoring the optimization procedure via a beautiful
-interactive dashboard.
-
-estimagic provides tools for nonlinear optimization, numerical differentiation
-and statistical inference.
-
+estimagic is a Python package for nonlinear optimization with or without constraints.
+It is particularly suited to solve difficult nonlinear estimation problems. On top, it
+provides functionality to perform statistical inference on estimated parameters.
 
 Optimization
 ------------

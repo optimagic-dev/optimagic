@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
+from estimagic.differentiation.derivatives import Evals
 from estimagic.differentiation.finite_differences import jacobian
-from estimagic.utilities import namedtuple_from_kwargs
+from estimagic.differentiation.generate_steps import Steps
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -9,7 +10,7 @@ from numpy.testing import assert_array_almost_equal as aaae
 def jacobian_inputs():
     """Very contrived test case for finite difference formulae with linear function."""
     steps_pos = np.array([[0.1, 0.1, 0.1, 0.1], [0.2, 0.2, 0.2, 0.2]])
-    steps = namedtuple_from_kwargs(pos=steps_pos, neg=-steps_pos)
+    steps = Steps(pos=steps_pos, neg=-steps_pos)
 
     jac1 = (np.arange(1, 13)).reshape(3, 4)
     jac2 = jac1 * 1.1
@@ -18,7 +19,7 @@ def jacobian_inputs():
     evals_pos2 = jac2 @ (np.zeros((4, 4)) + np.eye(4) * 0.2)
     evals_neg1 = jac1 @ (np.zeros((4, 4)) - np.eye(4) * 0.1)
     evals_neg2 = jac2 @ (np.zeros((4, 4)) - np.eye(4) * 0.2)
-    evals = namedtuple_from_kwargs(
+    evals = Evals(
         pos=np.array([evals_pos1, evals_pos2]), neg=np.array([evals_neg1, evals_neg2])
     )
 

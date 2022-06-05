@@ -15,14 +15,15 @@ from estimagic.differentiation.derivatives import _reshape_cross_step_evals
 from estimagic.differentiation.derivatives import _reshape_one_step_evals
 from estimagic.differentiation.derivatives import _reshape_two_step_evals
 from estimagic.differentiation.derivatives import _select_minimizer_along_axis
+from estimagic.differentiation.derivatives import Evals
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.differentiation.derivatives import second_derivative
+from estimagic.differentiation.generate_steps import Steps
 from estimagic.examples.numdiff_functions import logit_loglike
 from estimagic.examples.numdiff_functions import logit_loglike_gradient
 from estimagic.examples.numdiff_functions import logit_loglike_hessian
 from estimagic.examples.numdiff_functions import logit_loglikeobs
 from estimagic.examples.numdiff_functions import logit_loglikeobs_jacobian
-from estimagic.utilities import namedtuple_from_kwargs
 from numpy.testing import assert_array_almost_equal as aaae
 from pandas.testing import assert_frame_equal
 from scipy.optimize._numdiff import approx_derivative
@@ -253,8 +254,8 @@ def test_first_derivative_jacobian_richardson(example_function_jacobian_fixtures
 def test_convert_evaluation_data_to_frame():
     arr = np.arange(4).reshape(2, 2)
     arr2 = arr.reshape(2, 1, 2)
-    steps = namedtuple_from_kwargs(pos=arr, neg=-arr)
-    evals = namedtuple_from_kwargs(pos=arr2, neg=-arr2)
+    steps = Steps(pos=arr, neg=-arr)
+    evals = Evals(pos=arr2, neg=-arr2)
     expected = [
         [1, 0, 0, 0, 0, 0],
         [1, 0, 1, 0, 1, 1],

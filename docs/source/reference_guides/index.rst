@@ -34,6 +34,17 @@ Optimization
 
 
 
+.. dropdown:: count_free_params
+
+    .. autofunction:: count_free_params
+
+
+.. dropdown:: check_constraints
+
+    .. autofunction:: check_constraints
+
+
+
 .. _first_derivative:
 
 Derivatives
@@ -136,7 +147,16 @@ Benchmarks
 
 
 
+.. _logreading:
 
+
+Log reading
+-----------
+
+
+.. dropdown:: OptimizeLogReader
+
+    .. autoclass:: OptimizeLogReader
 
 
 
