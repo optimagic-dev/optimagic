@@ -30,7 +30,7 @@ def estimation_table(
     stats_options=None,
     number_format=("{0:.3g}", "{0:.5f}", "{0:.4g}"),
     add_trailing_zeros=True,
-    escape_special_chars_indices=True,
+    escape_special_characters=True,
     siunitx_warning=True,
 ):
     r"""Generate html or LaTex tables provided (lists of) of models.
@@ -123,12 +123,10 @@ def estimation_table(
             table. Defualt ("{0:.3g}", "{0:.5f}", "{0:.4g}").
         add_trailing_zeros (bool): If True, format floats such that they have same
             number of digits after the decimal point. Default True.
-        siunitx_watning (bool): If True, print warning about LaTex preamble to add for
+        siunitx_warning (bool): If True, print warning about LaTex preamble to add for
             proper compilation of  when working with siunitx package. Default True.
-        escape_special_chars_indices (bool): If True, replaces soecuak characters
-            in the index (both axes) cell display string with LaTeX or HTML safe
-            sequences.
-        siunitx (bool): If True,
+        escape_special_characters (bool): If True, replaces special characters
+            in parameter and model names with LaTeX or HTML safe sequences.
     Returns:
         res_table (data frame, str or dictionary): depending on the rerturn type,
             data frame with formatted strings, a string for html or latex tables,
@@ -187,7 +185,7 @@ def estimation_table(
             siunitx_warning=siunitx_warning,
             show_index_names=show_index_names,
             show_col_names=show_col_names,
-            escape_special_chars_indices=escape_special_chars_indices,
+            escape_special_characters=escape_special_characters,
         )
     elif str(return_type).endswith("html"):
         out = render_html(
@@ -199,7 +197,7 @@ def estimation_table(
             significance_levels=significance_levels,
             show_index_names=show_index_names,
             show_col_names=show_col_names,
-            escape_special_chars_indices=escape_special_chars_indices,
+            escape_special_characters=escape_special_characters,
         )
 
     elif return_type == "dataframe":
@@ -236,7 +234,7 @@ def render_latex(
     show_index_names=False,
     show_col_names=True,
     show_col_groups=True,
-    escape_special_chars_indices=True,
+    escape_special_characters=True,
 ):
     """Return estimation table in LaTeX format as string.
 
@@ -266,9 +264,9 @@ def render_latex(
         show_index_names (bool): If True, display index names in the table.
         show_col_names (bool): If True, the column names are displayed.
         show_col_groups (bool): If True, the column groups are displayed.
-        escape_special_char_indices (bool): If True, replaces the characters &, %,
-            $, #, _, {, }, ~, ^, and \ in the index (both axes) cell display string
-            with LaTeX-safe sequences.
+        escape_special_characters (bool): If True, replaces the characters &, %,
+            $, #, _, {, }, ~, ^, and \ in parameter and model names with
+            LaTeX-safe sequences.
 
     Returns:
         latex_str (str): The resulting string with Latex tabular code.
@@ -310,16 +308,16 @@ def render_latex(
     n_levels = body.index.nlevels
     n_columns = len(body.columns)
 
-    if escape_special_chars_indices:
-        escape_special_chars_indices = "latex"
+    if escape_special_characters:
+        escape_special_characters = "latex"
     else:
-        escape_special_chars_indices = None
+        escape_special_characters = None
     body_styler = _get_updated_styler(
         body,
         show_index_names=show_index_names,
         show_col_names=show_col_names,
         show_col_groups=show_col_groups,
-        escape_special_chars_indices=escape_special_chars_indices,
+        escape_special_characters=escape_special_characters,
     )
     default_options = {
         "multicol_align": "c",
@@ -381,7 +379,7 @@ def render_html(
     show_index_names=False,
     show_col_names=True,
     show_col_groups=True,
-    escape_special_chars_indices=True,
+    escape_special_characters=True,
     **kwargs,
 ):
     """Return estimation table in html format as string.
@@ -408,8 +406,8 @@ def render_html(
         show_index_names (bool): If True, display index names in the table.
         show_col_names (bool): If True, the column names are displayed.
         show_col_groups (bool): If True, the column groups are displayed.
-        escape_special_char_indices (bool): If True,  replace the characters &, <, >, ',
-            and " incell display string with HTML-safe sequences.
+        escape_special_characters (bool): If True,  replace the characters &, <, >, ',
+            and " in parameter and model names with HTML-safe sequences.
 
     Returns:
         html_str (str): The resulting string with html tabular code.
@@ -426,16 +424,16 @@ def render_html(
     n_levels = body.index.nlevels
     n_columns = len(body.columns)
     html_str = ""
-    if escape_special_chars_indices:
-        escape_special_chars_indices = "html"
+    if escape_special_characters:
+        escape_special_characters = "html"
     else:
-        escape_special_chars_indices = None
+        escape_special_characters = None
     body_styler = _get_updated_styler(
         body,
         show_index_names=show_index_names,
         show_col_names=show_col_names,
         show_col_groups=show_col_groups,
-        escape_special_chars_indices=escape_special_chars_indices,
+        escape_special_characters=escape_special_characters,
     )
     default_options = {"exclude_styles": True}
     if render_options:
@@ -484,7 +482,7 @@ def _process_model(model):
             name = info.pop("name")
         except (KeyboardInterrupt, SystemExit):
             raise
-        except BaseException:
+        except Exception:
             raise TypeError(
                 f"""Model can  be of type dict,  pd.DataFrame
                 or a statsmodels result. Model {model} is of type {type(model)}."""
@@ -1456,7 +1454,7 @@ def _unformat_integers(sr):
 
 
 def _get_updated_styler(
-    df, show_index_names, show_col_names, show_col_groups, escape_special_chars_indices
+    df, show_index_names, show_col_names, show_col_groups, escape_special_characters
 ):
     """Return pandas.Styler object based ont the data and styling options"""
     styler = df.style
@@ -1467,5 +1465,5 @@ def _get_updated_styler(
     if not show_col_groups:
         styler = styler.hide(axis=1, level=0)
     for ax in [0, 1]:
-        styler = styler.format_index(escape=escape_special_chars_indices, axis=ax)
+        styler = styler.format_index(escape=escape_special_characters, axis=ax)
     return styler
