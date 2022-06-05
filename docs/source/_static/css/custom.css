@@ -5,16 +5,14 @@ div.prompt {
 
 /* Getting started index page */
 
-.intro-card {
-    background: #fff;
-    border-radius: 0;
-    padding: 30px 10px 10px 10px;
-    margin: 10px 0px;
-    max-height: 85%;
-}
 
 .intro-card .card-text {
     margin: 20px 0px;
+}
+
+
+.card-title {
+    margin-top: 0.25rem;
 }
 
 div#index-container {
@@ -59,11 +57,14 @@ a#index-link {
 
 /* selecting constraints guide */
 .intro-card {
-  background:#FFF;
-  border-radius:0;
-  padding: 30px 10px 10px 10px;
+  background: #fff;
+  border-radius: 0;
+  padding: 20px 5px 5px 0px;
   margin: 10px 0px;
+  max-height: 85%;
 }
+
+
 
 .intro-card .card-text {
   margin:20px 0px;
@@ -71,7 +72,7 @@ a#index-link {
 }
 
 .intro-card .card-img-top {
-  margin: 10px;
+  margin: 0px;
 }
 
 .install-block {
@@ -207,7 +208,7 @@ details.dropdown .summary-up, details.dropdown .summary-down {
 
 /* Background color of dropdown boxes */
 .card {
-  background-color: #ebf0f5 !important;
+  background-color: white !important;
 }
 
 /* Color of inline code */

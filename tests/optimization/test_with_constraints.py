@@ -75,9 +75,9 @@ FUNC_INFO = {
 
 
 CONSTR_INFO = {
-    "fixed": [{"loc": [0], "type": "fixed", "value": 1}],
+    "fixed": {"loc": [0], "type": "fixed", "value": 1},
     "equality": [{"loc": [0, 1, 2], "type": "equality"}],
-    "pairwise_equality": [{"locs": [0, 1], "type": "pairwise_equality"}],
+    "pairwise_equality": {"locs": [0, 1], "type": "pairwise_equality"},
     "increasing": [{"loc": [1, 2], "type": "increasing"}],
     "decreasing": [{"loc": [0, 1], "type": "decreasing"}],
     "linear": [{"loc": [0, 1], "type": "linear", "value": 4, "weights": [1, 2]}],

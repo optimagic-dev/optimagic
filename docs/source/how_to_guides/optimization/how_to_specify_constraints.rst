@@ -77,7 +77,7 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.array([2.5, 1, 1, 1, 1, -2.5]),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [0, 5], "type": "fixed"}],
+            constraints={"loc": [0, 5], "type": "fixed"},
         )
 
     Looking at the optimization result we get:
@@ -100,7 +100,7 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.array([1, 1, 1, 1, 1, 1]),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [1, 2, 3], "type": "increasing"}],
+            constraints={"loc": [1, 2, 3], "type": "increasing"},
         )
 
     Looking at the optimization result we get:
@@ -126,7 +126,7 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.array([1, 1, 1, 1, 1, 1]),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [3, 0, 4], "type": "decreasing"}],
+            constraints={"loc": [3, 0, 4], "type": "decreasing"},
         )
 
     This should have no effect on ``params[4]`` because it is smaller than the other
@@ -149,7 +149,7 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.array([1, 1, 1, 1, 1, 1]),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [0, 5], "type": "equality"}],
+            constraints={"loc": [0, 5], "type": "equality"},
         )
 
     This yields:
@@ -171,7 +171,7 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.array([1, 1, 1, 1, 1, 1]),
             algorithm="scipy_lbfgsb",
-            constraints=[{"locs": [[0, 1], [2, 3]], "type": "pairwise_equality"}],
+            constraints={"locs": [[0, 1], [2, 3]], "type": "pairwise_equality"},
         )
 
     This constraint imposes that ``params[0] == params[2]`` and
@@ -191,7 +191,7 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.full(6, 0.25),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [0, 1, 2, 3], "type": "probability"}],
+            constraints={"loc": [0, 1, 2, 3], "type": "probability"},
         )
 
     This yields again the correct result:
@@ -217,7 +217,7 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.ones(6),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [0, 1, 2], "type": "covariance"}],
+            constraints={"loc": [0, 1, 2], "type": "covariance"},
         )
 
     This yields the same solution as an unconstrained estimation because the constraint
@@ -254,7 +254,7 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.ones(6),
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": [0, 1, 2], "type": "sdcorr"}],
+            constraints={"loc": [0, 1, 2], "type": "sdcorr"},
         )
 
 
@@ -297,9 +297,12 @@ flat numpy array are explained in the next section.
             criterion=criterion,
             params=np.ones(6),
             algorithm="scipy_lbfgsb",
-            constraints=[
-                {"loc": [0, 1, 2, 3], "type": "linear", "lower_bound": 0.95, "weights": 0.25}
-            ],
+            constraints={
+                "loc": [0, 1, 2, 3],
+                "type": "linear",
+                "lower_bound": 0.95,
+                "weights": 0.25,
+            },
         )
 
     This yields:
@@ -318,7 +321,7 @@ Imposing multiple constraints at once
 =====================================
 
 The above examples all just impose one constraint at a time. To impose multiple
-constraints simultaneously, simple pass in a longer list of constraints. Example:
+constraints simultaneously, simple pass in a list of constraints. Example:
 
 .. code-block:: python
 
@@ -395,7 +398,7 @@ Below we show how to use each of these selection methods in simple examples
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
-            constraints=[{"loc": "cutoffs", "type": "increasing"}],
+            constraints={"loc": "cutoffs", "type": "increasing"},
         )
 
     The value corresponding to ``loc`` can be anything that you could pass into the
@@ -434,7 +437,7 @@ Below we show how to use each of these selection methods in simple examples
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
-            constraints=[{"query": "category == 'betas' | name == 'a'", "type": "fixed"}],
+            constraints={"query": "category == 'betas' | name == 'a'", "type": "fixed"},
         )
 
     The value corresponding to ``query`` can be anything you could pass to the
@@ -462,7 +465,7 @@ Below we show how to use each of these selection methods in simple examples
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
-            constraints=[{"selector": lambda params: params["b"]["d"], "type": "fixed"}],
+            constraints={"selector": lambda params: params["b"]["d"], "type": "fixed"},
         )
 
     I.e. the value corresponding to ``selector`` is a python function that takes the
@@ -482,5 +485,5 @@ Below we show how to use each of these selection methods in simple examples
             criterion=some_criterion,
             params=params,
             algorithm="scipy_lbfgsb",
-            constraints=[{"selector": my_selector, "type": "fixed"}],
+            constraints={"selector": my_selector, "type": "fixed"},
         )
