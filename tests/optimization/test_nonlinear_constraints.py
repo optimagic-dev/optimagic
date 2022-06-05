@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 import pytest
 from estimagic import maximize
+from estimagic.config import IS_CYIPOPT_INSTALLED
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -65,13 +66,15 @@ def nlc_2d_example():
 
 
 @pytest.mark.parametrize(
-    "method, constr_type",
+    "algorithm, constr_type",
     itertools.product(
         ["scipy_slsqp", "scipy_cobyla", "scipy_trust_constr", "ipopt"], ["flat", "long"]
     ),
 )
-def test_nonlinear_optimization(nlc_2d_example, method, constr_type):
+def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
+    if algorithm == "ipopt" and not IS_CYIPOPT_INSTALLED:
+        pytest.skip(msg="cyipopt not installed.")
     get_kwargs, solution_x = nlc_2d_example
-    kwargs = get_kwargs(method, constr_type)
+    kwargs = get_kwargs(algorithm, constr_type)
     result = maximize(**kwargs)
     aaae(result.params, solution_x, decimal=5)

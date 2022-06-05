@@ -789,13 +789,6 @@ def _optimize(
     return res
 
 
-def _get_internal_constraints(constraints, converter):
-    _constraints = []
-    for constr in constraints:
-        _constraints.append(constr)
-    return _constraints
-
-
 def _create_and_initialize_database(logging, log_options, problem_data):
     """Create and initialize to sqlite database for logging."""
     path = Path(logging)

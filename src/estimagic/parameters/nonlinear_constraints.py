@@ -123,11 +123,7 @@ def transform_bounds_to_positivity_constraint(nonlinear_constraints):
 
 def is_positivity_constraint(constr):
     lb_is_zero = not np.count_nonzero(constr["lower_bound"])
-    if lb_is_zero and np.all(constr["upper_bound"] == np.inf):
-        out = True
-    else:
-        out = False
-    return out
+    return lb_is_zero and np.all(constr["upper_bound"] == np.inf)
 
 
 def _check_nonlinear_constraints(nonlinear_constraints):
