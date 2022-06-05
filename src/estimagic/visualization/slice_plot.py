@@ -30,8 +30,7 @@ def slice_plot(
     share_x=False,
     color="#497ea7",
     template=PLOTLY_TEMPLATE,
-    layout_kwargs=None,
-    title_kwargs=None,
+    title=None,
     return_dict=False,
     make_subplot_kwargs=None,
     batch_evaluator="joblib",
@@ -70,9 +69,7 @@ def slice_plot(
         layout_kwargs (dict or NoneType): Dictionary of key word arguments used to
             update layout of plotly Figure object. If None, the default kwargs defined
             in the function will be used.
-        title_kwargs (dict or NoneType): Dictionary of key word arguments used to
-            update properties of the figure title. Use {'text': '<desired title>'}
-            to set figure title.
+        title (str): The figure title.
         return_dict (bool): If True, return dictionary with individual plots of each
             parameter, else, ombine individual plots into a figure with subplots.
         make_subplot_kwargs (dict or NoneType): Dictionary of keyword arguments used
@@ -89,6 +86,13 @@ def slice_plot(
 
 
     """
+
+    layout_kwargs = None
+    if title is not None:
+        title_kwargs = {"text": title}
+    else:
+        title_kwargs = None
+
     if func_kwargs is not None:
         func = partial(func, **func_kwargs)
 
