@@ -12,19 +12,19 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 
 def _sim_pd(params):
-    return params["value"]
+    return pd.Series(params)
 
 
 def _sim_np(params):
-    return params["value"].to_numpy()
+    return params
 
 
 def _sim_dict_pd(params):
-    return {"simulated_moments": params["value"], "other": "bla"}
+    return {"simulated_moments": pd.Series(params), "other": "bla"}
 
 
 def _sim_dict_np(params):
-    return {"simulated_moments": params["value"].to_numpy(), "other": "bla"}
+    return {"simulated_moments": params, "other": "bla"}
 
 
 cov_np = np.diag([1, 2, 3.0])
@@ -39,11 +39,9 @@ test_cases = itertools.product(
 
 @pytest.mark.parametrize("simulate_moments, moments_cov, optimize_options", test_cases)
 def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
-    start_params = pd.DataFrame()
-    start_params["value"] = [3, 2, 1]
+    start_params = np.array([3, 2, 1])
 
-    expected_params = pd.DataFrame()
-    expected_params["value"] = np.zeros(3)
+    expected_params = np.zeros(3)
 
     # abuse simulate_moments to get empirical moments in correct format
     empirical_moments = simulate_moments(expected_params)
@@ -63,12 +61,11 @@ def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
             optimize_options=optimize_options,
         )
 
-    calculated_params = calculated["optimize_res"].params[["value"]]
     # check that minimization works
-    aaae(calculated_params["value"].to_numpy(), expected_params["value"].to_numpy())
+    aaae(calculated.params, expected_params)
 
     # check that cov works
-    calculated_cov = calculated["cov"]
+    calculated_cov = calculated.cov()
     if isinstance(calculated_cov, pd.DataFrame):
         calculated_cov = calculated_cov.to_numpy()
 

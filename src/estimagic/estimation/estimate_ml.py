@@ -55,17 +55,14 @@ def estimate_ml(
 
     While we have good defaults, you can still configure each aspect of each step
     via the optional arguments of this function. If you find it easier to do the
-    "difficult" steps (mainly maximization and calculating numerical derivatives
-    of a potentially noisy function) separately, you can do so and just provide those
-    results as ``params``, ``jacobian`` and ``hessian``.
-
-    The docstring is aspirational and not all options are supported yet.
+    maximization separately, you can do so and just provide the optimal parameters as
+    ``params`` and set ``optimize_options=False``.
 
     Args:
         loglike (callable): Likelihood function that takes a params (and potentially
             other keyword arguments) and returns a dictionary that has at least the
             entries "value" (a scalar float) and "contributions" (a 1d numpy array or
-            pandas Series) with the log likelihood contribution per individual.
+            pytree) with the log likelihood contribution per individual.
         params (pytree): A pytree containing the estimated or start parameters of the
             likelihood model. If the supplied parameters are estimated parameters, set
             optimize_options to False. Pytrees can be a numpy array, a pandas Series, a
@@ -73,10 +70,11 @@ def estimate_ml(
             or list containing these elements. See :ref:`params` for examples.
         optimize_options (dict, str or False): Keyword arguments that govern the
             numerical optimization. Valid entries are all arguments of
-            :func:`~estimagic.optimization.optimize.minimize` except for criterion. If
-            you pass False as optimize_options you signal that ``params`` are already
-            the optimal parameters and no numerical optimization is needed. If you pass
-            a str as optimize_options it is used as the ``algorithm`` option.
+            :func:`~estimagic.optimization.optimize.minimize` except for those that are
+            passed explicilty to ``estimate_ml``. If you pass False as optimize_options
+            you signal that ``params`` are already the optimal parameters and no
+            numerical optimization is needed. If you pass a str as optimize_options it
+            is used as the ``algorithm`` option.
         lower_bounds (pytree): A pytree with the same structure as params with lower
             bounds for the parameters. Can be ``-np.inf`` for parameters with no lower
             bound.
