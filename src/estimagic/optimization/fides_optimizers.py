@@ -39,7 +39,7 @@ def fides(
     stopping_max_seconds=np.inf,
     trustregion_initial_radius=1.0,
     trustregion_stepback_strategy="truncate",
-    trustregion_subspace_dimension="2D",
+    trustregion_subspace_dimension="full",
     trustregion_max_stepback_fraction=0.95,
     trustregion_decrease_threshold=0.25,
     trustregion_increase_threshold=0.75,

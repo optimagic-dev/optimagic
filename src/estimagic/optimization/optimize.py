@@ -84,8 +84,8 @@ def maximize(
             optimization is performed.
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries. See
-            .. _link: ../../docs/source/how_to_guides/how_to_specify_constraints.ipynb
+        constraints (list, dict): List with constraint dictionaries or single dict.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable): Function that calculates the first derivative
@@ -282,8 +282,8 @@ def minimize(
             optimization is performed.
         soft_upper_bounds (pytree): As soft_lower_bounds.
         criterion_kwargs (dict): Additional keyword arguments for criterion
-        constraints (list): List with constraint dictionaries. See
-            .. _link: ../../docs/source/how_to_guides/how_to_specify_constraints.ipynb
+        constraints (list, dict): List with constraint dictionaries or single dict.
+            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
         algo_options (dict): Algorithm specific configuration of the optimization. See
             :ref:`list_of_algorithms` for supported options of each algorithm.
         derivative (callable): Function that calculates the first derivative
@@ -641,9 +641,7 @@ def _optimize(
     # initialize the log database
     # ==================================================================================
     if logging:
-        problem_data["flat_params_names"] = (internal_params.names,)
-        problem_data["flat_params_groups"] = get_params_groups(internal_params)
-
+        problem_data["free_mask"] = internal_params.free_mask
         database = _create_and_initialize_database(logging, log_options, problem_data)
         db_kwargs = {
             "database": database,
