@@ -63,13 +63,13 @@ def _load_database(path_or_database):
 
 
 def read_steps_table(path_or_database):
-    """Load the start parameters DataFrame.
+    """Load the steps table.
 
     Args:
         path_or_database (pathlib.Path, str or sqlalchemy.MetaData)
 
     Returns:
-        params (pd.DataFrame): see :ref:`params`.
+        steps_df (pandas.DataFrame)
 
     """
     database = _load_database(path_or_database)
