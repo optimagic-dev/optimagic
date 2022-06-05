@@ -25,7 +25,6 @@ from estimagic.optimization.tiktak import WEIGHT_FUNCTIONS
 from estimagic.parameters.conversion import aggregate_func_output_to_value
 from estimagic.parameters.conversion import get_converter
 from estimagic.parameters.nonlinear_constraints import process_nonlinear_constraints
-from estimagic.parameters.parameter_groups import get_params_groups
 from estimagic.process_user_function import process_func_of_params
 
 
