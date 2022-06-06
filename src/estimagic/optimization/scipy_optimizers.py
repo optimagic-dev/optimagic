@@ -470,8 +470,8 @@ def _get_scipy_constraints(constraints):
         n_constr = c["n_constr"]
         nlc = NonlinearConstraint(
             fun=c["fun"],
-            lb=c.get("lower_bound", np.zeros(n_constr)),
-            ub=c.get("upper_bound", np.zeros(n_constr)),
+            lb=c.get("lower_bounds", np.zeros(n_constr)),
+            ub=c.get("upper_bounds", np.zeros(n_constr)),
             jac=c["jac"],
         )
         _constraints.append(nlc)

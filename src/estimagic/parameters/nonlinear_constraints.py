@@ -3,33 +3,28 @@ from estimagic.differentiation.derivatives import first_derivative
 
 
 def process_nonlinear_constraints(nonlinear_constraints, params, converter):
-    _check_nonlinear_constraints(nonlinear_constraints)
 
     processed = []
 
     for c in nonlinear_constraints:
+        _check_nonlinear_constraint(c)
 
+        new_constr = {}
         _constraint_fun = c["fun"]
-        _c = {}
 
         ################################################################################
         # process selector
         ################################################################################
-
-        if "selector" in c:
-            _selector = c["selector"]
-        else:
-            _selector = _identity_selector
+        _selector = _process_selector(c)
 
         ################################################################################
         # retrieve number of constraints
         ################################################################################
-
         if "n_constr" in c:
-            _c["n_constr"] = c["n_constr"]
+            new_constr["n_constr"] = c["n_constr"]
         else:
             constraint_value = _constraint_fun(_selector(params))
-            _c["n_constr"] = len(np.atleast_1d(constraint_value))
+            new_constr["n_constr"] = len(np.atleast_1d(constraint_value))
 
         ################################################################################
         # consolidate and transform jacobian
@@ -48,19 +43,16 @@ def process_nonlinear_constraints(nonlinear_constraints, params, converter):
         def _jacobian_from_internal(x):
             params = converter.params_from_internal(x)
             select = _selector(params)
-            return _jacobian(select).reshape(_c["n_constr"], -1)
+            return _jacobian(select).reshape(new_constr["n_constr"], -1)
 
-        ################################################################################
-        # consolidate and transform jacobian
-        ################################################################################
-
-        _type = "eq" if "value" in c else "ineq"
-        _c["type"] = _type
-        _c["jac"] = _jacobian_from_internal
+        new_constr["jac"] = _jacobian_from_internal
 
         ################################################################################
         # transform constraint function and derive bounds
         ################################################################################
+
+        _type = "eq" if "value" in c else "ineq"
+        new_constr["type"] = _type
 
         if _type == "eq":
 
@@ -77,12 +69,16 @@ def process_nonlinear_constraints(nonlinear_constraints, params, converter):
                 select = _selector(params)
                 return _constraint_fun(select)
 
-            _c["lower_bound"] = c.get("lower_bound", np.tile(-np.inf, _c["n_constr"]))
-            _c["upper_bound"] = c.get("upper_bound", np.tile(np.inf, _c["n_constr"]))
+            new_constr["lower_bounds"] = c.get(
+                "lower_bounds", np.tile(-np.inf, new_constr["n_constr"])
+            )
+            new_constr["upper_bounds"] = c.get(
+                "upper_bounds", np.tile(np.inf, new_constr["n_constr"])
+            )
 
-        _c["fun"] = _constraint_from_internal
+        new_constr["fun"] = _constraint_from_internal
 
-        processed.append(_c)
+        processed.append(new_constr)
     return processed
 
 
@@ -91,55 +87,82 @@ def transform_bounds_to_positivity_constraint(nonlinear_constraints):
     for c in nonlinear_constraints:
         if c["type"] == "ineq" and is_positivity_constraint(c):
 
-            _c = c.copy()
-            del _c["lower_bound"]
-            del _c["upper_bound"]
-            _transformed.append(_c)
+            new_constr = c.copy()
+            del new_constr["lower_bounds"]
+            del new_constr["upper_bounds"]
+            _transformed.append(new_constr)
 
         elif not is_positivity_constraint(c):
 
             def _long_constraint_fun(x):
                 value = np.atleast_1d(c["fun"](x))
                 return np.concatenate(
-                    (value - c["lower_bound"], -value + c["upper_bound"])
+                    (value - c["lower_bounds"], -value + c["upper_bounds"])
                 )
 
             def _long_jacobian(x):
                 value = c["jac"](x)
                 return np.concatenate((value, -value), axis=0)
 
-            _c = c.copy()
-            del _c["lower_bound"]
-            del _c["upper_bound"]
+            new_constr = c.copy()
+            del new_constr["lower_bounds"]
+            del new_constr["upper_bounds"]
 
-            _c["fun"] = _long_constraint_fun
-            _c["jac"] = _long_jacobian
+            new_constr["fun"] = _long_constraint_fun
+            new_constr["jac"] = _long_jacobian
 
-            _transformed.append(_c)
+            _transformed.append(new_constr)
         else:
             _transformed.append(c)
     return _transformed
 
 
 def is_positivity_constraint(constr):
-    lb_is_zero = not np.count_nonzero(constr["lower_bound"])
-    return lb_is_zero and np.all(constr["upper_bound"] == np.inf)
+    lb_is_zero = not np.count_nonzero(constr["lower_bounds"])
+    return lb_is_zero and np.all(constr["upper_bounds"] == np.inf)
 
 
-def _check_nonlinear_constraints(nonlinear_constraints):
-    for c in nonlinear_constraints:
-        assert c["type"] == "nonlinear"
-        assert callable(c["fun"])
+def _process_selector(c):
+    if "selector" in c:
+        _selector = c["selector"]
+    elif "loc" in c:
 
-        is_equality_constraint = "value" in c
-        is_inequality_constraint = not is_equality_constraint
+        def _selector(params):
+            return params.loc[c["loc"]]
 
-        if is_equality_constraint:
-            assert "lower_bound" not in c and "upper_bound" not in c
+    elif "query" in c:
 
-        if is_inequality_constraint:
-            assert "lower_bound" in c or "upper_bound" in c
+        def _selector(params):
+            return params.query(c["query"])
+
+    else:
+        _selector = _identity_selector
+    return _selector
 
 
 def _identity_selector(params):
     return params
+
+
+def _check_nonlinear_constraint(c):
+    if not callable(c["fun"]):
+        raise ValueError("Entry 'fun' in nonlinear constraints has be callable.")
+
+    if "jac" in c and not callable(c["jac"]):
+        raise ValueError("Entry 'jac' in nonlinear constraints has be callable.")
+
+    is_equality_constraint = "value" in c
+
+    if is_equality_constraint:
+        if "lower_bounds" in c or "upper_bounds" in c:
+            raise ValueError(
+                "Only one of 'value' or ('lower_bounds', 'upper_bounds') can be "
+                "passed to a nonlinear constraint."
+            )
+
+    if not is_equality_constraint:
+        if "lower_bounds" not in c and "upper_bounds" not in c:
+            raise ValueError(
+                "For inequality constraint at least one of ('lower_bounds', "
+                "'upper_bounds') has to be passed to the nonlinear constraint."
+            )

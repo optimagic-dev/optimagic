@@ -29,7 +29,7 @@ def nlc_2d_example():
             "type": "nonlinear",
             "fun": constraint_func,
             "jac": constraint_jac,
-            "lower_bound": np.zeros(2),
+            "lower_bounds": np.zeros(2),
         }
     ]
 
@@ -38,8 +38,8 @@ def nlc_2d_example():
             "type": "nonlinear",
             "fun": lambda x: np.dot(x, x),
             "jac": lambda x: 2 * x,
-            "lower_bound": 1,
-            "upper_bound": 2,
+            "lower_bounds": 1,
+            "upper_bounds": 2,
         }
     ]
 

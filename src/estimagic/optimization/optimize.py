@@ -608,6 +608,7 @@ def _optimize(
     # ==================================================================================
     # Split constraints into nonlinear and reparametrization parts
     # ==================================================================================
+    constraints = [constraints] if isinstance(constraints, dict) else constraints
     nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
     # the following constraints will be handled via reparametrization
     reparametrize_constraints = [c for c in constraints if c["type"] != "nonlinear"]
@@ -629,11 +630,6 @@ def _optimize(
         soft_lower_bounds=soft_lower_bounds,
         soft_upper_bounds=soft_upper_bounds,
         add_soft_bounds=multistart,
-    )
-
-    # process nonlinear constraints:
-    internal_constraints = process_nonlinear_constraints(
-        nonlinear_constraints, params, converter
     )
 
     # ==================================================================================
@@ -674,6 +670,11 @@ def _optimize(
         error_penalty=error_penalty,
         primary_key=algo_info.primary_criterion_entry,
         direction=direction,
+    )
+
+    # process nonlinear constraints:
+    internal_constraints = process_nonlinear_constraints(
+        nonlinear_constraints=nonlinear_constraints, params=params, converter=converter
     )
 
     x = internal_params.values
