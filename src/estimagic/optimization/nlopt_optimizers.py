@@ -763,20 +763,16 @@ def _minimize_nlopt(
     if population_size is not None:
         opt.set_population(population_size)
     if nonlinear_constraints is not None:
-        for constr in _get_nlopt_constraints(
-            nonlinear_constraints, _type="eq", _default_tol=convergence_ftol_abs
-        ):
+        for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="eq"):
             opt.add_equality_mconstraint(constr["fun"], constr["tol"])
-        for constr in _get_nlopt_constraints(
-            nonlinear_constraints, _type="ineq", _default_tol=convergence_ftol_abs
-        ):
+        for constr in _get_nlopt_constraints(nonlinear_constraints, filter_type="ineq"):
             opt.add_inequality_mconstraint(constr["fun"], constr["tol"])
     opt.set_min_objective(func)
     solution_x = opt.optimize(x)
     return _process_nlopt_results(opt, solution_x)
 
 
-def _get_nlopt_constraints(nonlinear_constraints, _type, _default_tol):
+def _get_nlopt_constraints(nonlinear_constraints, filter_type):
     """ "Transform internal nonlinear constraints to NLOPT readable format.
 
     Sign flip description:
@@ -786,9 +782,9 @@ def _get_nlopt_constraints(nonlinear_constraints, _type, _default_tol):
 
     """
     nlopt_constraints = []
-    for c in [c for c in nonlinear_constraints if c["type"] == _type]:
+    for c in [c for c in nonlinear_constraints if c["type"] == filter_type]:
 
-        tol = c.get("tol", _default_tol)
+        tol = c["tol"]
         if np.isscalar(tol):
             tol = np.tile(tol, c["n_constr"])
 

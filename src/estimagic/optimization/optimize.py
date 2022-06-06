@@ -686,6 +686,8 @@ def _optimize(
         params=params,
         converter=converter,
         numdiff_options=numdiff_options,
+        lower_bounds=lower_bounds,
+        upper_bounds=upper_bounds,
     )
 
     x = internal_params.values
