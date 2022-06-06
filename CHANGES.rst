@@ -10,7 +10,8 @@ releases are available on `Anaconda.org
 0.3.0
 -----
 
-Fist release with pytree support in optimization, estimation and differentiation.
+Fist release with pytree support in optimization, estimation and differentiation
+and much better result objects in optimization and estimation.
 
 Breaking changes
 
@@ -27,6 +28,15 @@ Breaking changes
 - Convenience functions to create namedtuples are removed from ``estimagic.utilities``.
 
 
+- :gh:`345` Moves estimation_table to new latex functionality of pandas
+  (:ghuser:`mpetrosian`)
+- :gh:`344` Adds pytree support to slice_plot (:ghuser:`janosg`)
+- :gh:`343` Improves the result object of estimation functions and makes msm estimation
+  pytree compatible (:ghuser:`janosg`)
+- :gh:`342` Improves default options of the fides optimizer, allows single constraints
+  and polishes the documentation (:ghuser:`janosg`)
+- :gh:`340` Enables history collection for optimizers that evaluate the criterion
+  function in parallel (:ghuser:`janosg`)
 - :gh:`339` Incorporates user feedback and polishes the documentation.
 - :gh:`338` Improves log reading functions (:ghuser:`janosg`)
 - :gh:`336` Adds pytree support to the dashboard (:ghuser:`roecla`).
