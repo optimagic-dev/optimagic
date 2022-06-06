@@ -252,7 +252,15 @@ def estimate_ml(
         int_jac = None
 
     if constraints in [None, []] and jacobian_eval is None and int_jac is not None:
-        jacobian_eval = int_jac  # xxxx need block tree conversion?
+        loglike_contribs = loglike_eval
+        if isinstance(loglike_contribs, dict) and "contributions" in loglike_contribs:
+            loglike_contribs = loglike_contribs["contributions"]
+
+        jacobian_eval = matrix_to_block_tree(
+            int_jac,
+            outer_tree=loglike_contribs,
+            inner_tree=estimates,
+        )
 
     if jacobian_eval is None:
         _no_jac_reason = (
@@ -413,9 +421,6 @@ class LikelihoodResult:
             bounds_handling=bounds_handling,
         )
 
-        if isinstance(free_cov, pd.DataFrame):  # xxxx
-            free_cov = free_cov.to_numpy()
-
         return free_cov
 
     @property
@@ -556,7 +561,11 @@ class LikelihoodResult:
             out = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
         elif return_type == "pytree":
             if len(free_cov) != len(self._flat_params.values):
-                raise NotImplementedError()  # xxxx
+                raise NotAvailableError(
+                    "Covariance matrices in block-pytree format are only available if "
+                    "there are no constraints that reduce the number of free "
+                    "parameters."
+                )
             out = matrix_to_block_tree(free_cov, self.params, self.params)
         return out
 
