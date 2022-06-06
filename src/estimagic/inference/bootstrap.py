@@ -25,7 +25,7 @@ def bootstrap(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array etc.).
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         outcome_kwargs (dict): Additional keyword arguments for outcome.
         n_draws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
@@ -74,7 +74,7 @@ def bootstrap_from_outcomes(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array etc.).
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         bootstrap_outcomes (pandas.DataFrame): DataFrame of bootstrap_outcomes in the
             bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.

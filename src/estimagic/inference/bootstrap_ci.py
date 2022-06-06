@@ -17,7 +17,7 @@ def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_c
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Needs to return a pandas Series.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
@@ -25,7 +25,6 @@ def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_c
 
     Returns:
         cis (pandas.DataFrame): DataFrame where k'th row contains CI for k'th parameter.
-
     """
     check_inputs(data=data, alpha=alpha, ci_method=ci_method)
 
@@ -44,13 +43,13 @@ def _ci_percentile(data, outcome, estimates, alpha, n_cores):
     Args:
         data (pd.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
     Returns:
-        cis (np.array): array where k'th row contains CI for k'th parameter.
-
+        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
     boot_est = estimates.values
@@ -70,13 +69,13 @@ def _ci_bca(data, outcome, estimates, alpha, n_cores):
     Args:
         data (pd.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
     Returns:
-        cis (np.array): array where k'th row contains CI for k'th parameter.
-
+        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
     boot_est = estimates.values
@@ -117,13 +116,13 @@ def _ci_bc(data, outcome, estimates, alpha, n_cores):
     Args:
         data (pd.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
     Returns:
-        cis (np.array): array where k'th row contains CI for k'th parameter.
-
+        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
     boot_est = estimates.values
@@ -156,13 +155,13 @@ def _ci_t(data, outcome, estimates, alpha, n_cores):
     Args:
         data (pd.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
     Returns:
-        cis (np.array): array where k'th row contains CI for k'th parameter.
-
+        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
     boot_est = estimates.values
@@ -192,13 +191,13 @@ def _ci_normal(data, outcome, estimates, alpha, n_cores):
     Args:
         data (pd.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
     Returns:
-        cis (np.array): array where k'th row contains CI for k'th parameter.
-
+        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
     boot_est = estimates.values
@@ -224,13 +223,13 @@ def _ci_basic(data, outcome, estimates, alpha, n_cores):
     Args:
         data (pd.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
     Returns:
-        cis (np.array): array where k'th row contains CI for k'th parameter.
-
+        cis (np.ndarray): array where k'th row contains CI for k'th parameter.
     """
     num_params = estimates.shape[1]
     boot_est = estimates.values
@@ -258,7 +257,6 @@ def _jackknife(data, outcome, n_cores=1):
         n_cores (int): number of jobs for parallelization.
 
     Returns:
-        jk_estimates (pd.DataFrame): DataFrame of estimated parameters.
         jk_estimates (np.ndarray): Numpy array of estimated parameters.
     """
     n = len(data)

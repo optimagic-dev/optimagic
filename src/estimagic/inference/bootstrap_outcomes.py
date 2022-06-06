@@ -25,7 +25,7 @@ def get_bootstrap_outcomes(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the dataset calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array etc.).
+            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         cluster_by (str): column name of the variable to cluster by.
         seed (int): Random seed.
         n_draws (int): number of draws, only relevant if seeds is None.
