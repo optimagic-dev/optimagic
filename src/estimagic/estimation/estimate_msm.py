@@ -38,6 +38,7 @@ from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from pybaum import leaf_names
 from pybaum import tree_just_flatten
 
 
@@ -320,6 +321,7 @@ def estimate_msm(
         _jacobian=jacobian_eval,
         _no_jacobian_reason=_no_jac_reason,
         _empirical_moments=empirical_moments,
+        _has_constraints=constraints not in [None, []],
     )
     return res
 
@@ -429,6 +431,7 @@ class MomentsResult:
     _internal_weights: np.ndarray
     _internal_jacobian: np.ndarray
     _empirical_moments: Any
+    _has_constraints: bool
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
 
@@ -808,8 +811,9 @@ class MomentsResult:
                 problems are simply ignored.
             seed (int): Seed for the random number generator. Only used if there are
                 transforming constraints.
-            return_type (str): One of "array", "dataframe" or "pytree".
-
+            return_type (str): One of "array", "dataframe" or "pytree". Default pytree.
+                If your params or moments have a very nested format, return_type
+                "dataframe" might be the better choice.
 
         Returns:
             Any: The sensitivity measure as a pytree, numpy array or DataFrame.
@@ -817,7 +821,10 @@ class MomentsResult:
                 parameter and one column per moment.
 
         """
-        # xxxx how can I check here that there are no constraints?
+        if self._has_constraints:
+            raise NotImplementedError(
+                "Sensitivity measures with constraints are not yet implemented."
+            )
         jac = self._internal_jacobian
         weights = self._internal_weights
         moments_cov = self._internal_moments_cov
@@ -879,5 +886,27 @@ class MomentsResult:
             raise ValueError(f"Invalid kind: {kind}")
 
         # xxxx do I need matrix to block tree?
-        out = raw
+        if return_type == "array":
+            out = raw
+        elif return_type == "pytree":
+            out = matrix_to_block_tree(
+                raw,
+                outer_tree=self.params,
+                inner_tree=self._empirical_moments,
+            )
+        elif return_type == "dataframe":
+            registry = get_registry(extended=True)
+            row_names = self._flat_params.names
+            col_names = leaf_names(self._empirical_moments, registry=registry)
+            out = pd.DataFrame(
+                data=raw,
+                index=row_names,
+                columns=col_names,
+            )
+        else:
+            msg = (
+                f"Invalid return type: {return_type}. Valid are 'pytree', 'array' "
+                "and 'dataframe'"
+            )
+            raise ValueError(msg)
         return out

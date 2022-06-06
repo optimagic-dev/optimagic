@@ -328,6 +328,7 @@ def estimate_ml(
         _internal_hessian=int_hess,
         _design_info=design_info,
         _flat_params=flat_estimates,
+        _has_constraints=constraints not in [None, []],
     )
 
     return res
@@ -338,6 +339,7 @@ class LikelihoodResult:
     params: Any
     _flat_params: Any
     _converter: Converter
+    _has_constraints: bool
     optimize_result: Union[OptimizeResult, None] = None
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None

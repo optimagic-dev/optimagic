@@ -61,6 +61,27 @@ def test_estimate_msm_dict_params_and_moments():
     aaae(summary_df["p_value"], np.ones(3))
     assert summary_df["stars"].tolist() == [""] * 3
 
+    expected_sensitivity_to_bias_dict = {
+        "a": {"aa": -1.0, "bb": 0.0, "cc": 0.0},
+        "b": {"aa": 0.0, "bb": -1.0, "cc": 0.0},
+        "c": {"aa": 0.0, "bb": 0.0, "cc": -1.0},
+    }
+
+    assert_almost_equal(
+        calculated.sensitivity("bias"), expected_sensitivity_to_bias_dict
+    )
+
+    expected_sensitivity_to_bias_arr = -np.eye(3)
+
+    aaae(
+        calculated.sensitivity("bias", return_type="array"),
+        expected_sensitivity_to_bias_arr,
+    )
+    aaae(
+        calculated.sensitivity("bias", return_type="dataframe").to_numpy(),
+        expected_sensitivity_to_bias_arr,
+    )
+
 
 def assert_almost_equal(x, y, decimal=6):
     if isinstance(x, np.ndarray):
