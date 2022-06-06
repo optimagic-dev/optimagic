@@ -25,7 +25,7 @@ def bootstrap(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Needs to return a pandas Series.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array etc.).
         outcome_kwargs (dict): Additional keyword arguments for outcome.
         n_draws (int): number of bootstrap samples to draw.
         cluster_by (str): column name of variable to cluster by or None.
@@ -42,10 +42,8 @@ def bootstrap(
 
     Returns:
         results (pandas.DataFrame): DataFrame where k'th row contains mean estimate,
-        standard error, and confidence interval of k'th parameter.
-
+            standard error, and confidence interval of k'th parameter.
     """
-
     check_inputs(data, cluster_by, ci_method, alpha)
 
     estimates = get_bootstrap_outcomes(
@@ -76,7 +74,7 @@ def bootstrap_from_outcomes(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Needs to return a pandas Series.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array etc.).
         bootstrap_outcomes (pandas.DataFrame): DataFrame of bootstrap_outcomes in the
             bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
@@ -85,9 +83,7 @@ def bootstrap_from_outcomes(
 
     Returns:
         results (pandas.DataFrame): table of results.
-
     """
-
     check_inputs(data=data, ci_method=ci_method, alpha=alpha)
 
     summary = pd.DataFrame(bootstrap_outcomes.mean(axis=0), columns=["mean"])

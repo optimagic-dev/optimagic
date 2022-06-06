@@ -4,6 +4,9 @@ import pandas as pd
 from estimagic.batch_evaluators import process_batch_evaluator
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_samples import get_bootstrap_indices
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import leaf_names
+from pybaum import tree_just_flatten
 
 
 def get_bootstrap_outcomes(
@@ -22,7 +25,7 @@ def get_bootstrap_outcomes(
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the dataset calculating statistic of interest.
-            Needs to return array-like object or pd.Series.
+            Returns a general pytree (e.g. pandas Series, dict, numpy array etc.).
         cluster_by (str): column name of the variable to cluster by.
         seed (int): Random seed.
         n_draws (int): number of draws, only relevant if seeds is None.
@@ -37,7 +40,6 @@ def get_bootstrap_outcomes(
     Returns:
         estimates (pandas.DataFrame): Outcomes for different bootstrap samples. The
             columns are the index of the result of ``outcome``.
-
     """
     batch_evaluator = process_batch_evaluator(batch_evaluator)
 
@@ -73,7 +75,7 @@ def _get_bootstrap_outcomes_from_indices(
     error_handling,
     batch_evaluator,
 ):
-
+    registry = get_registry(extended=True)
     arguments = [{"data": data, "indices": ind, "outcome": outcome} for ind in indices]
 
     raw_estimates = batch_evaluator(
@@ -84,11 +86,16 @@ def _get_bootstrap_outcomes_from_indices(
         error_handling=error_handling,
     )
 
-    estimates = [est for est in raw_estimates if not isinstance(est, str)]
+    leafnames = leaf_names(raw_estimates[0], registry=registry)
+    estimates = [
+        tree_just_flatten(est, registry=registry)
+        for est in raw_estimates
+        if not isinstance(est, str)
+    ]
     tracebacks = [est for est in raw_estimates if isinstance(est, str)]
 
     if estimates:
-        estimates_df = pd.concat(estimates, axis=1).T
+        estimates_df = pd.DataFrame(estimates, columns=leafnames)
     else:
         msg = (
             "Calculating of all bootstrap outcomes failed. The tracebacks of the "

@@ -4,9 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.batch_evaluators import joblib_batch_evaluator
-from estimagic.inference.bootstrap_outcomes import (
-    _get_bootstrap_outcomes_from_indices,
-)
+from estimagic.inference.bootstrap_outcomes import _get_bootstrap_outcomes_from_indices
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 from pandas.testing import assert_frame_equal as afe
 
@@ -17,10 +15,34 @@ def data():
     return df
 
 
-def test_get_bootstrap_estimates_runs(data):
+def _mean_return_series(data):
+    out = np.mean(data, axis=0)
+    return out
+
+
+def _mean_return_dict(data):
+    out = np.mean(data, axis=0)
+    return out.to_dict()
+
+
+def _mean_return_array(data):
+    out = np.mean(data, axis=0).to_numpy()
+    return out
+
+
+@pytest.mark.parametrize(
+    "outcome",
+    [
+        (functools.partial(np.mean, axis=0)),
+        (_mean_return_series),
+        (_mean_return_dict),
+        (_mean_return_array),
+    ],
+)
+def test_get_bootstrap_estimates_runs(outcome, data):
     get_bootstrap_outcomes(
         data=data,
-        outcome=functools.partial(np.mean, axis=0),
+        outcome=outcome,
         n_draws=5,
     )
 
