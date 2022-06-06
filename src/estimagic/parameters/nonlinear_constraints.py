@@ -108,6 +108,9 @@ def process_nonlinear_constraints(
             "jac": jacobian_from_internal,
         }
 
+        if "tol" in c:
+            internal_constr["tol"] = c["tol"]
+
         processed.append(internal_constr)
     return processed
 

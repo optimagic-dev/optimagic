@@ -41,7 +41,7 @@ def nlc_2d_example():
             "fun": constraint_func,
             "jac": constraint_jac,
             "lower_bounds": np.zeros(2),
-            "tol": 0.0,
+            "tol": 1e-8,
         }
     ]
 
@@ -52,31 +52,26 @@ def nlc_2d_example():
             "jac": lambda x: 2 * x,
             "lower_bounds": 1,
             "upper_bounds": 2,
-            "tol": 0.0,
+            "tol": 1e-8,
         }
     ]
 
-    constraints = {"flat": constraints_flat, "long": constraints_long}
+    _kwargs = {
+        "criterion": criterion,
+        "params": np.array([1.1, 0.1]),
+        "derivative": derivative,
+        "lower_bounds": np.zeros(2),
+        "upper_bounds": 2 * np.ones(2),
+    }
 
-    def get_kwargs(algorithm, constr_type):
-
-        kwargs = {
-            "criterion": criterion,
-            "params": np.array([1.1, 0.1]),
-            "algorithm": algorithm,
-            "constraints": constraints[constr_type],
-            "derivative": derivative,
-        }
-
-        if algorithm != "scipy_cobyla":
-            kwargs["lower_bounds"] = np.zeros(2)
-            kwargs["upper_bounds"] = 2 * np.ones(2)
-
-        return kwargs
+    kwargs = {
+        "flat": {**_kwargs, **{"constraints": constraints_flat}},
+        "long": {**_kwargs, **{"constraints": constraints_long}},
+    }
 
     solution_x = np.ones(2)
 
-    return get_kwargs, solution_x
+    return solution_x, kwargs
 
 
 @pytest.mark.parametrize(
@@ -84,12 +79,13 @@ def nlc_2d_example():
     itertools.product(NLC_ALGORITHMS, ["flat", "long"]),
 )
 def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
-    if algorithm == "nlopt_slsqp":
-        pytest.mark.skip("Fail for nlopt_slsqp.")
-        return None
-    get_kwargs, solution_x = nlc_2d_example
-    kwargs = get_kwargs(algorithm, constr_type)
-    result = maximize(**kwargs)
+    solution_x, kwargs = nlc_2d_example
+    if algorithm == "scipy_cobyla":
+        del kwargs[constr_type]["lower_bounds"]
+        del kwargs[constr_type]["upper_bounds"]
+
+    result = maximize(algorithm=algorithm, **kwargs[constr_type])
+
     if AVAILABLE_ALGORITHMS[algorithm]._algorithm_info.is_global:
         decimal = 0
     else:
