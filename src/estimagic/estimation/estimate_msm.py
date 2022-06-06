@@ -197,7 +197,7 @@ def estimate_msm(
         funcs = get_msm_optimization_functions(
             simulate_moments=simulate_moments,
             empirical_moments=empirical_moments,
-            flat_weights=internal_weights,
+            weights=weights,
             simulate_moments_kwargs=simulate_moments_kwargs,
             jacobian=jacobian,
             jacobian_kwargs=jacobian_kwargs,
@@ -334,7 +334,7 @@ def estimate_msm(
 def get_msm_optimization_functions(
     simulate_moments,
     empirical_moments,
-    flat_weights,
+    weights,
     *,
     simulate_moments_kwargs=None,
     jacobian=None,
@@ -349,8 +349,7 @@ def get_msm_optimization_functions(
             as long as one of those entries is "simulated_moments".
         empirical_moments (pandas.Series): A pandas series with the empirical
             equivalents of the simulated moments.
-        weights (pandas.DataFrame): DataFrame with a positive
-            semi-definite weighting matrix.
+        weights (pytree): The weighting matrix as block pytree.
         simulate_moments_kwargs (dict): Additional keyword arguments for
             ``simulate_moments``.
         jacobian (callable or pandas.DataFrame): A function that take ``params`` and
@@ -367,6 +366,14 @@ def get_msm_optimization_functions(
             as only argument.
 
     """
+    flat_weights = block_tree_to_matrix(
+        weights,
+        outer_tree=empirical_moments,
+        inner_tree=empirical_moments,
+    )
+
+    chol_weights = np.linalg.cholesky(flat_weights)
+
     registry = get_registry(extended=True)
     flat_emp_mom = tree_just_flatten(empirical_moments, registry=registry)
 
@@ -377,7 +384,7 @@ def get_msm_optimization_functions(
         _msm_criterion,
         simulate_moments=_simulate_moments,
         flat_empirical_moments=flat_emp_mom,
-        flat_weights=flat_weights,
+        chol_weights=chol_weights,
         registry=registry,
     )
 
@@ -392,7 +399,7 @@ def get_msm_optimization_functions(
 
 
 def _msm_criterion(
-    params, simulate_moments, flat_empirical_moments, flat_weights, registry
+    params, simulate_moments, flat_empirical_moments, chol_weights, registry
 ):
     """Calculate msm criterion given parameters and building blocks."""
     simulated = simulate_moments(params)
@@ -404,7 +411,13 @@ def _msm_criterion(
         simulated_flat = np.array(tree_just_flatten(simulated, registry=registry))
 
     deviations = simulated_flat - flat_empirical_moments
-    out = deviations @ flat_weights @ deviations
+    root_contribs = deviations @ chol_weights
+
+    value = root_contribs @ root_contribs
+    out = {
+        "value": value,
+        "root_contributions": root_contribs,
+    }
     return out
 
 

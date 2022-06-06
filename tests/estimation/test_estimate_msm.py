@@ -29,10 +29,12 @@ def _sim_dict_np(params):
 cov_np = np.diag([1, 2, 3.0])
 cov_pd = pd.DataFrame(cov_np)
 
-test_cases = itertools.product(
-    [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
-    [cov_np, cov_pd],  # moments_cov
-    [{"algorithm": "scipy_lbfgsb"}, "scipy_lbfgsb"],  # optimize_options
+test_cases = list(
+    itertools.product(
+        [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
+        [cov_np, cov_pd],  # moments_cov
+        [{"algorithm": "scipy_lbfgsb"}, "scipy_lbfgsb"],  # optimize_options
+    )
 )
 
 
@@ -99,3 +101,36 @@ def test_check_and_process_numdiff_options_with_invalid_entries():
 def test_check_and_process_optimize_options_with_invalid_entries():
     with pytest.raises(ValueError):
         check_optimization_options({"criterion": lambda x: x}, "estimate_msm")
+
+
+ls_test_cases = list(
+    itertools.product(
+        [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
+        [cov_np, cov_pd],  # moments_cov
+        [{"algorithm": "pounders"}, "pounders"],  # optimize_options
+    )
+)
+
+
+@pytest.mark.parametrize(
+    "simulate_moments, moments_cov, optimize_options", ls_test_cases
+)
+def test_estimate_msm_ls(simulate_moments, moments_cov, optimize_options):
+    start_params = np.array([3, 2, 1])
+
+    expected_params = np.zeros(3)
+
+    # abuse simulate_moments to get empirical moments in correct format
+    empirical_moments = simulate_moments(expected_params)
+    if isinstance(empirical_moments, dict):
+        empirical_moments = empirical_moments["simulated_moments"]
+
+    calculated = estimate_msm(
+        simulate_moments=simulate_moments,
+        empirical_moments=empirical_moments,
+        moments_cov=moments_cov,
+        params=start_params,
+        optimize_options=optimize_options,
+    )
+
+    aaae(calculated.params, expected_params)
