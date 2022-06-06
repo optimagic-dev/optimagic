@@ -77,7 +77,7 @@ def _powerset(iterable):
         itertools.combinations(s, r) for r in range(len(s) + 1)
     )
     pset = [e for e in pset if len(e) > 0]
-    pset = list(map(lambda x: x if len(x) > 1 else x[0], pset))
+    pset = [x if len(x) > 1 else x[0] for x in pset]
     return pset
 
 
