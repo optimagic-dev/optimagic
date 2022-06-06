@@ -516,6 +516,22 @@ def _optimize(
             raise ValueError(msg.format(algo_info.name))
 
     # ==================================================================================
+    # Split constraints into nonlinear and reparametrization parts
+    # ==================================================================================
+    if isinstance(constraints, dict):
+        constraints = [constraints]
+
+    nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
+
+    if nonlinear_constraints and "nonlinear_constraints" not in algo_kwargs:
+        raise ValueError(
+            f"Algorithm {algo_info.name} does not support nonlinear constraints."
+        )
+
+    # the following constraints will be handled via reparametrization
+    constraints = [c for c in constraints if c["type"] != "nonlinear"]
+
+    # ==================================================================================
     # prepare logging
     # ==================================================================================
     if logging:
@@ -606,20 +622,12 @@ def _optimize(
         used_deriv = None
 
     # ==================================================================================
-    # Split constraints into nonlinear and reparametrization parts
-    # ==================================================================================
-    constraints = [constraints] if isinstance(constraints, dict) else constraints
-    nonlinear_constraints = [c for c in constraints if c["type"] == "nonlinear"]
-    # the following constraints will be handled via reparametrization
-    reparametrize_constraints = [c for c in constraints if c["type"] != "nonlinear"]
-
-    # ==================================================================================
     # Get the converter (for tree flattening, constraints and scaling)
     # ==================================================================================
     converter, internal_params = get_converter(
         func=criterion,
         params=params,
-        constraints=reparametrize_constraints,
+        constraints=constraints,
         lower_bounds=lower_bounds,
         upper_bounds=upper_bounds,
         func_eval=first_crit_eval,

@@ -3,13 +3,24 @@ import itertools
 import numpy as np
 import pytest
 from estimagic import maximize
-from estimagic.config import IS_CYIPOPT_INSTALLED
+from estimagic.optimization import AVAILABLE_ALGORITHMS
 from numpy.testing import assert_array_almost_equal as aaae
+
+
+NLC_ALGORITHMS = [
+    name
+    for name, algo in AVAILABLE_ALGORITHMS.items()
+    if "nonlinear_constraints" in algo._algorithm_info.arguments
+]
 
 
 @pytest.fixture()
 def nlc_2d_example():
-    """Non-linear constraints: 2-dimensional example."""
+    """Non-linear constraints: 2-dimensional example.
+
+    See the example section in https://en.wikipedia.org/wiki/Nonlinear_programming.
+
+    """
 
     def criterion(x):
         return np.sum(x)
@@ -49,10 +60,10 @@ def nlc_2d_example():
 
         kwargs = {
             "criterion": criterion,
-            "params": np.array([0.1, 1.1]),  # start params
+            "params": np.array([0.1, 1.1]),
+            "algorithm": algorithm,
             "constraints": constraints[constr_type],
             "derivative": derivative,
-            "algorithm": algorithm,
         }
 
         if algorithm != "scipy_cobyla":
@@ -67,13 +78,9 @@ def nlc_2d_example():
 
 @pytest.mark.parametrize(
     "algorithm, constr_type",
-    itertools.product(
-        ["scipy_slsqp", "scipy_cobyla", "scipy_trust_constr", "ipopt"], ["flat", "long"]
-    ),
+    itertools.product(NLC_ALGORITHMS, ["flat", "long"]),
 )
 def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
-    if algorithm == "ipopt" and not IS_CYIPOPT_INSTALLED:
-        pytest.skip(msg="cyipopt not installed.")
     get_kwargs, solution_x = nlc_2d_example
     kwargs = get_kwargs(algorithm, constr_type)
     result = maximize(**kwargs)
