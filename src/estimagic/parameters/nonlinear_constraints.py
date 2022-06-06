@@ -130,9 +130,9 @@ def _process_nonlinear_constraint(
         # Inequality constraints
         #
         # We define the internal constraint function to be satisfied if it is
-        # greater or equal to zero (positivity constraint). If the bounds already
-        # satify this condition we do not change anything, otherwise we subtract the
-        # bounds and stack the constraint on top of itself with a sign switch.
+        # greater than or equal to zero (positivity constraint). If the bounds already
+        # satify this condition we do not change anything, otherwise we need to perform
+        # a transformation.
 
         def _constraint_from_internal(x):
             params = converter.params_from_internal(x)
@@ -142,22 +142,22 @@ def _process_nonlinear_constraint(
         lower_bounds = c.get("lower_bounds", 0)
         upper_bounds = c.get("upper_bounds", np.inf)
 
-        is_pos_constr = _is_positivity_constraint(lower_bounds, upper_bounds)
+        transformation_type = _get_transformation_type(lower_bounds, upper_bounds)
 
-        transform_constraint_fun = _get_positivity_transform(
-            is_pos_constr, lower_bounds, upper_bounds, case="fun"
+        constraint_transform = _get_positivity_transform(
+            transformation_type, lower_bounds, upper_bounds, case="fun"
         )
-        transform_jacobian = _get_positivity_transform(
-            is_pos_constr, lower_bounds, upper_bounds, case="jac"
+        jacobian_transform = _get_positivity_transform(
+            transformation_type, lower_bounds, upper_bounds, case="jac"
         )
 
         def constraint_from_internal(x):
-            return transform_constraint_fun(_constraint_from_internal(x))
+            return constraint_transform(_constraint_from_internal(x))
 
         def jacobian_from_internal(x):
-            return transform_jacobian(_jacobian_from_internal(x))
+            return jacobian_transform(_jacobian_from_internal(x))
 
-        n_constr = _n_constr if is_pos_constr else 2 * _n_constr
+        n_constr = 2 * _n_constr if transformation_type == "stack" else _n_constr
 
     internal_constr = {
         "n_constr": n_constr,
@@ -172,56 +172,71 @@ def _process_nonlinear_constraint(
 
 def equality_as_inequality_constraints(nonlinear_constraints):
     """Return constraints where equality constraints are converted to inequality."""
-    constraints = []
-    for c in nonlinear_constraints:
-        if c["type"] == "eq":
-
-            def _fun(x):
-                value = c["fun"]
-                return np.concatenate((value, -value), axis=0)
-
-            def _jac(x):
-                value = c["jac"]
-                return np.concatenate((value, -value), axis=0)
-
-            _c = {
-                "fun": _fun,
-                "jac": _jac,
-                "n_constr": 2 * c["n_constr"],
-                "type": "ineq",
-            }
-        else:
-            _c = c
-        constraints.append(_c)
+    constraints = [_equality_to_inequality(c) for c in nonlinear_constraints]
     return constraints
 
 
-def _get_positivity_transform(is_pos_constr, lower_bounds, upper_bounds, case):
-    if is_pos_constr:
-        _transform = _identity
-    elif case == "fun":
+def _equality_to_inequality(c):
+    """Transform a single constraint."""
+    if c["type"] == "eq":
 
-        def _transform(value):
-            return np.concatenate((value - lower_bounds, upper_bounds - value), axis=0)
+        def transform(x, func):
+            return np.concatenate((func(x), -func(x)), axis=0)
 
-    elif case == "jac":
+        out = {
+            "fun": partial(transform, func=c["fun"]),
+            "jac": partial(transform, func=c["jac"]),
+            "n_constr": 2 * c["n_constr"],
+            "type": "ineq",
+        }
+    else:
+        out = c
+    return out
 
-        def _transform(value):
-            return np.concatenate((value, -value), axis=0)
 
+def _get_positivity_transform(transformation_type, lower_bounds, upper_bounds, case):
+    if transformation_type == "identity":
+        return _identity
+
+    elif transformation_type == "subtract_lb":
+
+        transformers = {
+            "fun": lambda v: v - lower_bounds,
+            "jac": _identity,
+        }
+
+    elif transformation_type == "stack":
+
+        transformers = {
+            "fun": lambda v: np.concatenate(
+                (v - lower_bounds, upper_bounds - v), axis=0
+            ),
+            "jac": lambda v: np.concatenate((v, -v), axis=0),
+        }
+
+    _transform = transformers[case]
     return _transform
 
 
-def _is_positivity_constraint(lower_bounds, upper_bounds):
-    """Returns True if bounds define a positivity constraint, and False otherwise.
+def _get_transformation_type(lower_bounds, upper_bounds):
+    """Get transformation type given bounds.
 
-    A positivity constraint for a function g(x) is defined via g(x) >= 0. With lower and
-    upper bounds this is expressed via 0 = lb <= g(x) <= ub = infinity.
+    The internal inequality constraint is defined as h(x) >= 0. However, the user can
+    specify: a <= g(x) <= b. To get the internal represenation we need to transform the
+    constraint. This functions returns the corresponding efficient transformation type,
+    in the sense of introducing as few new constraints as possible.
 
     """
     lb_is_zero = not np.count_nonzero(lower_bounds)
-    ub_is_inf = np.all(upper_bounds == np.inf)
-    return lb_is_zero and ub_is_inf
+    ub_is_inf = np.all(np.isposinf(upper_bounds))
+
+    if lb_is_zero and ub_is_inf:
+        _transformation_type = "identity"
+    elif ub_is_inf:
+        _transformation_type = "subtract_lb"
+    else:
+        _transformation_type = "stack"
+    return _transformation_type
 
 
 def _process_selector(c):
@@ -274,4 +289,10 @@ def _check_validity_nonlinear_constraint(c):
             raise ValueError(
                 "For inequality constraint at least one of ('lower_bounds', "
                 "'upper_bounds') has to be passed to the nonlinear constraint."
+            )
+
+    if "lower_bounds" in c and "upper_bounds" in c:
+        if not np.all(np.array(c["lower_bounds"]) <= np.array(c["upper_bounds"])):
+            raise ValueError(
+                "If lower bounds need to less than or equal to upper bounds."
             )

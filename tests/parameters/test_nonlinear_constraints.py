@@ -7,7 +7,7 @@ from estimagic.parameters.nonlinear_constraints import (
     _check_validity_nonlinear_constraint,
 )
 from estimagic.parameters.nonlinear_constraints import _get_positivity_transform
-from estimagic.parameters.nonlinear_constraints import _is_positivity_constraint
+from estimagic.parameters.nonlinear_constraints import _get_transformation_type
 from estimagic.parameters.nonlinear_constraints import _process_selector
 from estimagic.parameters.nonlinear_constraints import (
     equality_as_inequality_constraints,
@@ -18,19 +18,20 @@ from pandas.testing import assert_frame_equal
 
 
 ########################################################################################
-# _is_positivity_constraint
+# _get_transformation_type
 ########################################################################################
 TEST_CASES = [
-    (0, np.inf, True),  # (lower_bounds, upper_bounds, expected)
-    (-1, 2, False),
-    (np.zeros(3), np.ones(3), False),
-    (np.zeros(3), np.tile(np.inf, 3), True),
+    (0, np.inf, "identity"),  # (lower_bounds, upper_bounds, expected)
+    (-1, 2, "stack"),
+    (np.zeros(3), np.ones(3), "stack"),
+    (np.zeros(3), np.tile(np.inf, 3), "identity"),
+    (np.array([1, 2]), np.tile(np.inf, 2), "subtract_lb"),
 ]
 
 
 @pytest.mark.parametrize("lower_bounds, upper_bounds, expected", TEST_CASES)
-def test_is_positivity_constraint(lower_bounds, upper_bounds, expected):
-    got = _is_positivity_constraint(lower_bounds, upper_bounds)
+def test_get_transformation_type(lower_bounds, upper_bounds, expected):
+    got = _get_transformation_type(lower_bounds, upper_bounds)
     assert got == expected
 
 
@@ -75,6 +76,7 @@ TEST_CASES = [
     {"fun": lambda x: x, "value": 1, "lower_bounds": 1},  # cannot have value and bounds
     {"fun": lambda x: x, "value": 1, "upper_bounds": 1},  # cannot have value and bounds
     {"fun": lambda x: x},  # needs to have at least one bound
+    {"fun": lambda x: x, "lower_bounds": 1, "upper_bounds": 0},
 ]
 
 
@@ -134,8 +136,6 @@ def test_equality_as_inequality_constraints(constraints, expected):
     got = equality_as_inequality_constraints(constraints)
     if expected == "same":
         assert got == constraints
-    else:
-        assert got == expected
 
     for g, c in zip(got, constraints):
         if c["type"] == "eq":
@@ -148,12 +148,12 @@ def test_equality_as_inequality_constraints(constraints, expected):
 ########################################################################################
 TEST_CASES = [
     #  (pis_pos_constr, lower_bounds, upper_bounds, case, expected)  # noqa: E800
-    (False, 0, 0, "fun", np.array([1, -1])),
-    (False, 1, 1, "fun", np.array([0, 0])),
-    (False, 0, 0, "jac", np.array([1, -1])),
-    (False, 1, 1, "jac", np.array([1, -1])),
-    (True, 0, 1, "fun", np.array([1])),
-    (True, 1, 0, "jac", np.array([1])),
+    ("stack", 0, 0, "fun", np.array([1, -1])),
+    ("stack", 1, 1, "fun", np.array([0, 0])),
+    ("stack", 0, 0, "jac", np.array([1, -1])),
+    ("stack", 1, 1, "jac", np.array([1, -1])),
+    ("identity", 0, 1, "fun", np.array([1])),
+    ("identity", 1, 0, "jac", np.array([1])),
 ]
 
 
