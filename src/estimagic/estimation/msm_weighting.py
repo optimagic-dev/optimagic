@@ -1,9 +1,13 @@
+import functools
+
 import numpy as np
 import pandas as pd
 from estimagic.inference.bootstrap import bootstrap
 from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.block_trees import matrix_to_block_tree
+from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import robust_inverse
+from pybaum import tree_just_flatten
 from scipy.linalg import block_diag
 
 
@@ -42,9 +46,24 @@ def get_moments_cov(
     if problematic:
         raise ValueError(f"Invalid bootstrap_kwargs: {problematic}")
 
-    cov = bootstrap(data=data, outcome=calculate_moments, outcome_kwargs=moment_kwargs)[
-        "cov"
-    ]
+    first_eval = calculate_moments(data, **moment_kwargs)
+
+    registry = get_registry(extended=True)
+
+    @functools.wraps(calculate_moments)
+    def func(data, **kwargs):
+        raw = calculate_moments(data, **kwargs)
+        out = pd.Series(
+            tree_just_flatten(raw, registry=registry)
+        )  # xxxx won't be necessary soon!
+        return out
+
+    cov_arr = bootstrap(data=data, outcome=func, outcome_kwargs=moment_kwargs)["cov"]
+
+    if isinstance(cov_arr, pd.DataFrame):
+        cov_arr = cov_arr.to_numpy()  # xxxx won't be necessary soon
+
+    cov = matrix_to_block_tree(cov_arr, first_eval, first_eval)
 
     return cov
 

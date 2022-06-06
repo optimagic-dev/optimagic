@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 import pytest
 from estimagic.estimation.msm_weighting import _assemble_block_diagonal_matrix
+from estimagic.estimation.msm_weighting import get_moments_cov
 from estimagic.estimation.msm_weighting import get_weighting_matrix
+from estimagic.parameters.block_trees import block_tree_to_matrix
 from numpy.testing import assert_array_almost_equal as aaae
 
 
@@ -54,3 +56,29 @@ def test_assemble_block_diagonal_matrix_mixed(expected_values):
     calculated = _assemble_block_diagonal_matrix(matrices)
     assert isinstance(calculated, np.ndarray)
     aaae(calculated, expected_values)
+
+
+def test_get_moments_cov_runs_with_pytrees():
+    np.random.seed(1234)
+    data = np.random.normal(scale=[10, 5, 1], size=(100, 3))
+    data = pd.DataFrame(data=data)
+
+    def calc_moments(data, keys):
+        means = data.mean()
+        means.index = keys
+        return means.to_dict()
+
+    moment_kwargs = {"keys": ["a", "b", "c"]}
+
+    calculated = get_moments_cov(
+        data=data,
+        calculate_moments=calc_moments,
+        moment_kwargs=moment_kwargs,
+        bootstrap_kwargs={"n_draws": 100},
+    )
+
+    fake_tree = {"a": 1, "b": 2, "c": 3}
+    cov = block_tree_to_matrix(calculated, fake_tree, fake_tree)
+    assert cov.shape == (3, 3)
+
+    assert cov[0, 0] > cov[1, 1] > cov[2, 2]
