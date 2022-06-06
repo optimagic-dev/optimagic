@@ -199,7 +199,9 @@ def estimate_msm(
             empirical_moments=empirical_moments,
             weights=weights,
             simulate_moments_kwargs=simulate_moments_kwargs,
-            jacobian=jacobian,
+            # Always pass None because we do not support closed form jacobians during
+            # optimization yet. Otherwise we would get a NotImplementedError
+            jacobian=None,
             jacobian_kwargs=jacobian_kwargs,
         )
 

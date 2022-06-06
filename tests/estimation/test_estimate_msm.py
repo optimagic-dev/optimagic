@@ -134,3 +134,26 @@ def test_estimate_msm_ls(simulate_moments, moments_cov, optimize_options):
     )
 
     aaae(calculated.params, expected_params)
+
+
+def test_estimate_msm_with_jacobian():
+    start_params = np.array([3, 2, 1])
+
+    expected_params = np.zeros(3)
+
+    # abuse simulate_moments to get empirical moments in correct format
+    empirical_moments = _sim_np(expected_params)
+    if isinstance(empirical_moments, dict):
+        empirical_moments = empirical_moments["simulated_moments"]
+
+    calculated = estimate_msm(
+        simulate_moments=_sim_np,
+        empirical_moments=empirical_moments,
+        moments_cov=cov_np,
+        params=start_params,
+        optimize_options="scipy_lbfgsb",
+        jacobian=lambda x: np.eye(len(x)),
+    )
+
+    aaae(calculated.params, expected_params)
+    aaae(calculated.cov(), cov_np)
