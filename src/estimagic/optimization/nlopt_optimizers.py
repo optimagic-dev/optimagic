@@ -777,19 +777,25 @@ def _minimize_nlopt(
 
 
 def _get_nlopt_constraints(nonlinear_constraints, _type, _tol):
-    constraints = [c for c in nonlinear_constraints if c["type"] == _type]
+    """ "Transform internal nonlinear constraints to NLOPT readable format.
+
+    Sign flip description:
+
+    In estimagic, inequality constraints are internally defined as g(x) >= 0. NLOPT uses
+    h(x) <= 0, which is why we need to flip the sign.
+
+    """
     nlopt_constraints = []
-    for c in constraints:
+    for c in [c for c in nonlinear_constraints if c["type"] == _type]:
 
         tol = c.get("tol", _tol)
         if np.isscalar(tol):
             tol = np.tile(tol, c["n_constr"])
-            # no early failure if shape(tol) != shape(fun)
 
         def _constraint(result, x, grad):
-            result[:] = c["fun"](x)
+            result[:] = -c["fun"](x)  # see docstring for sign flip
             if grad.size > 0:
-                grad[:] = c["jac"](x)
+                grad[:] = -c["jac"](x)  # see docstring for sign flip
 
         new_constr = {
             "fun": _constraint,
