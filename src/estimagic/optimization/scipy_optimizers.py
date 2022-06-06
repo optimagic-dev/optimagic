@@ -59,9 +59,6 @@ from estimagic.optimization.algo_options import LIMITED_MEMORY_STORAGE_LENGTH
 from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
-from estimagic.parameters.nonlinear_constraints import (
-    transform_bounds_to_positivity_constraint,
-)
 from estimagic.utilities import calculate_trustregion_initial_radius
 from scipy.optimize import Bounds
 from scipy.optimize import NonlinearConstraint
@@ -129,10 +126,6 @@ def scipy_slsqp(
         # scipy/optimize/slsqp/slsqp_optmz.f:495
         "ftol": convergence_absolute_criterion_tolerance,
     }
-
-    nonlinear_constraints = transform_bounds_to_positivity_constraint(
-        nonlinear_constraints
-    )
 
     res = scipy.optimize.minimize(
         fun=criterion,
@@ -329,10 +322,6 @@ def scipy_cobyla(
 
     options = {"maxiter": stopping_max_iterations, "rhobeg": trustregion_initial_radius}
 
-    nonlinear_constraints = transform_bounds_to_positivity_constraint(
-        nonlinear_constraints
-    )
-
     res = scipy.optimize.minimize(
         fun=criterion,
         x0=x,
@@ -427,15 +416,13 @@ def scipy_trust_constr(
         "initial_tr_radius": trustregion_initial_radius,
     }
 
-    nonlinear_constraints = _get_scipy_constraints(nonlinear_constraints)
-
     res = scipy.optimize.minimize(
         fun=criterion_and_derivative,
         jac=True,
         x0=x,
         method="trust-constr",
         bounds=_get_scipy_bounds(lower_bounds, upper_bounds),
-        constraints=nonlinear_constraints,
+        constraints=_get_scipy_constraints(nonlinear_constraints),
         options=options,
     )
 
@@ -467,11 +454,10 @@ def _get_scipy_bounds(lower_bounds, upper_bounds):
 def _get_scipy_constraints(constraints):
     _constraints = []
     for c in constraints:
-        n_constr = c["n_constr"]
         nlc = NonlinearConstraint(
             fun=c["fun"],
-            lb=c.get("lower_bounds", np.zeros(n_constr)),
-            ub=c.get("upper_bounds", np.zeros(n_constr)),
+            lb=np.zeros(c["n_constr"]),
+            ub=np.tile(np.inf, c["n_constr"]),
             jac=c["jac"],
         )
         _constraints.append(nlc)

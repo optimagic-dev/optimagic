@@ -6,9 +6,6 @@ from estimagic.exceptions import NotInstalledError
 from estimagic.optimization.algo_options import CONVERGENCE_RELATIVE_CRITERION_TOLERANCE
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
 from estimagic.optimization.scipy_optimizers import process_scipy_result
-from estimagic.parameters.nonlinear_constraints import (
-    transform_bounds_to_positivity_constraint,
-)
 
 if IS_CYIPOPT_INSTALLED:
     import cyipopt
@@ -493,10 +490,6 @@ def ipopt(
         #
         **converted_bool_to_str_options,
     }
-
-    nonlinear_constraints = transform_bounds_to_positivity_constraint(
-        nonlinear_constraints
-    )
 
     raw_res = cyipopt.minimize_ipopt(
         fun=criterion,

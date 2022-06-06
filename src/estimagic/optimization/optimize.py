@@ -674,7 +674,10 @@ def _optimize(
 
     # process nonlinear constraints:
     internal_constraints = process_nonlinear_constraints(
-        nonlinear_constraints=nonlinear_constraints, params=params, converter=converter
+        nonlinear_constraints=nonlinear_constraints,
+        params=params,
+        converter=converter,
+        numdiff_options=numdiff_options,
     )
 
     x = internal_params.values

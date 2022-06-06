@@ -2,149 +2,169 @@ import numpy as np
 from estimagic.differentiation.derivatives import first_derivative
 
 
-def process_nonlinear_constraints(nonlinear_constraints, params, converter):
+def process_nonlinear_constraints(
+    nonlinear_constraints, params, converter, numdiff_options
+):
 
     processed = []
 
     for c in nonlinear_constraints:
-        _check_nonlinear_constraint(c)
 
-        new_constr = {}
-        _constraint_fun = c["fun"]
+        _check_validity_nonlinear_constraint(c)
 
-        ################################################################################
-        # process selector
-        ################################################################################
-        _selector = _process_selector(c)
+        constraint_fun = c["fun"]
+        selector = _process_selector(c)
 
         ################################################################################
-        # retrieve number of constraints
+        # Retrieve number of constraints
         ################################################################################
         if "n_constr" in c:
-            new_constr["n_constr"] = c["n_constr"]
+            _n_constr = c["n_constr"]
         else:
-            constraint_value = _constraint_fun(_selector(params))
-            new_constr["n_constr"] = len(np.atleast_1d(constraint_value))
+            constraint_value = constraint_fun(selector(params))
+            _n_constr = len(np.atleast_1d(constraint_value))
 
         ################################################################################
-        # consolidate and transform jacobian
+        # Consolidate and transform jacobian
         ################################################################################
-
         if "jac" in c:
             if not callable(c["jac"]):
                 msg = "Jacobian of constraints needs to be callable."
                 raise ValueError(msg)
-            _jacobian = c["jac"]
+            jacobian = c["jac"]
         else:
             # use finite-differences if no closed-form jacobian is defined
-            def _jacobian(p):
-                return first_derivative(_constraint_fun, p)["derivative"]
+            def jacobian(p):
+                # parameter bounds etc.
+                return first_derivative(constraint_fun, p, **numdiff_options)[
+                    "derivative"
+                ]
 
         def _jacobian_from_internal(x):
             params = converter.params_from_internal(x)
-            select = _selector(params)
-            return _jacobian(select).reshape(new_constr["n_constr"], -1)
-
-        new_constr["jac"] = _jacobian_from_internal
+            select = selector(params)
+            return np.atleast_1d(jacobian(select)).reshape(_n_constr, -1)
 
         ################################################################################
-        # transform constraint function and derive bounds
+        # Transform constraint function and derive bounds
         ################################################################################
-
         _type = "eq" if "value" in c else "ineq"
-        new_constr["type"] = _type
 
         if _type == "eq":
 
-            # define constraint to be equal to zero
-            def _constraint_from_internal(x):
+            ############################################################################
+            # Equality constraints
+            #
+            # We define the internal constraint function to be satisfied if it is equal
+            # to zero, by subtracting the fixed value.
+
+            def constraint_from_internal(x):
                 params = converter.params_from_internal(x)
-                select = _selector(params)
-                return _constraint_fun(select) - c["value"]
+                select = selector(params)
+                return constraint_fun(select) - c["value"]
+
+            jacobian_from_internal = _jacobian_from_internal
+            n_constr = _n_constr
 
         else:
 
+            ############################################################################
+            # Inequality constraints
+            #
+            # We define the internal constraint function to be satisfied if it is
+            # greater or equal to zero (positivity constraint). If the bounds already
+            # satify this condition we do not change anything, otherwise we subtract the
+            # bounds and stack the constraint on top of itself with a sign switch.
+
             def _constraint_from_internal(x):
                 params = converter.params_from_internal(x)
-                select = _selector(params)
-                return _constraint_fun(select)
+                select = selector(params)
+                return np.atleast_1d(constraint_fun(select))
 
-            new_constr["lower_bounds"] = c.get(
-                "lower_bounds", np.tile(-np.inf, new_constr["n_constr"])
+            lower_bounds = c.get("lower_bounds", 0)
+            upper_bounds = c.get("upper_bounds", np.inf)
+
+            is_pos_constr = _is_positivity_constraint(lower_bounds, upper_bounds)
+
+            transform_constraint_fun = get_positivity_transform(
+                is_pos_constr, lower_bounds, upper_bounds, case="fun"
             )
-            new_constr["upper_bounds"] = c.get(
-                "upper_bounds", np.tile(np.inf, new_constr["n_constr"])
+            transform_jacobian = get_positivity_transform(
+                is_pos_constr, lower_bounds, upper_bounds, case="jac"
             )
 
-        new_constr["fun"] = _constraint_from_internal
+            def constraint_from_internal(x):
+                return transform_constraint_fun(_constraint_from_internal(x))
 
-        processed.append(new_constr)
+            def jacobian_from_internal(x):
+                return transform_jacobian(_jacobian_from_internal(x))
+
+            n_constr = _n_constr if is_pos_constr else 2 * _n_constr
+
+        internal_constr = {
+            "n_constr": n_constr,
+            "type": _type,
+            "fun": constraint_from_internal,
+            "jac": jacobian_from_internal,
+        }
+
+        processed.append(internal_constr)
     return processed
 
 
-def transform_bounds_to_positivity_constraint(nonlinear_constraints):
-    _transformed = []
-    for c in nonlinear_constraints:
-        if c["type"] == "ineq" and is_positivity_constraint(c):
+def get_positivity_transform(is_pos_constr, lower_bounds, upper_bounds, case):
+    if is_pos_constr:
+        _transform = _identity
+    elif case == "fun":
 
-            new_constr = c.copy()
-            del new_constr["lower_bounds"]
-            del new_constr["upper_bounds"]
-            _transformed.append(new_constr)
+        def _transform(value):
+            return np.concatenate((value - lower_bounds, upper_bounds - value), axis=0)
 
-        elif not is_positivity_constraint(c):
+    elif case == "jac":
 
-            def _long_constraint_fun(x):
-                value = np.atleast_1d(c["fun"](x))
-                return np.concatenate(
-                    (value - c["lower_bounds"], -value + c["upper_bounds"])
-                )
+        def _transform(value):
+            return np.concatenate((value, -value), axis=0)
 
-            def _long_jacobian(x):
-                value = c["jac"](x)
-                return np.concatenate((value, -value), axis=0)
-
-            new_constr = c.copy()
-            del new_constr["lower_bounds"]
-            del new_constr["upper_bounds"]
-
-            new_constr["fun"] = _long_constraint_fun
-            new_constr["jac"] = _long_jacobian
-
-            _transformed.append(new_constr)
-        else:
-            _transformed.append(c)
-    return _transformed
+    return _transform
 
 
-def is_positivity_constraint(constr):
-    lb_is_zero = not np.count_nonzero(constr["lower_bounds"])
-    return lb_is_zero and np.all(constr["upper_bounds"] == np.inf)
+def _is_positivity_constraint(lower_bounds, upper_bounds):
+    """Returns True if bounds define a positivity constraint, and False otherwise.
+
+    A positivity constraint for a function g(x) is defined via g(x) >= 0. With lower and
+    upper bounds this is expressed via 0 = lb <= g(x) <= ub = infinity.
+
+    """
+    lb_is_zero = not np.count_nonzero(lower_bounds)
+    ub_is_inf = np.all(upper_bounds == np.inf)
+    return lb_is_zero and ub_is_inf
 
 
 def _process_selector(c):
     if "selector" in c:
-        _selector = c["selector"]
+        if not callable(c["selector"]):
+            raise ValueError("'selector' entry in constraints needs to be callable.")
+        selector = c["selector"]
     elif "loc" in c:
 
-        def _selector(params):
+        def selector(params):
             return params.loc[c["loc"]]
 
     elif "query" in c:
 
-        def _selector(params):
+        def selector(params):
             return params.query(c["query"])
 
     else:
-        _selector = _identity_selector
-    return _selector
+        selector = _identity
+    return selector
 
 
-def _identity_selector(params):
-    return params
+def _identity(x):
+    return x
 
 
-def _check_nonlinear_constraint(c):
+def _check_validity_nonlinear_constraint(c):
     if not callable(c["fun"]):
         raise ValueError("Entry 'fun' in nonlinear constraints has be callable.")
 
