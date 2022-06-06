@@ -180,7 +180,9 @@ def estimate_msm(
 
     constraints = [] if constraints is None else constraints
     jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
-    simulate_moments_kwargs = {} if simulate_moments_kwargs is None else {}
+    simulate_moments_kwargs = (
+        {} if simulate_moments_kwargs is None else simulate_moments_kwargs
+    )
 
     # ==================================================================================
     # Calculate estimates via minimization (if necessary)
@@ -317,6 +319,7 @@ def estimate_msm(
         _internal_jacobian=int_jac,
         _jacobian=jacobian_eval,
         _no_jacobian_reason=_no_jac_reason,
+        _empirical_moments=empirical_moments,
     )
     return res
 
@@ -425,6 +428,7 @@ class MomentsResult:
     _internal_moments_cov: np.ndarray
     _internal_weights: np.ndarray
     _internal_jacobian: np.ndarray
+    _empirical_moments: Any
     _jacobian: Any = None
     _no_jacobian_reason: Union[str, None] = None
 
@@ -824,7 +828,11 @@ class MomentsResult:
             seed=seed,
         )
 
-        weights_opt = get_weighting_matrix(moments_cov, "optimal")
+        weights_opt = get_weighting_matrix(
+            moments_cov=moments_cov,
+            method="optimal",
+            empirical_moments=self._empirical_moments,
+        )
         params_cov_opt = cov_optimal(jac, weights_opt)
 
         if kind == "bias":
