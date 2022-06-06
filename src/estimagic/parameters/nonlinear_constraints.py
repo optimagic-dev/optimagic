@@ -112,6 +112,32 @@ def process_nonlinear_constraints(
     return processed
 
 
+def equality_as_inequality_constraints(nonlinear_constraints):
+    """Return constraints where equality constraints are converted to inequality."""
+    constraints = []
+    for c in nonlinear_constraints:
+        if c["type"] == "eq":
+
+            def _fun(x):
+                value = c["fun"]
+                return np.concatenate((value, -value), axis=0)
+
+            def _jac(x):
+                value = c["jac"]
+                return np.concatenate((value, -value), axis=0)
+
+            _c = {
+                "fun": _fun,
+                "jac": _jac,
+                "n_constr": 2 * c["n_constr"],
+                "type": "ineq",
+            }
+        else:
+            _c = c
+        constraints.append(_c)
+    return constraints
+
+
 def get_positivity_transform(is_pos_constr, lower_bounds, upper_bounds, case):
     if is_pos_constr:
         _transform = _identity

@@ -51,6 +51,7 @@ def nlc_2d_example():
             "jac": lambda x: 2 * x,
             "lower_bounds": 1,
             "upper_bounds": 2,
+            "tol": 1e-7,
         }
     ]
 
@@ -68,6 +69,7 @@ def nlc_2d_example():
 
         if algorithm != "scipy_cobyla":
             kwargs["lower_bounds"] = np.zeros(2)
+            kwargs["upper_bounds"] = 10 * np.ones(2)
 
         return kwargs
 
@@ -84,4 +86,10 @@ def test_nonlinear_optimization(nlc_2d_example, algorithm, constr_type):
     get_kwargs, solution_x = nlc_2d_example
     kwargs = get_kwargs(algorithm, constr_type)
     result = maximize(**kwargs)
-    aaae(result.params, solution_x, decimal=5)
+    if algorithm == "nlopt_slsqp":
+        decimal = 1
+    elif "nlopt" in algorithm:
+        decimal = 0
+    else:
+        decimal = 5
+    aaae(result.params, solution_x, decimal=decimal)
