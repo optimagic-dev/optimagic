@@ -19,9 +19,11 @@ from estimagic.inference.shared import check_is_optimized_and_derivative_case
 from estimagic.inference.shared import get_derivative_case
 from estimagic.inference.shared import transform_covariance
 from estimagic.optimization.optimize import minimize
+from estimagic.parameters.block_trees import block_tree_to_matrix
 from estimagic.parameters.block_trees import matrix_to_block_tree
 from estimagic.parameters.conversion import Converter
 from estimagic.parameters.conversion import get_converter
+from estimagic.parameters.tree_registry import get_registry
 from estimagic.sensitivity.msm_sensitivity import calculate_actual_sensitivity_to_noise
 from estimagic.sensitivity.msm_sensitivity import (
     calculate_actual_sensitivity_to_removal,
@@ -36,6 +38,7 @@ from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from pybaum import tree_just_flatten
 
 
 def estimate_msm(
@@ -159,9 +162,18 @@ def estimate_msm(
     if "scaling_factor" not in numdiff_options:
         numdiff_options["scaling_factor"] = 2
 
-    weights = get_weighting_matrix(
-        moments_cov, weights
-    )  # xxxx add return type argument for flat and external
+    weights, internal_weights = get_weighting_matrix(
+        moments_cov=moments_cov,
+        method=weights,
+        empirical_moments=empirical_moments,
+        return_type="pytree_and_array",
+    )
+
+    internal_moments_cov = block_tree_to_matrix(
+        moments_cov,
+        outer_tree=empirical_moments,
+        inner_tree=empirical_moments,
+    )
 
     constraints = [] if constraints is None else constraints
     jacobian_kwargs = {} if jacobian_kwargs is None else jacobian_kwargs
@@ -173,11 +185,12 @@ def estimate_msm(
 
     if is_optimized:
         estimates = params
+        opt_res = None
     else:
         funcs = get_msm_optimization_functions(
             simulate_moments=simulate_moments,
             empirical_moments=empirical_moments,
-            weights=weights,
+            flat_weights=internal_weights,
             simulate_moments_kwargs=simulate_moments_kwargs,
             jacobian=jacobian,
             jacobian_kwargs=jacobian_kwargs,
@@ -293,11 +306,11 @@ def estimate_msm(
 
     res = MomentsResult(
         params=estimates,
-        weights=weights,  # xxxx make sure those are tree weights
+        weights=weights,
         _flat_params=flat_estimates,
         _converter=converter,
-        _internal_weights=weights,  # xxxx is this right?
-        _internal_moments_cov=moments_cov,  # xxxx is this right with pytrees?
+        _internal_weights=internal_weights,
+        _internal_moments_cov=internal_moments_cov,
         _internal_jacobian=int_jac,
         _jacobian=jacobian_eval,
         _no_jacobian_reason=_no_jac_reason,
@@ -308,7 +321,7 @@ def estimate_msm(
 def get_msm_optimization_functions(
     simulate_moments,
     empirical_moments,
-    weights,
+    flat_weights,
     *,
     simulate_moments_kwargs=None,
     jacobian=None,
@@ -341,14 +354,18 @@ def get_msm_optimization_functions(
             as only argument.
 
     """
+    registry = get_registry(extended=True)
+    flat_emp_mom = tree_just_flatten(empirical_moments, registry=registry)
+
     _simulate_moments = _partial_kwargs(simulate_moments, simulate_moments_kwargs)
     _jacobian = _partial_kwargs(jacobian, jacobian_kwargs)
 
     criterion = functools.partial(
         _msm_criterion,
         simulate_moments=_simulate_moments,
-        empirical_moments=empirical_moments,
-        weights=weights,
+        flat_empirical_moments=flat_emp_mom,
+        flat_weights=flat_weights,
+        registry=registry,
     )
 
     out = {"criterion": criterion}
@@ -361,13 +378,20 @@ def get_msm_optimization_functions(
     return out
 
 
-def _msm_criterion(params, simulate_moments, empirical_moments, weights):
+def _msm_criterion(
+    params, simulate_moments, flat_empirical_moments, flat_weights, registry
+):
     """Calculate msm criterion given parameters and building blocks."""
     simulated = simulate_moments(params)
-    if isinstance(simulated, dict):
+    if isinstance(simulated, dict) and "simulated_moments" in simulated:
         simulated = simulated["simulated_moments"]
-    deviations = simulated - empirical_moments
-    out = deviations @ weights @ deviations
+    if isinstance(simulated, np.ndarray) and simulated.ndim == 1:
+        simulated_flat = simulated
+    else:
+        simulated_flat = np.array(tree_just_flatten(simulated, registry=registry))
+
+    deviations = simulated_flat - flat_empirical_moments
+    out = deviations @ flat_weights @ deviations
     return out
 
 

@@ -252,7 +252,7 @@ def estimate_ml(
         int_jac = None
 
     if constraints in [None, []] and jacobian_eval is None and int_jac is not None:
-        jacobian_eval = int_jac
+        jacobian_eval = int_jac  # xxxx need block tree conversion?
 
     if jacobian_eval is None:
         _no_jac_reason = (
