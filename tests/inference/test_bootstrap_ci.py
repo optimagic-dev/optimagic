@@ -58,63 +58,69 @@ def g(data):
     return data.mean(axis=0)
 
 
+def g_dict(data):
+    return data.mean(axis=0).to_dict()
+
+
 def g_arr(data):
     return np.array(data.mean(axis=0))
 
 
-def h(data):
-    return 2 * g(data)
+TEST_CASES = (g, g_dict, g_arr)
 
 
-def h_arr(data):
-    return 2 * g_arr(data)
-
-
-def test_percentile_ci(setup, expected):
+@pytest.mark.parametrize("outcome", TEST_CASES)
+def test_percentile_ci(outcome, setup, expected):
     percentile_ci = compute_ci(
-        setup["df"], g, setup["estimates"], ci_method="percentile"
+        setup["df"], outcome, setup["estimates"], ci_method="percentile"
     )
     aaae(percentile_ci, expected["percentile_ci"])
 
 
-def test_normal_ci(setup, expected):
-    normal_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="normal")
+@pytest.mark.parametrize("outcome", TEST_CASES)
+def test_normal_ci(outcome, setup, expected):
+    normal_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="normal")
     aaae(normal_ci, expected["normal_ci"])
 
 
-def test_basic_ci(setup, expected):
-    basic_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="basic")
+@pytest.mark.parametrize("outcome", TEST_CASES)
+def test_basic_ci(outcome, setup, expected):
+    basic_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="basic")
     aaae(basic_ci, expected["basic_ci"])
 
 
-def test_bc_ci(setup, expected):
-    bc_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="bc")
+@pytest.mark.parametrize("outcome", TEST_CASES)
+def test_bc_ci(outcome, setup, expected):
+    bc_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="bc")
     aaae(bc_ci, expected["bc_ci"])
 
 
-def test_bca_ci(setup, expected):
-    bca_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="bca")
+@pytest.mark.parametrize("outcome", TEST_CASES)
+def test_bca_ci(outcome, setup, expected):
+    bca_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="bca")
     aaae(bca_ci, expected["bca_ci"])
 
 
-def test_t_ci(setup, expected):
-    t_ci = compute_ci(setup["df"], g, setup["estimates"], ci_method="t")
+@pytest.mark.parametrize("outcome", TEST_CASES)
+def test_t_ci(outcome, setup, expected):
+    t_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="t")
     aaae(t_ci, expected["t_ci"])
 
 
-def test_jackknife(setup, expected):
-    jk_estimates = _jackknife(setup["df"], g)
+@pytest.mark.parametrize("outcome", TEST_CASES)
+def test_jackknife(outcome, setup, expected):
+    jk_estimates = _jackknife(setup["df"], outcome)
     aaae(jk_estimates, expected["jk_estimates"])
 
 
-def test_check_inputs_data(setup, expected):
+def test_check_inputs_data():
     data = "this is not a data frame"
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=data)
     assert "Input 'data' must be DataFrame." == str(excinfo.value)
 
 
-def test_check_inputs_cluster_by(setup, expected):
+def test_check_inputs_cluster_by(setup):
     cluster_by = "this is not a column name of df"
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=setup["df"], cluster_by=cluster_by)
@@ -123,7 +129,7 @@ def test_check_inputs_cluster_by(setup, expected):
     )
 
 
-def test_check_inputs_ci_method(setup, expected):
+def test_check_inputs_ci_method(setup):
     ci_method = 4
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=setup["df"], ci_method=ci_method)

@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 from estimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.parameters.tree_registry import get_registry
 from joblib import delayed
 from joblib import Parallel
+from pybaum import tree_just_flatten
 from scipy.stats import norm
 
 
@@ -25,7 +27,6 @@ def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_c
         cis (pandas.DataFrame): DataFrame where k'th row contains CI for k'th parameter.
 
     """
-
     check_inputs(data=data, alpha=alpha, ci_method=ci_method)
 
     funcname = "_ci_" + ci_method
@@ -51,7 +52,6 @@ def _ci_percentile(data, outcome, estimates, alpha, n_cores):
         cis (np.array): array where k'th row contains CI for k'th parameter.
 
     """
-
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
@@ -78,12 +78,12 @@ def _ci_bca(data, outcome, estimates, alpha, n_cores):
         cis (np.array): array where k'th row contains CI for k'th parameter.
 
     """
-
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
-    theta = outcome(data)
+    registry = get_registry(extended=True)
+    theta = tree_just_flatten(outcome(data), registry=registry)
 
     jack_est = _jackknife(data, outcome, n_cores)
     jack_mean = np.mean(jack_est, axis=0)
@@ -125,12 +125,12 @@ def _ci_bc(data, outcome, estimates, alpha, n_cores):
         cis (np.array): array where k'th row contains CI for k'th parameter.
 
     """
-
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
 
-    theta = outcome(data)
+    registry = get_registry(extended=True)
+    theta = tree_just_flatten(outcome(data), registry=registry)
 
     for k in range(num_params):
 
@@ -164,11 +164,12 @@ def _ci_t(data, outcome, estimates, alpha, n_cores):
         cis (np.array): array where k'th row contains CI for k'th parameter.
 
     """
-
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-    theta = outcome(data)
+
+    registry = get_registry(extended=True)
+    theta = tree_just_flatten(outcome(data), registry=registry)
 
     for k in range(num_params):
 
@@ -199,11 +200,12 @@ def _ci_normal(data, outcome, estimates, alpha, n_cores):
         cis (np.array): array where k'th row contains CI for k'th parameter.
 
     """
-
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-    theta = outcome(data)
+
+    registry = get_registry(extended=True)
+    theta = tree_just_flatten(outcome(data), registry=registry)
 
     for k in range(num_params):
 
@@ -230,11 +232,12 @@ def _ci_basic(data, outcome, estimates, alpha, n_cores):
         cis (np.array): array where k'th row contains CI for k'th parameter.
 
     """
-
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-    theta = outcome(data)
+
+    registry = get_registry(extended=True)
+    theta = tree_just_flatten(outcome(data), registry=registry)
 
     for k in range(num_params):
 
@@ -256,9 +259,8 @@ def _jackknife(data, outcome, n_cores=1):
 
     Returns:
         jk_estimates (pd.DataFrame): DataFrame of estimated parameters.
-
+        jk_estimates (np.ndarray): Numpy array of estimated parameters.
     """
-
     n = len(data)
 
     def loop(i):
@@ -268,7 +270,7 @@ def _jackknife(data, outcome, n_cores=1):
 
     jk_estimates = Parallel(n_jobs=n_cores)(delayed(loop)(i) for i in range(n))
 
-    return np.array(jk_estimates)
+    return np.array(pd.DataFrame(jk_estimates))
 
 
 def _eqf(sample):
@@ -279,7 +281,6 @@ def _eqf(sample):
 
     Returns:
         f (callable): quantile function for given sample.
-
     """
 
     def f(x):
