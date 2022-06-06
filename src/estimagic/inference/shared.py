@@ -75,9 +75,7 @@ def transform_covariance(
     else:
         free_cov = internal_cov
 
-    free_index = np.array(flat_params.names)[flat_params.free_mask]
-    res = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
-    return res
+    return free_cov
 
 
 def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level):

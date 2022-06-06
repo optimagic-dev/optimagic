@@ -82,6 +82,14 @@ def test_estimate_msm_dict_params_and_moments():
         expected_sensitivity_to_bias_arr,
     )
 
+    expected_jacobian = {
+        "a": {"aa": 1.0, "bb": 0.0, "cc": 0.0},
+        "b": {"aa": 0.0, "bb": 1.0, "cc": 0.0},
+        "c": {"aa": 0.0, "bb": 0.0, "cc": 1.0},
+    }
+
+    assert_almost_equal(calculated.jacobian, expected_jacobian)
+
 
 def assert_almost_equal(x, y, decimal=6):
     if isinstance(x, np.ndarray):

@@ -10,6 +10,7 @@ import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
 from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import InvalidFunctionError
+from estimagic.exceptions import NotAvailableError
 from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import calculate_ci
@@ -297,7 +298,11 @@ def estimate_msm(
     # ==================================================================================
 
     if constraints in [None, []] and jacobian_eval is None and int_jac is not None:
-        jacobian_eval = int_jac  # xxxx need block tree conversion?
+        jacobian_eval = matrix_to_block_tree(
+            int_jac,
+            outer_tree=empirical_moments,
+            inner_tree=estimates,
+        )
 
     if jacobian_eval is None:
         _no_jac_reason = (
@@ -478,9 +483,6 @@ class MomentsResult:
             bounds_handling=bounds_handling,
         )
 
-        if isinstance(free_cov, pd.DataFrame):  # xxxx
-            free_cov = free_cov.to_numpy()
-
         return free_cov
 
     @property
@@ -589,7 +591,11 @@ class MomentsResult:
             out = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
         elif return_type == "pytree":
             if len(free_cov) != len(self._flat_params.values):
-                raise NotImplementedError()  # xxxx
+                raise NotAvailableError(
+                    "Covariance matrices in block-pytree format are only available if "
+                    "there are no constraints that reduce the number of free "
+                    "parameters."
+                )
             out = matrix_to_block_tree(free_cov, self.params, self.params)
         return out
 
@@ -885,7 +891,6 @@ class MomentsResult:
         else:
             raise ValueError(f"Invalid kind: {kind}")
 
-        # xxxx do I need matrix to block tree?
         if return_type == "array":
             out = raw
         elif return_type == "pytree":
