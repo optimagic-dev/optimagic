@@ -1,3 +1,5 @@
+import functools
+
 import pandas as pd
 from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_ci import compute_ci
@@ -5,8 +7,6 @@ from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
 from estimagic.parameters.tree_registry import get_registry
 from pybaum import tree_just_flatten
-
-#
 
 
 def bootstrap(
@@ -63,14 +63,27 @@ def bootstrap(
     )
 
     out = bootstrap_from_outcomes(
-        data, outcome, estimates, ci_method=ci_method, alpha=alpha, n_cores=n_cores
+        data,
+        outcome,
+        estimates,
+        outcome_kwargs=outcome_kwargs,
+        ci_method=ci_method,
+        alpha=alpha,
+        n_cores=n_cores,
     )
 
     return out
 
 
 def bootstrap_from_outcomes(
-    data, outcome, bootstrap_outcomes, *, ci_method="percentile", alpha=0.05, n_cores=1
+    data,
+    outcome,
+    bootstrap_outcomes,
+    *,
+    outcome_kwargs=None,
+    ci_method="percentile",
+    alpha=0.05,
+    n_cores=1,
 ):
     """Set up results table containing mean, standard deviation and confidence interval
     for each estimated parameter.
@@ -81,6 +94,7 @@ def bootstrap_from_outcomes(
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         bootstrap_outcomes (pandas.DataFrame): DataFrame of bootstrap_outcomes in the
             bootstrap samples.
+        outcome_kwargs (dict): Additional keyword arguments for outcome.
         ci_method (str): method of choice for confidence interval computation.
         n_cores (int): number of jobs for parallelization.
         alpha (float): significance level of choice.
@@ -95,8 +109,14 @@ def bootstrap_from_outcomes(
 
     registry = get_registry(extended=True)
 
+    if outcome_kwargs is not None:
+        outcome = functools.partial(outcome, **outcome_kwargs)
+
+    @functools.wraps(outcome)
     def outcome_flat(data):
-        return tree_just_flatten(outcome(data), registry=registry)
+        raw = outcome(data)
+        out = tree_just_flatten(raw, registry=registry)
+        return out
 
     cis = compute_ci(data, outcome_flat, bootstrap_outcomes, ci_method, alpha, n_cores)
     summary["lower_ci"] = cis["lower_ci"]

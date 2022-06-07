@@ -125,7 +125,7 @@ def test_check_inputs_ci_method(setup):
     assert str(excinfo.value) == expected_msg
 
 
-def test_check_inputs_alpha(setup, expected):
+def test_check_inputs_alpha(setup):
     alpha = 666
     with pytest.raises(ValueError) as excinfo:
         check_inputs(data=setup["df"], alpha=alpha)
