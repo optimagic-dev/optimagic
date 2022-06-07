@@ -101,8 +101,8 @@ def combine_plots(
         ub = []
         for f in plots:
             for d in f.data:
-                lb.append(d["y"].min())
-                ub.append(d["y"].max())
+                lb.append(np.min(d["y"]))
+                ub.append(np.max(d["y"]))
         ub = np.max(ub)
         lb = np.min(lb)
         y_range = ub - lb
@@ -114,8 +114,8 @@ def combine_plots(
         ub = []
         for f in plots:
             for d in f.data:
-                lb.append(d["x"].min())
-                ub.append(d["x"].max())
+                lb.append(np.min(d["x"]))
+                ub.append(np.max(d["x"]))
         x_upper = np.max(ub)
         x_lower = np.min(lb)
         fig.update_xaxes(range=[x_lower, x_upper])

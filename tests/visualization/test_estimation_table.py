@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -41,7 +39,6 @@ from tests.visualization.helpers_test_estimation_table import _read_csv_string
 
 
 # test process_model for different model types
-ProcessedModel = namedtuple("ProcessedModel", "params info name")
 
 fix_path = EXAMPLE_DIR / "diabetes.csv"
 
@@ -73,7 +70,7 @@ def test_estimation_table():
          ,target
         R$^2$,0.40
         Adj. R$^2$,0.40
-        Residual Std. Error,60.00
+        Residual Std. Error,60
         F Statistic,72.90$^{***}$
         Observations,442
 
@@ -82,12 +79,7 @@ def test_estimation_table():
     exp["footer"].set_index(" ", inplace=True)
     exp["footer"].index.names = [None]
     exp["footer"].index = pd.MultiIndex.from_arrays([exp["footer"].index])
-    exp["notes_tex"] = "\\midrule\n"
-    exp[
-        "notes_html"
-    ] = """<tr><td colspan="2" style="border-bottom: 1px solid black">
-        </td></tr>"""
-    afe(exp["footer"], res["footer"])
+    afe(exp["footer"].sort_index(), res["footer"].sort_index())
     afe(exp["body"], res["body"], check_index_type=False)
 
 
@@ -105,33 +97,14 @@ def test_one_and_stage_rendering_are_equal(return_type, render_func, models):
     first_stage = estimation_table(
         models, return_type="render_inputs", confidence_intervals=True
     )
-    second_stage = render_func(
-        siunitx_warning=False, alignment_warning=False, **first_stage
-    )
+    second_stage = render_func(siunitx_warning=False, **first_stage)
     one_stage = estimation_table(
         models,
         return_type=return_type,
         siunitx_warning=False,
-        alignment_warning=False,
         confidence_intervals=True,
     )
     assert one_stage == second_stage
-
-
-def test_process_model_namedtuple():
-    # checks that process_model doesn't alter values
-    df = pd.DataFrame(columns=["value", "p_value", "ci_lower", "ci_upper"])
-    df["value"] = np.arange(10)
-    df["p_value"] = np.arange(10)
-    df["ci_lower"] = np.arange(10)
-    df["ci_upper"] = np.arange(10)
-    info = {"stat1": 0, "stat2": 0}
-    name = "model_name"
-    model = ProcessedModel(params=df, info=info, name=name)
-    res = _process_model(model)
-    afe(res.params, df)
-    ase(pd.Series(res.info), pd.Series(info))
-    assert name == res.name
 
 
 def test_process_model_stats_model():
@@ -160,23 +133,9 @@ def test_process_model_stats_model():
     info["resid_std_err"] = 59.97560860753488
     info["n_obs"] = 442.0
     res = _process_model(est)
-    afe(res.params, params)
-    ase(pd.Series(res.info), pd.Series(info))
-    assert res.name == "target"
-
-
-def test_process_model_dict():
-    df = pd.DataFrame(columns=["value", "p_value", "standard_error"])
-    df["value"] = np.arange(10)
-    df["p_value"] = np.arange(10)
-    df["standard_error"] = np.arange(10)
-    info = {"stat1": 0, "stat2": 0}
-    mod = {}
-    mod["params"] = df
-    mod["info"] = info
-    res = _process_model(mod)
-    afe(res.params, mod["params"])
-    ase(pd.Series(res.info), pd.Series(mod["info"]))
+    afe(res["params"], params)
+    ase(pd.Series(res["info"]), pd.Series(info))
+    assert res["name"] == "target"
 
 
 # test convert_model_to_series for different arguments
@@ -252,7 +211,7 @@ def test_create_statistics_sr():
     add_trailing_zeros = True
     sig_levels = [0.1, 0.2]
     show_stars = False
-    model = ProcessedModel(params=df, info=info, name="target")
+    model = {"params": df, "info": info, "name": "target"}
     stats_options = {
         "n_obs": "Observations",
         "rsquared": "R2",
@@ -267,11 +226,11 @@ def test_create_statistics_sr():
         add_trailing_zeros,
         max_trail=4,
     )
-    exp = pd.Series(["0.4500", "0.0002", "400"])
+    exp = pd.Series(["0.4500", "0.0002", "400.0000"])
     exp.index = pd.MultiIndex.from_arrays(
         np.array([np.array(["R2", "R2 Adj.", "Observations"]), np.array(["", "", ""])])
     )
-    ase(exp, res)
+    ase(exp.sort_index(), res.sort_index())
 
 
 # test _process_frame_axes for different arguments
@@ -375,9 +334,9 @@ def test_create_group_to_col_position():
 
 
 def test_get_model_names():
-    m1 = ProcessedModel(params=None, info=None, name="a_name")
-    m3 = ProcessedModel(params=None, info=None, name=None)
-    m5 = ProcessedModel(params=None, info=None, name="third_name")
+    m1 = {"params": None, "info": None, "name": "a_name"}
+    m3 = {"params": None, "info": None, "name": None}
+    m5 = {"params": None, "info": None, "name": "third_name"}
     models = [m1, m3, m5]
     res = _get_model_names(models)
     exp = ["a_name", "(2)", "third_name"]
@@ -426,12 +385,16 @@ def test_customize_col_names_list():
 
 
 def test_get_params_frames_with_common_index():
-    m1 = ProcessedModel(
-        params=pd.DataFrame(np.ones(5), index=list("abcde")), info=None, name=None
-    )
-    m2 = ProcessedModel(
-        params=pd.DataFrame(np.ones(3), index=list("abc")), info=None, name=None
-    )
+    m1 = {
+        "params": pd.DataFrame(np.ones(5), index=list("abcde")),
+        "info": None,
+        "name": None,
+    }
+    m2 = {
+        "params": pd.DataFrame(np.ones(3), index=list("abc")),
+        "info": None,
+        "name": None,
+    }
     res = _get_params_frames_with_common_index([m1, m2])
     exp = [
         pd.DataFrame(np.ones(5), index=list("abcde")),
@@ -445,10 +408,8 @@ def test_get_params_frames_with_common_index():
 
 def test_get_params_frames_with_common_index_multiindex():
     mi = pd.MultiIndex.from_tuples([("a", 1), ("a", 2), ("b", 1), ("b", 2), ("b", 3)])
-    m1 = ProcessedModel(params=pd.DataFrame(np.ones(5), index=mi), info=None, name=None)
-    m2 = ProcessedModel(
-        params=pd.DataFrame(np.ones(3), index=mi[:3]), info=None, name=None
-    )
+    m1 = {"params": pd.DataFrame(np.ones(5), index=mi), "info": None, "name": None}
+    m2 = {"params": pd.DataFrame(np.ones(3), index=mi[:3]), "info": None, "name": None}
     res = _get_params_frames_with_common_index([m1, m2])
     exp = [
         pd.DataFrame(np.ones(5), index=mi),

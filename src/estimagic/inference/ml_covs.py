@@ -226,7 +226,7 @@ def _clustering(jac, design_info):
 
 
 def _stratification(jac, design_info):
-    """Variance estimatio for each strata stratum.
+    """Variance estimation for each stratum.
 
     The function takes the sum of the jacobian observations for each cluster
     within strata. The result is the meat of the sandwich estimator.

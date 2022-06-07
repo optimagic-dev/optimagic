@@ -1,6 +1,5 @@
 """Most test exploit the special case where simulate_moments just returns parameters."""
 import itertools
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -12,63 +11,57 @@ from numpy.testing import assert_array_almost_equal as aaae
 
 
 def _sim_pd(params):
-    return params["value"]
+    return pd.Series(params)
 
 
 def _sim_np(params):
-    return params["value"].to_numpy()
+    return params
 
 
 def _sim_dict_pd(params):
-    return {"simulated_moments": params["value"], "other": "bla"}
+    return {"simulated_moments": pd.Series(params), "other": "bla"}
 
 
 def _sim_dict_np(params):
-    return {"simulated_moments": params["value"].to_numpy(), "other": "bla"}
+    return {"simulated_moments": params, "other": "bla"}
 
 
 cov_np = np.diag([1, 2, 3.0])
 cov_pd = pd.DataFrame(cov_np)
 
-test_cases = itertools.product(
-    [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
-    [cov_np, cov_pd],  # moments_cov
-    [{"algorithm": "scipy_lbfgsb"}, "scipy_lbfgsb"],  # optimize_options
+test_cases = list(
+    itertools.product(
+        [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
+        [cov_np, cov_pd],  # moments_cov
+        [{"algorithm": "scipy_lbfgsb"}, "scipy_lbfgsb"],  # optimize_options
+    )
 )
 
 
 @pytest.mark.parametrize("simulate_moments, moments_cov, optimize_options", test_cases)
 def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
-    start_params = pd.DataFrame()
-    start_params["value"] = [3, 2, 1]
+    start_params = np.array([3, 2, 1])
 
-    expected_params = pd.DataFrame()
-    expected_params["value"] = np.zeros(3)
+    expected_params = np.zeros(3)
 
     # abuse simulate_moments to get empirical moments in correct format
     empirical_moments = simulate_moments(expected_params)
     if isinstance(empirical_moments, dict):
         empirical_moments = empirical_moments["simulated_moments"]
 
-    # catching warnings is necessary because the very special case with diagonal
-    # weighting and diagonal jacobian leads to singular matrices while calculating
-    # sensitivity to removal of moments.
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message="Standard matrix inversion failed")
-        calculated = estimate_msm(
-            simulate_moments=simulate_moments,
-            empirical_moments=empirical_moments,
-            moments_cov=moments_cov,
-            params=start_params,
-            optimize_options=optimize_options,
-        )
+    calculated = estimate_msm(
+        simulate_moments=simulate_moments,
+        empirical_moments=empirical_moments,
+        moments_cov=moments_cov,
+        params=start_params,
+        optimize_options=optimize_options,
+    )
 
-    calculated_params = calculated["optimize_res"].params[["value"]]
     # check that minimization works
-    aaae(calculated_params["value"].to_numpy(), expected_params["value"].to_numpy())
+    aaae(calculated.params, expected_params)
 
     # check that cov works
-    calculated_cov = calculated["cov"]
+    calculated_cov = calculated.cov()
     if isinstance(calculated_cov, pd.DataFrame):
         calculated_cov = calculated_cov.to_numpy()
 
@@ -76,6 +69,28 @@ def test_estimate_msm(simulate_moments, moments_cov, optimize_options):
     # jac = identity matrix
     expected_cov = np.diag([1, 2, 3])
     aaae(calculated_cov, expected_cov)
+    aaae(calculated.se(), np.sqrt([1, 2, 3]))
+
+    # works only because parameter point estimates are exactly zero
+    aaae(calculated.p_values(), np.ones(3))
+
+    #
+    expected_ci_upper = np.array([1.95996398, 2.77180765, 3.3947572])
+    expected_ci_lower = -expected_ci_upper
+
+    lower, upper = calculated.ci()
+    aaae(lower, expected_ci_lower)
+    aaae(upper, expected_ci_upper)
+
+    aaae(calculated.ci(), calculated._ci)
+    aaae(calculated.p_values(), calculated._p_values)
+    aaae(calculated.se(), calculated._se)
+    aaae(calculated.cov(), calculated._cov)
+
+    summary = calculated.summary()
+    aaae(summary["value"], np.zeros(3))
+    aaae(summary["p_value"], np.ones(3))
+    assert summary["stars"].tolist() == [""] * 3
 
 
 def test_check_and_process_numdiff_options_with_invalid_entries():
@@ -86,3 +101,59 @@ def test_check_and_process_numdiff_options_with_invalid_entries():
 def test_check_and_process_optimize_options_with_invalid_entries():
     with pytest.raises(ValueError):
         check_optimization_options({"criterion": lambda x: x}, "estimate_msm")
+
+
+ls_test_cases = list(
+    itertools.product(
+        [_sim_pd, _sim_np, _sim_dict_pd, _sim_dict_np],  # simulate_moments
+        [cov_np, cov_pd],  # moments_cov
+        [{"algorithm": "pounders"}, "pounders"],  # optimize_options
+    )
+)
+
+
+@pytest.mark.parametrize(
+    "simulate_moments, moments_cov, optimize_options", ls_test_cases
+)
+def test_estimate_msm_ls(simulate_moments, moments_cov, optimize_options):
+    start_params = np.array([3, 2, 1])
+
+    expected_params = np.zeros(3)
+
+    # abuse simulate_moments to get empirical moments in correct format
+    empirical_moments = simulate_moments(expected_params)
+    if isinstance(empirical_moments, dict):
+        empirical_moments = empirical_moments["simulated_moments"]
+
+    calculated = estimate_msm(
+        simulate_moments=simulate_moments,
+        empirical_moments=empirical_moments,
+        moments_cov=moments_cov,
+        params=start_params,
+        optimize_options=optimize_options,
+    )
+
+    aaae(calculated.params, expected_params)
+
+
+def test_estimate_msm_with_jacobian():
+    start_params = np.array([3, 2, 1])
+
+    expected_params = np.zeros(3)
+
+    # abuse simulate_moments to get empirical moments in correct format
+    empirical_moments = _sim_np(expected_params)
+    if isinstance(empirical_moments, dict):
+        empirical_moments = empirical_moments["simulated_moments"]
+
+    calculated = estimate_msm(
+        simulate_moments=_sim_np,
+        empirical_moments=empirical_moments,
+        moments_cov=cov_np,
+        params=start_params,
+        optimize_options="scipy_lbfgsb",
+        jacobian=lambda x: np.eye(len(x)),
+    )
+
+    aaae(calculated.params, expected_params)
+    aaae(calculated.cov(), cov_np)
