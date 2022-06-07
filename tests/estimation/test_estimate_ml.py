@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import scipy as sp
+import statsmodels.api as sm
 from estimagic.estimation.estimate_ml import estimate_ml
 from estimagic.examples.logit import logit_derivative
 from estimagic.examples.logit import logit_hessian
@@ -21,6 +22,19 @@ def aaae(obj1, obj2, decimal=3):
 # ======================================================================================
 # logit case
 # ======================================================================================
+
+
+@pytest.fixture
+def logit_np_inputs():
+    spector_data = sm.datasets.spector.load_pandas()
+    spector_data.exog = sm.add_constant(spector_data.exog)
+    x_df = sm.add_constant(spector_data.exog)
+    out = {
+        "y": spector_data.endog,
+        "x": x_df.to_numpy(),
+        "params": np.array([-10, 2, 0.2, 2]),
+    }
+    return out
 
 
 @pytest.fixture
@@ -44,24 +58,26 @@ def logit_loglike_and_derivative(params, y, x):
     return loglike, loglike_derivative["value"]
 
 
-test_cases = itertools.product(
-    [
-        {"algorithm": "scipy_lbfgsb"},
-        "scipy_lbfgsb",
-        {
-            "algorithm": "scipy_lbfgsb",
-            "criterion_and_derivative": logit_loglike_and_derivative,
-        },
-    ],  # optimize_options
-    [None, logit_jacobian, False],  # jacobian
-    [None, logit_hessian, False],  # hessian
+test_cases = list(
+    itertools.product(
+        [
+            {"algorithm": "scipy_lbfgsb"},
+            "scipy_lbfgsb",
+            {
+                "algorithm": "scipy_lbfgsb",
+                "criterion_and_derivative": logit_loglike_and_derivative,
+            },
+        ],  # optimize_options
+        [None, logit_jacobian, False],  # jacobian
+        [None, logit_hessian, False],  # hessian
+    )
 )
 
 
 @pytest.mark.parametrize("optimize_options, jacobian, hessian", test_cases)
 def test_estimate_ml_with_logit_no_constraints(
     fitted_logit_model,
-    logit_inputs,
+    logit_np_inputs,
     optimize_options,
     jacobian,
     hessian,
@@ -78,14 +94,14 @@ def test_estimate_ml_with_logit_no_constraints(
     # estimate
     # ==================================================================================
 
-    kwargs = {"y": logit_inputs["y"], "x": logit_inputs["x"]}
+    kwargs = {"y": logit_np_inputs["y"], "x": logit_np_inputs["x"]}
 
     if "criterion_and_derivative" in optimize_options:
         optimize_options["criterion_and_derivative_kwargs"] = kwargs
 
     got = estimate_ml(
         loglike=logit_loglike,
-        params=logit_inputs["params"],
+        params=logit_np_inputs["params"],
         loglike_kwargs=kwargs,
         optimize_options=optimize_options,
         jacobian=jacobian,
@@ -101,11 +117,11 @@ def test_estimate_ml_with_logit_no_constraints(
     exp = fitted_logit_model
 
     if jacobian is not False and hessian is not False:
-        cases = ["jacobian", "hessian", "robust"]
+        methods = ["jacobian", "hessian", "robust"]
     elif jacobian is not False:
-        cases = ["jacobian"]
+        methods = ["jacobian"]
     elif hessian is not False:
-        cases = ["hessian"]
+        methods = ["hessian"]
 
     statsmodels_suffix_map = {
         "jacobian": "jac",
@@ -113,28 +129,45 @@ def test_estimate_ml_with_logit_no_constraints(
         "robust": "jhj",
     }
 
-    for case in cases:
+    # compare estimated parameters
+    aaae(got.params, exp.params, decimal=4)
 
-        summary = got[f"summary_{case}"]
-
-        # compare estimated parameters
-        aaae(summary["value"], exp.params, decimal=4)
+    for method in methods:
 
         # compare estimated standard errors
-        exp_se = getattr(exp, f"bse{statsmodels_suffix_map[case]}")
-        aaae(summary["standard_error"], exp_se, decimal=3)
+        exp_se = getattr(exp, f"bse{statsmodels_suffix_map[method]}")
+        aaae(got.se(method=method), exp_se, decimal=3)
 
         # compare estimated confidence interval
-        if case == "hessian":
-            aaae(summary[["ci_lower", "ci_upper"]], exp.conf_int(), decimal=3)
+        if method == "hessian":
+            lower, upper = got.ci(method=method)
+            exp_lower = exp.conf_int().T[0]
+            exp_upper = exp.conf_int().T[1]
+            aaae(lower, exp_lower, decimal=3)
+            aaae(upper, exp_upper, decimal=3)
 
-        # compare covariance (if not robust case)
-        if case == "hessian":
-            aaae(got[f"cov_{case}"], exp.cov_params(), decimal=3)
-        elif case == "robust":
-            aaae(got[f"cov_{case}"], exp.covjhj, decimal=2)
-        elif case == "jacobian":
-            aaae(got[f"cov_{case}"], exp.covjac, decimal=4)
+        # compare covariance
+        if method == "hessian":
+            aaae(got.cov(method=method), exp.cov_params(), decimal=3)
+        elif method == "robust":
+            aaae(got.cov(method=method), exp.covjhj, decimal=2)
+        elif method == "jacobian":
+            aaae(got.cov(method=method), exp.covjac, decimal=4)
+
+        summary = got.summary(method=method)
+
+        aaae(summary["value"], exp.params, decimal=4)
+        aaae(summary["standard_error"], got.se(method=method))
+        lower, upper = got.ci(method=method)
+        aaae(summary["ci_lower"], lower)
+        aaae(summary["ci_upper"], upper)
+        aaae(summary["p_value"], got.p_values(method=method))
+
+    if "jacobian" in methods:
+        aaae(got._se, got.se())
+        aaae(got._ci[0], got.ci()[0])
+        aaae(got._ci[1], got.ci()[1])
+        aaae(got._p_values, got.p_values())
 
 
 def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_inputs):
@@ -151,7 +184,7 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_inputs):
         optimize_options=False,
     )
 
-    summary = got["summary_jacobian"]
+    summary = got.summary()
 
     # compare estimated parameters
     aaae(summary["value"], fitted_logit_model.params, decimal=4)
@@ -160,7 +193,7 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_inputs):
     aaae(summary["standard_error"], fitted_logit_model.bsejac, decimal=3)
 
     # compare covariance (if not robust case)
-    aaae(got["cov_jacobian"], fitted_logit_model.covjac, decimal=4)
+    aaae(got.cov(method="jacobian"), fitted_logit_model.covjac, decimal=4)
 
 
 # ======================================================================================
@@ -203,10 +236,7 @@ def test_estimate_ml_general_pytree(normal_inputs):
         optimize_options="scipy_lbfgsb",
         lower_bounds={"sd": 0.0001},
         jacobian_kwargs=kwargs,
-        # ------------------------------------------------------------------------------
-        # constraints are not working properly at the moment. needs to be checked.
-        # constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],  # noqa: E800
-        # ------------------------------------------------------------------------------
+        constraints=[{"selector": lambda p: p["sd"], "type": "sdcorr"}],
     )
 
     # ==================================================================================
@@ -215,5 +245,7 @@ def test_estimate_ml_general_pytree(normal_inputs):
 
     true = normal_inputs["true"]
 
-    assert np.abs(true["mean"] - got["summary_jacobian"]["mean"]["value"][0]) < 1e-1
-    assert np.abs(true["sd"] - got["summary_jacobian"]["sd"]["value"][0]) < 1e-1
+    assert (
+        np.abs(true["mean"] - got.summary(method="jacobian")["mean"]["value"][0]) < 1e-1
+    )
+    assert np.abs(true["sd"] - got.summary(method="jacobian")["sd"]["value"][0]) < 1e-1
