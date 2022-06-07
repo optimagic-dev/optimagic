@@ -44,7 +44,7 @@ def get_bootstrap_outcomes(
     check_inputs(data=data, cluster_by=cluster_by)
 
     if outcome_kwargs is not None:
-        outcome = partial(outcome, *outcome_kwargs)
+        outcome = partial(outcome, **outcome_kwargs)
 
     indices = get_bootstrap_indices(
         data=data,
