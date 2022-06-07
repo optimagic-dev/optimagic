@@ -1,14 +1,19 @@
 import numpy as np
 import pandas as pd
 from estimagic.inference.bootstrap_helpers import check_inputs
-from estimagic.parameters.tree_registry import get_registry
 from joblib import delayed
 from joblib import Parallel
-from pybaum import tree_just_flatten
 from scipy.stats import norm
 
 
-def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_cores=1):
+def compute_ci(
+    data,
+    outcome,
+    estimates,
+    ci_method="percentile",
+    alpha=0.05,
+    n_cores=1,
+):
     """Compute confidence interval of bootstrap estimates. Parts of the code of the
     subfunctions of this function are taken from Daniel Saxton's resample library, as
     found on https://github.com/dsaxton/resample/ .
@@ -17,7 +22,7 @@ def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_c
     Args:
         data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
-            Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
+            Returns a flat general pytree.
         estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
         ci_method (str): method of choice for confidence interval computation.
         alpha (float): significance level of choice.
@@ -30,21 +35,23 @@ def compute_ci(data, outcome, estimates, ci_method="percentile", alpha=0.05, n_c
 
     funcname = "_ci_" + ci_method
 
-    cis = globals()[funcname](data, outcome, estimates, alpha, n_cores)
+    theta = outcome(data)
+    cis = globals()[funcname](data, outcome, estimates, theta, alpha, n_cores)
 
     return pd.DataFrame(
         cis, index=estimates.columns.tolist(), columns=["lower_ci", "upper_ci"]
     )
 
 
-def _ci_percentile(data, outcome, estimates, alpha, n_cores):
+def _ci_percentile(data, outcome, estimates, theta, alpha, n_cores):
     """Compute percentile type confidence interval of bootstrap estimates.
 
     Args:
-        data (pd.DataFrame): original dataset.
+        data (pandas.DataFrame): original dataset.
         outcome (callable): function of the data calculating statistic of interest.
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
-        estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        estimates (pandas.DataFrame): DataFrame of estimates in the bootstrap samples.
+        theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
@@ -63,7 +70,7 @@ def _ci_percentile(data, outcome, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_bca(data, outcome, estimates, alpha, n_cores):
+def _ci_bca(data, outcome, estimates, theta, alpha, n_cores):
     """Compute bca type confidence interval of bootstrap estimates.
 
     Args:
@@ -71,6 +78,7 @@ def _ci_bca(data, outcome, estimates, alpha, n_cores):
         outcome (callable): function of the data calculating statistic of interest.
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
@@ -80,9 +88,6 @@ def _ci_bca(data, outcome, estimates, alpha, n_cores):
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-
-    registry = get_registry(extended=True)
-    theta = tree_just_flatten(outcome(data), registry=registry)
 
     jack_est = _jackknife(data, outcome, n_cores)
     jack_mean = np.mean(jack_est, axis=0)
@@ -110,7 +115,7 @@ def _ci_bca(data, outcome, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_bc(data, outcome, estimates, alpha, n_cores):
+def _ci_bc(data, outcome, estimates, theta, alpha, n_cores):
     """Compute bc type confidence interval of bootstrap estimates.
 
     Args:
@@ -118,6 +123,7 @@ def _ci_bc(data, outcome, estimates, alpha, n_cores):
         outcome (callable): function of the data calculating statistic of interest.
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
@@ -127,9 +133,6 @@ def _ci_bc(data, outcome, estimates, alpha, n_cores):
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-
-    registry = get_registry(extended=True)
-    theta = tree_just_flatten(outcome(data), registry=registry)
 
     for k in range(num_params):
 
@@ -149,7 +152,7 @@ def _ci_bc(data, outcome, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_t(data, outcome, estimates, alpha, n_cores):
+def _ci_t(data, outcome, estimates, theta, alpha, n_cores):
     """Compute studentized confidence interval of bootstrap estimates.
 
     Args:
@@ -157,6 +160,7 @@ def _ci_t(data, outcome, estimates, alpha, n_cores):
         outcome (callable): function of the data calculating statistic of interest.
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
@@ -166,9 +170,6 @@ def _ci_t(data, outcome, estimates, alpha, n_cores):
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-
-    registry = get_registry(extended=True)
-    theta = tree_just_flatten(outcome(data), registry=registry)
 
     for k in range(num_params):
 
@@ -185,7 +186,7 @@ def _ci_t(data, outcome, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_normal(data, outcome, estimates, alpha, n_cores):
+def _ci_normal(data, outcome, estimates, theta, alpha, n_cores):
     """Compute approximate normal confidence interval of bootstrap estimates.
 
     Args:
@@ -193,6 +194,7 @@ def _ci_normal(data, outcome, estimates, alpha, n_cores):
         outcome (callable): function of the data calculating statistic of interest.
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
@@ -202,9 +204,6 @@ def _ci_normal(data, outcome, estimates, alpha, n_cores):
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-
-    registry = get_registry(extended=True)
-    theta = tree_just_flatten(outcome(data), registry=registry)
 
     for k in range(num_params):
 
@@ -217,7 +216,7 @@ def _ci_normal(data, outcome, estimates, alpha, n_cores):
     return cis
 
 
-def _ci_basic(data, outcome, estimates, alpha, n_cores):
+def _ci_basic(data, outcome, estimates, theta, alpha, n_cores):
     """Compute basic bootstrap confidence interval of bootstrap estimates.
 
     Args:
@@ -225,6 +224,7 @@ def _ci_basic(data, outcome, estimates, alpha, n_cores):
         outcome (callable): function of the data calculating statistic of interest.
             Returns a general pytree (e.g. pandas Series, dict, numpy array, etc.).
         estimates (data.Frame): DataFrame of estimates in the bootstrap samples.
+        theta (pytree): Pytree of base outcomes.
         alpha (float): significance level of choice.
         n_cores (int): number of jobs for parallelization.
 
@@ -234,9 +234,6 @@ def _ci_basic(data, outcome, estimates, alpha, n_cores):
     num_params = estimates.shape[1]
     boot_est = estimates.values
     cis = np.zeros((num_params, 2))
-
-    registry = get_registry(extended=True)
-    theta = tree_just_flatten(outcome(data), registry=registry)
 
     for k in range(num_params):
 
@@ -257,18 +254,17 @@ def _jackknife(data, outcome, n_cores=1):
         n_cores (int): number of jobs for parallelization.
 
     Returns:
-        jk_estimates (np.ndarray): Numpy array of estimated parameters.
+        jk_estimates (pytree): Pytree of estimated parameters.
     """
     n = len(data)
 
     def loop(i):
-
         df = data.drop(index=i)
         return outcome(df)
 
     jk_estimates = Parallel(n_jobs=n_cores)(delayed(loop)(i) for i in range(n))
 
-    return np.array(pd.DataFrame(jk_estimates))
+    return jk_estimates
 
 
 def _eqf(sample):

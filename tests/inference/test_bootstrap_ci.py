@@ -1,10 +1,14 @@
+import itertools
+
 import numpy as np
 import pandas as pd
 import pytest
 from estimagic.inference.bootstrap_ci import _jackknife
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
+from estimagic.parameters.tree_registry import get_registry
 from numpy.testing import assert_array_almost_equal as aaae
+from pybaum import tree_just_flatten
 
 
 @pytest.fixture
@@ -66,50 +70,30 @@ def g_arr(data):
     return np.array(data.mean(axis=0))
 
 
-TEST_CASES = (g, g_dict, g_arr)
+TEST_CASES = itertools.product(
+    [g, g_dict, g_arr], ["percentile", "normal", "basic", "bc", "bca", "t"]
+)
 
 
-@pytest.mark.parametrize("outcome", TEST_CASES)
-def test_percentile_ci(outcome, setup, expected):
-    percentile_ci = compute_ci(
-        setup["df"], outcome, setup["estimates"], ci_method="percentile"
-    )
-    aaae(percentile_ci, expected["percentile_ci"])
+@pytest.mark.parametrize("outcome, method", TEST_CASES)
+def test_ci(outcome, method, setup, expected):
+    registry = get_registry(extended=True)
+
+    def outcome_flat(data):
+        return tree_just_flatten(outcome(data), registry=registry)
+
+    ci = compute_ci(setup["df"], outcome_flat, setup["estimates"], ci_method=method)
+    aaae(ci, expected[method + "_ci"])
 
 
-@pytest.mark.parametrize("outcome", TEST_CASES)
-def test_normal_ci(outcome, setup, expected):
-    normal_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="normal")
-    aaae(normal_ci, expected["normal_ci"])
-
-
-@pytest.mark.parametrize("outcome", TEST_CASES)
-def test_basic_ci(outcome, setup, expected):
-    basic_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="basic")
-    aaae(basic_ci, expected["basic_ci"])
-
-
-@pytest.mark.parametrize("outcome", TEST_CASES)
-def test_bc_ci(outcome, setup, expected):
-    bc_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="bc")
-    aaae(bc_ci, expected["bc_ci"])
-
-
-@pytest.mark.parametrize("outcome", TEST_CASES)
-def test_bca_ci(outcome, setup, expected):
-    bca_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="bca")
-    aaae(bca_ci, expected["bca_ci"])
-
-
-@pytest.mark.parametrize("outcome", TEST_CASES)
-def test_t_ci(outcome, setup, expected):
-    t_ci = compute_ci(setup["df"], outcome, setup["estimates"], ci_method="t")
-    aaae(t_ci, expected["t_ci"])
-
-
-@pytest.mark.parametrize("outcome", TEST_CASES)
+@pytest.mark.parametrize("outcome", [g, g_dict, g_arr])
 def test_jackknife(outcome, setup, expected):
-    jk_estimates = _jackknife(setup["df"], outcome)
+    registry = get_registry(extended=True)
+
+    def outcome_flat(data):
+        return tree_just_flatten(outcome(data), registry=registry)
+
+    jk_estimates = _jackknife(setup["df"], outcome_flat)
     aaae(jk_estimates, expected["jk_estimates"])
 
 

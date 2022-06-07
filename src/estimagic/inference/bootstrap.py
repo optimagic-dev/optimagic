@@ -3,6 +3,10 @@ from estimagic.batch_evaluators import joblib_batch_evaluator
 from estimagic.inference.bootstrap_ci import compute_ci
 from estimagic.inference.bootstrap_helpers import check_inputs
 from estimagic.inference.bootstrap_outcomes import get_bootstrap_outcomes
+from estimagic.parameters.tree_registry import get_registry
+from pybaum import tree_just_flatten
+
+#
 
 
 def bootstrap(
@@ -87,10 +91,14 @@ def bootstrap_from_outcomes(
     check_inputs(data=data, ci_method=ci_method, alpha=alpha)
 
     summary = pd.DataFrame(bootstrap_outcomes.mean(axis=0), columns=["mean"])
-
     summary["std"] = bootstrap_outcomes.std(axis=0)
 
-    cis = compute_ci(data, outcome, bootstrap_outcomes, ci_method, alpha, n_cores)
+    registry = get_registry(extended=True)
+
+    def outcome_flat(data):
+        return tree_just_flatten(outcome(data), registry=registry)
+
+    cis = compute_ci(data, outcome_flat, bootstrap_outcomes, ci_method, alpha, n_cores)
     summary["lower_ci"] = cis["lower_ci"]
     summary["upper_ci"] = cis["upper_ci"]
 
