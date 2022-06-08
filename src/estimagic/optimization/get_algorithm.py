@@ -276,13 +276,6 @@ def _adjust_options_to_algorithm(
             f"with {algo_name}:\n\n {ignored}"
         )
 
-    if "nonlinear_constraints" not in valid_kwargs and nonlinear_constraints:
-        raise ValueError(
-            f"{algo_name} does not support nonlinear constraints. If you want to use "
-            "nonlinear constraints choose one of {'ipopt', 'scipy_trust_constr', "
-            "'scipy_slsqp', 'scipy_cobyla'}."
-        )
-
     if "lower_bounds" not in valid_kwargs and not (lower_bounds == -np.inf).all():
         raise ValueError(
             f"{algo_name} does not support lower bounds but your optimization "

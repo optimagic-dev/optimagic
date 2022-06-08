@@ -1,6 +1,7 @@
 from functools import partial
 
 import numpy as np
+import pandas as pd
 from estimagic.differentiation.derivatives import first_derivative
 
 
@@ -44,7 +45,7 @@ def process_nonlinear_constraints(
 
     """
     for c in nonlinear_constraints:
-        _check_validity_nonlinear_constraint(c)
+        _check_validity_nonlinear_constraint(c, params)
 
     _processor = partial(
         _process_nonlinear_constraint,
@@ -187,6 +188,7 @@ def _equality_to_inequality(c):
             "fun": partial(transform, func=c["fun"]),
             "jac": partial(transform, func=c["jac"]),
             "n_constr": 2 * c["n_constr"],
+            "tol": c["tol"],
             "type": "ineq",
         }
     else:
@@ -241,8 +243,6 @@ def _get_transformation_type(lower_bounds, upper_bounds):
 
 def _process_selector(c):
     if "selector" in c:
-        if not callable(c["selector"]):
-            raise ValueError("'selector' entry in constraints needs to be callable.")
         selector = c["selector"]
     elif "loc" in c:
 
@@ -263,7 +263,11 @@ def _identity(x):
     return x
 
 
-def _check_validity_nonlinear_constraint(c):
+def _check_validity_nonlinear_constraint(c, params):
+    ####################################################################################
+    # check functions
+    ####################################################################################
+
     if "fun" not in c:
         raise ValueError(
             "Constraint needs to have entry 'fun', representing the constraint "
@@ -274,6 +278,10 @@ def _check_validity_nonlinear_constraint(c):
 
     if "jac" in c and not callable(c["jac"]):
         raise ValueError("Entry 'jac' in nonlinear constraints has be callable.")
+
+    ####################################################################################
+    # check bounds
+    ####################################################################################
 
     is_equality_constraint = "value" in c
 
@@ -296,3 +304,34 @@ def _check_validity_nonlinear_constraint(c):
             raise ValueError(
                 "If lower bounds need to less than or equal to upper bounds."
             )
+
+    ####################################################################################
+    # check selector
+    ####################################################################################
+
+    if "selector" in c:
+        if not callable(c["selector"]):
+            raise ValueError("'selector' entry in constraints needs to be callable.")
+        else:
+            try:
+                c["selector"](params)
+            except Exception:
+                raise ValueError("'selector' function cannot be called on params.")
+
+    elif "loc" in c:
+        if not isinstance(params, (pd.Series, pd.DataFrame)):
+            raise ValueError(
+                "params needs to be pd.Series or pd.DataFrame to use 'loc' selector."
+            )
+        try:
+            params.loc[c["loc"]]
+        except (KeyError, IndexError):
+            raise ValueError("'loc' string is invalid.")
+
+    elif "query" in c:
+        if not isinstance(params, pd.DataFrame):
+            raise ValueError("params needs to be pd.DataFrame to use 'query' selector.")
+        try:
+            params.query(c["query"])
+        except Exception:
+            raise ValueError("'query' string is invalid.")

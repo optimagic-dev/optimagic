@@ -1,3 +1,4 @@
+import itertools
 from dataclasses import dataclass
 
 import numpy as np
@@ -41,7 +42,6 @@ def test_get_transformation_type(lower_bounds, upper_bounds, expected):
 TEST_CASES = [
     ({"selector": lambda x: x**2}, 10, 100),  # (constraint, params, expected)
     ({"loc": "a"}, pd.Series([0, 1], index=["a", "b"]), 0),
-    ({"selector": "not_callable"}, None, "raise"),
     (
         {"query": "a == 1"},
         pd.DataFrame([[1], [0]], columns=["a"]),
@@ -52,17 +52,13 @@ TEST_CASES = [
 
 @pytest.mark.parametrize("constraint, params, expected", TEST_CASES)
 def test_process_selector(constraint, params, expected):
-    if isinstance(expected, str) and expected == "raise":
-        with pytest.raises(ValueError):
-            _process_selector(constraint)
-    else:
-        _selector = _process_selector(constraint)
-        got = _selector(params)
+    _selector = _process_selector(constraint)
+    got = _selector(params)
 
-        if isinstance(got, pd.DataFrame):
-            assert_frame_equal(got, expected)
-        else:
-            assert got == expected
+    if isinstance(got, pd.DataFrame):
+        assert_frame_equal(got, expected)
+    else:
+        assert got == expected
 
 
 ########################################################################################
@@ -72,18 +68,25 @@ TEST_CASES = [
     {},  # no fun
     {"fun": 10},  # non-callable fun
     {"fun": lambda x: x, "jac": 10},  # non-callable jac
-    {"fun": lambda x: x},
+    {"fun": lambda x: x},  # no bounds at all
     {"fun": lambda x: x, "value": 1, "lower_bounds": 1},  # cannot have value and bounds
     {"fun": lambda x: x, "value": 1, "upper_bounds": 1},  # cannot have value and bounds
     {"fun": lambda x: x},  # needs to have at least one bound
     {"fun": lambda x: x, "lower_bounds": 1, "upper_bounds": 0},
+    {"fun": lambda x: x, "selector": 10},
+    {"fun": lambda x: x, "loc": 10},
+    {"fun": lambda x: x, "query": 10},
 ]
 
+TEST_CASES = list(
+    itertools.product(TEST_CASES, [np.arange(3), pd.DataFrame({"a": [0, 1, 2]})])
+)
 
-@pytest.mark.parametrize("constraint", TEST_CASES)
-def test_check_validity_nonlinear_constraint(constraint):
+
+@pytest.mark.parametrize("constraint, params", TEST_CASES)
+def test_check_validity_nonlinear_constraint(constraint, params):
     with pytest.raises(ValueError):
-        _check_validity_nonlinear_constraint(constraint)
+        _check_validity_nonlinear_constraint(constraint, params)
 
 
 def test_check_validity_nonlinear_constraint_correct_example():
@@ -91,8 +94,9 @@ def test_check_validity_nonlinear_constraint_correct_example():
         "fun": lambda x: x,
         "jac": lambda x: np.ones_like(x),
         "lower_bounds": np.arange(4),
+        "selector": lambda x: x[:1],
     }
-    _check_validity_nonlinear_constraint(constr)
+    _check_validity_nonlinear_constraint(constr, params=np.arange(4))
 
 
 ########################################################################################

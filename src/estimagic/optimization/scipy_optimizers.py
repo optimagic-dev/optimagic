@@ -59,6 +59,9 @@ from estimagic.optimization.algo_options import LIMITED_MEMORY_STORAGE_LENGTH
 from estimagic.optimization.algo_options import MAX_LINE_SEARCH_STEPS
 from estimagic.optimization.algo_options import STOPPING_MAX_CRITERION_EVALUATIONS
 from estimagic.optimization.algo_options import STOPPING_MAX_ITERATIONS
+from estimagic.parameters.nonlinear_constraints import (
+    equality_as_inequality_constraints,
+)
 from estimagic.utilities import calculate_trustregion_initial_radius
 from scipy.optimize import Bounds
 from scipy.optimize import NonlinearConstraint
@@ -322,6 +325,9 @@ def scipy_cobyla(
 
     options = {"maxiter": stopping_max_iterations, "rhobeg": trustregion_initial_radius}
 
+    # cannot handle equality constraints
+    nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
+
     res = scipy.optimize.minimize(
         fun=criterion,
         x0=x,
@@ -416,6 +422,9 @@ def scipy_trust_constr(
         "initial_tr_radius": trustregion_initial_radius,
     }
 
+    # cannot handle equality constraints
+    nonlinear_constraints = equality_as_inequality_constraints(nonlinear_constraints)
+
     res = scipy.optimize.minimize(
         fun=criterion_and_derivative,
         jac=True,
@@ -452,16 +461,23 @@ def _get_scipy_bounds(lower_bounds, upper_bounds):
 
 
 def _get_scipy_constraints(constraints):
-    _constraints = []
-    for c in constraints:
-        nlc = NonlinearConstraint(
-            fun=c["fun"],
-            lb=np.zeros(c["n_constr"]),
-            ub=np.tile(np.inf, c["n_constr"]),
-            jac=c["jac"],
-        )
-        _constraints.append(nlc)
-    return _constraints
+    """Transform internal nonlinear constraints to scipy readable format.
+
+    This format is currently only used by scipy_trust-constr.
+
+    """
+    scipy_constraints = [_internal_to_scipy_constraint(c) for c in constraints]
+    return scipy_constraints
+
+
+def _internal_to_scipy_constraint(c):
+    new_constr = NonlinearConstraint(
+        fun=c["fun"],
+        lb=np.zeros(c["n_constr"]),
+        ub=np.tile(np.inf, c["n_constr"]),
+        jac=c["jac"],
+    )
+    return new_constr
 
 
 def _scipy_least_squares(
