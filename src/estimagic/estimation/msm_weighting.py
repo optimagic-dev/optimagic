@@ -1,7 +1,13 @@
+import functools
+
 import numpy as np
 import pandas as pd
 from estimagic.inference.bootstrap import bootstrap
+from estimagic.parameters.block_trees import block_tree_to_matrix
+from estimagic.parameters.block_trees import matrix_to_block_tree
+from estimagic.parameters.tree_registry import get_registry
 from estimagic.utilities import robust_inverse
+from pybaum import tree_just_flatten
 from scipy.linalg import block_diag
 
 
@@ -40,47 +46,86 @@ def get_moments_cov(
     if problematic:
         raise ValueError(f"Invalid bootstrap_kwargs: {problematic}")
 
-    cov = bootstrap(data=data, outcome=calculate_moments, outcome_kwargs=moment_kwargs)[
-        "cov"
-    ]
+    first_eval = calculate_moments(data, **moment_kwargs)
+
+    registry = get_registry(extended=True)
+
+    @functools.wraps(calculate_moments)
+    def func(data, **kwargs):
+        raw = calculate_moments(data, **kwargs)
+        out = pd.Series(
+            tree_just_flatten(raw, registry=registry)
+        )  # xxxx won't be necessary soon!
+        return out
+
+    cov_arr = bootstrap(data=data, outcome=func, outcome_kwargs=moment_kwargs)["cov"]
+
+    if isinstance(cov_arr, pd.DataFrame):
+        cov_arr = cov_arr.to_numpy()  # xxxx won't be necessary soon
+
+    cov = matrix_to_block_tree(cov_arr, first_eval, first_eval)
 
     return cov
 
 
-def get_weighting_matrix(moments_cov, method, clip_value=1e-6):
+def get_weighting_matrix(
+    moments_cov, method, empirical_moments, clip_value=1e-6, return_type="pytree"
+):
     """Calculate a weighting matrix from moments_cov.
 
     Args:
         moments_cov (pandas.DataFrame or numpy.ndarray): Square DataFrame or Array
             with the covariance matrix of the moment conditions for msm estimation.
         method (str): One of "optimal", "diagonal".
+        empirical_moments (pytree): Pytree containing empirical moments. Used to get
+            the tree structure
         clip_value (float): Bound at which diagonal elements of the moments_cov are
             clipped to avoid dividing by zero.
+        return_type (str): One of "pytree", "array" or "pytree_and_array"
 
     Returns:
         pandas.DataFrame or numpy.ndarray: Weighting matrix with the same shape as
             moments_cov.
 
     """
+    fast_path = isinstance(moments_cov, np.ndarray) and moments_cov.ndim == 2
+
+    if fast_path:
+        _internal_cov = moments_cov
+    else:
+        _internal_cov = block_tree_to_matrix(
+            moments_cov,
+            outer_tree=empirical_moments,
+            inner_tree=empirical_moments,
+        )
+
     if method == "optimal":
-        values = robust_inverse(moments_cov)
+        array_weights = robust_inverse(_internal_cov)
     elif method == "diagonal":
-        diagonal_values = 1 / np.clip(np.diagonal(moments_cov), clip_value, np.inf)
-        values = np.diag(diagonal_values)
+        diagonal_values = 1 / np.clip(np.diagonal(_internal_cov), clip_value, np.inf)
+        array_weights = np.diag(diagonal_values)
     else:
         raise ValueError(f"Invalid method: {method}")
 
-    if isinstance(moments_cov, np.ndarray):
-        weights = values
+    if return_type == "array" or (fast_path and "_and_" not in return_type):
+        out = array_weights
+    elif fast_path:
+        out = (array_weights, array_weights)
     else:
-        weights = pd.DataFrame(
-            values, columns=moments_cov.index, index=moments_cov.index
+        tree_weights = matrix_to_block_tree(
+            array_weights,
+            outer_tree=empirical_moments,
+            inner_tree=empirical_moments,
         )
+        if return_type == "pytree":
+            out = tree_weights
+        else:
+            out = (tree_weights, array_weights)
 
-    return weights
+    return out
 
 
-def assemble_block_diagonal_matrix(matrices):
+def _assemble_block_diagonal_matrix(matrices):
     """Build a block diagonal matrix out of matrices.
 
     Args:

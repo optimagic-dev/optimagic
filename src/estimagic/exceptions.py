@@ -39,6 +39,10 @@ class NotInstalledError(EstimagicError):
     """Exception when optional dependencies are needed but not installed."""
 
 
+class NotAvailableError(EstimagicError):
+    """Exception when something is not available, e.g. because a calculation failed."""
+
+
 class StopOptimizationError(EstimagicError):
     def __init__(self, message, current_status):
         super().__init__(message)

@@ -10,78 +10,10 @@ epsilon 2-6: Honore, Jorgensen & de Paula
 """
 import numpy as np
 import pandas as pd
-from estimagic.estimation.msm_weighting import get_weighting_matrix
 from estimagic.exceptions import INVALID_SENSITIVITY_MSG
-from estimagic.inference.msm_covs import cov_optimal
 from estimagic.inference.msm_covs import cov_robust
 from estimagic.inference.shared import process_pandas_arguments
 from estimagic.utilities import robust_inverse
-
-
-def calculate_sensitivity_measures(jac, weights, moments_cov, params_cov):
-    """Calculate sensitivity measures for MSM estimates.
-
-    Args:
-        jac (np.ndarray or pandas.DataFrame): The jacobian of simulate_moments with
-            respect to params, evaluated at the  point estimates.
-        weights (np.ndarray or pandas.DataFrame): The weighting matrix used for
-            msm estimation.
-        moments_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
-            empirical moments.
-        params_cov (numpy.ndarray or pandas.DataFrame): The covariance matrix of the
-            parameter estimates.
-
-    Returns:
-        dict: Dictionary with six sensitivity measures.
-
-
-    """
-    weights_opt = get_weighting_matrix(moments_cov, "optimal")
-    params_cov_opt = cov_optimal(jac, weights_opt)
-
-    m1 = calculate_sensitivity_to_bias(jac=jac, weights=weights)
-    e2 = calculate_fundamental_sensitivity_to_noise(
-        jac=jac,
-        weights=weights_opt,
-        moments_cov=moments_cov,
-        params_cov_opt=params_cov_opt,
-    )
-    e3 = calculate_actual_sensitivity_to_noise(
-        sensitivity_to_bias=m1,
-        weights=weights,
-        moments_cov=moments_cov,
-        params_cov=params_cov,
-    )
-    e4 = calculate_actual_sensitivity_to_removal(
-        jac=jac,
-        weights=weights,
-        moments_cov=moments_cov,
-        params_cov=params_cov,
-    )
-
-    e5 = calculate_fundamental_sensitivity_to_removal(
-        jac=jac,
-        moments_cov=moments_cov,
-        params_cov_opt=params_cov_opt,
-    )
-
-    e6 = calculate_sensitivity_to_weighting(
-        jac=jac,
-        weights=weights,
-        moments_cov=moments_cov,
-        params_cov=params_cov,
-    )
-
-    measures = {
-        "sensitivity_to_bias": m1,
-        "fundamental_sensitivity_to_noise": e2,
-        "actual_sensitivity_to_noise": e3,
-        "actual_sensitivity_to_removal": e4,
-        "fundamental_sensitivity_to_removal": e5,
-        "sensitivity_to_weighting": e6,
-    }
-
-    return measures
 
 
 def calculate_sensitivity_to_bias(jac, weights):
