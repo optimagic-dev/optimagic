@@ -27,6 +27,7 @@ from estimagic.parameters.conversion import Converter
 from estimagic.parameters.conversion import get_converter
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from estimagic.utilities import to_pickle
 
 
 def estimate_ml(
@@ -737,3 +738,12 @@ class LikelihoodResult:
         out = self._converter.params_from_internal(helper)
 
         return out
+
+    def to_pickle(self, path):
+        """Save the LikelihoodResult object to pickle.
+
+        Args:
+            path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
+        """
+        to_pickle(self, path=path)

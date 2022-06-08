@@ -97,11 +97,13 @@ def _get_selection_field(constraint, selector_case, params_case):
             "dataframe": {"locs", "queries", "selectors"},
             "numpy array": {"locs", "selectors"},
             "pytree": {"selectors"},
+            "series": {"locs", "selectors"},
         },
         "one selector": {
             "dataframe": {"loc", "query", "selector"},
             "numpy array": {"loc", "selector"},
             "pytree": {"selector"},
+            "series": {"loc", "selector"},
         },
     }
 
@@ -183,6 +185,8 @@ def _get_selection_evaluator(field, constraint, params_case, registry):
 def _get_params_case(params):
     if isinstance(params, pd.DataFrame) and "value" in params:
         params_case = "dataframe"
+    elif isinstance(params, pd.Series):
+        params_case = "series"
     elif isinstance(params, np.ndarray):
         params_case = "numpy array"
     else:

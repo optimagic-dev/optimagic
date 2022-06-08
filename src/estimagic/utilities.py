@@ -1,7 +1,9 @@
 import warnings
 from hashlib import sha1
 
+import cloudpickle
 import numpy as np
+import pandas as pd
 from scipy.linalg import ldl
 from scipy.linalg import qr
 
@@ -282,3 +284,12 @@ def calculate_trustregion_initial_radius(x):
     """
     x_norm = np.linalg.norm(x, ord=np.inf)
     return 0.1 * max(x_norm, 1)
+
+
+def to_pickle(obj, path):
+    with open(path, "wb") as buffer:
+        cloudpickle.dump(obj, buffer)
+
+
+def read_pickle(path):
+    return pd.read_pickle(path)

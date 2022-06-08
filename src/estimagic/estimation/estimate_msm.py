@@ -39,6 +39,7 @@ from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_bias
 from estimagic.sensitivity.msm_sensitivity import calculate_sensitivity_to_weighting
 from estimagic.shared.check_option_dicts import check_numdiff_options
 from estimagic.shared.check_option_dicts import check_optimization_options
+from estimagic.utilities import to_pickle
 from pybaum import leaf_names
 from pybaum import tree_just_flatten
 
@@ -930,3 +931,12 @@ class MomentsResult:
             )
             raise ValueError(msg)
         return out
+
+    def to_pickle(self, path):
+        """Save the MomentsResult object to pickle.
+
+        Args:
+            path (str, pathlib.Path): A str or pathlib.path ending in .pkl or .pickle.
+
+        """
+        to_pickle(self, path=path)
