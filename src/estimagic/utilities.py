@@ -2,9 +2,12 @@ import warnings
 from hashlib import sha1
 
 import numpy as np
-from fuzzywuzzy import process as fw_process
 from scipy.linalg import ldl
 from scipy.linalg import qr
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=UserWarning)
+    from fuzzywuzzy import process as fw_process
 
 
 def chol_params_to_lower_triangular_matrix(params):
@@ -125,7 +128,9 @@ def propose_alternatives(requested, possibilities, number=3):
 
     """
     number = min(number, len(possibilities))
-    proposals_w_probs = fw_process.extract(requested, possibilities, limit=number)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        proposals_w_probs = fw_process.extract(requested, possibilities, limit=number)
     proposals = [proposal[0] for proposal in proposals_w_probs]
 
     return proposals
