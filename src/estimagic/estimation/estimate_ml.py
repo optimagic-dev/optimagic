@@ -212,7 +212,7 @@ def estimate_ml(
     # Get the converter for params and function outputs
     # ==================================================================================
 
-    converter, flat_estimates = get_converter(
+    converter, internal_estimates = get_converter(
         func=loglike,
         params=estimates,
         constraints=constraints,
@@ -242,9 +242,9 @@ def estimate_ml(
 
         jac_res = first_derivative(
             func=func,
-            params=flat_estimates.values,
-            lower_bounds=flat_estimates.lower_bounds,
-            upper_bounds=flat_estimates.upper_bounds,
+            params=internal_estimates.values,
+            lower_bounds=internal_estimates.lower_bounds,
+            upper_bounds=internal_estimates.upper_bounds,
             **numdiff_options,
         )
 
@@ -285,9 +285,9 @@ def estimate_ml(
 
         hess_res = second_derivative(
             func=func,
-            params=flat_estimates.values,
-            lower_bounds=flat_estimates.lower_bounds,
-            upper_bounds=flat_estimates.upper_bounds,
+            params=internal_estimates.values,
+            lower_bounds=internal_estimates.lower_bounds,
+            upper_bounds=internal_estimates.upper_bounds,
             **numdiff_options,
         )
         int_hess = hess_res["derivative"]
@@ -336,7 +336,7 @@ def estimate_ml(
         _internal_jacobian=int_jac,
         _internal_hessian=int_hess,
         _design_info=design_info,
-        _flat_params=flat_estimates,
+        _flat_params=internal_estimates,
         _has_constraints=constraints not in [None, []],
     )
 
@@ -616,7 +616,7 @@ class LikelihoodResult:
 
         summary = calculate_inference_quantities(
             estimates=self.params,
-            flat_estimates=self._flat_params,
+            internal_estimates=self._flat_params,
             free_cov=free_cov,
             ci_level=ci_level,
         )

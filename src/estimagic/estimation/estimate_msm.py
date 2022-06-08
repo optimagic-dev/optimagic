@@ -260,7 +260,7 @@ def estimate_msm(
     else:
         func_eval = {"contributions": sim_mom_eval}
 
-    converter, flat_estimates = get_converter(
+    converter, internal_estimates = get_converter(
         func=helper,
         params=estimates,
         constraints=constraints,
@@ -290,9 +290,9 @@ def estimate_msm(
 
         int_jac = first_derivative(
             func=func,
-            params=flat_estimates.values,
-            lower_bounds=flat_estimates.lower_bounds,
-            upper_bounds=flat_estimates.upper_bounds,
+            params=internal_estimates.values,
+            lower_bounds=internal_estimates.lower_bounds,
+            upper_bounds=internal_estimates.upper_bounds,
             **numdiff_options,
         )["derivative"]
 
@@ -321,7 +321,7 @@ def estimate_msm(
     res = MomentsResult(
         params=estimates,
         weights=weights,
-        _flat_params=flat_estimates,
+        _flat_params=internal_estimates,
         _converter=converter,
         _internal_weights=internal_weights,
         _internal_moments_cov=internal_moments_cov,
@@ -660,7 +660,7 @@ class MomentsResult:
 
         summary = calculate_inference_quantities(
             estimates=self.params,
-            flat_estimates=self._flat_params,
+            internal_estimates=self._flat_params,
             free_cov=free_cov,
             ci_level=ci_level,
         )

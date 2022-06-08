@@ -78,13 +78,13 @@ def transform_covariance(
     return free_cov
 
 
-def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level):
+def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_level):
     """Add standard errors, pvalues and confidence intervals to params.
 
     Args
         params (pytree): The input parameter pytree.
-        flat_estimates (FlatParams): NamedTuple with internal estimated parameter values
-            and names, lower_bounds and upper_bounds, and free_mask.
+        internal_estimates (FlatParams): NamedTuple with internal estimated parameter
+            values and names, lower_bounds and upper_bounds, and free_mask.
         free_cov (pd.DataFrame): Quadratic DataFrame containing the covariance matrix
             of the free parameters. If parameters were fixed (explicitly or by other
             constraints) the index is a subset of params.index. The columns are the same
@@ -101,14 +101,14 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
 
     """
     if not isinstance(free_cov, pd.DataFrame):
-        free_index = np.array(flat_estimates.names)[flat_estimates.free_mask]
+        free_index = np.array(internal_estimates.names)[internal_estimates.free_mask]
         free_cov = pd.DataFrame(data=free_cov, columns=free_index, index=free_index)
     ####################################################################################
     # Construct summary data frame for flat estimates
     ####################################################################################
 
-    df = pd.DataFrame(index=flat_estimates.names)
-    df["value"] = flat_estimates.values
+    df = pd.DataFrame(index=internal_estimates.names)
+    df["value"] = internal_estimates.values
     df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
 
     df["p_value"] = calculate_p_values(
@@ -137,7 +137,7 @@ def calculate_inference_quantities(estimates, flat_estimates, free_cov, ci_level
     registry = get_registry(extended=True)
 
     # create tree with values corresponding to indices of df
-    indices = tree_unflatten(estimates, flat_estimates.names, registry=registry)
+    indices = tree_unflatten(estimates, internal_estimates.names, registry=registry)
 
     indices_flat = tree_just_flatten(indices)
     estimates_flat = tree_just_flatten(estimates)
