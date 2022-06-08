@@ -106,9 +106,10 @@ def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_l
     ####################################################################################
     # Construct summary data frame for flat estimates
     ####################################################################################
+    registry = get_registry(extended=True)
 
     df = pd.DataFrame(index=internal_estimates.names)
-    df["value"] = internal_estimates.values
+    df["value"] = tree_just_flatten(estimates, registry=registry)
     df.loc[free_cov.index, "standard_error"] = np.sqrt(np.diag(free_cov))
 
     df["p_value"] = calculate_p_values(
@@ -134,13 +135,11 @@ def calculate_inference_quantities(estimates, internal_estimates, free_cov, ci_l
     # Map summary data into params tree structure
     ####################################################################################
 
-    registry = get_registry(extended=True)
-
     # create tree with values corresponding to indices of df
     indices = tree_unflatten(estimates, internal_estimates.names, registry=registry)
 
-    indices_flat = tree_just_flatten(indices)
     estimates_flat = tree_just_flatten(estimates)
+    indices_flat = tree_just_flatten(indices)
 
     # use index chunks in indices_flat to access the corresponding sub data frame of df,
     # and use the index information stored in estimates_flat to form the correct (multi)
