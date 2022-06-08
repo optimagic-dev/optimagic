@@ -66,16 +66,24 @@ def test_process_selector(constraint, params, expected):
 ########################################################################################
 TEST_CASES = [
     {},  # no fun
-    {"fun": 10},  # non-callable fun
-    {"fun": lambda x: x, "jac": 10},  # non-callable jac
-    {"fun": lambda x: x},  # no bounds at all
-    {"fun": lambda x: x, "value": 1, "lower_bounds": 1},  # cannot have value and bounds
-    {"fun": lambda x: x, "value": 1, "upper_bounds": 1},  # cannot have value and bounds
-    {"fun": lambda x: x},  # needs to have at least one bound
-    {"fun": lambda x: x, "lower_bounds": 1, "upper_bounds": 0},
-    {"fun": lambda x: x, "selector": 10},
-    {"fun": lambda x: x, "loc": 10},
-    {"fun": lambda x: x, "query": 10},
+    {"func": 10},  # non-callable fun
+    {"func": lambda x: x, "derivative": 10},  # non-callable jac
+    {"func": lambda x: x},  # no bounds at all
+    {
+        "func": lambda x: x,
+        "value": 1,
+        "lower_bounds": 1,
+    },  # cannot have value and bounds
+    {
+        "func": lambda x: x,
+        "value": 1,
+        "upper_bounds": 1,
+    },  # cannot have value and bounds
+    {"func": lambda x: x},  # needs to have at least one bound
+    {"func": lambda x: x, "lower_bounds": 1, "upper_bounds": 0},
+    {"func": lambda x: x, "selector": 10},
+    {"func": lambda x: x, "loc": 10},
+    {"func": lambda x: x, "query": 10},
 ]
 
 TEST_CASES = list(
@@ -86,13 +94,13 @@ TEST_CASES = list(
 @pytest.mark.parametrize("constraint, params", TEST_CASES)
 def test_check_validity_nonlinear_constraint(constraint, params):
     with pytest.raises(ValueError):
-        _check_validity_nonlinear_constraint(constraint, params)
+        _check_validity_nonlinear_constraint(constraint, params, skip_checks=False)
 
 
 def test_check_validity_nonlinear_constraint_correct_example():
     constr = {
-        "fun": lambda x: x,
-        "jac": lambda x: np.ones_like(x),
+        "func": lambda x: x,
+        "derivative": lambda x: np.ones_like(x),
         "lower_bounds": np.arange(4),
         "selector": lambda x: x[:1],
     }
@@ -182,8 +190,13 @@ def test_get_positivity_transform(
 def test_process_nonlinear_constraints():
 
     nonlinear_constraints = [
-        {"type": "eq", "fun": lambda x: np.dot(x, x), "value": 1},
-        {"type": "ineq", "fun": lambda x: x, "lower_bounds": -1, "upper_bounds": 2},
+        {"type": "nonlinear", "func": lambda x: np.dot(x, x), "value": 1},
+        {
+            "type": "nonlinear",
+            "func": lambda x: x,
+            "lower_bounds": -1,
+            "upper_bounds": 2,
+        },
     ]
 
     params = np.array([1.0])
@@ -196,14 +209,14 @@ def test_process_nonlinear_constraints():
     converter = Converter()
 
     got = process_nonlinear_constraints(
-        nonlinear_constraints, params, converter, None, None, None
+        nonlinear_constraints, params, converter, None, None, None, False
     )
 
     expected = [
-        {"type": "eq", "fun": lambda x: np.dot(x, x) - 1.0, "n_constr": 1},
+        {"type": "eq", "func": lambda x: np.dot(x, x) - 1.0, "n_constr": 1},
         {
             "type": "ineq",
-            "fun": lambda x: np.concatenate((x + 1.0, 2.0 - x), axis=0),
+            "func": lambda x: np.concatenate((x + 1.0, 2.0 - x), axis=0),
             "n_constr": 2,
         },
     ]
@@ -213,6 +226,6 @@ def test_process_nonlinear_constraints():
         assert g["n_constr"] == e["n_constr"]
         for x in [0.1, 0.2, 1.2, -2.0]:
             x = np.array([x])
-            assert_array_equal(g["fun"](x), e["fun"](x))
-        assert "jac" in g
+            assert_array_equal(g["func"](x), e["func"](x))
+        assert "derivative" in g
         assert "tol" in g

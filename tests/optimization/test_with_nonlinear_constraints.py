@@ -39,8 +39,8 @@ def nlc_2d_example():
     constraints_long = [
         {
             "type": "nonlinear",
-            "fun": constraint_func,
-            "jac": constraint_jac,
+            "func": constraint_func,
+            "derivative": constraint_jac,
             "lower_bounds": np.zeros(2),
             "tol": 1e-8,
         }
@@ -49,8 +49,8 @@ def nlc_2d_example():
     constraints_flat = [
         {
             "type": "nonlinear",
-            "fun": lambda x: np.dot(x, x),
-            "jac": lambda x: 2 * x,
+            "func": lambda x: np.dot(x, x),
+            "derivative": lambda x: 2 * x,
             "lower_bounds": 1,
             "upper_bounds": 2,
             "tol": 1e-8,
@@ -60,8 +60,8 @@ def nlc_2d_example():
     constraints_equality = [
         {
             "type": "nonlinear",
-            "fun": lambda x: np.dot(x, x),
-            "jac": lambda x: 2 * x,
+            "func": lambda x: np.dot(x, x),
+            "derivative": lambda x: 2 * x,
             "value": 2,
         }
     ]
@@ -69,14 +69,14 @@ def nlc_2d_example():
     constraints_equality_and_inequality = [
         {
             "type": "nonlinear",
-            "fun": lambda x: np.dot(x, x),
-            "jac": lambda x: 2 * x,
+            "func": lambda x: np.dot(x, x),
+            "derivative": lambda x: 2 * x,
             "lower_bounds": 1,
         },
         {
             "type": "nonlinear",
-            "fun": lambda x: np.dot(x, x),
-            "jac": lambda x: 2 * x,
+            "func": lambda x: np.dot(x, x),
+            "derivative": lambda x: 2 * x,
             "value": 2,
         },
     ]
