@@ -1,3 +1,4 @@
+import warnings
 from collections import Counter
 
 import numpy as np
@@ -53,7 +54,9 @@ def process_selectors(constraints, params, tree_converter, param_names):
             registry=registry,
         )
         try:
-            selected = evaluator(helper)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+                selected = evaluator(helper)
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
