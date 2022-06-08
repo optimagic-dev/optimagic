@@ -82,7 +82,7 @@ def estimate_ml(
         upper_bounds (pytree): As lower_bounds. Can be ``np.inf`` for parameters with
             no upper bound.
         constraints (list, dict): List with constraint dictionaries or single dict.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         logging (pathlib.Path, str or False): Path to sqlite3 file (which typically has
             the file extension ``.db``. If the file does not exist, it will be created.
             The dashboard can only be used when logging is used.

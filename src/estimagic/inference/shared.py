@@ -22,7 +22,7 @@ def transform_covariance(
             internal parameter vector. For background information about internal and
             external params see :ref:`implementation_of_constraints`.
         constraints (list): List with constraint dictionaries.
-            See .. _link: ../../docs/source/how_to_guides/how_to_use_constraints.ipynb
+            See :ref:`constraints`.
         n_samples (int): Number of samples used to transform the covariance matrix of
             the internal parameter vector into the covariance matrix of the external
             parameters.

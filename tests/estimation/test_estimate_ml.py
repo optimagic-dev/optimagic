@@ -10,6 +10,7 @@ from estimagic.examples.logit import logit_derivative
 from estimagic.examples.logit import logit_hessian
 from estimagic.examples.logit import logit_loglike
 from estimagic.examples.logit import logit_loglike_and_derivative as llad
+from scipy.stats import multivariate_normal
 from statsmodels.base.model import GenericLikelihoodModel
 
 
@@ -19,8 +20,56 @@ def aaae(obj1, obj2, decimal=3):
     np.testing.assert_array_almost_equal(arr1, arr2, decimal=decimal)
 
 
+# ==================================================================================
+# Test case with constraints using multivariate Normal model
+# ==================================================================================
+
+
+def multivariate_normal_loglike(params, data):
+    mean = params["mean"]
+    cov = params["cov"]
+    mn = multivariate_normal(mean=mean, cov=cov)
+    contributions = mn.logpdf(data)
+    return {
+        "contributions": contributions,
+        "value": contributions.sum(),
+    }
+
+
+@pytest.mark.tryfirst
+def test_estimate_ml_with_constraints():
+
+    # true parameters
+    true_mean = np.arange(1, 4)
+    true_cov = np.diag(np.arange(1, 4))
+
+    # simulate 10.000 random samples
+    mn = multivariate_normal(mean=true_mean, cov=true_cov)
+    data = mn.rvs(size=10_000)
+
+    loglike_kwargs = {"data": data}
+
+    params = {"mean": np.ones(3), "cov": np.diag(np.ones(3))}
+
+    constraints = [
+        {"type": "fixed", "selector": lambda p: p["mean"][0]},
+        {"type": "covariance", "selector": lambda p: p["cov"][np.tril_indices(3)]},
+    ]
+
+    results = estimate_ml(
+        loglike=multivariate_normal_loglike,
+        params=params,
+        loglike_kwargs=loglike_kwargs,
+        optimize_options="scipy_lbfgsb",
+        constraints=constraints,
+    )
+
+    aaae(results.params["mean"], true_mean, decimal=1)
+    aaae(results.params["cov"], true_cov, decimal=1)
+
+
 # ======================================================================================
-# logit case
+# Test case using Logit model
 # ======================================================================================
 
 
@@ -197,7 +246,7 @@ def test_estimate_ml_optimize_options_false(fitted_logit_model, logit_inputs):
 
 
 # ======================================================================================
-# (simple) normal case using dict params
+# Univariate normal case using dict params
 # ======================================================================================
 
 
